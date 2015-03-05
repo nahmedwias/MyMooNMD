@@ -1,0 +1,912 @@
+/** ************************************************************************ 
+* @brief     source file for TSystemMatNSE3D
+* @author    Sashikumaar Ganesan, 
+* @date      27.01.15
+* @History 
+ ************************************************************************  */
+#include <Database.h>
+#include <SystemMatNSE3D.h>
+#include <SquareStructure3D.h>
+#include <DiscreteForm3D.h>
+#include <Assemble3D.h>
+#include <FEVectFunct3D.h>
+#include <AuxParam3D.h>
+#include <LocalProjection.h>
+#include <DirectSolver.h>
+#include <NSE3D_ParamRout.h>
+#include <MainUtilities.h>
+#include <Upwind.h>
+#include <MultiGridIte.h>
+#include <FixedPointIte.h>
+#include <FgmresIte.h>
+#include <Upwind3D.h>
+
+#include <NSE_MultiGrid.h>
+#include <NSE_MGLevel1.h>
+#include <NSE_MGLevel2.h>
+#include <NSE_MGLevel3.h>
+#include <NSE_MGLevel4.h>
+
+
+#include <stdlib.h>
+#include <string.h>
+// #include <sstream>
+// #include <MooNMD_Io.h>
+
+TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
+                     TFEFunction3D **pressure, int disctype, int nsetype, int solver)
+{
+  int i, zerostart;
+//   TFESpace3D *fesp[1];
+//   TFEFunction3D *fefct[3];
+ 
+  /** need it for solver */
+  sqmatrices = (TSquareMatrix **)SQMATRICES;
+  matrices = (TMatrix **)MATRICES;
+
+   if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE) || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
+    { N_aux= 4; }
+   else
+    { N_aux= 2; }
+
+  //set number of multigrid levels
+  N_Levels = N_levels;
+   
+  //set the discretization type
+  Disctype = disctype;
+  
+  // NSE type
+  NSEType = nsetype;
+  
+  //set the solver type
+  SOLVER = solver;
+  
+  Velocity = velocity;
+  Pressure = pressure;
+  
+  U_Space = velocity_fespace;
+  P_Space = presssure_fespace;
+  
+  N_U = velocity_fespace[N_levels-1]->GetN_DegreesOfFreedom();
+  N_P = presssure_fespace[N_levels-1]->GetN_DegreesOfFreedom();
+  N_TotalDOF = 3*N_U + N_P;
+  
+  N_Active =  velocity_fespace[N_levels-1]->GetActiveBound();
+  N_DirichletDof = N_U - N_Active;  
+ 
+  sqstructureA = new TSquareStructure3D *[N_levels];
+  structureB = new TStructure3D *[N_levels];
+  structureBT = new TStructure3D *[N_levels];
+  
+  SqmatrixA11 = new TSquareMatrix3D*[N_levels];
+  SqmatrixA12 = new TSquareMatrix3D*[N_levels]; 
+  SqmatrixA13 = new TSquareMatrix3D*[N_levels];  
+  SqmatrixA21 = new TSquareMatrix3D*[N_levels];
+  SqmatrixA22 = new TSquareMatrix3D*[N_levels]; 
+  SqmatrixA23 = new TSquareMatrix3D*[N_levels];    
+  SqmatrixA31 = new TSquareMatrix3D*[N_levels];
+  SqmatrixA32 = new TSquareMatrix3D*[N_levels]; 
+  SqmatrixA33 = new TSquareMatrix3D*[N_levels];    
+  
+  MatrixB1 = new TMatrix3D*[N_levels];
+  MatrixB2 = new TMatrix3D*[N_levels];
+  MatrixB3 = new TMatrix3D*[N_levels];  
+  
+  MatrixB1T = new TMatrix3D*[N_levels];
+  MatrixB2T = new TMatrix3D*[N_levels];
+  MatrixB3T = new TMatrix3D*[N_levels];    
+ 
+  
+  if(SOLVER==AMG_SOLVE || SOLVER==DIRECT)
+   {
+    Start_Level=N_Levels-1;
+   }
+  else 
+   {
+    Start_Level=0;
+   }
+   
+  // build matrices   
+  for(i=Start_Level;i<N_Levels;i++)
+   {
+    if(SOLVER==GMG)
+     OutPut("MULTIGRID LEVEL : " << i<<endl;)
+    
+     // first build matrix structure
+     sqstructureA[i] = new TSquareStructure3D(U_Space[i]);
+     sqstructureA[i]->Sort();  // sort column numbers: numbers are in increasing order
+  
+     structureB[i] = new TStructure3D(P_Space[i], U_Space[i]);
+     structureBT[i] = new TStructure3D(U_Space[i], P_Space[i]);   
+
+    switch(NSEType)
+     {
+      case 1:
+        MatrixB1[i] = new TMatrix3D(structureB[i]);
+        MatrixB2[i] = new TMatrix3D(structureB[i]);
+        MatrixB3[i] = new TMatrix3D(structureB[i]);
+
+        SqmatrixA11[i] = new TSquareMatrix3D(sqstructureA[i]);
+
+        MatVect = MatVect_NSE1;
+        Defect = Defect_NSE1;
+      break;
+
+      case 2:
+        MatrixB1[i] = new TMatrix3D(structureB[i]);
+        MatrixB2[i] = new TMatrix3D(structureB[i]);
+        MatrixB3[i] = new TMatrix3D(structureB[i]);
+        MatrixB1T[i] = new TMatrix3D(structureBT[i]);
+        MatrixB2T[i] = new TMatrix3D(structureBT[i]);
+        MatrixB3T[i] = new TMatrix3D(structureBT[i]);
+
+        SqmatrixA11[i] = new TSquareMatrix3D(sqstructureA[i]);
+
+        MatVect = MatVect_NSE2;
+        Defect = Defect_NSE2;
+      break;
+
+      case 3:
+        MatrixB1[i] = new TMatrix3D(structureB[i]);
+        MatrixB2[i] = new TMatrix3D(structureB[i]);
+        MatrixB3[i] = new TMatrix3D(structureB[i]);
+
+        SqmatrixA11[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA12[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA13[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA21[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA22[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA23[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA31[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA32[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA33[i] = new TSquareMatrix3D(sqstructureA[i]);
+
+        MatVect = MatVect_NSE3;
+        Defect = Defect_NSE3;
+      break;
+
+      case 4:
+        MatrixB1[i] = new TMatrix3D(structureB[i]);
+        MatrixB2[i] = new TMatrix3D(structureB[i]);
+        MatrixB3[i] = new TMatrix3D(structureB[i]);
+        MatrixB1T[i] = new TMatrix3D(structureBT[i]);
+        MatrixB2T[i] = new TMatrix3D(structureBT[i]);
+        MatrixB3T[i] = new TMatrix3D(structureBT[i]);
+
+        SqmatrixA11[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA12[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA13[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA21[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA22[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA23[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA31[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA32[i] = new TSquareMatrix3D(sqstructureA[i]);
+        SqmatrixA33[i] = new TSquareMatrix3D(sqstructureA[i]);
+
+        MatVect = MatVect_NSE4;
+        Defect = Defect_NSE4;
+      break;
+      
+      default:
+            OutPut("Unknown NSETYPE " << NSEType <<"  it must be 1 to 4" << endl);
+            exit(4711);;      
+      
+     }  
+     OutPut(endl;)
+    } //  for(i=Start_Level;i<N_Levels;i++)
+    
+    
+   //initialize multigrid solver
+   if(SOLVER==GMG)
+   {    
+    Parameters[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
+    Parameters[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+    MG = new TNSE_MultiGrid(1, 2, Parameters);
+    
+     switch (TDatabase::ParamDB->SC_SOLVER_SADDLE)
+      {
+       case 11:
+          zerostart = 0;
+       break;
+       case 16:
+           zerostart = 1;
+        break;
+      default:
+         zerostart = 1;
+       }    
+    
+    // build preconditioner
+    switch (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
+     {
+      case 5:
+       prec = new TMultiGridIte(MatVect, Defect, NULL, 0, N_TotalDOF, MG, zerostart);
+       Itmethod_sol = new double[N_TotalDOF];
+       Itmethod_rhs = new double[N_TotalDOF];
+      break;
+      default:
+         OutPut("Unknown preconditioner !!!" << endl);
+         exit(4711);
+     }
+     
+    // build solver
+    switch (TDatabase::ParamDB->SC_SOLVER_SADDLE)
+     {
+        case 11:
+            Itmethod = new TFixedPointIte(MatVect, Defect, prec, 0, N_TotalDOF, 0);
+         break;
+         case 16:
+            Itmethod = new TFgmresIte(MatVect, Defect, prec, 0, N_TotalDOF, 0);
+         break;
+         default:
+            OutPut("Unknown solver !!!" << endl);
+            exit(4711);
+      }         
+     
+        
+     } //  if(SOLVER==GMG)  
+   
+   
+//     fesp[0] =  U_Space[N_Levels-1];
+// 
+//     fefct[0] = Velocity[N_Levels-1]->GetComponent(0);
+//     fefct[1] = Velocity[N_Levels-1]->GetComponent(1);
+//     fefct[2] = Velocity[N_Levels-1]->GetComponent(2);
+      
+    NSEaux_error = NULL;
+    NSEaux = NULL;
+}
+
+// TSystemMatNSE3D::~TSystemMatNSE3D()
+// {
+//     delete NSEaux; 
+//        
+//     if(NSEaux_error)
+//       delete NSEaux_error;
+// 
+// }
+
+
+void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *U1BoundValue, 
+                           BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue)
+{  
+  TDiscreteForm3D *DiscreteFormGalerkin, *DiscreteFormSDFEM, *DiscreteFormUpwind, *DiscreteFormSmagorinsky;
+  TDiscreteForm3D *DiscreteFormVMSProjection, *DiscreteFormNLGalerkin, *DiscreteFormNLSDFEM, *DiscreteFormNLUpwind;
+  TDiscreteForm3D *DiscreteFormNLSmagorinsky, *DiscreteFormNLVMSProjection, *DiscreteFormPressSep, *DiscreteFormAuxProbPressSep;
+  TDiscreteForm3D *DiscreteFormNSRFBRhs, *DiscreteFormNLSDFEM_DivDiv;
+    
+  /**  save the boundary condition */
+  BoundaryConditions[0] = BoundCond;
+  BoundaryConditions[1] = BoundCond;  
+  BoundaryConditions[2] = BoundCond;  
+  
+  /**  save the boundary values   */
+  BoundaryValues[0] = U1BoundValue;
+  BoundaryValues[1] = U2BoundValue;
+  BoundaryValues[2] = U3BoundValue;
+  
+  /** save the nse bilinear coefficient   */
+  LinCoeffs[0] = lincoeffs;
+  
+
+  /** set the Discreteforms */
+  InitializeDiscreteForms(DiscreteFormGalerkin, DiscreteFormSDFEM,
+                          DiscreteFormUpwind, DiscreteFormSmagorinsky,
+                          DiscreteFormVMSProjection,
+                          DiscreteFormNLGalerkin, DiscreteFormNLSDFEM,
+                          DiscreteFormNLUpwind, DiscreteFormNLSmagorinsky, 
+                          DiscreteFormNLVMSProjection,
+                          DiscreteFormNLSDFEM_DivDiv,
+                          DiscreteFormPressSep,
+                          DiscreteFormAuxProbPressSep,
+                          DiscreteFormNSRFBRhs,
+                          LinCoeffs[0], TDatabase::ParamDB->NSTYPE);
+  
+  
+    /** find discrete form */
+    switch(Disctype)
+       {
+          case GALERKIN:
+            DiscreteFormARhs = DiscreteFormGalerkin;
+            DiscreteFormNL = DiscreteFormNLGalerkin;
+          break;
+
+          case SDFEM:
+            DiscreteFormARhs = DiscreteFormSDFEM;
+            DiscreteFormNL = DiscreteFormNLSDFEM; 
+          break;
+
+          case UPWIND:
+            DiscreteFormARhs = DiscreteFormUpwind;
+            DiscreteFormNL = DiscreteFormNLUpwind;    
+            break;
+
+          case SMAGORINSKY:
+            DiscreteFormARhs = DiscreteFormSmagorinsky;
+            DiscreteFormNL = DiscreteFormNLSmagorinsky;              
+            break;
+
+          case VMS_PROJECTION:
+	      DiscreteFormARhs = DiscreteFormVMSProjection;
+	      if (TDatabase::ParamDB->NSTYPE != 1)
+	       {
+                OutPut("VMS only for NSTYPE 1 implemented !!!"<<endl);
+		exit(4711);
+	       }
+
+            DiscreteFormNL = DiscreteFormNLVMSProjection;
+            break;
+
+          default:
+            Error("Unknown DISCTYPE" << endl);
+            exit(-1);
+        } 
+     
+     // set the discrete form for the Stokes equation
+      if (TDatabase::ParamDB->STOKES_PROBLEM)
+       {
+        DiscreteFormARhs = DiscreteFormUpwind;     
+        DiscreteFormNL = NULL;
+       }
+} // TSystemMatNSE3D::Init
+
+ 
+void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
+{
+  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
+  int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
+  int velocity_space_code, pressure_space_code;
+  int mg_type = TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
+    
+  double *RHSs[4], alpha[2];
+
+  TFESpace3D *fesp[2], *fesprhs[3];
+  TFEFunction3D *fefct[7];
+  
+   for(i=Start_Level;i<N_Levels;i++)
+    {     
+     // initialize matrices
+     switch(NSEType)
+      {
+        case 1:
+          SQMATRICES[0] = SqmatrixA11[i];
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+
+          SQMATRICES[0]->Reset();
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+
+          N_SquareMatrices = 1;
+          N_RectMatrices = 3;
+        break;
+
+        case 2:
+          SQMATRICES[0] = SqmatrixA11[i];
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+          MATRICES[3] = MatrixB1T[i];
+          MATRICES[4] = MatrixB2T[i];
+          MATRICES[5] = MatrixB3T[i];
+
+          SQMATRICES[0]->Reset();
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+          MATRICES[3]->Reset();
+          MATRICES[4]->Reset();
+          MATRICES[5]->Reset();
+	  
+          N_SquareMatrices = 1;
+          N_RectMatrices = 6;
+        break;
+
+        case 3:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA12[i];
+          SQMATRICES[2] = SqmatrixA13[i];	  
+          SQMATRICES[3] = SqmatrixA21[i];
+          SQMATRICES[4] = SqmatrixA22[i];
+          SQMATRICES[5] = SqmatrixA23[i]; 
+          SQMATRICES[6] = SqmatrixA31[i];
+          SQMATRICES[7] = SqmatrixA32[i];
+          SQMATRICES[8] = SqmatrixA33[i];  
+
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+
+          SQMATRICES[0]->Reset();
+          SQMATRICES[1]->Reset();
+          SQMATRICES[2]->Reset();
+          SQMATRICES[3]->Reset();
+          SQMATRICES[4]->Reset();
+          SQMATRICES[5]->Reset();
+          SQMATRICES[6]->Reset();
+          SQMATRICES[7]->Reset();
+          SQMATRICES[8]->Reset();
+
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+
+          N_SquareMatrices = 9;
+          N_RectMatrices = 3;
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA12[i];
+          SQMATRICES[2] = SqmatrixA13[i];	  
+          SQMATRICES[3] = SqmatrixA21[i];
+          SQMATRICES[4] = SqmatrixA22[i];
+          SQMATRICES[5] = SqmatrixA23[i]; 
+          SQMATRICES[6] = SqmatrixA31[i];
+          SQMATRICES[7] = SqmatrixA32[i];
+          SQMATRICES[8] = SqmatrixA33[i];  
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+          MATRICES[3] = MatrixB1T[i];
+          MATRICES[4] = MatrixB2T[i];
+          MATRICES[5] = MatrixB3T[i];
+
+          SQMATRICES[0]->Reset();
+          SQMATRICES[1]->Reset();
+          SQMATRICES[2]->Reset();
+          SQMATRICES[3]->Reset();
+          SQMATRICES[4]->Reset();
+          SQMATRICES[5]->Reset();
+          SQMATRICES[6]->Reset();
+          SQMATRICES[7]->Reset();
+          SQMATRICES[8]->Reset();
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+          MATRICES[3]->Reset();
+          MATRICES[4]->Reset();
+          MATRICES[5]->Reset();
+
+          N_SquareMatrices = 9;
+          N_RectMatrices = 6;
+
+          break;
+      } //  switch(NSEType)
+      
+      N_Rhs = 3;
+      N_FESpaces = 2;   
+     
+      N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();
+      N_Active_Current  = U_Space[i]->GetActiveBound();     
+      N_DirichletDof = N_U_Current - N_Active_Current;
+      N_P_Current = P_Space[i]->GetN_DegreesOfFreedom();      
+      
+      RHSs[0] = rhs[i];
+      RHSs[1] = rhs[i] + N_U_Current;
+      RHSs[2] = rhs[i] + 2*N_U_Current;
+      RHSs[3] = rhs[i] + 3*N_U_Current;     
+      memset(rhs[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
+
+      fesp[0] =  U_Space[i];
+      fesp[1] =  P_Space[i];
+      
+      fefct[0] = Velocity[i]->GetComponent(0);
+      fefct[1] = Velocity[i]->GetComponent(1);
+      fefct[2] = Velocity[i]->GetComponent(2);
+      
+      fesprhs[0] =  U_Space[i];
+      fesprhs[1] =  U_Space[i];
+      fesprhs[2] =  U_Space[i];
+      
+      NSEaux =  new TAuxParam3D(NSN_FESpacesVelo, NSN_FctVelo, NSN_ParamFctVelo, NSN_FEValuesVelo,
+                                fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
+                                 NSN_ParamsVelo, NSBeginParamVelo);
+      
+      
+       /** assemble */
+       Assemble3D(N_FESpaces, fesp,
+                  N_SquareMatrices, SQMATRICES,
+                  N_RectMatrices, MATRICES,
+                  N_Rhs, RHSs, fesprhs,
+                  DiscreteFormARhs,
+                  BoundaryConditions,
+                  BoundaryValues,
+                  NSEaux);
+ 
+   
+       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+        {
+         switch(NSEType)
+          {
+           case 1:
+           case 2:
+            // do upwinding with one matrix
+            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
+            cout << "UPWINDING DONE : level " << endl;
+            break;
+
+          case 3:
+          case 4:
+            // do upwinding with three matrices
+            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SQMATRICES[4], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SQMATRICES[8], fefct[0], fefct[1], fefct[2]);
+            cout << "UPWINDING DONE : level " << endl;
+           break;
+         }                        // endswitch
+        }                          // endif     
+       
+
+       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+        {
+         if(NSEType <4)
+          {
+           OutPut("For slip with friction bc NSTYPE 4 is ");
+           OutPut("necessary !!!!! " << endl);
+           exit(4711);
+          }
+          
+          // prepare everything for the assembling of slip with friction bc
+          // on all levels
+          N_FESpaces = 1;
+          N_SquareMatrices = 9;
+          N_RectMatrices = 0;
+          N_Rhs = 3; 
+       
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA22[i];
+          SQMATRICES[2] = SqmatrixA33[i];
+          SQMATRICES[3] = SqmatrixA12[i];
+          SQMATRICES[4] = SqmatrixA13[i];
+          SQMATRICES[5] = SqmatrixA21[i];
+          SQMATRICES[6] = SqmatrixA23[i];
+          SQMATRICES[7] = SqmatrixA31[i];
+          SQMATRICES[8] = SqmatrixA32[i];
+
+          Assemble3DSlipBC(N_FESpaces, fesp,
+            N_SquareMatrices, SQMATRICES,
+            N_RectMatrices, MATRICES,
+            N_Rhs, RHSs, fesprhs,
+            NULL,
+            BoundaryConditions,
+            BoundaryValues,
+            NSEaux);
+        } //  if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRIC
+
+      delete NSEaux;   
+    
+      // set rhs for Dirichlet nodes
+      memcpy(sol[i]+N_Active_Current, rhs[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
+      memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
+      memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
+      
+      //setup the multigrid solver
+       alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
+       alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;  
+       velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
+       pressure_space_code = TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE;
+
+       if(mg_type==1)
+        {
+         if(i==0)
+          {
+           alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
+           alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
+          }     
+         else if(i==N_Levels-1)
+          {
+           alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+           alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE;  
+          }
+          
+         if(i<N_Levels-1)
+          {
+           velocity_space_code = -1;
+           pressure_space_code = 0; 
+          }
+          
+        }
+ 
+//         cout << velocity_space_code << " velocity_space_code " << pressure_space_code << endl;
+
+       // initialize matrices
+       if(SOLVER==GMG)
+        {      
+         switch(NSEType)
+          {
+           case 1:
+              MGLevel = new TNSE_MGLevel1(i, SqmatrixA11[i],  MatrixB1[i], MatrixB2[i], MatrixB3[i],
+                                             structureBT[i], rhs[i], sol[i], N_aux, alpha,
+                                             velocity_space_code, pressure_space_code,
+                                             NULL, NULL);
+              MG->AddLevel(MGLevel);
+          break;
+          case 2:
+              MGLevel = new TNSE_MGLevel2(i, SqmatrixA11[i], MatrixB1[i], MatrixB2[i], MatrixB3[i],
+                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], rhs[i], sol[i], N_aux, alpha,
+                                             velocity_space_code, pressure_space_code,
+                                             NULL, NULL);
+              MG->AddLevel(MGLevel);
+          break;
+          case 3:
+              MGLevel = new TNSE_MGLevel3(i, SqmatrixA11[i], SqmatrixA12[i], SqmatrixA13[i],
+                                             SqmatrixA21[i], SqmatrixA22[i], SqmatrixA23[i],
+                                             SqmatrixA31[i], SqmatrixA32[i], SqmatrixA33[i],
+                                             MatrixB1[i], MatrixB2[i], MatrixB3[i],
+                                             structureBT[i], rhs[i], sol[i], N_aux, alpha,
+                                             velocity_space_code, pressure_space_code,
+                                             NULL, NULL);
+              MG->AddLevel(MGLevel);
+          break;
+          case 4:
+              MGLevel = new TNSE_MGLevel4(i, SqmatrixA11[i], SqmatrixA12[i], SqmatrixA13[i],
+                                             SqmatrixA21[i], SqmatrixA22[i], SqmatrixA23[i],
+                                             SqmatrixA31[i], SqmatrixA32[i], SqmatrixA33[i],
+                                             MatrixB1[i], MatrixB2[i], MatrixB3[i],
+                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], rhs[i], sol[i], N_aux, alpha,
+                                             velocity_space_code, pressure_space_code,
+                                             NULL, NULL);
+              MG->AddLevel(MGLevel);
+          break;	
+        } //  switch(NSEType)
+       }  // if(SOLVER==GMG)    
+      
+     } // for(i=Start_Level;i<N_Levels;i++)
+      
+
+//     cout << "Test Assemble " << endl; 
+} // TSystemMatNSE3D::Assemble(T
+
+void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
+{
+ int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
+ int N_U_Current, N_Active_Current, N_DirichletDof;
+ 
+ TFESpace3D *fesp[2];
+ TFEFunction3D *fefct[3];
+  
+   for(i=Start_Level;i<N_Levels;i++)
+    {    
+      N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();
+      N_Active_Current  = U_Space[i]->GetActiveBound();     
+      N_DirichletDof = N_U_Current - N_Active_Current;
+      
+     // set the nonliner matrices
+      switch(TDatabase::ParamDB->NSTYPE)
+       {
+        case 1:
+        case 2:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[0]->Reset();
+
+          N_SquareMatrices = 1;
+        break;
+
+        case 3:
+        case 4:
+          if (TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==0)
+           {
+            SQMATRICES[0] = SqmatrixA11[i];
+            SQMATRICES[1] = SqmatrixA22[i];
+            SQMATRICES[2] = SqmatrixA33[i];
+            SQMATRICES[0]->Reset();
+            SQMATRICES[1]->Reset();
+            SQMATRICES[2]->Reset();
+
+            N_SquareMatrices = 3;
+           }
+          else
+           {
+            // Newton method
+            cout<< "Newton method not tested " <<endl;
+            exit(0);
+           }
+
+         break;
+        } // switch(TDatabase::ParamDB->NSTYPE)
+            
+      N_RectMatrices = 0;          
+      N_Rhs = 0;
+      N_FESpaces = 1;
+ 
+      fesp[0] =  U_Space[i];
+      
+      fefct[0] = Velocity[i]->GetComponent(0);
+      fefct[1] = Velocity[i]->GetComponent(1);
+      fefct[2] = Velocity[i]->GetComponent(2);
+
+       NSEaux =  new TAuxParam3D(NSN_FESpacesVelo, NSN_FctVelo, NSN_ParamFctVelo, NSN_FEValuesVelo,
+                                fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
+                                 NSN_ParamsVelo, NSBeginParamVelo);
+      
+       // assemble the nonlinear part of NSE
+       Assemble3D(N_FESpaces, fesp,
+                 N_SquareMatrices, SQMATRICES,
+                 N_RectMatrices, NULL,
+                 N_Rhs, NULL, NULL,
+                 DiscreteFormNL,
+                 BoundaryConditions,
+                 BoundaryValues,
+                 NSEaux);    
+
+       // apply upwind disc
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+       {
+        switch(NSEType)
+         {
+          case 1:
+          case 2:
+            // do upwinding with one matrix
+            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);	    
+            cout << "UPWINDING DONE : level " << endl;
+            break;
+
+          case 3:
+          case 4:
+            // do upwinding with two matrices
+            cout << "UPWINDING DONE : level " << endl;
+            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SQMATRICES[1], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SQMATRICES[2], fefct[0], fefct[1], fefct[2]);    
+          break;
+         }                        // endswitch
+       }                          // endif     
+       
+       
+      // slip with boundary condition
+      if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+      { 
+        N_FESpaces = 1;
+        N_SquareMatrices = 9;
+        N_RectMatrices = 0;
+        N_Rhs = 0;
+
+        SQMATRICES[0] = SqmatrixA11[i];
+        SQMATRICES[1] = SqmatrixA22[i];
+        SQMATRICES[2] = SqmatrixA33[i];
+        SQMATRICES[3] = SqmatrixA12[i];
+        SQMATRICES[4] = SqmatrixA13[i];
+        SQMATRICES[5] = SqmatrixA21[i];
+        SQMATRICES[6] = SqmatrixA23[i];
+        SQMATRICES[7] = SqmatrixA31[i];
+        SQMATRICES[8] = SqmatrixA32[i];
+
+        Assemble3DSlipBC(N_FESpaces, fesp,
+                         N_SquareMatrices, SQMATRICES,
+                         N_RectMatrices, NULL,
+                         N_Rhs, NULL, NULL, NULL,
+                         BoundaryConditions,
+                         BoundaryValues,
+                         NSEaux);
+
+       }// (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=         
+     
+     /** no change in rhs, so no need to update */
+      // set rhs for Dirichlet nodes
+      memcpy(sol[i]+N_Active_Current, rhs[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
+      memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
+      memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
+      } //
+      
+//       cout << "Test AssembleNonLinear " << endl; 
+//       exit(0);
+      
+} //TSystemMatNSE3D::AssembleNonLinear(
+
+
+void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res)
+{
+
+   Defect(sqmatrices, matrices, sol, rhs, res); 
+   
+} // TSystemMatNSE3D::GetResidual
+
+void TSystemMatNSE3D::Solve(double *sol, double *rhs)
+{
+  int N_LinIter=0;
+  
+    switch(SOLVER)
+     {
+      case AMG_SOLVE:
+        cout << "AMG_SOLVE not yet implemented " <<endl;
+      break;
+
+      case GMG:
+
+          if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
+           {
+            memcpy(Itmethod_sol, sol, N_TotalDOF*SizeOfDouble);
+            memcpy(Itmethod_rhs, rhs, N_TotalDOF*SizeOfDouble);
+           }
+          // solve the linear system
+          N_LinIter += Itmethod->Iterate(sqmatrices, matrices, Itmethod_sol, Itmethod_rhs);
+	  
+          if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
+           {
+            memcpy(sol, Itmethod_sol, N_TotalDOF*SizeOfDouble);
+            memcpy(rhs, Itmethod_rhs, N_TotalDOF*SizeOfDouble);
+           }
+        cout << "GMG solver not yet implemented " <<endl;
+      break;
+
+      case DIRECT:
+        switch(NSEType)
+         {
+          case 1:
+           cout << "Solver not included for NSTYPE 1 in this version" <<endl;
+            cout << "try NSTYPE 2 or 4 " <<endl;   
+	    exit(0);
+          break;
+
+          case 2:
+             DirectSolver(SqmatrixA11[N_Levels-1], MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
+                          MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol);
+          break;
+
+          case 3:
+           cout << "Solver not included for NSTYPE 3 in this version" <<endl;
+            cout << "try NSTYPE 2 or 4 " <<endl;   
+            exit(0);
+          break;
+
+          case 4:
+             DirectSolver(SqmatrixA11[N_Levels-1], SqmatrixA12[N_Levels-1], SqmatrixA13[N_Levels-1], 
+                          SqmatrixA21[N_Levels-1], SqmatrixA22[N_Levels-1], SqmatrixA23[N_Levels-1],  
+                          SqmatrixA31[N_Levels-1], SqmatrixA32[N_Levels-1], SqmatrixA33[N_Levels-1],  
+                          MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
+                          MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol, 0);
+          break;
+         } //  switch(NSEType) 
+
+      break;      
+ 
+      default:
+            OutPut("Unknown Solver" << endl);
+            exit(4711);;
+     }    
+  
+}
+
+void TSystemMatNSE3D::MeasureErrors(DoubleFunct3D *ExactU1, DoubleFunct3D *ExactU2, DoubleFunct3D *ExactU3, DoubleFunct3D *ExactP,
+                                    double *u_error, double *p_error)
+{
+  double errors[4];
+  TFEFunction3D *fefct[3];
+  TFESpace3D *fesp[1];
+  fesp[0] =  U_Space[N_Levels-1];
+
+    fefct[0] = Velocity[N_Levels-1]->GetComponent(0);
+    fefct[1] = Velocity[N_Levels-1]->GetComponent(1);
+    fefct[2] = Velocity[N_Levels-1]->GetComponent(2);     
+
+  
+     if(NSEaux_error==NULL)
+      NSEaux_error =  new TAuxParam3D(NSN_FESpacesVelo, NSN_FctVelo, NSN_ParamFctVelo, NSN_FEValuesVelo,
+                                    fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
+                                    NSN_ParamsVelo, NSBeginParamVelo);
+
+     // errors in first velocity component
+      fefct[0]->GetErrors(ExactU1, 4, NSAllDerivatives, 2, L2H1Errors, NULL, NSEaux_error, 1, U_Space+(N_Levels-1), errors);
+   
+      u_error[0] = errors[0];
+      u_error[1] = errors[1];
+      
+     // errors in second velocity component
+      fefct[1]->GetErrors(ExactU2, 4, NSAllDerivatives, 2, L2H1Errors, NULL, NSEaux_error, 1, U_Space+(N_Levels-1), errors);
+      u_error[2] = errors[0];
+      u_error[3] = errors[1];     
+     
+      // errors in third velocity component
+      fefct[2]->GetErrors(ExactU3, 4, NSAllDerivatives, 2, L2H1Errors, NULL, NSEaux_error, 1, U_Space+(N_Levels-1), errors);
+      u_error[4] = errors[0];
+      u_error[5] = errors[1];       
+     
+     
+      // errors in pressure
+      Pressure[N_Levels-1]->GetErrors(ExactP, 4, NSAllDerivatives, 2, L2H1Errors, NULL, NSEaux_error, 1,  P_Space+(N_Levels-1), errors);     
+      p_error[0] = errors[0];
+      p_error[1] = errors[1]; 
+}
+    

@@ -1,0 +1,59 @@
+###################################
+#
+#  Makefile for MooNMD
+#  author: Volker Behns
+#
+###################################
+
+RELPATH = .
+LIBPATH = lib3D/
+SRCPATH = 
+INC     = -Iinclude/FE -Iinclude/Geometry -Iinclude/QuadFormulas \
+          -Iinclude/General -Iinclude/Parallel -Iinclude/System -Iinclude/PBE\
+          -IEXT_LIB/UMFPACK/Include -IEXT_LIB/tetgen \
+          -IEXT_LIB/MUMPS/include -IEXT_LIB/SUPERLU/MPI/include \
+          -IEXT_LIB/Metis/Lib -IEXT_LIB/Hips/include  -I
+
+ifeq ($(PRG_TYPE),PARALLEL)
+ LIB_FE         = $(LIBPATH)lib_FE_par.a
+ LIB_QF         = $(LIBPATH)lib_QF_par.a
+ LIB_AMG        = $(LIBPATH)lib_amg_par.a
+ LIB_GENERAL    = $(LIBPATH)lib_general_par.a
+ LIB_GEO        = $(LIBPATH)lib_geo_par.a
+ LIB_REFINEMENT = $(LIBPATH)lib_refinement_par.a
+ LIB_SYSTEM     = $(LIBPATH)lib_System_par.a
+ LIB_PBE        = $(LIBPATH)lib_pbe_par.a
+ LIB_PAR        = $(LIBPATH)lib_par.a
+else
+ LIB_FE         = $(LIBPATH)lib_FE.a
+ LIB_QF         = $(LIBPATH)lib_QF.a
+ LIB_AMG        = $(LIBPATH)lib_amg.a
+ LIB_GENERAL    = $(LIBPATH)lib_general.a
+ LIB_GEO        = $(LIBPATH)lib_geo.a
+ LIB_REFINEMENT = $(LIBPATH)lib_refinement.a
+ LIB_SYSTEM     = $(LIBPATH)lib_System.a
+ LIB_PBE        = $(LIBPATH)lib_pbe.a
+endif
+LIB_TETGEN     = EXT_LIB/tetgen/libtet_$(MACH).a
+
+include Make.inc
+
+ifeq ($(EFENCE),YES)
+LM = EXT_LIB/Efence/libefence_$(MACH).a $(LDFLAG) -lm
+else
+LM = $(LDFLAG) -lm
+endif
+
+$(OUT): $(IN).C  $(LIB_PAR)  $(LIB_GEO)  $(LIB_SYSTEM)  $(LIB_FE) $(LIB_GENERAL) \
+	   $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) $(LIB_PBE)
+	@echo new main program
+	@echo CPP is $(CPP), C is $(CC) IN is $(IN)
+	@$(CPP) $(CPPFLAG) $(GPROF) $(DEFINE) -o $(OUT) $(IN).C \
+	 $(LIB_PAR)  $(LIB_SYSTEM) $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
+	 $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
+	 $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) \
+	 $(LIB_GEO)  $(LIB_FE) $(LIB_QF) \
+	 $(LIB_GEO) $(LIB_PBE) $(LIB_PAR)  \
+	 $(UMFPACK) $(TECPLOT) $(PARSOLVER_LIB) $(BLAS)\
+	 $(LIB_TETGEN) EXT_LIB/GridGen/gridgen_$(MACH).o  $(LM) 
+
