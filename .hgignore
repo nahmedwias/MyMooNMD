@@ -1,8 +1,6 @@
 
 
 
-lib2D
-lib3D
 
 src/.*\.o$
 .*\.*~$
@@ -12,7 +10,6 @@ src/.*\.o$
 
 #2DPrograms/.*\.C$
 
-make*
 
 .directory
 
