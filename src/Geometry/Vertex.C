@@ -25,6 +25,7 @@ TVertex::TVertex(double initX, double initY, double initZ)
   Z = initZ;
 
 #ifdef _MPI
+  N_Cells = 0;
   SubDomainVert = FALSE;
   N_SubDomains = 0;
   SubDomain_Ranks = NULL;

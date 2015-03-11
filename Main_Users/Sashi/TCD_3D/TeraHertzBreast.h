@@ -1167,7 +1167,7 @@ void TetrameshGen(TDomain *&Domain)
     opts<<ends;
     
   
-//   cout << " SMESHFILE is " << SMESH << endl;
+  cout << " SMESHFILE is " << SMESH << endl;
   /** load the medit mesh file into Tetgen */  
   ReadMeditMesh(SMESH, In);
   
@@ -1175,12 +1175,13 @@ void TetrameshGen(TDomain *&Domain)
 //     for(i=0;i<In.numberofpoints;i++)
 //       OutPut(i<<" (x, y, z) =  "<<
 //        In.pointlist[3*i]<<' '<<In.pointlist[3*i+1]<<' '<<In.pointlist[3*i+2]<<endl);
-
+//      exit(0);
  // Calling  tetrahedralize function of 3dtetgen mesh generator
     tetrahedralize((char*)opts.str().c_str(), &In, &Out);
     
    } // if(rank==0)
      
+//     exit(0);
     
  //   output: coordinates of all vertices
 //  for(i=0;i<Out.numberofpoints;i++)

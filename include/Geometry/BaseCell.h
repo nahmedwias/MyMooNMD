@@ -57,6 +57,9 @@ class TBaseCell
 #endif
 
 #ifdef  _MPI
+  /**  @brief an integer for storing clipboard information in parallel FEspace mapping*/ 
+  int  ClipBoard_Par; 
+    
   /**  @brief an integer for storing which subdomain contains this cell **/
     int SubDomainNumber;
 
@@ -345,6 +348,15 @@ class TBaseCell
 
        
 #ifdef  _MPI
+
+    /**  @brief set value in ClipBoard */
+    void SetClipBoard_Par(int value)
+    { ClipBoard_Par=value; }
+    
+    /**  @brief get value from ClipBoard */
+    int GetClipBoard_Par()
+    { return ClipBoard_Par; }
+    
     /**  @brief set subdomain number to this cell   */
     void SetSubDomainNo(int val)
        {SubDomainNumber = val;}

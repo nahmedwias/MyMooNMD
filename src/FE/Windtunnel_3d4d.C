@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-// #include <../../Examples/TNSE_3D/windtunnel_log_normal_parameters.h>
+#include <../../Main_Users/Sashi/TNSE_3D/windtunnel_log_normal_parameters.h>
 
 
 /****************************************************************************************

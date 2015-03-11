@@ -32,6 +32,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <tetgen.h>
+#include <GridCell.h>
+#include <MacroCell.h>
+#include <BdPlane.h>
+#include <BdSphere.h>
+#include <IsoBoundFace.h>
+#include <InterfaceJoint3D.h>
+#include <IsoInterfaceJoint3D.h>
+
+
 double bound = 0;
 // =======================================================================
 // include current example
@@ -39,7 +49,9 @@ double bound = 0;
 // #include "../Examples/TCD_3D/Sin4.h"
 // #include "../Examples/TCD_3D/ConstTSmooth.h"
 //  #include "../Examples/TCD_3D/ConstT.h"
-#include "../Examples/TCD_3D/amc.h"
+// #include "../Examples/TCD_3D/amc.h"
+#include "../Main_Users/Sashi/TCD_3D/TeraHertzBreast.h"
+
 
 int main(int argc, char* argv[])
 {
@@ -94,6 +106,14 @@ int main(int argc, char* argv[])
   // standard mesh  
   GEO = TDatabase::ParamDB->GEOFILE;
   Domain->Init(NULL, GEO);
+
+  
+    /** with atlas mesh, no tetgen*/
+    TetrameshCreate(Domain);
+    
+   /** Using tetgen with smesh mesh */
+//    TetrameshGen(Domain);
+
 
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)

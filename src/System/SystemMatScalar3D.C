@@ -39,11 +39,18 @@
 //#ifdef _MPI
 TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver
 #ifdef _MPI
-    			, TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions, MPI_Comm comm
+                  , TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions
 #endif
 )
 {
   int i;
+  
+#ifdef _MPI  
+  double t1,t2,tdiff;
+  int out_rank=TDatabase::ParamDB->Par_P0;
+  int rank;
+#endif
+  
   /** need it for solver */
   sqmatrices = (TSquareMatrix **)SQMATRICES;
   
@@ -52,11 +59,12 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
   //store the FEspace
   FeSpaces = fespaces;
+  
 #ifdef _MPI
   Own_FeSpaces = OwnScalar_Spaces;
   FEFunctArray = Scalar_FeFunctions;
-  Comm = comm;
 #endif
+  
   //set the discretization type
   Disctype = disctype;
   
@@ -101,8 +109,10 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
   
 #ifdef _MPI
-  double t1,t2,tdiff;
+  Comm = TDatabase::ParamDB->Comm;
+
   ParComm = new TParFECommunicator3D*[N_levels]; 
+  
   if(profiling)  t1 = MPI_Wtime();
   for(i=Start_Level;i<N_levels;i++)
    {   
@@ -112,14 +122,11 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
 //     ParComm[i]->GetOwnDofs(n_OwnDof, ownDofs);
 //     OutPut("NDOF-->::"<<n_OwnDof<<endl);
    }// for(i=0;i<N_levels;i++)
-//   printf("exit at sysmatscalar\n");
-//   exit(0);
+
    if(profiling)
    {
      t2 = MPI_Wtime();
      tdiff = t2-t1;
-     int out_rank=TDatabase::ParamDB->Par_P0;
-     int rank;
      MPI_Comm_rank(Comm, &rank);
      MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
      if(rank == out_rank)
@@ -128,7 +135,7 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
      }
    }
 #endif
-//exit(0);
+
    //initialize multigrid solver
    if(SOLVER==GMG)
    {
@@ -149,9 +156,9 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
       case 1:
             prec = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, 1
 #ifdef _MPI   
-                               ,ParComm[N_Levels-1]
+                                  ,ParComm[N_Levels-1]
 #endif    
-							      );
+                                  );
             break;
       case 5:
             prec = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, MG, 1);

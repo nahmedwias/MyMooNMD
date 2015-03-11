@@ -45,7 +45,11 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver);
+     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver
+#ifdef _MPI
+                          , TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions
+#endif       
+    );
 
     /** destrcutor */
     ~TSystemMatTimeScalar3D();
@@ -65,7 +69,11 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
 //     /** M = M + (tau*THETA1)*A */ 
 //     /** B = (tau*THETA1)*rhs +(tau*THETA2)*oldrhs + [ M - (tau*THETA2)A]*oldsol */  
-    void AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol);
+    void AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
+#ifdef _MPI
+                         , double **Rhs_array
+#endif      
+    );
     
     /** restoring the mass matrix */
     void RestoreMassMat();

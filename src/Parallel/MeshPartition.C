@@ -1294,15 +1294,15 @@ void Partition_Mesh3D_old(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 {
  idxtype *Cell_Rank, *Vert_Rank; 
- int i, j, k, m, M, n, rank, size, N_Cells, N, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
+ int i, j, k, ll, m, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
  int *GlobalCellIndex, N_RootVertices, N_VertInCell, N_JointsInCell, N_AllLocVert;
  int *VertexNumbers, *PointNeighb, maptype, MaxCpV;
  int MaxLen, N_Edges, N_FaceEdges, ii, jj, GblCellNr;
- int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0;
+ int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0, N_CellsInHaloVert;
  const int *TmpFV, *TmpLen, *TmpVE, *EdgeVertex, *NeibEdgeVertex;
  
  int VertexCellNo, VertexcellID, N_CellsInThisVert, *VertNeibRanks;
- int N_LocalCells, N_OwnCells, N_OwnIncidentCells, N_NeibIncidentCells;
+ int N_LocalCells, N_OwnCells, N_HalloCells, N_OwnIncidentCells, N_NeibIncidentCells;
  int a, b, N_SubDomInThisVert, *HaloCellIndex;
  int M1, M2, N1, N2, N_CellsIn_a, N_CellsIn_b;
  int N_CrossNeibs, *CrossNeibsRank, *HaloCellGlobalNo, *HaloCellLocVertNo;
@@ -1312,12 +1312,12 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
  TVertex *Vert_a, **VertexDel, *Last;
  TCollection *coll;
- TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells, *cell_a, *cell_b, **IncCells; 
+ TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells, *cell_a, *cell_b, **IncCells, **IncHalloCells, *HalloCell; 
  TBaseCell **CellDel, *LastCell;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel, *LastEdge;
  TShapeDesc *ShapeDesc, *NeibShapeDesc;
- TVertex *CurrVert, *NeibVert_a; 
+ TVertex *CurrVert, *NeibCurrVert, *NeibVert_a; 
  
  MPI_Status status, status1, status2, status3;
  MPI_Request request, request1;
@@ -1566,7 +1566,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
      }
 
   /** *********************************************/
-  /** STEP 8.2 : SET ALL VERTICES TO -1 */
+  /** STEP 8.2 : SET ALL VERTICES in OWN cells TO -1 */
   /** *********************************************/ 
     
     for(i=0;i<N_Cells;i++)
@@ -1597,12 +1597,12 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       cell = coll->GetCell(i);
       ID = cell->GetSubDomainNo();
 
-  /**run only through own cells */
+      /**run only through own cells */
       if(ID==rank) 
        {
         cell->SetAsOwnCell();
 
-        //set SubDomainVert if any vert in this cell is so needed for moving meshes and setting cross vertex
+        /** set SubDomainVert if any vert in this cell is so needed for moving meshes and setting cross vertex */
         for(j=0;j<N_VertInCell;j++)
          {
           CurrVert = cell->GetVertex(j);
@@ -1626,7 +1626,8 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
             Vertexcell = coll->GetCell(VertexCellNo);
             VertexcellID = Vertexcell->GetSubDomainNo();
 
-            if(VertexcellID != rank)
+            /** Hallo Cell */    
+            if(VertexcellID != rank) 
              {
               //vertex belong to diff subdomain 
               if(UPDATE)
@@ -1641,7 +1642,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
                /** changed on 4 Feb 2012 - by Sashi */
                if(HaloCellIndex[VertexcellID] == -1)
                 HaloCellIndex[VertexcellID]= VertexCellNo;
-
+    
              }
             } //  for(ii=1;ii< 
 
@@ -1725,7 +1726,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
         N_OwnCells++;
       } //  for (i=0;i<N_Cells;i++)
 
-      
+      N_HalloCells = N_LocalCells - N_OwnCells;
    //  printf("Rank: %d N_own Cells %d\n ", rank,  N_OwnCells);   
       
       
@@ -2029,8 +2030,14 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
         (cell->GetVertex(j))->SetClipBoard(-1);
      }
 
+    for(i=0;i<N_HalloCells;i++)
+     {
+      SubDomainCells[N_OwnCells + i]->SetClipBoard(-1); 
+     }
+     
     /** set incident cell list for all vertices */
     IncCells = new TBaseCell*[MaxCpV];
+    IncHalloCells = new TBaseCell*[MaxCpV];
     for(i=0;i<N_OwnCells;i++)
      {
       cell = SubDomainCells[i];
@@ -2050,13 +2057,63 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
          N_CellsInThisVert =  PointNeighb[N];
 
          for(ii=1;ii<=N_CellsInThisVert;ii++)
-          IncCells[ii-1] = coll->GetCell(PointNeighb[N + ii]);
+           IncCells[ii-1] = coll->GetCell(PointNeighb[N + ii]);
 
          CurrVert->SetVertexCells(N_CellsInThisVert, IncCells);
+
+
+         /** added, hallo cells vertCells neib info on 11 Mar 2015 - Sashi */  
+         for(ii=0;ii<N_CellsInThisVert;ii++) 
+          {
+           /** fill only for Hallo cells, since own Dependentcells' vertices got filled above */    
+	   if(IncCells[ii]->IsHaloCell())
+	    {
+	      /** this Hallo cell is already handled */
+	      if(IncCells[ii]->GetClipBoard() != -1)
+               continue;
+
+              IncCells[ii]->SetClipBoard(5);
+
+//       if(rank==0 && IncCells[ii]->GetGlobalCellNo()==32)
+//       printf("N_CellsInThisVert :%d, Vert_index: %d,   GlobalCellNo: %d , Neib_ID: %d \n",  N_CellsInThisVert, j, IncCells[ii]->GetGlobalCellNo(), IncCells[ii]->GetSubDomainNo()  );  
+
+              for(jj=0;jj<N_VertInCell;jj++)
+               {
+                ll = 0; 
+                NeibCurrVert = IncCells[ii]->GetVertex(jj);
+
+                /** even in Hallo cells, set neib info only for unset vertices */
+                if( NeibCurrVert->GetNNeibs()!= 0)
+                 continue;
+
+                MM = IncCells[ii]->GetGlobalCellNo();
+                NN = VertexNumbers[MM*N_VertInCell + jj] *MaxCpV;
+                N_CellsInHaloVert =  PointNeighb[NN];
+
+                for(kk=1;kk<=N_CellsInHaloVert;kk++)
+                 {
+                  HalloCell = coll->GetCell(PointNeighb[NN + kk]);
+ 
+                  /** include only owna and Halo in the neib list */
+                  if(HalloCell->GetSubDomainNo() == rank || HalloCell->IsHaloCell())
+                   {    
+                    IncHalloCells[ll] = HalloCell;
+                    ll++;
+                   } // if(HalloCell->GetSubDomainNo(
+                  } // for(kk=1;kk<=N_CellsInHaloVert;kk++)
+                  
+                 NeibCurrVert->SetVertexCells(ll, IncHalloCells);    
+                  
+                } //   for(jj=0;jj<N_VertInCell;jj++)   
+              }  // if(IncCells[ii]->IsHalo
+          } //  for(jj=0;jj<N_VertInCell;jj++)
+ 
+  
         } //  for (j=0;j<N_VertInCell;
      } //  for(i=0;i<N_OwnCell
     delete [] IncCells;
-
+    delete [] IncHalloCells;
+    
      // set the clipboard
     for(i=0;i<N_OwnCells;i++)
      {
@@ -2123,9 +2180,9 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    //Barrier is needed, before calling FECommunicator, since neib process must have all info
    MPI_Barrier(comm);
    
-  if(rank==out_rank)
-     printf("Mesh Partition end rank %d \n" , rank);
-
+//   if(rank==out_rank)
+//      printf("Mesh Partition end rank %d, N_HalloCells %d\n" , rank, N_HalloCells);
+// 
 //      MPI_Finalize();
 //     exit(0);  
 }
@@ -2138,15 +2195,15 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   //Variable list
   
  idxtype *Cell_Rank, *Vert_Rank;
- int i, j, k, m, M, n, rank, size, N_Cells, N, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
+ int i, j, k, m, ll, M, MM, n, rank, size, N_Cells, N, NN, ID, Neib_ID, out_rank= TDatabase::ParamDB->Par_P0;
  int *GlobalCellIndex, N_RootVertices, N_VertInCell, N_JointsInCell, N_AllLocVert;
  int *VertexNumbers, *PointNeighb, maptype, MaxCpV;
  int MaxLen, N_Edges, N_FaceEdges, ii, jj, GblCellNr;
- int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0;
+ int N_EdgeDel=0, N_VertexDel=0, N_CellDel=0, N_CellsInHaloVert;
  const int *TmpFV, *TmpLen, *TmpVE, *EdgeVertex, *NeibEdgeVertex;
 
  int MaxRankPerV,VertexCellNo, VertexcellID, N_CellsInThisVert, *VertNeibRanks, *NumberVertex;
- int N_LocalCells, N_OwnCells, N_OwnIncidentCells, N_NeibIncidentCells;
+ int N_LocalCells, N_OwnCells, N_HalloCells, N_OwnIncidentCells, N_NeibIncidentCells;
  int a, b, N_SubDomInThisVert, *HaloCellIndex;
  int M1, M2, N1, N2, N_CellsIn_a, N_CellsIn_b;
  int N_CrossNeibs, *CrossNeibsRank, *HaloCellGlobalNo, *HaloCellLocVertNo;
@@ -2156,12 +2213,12 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 
  TVertex *Vert_a, **VertexDel, *Last;
  TCollection *coll;
- TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells,**OwnCells, *cell_a, *cell_b, **IncCells;
+ TBaseCell *cell, *neib_cell, *Vertexcell, **SubDomainCells,**OwnCells, *cell_a, *cell_b, **IncCells, **IncHalloCells, *HalloCell;
  TBaseCell **CellDel, *LastCell;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel, *LastEdge;
  TShapeDesc *ShapeDesc, *NeibShapeDesc;
- TVertex *CurrVert, *NeibVert_a;
+ TVertex *CurrVert, *NeibVert_a, *NeibCurrVert;
   
  MPI_Status status, status1, status2, status3;
 
@@ -2305,12 +2362,13 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
  
   Nchildren = coll->GetCell(0)->GetParent()->GetN_Children();
 
+  /** copy the parent MPI_ID and global cell_no to children */
   for(i=0;i<N_Cells;i++)
      {
       cell = coll->GetCell(i);	
-      cell->SetSubDomainNo(cell->GetParent()->GetSubDomainNo());
-      childn = cell->GetParent()->GetChildNumber(cell);	
-      parentglobalno = cell->GetParent()->GetGlobalCellNo();	
+      cell->SetSubDomainNo((cell->GetParent())->GetSubDomainNo());
+      childn = (cell->GetParent())->GetChildNumber(cell);	
+      parentglobalno = (cell->GetParent())->GetGlobalCellNo();	
       cell->SetGlobalCellNo(parentglobalno*Nchildren+childn);
       cell->SetLocalCellNo(i);
       Cell_Rank[i] = cell->GetSubDomainNo();
@@ -2342,13 +2400,14 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 
     HaloCellGlobalNo = new int[MaxCpV];
     HaloCellLocVertNo = new int[MaxCpV];
-
+   
+   
     for(i=0;i<N_Cells;i++)
      {
       cell = coll->GetCell(i);
       ID = cell->GetSubDomainNo();
 
-  /**run only through own cells */
+      /**run only through own cells */
       if(ID==rank) 
        {
         cell->SetAsOwnCell();
@@ -2458,6 +2517,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
     delete [] HaloCellGlobalNo;
     delete [] HaloCellLocVertNo;
 
+     
+   
   /** *************************************************/
   /** STEP 10 : Get own SubDomain collection of cells */
   /** *************************************************/ 
@@ -2476,8 +2537,9 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
         N_OwnCells++;
       } //  for (i=0;i<N_Cells;i++)
 
-      
-    // printf("Rank: %d N_own Cells %d\n ", rank,  N_OwnCells);   
+    N_HalloCells = N_LocalCells - N_OwnCells;      
+
+//     printf("Rank: %d N_own Cells %d\n ", rank,  N_OwnCells);   
       
 
      if(N_LocalCells)
@@ -2533,7 +2595,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
        }
       } //  for (i=0;i<N_Cells;i++)
 
-      /** ***********************************************************************************/
+
+  /** ***********************************************************************************/
   /** STEP 12 : Delete other processors cells from own collection, excluding halo cells */
   /** ***********************************************************************************/ 
     // 
@@ -2768,7 +2831,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
           } // for(j=0;j<N_Edge
        } // if(cell->IsDependentCell())
      }// for(i=0;i<N_OwnCel
-         
+      
     /** find cross vertex (if any) */
     // set the clipboard
     for(i=0;i<N_OwnCells;i++)
@@ -2780,8 +2843,18 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
         (cell->GetVertex(j))->SetClipBoard(-1);
      }
 
+    for(i=0;i<N_HalloCells;i++)
+     {
+      SubDomainCells[N_OwnCells + i]->SetClipBoard(-1); 
+      
+      // store GlobalCellIndex
+      SubDomainCells[N_OwnCells + i]->SetClipBoard_Par(GlobalCellIndex[N_OwnCells + i]);
+     }
+     
     /** set incident cell list for all vertices */
     IncCells = new TBaseCell*[MaxCpV];
+    IncHalloCells = new TBaseCell*[MaxCpV];
+	
     for(i=0;i<N_OwnCells;i++)
      {
       cell = SubDomainCells[i];
@@ -2804,10 +2877,59 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
           IncCells[ii-1] = coll->GetCell(PointNeighb[N + ii]);
 
          CurrVert->SetVertexCells(N_CellsInThisVert, IncCells);
+
+         /** added, hallo cells vertCells neib info on 11 Mar 2015 - Sashi */  
+         for(ii=0;ii<N_CellsInThisVert;ii++) 
+          {
+           /** fill only for Hallo cells, since own Dependentcells' vertices got filled above */    
+	   if(IncCells[ii]->IsHaloCell())
+	    {
+	      /** this Hallo cell is already handled */
+	      if(IncCells[ii]->GetClipBoard() != -1)
+               continue;
+
+              IncCells[ii]->SetClipBoard(5);
+ 
+              for(jj=0;jj<N_VertInCell;jj++)
+               {
+                ll = 0; 
+                NeibCurrVert = IncCells[ii]->GetVertex(jj);
+
+                /** even in Hallo cells, set neib info only for unset vertices */
+                if( NeibCurrVert->GetNNeibs()!= 0)
+                 continue;
+
+                MM = IncCells[ii]->GetClipBoard_Par();
+                NN = VertexNumbers[MM*N_VertInCell + jj] *MaxCpV;
+                N_CellsInHaloVert =  PointNeighb[NN];
+
+                for(kk=1;kk<=N_CellsInHaloVert;kk++)
+                 {
+                  HalloCell = coll->GetCell(PointNeighb[NN + kk]);
+ 
+                  /** include only owna and Halo in the neib list */
+                  if(HalloCell->GetSubDomainNo() == rank || HalloCell->IsHaloCell())
+                   {    
+                    IncHalloCells[ll] = HalloCell;
+                    ll++;
+                   } // if(HalloCell->GetSubDomainNo(
+                  } // for(kk=1;kk<=N_CellsInHaloVert;kk++)
+         
+                 NeibCurrVert->SetVertexCells(ll, IncHalloCells);    
+     
+                } //   for(jj=0;jj<N_VertInCell;jj++)   
+              }  // if(IncCells[ii]->IsHalo
+          } //  for(jj=0;jj<N_VertInCell;jj++)
         } //  for (j=0;j<N_VertInCell;
      } //  for(i=0;i<N_OwnCell
     delete [] IncCells;
-
+    delete [] IncHalloCells;
+    
+//    printf("Rank %d : Domain_Crop \n\n",rank);   
+//    MPI_Finalize();  
+//    exit(0);
+    
+        
      // set the clipboard
     for(i=0;i<N_OwnCells;i++)
      {
@@ -2864,7 +2986,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 
    delete [] VertNeibRanks;
 
-coll = Domain->GetCollection(It_Finest, 0);
+ coll = Domain->GetCollection(It_Finest, 0);
  for(i=0;i<N_LocalCells;i++)
    {  
      cell = coll->GetCell(i);
@@ -2876,7 +2998,9 @@ coll = Domain->GetCollection(It_Finest, 0);
   //delete [] Vert_Rank;
   delete [] Cell_Rank;
   delete [] PointNeighb;
- 
+//    printf("Rank %d : Domain_Crop \n\n",rank);   
+//    MPI_Finalize();  
+//    exit(0);
    //Barrier is needed, before calling FECommunicator, since neib process must have all info
    MPI_Barrier(comm);
 } // Partition_Mesh2D()
