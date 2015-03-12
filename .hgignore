@@ -5,6 +5,10 @@
 src/.*\.o$
 .*\.*~$
 
+lib3D/.*\.a$
+
+lib2D/.*\.a$
+
 
 #3DPrograms/.*\.C$
 
