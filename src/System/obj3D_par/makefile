@@ -19,7 +19,7 @@ INC    = -I../../../include/General -I../../../include/FE \
 
 include ../../../Make.inc
 
-LIBRARY = $(LIBPATH)lib_System.a
+LIBRARY = $(LIBPATH)lib_System_par.a
    MEMBERS = \
         $(SRCPATH)SystemMatScalar3D.o \
         $(SRCPATH)SystemMatTimeScalar3D.o \

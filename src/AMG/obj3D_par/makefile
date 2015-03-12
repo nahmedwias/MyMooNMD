@@ -29,7 +29,7 @@ LIBRARY = $(LIBPATH)lib_amg_par.a
 ###############
 
 $(LIBRARY) : $(MEMBERS)
-	@echo "ar "$(LIBRARY)
+	@echo "ar "$(LIBRARY)  
 	@$(AR) $@ $(MEMBERS)
 
 clean:

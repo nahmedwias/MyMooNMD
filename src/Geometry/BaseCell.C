@@ -39,11 +39,12 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
 #endif
 
 #ifdef  _MPI
+  ClipBoard_Par  = -1;
   SubDomainNumber = 0;
   GlobalCellNo = -1;
   SubDomainLocalCellNo = -1;
 
-  OwnCell=TRUE;
+  OwnCell=FALSE;
   HaloCell=FALSE;
   SubDomainInterfaceCell=FALSE;
   DependentCell=FALSE;

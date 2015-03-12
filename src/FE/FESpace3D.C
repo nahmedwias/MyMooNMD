@@ -476,7 +476,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   N_BoundaryNodes[7] = 0;
   N_BoundaryNodes[8] = 0;
 
-  // OutPut("Number of Cells: " << N_Cells << endl);
+//   OutPut("Number of Cells: " << N_Cells << endl);
      
   // reset clipboards to -1
   for(i=0;i<N_Cells;i++)
@@ -490,12 +490,14 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     }
     cell->SetClipBoard(-1);
     
-    /** set clipboard to all bound/interface edges, since ony an edge from a cell be on the bound (in particaul  Dirchlet) */
+    /** set clipboard to all bound/interface edges, since only an edge from a cell be on the bound (in particaul  Dirchlet) */
     /** Finding BD (in particaul Dirichlet) Dof only may miss the edge BD DOF */
     /** unfortunately if this processor is the master of the missed BD  (in particaul Dirichlet) dof, it will give wrong result */ 
     /** only vert in a cell may be on the BD, so BD vertices also included 30.06.2012, sashi */
 #ifdef _MPI   
 
+    cell->SetClipBoard_Par(-1);
+    
     FEType0 = GetFE3D(i, cell);
     FE0 = TFEDatabase3D::GetFE3D(FEType0);
     FEDesc0_Obj = FE0->GetFEDesc3D();    
@@ -513,12 +515,32 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
       N_VertInCell = cell->GetN_Vertices();
       for(j=0;j<N_VertInCell;j++)
        (cell->GetVertex(j))->SetClipBoard(-1);    
+      
+      /** set dept. vert neib cells to -1, especiall to use own_FEspace and FEspace with (own + Hallo) cells */
+      if(cell->IsDependentCell())
+       {   
+        for(j=0;j<N_VertInCell;j++)
+         {
+          Vert=cell->GetVertex(j);
+          Vert->GetNeibs(N_VertNeibs, VertNeibs);
+
+          for(k=0;k<N_VertNeibs;k++)
+           VertNeibs[k]->SetClipBoard_Par(-1);  
+          
+         } //for(j=0;j<N_ 
+        } // f(cell->IsDependentCell())
 #endif   
    } // endfor i
 
   for(i=0;i<N_Cells;i++)
     Collection->GetCell(i)->SetClipBoard(i);
-
+   
+  /** if Hallo cells in this coll, the it will set to "i", otherwise -1 */
+#ifdef _MPI  
+  for(i=0;i<N_Cells;i++)
+    Collection->GetCell(i)->SetClipBoard_Par(i);
+#endif  
+  
   // set number i into clipboard, count the number of local degrees of
   // freedom
   count=0;
@@ -780,7 +802,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 #endif   
   } // endfor i
    
-  
+   
  /*
   OutPut("DirichletUpperBound: " << DirichletUpperBound << endl);
   OutPut("N_DiffBoundNodeTypes: " << N_DiffBoundNodeTypes << endl);
@@ -921,7 +943,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 	    //OutPut("done"<<endl);
         } // endswitch Cond0
 #ifdef _MPI         
-        /** edges on this face are already set, so no need of checking in BD edges on this face */
+        /** edges on this face are already set, so no need to check in BD edges on this face */
         N_FaceEdges = ETmpLen[j];
         for(n=0;n<N_FaceEdges;n++)
          {
@@ -929,7 +951,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
           edge->SetClipBoard(i);
          } // fo 
          
-         /** vertices on this face are already set, so no need of checking in BD vert on this face, 30.06.12, sashi */        
+         /** vertices on this face are already set, so no need to check in BD vert on this face, 30.06.12, sashi */        
         for(n=0;n<N_Points;n++)
           cell->GetVertex(TmpFV[j*MaxLen+n])->SetClipBoard(i);
 #endif         
@@ -1215,7 +1237,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
  
  
 #ifdef _MPI   
-  if(N_EdgeDOF = FEDesc0_Obj->GetN_EdgeDOF()>0)
+  if( (N_EdgeDOF = FEDesc0_Obj->GetN_EdgeDOF())>0)
   {
    cell->GetShapeDesc()->GetEdgeVertex(EdgeVertex); 
 
@@ -1267,8 +1289,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     }    // if(edge->GetType()==BDEdge3D || edge->GetType()==IsoEdge3D)
    }//  for(j=0;j<N_Edges;j 
   } // if(N_EdgeDOF = FEDesc0_Obj->GetN_EdgeDOF()>0)
+  
   /** identify BD vert but not part of BD faces/edge */
-  /** I hope, it is enough to check BD vertices, sice other vertices are anyway inner, so no prob with Dirichlet BD */
+  /** I hope, it is enough to check BD vertices, since other vertices are anyway inner, so no prob with Dirichlet BD */
   if(FEDesc0_Obj->GetN_VertDOF() > 0)
    {    
     for(j=0;j<N_VertInCell;j++)
@@ -1314,9 +1337,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   } // endfor i
 
 // ===============================================================================================
-// When the domain is partioned, cells in same subdomain may have only edges or vetrx as common 
+// When the domain is partioned, cells in same subdomain may have only an edge(s) or vertex(ies) as common 
 // between other cells in the same subcoll, therefore just joint map will not give a unique 
-// global number for dof on such edges or vertex
+// globaldof on such edges or vertex
 //  - sashikumaar Ganesan
 // ===============================================================================================
 
@@ -1395,10 +1418,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
         for(k=0;k<N_EdgeNeibs;k++)
          {
           neigh = EdgeNeibs[k];
-          if(rank!=(neigh->GetSubDomainNo()) )
-           continue;
 
-          if(neigh==cell  )
+          /** hallo cell included, as multigrid fespace will contain Halo cells - Sashi:10-03-15 */
+          if( (rank!=(neigh->GetSubDomainNo())) && !(neigh->IsHaloCell()) )
+           continue;
+  
+          /** own cell or neib cell (i.e. Hallo cells) is not in this collection */
+          if(neigh==cell || neigh->GetClipBoard_Par()==-1 )
            continue;
 
          l=0; // find the edge local index in the neib cell
@@ -1430,12 +1456,12 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
             {neibdof = BeginIndex[n] + NeibEdgeDof[N_EdgeDOF-1 - m]; }
 
            w1 = neibdof;
-           while((v1=GlobalNumbers[w1])>-1)
+           while( (v1=GlobalNumbers[w1])>-1 )
             { w1=v1; }
 
            w0 = w_array[m];
 
-/*      if(TDatabase::ParamDB->PBE_P9>0)
+/*      if(neigh->IsHaloCell()  )
      {
       #ifdef _MPI        
       printf("Test IISc  rank %d:, count %d , w0 %d, w1 %d\n", rank, m,k, w1); 
@@ -1489,13 +1515,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
    delete [] w_array;
  }//  if(N_EdgeDOF>0)  only for cont. FESpace
 
- 
-//  #ifdef _MPI      
+
+// #ifdef _MPI      
 //    if(rank==0)
 //     printf("FESpace3D    %d \n",  rank );  
-//     MPI_Finalize(); 
+// //     MPI_Finalize(); 
 // #endif    
-//   exit(0); 
+// //   exit(0); 
   
   if(N_VertDof>0)// only for cont. FESpace
   {
@@ -1519,7 +1545,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
         if( Vert->GetClipBoard()!=-1) 
          continue;
-
+ 
         Vert->SetClipBoard(5);
         w0 = I_K0+FEDesc0_Obj->GetVertDOF(j);
 
@@ -1527,15 +1553,18 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
           { w0 = v0; }
 
         Vert->GetNeibs(N_VertNeibs, VertNeibs);
-
+   
         for(k=0;k<N_VertNeibs;k++)
          {
           neigh = VertNeibs[k];
-          if(rank!=(neigh->GetSubDomainNo()) )
-           continue;
 
-          if(neigh==cell)
-           continue;
+          /** hallo cells are also need to be considered, so modified 11 Mar 2015 by Sashi */
+          if( (rank!=neigh->GetSubDomainNo() ) && !(neigh->IsHaloCell()) )
+           {  continue; }
+
+          /** own cell or neib cell (i.e. Hallo cells) is not in this collection */
+          if(neigh==cell || neigh->GetClipBoard_Par()==-1 )
+           continue; 
 
           n = neigh->GetClipBoard();
           FEType1 = GetFE3D(n, neigh);
@@ -1578,7 +1607,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   }//  if(N_VertDof>0)
 
 #endif
-
+//  printf("Rank %d : MPI_Finalize test :: %d\n\n",rank, N_Cells);   
+//   MPI_Finalize();  
+//   exit(0);
 //   if(rank==7){
 //     for(jj=0;jj<BeginIndex[1];jj++)
 //      printf("FESpace3D I_K0 i %d j %d global %d\n",  i, jj, GlobalNumbers[jj]);

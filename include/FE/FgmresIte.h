@@ -14,7 +14,7 @@
 
 #include <ItMethod.h>
 // #include <ParFECommunicator2D.h>
-// #include <ParFECommunicator3D.h>
+#include <ParFECommunicator3D.h>
 
 /** iteration method */
 class TFgmresIte : public TItMethod

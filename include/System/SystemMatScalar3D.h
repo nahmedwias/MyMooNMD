@@ -6,7 +6,9 @@
 * @date      23.01.15
 * @History    
  ************************************************************************  */
-
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#endif    
 
 #ifndef __SYSTEMMATSCALAR3D__
 #define __SYSTEMMATSCALAR3D__
@@ -58,15 +60,27 @@ class TSystemMatScalar3D
     /** rhs for assemble */
     double *RHSs[1];
     
-   /** variables for multigrid */
+    /** variables for multigrid */
     double Parameters[2], N_aux, *Itmethod_sol, *Itmethod_rhs;
     TMultiGrid3D *MG;
     TMGLevel3D *MGLevel;
     TItMethod *Itmethod, *prec;
-   
+    
+     /** variables for parallel algorithms */
+#ifdef _MPI
+    MPI_Comm Comm;
+    TFESpace3D **Own_FeSpaces;
+    TFEFunction3D **FEFunctArray;
+    TParFECommunicator3D **ParComm;
+#endif    
+    
   public:
     /** constructor */
-     TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver);
+     TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver
+#ifdef _MPI
+                  , TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions
+#endif       
+    );
 
     /** destrcutor */
     ~TSystemMatScalar3D();

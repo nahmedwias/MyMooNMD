@@ -177,6 +177,8 @@ class TVertex
        neighbs = Cells;
       }
       
+      int GetNNeibs()
+      {  return N_Cells; }     
 #endif
 };
 

@@ -27,7 +27,7 @@
 #include "mpi.h"
 #include <MeshPartition.h>
 //#include <MeshPartition2D.h>
-// #include <ParFECommunicator3D.h>
+#include <ParFECommunicator3D.h>
 // #include <MumpsSolver.h>
 // #include <ParVector3D.h>
 // #include <ParVectorNSE3D.h>
@@ -44,7 +44,7 @@ double bound = 0;
 // =======================================================================
 // include current example
 // =======================================================================
-#include "../Examples_All/CD_3D/Laplace.h"
+#include "../Main_Users/Sashi/CD_3D//Laplace.h"
 // =======================================================================
 
  double timeC;
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   
   if(profiling)	start_time = GetTime();
   
-  #ifdef _MPI
+#ifdef _MPI
   int rank, size, out_rank;
   int MaxCpV, MaxSubDomainPerDof;
   
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
   TFESpace3D **OwnScalar_Spaces;
   TCollection *own_coll;
-  #endif 
+#endif 
 
   TDomain *Domain;
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 
   const char vtkdir[] = "VTK"; 
-  char *PsBaseName, *VtkBaseName, *GEO;
+  char *PsBaseName, *VtkBaseName, *GEO, *PRM;
   char Name[] = "name";
   char Description[] = "description";
   char CString[] = "C";
@@ -118,11 +118,11 @@ int main(int argc, char* argv[])
   OpenFiles();
   OutFile.setf(std::ios::scientific);
 
-  #ifdef _MPI
+#ifdef _MPI
   out_rank=TDatabase::ParamDB->Par_P0;
   //out_rank = 0;
   if(rank == out_rank)
-  #endif
+#endif
    {
   Database->WriteParamDB(argv[0]);
     Database->WriteTimeDB();
@@ -134,16 +134,17 @@ int main(int argc, char* argv[])
   PsBaseName = TDatabase::ParamDB->PSBASENAME;
   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
   
+  PRM = TDatabase::ParamDB->BNDFILE; 
   GEO = TDatabase::ParamDB->GEOFILE;
-  Domain->Init(NULL, GEO);
-   
+  Domain->Init(PRM, GEO);
+
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
 
 #ifdef _MPI
   Domain->GenerateEdgeInfo();
-  
+     
   if(profiling)  t1 = MPI_Wtime();
   Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
   if(profiling)  t2 = MPI_Wtime(); 
@@ -154,12 +155,12 @@ int main(int argc, char* argv[])
     if(rank == out_rank)
       printf("Time taken for Domain Decomposition is %e\n", time1);
   }
-
+ 
   Domain->GenerateEdgeInfo();
   MaxSubDomainPerDof = MIN(MaxCpV, size);
   TDatabase::ParamDB->WRITE_PS = 0;
 #endif 
- 
+
   if(TDatabase::ParamDB->WRITE_PS)
    {
     // write grid into an Postscript file
@@ -221,6 +222,7 @@ int main(int argc, char* argv[])
 #ifdef _MPI    
   OwnScalar_Spaces = new TFESpace3D*[LEVELS+1];   
 #endif 
+  
 
 //=========================================================================
 // construct all finite element spaces
@@ -228,31 +230,41 @@ int main(int argc, char* argv[])
 //=========================================================================
   for(i=0;i<LEVELS;i++)
    {  
+     
+
+  
     if(i)
      { Domain->RegRefineAll(); }
-     
-     #ifdef _MPI
+   
+#ifdef _MPI
      if(rank == out_rank)
        printf("Level :: %d\n\n",i);
      if(i)
      {
        Domain->GenerateEdgeInfo();
        Domain_Crop(Comm, Domain);       // removing unwanted cells in the hallo after refinement 
-    }
-     #endif
-     
+     }
+#endif
+
      coll = Domain->GetCollection(It_Finest, 0);
-  
+     
+
+     
      // fespaces for scalar equation 
      Scalar_FeSpaces[i] =  new TFESpace3D(coll, Name, Description, BoundCondition, ORDER);     
-      
-     #ifdef _MPI
+    
+
+#ifdef _MPI
      Scalar_FeSpaces[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
      
      own_coll = Domain->GetOwnCollection(It_Finest, 0, rank);
      OwnScalar_Spaces[i] = new TFESpace3D(own_coll,  Name, Description, BoundCondition, ORDER); 
-     #endif
+#endif
      
+//   printf("Rank %d : MPI_Finalize :: %d\n\n",rank, i);   
+//   MPI_Finalize();  
+//   exit(0); 
+ 
      //multilevel multigrid disc
      if(i==LEVELS-1 && i!=mg_level-1) 
       {
@@ -304,10 +316,10 @@ int main(int argc, char* argv[])
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
     if(profiling)	t1 = GetTime();
     SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE
-    #ifdef _MPI
-					  , OwnScalar_Spaces, Scalar_FeFunctions, Comm
-    #endif
-											);
+#ifdef _MPI
+                                          , OwnScalar_Spaces, Scalar_FeFunctions
+#endif
+                                          );
     if(profiling){
       t2 = GetTime();
       t2 = t2-t1;
@@ -402,13 +414,8 @@ int main(int argc, char* argv[])
       fesp[0] = Scalar_FeSpaces[mg_level-1];
       aux =  new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
      
-#ifdef _MPI
-       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
-                                   BilinearCoeffs, aux, 1, fesp, errors,Comm);
-#else  
       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
                                    BilinearCoeffs, aux, 1, fesp, errors);
-#endif
       
       delete aux;
       
@@ -432,7 +439,7 @@ int main(int argc, char* argv[])
   
   
   if(profiling)	end_time = GetTime();
-  #ifdef _MPI
+#ifdef _MPI
   if(profiling){
     //printf("rank = %d out_rank = %d\n",rank,out_rank);
     end_time = MPI_Wtime();
@@ -442,9 +449,9 @@ int main(int argc, char* argv[])
       OutPut( "Total time taken: " << (t2-t1) << endl);
   }
   MPI_Finalize();  
-  #else 
+#else 
   if(profiling)	OutPut( "Total time taken: " << (end_time-start_time) << endl);
-  #endif
+#endif
   CloseFiles();
   return 0;
 } // end main

@@ -87,7 +87,15 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
   double LocError[4];
   double hK;
   bool *SecondDer;
+  double loc_x, loc_y, loc_z, loc_r;
 
+  
+#ifdef _MPI
+   int ID, rank;
+   
+   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);    
+#endif
+      
   BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
@@ -131,16 +139,15 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
   N_Cells = Coll->GetN_Cells();
   
   TVertex *vertex;
-  double loc_x, loc_y, loc_z, loc_r;
-  int ID;
+
   for(i=0;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
 
-// #ifdef _MPI
-//     ID = cell->GetSubDomainNo();
-//     if(rank!=ID) continue;
-// #endif
+#ifdef _MPI
+    ID = cell->GetSubDomainNo();
+    if(rank!=ID) continue;
+#endif
     
     hK = cell->GetDiameter();
 
