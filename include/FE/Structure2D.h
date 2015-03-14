@@ -64,7 +64,10 @@ class TStructure2D : public TStructure
      
      TStructure2D(TFESpace2D *testspace, TFESpace1D *ansatzspace, TNonMortarData *NonMortarFEData);
 
-     
+    /** return AnsatzSpace */
+    TFESpace2D *GetAnsatzSpace2D() const
+    { return AnsatzSpace2D; }
+    
     /** return AnsatzSpace */
     TFESpace *GetAnsatzSpace()
     {
@@ -73,7 +76,11 @@ class TStructure2D : public TStructure
       else
         return AnsatzSpace2D;
     }
-
+    
+    /** return TestSpace */
+    TFESpace2D *GetTestSpace2D() const
+    { return TestSpace2D; }
+    
     /** return TestSpace */
     TFESpace *GetTestSpace()
     {

@@ -14,35 +14,13 @@
 #ifndef __SQUARESTRUCTURE__
 #define __SQUARESTRUCTURE__
 
-class TSquareStructure
+#include <Structure.h>
+
+class TSquareStructure : public TStructure
 {
   protected:
-    /** number of rows */
-    int N_Rows;
-
     /** number of active rows */
     int ActiveBound;
-
-    /** number columns */
-    int N_Columns;
-
-    /** number of matrix entries */
-    int N_Entries;
-
-    /** number of matrix entries in hanging nodes part */
-    int HangingN_Entries;
-
-    /** in which column is the current entry */
-    int *KCol;
-
-    /** in which column is the current entry (hanging nodes part */
-    int *HangingKCol;
-
-    /** index in KCol where each row starts */
-    int *RowPtr;
-
-    /** index in HangingKCol where each row starts */
-    int *HangingRowPtr;
 
     /** ordering of the column entries */
     /** 0 - no special ordering */
@@ -63,45 +41,16 @@ class TSquareStructure
     /** generate the matrix structure, all arrays are already defined */
     TSquareStructure(int n, int N_entries, int *col_ptr,
       int *row_ptr);
-
-    /** return number of rows */
-    int GetN_Rows()
-    { return N_Rows; }
-
-    /** return number of columns */
-    int GetN_Columns()
-    { return N_Columns; }
     
+    /** Generates an empty n*n Structure for a Zero-Matrix */
+    explicit TSquareStructure(int n);
+
     /** return ActiveBound */
-    int GetActiveBound()
+    int GetActiveBound() const
     { return ActiveBound; }
 
-    /** return number of matrix entries */
-    int GetN_Entries()
-    { return N_Entries; }
-
-    /** return number of matrix entries (hanging nodes part) */
-    int GetHangingN_Entries()
-    { return HangingN_Entries; }
-
-    /** return array KCol */
-    int *GetKCol()
-    { return KCol; }
-
-    /** return array HangingKCol */
-    int *GetHangingKCol()
-    { return HangingKCol; }
-
-    /** return array RowPtr */
-    int *GetRowPtr()
-    { return RowPtr; }
-
-    /** return array HangingRowPtr */
-    int *GetHangingRowPtr()
-    { return HangingRowPtr; }
-
     /** return ordering of columns */
-    int GetColOrder()
+    int GetColOrder() const
     { return ColOrder;}
 
     /** sort column numbers in each row, increasing indices */
@@ -111,8 +60,11 @@ class TSquareStructure
     increasing */
     void SortDiagFirst();
     
-    /** sort column numbers in increasing in all rows including Dirichlet DOF row*/
-//     void Sort_ForDirectSolver();
+    /** @brief Comparision Operators */
+    friend bool operator==(const TSquareStructure &lhs, 
+                           const TSquareStructure &rhs);
+    friend bool operator!=(const TSquareStructure &lhs,
+                           const TSquareStructure &rhs);
 };
 
 #endif

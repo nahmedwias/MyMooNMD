@@ -33,8 +33,6 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
 : TSquareStructure()
 {
   int i,j,k,l,n,N_, n1, m; 
-  int *GlobalNumbers;
-  int *BeginIndex;
   int *Numbers;
 
   int N_Dirichlet;
@@ -73,6 +71,13 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
 
   N_Rows = ActiveBound+N_Hanging+N_Dirichlet;
   N_Columns = N_Rows;
+  // assembles matrices without shorter rows for non-active dof
+  if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+  {
+    N_NonDiri += N_Dirichlet;
+    N_Dirichlet = 0;
+    ActiveBound = N_Inner + N_NonDiri;
+  }
   ColOrder = 0;
   // AuxPtr[i] will contain an upper bound for the number of 
   // matrix entries in row i
@@ -84,10 +89,6 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
   HangingAuxPtr=new int[l];
   memset(HangingAuxPtr, 0, l*sizeof(int));
 
-  GlobalNumbers=Space->GetGlobalNumbers();
-
-  BeginIndex=Space->GetBeginIndex();
-
   Offset=ActiveBound;
 
   // loop over all elements 
@@ -96,7 +97,7 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
-    Numbers=GlobalNumbers+BeginIndex[i];
+    Numbers=Space->GetGlobalDOF(i);
 
     CurrentElement = Space->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
@@ -229,7 +230,7 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
-    Numbers=GlobalNumbers+BeginIndex[i];
+    Numbers=Space->GetGlobalDOF(i);
 
     CurrentElement = Space->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
@@ -515,9 +516,12 @@ int *row_ptr)
   ColOrder = 0;
 }
 
+TSquareStructure3D::TSquareStructure3D(int n)
+ : TSquareStructure(n), FESpace(NULL)
+{
+}
+
 TSquareStructure3D::~TSquareStructure3D()
 {
-  if(HangingKCol) delete HangingKCol;
-  if(HangingRowPtr) delete HangingRowPtr;
 }
 

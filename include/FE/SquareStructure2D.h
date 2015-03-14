@@ -33,6 +33,9 @@ class TSquareStructure2D : public TSquareStructure
     /** generate the matrix structure, all arrays are already defined */
     TSquareStructure2D(int n, int N_entries, int *col_ptr,
       int *row_ptr);
+    
+    /** Generates an empty n*n Structure for a Zero-Matrix */
+    explicit TSquareStructure2D(int n);
 
     /** destructor: free all used arrays */
     ~TSquareStructure2D();
@@ -40,6 +43,12 @@ class TSquareStructure2D : public TSquareStructure
     /** return FESpace */
     TFESpace2D *GetFESpace()
       { return FESpace; }
-
+    
+    /** @brief find out if two TSquareStructure2Ds are the same */
+    friend bool operator==(const TSquareStructure2D &lhs,
+                           const TSquareStructure2D &rhs);
+    /** @brief find out if two TSquareStructure2Ds are different */
+    friend bool operator!=(const TSquareStructure2D &lhs,
+                           const TSquareStructure2D &rhs);
 };
 #endif

@@ -214,7 +214,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
   int lev, infoNM, infoM;
   double lamM0, lamM1 = 0, lamNM0, lamNM1, startX, startY, endX, endY;
   double delX, delY;
-  boolean NewMortarSideEle;
+  bool NewMortarSideEle;
   int **J_DOF_NM, N_J_DOF_NM, **J_DOF_M, N_J_DOF_M;
   int indexM = 0, indexNM;
 
@@ -228,7 +228,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
   N_ = It1->GetN_MortarFace();
   for (i=0;i<N_;i++)
   {
-    NewMortarSideEle = TRUE;
+    NewMortarSideEle = true;
     lev = MAX_ItLevel + (i << 8);
     It1->Init(lev);
     It2->Init(-lev);
@@ -274,7 +274,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
       }
 
       // check which side is next
-      if (lamM1 < lamNM1) NewMortarSideEle = TRUE;
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
 
       while (NewMortarSideEle)
       {
@@ -309,7 +309,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
           AuxPtr[TestNumbers[J_DOF_M[infoM][m]]] += N_J_DOF_NM;
 
         // check which side is next
-        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = FALSE;
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
       }
     }
   }
@@ -457,7 +457,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
   N_ = It1->GetN_MortarFace();
   for (i=0;i<N_;i++)
   {
-    NewMortarSideEle = TRUE;
+    NewMortarSideEle = true;
     lev = MAX_ItLevel + (i << 8);
     It1->Init(lev);
     It2->Init(-lev);
@@ -539,7 +539,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
       }
 
       // check which side is next
-      if (lamM1 < lamNM1) NewMortarSideEle = TRUE;
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
 
       while (NewMortarSideEle)
       {
@@ -611,7 +611,7 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
         }
 
         // check which side is next
-        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = FALSE;
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
       }
     }
   }
@@ -749,7 +749,8 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
-  #endif 
+  #endif
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
   cout << endl;
   cout << "Information on the stored matrix structure" << endl;
@@ -775,7 +776,7 @@ TStructure2D::TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace)
   TCollection *coll1D = TestSpace1D->GetCollection();
   TCollection *coll2D = AnsatzSpace2D->GetCollection();
   const int *TmpEV;
-  boolean MortarSide;
+  bool MortarSide;
   double X, Y, X0, Y0, X1, Y1, X2, Y2, X3, Y3;
   TVertex *CurrVertex;
   int **JointDOFs, N_JointDOFs;
@@ -851,11 +852,11 @@ TStructure2D::TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace)
           l = ((TMortarBaseJoint *) CurrCell2D->GetJoint(j))->GetMEdgeInColl();
         if (l < 0)
         {
-          MortarSide = TRUE;
+          MortarSide = true;
           l = -(l + 1);
         }
         else
-          MortarSide = FALSE;
+          MortarSide = false;
 
         CurrCell1D = coll1D->GetCell(l);
 
@@ -943,11 +944,11 @@ TStructure2D::TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace)
           l0 = ((TMortarBaseJoint *) CurrCell2D->GetJoint(j))->GetMEdgeInColl();
         if (l0 < 0)
         {
-          MortarSide = TRUE;
+          MortarSide = true;
           l0 = -(l0 + 1);
         }
         else
-          MortarSide = FALSE;
+          MortarSide = false;
 
         l1 = l0;
 
@@ -1043,7 +1044,8 @@ TStructure2D::TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
-  #endif 
+  #endif
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
   cout << "Information on the stored matrix structure of B" << endl;
   cout << "Number of rows: " << N_Rows << endl;
@@ -1716,7 +1718,8 @@ TStructure2D::TStructure2D(TFESpace2D *testspace, int test_level,
   
 #ifdef _MPI
   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
+#endif
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
   cout << "Information on the stored matrix structure" << endl;
   cout << "Number of rows: " << N_Rows << endl;

@@ -22,6 +22,7 @@
 
 /** generate the matrix structure, both spaces are 3D */
 TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
+ : TStructure()
 {
   TCollection *coll;
   TBaseCell *cell;
@@ -115,7 +116,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
   int lev, infoNM, infoM;
   double lamM0, lamM1 = 0, lamNM0, lamNM1, startX, startY, endX, endY;
   double delX, delY;
-  boolean NewMortarSideEle;
+  bool NewMortarSideEle;
   int **J_DOF_NM, N_J_DOF_NM, **J_DOF_M, N_J_DOF_M;
   int indexM = 0, indexNM;
 
@@ -129,7 +130,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
   N_ = It1->GetN_MortarFace();
   for (i=0;i<N_;i++)
   {
-    NewMortarSideEle = TRUE;
+    NewMortarSideEle = true;
     lev = MAX_ItLevel + (i << 8);
     It1->Init(lev);
     It2->Init(-lev);
@@ -175,7 +176,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
       }
 
       // check which side is next
-      if (lamM1 < lamNM1) NewMortarSideEle = TRUE;
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
 
       while (NewMortarSideEle)
       {
@@ -210,7 +211,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
           AuxPtr[TestNumbers[J_DOF_M[infoM][m]]] += N_J_DOF_NM;
 
         // check which side is next
-        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = FALSE;
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
       }
     }
   }
@@ -292,7 +293,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
   N_ = It1->GetN_MortarFace();
   for (i=0;i<N_;i++)
   {
-    NewMortarSideEle = TRUE;
+    NewMortarSideEle = true;
     lev = MAX_ItLevel + (i << 8);
     It1->Init(lev);
     It2->Init(-lev);
@@ -374,7 +375,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
       }
 
       // check which side is next
-      if (lamM1 < lamNM1) NewMortarSideEle = TRUE;
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
 
       while (NewMortarSideEle)
       {
@@ -446,7 +447,7 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
         }
 
         // check which side is next
-        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = FALSE;
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
       }
     }
   }

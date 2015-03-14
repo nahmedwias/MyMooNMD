@@ -19,20 +19,25 @@
 #include <string.h>
 
 /** generate the matrix structure, both space are 2D */
-TSquareStructure::TSquareStructure()
+TSquareStructure::TSquareStructure() 
+ : TStructure(), ActiveBound(0), ColOrder(0)
 {
 } 
 
 /** generate the matrix structure, all arrays are already defined */
 TSquareStructure::TSquareStructure(int n, int N_entries, int *col_ptr,
-				   int *row_ptr)
+                                   int *row_ptr)
+ : TStructure(n, N_entries, col_ptr, row_ptr), ActiveBound(n), ColOrder(0)
+{
+}
+
+TSquareStructure::TSquareStructure(int n)
+ : TStructure(n, n), ActiveBound(0), ColOrder(0)
 {
 }
 
 TSquareStructure::~TSquareStructure()
 {
-  delete [] KCol;
-  delete [] RowPtr;
 }
 
 /** sort an integer array [BeginPtr, AfterEndPtr) */
@@ -120,3 +125,26 @@ void TSquareStructure::SortDiagFirst()
 //   } // endfor i
 // }
 // 
+
+/** Comparision Operator */
+bool operator==(const TSquareStructure &lhs, const TSquareStructure &rhs)
+{
+  if(&lhs == &rhs)
+    return true;
+  if(lhs.ActiveBound != rhs.ActiveBound
+     || lhs.ColOrder != rhs.ColOrder)
+    return false;
+  else
+  {
+    const TStructure* lhs_tmp = &lhs;
+    const TStructure* rhs_tmp = &rhs;
+    return *lhs_tmp == *rhs_tmp;
+  }
+  return false;
+}
+
+bool operator!=(const TSquareStructure &lhs, const TSquareStructure &rhs)
+{
+  return !(rhs == lhs);
+}
+
