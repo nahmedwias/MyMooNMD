@@ -14,7 +14,8 @@
   #include <Matrix2D.h>
   #include <AuxParam2D.h>
   #include <Assemble2D.h>
-#endif  
+#endif
+#include <TimeDiscRout.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +30,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-void SetTimeDiscParameters()
+void SetTimeDiscParameters(int increase_count)
 {
   static int count=0;
   static int rb_type = TDatabase::TimeDB->RB_TYPE;
@@ -41,8 +42,9 @@ void SetTimeDiscParameters()
   double gamma;
   double b4, c3;
   double c2, a22, a31, a32, a33;
-
-  count++;
+  
+  if (increase_count)
+    count++;
 
   switch(TDatabase::TimeDB->TIME_DISC)
   {
@@ -2042,6 +2044,7 @@ void SetTimeDiscParameters()
    }
 }
 
+
 int GetN_SubSteps()
 {
   int ret;
@@ -2209,118 +2212,6 @@ int GetN_SubSteps()
   return ret;
 }
 
-#ifdef __2D__
-
-/******************************************************************************/
-/*                                                                            */
-/* Output of square matrices                                                  */
-/*                                                                            */
-/******************************************************************************/
-
-void mat_ausgabe(int n_sqmatrices, TSquareMatrix2D **sqmatrices)
-{  
-
-  int *ColInd, *RowPtr;
-  double *Entries;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements, end;
-  int N_Unknowns;
-  // ####################################################################
-  // print the whole matrix -- SECOND
-  // ####################################################################
-  for(k=0;k<n_sqmatrices;k++)
-  {
-    cout << endl;
-    cout << "sqmatrix: " << k << endl;
-    RowPtr = sqmatrices[k]->GetRowPtr();
-    Entries = sqmatrices[k]->GetEntries();
-    ColInd = sqmatrices[k]->GetKCol();
-    N_Unknowns = sqmatrices[k]->GetN_Rows();
-    for(i=0;i<N_Unknowns;i++)
-    {
-      end=RowPtr[i+1];
-      for(j=RowPtr[i];j<end;j++)
-      {
-        // cout << j << endl;
-        cout << setw(5) << i << setw(5) << ColInd[j] << "   ";
-        cout << setw(10) << Entries[j] << endl;
-      }
-    }
-    cout << endl;
-  } // endfor k
-}
-
-/******************************************************************************/
-/*                                                                            */
-/* Output of rectangular matrices                                             */
-/*                                                                            */
-/******************************************************************************/
-void rmat_ausgabe(int n_matrices, TMatrix2D **matrices)
-{  
-
-  int *ColInd, *RowPtr;
-  double *Entries;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements, end;
-  int N_Unknowns;
-  // ####################################################################
-  // print the whole matrix -- SECOND
-  // ####################################################################
-  for(k=0;k<n_matrices;k++)
-  {
-    cout << endl;
-    cout << "matrix: " << k << endl;
-    RowPtr = matrices[k]->GetRowPtr();
-    Entries = matrices[k]->GetEntries();
-    ColInd = matrices[k]->GetKCol();
-    N_Unknowns = matrices[k]->GetN_Rows();
-    for(i=0;i<N_Unknowns;i++)
-    {
-      end=RowPtr[i+1];
-      for(j=RowPtr[i];j<end;j++)
-      {
-        // cout << j << endl;
-        cout << setw(5) << i << setw(5) << ColInd[j] << "   ";
-        cout << setw(10) << Entries[j] << endl;
-      }
-    }
-    cout << endl;
-  } // endfor k
-}
-
-/******************************************************************************/
-/*                                                                            */
-/* Output of square matrix on level k                                         */
-/*                                                                            */
-/******************************************************************************/
-void mat_ausgabe1(int k, TSquareMatrix2D **sqmatrices)
-{  
-  int *ColInd, *RowPtr;
-  double *Entries;
-  int i,j,l,l1,l2,l3,n,m, N_LocalUsedElements, end;
-  int N_Unknowns;
-
-    // cout << (int)sqmatrices[k] << endl;
-    RowPtr = sqmatrices[k]->GetRowPtr();
-    // cout << (int)RowPtr << endl;
-    Entries = sqmatrices[k]->GetEntries();
-    // cout << (int)Entries << endl;
-    ColInd = sqmatrices[k]->GetKCol();
-    // cout << (int)ColInd << endl;
-    N_Unknowns = sqmatrices[k]->GetN_Rows();
-    // cout << N_Unknowns << endl;
-    for(i=0;i<N_Unknowns;i++)
-    {
-      end=RowPtr[i+1];
-      for(j=RowPtr[i];j<end;j++)
-      {
-        // cout << j << endl;
-        cout << setw(5) << i << setw(5) << ColInd[j] << "   ";
-        cout << setw(10) << Entries[j] << endl;
-      }
-    }
-    cout << endl;
-}
-#endif  
-
 /******************************************************************************/
 /*                                                                            */
 /* ROSENBROCK                                                                 */
@@ -2337,163 +2228,164 @@ void AllocateAuxiliaryVectorsRB(int &rb_order, int &RB_s,
                                 double* RB_A, double* RB_C, double *RB_S,
                                 int N_Unknowns)
 {
-    int i, i1, i2, il, j;
-    double RB_gamma_ii, val;
+  int i, i1, i2, il, j;
+  double RB_gamma_ii, val;
 
-    switch(TDatabase::TimeDB->RB_TYPE)
-    {
-       case 0:
-       case 1:
-         rb_order = 2;
-        break;
-       case 2:
-       case 3:
-       case 11:
-       case 12:
-       case 13:
-         rb_order = 3;
-        break;
-       case 4:
-       case 5:
-       case 6:
-       case 7:
-       case 8:
-       case 9:
-       case 14:
-       case 15:
-       case 16:
-       case 17:
-       case 18:
-       case 21:
-       case 22:
-       case 23:
-       case 24:
-         rb_order = 4;
-        break;
-       case 10:
-         rb_order = 5;
-        break;
-       case 19:
-       case 20:
-         rb_order = 6;
-        break;
-        default: 
-            OutPut("RB_TYPE " << TDatabase::TimeDB->RB_TYPE <<
-                   " not implemented !!!"<< endl);
-            exit(4711);
-         break;
-    }
+  switch(TDatabase::TimeDB->RB_TYPE)
+  {
+    case 0:
+    case 1:
+      rb_order = 2;
+     break;
+    case 2:
+    case 3:
+    case 11:
+    case 12:
+    case 13:
+      rb_order = 3;
+     break;
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+    case 18:
+    case 21:
+    case 22:
+    case 23:
+    case 24:
+      rb_order = 4;
+     break;
+    case 10:
+      rb_order = 5;
+     break;
+    case 19:
+    case 20:
+      rb_order = 6;
+      break;
+    default: 
+      OutPut("RB_TYPE " << TDatabase::TimeDB->RB_TYPE << " not implemented!\n");
+      exit(4711);
+      break;
+  }
 
-    RB_s = rb_order;
-    RB_m  = new double[rb_order+2];
-    RB_ms = new double[rb_order+2];
-    RB_alpha = new double[rb_order+2];
-    RB_gamma = new double[rb_order+2];
-    RB_sigma = new double[rb_order+2];
-    RB_RHS_YN = new double[rb_order+2];
-    old_sol_rbU = new double[(rb_order+1)*N_Unknowns];
-    rb_mein = new double[(rb_order+1)*N_Unknowns];
-    
-    memset(RB_A, 0, 100*SizeOfDouble); 
-    memset(RB_C, 0, 100*SizeOfDouble); 
-    memset(RB_S, 0, 100*SizeOfDouble); 
+  RB_s = rb_order;
+  RB_m  = new double[rb_order+2];
+  RB_ms = new double[rb_order+2];
+  RB_alpha = new double[rb_order+2];
+  RB_gamma = new double[rb_order+2];
+  RB_sigma = new double[rb_order+2];
+  RB_RHS_YN = new double[rb_order+2];
+  old_sol_rbU = new double[(rb_order+1)*N_Unknowns];
+  rb_mein = new double[(rb_order+1)*N_Unknowns];
+  
+  memset(RB_A, 0, 100*SizeOfDouble); 
+  memset(RB_C, 0, 100*SizeOfDouble); 
+  memset(RB_S, 0, 100*SizeOfDouble); 
 
-    for (il=1;il<=rb_order;il++) 
+  for (il=1;il<=rb_order;il++) 
+  {
+    SetTimeDiscParameters();
+    old_sol_rbU[il] =  old_sol_rbU[0] + il*N_Unknowns;
+    rb_mein[il] =  rb_mein[0] + il*N_Unknowns;
+    
+    RB_m[il-1]  = TDatabase::TimeDB->RB_M_I;
+    RB_ms[il-1] = TDatabase::TimeDB->RB_MS_I;
+    
+    for (i2=1;i2<il;++i2)
     {
-        SetTimeDiscParameters();
-        old_sol_rbU[il] =  old_sol_rbU[0] + il*N_Unknowns;
-        rb_mein[il] =  rb_mein[0] + il*N_Unknowns;
-      
-        RB_m[il-1]  = TDatabase::TimeDB->RB_M_I;
-        RB_ms[il-1] = TDatabase::TimeDB->RB_MS_I;
-      
-      for (i2=1;i2<il;++i2) {
-        RB_C[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_C_IJ[i2-1];
-        RB_A[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_A_IJ[i2-1];
-        RB_S[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_S_IJ[i2-1];
-      }
-      RB_alpha[il-1] = TDatabase::TimeDB->RB_ALPHA_I;
-      RB_gamma[il-1] = TDatabase::TimeDB->RB_GAMMA_I;
-      RB_sigma[il-1] = TDatabase::TimeDB->RB_SIGMA_I;
+      RB_C[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_C_IJ[i2-1];
+      RB_A[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_A_IJ[i2-1];
+      RB_S[(il-1)*10+i2-1] = TDatabase::TimeDB->RB_S_IJ[i2-1];
     }
-    
-    RB_gamma_ii = TDatabase::TimeDB->RB_GAMMA_II;
-    
-    for (i2=0;i2<rb_order;++i2) {
-      RB_C[(il-1)*10+il-1] = 1/RB_gamma_ii;
-    }
-    
-    // rechte Seite auswerten
-    RB_RHS_YN[0] = 1;
-    for (i1=1;i1<rb_order;++i1) 
+    RB_alpha[il-1] = TDatabase::TimeDB->RB_ALPHA_I;
+    RB_gamma[il-1] = TDatabase::TimeDB->RB_GAMMA_I;
+    RB_sigma[il-1] = TDatabase::TimeDB->RB_SIGMA_I;
+  }
+  
+  RB_gamma_ii = TDatabase::TimeDB->RB_GAMMA_II;
+  
+  for (i2=0;i2<rb_order;++i2)
+  {
+    RB_C[(il-1)*10+il-1] = 1/RB_gamma_ii;
+  }
+  
+  // rechte Seite auswerten
+  RB_RHS_YN[0] = 1;
+  for (i1=1;i1<rb_order;++i1) 
+  {
+    val = 0;
+    for (i2=0;i2<rb_order;++i2)
     {
-      val = 0;
-      for (i2=0;i2<rb_order;++i2)
-      {
-        val += (RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2])*(RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2]);
-      }
-      if (val < 1.0e-10)
-      {
-         RB_RHS_YN[i1] = 0;
-      } else {
-         RB_RHS_YN[i1] = 1;
-      }
-      cout << "AUSW: " << i1 << " : " <<RB_RHS_YN[i1] << endl;
+      val += (RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2])*(RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2]);
     }
-   //cout << "N_Unknowns: " << N_Unknowns << endl;
-    rb_diff = new double[N_Unknowns];
-    sol_tilde = new double[N_Unknowns];
-    B1 = new double[N_Unknowns];
-    B2 = new double[N_Unknowns];
-    dq = new double[N_Unknowns];
+    if (val < 1.0e-10)
+    {
+       RB_RHS_YN[i1] = 0;
+    } else {
+       RB_RHS_YN[i1] = 1;
+    }
+    cout << "AUSW: " << i1 << " : " <<RB_RHS_YN[i1] << endl;
+  }
+  cout << "N_Unknowns: " << N_Unknowns << endl;
+  rb_diff = new double[N_Unknowns];
+  sol_tilde = new double[N_Unknowns];
+  B1 = new double[N_Unknowns];
+  B2 = new double[N_Unknowns];
+  dq = new double[N_Unknowns];
 
-    printf("Hallo\n");
-    printf("    case %d: // \n", (TDatabase::TimeDB->RB_TYPE));
-    printf("      *s = %d;\n", rb_order);
-    printf("      *p = %d;\n", rb_order);
-    for (i=0;i<RB_s;i++)
+  printf("Hallo\n");
+  printf("    case %d: // \n", (TDatabase::TimeDB->RB_TYPE));
+  printf("      *s = %d;\n", rb_order);
+  printf("      *p = %d;\n", rb_order);
+  for (i=0;i<RB_s;i++)
+  {
+    for (j=0;j<RB_s;j++)
     {
-      for (j=0;j<RB_s;j++)
-      {
-        printf("      C[%d][%d] = %30.20e;\n", i, j, RB_C[i*10+j]);
-      }
+      printf("      C[%d][%d] = %30.20e;\n", i, j, RB_C[i*10+j]);
     }
-    for (i=0;i<RB_s;i++)
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    for (j=0;j<RB_s;j++)
     {
-      for (j=0;j<RB_s;j++)
-      {
-        printf("      A[%d][%d] = %30.20e;\n", i, j, RB_A[i*10+j]);
-      }
+      printf("      A[%d][%d] = %30.20e;\n", i, j, RB_A[i*10+j]);
     }
-    for (i=0;i<RB_s;i++)
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    for (j=0;j<RB_s;j++)
     {
-      for (j=0;j<RB_s;j++)
-      {
-        printf("      S[%d][%d] = %30.20e;\n", i, j, RB_S[i*10+j]);
-      }
+      printf("      S[%d][%d] = %30.20e;\n", i, j, RB_S[i*10+j]);
     }
-    for (i=0;i<RB_s;i++)
-    {
-      printf("      gamma[%d] = %30.20e;\n", i, RB_gamma[i]);
-    }
-    for (i=0;i<RB_s;i++)
-    {
-      printf("      alpha[%d] = %30.20e;\n", i, RB_alpha[i]);
-    }
-    for (i=0;i<RB_s;i++)
-    {
-      printf("      sigma[%d] = %30.20e;\n", i, RB_sigma[i]);
-    }
-    for (i=0;i<RB_s;i++)
-    {
-      printf("      m[%d] = %30.20e;\n", i, RB_m[i]);
-    }
-    for (i=0;i<RB_s;i++)
-    {
-      printf("      ms[%d] = %30.20e;\n", i, RB_ms[i]);
-    }
-    
-    printf("    break;\n");
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      gamma[%d] = %30.20e;\n", i, RB_gamma[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      alpha[%d] = %30.20e;\n", i, RB_alpha[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      sigma[%d] = %30.20e;\n", i, RB_sigma[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      m[%d] = %30.20e;\n", i, RB_m[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      ms[%d] = %30.20e;\n", i, RB_ms[i]);
+  }
+  
+  printf("    break;\n");
 }
 
 #ifdef __2D__
@@ -2562,143 +2454,149 @@ void AllocateAuxiliaryVectorsDIRK(int &rb_order, int &RB_s,
                                   double* RB_A,
                                   int N_Unknowns)
 {
-    int i, i1, i2, il, j;
-    double val;
+  int i, i1, i2, il, j;
+  double val;
 
-    OutPut("DIRK-Methods" << endl);
-    // set order of the methods for stepsize-selection
-    switch(TDatabase::TimeDB->RB_TYPE)
-      {
-          case 0:
-          case 1:
-              rb_order = 1;
-              break;
-          case 2:
-          case 3:
-          case 6:
-          case 8:
-          case 15:
-              rb_order = 2;
-              break;
-          case 4:
-          case 5:
-          case 7:
-          case 9:
-          case 10:
-          case 14:
-              rb_order = 3;
-              break;
-          case 11:
-          case 12:
-          case 13:
-              rb_order = 4;
-              break;
-        default: 
-            OutPut("RB_TYPE " << TDatabase::TimeDB->RB_TYPE <<
-                   " not implemented !!!"<< endl);
-            exit(4711);
-      }
+  OutPut("DIRK-Methods" << endl);
+  // set order of the methods for stepsize-selection
+  switch(TDatabase::TimeDB->RB_TYPE)
+  {
+    case 0:
+    case 1:
+      rb_order = 1;
+      break;
+    case 2:
+    case 3:
+    case 6:
+    case 8:
+    case 15:
+      rb_order = 2;
+      break;
+    case 4:
+    case 5:
+    case 7:
+    case 9:
+    case 10:
+    case 14:
+      rb_order = 3;
+      break;
+    case 11:
+    case 12:
+    case 13:
+      rb_order = 4;
+      break;
+    default: 
+      OutPut("RB_TYPE " << TDatabase::TimeDB->RB_TYPE << " not implemented!\n");
+      exit(4711);
+  }
 
-    // allocate vectors and matrices
-    RB_s = GetN_SubSteps();
-    RB_m  = new double[RB_s+2];
-    RB_ms = new double[RB_s+2];
-    RB_alpha = new double[RB_s+2];
-    RB_RHS_YN = new double[RB_s+2];
-    // stores the values k_i for stepsize selction, if embedded is not stiffly accurate
-    old_sol_rbK = new double[(RB_s+1)*N_Unknowns];
-    // stores the values U_i
-    old_sol_rbU = new double[(RB_s+1)*N_Unknowns];
-    // stores the old rhs
-    old_rhs = new double[(RB_s+1)*N_Unknowns];
-    rb_mein = new double[(RB_s+1)*N_Unknowns];
-    B2 = new double[N_Unknowns];
+  // allocate vectors and matrices
+  RB_s = GetN_SubSteps();
+  RB_m  = new double[RB_s+2];
+  RB_ms = new double[RB_s+2];
+  RB_alpha = new double[RB_s+2];
+  RB_RHS_YN = new double[RB_s+2];
+  // stores the values k_i for stepsize selction, if embedded is not stiffly accurate
+  old_sol_rbK = new double[(RB_s+1)*N_Unknowns];
+  // stores the values U_i
+  old_sol_rbU = new double[(RB_s+1)*N_Unknowns];
+  // stores the old rhs
+  old_rhs = new double[(RB_s+1)*N_Unknowns];
+  rb_mein = new double[(RB_s+1)*N_Unknowns];
+  B2 = new double[N_Unknowns];
 
-    memset(RB_A, 0, 100*SizeOfDouble); 
-    for (il=1;il<=RB_s;il++) {
-      SetTimeDiscParameters();
-      old_sol_rbK[il] =  old_sol_rbK[0] + il*N_Unknowns;
-      old_sol_rbU[il] =  old_sol_rbU[0] + il*N_Unknowns;
-      old_rhs[il] =  old_rhs[0] + il*N_Unknowns;
-      rb_mein[il] =  rb_mein[0] + il*N_Unknowns;
+  memset(RB_A, 0, 100*SizeOfDouble); 
+  for (il=1;il<=RB_s;il++)
+  {
+    SetTimeDiscParameters();
+    old_sol_rbK[il] =  old_sol_rbK[0] + il*N_Unknowns;
+    old_sol_rbU[il] =  old_sol_rbU[0] + il*N_Unknowns;
+    old_rhs[il] =  old_rhs[0] + il*N_Unknowns;
+    rb_mein[il] =  rb_mein[0] + il*N_Unknowns;
 
-      RB_m[il-1]  = TDatabase::TimeDB->RB_M_I;
-      RB_ms[il-1] = TDatabase::TimeDB->RB_MS_I;
+    RB_m[il-1]  = TDatabase::TimeDB->RB_M_I;
+    RB_ms[il-1] = TDatabase::TimeDB->RB_MS_I;
 
-      for (i2=1;i2<=il;++i2) {
-        RB_A[(il-1)*10+(i2-1)] = TDatabase::TimeDB->RB_A_IJ[i2-1];
-      }
-      RB_alpha[il-1] = TDatabase::TimeDB->RB_ALPHA_I;
-    }
-
-    // are the method1 and method2 stiffly accurate?
-    //  if yes : stiff_acc=1 else =0
-    stiff_acc1 = 1;
-    stiff_acc2 = 1;
-    
-    for (il=1;il<=RB_s;il++) {
-      if (fabs(RB_m[il-1]  - RB_A[(RB_s-1)*10+il-1])>1.0E-6) stiff_acc1 = 0;
-      if (fabs(RB_ms[il-1] - RB_A[(RB_s-2)*10+il-1])>1.0E-6) stiff_acc2 = 0;
-    }
-    
-    OutPut("DIRK(m):  stiffly-accurate : " << stiff_acc1 << endl);
-    OutPut("DIRK(ms): stiffly-accurate : " << stiff_acc2 << endl);
-    
-    OutPut("DIRK-coefficients: " << endl);
-    for (il=1;il<=RB_s;il++) {
-      for (i2=1;i2<=RB_s;i2++) {
-        OutPut("DIRK: a[" << il << "," << i2 << "] = " << RB_A[(il-1)*10+i2-1] << endl);        
-      }
-      OutPut("DIRK: alpha[" << il << "] = " << RB_alpha[il-1] << endl);        
-      OutPut("DIRK: b[" << il << "] = " << RB_m[il-1] << endl);        
-      OutPut("DIRK: bs[" << il << "] = " << RB_ms[il-1] << endl);        
-    }
-    OutPut("END OF DIRK-coefficients: " << endl);
-    
-    // rechte Seite auswerten
-    RB_RHS_YN[0] = 1;
-    for (i1=1;i1<RB_s;++i1) 
+    for (i2=1;i2<=il;++i2)
     {
-      val = 0;
-      for (i2=0;i2<RB_s;++i2)
-      {
-        val += (RB_A[(i1-1)+i2] - RB_A[i1*10+i2])*(RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2]);
-      }
-      if (val < 1.0e-10)
-      {
-         RB_RHS_YN[i1] = 0;
-      } else {
-         RB_RHS_YN[i1] = 1;
-      }
+      RB_A[(il-1)*10+(i2-1)] = TDatabase::TimeDB->RB_A_IJ[i2-1];
     }
-    
-    rb_diff = new double[N_Unknowns];
-    sol_tilde = new double[N_Unknowns];
-    B1 = new double[N_Unknowns];
-    
-    printf("DIRK\n");
-    printf("    case %d: // \n", (TDatabase::TimeDB->RB_TYPE));
-    printf("      *s = %d;\n", RB_s);
-    printf("      *p = %d;\n", rb_order);
-    for (i=0;i<RB_s;i++)
+    RB_alpha[il-1] = TDatabase::TimeDB->RB_ALPHA_I;
+  }
+
+  // are the method1 and method2 stiffly accurate?
+  //  if yes : stiff_acc=1 else =0
+  stiff_acc1 = 1;
+  stiff_acc2 = 1;
+  
+  for (il=1;il<=RB_s;il++)
+  {
+    if (fabs(RB_m[il-1]  - RB_A[(RB_s-1)*10+il-1])>1.0E-6) stiff_acc1 = 0;
+    if (fabs(RB_ms[il-1] - RB_A[(RB_s-2)*10+il-1])>1.0E-6) stiff_acc2 = 0;
+  }
+  
+  OutPut("DIRK(m):  stiffly-accurate : " << stiff_acc1 << endl);
+  OutPut("DIRK(ms): stiffly-accurate : " << stiff_acc2 << endl);
+  
+  OutPut("DIRK-coefficients: " << endl);
+  for (il=1;il<=RB_s;il++)
+  {
+    for (i2=1;i2<=RB_s;i2++)
     {
-      for (j=0;j<RB_s;j++)
-      {
-        printf("      A[%d][%d] = %30.20e;\n", i, j, RB_A[i*10+j]);
-      }
+      OutPut("DIRK: a[" << il << "," << i2 << "] = " << RB_A[(il-1)*10+i2-1]
+             << endl);
     }
-    for (i=0;i<RB_s;i++)
+    OutPut("DIRK: alpha[" << il << "] = " << RB_alpha[il-1] << endl);        
+    OutPut("DIRK: b[" << il << "] = " << RB_m[il-1] << endl);        
+    OutPut("DIRK: bs[" << il << "] = " << RB_ms[il-1] << endl);        
+  }
+  OutPut("END OF DIRK-coefficients: " << endl);
+  
+  // rechte Seite auswerten
+  RB_RHS_YN[0] = 1;
+  for (i1=1;i1<RB_s;++i1) 
+  {
+    val = 0;
+    for (i2=0;i2<RB_s;++i2)
     {
-      printf("      alpha[%d] = %30.20e;\n", i, RB_alpha[i]);
+      val += (RB_A[(i1-1)+i2] - RB_A[i1*10+i2])*(RB_A[(i1-1)*10+i2] - RB_A[i1*10+i2]);
     }
-    for (i=0;i<RB_s;i++)
+    if (val < 1.0e-10)
     {
-      printf("      m[%d] = %30.20e;\n", i, RB_m[i]);
-    }
-    for (i=0;i<RB_s;i++)
+       RB_RHS_YN[i1] = 0;
+    } else
     {
-      printf("      ms[%d] = %30.20e;\n", i, RB_ms[i]);
+       RB_RHS_YN[i1] = 1;
     }
-    
-    printf("    break;\n");
+  }
+  
+  rb_diff = new double[N_Unknowns];
+  sol_tilde = new double[N_Unknowns];
+  B1 = new double[N_Unknowns];
+  
+  printf("DIRK\n");
+  printf("    case %d: // \n", (TDatabase::TimeDB->RB_TYPE));
+  printf("      *s = %d;\n", RB_s);
+  printf("      *p = %d;\n", rb_order);
+  for (i=0;i<RB_s;i++)
+  {
+    for (j=0;j<RB_s;j++)
+    {
+      printf("      A[%d][%d] = %30.20e;\n", i, j, RB_A[i*10+j]);
+    }
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      alpha[%d] = %30.20e;\n", i, RB_alpha[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      m[%d] = %30.20e;\n", i, RB_m[i]);
+  }
+  for (i=0;i<RB_s;i++)
+  {
+    printf("      ms[%d] = %30.20e;\n", i, RB_ms[i]);
+  }
+  
+  printf("    break;\n");
 }

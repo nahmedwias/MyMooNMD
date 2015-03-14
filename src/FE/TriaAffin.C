@@ -80,7 +80,7 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
                                int N_Points, double *xi, double *eta,
                                int N_Functs, QuadFormula2D QuadFormula)
 {
-  int i,j,k;
+  int i,j,k, BaseVectDim;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -97,6 +97,7 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   double AllData[MaxN_BaseFunctions2D][5];
   double GeoData[5][5];
   
+  BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
   refvaluesD00=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D00);
   if(refvaluesD00==NULL)
   {
@@ -109,9 +110,9 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD00==NULL)
   {
     origvaluesD00 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD00[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD00[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D00, origvaluesD00);
   }
 
@@ -120,9 +121,9 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD10==NULL)
   {
     origvaluesD10 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD10[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD10[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D10, origvaluesD10);
   }
 
@@ -131,9 +132,9 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD01==NULL)
   {
     origvaluesD01 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD01[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD01[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D01, origvaluesD01);
   }
 
@@ -142,9 +143,9 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD20==NULL)
   {
     origvaluesD20 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD20[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD20[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D20, origvaluesD20);
   }
 
@@ -153,9 +154,9 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD11==NULL)
   {
     origvaluesD11 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD11[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD11[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D11, origvaluesD11);
   }
 
@@ -164,23 +165,35 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   if(origvaluesD02==NULL)
   {
     origvaluesD02 = new double* [MaxN_QuadPoints_2D];
-    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+    aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
     for(i=0;i<MaxN_QuadPoints_2D;i++)
-      origvaluesD02[i] = aux+i*MaxN_BaseFunctions2D;
+      origvaluesD02[i] = aux+i*MaxN_BaseFunctions2D*BaseVectDim;
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D02, origvaluesD02);
   }
 
   // D00
-  for(i=0;i<N_Points;i++)
+  if(BaseVectDim == 1) // standard
   {
-    refD00 = refvaluesD00[i];
-    origD00 = origvaluesD00[i];
-
-    for(j=0;j<N_Functs;j++)
+    for(i=0;i<N_Points;i++)
     {
-      origD00[j] = refD00[j];
-    } // endfor j
-  } // endfor i
+      refD00 = refvaluesD00[i];
+      origD00 = origvaluesD00[i];
+
+      for(j=0;j<N_Functs;j++)
+      {
+        origD00[j] = refD00[j];
+      } // endfor j
+    } // endfor i
+  }
+  else // vector valued functions, do piola transformation
+  {
+    for(i=0;i<N_Points;i++)
+    {
+      refD00 = refvaluesD00[j];
+      origD00 = origvaluesD00[j];
+      this->PiolaMapOrigFromRef(N_Functs, refD00, origD00);
+    }
+  }
 
   // D10 and D01
   for(i=0;i<N_Points;i++)
@@ -191,15 +204,23 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
     refD01 = refvaluesD01[i];
     origD01 = origvaluesD01[i];
 
-    for(j=0;j<N_Functs;j++)
+    if (BaseVectDim == 1) // standard
     {
-      origD10[j]=(yc2*refD10[j]-yc1*refD01[j]) *rec_detjk;
-      origD01[j]=(-xc2*refD10[j]+xc1*refD01[j]) *rec_detjk;
+      for(j=0;j<N_Functs;j++)
+      {
+        origD10[j]=(yc2*refD10[j]-yc1*refD01[j]) *rec_detjk;
+        origD01[j]=(-xc2*refD10[j]+xc1*refD01[j]) *rec_detjk;
+        
+        // cout << "10: " << origD10[j] << endl;
+        // cout << "01: " << origD01[j] << endl;
+        // cout << endl;
+      } // endfor j
+    }
+    else // vector valued functions, do piola transformation
+    {
+      this->PiolaMapOrigFromRef(N_Functs, refD10, refD01, origD10, origD01);
+    }
 
-      // cout << "10: " << origD10[j] << endl;
-      // cout << "01: " << origD01[j] << endl;
-      // cout << endl;
-    } // endfor j
     // cout << "----------" << endl;
   } // endfor i
 }
@@ -211,7 +232,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
                                QuadFormula2D QuadFormula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k,N_, start, end, BaseVectDim;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -236,6 +257,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
+    BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
     N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
 
     refvaluesD00=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D00);
@@ -250,9 +272,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD00==NULL)
     {
       origvaluesD00 = new double* [MaxN_QuadPoints_2D];
-      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_2D;j++)
-        origvaluesD00[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD00[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D00, origvaluesD00);
     }
   
@@ -261,7 +283,15 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       refD00 = refvaluesD00[j];
       origD00 = origvaluesD00[j];
 
-      memcpy(origD00, refD00, N_Functs*SizeOfDouble);
+      if(BaseVectDim == 1) // standard
+      {
+        memcpy(origD00, refD00, N_Functs*BaseVectDim*SizeOfDouble);
+      }
+      else // piola transformation
+      {
+        this->PiolaMapOrigFromRef(N_Functs, refD00, origD00);
+      }
+
     } // endfor j
 
     refvaluesD10=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
@@ -269,9 +299,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD10==NULL)
     {
       origvaluesD10 = new double* [MaxN_QuadPoints_2D];
-      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_2D;j++)
-        origvaluesD10[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD10[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D10, origvaluesD10);
     }
   
@@ -280,9 +310,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD01==NULL)
     {
       origvaluesD01 = new double* [MaxN_QuadPoints_2D];
-      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+      aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_2D;j++)
-        origvaluesD01[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD01[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D01, origvaluesD01);
     }
   
@@ -295,9 +325,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD20==NULL)
       {
         origvaluesD20 = new double* [MaxN_QuadPoints_2D];
-        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
         for(j=0;j<MaxN_QuadPoints_2D;j++)
-          origvaluesD20[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD20[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D20, origvaluesD20);
       }
     
@@ -306,9 +336,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD11==NULL)
       {
         origvaluesD11 = new double* [MaxN_QuadPoints_2D];
-        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
         for(j=0;j<MaxN_QuadPoints_2D;j++)
-          origvaluesD11[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD11[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D11, origvaluesD11);
       }
     
@@ -317,9 +347,9 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD02==NULL)
       {
         origvaluesD02 = new double* [MaxN_QuadPoints_2D];
-        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D];
+        aux = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
         for(j=0;j<MaxN_QuadPoints_2D;j++)
-          origvaluesD02[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD02[j] = aux+j*MaxN_BaseFunctions2D*BaseVectDim;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D02, origvaluesD02);
       }
     } // endfor Needs2ndDer[i]
@@ -329,6 +359,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
+    BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
     N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
 
     refvaluesD10=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
@@ -345,12 +376,18 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       refD01 = refvaluesD01[j];
       origD01 = origvaluesD01[j];
   
-      for(k=0;k<N_Functs;k++)
+      if(BaseVectDim == 1) // standard
       {
-        origD10[k]=(yc2*refD10[k]-yc1*refD01[k]) *rec_detjk;
-        origD01[k]=(-xc2*refD10[k]+xc1*refD01[k]) *rec_detjk;
-  
-      } // endfor k
+        for(k=0;k<N_Functs;k++)
+        {
+          origD10[k]=(yc2*refD10[k]-yc1*refD01[k]) *rec_detjk;
+          origD01[k]=(-xc2*refD10[k]+xc1*refD01[k]) *rec_detjk;
+        } // endfor k
+      }
+      else // vector valued basis function, do piola transformation
+      {
+        this->PiolaMapOrigFromRef(N_Functs, refD10, refD01, origD10, origD01);
+      }
     } // endfor j
   } // endfor i
 
@@ -393,6 +430,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     {
       BaseFunct=BaseFuncts[i];
       N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
+      BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
   
       refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
       origvaluesD20=TFEDatabase2D::GetOrigElementValues(BaseFunct, D20);
@@ -413,7 +451,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
         origD11 = origvaluesD11[j];
         origD02 = origvaluesD02[j];
     
-        for(k=0;k<N_Functs;k++)
+        for(k=0;k<N_Functs*BaseVectDim;k++)
         {
           r20 = refD20[k];
           r11 = refD11[k];
@@ -437,20 +475,34 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 void TTriaAffin::GetOrigValues(double xi, double eta, 
                 int N_BaseFunct,
                 double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig)
+                double *uorig, double *uxorig, double *uyorig,
+                int _BaseVectDim)
 {
   int i;
-
   // D00
-  for(i=0;i<N_BaseFunct;i++)
-    uorig[i] = uref[i];
+  if(_BaseVectDim == 1) // standard
+  {
+    for(i=0;i<N_BaseFunct;i++)
+      uorig[i] = uref[i];
+  }
+  else
+  {
+    this->PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
+  }
 
   // D10 and D01
-  for(i=0;i<N_BaseFunct;i++)
+  if(_BaseVectDim == 1) // standard
   {
-    uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
-    uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
-  } // endfor i
+    for(i=0;i<N_BaseFunct;i++)
+    {
+      uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
+      uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
+    } // endfor i
+  }
+  else
+  {
+    this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+  }
 }
 
 
@@ -460,7 +512,8 @@ void TTriaAffin::GetOrigValues(double xi, double eta,
 void TTriaAffin::GetOrigValues(int joint, double zeta,
             int N_BaseFunct,
             double *uref, double *uxiref, double *uetaref,
-            double *uorig, double *uxorig, double *uyorig)
+            double *uorig, double *uxorig, double *uyorig,
+            int _BaseVectDim)
 {
   double xi, eta;
 
@@ -479,7 +532,8 @@ void TTriaAffin::GetOrigValues(int joint, double zeta,
     break;
   }
 
-  this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, uorig, uxorig, uyorig);
+  this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, 
+                      uorig, uxorig, uyorig, _BaseVectDim);
 
 //   int i;
 //  for(i=0;i<N_BaseFunct;i++)
@@ -630,3 +684,49 @@ void TTriaAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, doub
 }
 
 
+/** Piola transformation for vectorial basis functions */
+void TTriaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD00, 
+                                     double *origD00)
+{
+  double a11 = xc1*rec_detjk;
+  double a12 = xc2*rec_detjk;
+  double a21 = yc1*rec_detjk;
+  double a22 = yc2*rec_detjk;
+
+  for(int k = 0; k < N_Functs; k++)
+  {
+    // Piola transformation
+    // phi = 1/|J| DF phi_hat
+    // def.gradient/detjk
+    origD00[k] = a11*refD00[k] + a12*refD00[N_Functs+k];
+    origD00[N_Functs+k] = a21*refD00[k] + a22*refD00[N_Functs+k];
+  }
+}
+   
+void TTriaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD10,
+                                     double *refD01, double *origD10,
+                                     double *origD01)
+{
+  double a11 = xc1*rec_detjk;
+  double a12 = xc2*rec_detjk;
+  double a21 = yc1*rec_detjk;
+  double a22 = yc2*rec_detjk;
+  for(int k = 0; k < N_Functs; k++)
+  {
+    // Piola transformation
+    // phi = 1/|J| DF phi_hat
+    // def.gradient/detjk
+    
+    // x-component (k=0,N_Functs-1)
+    double refPiolaD10_k = a11*refD10[k] + a12*refD10[N_Functs+k];
+    double refPiolaD01_k = a11*refD01[k] + a12*refD01[N_Functs+k];
+    origD10[k] = ( yc2*refPiolaD10_k - yc1*refPiolaD01_k) * rec_detjk;
+    origD01[k] = (-xc2*refPiolaD10_k + xc1*refPiolaD01_k) * rec_detjk;
+    
+    // y-component (k=N_Functs,BaseVectDim*N_Functs-1)
+    refPiolaD10_k = a21*refD10[k] + a22*refD10[N_Functs+k];
+    refPiolaD01_k = a21*refD01[k] + a22*refD01[N_Functs+k];
+    origD10[k+N_Functs] = ( yc2*refPiolaD10_k - yc1*refPiolaD01_k) * rec_detjk;
+    origD01[k+N_Functs] = (-xc2*refPiolaD10_k + xc1*refPiolaD01_k) * rec_detjk;
+  }// endfor k
+}

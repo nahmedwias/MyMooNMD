@@ -129,7 +129,7 @@ class TTetraIsoparametric : public TRefTrans3D
     void GetOrigValues(int N_Sets, BaseFunct3D *BaseFunct,
                        int N_Points, double *xi, double *eta, double *zeta,
                        QuadFormula3D QuadFormula,
-                       boolean *Needs2ndDer);
+                       bool *Needs2ndDer);
 
     /** calculate functions and derivatives from reference element
         to original element */

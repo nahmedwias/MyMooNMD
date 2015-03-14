@@ -6,37 +6,19 @@
 // routines which are used for the different temporal discretizations
 //
 // ======================================================================
+#ifndef __TIMEDISCROUT__
+#define __TIMEDISCROUT__
 
 /******************************************************************************/
 /*                                                                            */
 /* GENERAL                                                                    */
 /*                                                                            */
 /******************************************************************************/
-void SetTimeDiscParameters();
+void SetTimeDiscParameters(int increase_count = 0);
 
 int GetN_SubSteps();
 
 /******************************************************************************/
-/*                                                                            */
-/* Output of a square matrix                                                  */
-/*                                                                            */
-/******************************************************************************/
-void mat_ausgabe(int n_sqmatrices, TSquareMatrix2D **sqmatrices);
-
-/******************************************************************************/
-/*                                                                            */
-/* Output of rectangular matrices                                             */
-/*                                                                            */
-/******************************************************************************/
-void rmat_ausgabe(int n_sqmatrices, TMatrix2D **matrices);
-
-/******************************************************************************/
-/*                                                                            */
-/* Output of square matrix on level k                                         */
-/*                                                                            */
-/******************************************************************************/
-void mat_ausgabe1(int k, TSquareMatrix2D **sqmatrices);
-
 /*                                                                            */
 /* ROSENBROCK                                                                 */
 /*                                                                            */
@@ -77,3 +59,5 @@ void AllocateAuxiliaryVectorsDIRK(int &rb_order, int &RB_s,
 				  double* &B1, double* &B2,				
 				  double* RB_A,
 				  int N_Unknowns);
+
+#endif // __TIMEDISCROUT__

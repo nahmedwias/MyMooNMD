@@ -85,8 +85,10 @@ class TTetraAffin : public TRefTrans3D
     /** calculate functions and derivatives from reference element
         to original element */
     void GetOrigValues(double xi, double eta, double zeta, int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref, double *zetaref,
-                double *uorig, double *uxorig, double *uyorig, double *uzorig);
+                       double *uref, double *uxiref, double *uetaref, 
+                       double *zetaref,
+                       double *uorig, double *uxorig, double *uyorig, 
+                       double *uzorig, int _BaseVectDim = 1);
 
     /** calculate functions and derivatives from reference element
         to original element on joint, parameters on joint are p1, p2 */
@@ -110,7 +112,9 @@ class TTetraAffin : public TRefTrans3D
     void GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
         double &t21, double &t22, double &t23);
-
+    
+    /** @brief Piola transformation for vector basis */
+    void PiolaMapOrigFromRef(int N_Functs, double *refD000, double *origD000);
 };
 
 #endif
