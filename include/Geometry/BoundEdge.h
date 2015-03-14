@@ -74,12 +74,12 @@ class TBoundEdge : public TJoint
     int GetXYofT(double T, double &X, double &Y);
 
     /** return boundary component */
-    TBoundComp2D *GetBoundComp()
+    TBoundComp2D *GetBoundComp() const
     { return BoundComp; }
 
     /** return whether this is an interior joint */
-    virtual boolean InnerJoint() 
-    { return FALSE; }
+    virtual bool InnerJoint() const
+    { return false; }
     
     /** change the boundary component */
     void ChangeBoundComp(TBoundComp2D *New_BoundComp)

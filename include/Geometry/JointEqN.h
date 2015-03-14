@@ -47,8 +47,8 @@ class TJointEqN : public TJoint
     { return new TJointEqN(NULL); }
 
     /** return whether this is an interior joint */
-    virtual boolean InnerJoint()
-    { return TRUE; }
+    virtual bool InnerJoint() const
+    { return true; }
 
 };
 

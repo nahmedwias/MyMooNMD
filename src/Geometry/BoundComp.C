@@ -11,11 +11,11 @@
 #include <BoundComp.h>
 
 // Constructor
-TBoundComp::TBoundComp(int id)
+TBoundComp::TBoundComp(int id, int ref)
 {
   ID = id;
-  
-  FreeBoundaryStatus = FALSE;
+  refID = ref;
+  FreeBoundaryStatus = false;
 }
 
 // Methods

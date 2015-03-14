@@ -34,24 +34,27 @@ class TBoundComp
     /** TRUE if component is on free boundary */
     bool FreeBoundaryStatus;
     
+    /** reference identifier */
+    int refID;
+    
   public:
     // Constructor
-    TBoundComp(int id);
+    TBoundComp(int id, int ref = -1);
 
     // Methods
     /** read parameter from input file */
     virtual int ReadIn(std::ifstream &dat) = 0;
 
     /** return ID */
-    int GetID()
+    int GetID() const
     { return ID; }
 
     /** get type of component */
-    BoundTypes GetType()
+    BoundTypes GetType() const
     { return Type; }
 
     /** get free boundary status */
-    bool IsFreeBoundary()
+    bool IsFreeBoundary() const
     { return FreeBoundaryStatus; }
 
     /** set free boundary status */
@@ -59,7 +62,16 @@ class TBoundComp
     { FreeBoundaryStatus = status; }
     
     void ChangeType(BoundTypes New_Type)
-     { Type = New_Type; }    
+     { Type = New_Type; }
+     
+     /** set reference */
+    void SetRefID(int _ref)
+    { refID=_ref; }
+
+    /** return reference */
+    int GetRefID() const
+    { return refID; }
+
 };
 
 #endif

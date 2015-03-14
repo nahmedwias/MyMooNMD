@@ -13,7 +13,8 @@
 #ifndef __EDGE__
 #define __EDGE__
 
-#include <AllClasses.h>
+#include <Vertex.h>
+#include <BaseCell.h>
 #include <MooNMD_Io.h>
 #include <Constants.h>
 

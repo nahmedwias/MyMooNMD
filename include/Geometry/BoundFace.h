@@ -42,8 +42,8 @@ class TBoundFace : public TJoint
     virtual TJoint *NewInst();
 
     /** return whether this is an interior joint */
-    virtual boolean InnerJoint()
-    { return FALSE; }
+    virtual bool InnerJoint()  const
+    { return false; }
 
     /** return boundary component */
     TBoundComp3D *GetBoundComp()

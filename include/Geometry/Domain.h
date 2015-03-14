@@ -31,6 +31,8 @@ struct TMortarFaceStruct
 typedef struct TMortarFaceStruct TMortarFace;
 #endif
 
+/** contains the boundary description, the virtual cell
+    tree and macro grid */
 class TDomain
 {
   protected:
@@ -128,6 +130,8 @@ class TDomain
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
+    
+    int CloseGrid(int level);
 #endif
 
 #ifdef __2D__
@@ -204,10 +208,14 @@ class TDomain
       /** @brief make initial 2D grid */
       int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
                    int NVE);
+      /** @brief make initial 2D grid, extended version which sets ReferenceID
+       *         in cells */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE);
     #else
-      /** @brief make initial 2D grid */
-      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
-                   int NVE, int *BoundFaces, int *FaceParam,
+      /** @brief make initial 3D grid */
+      int MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
+                   int N_Vertices, int NVE, int *BoundFaces, int *FaceParam,
                    int NBF, int NVpF,
                    int *Interfaceparam, int N_Interfaces);
       /** @brief make initial sandwich grid */
@@ -262,6 +270,13 @@ class TDomain
 
     /** @brief produce a collection with all cells returned by iterator it */
     TCollection *GetCollection(Iterators it, int level);
+    
+    /** @brief produce a collection with all cells of a given Collection which
+     *         have the given reference as ReferenceID 
+     * 
+     * This will give you a subcollection.
+     */
+    TCollection *GetCollection(TCollection *coll, int reference);
 
 #ifdef  _MPI 
     /** @brief produce a own collection with all cells returned by iterator it */
@@ -329,6 +344,7 @@ class TDomain
       void PeriodicSquares();
       void PeriodicSquaresLarge();
       void PeriodicRectangle_2_4();
+      void PeriodicTrianglesLarge();
       void QuadShishkin(double tau1, double tau2);
       void Rectangular(int dimx, int dimy);
       void TestTriaConf();

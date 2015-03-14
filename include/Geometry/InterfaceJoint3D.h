@@ -55,12 +55,12 @@ class TInterfaceJoint3D : public TJointEqN
     int CheckOrientation();
 
     /** check whether Neighb0 is "inside" the domain */
-    boolean CheckInside(TBaseCell *Me)
+    bool CheckInside(TBaseCell *Me)
     { 
       if (Neighb0 == Me)
-        return TRUE;
+        return true;
       else
-        return FALSE;
+        return false;
     }
 };
 

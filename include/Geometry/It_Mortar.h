@@ -21,7 +21,7 @@ class TIt_Mortar : public TIt_Search
     int LocMortarFace[MAX_ItLevel];
 
     /** indicator for mortar side */
-    boolean MortarSide;
+    bool MortarSide;
 
   public:
     // Constructors

@@ -45,17 +45,17 @@ int TBdLine::GetXYofT(double T, double &X, double &Y)
 int TBdLine::GetTofXY(double X, double Y, double &T)
 {
   double T_X = -123, T_Y = -123;
-  boolean testX = FALSE, testY = FALSE;
+  bool testX = false, testY = false;
 
   if (ABS(delX) > 0.0001)
     T = T_X = (X - Xstart) / delX;
   else
-    if (ABS(X - Xstart) < 0.0001) testX = TRUE;
+    if (ABS(X - Xstart) < 0.0001) testX = true;
   
   if (ABS(delY) > 0.0001)
     T = T_Y = (Y - Ystart) / delY;
   else
-    if (ABS(Y - Ystart) < 0.0001) testY = TRUE;
+    if (ABS(Y - Ystart) < 0.0001) testY = true;
 
   if (T < -0.001 || T > 1.001 || (!(testX || testY) && ABS(T_X - T_Y) > 1e-6))
     return -1;

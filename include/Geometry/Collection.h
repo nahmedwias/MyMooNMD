@@ -43,11 +43,11 @@ class TCollection
     TCollection(int n_cells, TBaseCell **cells);
 
     /** @brief return number of cells */
-    int GetN_Cells()
+    int GetN_Cells() const
     { return N_Cells; }
 
     /** @brief return Cell with index i in Cells-array */
-    TBaseCell *GetCell(int i)
+    TBaseCell *GetCell(int i) const
     { return Cells[i]; }
 
     /** @brief destructor: delete arrays */

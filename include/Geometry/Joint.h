@@ -30,7 +30,7 @@ struct StoreGeom
 {
   TVertex *Vertices[MAXN_nVpoJ];
   TJoint *Joints[MAXN_nJpoJ];
-  boolean Filled;
+  bool Filled;
 };
 
 #ifdef __MORTAR__
@@ -38,7 +38,7 @@ struct StoreGeom
   {
     TVertex **Vertices;
     TJoint **Joints;
-    boolean Filled;
+    bool Filled;
   };
 
   typedef struct StoreGeomMortarStruct StoreGeomMortar;
@@ -73,7 +73,7 @@ class TJoint
     // Methods
     /** return type */
     JointType GetType()
-    { return ID; }
+    { return ID; } const
     
     void ChangeType(JointType New_ID)
      {ID = New_ID;}
@@ -87,8 +87,11 @@ class TJoint
     { MapType = maptype; }
 
     /** return mapper type */
-    int GetMapType()
+    int GetMapType() const
     { return MapType; }
+    
+    /** Function is used to get local edge index on neighboured element */
+    int GetNeighbourEdgeIndex(TBaseCell*, int);
 #endif
 
     /** check the refinement pattern on both sides for matching,
@@ -110,22 +113,22 @@ class TJoint
     /** set the neighbour to Neighb */
     int SetNeighbour(TBaseCell *Neighb);
     /** return the neighbour of this joint which is not equal to Me */
-    TBaseCell *GetNeighbour(TBaseCell *Me);
+    TBaseCell *GetNeighbour(TBaseCell *Me) const;
 
     /** set neighbour i to Neighb */
     int SetNeighbour(int i, TBaseCell *Neighb);
     /** return neighbour with number i */
-    TBaseCell *GetNeighbour(int i);
+    TBaseCell *GetNeighbour(int i) const;
 
     /** remove a neighbour */
     void Delete(TBaseCell *Neighb);
 
     /** function for debug purpose only */
-    TBaseCell *GetNeighb(int i)
+    TBaseCell *GetNeighb(int i) const
     { return(i ? Neighb1 : Neighb0); }
 
     /** return whether this is an interior joint */
-    virtual boolean InnerJoint() = 0;
+    virtual bool InnerJoint() const = 0;
 
     #ifdef __3D__
       /** return mapper of refined vertices and faces */

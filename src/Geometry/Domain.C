@@ -557,8 +557,11 @@ int TDomain::GenInitGrid()
     CellTree[i]->SetVertex(2, NewVertices[outt.trianglelist[3*i + 2]]);
 
     if(N_Regions)
+    {
       ((TMacroCell *) CellTree[i])->SetSubGridID(
           (int)(outt.triangleattributelist[i]+0.05));
+      CellTree[i]->SetReference_ID((int)(outt.triangleattributelist[i]+1.05));
+    }
     else
       ((TMacroCell *) CellTree[i])->SetSubGridID(0);
   }
@@ -761,61 +764,57 @@ void TDomain::Init(char *PRM, char *GEO)
   int Flag;
 
   if(PRM)
-   { ReadBdParam(PRM, Flag); }
+  { ReadBdParam(PRM, Flag); }
 
   if (!strcmp(GEO, "InitGrid"))
-   {
+  {
     GenInitGrid();
-   }
+  }
+  else if (!strcmp(GEO, "TwoTriangles"))
+  {
+    TwoTriangles();
+  }
   else
-    if (!strcmp(GEO, "TwoTriangles"))
-    {
-      TwoTriangles();
-    }
-    else
-      if (!strcmp(GEO, "TwoTrianglesRef"))
-      {
-        TwoTrianglesRef();
-      }
-      else
-        if (!strcmp(GEO, "UnitSquare"))
-        {
-          UnitSquare();
-        }
-        else
-          if (!strcmp(GEO, "UnitSquareRef"))
-          {
-            UnitSquareRef();
-          }
-          else
-            if (!strcmp(GEO, "SquareInSquare"))
-            {
-              SquareInSquare();
-            }
-            else
-              if (!strcmp(GEO, "SquareInSquareRef"))
-              {
-                SquareInSquareRef();
-              }
-              else
-                if (!strcmp(GEO, "PeriodicSquares"))
-                {
-                  PeriodicSquares();
-                }
-                else
-                  if (!strcmp(GEO, "PeriodicSquaresLarge"))
-                  {
-                    PeriodicSquaresLarge();
-                  }
-                  else
-                     if (!strcmp(GEO, "PeriodicRectangle_2_4"))
-                     {
-                       PeriodicRectangle_2_4();
-                     }
-                     else
-                        ReadGeo(GEO);
+  if (!strcmp(GEO, "TwoTrianglesRef"))
+  {
+    TwoTrianglesRef();
+  }
+  else if (!strcmp(GEO, "UnitSquare"))
+  {
+    UnitSquare();
+  }
+  else if (!strcmp(GEO, "UnitSquareRef"))
+  {
+    UnitSquareRef();
+  }
+  else if (!strcmp(GEO, "SquareInSquare"))
+  {
+    SquareInSquare();
+  }
+  else if (!strcmp(GEO, "SquareInSquareRef"))
+  {
+    SquareInSquareRef();
+  }
+  else if (!strcmp(GEO, "PeriodicSquares"))
+  {
+    PeriodicSquares();
+  }
+  else if (!strcmp(GEO, "PeriodicSquaresLarge"))
+  {
+    PeriodicSquaresLarge();
+  }
+  else if (!strcmp(GEO, "PeriodicTrianglesLarge"))
+  {
+    PeriodicTrianglesLarge();
+  }
+  else if (!strcmp(GEO, "PeriodicRectangle_2_4"))
+  {
+    PeriodicRectangle_2_4();
+  }
+  else
+     ReadGeo(GEO);
 }
-#else
+#else // 3D
 void TDomain::Init(char *PRM, char *GEO)
 {
   int IsSandwich = 0;
@@ -912,7 +911,8 @@ int TDomain::PS(const char *name, TCollection *Coll)
     return -1;
   }
 
-  cout << "Generating postscript file " << name << endl;
+  if(TDatabase::ParamDB->SC_VERBOSE)
+    OutPut(" Generating postscript file " << name << endl);
 
   N_ = Coll->GetN_Cells();
   
@@ -1141,20 +1141,20 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
 
   if (coarsetol>=reftol)
     coarsetol=0.001*reftol;
+  // minimal fraction of cells to refine
   min_fraction_to_change=TDatabase::ParamDB->MIN_FRACTION_TO_CHANGE; 
-                                  // minimal fraction of cells to refine
 
-  decrease_reftol_factor=TDatabase::ParamDB->DECREASE_REFTOL_FACTOR; 
-                                  // decrease reftol if necessary by this
+  // decrease reftol if necessary by this
+  decrease_reftol_factor=TDatabase::ParamDB->DECREASE_REFTOL_FACTOR;
 
+  // increase coarsetol if necessary by this
   increase_coarsetol_factor=TDatabase::ParamDB->INCREASE_COARSETOL_FACTOR; 
-                                  // increase coarsetol if necessary by this
 
+  // fraction of global error    
   fraction_of_error=TDatabase::ParamDB->FRACTION_OF_ERROR;
-                                  // fraction of global error    
 
+  // maximal geo level of a cell
   max_cell_level=TDatabase::ParamDB->MAX_CELL_LEVEL;
-                                  // maximal geo level of a cell
 
   if (refine_strategy==0)         // compare with the maximal local error
   {
@@ -1188,15 +1188,19 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
         reftol*=decrease_reftol_factor;
         coarsetol *=increase_coarsetol_factor;
       }
-      OutPut("total " << N_ << " changed " <<  changed << endl);
+      if(TDatabase::ParamDB->SC_VERBOSE > 1)
+        OutPut("total " << N_ << " changed " <<  changed << endl);
       it++;
     }
     if (ConfClosure)
     {
-      cout << " before " << endl;
+      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
+        cout << " before " << endl;
       MakeConfClosure();
-      cout << " after " << endl;
-       return 0;
+      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
+        cout << " after " << endl;
+      
+      return 0;
     }
     else
     {  
@@ -1236,9 +1240,10 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
           ;
         }
       }
-      OutPut("total " << N_ << " changed " <<  changed << " global error "
-           << eta << " error of refined cells " << sqrt(sum_local_errors)
-           << endl);
+      if(TDatabase::ParamDB->SC_VERBOSE > 1)
+        OutPut("total " << N_ << " changed " <<  changed << " global error "
+               << eta << " error of refined cells " << sqrt(sum_local_errors)
+               << endl);
       if ((changed< min_changed)||(sqrt(sum_local_errors) <=
            fraction_of_error * eta))
       {                  // criteria not fulfilled, change tolerances
@@ -1262,6 +1267,7 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
   return 0;
 }
 
+#ifdef __2D__
 int TDomain::MakeConfClosure()
 {
   TBaseCell *CurrCell, *parent;
@@ -1401,6 +1407,470 @@ int TDomain::MakeConfClosure()
   return 0;
 }
 
+#else
+
+int TDomain::CloseGrid(int level)
+{
+  TBaseCell *CurrCell, *Cell, *Child, *Neigh;
+  int i, j, k, clip;
+  int N_Joints, N_Edges, N_Children;
+  int info, LocEdge, CurrLocEdge, LocFace, NeighLocFace;
+  int MapType;
+  int first_bis, second_bis, neigh_first_bis, neigh_second_bis, neigh_type;
+  TJoint *Joint, *LastJoint;
+  const int *TmpEF, *TmpEF2;
+  int TmpFEMaxLen, TmpEFMaxLen, TmpEF2MaxLen;
+  bool RefineRegular;
+  Refinements NeighFaceRef, MyFaceRef;
+  int N_ToRefine = 0, N_Refinements[64];
+
+  // Reset ClipBoards
+  TDatabase::IteratorDB[It_EQ]->Init(level);
+  k=0;
+  while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+    {
+      N_Children = CurrCell->GetRefDesc()->GetN_Children();
+
+      // Check if CurrCell is refined irregularly but has a son which has to be refined
+      if(2 <= N_Children && N_Children < 8) // CurrCell is refined irregularly
+  {
+    RefineRegular = false;
+
+    for(i=0; i<N_Children; ++i)
+      {
+        Child = CurrCell->GetChild(i);
+        // Check if Child is refined directly
+
+        //if(Child->GetRefDesc()->GetType() != NoRef) // TODO
+        if(Child->GetClipBoard() > 0)
+    RefineRegular = true;
+
+        // Check if Child contains an edge that is refined by a neighbour
+        if(!RefineRegular)
+    {         
+      // TODO
+    }
+
+        if(RefineRegular)
+    {
+      CurrCell->SetRegRefine();
+      break;
+    }
+        else
+    CurrCell->SetNoRefinement();
+      }
+  }
+
+      // Initialize Clipboard
+      if(CurrCell->GetRefDesc()->GetType() >= TetraReg && 
+   CurrCell->GetRefDesc()->GetType() <= TetraReg2)
+  CurrCell->SetClipBoard(63);
+      else
+  CurrCell->SetClipBoard(-1);
+    }
+
+  /*
+   * Set Clipboard to 0 if element is unrefined but contains an edge that is refined by an other tetrahedron
+   */
+  k = -1;
+  TDatabase::IteratorDB[It_EQ]->Init(level);
+  while (Cell = TDatabase::IteratorDB[It_EQ]->Next(info))
+    {
+      Cell->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
+      N_Edges = Cell->GetN_Edges();
+
+      k++;
+      if(Cell->GetClipBoard() == 63)
+  {
+    for (i=0;i<N_Edges;i++)
+      {
+        if(Cell->GetClipBoard() & pow(2, i) == 0)
+    continue;
+
+        LocEdge = i;
+        for(j=0; j<TmpEFMaxLen; ++j)
+    {
+      LastJoint = Cell->GetJoint(TmpEF[2*LocEdge+j]);
+
+      if(!(CurrCell = LastJoint->GetNeighbour(Cell)))
+        continue;
+
+      CurrLocEdge = LastJoint->GetNeighbourEdgeIndex(Cell, LocEdge);
+
+      while(CurrCell != Cell && CurrCell)
+        {
+          // Check if Edge is refined in CurrCell
+          if(CurrCell->GetClipBoard() == -1)
+      {
+        CurrCell->SetClipBoard(0);
+        N_ToRefine++;
+      }
+
+          // Get next joint which contains this edge
+          CurrCell->GetShapeDesc()->GetEdgeFace(TmpEF2, TmpEF2MaxLen);
+          if(CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]) == LastJoint)
+      Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge+1]);
+          else
+      Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]);
+
+          // Get new element and the index of our edge in this element
+          CurrLocEdge = Joint->GetNeighbourEdgeIndex(CurrCell, CurrLocEdge);
+          CurrCell = Joint->GetNeighbour(CurrCell);
+          LastJoint = Joint;
+        }
+    } // j=0..N_JointsPerEdge
+      } // i=0..N_edges
+  }
+    }
+
+  while(N_ToRefine > 0)
+    {
+      TDatabase::IteratorDB[It_EQ]->Init(level);
+      k=0;
+      while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+  {
+    if(CurrCell->GetClipBoard() == 0)
+      {
+        //std::cout << "Scanning Cell " << k << "\n";
+        N_ToRefine += CurrCell->MakeConfClosure() - 1;
+      }
+    k++;
+  }
+    }
+      
+  k=-1;
+  TDatabase::IteratorDB[It_EQ]->Init(level);
+  while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+    {
+      k++;
+      clip = CurrCell->GetClipBoard();
+
+      switch(clip)
+  {
+    /*
+     * Unique Refinements
+     */
+    // NoRef
+  case 0:
+    std::cerr << "This should not happen\n";
+    break;
+  case -1:
+    CurrCell->SetNoRefinement();
+    break;
+    // Bisections
+  case 1:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis0]);
+    break;
+  case 2:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis1]);
+    break;
+  case 4:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis2]);
+    break;
+  case 8:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis3]);
+    break;
+  case 16:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis4]);
+    break;
+  case 32:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis5]);
+    break;
+    // Diagonal Bisections
+  case 33:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis05]);
+    break;
+  case 10:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis13]);
+    break;
+  case 20:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis24]);
+    break;
+    // QuadX
+  case 7:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraQuad0]);
+    break;
+  case 25:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraQuad1]);
+    break;
+  case 50:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraQuad2]);
+    break;
+  case 44:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraQuad3]);
+    break;
+    // Reg
+  case 63:
+    CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraReg]);
+    break;
+  case 3:
+  case 5:
+  case 9:
+  case 17:
+  case 6:
+  case 18:
+  case 34:
+  case 12:
+  case 36:
+  case 24:
+  case 40:
+  case 48:
+    // Determine Local Face Index of face which is refined by double bisection
+    switch(clip)
+      {
+      case 3: LocFace = 0; break;
+      case 5: LocFace = 0; break;
+      case 9: LocFace = 1; break;
+      case 17: LocFace = 1; break;
+      case 6: LocFace = 0; break;
+      case 18: LocFace = 2; break;
+      case 34: LocFace = 2; break;
+      case 12: LocFace = 3; break;
+      case 36: LocFace = 3; break;
+      case 24: LocFace = 1; break;
+      case 40: LocFace = 3; break;
+      case 48: LocFace = 2; break;
+      }
+
+    // Check if Neighbour is already refined
+    Joint = CurrCell->GetJoint(LocFace);
+    Neigh = Joint->GetNeighbour(CurrCell);
+
+    if(Neigh && Neigh->ExistChildren())
+      {
+        // Find Local Face Index at Neigh
+        for(NeighLocFace=0; NeighLocFace<Neigh->GetN_Faces(); ++NeighLocFace)
+    if(Joint == Neigh->GetJoint(NeighLocFace))
+      break;
+
+        if(NeighLocFace == Neigh->GetN_Faces())
+    {
+      std::cerr << "Face was not found at Neighbour\n";
+
+    }
+
+        NeighFaceRef = Neigh->GetRefDesc()->GetFaceRef(NeighLocFace);
+
+        MapType = Joint->GetMapType();
+
+        first_bis = (NeighFaceRef-TriBis01) / 2;
+        second_bis = (NeighFaceRef-TriBis01) % 2;
+        if(first_bis <= second_bis) second_bis++;
+
+        neigh_first_bis = ((2-first_bis) + MapType) % 3;
+        neigh_second_bis = ((2-second_bis) + MapType) % 3;
+
+        neigh_type = 2*neigh_first_bis + neigh_second_bis;
+        if(neigh_second_bis > neigh_first_bis) neigh_type--;
+
+        MyFaceRef = Refinements(TriBis01 + neigh_type);
+
+        switch(clip)
+    {
+      /*
+       * Non-unique refinements
+       */
+      // Bis0X
+    case 3:
+      if(MyFaceRef == TriBis01)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis01]);
+      else if(MyFaceRef == TriBis10)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis10]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 5:
+      if(MyFaceRef == TriBis02)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis02]);
+      else if(MyFaceRef == TriBis20)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis20]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 9:
+      if(MyFaceRef == TriBis20)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis03]);
+      else if(MyFaceRef == TriBis02)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis30]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 17:
+      if(MyFaceRef == TriBis21)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis04]);
+      else if(MyFaceRef == TriBis12)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis40]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+      // Bis 1X
+    case 6:
+      if(MyFaceRef == TriBis12)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis12]);
+      else if(MyFaceRef == TriBis21)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis21]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 18:
+      if(MyFaceRef == TriBis01)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis14]);
+      else if(MyFaceRef == TriBis10)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis41]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 34:
+      if(MyFaceRef == TriBis02)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis15]);
+      else if(MyFaceRef == TriBis20)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis51]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+      // Bis2X
+    case 12:
+      if(MyFaceRef == TriBis02)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis23]);
+      else if(MyFaceRef == TriBis20)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis32]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 36:
+      if(MyFaceRef == TriBis01)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis25]);
+      else if(MyFaceRef == TriBis10)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis52]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+      // Bis 3X
+    case 24:
+      if(MyFaceRef == TriBis01)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis34]);
+      else if(MyFaceRef == TriBis10)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis43]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    case 40:
+      if(MyFaceRef == TriBis21)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis35]);
+      else if(MyFaceRef == TriBis12)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis53]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+      // Bis 4X
+    case 48:
+      if(MyFaceRef == TriBis12)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis45]);
+      else if(MyFaceRef == TriBis21)
+        CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis54]);
+      else
+        std::cerr << "RefDesc does not fit to FaceRefDesc!\n";
+      break;
+    }
+      }
+    else
+      {
+        switch(clip)
+    {
+      /*
+       * Non-unique refinements
+       */
+      // Bis0X
+    case 3:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis01]);
+      break;
+    case 5:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis02]);
+      break;
+    case 9:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis03]);
+      break;
+    case 17:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis04]);
+      break;
+      // Bis 1X
+    case 6:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis12]);
+      break;
+    case 18:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis14]);
+      break;
+    case 34:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis15]);
+      break;
+      // Bis2X
+    case 12:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis23]);
+      break;
+    case 36:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis25]);
+      break;
+      // Bis 3X
+    case 24:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis34]);
+      break;
+    case 40:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis35]);
+      break;
+      // Bis 4X
+    case 48:
+      CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TetraBis45]);
+      break;
+    }
+      }
+
+
+    break;
+  default:
+    std::cout << "Undefined Reference Description: " << CurrCell->GetClipBoard() << "\n";
+    break;
+  }
+
+      CurrCell->Refine(level+1);
+    }
+}
+
+/**
+ * This function is used to set the right refinement descriptions to each cell such that the grid is conforming afterwards.
+ * After refinement of one ore more selected Cells this method has to be called.
+ *
+ * Max Winkler (23.02.2012)
+ */
+int TDomain::MakeConfClosure()
+{
+  TBaseCell *CurrCell, *Cell, *Child, *Neigh;
+  int m, i, j, k, clip;
+  int N_Joints, N_Edges, N_Children;
+  int info, LocEdge, CurrLocEdge, LocFace, NeighLocFace;
+  int MapType;
+  int first_bis, second_bis, neigh_first_bis, neigh_second_bis, neigh_type;
+  TJoint *Joint, *LastJoint;
+  const int *TmpEF, *TmpEF2;
+  int TmpFEMaxLen, TmpEFMaxLen, TmpEF2MaxLen;
+  int N_ToRefine, MaxLevel;
+  bool RefineRegular;
+  Refinements NeighFaceRef, MyFaceRef;
+
+  // Generate 1-regular grid
+  Gen1RegGrid();
+
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+  MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
+
+  for(m=MaxLevel; m>=0; --m)
+    {
+      CloseGrid(m);
+    }
+
+}
+#endif
+
+#ifdef __2D__
 int TDomain::Gen1RegGrid()
 {
   int MaxLevel, CurrLevel, info;
@@ -1408,17 +1878,30 @@ int TDomain::Gen1RegGrid()
 
   TDatabase::IteratorDB[It_Finest]->Init(0);
   MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-  
+
   for (CurrLevel=MaxLevel;CurrLevel>0;CurrLevel--)
   {
     TDatabase::IteratorDB[It_EQ]->Init(CurrLevel);
 
-    while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
+    while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
       if (!CurrCell->ExistChildren())
         CurrCell->Gen1RegGrid();
   }
   return 0;
 }
+#else
+int TDomain::Gen1RegGrid()
+{
+  TBaseCell* CurrCell;
+  int info;
+
+  TDatabase::IteratorDB[It_Finest]->Init(0);
+  while (CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))    
+      CurrCell->Gen1RegGrid();
+
+  return 0;
+}
+#endif
 
 int TDomain::ConvertQuadToTri(int type)
 {
@@ -1457,25 +1940,82 @@ int TDomain::ConvertQuadToTri(int type)
   return 0;
 }
 
+/*
+ Extract a subcollection from a collection object:
+*/
+TCollection *TDomain::GetCollection(TCollection *coll, int reference)
+{
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+    cout << " Domain::GetCollection with reference: " << reference << endl;
+  int n_cells;
+  TBaseCell **cells, *CurrCell;
+  TCollection *subcoll;
+
+  n_cells = 0;
+  for (int i=0;i<coll->GetN_Cells();i++)
+  {
+    CurrCell = coll->GetCell(i);
+    if (CurrCell->GetReference_ID()==reference)
+    {
+      n_cells++;
+    }
+  }
+
+  // fill array of cells
+  cells = new TBaseCell*[n_cells];
+  int j = 0;
+  for (int i=0;i<coll->GetN_Cells();i++)
+  {
+    CurrCell = coll->GetCell(i);
+    if (CurrCell->GetReference_ID()==reference)
+    {
+      cells[j] = CurrCell;
+      j++;
+    }
+  }
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+    cout << "TDomain::GetCollection() creating collection, n_cells = " << n_cells << endl;
+  // create collection from an array of cells
+  subcoll = new TCollection(n_cells, cells);
+  
+  return subcoll;
+}
+
+
+/*
+ Extract a collection from a Domain object:
+ For a given Iterator
+   - count how many cells it contain
+   - add cells to collection
+*/
 TCollection *TDomain::GetCollection(Iterators it, int level)
 {
   TCollection *coll;
   int i, n_cells, info;
   TBaseCell **cells, *CurrCell;
 
+  // initialize the iterator
+  // note:
+  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
+  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
   TDatabase::IteratorDB[it]->Init(level);
   n_cells=0;
+  // if the pointer to the next item is not empty increase number of cells
+  // info: set to the current level
   while (TDatabase::IteratorDB[it]->Next(info)) n_cells++;
 
+  // fill array of cells
   cells=new TBaseCell*[n_cells];
   TDatabase::IteratorDB[it]->Init(level);
   i=0;
   while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
   {
     cells[i]=CurrCell;
+    cells[i]->SetCellIndex(i);
     i++;
   }
 
+  // create collection from an array of cells
   coll=new TCollection(n_cells, cells);
 
   #ifdef  _MPI 

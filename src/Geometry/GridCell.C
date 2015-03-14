@@ -38,7 +38,7 @@ TGridCell::~TGridCell()
     exit (-1);
   }
 
-  delete Vertices;
+  delete [] Vertices;
 }
 
 // Methods
@@ -248,6 +248,7 @@ int TGridCell::MD_raw(std::ofstream &dat)
   return 0;
 }
 
+#ifdef __2D__
 int TGridCell::Gen1RegGrid()
 {
   int i, N_, ChildNumber, LocJointNum;
@@ -265,6 +266,7 @@ int TGridCell::Gen1RegGrid()
   {
     if (Joints[i]->GetType() != BoundaryEdge &&
         Joints[i]->GetType() != IsoBoundEdge)
+
       if (!Joints[i]->GetNeighbour(this))
       {
         ChildNumber = Parent->GetChildNumber(this);
@@ -275,22 +277,92 @@ int TGridCell::Gen1RegGrid()
           Parent->Ref1Reg(LocJointNum, RefCell);
       }
 
-#ifdef __2D__
     if (Joints[i]->GetType() == InterfaceJoint ||
         Joints[i]->GetType() == IsoInterfaceJoint)
       if (!Joints[i]->GetNeighbour(this))
         Ref1Reg(i, RefCell);
-#else
-    if (Joints[i]->GetType() == InterfaceJoint3D ||
-        Joints[i]->GetType() == IsoInterfaceJoint3D)
-      if (!Joints[i]->GetNeighbour(this))
-        Ref1Reg(i, RefCell);
-#endif
   }
 
   return 0;
 }
 
+#else
+
+int TGridCell::Gen1RegGrid()
+{
+  if(!Parent)
+    return 0;
+
+  int i, N_, CurrLocEdge;
+  const int *TmpCE, *TmpnEoE;
+  int MaxLen;
+  TRefDesc *ParentRefDesc = Parent->GetRefDesc(), *GrandParentRefDesc;
+  TBaseCell *RefCell;
+  TBaseCell* Grandfather, *CurrCell;
+  TJoint* LastJoint, *Joint;
+  const int *TmpEF, *TmpEF2;
+  int TmpEFMaxLen, TmpEF2MaxLen;
+
+  if(RefLevel > 1 && (Grandfather = Parent->GetParent()))
+  {
+    GrandParentRefDesc = Grandfather->GetRefDesc();
+    Grandfather->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
+
+    for(int i=0; i<Grandfather->GetN_Edges(); ++i)
+    {
+      for(int j=0; j<TmpEFMaxLen; ++j)
+      {
+        LastJoint = Grandfather->GetJoint(TmpEF[2*i+j]);
+
+        if(!(CurrCell = LastJoint->GetNeighbour(Grandfather)))
+          continue;
+
+        CurrLocEdge = LastJoint->GetNeighbourEdgeIndex(Grandfather, i);
+
+        while(CurrCell != Grandfather && CurrCell)
+        {
+          if(CurrLocEdge == -1)
+          {
+            std::cout << "Error!\n"; exit(-1);
+          }
+          
+          // If neighbour is not refined, refine it regular
+          //if(CurrCell->GetRefDesc()->GetType() == NoRef)
+          if(CurrCell->GetN_Children() == 0)
+          {
+            CurrCell->SetRegRefine();
+            CurrCell->Refine(RefLevel-1);
+            
+            if(RefLevel>2)
+            {
+              for(int k=0; k<CurrCell->GetN_Children(); ++k)
+                CurrCell->GetChild(k)->Gen1RegGrid();
+            }
+          }
+          
+          // Get next joint which contains this edge
+          CurrCell->GetShapeDesc()->GetEdgeFace(TmpEF2, TmpEF2MaxLen);
+          if(CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]) == LastJoint)
+            Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge+1]);
+          else
+            Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]);
+
+          // Get new element and the index of our edge in this element
+          CurrLocEdge = Joint->GetNeighbourEdgeIndex(CurrCell, CurrLocEdge);
+          CurrCell = Joint->GetNeighbour(CurrCell);
+          
+          LastJoint = Joint;
+        }
+      } // j=0..N_JointsPerEdge
+    }
+  }
+
+  return 0;
+}
+#endif
+
+
+#ifdef __2D__
 int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
 {
   int ChildNumber;
@@ -322,6 +394,42 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
   return 0;
 }
 
+#else
+
+int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
+{
+  int ChildNumber;
+  TBaseCell *LocCell;
+  const int *TmpCF, *TmpnFoF;
+  int MaxLen;
+  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+
+  ParentRefDesc->GetChildFace(TmpCF, MaxLen);
+  ParentRefDesc->GetNewFaceOldFace(TmpnFoF);
+
+  ChildNumber = Parent->GetChildNumber(this);
+
+  LocCell = Parent->GetJoint(TmpnFoF[TmpCF[ChildNumber * MaxLen +
+              LocJointNum]])->GetNeighbour(Parent);
+
+  if (LocCell)
+  {
+    LocCell->SetRegRefine();
+    LocCell->Refine(RefLevel);
+  }
+  else
+  {
+    cerr << "Error: generation of 1-regular grid impossible" << endl;
+    return -1;
+  }
+
+  RefCell = LocCell;
+  return 0;
+}
+#endif
+
+
+#ifdef __2D__
 int TGridCell::MakeConfClosure()
 {
   int i, clip, N_;
@@ -377,6 +485,187 @@ int TGridCell::MakeConfClosure()
   return 0;
 }
 
+#else // 3D
+int TGridCell::MakeConfClosure()
+{
+  int i, j, clip, N_Edges, LocEdge, LocFace, LocFace2, CurrLocEdge, N_ToRefine=0, CurrClip;
+  TBaseCell *Neigh, *CurrCell;
+  const int *TmpEF, *TmpEF2;
+  int TmpEFMaxLen, TmpEF2MaxLen;
+  TJoint *Joint, *LastJoint;
+  bool EdgeRefined;
+
+  if(Children)
+    {
+      Derefine();
+      std::cerr << "Element has already been refined\n";
+      //exit(-1);
+    }
+
+  clip = 0; //GetClipBoard(); 
+
+  GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
+  N_Edges = GetN_Edges();
+
+  for (i=0;i<N_Edges;i++)
+    {
+      EdgeRefined = false;
+      LocEdge = i;
+      for(j=0; j<TmpEFMaxLen; ++j)
+        {
+    LastJoint = GetJoint(TmpEF[2*LocEdge+j]);
+
+    if(!(CurrCell = LastJoint->GetNeighbour(this)))
+      continue;
+
+    CurrLocEdge = LastJoint->GetNeighbourEdgeIndex(this, LocEdge);
+
+    while(CurrCell != this && CurrCell)
+            {
+        if(CurrLocEdge == -1)
+                {
+      std::cout << "Error!\n"; exit(-1);
+                }
+
+        // Check if Edge is refined in CurrCell
+        CurrClip = CurrCell->GetClipBoard();
+                
+        if(CurrClip != -1 && ((CurrClip >> CurrLocEdge) & 1))
+                {
+      // Check if Cell is already marked for refinement
+      if((clip >> LocEdge) & 1)
+        std::cout << "Should not happen\n";
+
+      clip |= 1 << LocEdge;
+      EdgeRefined = true;
+      break;
+                }
+
+        // Get next joint which contains this edge
+        CurrCell->GetShapeDesc()->GetEdgeFace(TmpEF2, TmpEF2MaxLen);
+        if(CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]) == LastJoint)
+    Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge+1]);
+        else
+    Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]);
+
+        // Get new element and the index of our edge in this element
+        CurrLocEdge = Joint->GetNeighbourEdgeIndex(CurrCell, CurrLocEdge);
+        CurrCell = Joint->GetNeighbour(CurrCell);
+
+        LastJoint = Joint;
+            }
+
+    if(EdgeRefined)
+      break;
+        } // j=0..N_JointsPerEdge
+
+      //if(EdgeRefined)
+      //    std::cout << "Edge " << i << " is refined by an other element\n";
+    } // i=0--N_edges
+
+  // Check if a RefDesc exists for this setting
+  switch(clip)
+    {
+      // NoRef
+    case 0:
+      break;
+      std::cout << "Unexpected behaviour!\n";
+      exit(-1);
+      // Bisections
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+    case 16:
+    case 32:
+      // Bis0X
+    case 3:
+    case 5:
+    case 9:
+    case 17:
+    case 33:
+      // Bis 1X
+    case 6:
+    case 10:
+    case 18:
+    case 34:
+      // Bis2X
+    case 12:
+    case 20:
+    case 36:
+      // Bis 3X
+    case 24:
+    case 40:
+      // Bis 4X
+    case 48:
+      // QuadX
+    case 7:
+    case 25:
+    case 50:
+    case 44:
+      break;
+      // Refinement Rule was found
+      // Reg
+    case 63:
+    default:
+      // No Suitable Refinement Rule was found
+
+      N_Edges = GetN_Edges();
+      for(i=0; i<N_Edges; ++i)
+        {
+    // Check if edge is marked for refinement
+    if((clip >> i) & 1 == 1) continue;
+
+    LocEdge = i;
+    for(j=0; j<TmpEFMaxLen; ++j)
+            {
+        LastJoint = GetJoint(TmpEF[2*LocEdge+j]);
+
+        if(!(CurrCell = LastJoint->GetNeighbour(this)))
+    continue;
+
+        CurrLocEdge = LastJoint->GetNeighbourEdgeIndex(this, LocEdge);
+
+        while(CurrCell != this && CurrCell)
+                {
+      // Add this cell to Gk
+      if(CurrCell->GetClipBoard() > 0 && ((CurrCell->GetClipBoard() >> CurrLocEdge) & 1) == 1)
+        std::cout << "Edge has been marked for refinement already before\n";
+
+      if(CurrCell->GetClipBoard() != 0)
+        {
+          N_ToRefine++;         
+          CurrCell->SetClipBoard(0);
+        }
+      
+      // Get next joint which contains this edge
+      CurrCell->GetShapeDesc()->GetEdgeFace(TmpEF2, TmpEF2MaxLen);
+      if(CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]) == LastJoint)
+        Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge+1]);
+      else
+        Joint = CurrCell->GetJoint(TmpEF2[2*CurrLocEdge]);
+
+      // Get new element and the index of our edge in this element
+      CurrLocEdge = Joint->GetNeighbourEdgeIndex(CurrCell, CurrLocEdge);
+      CurrCell = Joint->GetNeighbour(CurrCell);
+      LastJoint = Joint;
+                }
+            } // j=0..N_JointsPerEdge
+        }
+      clip = 63;
+    }
+
+  if(clip == 0)
+    std::cerr << "Fehler!\n";
+
+  SetClipBoard(clip);
+
+  return N_ToRefine;
+}
+#endif
+
+
+#ifdef __2D__
 int TGridCell::Check1Reg()
 {
   int i, N_;
@@ -393,6 +682,25 @@ int TGridCell::Check1Reg()
 
   return 0;
 }
+#else
+int TGridCell::Check1Reg()
+{
+  int i, N_;
+  TBaseCell *Neighb;
+
+  N_ = GetN_Faces();
+  for (i=0;i<N_;i++)
+    if (Joints[i]->InnerJoint())
+      if (!(Neighb = Joints[i]->GetNeighbour(this)))
+      {
+        Ref1Reg(i, Neighb);
+        Neighb->Check1Reg();
+      }
+
+  return 0;
+}
+#endif
+
 
 #ifdef __2D__
 int TGridCell::SetRegRefine()
@@ -715,6 +1023,12 @@ bool TGridCell::PointInCell(double X, double Y)
 
     DX = X - DX;
     DY = Y - DY;
+
+    // check if given point is identical to vertex
+    if(DX*DX + DY*DY < 1e-8)
+    {
+      return true;
+    }
 
 //     len = sqrt(DX*DX+DY*DY);
 //     DX /= len;
