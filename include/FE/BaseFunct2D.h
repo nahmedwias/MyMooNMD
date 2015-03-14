@@ -37,7 +37,7 @@ class TBaseFunct2D
     DoubleFunct2D *Functions[N_MultiIndices2D];
 
     /** status of changability of entries */
-    boolean changable;
+    bool changable;
 
     /** reference element used for this set of base functions */
     BF2DRefElements RefElement;
@@ -116,11 +116,11 @@ class TBaseFunct2D
     TBaseFunct2D(int dimension);
 
     /** return the dimension of local space */
-    int GetDimension() 
+    int GetDimension() const
     { return Dimension; }
 
     /** return BaseFunct_ID */
-    BaseFunct2D GetID()
+    BaseFunct2D GetID() const
     { return BaseFunct; }
 
     /** return the values for derivative MultiIndex at (xi,eta) */
@@ -146,7 +146,7 @@ class TBaseFunct2D
 
     /** set status to unchangable */
     void SetUnchangable()
-      { changable = FALSE; };
+      { changable = false; };
 
     /** set function for derivative MultiIndex */
     void SetFunction(MultiIndex2D MultiIndex, DoubleFunct2D* function);
@@ -161,23 +161,23 @@ class TBaseFunct2D
     TGridCell *GenerateRefElement();
 
     /** return reference element */
-    BF2DRefElements GetRefElement()
+    BF2DRefElements GetRefElement() const
       { return RefElement; };
 
     /** return polynomial degree */
-    int GetPolynomialDegree()
+    int GetPolynomialDegree() const
       { return PolynomialDegree; };
 
     /** return accuracy */
-    int GetAccuracy()
+    int GetAccuracy() const
       { return Accuracy; };
 
     /** return number of changeable basis functions per joint */
-    int GetN_BF2Change()
+    int GetN_BF2Change() const
       { return N_BF2Change; }
 
     /** return array with basis function indices */
-    int **GetBF2Change()
+    int **GetBF2Change() const
       { return BF2Change; }
 
     /** change basis functions on cell if needed */
@@ -187,7 +187,7 @@ class TBaseFunct2D
     void ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values);
     
     /** return the dimension of the vector basis function */
-    int GetBaseVectDim() 
+    int GetBaseVectDim() const
     { return BaseVectDim; }
     
 

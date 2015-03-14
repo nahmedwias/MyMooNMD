@@ -35,7 +35,7 @@ class TBaseFunct1D
     DoubleFunct1D *Functions[N_MultiIndices1D];
 
     /** status of changability of entries */
-    boolean changable;
+    bool changable;
 
     /** polynomial degree */
     int PolynomialDegree;
@@ -77,7 +77,7 @@ class TBaseFunct1D
 
     /** set status to unchangable */
     void SetUnchangable()
-      { changable = FALSE; };
+      { changable = false; };
 
     /** set function for derivative MultiIndex */
     void SetFunction(MultiIndex1D MultiIndex, DoubleFunct1D* function);

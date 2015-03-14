@@ -45,6 +45,62 @@ TAuxParam3D::TAuxParam3D(
   N_BaseFunct = new int[N_FEValues];
 }
 
+TAuxParam3D::TAuxParam3D()
+ : TAuxParam3D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL)
+{
+  
+}
+
+
+/** set aux parameters giving a keyword*/
+TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
+{
+  if(name=="Velocity") // for Navier-Stokes
+  {
+    N_FESpace3D = 0;
+    FESpaces3D = NULL;
+    
+    N_FEFunction3D = 3;
+    FEFunctions3D = fefunctions3d;
+    
+    N_ParamFct = 1;
+    N_FEValues = 3;
+    
+    //see TNSE3D_FixPo.C
+    ParameterFct=new ParamFct*[1];
+    ParameterFct[0] = &Velocity_Fct; // see below in this file
+    FEValue_FctIndex =new int[3];
+    FEValue_FctIndex[0] = 0;
+    FEValue_FctIndex[1] = 1;
+    FEValue_FctIndex[2] = 2;
+    
+    FEValue_MultiIndex=new MultiIndex3D[3];
+    FEValue_MultiIndex[0]= D000;
+    FEValue_MultiIndex[1]= D000;
+    FEValue_MultiIndex[2]= D000;    
+    
+    N_Parameters = 3;
+    BeginParameter =new int[1];
+    BeginParameter[0]=0;
+    
+  }
+  else
+  {
+    ErrMsg(" AuxParam3D:: Constructor: ERROR, name " << name 
+           << " for initialization not imlpemented ");
+    exit(1);
+  }
+  
+  Temp = new double[3 + N_FEValues];
+
+  Values = new double* [N_FEValues];
+  OrigValues = new double** [N_FEValues];
+  Index = new int* [N_FEValues];
+  N_BaseFunct = new int[N_FEValues];
+}
+
+
+
 /** return all parameters at all quadrature points */
 void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
                               double *Xi, double *Eta, double *Zeta,
@@ -122,9 +178,17 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
 /** destructor */
 TAuxParam3D::~TAuxParam3D()
 {
-  delete Temp;
-  delete Values;
-  delete OrigValues;
-  delete Index;
-  delete N_BaseFunct;
+  delete [] Temp;
+  delete [] Values;
+  delete [] OrigValues;
+  delete [] Index;
+  delete [] N_BaseFunct;
+}
+
+
+void Velocity_Fct(double *inputList, double *outputValues)
+{
+  outputValues[0] = inputList[3];                // u1old
+  outputValues[1] = inputList[4];                // u2old
+  outputValues[2] = inputList[5];                // u3old
 }

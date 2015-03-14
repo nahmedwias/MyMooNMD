@@ -46,7 +46,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
   Functions[D11]=derivativesxieta;
   Functions[D02]=derivativesetaeta;
 
-  changable=FALSE;
+  changable = false;
 
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
@@ -56,7 +56,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
   
   //default is a scalar basis function
   BaseVectDim = 1;
-  SpaceDeptBasis = FALSE;
+  SpaceDeptBasis = false;
   
 }
 
@@ -87,7 +87,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
   Functions[D11]=derivativesxieta;
   Functions[D02]=derivativesetaeta;
 
-  changable=FALSE;
+  changable = false;
 
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
@@ -96,7 +96,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
   BF2Change = bf2change;
   
   BaseVectDim = baseVectDim;
-  SpaceDeptBasis = FALSE;
+  SpaceDeptBasis = false;
 }
 
 /** constructor, fill in all information with space dept. basis functions*/
@@ -128,7 +128,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
   Functions[D11]=derivativesxieta;
   Functions[D02]=derivativesetaeta;
 
-  changable=FALSE;
+  changable = false;
 
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
@@ -147,8 +147,8 @@ TBaseFunct2D::TBaseFunct2D(int dimension)
 {
   Dimension = dimension;
 
-  changable = TRUE;
-  SpaceDeptBasis = FALSE;
+  changable = true;
+  SpaceDeptBasis = false;
 }
 
 /** return the values for derivative MultiIndex at all
@@ -170,7 +170,7 @@ void TBaseFunct2D::GetValues(int N_Points, double *zeta,
                              int joint, double **Values)
 {
   int i;
-  double xi[MaxN_QuadPoints_1D], eta[MaxN_QuadPoints_1D];
+  double xi[N_Points], eta[N_Points];
 
   switch(RefElement)
   {
@@ -246,7 +246,7 @@ void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
                                   double *zeta, int joint, double **Values)
 {
   int i;
-  double xi[MaxN_QuadPoints_1D], eta[MaxN_QuadPoints_1D];
+  double xi[N_Points], eta[N_Points];
 
   switch(RefElement)
   {
@@ -323,7 +323,7 @@ void TBaseFunct2D::GetValues(int N_Points, double *zeta,
                              double **Values)
 {
   int i;
-  double xi[MaxN_QuadPoints_1D], eta[MaxN_QuadPoints_1D];
+  double xi[N_Points], eta[N_Points];
 
   switch(RefElement)
   {
@@ -434,42 +434,89 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_1D];
-      AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions2D*BaseVectDim];
-      for(j=0;j<MaxN_QuadPoints_1D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetValues(N_Points, zeta, i, Values);
       TFEDatabase2D::RegisterJointValues2D(BaseFunct, LineQuadFormula, 
                        i, Values);
     } // endif
 
-    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula,
-                                              i, D10);
+    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
+                                                D10);
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_1D];
-      AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions2D*BaseVectDim];
-      for(j=0;j<MaxN_QuadPoints_1D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetDerivatives(D10, N_Points, zeta, i, Values);
       TFEDatabase2D::RegisterJointDerivatives2D(BaseFunct, LineQuadFormula, 
                        i, D10, Values);
     } // endif
 
-    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula,
-                                              i, D01);
+    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
+                                                D01);
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_1D];
-      AllValues = new double [MaxN_QuadPoints_1D*MaxN_BaseFunctions2D*BaseVectDim];
-      for(j=0;j<MaxN_QuadPoints_1D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetDerivatives(D01, N_Points, zeta, i, Values);
       TFEDatabase2D::RegisterJointDerivatives2D(BaseFunct, LineQuadFormula, 
                        i, D01, Values);
     } // endif
+    
+    // second derivatives
+    // D20
+    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
+                                                D20);
+    if(Values == NULL)
+    {
+      // data not generated yet
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
+      GetDerivatives(D20, N_Points, zeta, i, Values);
+      TFEDatabase2D::RegisterJointDerivatives2D(BaseFunct, LineQuadFormula, 
+            i, D20, Values);
+    }
+    
+    // D11
+    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
+                                                D11);
+    if(Values == NULL)
+    {
+      // data not generated yet
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
+      GetDerivatives(D11, N_Points, zeta, i, Values);
+      TFEDatabase2D::RegisterJointDerivatives2D(BaseFunct, LineQuadFormula, 
+            i, D11, Values);
+    }
+  
+    // D02
+    Values=TFEDatabase2D::GetJointDerivatives2D(BaseFunct, LineQuadFormula, i,
+                                                D02);
+    if(Values == NULL)
+    {
+      // data not generated yet
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
+      GetDerivatives(D02, N_Points, zeta, i, Values);
+      TFEDatabase2D::RegisterJointDerivatives2D(BaseFunct, LineQuadFormula, 
+            i, D02, Values);
+    }
+
   } // endfor
 }
 
@@ -481,15 +528,16 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   TQuadFormula2D *qf2;
 
   qf2 = TFEDatabase2D::GetQuadFormula2D(QuadFormula);
-
+  int N_Points =TFEDatabase2D::GetQuadFormula2D(QuadFormula)->GetN_QuadPoints();
+  
   // D00
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D00);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D00, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D00, Values);
@@ -499,10 +547,10 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D10, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D10, Values);
@@ -512,10 +560,10 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D01);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D01, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D01, Values);
@@ -525,10 +573,10 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D20, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D20, Values);
@@ -538,10 +586,10 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D11);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D11, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D11, Values);
@@ -551,10 +599,10 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
   Values=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D02);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_2D];
-    AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions2D*BaseVectDim];
-    for(j=0;j<MaxN_QuadPoints_2D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions2D*BaseVectDim;
+    Values = new double* [N_Points];
+    AllValues = new double [N_Points*Dimension*BaseVectDim];
+    for(j=0;j<N_Points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D02, qf2, Values);
     TFEDatabase2D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D02, Values);

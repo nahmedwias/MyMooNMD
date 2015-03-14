@@ -34,7 +34,8 @@ TBaseFunct3D::TBaseFunct3D(int dimension, BaseFunct3D basefunct,
                            int polynomialdegree,
                            int accuracy,
                            int n_bf2change,
-                           int ***bf2change)
+                           int ***bf2change,
+                           int baseVectDim)
 {
   Dimension=dimension;
 
@@ -53,13 +54,14 @@ TBaseFunct3D::TBaseFunct3D(int dimension, BaseFunct3D basefunct,
   Functions[D011]=derivativesEtaZeta;
   Functions[D002]=derivativesZetaZeta;
 
-  changable=FALSE;
+  changable = false;
 
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
 
   N_BF2Change = n_bf2change;
   BF2Change = bf2change;
+  BaseVectDim = baseVectDim;
 }
 
 /** constructor without filling data structure */
@@ -67,7 +69,7 @@ TBaseFunct3D::TBaseFunct3D(int dimension)
 {
   Dimension = dimension;
 
-  changable = TRUE;
+  changable = true;
 }
 
 /** return the values for derivative MultiIndex at all
@@ -335,10 +337,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_2D];
-      AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions3D];
-      for(j=0;j<MaxN_QuadPoints_2D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension;
       GetValues(N_Points, t, s, i, Values);
       TFEDatabase3D::RegisterJointValues3D(BaseFunct, FaceQF, 
                        i, Values);
@@ -348,10 +350,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_2D];
-      AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions3D];
-      for(j=0;j<MaxN_QuadPoints_2D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension;
       GetValues(N_Points, t, s, i, D100, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D100, Values);
@@ -361,10 +363,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_2D];
-      AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions3D];
-      for(j=0;j<MaxN_QuadPoints_2D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension;
       GetValues(N_Points, t, s, i, D010, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D010, Values);
@@ -374,10 +376,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     if(Values == NULL)
     {
       // data not generated yet
-      Values = new double* [MaxN_QuadPoints_2D];
-      AllValues = new double [MaxN_QuadPoints_2D*MaxN_BaseFunctions3D];
-      for(j=0;j<MaxN_QuadPoints_2D;j++)
-        Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+      Values = new double* [N_Points];
+      AllValues = new double [N_Points*Dimension];
+      for(j=0;j<N_Points;j++)
+        Values[j] = AllValues+j*Dimension;
       GetValues(N_Points, t, s, i, D001, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D001, Values);
@@ -393,15 +395,16 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   TQuadFormula3D *qf2;
 
   qf2 = TFEDatabase3D::GetQuadFormula3D(QuadFormula);
+  int n_points = qf2->GetN_QuadPoints();
 
   // D000
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension;
     GetDerivatives(D000, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D000, Values);
@@ -411,10 +414,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension;
     GetDerivatives(D100, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D100, Values);
@@ -424,10 +427,10 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension;
     GetDerivatives(D010, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D010, Values);
@@ -437,54 +440,92 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension;
     GetDerivatives(D001, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D001, Values);
   }
-  /*
-  // D20
-  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D20);
+  
+  // D200
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
-    GetDerivatives(D20, qf2, Values);
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D200, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
-                                          D20, Values);
+                                            D200, Values);
   }
 
-  // D11
-  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D11);
+  // D110
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
-    GetDerivatives(D11, qf2, Values);
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D110, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
-                                          D11, Values);
+                                            D110, Values);
   }
 
-  // D02
-  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D02);
+  // D101
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
   if( Values==NULL)
   {
-    Values = new double* [MaxN_QuadPoints_3D];
-    AllValues = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Values[j] = AllValues+j*MaxN_BaseFunctions3D;
-    GetDerivatives(D02, qf2, Values);
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D101, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
-                                          D02, Values);
+                                            D101, Values);
   }
-  */
+  
+  // D020
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
+  if( Values==NULL)
+  {
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D020, qf2, Values);
+    TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
+                                            D020, Values);
+  }
+  
+  // D011
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
+  if( Values==NULL)
+  {
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D011, qf2, Values);
+    TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
+                                            D011, Values);
+  }
+  
+  // D002
+  Values=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
+  if( Values==NULL)
+  {
+    Values = new double* [n_points];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
+    for(j=0;j<n_points;j++)
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
+    GetDerivatives(D002, qf2, Values);
+    TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
+                                            D002, Values);
+  }
 }
 
 TGridCell *TBaseFunct3D::GenerateRefElement()

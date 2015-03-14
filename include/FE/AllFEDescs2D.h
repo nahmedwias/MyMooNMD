@@ -69,6 +69,8 @@
 #include <FE_D_T_SV1_2D.h>
 #include <FE_C_T_SV2_2D.h>
 
+#include <FE_C_T_RR2_2D.h>
+
 //==== localProjection
 #include <FE_C_Q_UL1_2D.h>
 #include <FE_C_Q_UL2_2D.h>
@@ -109,6 +111,23 @@
 #include <FE_C_Q_M8_2D.h>
 #include <FE_C_Q_M9_2D.h>
 
-#include <FE_N_Q_RT1_2D.h>
-
 #include <FE_C_Q_EL1_2D.h>
+
+// Raviart-Thomas (RT) fe descriptor, vector valued basis functions
+#include <FE_N_T_RT0_2D.h>
+#include <FE_N_T_RT1_2D.h>
+#include <FE_N_T_RT2_2D.h>
+#include <FE_N_T_RT3_2D.h>
+#include <FE_N_Q_RT0_2D.h>
+#include <FE_N_Q_RT1_2D.h>
+#include <FE_N_Q_RT2_2D.h>
+#include <FE_N_Q_RT3_2D.h>
+
+// Brezzi-Douglas-Marini (BDM) fe descriptor, vector valued basis functions
+#include <FE_N_Q_BDM1_2D.h>
+#include <FE_N_Q_BDM2_2D.h>
+#include <FE_N_Q_BDM3_2D.h>
+#include <FE_N_T_BDM1_2D.h>
+#include <FE_N_T_BDM2_2D.h>
+#include <FE_N_T_BDM3_2D.h>
+

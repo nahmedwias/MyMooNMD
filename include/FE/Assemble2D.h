@@ -15,10 +15,29 @@
 #include <AllClasses.h>
 #include <Constants.h>
 #include <FEDatabase2D.h>
+#include <LocalAssembling2D.h>
 
 #ifdef __3D__
   #include <Aux2D3D.h>
 #endif
+
+/** a function from a finite element space */
+void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
+                int n_sqmatrices, TSquareMatrix2D **sqmatrices,
+                int n_matrices, TMatrix2D **matrices,
+                int n_rhs, double **rhs, TFESpace2D **ferhs,
+                BoundCondFunct2D **BoundaryConditions,
+                BoundValueFunct2D **BoundaryValues,
+                LocalAssembling2D& la
+#ifdef __3D__
+                , TAux2D3D *Aux2D3D
+#endif
+, int AssemblePhaseID = -1 
+               );
+
+
+
+
 
 /** a function from a finite element space */
 void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
@@ -34,6 +53,21 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
 #endif
 , int AssemblePhaseID = -1 
                );
+
+/** assembling of matrices multiplied by a factor */
+void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices, 
+                    TSquareMatrix2D **sqmatrices, int n_matrices, 
+                    TMatrix2D **matrices, int n_rhs, double **rhs, 
+                    TFESpace2D **ferhs, TDiscreteForm2D *DiscreteForm,
+                    BoundCondFunct2D **BoundaryConditions,
+                    BoundValueFunct2D **BoundaryValues, TAuxParam2D *Parameters,
+                    double factor
+#ifdef __3D__
+                    , TAux2D3D *Aux2D3D
+#endif
+                   );
+
+
 
 /** assembling of slip type bc */
 void Assemble2DSlipBC(int n_fespaces, TFESpace2D **fespaces,
@@ -78,6 +112,18 @@ void Assemble2D_CIP(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
 		    BoundValueFunct2D **BoundaryValues,
 		    TAuxParam2D *Parameters);
 
+/** assembling for vector finite elements (Raviart-Thomas (RT) and 
+ * Brezzi-Douglas-Marini (BDM)) */
+void Assemble2D_VectFE(int n_fespaces, TFESpace2D **fespaces,
+           int n_sqmatrices, TSquareMatrix2D **sqmatrices,
+           int n_matrices, TMatrix2D **matrices,
+           int n_rhs, double **rhs, TFESpace2D **ferhs,
+           TDiscreteForm2D *DiscreteForm,
+           BoundCondFunct2D **BoundaryConditions,
+           BoundValueFunct2D **BoundaryValues,
+           TAuxParam2D *Parameters=NULL
+           );
+
 #ifdef __MORTAR__
 void Assemble(TMatrix2D *matrix);
 
@@ -85,7 +131,7 @@ void Assemble(TMatrix2D *matrix);
   #ifdef __ADD_LINK_SDFEM__
   void AddLinkSDFEM(TFESpace2D *Space2D, TSquareMatrix2D *Matrix,
   #endif
-#endif
+#endif // __MORTAR__
 
 void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
                 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
@@ -123,7 +169,7 @@ void ComputeInterfaceConditionStress(TSquareMatrix2D  **sqmatrices,
 				     double density_other, 
 				     double *rhs_for_stress_other);
      
-#endif
+#endif // __2D__
 
-#endif
+#endif // __ASSEMBLE2D__
 

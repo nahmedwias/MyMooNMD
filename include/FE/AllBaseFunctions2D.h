@@ -69,6 +69,8 @@
 #include <BF_D_T_SV1_2D.h>
 #include <BF_C_T_SV2_2D.h>
 
+#include <BF_C_T_RR2_2D.h>
+
 //==== localProjection BaseFunctions
 #include <BF_C_Q_UL1_2D.h>
 #include <BF_C_Q_UL2_2D.h>
@@ -109,8 +111,21 @@
 #include <BF_C_Q_M8_2D.h>
 #include <BF_C_Q_M9_2D.h>
 
-//RAVIART-THOMAS VECTOR BASIS FUNCTIONS
-#include <BF_N_Q_RT1_2D.h>
-
 #include <BF_C_Q_EL1_2D.h>
 
+// Raviart-Thomas (RT) basis functions, vector valued basis functions
+#include <BF_N_Q_RT0_2D.h>
+#include <BF_N_Q_RT1_2D.h>
+#include <BF_N_Q_RT2_2D.h>
+#include <BF_N_Q_RT3_2D.h>
+#include <BF_N_T_RT0_2D.h>
+#include <BF_N_T_RT1_2D.h>
+#include <BF_N_T_RT2_2D.h>
+#include <BF_N_T_RT3_2D.h>
+// Brezzi-Douglas-Marini (BDM) basis functions, vector valued basis functions
+#include <BF_N_Q_BDM1_2D.h>
+#include <BF_N_Q_BDM2_2D.h>
+#include <BF_N_Q_BDM3_2D.h>
+#include <BF_N_T_BDM1_2D.h>
+#include <BF_N_T_BDM2_2D.h>
+#include <BF_N_T_BDM3_2D.h>

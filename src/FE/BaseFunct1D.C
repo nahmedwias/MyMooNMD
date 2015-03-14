@@ -31,7 +31,7 @@ TBaseFunct1D::TBaseFunct1D(int dimension, BaseFunct1D basefunct,
   Functions[D1]=derivativesxi;
   Functions[D2]=derivativesxixi;
 
-  changable=FALSE;
+  changable = false;
 }
 
 /** constructor, fill in all information */
@@ -50,7 +50,7 @@ TBaseFunct1D::TBaseFunct1D(int dimension, BaseFunct1D basefunct,
   Functions[D1]=derivativesxi;
   Functions[D2]=derivativesxixi;
 
-  changable=FALSE;
+  changable = false;
 
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
@@ -62,7 +62,7 @@ TBaseFunct1D::TBaseFunct1D(int dimension)
 {
   Dimension = dimension;
 
-  changable = TRUE;
+  changable = false;
 }
 
 /** return the values for derivative MultiIndex at all
