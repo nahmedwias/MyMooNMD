@@ -54,8 +54,8 @@ TIMESTEPLENGTH: 0.05
 ----------------------------------------------------------------------
 # output controls
 ----------------------------------------------------------------------
-PSBASENAME:  unitsquare
-VTKBASENAME: unitsquare
+BASENAME: unitsquare
+OUTPUTDIR: VTK
 WRITE_PS: 0
 WRITE_VTK: 0
 
