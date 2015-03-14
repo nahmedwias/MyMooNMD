@@ -15,7 +15,8 @@
 #include <FEM_TVD_FCT.h>
 #include <Bulk_3d4d.h>
 #include <Bulk.h>
-
+#include <TimeDiscRout.h>
+#include <RKV_FDM.h>
 #include <Database.h>
 
 #include <string.h>
@@ -504,6 +505,658 @@ void grid_generator_4d(TCollection *coll,
   delete x_help;
 }
 
+void grid_generator_4d_pipe(int N_x, int N_y, int N_z, int N_a,
+                            double* &x_coord, double* &y_coord, 
+                            double* &z_coord, 
+                            double* &x_coord_pipe, double* &y_coord_pipe, 
+                            double* &z_coord_pipe)
+{
+  
+  int i, j, N3 = (N_x+1)*(N_y+1)*(N_z+1), Nodes = N3*(N_a+1);
+  
+  x_coord_pipe = new double[Nodes];
+  memset(x_coord_pipe,0,Nodes*SizeOfDouble);
+  y_coord_pipe = new double[Nodes];
+  memset(y_coord_pipe,0,Nodes*SizeOfDouble);
+  z_coord_pipe = new double[Nodes];
+  memset(z_coord_pipe,0,Nodes*SizeOfDouble);
+  
+  
+  for(i=0 ; i<N3 ; i++)
+  {
+    CoordsTrafo_SquareToCircle(y_coord[i], z_coord[i], y_coord_pipe[i], z_coord_pipe[i]);
+    x_coord_pipe[i] = x_coord[i];
+    for (j=1 ; j<(N_a+1) ; j++)
+    {
+      x_coord_pipe[i+j*N3] = x_coord_pipe[i];
+      y_coord_pipe[i+j*N3] = y_coord_pipe[i];
+      z_coord_pipe[i+j*N3] = z_coord_pipe[i];
+    }
+  }
+}
+
+// ========================================================================
+// calculate circle coordinates for given square coordinates
+// ========================================================================
+
+void CoordsTrafo_SquareToCircle(double x, double y, double& nx, double& ny)
+{
+  double phi, r, pi = 3.1415926535897, eps = 1e-8;
+
+  //calculate radius r and angle phi
+  r = fmax(fabs(x),fabs(y));
+  // case x = y = 0 
+  if (fabs(r) < eps)
+  {
+    nx = 0;  
+    ny = 0;
+    return;
+  }
+  else //r>0
+  {
+    // 1st sector
+    if(fabs(y) <= fabs(x) && x > 0)
+    { phi = (pi/4)*y/r; }
+    
+    // 2nd sector
+    if(fabs(y) > fabs(x) && y > 0)
+    { phi = pi/2 - (pi/4)*x/r;}
+      
+    // 3rd sector
+    if(fabs(y) <= fabs(x) && x < 0)
+    { phi = pi - (pi/4)*y/r;}
+    
+    // 4th sector
+    if(fabs(y) > fabs(x) && y < 0)
+    { phi = pi*3/2 + (pi/4)*x/r;}
+
+    // calculate x and y coordinate in the circle
+    nx = r*cos(phi);
+    ny = r*sin(phi);
+    return;
+  }
+}
+
+void grid_generator_5d(TCollection *coll,
+int &N_x,
+int &N_y,
+int &N_z,
+double &x_min, double &x_max, double &y_min, double &y_max,
+double &z_min, double &z_max,
+double a_min, double a_max, double b_min, double b_max, int N_a, int N_b,
+double* &x_coord, double* &y_coord, double* &z_coord, double* &a_coord,double* &b_coord,
+double *a_layers_coord, double *b_layers_coord)
+{
+  // check consistency
+  if ((a_min >= a_max )|| (N_a <= 0) )
+  {
+    OutPut(" error : wrong input in grid_generator_5d " << endl);
+    exit(-1);
+  }
+  if ((b_min >= b_max )|| (N_b <= 0) )
+  {
+    OutPut(" error : wrong input in grid_generator_5d " << endl);
+    //exit(-1);
+  }
+  OutPut("maximal values of internal coordinates " << a_max << " " << b_max  << endl);
+
+  // integer variables for the loops
+  int i, j,j1, k, N_Cells, N_Vertices, found, Nodes, N2, N3,N4, max_dir = 1025;
+  double eps = 1e-5, mini, x, y, z, gamma, a1, a2, a3, b1, b2, b3;
+  TBaseCell *cell;
+
+  // arrays for the grid -> this allows to implement different distributions of grid points in every direction
+  double *x_help, *y_help, *z_help, *a_help, *b_help;
+
+  x_help = new double[max_dir];  memset(x_help,0,max_dir*SizeOfDouble);
+  y_help = new double[max_dir];  memset(y_help,0,max_dir*SizeOfDouble);
+  z_help = new double[max_dir];  memset(z_help,0,max_dir*SizeOfDouble);
+  a_help = new double[N_a+1];  memset(a_help,0,(N_a+1)*SizeOfDouble);
+  b_help = new double[N_b+1];  memset(b_help,0,(N_b+1)*SizeOfDouble);
+  //neu grid
+  //neu grid von ARAM
+  double input[94] =
+  {
+    0,
+    0.000488281,
+    0.000615194,
+    0.000775097,
+    0.000976561,
+    0.00123039,
+    0.00155019,
+    0.00195312,
+    0.00246078,
+    0.00310039,
+    0.00390625,
+    0.00447154,
+    0.00492156,
+    0.0053016,
+    0.00563379,
+    0.00593084,
+    0.00620079,
+    0.00667959,
+    0.00709813,
+    0.00747238,
+    0.0078125,
+    0.00841576,
+    0.00894308,
+    0.00941462,
+    0.00984313,
+    0.0106032,
+    0.0112676,
+    0.0118617,
+    0.0124016,
+    0.0133592,
+    0.0141962,
+    0.0149448,
+    0.015625,
+    0.0168315,
+    0.0178862,
+    0.0188292,
+    0.0196863,
+    0.0204745,
+    0.0212064,
+    0.0218909,
+    0.0225352,
+    0.0231445,
+    0.0237233,
+    0.0242752,
+    0.0248031,
+    0.0267184,
+    0.0283925,
+    0.0298896,
+    0.03125,
+    0.0336631,
+    0.0357723,
+    0.0393725,
+    0.0450703,
+    0.0496062,
+    0.0534368,
+    0.056785,
+    0.0597791,
+    0.0625,
+    0.0673261,
+    0.0715446,
+    0.0753169,
+    0.0787451,
+    0.0818982,
+    0.0848255,
+    0.0875637,
+    0.0901406,
+    0.0948934,
+    0.0992125,
+    0.106873,
+    0.11357,
+    0.119558,
+    0.125,
+    0.134652,
+    0.143089,
+    0.150634,
+    0.15749,
+    0.169651,
+    0.180281,
+    0.189787,
+    0.198425,
+    0.213747,
+    0.22714,
+    0.239117,
+    0.25,
+    0.269304,
+    0.286179,
+    0.301268,
+    0.31498,
+    0.360562,
+    0.39685,
+    0.5,
+    0.629961,
+    0.793701,
+    1
+  };
+
+  // compute coordinates of the 3d domain
+  // initialize
+  for (i=0;i<max_dir;i++)
+    x_help[i] = -47111174;
+  for (i=0;i<max_dir;i++)
+    y_help[i] = -47111174;
+  for (i=0;i<max_dir;i++)
+    z_help[i] = -47111174;
+
+  // number of mesh cells
+  N_Cells = coll->GetN_Cells();
+  for (i=0;i<N_Cells;i++)
+  {
+    cell = coll->GetCell(i);
+    // number of vertices
+    N_Vertices = cell->GetN_Vertices();
+    for ( j=0; j<N_Vertices; j++)
+    {
+      // get coordinates of the vertex
+      x = cell->GetVertex(j)->GetX();
+      y = cell->GetVertex(j)->GetY();
+      z = cell->GetVertex(j)->GetZ();
+      // check if they are already included in the arrays
+      found = 0;
+      for (k=0;k<max_dir;k++)
+      {
+        // coordinate already included
+        if (fabs(x-x_help[k]) < eps)
+        {
+          found = 1;
+          break;
+        }
+        // new entry
+        if (fabs(x_help[k]+47111174) < eps)
+        {
+          x_help[k] = x;
+          found = 1;
+          break;
+        }
+      }
+      if (!found)
+      {
+        OutPut("Error in grid_generation_5d, x coordinate !!!" << endl);
+        exit(4711);
+      }
+      found = 0;
+      for (k=0;k<max_dir;k++)
+      {
+        // coordinate already included
+        if (fabs(y-y_help[k]) < eps)
+        {
+          found = 1;
+          break;
+        }
+        // new entry
+        if (fabs(y_help[k]+47111174) < eps)
+        {
+          y_help[k] = y;
+          found = 1;
+          break;
+        }
+      }
+      if (!found)
+      {
+        OutPut("Error in grid_generation_5d, y coordinate !!!" << endl);
+        exit(4711);
+      }
+      found = 0;
+      for (k=0;k<max_dir;k++)
+      {
+        // coordinate already included
+        if (fabs(z-z_help[k]) < eps)
+        {
+          found = 1;
+          break;
+        }
+        // new entry
+        if (fabs(z_help[k]+47111174) < eps)
+        {
+          z_help[k] = z;
+          found = 1;
+          break;
+        }
+      }
+      if (!found)
+      {
+        OutPut("Error in grid_generation_5d, z coordinate !!!" << endl);
+        exit(4711);
+      }
+    }
+  }
+
+  // compute actual length of arrays
+  for (i=0;i<max_dir;i++)
+  {
+    if (fabs(x_help[i]+47111174) < eps)
+      break;
+  }
+  N_x = i-1;
+  for (i=0;i<max_dir;i++)
+  {
+    if (fabs(y_help[i]+47111174) < eps)
+      break;
+  }
+  N_y = i-1;
+  for (i=0;i<max_dir;i++)
+  {
+    if (fabs(z_help[i]+47111174) < eps)
+      break;
+  }
+  N_z = i-1;
+
+  // bring arrays in correct order
+  for (i=0;i<N_x+1;i++)
+  {
+    mini = 47111147.0;
+    // find smallest entry
+    for (j=i;j<N_x+1;j++)
+    {
+      if (x_help[j] < mini)
+      {
+        mini = x_help[j];
+        found = j;
+      }
+    }
+    // change entries
+    mini = x_help[i];
+    x_help[i] = x_help[found];
+    x_help[found] = mini;
+  }
+  x_min = x_help[0];
+  x_max = x_help[N_x];
+
+  for (i=0;i<N_y+1;i++)
+  {
+    mini = 47111147.0;
+    // find smallest entry
+    for (j=i;j<N_y+1;j++)
+    {
+      if (y_help[j] < mini)
+      {
+        mini = y_help[j];
+        found = j;
+      }
+    }
+    // change entries
+    mini = y_help[i];
+    y_help[i] = y_help[found];
+    y_help[found] = mini;
+  }
+  y_min = y_help[0];
+  y_max = y_help[N_y];
+
+  for (i=0;i<N_z+1;i++)
+  {
+    mini = 47111147.0;
+    // find smallest entry
+    for (j=i;j<N_z+1;j++)
+    {
+      if (z_help[j] < mini)
+      {
+        mini = z_help[j];
+        found = j;
+      }
+    }
+    // change entries
+    mini = z_help[i];
+    z_help[i] = z_help[found];
+    z_help[found] = mini;
+  }
+  z_min = z_help[0];
+  z_max = z_help[N_z];
+
+  // parameters for the loops
+  // total number of nodes of the 4d grid
+  Nodes = (N_x+1)*(N_y+1)*(N_z+1)*(N_a+1)*(N_b+1);
+  // number of nodes of the 2d plane (spatial coordinates x and y)
+  N2 = (N_x+1)*(N_y+1);
+  // number of nodes of the 3d cube = "spatial part" of the 4d grid
+  N3 = N2*(N_z+1);
+  N4 = N3*(N_a+1);
+  // stretching parameter for grid type 2
+  gamma = TDatabase::ParamDB->CHANNEL_GRID_STRETCH;
+
+  //arrays for the extension from 3d to 4d
+  double *x_3d_cube, *y_3d_cube, *z_3d_cube;
+
+  x_3d_cube = new double[N3];  memset(x_3d_cube,0,N3*SizeOfDouble);
+  y_3d_cube = new double[N3];  memset(y_3d_cube,0,N3*SizeOfDouble);
+  z_3d_cube = new double[N3];  memset(z_3d_cube,0,N3*SizeOfDouble);
+
+  switch(TDatabase::ParamDB->GRID_TYPE_1)
+  {
+    // equidistant grid
+    case 0:
+      // a_help
+      for ( i=0 ; i<(N_a+1) ; i++ )
+      {
+        a_min=TDatabase::ParamDB->KDP_D_P_0;
+        a_help[i] = a_min + ( ((a_max-a_min)/(N_a)) * i );
+        //a_help[i] = a_min/a_max + ( ((a_max-a_min)/a_max*(N_a)) * i );
+        //OutPut("a_min " << a_min <<endl);
+
+        //a_help[i] = ( (a_max)/(N_a) * i );
+      }
+      break;
+
+      // non-equidistant grid, based on the cosinus function in the a-direction
+    case 1:
+      // fill auxiliary vectors with a distribution
+      // a_help
+      for ( i=0 ; i<(N_a+1) ; i++ )
+      {
+        a_help[i] = a_max - (a_max-a_min) * cos(i*Pi/(2*N_a));
+      }
+      break;
+
+      // non-equidistant grid, based on the hyperbolic tangent function in the z-direction
+      // stretching parameter is gamma
+    case 2:
+      // fill auxiliary vectors with a distribution
+      // a_help
+      for ( i=0 ; i<(N_a+1) ; i++ )
+      {
+        a_help[i] = a_max + (a_max-a_min) * (tanh( gamma*(((double)i/(double)N_a)-1.)))/(tanh(gamma));
+      }
+      break;
+
+      // equidistant with respect to mass
+      // for urea
+    case 3:
+      // equidistant with power 3
+      a1 = a_min*a_min*a_min;
+      a2 = a_max*a_max*a_max;
+      a3 = 1.0/3.0;
+      for ( i=0 ; i<(N_a+1) ; i++ )
+      {
+        a_help[i] = a1 + ( ((a2-a1)/(N_a)) * i );
+        // third power
+        a_help[i] = pow(a_help[i],a3);
+      }
+      break;
+    case 4:
+      // test for windtunnel, first coordinate 0, then to r_min, then equi-distant
+      a_help[0] = 0;
+      a_min = 5e-6/TDatabase::ParamDB->WINDTUNNEL_R_INFTY;
+      for ( i=1 ; i<(N_a+1) ; i++ )
+      {
+        a_help[i] = a_min + ( ((a_max-a_min)/(N_a-1)) * (i-1) );
+      }
+      break;
+    case 5:
+      // transformed grid(from discretized with respect to diam into disc with respect to mass)
+      for ( i=0 ; i<(N_a+1); i++ )
+      {
+        a_help[i] = input[i];
+      }
+      break;
+      // equidistant grid save first interval
+    case 10:
+      // a_help
+      a_help[0] = a_min;
+      a_help[1] = a_min +  ((a_max-a_min)/(N_a))/2.0;
+
+      for ( i=2 ; i<(N_a+1) ; i++ )
+      {
+        a_help[i] = a_help[1]  + ( ((a_max-a_min)/(N_a)) * (i-1) );
+      }
+      break;
+    default:
+      OutPut(" error : wrong grid_type in grid_generator_5d " << endl);
+      exit(-1);
+  }
+  switch(TDatabase::ParamDB->GRID_TYPE_2)
+  {
+    // equidistant grid
+    case 0:
+      // b_help
+      for ( i=0 ; i<(N_b+1) ; i++ )
+      {
+        b_min=TDatabase::ParamDB->KDP_D_P_0_2;
+        b_help[i] = b_min + ( ((b_max-b_min)/(N_b)) * i );
+        //b_help[i] = b_min/b_max + ( ((b_max-b_min)/(b_max*N_b)) * i );
+      }
+      break;
+
+      // non-equidistant grid, based on the cosinus function in the a-direction
+    case 1:
+      // fill auxiliary vectors with a distribution
+      // a_help
+      for ( i=0 ; i<(N_b+1) ; i++ )
+      {
+        b_help[i] = b_max - (b_max-b_min) * cos(i*Pi/(2*N_b));
+      }
+      break;
+
+      // non-equidistant grid, based on the hyperbolic tangent function in the z-direction
+      // stretching parameter is gamma
+    case 2:
+      // fill auxiliary vectors with a distribution
+      // a_help
+      for ( i=0 ; i<(N_b+1) ; i++ )
+      {
+        b_help[i] = b_max + (b_max-b_min) * (tanh( gamma*(((double)i/(double)N_b)-1.)))/(tanh(gamma));
+      }
+      break;
+
+      // equidistant with respect to mass
+      // for urea
+    case 3:
+      // equidistant with power 3
+      b1 = b_min*b_min*b_min;
+      b2 = b_max*b_max*b_max;
+      b3 = 1.0/3.0;
+      for ( i=0 ; i<(N_b+1) ; i++ )
+      {
+        b_help[i] = b1 + ( ((b2-b1)/(N_b)) * i );
+        // third power
+        b_help[i] = pow(b_help[i],b3);
+      }
+      break;
+    case 4:
+      // test for windtunnel, first coordinate 0, then to r_min, then equi-distant
+      b_help[0] = 0;
+      b_min = 5e-6/TDatabase::ParamDB->WINDTUNNEL_R_INFTY;
+      for ( i=1 ; i<(N_b+1) ; i++ )
+      {
+        b_help[i] = b_min + ( ((b_max-b_min)/(N_b-1)) * (i-1) );
+      }
+      break;
+    case 5:
+      // transformed grid(from discretized with respect to diam into disc with respect to mass)
+      for ( i=0 ; i<(N_b+1); i++ )
+      {
+        b_help[i] = input[i];
+      }
+      break;
+      // equidistant grid save first interval
+    case 10:
+      // b_help
+      b_help[0] = b_min;
+      b_help[1] = b_min +  ((b_max-b_min)/(N_b))/2.0;
+
+      for ( i=2 ; i<(N_b+1) ; i++ )
+      {
+        b_help[i] = b_help[1]  + ( ((b_max-b_min)/(N_b)) * (i-1) );
+      }
+      break;
+    default:
+      OutPut(" error : wrong grid_type in grid_generator_5d " << endl);
+      exit(-1);
+  }
+  // fill the "cube"-vectors
+  // x_3d_cube
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    x_3d_cube[i] = x_help[(i%(N_x+1))];
+  }
+
+  // y_3d_cube
+  for ( k=0 ; k<(N_z+1) ; k++ )
+  {
+    for ( j=0 ; j<(N_y+1) ; j++ )
+    {
+      for ( i=0 ; i<(N_x+1) ; i++  )
+      {
+        y_3d_cube[(i+(j*(N_x+1)))+(k*N2)] = y_help[j];
+      }
+    }
+  }
+
+  // z_3d_cube
+  for ( j=0 ; j<(N_z+1) ; j++ )
+  {
+    for ( i=0 ; i<N2 ; i++ )
+    {
+      z_3d_cube[i+(j*N2)] = z_help[j];
+    }
+  }
+
+  x_coord = new double[Nodes];
+  memset(x_coord,0,Nodes*SizeOfDouble);
+  y_coord = new double[Nodes];
+  memset(y_coord,0,Nodes*SizeOfDouble);
+  z_coord = new double[Nodes];
+  memset(z_coord,0,Nodes*SizeOfDouble);
+  a_coord = new double[Nodes];
+  memset(a_coord,0,Nodes*SizeOfDouble);
+  b_coord = new double[Nodes];
+  memset(b_coord,0,Nodes*SizeOfDouble);
+
+  // fill the output vectors
+  for ( i=0 ; i<Nodes ; i++ )
+  {
+    x_coord[i] = x_3d_cube[i%N3];
+    y_coord[i] = y_3d_cube[i%N3];
+    z_coord[i] = z_3d_cube[i%N3];
+  }
+
+  for ( j1=0 ; j1<(N_b+1) ; j1++ )
+  {
+    for ( j=0 ; j<(N_a+1) ; j++ )
+    {
+      for ( i=0 ; i<N3 ; i++ )
+
+      {
+        a_coord[i+(j*N3)+(j1*N4)]=a_help[j];
+        b_coord[i+(j*N3)+(j1*N4)]=b_help[j1];
+        //OutPut("a" << a_coord[i+(j*N3)+(j1*N4)] << endl);
+        // OutPut("b" << b_coord[i+(j*N3)+(j1*N4)] << endl);
+
+      }
+
+    }
+  }
+
+  // generate the vector with the coordinates of the layers in a-direction
+  // the entries are all positive -> in the dim-less form is a_min = d_p_min and a_max = 1.0
+  for ( i=0 ; i<(N_a+1) ; i++ )
+  {
+    a_layers_coord[i] = a_help[i];
+    //OutPut("a" << a_layers_coord[i] << endl);
+  }
+  // generate the vector with the coordinates of the layers in b-direction
+  for ( j=0 ; j<(N_b+1) ; j++ )
+  {
+    b_layers_coord[j] = b_help[j];
+    //OutPut("b" << a_layers_coord[i] << endl);
+  }
+
+  delete z_3d_cube;
+  delete y_3d_cube;
+  delete x_3d_cube;
+
+  delete b_help;
+  delete a_help;
+  delete z_help;
+  delete y_help;
+  delete x_help;
+}
+
+
+
+
 /***************************************************************************/
 //
 // computes boundary conditions for PSD on the inflow boundary wrt the flow
@@ -835,6 +1488,284 @@ void Bulk_FWE_FDM_Upwind_4D(TCollection *coll,
   delete f_new;
   delete derx_val;
 }
+
+void Bulk_RKV_FDM_4D(TCollection *coll,
+TFEFunction3D *velocity1, TFEFunction3D *velocity2,
+TFEFunction3D *velocity3, TFEFunction3D *concent_C,
+double *f_old, double **stages,
+int N_x, int N_y, int N_z, int N_a,
+double *x_coord, double *y_coord, double *z_coord,
+double *a_coord,
+double *velo1, double *velo2, double *velo3,
+double *concent_C_array, int *correspond_3dgrid)
+{
+  int i, ii, N2, N3, N4, maxind, val, N1_[4], N_, N_stages;
+  int very_first = 0, disctype, time_disc;
+  int alpha, beta, gamma, no_of_3dcell;
+  int *offset_ = NULL, *offset1_;
+  double B_c_C, velocity1_array_val, velocity2_array_val, velocity3_array_val;
+  double concent_C_array_val, maxsol, G_c_C_val;
+  double values[4], t1, t2, coeff[4];
+  double *current_stage_fdm, *sol_curr;
+  double *coordinates[4];
+  double deltat = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double time = TDatabase::TimeDB->CURRENTTIME;
+
+  // model constants
+  double l_infty = TDatabase::ParamDB->BULK_l_infty;
+  double u_infty = TDatabase::ParamDB->BULK_u_infty;
+  double c_C_infty_sat = TDatabase::ParamDB->BULK_c_C_infty_sat;
+  double C_g = TDatabase::ParamDB->BULK_C_g;
+  double C_2 = TDatabase::ParamDB->BULK_C_2;
+  double d_p_0 = TDatabase::ParamDB->BULK_D_P_0;
+  double d_p_max = TDatabase::ParamDB->BULK_D_P_MAX;
+  double k_g = TDatabase::ParamDB->BULK_k_g;
+  double k_nuc = TDatabase::ParamDB->BULK_k_nuc;
+  double d_p_min = TDatabase::ParamDB->BULK_D_P_MIN;
+  double c_C_infty = TDatabase::ParamDB->BULK_c_C_infty;
+  double f_infty = TDatabase::ParamDB->BULK_f_infty;
+  double factor_G;
+
+  // computed model constants
+  factor_G = k_g*c_C_infty*l_infty/(u_infty*d_p_max);
+
+  // very first computation
+  if (fabs (velo1[0] + 4711) < 1e-6)
+  {
+    very_first++;
+    OutPut("very first computation of f" << endl);
+  }
+  // number of unknowns in 2D (on one layer)
+  N2 = (N_x+1)*(N_y+1);
+  // number of unknowns in 3D (one cube)
+  N3 = (N_x+1)*(N_y+1)*(N_z+1);
+  // number of unknowns in 4D (total grid)
+  N4 = (N_x+1)*(N_y+1)*(N_z+1)*(N_a+1);
+
+  // save parameters
+  disctype = TDatabase::ParamDB->DISCTYPE;
+  time_disc = TDatabase::TimeDB->TIME_DISC;
+
+  // array for concentration of species C
+  memset(concent_C_array, 0, N3*SizeOfDouble);
+  // array for solution of current state
+  sol_curr = stages[5];
+
+  TDatabase::ParamDB->DISCTYPE = TDatabase::ParamDB->PB_DISC_TYPE;
+  TDatabase::TimeDB->TIME_DISC = TDatabase::ParamDB->PB_TIME_DISC;
+
+  N_stages = GetN_SubSteps();
+
+  N1_[0] = N_x+1;
+  N1_[1] = N_y+1;
+  N1_[2] = N_z+1;
+  N1_[3] = N_a+1;
+  coordinates[0] = x_coord;
+  coordinates[1] = y_coord;
+  coordinates[2] = z_coord;
+  coordinates[3] = a_coord;
+
+  InitializeConvectiveTermFDM(4, offset_, offset1_, N1_);
+
+  for (N_ = 0; N_ < N_stages; N_++)
+  {
+    SetTimeDiscParameters(1);
+    for (i=0;i<N_stages;i++)
+      OutPut(" A("<<N_<<","<<i<<") = " << TDatabase::TimeDB->RK_A[N_][i]);
+    OutPut(" : c("<<N_<<") = " << TDatabase::TimeDB->RK_c[N_]);
+    OutPut(" : b("<<N_<<") = " << TDatabase::TimeDB->RK_b[N_] << endl);
+    current_stage_fdm = stages[N_];
+    memset(current_stage_fdm, 0, N4 * SizeOfDouble);
+    // initialize current stage
+    memcpy(sol_curr,f_old,N4 * SizeOfDouble);
+    // add previous stages
+    for (i=0;i<N_;i++)
+      Daxpy(N4, deltat*TDatabase::TimeDB->RK_A[N_][i], stages[i], sol_curr);
+    // compute next stage
+    // discretization of PBE with FDM
+    // loop over all nodes of the FDM grid
+    for ( i=0 ; i<N4 ; i++ )
+    {
+      // node is on the first cube (a_coord=0)
+      // in this cube, the velocity vector will be filled
+      // since this vector is independent of a
+      if (i < N3)
+      {
+        // CHECKED AT 08/10/09
+        // find grid cell of 3d grid
+        ii = i;
+        // top of "first cube" = z_max
+        if( ii>= N2*N_z )
+        {
+          ii = ii-N2;
+        }
+        // treat right d.o.f. = x_max seperately
+        if ( ((ii+1)%(N_x+1)==0) )
+        {
+          ii = ii-1;
+        }
+        // treat upper d.o.f. =  y_max seperately
+        if ( ii%N2 >= (N_y*(N_x+1)) )
+        {
+          ii = ii-(N_x+1);
+        }
+        // level in z-direction
+        gamma = (int)(ii/N2);
+        ii -= gamma*N2;
+        // level in y-direction
+        alpha = (int)(ii/(N_x+1)+1e-6 );
+        // level in x-direction
+        beta = ii%(N_x+1);
+        no_of_3dcell = correspond_3dgrid[gamma*N_x*N_y+ alpha * N_x + beta];
+
+        // find velocity
+        velocity1->FindGradientLocal(coll->GetCell(no_of_3dcell),no_of_3dcell,
+          x_coord[i],y_coord[i],z_coord[i],values);
+        velo1[i] = values[0];
+        velocity1_array_val = velo1[i];
+
+        velocity2->FindGradientLocal(coll->GetCell(no_of_3dcell),no_of_3dcell,
+          x_coord[i],y_coord[i],z_coord[i],values);
+        velo2[i] = values[0];
+        velocity2_array_val = velo2[i];
+
+        velocity3->FindGradientLocal(coll->GetCell(no_of_3dcell),no_of_3dcell,
+          x_coord[i],y_coord[i],z_coord[i],values);
+        velo3[i] = values[0];
+        velocity3_array_val = velo3[i];
+
+        // fill the array for the concentrations of C
+        // since this concentration does not depend on a
+        // c_C
+        concent_C->FindValueLocal(coll->GetCell(no_of_3dcell),no_of_3dcell,
+          x_coord[i],y_coord[i],z_coord[i],values);
+        concent_C_array[i] = values[0];
+        concent_C_array_val = values[0];
+      }
+      // node is not on the first cube
+      else
+      {
+        // the corresponding node on the first cube
+        ii = i - N3*((int)(i/N3));
+        // compute the value of the velocity for the corresponding (x,y,z) coordinates
+        velocity1_array_val = velo1[ii];
+        velocity2_array_val = velo2[ii];
+        velocity3_array_val = velo3[ii];
+        // compute the value of the concentration of C for the corresponding (x,y,z) coordinates
+        concent_C_array_val = concent_C_array[ii];
+      }
+
+      if ( TDatabase::ParamDB->BULK_GROWTH_RATE==2 )
+      {
+        G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty*exp(C_2/(a_coord[i]*d_p_max)));
+      }
+      else
+      {
+        G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty);
+      }
+      coeff[0] = velocity1_array_val;
+      coeff[1] = velocity2_array_val;
+      coeff[2] = velocity3_array_val;
+      coeff[3] = G_c_C_val;
+
+      // compute convection term
+      ConvectiveTermFDM(4, i,
+        coeff, sol_curr, current_stage_fdm, coordinates,
+        offset_, offset1_);
+
+      // set Dirichlet boundary conditions
+      // if convection is positive at the bottom ( = cube with a = a_min )
+      if (i<N3)
+      {
+        if (TDatabase::ParamDB->BULK_GROWTH_RATE==2)
+        {
+          // G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty*exp(C_2/(z_coord[i]*d_p_max)));
+          G_c_C_val = k_g*(c_C_infty*concent_C_array_val- c_C_infty_sat*exp(C_2/d_p_0));
+        }
+        else
+        {
+          G_c_C_val = k_g*(c_C_infty*concent_C_array_val-c_C_infty_sat);
+        }
+        // compute G*n, n=(0,0,0,-1);
+        if (G_c_C_val*f_infty > 1e-10)
+        {
+          // compute rate of nucleation
+          B_c_C = k_nuc*pow(c_C_infty*(concent_C_array_val - 1),5);
+          // truncate negative values
+          if (B_c_C < 0)
+            B_c_C = 0;
+          // compute new particle size distribution
+          if (N_ == N_stages -1)
+            f_old[i] = B_c_C/(G_c_C_val*f_infty);
+          current_stage_fdm[i] = 0.0;
+        }
+      }
+      // set Dirichlet boundary conditions
+      // if convection is positive at the top
+      if (i>=N3*N_a )
+      {
+        if (TDatabase::ParamDB->BULK_GROWTH_RATE==2)
+        {
+          //G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty*exp(C_2/(z_coord[i]*d_p_max)));
+          G_c_C_val = k_g*(c_C_infty*concent_C_array_val- c_C_infty_sat*exp(C_2/d_p_0));
+        }
+        else
+        {
+          G_c_C_val = k_g*(c_C_infty*concent_C_array_val-c_C_infty_sat);
+        }
+        // compute G*n, n=(0,0,0,1);
+        if (G_c_C_val*f_infty < 0)
+        {
+          current_stage_fdm[i] = 0.0;
+          if (N_ == N_stages -1)
+            f_old[i] = 0.0;
+        }
+      }
+
+      // set Dirichlet boundary conditions
+      // inflow from the left x = x_min (left) or right x = x_max (right)
+      if ((( i%(N_x+1)==0 )  ||  ((i+1)%(N_x+1)==0 ))&&(i>N3))
+      {
+        val = PSD_bound_cound_from_velo_inflow(x_coord[i], y_coord[i], z_coord[i]);
+        if (val)
+        {
+          if (N_ == N_stages -1)
+            f_old[i] = 0.0;
+          current_stage_fdm[i] = 0.0;
+        }
+      }
+    }
+  }
+
+  // compute linear combination of stages
+  for (i=0;i<N_stages;i++)
+  {
+    Daxpy(N4, deltat*TDatabase::TimeDB->RK_b[i], stages[i], f_old);
+  }
+
+  maxsol =  0;
+  maxind = -4711;
+
+  // cut undershoots
+  for ( i=0 ; i<N4 ; i++ )
+  {
+    if (f_old[i] > maxsol)
+    {
+      maxsol = f_old[i];
+      maxind = i;
+    }
+    if (f_old[i]<0)
+    {
+      f_old[i] = 0;
+    }
+  }
+  OutPut(time << " maxsol " << maxsol << " maxind " << maxind << endl);
+
+  TDatabase::ParamDB->DISCTYPE = disctype;
+  TDatabase::TimeDB->TIME_DISC = time_disc;
+  delete[] offset_;
+}
+
 
 
 /****************************************************************************************
@@ -1548,6 +2479,29 @@ void generate_correspond_3d_grid(int N_x, int N_y, int N_z,
     }
   }
 }
+
+void generate_correspond_3d_grid_urea_pipe(int N_x, int N_y, int N_z,
+double *x_coord, double *y_coord, double *z_coord,
+TCollection *coll, int *correspond_3dgrid)
+{
+  int i, j, N_Cells;
+
+  TBaseCell *cell;
+  // number of mesh cells
+  N_Cells = coll->GetN_Cells();
+
+  for ( j=0 ; j<(N_x+1)*(N_y+1)*(N_z+1) ; j++ )
+  {
+    for ( i=0 ; i<N_Cells ; i++ )
+    {
+      cell = coll->GetCell(i);
+      if (cell->PointInCell(x_coord[j],y_coord[j],z_coord[j]))
+        break;
+    }
+    correspond_3dgrid[j] = i;
+  }
+}
+
 
 /****************************************************************************************
  *                                                                                      *
@@ -3106,6 +4060,696 @@ void Integral_For_Particle_Increase_Term(TFESpace3D *fespace, TFEFunction3D *fef
 
   delete indextest;
 }
+
+#if 0 // this is not compiling
+void Integral_For_Particle_Increase_Term_2D(TFESpace3D *fespace, TFEFunction3D *fefct,TFEFunction3D *fefct_2,
+int N_x, int N_y, int N_z, int N_a,int N_b,
+double *x_coord, double *y_coord, double *z_coord,
+double *a_coord, double *b_coord,
+double *f)
+{
+  int i,i1,i2,i3,i4, j, N2, N3,N4,N5, m, k,k1,k2, l, N_Cells, local;
+  int N_Vertices, index;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int m1,m2,m3,n1,n2,n3;
+  double sa,sb,sa2,sb2,val,val_1,val1,val2,val3, val_2,val1_2,val2_2,val3_2,val_t,x, y, z, value, eps = 1e-6,A1,A2;
+  double i1a,i1b,i2a,i2b,i3a,i3b,i4a,i4b;
+  double j1a,j1b,j2a,j2b,j3a,j3b,k1a,k1b,k2a,k2b,k3a,k3b,fs,fj1,fj2,fj3,fs2,fk1,fk2,fk3;
+  double *integral1,*integral2,*integral,*a,*b;
+  double c_C_infty_sat, C_2, d_p_max, d_p_0, d_p_min, c_C_infty;
+  //double L_max_1 = TDatabase::ParamDB->UREA_D_P_MAX;
+  //double L_max_2 = TDatabase::ParamDB->UREA_D_P_MAX;
+  double L_max_1 = TDatabase::ParamDB->KDP_D_P_MAX;
+  double L_max_2 = TDatabase::ParamDB->KDP_D_P_MAX_2;
+  // double G1=1.0;
+  //double G2=1.0;
+  double val11, val21,val31, val12, val22, val32;
+  double val11_2, val21_2,val31_2, val12_2, val22_2, val32_2;
+  TCollection *Coll;
+  TBaseCell *cell;
+  int *indextest;
+
+  //OutPut("diam_MAX" << d_p_max << endl);
+  //OutPut("conc_infty" << c_C_infty  << endl);
+  N2 = (N_x+1)*(N_y+1);
+  // number of grid points in 3D domain
+  N3 = N2 * (N_z+1);
+  // test array to check if all indices in 3D were computed
+  N4 = N3 * (N_a+1);
+  N5 = N4 * (N_b+1);
+  indextest = new int[N3];
+  memset(indextest,0,N3*SizeOfInt);
+
+  //f = new double[N5];
+  // memset(f,0,N5*SizeOfDouble);
+
+  //OutPut(TDatabase::TimeDB->CURRENTTIME << " f ist " << sqrt(Ddot(N5,f,f)) << endl);
+
+  a =new double[N5];
+  memset(a,0,N5*SizeOfDouble);
+  b =new double[N5];
+  memset(b,0,N5*SizeOfDouble);
+  // arrays for d.o.f. of fe space (Q1) which contains the integral
+  GlobalNumbers = fespace->GetGlobalNumbers();
+  BeginIndex = fespace->GetBeginIndex();
+  // values of the integral in the fe space
+  integral1 = fefct->GetValues();
+  integral2 = fefct_2->GetValues();
+  integral = fefct->GetValues();
+
+  //OutPut("Integral bis hier !!!" << endl);
+  // OutPut(TDatabase::TimeDB->CURRENTTIME << " integral " << sqrt(Ddot(N3,integral,integral)) << endl);
+  // OutPut(TDatabase::TimeDB->CURRENTTIME << " integral1 " << sqrt(Ddot(N3,integral1,integral1)) << endl);
+  //OutPut(TDatabase::TimeDB->CURRENTTIME << " integral2 " << sqrt(Ddot(N3,integral2,integral2)) << endl);
+
+  // initialize
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    integral[i] = -1;
+  }
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    integral1[i] = -1;
+  }
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    integral2[i] = -1;
+  }
+  // all spaces use same Coll
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  //loop over all mesh cells
+  for( i=0 ; i<N_Cells ; i++ )
+  {
+    // get cell i
+    cell = Coll->GetCell(i);
+    // get number of edges (or vertices)
+    N_Vertices=cell->GetN_Vertices();
+    if (N_Vertices!=8 && N_Vertices!=4)
+    {
+      OutPut("Integral_For_Particle_Increase_Term only implemented for hexahedra and tetrahedra!!!" << endl);
+      exit(4711);
+    }
+    // get pointer to degrees of freedom connected to this mesh cell
+    DOF = GlobalNumbers + BeginIndex[i];
+    // loop over all vertices
+    for ( j=0 ; j<N_Vertices ; j++ )
+    {
+      // corners of mesh cell
+      if (N_Vertices == 8)
+      {
+        cell->GetVertex(j)->GetCoords(x,y,z);
+      }
+      else
+        cell->GetVertex(j)->GetNormalCoords(x,y,z);
+      // correspondance of local vertex and local dof
+      // hexahedron
+      if (N_Vertices == 8)
+      {
+        switch(j)
+        {
+          case 0:
+            local = 0;
+            break;
+          case 1:
+            local = 1;
+            break;
+          case 2:
+            local = 3;
+            break;
+          case 3:
+            local = 2;
+            break;
+          case 4:
+            local = 4;
+            break;
+          case 5:
+            local = 5;
+            break;
+          case 6:
+            local = 7;
+            break;
+          case 7:
+            local = 6;
+            break;
+        }
+      }
+      else
+      // tetrahedron
+        local = j;
+      // l - global index
+      l = DOF[local];
+      // already done
+      if ( integral[l]>=-0.1 )
+      {
+        continue;
+      }
+      if ( integral1[l]>=-0.1 )
+      {
+        continue;
+      }
+      if ( integral2[l]>=-0.1 )
+      {
+        continue;
+      }
+      // corresponding index of array f - comparision of the x, y and z coordinates
+      for ( m=0 ; m<(N_x+1) ; m++ )
+      {
+        if ( fabs(x-x_coord[m])<eps )
+        {
+          index = m;
+          break;
+        }
+      }
+      //OutPut(x_coord[m]);
+
+      for ( m=0 ; m<=N_y*(N_x+1) ; m+=(N_x+1) )
+      {
+        if ( fabs(y-y_coord[m])<eps )
+        {
+          index += m;
+          break;
+        }
+      }
+
+      for ( m=0 ; m<=N_z*N2 ; m+=N2 )
+      {
+        if ( fabs(z-z_coord[m])<eps )
+        {
+          index += m;
+          break;
+        }
+      }
+
+      // set test array to 1
+      indextest[index]++;
+
+      /*   for ( k1=0 ; k1<=N_b ; k1++)
+        {
+          for ( k2=0 ; k2<=N_a ; k2++ )
+          {
+              i1 = index+k2*N3+k1*N4;
+               a[i1]=a_coord[k2];
+         b[i1]=b_coord[k1];
+
+         f[i1]=-7*a[i1]*b[i1]+2*b[i1]*b[i1];
+      }
+      }*/
+
+      val=0.0;
+      val1= 0.0;
+      val2= 0.0;
+      val_2 = 0.0;
+      // growth rate does not depend on PSD
+
+      // compute integral in a-direction, composed trapezoidal rule
+      for ( k1=0 ; k1<N_b ; k1++)
+      {
+        for ( k2=0 ; k2<N_a ; k2++ )
+        {
+          // lower left node
+          i1 = index+k2*N3+k1*N4;
+          // lower right node
+          i2 = i1+N3;
+          // upper left node
+          i3 = i1+N4;
+          // uppe right node
+          i4=  i1+N3+N4;
+
+          // triangle i1 i4 i3
+          //                   P1 i1a             P2 i1b                 P3  i4a                 P4 i4b                  P5 i3a                P6 i3b
+          //OutPut(" " << a_coord[k2] << " " << b_coord[k1] <<" "<< a_coord[k2+1] << " " << b_coord[k1+1] << " " << a_coord[k2] << " " << b_coord[k1+1] <<endl);
+          // coordinates of vertices
+          i1a = a_coord[k2];
+          i1b = b_coord[k1];
+          i2a = a_coord[k2+1];
+          i2b = b_coord[k1];
+          i3a = a_coord[k2];
+          i3b = b_coord[k1+1];
+          i4a = a_coord[k2+1];
+          i4b = b_coord[k1+1];
+          // bary center
+          sa = (i1a + i3a + i4a)/3.0;
+          sb = (i1b + i3b + i4b)/3.0;
+          // if upper triangle below a=b then also lower triangle
+          if (sb < sa)
+            continue;
+          // mid points of edges
+          j1a = (i1a + i3a)/2.0;
+          j1b = (i1b + i3b)/2.0;
+          j2a = (i1a + i4a)/2.0;
+          j2b = (i1b + i4b)/2.0;
+          j3a = (i3a + i4a)/2.0;
+          j3b = (i3b + i4b)/2.0;
+
+          // function values by linear interpolation
+          fs = (f[i1]+f[i4]+f[i3])/3.0;
+
+          fj1 = (f[i1]+f[i3])/2.0;
+          fj2 = (f[i1]+f[i4])/2.0;
+          fj3 = (f[i3]+f[i4])/2.0;
+
+          //A1=abs((P3*P6 - P5*P4)-(P1*P6 - P5*P2)+(P1*P4 - P3*P2))/2
+          // A1=fabs((a_coord[k2+1]*b_coord[k1+1]-a_coord[k2]*b_coord[k1+1])-(a_coord[k2]*b_coord[k1+1]-a_coord[k2]*b_coord[k1])+(a_coord[k2]*b_coord[k1+1]-a_coord[k2+1]*b_coord[k1]))/2.0;
+          A1=fabs((i4a*i3b-i3a*i4b) -(i1a*i3b-i3a*i1b)+(i1a*i4b-i4a*i1b))/2.0;
+          // values of function in edge mid points
+          //integral for G1
+          val11 =   2*( L_max_2*j1a*j1b -  L_max_1*j1a*j1a) * fj1;
+          val21 =  2*( L_max_2*j2a*j2b - L_max_1*j2a*j2a) * fj2;
+          val31 =  2*( L_max_2*j3a*j3b - L_max_1*j3a*j3a) * fj3;
+          //integral for G1
+          val12 = j1a*j1a * fj1;
+          val22 = j2a*j2a * fj2;
+          val32 = j3a*j3a * fj3;
+
+          val1 += A1 * (val11 + val21 + val31)/3.0;
+          val2 += A1 * (val12 + val22 + val32)/3.0;
+          // OutPut(" " << i1 << " " << i2 <<" " << i4 <<endl);
+          //triangle i1 i2 i4
+          //                   P1 i1a                   P2 i1b           P3 i2a                 P4 i2b                  P5 i4a                P6 i4b
+          //OutPut(" " << a_coord[k2] << " " << b_coord[k1] << " " << a_coord[k2+1] << " " << b_coord[k1] << " " << a_coord[k2+1] << " " << b_coord[k1+1] <<" "<<endl);
+
+          sa2=(i1a + i2a + i4a)/3.0;
+          sb2=(i1b + i2b + i4b)/3.0;
+          // if bottom triangle below a=b then also lower triangle
+          if (sb2<sa2)
+            continue;
+
+          //A2=abs((P3*P6 - P5*P4)-(P1*P6 - P5*P2)+(P1*P4 - P3*P2))/2
+          // A2=fabs((a_coord[k2+1]*b_coord[k1+1]-a_coord[k2+1]* b_coord[k1])-(a_coord[k2]*b_coord[k1+1]-a_coord[k2+1]* b_coord[k1])+(a_coord[k2]*b_coord[k1]-a_coord[k2+1]* b_coord[k1]))/2.0;
+          A2=fabs((i2a*i4b-i4a*i2b)-(i1a*i4b-i4a*i1b)+(i1a*i2b -i2a*i1b))/2.0;
+
+          // mid points of edges
+          k1a = (i1a + i2a)/2.0;
+          k1b = (i1b + i2b)/2.0;
+          k2a = (i2a + i4a)/2.0;
+          k2b = (i2b + i4b)/2.0;
+          k3a = (i1a + i4a)/2.0;
+          k3b = (i1b + i4b)/2.0;
+
+          // function values by linear interpolation
+          fs2 = (f[i1]+f[i2]+f[i4])/3.0;
+
+          fk1 = (f[i1]+f[i2])/2.0;
+          fk2 = (f[i2]+f[i4])/2.0;
+          fk3 = (f[i1]+f[i4])/2.0;
+          //integral for G1
+          val11_2 = 2* (L_max_2*k1a*k1b - L_max_1*k1a*k1a) * fk1;
+          val21_2 = 2* (L_max_2*k2a*k2b - L_max_1*k2a*k2a) * fk2;
+          val31_2 = 2* (L_max_2*k3a*k3b - L_max_1*j3a*k3a) * fk3;
+          //integral for G2
+          val12_2 =  k1a*k1a * fk1;
+          val22_2 =  k2a*k2a * fk2;
+          val32_2 =  k3a*k3a * fk3;
+
+          val1 += A2 * (val11_2 + val21_2 + val31_2)/3.0;
+          val2 += A2 * (val12_2 + val22_2 + val32_2)/3.0;
+
+          val=val1+val2;
+        }
+
+      }
+      //OutPut(" val1 " << val1 << endl);
+      //  OutPut(" val2 " << val2 << endl);
+
+      // OutPut(" val " << Func(5.,5.) << endl);
+      // OutPut(" val1 " << val1 << endl);
+      //OutPut(" val2 " << val2 << endl);
+      // OutPut(" val " << val1+val2<< endl);
+      // OutPut(" A1 " << A1 << endl);
+      //  OutPut(" A2 " << A2 << endl);
+      // insert the value into the fe function
+      integral[l]=val;
+      integral1[l] = val1;
+      integral2[l] = val2;
+      //integral1[l] = 1.;
+      //integral2[l] = 2.;
+      // if (abs(integral1[l])>1e-12)
+      //  {
+      //  OutPut(" j = " << j << " integral1[" << l << "]=" << integral1[l] << endl);
+      //  }
+      //  if (abs(integral2[l])>1e-12)
+      //  {
+      // OutPut(" j = " << j <<  " integral2[" << l << "]=" << integral2[l] << endl);
+      // }
+      // OutPut(" integral2 " << integral2[l] << endl);
+      // OutPut(" val1 " << integral1[l] << endl);
+      // OutPut(" val2 " << integral2[l] << endl);
+    }
+  }
+
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    if (!indextest[i])
+    {
+      OutPut("Index " << i << " not found " << endl);
+      exit(4711);
+    }
+  }
+  //OutPut(TDatabase::TimeDB->CURRENTTIME << " integral " << sqrt(Ddot(N3,integral,integral)) << endl);
+  //OutPut( setprecision(7) << endl);
+  OutPut(TDatabase::TimeDB->CURRENTTIME << " integral1 " << sqrt(Ddot(N3,integral1,integral1)) << endl);
+  OutPut(TDatabase::TimeDB->CURRENTTIME << " integral2 " << sqrt(Ddot(N3,integral2,integral2)) << endl);
+  //memset(integral1,0.0,N3*SizeOfDouble);
+  //memset(integral2,0.0,N3*SizeOfDouble);
+  //exit(1);
+  delete indextest;
+  delete a;
+  delete b;
+}
+#endif // 0, the above method is not compiling
+
+/****************************************************************************************
+ *                                                                                       *
+ *  feedback to concentration C  2D                                                        *
+ *                                                                                       *
+ ****************************************************************************************/
+
+#if 0 // not compiling
+void Integral_For_Particle_Increase_Term_2D_old(TFESpace3D *fespace, TFEFunction3D *fefct,
+int N_x, int N_y, int N_z,int N_a,int N_b,
+double *x_coord, double *y_coord, double *z_coord, double *a_coord,double *b_coord, double *f)
+{
+  int N_P,N_e,N_E,alpha;
+  int N_Vertices, index,index1,index2;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+
+  double val,val1,val2,val3, x, y, z, eps = 1e-6,sa,sb,A;
+  double *integral,*a,*b;
+  double c_C_infty_sat, C_2, d_p_max, d_p_0, d_p_min, c_C_infty;
+  int i, j, N2, N3, N4, N5, m, k, l, N_Cells, local;
+  TCollection *Coll;
+  TBaseCell *cell;
+  int *indextest;
+  const int dim =3;
+  int in3,k1,k2;
+  double G1=0.4;
+  double G2=0.3;
+  int  i1=0;
+  int  i2=0;
+  int ii;
+  int iii=0;
+  int ii1;
+  int ii2;
+  int ii3;
+  //N_e=N_a*N_b;
+  N2 = (N_x+1)*(N_y+1);
+  N3 = N2 * (N_z+1);
+  N4 = N3 * (N_a+1);
+  N5 = N4 * (N_b+1);
+
+  // array for index
+  int **in = new int*[N5];
+  for (int i = 0; i < N5 ; i++)
+    in[i] = new int[dim];
+
+  int **in1 = new int*[N5];
+  for (int i = 0; i < N5 ; i++)
+    in1[i] = new int[dim];
+
+  int **in2 = new int*[N5];
+  for (int i = 0; i < N5 ; i++)
+    in2[i] = new int[dim];
+
+  for (int i = 0; i < N5 ; i++)
+  {
+    for (int j = 0; j < dim ; j++)
+    {
+      in[i][j]=0;
+      in1[i][j]=0;
+      in2[i][j]=0;
+    }
+
+  }
+
+  indextest = new int[N3];
+  memset(indextest,0,N3*SizeOfInt);
+
+  a =new double[N5];
+  memset(a,0,N5*SizeOfDouble);
+  b =new double[N5];
+  memset(b,0,N5*SizeOfDouble);
+
+  // arrays for d.o.f. of fe space (Q1) which contains the integral
+  GlobalNumbers = fespace->GetGlobalNumbers();
+  BeginIndex = fespace->GetBeginIndex();
+  // values of the integral in the fe space
+  integral = fefct->GetValues();
+
+  // initialize
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    integral[i] = -1;
+  }
+
+  // all spaces use same Coll
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+  N_P = (N_a+1)*(N_b+1);
+  index=0;
+  index1=0;
+  index2=0;
+  //loop over all mesh cells
+  for( i=0 ; i<N_Cells ; i++ )
+  {
+    // get cell i
+    cell = Coll->GetCell(i);
+    // get number of edges (or vertices)
+    N_Vertices=cell->GetN_Vertices();
+    if (N_Vertices!=8)
+    {
+      OutPut("Integral_For_Particle_Increase_Term only implemented for hexahedra !!!" << endl);
+      exit(4711);
+    }
+    // get pointer to degrees of freedom connected to this mesh cell
+    DOF = GlobalNumbers + BeginIndex[i];
+    // loop over all vertices
+    for ( j=0 ; j<N_Vertices ; j++ )
+    {
+
+      // corners of mesh cell
+      if (N_Vertices == 8)
+      {
+        cell->GetVertex(j)->GetCoords(x,y,z);
+      }
+      else
+        cell->GetVertex(j)->GetNormalCoords(x,y,z);
+
+      // correspondance of local vertex and local dof
+      //hexahedron
+      if (N_Vertices == 8)
+      {
+        switch(j)
+        {
+          case 0:
+            local = 0;
+            break;
+          case 1:
+            local = 1;
+            break;
+          case 2:
+            local = 3;
+            break;
+          case 3:
+            local = 2;
+            break;
+          case 4:
+            local = 4;
+            break;
+          case 5:
+            local = 5;
+            break;
+          case 6:
+            local = 7;
+            break;
+          case 7:
+            local = 6;
+            break;
+        }
+      }
+      else
+      //tetrahedron
+        local = j;
+
+      // l - global index
+      l = DOF[local];
+      // already done
+      if ( integral[l]>=-0.1 )
+      {
+        continue;
+      }
+      // corresponding index of array f - comparision of the x, y and z coordinates
+      for ( m=0 ; m<(N_x+1) ; m++ )
+      {
+        if ( fabs(x-x_coord[m])<eps )
+        {
+          index = m;
+          break;
+        }
+      }
+      //OutPut(x_coord[m]);
+
+      for ( m=0 ; m<=N_y*(N_x+1) ; m+=(N_x+1) )
+      {
+        if ( fabs(y-y_coord[m])<eps )
+        {
+          index += m;
+          break;
+        }
+      }
+
+      for ( m=0 ; m<=N_z*N2 ; m+=N2 )
+      {
+        if ( fabs(z-z_coord[m])<eps )
+        {
+          index += m;
+          break;
+        }
+      }
+
+      // set test array to 1
+      indextest[index]++;
+
+      val = 0.0;
+      val1 = 0.0;
+      val2 = 0.0;
+      val3 = 0.0;
+
+      for ( k1=0 ; k1<=N_a ; k1++ )
+      {
+        for ( k2=0 ; k2<=N_b ; k2++ )
+        {
+          ii=index+k1*N3+k2*N4;
+          //ii=k1+(N_a+1)*k2;
+          a[ii]=a_coord[k1];
+          b[ii]=b_coord[k2];
+          // OutPut("  " <<ii<<"  "<<a[ii]<<"  " <<b[ii]<<"  "<<endl);
+          //index=i;
+          //alpha=(ii+1)%(N_a+1);
+
+          alpha=(ii+1)%N4;
+          //if ((ii+1< N_P-N_a-1)&&(alpha!=0))
+          if ((ii+1< N5-N4)&&(alpha!=0))
+          {
+
+            in1[index1][0]=ii;
+            in1[index1][1]=ii+1;
+            in1[index1][2]=ii+N_a+2;
+            //OutPut(" test " <<a[5]<<"  " <<b[5]<<"  "<<endl);
+            //OutPut("  " <<index1 <<"  " <<in1[index1][0]<<"  " <<  "  " <<in1[index1][1]<<"  " <<   "  " <<in1[index1][2]<<"  " <<   endl);
+            // OutPut("  " <<a[ii]<<"  " <<b[i]<<"  "  <<a[i+1]<<"  " <<  "  " <<b[i+1] <<"  " << "  " <<a[i+N_a+2]<< "  " <<b[i+N_a+2]<<"  " <<  endl);
+            //OutPut("  " <<ii<<"  "<<a[ii]<<"  " <<b[ii]<<"  "<<a[ii+1]<<"  " <<b[ii+1]<<"  "<<a[ii+N_a+2]<<"  " <<b[ii+N_a+2]<<"  "<<endl);
+
+            in2[index2][0]=ii;
+            in2[index2][1]=ii+N_a+2;
+            in2[index2][2]=ii+N_a+1;
+            //OutPut("  " <<a_coord[k1]<<"  " <<b_coord[k2] <<"  " << endl);
+
+            //OutPut("  " <<a_coord[i+1]<<"  " <<b_coord[i+1] <<"  " << endl);
+            //OutPut("  " <<a_coord[index2]<<"  " <<b_coord[index2] <<"  " << endl);
+            //OutPut("  " <<a[i]<<"  " <<b[i] <<"  " << endl);
+            //OutPut("  " <<a[index2]<<"  " <<b_coord[index2] <<"  " << endl);
+            //OutPut("  " <<a_coord[i+N_a+2]<<"  " <<b_coord[i+N_a+2] <<"  " << endl);
+            //OutPut("  " <<a_coord[i+N_a+1]<<"  " <<b_coord[i+N_a+1] <<"  " << endl);
+            //OutPut("  " <<index2<<"  " <<in2[index2][0]<<"  " <<  "  " <<in2[index2][1]<<"  " <<  "  " <<in2[index][2]<<"  " <<   endl);
+            //OutPut("  " <<index2 <<"  " <<in2[index2][0]<<"  " <<  "  " <<in2[index2][1]<<"  " <<   "  " <<in2[index2][2]<<"  " <<   endl);
+
+            index1++;
+            index2++;
+
+          }
+          //OutPut("  " <<a[i]<<"  " <<b[i]<<"  "   <<  endl);
+        }
+      }
+      //  OutPut("  " <<in1[2][0]<<"  " <<   endl);
+      //  OutPut("  " <<in1[2][1]<<"  " <<   endl);
+      // OutPut("  " <<in1[2][2]<<"  " <<   endl);
+
+      N_e=index1;
+      // OutPut("  " <<N_e<<"  " <<   endl);
+      for (i1=0;i1<index1;i1++)
+      {
+
+        in[i1][0]=in1[i1][0];
+        in[i1][1]=in1[i1][1];
+        in[i1][2]=in1[i1][2];
+        //OutPut("  " <<i1<<"  " <<in1[i1][0]<<"  " <<  "  " <<in1[i1][1]<<"  " <<  "  " <<in1[i1][2]<<"  " <<   endl);
+        // OutPut("  " <<a[in1[i1][0]]<<"  " <<b[in1[i1][0]]<<"  "  <<a[in1[i1][1]]<<"  " <<  "  " <<b[in1[i1][1]] <<"  " << "  " <<a[in1[i1][2]]<< "  " <<a[in1[i1][2]]<<"  " <<  endl);
+
+      }
+      for (i2=0;i2<N_e;i2++)
+      {
+        in[i1+i2][0]=in2[i2][0];
+        in[i1+i2][1]=in2[i2][1];
+        in[i1+i2][2]=in2[i2][2];
+        //OutPut("  " <<i2<<"  " <<in2[i2][0]<<"  " <<  "  " <<in2[i2][1]<<"  " <<  "  " <<in2[i2][2]<<"  " <<   endl);
+        // OutPut("  " <<a[in2[i2][0]]<<"  " <<b[in2[i2][0]]<<"  "  <<a[in2[i2][1]]<<"  " <<  "  " <<b[in2[i2][1]] <<"  " << "  " <<a[in2[i2][2]]<< "  " <<a[in2[i2][2]]<<"  " <<  endl);
+      }
+      N_E=2*N_e;
+      for (ii=0;ii<2*N_e;ii++)
+      {
+        ii1=in[ii][0];
+        ii2=in[ii][1];
+        ii3=in[ii][2];
+
+        // OutPut("  " <<i<<"  " <<ii1<<"  " <<  "  " <<ii2<<"  " <<  "  " <<ii3<<"  " <<   endl);
+        //OutPut("  " <<P(i,1)<<"  " <<P(i,2)<<"  "  <<P(i,3)<<"  " <<  "  " <<P(i,4) <<"  " << "  " <<P(i,5)<< "  " <<P(i,6)<<"  " <<  endl);
+        // OutPut("  " <<a[ii1]<<"  " <<b[ii1]<<"  "  <<a[ii2]<<"  " <<  "  " <<b[ii2] <<"  " << "  " <<a[ii3]<< "  " <<b[ii3]<<"  " <<  endl);
+
+        sa =  (a[ii1]+a[ii2]+a[ii3])/3.0;
+        sb =  (b[ii1]+b[ii2]+b[ii3])/3.0;
+        if (sa>sb)
+          continue;
+        //  OutPut("  " <<ii<<"  " <<ii1<<"  " <<  "  " <<ii2<<"  " <<  "  " <<ii3<<"  " <<   endl);
+        //OutPut("  " <<a[ii1]<<"  " <<b[ii1]<<"  "  <<a[ii2]<<"  " <<  "  " <<b[ii2] <<"  " << "  " <<a[ii3]<< "  " <<b[ii3]<<"  " <<  endl);
+        A = fabs(( a[ii2]*b[ii3]-a[ii3]*b[ii2]) - (a[ii1]*b[ii3]-a[ii3]*b[ii1]) + (a[ii1]*b[ii2]-a[ii2]*b[ii1]))/2;
+        val1 = G1*a[ii1]*b[ii1]+G1*b[ii1]*b[ii1]-G2*b[ii1]*b[ii1];
+        val2 = G1*a[ii2]*b[ii2]+G1*b[ii2]*b[ii2]-G2*b[ii2]*b[ii2];
+        val3 = G1*a[ii3]*b[ii3]+G1*b[ii3]*b[ii3]-G2*b[ii3]*b[ii3];
+        //OutPut(" val1  " <<val1<<"  " <<   endl);
+        //OutPut(" val2  " <<val2<<"  " <<   endl);
+        //val=val+A*(val1*f[ii1]+val2*f[ii2]+val3*f[ii3])/3.0;
+        //val=val+A*(val1+val2*+val3)/3.0;
+        val=val+A*(f[ii1]+f[ii2]*+f[ii3])/3.0;
+        // OutPut(" val  " <<val<<"  " <<   endl);
+
+      }
+      // insert the value into the fe function
+      integral[l] = val;
+      // OutPut(" Integr  " <<l <<"  " <<integral[l]<<"  " <<   endl);
+    }
+
+  }
+  // check if intergral has been computed for all dof
+  for ( i=0 ; i<N3 ; i++ )
+  {
+    if (!indextest[i])
+    {
+      OutPut("Index " << i << " not found " << endl);
+      exit(4711);
+    }
+  }
+
+  OutPut(TDatabase::TimeDB->CURRENTTIME << " integral " << sqrt(Ddot(N3,integral,integral)) << endl);
+
+  delete indextest;
+  delete a;
+  delete b;
+
+  for (int j = 0; j < N5 ; j++)
+    delete [] in[j] ;
+  delete [] in;
+
+  for (int j = 0; j < N5 ; j++)
+    delete [] in1[j] ;
+  delete [] in1;
+
+  for (int j = 0; j < N5 ; j++)
+    delete [] in2[j] ;
+  delete [] in2;
+}
+#endif // 0, the above method is not compiling
 
 
 /****************************************************************************************

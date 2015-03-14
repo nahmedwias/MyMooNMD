@@ -118,16 +118,5 @@ MultiIndex3D SOLD_FEMultiIndex[6] = { D000, D100, D010, D001, D000, D000 };
 ParamFct *SOLD_Fct[1] = { SOLD_Params };
 int SOLD_BeginParam[1] = { 0 };
 
-// ========================================================================
-// write parameters for latex table
-// ========================================================================
 
-void ParamsForLatexTable();
-void SetSoldParameters(int i);
-
-void EvaluateResults(int *nonlinite, double *scale, double *globmin,
-double *globmax, double *bdrmin, double *bdrmax,
-double *bdrh11, double *maxprinciple_cells, double *maxprinciple_max,
-int ij_end);
-
-#endif
+#endif // __CONVDIFF3D__

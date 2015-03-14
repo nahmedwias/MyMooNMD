@@ -20,6 +20,7 @@
 #include <Enumerations.h>
 #include <BaseFunct2D.h>
 #include <Database.h>
+#include <ConvDiff.h>
 
 #include <math.h>
 #include <string.h>
@@ -27,6 +28,17 @@
 #ifndef __MAC64__
 #include <malloc.h>
 #endif
+
+/**********************************************************************/
+// 0 - gradient indicator
+// 1 - H^1 estimator
+// 2 - L^2 estimator
+// 3 - energy norm + dual norm, Verf"urth 2005
+// 4 - energy norm estimator without jumps
+// 5 - supg estimator John/Novo, upper estimate
+// 6 - supg estimator John/Novo, lower estimate
+/**********************************************************************/
+#define N_estimators 7
 
 TCD2DErrorEstimator::TCD2DErrorEstimator(int fe_local_estimator,
 TFEFunction2D *fe_function2D,
@@ -96,7 +108,7 @@ double *estimated_global_error)
   double *Values,max_loc_err;
   int *GlobalNumbers, *BeginIndex;
   double xc, yc;
-  double estimated_global_errors[5], estimated_local_errors[5];
+  double estimated_global_errors[N_estimators], estimated_local_errors[N_estimators];
   int LocN_BF[N_BaseFuncts2D];
   BaseFunct2D LocBF[N_BaseFuncts2D];
   bool *SecondDer;
@@ -339,7 +351,7 @@ double *estimated_global_error)
     cell->SetClipBoard(i);
   }
 
-  for (i=0;i<5;i++)                               // initialize some quantities
+  for (i=0;i<N_estimators;i++)                               // initialize some quantities
     estimated_global_errors[i]=0.0;
   max_loc_err = 0;
   current_estimator = GetFELocalEstimator();
@@ -461,6 +473,21 @@ double *estimated_global_error)
         yderiv_1D[j][k]= val[2];                  // for k-th
       }                                           // endfor k
     }                                             // endfor j
+    
+    if((TDatabase::ParamDB->DISCTYPE == SDFEM)
+        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
+    {
+      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
+      N_Edges = cell->GetN_Edges();
+      for (int ij=0;ij<N_Edges;ij++)
+      {
+        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+      }
+      if (N_Edges==3)
+        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+    }
 
     // estimate local errors
     EstimateCellError_new(fespace,cell,N_Points, X, Y, AbsDetjk, weights, Derivatives,
@@ -470,7 +497,7 @@ double *estimated_global_error)
 		      GlobalNumbers,BeginIndex,DOF,Values,
 		      estimated_local_errors);
 
-    for(k=0;k<5;k++)                              // update global error estimates
+    for(k=0;k<N_estimators;k++) // update global error estimates
       estimated_global_errors[k]+=estimated_local_errors[k];
     // update maximal local error estimate
     if (estimated_local_errors[current_estimator]>max_loc_err)
@@ -483,7 +510,7 @@ double *estimated_global_error)
   memory[2]=MALLINFO.usmblks+MALLINFO.uordblks;
   data_base_memory+= memory[2]-memory[1];
 #endif
-  for(i=1;i<5;i++)                                // compute global error estimates
+  for(i=1;i<N_estimators;i++)                                // compute global error estimates
     estimated_global_error[i]=sqrt(estimated_global_errors[i]);
   estimated_global_error[0]=estimated_global_errors[0];
   // compute maximal local error estimate
@@ -533,6 +560,22 @@ double *estimated_global_error)
 #endif
 }                                                 // TCD2DErrorEstimator::GetErrorEstimate
 
+/*******************************************************************************/
+// EstimateCellError_new
+// compute the local contribution to the error estimator
+// * gradient indicator - estimated_error[0]
+// * residual based estimators - estimated_error[i], i>0
+// alpha[i] - weight for cell residual
+// beta[i]  - weight for edge residuals
+// 0 - H^1 estimator
+// 1 - L^2 estimator
+// 2 - estimator for dual norm of convection, Verf"urth 2005
+// 3 - estimator for dual norm of convection, Verf"urth 2005
+//     without jumps
+// 4 - estimator for SUPG norm, version 1, Novo
+// 5 - estimator for SUPG norm, version 2, Novo
+/*******************************************************************************/
+
 void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 					     TBaseCell *cell,
 					     int N_Points,
@@ -561,16 +604,17 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 {
   int i,j,k,l,n,N_Edges,comp,parent_edge,MaxLen1,MaxLen2,MaxLen3,N_child,neigh_edge;
   int chnum1,l_child,child_N_,edge1,neigh_N_,N_Neigh;
-  double *deriv, w,e1,e2,*coeff,strong_residual,alpha[4],beta[3],hK,hE,val[3],hE2;
-  double estimated_error[5],t0,t1,nx,ny,x0,x1,y0,y1,neumann_data,jump,absdetjk1D;
+  double *deriv, w,e1,e2,*coeff,strong_residual,alpha[N_estimators-1],beta[N_estimators-1],hK,hE,val[3],hE2;
+  double estimated_error[N_estimators],t0,t1,nx,ny,x0,x1,y0,y1,neumann_data,jump,absdetjk1D, meas;
   double absdet1D[MaxN_QuadPoints_2D];
   double cell_x0,cell_y0,cell_x1,cell_y1,*xi1DNeigh,*eta1DNeigh, *FEFunctValuesNeigh;
   double *X1DNeigh,*Y1DNeigh,*X1DCell,*Y1DCell;
+  double delta_K;
   const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3;
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
   TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
+  TBoundComp2D *BoundComp;
   BoundCond Cond0;
   TRefDesc *refdesc,*refdesc_child;
   TBaseCell *neigh, *child, *parent;
@@ -602,32 +646,32 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   Coll = fespace->GetCollection();
   // this is for the parameter optimization
   if (TDatabase::ParamDB->INTERNAL_NO_ESTIMATE_DIRICHLET_CELLS)
+  {
+    N_Edges=cell->GetN_Edges();
+    for(j=0;j<N_Edges;j++) // loop over all edges of cell
     {
-      N_Edges=cell->GetN_Edges();
-      for(j=0;j<N_Edges;j++)                        // loop over all edges of cell
-	{
-	  ver0 = cell->GetVertex(j);
-	  // clip board contains information on the position of the vertex
-	  w =  ver0->GetClipBoard();
-	  // vertex not on the boundary
-	  if (w<-1e-8)
-	    continue;
-	  // component of boundary
-	  comp = floor(w+1e-8);
-	  // parameter
-	  w -= comp;
-	  // get boundary condition
-	  //OutPut(comp << " " << w << endl);
-	  BoundaryConds[0](comp, w, Cond0);
-	  // Dirichlet
-	  if (Cond0== DIRICHLET)
-	    {
-	      for (i=0;i<5;i++)
-		estimated_error[i] = 0;
-	      return;
-	    }
-	}
+      ver0 = cell->GetVertex(j);
+      // clip board contains information on the position of the vertex
+      w =  ver0->GetClipBoard();
+      // vertex not on the boundary
+      if (w<-1e-8)
+        continue;
+      // component of boundary
+      comp = floor(w+1e-8);
+      // parameter
+      w -= comp;
+      // get boundary condition
+      //OutPut(comp << " " << w << endl);
+      BoundaryConds[0](comp, w, Cond0);
+      // Dirichlet
+      if (Cond0== DIRICHLET)
+      {
+        for (i=0;i<N_estimators;i++)
+          estimated_error[i] = 0;
+	    return;
+      }
     }
+  }
   k = MaxN_BaseFunctions2D*MaxN_QuadPoints_1D*MaxN_BaseFunctions2D_loc;
   xietaval_refNeigh1D[0][0] = new double[3*k];
   xideriv_refNeigh1D[0][0] = xietaval_refNeigh1D[0][0] + k;
@@ -661,7 +705,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
           yderiv_1D[j][k] << endl;
   }
 
-  for (i=0;i<5;i++)                               // initalize local error estimates
+  for (i=0;i<N_estimators;i++)                               // initalize local error estimates
     estimated_error[i]=0.0;
 
   /*************************************************************************/
@@ -721,6 +765,16 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
     /*  strong residual                                                      */
     /*************************************************************************/
     hK = cell->GetDiameter();
+    N_Edges = cell->GetN_Edges();
+     for (i=0;i<N_Edges;i++)
+    {
+      TDatabase::ParamDB->INTERNAL_VERTEX_X[i] = cell->GetVertex(i)->GetX();
+      TDatabase::ParamDB->INTERNAL_VERTEX_Y[i] = cell->GetVertex(i)->GetY();
+    }
+    if (N_Edges==3)
+      TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+
+    meas = cell->GetMeasure();
     strong_residual = 0;
     for(i=0;i<N_Points;i++)                       // for all quadrature points
     {
@@ -737,8 +791,13 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
       e1 = -coeff[0]*(deriv[3]+deriv[4])+coeff[1]*deriv[0]+coeff[2]*deriv[1]
         +coeff[3]*deriv[2]
         -coeff[4];                                // strong residual
+      if(  TDatabase::ParamDB->P15 == -4711.0)    // time-dependent problem
+        e1 += coeff[6];
+
       strong_residual += w*e1*e1;                 // L^2 norm
     }                                             // endfor i
+    double hK_tilde = Mesh_size_in_convection_direction(hK, coeff[1], coeff[2]);
+
     alpha[0] = hK*hK;                             // weight for H^1 estimator
     alpha[1] = hK*hK*hK*hK;                       // weight for L^2 estimator
     alpha[2] = hK*hK/coeff[0];                    // weight for energy norm estimator
@@ -748,11 +807,40 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 	    alpha[2] = 1.0/TDatabase::ParamDB->INTERNAL_COERCIVITY; // update weight for energy norm estimator
     }
     alpha[3] = alpha[2];
-    for (i=1;i<5;i++)
+    alpha[4] = alpha[3];
+    double linfb = fabs(coeff[1]);
+    if (fabs(coeff[2]) > linfb)
+      linfb = fabs(coeff[2]);
+    if (TDatabase::ParamDB->DISCTYPE == SUPG)
+    {
+      // compute stabilization parameter
+      delta_K = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], linfb);
+      if (alpha[4] > 24 * delta_K)
+         alpha[4] =  24 * delta_K;
+      // second contribution
+      alpha[4] +=  24 * delta_K;
+    }
+    alpha[5] = hK;
+    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    {
+      alpha[5] = hK*hK/(3*sqrt(10.0)*coeff[0]);
+      if (coeff[3]>0)
+      {
+        if (1.0/coeff[3]<alpha[5])
+          alpha[5] = 1.0/coeff[3];
+      }
+      // compute stabilization parameter
+      if (hK_tilde/(sqrt(2.0)*linfb)<alpha[5])
+        alpha[5] = hK/(sqrt(2.0)*linfb);
+      alpha[5] *= 2*alpha[5];
+    }
+    for (i=1;i<N_estimators;i++)
       estimated_error[i] = alpha[i-1]*strong_residual;
     /*************************************************************************/
     /*  compute jumps across the edges                                       */
     /*************************************************************************/
+    // no jumps in this estimator
+    beta[3] = 0;
     N_Edges=cell->GetN_Edges();
     for(j=0;j<N_Edges;j++)                        // loop over all edges of cell
     {
@@ -770,15 +858,15 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
         switch(Cond0)
         {
           case DIRICHLET:                         // boundary is Dirichlet
-	    if (TDatabase::ParamDB->INTERNAL_NO_ESTIMATE_DIRICHLET_CELLS)
-	      {
-		for (i=0;i<5;i++)
-		  estimated_error[i] = 0;
-		delete xietaval_refNeigh1D[0][0];
-		delete xi1DNeigh;
-		delete FEFunctValuesNeigh;
-		return;
-	      }
+            if(TDatabase::ParamDB->INTERNAL_NO_ESTIMATE_DIRICHLET_CELLS)
+            {
+              for (i=0;i<N_estimators;i++)
+                estimated_error[i] = 0;
+              delete xietaval_refNeigh1D[0][0];
+              delete xi1DNeigh;
+              delete FEFunctValuesNeigh;
+              return;
+            }
             break;                                // no error
           case NEUMANN:                           // boundary is Neumann
             boundedge->GetXYofT(t0,x0,y0);        // coordinates at begin of parameter interval
@@ -809,7 +897,28 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 		if (w < beta[2])
 		    beta[2]= w;
 	    }
-            for (i=1;i<4;i++)
+            if (24.0/linfb< beta[2])
+            {
+              beta[4] = 24.0/linfb;
+            }
+            else
+            {
+              beta[4] = beta[2];
+            }
+            /*
+            if (TDatabase::ParamDB->INTERNAL_COERCIVITY>0)
+            {
+              linfb = sqrt(TDatabase::ParamDB->INTERNAL_COERCIVITY * coeff[0]);
+              if (1.0/linfb < beta[4])
+                beta[4] = 1.0/linfb;
+            }
+            linfb = hE / coeff[0];
+            if (linfb < beta[4])
+              beta[4] = linfb;
+            */
+            beta[5] = 1.0;
+            beta[5] = alpha[5]*hE/(4.0*meas);
+            for (i=1;i<N_estimators;i++)
               estimated_error[i] += beta[i-1]*jump;
             break;
         default:
@@ -1145,9 +1254,30 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 		  beta[2]= w;
 	  }
 	  //beta[2] *= 2.0;
-          for (i=1;i<4;i++)
-	      estimated_error[i] += beta[i-1]*jump/2.0;
-	}                                         // end no neighbour
+          if (24.0/linfb < beta[2])
+          {
+            beta[4] = 24.0/linfb;
+          }
+          else
+          {
+            beta[4] = beta[2];
+          }
+          /*
+          beta[4] = 24;
+          if (TDatabase::ParamDB->INTERNAL_COERCIVITY>0)
+          {
+            linfb = sqrt(TDatabase::ParamDB->INTERNAL_COERCIVITY) * sqrt(coeff[0]);
+            if (1.0/linfb < beta[4])
+              beta[4] = 1.0/linfb;
+          }
+          linfb = hE / coeff[0];
+          if (linfb < beta[4])
+            beta[4] = linfb;*/
+          beta[5] = 1.0;
+          beta[5] = alpha[5]*hE/(4.0*meas);
+          for (i=1;i<N_estimators;i++)
+            estimated_error[i] += beta[i-1]*jump/2.0;
+        }                                         // end no neighbour
         /*************************************************************************/
         /*  neighbour is not on the finest level, find children of neighbour     */
         /*************************************************************************/
@@ -1623,10 +1753,31 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 		  if (w < beta[2])
 		      beta[2]= w;
 	      }
-	      //beta[2] *= 2.0;
-	      for (i=1;i<4;i++)
+              //beta[2] *= 2.0;
+              if (24.0/linfb< beta[2])
+              {
+                beta[4] = 24.0/linfb;
+              }
+              else
+              {
+                beta[4] = beta[2];
+              }
+              /*
+              beta[4] = 24;
+              if (TDatabase::ParamDB->INTERNAL_COERCIVITY>0)
+              {
+                linfb = sqrt(TDatabase::ParamDB->INTERNAL_COERCIVITY) * sqrt(coeff[0]);
+                if (1.0/linfb < beta[4])
+                  beta[4] = 1.0/linfb;
+              }
+              linfb = hE / coeff[0];
+              if (linfb < beta[4])
+                beta[4] = linfb;
+              */
+              beta[5] = 1.0;
+              beta[5] = alpha[5]*hE/(4.0*meas);
+              for (i=1;i<N_estimators;i++)
                 estimated_error[i] += beta[i-1]*jump/2.0;
-
             }
           }                                       // end clipboard==-1
           else
@@ -1825,8 +1976,29 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 		    beta[2]= w;
 	    }
 	    //beta[2] *= 2.0;
-            for (i=1;i<4;i++)
-		estimated_error[i] += beta[i-1]*jump/2.0;
+            if (24.0/linfb< beta[2])
+            {
+              beta[4] = 24.0/linfb;
+            }
+            else
+            {
+              beta[4] = beta[2];
+            }
+            /*beta[4] = 24;
+            if (TDatabase::ParamDB->INTERNAL_COERCIVITY>0)
+            {
+              linfb = sqrt(TDatabase::ParamDB->INTERNAL_COERCIVITY) * sqrt(coeff[0]);
+              if (1.0/linfb < beta[4])
+                beta[4] = 1.0/linfb;
+            }
+            linfb = hE / coeff[0];
+            if (linfb < beta[4])
+              beta[4] = linfb;
+            */
+            beta[5] = 1.0;
+            beta[5] = alpha[5]*hE/(4.0*meas);
+            for (i=1;i<N_estimators;i++)
+              estimated_error[i] += beta[i-1]*jump/2.0;
           }                                       // end neighbour is member of the collection
         }                                         // end neighbour on the finer level
       }                                           // end inner edge
@@ -1839,8 +2011,18 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 
   //for (i=0;i<4;i++)
   //  cout << i << " estimated error " << estimated_error[i] << endl;
-  for (i=0;i<5;i++)
+  if (delta_K!=4711)
+  {
+      for (i=0;i<N_estimators;i++)
     estimated_local_error[i]=estimated_error[i];
+  }
+  else
+  {
+    for (i=0;i<5;i++)
+      estimated_local_error[i]=estimated_error[i];
+    // no SUPG, i.e. no delta_K
+    estimated_local_error[5] = estimated_local_error[6] = 0;
+  }
 }
 
 void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
@@ -1870,7 +2052,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
 {
   int i,j,k,l,n,N_Edges,comp,parent_edge,MaxLen1,MaxLen2,MaxLen3,N_child,neigh_edge;
   int chnum1,l_child,child_N_,edge1,neigh_N_,N_Neigh;
-  double *deriv, w,e1,e2,*coeff,strong_residual,alpha[4],beta[4],hK,hE,val[3],hE2;
+  double *deriv, w,e1,e2,*coeff,strong_residual,alpha[N_estimators-1],beta[N_estimators-1],hK,hE,val[3],hE2;
   double estimated_error[4],t0,t1,nx,ny,x0,x1,y0,y1,neumann_data,jump,absdetjk1D;
   double absdet1D[MaxN_QuadPoints_2D];
   double cell_x0,cell_y0,cell_x1,cell_y1,*xi1DNeigh,*eta1DNeigh, *FEFunctValuesNeigh;
@@ -2855,13 +3037,12 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
                       ver1=  cell->GetVertex(TmpEdVer[2*j+1]);
                       ver2 = neigh->GetVertex(TmpEdVerNeigh[2*neigh_edge]);          // vertices of edge
                       ver3 = neigh->GetVertex(TmpEdVerNeigh[2*neigh_edge+1]);
-                      if (((ver0==ver2)&&(ver1==ver3))||((ver0==ver3)&&(ver1==ver2)))
-                        ;
-                      else
-                        {
-                          cout << "wrong edge " << endl;                          
-                        }
-                                            
+                      if(!(((ver0==ver2)&&(ver1==ver3))||((ver0==ver3)&&(ver1==ver2))))
+                      {
+                        OutPut("wrong edge 2" << endl);
+                        exit(4711);
+                      }
+                      
                       // compute gradient at the quadrature points on the edge of 
                       // the neighbour element
                       

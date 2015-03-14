@@ -18,6 +18,8 @@
 #include <Bulk.h>
 
 #include <Database.h>
+#include <TimeDiscRout.h>
+#include <RKV_FDM.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -573,6 +575,263 @@ double *velo1, double *velo2, double *concent_C_array,
   // free allocated memory
   delete f_new;
   delete derx_val;
+}
+
+void Bulk_RKV_FDM_3D(TCollection *coll,
+         TFEFunction2D *velocity1, TFEFunction2D *velocity2,
+         TFEFunction2D *concent_C,
+         double *f_old, double **stages, 
+         int N_x, int N_y, int N_z,
+         double *x_coord, double *y_coord, double *z_coord,
+         double *velo1, double *velo2, double *concent_C_array,
+         int *correspond_2dgrid)
+{
+    int i, ii, N2, N3, maxind, val, N1_[3], N_, N_stages;
+    int very_first = 0, disctype, time_disc;
+  int alpha, beta, no_of_2dcell;
+  int *offset_ = NULL, *offset1_;
+  double B_c_C, velocity1_array_val, velocity2_array_val, concent_C_array_val, maxsol, G_c_C_val;
+  double values[3], t1, t2, coeff[3];
+  double *current_stage_fdm, *sol_curr;
+  double *coordinates[3];
+  double deltat = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double time = TDatabase::TimeDB->CURRENTTIME;
+
+  //model constants
+  double l_infty = TDatabase::ParamDB->BULK_l_infty;
+  double u_infty = TDatabase::ParamDB->BULK_u_infty;
+  double c_C_infty_sat = TDatabase::ParamDB->BULK_c_C_infty_sat;
+  double C_g = TDatabase::ParamDB->BULK_C_g;
+  double C_2 = TDatabase::ParamDB->BULK_C_2;
+  double d_p_0 = TDatabase::ParamDB->BULK_D_P_0;
+  double d_p_max = TDatabase::ParamDB->BULK_D_P_MAX;
+  double k_g = TDatabase::ParamDB->BULK_k_g;
+  double k_nuc = TDatabase::ParamDB->BULK_k_nuc;
+  double d_p_min = TDatabase::ParamDB->BULK_D_P_MIN;
+  double c_C_infty = TDatabase::ParamDB->BULK_c_C_infty;
+  double f_infty = TDatabase::ParamDB->BULK_f_infty;
+  double factor_G,c_C;
+
+//  t1 = GetTime();
+  // computed model constants
+  factor_G = k_g*c_C_infty*l_infty/(u_infty*d_p_max);
+
+  double oldtime;
+  // very first computation
+  if (fabs (velo1[0] + 4711) < 1e-6)
+  {
+    very_first++;
+    OutPut("very first computation of f" << endl);
+  }
+  N2 = (N_x+1)*(N_y+1);
+  // number of unknowns in 3D
+  N3 = (N_x+1)*(N_y+1)*(N_z+1);
+
+  // save parameters
+  disctype = TDatabase::ParamDB->DISCTYPE;
+  time_disc = TDatabase::TimeDB->TIME_DISC;
+
+  // array for concentration of species C
+  memset(concent_C_array, 0, N2*SizeOfDouble);
+  // array for solution of current state
+  sol_curr = stages[5];
+  
+  TDatabase::ParamDB->DISCTYPE = TDatabase::ParamDB->PB_DISC_TYPE;
+  TDatabase::TimeDB->TIME_DISC = TDatabase::ParamDB->PB_TIME_DISC;
+
+  N_stages = GetN_SubSteps();
+
+  N1_[0] = N_x+1;
+  N1_[1] = N_y+1;
+  N1_[2] = N_z+1;
+  coordinates[0] = x_coord;
+  coordinates[1] = y_coord;
+  coordinates[2] = z_coord;
+  InitializeConvectiveTermFDM(3, offset_, offset1_, N1_);  
+
+  /*  for (i=0;i<N3;i++)
+  {
+      f_old[i] = sin(i*1.0/N3);
+      }*/
+
+ // loop over the stages
+  for (N_ = 0; N_ < N_stages; N_++)
+  {
+      SetTimeDiscParameters(1);
+      for (i=0;i<N_stages;i++)
+    OutPut(" A("<<N_<<","<<i<<") = " << TDatabase::TimeDB->RK_A[N_][i]);
+      OutPut(" : c("<<N_<<") = " << TDatabase::TimeDB->RK_c[N_]);
+      OutPut(" : b("<<N_<<") = " << TDatabase::TimeDB->RK_b[N_] << endl);
+      current_stage_fdm = stages[N_];
+      memset(current_stage_fdm, 0, N3 * SizeOfDouble);
+      // initialize current stage
+      memcpy(sol_curr,f_old,N3*SizeOfDouble);
+      // add previous stages
+      for (i=0;i<N_;i++)
+    Daxpy(N3, deltat*TDatabase::TimeDB->RK_A[N_][i], stages[i], sol_curr);
+      // compute next stage
+      // discretization of PBE with FDM
+      // loop over all nodes of the FDM grid
+      for (i=0;i<N3;i++)
+      {
+    // node is on the first layer (z_coord=0)
+    // in this layer, the velocity vector will be filled
+    // since this vector is independent of z
+    if ((N_==0) && (i < N2))
+    {
+        ii = i;
+        // treat right d.o.f. seperately
+        if (((ii+1)%(N_x+1)==0))
+      ii = ii-1;
+        // treat upper d.o.f. seperately
+        if (ii>=N_y*(N_x+1))
+      ii = ii-(N_x+1);
+        // right corner
+        //if (i==(N_y+1)*(N_x+1)-1)
+        //  ii = i-(N_x+1)-1;
+        alpha = (int)(ii/(N_x+1)+1e-6);
+        beta = ii%(N_x+1);
+        no_of_2dcell = correspond_2dgrid[alpha*N_x+beta];
+        
+        // u1
+        velocity1->FindGradientLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],values);
+        velo1[i] = values[0];
+        velocity1_array_val = velo1[i];
+        
+        //u2
+        velocity2->FindGradientLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],values);
+        velo2[i] = values[0];
+        velocity2_array_val = velo2[i];
+        
+        // fill the array for the concentrations of C
+        // since this concentration does not depend on z
+        // c_C
+        concent_C->FindValueLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],values);
+        concent_C_array[i] = values[0];
+        concent_C_array_val = values[0];
+    }
+    //node is not on the first layer or not first stage
+    else
+    {
+        //the corresponding node on the first layer
+        ii = i - N2*((int)(i/N2));
+        // compute the value of the velocity for the corresponding (x,y) coordinates
+        velocity1_array_val = velo1[ii];
+        velocity2_array_val = velo2[ii];
+        // compute the value of the concentration of C for the corresponding (x,y) coordinates
+        concent_C_array_val = concent_C_array[ii];
+    }
+    //velocity1_array_val = cos(i);
+    //velocity2_array_val = cos(i)*sin(i);
+    //concent_C_array_val = atan(i)+0.2;
+    // growth rate
+    if (TDatabase::ParamDB->BULK_GROWTH_RATE==2)
+    {
+        G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty*exp(C_2/(z_coord[i]*d_p_max)));
+    }
+    else
+    {
+        G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty);
+    }
+    coeff[0] = velocity1_array_val;
+    coeff[1] = velocity2_array_val;
+    coeff[2] = G_c_C_val;
+    
+    // compute convection term 
+    ConvectiveTermFDM(3, i, 
+          coeff, sol_curr, current_stage_fdm, coordinates,
+          offset_, offset1_);
+
+    // set Dirichlet boundary conditions
+    // if convection is positive at the bottom
+    if (i<N2)
+    {
+        if (TDatabase::ParamDB->BULK_GROWTH_RATE==2)
+        {
+      //G_c_C_val = factor_G*(concent_C_array_val- c_C_infty_sat/c_C_infty*exp(C_2/(z_coord[i]*d_p_max)));
+      G_c_C_val = k_g*(c_C_infty*concent_C_array_val- c_C_infty_sat*exp(C_2/d_p_0));
+        }
+        else
+        {
+      G_c_C_val = k_g*(c_C_infty*concent_C_array_val-c_C_infty_sat);
+        }
+        // compute G*n, n=(0,0,-1);
+        if (G_c_C_val*f_infty > 1e-10)
+        {
+      // compute rate of nucleation
+      B_c_C = k_nuc*pow(c_C_infty*(concent_C_array_val - 1),5);
+      // truncate negative values
+      if (B_c_C < 0)
+          B_c_C = 0;
+      // compute new particle size distribution
+      if (N_ == N_stages -1)
+          f_old[i] = B_c_C/(G_c_C_val*f_infty);
+      current_stage_fdm[i] = 0.0;
+        }
+    }
+    // set Dirichlet boundary conditions
+    // if convection is positive at the top
+    if (i>=N2*N_z)
+    {
+        if (TDatabase::ParamDB->BULK_GROWTH_RATE==2)
+        {
+      G_c_C_val = k_g*(c_C_infty*concent_C_array_val- c_C_infty_sat*exp(C_2/d_p_0));
+        }
+        else
+        {
+      G_c_C_val = k_g*(c_C_infty*concent_C_array_val-c_C_infty_sat);
+        }
+        // compute G*n, n=(0,0,1);
+        if (G_c_C_val*f_infty < 0)
+        {
+      current_stage_fdm[i] = 0.0;
+      if (N_ == N_stages -1)
+          f_old[i] = 0.0;
+        }
+    }
+    
+    // set Dirichlet boundary conditions
+    // inflow from the left x = x_min (left) or right x = x_max (right)
+    if ((( i%(N_x+1)==0 )  ||  ((i+1)%(N_x+1)==0 ))&&(i>N2))
+    {
+        val = PSD_bound_cound_from_velo_inflow(x_coord[i], y_coord[i]);
+        if (val)
+        {
+      if (N_ == N_stages -1)
+          f_old[i] = 0.0;
+      current_stage_fdm[i] = 0.0;
+        }
+    }   
+      }
+  }
+  // compute linear combination of stages
+  for (i=0;i<N_stages;i++)
+  {
+      Daxpy(N3, deltat*TDatabase::TimeDB->RK_b[i], stages[i], f_old);
+  }
+
+  maxsol =  0;
+  maxind = -4711;
+
+  // cut undershoots
+  for (i=0;i<N3;i++)
+  {
+      
+    if (f_old[i] > maxsol)
+    {
+      maxsol = f_old[i];
+      maxind = i;
+    }
+    if (f_old[i]<0)
+    {
+      f_old[i] = 0;
+    }
+  }
+  OutPut(time << " maxsol " << maxsol << " maxind " << maxind << endl);
+   // restore parameters
+  TDatabase::ParamDB->DISCTYPE = disctype;
+  TDatabase::TimeDB->TIME_DISC = time_disc;
+  delete[] offset_;
 }
 
 
@@ -2317,6 +2576,544 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
   delete u1;
   delete test_cells;
 }
+
+
+/****************************************************************************************
+ *                                                                                      *
+ *  assembling of matricess for Q_1 group finite elements                               *
+ *  array with indices for assembling is filled too                                     *
+ *                                                                                      *
+ ***************************************************************************************/
+
+void Build_3D_FEM_FCT_Matrices_Q1_GroupFEM_Bulk(TCollection *coll,
+            int N_x, int N_y, int N_z,
+            double *x_coord, double *y_coord, double *z_coord,
+            TSquareMatrix2D *matM,TSquareMatrix2D *matU1, 
+                  TSquareMatrix2D *matU2, TSquareMatrix2D *matG,
+            double *lump_mass_PSD)
+{
+  int locdof[8], *col_ptr, *row_ptr;
+  int i, j, k, iq, ii, jj, z, z1, N_Entries, Nodes, ii8;
+  int test_index, ansatz_index, index, z_local, z_iq, z_ii;
+  int quad_points = 8, diag_index, found, N_cells, range, index1, index_test_ansatz_loc[64];
+
+  double a[64], b[64], u_val[4], val_test[4], val_ansatz[4], C_val[3];
+  double x_coord_loc[8], y_coord_loc[8], z_coord_loc[8];
+  double *entriesM, *entriesU1, *entriesU2, *entriesG, *growth;
+  double x_max, y_max, z_max, z_min, smag;
+  double area, detJK, hK, hK_conv, tauK, xq, yq, zq, val[4], weight_det;
+  double t1, t2;
+  double d_p_min = TDatabase::ParamDB->BULK_D_P_MIN;
+
+  static double weight[8]={ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+
+  static double qx[8]=
+  {
+    -0.5773502691896257645091489,  0.5773502691896257645091489,
+    -0.5773502691896257645091489,  0.5773502691896257645091489,
+    -0.5773502691896257645091489,  0.5773502691896257645091489,
+    -0.5773502691896257645091489,  0.5773502691896257645091489
+  };
+  static double qy[8]=
+  {
+    -0.5773502691896257645091489, -0.5773502691896257645091489,
+    0.5773502691896257645091489,  0.5773502691896257645091489,
+    -0.5773502691896257645091489, -0.5773502691896257645091489,
+    0.5773502691896257645091489,  0.5773502691896257645091489
+  };
+  static double qz[8]=
+  {
+    -0.5773502691896257645091489, -0.5773502691896257645091489,
+    -0.5773502691896257645091489, -0.5773502691896257645091489,
+    0.5773502691896257645091489,  0.5773502691896257645091489,
+    0.5773502691896257645091489,  0.5773502691896257645091489
+  };
+
+  t1 = GetTime();
+
+  // compute coefficients of the equation
+  N_cells = coll->GetN_Cells();
+
+  N_Entries = matM->GetN_Entries();
+  col_ptr = matM->GetKCol();
+  row_ptr = matM->GetRowPtr();
+  entriesM = matM->GetEntries();    
+  memset(entriesM,0, N_Entries*SizeOfDouble);
+ entriesU1 = matU1->GetEntries();
+  memset(entriesU1,0, N_Entries*SizeOfDouble);
+  entriesU2 = matU2->GetEntries();
+  memset(entriesU2,0, N_Entries*SizeOfDouble);
+   entriesG = matG->GetEntries();
+  memset(entriesG,0, N_Entries*SizeOfDouble);
+
+  Nodes = (N_x+1)*(N_y+1)*(N_z+1);
+  x_max = x_coord[Nodes-1];
+  y_max = y_coord[Nodes-1];
+  z_max = z_coord[Nodes-1];
+  z_min = z_coord[0];
+
+  if (fabs(z_min-d_p_min) > 1e-8)
+  {
+    OutPut("z_min " << z_min << " does not correspond to d_p_min " << d_p_min << endl);
+    exit(4711);
+  }
+
+  z = 0;
+  //t2 = GetTime();
+  //OutPut("time bulkmass (1) " << t2-t1 << endl);
+  // loop over Nodes
+  for ( i=0 ; i<Nodes ; i++ )
+  {
+    // assign nodes with mesh cell if it is not at right, back or top
+    if ( (fabs(x_coord[i] - x_max)< 1e-10) || (fabs(y_coord[i] - y_max)< 1e-10)
+      || (fabs(z_coord[i] - z_max)< 1e-10) )
+    {
+      continue;
+    }
+
+    // consider the mesh cell with node i on the left lower corner
+    // compute dof on these mesh cell
+    locdof[0] = i;
+    locdof[1] = i+1;
+    locdof[2] = locdof[1] + N_x+1;
+    locdof[3] = locdof[0] + N_x+1;
+    locdof[4] = locdof[0] + (N_x+1)*(N_y+1);
+    locdof[5] = locdof[4] + 1;
+    locdof[6] = locdof[5] + N_x+1;
+    locdof[7] = locdof[4] + N_x+1;
+
+    // volume of the hexahedron
+    area = (x_coord[i+1]-x_coord[i])*(y_coord[i+N_x+1]-y_coord[i])*(z_coord[(N_x+1)*(N_y+1)+i]-z_coord[i]);
+    detJK = area/8.0;
+
+    // compute basis functions
+    // set matrices for computation of the coefficients of the bilinear function
+    for ( j=0 ; j<8 ; j++ )
+    {
+      index = locdof[j];
+      x_coord_loc[j] = x_coord[index];
+      y_coord_loc[j] = y_coord[index];
+      z_coord_loc[j] = z_coord[index];
+    }
+
+    // compute basis functions
+    // set matrices for computation of the coefficients of the bilinear function
+    for ( j=0 ; j<8 ; j++ )
+    {
+      a[8*j] = 1;
+      a[8*j+1] = x_coord_loc[j];
+      a[8*j+2] = y_coord_loc[j];
+      a[8*j+3] = z_coord_loc[j];
+      a[8*j+4] = x_coord_loc[j]*y_coord_loc[j];
+      a[8*j+5] = x_coord_loc[j]*z_coord_loc[j];
+      a[8*j+6] = y_coord_loc[j]*z_coord_loc[j];
+      a[8*j+7] = x_coord_loc[j]*y_coord_loc[j]*z_coord_loc[j];
+    }
+    // initialize rhs
+    memset(b,0,64*SizeOfDouble);
+    for ( j=0 ; j<8 ; j++ )
+  b[9*j] = 1;
+    // solve system for the coefficients of the bilinear function
+    // already checked !!!
+    // solution is stored in b, row-wise
+    SolveMultipleSystemsLapack(a,b,8,8,8,8);
+
+    // assemble matrix entries
+    // first index for array of indices
+    z_iq = z;
+    // loop over the quadrature points
+    for (iq = 0;iq < quad_points; iq++)
+    {
+      // quadrature points -> ONLY FOR PARALLELEPIPED !!!
+      index = locdof[0];
+      index1 = locdof[1];
+      xq = x_coord[index] + ( x_coord[index1] - x_coord[index])*(1+ qx[iq])/2;
+      index1 = locdof[3];
+      yq = y_coord[index] + ( y_coord[index1] - y_coord[index])*(1+ qy[iq])/2;
+      index1 = locdof[5];
+      zq = z_coord[index] + ( z_coord[index1] - z_coord[index])*(1+ qz[iq])/2;
+      weight_det = detJK * weight[iq];
+
+      // loop for test function
+      // ii -- test function
+      z_ii = 0;
+      for ( ii=0 ; ii<8 ; ii++ )
+      {
+  test_index = locdof[ii];
+        // values for test function
+        Compute_Q1_Value(b+8*ii, xq, yq, zq, val_test);
+  val_test[0] *= weight_det;
+  // loop for ansatz functions
+        // jj -- ansatz function
+        for ( jj=0 ; jj<8 ; jj++ )
+        {
+          ansatz_index = locdof[jj];
+          // compute global index
+    // only for first quad point loop over the row_ptr
+    // index depends only on ii and jj but not on iq
+    //index = test_index;
+          // values for ansatz function
+    if (iq==0)
+    {
+        for ( k=row_ptr[test_index] ; k<row_ptr[test_index+1] ; k++ )
+        {
+      if ( col_ptr[k] == ansatz_index )
+      {
+          index = k;
+          index_test_ansatz_loc[z_ii] = index;
+          z_ii++;
+          break;
+      }
+        }
+    }
+    else
+    {
+        // other quad points
+           index = index_test_ansatz_loc[z_ii];
+            z_ii++;       
+    }
+         
+    Compute_Q1_Value_Gradient(b+8*jj, xq, yq, zq, val_ansatz);
+    // mass term
+    val[0] = val_ansatz[0]*val_test[0];
+    // convective terms
+    val[1] = val_ansatz[1]*val_test[0];
+    val[2] = val_ansatz[2]*val_test[0];
+    val[3] = val_ansatz[3]*val_test[0];
+
+          // add to M(locdof[ii], locdof[jj])
+          entriesM[index] += val[0];
+          entriesU1[index] += val[1];
+          entriesU2[index] += val[2];
+          entriesG[index] += val[3];
+  }
+      }
+    }                            // end quad points
+  }                              // end i
+
+  OutPut(" z " << z << endl);
+  LumpMassMatrixToVector((TSquareMatrix2D*) matM, lump_mass_PSD);  
+    
+  t2 = GetTime();
+  OutPut("time bulkmass (2) " << t2-t1 << endl);
+}
+/*******************************************************************************/
+//
+// FEM_FCT_Matrix_Q1_GroupFEM_3D_Bulk
+//
+// sol            - at beginning: solution of last time
+//                  at end: solution of current time
+// oldsol         - same as sol
+// lump_mass_PSD  - lumped mass matrix, already computed
+// matrix_D_Entries_PSD - set in FEM_FCT_ForConvDiff
+// mat            - matrix for assembling the convection term
+// matM           - mass matrix with incorporation of Dirichlet values
+//                  matM_cons is copied to matM in this routine
+// matM_cons      - consistent mass matrix, is not changed
+//
+// sol and oldsol have at the entrance and at leaving the routine the same
+//                  values
+//
+/*******************************************************************************/
+
+void FEM_FCT_Matrix_Q1_GroupFEM_3D_Bulk(TCollection *coll,
+TFEFunction2D *velocity1, TFEFunction2D *velocity2,
+TFEFunction2D *concent_C,
+double *sol, double *oldsol, 
+double *lump_mass_PSD, double *matrix_D_Entries_PSD,
+int *correspond_2dgrid,
+int N_x, int N_y, int N_z,
+double *x_coord, double *y_coord, double *z_coord,
+TSquareMatrix2D *mat,
+TSquareMatrix2D *matM_cons,
+TSquareMatrix2D *matM,
+TSquareMatrix2D *matU1,
+TSquareMatrix2D *matU2,
+TSquareMatrix2D *matG,
+double *psd_coeff,
+int N_neum_to_diri,
+int *neum_to_diri,
+double *neum_to_diri_x,
+double *neum_to_diri_y,
+double *neum_to_diri_z)
+{
+  int *col_ptr, *row_ptr;
+  int i, j, k, iq, ii, jj, z, N_Entries, Nodes, ij, start, end;
+  int test_index, ansatz_index, index, index1, alpha, beta, gamma, no_of_2dcell;
+  int diag_index, found, N_cells, range_y, range_z, topdiri = 0;
+  int SC_LDS =  TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
+
+  // N2 and N3 are defined to save multiplications during the computation of loc_dof
+  int N2 = (N_x+1)*(N_y+1);
+ 
+  double a[256], b[256], C_val[4],Temp_val[4], u_val[6], val_test[5], val_ansatz[5], val_sol[5];
+  double *entries, *entriesM, *rhs, *tilde_u, *u1, *u2,  *growth;
+  double *bdr_val, *entriesM_cons, *entriesU1, *entriesU2, *entriesG;
+  double *RhsArray, *oldrhs_fem_fct0;
+  double x_max, y_max, z_max, a_max, z_min, smag;
+  double area, detJK, hK, hK_conv, tauK, xq, yq, zq, aq, val, weight_det;
+  double B_c_C, maxsol, norm_b, al, react, factor_growth;
+  double time = TDatabase::TimeDB->CURRENTTIME, t1, t2, t3;
+
+  t1 = GetTime();
+  
+  //model constants
+  double l_infty = TDatabase::ParamDB->BULK_l_infty;
+  double u_infty = TDatabase::ParamDB->BULK_u_infty;
+  double c_C_infty_sat = TDatabase::ParamDB->BULK_c_C_infty_sat;
+  double C_g = TDatabase::ParamDB->BULK_C_g;
+  double C_2 = TDatabase::ParamDB->BULK_C_2;
+  double d_p_0 = TDatabase::ParamDB->BULK_D_P_0;
+  double d_p_max = TDatabase::ParamDB->BULK_D_P_MAX;
+  double k_g = TDatabase::ParamDB->BULK_k_g;
+  double k_nuc = TDatabase::ParamDB->BULK_k_nuc;
+  double d_p_min = TDatabase::ParamDB->BULK_D_P_MIN;
+  double c_C_infty = TDatabase::ParamDB->BULK_c_C_infty;
+  double f_infty = TDatabase::ParamDB->BULK_f_infty;
+  double factor_G, c_C_infty_sat0, G_c_C_val;
+  // \tilde G(\tilde c_C)   
+  factor_G = k_g*c_C_infty*l_infty/(u_infty*d_p_max);
+  c_C_infty_sat0 = c_C_infty_sat/c_C_infty;     
+  
+  // compute coefficients of the equation
+  N_cells = coll->GetN_Cells();
+
+  // matrix objects
+  entries = mat->GetEntries();
+  N_Entries = mat->GetN_Entries();
+  memset(entries,0, N_Entries*SizeOfDouble);
+  col_ptr = mat->GetKCol();
+  row_ptr = mat->GetRowPtr();
+  entriesM = matM->GetEntries();
+  entriesM_cons = matM_cons->GetEntries();
+  entriesU1 = matU1->GetEntries();
+  entriesU2 = matU2->GetEntries();
+  entriesG = matG->GetEntries();
+
+  // copy entries of mass matrix
+  memcpy(entriesM, entriesM_cons, N_Entries*SizeOfDouble);
+
+  Nodes = N2*(N_z+1);
+  x_max = x_coord[Nodes-1];
+  y_max = y_coord[Nodes-1];
+  z_max = z_coord[Nodes-1];
+  z_min = z_coord[0];
+
+  // initialization of u1, u2, u3, growth, reaction in the vector u1
+  u1 = psd_coeff;
+  u2 = u1 + Nodes;
+  growth = u2 + Nodes;
+
+  // initialization of rhs and the vectors for FEM_FCT_ForConvDiff in the vector rhs
+   rhs = new double[4*Nodes];
+  memset(rhs,0,4*Nodes*SizeOfDouble);
+  // vectors for FEM_FCT_ForConvDiff
+  tilde_u  = rhs +  Nodes;
+  RhsArray = tilde_u + Nodes;
+  oldrhs_fem_fct0 = RhsArray + Nodes;
+ 
+  bdr_val = new double[N_neum_to_diri];
+  memset(bdr_val,0,N_neum_to_diri*SizeOfDouble);
+
+  z = 0;
+// loop over the nodes to fill the arrays for the convection
+  for ( i=0 ; i<Nodes ; i++ )
+  {
+    // find corresponding cell in 2d grid
+    if ( i < N2 )
+    {
+      ij = i;
+      // treat nodes on boundaries in a special was
+      if (fabs(x_coord[i] - x_max)< 1e-6) 
+  ij = ij - 1;
+      if (fabs(y_coord[i] - y_max)< 1e-6)
+  ij = ij - (N_x+1);
+     
+     alpha = (int)(ij/(N_x+1)+1e-6);
+     beta = ij%(N_x+1);
+     no_of_2dcell = correspond_2dgrid[alpha*N_x+beta];
+     velocity1->FindValueLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],u_val);
+     velocity2->FindValueLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],u_val+1);
+     // store the values
+      u1[i] = u_val[0];
+      u2[i] = u_val[1];
+     // concentration of species C, C = C_val[0]
+     concent_C->FindValueLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],C_val); 
+     // G(c_C)
+      growth[i] = factor_G*(C_val[0]-c_C_infty_sat0);
+    }
+   else
+    {
+  // for larger internal coordinates there are the same velocities
+  // find corresponding index of samllest internal coordinate
+  j = i%N2;
+  u1[i] = u1[j];
+  u2[i] = u2[j];
+  growth[i] = growth[j];
+    }
+   }
+ // compute matrix and rhs
+  // working matrix is mat
+  // femrhs is array rhs
+  // loop over the rows
+  for (i=0; i< Nodes; i++)
+  {
+      start = row_ptr[i];
+      end = row_ptr[i+1];
+      for (j=start;j<end;j++)
+      {
+    // matrix
+  entries[j] =  entriesU1[j] * u1[i] + entriesU2[j] * u2[i] + entriesG[j] * growth[i];
+    }
+      // rhs 
+      //RhsArray[i] = oldrhs_fem_fct0[i] = 0.0;
+   }
+  // end i
+ 
+ // FEM--FCT
+  // set Dirichlet boundary conditions, on all (possible) inflow boundaries
+  for ( i=0 ; i<(N_x+1)*(N_y+1) ; i++ )
+  {
+      ii = i;
+      // treat right d.o.f. seperately
+      if ( ((ii+1)%(N_x+1)==0) )
+    ii = ii-1;
+      // treat upper d.o.f. seperately
+      if ( ii>=N_y*(N_x+1) )
+    ii = ii-(N_x+1);
+      // right corner
+      //if ( i==N2-1 )
+      //  ii = i-(N_x+1)-1;
+      
+      alpha = (int)(ii/(N_x+1)+1e-6);
+      beta = ii%(N_x+1);
+      no_of_2dcell = correspond_2dgrid[alpha*N_x+beta];
+      concent_C->FindValueLocal(coll->GetCell(no_of_2dcell),no_of_2dcell,x_coord[i],y_coord[i],C_val);
+      //G_c_C_val = k_g*(C_val[0]-c_C_infty_sat*exp(C_2/z_min));
+      G_c_C_val = k_g*(c_C_infty*C_val[0]-c_C_infty_sat);
+      // compute G*n, n=(0,0,-1);
+      if (G_c_C_val*f_infty > 1e-10)
+      {
+    // compute rate of nucleation
+    B_c_C = k_nuc*pow(c_C_infty*(C_val[0] - 1),5);
+    // truncate negative values
+    if (B_c_C < 0)
+        B_c_C = 0;
+    // compute new particle size distribution
+    bdr_val[i] = B_c_C/ (G_c_C_val*f_infty);
+      }
+      else
+      {
+        // top Dirichlet condition, bdr_val[i] is already set to be zero
+        if (G_c_C_val*f_infty < 0)
+        {
+      j = i + N_z * (N_x+1)*(N_y+1);
+      neum_to_diri[i] = j;
+      topdiri = 1;
+        }
+      }
+  }  // the other Dirichlet values are already set to zero
+
+
+  // this sets the array rhs
+  FEM_FCT_ForConvDiff((TSquareMatrix2D*) matM, (TSquareMatrix2D*) mat,
+          Nodes, Nodes,
+          lump_mass_PSD, matrix_D_Entries_PSD,
+          sol, oldsol,
+          rhs, RhsArray, oldrhs_fem_fct0, tilde_u,
+          N_neum_to_diri, neum_to_diri,
+          NULL,NULL,
+          1, NULL,bdr_val);
+
+  //t2 = GetTime();
+  //OutPut("time bulkfct (3) " << t2-t1 << endl);
+  // build matrix for FEM-FCT
+  matM->Reset();
+  FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
+  OutPut("entries " << Ddot(matM->GetN_Entries(),matM->GetEntries(),matM->GetEntries()) << 
+   " lump " << Ddot(Nodes,lump_mass_PSD,lump_mass_PSD) << endl);
+
+  //t2 = GetTime();
+  //OutPut("time bulkfct (4) " << t2-t1 << endl);
+  // set Dirichlet boundary conditions in matrix
+  for ( i=0 ; i<N_neum_to_diri ; i++ )
+  {
+      j = neum_to_diri[i];
+      rhs[j] = bdr_val[i];
+      sol[j] = rhs[j];       
+      ii = row_ptr[j];
+      jj = row_ptr[j+1];
+      // off diagonals
+      for ( iq = ii ; iq < jj ; iq++ )
+      {
+    // diagonal entry
+    if(col_ptr[iq]==j)
+        entriesM[iq] = 1.0;
+    else
+        entriesM[iq] = 0;
+      }
+  }
+
+
+  //OutPut(endl);
+  //t2 = GetTime();
+  //OutPut("time bulkfct (5) " << t2-t1 << endl);
+  if (sqrt(Ddot(Nodes,rhs,rhs)) > 0)
+  {
+    if (Nodes<SC_LDS)
+    {
+      //DirectSolver(matM, rhs, sol);
+      OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
+      //SolveLU(Nodes, N_Entries, row_ptr, col_ptr, entries, rhs, sol);
+      OutPut("done SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
+
+    }
+    else
+    {
+  t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
+  TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0;
+  Solver(matM,rhs,sol);
+  TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
+  // no output of solver data any longer
+  TDatabase::ParamDB->SC_VERBOSE_AMG = 1;
+    }
+  }
+  else
+  {
+    memset(sol,0,Nodes*SizeOfDouble);
+  }
+  
+  maxsol = 0;
+  // cut undershoots
+  for (i=0;i<Nodes;i++)
+  {
+      if (sol[i] < 0)
+    sol[i] = 0;
+      if (sol[i] > maxsol)
+    maxsol = sol[i];
+  }
+  memcpy(oldsol, sol, Nodes * SizeOfDouble);
+
+  //OutPut(TDatabase::TimeDB->CURRENTTIME << " Solver done " << sqrt(Ddot(Nodes,sol,sol)) << " max " << maxsol << endl);
+
+  // reset indices if necessary
+  if (topdiri)
+  {
+      for (i=0;i<N2;i++)
+    neum_to_diri[i] = i;  
+  }
+
+  //for (i=0;i<N2;i++)
+  //   OutPut(sol[i] << " " <<  bdr_val[i] << endl);
+  //t2 = GetTime();
+  //OutPut("time bulkfct (6) " << t2-t1 << endl);
+
+  // deletion of the arrays
+  delete bdr_val;
+  delete rhs;
+}
+
+
 
 /****************************************************************************************
  *                                                                                       *

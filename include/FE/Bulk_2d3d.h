@@ -13,7 +13,7 @@
 void Bulk_FWE_FDM_Upwind_3D(TCollection *coll,
 TFEFunction2D *velocity1, TFEFunction2D *velocity2,
 TFEFunction2D *concent_C,
-double *f_old,
+double *f_old, double *rhs_psd,
 int N_x, int N_y, int N_z,
 double *x_coord, double *y_coord, double *z_coord,
 double x_min, double x_max, double y_min, double y_max,
@@ -21,6 +21,16 @@ double z_min, double z_max,
 double *velo1, double *velo2, double *concent_C_array,
 			    int *correspond_2dgrid
     );
+
+void Bulk_RKV_FDM_3D(TCollection *coll,
+         TFEFunction2D *velocity1, TFEFunction2D *velocity2,
+         TFEFunction2D *concent_C,
+         double *f_old, double **stages, 
+         int N_x, int N_y, int N_z,
+         double *x_coord, double *y_coord, double *z_coord,
+         double *velo1, double *velo2, double *concent_C_array,
+         int *correspond_2dgrid);
+
 
 void Bulk_BWE_FDM_Upwind_3D(TCollection *coll,
 			    TFEFunction2D *velocity1, TFEFunction2D *velocity2,
@@ -106,6 +116,41 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
 				double *neum_to_diri_y,
 				double *neum_to_diri_z);
 
+void Build_3D_FEM_FCT_Matrices_Q1_GroupFEM_Bulk(TCollection *coll, int N_x, 
+                                                int N_y, int N_z, 
+                                                double *x_coord, 
+                                                double *y_coord, 
+                                                double *z_coord,
+                                                TSquareMatrix2D *matM,
+                                                TSquareMatrix2D *matU1, 
+                                                TSquareMatrix2D *matU2,
+                                                TSquareMatrix2D *matG,
+                                                double *lump_mass_PSD);
+            
+void FEM_FCT_Matrix_Q1_GroupFEM_3D_Bulk(TCollection *coll, 
+                                        TFEFunction2D *velocity1, 
+                                        TFEFunction2D *velocity2,
+                                        TFEFunction2D *concent_C,
+                                        double *sol, double *oldsol, 
+                                        double *lump_mass_PSD, 
+                                        double *matrix_D_Entries_PSD,
+                                        int *correspond_2dgrid,
+                                        int N_x, int N_y, int N_z,
+                                        double *x_coord, double *y_coord, 
+                                        double *z_coord, 
+                                        TSquareMatrix2D *mat,
+                                        TSquareMatrix2D *matM_cons,
+                                        TSquareMatrix2D *matM,
+                                        TSquareMatrix2D *matU1,
+                                        TSquareMatrix2D *matU2,
+                                        TSquareMatrix2D *matG,
+                                        double *psd_coeff, int N_neum_to_diri,
+                                        int *neum_to_diri, 
+                                        double *neum_to_diri_x,
+                                        double *neum_to_diri_y,
+                                        double *neum_to_diri_z);
+
+
 void write_vtk_psd(int N_x, int N_y, int N_z,
 		   double *x_coord, double *y_coord, double *z_coord,
 		   double *f_old, const char *name);
@@ -114,5 +159,12 @@ void write_vtk_psd(int N_x, int N_y, int N_z,
 void write_psd(int N_x, int N_y, int N_z,
 	     double *x_coord, double *y_coord, double *z_layers_coord,
 	       double *f_old, const char *name);
-#endif
+
+void PrepareAgglomerationBULK(TCollection *Coll, TFEFunction2D *velocity1, 
+                              TFEFunction2D *velocity2, int N_x, int N_y, int N_a,
+                              double *x_coord, double *y_coord, 
+                              double *a_layers_coord, double *f, 
+                              double *rhs_new, int *correspond_2dgrid);
+
+#endif /// __BULK_2D3D__
 
