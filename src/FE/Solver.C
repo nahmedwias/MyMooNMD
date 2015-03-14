@@ -49,7 +49,11 @@ void Solver(TSquareMatrix **sqmatrices, TMatrix **matrices,
 double *rhs, double *sol,
 MatVecProc *MatVect, DefectProc *Defect,
 TMultiGrid2D *MG,
-int N_Unknowns, int ns_type)
+int N_Unknowns, int ns_type
+#ifdef _MPI   
+     ,TParFECommunicator3D *ParComm
+#endif        
+)
 {
   int solver_type, prec_type;
   double *itmethod_sol, *itmethod_rhs, t1, t2;
@@ -106,7 +110,12 @@ int N_Unknowns, int ns_type)
       {
         case 1:
           prec = new TJacobiIte(MatVect, Defect, NULL,
-            0, N_Unknowns, 1);
+            0, N_Unknowns, 1
+#ifdef _MPI   
+                  , ParComm
+#endif    
+    
+                   );
           break;
         case 3:
           prec = new TSSORIte(MatVect, Defect, NULL,

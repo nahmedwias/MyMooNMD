@@ -28,7 +28,7 @@ TJacobiIte::TJacobiIte(MatVecProc *MatVec,
                        int scalar
 #ifdef _MPI   
                                ,TParFECommunicator3D *ParComm
-#endif		      
+#endif      
 )
   : TItMethod(MatVec, Defect, Prec, n_aux, n_dof)
   

@@ -306,9 +306,9 @@ int main(int argc, char* argv[])
     if(profiling)	t1 = GetTime();
     SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE
     #ifdef _MPI
-					  , OwnScalar_Spaces, Scalar_FeFunctions, Comm
+                                         , OwnScalar_Spaces, Scalar_FeFunctions
     #endif
-											);
+                                         );
     if(profiling){
       t2 = GetTime();
       t2 = t2-t1;
