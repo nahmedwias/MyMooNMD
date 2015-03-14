@@ -16,7 +16,8 @@
 #ifndef __BASECELL__
 #define __BASECELL__
 
-#include <AllClasses.h>
+#include <Edge.h>
+#include <Joint.h>
 #include <RefDesc.h>
 #include <fstream>
 
@@ -33,6 +34,9 @@ class TBaseCell
     /**  @brief an integer for storing clipboard information*/
     int ClipBoard;
 
+    /** @brief an integer for storing physical reference of cell (e.g. material properties) **/
+    int Reference_ID;
+    
     /**  @brief an integer for storing which phase(multiphase domains) this cell belongs*/
     int Phase_ID;
 
@@ -43,13 +47,16 @@ class TBaseCell
     int CellIndex;
 
   /**  @brief an integer for storing the global cell number **/
-    int GlobalCellNo;   
+    int GlobalCellNo;
+    
+    /** @brief normal orientation of joints (for each joint this is 1 or -1) */
+    int *normalOrientation;
     
   /**  @brief an integer for storing the region of this cell number **/
-    int region;       
+    int region;
 
   /**  @brief an integer for indicating layer cells **/
-    int LayerCell;     
+    int LayerCell;
     
 #ifdef __3D__
     /**  @brief array of all Edges in 3D */
@@ -101,7 +108,7 @@ class TBaseCell
     TBaseCell(TRefDesc *refdesc);
 
     // Destructor
-    ~TBaseCell();
+    virtual ~TBaseCell();
 
     // Methods
     /**  @brief set refinement descriptor to newrefdesc */
@@ -124,17 +131,17 @@ class TBaseCell
     }
 
     /**  @brief return refinement descriptor */
-    TRefDesc *GetRefDesc()
+    TRefDesc *GetRefDesc() const
     { return RefDesc; }
     /**  @brief return shape descriptor of refinement descriptor */
-    TShapeDesc *GetShapeDesc()
+    TShapeDesc *GetShapeDesc() const
     { return RefDesc->GetShapeDesc(); }
     /**  @brief return shape type of refinement descriptor */
-    Shapes GetType() 
+    Shapes GetType() const
     { return RefDesc->GetShapeDesc()->GetType(); }
 
     /**  @brief return refinement descriptor of edge i */
-    Refinements GetEdgeRef(int i)
+    Refinements GetEdgeRef(int i) const
     { return RefDesc->GetEdgeRef(i); }
 
 #ifdef __3D__
@@ -273,6 +280,15 @@ class TBaseCell
 
      /**  @brief get measure of a cell */
     virtual double GetMeasure() = 0;
+    
+    /** @brief get the value of hK 
+     * 
+     * This function calls either this->GetDiameter(), thid->GetShortestEdge, or
+     * this->GetMeasure(), depending on cell_measure.
+     * 
+     * Typically you should set cell_measure = TDatabase::ParamDB->CELL_MEASURE.
+     */
+    double Get_hK(int cell_measure);
 
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y) = 0;
@@ -290,12 +306,20 @@ class TBaseCell
     /**  @brief get subgrid ID */
     virtual int GetSubGridID() = 0;
 
+    /** @brief set reference number to this cell   */
+    void SetReference_ID(int val)
+    { Reference_ID = val;}
+    
+    /** @brief get reference number of this cell   */
+    int GetReference_ID() const
+    {return Reference_ID;}
+    
     /**  @brief set phase number to this cell   */
     void SetPhase_ID(int val)
        {Phase_ID = val;}
 
     /**  @brief get phase number to this cell   */
-    int GetPhase_ID()
+    int GetPhase_ID() const
        {return Phase_ID;}
 
     /**  @brief set phase number to this cell   */
@@ -303,7 +327,7 @@ class TBaseCell
        {Bd_Part = val;}
 
     /**  @brief get phase number to this cell   */
-    int GetBd_Part()
+    int GetBd_Part() const
        {return Bd_Part;}
 
     /**  @brief set subdomain number to this cell   */
@@ -311,7 +335,7 @@ class TBaseCell
        {CellIndex = val;}
 
     /**  @brief set subdomain number to this cell   */
-    int GetCellIndex()
+    int GetCellIndex() const
        {return CellIndex;}
 
     /**  @brief set subdomain number to this cell   */
@@ -319,7 +343,7 @@ class TBaseCell
        {GlobalCellNo = val;}
 
     /**  @brief set subdomain number to this cell   */
-    int GetGlobalCellNo()
+    int GetGlobalCellNo() const
        {return GlobalCellNo;}
 
     /**  @brief set subdomain number to this cell   */
@@ -327,7 +351,7 @@ class TBaseCell
        {LocalCellNo = val;}
 
     /**  @brief set LocalCellNo number to this cell   */
-    int GetLocalCellNo()
+    int GetLocalCellNo() const 
        {return LocalCellNo;}
 
     /**  @brief set region number to this cell   */
@@ -335,7 +359,7 @@ class TBaseCell
        {region = val;}
 
     /**  @brief set region number to this cell   */
-    int GetRegionID()
+    int GetRegionID() const
        {return region;}       
 
      /**  @brief set as LayerCell cell   */
@@ -343,8 +367,15 @@ class TBaseCell
        {LayerCell = val;}
 
     /**  @brief get LayerCell info  */
-    int IsLayerCell()
+    int IsLayerCell() const
        {return LayerCell;}          
+
+    /** @brief compute normal orientation w.r.t cell */
+    void SetNormalOrientation();
+    
+    /** @brief get normal orientation w.r.t cell at i-th joint */
+    int GetNormalOrientation(int i) const
+    { return normalOrientation[i]; }
 
        
 #ifdef  _MPI
@@ -362,7 +393,7 @@ class TBaseCell
        {SubDomainNumber = val;}
 
     /**  @brief set subdomain number to this cell   */
-    int GetSubDomainNo()
+    int GetSubDomainNo() const
        {return SubDomainNumber;}
 
     void SetAsOwnCell()
@@ -377,40 +408,40 @@ class TBaseCell
       HaloCell=TRUE;
      }
 
-    bool IsHaloCell()
+    bool IsHaloCell() const
      {  return HaloCell; }
 
     void SetAsSubDomainInterfaceCell()
      { SubDomainInterfaceCell=TRUE; }
 
-    bool IsSubDomainInterfaceCell()
+    bool IsSubDomainInterfaceCell() const
      {  return SubDomainInterfaceCell; }
 
     void SetAsCrossEdgeCell()
      { CrossEdgeCell=TRUE; }
 
-    bool IsCrossEdgeCell()
+    bool IsCrossEdgeCell() const
      {  return CrossEdgeCell; }
 
 
     void SetAsCrossVertexCell()
      { CrossVertexCell=TRUE; }
 
-    bool IsCrossVertexCell()
+    bool IsCrossVertexCell() const
      {  return CrossVertexCell; }
 
-    bool IsDependentCell()
+    bool IsDependentCell() const
      {  return DependentCell; }
 
     void SetN_NeibProcesses(int n)
      { N_NeibProcesses = n; }
 
-    int GetN_NeibProcesses()
+    int GetN_NeibProcesses() const
      { return N_NeibProcesses; }
 
     void SetNeibProcessesIds(int *Neiblist);
 
-    int *GetNeibProcessesIds()
+    int *GetNeibProcessesIds() const
      { return NeibProcessesIds; } 
      
 #endif

@@ -27,10 +27,13 @@ TBaseCell::TBaseCell(TRefDesc *refdesc)
 
   ClipBoard = 0;
   Phase_ID = 0;
+  Reference_ID = 0;
   CellIndex = -1;
   region = 0;
   LayerCell = 0;  
   
+  normalOrientation = NULL;
+
 #ifdef __3D__   
   N_ = RefDesc->GetN_OrigEdges();
   Edges = new TEdge*[N_];
@@ -92,6 +95,37 @@ TBaseCell::~TBaseCell()
   delete Joints;
 }
 
+double TBaseCell::Get_hK(int cell_measure)
+{
+  switch (cell_measure)
+  {
+    case 0:                                     // diameter
+      return this->GetDiameter();
+      //case 1: // with reference map
+      //OutPut("cell measure " << endl);
+      //return this->GetLengthWithReferenceMap();
+    case 2:                                     // shortest edge
+      return this->GetShortestEdge();
+      break;
+    case 1:                                     // with reference map
+    case 3:                                     // measure
+      return sqrt(this->GetMeasure());
+      break;
+    case 4:                                     // mesh size in convection direction, this is just a dummy
+      return this->GetDiameter();
+      break;
+    case 5:                                     // take value from an array
+      // this is in general not the diameter but a pw constant value
+      // which is needed for some reasons
+      return this->GetDiameter();
+      break;
+    default:                                    // diameter
+      OutPut("CELL_MEASURE " << cell_measure << " not available!!!" << endl);
+      return this->GetDiameter();
+      break;
+  }
+}
+
 // added 25.04.2010 for fixing refinement problem
 #ifdef __3D__
 void TBaseCell::CorrectBoundaryVertices(TVertex **NewVertices, TJoint **NewJoints)
@@ -131,6 +165,33 @@ void TBaseCell::CorrectBoundaryVertices(TVertex **NewVertices, TJoint **NewJoint
   
 }
 #endif
+
+// on each joint, decide whether the 
+// global normal is outgoing (+1) or ingoing (-1)
+void TBaseCell::SetNormalOrientation()
+{
+  TBaseCell *neighbCell;
+  int nEdges = RefDesc->GetN_OrigEdges();
+  #ifdef __3D__
+  nEdges = RefDesc->GetN_OrigFaces();
+  #endif
+  if(normalOrientation != NULL) // nothing more to do
+    return;
+  normalOrientation = new int[nEdges];
+  for (int i=0; i<nEdges;i++)
+  {
+    normalOrientation[i] = 1;
+    TJoint *joint = Joints[i];
+    if(joint->InnerJoint())
+    {
+      neighbCell = joint->GetNeighbour(this);
+      if(neighbCell->GetCellIndex() < GetCellIndex()&& 
+         Reference_ID == neighbCell->GetReference_ID()) 
+        normalOrientation[i] = -1;
+    }
+  }
+}
+
 
 
 // Methods

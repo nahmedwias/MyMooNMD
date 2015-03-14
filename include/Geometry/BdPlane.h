@@ -28,6 +28,8 @@ class TBdPlane : public TBoundComp3D
   public:
     // Constructor
     TBdPlane(int id);
+    
+    virtual ~TBdPlane () {};
 
     // Methods
     /** set all parameters to the given values */

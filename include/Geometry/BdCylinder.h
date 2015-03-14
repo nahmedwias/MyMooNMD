@@ -38,6 +38,8 @@ class TBdCylinder : public TBoundComp3D
     // CTOR
     TBdCylinder (int id);
     
+    virtual ~TBdCylinder () {};
+    
     // Methods
     /** return the coordinates {X, Y, Z} of parameter values T and S */
     virtual int GetXYZofTS(double T, double S, double &X, double &Y,

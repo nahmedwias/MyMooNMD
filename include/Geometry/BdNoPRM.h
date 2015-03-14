@@ -22,6 +22,8 @@ class TBdNoPRM : public TBoundComp3D
     // Constructor
     TBdNoPRM(int id);
 
+    virtual ~TBdNoPRM() {};
+    
     // Methods
     /** set all parameters to the given values */
     void SetParams ();
