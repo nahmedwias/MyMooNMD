@@ -5,6 +5,8 @@
 src/.*\.o$
 .*\.*~$
 
+Examples/.*\.o$
+
 lib3D/.*\.a$
 
 lib2D/.*\.a$
