@@ -536,7 +536,7 @@ int prepare_saddle_system(AMG_SolverContext *sc, AMG_CoarsenContext *cc,
     {
       AMG_Print("MESSAGE : Scalar type preconditioner does not work for\n");
       AMG_Print("MESSAGE : saddle point systems.\n");                             
-      AMG_Print("MESSAGE : Preconditioner changed to AMG_MGC (coupled algebraic multigrid)\n");     
+      AMG_Print("MESSAGE : Preconditioner changed to AMG_SCHUR_GMRES\n");
       sc->preconditioner = AMG_SCHUR_GMRES;
     }
 
