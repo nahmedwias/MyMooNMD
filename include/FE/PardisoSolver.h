@@ -68,7 +68,7 @@ class TPardisoSolver : public TDirectSolver
     int mtype;
 
     /** pressureprojection */
-    boolean pp;
+    bool pp;
     int rhs_index;
     
     /** Benchmark */

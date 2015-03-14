@@ -112,6 +112,9 @@ class TOutput2D
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
 
+    /** write stored data. This calls the other Write* functions. */
+    int Write(std::string basename, int i=1, double t=0.);
+    
     /** write stored data into a grape file */
     int WriteGrape(const char *name);
 
@@ -120,6 +123,10 @@ class TOutput2D
 
     /** write stored data into a VTK file */
     int WriteVtk(const char *name);
+    
+    /** write a discontinuous function into a VTK file */
+    void WriteVtkDiscontinuous(const char *fileName, 
+                               int N_LocVertices, TVertex **Vertices);
 
     /** write stored data into a MATLAB file */
     int WriteMatlab(const char *name);

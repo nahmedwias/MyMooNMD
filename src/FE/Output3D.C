@@ -18,6 +18,10 @@
 #include <MooNMD_Io.h>
 #include <TECIO.h>
 
+#include <TetraAffin.h>
+#include <HexaAffin.h>
+#include <HexaTrilinear.h>
+
 #ifdef __COMPAQ__
   // include byte reordering routines for Compaq only
   #include <Utilities.h>
@@ -257,6 +261,22 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
   }
   return m;
 }
+
+/** write stored data into a .vtk-file*/
+int TOutput3D::Write(std::string basename, int i, double t)
+{
+  std::ostringstream os;
+  os.seekp(std::ios::beg);
+  os << basename << i << ".vtk"<<ends;
+  
+  if(TDatabase::ParamDB->WRITE_VTK)
+  {
+    cout << " Output3D:: writing " << os.str() << endl;
+    this->WriteVtk(os.str().c_str());
+  }
+  // put more here if needed
+}
+
 
 /** write stored data into a grape file */
 int TOutput3D::WriteGrape(const char *name)
@@ -1727,7 +1747,7 @@ int TOutput3D::WriteVtk(const char *name)
   TBaseFunct3D *bf;
   BaseFunct3D BaseFunct;
   FE3D FE_ID;
-  double BFValues[MaxN_BaseFunctions3D];
+  double BFValues[3*MaxN_BaseFunctions3D]; // 3 for vector valued basis functions
   double *FEValues;
   int *GlobalNumbers, *BeginIndex, *Index, *DOF;
   double *Coords;
@@ -1819,6 +1839,22 @@ int TOutput3D::WriteVtk(const char *name)
       N_++;
     }
   }
+  
+  // check for discontinuous scalar variables. In such a case write a new file
+  // for this variable. ParaView will really display a discontinuous function
+  // instead of projecting it onto P1/Q1 space.
+  // However there are some drawbacks. 
+  for(i = 0; i < N_ScalarVar; i++)
+  {
+    j = FEFunctionArray[i]->GetFESpace3D()->IsDGSpace();
+    if(j==1)
+    {
+      // draw all discontinuous functions not just this i-th one.
+      WriteVtkDiscontinuous(name,N_LocVertices,Vertices);
+      break;
+    }
+  }
+  
 //   cout << "N_" << N_ << endl;
   Sort(Vertices, N_);
   //Sort(cell_types, N_);
@@ -1883,7 +1919,7 @@ int TOutput3D::WriteVtk(const char *name)
 
   dat << "ASCII" << endl;
   dat << "DATASET UNSTRUCTURED_GRID" << endl << endl;
-  dat << "POINTS " << N_Vertices << " float" << endl;
+  dat << "POINTS " << N_Vertices << " double" << endl;
   N_=0;
   //cout << "N_LocVertices: " << N_LocVertices << endl;
   for(i=0;i<N_Vertices;i++)
@@ -1937,6 +1973,10 @@ int TOutput3D::WriteVtk(const char *name)
     memset(DoubleArray, 0, SizeOfDouble*N_Vertices);
     memset(IntArray, 0, SizeOfInt*N_Vertices);
     m = 0;
+    
+    // will be set to true for vector valued basis functions (for example 
+    // Raviart-Thomas or Brezzi-Douglas-Marini)
+    bool VectOutput = false;
       
     for(i=0;i<N_Elements;i++)
     {
@@ -1948,6 +1988,11 @@ int TOutput3D::WriteVtk(const char *name)
       bf = TFEDatabase3D::GetFE3D(FE_ID)->GetBaseFunct3D();
       DOF = GlobalNumbers+BeginIndex[i];
       N_LocDOF = bf->GetDimension();
+      int BaseVectDim = bf->GetBaseVectDim();
+      if(BaseVectDim == 3) 
+        VectOutput = true;
+      else if(BaseVectDim != 1)
+        ErrMsg("unkown number of basis function components, assume 1.");
       for(j=0;j<N_;j++)
       {
         switch(cell->GetN_Vertices())
@@ -1967,27 +2012,101 @@ int TOutput3D::WriteVtk(const char *name)
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
-        value = 0;
-        for(l=0;l<N_LocDOF;l++)
-          value += BFValues[l] * Coeffs[DOF[l]];
-        DoubleArray[VertexNumbers[m]] += value;
+        if(!VectOutput)
+        {
+          value = 0;
+          for(l=0;l<N_LocDOF;l++)
+            value += BFValues[l] * Coeffs[DOF[l]];
+          DoubleArray[VertexNumbers[m]] += value;
+        }
+        else // VectOutput
+        {
+          // transform values using the Piola transform
+          RefTrans3D RefTrans = TFEDatabase3D::GetRefTrans3D_IDFromFE3D(FE_ID);
+          TRefTrans3D *F_K = TFEDatabase3D::GetRefTrans3D(RefTrans);
+          TFEDatabase3D::SetCellForRefTrans(cell, RefTrans);
+          double *BFValuesOrig = new double[3*N_LocDOF];
+          switch(RefTrans)
+          {
+            case TetraAffin:
+            case HexaAffin:
+              F_K->PiolaMapOrigFromRef(N_LocDOF, BFValues, BFValuesOrig);
+              break;
+            case HexaTrilinear:
+              ErrMsg("Piola transform for trilinear reference map not yet " << 
+                     "implemented");
+              break;
+            default:
+              ErrMsg("unknown reference transformation");
+              exit(0);
+              break;
+          }
+          
+          double value_x = 0, value_y = 0, value_z = 0;
+          for( l = 0; l < N_LocDOF; l++)
+          {
+            int face = TFEDatabase3D::GetFE3D(FE_ID)->GetFEDesc3D()
+                ->GetJointOfThisDOF(l);
+            int nsign = 1;
+            if(face != -1)
+              nsign = cell->GetNormalOrientation(face);
+            value_x += BFValuesOrig[l             ] * Coeffs[DOF[l]]*nsign;
+            value_y += BFValuesOrig[l +   N_LocDOF] * Coeffs[DOF[l]]*nsign;
+            value_z += BFValuesOrig[l + 2*N_LocDOF] * Coeffs[DOF[l]]*nsign;
+          }
+          DoubleArray[BaseVectDim*VertexNumbers[m] + 0] += value_x;
+          DoubleArray[BaseVectDim*VertexNumbers[m] + 1] += value_y;
+          DoubleArray[BaseVectDim*VertexNumbers[m] + 2] += value_z;
+          
+          delete [] BFValuesOrig;
+        }
         IntArray[VertexNumbers[m]]++;
         m++;
       } // endfor j
     } // endfor i
 
-    // non conforming
-    for(i=0;i<N_Vertices;i++)
-      DoubleArray[i] /= IntArray[i];
+    if(!VectOutput)
+    {
+      // non conforming
+      for(i=0;i<N_Vertices;i++)
+        DoubleArray[i] /= IntArray[i];
+    }
+    else // VectOutput
+    {
+      for(i = 0; i < N_Vertices; i++)
+      {
+        DoubleArray[3*i    ] /= IntArray[i];
+        DoubleArray[3*i + 1] /= IntArray[i];
+        DoubleArray[3*i + 2] /= IntArray[i];
+      }
+    }
 
-    
-    dat << "SCALARS " << FEFunctionArray[k]->GetName();
-    dat << " float"<< endl;
-    dat << "LOOKUP_TABLE " << "default" << endl;
-    for(j=0;j<N_Vertices;j++)
-      dat << DoubleArray[j] << endl;
-    dat << endl;
-    dat << endl;
+    if(!VectOutput)
+    {
+      dat << "SCALARS " << FEFunctionArray[k]->GetName();
+      dat << " double"<< endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      for(j=0;j<N_Vertices;j++)
+        dat << DoubleArray[j] << endl;
+      dat << endl;
+      dat << endl;
+    }
+    else
+    {
+      // vector output, we don't write each component individually, 
+      dat << "VECTORS " << FEFunctionArray[k]->GetName() << " double\n";
+      for(i = 0; i < N_Vertices; i++)
+      {
+        for(j = 0; j < 3; j++)
+        {
+          dat << DoubleArray[3 * i + j] << " ";
+        }
+        dat << endl;
+      }
+      dat << endl;
+      // reset
+      VectOutput = false;
+    }
   } // endfor k
 
  
@@ -2070,7 +2189,7 @@ int TOutput3D::WriteVtk(const char *name)
     for(j=0;j<N_Comp;j++)
     {
       dat << "SCALARS " << FEVectFunctArray[k]->GetName() << j;
-      dat << " float"<< endl;
+      dat << " double"<< endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
       for(i=0;i<N_Vertices;i++)
       {
@@ -2080,7 +2199,7 @@ int TOutput3D::WriteVtk(const char *name)
     }
     
     dat << "SCALARS " << "|" << FEVectFunctArray[k]->GetName() << "|";
-    dat << " float"<< endl;
+    dat << " double"<< endl;
     dat << "LOOKUP_TABLE " << "default" << endl;
     l=0;
     for(i=0;i<N_Vertices;i++)
@@ -2096,7 +2215,7 @@ int TOutput3D::WriteVtk(const char *name)
     dat << endl << endl;
 
     dat << "VECTORS " << FEVectFunctArray[k]->GetName();
-    dat << " float"<< endl;
+    dat << " double"<< endl;
     
     l=0;
     for(i=0;i<N_Vertices;i++)
@@ -2123,6 +2242,206 @@ int TOutput3D::WriteVtk(const char *name)
   OutPut("wrote output into vtk file: " << name << endl);
   return 0;
 }
+
+
+/*
+  Ulrich Wilbrandt, December 2013.
+
+  writes an extra vtk-file for (scalar) discontinuous functions. ParaView can
+  then display discontinuous data. The "POINTS" in the resulting vtk-file are 
+  the vertices of the mesh, but every vertex is put here as many times as there 
+  are cells this vertex belongs to. That means if a vertex belongs to 4 cells 
+  in the mesh it will appear 4 times in the list "POINTS" in the resulting 
+  vtk-file. The input "TVertex **Vertices" should be in this pattern. It can be
+  generated by
+
+  N_Elements=Coll->GetN_Cells();
+  N_LocVertices=0;
+  for(i=0;i<N_Elements;i++)
+  {
+    cell = Coll->GetCell(i);
+    N_LocVertices += cell->GetN_Vertices();
+  }
+  Vertices=new TVertex*[N_LocVertices];
+  N_=0;
+  
+  for(i=0;i<N_Elements;i++)
+  {
+    cell = Coll->GetCell(i);
+    k=cell->GetN_Vertices();
+    for(j=0;j<k;j++)
+    {
+      Vertices[N_]=cell->GetVertex(j);
+      N_++;
+    }
+  }
+
+  as is done in WriteVtk(cont char *name).
+  WARNING: This destroys the topology of the mesh. Some filters in ParaView 
+  might work incorrectly. Warp by scalar works though.
+  The way this is done here is not very elegant, but I couldn't find a better
+  solution.
+  Also note that in each element the function is projected onto P1/Q1.
+*/
+void TOutput3D::WriteVtkDiscontinuous(const char *fileName,
+int N_LocVertices, TVertex **Vertices)
+{
+  char Disc[80];             // the new file name
+  strcpy(Disc,fileName);     // copy the file name ...
+  strcat(Disc,"_disc.vtk");  // ... add a string to the output file name
+  
+  std::ofstream dat(Disc);
+  if (!dat)
+  {
+    Error("cannot open file for output\n");
+    exit(-1);
+  }
+  
+  dat.setf(std::ios::fixed);
+  dat << setprecision(9);
+
+  dat << "# vtk DataFile Version 4.2" << endl;
+  dat << "file created by MooNMD." << endl;
+
+  dat << "ASCII" << endl;
+  dat << "DATASET UNSTRUCTURED_GRID" << endl;
+  dat << "POINTS " << N_LocVertices << " float" << endl;
+
+  for(int i = 0; i < N_LocVertices; i++)
+  {
+    double x,y,z;
+    Vertices[i]->GetCoords(x,y,z);
+    dat << x << " " <<  y << " " << z << endl;
+  }
+  dat << endl;
+  int N_Elements = Coll->GetN_Cells();
+  
+  // writing which vertices belong to which cells, here it is ignored that
+  // a vertex might belong to multiple cells.
+  dat << "CELLS " << N_Elements << " " <<  N_Elements+N_LocVertices << endl;
+  int l = 0;
+  for(int i = 0; i < N_Elements; i++)
+  {
+    TBaseCell* current_cell = Coll->GetCell(i);
+    int N_CellVertices = current_cell->GetN_Vertices();
+    dat <<  N_CellVertices << " ";
+    for(int j = 0; j < N_CellVertices; j++)
+    {
+      dat << l << " ";
+      l++;
+    }
+    dat << endl;
+  }
+  dat << endl;
+  
+  // the cell types tell paraview if this is a tetrahedron or a hexahedron
+  // (export of other types is not supported here)
+  dat << "CELL_TYPES " << N_Elements << endl;
+  for(int i = 0; i < N_Elements; i++)
+  {
+    int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
+    switch(N_CellVertices)
+    {
+    case 4: dat << 10 << " ";
+      break;
+    case 8: dat << 12 << " ";
+      break; 
+    }
+  }
+  dat << endl << endl;
+  
+  // write the function values, only for scalar functions, which includes
+  // vector valued basis functions (such as Raviart-Thomas), because these 
+  // are handled like scalar basis functions
+  dat << "POINT_DATA " << N_LocVertices << endl;
+  for(int space_number = 0; space_number < N_ScalarVar; space_number++)
+  {
+    TFEFunction3D* fefunction = FEFunctionArray[space_number];
+    if(fefunction->GetFESpace3D()->IsDGSpace() != 1)
+      continue;
+    // this is a discontinuous space
+    int BaseVectDim = TFEDatabase3D::GetFE3D(
+      fefunction->GetFESpace3D()->GetFE3D(0,Coll->GetCell(0)))
+      ->GetBaseFunct3D()->GetBaseVectDim();   // ugly, but we need to know this
+    // scalar valued basis functions (normal case)
+    if (BaseVectDim == 1)
+    {
+      dat << endl << endl;
+      dat << "SCALARS " << fefunction->GetName();
+      dat << " double" << endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      double *function_value = new double[1];
+      for(int i = 0; i < N_Elements; i++)
+      {
+        TBaseCell* current_cell = Coll->GetCell(i);
+        int N_CellVertices = current_cell->GetN_Vertices();
+        for(int j = 0; j < N_CellVertices; j++)
+        {
+          double x,y,z;
+          current_cell->GetVertex(j)->GetCoords(x,y,z);
+          fefunction->FindValueLocal(current_cell,i,x,y,z,function_value);
+          dat << function_value[0] << endl;
+        }
+      }
+      delete [] function_value;
+    }
+    // vector valued basis functions (e.g. Raviart-Thomas)
+    else if(BaseVectDim == 3)
+    {
+      // find values for all components
+      double* function_value = new double[3];   // 3==BaseVectDim
+      // store function values at all vertices (three components)
+      double **allValues = new double*[3];       // 3==BaseVectDim
+      for(int l = 0; l < BaseVectDim; l++)
+        allValues[l] = new double[N_LocVertices];
+      for(int i = 0, k = 0; i < N_Elements; i++)
+      {
+        TBaseCell* current_cell = Coll->GetCell(i);
+        int N_CellVertices = current_cell->GetN_Vertices();
+        for(int j = 0; j < N_CellVertices; j++)
+        {
+          double x,y,z;
+          current_cell->GetVertex(j)->GetCoords(x, y, z);
+          // FindValueLocal includes the necessary sign changes due to global
+          // normals (for Raviart-Thomas elements)
+          fefunction->FindValueLocal(current_cell,i,x,y,z,function_value);
+          //for(int l = 0; l < BaseVectDim; l++)
+          //  allValues[l][k] = function_value[l];
+          allValues[0][k] = function_value[0];
+          allValues[1][k] = function_value[1];
+          allValues[2][k] = function_value[2];
+          k++;
+        }
+      }
+      delete [] function_value;
+      // write the function values to the vtk-file
+      dat << endl << endl;
+      dat << "VECTORS " << fefunction->GetName();
+      dat << " double"<< endl;
+      for(int i = 0, k = 0; i < N_Elements; i++)
+      {
+        int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
+        for(int j = 0; j < N_CellVertices; j++)
+        {
+          dat << allValues[0][k] << "\t" << allValues[1][k] 
+              << "\t" << allValues[2][k] << endl;
+          k++;
+        }
+      }
+      
+      for(int l = 0; l < BaseVectDim; l++)
+        delete [] allValues[l];
+      delete [] allValues;
+    }
+    else
+      ErrMsg("TOutput3D::WriteVtkDiscontinuous: Basis functions of dimension "
+             << BaseVectDim << " are not supported");
+    
+    
+  }
+  dat.close();
+}
+
 
 
 /** write stored PARALLEL data into a pvtu and vtu files (XML files for paraview) (Sashikumaar Ganesan) */
@@ -2162,7 +2481,8 @@ int TOutput3D::Write_ParVTK(
   FE3D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
-  VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
+  VtkBaseName = TDatabase::ParamDB->BASENAME;
+  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
   AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
@@ -2193,14 +2513,15 @@ int TOutput3D::Write_ParVTK(
   if(rank==0)
    {
    if( TDatabase::ParamDB->SC_VERBOSE > 0 )
-    OutPut("writing output into "<< VtkBaseName<<subID << "*." <<img<< " xml vtk file"<< endl);
-   
+    OutPut("writing output into "<< output_directory << "/" << VtkBaseName 
+           <<subID << "*." <<img<< " xml vtk file"<< endl);
     os.seekp(std::ios::beg);
-        if(img<10) os << VtkBaseName<<subID<<".0000"<<img<<".pvtu" << ends;
-         else if(img<100) os << VtkBaseName<<subID<<".000"<<img<<".pvtu" << ends;
-         else if(img<1000) os << VtkBaseName<<subID<<".00"<<img<<".pvtu" << ends;
-         else if(img<10000) os << VtkBaseName<<subID<<".0"<<img<<".pvtu" << ends;
-         else  os << VtkBaseName<<subID<<"."<<img<<".pvtu" << ends;
+    os << output_directory << "/" << VtkBaseName << subID;
+    if(img<10) os << ".0000"<<img<<".pvtu" << ends;
+    else if(img<100) os << ".000"<<img<<".pvtu" << ends;
+    else if(img<1000) os << ".00"<<img<<".pvtu" << ends;
+    else if(img<10000) os << ".0"<<img<<".pvtu" << ends;
+    else  os << "."<<img<<".pvtu" << ends;
     std::ofstream dat(os.str().c_str());
     if (!dat)
      {

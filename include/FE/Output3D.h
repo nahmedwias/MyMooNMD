@@ -115,6 +115,9 @@ class TOutput3D
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
 
+    /** write stored data. This calls the other Write* functions. */
+    int Write(std::string basename, int i=1, double t=0.);
+    
     /** write stored data into a grape file */
     int WriteGrape(const char *name);
 
@@ -129,6 +132,10 @@ class TOutput3D
 
     /** write stored data into an vtk file */
     int WriteVtk(const char *name);
+    
+     /** write a discontinuous function into a VTK file */
+    void WriteVtkDiscontinuous(const char *fileName, 
+                               int N_LocVertices, TVertex **Vertices);
 
     /** write stored PARALLEL data into a pvtu and vtu files (XML files for paraview) */
     int Write_ParVTK(

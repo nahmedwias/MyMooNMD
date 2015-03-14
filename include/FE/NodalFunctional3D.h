@@ -104,8 +104,17 @@ class TNodalFunctional3D
     { EvalFace(Coll, Cell, Joint, PointValues, Functionals); }
 
     /** return ID for this set */
-    NodalFunctional3D GetID()
+    NodalFunctional3D GetID() const
     { return ID; }
+    
+    int n_functionals() const
+    {return N_AllFunctionals; }
+
+    int n_face_functionals(int face) const
+    {return N_FaceFunctionals[face]; }
+
+    int n_points() const
+    { return N_PointsAll; }
 
 };
 

@@ -15,7 +15,6 @@
 
 #include <Enumerations.h>
 #include <Constants.h>
-#include <Collection.h>
 
 /**  realize nodal functionals in 2D */
 class TNodalFunctional2D

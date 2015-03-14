@@ -124,7 +124,7 @@ TPardisoSolver::TPardisoSolver() : TDirectSolver()
 //   runs_a = runs_f = runs_s = 0;
 //   exit(0);
 
-  pp = FALSE;
+  pp = false;
 }
 
 // Destructor
@@ -845,7 +845,7 @@ void TPardisoSolver::SetMatrix(TSquareMatrix3D *sqmatrixA,
     KCol[begin] = 3*N_U;
 //     rhs[3*N_U] = 0;
 
-    pp = TRUE;
+    pp = true;
     rhs_index = 3*N_U;
   }
 
@@ -1055,7 +1055,7 @@ void TPardisoSolver::SetMatrix(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sq
     KCol[begin] = 3*N_U;
 //     rhs[3*N_U] = 0;
 
-    pp = TRUE;
+    pp = true;
     rhs_index = 3*N_U;
   }
   

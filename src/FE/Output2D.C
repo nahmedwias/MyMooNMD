@@ -33,6 +33,10 @@
 #  include <sys/types.h>
 #include <math.h>
 
+#include <QuadAffin.h>
+#include <TriaAffin.h>
+#include <QuadBilinear.h>
+
 // tecplot
 #include <TECIO.h>
 
@@ -260,6 +264,30 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
   return m;
 }
 
+ /** write stored data into a .vtk-file*/
+int TOutput2D::Write(std::string basename, int i, double _current_time)
+{
+  std::ostringstream os;
+
+  os.seekp(std::ios::beg);
+  os << basename << i << ".vtk"<<ends;
+  os.seekp(std::ios::beg);
+  os << basename << i << ".vtk"<<ends;
+  if(TDatabase::ParamDB->WRITE_VTK)
+  {
+    cout << " Output2D:: writing " << os.str() << endl;
+    WriteVtk(os.str().c_str());
+  }
+  
+  os.seekp(std::ios::beg);
+  os << basename << i << ".gnu"<<ends;
+  if(TDatabase::ParamDB->WRITE_GNU) 
+  {
+    cout << " Output2D:: writing " << os.str() << endl;
+    WriteGnuplot(os.str().c_str());
+  }
+  // add more here if needed
+}
 
 /** write stored data into a grape file */
 int TOutput2D::WriteGrape(const char *name)
@@ -857,6 +885,17 @@ int TOutput2D::WriteVtk(const char *name)
   double xi, eta, value, *Coeffs, t;
   double BFValues[MaxN_BaseFunctions2D];
   double *FEValues, s, *Coords, z, *WArray, *DoubleArray;
+  /** this is needed to handle vector valued basis functions such as 
+   * Raviart-Thomas (RT) or Brezzi-Douglas-Marini (BDM) element */
+  double BFValuesOrig[MaxN_BaseFunctions2D];
+  bool VectOutput = false;
+  BF2DRefElements RefElement;
+  RefTrans2D RefTrans;
+  TRefTrans2D *F_K;
+  int BaseVectDim;
+  double value_y;
+  int edge, nsign;
+  
   double LocValues[MaxN_BaseFunctions2D];
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
@@ -940,7 +979,20 @@ int TOutput2D::WriteVtk(const char *name)
       N_++;
     }
   }
-//   N_--;
+  
+  // check for discontinuous scalar variables. In such a case write a new file
+  // for this variable. ParaView will really display a discontinuous function
+  // instead of projecting it onto P1/Q1 space. However there are some
+  // drawbacks.
+  for(i=0;i<N_ScalarVar;i++)
+  {
+    j = FEFunctionArray[i]->GetFESpace2D()->IsDGSpace();
+    if(j==1)
+    {
+      WriteVtkDiscontinuous(name, N_LocVertices, Vertices);
+      break;
+    }
+  }
   
   //cout << "N_" << N_ << endl;
   Sort(Vertices, N_);
@@ -1072,9 +1124,22 @@ int TOutput2D::WriteVtk(const char *name)
     GlobalNumbers = fespace->GetGlobalNumbers();
     BeginIndex = fespace->GetBeginIndex();
 
+    // get dimension of basis functions
+    cell = Coll->GetCell(0);
+    FE_ID = fespace->GetFE2D(i, cell);
+    bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+    BaseVectDim = bf->GetBaseVectDim();
+    N_Comp = BaseVectDim;
+
     memset(DoubleArray, 0, SizeOfDouble*2*N_Vertices);
     memset(WArray, 0, SizeOfDouble*N_Vertices);
     m = 0;
+    
+    // set to true if basis functions are vectors
+    if (BaseVectDim>1)  
+      VectOutput = true;
+    else 
+      VectOutput = false;
 
     for(i=0;i<N_Elements;i++)
     {
@@ -1086,6 +1151,26 @@ int TOutput2D::WriteVtk(const char *name)
       bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
       DOF = GlobalNumbers+BeginIndex[i];
       N_LocDOF = bf->GetDimension();
+      
+      RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FE_ID);
+      RefElement = TFEDatabase2D::GetRefElementFromFE2D(FE_ID);
+      F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
+      switch(RefTrans)
+      {
+        case TriaAffin:
+          ((TTriaAffin*)F_K)->SetCell(cell);
+          break;
+        case QuadAffin:
+          ((TQuadAffin*)F_K)->SetCell(cell);
+          break;
+        case QuadBilinear:
+          ((TQuadBilinear*)F_K)->SetCell(cell);
+          break;
+        default: 
+          cout << "Output2D():: no such reference transformation allowed" 
+               << endl;
+          break;
+      }                                           // endswitch
 
 //       for(j=0; j<N_LocDOF; j++)
 // 	if(Coeffs[DOF[l]]>1)
@@ -1107,10 +1192,56 @@ int TOutput2D::WriteVtk(const char *name)
         }
         bf->GetDerivatives(D00, xi, eta, BFValues);
         value = 0;
-        for(l=0;l<N_LocDOF;l++)
-          value += BFValues[l] * Coeffs[DOF[l]];
+        //for(l=0;l<N_LocDOF;l++)
+        //  value += BFValues[l] * Coeffs[DOF[l]];
   
-        DoubleArray[VertexNumbers[m]] += value;
+        //DoubleArray[VertexNumbers[m]] += value;
+        value_y = 0;
+        if(!VectOutput)
+        {                                         // standard
+          for(l=0;l<N_LocDOF;l++)
+          {
+            value += BFValues[l] * Coeffs[DOF[l]];
+          }
+          DoubleArray[VertexNumbers[m]] += value;
+        }
+        else // VectOutput
+        {
+          // apply Piola transform 
+          switch(RefTrans)
+          {
+            case TriaAffin:
+            case QuadAffin:
+              F_K->PiolaMapOrigFromRef(N_LocDOF,BFValues,BFValuesOrig);
+              break;
+            case QuadBilinear: 
+              // for non affine reference transformations one needs to know the 
+              // point, because the determinant is not constant in this case.
+              ((TQuadBilinear*)F_K)->PiolaMapOrigFromRefNotAffine(
+                                        N_LocDOF,BFValues,BFValuesOrig,xi,eta);
+              break;
+            default:
+              cout << "Output2D():: no such reference transformation allowed" 
+               << endl;
+              break;
+          }
+          for(l=0;l<N_LocDOF;l++)
+          {
+            // change sign of basis functions according to global normal
+            edge=TFEDatabase2D::GetFE2D(FE_ID)->GetFEDesc2D()->GetJointOfThisDOF(l);
+            if (edge != -1)
+            {
+              nsign = cell->GetNormalOrientation(edge);
+            }
+            else
+              nsign=1;
+            value += BFValuesOrig[l] * Coeffs[DOF[l]]*nsign;
+            value_y += BFValuesOrig[N_LocDOF+l] * Coeffs[DOF[l]]*nsign;
+          }
+          DoubleArray[N_Comp*VertexNumbers[m] + 0] += value;
+          DoubleArray[N_Comp*VertexNumbers[m] + 1] += value_y;
+        }
+        
         WArray[VertexNumbers[m]] +=1.;
         m++;
 
@@ -1118,28 +1249,100 @@ int TOutput2D::WriteVtk(const char *name)
     } // endfor i
 
     // non conforming
-    for(i=0;i<N_Vertices;i++)
-     if(WArray[i]!=0.)
-      DoubleArray[i] /= WArray[i];
+    if (!VectOutput)
+    {
+      for(i=0;i<N_Vertices;i++)
+      {
+        if(WArray[i]!=0.)
+        {
+          DoubleArray[i] /= WArray[i];
+        }
+      }
+    }
+    else // VectOutput
+    {
+      l = 0;
+      for(i=0;i<N_Vertices;i++)
+      {
+        for(j=0;j<N_Comp;j++)
+        {
+          if(WArray[i]!=0.)
+            DoubleArray[l] /= WArray[i];
+          l++;
+        }
+      }                                           // endfor i
+    }
+
 
 //       for(j=0; j<N_Vertices; j++)
 //      if(DoubleArray[j]>1)
 //        cout <<j << " SolPbe " <<DoubleArray[j] <<endl;
      
      
-     
-    dat << "SCALARS " << FEFunctionArray[k]->GetName();
-    dat << " float"<< endl;
-    dat << "LOOKUP_TABLE " << "default" << endl;
-    for(j=0;j<N_Vertices;j++)
-      dat << DoubleArray[j] << endl;
-    dat << endl;
-    dat << endl;
-  } // endfor k
+    if (!VectOutput)
+    {
+      // standard output writing
+      dat << "SCALARS " << FEFunctionArray[k]->GetName();
+      dat << " float"<< endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      for(j=0;j<N_Vertices;j++)
+        dat << DoubleArray[j] << endl;
+      dat << endl;
+      dat << endl;
+    }
+    else // VectOutput
+    {
+      // scalar components
+      for(j=0;j<N_Comp;j++)
+      {
+        dat << "SCALARS " << FEFunctionArray[k]->GetName() << j;
+        dat << " float"<< endl;
+        dat << "LOOKUP_TABLE " << "default" << endl;
+        for(i=0;i<N_Vertices;i++)
+        {
+          dat << DoubleArray[i*N_Comp+j] << endl;
+        }
+        dat << endl << endl;
+      }
+
+      // absolute value
+      dat << "SCALARS " << "|" << FEFunctionArray[k]->GetName() << "|";
+      dat << " float"<< endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      l=0;
+      for(i=0;i<N_Vertices;i++)
+      {
+        t=0;
+        for(j=0;j<N_Comp;j++)
+        {
+          t+=DoubleArray[l]*DoubleArray[l];
+          l++;
+        }
+        dat << sqrt(t)<< endl;
+      }
+      dat << endl << endl;
+
+      dat << "VECTORS " << FEFunctionArray[k]->GetName();
+      dat << " float"<< endl;
+
+      l=0;
+      for(i=0;i<N_Vertices;i++)
+      {
+        for(j=0;j<N_Comp;j++)
+        {
+          dat << DoubleArray[N_Comp*i+j] << " ";
+        }
+        dat << double(0) << " " << endl;
+      }
+      dat << endl;
+      // reset for next iteration in loop over all scalar variables
+      VectOutput = false;
+    }
+  } // endfor k (loop over scalar variables
 
 
   for(k=0;k<N_VectorVar;k++)
-   {
+  {
     fespace = FEVectFunctArray[k]->GetFESpace2D();
     N_Comp = FEVectFunctArray[k]->GetN_Components();
     Length = FEVectFunctArray[k]->GetLength();
@@ -1153,7 +1356,7 @@ int TOutput2D::WriteVtk(const char *name)
     m = 0;
 
     for(i=0;i<N_Elements;i++)
-     {
+    {
       cell = Coll->GetCell(i);
       N_ = cell->GetN_Vertices();
 
@@ -1169,22 +1372,21 @@ int TOutput2D::WriteVtk(const char *name)
           case 3:
             xi = TriaCoords[2*j];
             eta = TriaCoords[2*j+1];
-	    break;
-
-	  case 4:
+            break;
+          case 4:
             xi = QuadCoords[2*j];
             eta = QuadCoords[2*j+1];
-	    break;
+            break;
         }
         bf->GetDerivatives(D00, xi, eta, BFValues);
 
-	for(n=0;n<N_Comp;n++)
+        for(n=0;n<N_Comp;n++)
         {
-	  value = 0;
-	  for(l=0;l<N_LocDOF;l++)
-	    value += BFValues[l] * Coeffs[DOF[l]+n*Length];
-	  DoubleArray[N_Comp*VertexNumbers[m] + n] += value;
-	}
+          value = 0;
+          for(l=0;l<N_LocDOF;l++)
+            value += BFValues[l] * Coeffs[DOF[l]+n*Length];
+          DoubleArray[N_Comp*VertexNumbers[m] + n] += value;
+        }
         WArray[VertexNumbers[m]] +=1.;
         m++;
       } // endfor j
@@ -1197,9 +1399,9 @@ int TOutput2D::WriteVtk(const char *name)
     {
       for(j=0;j<N_Comp;j++)
       {
-      	if(WArray[i]!=0.)
-         DoubleArray[l] /= WArray[i];
-	l++;
+        if(WArray[i]!=0.)
+          DoubleArray[l] /= WArray[i];
+        l++;
       }
     } // endfor l
 
@@ -1210,7 +1412,7 @@ int TOutput2D::WriteVtk(const char *name)
       dat << "LOOKUP_TABLE " << "default" << endl;
       for(i=0;i<N_Vertices;i++)
       {
-	dat << DoubleArray[i*N_Comp+j] << endl;
+        dat << DoubleArray[i*N_Comp+j] << endl;
       }
       dat << endl << endl;
     }
@@ -1239,7 +1441,7 @@ int TOutput2D::WriteVtk(const char *name)
     {
       for(j=0;j<N_Comp;j++)
       {
-	dat << DoubleArray[N_Comp*i+j] << " ";
+        dat << DoubleArray[N_Comp*i+j] << " ";
       }
       dat << double(0) << " " << endl;
     }
@@ -1260,8 +1462,228 @@ int TOutput2D::WriteVtk(const char *name)
 //   cout << endl;
 //   if( TDatabase::ParamDB->SC_VERBOSE > 0 )
   OutPut("wrote output into vtk file: " << name << endl);
-
   return 0;
+}
+
+
+/*
+  Ulrich Wilbrandt, November 2011.
+
+  writes an extra vtk-file for (scalar) discontinuous functions. ParaView can
+  then display discontinuous data. The "POINTS" in the resulting vtk-file are 
+  the vertices of the mesh, but every vertex is put here as many times as there 
+  are cells this vertex belongs to. That means if a vertex belongs to 4 cells 
+  in the mesh it will appear 4 times in the list "POINTS" in the resulting 
+  vtk-file. The input "TVertex **Vertices" should be in this pattern. It can be
+  generated by
+
+  N_Elements=Coll->GetN_Cells();
+  N_LocVertices=0;
+  for(i=0;i<N_Elements;i++)
+  {
+    cell = Coll->GetCell(i);
+    N_LocVertices += cell->GetN_Vertices();
+  }
+  Vertices=new TVertex*[N_LocVertices];
+  N_=0;
+  
+  for(i=0;i<N_Elements;i++)
+  {
+    cell = Coll->GetCell(i);
+    k=cell->GetN_Vertices();
+    for(j=0;j<k;j++)
+    {
+      Vertices[N_]=cell->GetVertex(j);
+      N_++;
+    }
+  }
+
+  as is done in WriteVtk(cont char *name).
+  WARNING: This destroys the topology of the mesh. Some filters in ParaView 
+  might work incorrectly. Warp by scalar works though.
+  The way this is done here is not very elegant, but I couldn't find a better
+  solution.
+  Also note that in each element the function is projected onto P1/Q1.
+*/
+void TOutput2D::WriteVtkDiscontinuous(const char *fileName,
+int N_LocVertices, TVertex **Vertices)
+{
+  TVertex *curret_vertex;
+  double x,y;                // coordinates of a vertex
+  int N_Elements;            // number of all elements in this mesh
+  int N_CellVertices;        // number of all vertices in this cell
+  int i,j,k,l;               // loop variables
+  TFEFunction2D *fefunction; // this function, which is discontinuous
+  TBaseCell *current_cell;   
+  double *function_value;    // value of function at a particular vertex
+  double **allValues;        // in case of vector valued basis functions, store
+                             // all values of all components
+  int space_number;          
+  char Disc[80];             // the new file name
+  strcpy(Disc,fileName);     // copy the file name ...
+  strcat(Disc,"_disc.vtk");  // ... add a string to the output file name
+
+  N_Elements = Coll->GetN_Cells();
+
+  std::ofstream dat(Disc);
+  if (!dat)
+  {
+    Error("cannot open file for output\n");
+    exit(-1);
+  }
+  dat.setf(std::ios::fixed);
+  dat << setprecision(9);
+
+  dat << "# vtk DataFile Version 4.2" << endl;
+  dat << "file created by MooNMD." << endl;
+
+  dat << "ASCII" << endl;
+  dat << "DATASET UNSTRUCTURED_GRID" << endl;
+  dat << "POINTS " << N_LocVertices << " float" << endl;
+
+  for(i=0;i<N_LocVertices;i++)
+  {
+    #ifdef __3D__
+    //Vertices[i]->GetCoords(x,y,z);
+    OutPut("WriteVtkDiscontinuous has to be checked for 3D"<<endl);
+    exit(4711);
+    #else
+    Vertices[i]->GetCoords(x,y);
+    #endif
+    dat << x << " " <<  y << " " << double(0) << endl;
+    // in 2D: set last entry 0
+  }
+  dat << endl;
+  dat << "CELLS " << N_Elements << " " <<  N_Elements+N_LocVertices << endl;
+  l=0;
+  for(i=0;i<N_Elements;i++)
+  {
+    current_cell = Coll->GetCell(i);
+    N_CellVertices = current_cell->GetN_Vertices();
+    dat <<  N_CellVertices << " ";
+    for(j=0;j<N_CellVertices;j++)
+    {
+      dat << l << " ";
+      l++;
+    }
+    dat << endl;
+  }
+  dat << endl;
+  dat << "CELL_TYPES " << N_Elements << endl;
+  for(i=0;i<N_Elements;i++)
+  {
+    N_CellVertices=Coll->GetCell(i)->GetN_Vertices();
+    switch(N_CellVertices)
+    {
+      case 4: dat << 9 << " ";
+      break;
+      case 3: dat << 5 << " ";
+      break;
+    }
+  }
+  dat << endl << endl;
+  dat << "POINT_DATA " << N_LocVertices << endl;
+  for(space_number=0; space_number<N_ScalarVar; space_number++)
+  {
+    fefunction = FEFunctionArray[space_number];
+    if(fefunction->GetFESpace2D()->IsDGSpace() != 1)
+      continue;
+    // this is a discontinuous space
+
+    int BaseVectDim =
+      TFEDatabase2D::GetFE2D(
+      fefunction->GetFESpace2D()->GetFE2D(0,Coll->GetCell(0)))
+      ->GetBaseFunct2D()->GetBaseVectDim();   // ugly, but we need to know this
+    if (BaseVectDim==1)
+    {
+      dat << endl << endl;
+      dat << "SCALARS " << fefunction->GetName();
+      dat << " double" << endl;
+      dat << "LOOKUP_TABLE " << "default" << endl;
+      function_value = new double[3];  // only need to allocate this first entry
+      for(i=0;i<N_Elements;i++)
+      {
+        current_cell = Coll->GetCell(i);
+        N_CellVertices=current_cell->GetN_Vertices();
+        for(j=0;j<N_CellVertices;j++)
+        {
+          #ifdef __2D__
+          current_cell->GetVertex(j)->GetCoords(x,y);
+          #endif
+          fefunction->FindValueLocal(current_cell,i,x,y,function_value);
+          dat << function_value[0] << endl;
+        }
+      }
+    }
+    else if(BaseVectDim==2)
+    {
+      // find values for all components
+      function_value = new double[2];   // 2==BaseVectDim
+      allValues = new double*[2];       // 2==BaseVectDim
+      for(l=0; l<BaseVectDim; l++)
+        allValues[l] = new double[N_LocVertices];
+      k=0;
+      for(i=0;i<N_Elements;i++)
+      {
+        current_cell = Coll->GetCell(i);
+        N_CellVertices=current_cell->GetN_Vertices();
+        for(j=0;j<N_CellVertices;j++)
+        {
+          #ifdef __2D__
+          current_cell->GetVertex(j)->GetCoords(x,y);
+          #endif
+          // FindValueLocal includes the necessary sign changes due to global
+          // normals (for Raviart-Thomas elements)
+          fefunction->FindValueLocal(current_cell,i,x,y,function_value);
+          //for(l=0; l<BaseVectDim; l++)
+          //  allValues[l][k] = function_value[l];
+          allValues[0][k] = function_value[0];
+          allValues[1][k] = function_value[1];
+          k++;
+        }
+      }
+      delete [] function_value;
+      // write the function values to the vtk-file
+      for(l=0; l<BaseVectDim; l++)
+      {
+        dat << endl << endl;
+        dat << "SCALARS " << fefunction->GetName() << l;
+        dat << " double" << endl;
+        dat << "LOOKUP_TABLE " << "default" << endl;
+        k=0;
+        for(i=0;i<N_Elements;i++)
+        {
+          N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
+          for(j=0;j<N_CellVertices;j++)
+          {
+            dat << allValues[l][k] << endl;
+            k++;
+          }
+        }
+      }
+      dat << endl << endl;
+      dat << "VECTORS " << fefunction->GetName();
+      dat << " double"<< endl;
+      k=0;
+      for(i=0;i<N_Elements;i++)
+      {
+        N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
+        for(j=0;j<N_CellVertices;j++)
+        {
+          dat << allValues[0][k] << "\t" << allValues[1][k] // 2D 
+              << "\t" << double(0) << endl;
+          k++;
+        }
+      }
+      for(l=0; l<BaseVectDim; l++)
+        delete [] allValues[l];
+      delete [] allValues;
+    }
+    else
+      OutPut("TOutput2D::WriteVtkDiscontinuous: Basis functions of dimension "
+        << BaseVectDim << " are not supported." << endl);
+  }
+  dat.close();
 }
 
 
@@ -1789,7 +2211,7 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
   int i, k, idx, nextx, nexty, LocVertex;
   int N_Cells, N_Verts, N_BaseFct;
   double startx, starty, boundx, boundy, X, Y;
-  boolean found = FALSE;
+  bool found = false;
   TBaseCell *CellX, *CellY;
   TJoint *JointX, *JointY;
   TFESpace2D *FESpace;
@@ -1865,7 +2287,7 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
       if (ABS(X - startx) < 1e-10)
         if (ABS(Y - starty) < 1e-10)
       {
-        found = TRUE;
+        found = true;
         break;
       }
     }
@@ -2469,7 +2891,8 @@ int TOutput2D::Write_ParVTK(
   FE2D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
-  VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
+  VtkBaseName = TDatabase::ParamDB->BASENAME;
+  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
   AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
@@ -2497,13 +2920,15 @@ int TOutput2D::Write_ParVTK(
   if(rank==0)
    {
 //    if( TDatabase::ParamDB->SC_VERBOSE > 0 )
-    OutPut("writing output into "<< VtkBaseName<<subID << "*." <<img<< " xml vtk file"<< endl);
+    OutPut("writing output into "<< output_directory << "/" << VtkBaseName 
+           <<subID << "*." <<img<< " xml vtk file"<< endl);
     os.seekp(std::ios::beg);
-        if(img<10) os << VtkBaseName<<subID<<".0000"<<img<<".pvtu" << ends;
-         else if(img<100) os << VtkBaseName<<subID<<".000"<<img<<".pvtu" << ends;
-         else if(img<1000) os << VtkBaseName<<subID<<".00"<<img<<".pvtu" << ends;
-         else if(img<10000) os << VtkBaseName<<subID<<".0"<<img<<".pvtu" << ends;
-         else  os << VtkBaseName<<subID<<"."<<img<<".pvtu" << ends;
+    os << output_directory << "/" << VtkBaseName << subID;
+    if(img<10) os << ".0000"<<img<<".pvtu" << ends;
+    else if(img<100) os << ".000"<<img<<".pvtu" << ends;
+    else if(img<1000) os << ".00"<<img<<".pvtu" << ends;
+    else if(img<10000) os << ".0"<<img<<".pvtu" << ends;
+    else  os << "."<<img<<".pvtu" << ends;
     std::ofstream dat(os.str().c_str());
     if (!dat)
      {
