@@ -47,6 +47,8 @@ class TQuadFormulaTria : public TQuadFormula2D
     void Degree19();
     /** Gauss-like formula, composed on three sub-triangles */
     void CompGauss3();
+    /** Gauss-like formula, composed on four sub-triangles */
+    void CompGauss4();
     /** Gauss formula of degree 8 */
     void Gauss_Degree8();
 };
