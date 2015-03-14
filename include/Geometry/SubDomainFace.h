@@ -27,7 +27,7 @@ struct SubDomainMap
     int NeibParentLocalEdge_No;
     int NewEdge;
     int NeibNewEdge;
-    boolean MapFilled;
+    bool MapFilled;
 };
 
 /** connects two cells, which are in two/(more in 3D) different sub domains */

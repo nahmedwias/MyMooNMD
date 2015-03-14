@@ -41,6 +41,7 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
     case IsoInterfaceJoint3D:
 #endif
     case PeriodicJoint:
+    case InnerInterfaceJoint:
       if (Neighb0)
         Neighb1 = Neighb;
       else
@@ -53,7 +54,7 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
   }
 }
 
-TBaseCell *TJoint::GetNeighbour(TBaseCell *Me)
+TBaseCell *TJoint::GetNeighbour(TBaseCell *Me) const
 {
   if (Neighb0 == Me)
     return Neighb1;
@@ -86,7 +87,7 @@ int TJoint::SetNeighbour(int i, TBaseCell *Neighb)
   }
 }
 
-TBaseCell *TJoint::GetNeighbour(int i)
+TBaseCell *TJoint::GetNeighbour(int i) const
 {
   if (i)
     return Neighb1;
@@ -195,7 +196,44 @@ void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
     exit (-1);
   }
 }
-#endif
+int TJoint::GetNeighbourEdgeIndex(TBaseCell* me, int LocEdge)
+{
+  int N_Edges, MaxLen;
+  const int *TmpEV;
+  TVertex *Vert0, *Vert1;
+  TBaseCell* neigh;
+
+  // Set neigh as the neighbour of me
+  if(me == Neighb0) neigh=Neighb1;
+  else neigh = Neighb0;
+
+  if (me && neigh)
+  {
+    // Get Vertices of the edge
+    me->GetShapeDesc()->GetEdgeVertex(TmpEV);
+    Vert0 = me->GetVertex(TmpEV[LocEdge*2]);
+    Vert1 = me->GetVertex(TmpEV[LocEdge*2+1]);
+
+    neigh->GetShapeDesc()->GetEdgeVertex(TmpEV);
+    N_Edges = neigh->GetShapeDesc()->GetN_Edges();
+    // Iterate over all edges of neighbour
+    for(int i=0; i<N_Edges; ++i)
+    {
+        // Check if the vertices of that edge are the ones we searched for
+        if((neigh->GetVertex(TmpEV[2*i]) == Vert0 && neigh->GetVertex(TmpEV[2*i+1]) == Vert1) ||
+           (neigh->GetVertex(TmpEV[2*i]) == Vert1 && neigh->GetVertex(TmpEV[2*i+1]) == Vert0))
+           return i;
+    }
+
+    return -1;
+  }
+  else
+  {
+    return -1;
+  }
+}
+
+#endif // __3D__
 
 // Destructor
 TJoint::~TJoint()

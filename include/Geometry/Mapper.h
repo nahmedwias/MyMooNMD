@@ -11,10 +11,17 @@
 #ifndef __MAPPER__
 #define __MAPPER__
 
-#define N_MAPPER  13
+#define N_MAPPER  34
 enum Mapper {MapTriReg0,  MapTriReg1, MapTriReg2,
              MapTriBis00, MapTriBis01, MapTriBis02,
-             MapTriBis11, MapTriBis12, MapTriBis22,
+             MapTriBis10, MapTriBis11, MapTriBis12,
+             MapTriBis20, MapTriBis21, MapTriBis22,
+             MapTriBis010, MapTriBis011, MapTriBis012,
+             MapTriBis020, MapTriBis021, MapTriBis022,
+             MapTriBis100, MapTriBis101, MapTriBis102,
+             MapTriBis120, MapTriBis121, MapTriBis122,
+             MapTriBis200, MapTriBis201, MapTriBis202,
+             MapTriBis210, MapTriBis211, MapTriBis212,
              MapQuadReg0, MapQuadReg1, MapQuadReg2, MapQuadReg3};
 
 /** mapper for faces of 3D geometric objects */

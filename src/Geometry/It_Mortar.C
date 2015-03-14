@@ -23,7 +23,7 @@ int TIt_Mortar::Init(int level)
   const int *TmpoEnE, *TmpLen;
   int MaxLen, MortarFaceID;
 
-  MortarSide = (boolean) (level < 0);
+  MortarSide = (bool) (level < 0);
   if (MortarSide) level = - level;
 
   TIt_Search::Init(level);

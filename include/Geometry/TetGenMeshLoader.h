@@ -57,9 +57,9 @@ class TTetGenMeshLoader
 #endif
     
     /** options */
-    boolean plc;
-    boolean reconstruct;
-    boolean insertpoints;
+    bool plc;
+    bool reconstruct;
+    bool insertpoints;
     
   protected:
     int ReadBoundFile(int N_BoundComps);

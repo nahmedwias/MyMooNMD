@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <InnerInterfaceJoint.h>
 #ifdef __2D__
   #include <IsoBoundEdge.h>
   #include <IsoInterfaceJoint.h>
@@ -44,6 +45,21 @@ int TDomain::ReadGeo(char *GeoFile)
     int *InterfaceParam, N_Interfaces;
   #endif
 
+  // physical references
+  int *ELEMSREF;
+  int readXgeo = 0;
+  // check if input file is an extended geo file (.xGEO)
+  int nn=0;
+  while (GeoFile[nn] != 0) {++nn;}
+  
+  if (GeoFile[nn-4]=='x')
+  {
+    if(TDatabase::ParamDB->SC_VERBOSE>1)
+      cout << " *** reading xGEO file (with physical references) ***" << endl;
+    readXgeo = 1;
+  }
+
+  
   std::ifstream dat(GeoFile);
 
   if (!dat)
@@ -69,6 +85,10 @@ int TDomain::ReadGeo(char *GeoFile)
   KVERT = new int[NVE*N_RootCells];
   KNPR = new int[N_Vertices];
   
+  // additional array of physical properties of elements (only if readXgeo)
+  ELEMSREF = new int[N_RootCells];
+
+  
   // read fields
   for (i=0;i<N_Vertices;i++)
   {
@@ -86,6 +106,10 @@ int TDomain::ReadGeo(char *GeoFile)
   {
     for (j=0;j<NVE;j++)
       dat >> KVERT[NVE*i + j];
+    if(readXgeo)
+      dat >> ELEMSREF[i];
+    else
+      ELEMSREF[i] = 0;
     dat.getline (line, 99);
   }
 
@@ -151,25 +175,477 @@ int TDomain::ReadGeo(char *GeoFile)
   dat.close();
 
   #ifdef __2D__
-       k = MakeGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE);
+       k = MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE);
   #else
-//   OutPut("33"<<endl);
-    k = MakeGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
+    k = MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE,
              BoundFaces, FaceParam, NBF, NVpF,
              InterfaceParam, N_Interfaces);
-//   OutPut("34"<<endl);
+  delete [] BoundFaces;
+  delete [] FaceParam;
   #endif
 
-  delete DCORVG;
-  delete KVERT;
-  delete KNPR;
+  delete [] DCORVG;
+  delete [] KVERT;
+  delete [] KNPR;
 
   return 0;
 }
 
 #ifdef __2D__
-int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
+// extended version
+// Alfonso, 2011
+int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
                       int N_Vertices, int NVE)
+{
+  int a, b, j, k, l, comp, Part, NeighborID, N_Edges,maxElpV = 0;
+  int aux1, aux2, aux3;
+  double T_a, T_b, T, X, Y;
+  double Xmin = 1e10, Xmax = -1e10, Ymin = 1e10, Ymax = -1e10;
+  int *KVEL;
+  TVertex **NewVertices, *LocVerts[4];
+  TJoint **KMT, *Joint;
+  TBaseCell *JNeib1, *JNeib2, *cell;
+  Shapes CellType;
+
+  double bd_parameter_a, bd_parameter_b;
+
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+    cout << " Domain::MakeGrid() creating 2D grid " << endl;
+ 
+  // generate vertices, edges and cells
+  // search neighbours
+  KVEL = new int[N_Vertices];
+  
+  memset(KVEL, 0, N_Vertices * SizeOfInt);
+  
+  //KVEL(j) = how many times vertices j appears in the list
+  for (int i=0;i<NVE*N_RootCells;i++)
+  {
+    if (KVERT[i])
+    {
+      KVEL[KVERT[i]-1]++;
+    }
+  }
+  
+  // get the maximum
+  for (int i=0;i<N_Vertices;i++)
+    if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
+  
+  delete KVEL;
+
+  //KVEL = new int[++maxElpV * N_Vertices];
+  maxElpV = maxElpV+1;
+  KVEL = new int[maxElpV * N_Vertices];
+  memset(KVEL, 0, maxElpV * N_Vertices * SizeOfInt);
+  // first column contains the number of following elements
+  for (int i=0;i<NVE*N_RootCells;i++)
+  {
+    if (KVERT[i])
+    {
+      j = (KVERT[i] - 1)*maxElpV;
+      KVEL[j]++;
+      KVEL[j + KVEL[j]] = i / NVE;
+    }
+  }
+
+
+  // generate vertices
+  //cout << " Domain::MakeGrid() generate " << N_Vertices << " vertices " << endl;
+  NewVertices = new TVertex*[N_Vertices];
+  
+  for (int i=0;i<N_Vertices;i++)
+  {
+    //cout << " i = " << i << endl;
+    if (KNPR[i])
+    {
+      // vertices on a boundary (inner or outer) joint
+      // described by bd parametrization of 
+      // part BdParts[ KNPR[i] ] [ (int) DCORVG[2*i]] ;
+
+      T = DCORVG[2*i];
+      comp = (int) T;
+      if (GetLastLocalComp(KNPR[i]-1) == comp - 1)
+      {
+        comp--;
+        T = 1.0;
+      }
+      else
+        T -= comp;
+
+      BdParts[KNPR[i] - 1]->GetXYofT(comp, T, X, Y);
+
+      if (X > Xmax) Xmax = X;
+      if (X < Xmin) Xmin = X;
+      if (Y > Ymax) Ymax = Y;
+      if (Y < Ymin) Ymin = Y;
+  
+      NewVertices[i] = new TVertex(X, Y);
+      //cout << " vertex: " << i << " comp: " << comp << " X,Y= " << X << "," << Y << endl;
+      //OutPut("bd " << i << " "<< X << " " << Y << endl);
+    }
+    else
+    { 
+      // inner vertex (described by coordinates)
+      NewVertices[i] = new TVertex(DCORVG[2*i], DCORVG[2*i+1]);
+    } 
+  } // for (i=0;i<N_Vertices;i++) {
+
+  // set bounding box
+  StartX = Xmin;
+  StartY = Ymin;
+  BoundX = Xmax - Xmin;
+  BoundY = Ymax - Ymin;
+  //StartZ = 0; // this is 2D
+  //BoundZ = 0; // this is 2D
+  
+  // create the CellTree and set references
+  CellTree = new TBaseCell*[N_RootCells];
+  for (int i=0;i<N_RootCells;i++)
+  {
+    CellType = Quadrangle;
+    if (NVE == 3)
+      CellType = Triangle;
+    else
+      if (!KVERT[NVE*i + 3]) CellType = Triangle;
+
+    if (CellType == Quadrangle)
+    {
+      LocVerts[0] = NewVertices[KVERT[NVE*i    ]-1];
+      LocVerts[1] = NewVertices[KVERT[NVE*i + 1]-1];
+      LocVerts[2] = NewVertices[KVERT[NVE*i + 2]-1];
+      LocVerts[3] = NewVertices[KVERT[NVE*i + 3]-1];
+
+      CellType = ((TQuadrangle *) TDatabase::RefDescDB[Quadrangle]->
+                 GetShapeDesc())->CheckQuad(LocVerts);
+
+      CellTree[i] = new TMacroCell(TDatabase::RefDescDB[CellType],
+                                   RefLevel);
+
+      CellTree[i]->SetVertex(0, LocVerts[0]);
+      CellTree[i]->SetVertex(1, LocVerts[1]);
+      CellTree[i]->SetVertex(2, LocVerts[2]);
+      CellTree[i]->SetVertex(3, LocVerts[3]);
+
+    }
+    else
+    {
+      CellTree[i] = new TMacroCell(TDatabase::RefDescDB[
+                                   Triangle], RefLevel);
+      CellTree[i]->SetVertex(0, NewVertices[KVERT[NVE*i    ]-1]);
+      CellTree[i]->SetVertex(1, NewVertices[KVERT[NVE*i + 1]-1]);
+      CellTree[i]->SetVertex(2, NewVertices[KVERT[NVE*i + 2]-1]);
+    }
+    // ReferenceID: used to specify physical/geometrical reference
+    CellTree[i]->SetReference_ID(ELEMSREF[i]);
+    // set the index in the cell list
+    CellTree[i]->SetCellIndex(i);
+  }
+  
+  // initialize iterators
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);
+
+  #ifdef __MORTAR__
+    TDatabase::IteratorDB[It_Mortar1]->SetParam(this);
+    TDatabase::IteratorDB[It_Mortar2]->SetParam(this);
+  #endif
+
+  // generate edges
+  KMT = new TJoint*[N_RootCells*4];
+  for (int i=0; i<N_RootCells*4; i++)
+    KMT[i] = NULL;
+
+  for (int i=0;i<N_RootCells;i++)
+  {
+    N_Edges = CellTree[i]->GetN_Edges();
+
+    for (j=0;j<N_Edges;j++)
+    {
+      a = KVERT[NVE*i + j] - 1;
+      b = KVERT[NVE*i + (j+1) % N_Edges] - 1;
+      // Part: -1 for inner, 0,1,2,... ofr bdpart 0,1,2,...
+      Part = KNPR[a] - 1; // Bdpart
+      // find neighbor ID
+      NeighborID = -1;
+      aux1 = KVEL[a*maxElpV];
+      aux2 = KVEL[b*maxElpV];
+
+      for (k=1;k<=aux1;k++)
+      {
+        aux3 = KVEL[a*maxElpV + k];
+        if (aux3 == i) continue;
+
+        for (l=1;l<=aux2;l++)
+          if (aux3 == KVEL[b*maxElpV + l])
+          {
+            NeighborID = aux3;
+            break;
+          }
+        if (NeighborID >= 0) break;
+      }
+      
+      //OutPut(NeighborID << endl);
+      if (NeighborID > i)
+      {
+        if( (KNPR[a]) && (KNPR[b]) )
+        {
+          if( (KNPR[a] == KNPR[b]) && (Interfaces[KNPR[a]-1] < 0) )
+          {
+            KMT[i*4 + j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+            // bd.comp ID of the point is given as integer part of first coordinate
+            comp = (int) DCORVG[2*a]; 
+            Part = KNPR[a] - 1;
+            bd_parameter_a = DCORVG[2*a] - comp;
+            // correction for the endpoint of nonclosed interfaces
+            if(BdParts[Part]->GetN_BdComps() == comp)
+            {
+              bd_parameter_a = 1.0;
+              comp--;
+            }
+      
+            // check if vertex belongs to boundary component
+            if(BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[a]->GetX(), 
+                                                        NewVertices[a]->GetY(),
+                                                        bd_parameter_a))
+            {
+              // if not: 
+              if (comp)
+                comp--;
+              else
+                comp = GetLastLocalComp(Part);
+
+              int check_bd_node = 
+                BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[a]->GetX(),
+                                                         NewVertices[a]->GetY(),
+                                                         bd_parameter_a);
+              if (!check_bd_node)
+              {
+                cout << " MakeGrid(), line " << __LINE__ << ": Error: vertex " 
+                     << a << " does not belong to a bd. component " << endl;
+              }
+            }
+
+            comp = (int) DCORVG[2*b];
+            Part = KNPR[b] - 1;
+
+            if(comp > GetLastLocalComp(Part) ) 
+              comp = GetLastLocalComp(Part);
+
+            bd_parameter_b = DCORVG[2*b] - comp;
+            if(BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[b]->GetX(), 
+                                                        NewVertices[b]->GetY(),
+                                                        bd_parameter_b))
+            {
+              if (comp)
+                comp--;
+              else
+                comp = GetLastLocalComp(Part);
+              
+              int check_bd_node = BdParts[Part]->GetBdComp(comp)->GetTofXY(
+                NewVertices[b]->GetX(), NewVertices[b]->GetY(), bd_parameter_b);
+              if (!check_bd_node)
+              {
+                cout << " MakeGrid(), line " << __LINE__ << ": Error: vertex " 
+                     << b << " does not belong to a bd. component " << endl;
+              }
+            }
+      
+            T_a = bd_parameter_a;
+            T_b = bd_parameter_b;
+      
+            if (BdParts[Part]->GetBdComp(comp)->GetType() != Line)
+            {
+              if (ABS(T_a) < 1e-4 || ABS(T_a) > 0.9999 ||
+                  ABS(T_b) < 1e-4 || ABS(T_b) > 0.9999)
+              {
+                X = (NewVertices[a]->GetX() + NewVertices[b]->GetX()) / 2.;
+                Y = (NewVertices[a]->GetY() + NewVertices[b]->GetY()) / 2.;
+
+                BdParts[Part]->GetBdComp(comp)->GetTofXY(X, Y, T);
+
+                if ((T_a - T)*(T - T_b) < 0)
+                {
+                  cout << __FILE__ << " line: " << __LINE__ 
+                       << " changing boundary parameters of vertices " 
+                       << a << " and " << b << endl;
+
+                  if (ABS(T_a) < 1e-4)
+                    T_a = 1.0;
+                  else
+                    if (ABS(T_a) > 0.9999)
+                      T_a = 0.0;
+
+                  if (ABS(T_b) < 1e-4)
+                    T_b = 1.0;
+                  else
+                    if (ABS(T_b) > 0.9999)
+                      T_b = 0.0;
+                }
+              }
+            }
+
+            if(BdParts[Part]->GetBdComp(comp)->IsFreeBoundary())
+              KMT[i*4 + j] = new TIsoInterfaceJoint(BdParts[Part]->
+                 GetBdComp(comp), T_a, T_b,CellTree[i], CellTree[NeighborID]);
+            else
+              KMT[i*4 + j] = new TInterfaceJoint(BdParts[Part]->
+                 GetBdComp(comp), T_a, T_b,CellTree[i], CellTree[NeighborID]);
+
+            CellTree[i]->SetJoint(j, KMT[i*4 + j]);
+            ((TInterfaceJoint *)KMT[i*4 + j])->CheckOrientation();
+          } // two vertices on the same Interfaces
+          else
+          {
+            // two vertices on the boundary
+            //KMT[i*4 + j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+            
+            // check if neighbor belongs to different subdomain:
+            if (CellTree[i]->GetReference_ID() 
+              == CellTree[NeighborID]->GetReference_ID())
+            {
+              KMT[i*4 + j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+            }
+            else
+            {
+              //KMT[i*4+j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+              KMT[i*4+j] = new TInnerInterfaceJoint(CellTree[i], 
+                                                    CellTree[NeighborID]);
+              ((TInnerInterfaceJoint*)KMT[i*4 + j])->SetParams(
+                 NewVertices[a]->GetX(),
+                 NewVertices[a]->GetY(),
+                 NewVertices[b]->GetX()-NewVertices[a]->GetX(),
+                 NewVertices[b]->GetY()-NewVertices[a]->GetY());
+              ((TInnerInterfaceJoint*)KMT[i*4 + j])->SetIndexInNeighbor(
+                 CellTree[i],j);
+            }
+          }
+        }
+        else
+        {
+          // at least one vertex is inside the domain
+          // check if neighbor belongs to different subdomain:
+          if(CellTree[i]->GetReference_ID() 
+             == CellTree[NeighborID]->GetReference_ID())
+          {
+            KMT[i*4 + j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+          }
+          else
+          {
+            //KMT[i*4+j] = new TJointEqN(CellTree[i], CellTree[NeighborID]);
+            KMT[i*4+j] = new TInnerInterfaceJoint(CellTree[i], 
+                                                  CellTree[NeighborID]);
+            ((TInnerInterfaceJoint*)KMT[i*4 + j])->SetParams(
+                   NewVertices[a]->GetX(),
+                   NewVertices[a]->GetY(),
+                   NewVertices[b]->GetX()-NewVertices[a]->GetX(),
+                   NewVertices[b]->GetY()-NewVertices[a]->GetY());
+            ((TInnerInterfaceJoint*)KMT[i*4 + j])->SetIndexInNeighbor(
+                   CellTree[i],j);
+          }
+        }
+        CellTree[i]->SetJoint(j, KMT[i*4 + j]);
+      }
+      else 
+      {
+        if (NeighborID == -1)
+        {
+          if (Interfaces[KNPR[a]-1] < 0)
+          {
+            comp = (int) DCORVG[2*b];
+            T_b = DCORVG[2*b] - comp;
+            Part = KNPR[b] - 1;
+            
+            if (BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[a]->GetX(), 
+                                                         NewVertices[a]->GetY(), 
+                                                         T_a))
+            {
+              if (comp)
+                comp--;
+              else
+                comp = GetLastLocalComp(Part);
+        
+              BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[a]->GetX(), 
+                                                       NewVertices[a]->GetY(), 
+                                                       T_a);
+            }
+          }
+          else if (Interfaces[KNPR[b]-1] < 0)
+          {
+            comp = (int) DCORVG[2*a];
+            T_a = DCORVG[2*a] - comp;
+            
+            if (BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[b]->GetX(), 
+                                                         NewVertices[b]->GetY(), 
+                                                         T_b))
+            {
+              if (comp)
+                comp--;
+              else
+                comp = GetLastLocalComp(Part);
+              
+              BdParts[Part]->GetBdComp(comp)->GetTofXY(NewVertices[b]->GetX(), 
+                                                       NewVertices[b]->GetY(), 
+                                                       T_b);
+            }
+          }
+          else
+          {
+            //cout << "a=" << a << endl;
+            comp = (int) DCORVG[2*a];
+            T_a = DCORVG[2*a] - comp;
+            T_b = DCORVG[2*b] - comp;
+            //cout << "comp: " << comp << endl;
+          }
+          //cout << "Part = " << Part << endl;
+          //cout << " test = " << BdParts[Part]->GetBdComp(comp)->IsFreeBoundary() << endl;
+          if (T_b < T_a) 
+            T_b = 1.;
+          if(BdParts[Part]->GetBdComp(comp)->IsFreeBoundary())
+            Joint = new TIsoBoundEdge(BdParts[Part]->GetBdComp(comp), T_a, T_b);
+          else 
+          {
+            Joint = new TBoundEdge(BdParts[Part]->GetBdComp(comp), T_a, T_b);
+          }
+          CellTree[i]->SetJoint(j, Joint);
+        }
+        else
+        {
+          // joint already created (from the neighboring cell)
+          TJoint *nJoint;
+          for (int jj=0;jj<CellTree[NeighborID]->GetN_Edges();jj++)
+          {
+            nJoint = CellTree[NeighborID]->GetJoint(jj);
+            JNeib1 = nJoint->GetNeighbour(0);
+            JNeib2 = nJoint->GetNeighbour(1);
+            if(JNeib1 == CellTree[NeighborID] && JNeib2 == CellTree[i] 
+               || JNeib1 == CellTree[i] && JNeib2 == CellTree[NeighborID]) 
+              break;
+          }
+          CellTree[i]->SetJoint(j, nJoint);
+          
+          if (CellTree[i]->GetReference_ID()
+            != CellTree[NeighborID]->GetReference_ID())
+          {
+            ((TInnerInterfaceJoint*)nJoint)->SetIndexInNeighbor(CellTree[i],j);
+          }
+        }
+      }
+    }
+  } //for (i=0;i<N_RootCells;i++) {
+
+  // free memory
+  delete KVEL;
+  delete NewVertices;
+  delete KMT;
+  
+  return 0;
+}
+
+int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices, 
+                      int NVE)
 {
    int a, b, i, j, k, l, comp, Part, Neib, N_E, maxElpV = 0;
   int aux1, aux2, aux3;
@@ -296,10 +772,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
 
   // generate edges
   KMT = new TJoint*[N_RootCells*4];
-//   memset(KMT, 0, N_RootCells*4 * SizeOfInt);
-
-    for (i=0;i<N_RootCells*4;i++)
-     KMT[i] = NULL;
+  for (i=0;i<N_RootCells*4;i++)
+    KMT[i] = NULL;
   
   for (i=0;i<N_RootCells;i++)
   {
@@ -519,7 +993,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
 
    // free memory
   delete KVEL;
-
   delete NewVertices;
   delete KMT;
   
@@ -682,7 +1155,7 @@ int TDomain::ReadSandwichGeo(char *GeoFile)
 }
 
 // this makes a 3D coarse grid
-int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
+int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
                       int N_Vertices, int NVE, int *BoundFaces,
                       int *FaceParam, int NBF, int NVpF,
                       int *InterfaceParam, int N_Interfaces)
@@ -792,16 +1265,27 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
 
     if (CellType == Hexahedron)
     {
-      CellTree[i] = new TMacroCell(TDatabase::RefDescDB[CellType],
-                                   RefLevel);
+      CellTree[i] = new TMacroCell(TDatabase::RefDescDB[Hexahedron], RefLevel);
 
       auxi = NVE*i;
       for (j=0;j<8;j++)
         CellTree[i]->SetVertex(j, NewVertices[KVERT[auxi++]-1]);
 
+      // check if Hexahedron is even a brick and if yes, change the refinement
+      // descriptor accordingly. This allows us to use an affine reference 
+      // mapping instead of the (more expensive) trilinear one.
       CellType = ((THexahedron *) TDatabase::RefDescDB[Hexahedron]->
                  GetShapeDesc())->CheckHexa(((TGridCell *)(CellTree[i]))
                         ->GetVertices());
+      if(CellType != Hexahedron)
+      {
+        int ret = CellTree[i]->SetRefDesc(TDatabase::RefDescDB[CellType]);
+        if(ret==-1)
+        {
+          ErrMsg("setRefDesc(" << CellType << ") was not sucessfull");
+          exit(0);
+        }
+      }
     }
     else
     {
@@ -825,16 +1309,15 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
   NewJoints = new TJoint*[N_RootCells*6];
   memset(NewJoints, 0, N_RootCells*6 * SizeOfInt);
 
-//   OutPut("NBF a " << NBF << endl);
+  //OutPut("NBF a " << NBF << endl);
   // first generate boundary joints
   // NBF -- number of faces on boundaries
   for (i=0;i<NBF;i++)
   {
     auxi = i*4;
-//    cout << FaceParam[auxi + 2] <<  endl;
-    bdcomp = BdParts[FaceParam[auxi + 2] - 1]->
-	GetBdComp(FaceParam[auxi + 3] - 1);
-    //   cout << "free " << bdcomp->IsFreeBoundary()  << endl;
+    //cout << FaceParam[auxi + 2] <<  endl;
+    bdcomp = BdParts[FaceParam[auxi + 2] - 1]->GetBdComp(FaceParam[auxi+3] - 1);
+    //cout << "free " << bdcomp->IsFreeBoundary()  << endl;
     if(bdcomp->IsFreeBoundary())
     {
       NewJoints[FaceParam[auxi]*6 + FaceParam[auxi + 1] - 7] =
@@ -1055,6 +1538,12 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
     } // endfor j
   } // endfor i
 
+  for(int i=0; i<N_RootCells; i++)
+  {
+    CurrCell = CellTree[i];
+    CurrCell->SetReference_ID(ELEMSREF[i]);
+  }
+  
   // free memory
   delete KVEL;
   delete NewVertices;
@@ -1064,6 +1553,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR,
 
   return 0;
 }
+
+
 
 int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                               int N_Vertices, int NVE,

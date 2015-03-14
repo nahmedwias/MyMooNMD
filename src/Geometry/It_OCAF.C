@@ -24,7 +24,7 @@ int TIt_OCAF::Init(int level)
 
 TBaseCell *TIt_OCAF::Next(int &info)
 {
-  boolean OK = FALSE;
+  bool OK = false;
 
   while (!OK)
   {
@@ -60,7 +60,7 @@ TBaseCell *TIt_OCAF::Next(int &info)
       Status[ActiveLevel].N_Children = 0;
       Status[ActiveLevel].CurrentChild = 0;
       Status[--ActiveLevel].CurrentChild = ActiveCell->GetN_Children();
-      OK = TRUE;
+      OK = true;
     }
   }
 

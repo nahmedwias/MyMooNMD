@@ -45,8 +45,8 @@ class TSubDomainJoint : public TJointEqN
 
     // Methods
     /** return whether this is an interior joint */
-    virtual boolean InnerJoint()
-    { return FALSE; }
+    virtual bool InnerJoint()
+    { return false; }
 
     /** return the subdomain number of the neib cell joint */
     int GetNeibRank()

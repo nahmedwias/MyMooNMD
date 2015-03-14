@@ -35,9 +35,9 @@ TTetGenMeshLoader::TTetGenMeshLoader()
   mAllVertices   = NULL;
   mAllJoints     = NULL;
   mTrifaceHash   = NULL;
-  plc     	= FALSE;
-  reconstruct   = FALSE;
-  insertpoints  = FALSE;
+  plc     	= false;
+  reconstruct   = false;
+  insertpoints  = false;
 }
 
 TTetGenMeshLoader::TTetGenMeshLoader(const char *FileName)
@@ -64,9 +64,9 @@ TTetGenMeshLoader::TTetGenMeshLoader(const char *FileName)
   mAllJoints     = NULL;
   mTrifaceHash   = NULL;
 
-  plc     	= FALSE;
-  reconstruct   = FALSE;
-  insertpoints  = FALSE;
+  plc     	= false;
+  reconstruct   = false;
+  insertpoints  = false;
 }
 
 
@@ -784,7 +784,7 @@ int TTetGenMeshLoader::Generate(TDomain *Domain)
     suffix = strrchr(mBoundFile, '.');
     *suffix = 0;
 
-    plc = TRUE;
+    plc = true;
 
     // read smesh file
     mTetIn.load_poly(mFileName);
@@ -823,7 +823,7 @@ int TTetGenMeshLoader::Generate(TDomain *Domain)
   {
     OutPut("gmsh" << endl);
 
-    reconstruct = TRUE;
+    reconstruct = true;
 
     Load_msh(mFileName);
     
@@ -1382,7 +1382,7 @@ void TTetGenMeshLoader::MakeBoundaryLayer_msh()
     }
   }
   
-  insertpoints = TRUE;
+  insertpoints = true;
   
   delete [] pointlist;
   delete [] normallist;
@@ -1444,7 +1444,7 @@ void TTetGenMeshLoader::MakeBoundaryLayer_smesh()
     }
   }
   
-  insertpoints = TRUE;
+  insertpoints = true;
 }
 
 int TTetGenMeshLoader::Generate(int N_Points, double *Points, int N_Facets, int *Facets,
@@ -1482,7 +1482,7 @@ int TTetGenMeshLoader::Generate(int N_Points, double *Points, int N_Facets, int 
 //   mTetIn.numberofregions = N_Regions;
 //   mTetIn.regionlist = Regions;
   
-  plc = TRUE;
+  plc = true;
   
   mTetIn.load_poly("../My-MooNMD/data/smesh/sphere_in_cube");
   

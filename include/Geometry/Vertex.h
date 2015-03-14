@@ -93,17 +93,17 @@ class TVertex
 #endif
 
     /** return the x coordinate */
-    double GetX()
+    double GetX() const
     { return X; }
     /** return the y coordinate */
-    double GetY()
+    double GetY() const
     { return Y; }
 #ifdef __3D__
       /** return the z coordinate (3D) */
-      double GetZ()
+      double GetZ() const
       { return Z; }
       /** return all three coordinates */
-      void GetCoords(double& x, double& y, double& z)
+      void GetCoords(double& x, double& y, double& z) const
       {
         x = X;
         y = Y;
@@ -111,7 +111,7 @@ class TVertex
       }
 #else
       /** return all two coordinates */
-      void GetCoords(double& x, double& y)
+      void GetCoords(double& x, double& y) const
       {
         x = X;
         y = Y;
@@ -125,13 +125,13 @@ class TVertex
     void SetClipBoard(int value)
     { ClipBoard=value; }
     /** get value from ClipBoard */
-    int GetClipBoard()
+    int GetClipBoard() const
     { return ClipBoard; }
 
      void SetAsBoundVert()
       { BoundVert=TRUE; }    
       
-     bool IsBoundVert()
+     bool IsBoundVert() const
      { return BoundVert; }     
     
 #ifdef _MPI

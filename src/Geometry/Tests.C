@@ -870,6 +870,7 @@ void TDomain::PeriodicSquares()
   CellTree[3]->SetJoint(3, b[3]);
 
 }
+
 void TDomain::PeriodicSquaresLarge()
 {
   TVertex *v[9];
@@ -967,6 +968,147 @@ void TDomain::PeriodicSquaresLarge()
   CellTree[3]->SetJoint(3, b[3]);
 
 }
+
+void TDomain::PeriodicTrianglesLarge()
+{
+  TVertex *v[9];
+  TBoundEdge *b[4];
+  TJoint *j[10];
+
+  TDatabase::ParamDB->INTERNAL_PERIODIC_IDENTITY = 2;
+
+  v[0] = new TVertex(-1.0, -1.0);
+  v[1] = new TVertex(0, -1.0);
+  v[2] = new TVertex(1.0, -1.0);
+  v[3] = new TVertex(-1.0, 0.0);
+  v[4] = new TVertex(0, 0.0);
+  v[5] = new TVertex(1.0, 0.0);
+  v[6] = new TVertex(-1.0, 1.0);
+  v[7] = new TVertex(0, 1.0);
+  v[8] = new TVertex(1.0, 1.0);
+
+  b[0] = new TBoundEdge(BdParts[0]->GetBdComp(0), 0.0, 0.5);
+  b[1] = new TBoundEdge(BdParts[0]->GetBdComp(0), 0.5, 1.0);
+  b[2] = new TBoundEdge(BdParts[0]->GetBdComp(2), 0.0, 0.5);
+  b[3] = new TBoundEdge(BdParts[0]->GetBdComp(2), 0.5, 1.0);
+
+  CellTree = new TBaseCell*[8];
+  N_InitVCells = 8;
+  N_RootCells = 8;
+
+  SetBoundBox(2, 2);
+
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);
+
+  CellTree[0] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[1] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[2] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[3] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[4] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[5] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[6] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+  CellTree[7] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      TriReg], RefLevel);
+
+  CellTree[0]->SetClipBoard(Refinement);
+  CellTree[1]->SetClipBoard(Refinement);
+  CellTree[2]->SetClipBoard(Refinement);
+  CellTree[3]->SetClipBoard(Refinement);
+  CellTree[4]->SetClipBoard(Refinement);
+  CellTree[5]->SetClipBoard(Refinement);
+  CellTree[6]->SetClipBoard(Refinement);
+  CellTree[7]->SetClipBoard(Refinement);
+
+  j[0] = new TJointEqN(CellTree[0], CellTree[2]);
+  j[1] = new TJointEqN(CellTree[0], CellTree[1]);
+  j[2] = new TJointEqN(CellTree[1], CellTree[3]);
+  j[3] = new TJointEqN(CellTree[2], CellTree[4]);
+  j[4] = new TJointEqN(CellTree[3], CellTree[5]);
+  j[5] = new TJointEqN(CellTree[4], CellTree[5]);
+  j[6] = new TJointEqN(CellTree[4], CellTree[6]);
+  j[7] = new TJointEqN(CellTree[5], CellTree[7]);
+  j[8] = new TPeriodicJoint(CellTree[7], CellTree[1]);
+  j[9] = new TPeriodicJoint(CellTree[6], CellTree[0]);
+
+  // assign vertices to the mesh cells
+  CellTree[0]->SetVertex(0, v[0]);
+  CellTree[0]->SetVertex(1, v[4]);
+  CellTree[0]->SetVertex(2, v[3]);
+ 
+  CellTree[1]->SetVertex(0, v[3]);
+  CellTree[1]->SetVertex(1, v[4]);
+  CellTree[1]->SetVertex(2, v[6]);
+
+  CellTree[2]->SetVertex(0, v[0]);
+  CellTree[2]->SetVertex(1, v[1]);
+  CellTree[2]->SetVertex(2, v[4]);
+
+  CellTree[3]->SetVertex(0, v[4]);
+  CellTree[3]->SetVertex(1, v[7]);
+  CellTree[3]->SetVertex(2, v[6]);
+
+  CellTree[4]->SetVertex(0, v[1]);
+  CellTree[4]->SetVertex(1, v[5]);
+  CellTree[4]->SetVertex(2, v[4]);
+ 
+  CellTree[5]->SetVertex(0, v[4]);
+  CellTree[5]->SetVertex(1, v[5]);
+  CellTree[5]->SetVertex(2, v[7]);
+
+  CellTree[6]->SetVertex(0, v[1]);
+  CellTree[6]->SetVertex(1, v[2]);
+  CellTree[6]->SetVertex(2, v[5]);
+
+  CellTree[7]->SetVertex(0, v[5]);
+  CellTree[7]->SetVertex(1, v[8]);
+  CellTree[7]->SetVertex(2, v[7]);
+ 
+  // assign links to the edges
+  CellTree[0]->SetJoint(0, j[0]);
+  CellTree[0]->SetJoint(1, j[1]);
+  CellTree[0]->SetJoint(2, j[9]);
+ 
+  CellTree[1]->SetJoint(0, j[1]);
+  CellTree[1]->SetJoint(1, j[2]);
+  CellTree[1]->SetJoint(2, j[8]);
+
+  CellTree[2]->SetJoint(0, b[0]);
+  CellTree[2]->SetJoint(1, j[3]);
+  CellTree[2]->SetJoint(2, j[0]);
+
+  CellTree[3]->SetJoint(0, j[4]);
+  CellTree[3]->SetJoint(1, b[3]);
+  CellTree[3]->SetJoint(2, j[2]);
+ 
+  CellTree[4]->SetJoint(0, j[6]);
+  CellTree[4]->SetJoint(1, j[5]);
+  CellTree[4]->SetJoint(2, j[3]);
+ 
+  CellTree[5]->SetJoint(0, j[5]);
+  CellTree[5]->SetJoint(1, j[7]);
+  CellTree[5]->SetJoint(2, j[4]);
+
+  CellTree[6]->SetJoint(0, b[1]);
+  CellTree[6]->SetJoint(1, j[9]);
+  CellTree[6]->SetJoint(2, j[6]);
+
+  CellTree[7]->SetJoint(0, j[8]);
+  CellTree[7]->SetJoint(1, b[2]);
+  CellTree[7]->SetJoint(2, j[7]);
+
+}
+
 void TDomain::PeriodicRectangle_2_4()
 {
   TVertex *v[15];

@@ -46,7 +46,8 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
   Refinements NeibFaceRef, MyFaceRef;
   const int *TmpLen1, *TmpLen2, *TmpLen3, *TmpLen4;
   const int *TmpoFnF, *TmpFC, *TmpFCI, *TmpoFnV, *TmpVC, *TmpVCI;
-  const int *MapVerts, *MapFaces;
+  const int *MapVerts, *MapFaces, *MapEdges;
+  int* MapFacesTmp;
   int MaxLen3;
 #endif
 
@@ -169,11 +170,44 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
                           GetVertex(TmpVCI[aux]);
     }
 #else
-    NeibFaceRef = Neighb->GetFaceRef(J_j);
-    MyFaceRef = Me->GetFaceRef(J_i);
+    NeibFaceRef = Neighb->GetRefDesc()->GetFaceRef(J_j);
+    MyFaceRef = Me->GetRefDesc()->GetFaceRef(J_i);
 
-    if (NeibFaceRef != MyFaceRef)
-      return -2;
+    if(NeibFaceRef == TriReg && MyFaceRef != TriReg ||
+       NeibFaceRef != TriReg && MyFaceRef == TriReg)
+        return -2;
+    if(MyFaceRef >= TriBis0 && MyFaceRef <= TriBis2)
+    {
+      if(NeibFaceRef != TriBis0 + (2 - (MyFaceRef - TriBis0) + MapType) % 3 )
+      {
+        std::cerr << "Face Reference Description for Triangle Bisection does not fit\n";
+        return -2;
+      }
+      MapType = MapTriBis00 + 3*(MyFaceRef - TriBis0) + MapType;
+    }
+    if(MyFaceRef >= TriBis01 && MyFaceRef <= TriBis21)
+    {
+      int first_bis = (MyFaceRef-TriBis01) / 2;
+      int second_bis = (MyFaceRef-TriBis01) % 2;
+      if(first_bis <= second_bis) 
+        second_bis++;
+    
+      int neigh_first_bis = ((2-first_bis) + MapType) % 3;
+      int neigh_second_bis = ((2-second_bis) + MapType) % 3;
+    
+      int neigh_type = 2*neigh_first_bis + neigh_second_bis;
+      if(neigh_second_bis > neigh_first_bis) 
+        neigh_type--;
+    
+      if(NeibFaceRef != neigh_type + TriBis01)
+      {
+        std::cerr << "Face Reference Description for Triangle Bisection does not fit\n";
+        return -2;
+      }
+    
+      MapType = MapTriBis010 + 3 * (NeibFaceRef - TriBis01) + MapType;
+    }
+
 
     Tmp.Filled = TRUE;
 
@@ -187,7 +221,16 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 
     NeighbRefDesc->GetOldFaceNewVertex(TmpoFnV, TmpLen3, MaxLen3);
 
-    Neighb->GetJoint(J_j)->GetMapperRef(MapVerts, MapFaces);
+    if(N_ == 1)
+    {
+      MapFacesTmp = new int[1];
+      MapFacesTmp[0] = 0;
+      MapFaces = MapFacesTmp;
+      
+      Neighb->GetJoint(J_j)->GetMapperOrig(MapVerts, MapEdges);
+    }
+    else
+      Neighb->GetJoint(J_j)->GetMapperRef(MapVerts, MapFaces);
 
     auxi = J_j * MaxLen1;
     for (i=0;i<N_;i++)

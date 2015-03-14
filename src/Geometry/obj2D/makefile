@@ -30,6 +30,7 @@ LIBRARY = $(LIBPATH)lib_geo.a
 	$(SRCPATH)Collection.o \
 	$(SRCPATH)Domain.o \
 	$(SRCPATH)GridCell.o \
+	$(SRCPATH)InnerInterfaceJoint.o \
 	$(SRCPATH)InterfaceJoint.o \
 	$(SRCPATH)IsoBoundEdge.o \
 	$(SRCPATH)IsoInterfaceJoint.o \

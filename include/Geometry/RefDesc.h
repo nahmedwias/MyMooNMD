@@ -15,18 +15,28 @@
 
 #include <ShapeDesc.h>
 
-#define N_REFDESC  27
+#define N_REFDESC  74
 // Actually there are some more refinement types (the mortar types).
 // These will be added dynamicly.
 // We use TriBis0 - Quad2Conf3 for generation of closures. Do not
 // put any other descriptors between these.
 enum Refinements {NoRef, LineReg, TriReg, QuadReg, ParallReg, RectReg,
-                  TriBis0, TriBis1, TriBis2, QuadBis0, QuadBis1,
+                  TriBis0, TriBis1, TriBis2, 
+                  TriBis01, TriBis02, TriBis10, TriBis12, TriBis20, TriBis21,
+                  QuadBis0, QuadBis1,
                   Quad1Conf0, Quad1Conf1, Quad1Conf2, Quad1Conf3,
                   Quad2Conf0, Quad2Conf1, Quad2Conf2, Quad2Conf3,
                   QuadToTri0, QuadToTri1, TetraReg, 
-                  TetraReg0, TetraReg1,
-                  TetraReg2, HexaReg, BrickReg,
+                  TetraReg0, TetraReg1, TetraReg2, 
+                  TetraBis0, TetraBis1, TetraBis2, TetraBis3, TetraBis4, TetraBis5,
+                  TetraBis01, TetraBis02, TetraBis03, TetraBis04, TetraBis05,
+                  TetraBis10, TetraBis12, TetraBis13, TetraBis14, TetraBis15,
+                  TetraBis20, TetraBis21, TetraBis23, TetraBis24, TetraBis25,
+                  TetraBis30, TetraBis32, TetraBis34, TetraBis35,
+                  TetraBis40, TetraBis41, TetraBis43, TetraBis45,
+                  TetraBis51, TetraBis52, TetraBis53, TetraBis54,
+                  TetraQuad0, TetraQuad1, TetraQuad2, TetraQuad3, TetraQuad4, TetraQuad5,
+                  HexaReg, BrickReg,
                   Mortar, MortarLine};
 
 #ifdef __MORTAR__
@@ -332,7 +342,7 @@ class TRefDesc
       { return N_Faces; }
     #endif
 
-    /** return a boolean, whether to refine or not */
+    /** return a bool, whether to refine or not */
     virtual int IsToRefine()
     { return TRUE; }
     
@@ -444,6 +454,13 @@ class TRefDesc
       TmpoEnV = OldEdgeNewVertex;
       TmpLen = InteriorVertexOfEdgeLen;
       MaxLen = MaxN_nVpoE;
+      return 0;
+    }
+    
+    /** return the array EdgeVertex */
+    int GetEdgeVertex(const int *&TmpEV)
+    {
+      TmpEV = EdgeVertex;
       return 0;
     }
 

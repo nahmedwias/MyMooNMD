@@ -77,7 +77,6 @@ THexahedron::THexahedron()
 // Methods
 double THexahedron::GetDiameter(TVertex **Verts)
 {
-  int i;
   double len, diam = 0;
   double x0, x1, y0, y1, z0, z1;
 
@@ -107,7 +106,6 @@ double THexahedron::GetDiameter(TVertex **Verts)
 // Methods, exact only for parallelepiped
 double THexahedron::GetShortestEdge(TVertex **Verts)
 {
-  int i;
   double len, diam = 1e10;
   double x0, x1, y0, y1, z0, z1;
 
