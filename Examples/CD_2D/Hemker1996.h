@@ -2,7 +2,7 @@
 // Example from P.W. Hemker
 // ======================================================================
 #define __HEMKER1996__
-// #include <ConvDiff2D.h>
+
 void ExampleFile()
 {
   OutPut("Example: Hemker1996.h" << endl) ;

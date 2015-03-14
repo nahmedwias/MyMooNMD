@@ -3,12 +3,9 @@
 // Knopp, Lube, Rapin, CMAME 2002
 // ======================================================================
 #define __TWO_INTERIOR_LAYERS__
-// #include <ConvDiff2D.h>
-#include <Joint.h>
-#include <BoundEdge.h>
-#include <BoundComp.h>
-#include <FE2D.h>
-#include <FEDesc2D.h>
+
+#include <MooNMD_Io.h>
+#include <Constants.h>
 
 void ExampleFile()
 {
