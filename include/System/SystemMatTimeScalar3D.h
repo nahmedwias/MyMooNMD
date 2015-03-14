@@ -18,7 +18,7 @@
 class TSystemMatTimeScalar3D : public TSystemMatScalar3D
 {
   protected:
-        
+    
     /** M mass matrix */
     TSquareMatrix3D **sqmatrixM;
     

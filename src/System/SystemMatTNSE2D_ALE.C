@@ -217,7 +217,7 @@ void TSystemMatTNSE2D_ALE::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCo
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->STOKES_PROBLEM)
+      if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -396,7 +396,7 @@ void TSystemMatTNSE2D_ALE::Assemble(double *sol, double *rhs)
         BoundaryValues,
         NSEaux);
         
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {
@@ -818,7 +818,7 @@ void TSystemMatTNSE2D_ALE::AssembleANonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {

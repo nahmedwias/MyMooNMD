@@ -342,7 +342,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->STOKES_PROBLEM)
+      if (TDatabase::ParamDB->PROBLEM_TYPE==3)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -516,7 +516,7 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                   NSEaux);
  
    
-       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
         {
          switch(NSEType)
           {
@@ -732,7 +732,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
        {
         switch(NSEType)
          {

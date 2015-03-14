@@ -343,8 +343,7 @@ void TSystemMatScalar3D::Solve(double *sol, double *rhs)
       break;
 
       case DIRECT:
-	OutPut("yet to impelment" << endl);
-            exit(4711);;
+        DirectSolver((TSquareMatrix*)sqmatrixA[N_Levels-1], rhs, sol);
 // #ifndef _MPI
 //         //t1 = GetTime();
 //         DirectSolver(sqmatrixA[N_Levels-1], rhs, sol);

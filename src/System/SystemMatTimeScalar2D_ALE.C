@@ -291,17 +291,17 @@ void TSystemMatTimeScalar2D_ALE::AssembleMRhs(double *sol, double *rhs)
     ferhs[0] = FeSpace;
     
     // initialize matrices
-    SQMATRICES[0] = sqmatrixM;
-    SQMATRICES[0]->Reset();   
+    TSquareMatrix2D *SQMATRICES[2] = { sqmatrixM, NULL };
+    SQMATRICES[0]->Reset();
 
     N_SquareMatrices =1;
     
    if(Disctype == SUPG)
-    {
+   {
      N_SquareMatrices = 2;  
      SQMATRICES[1] = sqmatrixS;
      SQMATRICES[1]->Reset();  
-    }      
+   }
 
     
    aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); 
@@ -348,16 +348,15 @@ void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
     ferhs[0] = FeSpace;
     
     // initialize matrices
-    SQMATRICES[0] = sqmatrixA;
-    SQMATRICES[0]->Reset();   
-    SQMATRICES[1] = sqmatrixM;
-    SQMATRICES[1]->Reset();   
+    TSquareMatrix2D *SQMATRICES[3] = { sqmatrixA, sqmatrixM, NULL };
+    SQMATRICES[0]->Reset();
+    SQMATRICES[1]->Reset();
     
     N_SquareMatrices =2;
     
    if(Disctype == SDFEM)
     {
-     N_SquareMatrices = 3;  
+     N_SquareMatrices = 3;
      SQMATRICES[2] = sqmatrixS;
      SQMATRICES[2]->Reset();  
     }      

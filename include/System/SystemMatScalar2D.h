@@ -12,6 +12,7 @@
 #define __SYSTEMMATSCALAR2D__
 
 #include <SquareMatrix2D.h>
+#include <LocalAssembling2D.h>
 
 /**class for 2D scalar system matrix */
 class TSystemMatScalar2D
@@ -27,25 +28,20 @@ class TSystemMatScalar2D
     /** Solver type */
     int SOLVER;
        
-    /** number of matrices in the system matrix*/
+    /** number of matrices in the system matrix */
     int N_Matrices;
 
     /** sqstructure of the system matrix */
     TSquareStructure2D *sqstructure;
 
     /** A is the stiffness/system mat for stationary problem   */
-    TSquareMatrix2D *sqmatrixA, *SQMATRICES[3];;
-    TSquareMatrix **sqmatrices;
+    TSquareMatrix2D *sqmatrixA;
     
     /** Boundary conditon */
     BoundCondFunct2D *BoundaryConditions[1];
 
      /** Boundary value */   
     BoundValueFunct2D *BoundaryValues[1];
-        
-    /** Discrete form for the equation */
-    TDiscreteForm2D *DiscreteFormARhs;
- 
     
   public:
     /** constructor */
@@ -55,14 +51,14 @@ class TSystemMatScalar2D
     ~TSystemMatScalar2D();
     
     /** Initilize the discrete forms and the matrices */
-    void Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue);
+    void Init(BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue);
  
     /** assemble the system matrix */
-    void Assemble(TAuxParam2D *aux, double *sol, double *rhs);
+    //void Assemble(TAuxParam2D *aux, double *sol, double *rhs);
+    void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
 
     /** solve the system matrix */
     void  Solve(double *sol, double *rhs);
-    
 };
 
 #endif

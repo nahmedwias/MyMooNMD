@@ -12,6 +12,7 @@
 #define __SYSTEMMATNSE2D__
 
 #include <SquareMatrix2D.h>
+#include <LocalAssembling2D.h>
 
 /**class for 2D  NSE system matrix */
 class TSystemMatNSE2D
@@ -25,7 +26,7 @@ class TSystemMatNSE2D
     TFESpace2D *FeSpaces[5];
     
     /** Fe functions of NSE */
-    TFEFunction2D *FeFct[5];    
+    TFEFunction2D *FeFct[5];
     
     /** Discretization type */
     int Disctype;
@@ -49,18 +50,18 @@ class TSystemMatNSE2D
     int N_Matrices;
 
     /** sqstructureA of the system matrix */
-    TSquareStructure2D *sqstructureA;
+    TSquareStructure2D *sqstructureA, *sqstructureC;
 
     /** structure of the system matrix */
     TStructure2D *structureB, *structureBT;
     
     /** A is the stiffness/system mat for NSE velocity component   */
     TSquareMatrix2D *SqmatrixA11, *SqmatrixA12, *SqmatrixA21, *SqmatrixA22, *SQMATRICES[9];
-    TSquareMatrix **sqmatrices;
+    TSquareMatrix *sqmatrices[9];
   
     /** B is the  system mat for NSE pressure component   */
     TMatrix2D *MatrixB1, *MatrixB2, *MatrixB1T, *MatrixB2T, *MATRICES[8];
-    TMatrix **matrices;
+    TMatrix *matrices[4];
     
     /** Boundary conditon */
     BoundCondFunct2D *BoundaryConditions[2];
@@ -74,23 +75,23 @@ class TSystemMatNSE2D
     
   public:
     /** constructor */
-     TSystemMatNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
-                      TFEFunction2D *p, int disctype, int nsetype, int solver);
+     TSystemMatNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p, int disctype,
+                     int nsetype, int solver);
 
     /** destrcutor */
     ~TSystemMatNSE2D();
 
     /** methods */
     /** Initilize the discrete forms and the matrices */    
-    void Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue,
-              TAuxParam2D *aux);
+    void Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond,
+              BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue);
     
     
     /** assemble the system matrix */
-    void Assemble(double *sol, double *rhs);
+    void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
     
     /** assemble the nonlinear part of the NSE system */
-    void AssembleNonLinear(double *sol, double *rhs);
+    void AssembleNonLinear(LocalAssembling2D& la, double *sol, double *rhs);
     
     /** get the resudual of the NSE system */
     void GetResidual(double *sol, double *rhs, double *res);

@@ -32,7 +32,7 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
 #ifdef __PRIVATE__  
                                    ,TFESpace2D *Projection_space
 #endif    
-                                   ) : TSystemMatNSE2D(velocity_fespace, presssure_fespace, Velocity, p, disctype, nsetype, solver)
+                                   ) : TSystemMatNSE2D(Velocity, p, disctype, nsetype, solver)
 {
   B = new double[2*N_U+N_P];
   defect = new double[2*N_U+N_P];
@@ -213,7 +213,7 @@ void TSystemMatTNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->STOKES_PROBLEM)
+      if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -387,7 +387,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         NSEaux);
 
        
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {
@@ -762,7 +762,7 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->STOKES_PROBLEM) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {
