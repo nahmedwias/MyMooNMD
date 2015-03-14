@@ -31,9 +31,9 @@ endif
 # ======================================================================
 # LINUX64: Linux with gnu
 # ======================================================================
-CPPFLAG_LINUX64_OPTI  = -O3 -openmp -s $(INC)
-CPPFLAG_LINUX64_FAST  = -s $(INC) -openmp
-CPPFLAG_LINUX64_DEBUG = -g $(INC) -openmp
+CPPFLAG_LINUX64_OPTI  = -O3 -openmp -s $(INC) -std=c++11
+CPPFLAG_LINUX64_FAST  = -s $(INC) -openmp -std=c++11
+CPPFLAG_LINUX64_DEBUG = -g $(INC) -openmp -std=c++11
 DEFINE_LINUX64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
 CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -openmp
 CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -openmp
