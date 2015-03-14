@@ -452,19 +452,22 @@ void TFEVectFunct3D::WriteSol(double t)
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->VTKBASENAME;
+  BaseName = TDatabase::ParamDB->BASENAME;
+  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
 
   std::ostringstream os;
   os << " ";
 
   #ifdef _MPI
-  OutPut("Writing solution into "<< BaseName <<rank<< ".Sol MooNMD file"<< endl);
+  OutPut("Writing solution into "<< output_directory << "/" << BaseName << rank
+         << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << BaseName<<rank<<".Sol" << ends;
+  os << output_directory << "/" << BaseName<<rank<<".Sol" << ends;
   #else
-  OutPut("Writing solution into "<< BaseName << t<< ".Sol MooNMD file"<< endl);
+  OutPut("Writing solution into "<< output_directory << "/" << BaseName << t
+         << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << BaseName << t<<".Sol" << ends;
+  os << output_directory << "/" << BaseName << t<<".Sol" << ends;
   #endif  
   
   std::ofstream dat(os.str().c_str());

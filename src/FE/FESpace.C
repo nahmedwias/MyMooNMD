@@ -37,6 +37,7 @@ int TFESpace::InitData(TCollection *coll, char *name, char *description)
   N_UsedElements=0;
 
   N_Dirichlet=0;
+  DGSpace = 0; // use 'void SetAsDGSpace()' to change this
 
  # ifdef _MPI
   MaxSubDomainPerDof = -1;
@@ -56,10 +57,10 @@ TFESpace::~TFESpace()
 {
   delete Name;
   delete Description;
-  delete GlobalNumbers;
-  delete BeginIndex;
-  delete BoundaryNodeTypes;
-  delete N_BoundaryNodes;
+  delete [] GlobalNumbers;
+  delete [] BeginIndex;
+  delete [] BoundaryNodeTypes;
+  delete [] N_BoundaryNodes;
 }
 
 /** write info on fespace into file */

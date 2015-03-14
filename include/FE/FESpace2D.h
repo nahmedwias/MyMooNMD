@@ -49,6 +49,9 @@ class TFESpace2D : public TFESpace
 
     /** array storing the fe for each element, if necessary */
     FE2D *AllElements;
+    
+    /** boundary condition used to create this space */
+   BoundCondFunct2D *BoundCondition;
 
 #ifdef __MORTAR__
     /** 1D collection of mortar cells */
@@ -98,27 +101,27 @@ class TFESpace2D : public TFESpace
     void ConstructSpace(BoundCondFunct2D *BoundaryCondition);
 
     /** return number of active degrees of freedom */
-    int GetN_ActiveDegrees()
+    int GetN_ActiveDegrees() const
     { return N_ActiveDegrees; }
 
     /** return number of slave degrees of freedom */
-    int GetN_SlaveDegrees()
+    int GetN_SlaveDegrees() const
     { return N_SlaveDegrees; }
 
     /** return HangingBound */
-    int GetHangingBound()
+    int GetHangingBound() const
     { return HangingBound; }
 
     /** return N_Hanging=N_SlaveDegrees */
-    int GetN_Hanging()
+    int GetN_Hanging() const
     { return N_SlaveDegrees; }
 
     /** return identifiers of used elements */
-    FE2D *GetUsedElements()
+    FE2D *GetUsedElements() const
     { return UsedElements; }
 
     /** return array with all hanging nodes */
-    THangingNode **GetHangingNodes()
+    THangingNode **GetHangingNodes() const
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
@@ -133,12 +136,18 @@ class TFESpace2D : public TFESpace
     void SetIntlPtIndexOfPts(int *intlPtIndexOfPts)
      { IntlPtIndexOfPts = intlPtIndexOfPts; }
 
-    int *GetIntlPtIndexOfPts()
+    int *GetIntlPtIndexOfPts() const
      { return IntlPtIndexOfPts; }
      
-     FE2D *GetAllElements()
-     { return AllElements; }       
+     FE2D *GetAllElements() const
+     { return AllElements; }
      
+     /** return boundary condition */
+    BoundCondFunct2D *GetBoundCondition() const
+    { return BoundCondition; }
+    
+    friend  bool operator== (const TFESpace2D &lhs, const TFESpace2D &rhs);
+    friend  bool operator!= (const TFESpace2D &lhs, const TFESpace2D &rhs);
 };
 
 #ifdef __MORTAR__

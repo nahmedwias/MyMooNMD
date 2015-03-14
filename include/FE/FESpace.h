@@ -115,78 +115,86 @@ class TFESpace
     ~TFESpace();
 
     /** return name */
-    char *GetName()
+    char *GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription()
+    char *GetDescription() const
     { return Description; }
 
     /** return number of cells in the triangulation used for building 
         this space */
-    int GetN_Cells()
+    int GetN_Cells() const
     { return N_Cells; }
 
     /** return the collection of this space */
-    TCollection *GetCollection()
+    TCollection *GetCollection() const
     { return Collection; }
 
     /** return global numbers of local degrees of freedom */
-    int *GetGlobalNumbers()
+    int *GetGlobalNumbers() const
     { return GlobalNumbers; }
     
     void SetGlobalNumbers(int* NewGN)
     { GlobalNumbers=NewGN; }
 
     /** return begin index for each element */
-    int *GetBeginIndex()
+    int *GetBeginIndex() const
     { return BeginIndex; }
+    
+    /** @brief return correspondence map from local to global degrees of freedom
+     * 
+     * set int * DOF=feSpace->GetGlobalDOF(i); then DOF[j]-th global degree of 
+     * freedom corresponds to the j-th local degree of freedom.
+    */
+    int* GetGlobalDOF(int i) const
+    { return GlobalNumbers+BeginIndex[i];}
 
     /** return number of used elements */
-    int GetN_UsedElements()
+    int GetN_UsedElements() const
     { return N_UsedElements; }
 
     /** return number of all degrees of freedom */
-    int GetN_DegreesOfFreedom()
+    int GetN_DegreesOfFreedom() const
     { return N_DegreesOfFreedom; }
 
 // =======================================================================
 // counts and bounds for different types of degrees of freedom
 // =======================================================================
     /** get number of different boundary node types, except Dirichlet */
-    int GetN_DiffBoundaryNodeTypes()
+    int GetN_DiffBoundaryNodeTypes() const
     { return N_DiffBoundNodeTypes; }
 
     /** return type for each of the different types */
-    BoundCond *GetBoundaryNodeTypes()
+    BoundCond *GetBoundaryNodeTypes() const
     { return BoundaryNodeTypes; }
 
     /** return number of nodes for each boundary node type */
-    int *GetN_BoundaryNodes()
+    int *GetN_BoundaryNodes() const
     { return N_BoundaryNodes; }
 
     /** return N_Dirichlet */
-    int GetN_Dirichlet()
+    int GetN_Dirichlet() const
     { return N_Dirichlet; }
 
     /** return N_Inner */
-    int GetN_Inner()
+    int GetN_Inner() const
     { return N_Inner; }
 
     /** return InnerBound */
-    int GetInnerBound()
+    int GetInnerBound() const
     { return InnerBound; }
 
     /** return BoundaryNodesBound */
-    int *GetBoundaryNodesBound()
+    int *GetBoundaryNodesBound() const
     { return BoundaryNodesBound; }
 
     /** return DirichletBound */
-    int GetDirichletBound()
+    int GetDirichletBound() const
     { return DirichletBound; }
 
     /** return ActiveBound */
-    int GetActiveBound()
+    int GetActiveBound() const
     { return ActiveBound; }
 
     /** write info on fespace into file */
@@ -195,7 +203,7 @@ class TFESpace
     void SetAsDGSpace()
     { DGSpace = 1; }
 
-    int IsDGSpace()
+    int IsDGSpace() const
     { return DGSpace; }
 
 #ifdef  _MPI

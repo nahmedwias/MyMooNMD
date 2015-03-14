@@ -103,6 +103,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 {
   int *ColInd, *RowPtr, N_Entries;
   int i,j,j0,j1,j2,j3,jj,index;
+  double nenner, zaehler;
   double *Entries, *F;
   double *P_plus, *P_minus, *Q_plus, *Q_minus, *R_plus, *R_minus, val;
  
@@ -255,23 +256,51 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
   }
 
   // apply the nodal correction factor evaluated at the upwind node i
-  for(i=0;i<N_U;i++)
-  {
-    if (fabs(P_plus[i])>0)
-    {
-      R_plus[i] = Q_plus[i]/P_plus[i];
-      if (R_plus[i] >1)
-        R_plus[i] = 1;
+  // loop over all nodes
+  if (TDatabase::ParamDB->P9!=4711)
+  { // original but discontinuous proposal
+    for(i=0;i<N_U;i++)
+    {  
+      if (fabs(P_plus[i])>0)
+      {
+        R_plus[i] = Q_plus[i]/P_plus[i];
+        if (R_plus[i] >1)
+          R_plus[i] = 1;
+      }
+      if (fabs(P_minus[i])>0)
+      {
+        R_minus[i] = Q_minus[i]/P_minus[i];
+        if (R_minus[i] >1)
+          R_minus[i] = 1;
+      }
+      //OutPut(" P " << P_plus[i] << " " <<  P_minus[i] << " ");
+      //OutPut(R_plus[i] << " " <<  R_minus[i] << endl);
     }
-    if (fabs(P_minus[i])>0)
-    {
-      R_minus[i] = Q_minus[i]/P_minus[i];
-      if (R_minus[i] >1)
-        R_minus[i] = 1;
-    }
-    //OutPut(" P " << P_plus[i] << " " <<  P_minus[i] << " ");
-    //OutPut(R_plus[i] << " " <<  R_minus[i] << endl);
   }
+  else
+  {
+    // continuous proposal 
+  
+    for(i=0;i<N_U;i++)
+    { 
+      zaehler =  Q_plus[i];
+      if (-Q_minus[i] < zaehler)
+        zaehler = -Q_minus[i];
+      nenner = 1e-32;
+      if (P_plus[i] > nenner)
+        nenner = P_plus[i];
+      if (-P_minus[i] > nenner)
+        nenner = -P_minus[i];
+      //OutPut(zaehler << " " << nenner );
+      R_plus[i] = zaehler/nenner;
+      if (R_plus[i] > 1)
+        R_plus[i] = 1;
+      R_minus[i] = R_plus[i];
+      //OutPut("new " << i << " P " << P_plus[i] << " "  << P_minus[i] <<" Q " << Q_plus[i] << " "  << Q_minus[i] << 
+      //" R " << R_plus[i] << " " << R_minus[i] << endl);
+    }
+  }
+
 
   // treat Dirichlet nodes
   for (j=0;j<N_neum_to_diri;j++)
@@ -290,12 +319,18 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
     j1 = RowPtr[i+1];
     for(j=j0;j<j1;j++)
     {
-      if (Entries[j] > 0)
-        continue;
       // column
       index = ColInd[j];
       if (index==i)
         continue;
+       // this should not happen
+      if (Entries[j] > 0)
+      {
+        OutPut("positive entry in FEMTVD " << i << " " << j << " " << Entries[j] << endl);
+        exit(4711);
+        continue;
+      }
+
       // check transposed entry
       j2 = RowPtr[index];
       j3 = RowPtr[index+1];
@@ -307,23 +342,44 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
           break;
         }
       }
-      // check upwind condition
-      // this ensures that the 'link' between i and index is treated only once
-      if (Entries[jj] > Entries[j])
-        continue;
-      if (F[j] > 0)
+      
+      if (TDatabase::ParamDB->P8!=4711)
       {
-        F[j] = R_plus[i]*F[j];
+        // original, symmetric application 
+        // check upwind condition
+        // this ensures that the 'link' between i and index is treated only once
+        if (Entries[jj] > Entries[j])
+          continue;
+        //OutPut(R_plus[i] << " " << R_minus[i] << " : " << R_plus[index] << " " << R_minus[index] << "::");
+        // compute contribution to rhs
+        if (F[j] > 0)
+        {
+          F[j] = R_plus[i]*F[j];
+        }
+        else
+          F[j] = R_minus[i]*F[j];
+        // update rhs of current row 
+        rhs[i] += F[j];
+        // update rhs wrt to current column 
+        // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry of alpha matrix)
+        if (index<N_Active)
+          rhs[index] -= F[j];
       }
       else
-        F[j] = R_minus[i]*F[j];
-      rhs[i] += F[j];
-      if (index<N_Active)
-        rhs[index] -= F[j];
-    }                                             // end loop j
+      { // nonsymmetric application 
+        // compute contribution to rhs
+        if (F[j] > 0)
+        {
+          F[j] = R_plus[i]*F[j];
+        }
+        else
+          F[j] = R_minus[i]*F[j];
+        // update rhs of current row 
+        rhs[i] += F[j]; 
+      }
+    }
   }
-
-  delete F;
+  delete [] F;
 }
 
 //**************************************************************
@@ -490,6 +546,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
   double theta3 = TDatabase::TimeDB->THETA3;
   double theta4 = TDatabase::TimeDB->THETA4;
 
+  /*
   if (N_Active < N_U)
   {
     OutPut("N_Active < N_U ("<< N_Active<< "<"<< N_U <<
@@ -500,6 +557,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
 #endif         
     exit(4711);
   }
+  */
 
   // get pointers to columns, rows and entries of matrix M_C
   ColInd_M = M_C->GetKCol();
@@ -672,7 +730,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
           // prelimiting with MINMOD
           if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
             (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-            res[j] = MinMod(res[j], val);
+            res[j] = delta_t*MinMod(res[j]/delta_t, val);
           // more prelimiting
           if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
             (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
@@ -912,7 +970,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
               (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
           {
              val =  -matrix_D_Entries[j]*(tilde_u[i]-tilde_u[index]);
-              res[j] = MinMod(res[j], val);
+              res[j] = delta_t*MinMod(res[j]/delta_t, val);
           }
           // more prelimiting
           if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
@@ -1003,7 +1061,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
           // prelimiting with MINMOD, THIS HAS TO BE CHECKED
           if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
             (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-            res[j] = MinMod(res[j], -matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]));
+            res[j] = delta_t*MinMod(res[j]/delta_t, -matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]));
           // more prelimiting
           if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
             (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
@@ -1139,8 +1197,8 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
           alpha[j] = R_plus[index];
       }
       // clipping, see Kuzmin (2009), end of Section 5
-      if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
-        alpha[j] = 0;
+      //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
+      //  alpha[j] = 0;
     }                                             //end loop j
   }
 
@@ -1198,6 +1256,6 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
     }
   }
 
-//   OutPut(" vecB " << Ddot(N_U,B,B) << endl);
+  //OutPut(" vecB " << Ddot(N_U,B,B) << endl);
   delete [] res;
 }

@@ -19,6 +19,7 @@
 #include <FESpace3D.h>
 #include <AuxParam3D.h>
 #include <Constants.h>
+#include <vector>
 
 /** a function from a finite element space */
 class TFEFunction3D
@@ -67,13 +68,19 @@ class TFEFunction3D
     double *GetValues()
     { return Values; }
 
-    /** calculate errors to given function */
+    /** calculate errors to given function 
+     * NOTE: errors must be of length N_Errors+1 !!!! */
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
                    CoeffFct3D *Coeff, TAuxParam3D *Aux,
                    int n_fespaces, TFESpace3D **fespaces,
                    double *errors);
+    
+    void GetErrorsForVectorValuedFunction(const DoubleFunct3D ** const Exact,
+                                          const ErrorMethod3D * const ErrMeth,
+                                          double * const errors);
+    
     void GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 			MultiIndex3D *NeededDerivatives,
 			int N_Errors, ErrorMethod3D *ErrorMeth, 
@@ -122,9 +129,47 @@ class TFEFunction3D
     void InterpolateSuper(DoubleFunct3D *Exact);
     
     /**  interpolation of an exact function with give FeFunction values */
-    void Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  TFEFunction3D **AuxFeFcts, DoubleFunctND *Exact);
+    void Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts, 
+                     TFEFunction3D **AuxFeFcts, DoubleFunctND *Exact);
     
+    /** @brief interpolate a vector valued function
+     *
+     * @param[in] Exact must be of length 3 (= space dimension)
+     * @warning EvalAll must be correctly implemented for the used finite element
+     */
+    void Interpolate_vector_valued_function(std::vector<DoubleFunct3D*> Exact);
     
+    /**
+     * @brief project this functions into the space L20 (having zero mean value)
+     *
+     * After a call to this function the mean value (integral of this function
+     * devided by the measure of its domain) has the value a. This is for
+     * example needed for the pressure in a Stokes problem with Dirichlet
+     * conditions on all boundaries.
+     *
+     * @param[in] a set mean value of this FEFunction3D to a
+     */
+    void project_into_L20(double a = 0.0);
+
+    /**
+     * @brief find the integral of this function and the measure of its domain
+     *
+     * @param[out] integral double value for the integral of this TFEFunction2D
+     * @param[out] measure double value for the measure of its domain
+     */
+    void compute_integral_and_measure(double& integral, double& measure) const;
+
+  /** @brief Set Dirichlet values according to boundary conditions */
+    void SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
+                                   BoundValueFunct3D *BoudaryValue);
+    
+    /** @brief find the largest and smallest element in the vector of this FE 
+     *         function */
+   void MinMax(double & min, double & max);
+
+   /** @brief print the largest and smallest element in the vector of this FE 
+    *         function */
+   void PrintMinMax();
 };
 
 #endif

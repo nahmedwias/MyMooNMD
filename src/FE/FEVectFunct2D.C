@@ -522,19 +522,22 @@ void TFEVectFunct2D::WriteSol(double t)
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->VTKBASENAME;
+  BaseName = TDatabase::ParamDB->BASENAME;
+  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
 
   std::ostringstream os;
   os << " ";
 
   #ifdef _MPI
-  OutPut("Writing solution into "<< BaseName <<rank<< ".Sol MooNMD file"<< endl);
+  OutPut("Writing solution into "<< output_directory << "/" << BaseName << rank
+         << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << BaseName<<rank<<".Sol" << ends;
+  os << output_directory << "/" << BaseName<<rank<<".Sol" << ends;
   #else
-  OutPut("Writing solution into "<< BaseName << t<< ".Sol MooNMD file"<< endl);
+  OutPut("Writing solution into "<< output_directory << "/" << BaseName << t
+         << ".Sol MooNMD file"<< endl);
   os.seekp(std::ios::beg);
-  os << BaseName << t<<".Sol" << ends;
+  os << output_directory << "/" << BaseName << t<<".Sol" << ends;
   #endif
 
   std::ofstream dat(os.str().c_str());
@@ -975,11 +978,96 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
     cout<<"("<<x<<" , " <<y<<" ) Point not found !!!!!"<<endl;
     exit(0);
    }
-   
-   
-   
 }
 
 
-   
+TFEVectFunct2D& TFEVectFunct2D::operator*=(double alpha)
+{
+  int N_Active = FESpace2D->GetActiveBound();
+  for(int n=0; n<N_Components; n++)
+  {
+    for (int i=0; i<N_Active; i++)
+    {
+      Values[i+n*Length] *= alpha;
+    }
+  }
+  return *this;
+}
+
+TFEVectFunct2D & TFEVectFunct2D::operator+=(const TFEVectFunct2D & rhs)
+{
+  if(FESpace2D != rhs.FESpace2D)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator+=() The two arguments "
+           << "have different fe spaces. Exiting" << endl);
+    exit(1);
+  }
+  if(Length != rhs.Length)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator+=() The two arguments "
+           << "have different lengths. Exiting" << endl);
+    exit(1);
+  }
+  if(Values == rhs.Values)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator+=() The two arguments "
+           << "have the same solution vector. This operation would be "
+           << "equivalent to a multiplication by 2! Exiting" << endl);
+    exit(1);
+  }
+  if(N_Components != rhs.N_Components)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator+=() The two arguments "
+           << "have different number of components. You are trying to add a "
+           << rhs.N_Components << "-dimensional vector to a " << N_Components
+           << "-dimensional vector! Exiting" << endl);
+    exit(1);
+  }
+  int N_Active = FESpace2D->GetActiveBound();
+  for(int n=0; n<N_Components; n++)
+  {
+    for (int i=0; i<N_Active; i++)
+    {
+      Values[i+n*Length] += rhs.Values[i+n*Length];
+    }
+  }
+  return *this;
+}
+
+TFEVectFunct2D & TFEVectFunct2D::operator=(const TFEVectFunct2D & rhs)
+{
+  if(FESpace2D != rhs.FESpace2D)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
+           << "have different fe spaces. Exiting" << endl);
+    exit(1);
+  }
+  if(Length != rhs.Length)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
+           << "have different lengths. Exiting" << endl);
+    exit(1);
+  }
+  if(N_Components != rhs.N_Components)
+  {
+    OutPut("ERROR: TFEVectFunct2D::operator=() The two arguments "
+           << "have different number of components. You are trying to set a "
+           << rhs.N_Components << "-dimensional vector to a " << N_Components
+           << "-dimensional vector! Exiting" << endl);
+    exit(1);
+  }
+  if(Values == rhs.Values)
+  {
+    OutPut("WARNING: TFEVectFunct2D::operator=() The two arguments "
+           << "have the same solution vector already. No action taken.");
+    return *this;
+  }
+  // copy the values from rhs to *this
+  for (int i=0;i<Length*N_Components; i++)
+  {
+    Values[i] = rhs.Values[i];
+  }
+  return *this;
+}
+
 

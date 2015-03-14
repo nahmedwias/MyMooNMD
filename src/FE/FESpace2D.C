@@ -94,6 +94,21 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
              ElementForShape[Rectangle] = C_Q2_2D_Q_A;
              break;
+    case 222:
+      switch((int) (TDatabase::ParamDB->REACTOR_P11 + 0.5))
+      {
+        case 1:
+        case 2:
+          ElementForShape[Triangle] = C_B2_2D_T_A;
+          break;
+          
+        default:
+          ElementForShape[Triangle] = C_P2_2D_T_A;
+      }
+      ElementForShape[Quadrangle] = C_Q2_2D_Q_M;
+      ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
+      ElementForShape[Rectangle] = C_Q2_2D_Q_A;
+      break;
     case 3:  ElementForShape[Triangle] = C_P3_2D_T_A;
              // ElementForShape[Triangle] = C_B3_2D_T_A;
              ElementForShape[Quadrangle] = C_Q3_2D_Q_M;
@@ -476,13 +491,49 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 
     //====================================
     //========Vector basis Raviart-Thomas  element=============
+    case 1000:
+      ElementForShape[Triangle] = N_RT0_2D_T_A;
+      ElementForShape[Quadrangle] = N_RT0_2D_Q_M;
+      ElementForShape[Parallelogram] = N_RT0_2D_Q_A;
+      ElementForShape[Rectangle] = N_RT0_2D_Q_A;
+      break;
     case 1001:
-             ElementForShape[Triangle] = N_P1_2D_T_A;
-             OutPut("Using usual scalar non-conforming element on triangles" << endl);
-             ElementForShape[Quadrangle] = N_RT1_2D_Q_M;
-             ElementForShape[Parallelogram] = N_RT1_2D_Q_A;
-             ElementForShape[Rectangle] = N_RT1_2D_Q_A;	  
-             break;
+      ElementForShape[Triangle] = N_RT1_2D_T_A;
+      ElementForShape[Quadrangle] = N_RT1_2D_Q_M;
+      ElementForShape[Parallelogram] = N_RT1_2D_Q_A;
+      ElementForShape[Rectangle] = N_RT1_2D_Q_A;
+      break;
+    case 1002:
+      ElementForShape[Triangle] = N_RT2_2D_T_A;
+      ElementForShape[Quadrangle] = N_RT2_2D_Q_M;
+      ElementForShape[Parallelogram] = N_RT2_2D_Q_A;
+      ElementForShape[Rectangle] = N_RT2_2D_Q_A;
+      break;
+    case 1003:
+      ElementForShape[Triangle] = N_RT3_2D_T_A;
+      ElementForShape[Quadrangle] = N_RT3_2D_Q_M;
+      ElementForShape[Parallelogram] = N_RT3_2D_Q_A;
+      ElementForShape[Rectangle] = N_RT3_2D_Q_A;
+      break;
+      //========Vector basis BDM  element=============
+    case 1011:
+      ElementForShape[Triangle] = N_BDM1_2D_T_A;
+      ElementForShape[Quadrangle] = N_BDM1_2D_Q_M;
+      ElementForShape[Parallelogram] = N_BDM1_2D_Q_A;
+      ElementForShape[Rectangle] = N_BDM1_2D_Q_A;
+      break;
+    case 1012:
+      ElementForShape[Triangle] = N_BDM2_2D_T_A;
+      ElementForShape[Quadrangle] = N_BDM2_2D_Q_M;
+      ElementForShape[Parallelogram] = N_BDM2_2D_Q_A;
+      ElementForShape[Rectangle] = N_BDM2_2D_Q_A;
+      break;
+    case 1013:
+      ElementForShape[Triangle] = N_BDM3_2D_T_A;
+      ElementForShape[Quadrangle] = N_BDM3_2D_Q_M;
+      ElementForShape[Parallelogram] = N_BDM3_2D_Q_A;
+      ElementForShape[Rectangle] = N_BDM3_2D_Q_A;
+      break;
 
     //========LOCALPROJECTION WITH EXP BUBBLE=============
     // Q1+bubble*P0
@@ -559,6 +610,14 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
           ElementForShape[Rectangle] = C_Q4_2D_Q_A;
         break;
 
+        // Scott-Vogelius
+        case 222:
+          ElementForShape[Triangle] = C_SV2_2D_T_A;
+          ElementForShape[Quadrangle] = C_Q2_2D_Q_M;
+          ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
+          ElementForShape[Rectangle] = C_Q2_2D_Q_A;
+          break;
+
         default:
           Error("Space is not available" << endl);
           exit(-1);
@@ -634,14 +693,21 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
           ElementForShape[Parallelogram] = D_D2_2D_Q_A;
           ElementForShape[Rectangle] = D_D2_2D_Q_A;
         break;
-
-	     // only function zero	     
-	  case 102:  ElementForShape[Triangle] = C_P00_2D_T_A;
-             ElementForShape[Quadrangle] = C_Q00_2D_Q_M;
-             ElementForShape[Parallelogram] = C_Q00_2D_Q_A;
-             ElementForShape[Rectangle] = C_Q00_2D_Q_A;
-             break;
-      
+        
+        // only function zero
+        case 102:
+          ElementForShape[Triangle] = C_P00_2D_T_A;
+          ElementForShape[Quadrangle] = C_Q00_2D_Q_M;
+          ElementForShape[Parallelogram] = C_Q00_2D_Q_A;
+          ElementForShape[Rectangle] = C_Q00_2D_Q_A;
+          break;
+        // Scott-Vogelius
+        case 222:
+          ElementForShape[Triangle] = D_SV1_2D_T_A;
+          ElementForShape[Quadrangle] = D_P1_2D_Q_M;
+          ElementForShape[Parallelogram] = D_P1_2D_Q_A;
+          ElementForShape[Rectangle] = D_P1_2D_Q_A;
+          break;      
 	  default:
           Error("Space is not available" << endl);
           exit(-1);
@@ -966,7 +1032,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
         //====================================
     
         default:
-          Error("Space is not available." << endl;);
+          Error("Space is not available." << endl);
           exit(-1);
       } // endswitch
     break;
@@ -1019,13 +1085,50 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
         break;
 
         //========Vector basis Raviart-Thomas  element=============
+        case 1000:
+          ElementForShape[Triangle] = N_RT0_2D_T_A;
+          ElementForShape[Quadrangle] = N_RT0_2D_Q_M;
+          ElementForShape[Parallelogram] = N_RT0_2D_Q_A;
+          ElementForShape[Rectangle] = N_RT0_2D_Q_A;
+          break;
+          
         case 1001:
-             ElementForShape[Triangle] = N_P1_2D_T_A;
-             OutPut("Using usual scalar non-conforming element on triangles" << endl);
-             ElementForShape[Quadrangle] = N_RT1_2D_Q_M;
-             ElementForShape[Parallelogram] = N_RT1_2D_Q_A;
-             ElementForShape[Rectangle] = N_RT1_2D_Q_A;	  
-             break;
+          ElementForShape[Triangle] = N_RT1_2D_T_A;
+          ElementForShape[Quadrangle] = N_RT1_2D_Q_M;
+          ElementForShape[Parallelogram] = N_RT1_2D_Q_A;
+          ElementForShape[Rectangle] = N_RT1_2D_Q_A;
+          break;
+        case 1002:
+          ElementForShape[Triangle] = N_RT2_2D_T_A;
+          ElementForShape[Quadrangle] = N_RT2_2D_Q_M;
+          ElementForShape[Parallelogram] = N_RT2_2D_Q_A;
+          ElementForShape[Rectangle] = N_RT2_2D_Q_A;
+          break;
+        case 1003:
+          ElementForShape[Triangle] = N_RT3_2D_T_A;
+          ElementForShape[Quadrangle] = N_RT3_2D_Q_M;
+          ElementForShape[Parallelogram] = N_RT3_2D_Q_A;
+          ElementForShape[Rectangle] = N_RT3_2D_Q_A;
+          break;
+          //========Vector basis BDM  element=============
+        case 1011:
+          ElementForShape[Triangle] = N_BDM1_2D_T_A;
+          ElementForShape[Quadrangle] = N_BDM1_2D_Q_M;
+          ElementForShape[Parallelogram] = N_BDM1_2D_Q_A;
+          ElementForShape[Rectangle] = N_BDM1_2D_Q_A;
+          break;
+        case 1012:
+          ElementForShape[Triangle] = N_BDM2_2D_T_A;
+          ElementForShape[Quadrangle] = N_BDM2_2D_Q_M;
+          ElementForShape[Parallelogram] = N_BDM2_2D_Q_A;
+          ElementForShape[Rectangle] = N_BDM2_2D_Q_A;
+          break;
+        case 1013:
+          ElementForShape[Triangle] = N_BDM3_2D_T_A;
+          ElementForShape[Quadrangle] = N_BDM3_2D_Q_M;
+          ElementForShape[Parallelogram] = N_BDM3_2D_Q_A;
+          ElementForShape[Rectangle] = N_BDM3_2D_Q_A;
+          break;
     
         default:
           Error("This nonconforming space (order " << ord << ")");
@@ -1675,7 +1778,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 
 #ifdef __MORTAR__
 #ifdef __CONNECT_CROSSPOINTS__
-  boolean Connect_Crosspoints = FALSE;
+  bool Connect_Crosspoints = false;
   const int *TmpCE, *TmpEV, *TmpnEoE, *TmpVE, *TmpnVEqoV, *TmpIndex;
   int N_, N2_, C_loc, J_loc, V_loc, V_inc, clip, v0, w0, v1, w1;
   int N_JointDOFs, **JointDOFs;
@@ -1694,7 +1797,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
         CurrElementID != N_Q1_2D_Q_M && CurrElementID != C_P0_2D_T_A &&
         CurrElementID < D_P1_2D_Q_A)
     {
-      Connect_Crosspoints = TRUE;
+      Connect_Crosspoints = true;
       break;
     }
   }
@@ -2165,7 +2268,7 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
 
     N_Joints = cell->GetN_Joints();
 
-    IsIsoparametric = FALSE;
+    IsIsoparametric = false;
     if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
     {
       for(j=0;j<N_Joints;j++)
@@ -2176,17 +2279,17 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
         {
           bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == InterfaceJoint)
         {
           bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == IsoInterfaceJoint ||
            jointtype == IsoBoundEdge)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     }// endif
 
@@ -2306,7 +2409,7 @@ void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
   
       N_Joints = cell->GetN_Joints();
   
-      IsIsoparametric = FALSE;
+      IsIsoparametric = false;
       if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
       {
         for(j=0;j<N_Joints;j++)
@@ -2317,17 +2420,17 @@ void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
           {
             bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
             if(bdtype != Line)
-              IsIsoparametric = TRUE;
+              IsIsoparametric = true;
           }
           if(jointtype == InterfaceJoint)
           {
             bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
             if(bdtype != Line)
-              IsIsoparametric = TRUE;
+              IsIsoparametric = true;
           }
           if(jointtype == IsoInterfaceJoint ||
              jointtype == IsoBoundEdge)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
       }// endif
   
@@ -2383,4 +2486,31 @@ void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
     } // endif DOFFound > -1
   } // endfor i
 } // end GetDOFPosition
+
+
+/** check if FE spaces lhs_space and rhs_space are equal*/
+bool operator==(const TFESpace2D &lhs_space, const TFESpace2D &rhs_space)
+{
+  if(&lhs_space == &rhs_space) // compare pointers
+    return true;
+  if((lhs_space.N_DegreesOfFreedom == rhs_space.N_DegreesOfFreedom)
+     && (lhs_space.N_UsedElements == rhs_space.N_UsedElements)
+     && (lhs_space.BoundCondition == rhs_space.BoundCondition)
+     && (lhs_space.N_ActiveDegrees == rhs_space.N_ActiveDegrees)
+     //&& (lhs_space.OrderOfSpace == rhs_space.OrderOfSpace)
+     && (lhs_space.Collection == rhs_space.Collection))
+  {
+    return true;
+  }
+  
+  return false;
+}
+
+/** check if FE spaces lhs_space and rhs_space are not equal*/
+bool operator!=(const TFESpace2D &lhs_space, const TFESpace2D &rhs_space)
+
+{
+  return !(lhs_space == rhs_space);
+}
+
 

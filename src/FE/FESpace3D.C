@@ -112,15 +112,91 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
              ElementForShape[Tetrahedron] = N_P4_3D_T_A;
              Error("No nonconforming elements of order 4 for Tetrahedron!" << endl);
              break;
+    case -11: 
+             ElementForShape[Hexahedron] = D_Q1_3D_H_M;
+             ElementForShape[Brick] = D_Q1_3D_H_A;
+             ElementForShape[Tetrahedron] = D_P1_3D_T_A;
+             break;
+    case -12:
+             ElementForShape[Hexahedron] = D_Q2_3D_H_M;
+             ElementForShape[Brick] = D_Q2_3D_H_A;
+             ElementForShape[Tetrahedron] = D_P2_3D_T_A;
+             break;
+    case -13:
+             //ElementForShape[Hexahedron] = D_Q2_3D_H_M;
+             //ElementForShape[Brick] = D_Q2_3D_H_A;
+             ElementForShape[Tetrahedron] = D_P3_3D_T_A;
+             break;
+    case -110:
+             ElementForShape[Hexahedron] = D_P1_3D_H_M;
+             ElementForShape[Brick] = D_P1_3D_H_A;
+             ElementForShape[Tetrahedron] = D_P1_3D_T_A;
+             break;
+    case -120:
+             ElementForShape[Hexahedron] = D_P2_3D_H_M;
+             ElementForShape[Brick] = D_P2_3D_H_A;
+             ElementForShape[Tetrahedron] = D_P2_3D_T_A;
+             break;
 
     //========LOCALPROJECTION=============
     // Q1+bubble*P0
     case 100:
-             ElementForShape[Tetrahedron] = C_P1_3D_T_A;
-             OutPut("Using usual P1 element on tetrahedron" << endl);
+             ElementForShape[Hexahedron] = C_UL1_3D_H_M;
              ElementForShape[Brick] = C_UL1_3D_H_A;
-             ElementForShape[Hexahedron] = C_UL1_3D_H_M;    
+             // ElementForShape[Tetrahedron] = C_UL1_3D_T_A;
              break;
+    // Q2+bubble*P1
+    case 201:
+             ElementForShape[Hexahedron] = C_UL2_3D_H_M;
+             ElementForShape[Brick] = C_UL2_3D_H_A;
+             // ElementForShape[Tetrahedron] = C_UL2_3D_T_A;
+             break;
+    // Q3+bubble*P2
+    case 302:
+             ElementForShape[Hexahedron] = C_UL3_3D_H_M;
+             ElementForShape[Brick] = C_UL3_3D_H_A;
+             // ElementForShape[Tetrahedron] = C_UL3_3D_T_A;
+             break;
+    //====================================
+    //Raviar-Thomas-0
+    case 1000:
+      //ElementForShape[Hexahedron] = N_RT0_3D_H_M;
+      ElementForShape[Brick] = N_RT0_3D_H_A;
+      ElementForShape[Tetrahedron] = N_RT0_3D_T_A;
+      break;
+   //Raviar-Thomas-1
+    case 1001:
+      //ElementForShape[Hexahedron] = N_RT1_3D_H_M;
+      ElementForShape[Brick] = N_RT1_3D_H_A;
+      ElementForShape[Tetrahedron] = N_RT1_3D_T_A;
+      break;
+    //Raviar-Thomas-2
+    case 1002:
+      ElementForShape[Brick] = N_RT2_3D_H_A;
+      ElementForShape[Tetrahedron] = N_RT2_3D_T_A;
+      break;
+    //Raviar-Thomas-3
+    case 1003:
+      ElementForShape[Tetrahedron] = N_RT3_3D_T_A;
+      break;
+
+
+    //Brezzi-Douglas-Duran-Fortin-1
+    case 1011:
+        ElementForShape[Brick] = N_BDDF1_3D_H_A;
+        ElementForShape[Tetrahedron] = N_BDDF1_3D_T_A;
+        break;
+
+    //Brezzi-Douglas-Duran-Fortin-2
+    case 1012:
+        ElementForShape[Brick] = N_BDDF2_3D_H_A;
+        ElementForShape[Tetrahedron] = N_BDDF2_3D_T_A;
+        break;
+    //Brezzi-Douglas-Duran-Fortin-3
+    case 1013:
+        ElementForShape[Brick] = N_BDDF3_3D_H_A;
+        ElementForShape[Tetrahedron] = N_BDDF3_3D_T_A;
+        break;
 
     default: Error("unknown order" << endl);
              exit(-1);
@@ -279,7 +355,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
           ElementForShape[Brick] = B_IB2_3D_H_A;
         break;
         default:
-          Error("Space is not available." << endl;);
+          ErrMsg("Space is not available.");
           exit(-1);
       } // endswitch
     break;
@@ -315,7 +391,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
         break;
 
         default:
-          Error("Only first order nonconforming spaces available" << endl);
+          ErrMsg("Only first order nonconforming spaces available");
           exit(-1);
       }
     break;
@@ -1135,6 +1211,34 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                                   joint->GetMapType(),
                                   DirichletBound,
                                   Counter, VHN, HNNumbers);
+                }
+                // There is exactly one children on the neighbour sharing the current face
+                else if(TmpLen1[l] == 1)
+                {
+                  // Get Child of Neighbour that contains this face
+                  f1 = TmpoFnF[l * MaxLen1];
+                  chnum1 = TmpFC[f1 * MaxLen2];
+                  child1 = neigh->GetChild(chnum1);
+                  c1 = child1->GetClipBoard();
+                  
+                  FEType1 = GetFE3D(c1, child1);
+                  FE1 = TFEDatabase3D::GetFE3D(FEType1);
+                  FE1->GetFEDesc3D(FEDesc1, FEDesc1_Obj);
+                  
+                  I_K1 = BeginIndex[c1];
+                  J_K1 = GlobalNumbers + BeginIndex[c1];
+                  m = TmpoFnlF[chnum1 * NFaces + l];
+                  if(m == -1)
+                  {
+                    std::cerr << "Error!\n";
+                    exit(-1);
+                  }
+                  Indices1 = FEDesc1_Obj->GetJointDOF(m);
+                  
+                  mapper = TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc1);
+                  mapper->Map(joint->GetMapType(), GlobalNumbers, I_K0, I_K1,
+                              Indices0, Indices1, 0, 0, FEDesc0_Obj,
+                              FEDesc1_Obj, Counter, VHN, HNNumbers);
                 }
                 else
                 {

@@ -74,6 +74,13 @@ class TFEFunction2D
                    CoeffFct2D *Coeff, TAuxParam2D *Aux,
                    int n_fespaces, TFESpace2D **fespaces,
                    double *errors);
+
+    /** @brief use this for vector valued basis functions (Raviart-Thomas (RT)
+     *         or Brezzi-Douglas-Marini (BDM) elements) */
+    void  GetErrorsForVectorValuedFunction(
+                  const DoubleFunct2D * const * const Exact, 
+                  const ErrorMethod2D * const ErrorMeth, 
+                  double * const errors);
     
     void GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
 		   MultiIndex2D *NeededDerivatives,
@@ -110,6 +117,40 @@ class TFEFunction2D
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct2D *Exact);
+    /** interpolate the old mesh fe function values to the new fe function
+    * 
+    * Note that this is rather slow, because no further information is 
+    * required. The function 'OldFeFunction' could even live on a larger domain.
+    */
+    void Interpolate(TFEFunction2D *F);
+    
+    /**
+     * @brief project this functions into the space L20 (having zero mean value)
+     * 
+     * After a call to this function the mean value (integral of this function
+     * devided by the measure of its domain) has the value a. This is for 
+     * example needed for the pressure in a Stokes problem with Dirichlet 
+     * conditions on all boundaries.
+     * 
+     * @param a set mean value of this FEFunction2D to a
+     */
+    void project_into_L20(double a = 0.0);
+    
+    /**
+     * @brief find the integral of this function and the measure of its domain
+     * 
+     * @param integral double value for the integral of this TFEFunction2D
+     * @param measure double value for the measure of its domain 
+     */
+    void compute_integral_and_measure(double& integral, double& measure) const;
+    
+    /**
+     * @brief compute the mean value of this TFEFunction2D
+     * 
+     * this functions uses 'compute_integral_and_measure'. Then the mean is the
+     * integral divided by the measure.
+     */
+    double compute_mean() const;    
 
     /** calculate parameters which are connected to a mesh cell */
     void GetMeshCellParams(DoubleFunct2D *Exact, int N_Derivatives,
@@ -123,19 +164,43 @@ class TFEFunction2D
     /** calculate the super-convergence interpolation of an exact function */
     void InterpolateSuper(DoubleFunct2D *Exact);
     
+    /** set Dirichlet values according to boundary conditions */
+    void SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
+                        BoundValueFunct2D *BoundaryValue);
+    
    /** write the solution into a data file - written by Sashi **/
    void WriteSol();
 
    /** Read the solution from a given data file - written by Sashi **/
    void ReadSol(char *BaseName);
    
-   /** interpolate the old mesh fe function values to the new fe function **/
-   void Interpolate(TFEFunction2D *OldFeFunction);
 
    /** sol will be correct to conserve the Old_Mass (remessing, temp, surfact, psd, etc) - added by sashi */   
    void CorrectMass(double OldMass);
 
    /** Retun the mass, domain volume and mean values of the function - added by sashi */
    void GetMassAndMean(double *OutVal);
+   
+   
+   /** multiply function with a scalar alpha. Only non-Dirichlet dofs are 
+       multiplied! */
+   TFEFunction2D& operator*=(double alpha);
+   
+   /** add one TFEFunction2D to another one. Both have to be defined on the 
+       same space. Only non-Dirichlet dofs are added!  */
+   TFEFunction2D & operator+=(const TFEFunction2D & rhs);
+   
+   /** copy one TFEFunction2D to another one. Both have to be defined on the 
+       same space */
+   TFEFunction2D & operator=(const TFEFunction2D & rhs);
+   /** find the largest and smallest element in the vector of this FE function
+   */
+   void MinMax(double & min, double & max);
+
+   /** print the largest and smallest element in the vector of this FE 
+       function 
+   */
+   void PrintMinMax();
+
 };
 #endif

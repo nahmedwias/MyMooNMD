@@ -36,7 +36,11 @@ class TFEVectFunct2D : public TFEFunction2D
     /** return i-th component as FEFunction2D */
     TFEFunction2D *GetComponent(int i)
     {
-      return new TFEFunction2D(FESpace2D, Name, Description,
+      // the name of the component will include the index i
+      std::ostringstream os;
+      os.seekp(std::ios::beg);
+      os << Name << i <<ends;
+      return new TFEFunction2D(FESpace2D, (char*)os.str().c_str(), Description,
                                Values+i*Length, Length);
     }
 
@@ -72,7 +76,17 @@ class TFEVectFunct2D : public TFEFunction2D
    /** interpolate the old vect value to the new function */
    void Interpolate(TFEVectFunct2D *OldVectFunct);
    
+   /** @brief multiply function with a scalar alpha. Only non-Dirichlet dofs are 
+    *         multiplied! */
+    TFEVectFunct2D& operator*=(double alpha);
    
+    /** @brief add one TFEVectFunct2D to another one. Both have to be defined on
+     *         the same space. Only non-Dirichlet dofs are added!  */
+    TFEVectFunct2D & operator+=(const TFEVectFunct2D & rhs);
+   
+    /** @brief copy one TFEVectFunct2D to another one. Both have to be defined 
+     *         on the same space */
+    TFEVectFunct2D & operator=(const TFEVectFunct2D & rhs);
 };
 
 #endif
