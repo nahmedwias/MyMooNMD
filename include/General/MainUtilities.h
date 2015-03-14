@@ -3,6 +3,7 @@
   #include <TriaAffin.h>
   #include <QuadAffin.h>
   #include <NodalFunctional2D.h>
+  #include <BoundEdge.h>
 #endif
 #ifdef __3D__
   #include <FESpace3D.h>
@@ -16,6 +17,10 @@
 
 double GetTime();
 int GetMemory();
+
+void SwapDoubleArray(double *doublearray, int length);
+void SwapIntArray(int *intarray, int length);
+
 
 #ifdef __2D__
 // ====================================================================
@@ -32,6 +37,12 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
                 double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
+
+// determine L2-error, divergence error and H1 error, 2D
+void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+                   double *Weights, double hK, 
+                   double **Der, double **Exact,
+                   double **coeffs, double *LocError);
 
 // determine L1 error, 2D
 void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
@@ -55,6 +66,22 @@ void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 (int N_Points, double *X, double *Y, double *AbsDetjk, 
  double *Weights, double hK, double **Der, double **Exact,
  double **coeffs, double *LocError);
+
+// determine errors to interpolant
+// paper with Julia Novo
+ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk, 
+                 double *Weights, double hK, double **Der, double **Exact,
+                 double **coeffs, double *LocError);
+     
+ // determine L2, H1 and SDFEM error for NSE
+void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk, 
+                 double *Weights, double hK, double **Der, double **Exact,
+                 double **coeffs, double *LocError);
+
+// determine L2, H1 and pressure part of SUPG error for Oseen
+void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk, 
+                 double *Weights, double hK, double **Der, double **Exact,
+                 double **coeffs, double *LocError);
 
 // determine deformation tensor error
 void DeformationTensorError(int N_Points, double *X, double *Y, double *AbsDetjk, 
@@ -84,7 +111,19 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk,
            double *Weights, double hK, 
            double **Der, double **Exact,
            double **coeffs, double *LocError);
+
+void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
+         double *AbsDetjk, double *Weights, double hK, 
+         double **Der, double **Exact,
+         double **coeffs, double *LocError);
+         
+void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *AbsDetjk,
+           double *Weights, double hK,
+           double **Der, double **Exact,
+           double **coeffs, double *LocError);
 #endif
+
+double graddiv_parameterOseen(double hK, double nu, double b1, double b2);
 
 #ifdef __3D__
 void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1, 
@@ -105,6 +144,12 @@ void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
                 double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
+
+// compute L2 error, L2 error of divergence, and H1 error for vector valued
+// basis functions (Raviart-Thomas or Brezzi-Douglas-Marini)
+void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
+                   double *AbsDetjk, double *Weights, double hK, double **Der,
+                   double **Exact, double **coeffs, double *LocError);
 
 // determine L1 error
 void L1Error(int N_Points, double *X, double *Y,  double *Z, double *AbsDetjk, 
@@ -138,6 +183,10 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
                       double *Weights, double hK, 
                       double **Der, double **Exact,
                       double **coeffs, double *LocError);
+
+void Q_criterion(TCollection *Coll,
+                 TFEFunction3D *velocity1, TFEFunction3D *velocity2,
+                 TFEFunction3D *velocity3, double *Qcrit);
 #endif
 
 // ====================================================================
@@ -211,7 +260,10 @@ void ExactNull(double x, double y, double z, double *values);
 void ExactNull(double x, double y, double *values);
 int ComputeNewTimeStep(double err); 
 void BoundConditionNoBoundCondition(int BdComp, double t, BoundCond &cond);
+void BoundConditionNoBoundCondition(double x, double y, double z, BoundCond &cond);
 void BoundaryValueNoBoundaryValue(int BdComp, double Param, double &value);
+void BoundaryValueHomogenous(int BdComp, double Param, double &value);
+void BoundaryValueHomogenous(double x, double y, double z, double &value);
 void BoundConditionVMM(int BdComp, double t, BoundCond &cond);
 void BoundConditionNSE(int BdComp, double t, BoundCond &cond);
 void BoundaryConditionPressSep(int i, double t, BoundCond &cond);
@@ -224,6 +276,10 @@ void BoundCondition_FEM_FCT(int i, double t, BoundCond &cond);
 void BoundValue_FEM_FCT(int BdComp, double Param, double &value);
 void BoundCondition_FEM_FCT(double x, double y, double z, BoundCond &cond);
 void BoundValue_FEM_FCT(double x, double y, double z, double &value);
+void BoundConditionAuxProblem(int i, double t, BoundCond &cond);
+void BoundValueAuxProblem(int BdComp, double Param, double &value);
+void ho_BoundCondition(int i, double t, BoundCond &cond);
+void ho_BoundValue(int BdComp, double Param, double &value);
 
 void SetPolynomialDegree();
 void CheckMaximumPrinciple(TSquareMatrix *A, double *sol, int N_Active,
@@ -231,6 +287,8 @@ void CheckMaximumPrinciple(TSquareMatrix *A, double *sol, int N_Active,
 void SaveData(char *name, int N_Array, double **sol, int *N_Unknowns);
 void ReadData(char *name, int N_Array, double **sol, int *N_Unknowns);
 
+void SaveData(std::string basename, double *sol, int nDOF);
+void ReadData(std::string filename, double *sol, int nDOF);
 /******************************************************************************/
 //
 // sets the nodes with global dof neum_to_diri to Dirichlet nodes 

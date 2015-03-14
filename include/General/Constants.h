@@ -78,7 +78,8 @@ enum JointType {Joint, JointEqN, MortarBaseJoint, MortarJoint,
                 IsoJointEqN, IsoBoundEdge, IsoBoundFace,
                 Joint_2to1,
                 InterfaceJoint3D, IsoInterfaceJoint3D,
-                SubDomainJoint, SubDomainHaloJoint, InnerEdge, IsoEdge3D, BDEdge3D};
+                SubDomainJoint, SubDomainHaloJoint, InnerInterfaceJoint,
+                InnerEdge, IsoEdge3D, BDEdge3D};
 
 typedef void DoubleFunct1D(double, double *);
 typedef void DoubleFunct2D(double, double, double *);
@@ -162,6 +163,12 @@ typedef void ParDefectProc(TSquareMatrix **, TMatrix **, TParVectorNSE3D  *, TPa
 
 typedef int TypeBoundSwitchFunct2D(int, double );
 
+class TFEFunction2D;
+class TFEVectFunct2D;
+typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **, 
+                                     double *, int *);
+
+
 #define GALERKIN         1
 #define SDFEM            2
 #define SUPG             2
@@ -176,13 +183,18 @@ typedef int TypeBoundSwitchFunct2D(int, double );
 #define VMS_RFB_EXPL     11
 #define VMS_PROJECTION_SD     12
 #define VMS_RFB_EXPL_COUPLED     13
+#define LERAY_ALPHA_EXPL   16
+#define LERAY_ALPHA_IMPL   17
 #define NSE_RFB          21
 #define SDFEM_DIVDIV     5
 #define LOCAL_PROJECTION 14
+#define LOCAL_PROJECTION_2_LEVEL 15
 #define CIP              4
 #define DG               5
-#define GLS              100
+#define GLS              6
 #define FD               0
+#define ENO_3           13
+#define WENO_5          14
 
 #define OSEEN_PROBLEM    13
 
@@ -215,7 +227,7 @@ typedef int TypeBoundSwitchFunct2D(int, double );
 #define FEM_FCT          50
 #define FEM_FCT_LIN      51
 #define FEM_TVD          52
-#define GENERAL_SOLD    100 
+#define GENERAL_SOLD    200 
  
 #define SD_POWER_H  1.0
 #define SD_FACTOR_H 1.0
@@ -242,6 +254,7 @@ typedef int TypeBoundSwitchFunct2D(int, double );
 #define UREA_BWE_FDM_UPWIND    1
 #define UREA_FEM_FCT           2
 
+#define PB_RKV_ENO             4
 
 #define ABS(i)        (((i)<0) ? (-(i)) : (i))
 
@@ -261,7 +274,7 @@ typedef int TypeBoundSwitchFunct2D(int, double );
 #endif
 
 #define POW2(i)       (1<<(i))
-#define POW(a,b)      ((b==1)?(a):((b==2)?(a*a):((b==0)?(1):(pow(a,b)))))
+#define POW(a,b)      ((b==1)?(a):((b==2)?((a)*(a)):((b==0)?(1):(pow(a,b)))))
 #define ABSDIFF(a,b)  (fabs((a)-(b)))
 
 #define SIGN(a)       ((a>0)?(1):((a<0)?(-1):(0)))
@@ -272,6 +285,12 @@ int GetMemory();
 #define AMG_SOLVE 0
 #define GMG 1
 #define DIRECT 2
+
+// maybe we should define more types here (like CD, TCD, TNSE, TSTOKES,...)
+#define NSE    0
+#define STOKES 1
+#define OSEEN  2
+
 
 #define MAXN_LEVELS 100
 

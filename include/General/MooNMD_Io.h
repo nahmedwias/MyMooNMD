@@ -27,9 +27,9 @@ void OpenFiles();
 void CloseFiles();
 
 #define OutPut(x) {OutFile << x; cout << x;}
-#define Error(x) {LogFile << x; cerr << x;}
+#define ErrMsg(x) { cerr <<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl; OutFile<<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl;}
+#define Error(x) {ErrMsg(x)}
 
 extern std::ofstream OutFile;
-extern std::ofstream LogFile;
 
 #endif

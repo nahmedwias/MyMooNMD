@@ -2,18 +2,16 @@
 #include <MooNMD_Io.h>
 
 std::ofstream OutFile;
-std::ofstream LogFile;
 
 void OpenFiles()
 {
   OutFile.open(TDatabase::ParamDB->OUTFILE);
-  LogFile.open(TDatabase::ParamDB->LOGFILE);
+  OutFile.setf(std::ios::scientific);
 }
 
 void CloseFiles()
 {
   OutFile.close();
-  LogFile.close();
 }
 
 
