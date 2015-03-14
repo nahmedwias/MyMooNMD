@@ -337,7 +337,7 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
-  boolean OnBoundary;
+  bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
   double FEValuesX[MaxN_BaseFunctions2D];
@@ -740,11 +740,11 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   {
     cell  = Coll->GetCell(i);
     N_Edges = cell->GetN_Edges();
-    OnBoundary = FALSE;
+    OnBoundary = false;
     for(j=0;j<N_Edges;j++)
     {
       if( !(cell->GetJoint(j)->InnerJoint()) )
-        OnBoundary = TRUE;
+        OnBoundary = true;
     } // endfor j
 
     if(OnBoundary)
@@ -993,7 +993,7 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
-  boolean OnBoundary;
+  bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
   double FEValuesX[MaxN_BaseFunctions2D];
@@ -1417,11 +1417,11 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   {
     cell = Coll->GetCell(i);
     N_Edges = cell->GetN_Edges();
-    OnBoundary = FALSE;
+    OnBoundary = false;
     for(j=0;j<N_Edges;j++)
     {
       if( !(cell->GetJoint(j)->InnerJoint()) )
-        OnBoundary = TRUE;
+        OnBoundary = true;
     } // endfor j
 
     if(OnBoundary)
@@ -1691,7 +1691,7 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
   TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
-  boolean OnBoundary;
+  bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
   double FEValuesX[MaxN_BaseFunctions2D];
@@ -2010,12 +2010,12 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
   {
     cell  = Coll->GetCell(i);
     N_Edges = cell->GetN_Edges();
-    OnBoundary = FALSE;
+    OnBoundary = false;
     for(j=0;j<N_Edges;j++)
     {
       if( !(cell->GetJoint(j)->InnerJoint()) 
          || (cell->GetJoint(j)->GetType() == IsoInterfaceJoint) )
-        OnBoundary = TRUE;
+        OnBoundary = true;
     } // endfor j
 
     if(OnBoundary)
@@ -2206,7 +2206,7 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
   TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
-  boolean OnBoundary;
+  bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
   double FEValuesX[MaxN_BaseFunctions2D];
@@ -2522,13 +2522,13 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
   {
     cell  = Coll->GetCell(i);
     N_Edges = cell->GetN_Edges();
-    OnBoundary = FALSE;
+    OnBoundary = false;
     for(j=0;j<N_Edges;j++)
     {
       if( !(cell->GetJoint(j)->InnerJoint()) 
         || (cell->GetJoint(j)->GetType() == IsoInterfaceJoint) 
         || (cell->GetJoint(j)->GetType() == InterfaceJoint) )
-        OnBoundary = TRUE;
+        OnBoundary = true;
     } // endfor j
 
     if(OnBoundary)
@@ -2719,7 +2719,7 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
-  boolean OnBoundary;
+  bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
   double FEValuesX[MaxN_BaseFunctions2D];
@@ -3044,12 +3044,12 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   {
     cell = Coll->GetCell(i);
     N_Edges = cell->GetN_Edges();
-    OnBoundary = FALSE;
+    OnBoundary = false;
     for(j=0;j<N_Edges;j++)
     {
       if( !(cell->GetJoint(j)->InnerJoint()) 
          || (cell->GetJoint(j)->GetType() == IsoInterfaceJoint) )
-        OnBoundary = TRUE;
+        OnBoundary = true;
     } // endfor j
 
     if(OnBoundary)
@@ -3418,7 +3418,7 @@ double Volume(TFESpace2D *FESpace)
   QuadFormula2D QuadFormula;
   TQuadFormula2D *qf2;
   int polydegree;
-  boolean IsIsoparametric;
+  bool IsIsoparametric;
   TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
@@ -3434,7 +3434,7 @@ double Volume(TFESpace2D *FESpace)
     RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FEId);
     N_Edges = cell->GetN_Edges(); 
 
-    IsIsoparametric = FALSE;
+    IsIsoparametric = false;
     if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
     {
       for(j=0;j<N_Edges;j++)
@@ -3445,17 +3445,17 @@ double Volume(TFESpace2D *FESpace)
         {
           bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == InterfaceJoint)
         {
           bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
-            IsIsoparametric = TRUE;
+            IsIsoparametric = true;
         }
         if(jointtype == IsoInterfaceJoint ||
            jointtype == IsoBoundEdge)
-          IsIsoparametric = TRUE;
+          IsIsoparametric = true;
       }
     } // endif 
 

@@ -364,6 +364,13 @@ void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
   {
     BaseFunct=BaseFuncts[i];
     N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
+    int BaseVectDim = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetBaseVectDim();
+    if(BaseVectDim != 1)
+    {
+      ErrMsg("HexaIsoparametric for vector valued functions not " <<
+             "implemented. (Piola transform)");
+      exit(0);
+    }
       
     refvaluesD000=TFEDatabase3D::GetRefElementValues
                         (BaseFunct, QuadFormula, D000);

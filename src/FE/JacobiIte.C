@@ -93,6 +93,7 @@ int TJacobiIte::Iterate (TSquareMatrix **sqmat,
   ARowPtr = sqmat[0]->GetRowPtr();
   AKCol = sqmat[0]->GetKCol();
   AEntries = sqmat[0]->GetEntries();
+  double om = TDatabase::ParamDB->SC_SOR_OMEGA;
 
   for (i=0; i<N_DOF;i++)
   {
@@ -101,7 +102,7 @@ int TJacobiIte::Iterate (TSquareMatrix **sqmat,
     for (k=j;k<l;k++)
       if (AKCol[k]==i)          // diagonal entry
       {
-        sol[i] = rhs[i]/AEntries[k];
+        sol[i] = om*rhs[i]/AEntries[k];
         break;
       }
   }

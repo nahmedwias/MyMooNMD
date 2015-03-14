@@ -181,6 +181,14 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
+  
+  int BaseVectDim = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetBaseVectDim();
+  if(BaseVectDim != 1)
+  {
+    ErrMsg("HexaIsoparametric for vector valued functions not " <<
+           "implemented. (Piola transform)");
+    exit(0);
+  }
  
   refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
   if(refvaluesD000==NULL)
@@ -479,9 +487,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD000==NULL)
     {
       origvaluesD000 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD000[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD000[j] = aux+j*N_Functs;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D000, origvaluesD000);
     }
       
@@ -498,9 +506,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD100==NULL)
     {
       origvaluesD100 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD100[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD100[j] = aux+j*N_Functs;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D100, origvaluesD100);
     }
       
@@ -509,9 +517,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD010==NULL)
     {
       origvaluesD010 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD010[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD010[j] = aux+j*N_Functs;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D010, origvaluesD010);
     }
       
@@ -520,9 +528,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD001==NULL)
     {
       origvaluesD001 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD001[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD001[j] = aux+j*N_Functs;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D001, origvaluesD001);
     }
   }
@@ -536,9 +544,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD200==NULL)
             {
               origvaluesD200 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD200[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD200[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D200, origvaluesD200);
             }
           
@@ -547,9 +555,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD110==NULL)
             {
               origvaluesD110 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD110[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD110[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D110, origvaluesD110);
             }
           
@@ -558,9 +566,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD101==NULL)
             {
               origvaluesD101 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD101[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD101[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D101, origvaluesD101);
             }
           
@@ -569,9 +577,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD011==NULL)
             {
               origvaluesD011 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD011[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD011[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D011, origvaluesD011);
             }
           
@@ -580,9 +588,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD020==NULL)
             {
               origvaluesD020 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD020[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD020[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D020, origvaluesD020);
             }
           
@@ -591,9 +599,9 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
           if(origvaluesD002==NULL)
             {
               origvaluesD002 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+              aux = new double [MaxN_QuadPoints_3D*N_Functs];
               for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD002[j] = aux+j*MaxN_BaseFunctions3D;
+                origvaluesD002[j] = aux+j*N_Functs;
               TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D002, origvaluesD002);
             } // endfor Needs2ndDer[i]
         } // endfor i
@@ -742,12 +750,19 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 void THexaTrilinear::GetOrigValues(double xi, double eta, double zeta,
                                int N_BaseFunct,
                                double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                               double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                               double *uorig, double *uxorig, double *uyorig, double *uzorig, 
+                               int _BaseVectDim)
 {
   int i;
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
+  
+  if(_BaseVectDim != 1)
+  {
+    ErrMsg("mixed finite elements with trilinear reference transformation not available");
+    exit(0);
+  }
   
   // D000
   for(i=0;i<N_BaseFunct;i++)
@@ -1011,3 +1026,11 @@ void THexaTrilinear::GetTangentVectors(int j, double p1, double p2,
       return;
   }
 } // end THexaTrilinear::GetTangentVectors
+
+
+void THexaTrilinear::PiolaMapOrigFromRef(int N_Functs, double *refD000, 
+                                         double *origD000)
+{
+  ErrMsg("Piola Map for HexaTrilinear reference map not yet implemented");
+  exit(1);
+}

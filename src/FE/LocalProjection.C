@@ -17,9 +17,10 @@
 #else  
   #include <FEDatabase3D.h>
   #include <FEFunction3D.h>
-  #include <NodalFunctional3D.h> 
+  #include <NodalFunctional3D.h>
 #endif
 
+#include <ConvDiff.h>
 #include <LinAlg.h>
 
 #include <string.h>
@@ -374,7 +375,7 @@ void MatVect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x, double *y)
 }
 
 // stabilisation of full gradient (velocity or pressure)
-void UltraLocalProjection(void* A, boolean ForPressure)
+void UltraLocalProjection(void* A, bool ForPressure)
 {
   int i,j,k,l,m,n;
   int N_Cells;
@@ -390,7 +391,7 @@ void UltraLocalProjection(void* A, boolean ForPressure)
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -659,7 +660,7 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -876,7 +877,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -1129,7 +1130,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -1404,7 +1405,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -1982,7 +1983,7 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -2201,7 +2202,7 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -2429,7 +2430,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -2656,6 +2657,1069 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
 } // UltraLocalErrorPWConst
 
 
+//**************************************************************
+//  UltraLocalProjectionStreamlinePLaplacian
+//  ultra LPS for scalar equation
+//  projection of streamline derivative
+//  p-Laplacian term can be added
+//**************************************************************
+
+void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A, 
+                TFEFunction2D *uh,
+                CoeffFct2D *Coeff)
+{
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *Coll;
+  TFESpace2D *fespace;
+  FE2D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE2D *CurrentElement, *CoarseElement;
+  TBaseFunct2D *BF, *CoarseBF;
+  BaseFunct2D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *weights;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double Gsave[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double H[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double P[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double rhs_l2_proj[MaxN_BaseFunctions2D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **ChildValues, *ChildValue;
+  double **PCValues;
+  double *PCValue;
+  double w, val, valx, valy;
+  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double s, loc_proj_L2;
+  int i1, i2;
+  double hK;
+  int ActiveBound, dof;
+  int p, end, ij, N_Edges;
+  int *RowPtr, *KCol;
+  double *Entries;
+  double *Values, Values1, Values2;
+  double *coeffs, *params, sx, sy, crosswind_uh[MaxN_QuadPoints_2D], loc_proj;
+  double BValue[MaxN_BaseFunctions2D];
+  int OrderDiff;
+  double lpcoeff, lpexponent, stab_coeff, norm_b, lpcoeff_crosswind, lpexponent_crosswind;
+  double vall[3];
+
+  if (TDatabase::ParamDB->SC_VERBOSE>1)
+    OutPut("LPS streamline" << endl);
+
+  coeffs = new double[20];
+  params = new double[10];
+  memset(params, 0, 10 * SizeOfDouble);
+
+  lpcoeff = TDatabase::ParamDB->LP_STREAMLINE_COEFF;
+  lpexponent = TDatabase::ParamDB->LP_STREAMLINE_EXPONENT;
+  OrderDiff = TDatabase::ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE;
+  lpcoeff_crosswind = TDatabase::ParamDB->LP_CROSSWIND_COEFF;
+  lpexponent_crosswind = TDatabase::ParamDB->LP_CROSSWIND_EXPONENT;
+  
+  // get fespace and matrices
+  fespace = A->GetFESpace();
+  ActiveBound = fespace->GetActiveBound();
+  RowPtr = A->GetRowPtr();
+  KCol = A->GetKCol();
+  Entries = A->GetEntries();
+
+  // get values of fe function if available
+  if (uh != NULL)
+  {
+      Values = uh->GetValues();     
+  }
+  else
+  {
+      if (TDatabase::ParamDB->LP_CROSSWIND)
+      {
+    OutPut("for crosswind LPS the current finite element function has to be given to the routine"
+     << endl);
+    exit(4711);
+      }
+  }
+
+  // get collection
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  // get arrays for dofs  
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+  
+  // loop over the cells
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    // number of edges
+    N_Edges = cell->GetN_Edges();
+    // get diameter of the cell
+    switch (TDatabase::ParamDB->CELL_MEASURE)
+    {
+  case 0: // diameter
+      hK = cell->GetDiameter();
+      break;
+  case 1: // with reference map
+      hK = cell->GetLengthWithReferenceMap();
+      break;
+  case 2: // shortest edge
+      hK = cell->GetShortestEdge();
+      break;
+  case 3: // measure
+      hK = cell->GetMeasure();
+      hK = pow(hK,1.0/3.0);
+      break;
+  case 4: // mesh cell in convection direction
+            TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+            sx = sy = 0;
+      for (ij=0;ij<N_Edges;ij++)
+      {
+    TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+    sx += TDatabase::ParamDB->INTERNAL_VERTEX_X[ij];
+    TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+    sy += TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij];
+      }
+      if (N_Edges==3)
+    TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+      // center of mesh cell
+      sx /= N_Edges;
+      sy /= N_Edges;
+      hK = cell->GetDiameter(); 
+      // get coefficients in center of mesh cell 
+      Coeff(1, &sx ,&sy, &params, &coeffs);
+      hK = Mesh_size_in_convection_direction(hK, coeffs[1], coeffs[2]); 
+      break;
+  default: // diameter
+      hK = cell->GetDiameter();
+      break;
+    }
+    
+    // get finite element in the cell
+    CurrEleID = fespace->GetFE2D(i, cell);
+    CurrentElement = TFEDatabase2D::GetFE2D(CurrEleID);
+    // get basis functions of the finite element
+    BF = CurrentElement->GetBaseFunct2D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+
+    // compute order of the local coarse space
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // get type of the mesh cell
+    shapetype = cell->GetType();
+
+    // determine finite element of the local coarse space
+    switch(shapetype)
+    {
+      // regularly refined quadrilateral
+      // discontinuous finite elements  
+      case Quadrangle:
+      case Parallelogram:
+      case Rectangle:
+        switch(CoarseOrder)
+        {
+          case 0:
+            UsedElements[0] = C_Q0_2D_Q_M;
+          break;
+
+          case 1:
+            UsedElements[0] = D_P1_2D_Q_M;
+          break;
+
+          case 2:
+            UsedElements[0] = D_P2_2D_Q_M;
+          break;
+
+          case 3:
+            UsedElements[0] = D_P3_2D_Q_M;
+          break;
+
+          case 4:
+            UsedElements[0] = D_P4_2D_Q_M;
+          break;
+
+          default:
+            OutPut("Projection space is defined up to order 4" << endl);
+            exit(-1);
+        } // end switch CoarseOrder
+      break; // end regularly refined quadrilateral
+
+      case Triangle:
+        switch(CoarseOrder)
+        {
+          case 0:
+            UsedElements[0] = C_P0_2D_T_A;
+          break;
+
+          case 1:
+            UsedElements[0] = D_P1_2D_T_A;
+          break;
+
+          case 2:
+            UsedElements[0] = D_P2_2D_T_A;
+          break;
+
+          case 3:
+            UsedElements[0] = D_P3_2D_T_A;
+          break;
+
+          case 4:
+            UsedElements[0] = D_P4_2D_T_A;
+          break;
+
+          default:
+            OutPut("Projection space is defined up to order 4" << endl);
+            exit(-1);
+        }
+      break;
+      default: 
+    OutPut("No coarse finite elements for mesh cell type "
+     << shapetype << " implemented !!!" << endl);
+    exit(4711);
+    } // end switch reftype
+
+    // approx (index 1) and proj (index 0) space
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase2D::GetFE2D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct2D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+    // number of dof in the local coarse space
+    N_CoarseDOF = CoarseBF->GetDimension();
+    // get function values for the basis functions of the coarse space
+    CoarseValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+    // initialize array G, stores mass matrix of coarse space
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    // loop over the quadrature points
+    for(j=0;j<N_Points;j++)
+    {
+      // values of the coarse basis functions in the quad points
+      CoarseValue = CoarseValues[j];
+      // factor for numerical quadrature
+      w = AbsDetjk[j]*weights[j];
+      // loop over the basis functions of the coarse space
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+    // first factor of integrand
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+      // update integral 
+           G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    // degrees of freedom of the fine space 
+    DOF = GlobalNumbers + BeginIndex[i];
+    // this should be the same as CoarseValues ???    
+    //PCValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+    PCValues = CoarseValues;
+    // get derivatives of fe functions of approximation space
+    ChildValuesX = TFEDatabase2D::GetOrigElementValues(BF_ID, D10);
+    ChildValuesY = TFEDatabase2D::GetOrigElementValues(BF_ID, D01);
+    ChildValues  = TFEDatabase2D::GetOrigElementValues(BF_ID, D00);
+    // initialize array H, holds mixed products of coarse basis 
+    // functions and streamline derivatives of fine basis functions
+    memset(H, 0, N_CoarseDOF*N_DOF*SizeOfDouble);
+    // initialize array LocMatrix, holds products of derivatives
+    // of fine basis functions
+    memset(LocMatrix, 0, N_DOF*N_DOF*SizeOfDouble);
+    // loop over the quadrature points
+    for(j=0;j<N_Points;j++)
+    {
+      // get all values in the quad point j 
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      // factor in the integral
+      w = AbsDetjk[j]*weights[j];
+      // values of convection in this quadrature point
+      Coeff(1, &X[j] , &Y[j], &params, &coeffs);
+      // compute streamline derivative
+      for(k=0;k<N_DOF;k++)
+      {
+    BValue[k] = coeffs[1]*ChildValueX[k] + coeffs[2]*ChildValueY[k];
+    //BValue[k] = -coeffs[2]*ChildValueX[k] + coeffs[1]*ChildValueY[k];
+      }
+      // loop over the basis functions of the coarse space
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+  // compute products of coarse basis function and
+  // streamline derivatives of fine basis functions
+        for(l=0;l<N_DOF;l++)
+        {
+          H[k*N_DOF+l      ] += val*BValue[l];
+        } // end for l
+      } // end for kcoeffs[2]
+
+      // fine-fine couplings
+      for(k=0;k<N_DOF;k++)
+      {
+        for(l=0;l<N_DOF;l++)
+        {
+      LocMatrix[k*N_DOF+l] += w*BValue[k]*BValue[l];
+        }
+      }
+    } // end for j
+    // save H for later use
+    memcpy(P, H, N_CoarseDOF*N_DOF*SizeOfDouble);
+     // solve G * X = H, solution X stored on H
+    // the right hand side and the solution are stored column wise
+    // right hand side: a finecoeffs[2] fct. tested with all coarse fcts. 
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, N_DOF, N_DOF);
+
+    // update LocMatrix
+    // proj-proj coupling (coarse-coarse coupling)
+    // l - test function index
+    for(l=0;l<N_DOF;l++)
+    {
+      // m - ansatz function index
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i1=0;i1<N_CoarseDOF;i1++)
+          for(i2=0;i2<N_CoarseDOF;i2++)
+            s += Gsave[i1*N_CoarseDOF+i2] * H[i1*N_DOF+l] * H[i2*N_DOF+m];
+        LocMatrix[l*N_DOF+m] += s;
+      } // endfor m
+    } // endfor l
+
+    // grad-proj coupling (fine-coarse couplings)
+    // l - test function index
+    for(l=0;l<N_DOF;l++)
+    {
+      // m - ansatz function index
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i2=0;i2<N_CoarseDOF;i2++)
+        {
+          s += P[i2*N_DOF+l      ] * H[i2*N_DOF+m      ];
+        }
+        for(i1=0;i1<N_CoarseDOF;i1++)
+        {
+          s += P[i1*N_DOF+m      ] * H[i1*N_DOF+l      ];
+        }
+        LocMatrix[l*N_DOF+m] -= s;
+      } // end for m
+    } // end for l
+    // compute stabilzation coefficient
+    switch(TDatabase::ParamDB->LP_COEFF_TYPE)
+    {
+  case 0:
+      stab_coeff = lpcoeff*pow(hK,lpexponent);
+      break;
+  case 1:
+      // h^2/epsilon
+      stab_coeff = hK*hK/coeffs[0];
+      norm_b = sqrt(coeffs[1]*coeffs[1]+coeffs[2]*coeffs[2]);
+      if (norm_b > 1e-10)
+      {
+    // h/|b|
+    val = hK/norm_b;
+    if (val < stab_coeff)
+        stab_coeff = val;
+      }
+      stab_coeff *= lpcoeff;
+      break;
+  default:
+      stab_coeff = lpcoeff*pow(hK,lpexponent);
+      break;
+    }
+ 
+    // add to global matrix
+    for(l=0;l<N_DOF;l++)
+    {
+      dof = DOF[l];
+      if(dof<ActiveBound)
+      {
+        for(m=0;m<N_DOF;m++)
+        {
+          end = RowPtr[dof+1];
+          for(p=RowPtr[dof];p<end;p++)
+            if(KCol[p] == DOF[m])
+            {
+    // parameter is lpcoeff*pow(hK,lpexponent)
+               Entries[p] += stab_coeff*LocMatrix[l*N_DOF+m];
+              break;
+            }
+        } // endfor m
+      } // endif dof<ActiveBound
+    } // endfor l
+
+    //***************************************************
+    // LPS with SOLD term
+    //***************************************************
+    if (TDatabase::ParamDB->LP_CROSSWIND)
+    {
+  // recover mass matrix of coarse space
+  memcpy(G, Gsave, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+  memset(rhs_l2_proj, 0, N_CoarseDOF*SizeOfDouble);
+  // compute L2 projection of crosswind derivative
+  // this gives just an array (one value for each quad point)
+  // mass matrix of coarse space already computed: G
+  // compute right hand side
+  // loop over the quadrature points
+  for(j=0;j<N_Points;j++)
+  {
+      // get all values in the quad point j 
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      // values of the coarse basis functions in the quad points
+      CoarseValue = CoarseValues[j];
+      // factor for numerical quadrature
+      w = AbsDetjk[j]*weights[j];
+      // compute crosswind derivative in this point
+      // calculate gradient of discrete uh in this quadrature point
+      valx = 0.0;
+      valy = 0.0;
+      for(k=0;k<N_DOF;k++)
+      {
+    l = DOF[k];
+    val = Values[l];
+    valx += ChildValueX[k]*val;
+    valy += ChildValueY[k]*val;
+      }
+      // values of convection in this quadrature point
+      Coeff(1, &X[j] , &Y[j], &params, &coeffs);
+      
+      // calculate crosswind derivative in this quadrature point
+      crosswind_uh[j] = -coeffs[2] * valx + coeffs[1] * valy;
+      //OutPut(crosswind_uh[j] << " ");
+      w *= crosswind_uh[j];
+      // loop over the test functions of the coarse space
+      // right hand side of linear system for local projection
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+    rhs_l2_proj[k] += w*CoarseValue[k];
+      } // end for k
+      //OutPut(rhs_l2_proj[0] << " :: ");
+  } // end for j  
+  // solution is on rhs_l2_proj
+  // these are coefficients wrt to coarse space basis
+  //OutPut("G " << G[0] << " " <<  rhs_l2_proj[0] << endl);
+  SolveLinearSystemLapack(G, rhs_l2_proj, N_CoarseDOF, N_CoarseDOF);
+  //OutPut("G " << G[0] << " " <<  rhs_l2_proj[0] << endl);
+  // recover mass matrix of coarse space
+  memcpy(G, Gsave, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+ 
+  // initialize array H, holds mixed products of coarse basis 
+  // functions and crosswind derivatives of fine basis functions
+  memset(H, 0, N_CoarseDOF*N_DOF*SizeOfDouble);
+  // initialize array LocMatrix, holds products of derivatives
+  // of fine basis functions
+  memset(LocMatrix, 0, N_DOF*N_DOF*SizeOfDouble);
+
+  // loop over the quadrature points
+  // this computes the projections of the crosswind derivatives 
+  // for each basis function of the fine space
+  for(j=0;j<N_Points;j++)
+  {
+      // get all values in the quad point j 
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      // factor in the integral
+      w = AbsDetjk[j]*weights[j];
+      // values of convection in this quadrature point
+      Coeff(1, &X[j] , &Y[j], &params, &coeffs);
+      // compute crosswind derivative
+      for(k=0;k<N_DOF;k++)
+      {
+    BValue[k] = -coeffs[2]*ChildValueX[k] + coeffs[1]*ChildValueY[k];
+        }
+      // loop over the basis functions of the coarse space
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+    val = w*PCValue[k];
+    // compute products of coarse basis function and
+    // crosswind derivatives of fine basis functions
+    for(l=0;l<N_DOF;l++)
+    {
+        H[k*N_DOF+l] += val*BValue[l];
+    } // end for l
+      } // end for k
+  } // end for j
+
+  // solve G * X = H, solution X stored on H
+  // the right hand side and the solution are stored column wise
+  // right hand side: a fine fct. tested with all coarse fcts. 
+  SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, N_DOF, N_DOF);
+
+  // compute L^2 norm of fluctuations 
+  if (TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE >= 200)
+  {
+      loc_proj_L2 = 0.0;
+      for(j=0;j<N_Points;j++)
+      {
+    // get all values in the quad point j 
+    PCValue = PCValues[j];
+    ChildValueX = ChildValuesX[j];
+    ChildValueY = ChildValuesY[j];
+    // factor in the integral
+    w = AbsDetjk[j]*weights[j];
+    // values of convection in this quadrature point
+    Coeff(1, &X[j] , &Y[j], &params, &coeffs);
+    // compute crosswind derivative
+    for(k=0;k<N_DOF;k++)
+    {
+        BValue[k] = -coeffs[2]*ChildValueX[k] + coeffs[1]*ChildValueY[k];
+    }
+    // compute projection of crosswind derivative for basis functions
+    for(k=0;k<N_DOF;k++)
+    {
+        P[k] = 0;
+        for (l=0; l < N_CoarseDOF; l++)
+      P[k] += H[l*N_DOF+k] * PCValue[l];
+    }
+    // calculate projection of crosswind derivative discrete uh in this quadrature point
+    val = 0.0;
+    for(k=0;k<N_CoarseDOF;k++)
+    {
+        val += rhs_l2_proj[k] * PCValue[k]; 
+    }
+    // local projection of crosswind derivative of current solution in this quadrature point
+    // this is the coefficient
+    loc_proj = val - crosswind_uh[j];
+    // update norm
+    loc_proj_L2 += w * loc_proj * loc_proj;
+      } // end for j
+      // L2 norm and scale such that independent of h
+      loc_proj_L2 = sqrt(loc_proj_L2/cell->GetMeasure());
+  }
+
+  // loop over the quadrature points
+  // this computes the LPS term
+  // for each basis function of the fine space
+  for(j=0;j<N_Points;j++)
+  {
+      // get all values in the quad point j 
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      // factor in the integral
+      w = AbsDetjk[j]*weights[j];
+      // values of convection in this quadrature point
+      Coeff(1, &X[j] , &Y[j], &params, &coeffs);
+      // compute crosswind derivative
+      for(k=0;k<N_DOF;k++)
+      {
+    BValue[k] = -coeffs[2]*ChildValueX[k] + coeffs[1]*ChildValueY[k];
+      }
+      // compute projection of crosswind derivative for basis functions
+      for(k=0;k<N_DOF;k++)
+      {
+    P[k] = 0;
+    for (l=0; l < N_CoarseDOF; l++)
+        P[k] += H[l*N_DOF+k] * PCValue[l];
+      }
+      // calculate projection of crosswind derivative discrete uh in this quadrature point
+      if (TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE < 100)
+      {
+    val = 0.0;
+    for(k=0;k<N_CoarseDOF;k++)
+    {
+        val += rhs_l2_proj[k] * PCValue[k]; 
+    }
+    // local projection of crosswind derivative of current solution in this quadrature point
+    // this is the coefficient
+    loc_proj = fabs(val - crosswind_uh[j]);
+      }
+      // linear case
+      if ((TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE >= 100) && (TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE <200))
+    loc_proj = 1.0;
+      // local average
+      if (TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE >= 200)
+      {
+    loc_proj = loc_proj_L2;
+      }
+
+      // update factor in integral
+      w *= loc_proj;
+      // update local matrix
+      for(k=0;k<N_DOF;k++)
+      {
+    for(l=0;l<N_DOF;l++)
+    {
+        // fine-fine
+        val = BValue[k]*BValue[l];
+        // coarse-fine
+        val -= BValue[k]*P[l];
+        val -= BValue[l]*P[k];
+        // coarse-coarse
+        val += P[l]*P[k];       
+        LocMatrix[k*N_DOF+l] += w*val;
+    }
+      }
+  } // end for j
+
+
+  // compute stabilzation coefficient
+  switch(TDatabase::ParamDB->LP_CROSSWIND_COEFF_TYPE)
+  {
+      case 0:
+      case 100:
+      case 200:
+    stab_coeff = lpcoeff_crosswind*pow(hK,lpexponent_crosswind);
+    break;
+      case 1:
+      case 101:
+      case 201:
+    // norm squared of convection
+    norm_b = coeffs[1]*coeffs[1]+coeffs[2]*coeffs[2];
+    if (norm_b > 1e-20)
+    {
+        // h/|b|
+        stab_coeff = lpcoeff_crosswind*hK/norm_b;
+    }
+    else
+        stab_coeff = 0.0;
+    break;
+      default:
+    stab_coeff = lpcoeff_crosswind*pow(hK,lpexponent_crosswind);
+    break;
+  }
+    // add to global matrix
+    for(l=0;l<N_DOF;l++)
+    {
+      dof = DOF[l];
+      if(dof<ActiveBound)
+      {
+        for(m=0;m<N_DOF;m++)
+        {
+          end = RowPtr[dof+1];
+          for(p=RowPtr[dof];p<end;p++)
+            if(KCol[p] == DOF[m])
+            {
+    // parameter is lpcoeff*pow(hK,lpexponent)
+               Entries[p] += stab_coeff*LocMatrix[l*N_DOF+m];
+              break;
+            }
+        } // endfor m
+      } // endif dof<ActiveBound
+    } // endfor l
+    } // end LP_CROSSWIND
+
+  } // endfor i
+  delete params;
+  delete coeffs;
+ if (TDatabase::ParamDB->SC_VERBOSE>1)
+    OutPut("LPS streamline done" << endl);
+} // UltraLocalProjectionStreamlinePLaplacian
+
+
+//**************************************************************
+// computes the local projection to Q0 on a coarse grid
+// uh      -  current fe function
+// uh_proj -  fe function for projection, pw constant
+//**************************************************************
+
+void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
+         TFEFunction2D *uh_proj,
+               CoeffFct2D *Coeff,
+               int convection_flag)
+{
+  int i, j, iq, index;
+  int N_Cells, N_Edges;
+  int *GlobalNumbers_fine, *BeginIndex_fine, *GlobalNumbers_coarse, *BeginIndex_coarse, *DOF;
+  double sx, sy, b1, b2, area, detJK, weight_det, value;
+  double *Values_fine, *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
+  double gauss2_x[4]=
+  {
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746,
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746
+  };
+  double gauss2_y[4]=
+  {
+    -0.57735026918962576450914878050195746,
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746
+  };
+  TCollection *Coll;
+  TFESpace2D *fespace_fine, *fespace_coarse;
+  TBaseCell *cell, *parent_cell, *child_cell;
+
+  OutPut("compute local projection to Q0 on coarse grid"<<endl);
+  coeffs = new double[20];
+  params = new double[10];
+  memset(params, 0, 10 * SizeOfDouble);
+
+  fespace_fine = uh->GetFESpace2D();
+  fespace_coarse = uh_proj->GetFESpace2D();
+  // get collection, same for fine and coarse fe space
+  Coll = fespace_fine->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+  
+   // get arrays for dofs  
+  BeginIndex_fine = fespace_fine->GetBeginIndex();
+  GlobalNumbers_fine = fespace_fine->GetGlobalNumbers();
+ 
+  // get values of fe function 
+  Values_fine = uh->GetValues();     
+  Values_coarse = uh_proj->GetValues();     
+  // pw constant space
+  memset(Values_coarse, 0.0, N_Cells * SizeOfDouble);
+  
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  // loop over the cells
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);   
+    // number of edges
+    N_Edges = cell->GetN_Edges();
+    // get barycenter
+    sx = sy = 0;
+    for (j=0;j<N_Edges;j++)
+    {
+      x[j] = cell->GetVertex(j)->GetX(); 
+      sx += x[j];
+      y[j] = cell->GetVertex(j)->GetY();
+      sy += y[j];
+    }
+    sx /= N_Edges;
+    sy /= N_Edges;
+    // area of parallelogramm with vector product
+    area = fabs((x[1]-x[0])*(y[3]-y[0]) - (x[3]-x[0])*(y[1]-y[0]));
+    // functional determinant
+    detJK = area/4.0;
+    // get coefficients in center of mesh cell 
+    Coeff(1, &sx ,&sy, &params, &coeffs);
+    // take the desired direction
+    switch(convection_flag)
+    {
+      case 0:
+      // convection
+        b1 = coeffs[1];
+        b2 = coeffs[2];
+        break;
+      case 1:
+      // normalized crosswind convection
+        b2 = sqrt(coeffs[1]*coeffs[1] + coeffs[2] * coeffs[2]);
+  b1 = -coeffs[2]/b2;
+  b2 = coeffs[1]/b2;
+  break;
+    }
+    // compute integral of b times grad_uh
+    // loop over the quadrature points
+     for (iq = 0;iq < 4; iq++)
+    {
+       sx = (x[1]-x[0])* gauss2_x[iq] + (x[3]-x[0])*gauss2_y[iq] + x[1] + x[3];
+       sx /= 2.0;
+       sy = (y[1]-y[0])* gauss2_x[iq] + (y[3]-y[0])*gauss2_y[iq] + y[1] + y[3];
+       sy /= 2.0;
+       uh->FindGradientLocal(cell,i,sx,sy,val);
+       value = b1 * val[1] + b2 * val[2];
+       weight_det = detJK;
+       Values_coarse[i] += value * weight_det;
+    }   
+  }
+   
+  // compute the mean values on the macros
+    // loop over the cells
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    // cell not yet child of a macro cell
+    if (cell->GetClipBoard()>=0)
+    {
+      parent_cell = cell->GetParent();
+      if (parent_cell == NULL)
+      {
+  OutPut("no coarse grid to project !!!" << endl);
+        delete params;
+        delete coeffs;
+  return;
+      }
+      area = 0.0;
+      value = 0.0;
+      for (j=0;j<4;j++)
+      {
+  child_cell = parent_cell->GetChild(j);
+  // get index of pw constant space
+  index = child_cell->GetClipBoard();
+  // integral of projected quantity
+  value += Values_coarse[index];
+  // area of macro cell
+  area += child_cell->GetMeasure();
+      }
+      value /= area;
+      for (j=0;j<4;j++)
+      {
+  child_cell = parent_cell->GetChild(j);
+  // get index of pw constant space
+  index = child_cell->GetClipBoard();
+        // projection
+  Values_coarse[index] = value;
+  child_cell->SetClipBoard(-1);
+      }
+    }
+  }
+
+  delete[] params;
+  delete[] coeffs;
+}
+
+
+void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
+            TFEFunction2D *uh,
+            TFEFunction2D *uh_proj,
+            CoeffFct2D *Coeff,
+            double *rhs,
+                        int convection_flag) 
+{
+  int i, j, k, iq, N_Cells, N_Edges, N_Unknowns, index, dof_index;
+  int *global_numbers, *begin_index, *dof;
+  double  sx, sy, b1, b2, area, detJK, weight_det, value, value1, value_proj, hK;
+  double *Values_fine, *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
+  double *sol, *sol_copy, *proj_test, area_coarse, norm_b, stab_coeff_cw;
+  double lpcoeff_crosswind = TDatabase::ParamDB->LP_CROSSWIND_COEFF;
+  double gauss2_x[4]=
+  {
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746,
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746
+  };
+  double gauss2_y[4]=
+  {
+    -0.57735026918962576450914878050195746,
+    -0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746,
+    0.57735026918962576450914878050195746
+  };
+  TCollection *coll_coarse, *coll;
+  TBaseCell *cell, *child_cell;
+  TFESpace2D *fespace;
+ 
+   OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
+  // get coarse grid
+  coll_coarse=Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR-1);
+  if (coll_coarse == NULL)
+  {
+    OutPut("No coarse grid !!!" << endl);
+    return;
+  }
+   coeffs = new double[20];
+  params = new double[10];
+  memset(params, 0, 10 * SizeOfDouble);
+
+  // get fine grid
+  coll = Domain->GetCollection(It_EQ, mg_level+TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR);
+  N_Cells = coll->GetN_Cells();
+  // initialise ClipBoard for fine grid
+  for(i=0;i<N_Cells;i++)
+    coll->GetCell(i)->SetClipBoard(i);
+  
+  // fespace on the fine grid
+  fespace = uh->GetFESpace2D();
+  // array with global numbers of d.o.f.
+  global_numbers = fespace->GetGlobalNumbers();
+  // array which points to the beginning of the global numbers in
+  // global_numbers for each mesh cell
+  begin_index = fespace->GetBeginIndex();
+  // copy solution
+  N_Unknowns = uh->GetLength();
+  sol = uh->GetValues();
+  sol_copy = new double[N_Unknowns];
+  memcpy(sol_copy,sol, N_Unknowns*SizeOfDouble);
+
+  proj_test = new double[N_Unknowns];
+  // the already computed projections of the current solution 
+  Values_coarse = uh_proj->GetValues();  
+  // loop over coarse grid
+  N_Cells = coll_coarse->GetN_Cells();
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = coll_coarse->GetCell(i);  
+    area_coarse = cell->GetMeasure();
+    hK = cell->GetDiameter();
+    memset(proj_test,0,N_Unknowns*SizeOfDouble);
+    for (j=0;j<4;j++)
+    {
+        // get child cell
+  child_cell = cell->GetChild(j);
+  // get degrees of freedom in the cell on the fine grid
+  index = child_cell->GetClipBoard();
+  dof = global_numbers+begin_index[index];
+        // number of edges
+        N_Edges = child_cell->GetN_Edges();
+  // for each degree of freedom
+       for (k=0;k<N_Edges;k++)
+       {
+         x[k] = child_cell->GetVertex(k)->GetX(); 
+         sx += x[k];
+         y[k] = child_cell->GetVertex(k)->GetY();
+         sy += y[k];
+       }
+       sx /= N_Edges;
+       sy /= N_Edges;
+       // area of parallelogramm with vector product
+       area = fabs((x[1]-x[0])*(y[3]-y[0]) - (x[3]-x[0])*(y[1]-y[0]));
+       // functional determinant
+       detJK = area/4.0;
+       // get coefficients in center of mesh cell 
+       Coeff(1, &sx ,&sy, &params, &coeffs);
+       // take the desired direction
+       switch(convection_flag)
+       {
+         case 0:
+         // convection
+           b1 = coeffs[1];
+           b2 = coeffs[2];
+           break;
+        case 1:
+        // normalized crosswind convection
+           b2 = sqrt(coeffs[1]*coeffs[1] + coeffs[2] * coeffs[2]);
+           b1 = -coeffs[2]/b2;
+     b2 = coeffs[1]/b2;
+     break;
+        }
+        // loop over the local dofs
+  for (k=0;k<N_Edges;k++)
+  {
+    memset(sol,0,N_Unknowns*SizeOfDouble);
+    dof_index = dof[k];
+    sol[dof_index] = 1.0;
+          // compute integral of b times grad_vh
+          // loop over the quadrature points
+          for (iq = 0;iq < 4; iq++)
+          {
+             sx = (x[1]-x[0])* gauss2_x[iq] + (x[3]-x[0])*gauss2_y[iq] + x[1] + x[3];
+             sx /= 2.0;
+             sy = (y[1]-y[0])* gauss2_x[iq] + (y[3]-y[0])*gauss2_y[iq] + y[1] + y[3];
+             sy /= 2.0;
+             uh->FindGradientLocal(child_cell,index,sx,sy,val);
+             value = b1 * val[1] + b2 * val[2];
+             weight_det = detJK;
+             proj_test[dof_index] += value * weight_det/area_coarse;
+           }   
+           OutPut(dof_index << " " << proj_test[dof_index] << ":");
+  } 
+    } // end j
+    // projection of test function for macro cell i computed
+    // now compute contribution to rhs
+    for (j=0;j<4;j++)
+    {
+        // get child cell
+  child_cell = cell->GetChild(j);
+  // get degrees of freedom in the cell on the fine grid
+  index = child_cell->GetClipBoard();
+  dof = global_numbers+begin_index[index];
+        // number of edges
+        N_Edges = child_cell->GetN_Edges();
+  // for each degree of freedom
+       for (k=0;k<N_Edges;k++)
+       {
+         x[k] = child_cell->GetVertex(k)->GetX(); 
+         sx += x[k];
+         y[k] = child_cell->GetVertex(k)->GetY();
+         sy += y[k];
+       }
+       sx /= N_Edges;
+       sy /= N_Edges;
+       // area of parallelogramm with vector product
+       area = fabs((x[1]-x[0])*(y[3]-y[0]) - (x[3]-x[0])*(y[1]-y[0]));
+       // functional determinant
+       detJK = area/4.0;
+       // get coefficients in center of mesh cell 
+       Coeff(1, &sx ,&sy, &params, &coeffs);
+       // take the desired direction
+       switch(convection_flag)
+       {
+         case 0:
+         // convection
+           b1 = coeffs[1];
+           b2 = coeffs[2];
+           break;
+        case 1:
+        // normalized crosswind convection
+           b2 = sqrt(coeffs[1]*coeffs[1] + coeffs[2] * coeffs[2]);
+           b1 = -coeffs[2]/b2;
+     b2 = coeffs[1]/b2;
+     break;
+        }
+        // value of projection
+  value_proj = Values_coarse[index];
+        // loop over the local dofs
+  for (k=0;k<N_Edges;k++)
+  {
+    dof_index = dof[k];
+          // compute integral of b times grad_vh
+          // loop over the quadrature points
+    value1 = 0;
+          for (iq = 0;iq < 4; iq++)
+          {
+             sx = (x[1]-x[0])* gauss2_x[iq] + (x[3]-x[0])*gauss2_y[iq] + x[1] + x[3];
+             sx /= 2.0;
+             sy = (y[1]-y[0])* gauss2_x[iq] + (y[3]-y[0])*gauss2_y[iq] + y[1] + y[3];
+             sy /= 2.0;
+             uh->FindGradientLocal(child_cell,index,sx,sy,val);
+             value = b1 * val[1] + b2 * val[2] - value_proj;
+       value = fabs(value) * value * proj_test[dof_index];
+             weight_det = detJK;
+             value1 += value * weight_det;
+           }
+           norm_b = sqrt(b1*b1+b2*b2);
+           if (norm_b > 1e-20)
+           {
+           // h/|b|
+             stab_coeff_cw = 2*lpcoeff_crosswind*hK/norm_b;
+           }
+           else
+             stab_coeff_cw = 0.0;
+     
+           rhs[dof_index] += stab_coeff_cw * value1;
+     //OutPut( -hK*value1 << " ");
+  } 
+  //OutPut(endl);
+    } // end j
+   
+  }
+  
+  // recover solution
+  memcpy(sol,sol_copy, N_Unknowns*SizeOfDouble);
+
+  delete[] proj_test;
+  delete[] sol_copy; 
+  delete[] params;
+  delete[] coeffs;
+
+}
+
 // Adaptive post processing basd on Friedhelm Schiweck talk at MAFELAP 09 - Sashi
 void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool DirichletBC)
 {
@@ -2679,7 +3743,7 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
   double *W, maxbubble=-1E8, minbubble=1E8;
 
 
-  bool SecondDer[1] = { FALSE };
+  bool SecondDer[1] = { false };
 
   TFESpace2D *fespace;
   TCollection *coll;
@@ -2833,7 +3897,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   Shapes shapetype;
   TFEFunction2D *uh1, *uh2, *wh1, *wh2;  
   
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -3225,7 +4289,7 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -3486,7 +4550,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
   Shapes shapetype;
-  bool SecondDer[2] = { FALSE, FALSE };
+  bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -3710,6 +4774,1472 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   } // endfor i
 } // AddStreamlineTerm
 
+
+//**************************************************************
+//  UltraLocalProjection
+//  checked: Volker John 08/02/19
+//**************************************************************
+#ifdef __2D__
+void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D *Coeff)
+{
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *coll;
+  TFESpace2D *fespace;
+  FE2D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE2D *CurrentElement, *CoarseElement;
+  TBaseFunct2D *BF, *CoarseBF;
+  BaseFunct2D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *weights;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double Gsave[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double H[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double P[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **PCValues;
+  double *PCValue;
+  double w, val;
+  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double s, sx, sy;
+  int i1, i2, ij, N_Edges;
+  double hK, *coeffs, *params;
+  int ActiveBound, dof;
+  int p, end;
+  int *RowPtr, *KCol;
+  double *Entries;
+  int OrderDiff;
+  double lpcoeff, lpexponent;
+
+  OutPut("LPS full gradient" << endl);
+
+  coeffs = new double[20];
+  params = new double[10];
+  memset(params, 0, 10 * SizeOfDouble);
+
+  if(!(TDatabase::ParamDB->LP_FULL_GRADIENT) && !(ForPressure))
+  {
+    OutPut("Local projection stabilization is implemented only for full gradient!" << endl);
+    exit(-1);
+  }
+
+  if(ForPressure)
+  {
+    lpcoeff = TDatabase::ParamDB->LP_PRESSURE_COEFF;
+    lpexponent = TDatabase::ParamDB->LP_PRESSURE_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE;
+  }
+  else
+  {
+    lpcoeff = TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF;
+    lpexponent = TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE;
+  }
+
+  // get fespace and matrices
+  if(ForPressure)
+  {
+    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure()->GetTestSpace());
+    ActiveBound = -1;
+    RowPtr = ((TMatrix2D *)A)->GetRowPtr();
+    KCol = ((TMatrix2D *)A)->GetKCol();
+    Entries = ((TMatrix2D *)A)->GetEntries();
+    // cout << "for pressure" << endl;
+  }
+  else
+  {
+    fespace = ((TSquareMatrix2D *)A)->GetFESpace();
+    ActiveBound = fespace->GetActiveBound();
+    RowPtr = ((TSquareMatrix2D *)A)->GetRowPtr();
+    KCol = ((TSquareMatrix2D *)A)->GetKCol();
+    Entries = ((TSquareMatrix2D *)A)->GetEntries();
+    // cout << "not for pressure" << endl;
+  }
+  // get collection
+  coll = fespace->GetCollection();
+  N_Cells = coll->GetN_Cells();
+  // get arrays for dofs
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    coll->GetCell(i)->SetClipBoard(i);
+  // loop over the cells
+  for(i=0;i<N_Cells;i++)
+  {
+      // get cell
+    cell = coll->GetCell(i);
+    // get diameter of the cell
+    switch (TDatabase::ParamDB->CELL_MEASURE)
+    {
+  case 0: // diameter
+      hK = cell->GetDiameter();
+      break;
+  case 1: // with reference map
+      hK = cell->GetLengthWithReferenceMap();
+      break;
+  case 2: // shortest edge
+      hK = cell->GetShortestEdge();
+      break;
+  case 3: // measure
+      hK = cell->GetMeasure();
+      hK = pow(hK,1.0/3.0);
+      break;
+  case 4: // mesh cell in convection direction
+      N_Edges = cell->GetN_Edges();
+      sx = sy = 0;
+      for (ij=0;ij<N_Edges;ij++)
+      {
+    TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+    sx += TDatabase::ParamDB->INTERNAL_VERTEX_X[ij];
+    TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+    sy += TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij];
+      }
+      if (N_Edges==3)
+    TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+      // center of mesh cell
+      sx /= N_Edges;
+      sy /= N_Edges;
+      hK = cell->GetDiameter(); 
+      // get coefficients in center of mesh cell 
+      Coeff(1, &sx ,&sy, &params, &coeffs);
+      hK = Mesh_size_in_convection_direction(hK, coeffs[1], coeffs[2]); 
+      break;
+  default: // diameter
+      hK = cell->GetDiameter();
+      break;
+    }
+    // get finite element in the cell
+    CurrEleID = fespace->GetFE2D(i, cell);
+    CurrentElement = TFEDatabase2D::GetFE2D(CurrEleID);
+    // get basis functions of the finite element
+    BF = CurrentElement->GetBaseFunct2D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+    // compute order of the local coarse space
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // get type of the mesh cell
+    shapetype = cell->GetType();
+
+    // determine finite element of the local coarse space
+    switch(shapetype)
+    {
+      // regularly refined quadrilateral
+      // discontinuous finite elements  
+      case Quadrangle:
+      case Parallelogram:
+      case Rectangle:
+        switch(CoarseOrder)
+        {
+          case 0:
+            UsedElements[0] = C_Q0_2D_Q_M;
+          break;
+
+          case 1:
+            UsedElements[0] = D_P1_2D_Q_M;
+          break;
+
+          case 2:
+            UsedElements[0] = D_P2_2D_Q_M;
+          break;
+
+          case 3:
+            UsedElements[0] = D_P3_2D_Q_M;
+          break;
+
+          case 4:
+            UsedElements[0] = D_P4_2D_Q_M;
+          break;
+
+          default:
+            OutPut("Projection space is defined upto order 4" << endl);
+            exit(-1);
+        } // end switch CoarseOrder
+      break; // end regularly refined quadrilateral
+
+      case Triangle:
+        switch(CoarseOrder)
+        {
+          case 0:
+            UsedElements[0] = C_P0_2D_T_A;
+          break;
+
+          case 1:
+            UsedElements[0] = D_P1_2D_T_A;
+          break;
+
+          case 2:
+            UsedElements[0] = D_P2_2D_T_A;
+          break;
+
+          case 3:
+            UsedElements[0] = D_P3_2D_T_A;
+          break;
+
+          case 4:
+            UsedElements[0] = D_P4_2D_T_A;
+          break;
+
+          default:
+            OutPut("Projection space is defined upto order 4" << endl);
+            exit(-1);
+        }
+      break;
+      default: 
+    OutPut("No coarse finite elements for mesh cell type "
+     << shapetype << " implemented !!!" << endl);
+    exit(4711);
+    } // end switch reftype
+
+    // approximation space (index 1) and projection space (index 0)
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase2D::GetFE2D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct2D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements,
+                           coll, cell, SecondDer,
+                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
+    // number of dof in the local coarse space
+    N_CoarseDOF = CoarseBF->GetDimension();
+    // get function values for the basis functions of the coarse space
+    CoarseValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+    // initialize array G, stores mass matrix of coarse space
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    // loop over the quadrature points
+    for(j=0;j<N_Points;j++)
+    {
+      // values of the coarse basis functions in the quad points
+      CoarseValue = CoarseValues[j];
+      // factor for numerical quadrature
+      w = AbsDetjk[j]*weights[j];
+      // loop over the basis functions of the coarse space
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+    // first factor of integrand
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+      // update integral 
+          G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    /*
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<N_CoarseDOF;k++)
+        cout << j << " " << k << " " << G[N_CoarseDOF*j+k] << endl;
+    */
+
+    // this should be the same as CoarseValues ???
+    PCValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+    // get derivatives of fe functions of approximation space
+    ChildValuesX = TFEDatabase2D::GetOrigElementValues(BF_ID, D10);
+    ChildValuesY = TFEDatabase2D::GetOrigElementValues(BF_ID, D01);
+    // initialize array H, holds mixed products of coarse basis 
+    // functions and derivatives of fine basis functions
+    memset(H, 0, N_CoarseDOF*2*N_DOF*SizeOfDouble);
+    // initialize array LocMatrix, holds products of derivatives
+    // of fine basis functions
+    memset(LocMatrix, 0, N_DOF*N_DOF*SizeOfDouble);
+    // loop over the quadrature points
+    for(j=0;j<N_Points;j++)
+    {
+  // get all values in the quad point j 
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      // factor in the integral
+      w = AbsDetjk[j]*weights[j];
+      // loop over the basis functions of the coarse space
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+  // compute products of coarse basis function and
+  // derivatives of fine basis functions
+  // values for the same quad point are stored after
+  // each other (x deriv of all fine fcts., y deriv
+  // of all fine fcts.) tested with the k-th coarse fct. 
+        for(l=0;l<N_DOF;l++)
+        {
+          H[k*2*N_DOF+l      ] += val*ChildValueX[l];
+          H[k*2*N_DOF+l+N_DOF] += val*ChildValueY[l];
+        } // end for l
+      } // end for k
+
+      // grad-grad matrix (fine-fine coupling)
+      // LocMatrix will store the local update of the global
+      // system matrix
+      for(k=0;k<N_DOF;k++)
+      {
+        for(l=0;l<N_DOF;l++)
+        {
+          LocMatrix[k*N_DOF+l] += w*( ChildValueX[k]*ChildValueX[l]
+                                     +ChildValueY[k]*ChildValueY[l]);
+        }
+      }
+    } // end for j
+    // copy array H to array P
+    memcpy(P, H, N_CoarseDOF*2*N_DOF*SizeOfDouble);
+
+    /*
+    cout << "vor" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    // solve G * X = H, solution X stored on H
+    // the right hand side and the solution are stored column wise
+    // right hand side: a fine fct. tested with all coarse fcts. 
+    // X - coefficients of local L^2 projection of grad of fine function
+    //     ((first fct.)_x, first coarse fct.), ((second fct.)_x, first coarse fct.), 
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, 2*N_DOF, 2*N_DOF);
+    //SolveMultipleSystems(G, H, N_CoarseDOF, N_CoarseDOF, 2*N_DOF, 2*N_DOF);
+
+    /*// checked 08/02/19
+    double val;
+    cout << "nach" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+    {
+  for(l=0;l<2*N_DOF;l++)
+  {
+      val = 0;
+      
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+    val += G[j*N_CoarseDOF+k] * H[l+k*2*N_DOF];
+    OutPut(l+2*k*N_DOF << " ");
+      }
+      OutPut(j << " " << l << " "  << P[j*2*N_DOF+l]<<  " " << val << endl);
+  }
+    }
+    exit(1);
+    */
+
+    // update LocMatrix
+    // proj-proj coupling (coarse-coarse coupling)
+    // l - test function index
+    for(l=0;l<N_DOF;l++)
+    {
+  // m - ansatz function index
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i1=0;i1<N_CoarseDOF;i1++)
+          for(i2=0;i2<N_CoarseDOF;i2++)
+            s += Gsave[i1*N_CoarseDOF+i2]*( H[i1*2*N_DOF+l      ]*H[i2*2*N_DOF+m      ]
+                                           +H[i1*2*N_DOF+l+N_DOF]*H[i2*2*N_DOF+m+N_DOF]);
+        LocMatrix[l*N_DOF+m] += s;
+      } // endfor m
+    } // endfor l
+
+    // grad-proj coupling (fine-coarse couplings)
+    // l - test function index
+    for(l=0;l<N_DOF;l++)
+    {
+  // m - ansatz function index
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i2=0;i2<N_CoarseDOF;i2++)
+        {
+          s += P[i2*2*N_DOF+l      ] * H[i2*2*N_DOF+m      ];
+          s += P[i2*2*N_DOF+l+N_DOF] * H[i2*2*N_DOF+m+N_DOF];
+        }
+        for(i1=0;i1<N_CoarseDOF;i1++)
+        {
+          s += P[i1*2*N_DOF+m      ] * H[i1*2*N_DOF+l      ];
+          s += P[i1*2*N_DOF+m+N_DOF] * H[i1*2*N_DOF+l+N_DOF];
+        }
+        LocMatrix[l*N_DOF+m] -= s;
+      } // end for m
+    } // end for l
+
+    /*
+    cout << "Matrix: " << endl;
+     for(l=0;l<N_DOF;l++)
+        for(m=0;m<N_DOF;m++)
+          cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
+    */
+
+    // get numbers of global dof belonging to this mesh cell
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    // add to global matrix
+    for(l=0;l<N_DOF;l++)
+    {
+      dof = DOF[l];
+      if((dof<ActiveBound) || (ForPressure))
+      {
+        for(m=0;m<N_DOF;m++)
+        {
+          end = RowPtr[dof+1];
+          for(p=RowPtr[dof];p<end;p++)
+            if(KCol[p] == DOF[m])
+            {
+    // parameter is lpcoeff*pow(hK,lpexponent)
+              Entries[p] += lpcoeff*pow(hK,lpexponent)*LocMatrix[l*N_DOF+m];
+        break;
+            }
+        } // endfor m
+      } // endif dof<ActiveBound
+    } // endfor l
+  } // endfor i
+  delete params;
+  delete coeffs;
+} // UltraLocalProjection
+
+
+
+bool TestCell(TBaseCell *cell)
+{
+  int i, N_;
+  double x, y;
+  bool val = true;
+  
+  N_ = cell->GetN_Vertices();
+  
+  for(i=0;i<N_;i++)
+  {
+    cell->GetVertex(i)->GetCoords(x,y);
+    if(x<TDatabase::ParamDB->P6 && y<TDatabase::ParamDB->P6)
+      val = val && true;
+    else 
+      val = val && false;    
+  }
+  return val;
+}
+
+// stabilisation of function velocity
+void UltraLocalProjectionFunction(void* A, bool ForPressure)
+{
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *Coll;
+  TFESpace2D *fespace;
+  FE2D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE2D *CurrentElement, *CoarseElement;
+  TBaseFunct2D *BF, *CoarseBF;
+  BaseFunct2D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *weights;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double Gsave[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double H[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double P[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **PCValues;
+  double *PCValue;
+  double w, val;
+  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double s;
+  int i1, i2;
+  double hK;
+  int ActiveBound, dof;
+  int p, end;
+  int *RowPtr, *KCol;
+  double *Entries;
+  int OrderDiff;
+  double lpcoeff, lpexponent;
+
+  if(!(TDatabase::ParamDB->LP_FULL_GRADIENT) && !(ForPressure))
+  {
+    OutPut("Local projection stabilization is implemented only for full gradient!" << endl);
+    exit(-1);
+  }
+
+  if(ForPressure)
+  {
+    lpcoeff = -(TDatabase::ParamDB->LP_PRESSURE_COEFF);
+    lpexponent = TDatabase::ParamDB->LP_PRESSURE_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE;
+  }
+  else
+  {
+    lpcoeff = TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF;
+    lpexponent = TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE;
+  }
+
+  if(ForPressure)
+  {
+    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure()->GetTestSpace());
+    ActiveBound = -1;
+    RowPtr = ((TMatrix2D *)A)->GetRowPtr();
+    KCol = ((TMatrix2D *)A)->GetKCol();
+    Entries = ((TMatrix2D *)A)->GetEntries();
+    // cout << "for pressure" << endl;
+  }
+  else
+  {
+    fespace = ((TSquareMatrix2D *)A)->GetFESpace();
+    ActiveBound = fespace->GetActiveBound();
+    RowPtr = ((TSquareMatrix2D *)A)->GetRowPtr();
+    KCol = ((TSquareMatrix2D *)A)->GetKCol();
+    Entries = ((TSquareMatrix2D *)A)->GetEntries();
+    // cout << "not for pressure" << endl;
+  }
+
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    hK = cell->GetDiameter();
+
+    CurrEleID = fespace->GetFE2D(i, cell);
+    CurrentElement = TFEDatabase2D::GetFE2D(CurrEleID);
+
+    BF = CurrentElement->GetBaseFunct2D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // cout << "CoarseOrder: " << CoarseOrder << endl;
+
+    UsedElements[0] = GetElement2D(cell, CoarseOrder);
+
+    // approximation space (index 1) and projection space (index 0)
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase2D::GetFE2D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct2D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+    // cout << "N_Points: " << N_Points << endl;
+
+    N_CoarseDOF = CoarseBF->GetDimension();
+    CoarseValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+
+    // cout << "N_CoarseDOF: " << N_CoarseDOF << endl;
+
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      CoarseValue = CoarseValues[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+          G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    /*
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<N_CoarseDOF;k++)
+        cout << j << " " << k << " " << G[N_CoarseDOF*j+k] << endl;
+    */
+
+    PCValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+
+    ChildValuesX = TFEDatabase2D::GetOrigElementValues(BF_ID, D00);
+    ChildValuesY = TFEDatabase2D::GetOrigElementValues(BF_ID, D00);
+
+    memset(H, 0, N_CoarseDOF*2*N_DOF*SizeOfDouble);
+
+    memset(LocMatrix, 0, N_DOF*N_DOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+        for(l=0;l<N_DOF;l++)
+        {
+          H[k*2*N_DOF+l      ] += val*ChildValueX[l];
+          H[k*2*N_DOF+l+N_DOF] += val*ChildValueY[l];
+        } // end for l
+      } // end for k
+
+      // (u,v)--matrix
+      for(k=0;k<N_DOF;k++)
+      {
+        for(l=0;l<N_DOF;l++)
+        {
+          LocMatrix[k*N_DOF+l] += w*( ChildValueX[k]*ChildValueX[l]
+                                     +ChildValueY[k]*ChildValueY[l]);
+        }
+      }
+    } // end for j
+    memcpy(P, H, N_CoarseDOF*2*N_DOF*SizeOfDouble);
+
+    /*
+    cout << "vor" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, 2*N_DOF, 2*N_DOF);
+
+    /*
+    cout << "nach" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    // (\pi u, \pi v) proj-proj coupling
+    for(l=0;l<N_DOF;l++)
+    {
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i1=0;i1<N_CoarseDOF;i1++)
+          for(i2=0;i2<N_CoarseDOF;i2++)
+            s += Gsave[i1*N_CoarseDOF+i2]*( H[i1*2*N_DOF+l      ]*H[i2*2*N_DOF+m      ]
+                                           +H[i1*2*N_DOF+l+N_DOF]*H[i2*2*N_DOF+m+N_DOF]);
+        LocMatrix[l*N_DOF+m] += s;
+      } // endfor m
+    } // endfor l
+
+    // function-proj coupling
+    for(l=0;l<N_DOF;l++)
+    {
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i2=0;i2<N_CoarseDOF;i2++)
+        {
+          s += P[i2*2*N_DOF+l      ] * H[i2*2*N_DOF+m      ];
+          s += P[i2*2*N_DOF+l+N_DOF] * H[i2*2*N_DOF+m+N_DOF];
+        }
+        for(i1=0;i1<N_CoarseDOF;i1++)
+        {
+          s += P[i1*2*N_DOF+m      ] * H[i1*2*N_DOF+l      ];
+          s += P[i1*2*N_DOF+m+N_DOF] * H[i1*2*N_DOF+l+N_DOF];
+        }
+        LocMatrix[l*N_DOF+m] -= s;
+      } // end for m
+    } // end for l
+
+    /*
+    cout << "Matrix: " << endl;
+     for(l=0;l<N_DOF;l++)
+        for(m=0;m<N_DOF;m++)
+          cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
+    */
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    // add to global matrix
+    for(l=0;l<N_DOF;l++)
+    {
+      dof = DOF[l];
+      if((dof<ActiveBound) || (ForPressure))
+      {
+        for(m=0;m<N_DOF;m++)
+        {
+          end = RowPtr[dof+1];
+          for(p=RowPtr[dof];p<end;p++)
+            if(KCol[p] == DOF[m])
+            {
+              Entries[p] += 1000.*hK*hK*LocMatrix[l*N_DOF+m];
+              break;
+            }
+        } // endfor m
+      } // endif dof<ActiveBound
+    } // endfor l
+  } // endfor i
+} // UltraLocalProjection
+
+double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
+        double lpcoeff, double lpexponent, int OrderDiff)
+{
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *Coll;
+  TFESpace2D *fespace;
+  FE2D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE2D *CurrentElement, *CoarseElement;
+  TBaseFunct2D *BF, *CoarseBF;
+  BaseFunct2D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *weights;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double Gsave[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double H[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double P[2*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **PCValues;
+  double *PCValue;
+  double w, val, valx, valy;
+  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+  double s;
+  int i1, i2;
+  double hK;
+  int ActiveBound, dof;
+  int p, end;
+  double *Values;
+  double error, locerror;
+  double exactval[4];
+
+  error = 0.0;
+
+  fespace = uh->GetFESpace2D();
+  Values = uh->GetValues();
+
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  for(i=0;i<N_Cells;i++)
+  {
+    locerror = 0.0;
+    cell = Coll->GetCell(i);
+    hK = cell->GetDiameter();
+    
+    if((TestCell(cell)) == false) continue;
+    
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    CurrEleID = fespace->GetFE2D(i, cell);
+    CurrentElement = TFEDatabase2D::GetFE2D(CurrEleID);
+
+    BF = CurrentElement->GetBaseFunct2D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // cout << "CoarseOrder: " << CoarseOrder << endl;
+
+    UsedElements[0] = GetElement2D(cell, CoarseOrder);
+
+    // approximation space (index 1) and projection space (index 0)
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase2D::GetFE2D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct2D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase2D::GetOrig(N_UsedElements, UsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, weights, X, Y, AbsDetjk);
+
+    N_CoarseDOF = CoarseBF->GetDimension();
+    CoarseValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      CoarseValue = CoarseValues[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+          G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    /*
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<N_CoarseDOF;k++)
+        cout << j << " " << k << " " << G[N_CoarseDOF*j+k] << endl;
+    */
+
+    PCValues = TFEDatabase2D::GetOrigElementValues(CoarseBF_ID, D00);
+
+    ChildValuesX = TFEDatabase2D::GetOrigElementValues(BF_ID, D10);
+    ChildValuesY = TFEDatabase2D::GetOrigElementValues(BF_ID, D01);
+
+    // only two right-hand sides (x and y derivative)
+    memset(H, 0, N_CoarseDOF*2*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+
+      // calculate gradient of discrete uh in this quadrature point
+      valx = 0.0;
+      valy = 0.0;
+      for(k=0;k<N_DOF;k++)
+      {
+        val = Values[DOF[k]];
+        valx += ChildValueX[k]*val;
+        valy += ChildValueY[k]*val;
+      }
+
+      // get gradient of exact u
+      ExactU(X[j], Y[j], exactval);
+
+      valx -= exactval[1];
+      valy -= exactval[2];
+
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+        H[k*2  ] += val*valx;
+        H[k*2+1] += val*valy;
+      } // end for k
+
+      // grad-grad term
+      locerror += w*(valx*valx + valy*valy);
+
+    } // end for j
+    memcpy(P, H, N_CoarseDOF*2*SizeOfDouble);
+
+    /*
+    cout << "vor" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, 2, 2);
+
+    /*
+    cout << "nach" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    // proj-proj coupling
+    s = 0;
+    for(i1=0;i1<N_CoarseDOF;i1++)
+      for(i2=0;i2<N_CoarseDOF;i2++)
+        s += Gsave[i1*N_CoarseDOF+i2]*( H[i1*2  ]*H[i2*2  ]
+                                       +H[i1*2+1]*H[i2*2+1]);
+    locerror += s;
+
+    // grad-proj coupling
+    s = 0;
+    for(i2=0;i2<N_CoarseDOF;i2++)
+    {
+      s += P[i2*2  ] * H[i2*2  ];
+      s += P[i2*2+1] * H[i2*2+1];
+    }
+    for(i1=0;i1<N_CoarseDOF;i1++)
+    {
+      s += P[i1*2  ] * H[i1*2  ];
+      s += P[i1*2+1] * H[i1*2+1];
+    }
+    locerror -= s;
+
+    /*
+    cout << "Matrix: " << endl;
+     for(l=0;l<N_DOF;l++)
+        for(m=0;m<N_DOF;m++)
+          cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
+    */
+
+    error += lpcoeff*pow(hK,lpexponent)*locerror;
+  } // endfor i
+
+  return error;
+} // UltraLocalProjection
+
+#endif // __2D__
+
+// stabilisation of full gradient (velocity or pressure)
+void UltraLocalProjection3D(void* A, bool ForPressure)
+{
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *Coll;
+  TFESpace3D *fespace;
+  FE3D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE3D *CurrentElement, *CoarseElement;
+  TBaseFunct3D *BF, *CoarseBF;
+  BaseFunct3D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *zeta, *weights;
+  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
+  double AbsDetjk[MaxN_QuadPoints_3D];
+  double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double Gsave[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double H[3*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double P[3*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **ChildValuesZ, *ChildValueZ;
+  double **PCValues;
+  double *PCValue;
+  double w, val;
+  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double s;
+  int i1, i2, i3;
+  double hK;
+  int ActiveBound, dof;
+  int p, end;
+  int *RowPtr, *KCol;
+  double *Entries;
+  int OrderDiff;
+  double lpcoeff, lpexponent;
+
+  if(!(TDatabase::ParamDB->LP_FULL_GRADIENT) && !(ForPressure))
+  {
+    OutPut("Local projection stabilization is implemented only for full gradient!" << endl);
+    exit(-1);
+  }
+
+  if(ForPressure)
+  {
+    lpcoeff = -(TDatabase::ParamDB->LP_PRESSURE_COEFF);
+    lpexponent = TDatabase::ParamDB->LP_PRESSURE_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_PRESSURE_ORDER_DIFFERENCE;
+  }
+  else
+  {
+    lpcoeff = TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF;
+    lpexponent = TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT;
+    OrderDiff = TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE;
+  }
+
+  if(ForPressure)
+  {
+    fespace = (TFESpace3D*)(((TMatrix3D *)A)->GetStructure()->GetTestSpace());
+    ActiveBound = -1;
+    RowPtr = ((TMatrix3D *)A)->GetRowPtr();
+    KCol = ((TMatrix3D *)A)->GetKCol();
+    Entries = ((TMatrix3D *)A)->GetEntries();
+    // cout << "for pressure" << endl;
+  }
+  else
+  {
+    fespace = ((TSquareMatrix3D *)A)->GetFESpace();
+    ActiveBound = fespace->GetActiveBound();
+    RowPtr = ((TSquareMatrix3D *)A)->GetRowPtr();
+    KCol = ((TSquareMatrix3D *)A)->GetKCol();
+    Entries = ((TSquareMatrix3D *)A)->GetEntries();
+    // cout << "not for pressure" << endl;
+  }
+
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  for(i=0;i<N_Cells;i++)
+  {
+    cell = Coll->GetCell(i);
+    hK = cell->GetDiameter();
+
+    CurrEleID = fespace->GetFE3D(i, cell);
+    CurrentElement = TFEDatabase3D::GetFE3D(CurrEleID);
+
+    BF = CurrentElement->GetBaseFunct3D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // cout << "CoarseOrder: " << CoarseOrder << endl;
+
+    UsedElements[0] = GetElement3D(cell, CoarseOrder);
+
+    // approximation space (index 1) and projection space (index 0)
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase3D::GetFE3D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct3D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase3D::GetOrig(N_UsedElements, UsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetjk);
+
+    N_CoarseDOF = CoarseBF->GetDimension();
+    CoarseValues = TFEDatabase3D::GetOrigElementValues(CoarseBF_ID, D000);
+
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      CoarseValue = CoarseValues[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+          G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    PCValues = TFEDatabase3D::GetOrigElementValues(CoarseBF_ID, D000);
+
+    ChildValuesX = TFEDatabase3D::GetOrigElementValues(BF_ID, D100);
+    ChildValuesY = TFEDatabase3D::GetOrigElementValues(BF_ID, D010);
+    ChildValuesZ = TFEDatabase3D::GetOrigElementValues(BF_ID, D001);
+
+    memset(H, 0, N_CoarseDOF*3*N_DOF*SizeOfDouble);
+
+    memset(LocMatrix, 0, N_DOF*N_DOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      ChildValueZ = ChildValuesZ[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+        for(l=0;l<N_DOF;l++)
+        {
+          H[k*3*N_DOF+l        ] += val*ChildValueX[l];
+          H[k*3*N_DOF+l+N_DOF  ] += val*ChildValueY[l];
+          H[k*3*N_DOF+l+2*N_DOF] += val*ChildValueZ[l];
+        } // end for l
+      } // end for k
+
+      // grad-grad matrix
+      for(k=0;k<N_DOF;k++)
+      {
+        for(l=0;l<N_DOF;l++)
+        {
+          LocMatrix[k*N_DOF+l] += w*( ChildValueX[k]*ChildValueX[l]
+                                     +ChildValueY[k]*ChildValueY[l]
+                                     +ChildValueZ[k]*ChildValueZ[l]);
+        }
+      }
+    } // end for j
+    memcpy(P, H, N_CoarseDOF*3*N_DOF*SizeOfDouble);
+
+    /*
+    cout << "vor" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, 3*N_DOF, 3*N_DOF);
+
+    /*
+    cout << "nach" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    // proj-proj coupling
+    for(l=0;l<N_DOF;l++)
+    {
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+        for(i1=0;i1<N_CoarseDOF;i1++)
+          for(i2=0;i2<N_CoarseDOF;i2++)
+            s += Gsave[i1*N_CoarseDOF+i2]*( H[i1*3*N_DOF+l        ]*H[i2*3*N_DOF+m        ]
+                                           +H[i1*3*N_DOF+l+N_DOF  ]*H[i2*3*N_DOF+m+N_DOF  ]
+                                           +H[i1*3*N_DOF+l+2*N_DOF]*H[i2*3*N_DOF+m+2*N_DOF]);
+        LocMatrix[l*N_DOF+m] += s;
+      } // endfor m
+    } // endfor l
+
+    // grad-proj coupling
+    for(l=0;l<N_DOF;l++)
+    {
+      for(m=0;m<N_DOF;m++)
+      {
+        s = 0;
+//        for(i3=0;i3<N_CoarseDOF;i3++)
+//        {
+//          s += P[i3*3*N_DOF+l        ] * H[i3*3*N_DOF+m        ];
+//          s += P[i3*3*N_DOF+l+N_DOF  ] * H[i3*3*N_DOF+m+N_DOF  ];
+//          s += P[i3*3*N_DOF+l+2*N_DOF] * H[i3*3*N_DOF+m+2*N_DOF];
+//        }
+        for(i2=0;i2<N_CoarseDOF;i2++)
+        {
+          s += P[i2*3*N_DOF+l        ] * H[i2*3*N_DOF+m        ];
+          s += P[i2*3*N_DOF+l+N_DOF  ] * H[i2*3*N_DOF+m+N_DOF  ];
+          s += P[i2*3*N_DOF+l+2*N_DOF] * H[i2*3*N_DOF+m+2*N_DOF];
+        }
+        for(i1=0;i1<N_CoarseDOF;i1++)
+        {
+          s += P[i1*3*N_DOF+m        ] * H[i1*3*N_DOF+l        ];
+          s += P[i1*3*N_DOF+m+N_DOF  ] * H[i1*3*N_DOF+l+N_DOF  ];
+          s += P[i1*3*N_DOF+m+2*N_DOF] * H[i1*3*N_DOF+l+2*N_DOF];
+        }
+        LocMatrix[l*N_DOF+m] -= s;
+      } // end for m
+    } // end for l
+
+    /*
+    cout << "Matrix: " << endl;
+     for(l=0;l<N_DOF;l++)
+        for(m=0;m<N_DOF;m++)
+          cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
+    */
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    // add to global matrix
+    for(l=0;l<N_DOF;l++)
+    {
+      dof = DOF[l];
+      if((dof<ActiveBound) || (ForPressure))
+      {
+        for(m=0;m<N_DOF;m++)
+        {
+          end = RowPtr[dof+1];
+          for(p=RowPtr[dof];p<end;p++)
+            if(KCol[p] == DOF[m])
+            {
+              Entries[p] += lpcoeff*pow(hK,lpexponent)*LocMatrix[l*N_DOF+m];
+              break;
+            }
+        } // endfor m
+      } // endif dof<ActiveBound
+    } // endfor l
+  } // endfor i
+  cout << "\n end of lps \n" << endl;
+} // UltraLocalProjection
+
+double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
+        double lpcoeff, double lpexponent, int OrderDiff)
+{
+  // cout << "\n start of lps error \n" << endl;
+  
+  int i,j,k,l,m,n;
+  int N_Cells;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int CellOrder, CoarseOrder;
+  int N_CoarseDOF, N_DOF;
+  TCollection *Coll;
+  TFESpace3D *fespace;
+  FE3D CurrEleID, UsedElements[2];
+  int N_UsedElements;
+  TFE3D *CurrentElement, *CoarseElement;
+  TBaseFunct3D *BF, *CoarseBF;
+  BaseFunct3D BF_ID, CoarseBF_ID;
+  TBaseCell *cell;
+  Shapes shapetype;
+  bool SecondDer[2] = { false, false };
+  int N_Points;
+  double *xi, *eta, *zeta, *weights;
+  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
+  double AbsDetjk[MaxN_QuadPoints_3D];
+  double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double Gsave[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double H[3*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double P[3*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double **CoarseValues, *CoarseValue;
+  double **ChildValuesX, *ChildValueX;
+  double **ChildValuesY, *ChildValueY;
+  double **ChildValuesZ, *ChildValueZ;
+  double **PCValues;
+  double *PCValue;
+  double w, val, valx, valy, valz;
+  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+  double s;
+  int i1, i2, i3;
+  double hK;
+  int ActiveBound, dof;
+  int p, end;
+  double *Values;
+  double error, locerror;
+  double exactval[5];
+
+  error = 0.0;
+
+  fespace = uh->GetFESpace3D();
+  Values = uh->GetValues();
+
+  Coll = fespace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  BeginIndex = fespace->GetBeginIndex();
+  GlobalNumbers = fespace->GetGlobalNumbers();
+
+  // initialise ClipBoard
+  for(i=0;i<N_Cells;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  for(i=0;i<N_Cells;i++)
+  {
+    locerror = 0.0;
+    cell = Coll->GetCell(i);
+    hK = cell->GetDiameter();
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    CurrEleID = fespace->GetFE3D(i, cell);
+    CurrentElement = TFEDatabase3D::GetFE3D(CurrEleID);
+
+    BF = CurrentElement->GetBaseFunct3D();
+    BF_ID = BF->GetID();
+    N_DOF = BF->GetDimension();
+
+    CoarseOrder = BF->GetAccuracy() - OrderDiff;
+    // cout << "CoarseOrder: " << CoarseOrder << endl;
+
+    UsedElements[0] = GetElement3D(cell, CoarseOrder);
+
+    // approximation space (index 1) and projection space (index 0)
+    N_UsedElements = 2;
+    UsedElements[1] = CurrEleID;
+
+    CoarseElement = TFEDatabase3D::GetFE3D(UsedElements[0]);
+    CoarseBF = CoarseElement->GetBaseFunct3D();
+    CoarseBF_ID = CoarseBF->GetID();
+
+    // quadrature formula on cell
+    TFEDatabase3D::GetOrig(N_UsedElements, UsedElements,
+                           Coll, cell, SecondDer,
+                           N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetjk);
+
+    N_CoarseDOF = CoarseBF->GetDimension();
+    CoarseValues = TFEDatabase3D::GetOrigElementValues(CoarseBF_ID, D000);
+
+    memset(G, 0, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      CoarseValue = CoarseValues[j];
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*CoarseValue[k];
+        for(l=0;l<N_CoarseDOF;l++)
+        {
+          G[k*N_CoarseDOF+l] += val*CoarseValue[l];
+        } // end for l
+      } // end for k
+    } // end for j
+
+    // Hack: to deal with D_h = {0}
+    if(N_CoarseDOF == 1 && fabs(G[0])<1e-10)
+      G[0] = 1;
+
+    // save G for later use
+    memcpy(Gsave, G, N_CoarseDOF*N_CoarseDOF*SizeOfDouble);
+    /*
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<N_CoarseDOF;k++)
+        cout << j << " " << k << " " << G[N_CoarseDOF*j+k] << endl;
+    */
+
+    PCValues = TFEDatabase3D::GetOrigElementValues(CoarseBF_ID, D000);
+
+    ChildValuesX = TFEDatabase3D::GetOrigElementValues(BF_ID, D100);
+    ChildValuesY = TFEDatabase3D::GetOrigElementValues(BF_ID, D010);
+    ChildValuesZ = TFEDatabase3D::GetOrigElementValues(BF_ID, D001);
+
+    // only two right-hand sides (x and y derivative)
+    memset(H, 0, N_CoarseDOF*3*SizeOfDouble);
+
+    for(j=0;j<N_Points;j++)
+    {
+      PCValue = PCValues[j];
+      ChildValueX = ChildValuesX[j];
+      ChildValueY = ChildValuesY[j];
+      ChildValueZ = ChildValuesZ[j];
+
+      // calculate gradient of discrete uh in this quadrature point
+      valx = 0.0;
+      valy = 0.0;
+      valz = 0.0;
+      for(k=0;k<N_DOF;k++)
+      {
+        val = Values[DOF[k]];
+        valx += ChildValueX[k]*val;
+        valy += ChildValueY[k]*val;
+        valz += ChildValueZ[k]*val;
+      }
+
+      // get gradient of exact u
+      ExactU(X[j], Y[j], Z[j], exactval);
+
+      valx -= exactval[1];
+      valy -= exactval[2];
+      valz -= exactval[3];
+
+      w = AbsDetjk[j]*weights[j];
+      for(k=0;k<N_CoarseDOF;k++)
+      {
+        val = w*PCValue[k];
+        H[k*3  ] += val*valx;
+        H[k*3+1] += val*valy;
+        H[k*3+2] += val*valz;
+      } // end for k
+
+      // grad-grad term
+      locerror += w*(valx*valx + valy*valy + valz*valz);
+
+    } // end for j
+    memcpy(P, H, N_CoarseDOF*3*SizeOfDouble);
+
+    /*
+    cout << "vor" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    SolveMultipleSystemsNew(G, H, N_CoarseDOF, N_CoarseDOF, 3, 3);
+
+    /*
+    cout << "nach" << endl;
+    for(j=0;j<N_CoarseDOF;j++)
+      for(k=0;k<2*N_DOF;k++)
+        cout << j << " " << k << " " << H[j*2*N_DOF+k] << endl;
+    */
+
+    // proj-proj coupling
+    s = 0;
+    for(i1=0;i1<N_CoarseDOF;i1++)
+      for(i2=0;i2<N_CoarseDOF;i2++)
+        s += Gsave[i1*N_CoarseDOF+i2]*( H[i1*3  ]*H[i2*3  ]
+                                       +H[i1*3+1]*H[i2*3+1]
+                                       +H[i1*3+2]*H[i2*3+2]);
+    locerror += s;
+
+    // grad-proj coupling
+    s = 0;
+//    for(i3=0;i3<N_CoarseDOF;i3++)
+//    {
+//      s += P[i3*3  ] * H[i3*3  ];
+//      s += P[i3*3+1] * H[i3*3+1];
+//      s += P[i3*3+2] * H[i3*3+2];
+//    }
+    for(i2=0;i2<N_CoarseDOF;i2++)
+    {
+      s += P[i2*3  ] * H[i2*3  ];
+      s += P[i2*3+1] * H[i2*3+1];
+      s += P[i2*3+2] * H[i2*3+2];
+    }
+    for(i1=0;i1<N_CoarseDOF;i1++)
+    {
+      s += P[i1*3  ] * H[i1*3  ];
+      s += P[i1*3+1] * H[i1*3+1];
+      s += P[i1*3+2] * H[i1*3+2];
+    }
+    locerror -= s;
+
+    /*
+    cout << "Matrix: " << endl;
+     for(l=0;l<N_DOF;l++)
+        for(m=0;m<N_DOF;m++)
+          cout << l << " " << m << " " << LocMatrix[l*N_DOF+m] << endl;
+    */
+
+    error += lpcoeff*pow(hK,lpexponent)*locerror;
+  } // endfor i
+
+  // error = 0;
+  cout << " end of local error " << endl;
+  return error;
+} // UltraLocalProjection
 
 
 #endif

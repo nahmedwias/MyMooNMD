@@ -82,7 +82,8 @@ class THexaTrilinear : public TRefTrans3D
         to original element */
     void GetOrigValues(double xi, double eta, double zeta, int N_BaseFunct,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                double *uorig, double *uxorig, double *uyorig, double *uzorig);
+                double *uorig, double *uxorig, double *uyorig, double *uzorig,
+                int _BaseVectDim = 1);
 
     /** set element to cell */
     void SetCell(TBaseCell * cell);
@@ -95,7 +96,9 @@ class THexaTrilinear : public TRefTrans3D
     void GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
         double &t21, double &t22, double &t23);
-
+    
+    /** @brief Piola transformation for vector valued basis functions **/
+    void PiolaMapOrigFromRef(int N_Functs, double *refD000, double *origD000);
 };
 
 #endif

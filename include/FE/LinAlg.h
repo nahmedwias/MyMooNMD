@@ -179,6 +179,15 @@ void MatVect_EquOrd_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *y);
 
 void Defect_EquOrd_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r);
 
+
+/**  Darcy using Raviart-Thomas (RT) or Brexxi-Douglas-Marini (DBM) elements
+ ( A B' )
+ ( B 0  )
+*/
+void CoupledMatVect(TSquareMatrix *A, TMatrix *B, double *x, double *y);
+void CoupledDefect(TSquareMatrix *A, TMatrix *B, 
+                   double *x, double *b, double *r);
+
 // ========================================================================
 // (Navier-)Stokes system with almost divergence-free basis, NSTYP==5
 // ========================================================================
@@ -426,8 +435,6 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace);
 
 void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
                        int velocity_space, int pressure_space);
-		       
-void IntoL20FEFunction3D_OLD(double *v, int Length, TFESpace3D *FESpace);
 
 void VMS_ProjectionUpdateMatrices(int N_U,int N_Active,int N_L,
                              TSquareMatrix3D **SQMATRICES, TMatrix3D **MATRICES);

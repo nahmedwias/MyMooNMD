@@ -122,6 +122,15 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
   double AllData[MaxN_BaseFunctions3D][5];
   double GeoData[5][5];
   
+  {
+    TBaseFunct3D* bf = TFEDatabase3D::GetBaseFunct3D(BaseFunct);
+    if(bf->GetBaseVectDim() != 1)
+    {
+      ErrMsg("Piola map for HexaAffin not yet implemented");
+      exit(1);
+    }
+  }
+  
   refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
   if(refvaluesD000==NULL)
     {
@@ -372,19 +381,19 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
   double *refD002, *origD002;
   double r20, r11, r02, o20, o11, o02;
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
   BaseFunct3D BaseFunct;
   int N_Functs;
   bool SecondDer;
   int ii,ij,ik;
   double tmp,Eye1[3][3];
   
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
     N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
+    int BaseVectDim =
+        TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetBaseVectDim();
       
     refvaluesD000=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D000);
     if(refvaluesD000==NULL)
@@ -398,9 +407,9 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD000==NULL)
     {
       origvaluesD000 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD000[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD000[j] = aux+j*N_Functs*BaseVectDim;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D000, origvaluesD000);
     }
       
@@ -409,7 +418,16 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       refD000 = refvaluesD000[j];
       origD000 = origvaluesD000[j];
           
-      memcpy(origD000, refD000, N_Functs*SizeOfDouble);
+      if(BaseVectDim == 1)
+      {
+        // simply copy values
+        memcpy(origD000, refD000, N_Functs*BaseVectDim*SizeOfDouble);
+      }
+      else
+      {
+        // do Piola transformation
+        PiolaMapOrigFromRef(N_Functs, refD000, origD000);
+      }
     } // endfor j
       
     refvaluesD100=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
@@ -417,9 +435,9 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD100==NULL)
     {
       origvaluesD100 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD100[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD100[j] = aux+j*N_Functs*BaseVectDim;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D100, origvaluesD100);
     }
       
@@ -428,9 +446,9 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD010==NULL)
     {
        origvaluesD010 = new double* [MaxN_QuadPoints_3D];
-       aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+       aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
        for(j=0;j<MaxN_QuadPoints_3D;j++)
-         origvaluesD010[j] = aux+j*MaxN_BaseFunctions3D;
+         origvaluesD010[j] = aux+j*N_Functs*BaseVectDim;
        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D010, origvaluesD010);
     }
       
@@ -439,225 +457,409 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     if(origvaluesD001==NULL)
     {
       origvaluesD001 = new double* [MaxN_QuadPoints_3D];
-      aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
+      aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
       for(j=0;j<MaxN_QuadPoints_3D;j++)
-        origvaluesD001[j] = aux+j*MaxN_BaseFunctions3D;
+        origvaluesD001[j] = aux+j*N_Functs*BaseVectDim;
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D001, origvaluesD001);
     }
+    
+    if(Needs2ndDer[i])
+    {
+      SecondDer = true;
+      
+      refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula,
+                                                       D200);
+      origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
+      if(origvaluesD200==NULL)
+      {
+        origvaluesD200 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD200[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D200,
+                                                 origvaluesD200);
+      }
+          
+      refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula,
+                                                       D110);
+      origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
+      if(origvaluesD110==NULL)
+      {
+        origvaluesD110 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD110[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D110,
+                                                 origvaluesD110);
+      }
+          
+      refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, 
+                                                       D101);
+      origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
+      if(origvaluesD101==NULL)
+      {
+        origvaluesD101 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD101[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D101,
+                                                 origvaluesD101);
+      }
+      
+      refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula,
+                                                       D011);
+      origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
+      if(origvaluesD011==NULL)
+      {
+        origvaluesD011 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD011[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D011,
+                                                 origvaluesD011);
+      }
+      
+      refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, 
+                                                       D020);
+      origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
+      if(origvaluesD020==NULL)
+      {
+        origvaluesD020 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD020[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D020, 
+                                                 origvaluesD020);
+      }
+      
+      refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula,
+                                                       D002);
+      origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
+      if(origvaluesD002==NULL)
+      {
+        origvaluesD002 = new double* [MaxN_QuadPoints_3D];
+        aux = new double [MaxN_QuadPoints_3D*N_Functs*BaseVectDim];
+        for(j=0;j<MaxN_QuadPoints_3D;j++)
+          origvaluesD002[j] = aux+j*N_Functs*BaseVectDim;
+        TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D002,
+                                                 origvaluesD002);
+      } // endfor Needs2ndDer[i]
+    } // endfor i
   }
-      /*
-      if(Needs2ndDer[i])
+
+  // D100, D010 and D001
+  for(i=0;i<N_Sets;i++)
+  {
+    BaseFunct=BaseFuncts[i];
+    int BaseVectDim =
+        TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetBaseVectDim();
+    N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
+        
+    refvaluesD100=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
+    origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
+    
+    refvaluesD010=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
+    origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
+        
+    refvaluesD001=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
+    origvaluesD001=TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
+        
+    for(j=0;j<N_Points;j++)
+    {
+      refD100 = refvaluesD100[j];
+      origD100 = origvaluesD100[j];
+            
+      refD010 = refvaluesD010[j];
+      origD010 = origvaluesD010[j];
+            
+      refD001 = refvaluesD001[j];
+      origD001 = origvaluesD001[j];
+            
+      // inverse of transformation (DF^{-1}) multiplied by determinant^{-1}
+      // for the inverse you can use maxima and type
+      // A:matrix([x1, x2, x3],[y1, y2, y3],[z1, z2, z3]);
+      // B:invert(A);
+      // ratsimp(A.B); // check
+      double i11 = (yc2*zc3 - yc3*zc2) * rec_detjk;
+      double i12 = (yc3*zc1 - yc1*zc3) * rec_detjk;
+      double i13 = (yc1*zc2 - yc2*zc1) * rec_detjk;
+      double i21 = (xc3*zc2 - xc2*zc3) * rec_detjk;
+      double i22 = (xc1*zc3 - xc3*zc1) * rec_detjk;
+      double i23 = (xc2*zc1 - xc1*zc2) * rec_detjk;
+      double i31 = (xc2*yc3 - xc3*yc2) * rec_detjk;
+      double i32 = (xc3*yc1 - xc1*yc3) * rec_detjk;
+      double i33 = (xc1*yc2 - xc2*yc1) * rec_detjk;
+      
+      if(BaseVectDim == 1)
+      {
+        for(int k = 0; k < N_Functs; k++)
         {
-          SecondDer = TRUE;
+          origD100[k] = i11 * refD100[k] + i12 * refD010[k] + i13 * refD001[k];
+          origD010[k] = i21 * refD100[k] + i22 * refD010[k] + i23 * refD001[k];
+          origD001[k] = i31 * refD100[k] + i32 * refD010[k] + i33 * refD001[k];
+        } // endfor k
+      }
+      else
+      {
+        // Piola transformation
+        // this is DF divided by determinant
+        double a11 = xc1 * rec_detjk;
+        double a12 = xc2 * rec_detjk;
+        double a13 = xc3 * rec_detjk;
+        double a21 = yc1 * rec_detjk;
+        double a22 = yc2 * rec_detjk;
+        double a23 = yc3 * rec_detjk;
+        double a31 = zc1 * rec_detjk;
+        double a32 = zc2 * rec_detjk;
+        double a33 = zc3 * rec_detjk;
+        for(int k = 0; k < N_Functs; k++)
+        {
+          double p11 = a11 * refD100[k             ] 
+                     + a12 * refD100[k + N_Functs  ] 
+                     + a13 * refD100[k + 2*N_Functs];
+          double p21 = a11 * refD010[k             ] 
+                     + a12 * refD010[k + N_Functs  ] 
+                     + a13 * refD010[k + 2*N_Functs];
+          double p31 = a11 * refD001[k             ] 
+                     + a12 * refD001[k + N_Functs  ] 
+                     + a13 * refD001[k + 2*N_Functs];
+          origD100[k] = i11*p11 + i12*p21 + i13*p31;
+          origD010[k] = i21*p11 + i22*p21 + i23*p31;
+          origD001[k] = i31*p11 + i32*p21 + i33*p31;
           
-          refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
-          origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
-          if(origvaluesD200==NULL)
-            {
-              origvaluesD200 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD200[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D200, origvaluesD200);
-            }
+          double p12 = a21 * refD100[k             ] 
+                     + a22 * refD100[k + N_Functs  ] 
+                     + a23 * refD100[k + 2*N_Functs];
+          double p22 = a21 * refD010[k             ] 
+                     + a22 * refD010[k + N_Functs  ] 
+                     + a23 * refD010[k + 2*N_Functs];
+          double p32 = a21 * refD001[k             ] 
+                     + a22 * refD001[k + N_Functs  ] 
+                     + a23 * refD001[k + 2*N_Functs];
+          origD100[k + N_Functs] = i11*p12 + i12*p22 + i13*p32;
+          origD010[k + N_Functs] = i21*p12 + i22*p22 + i23*p32;
+          origD001[k + N_Functs] = i31*p12 + i32*p22 + i33*p32;
           
-          refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
-          origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
-          if(origvaluesD110==NULL)
-            {
-              origvaluesD110 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD110[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D110, origvaluesD110);
-            }
-          
-          refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
-          origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
-          if(origvaluesD101==NULL)
-            {
-              origvaluesD101 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD101[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D101, origvaluesD101);
-            }
-          
-          refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
-          origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
-          if(origvaluesD011==NULL)
-            {
-              origvaluesD011 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD011[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D011, origvaluesD011);
-            }
-          
-          refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
-          origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
-          if(origvaluesD020==NULL)
-            {
-              origvaluesD020 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD020[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D020, origvaluesD020);
-            }
-          
-          refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
-          origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
-          if(origvaluesD002==NULL)
-            {
-              origvaluesD002 = new double* [MaxN_QuadPoints_3D];
-              aux = new double [MaxN_QuadPoints_3D*MaxN_BaseFunctions3D];
-              for(j=0;j<MaxN_QuadPoints_3D;j++)
-                origvaluesD002[j] = aux+j*MaxN_BaseFunctions3D;
-              TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D002, origvaluesD002);
-            } // endfor Needs2ndDer[i]
-        } // endfor i
-      */
-    // D100, D010 and D001
-    for(i=0;i<N_Sets;i++)
+          double p13 = a31 * refD100[k             ] 
+                     + a32 * refD100[k + N_Functs  ] 
+                     + a33 * refD100[k + 2*N_Functs];
+          double p23 = a31 * refD010[k             ] 
+                     + a32 * refD010[k + N_Functs  ] 
+                     + a33 * refD010[k + 2*N_Functs];
+          double p33 = a31 * refD001[k             ] 
+                     + a32 * refD001[k + N_Functs  ] 
+                     + a33 * refD001[k + 2*N_Functs];
+          origD100[k + 2*N_Functs] = i11*p13 + i12*p23 + i13*p33;
+          origD010[k + 2*N_Functs] = i21*p13 + i22*p23 + i23*p33;
+          origD001[k + 2*N_Functs] = i31*p13 + i32*p23 + i33*p33;
+        }
+      }
+    } // endfor j
+  } // endfor i
+   
+  // leave if no second derivatives are needed
+  if(!SecondDer) return;
+  
+  double GeoData[6][6];
+  double Eye[6][6];
+  // reset matrices
+  memset(GeoData, 0, 36*SizeOfDouble);
+  memset(Eye, 0, 36*SizeOfDouble);
+  Eye[0][0] = 1;
+  Eye[1][1] = 1;
+  Eye[2][2] = 1;
+  Eye[3][3] = 1;
+  Eye[4][4] = 1;
+  Eye[5][5] = 1;
+  
+  GeoData[0][0] = xc1*xc1;
+  GeoData[0][1] = 2*xc1*yc1;
+  GeoData[0][2] = 2*xc1*zc1;
+  GeoData[0][3] = yc1*yc1;
+  GeoData[0][4] = 2*yc1*zc1;
+  GeoData[0][5] = zc1*zc1;
+  
+  GeoData[1][0] = xc1*xc2;
+  GeoData[1][1] = yc1*xc2 + xc1*yc2; 
+  GeoData[1][2] = xc1*zc2 + xc2*zc1;
+  GeoData[1][3] = yc1*yc2;
+  GeoData[1][4] = yc1*zc2 + yc2*zc1;
+  GeoData[1][5] = zc1*zc2;
+  
+  GeoData[2][0] = xc1*xc3;
+  GeoData[2][1] = xc1*yc3 + xc3*yc1;
+  GeoData[2][2] = xc1*zc3 + xc3*zc1;
+  GeoData[2][3] = yc1*yc3;
+  GeoData[2][4] = yc1*zc3 + yc3*zc1;
+  GeoData[2][5] = zc1*zc3;
+  
+  GeoData[3][0] = xc2*xc2;
+  GeoData[3][1] = 2*xc2*yc2;
+  GeoData[3][2] = 2*xc2*zc2;
+  GeoData[3][3] = yc2*yc2;
+  GeoData[3][4] = 2*yc2*zc2;
+  GeoData[3][5] = zc2*zc2;
+  
+  GeoData[4][0] = xc2*xc3;
+  GeoData[4][1] = xc2*yc3 + xc3*yc2;
+  GeoData[4][2] = xc2*zc3 + xc3*zc2;
+  GeoData[4][3] = yc2*yc3;
+  GeoData[4][4] = yc2*zc3 + yc3*zc2;
+  GeoData[4][5] = zc2*zc3;
+  
+  GeoData[5][0] = xc3*xc3;
+  GeoData[5][1] = 2*xc3*yc3;
+  GeoData[5][2] = 2*xc3*zc3;
+  GeoData[5][3] = yc3*yc3;
+  GeoData[5][4] = 2*yc3*zc3;
+  GeoData[5][5] = zc3*zc3;
+  
+  // subroutine for solving a multiple systems of linear equations
+  // void SolveMultipleSystems(double *a, double *b, int N_Eqn,
+  //                        int LDA, int LDB, int N_Rhs);
+  //SolveMultipleSystems((double *)GeoData, (double *)Eye, 3,
+  //                 3, 3, 3);
+  //SolveLinearSystem((double *)GeoData, (double *)Eye, 3, 3);
+              
+  SolveMultipleSystemsNew((double *)GeoData, (double *)Eye, 6, 6, 6, 6);
+  
+  for(i=0;i<N_Sets;i++)
+  {
+    if(Needs2ndDer[i])
     {
       BaseFunct=BaseFuncts[i];
       N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
-          
-      refvaluesD100=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D100);
-      origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
+      int BaseVectDim =
+        TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetBaseVectDim();
+      if(BaseVectDim != 1)
+      {
+        ErrMsg("second derivatives of vector valued basis function not " <<
+               "supported");
+        exit(0);
+      }
       
-      refvaluesD010=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D010);
-      origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
-          
-      refvaluesD001=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D001);
-      origvaluesD001=TFEDatabase3D::GetOrigElementValues(BaseFunct, D001);
-          
+      refvaluesD200 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D200);
+      origvaluesD200 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D200);
+      
+      refvaluesD110 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D110);
+      origvaluesD110 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D110);
+      
+      refvaluesD101 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D101);
+      origvaluesD101 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D101);
+      
+      refvaluesD020 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D020);
+      origvaluesD020 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D020);
+      
+      refvaluesD011 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D011);
+      origvaluesD011 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D011);
+      
+      refvaluesD002 = TFEDatabase3D::GetRefElementValues
+      (BaseFunct, QuadFormula, D002);
+      origvaluesD002 = TFEDatabase3D::GetOrigElementValues
+      (BaseFunct, D002);
+      
       for(j=0;j<N_Points;j++)
       {
-        refD100 = refvaluesD100[j];
-        origD100 = origvaluesD100[j];
-              
-        refD010 = refvaluesD010[j];
-        origD010 = origvaluesD010[j];
-              
-        refD001 = refvaluesD001[j];
-        origD001 = origvaluesD001[j];
-              
-        for(k=0;k<N_Functs;k++)
+        double *refD200 = refvaluesD200[j];
+        double *refD110 = refvaluesD110[j];
+        double *refD101 = refvaluesD101[j];
+        double *refD020 = refvaluesD020[j];
+        double *refD011 = refvaluesD011[j];
+        double *refD002 = refvaluesD002[j];
+        
+        double *origD200 = origvaluesD200[j];
+        double *origD110 = origvaluesD110[j];
+        double *origD101 = origvaluesD101[j];
+        double *origD020 = origvaluesD020[j];
+        double *origD011 = origvaluesD011[j];
+        double *origD002 = origvaluesD002[j];
+        
+        for(int k = 0; k < N_Functs; k++)
         {
-          origD100[k] = ((yc2*zc3 - yc3*zc2)*refD100[k] + (yc3*zc1 - yc1*zc3)*refD010[k] + (yc1*zc2 - yc2*zc1)*refD001[k]) *rec_detjk;
-          origD010[k] = ((xc3*zc2 - xc2*zc3)*refD100[k] + (xc1*zc3 - xc3*zc1)*refD010[k] + (xc2*zc1 - xc1*zc2)*refD001[k]) *rec_detjk;
-          origD001[k] = ((xc2*yc3 - xc3*yc2)*refD100[k] + (xc3*yc1 - xc1*yc3)*refD010[k] + (xc1*yc2 - xc2*yc1)*refD001[k]) *rec_detjk;                   
+          double r200 = refD200[k];
+          double r110 = refD110[k];
+          double r101 = refD101[k];
+          double r020 = refD020[k];
+          double r011 = refD011[k];
+          double r002 = refD002[k];
+          
+          double o200, o110, o101, o020, o011, o002;
+          o200 =  Eye[0][0]*r200 + Eye[0][1]*r110 + Eye[0][2]*r101 
+                + Eye[0][3]*r020 + Eye[0][4]*r011 + Eye[0][5]*r002;
+          o110 =  Eye[1][0]*r200 + Eye[1][1]*r110 + Eye[1][2]*r101 
+                + Eye[1][3]*r020 + Eye[1][4]*r011 + Eye[1][5]*r002;
+          o101 =  Eye[2][0]*r200 + Eye[2][1]*r110 + Eye[2][2]*r101 
+                + Eye[2][3]*r020 + Eye[2][4]*r011 + Eye[2][5]*r002;
+          o020 =  Eye[3][0]*r200 + Eye[3][1]*r110 + Eye[3][2]*r101 
+                + Eye[3][3]*r020 + Eye[3][4]*r011 + Eye[3][5]*r002;
+          o011 =  Eye[4][0]*r200 + Eye[4][1]*r110 + Eye[4][2]*r101 
+                + Eye[4][3]*r020 + Eye[4][4]*r011 + Eye[4][5]*r002;
+          o002 =  Eye[5][0]*r200 + Eye[5][1]*r110 + Eye[5][2]*r101 
+                + Eye[5][3]*r020 + Eye[5][4]*r011 + Eye[5][5]*r002;
+          
+          origD200[k] = o200;
+          origD110[k] = o110;
+          origD101[k] = o101;
+          origD020[k] = o020;
+          origD011[k] = o011;
+          origD002[k] = o002;
         } // endfor k
-      } // endfor j
-    } // endfor i
-   
-    // leave if no second derivatives are needed
-    if(!SecondDer) return;
-      /*
-        // find transformation matrix for second derivatives
-        // do this only once since matrix is constant for an affine mapping
-        
-        // reset matrices
-        memset(GeoData, 0, 9*SizeOfDouble);
-        memset(Eye, 0, 9*SizeOfDouble);
-        Eye[0][0] = 1;
-        Eye[1][1] = 1;
-        Eye[2][2] = 1;
-        
-        GeoData[0][0] = xc1*xc1;
-        GeoData[0][1] = 2*xc1*yc1;
-        GeoData[0][2] = yc1*yc1;
-        
-        GeoData[1][0] = xc1*xc2;
-        GeoData[1][1] = yc1*xc2+xc1*yc2; 
-        GeoData[1][2] = yc1*yc2;
-        
-        GeoData[2][0] = xc2*xc2;
-        GeoData[2][1] = 2*xc2*yc2;
-        GeoData[2][2] = yc2*yc2;
-        
-        // subroutine for solving a multiple systems of linear equations
-        // void SolveMultipleSystems(double *a, double *b, int N_Eqn,
-        //                        int LDA, int LDB, int N_Rhs);
-        //SolveMultipleSystems((double *)GeoData, (double *)Eye, 3,
-        //                 3, 3, 3);
-        //SolveLinearSystem((double *)GeoData, (double *)Eye, 3, 3);
-                    
-        SolveMultipleSystemsNew((double *)GeoData, (double *)Eye, 3,
-        3, 3, 3);
-        
-        for(i=0;i<N_Sets;i++)
-        {
-  if(Needs2ndDer[i])
-  {
-  BaseFunct=BaseFuncts[i];
-  N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
-  
-  refvaluesD20=TFEDatabase3D::GetRefElementValues
-  (BaseFunct, QuadFormula, D20);
-  origvaluesD20=TFEDatabase3D::GetOrigElementValues
-  (BaseFunct, D20);
-  
-  refvaluesD11=TFEDatabase3D::GetRefElementValues
-  (BaseFunct, QuadFormula, D11);
-  origvaluesD11=TFEDatabase3D::GetOrigElementValues
-  (BaseFunct, D11);
-  
-  refvaluesD02=TFEDatabase3D::GetRefElementValues
-  (BaseFunct, QuadFormula, D02);
-  origvaluesD02=TFEDatabase3D::GetOrigElementValues
-  (BaseFunct, D02);
-  
-  for(j=0;j<N_Points;j++)
-  {
-  refD20 = refvaluesD20[j];
-  refD11 = refvaluesD11[j];
-  refD02 = refvaluesD02[j];
-  
-  origD20 = origvaluesD20[j];
-  origD11 = origvaluesD11[j];
-  origD02 = origvaluesD02[j];
-  
-  for(k=0;k<N_Functs;k++)
-  {
-    r20 = refD20[k];
-    r11 = refD11[k];
-    r02 = refD02[k];
-  
-    o20 = Eye[0][0]*r20+Eye[0][1]*r11+Eye[0][2]*r02;
-    o11 = Eye[1][0]*r20+Eye[1][1]*r11+Eye[1][2]*r02;
-    o02 = Eye[2][0]*r20+Eye[2][1]*r11+Eye[2][2]*r02;
-  
-    origD20[k] = o20;
-    origD11[k] = o11;
-    origD02[k] = o02;
-  } // endfor k
-  } // endif
-  } // endfor j
+      } // endif
+    } // endfor j
   } // endfor i
-*/
 }
 /** calculate functions and derivatives from reference element
     to original element */
 void THexaAffin::GetOrigValues(double xi, double eta, double zeta,
                                int N_BaseFunct,
                                double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                               double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                               double *uorig, double *uxorig, double *uyorig, double *uzorig,
+                               int _BaseVectDim)
 {
-  int i;
-  
-  // D000
-  for(i=0;i<N_BaseFunct;i++)
-    uorig[i] = uref[i];
-
-  // D100, D010 and D001
-  for(i=0;i<N_BaseFunct;i++)
+  if(_BaseVectDim == 1)
   {
-    uxorig[i] = ((yc2*zc3 - yc3*zc2)*uxiref[i] + (yc3*zc1 - yc1*zc3)*uetaref[i] + (yc1*zc2 - yc2*zc1)*uzetaref[i]) *rec_detjk;
-    uyorig[i] = ((xc3*zc2 - xc2*zc3)*uxiref[i] + (xc1*zc3 - xc3*zc1)*uetaref[i] + (xc2*zc1 - xc1*zc2)*uzetaref[i]) *rec_detjk;
-    uzorig[i] = ((xc2*yc3 - xc3*yc2)*uxiref[i] + (xc3*yc1 - xc1*yc3)*uetaref[i] + (xc1*yc2 - xc2*yc1)*uzetaref[i]) *rec_detjk;
-  } // endfor i
+    int i;
+    // D000
+    for(i=0;i<N_BaseFunct;i++)
+      uorig[i] = uref[i];
+    
+    // D100, D010 and D001
+    for(i=0;i<N_BaseFunct;i++)
+    {
+      uxorig[i] = ( (yc2*zc3 - yc3*zc2)*uxiref[i] 
+                  + (yc3*zc1 - yc1*zc3)*uetaref[i] 
+                  + (yc1*zc2 - yc2*zc1)*uzetaref[i] ) *rec_detjk;
+      uyorig[i] = ( (xc3*zc2 - xc2*zc3)*uxiref[i] 
+                  + (xc1*zc3 - xc3*zc1)*uetaref[i] 
+                  + (xc2*zc1 - xc1*zc2)*uzetaref[i] ) *rec_detjk;
+      uzorig[i] = ( (xc2*yc3 - xc3*yc2)*uxiref[i] 
+                  + (xc3*yc1 - xc1*yc3)*uetaref[i] 
+                  + (xc1*yc2 - xc2*yc1)*uzetaref[i] ) *rec_detjk;
+    } // endfor i
+  }
+  else if(_BaseVectDim == 3)
+  {
+    // D000
+    PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
+    
+    // D100, D010, D001
+    // not yet implemented
+  }
+  else
+  {
+    ErrMsg("unknown basis function dimension");
+    exit(0);
+  }
 }
 
 void THexaAffin::SetCell(TBaseCell *cell)
@@ -793,4 +995,34 @@ void THexaAffin::GetTangentVectors(int j, double p1, double p2,
       return;
   }
 } // end THexaAffin::GetTangentVectors
+
+
+/** Piola transformation for vectorial basis functions */
+void THexaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD000, 
+                                     double *origD000 )
+{
+  double a11 = xc1 * rec_detjk;
+  double a12 = xc2 * rec_detjk;
+  double a13 = xc3 * rec_detjk;
+  double a21 = yc1 * rec_detjk;
+  double a22 = yc2 * rec_detjk;
+  double a23 = yc3 * rec_detjk;
+  double a31 = zc1 * rec_detjk;
+  double a32 = zc2 * rec_detjk;
+  double a33 = zc3 * rec_detjk;
+  for(int k = 0; k < N_Functs; k++)
+  {
+    // three components:
+    origD000[k             ] = a11 * refD000[k             ] 
+                             + a12 * refD000[k +   N_Functs] 
+                             + a13 * refD000[k + 2*N_Functs]; 
+    origD000[k + N_Functs  ] = a21 * refD000[k             ] 
+                             + a22 * refD000[k +   N_Functs] 
+                             + a23 * refD000[k + 2*N_Functs]; 
+    origD000[k + 2*N_Functs] = a31 * refD000[k             ] 
+                             + a32 * refD000[k +   N_Functs] 
+                             + a33 * refD000[k + 2*N_Functs];
+  }
+}
+
 

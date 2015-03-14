@@ -26,9 +26,9 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
 
 void MatVect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x, double *y);
 
-void UltraLocalProjection(void* A, boolean ForPressure, CoeffFct2D *Coeff);
-void UltraLocalProjection(void* A, boolean ForPressure);
-void UltraLocalProjectionSD(void* A, boolean ForPressure);
+void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D *Coeff);
+void UltraLocalProjection(void* A, bool ForPressure);
+void UltraLocalProjectionSD(void* A, bool ForPressure);
 
 double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
         double lpcoeff, double lpexponent, int OrderDiff);
@@ -73,12 +73,32 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
 
 void Defect_NSE4C(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r);
 
-void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, boolean DirichletBC);
+double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
+                             double lpcoeff, double lpexponent, int OrderDiff);
+bool TestCell(TBaseCell *cell);
+
+void UltraLocalProjectionFunction(void* A, bool ForPressure);
+
+void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A, 
+                                              TFEFunction2D *uh, 
+                                              CoeffFct2D *Coeff);
+
+void LocalProjectionCoarseGridQ0(TFEFunction2D *uh, TFEFunction2D *uh_proj,
+                                 CoeffFct2D *Coeff, int convection_flag);  
+         
+void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
+                                          TFEFunction2D *uh,
+                                          TFEFunction2D *uh_proj,
+                                          CoeffFct2D *Coeff,
+                                          double *rhs, int convection_flag); 
+
+
+void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool DirichletBC);
 
 
 void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFunct,
                          double lpcoeff, double lpexponent, int OrderDiff);
-#else 
+#else // __3D__ 
 
 void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
                        TFEFunction3D *uh2, TFEFunction3D *uh3,
@@ -87,5 +107,14 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
 void UltraLocalProjection(TSquareMatrix3D* A, 
                           double lpcoeff, double lpexponent, int OrderDiff);
 
-#endif                           
-#endif
+FE3D GetElement3D(TBaseCell *cell, int CoarseOrder);
+
+void UltraLocalProjection3D(void* A, bool ForPressure);
+
+double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
+        double lpcoeff, double lpexponent, int OrderDiff);
+
+
+#endif // __3D__
+
+#endif // __LOCAL_PROJECTION__

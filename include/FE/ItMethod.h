@@ -80,37 +80,64 @@ class TItMethod
                         double *rhs) = 0;
 
     /** return system id */
-    int GetSystemId()
-      {return system_id;};
+    int GetSystemId() const
+    { return system_id; };
 
     /** return maximal number of preconditioner iterations */
-    int GetPrecMaxit()
-      {return prec_maxit;};
+    int GetPrecMaxit() const
+    { return prec_maxit; };
+    
+    /** set maximal number of preconditioner iterations */
+    void SetPrecMaxit(int Prec_Maxit)
+    { prec_maxit = Prec_Maxit; }
 
     /** return absolute tolerance for stopping */
-    double GetResNormMin()
-      {return res_norm_min;};
+    double GetResNormMin() const
+    { return res_norm_min; };
+    
+    /** set absolute tolerance for stopping */
+    void SetResNormMin(double Res_Norm_Min)
+   { res_norm_min = Res_Norm_Min; }
 
     /** return relative tolerance for stopping */
-    double GetRedFactor()
-      {return red_factor;};
+    double GetRedFactor() const
+    { return red_factor; };
+    
+    /** set relative tolerance for stopping */
+    void SetRedFactor(double Red_Factor)
+    { red_factor = Red_Factor; }
 
     /** return tolerance for divergence */
-    double GetDivFactor()
-      {return div_factor;};
+    double GetDivFactor() const
+    { return div_factor; };
+    
+    /** set tolerance for divergence */
+    void SetDivFactor(double Div_Factor)
+    { div_factor = Div_Factor; }
 
     /** return maximal number of iterations */
-    int GetMaxit()
-      {return maxit;};
+    int GetMaxit() const
+    { return maxit; };
+    
+    /** set maximal number of iterations */
+    void SetMaxit(int Maxit)
+    { maxit = Maxit; }
 
     /** return minimal number of iterations */
-    int GetMinit()
-      {return minit;};
+    int GetMinit() const
+    { return minit; };
+
+    /** set minimal number of iterations */
+    void SetMinit(int Minit)
+    { minit = Minit; }
 
     /** return restart */
-    int GetRestart()
-      {return restart;};
-
+    int GetRestart() const
+    { return restart; };
+    
+    /** set restart */
+    void SetRestart(int Restart)
+    { restart = Restart; };
 };
 
 #endif
