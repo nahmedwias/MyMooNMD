@@ -13,13 +13,13 @@
 // Type 4, SDFEM, (grad u, grad v)
 // ======================================================================
 void NSType4SDFEMEquOrd(double Mult, double *coeff,
-			double *param, double hK,
-			double **OrigValues, int *N_BaseFuncts,
-			double ***LocMatrices, double **LocRhs);
+                        double *param, double hK,
+                        double **OrigValues, int *N_BaseFuncts,
+                        double ***LocMatrices, double **LocRhs);
 
 void NSType4NLSDFEMEquOrd(double Mult, double *coeff,
-			  double *param, double hK,
-			  double **OrigValues, int *N_BaseFuncts,
-			  double ***LocMatrices, double **LocRhs);
+                          double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs);
 
-#endif
+#endif // __NSE2D_EQUORD_FIXPO__

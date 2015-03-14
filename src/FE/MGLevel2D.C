@@ -514,18 +514,32 @@ void TMGLevel2D::ILUDecomposition()
 {
   int i,j,jj,k,l,N_;
   double diag, pivot, update;
-  int begin, end, beginJ, endJ, found;
+  int begin, end, beginJ, endJ, found, index;
   static double beta_ilu = TDatabase::ParamDB->SC_ILU_BETA;
 
   N_=RowPtr[N_DOF];
   Additional = new double[N_];
   memcpy(Additional, Entries, N_*SizeOfDouble);
 
+  // compute ILU decomposition
+  // loop over all rows
   for(i=0;i<N_DOF;i++)
   {
+    // pointer to the entries for the columns
     begin = RowPtr[i];
     end = RowPtr[i+1];
-    diag = Additional[begin];
+    //diag = Additional[begin];
+    // find diagonal entry
+    diag = -4711;
+    for(j=begin;j<end;j++)
+    {
+      index = KCol[j];
+      if (index==i)
+      {
+        diag = Additional[j];
+        break;
+      }
+    }
     if(fabs(diag)<1e-8)
     {
       cerr << "ILU decomposition failed" << endl;
@@ -597,6 +611,7 @@ void TMGLevel2D::ILU(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
   int i,j,k, begin, end;
+  double diag;
 
   if (Additional==NULL)
   {
@@ -624,7 +639,17 @@ void TMGLevel2D::ILU(double *sol, double *f, double *aux,
     for(j=begin;j<end;j++)
       if( (k=KCol[j]) > i)
         aux[i] -= Additional[j]*aux[k];
-    aux[i] /= Additional[begin];
+    //aux[i] /= Additional[begin];
+    // find diagonal entry
+    for(j=begin;j<end;j++)
+    {
+       if (KCol[j]==i)
+      {
+        diag = Additional[j];
+        break;
+      }
+    }
+    aux[i] /= diag;
   }
 
   for(i=0;i<N_DOF;i++)

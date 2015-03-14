@@ -17,6 +17,14 @@
 double RFB_Parameter(double hK, double eps, double* b);
 
 // ======================================================================
+// compute parameter for SUPG stabilization
+// ======================================================================
+double SUPG_Parameter(double hK, double eps, double b1, double b2, double c);
+
+
+void NSParamsVelo(double *in, double *out);
+
+// ======================================================================
 // Type 1, Standard Galerkin
 // ======================================================================
 void NSType1Galerkin(double Mult, double *coeff,
@@ -57,6 +65,14 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+// Type 1, Standard Galerkin + divergence term 
+// ======================================================================
+void NSType1GalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
 // Type 2, Standard Galerkin
 // ======================================================================
 void NSType2Galerkin(double Mult, double *coeff,
@@ -84,6 +100,14 @@ double ***LocMatrices, double **LocRhs);
 // Type 2, Smagorinsky
 // ======================================================================
 void NSType2Smagorinsky(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// Type 2, Standard Galerkin + divergence term
+// ======================================================================
+void NSType2GalerkinDiv(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
@@ -136,6 +160,14 @@ double ***LocMatrices, double **LocRhs);
 // Type 3, Smagorinsky, D(u):D(v)
 // ======================================================================
 void NSType3SmagorinskyDD(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// Type 3, Standard Galerkin +div term, (grad u, grad v)
+// ======================================================================
+void NSType3GalerkinDiv(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
@@ -246,6 +278,14 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+// Type 1, Standard Galerkin + div term, only nonlinear part
+// ======================================================================
+void NSType1_2NLGalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
 // Type 2, SDFEM
 // ======================================================================
 void NSType2NLSDFEM(double Mult, double *coeff,
@@ -297,6 +337,14 @@ double ***LocMatrices, double **LocRhs);
 // Type 3, Smagorinsky, D(u):D(v)
 // ======================================================================
 void NSType3_4NLSmagorinskyDD(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// Type 3, Standard Galerkin + div term, (grad u, grad v)
+// ======================================================================
+void NSType3_4NLGalerkinDiv(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs);

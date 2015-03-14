@@ -2839,7 +2839,8 @@ void Defect_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
   N_UDOF = A[0]->GetN_Rows();
   N_PDOF = B[0]->GetN_Rows();
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
-    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
+    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,
+                    TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
   return;
 }
 
@@ -3159,12 +3160,179 @@ void Defect_EquOrd_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *b, do
   return;
 }
 
+void MatVect_Raviart_Thomas_NSE4(TSquareMatrix **A, TMatrix **B, double *x, 
+    double *y)
+{
+  CoupledMatVect(A[0],B[0],x,y);
+  return;
+}
+
+/**  Darcy Raviart-Thomas
+ ( A B' )
+ ( B 0  )
+ block A: flux x flux
+*/
+void CoupledMatVect(TSquareMatrix *A, TMatrix *B, double *x, double *y)
+{
+  int N_UDOF, N_PDOF;
+  int i,j,k,index;
+  double s, t, value;
+  double *u, *p;
+  double *v, *q;
+  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  double *AEntries, *BEntries;
+  int N_Active;
+
+  ARowPtr = A->GetRowPtr();
+  AKCol = A->GetKCol();
+  AEntries = A->GetEntries();
+
+  BRowPtr = B->GetRowPtr();
+  BKCol = B->GetKCol();
+
+  BEntries = B->GetEntries();
+  
+  N_UDOF = A->GetN_Rows();
+  N_PDOF = B->GetN_Rows();
+
+  u = x;
+  p = u+N_UDOF;
+
+  v = y;
+  q = v+N_UDOF;
+
+  N_Active = A->GetActiveBound();
+  j = ARowPtr[0];
+ 
+  for(i=0;i<N_UDOF;i++)
+  {
+    s = 0;
+    k = ARowPtr[i+1];
+    for(;j<k;j++)
+    {
+      index = AKCol[j];
+      value = AEntries[j];
+      s += value * u[index];
+    }
+    v[i] = s;
+  } // endfor i
+
+  j = BRowPtr[0];
+  for(i=0;i<N_PDOF;i++)
+  {
+    s = 0;
+    k = BRowPtr[i+1];
+    for(;j<k;j++)
+    {
+      index = BKCol[j];
+      value = BEntries[j];
+      s += value * u[index];
+
+      if(index<N_Active)
+      {
+        t = p[i];
+        v[index] += value * t;
+      }
+    } // endfor j
+    q[i] = s;
+  } // endfor i
+}
+
+/** r := b - A * x */
+void CoupledDefect(TSquareMatrix *A, TMatrix *B, 
+                   double *x, double *b, double *r)
+{
+  int N_UDOF, N_PDOF;
+  int i,j,k,index;
+  double s, t, value;
+  double *u, *p;
+  double *v, *q;
+  double *r1, *r2;
+  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  double *AEntries, *BEntries;
+  int N_Active;
+  
+  ARowPtr = A->GetRowPtr();
+  AKCol = A->GetKCol();
+  AEntries = A->GetEntries();
+
+  BRowPtr = B->GetRowPtr();
+  BKCol = B->GetKCol();
+
+  BEntries = B->GetEntries();
+  
+  N_UDOF = A->GetN_Rows();
+  N_PDOF = B->GetN_Rows();
+
+  u = x;
+  p  = u+N_UDOF;
+
+  v = b;
+  q  = v+N_UDOF;
+
+  r1 = r;
+  r2 = r1+N_UDOF;
+  
+  // ( r1 ) = ( v ) _ ( A B' ) ( u )
+  // ( r2 )   ( q )   ( B 0  ) ( p )
+  
+  N_Active = A->GetActiveBound();
+  j = ARowPtr[0];
+  for(i=0;i<N_UDOF;i++)
+  {
+    s = v[i];
+    k = ARowPtr[i+1];
+    for(;j<k;j++)
+    {
+      index = AKCol[j];
+      value = AEntries[j];
+      s -= value * u[index];
+    }
+    r1[i] = s;
+  } // endfor i
+
+  j = BRowPtr[0];
+  for(i=0;i<N_PDOF;i++)
+  {
+    s = q[i];
+    k = BRowPtr[i+1];
+    for(;j<k;j++)
+    {
+      index = BKCol[j];
+      value = BEntries[j];
+      s -= value * u[index];
+
+      if(index<N_Active)
+      {
+        t = p[i];
+        r1[index] -= value * t;
+      }
+    } // endfor j
+    r2[i] = s;
+  } // endfor i
+}
+
+void Defect_Raviart_Thomas_NSE4(TSquareMatrix **A, TMatrix **B, 
+                                double *x, double *b, double *r)
+{
+  CoupledDefect(A[0], B[0], x, b, r);
+  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+    int N_UDOF,N_PDOF;
+    N_UDOF = A[0]->GetN_Rows();
+    N_PDOF = B[0]->GetN_Rows();
+    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
+  }
+}
+
+
+
 /** Navier--Stokes type 5 (NSTYPE==5) */
 /** matrix * vector for coupled Stokes / Navier-Stokes system */
 void CoupledMatVect(TSquareMatrix *A, double *x, double *y)
 {
   int i,j,k,l,m;
-  TSquareMatrixNSE2D *NSE;
+  TSquareMatrixNSE2D *NSE_matrix;
   int *BeginJb, *jb, N_DOFperJoint;
   double *Alpha;
   int *RowPtr, *KCol;
@@ -3186,18 +3354,18 @@ void CoupledMatVect(TSquareMatrix *A, double *x, double *y)
   TFEDesc2D *FEDesc_Obj;
   int N_U;
   
-  NSE = (TSquareMatrixNSE2D*)A;
+  NSE_matrix = (TSquareMatrixNSE2D*)A;
 
-  RowPtr = NSE->GetRowPtr();
-  KCol = NSE->GetKCol();
-  Entries = NSE->GetEntries();
+  RowPtr = NSE_matrix->GetRowPtr();
+  KCol = NSE_matrix->GetKCol();
+  Entries = NSE_matrix->GetEntries();
 
-  BeginJb = NSE->GetBeginJb();
-  jb = NSE->GetJb();
-  N_DOFperJoint = NSE->GetN_DOFperJoint();
-  Alpha = NSE->GetAlpha();
+  BeginJb = NSE_matrix->GetBeginJb();
+  jb = NSE_matrix->GetJb();
+  N_DOFperJoint = NSE_matrix->GetN_DOFperJoint();
+  Alpha = NSE_matrix->GetAlpha();
 
-  USpace = NSE->GetFESpace();
+  USpace = NSE_matrix->GetFESpace();
   GlobalNumbers = USpace->GetGlobalNumbers();
   BeginIndex = USpace->GetBeginIndex();
 
@@ -3323,7 +3491,7 @@ void MatVect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *y)
 void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r)
 {
   int i,j,k,l,m;
-  TSquareMatrixNSE2D *NSE;
+  TSquareMatrixNSE2D *NSE_matrix;
   int *BeginJb, *jb, N_DOFperJoint;
   double *Alpha;
   int *RowPtr, *KCol;
@@ -3345,18 +3513,18 @@ void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r)
   TFEDesc2D *FEDesc_Obj;
   int N_U;
   
-  NSE = (TSquareMatrixNSE2D*)A;
+  NSE_matrix = (TSquareMatrixNSE2D*)A;
 
-  RowPtr = NSE->GetRowPtr();
-  KCol = NSE->GetKCol();
-  Entries = NSE->GetEntries();
+  RowPtr = NSE_matrix->GetRowPtr();
+  KCol = NSE_matrix->GetKCol();
+  Entries = NSE_matrix->GetEntries();
 
-  BeginJb = NSE->GetBeginJb();
-  jb = NSE->GetJb();
-  N_DOFperJoint = NSE->GetN_DOFperJoint();
-  Alpha = NSE->GetAlpha();
+  BeginJb = NSE_matrix->GetBeginJb();
+  jb = NSE_matrix->GetJb();
+  N_DOFperJoint = NSE_matrix->GetN_DOFperJoint();
+  Alpha = NSE_matrix->GetAlpha();
 
-  USpace = NSE->GetFESpace();
+  USpace = NSE_matrix->GetFESpace();
   GlobalNumbers = USpace->GetGlobalNumbers();
   BeginIndex = USpace->GetBeginIndex();
 

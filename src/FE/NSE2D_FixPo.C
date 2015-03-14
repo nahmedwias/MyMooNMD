@@ -34,6 +34,147 @@ double RFB_Parameter(double hK, double eps, double* b)
 }
 
 // ======================================================================
+// compute parameter for SUPG stabilization
+// ======================================================================
+
+double SUPG_Parameter(double hK, double eps, double b1, double b2, double c)
+{
+  double delta, val, norm_b, M, r=2.0, c_inv_2 = 24.0, beta_0 = 1.0, c_pf = 1.0;
+  double beta_1 = 1.0, C0, C_h = 1.0, delta_0 = 0.1;
+  double delta0 = TDatabase::ParamDB->DELTA0;
+  double delta1 = TDatabase::ParamDB->DELTA1;
+  
+  switch (TDatabase::ParamDB->VELOCITY_SPACE)
+  {
+    case 2:
+    case 12:
+        if (TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE==3)
+        c_inv_2 = 48.0;
+  else
+        c_inv_2 = 24.0;
+      break;
+      case 3:
+      case 13:
+        if (TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE==3)
+        c_inv_2 = (435+sqrt(26025.0))/4.0;
+  else
+        c_inv_2 = (244+sqrt(9136.0))/3.0;
+         break; 
+    default: 
+         c_inv_2 = (435+sqrt(26025.0))/4.0;
+         break;     
+  }
+
+  switch (TDatabase::ParamDB->SDFEM_TYPE)
+  {
+    case 1:
+      // standard parameter 
+      delta =  hK*hK;
+      delta =  delta0*delta;
+       //OutPut(delta << endl);
+       break;
+    case 2:                                      
+      // parameter from [BBJL07]
+      delta =  hK*hK/(r*r*(eps+c));
+      delta =  delta0*delta;
+  //OutPut(delta << endl);
+       break;
+      // paper with Julia Novo
+    case 3:
+         delta = hK*hK/(3*eps*c_inv_2);
+  //OutPut(delta << " ");
+  if (c>0)
+  {
+    val = 1.0/(3.0*c);
+    if (val<delta)
+      delta = val;
+  }
+  //OutPut(delta << " ");
+  norm_b= fabs(b1);
+  if (fabs(b2)>norm_b)
+    norm_b = fabs(b2);
+  if (norm_b > 0)
+  {
+  val = beta_0 *hK/(4*norm_b*sqrt(c_inv_2));
+  if (val<delta)
+          delta = val;
+  }
+  //OutPut(delta << " ");
+  M = 14*eps;
+  val = 21 * c * c_pf *  c_pf ;
+  if (val > M)
+    M = val;
+  val = 14 * delta1;
+  if (val > M)
+    M = val;
+  if (c>0)
+  {
+    val = 21 * norm_b * norm_b/c;
+    if (val > M)
+      M = val;
+  }
+  M /= (beta_0*beta_0);
+  val = hK * hK /(24 * M * c_inv_2);
+  if (val<delta)
+          delta = val;
+
+  //OutPut(delta << endl);
+     break;
+    case 4:
+         delta = hK*hK/(2*eps*c_inv_2);
+  // OutPut(delta << " ");
+  norm_b= fabs(b1);
+  if (fabs(b2)>norm_b)
+    norm_b = fabs(b2);
+  if (norm_b > 0)
+  {
+          val = beta_1 * hK/(4*norm_b*sqrt(c_inv_2));
+    if (val<delta)
+            delta = val;
+  }
+  //OutPut(delta << " ");
+  C0 = delta;
+  M = 10 * eps * c_inv_2/(C_h*C_h);
+  val = 10.0/(C_h*C_h*delta_0);
+  if (val > M)
+    M = val;
+  val = 10 * delta1 * c_inv_2/(C_h*C_h);
+  if (val > M)
+    M = val;
+  val = 10 * C0 * norm_b * norm_b * c_inv_2/(C_h*C_h);
+  if (val > M)
+    M = val;  
+  M /= (beta_1*beta_1);
+  val = beta_1 * hK * hK /(16 * M);
+  if (val<delta)
+          delta = val;
+
+  //OutPut(delta << " " << TDatabase::ParamDB->INTERNAL_POLYNOMIAL_DEGREE << endl);
+     break;
+   case 11:
+      // standard parameter 
+      if (eps < hK)
+        delta = hK;
+      else
+        delta = hK * hK;
+      delta =  delta0*delta;
+        //OutPut(delta << endl);
+       break;
+   case 12:
+       delta =  hK;
+       delta =  delta0*delta;
+         //OutPut(delta << endl);
+        break;
+
+    default:
+      OutPut("SDFEM_TYPE " << TDatabase::ParamDB->SDFEM_TYPE << " not defined !!!" << endl);
+      exit(4711);
+  }
+  return(delta);
+}
+
+
+// ======================================================================
 // Type 1, Standard Galerkin
 // ======================================================================
 void NSType1Galerkin(double Mult, double *coeff,
@@ -429,12 +570,13 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
 
   // for computational comparisons of Oseen problems
-  if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM 
+     || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
-      u1 = coeff[3];
-      u2 = coeff[4];
-      param[0] = u1;
-      param[1] = u2;
+    u1 = coeff[3];
+    u2 = coeff[4];
+    param[0] = u1;
+    param[1] = u2;
   }
 
   // compute the size of the mesh lenght for the turbulent viscosity
@@ -533,6 +675,96 @@ double ***LocMatrices, double **LocRhs)
     }
   }
 }
+
+// ======================================================================
+// Type 1, Standard Galerkin + divergence term 
+// ======================================================================
+void NSType1GalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, **MatrixB1, **MatrixB2;
+  double *Rhs1, *Rhs2, val;
+  double *MatrixRow, *MatrixRow1, *MatrixRow2;
+  double ansatz10, ansatz01, ansatz00;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_U, N_P;
+  double c0, c1, c2;
+  double u1, u2, du1x, du2y, divu;
+
+  MatrixA = LocMatrices[0];
+  MatrixB1 = LocMatrices[1];
+  MatrixB2 = LocMatrices[2];
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+  Orig3 = OrigValues[3];                          // p
+
+  c0 = coeff[0];                                  // nu
+  c1 = coeff[1];                                  // f1
+  c2 = coeff[2];                                  // f2
+
+  u1 = param[0];                 // u1old
+  u2 = param[1];                 // u2old
+  du1x = param[2];
+  du2y = param[5];
+  divu = (du1x + du2y)/2.0;
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixRow = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+
+      MatrixRow[j] += Mult * val;
+    }                                             // endfor j
+  }                                               // endfor i
+ for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+
+      val = -Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }                                             // endfor j
+
+  }                                               // endfor i
+  //cout << " end. " << endl;
+}
+
 
 // ======================================================================
 // Type 2, Standard Galerkin
@@ -651,7 +883,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig3, *Orig4, *Orig5;
   double *Orig6, *Orig7;
   int i,j,N_U, N_P;
-  double c0, c1, c2;
+  double c0, c1, c2, c;
   double u1, u2;
   double delta, ugrad;
 
@@ -685,6 +917,16 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
+  
+  // for computational comparisons of Oseen problems
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
+  {
+    u1 = coeff[3];
+    u2 = coeff[4];
+    c  = coeff[5];
+    param[0] = u1;
+    param[1] = u2;
+  }
 
   if(c0 < hK)
     delta = delta0*hK*hK;
@@ -708,13 +950,20 @@ double ***LocMatrices, double **LocRhs)
       ansatz01 = Orig1[j];
       ansatz20 = Orig3[j];
       ansatz02 = Orig4[j];
-
+      // standard terms
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
+      // SD term
       val += (-c0*(ansatz20+ansatz02)
-                                 // SD term
         + (u1*ansatz10+u2*ansatz01) ) * ugrad;
-      // val +=  ((u1*ansatz10+u2*ansatz01) ) * ugrad; // SD term
+      // for computational comparisons of Oseen problems
+      if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
+      {
+        ansatz00 = Orig2[j];
+        val += c * ansatz00 * test00;
+        val += c * ansatz00 * ugrad;
+      }
+
       MatrixRow[j] += Mult * val;
     }                            // endfor j
 
@@ -957,6 +1206,109 @@ double ***LocMatrices, double **LocRhs)
     }                            // endfor j
 
   }                              // endfor i
+}
+
+// ======================================================================
+// Type 2, Standard Galerkin + divergence term
+// ======================================================================
+void NSType2GalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, **MatrixB1, **MatrixB2;
+  double **MatrixB1T, **MatrixB2T;
+  double *Rhs1, *Rhs2, val;
+  double *MatrixRow, *MatrixRow1, *MatrixRow2;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_U, N_P;
+  double c0, c1, c2;
+  double u1, u2, du1x, du2y, divu;
+
+  MatrixA = LocMatrices[0];
+  MatrixB1 = LocMatrices[1];
+  MatrixB2 = LocMatrices[2];
+  MatrixB1T = LocMatrices[3];
+  MatrixB2T = LocMatrices[4];
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+  Orig3 = OrigValues[3];                          // p
+
+  c0 = coeff[0];                                  // nu
+  c1 = coeff[1];                                  // f1
+  c2 = coeff[2];                                  // f2
+
+  u1 = param[0];                                  // u1old
+  u2 = param[1];                                  // u2old
+  du1x = param[2];
+  du2y = param[5];
+  divu = (du1x + du2y)/2.0;
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixRow = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+
+      MatrixRow[j] += Mult * val;
+    }                                             // endfor j
+
+    MatrixRow1 = MatrixB1T[i];
+    MatrixRow2 = MatrixB2T[i];
+    for(j=0;j<N_P;j++)
+    {
+      ansatz00 = Orig3[j];
+
+      val = -Mult*ansatz00*test10;
+      MatrixRow1[j] += val;
+      val = -Mult*ansatz00*test01;
+      MatrixRow2[j] += val;
+    }
+  }                                               // endfor i
+
+  for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+      val = -Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }                                             // endfor j
+
+  }                                               // endfor i
 }
 
 
@@ -1580,6 +1932,117 @@ double ***LocMatrices, double **LocRhs)
 
 
 // ======================================================================
+// Type 3, Standard Galerkin + div term, (grad u, grad v)
+// ======================================================================
+void NSType3GalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixB1, **MatrixB2;
+  double *Rhs1, *Rhs2, val;
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *MatrixRow1, *MatrixRow2;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j,N_U, N_P;
+  double c0, c1, c2;
+  double u1, u2, du1x, du2y, divu;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA12 = LocMatrices[1];
+  MatrixA21 = LocMatrices[2];
+  MatrixA22 = LocMatrices[3];
+  MatrixB1  = LocMatrices[4];
+  MatrixB2  = LocMatrices[5];
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+  Orig3 = OrigValues[3];                          // p
+
+  c0 = coeff[0];                                  // nu
+  c1 = coeff[1];                                  // f1
+  c2 = coeff[2];                                  // f2
+
+  u1 = param[0];                                  // u1old
+  u2 = param[1];                                  // u2old
+  du1x = param[2];
+  du2y = param[5];
+  divu = (du1x + du2y)/2.0;
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+// OutPut("divu =" << divu << endl);
+      Matrix11Row[j] += Mult * val;
+
+
+      // val  = 0;
+      // Matrix12Row[j] += Mult * val;
+
+      // val  = 0;
+      // Matrix21Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+      Matrix22Row[j] += Mult * val;
+
+    }                                             // endfor j
+  }                                               // endfor i
+
+  for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+
+      val = -Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }                                             // endfor j
+
+  }                                               // endfor i
+}
+
+
+// ======================================================================
 // Type 4, Standard Galerkin, (grad u, grad v)
 // ======================================================================
 void NSType4Galerkin(double Mult, double *coeff,
@@ -1876,10 +2339,11 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
 
   // for computational comparisons of Oseen problems
-   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+   if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM
+      || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
-      u1 = coeff[3];
-      u2 = coeff[4];
+    u1 = coeff[3];
+    u2 = coeff[4];
   }
 
   maxu = fabs(u1);
@@ -2230,6 +2694,24 @@ double ***LocMatrices, double **LocRhs)
     }                            // endfor j
 
   }                              // endfor i
+  
+  // including ROSSBY term, ONLY FOR STOKES SO FAR
+  if (fabs(TDatabase::ParamDB->ROSSBY_NR)>1e-10)
+  {
+    for(i=0;i<N_U;i++)
+    {
+      Matrix12Row = MatrixA12[i];
+      Matrix21Row = MatrixA21[i];
+      test00 = Orig2[i];
+      for(j=0;j<N_U;j++)
+      {
+        ansatz00 = Orig2[j];
+        val  = 2*TDatabase::ParamDB->ROSSBY_NR * ansatz00 * test00;
+        Matrix12Row[j] -= Mult * val;
+        Matrix21Row[j] += Mult * val;
+      }   // endfor j
+    }
+  }
 }
 
 
@@ -2341,8 +2823,25 @@ double ***LocMatrices, double **LocRhs)
       val = -Mult*test00*ansatz01;
       MatrixRow2[j] += val;
     }                            // endfor j
-
   }                              // endfor i
+  
+  // including ROSSBY term, ONLY FOR STOKES SO FAR
+  if (fabs(TDatabase::ParamDB->ROSSBY_NR)>1e-10)
+  {
+    for(i=0;i<N_U;i++)
+    {
+      Matrix12Row = MatrixA12[i];
+      Matrix21Row = MatrixA21[i];
+      test00 = Orig2[i];
+      for(j=0;j<N_U;j++)
+      {
+        ansatz00 = Orig2[j];
+        val  = 2*TDatabase::ParamDB->ROSSBY_NR * ansatz00 * test00;
+        Matrix12Row[j] -= Mult * val;
+        Matrix21Row[j] += Mult * val;
+      }   // endfor j
+    }
+  }
 }
 
 
@@ -2849,7 +3348,8 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
 
   // for computational comparisons of Oseen problems
-  if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM
+     || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
       u1 = coeff[3];
       u2 = coeff[4];
@@ -2901,6 +3401,63 @@ double ***LocMatrices, double **LocRhs)
     }
   }
 }
+
+// ======================================================================
+// Type 1, Standard Galerkin + div term, only nonlinear part
+// ======================================================================
+void NSType1_2NLGalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA;
+  double val;
+  double *MatrixRow;
+  double ansatz10, ansatz01, ansatz00;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U;
+  double c0;
+  double u1, u2, du1x, du2y, divu;
+
+  MatrixA = LocMatrices[0];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+
+  c0 = coeff[0];                                  // nu
+
+  u1 = param[0];                                  // u1old
+  u2 = param[1];                                  // u2old
+  du1x = param[2];
+  du2y = param[5];
+  divu = (du1x + du2y)/2.0;
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixRow = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+
+      MatrixRow[j] += Mult * val;
+    }                                             // endfor j
+  }                                               // endfor i
+}
+
 
 // ======================================================================
 // Type 2, SDFEM
@@ -3368,6 +3925,72 @@ double ***LocMatrices, double **LocRhs)
 
 
 // ======================================================================
+// Type 3, Standard Galerkin + div term, (grad u, grad v)
+// ======================================================================
+void NSType3_4NLGalerkinDiv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA22;
+  double val;
+  double *Matrix11Row, *Matrix22Row;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U;
+  double c0;
+  double u1, u2, du1x, du2y, divu;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA22 = LocMatrices[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+
+  c0 = coeff[0];                                  // nu
+
+  u1 = param[0];                                  // u1old
+  u2 = param[1];                                  // u2old
+  du1x = param[2];
+  du2y = param[5];
+  divu = (du1x + du2y)/2.0;
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+
+      Matrix11Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      val += divu*ansatz00*test00;
+      
+      Matrix22Row[j] += Mult * val;
+
+    }                                             // endfor j
+  }                                               // endfor i
+}
+
+
+// ======================================================================
 // Type 4, SDFEM, (grad u, grad v)
 // ======================================================================
 void NSType4NLSDFEM(double Mult, double *coeff,
@@ -3421,7 +4044,8 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
 
   // for computational comparisons of Oseen problems
-   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+   if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM
+      || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
       u1 = coeff[3];
       u2 = coeff[4];

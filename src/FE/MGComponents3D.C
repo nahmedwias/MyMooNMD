@@ -1824,209 +1824,6 @@ void IntoL20Vector3D(double *v, int Length, int order)
   }
 } // IntoL20
 
-/** project vector v into L20 */
-void IntoL20FEFunction3D_OLD(double *v, int Length, TFESpace3D *FESpace)
-{
-  double s;
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
-  int Used[N_FEs3D], *N_BaseFunct;
-  TFESpace3D *fespace;
-  FE3D LocalUsedElements[N_FEs3D], CurrentElement;
-  BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
-  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta;
-  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
-  double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
-  double *Derivatives[MaxN_QuadPoints_3D], der[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, number;
-  double **OrigFEValues, *Orig, value;
-  double FEFunctValues[MaxN_BaseFunctions3D];
-  int *GlobalNumbers, *BeginIndex;
-  double LocError[4];
-  double hK;
-  bool SecondDer[1];
-  double error0, error1;
-
-  if (TDatabase::ParamDB->PRESSURE_SPACE==-4711)
-  {
-    switch (TDatabase::ParamDB->VELOCITY_SPACE)
-    {
-        case -1:
-        case 1:
-          number = 0;
-          break;
-        case 2:
-        case 3:
-        case 4:
-          number = TDatabase::ParamDB->VELOCITY_SPACE;
-          break;
-        case 12:
-        case 13:
-        case 14:
-          number = -TDatabase::ParamDB->VELOCITY_SPACE+1;
-          break;
-        case 22:
-        case 23:
-          number = -TDatabase::ParamDB->VELOCITY_SPACE+11;
-          break;
-
-    }
-  }
-  else
-    number = TDatabase::ParamDB->PRESSURE_SPACE;
-
-  switch(number)
-  {
-    // pw constant
-    case 0:
-      s=0;
-      for(i=0;i<Length;i++)
-        s += v[i];
-      s /= Length;
-      for(i=0;i<Length;i++)
-        v[i] -= s;
-      break;
-      
-    // pw linear discontinuous   
-    case -11:
-      s=0;
-      for(i=0;i<Length;i+=4)
-        s += v[i];
-
-      s /= Length;
-      s *= 4;
-
-      for(i=0;i<Length;i+=4)
-        v[i] -= s;
-      break;
-
-    // pw quadratics discontinuous   
-    case -12:
-      s=0;
-      for(i=0;i<Length;i+=10)
-        s += v[i];
-
-      s /= Length;
-      s *= 10;
-
-      for(i=0;i<Length;i+=10)
-        v[i] -= s;
-      break;
-
-    // pw cubics discontinuous   
-    case -13:
-      s=0;
-      for(i=0;i<Length;i+=20)
-        s += v[i];
-
-      s /= Length;
-      s *= 20;
-
-      for(i=0;i<Length;i+=20)
-        v[i] -= s;
-      
-      break;
-      
-    // pw polynomials, continuous
-    // with and without bubbles   
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 12:
-    case 13:
-    case 14:
-    case 22:
-    case 23:
-      BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
-      N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
-
-      for(i=0;i<MaxN_QuadPoints_3D;i++)
-        Derivatives[i] = der+i;
-    
-      SecondDer[0] = FALSE;
-    
-      GlobalNumbers = FESpace->GetGlobalNumbers();
-      BeginIndex = FESpace->GetBeginIndex();
-    
-      error0 = 0.0;
-      error1 = 0.0;
-    
-    // ########################################################################
-    // loop over all cells
-    // ########################################################################
-      Coll = FESpace->GetCollection(); // all spaces use same Coll
-      N_Cells = Coll->GetN_Cells();
-      for(i=0;i<N_Cells;i++)
-      {
-        cell = Coll->GetCell(i);
-    
-        hK = cell->GetDiameter();
-    
-        // ####################################################################
-        // find local used elements on this cell
-        // ####################################################################
-        N_LocalUsedElements = 1;
-        CurrentElement = FESpace->GetFE3D(i, cell);
-        LocalUsedElements[0] = CurrentElement;
-    
-        // ####################################################################
-        // calculate values on original element
-        // ####################################################################
-        
-        TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements, 
-                               Coll, cell, SecondDer,
-                               N_Points, xi, eta, zeta,
-                               weights, X, Y, Z, AbsDetjk);
-    
-        // calculate all needed derivatives of this FE function
-        BaseFunct = BaseFuncts[CurrentElement];
-        N_ = N_BaseFunct[CurrentElement];
-    
-        DOF = GlobalNumbers + BeginIndex[i];
-        for(l=0;l<N_;l++)
-          FEFunctValues[l] = v[DOF[l]];
-    
-        OrigFEValues = TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
-        for(j=0;j<N_Points;j++)
-        {
-          Orig = OrigFEValues[j];
-          value = 0;
-          for(l=0;l<N_;l++)
-          {
-            value += FEFunctValues[l] * Orig[l];
-          } // endfor l
-          Derivatives[j][0] = value;
-        } // endfor j
-    
-        L1Int3D(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, 
-                  ExactVal, AuxArray, LocError);
-    
-        error0 += LocError[0];
-        error1 += LocError[1];
-    
-      } // endfor i
-    
-      s = error0/error1;
-
-      for(i=0;i<Length;i++)
-        v[i] -= s; 
-    
-    break;
-
-    default:
-      cout << "The L^2_0 projection does not";
-      cout << "work for this type of elements" << endl;
-      exit(-1);
-  }
-} // IntoL20
 
 /** project vector v into L20 */
 void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
@@ -3426,7 +3223,7 @@ void Defect_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
 void CoupledMatVect(TSquareMatrix *A, double *x, double *y)
 {
   int i,j,k,l,m, jj;
-  TSquareMatrixNSE3D *NSE;
+  TSquareMatrixNSE3D *NSE_matrix;
   int *BeginJb, *jb, N_DOFperJoint;
   double *Alpha;
   int *RowPtr, *KCol;
@@ -3449,18 +3246,18 @@ void CoupledMatVect(TSquareMatrix *A, double *x, double *y)
   TFEDesc3D *FEDesc_Obj;
   int N_U;
   
-  NSE = (TSquareMatrixNSE3D*)A;
+  NSE_matrix = (TSquareMatrixNSE3D*)A;
 
-  RowPtr = NSE->GetRowPtr();
-  KCol = NSE->GetKCol();
-  Entries = NSE->GetEntries();
+  RowPtr = NSE_matrix->GetRowPtr();
+  KCol = NSE_matrix->GetKCol();
+  Entries = NSE_matrix->GetEntries();
 
-  BeginJb = NSE->GetBeginJb();
-  jb = NSE->GetJb();
-  N_DOFperJoint = NSE->GetN_DOFperJoint();
-  Alpha = NSE->GetAlpha();
+  BeginJb = NSE_matrix->GetBeginJb();
+  jb = NSE_matrix->GetJb();
+  N_DOFperJoint = NSE_matrix->GetN_DOFperJoint();
+  Alpha = NSE_matrix->GetAlpha();
 
-  USpace = NSE->GetFESpace();
+  USpace = NSE_matrix->GetFESpace();
   GlobalNumbers = USpace->GetGlobalNumbers();
   BeginIndex = USpace->GetBeginIndex();
 
@@ -3616,7 +3413,7 @@ void MatVect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *y)
 void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r)
 {
   int i,j,k,l,m;
-  TSquareMatrixNSE3D *NSE;
+  TSquareMatrixNSE3D *NSE_matrix;
   int *BeginJb, *jb, N_DOFperJoint;
   double *Alpha;
   int *RowPtr, *KCol;
@@ -3639,18 +3436,18 @@ void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r)
   TFEDesc3D *FEDesc_Obj;
   int N_U;
   
-  NSE = (TSquareMatrixNSE3D*)A;
+  NSE_matrix = (TSquareMatrixNSE3D*)A;
 
-  RowPtr = NSE->GetRowPtr();
-  KCol = NSE->GetKCol();
-  Entries = NSE->GetEntries();
+  RowPtr = NSE_matrix->GetRowPtr();
+  KCol = NSE_matrix->GetKCol();
+  Entries = NSE_matrix->GetEntries();
 
-  BeginJb = NSE->GetBeginJb();
-  jb = NSE->GetJb();
-  N_DOFperJoint = NSE->GetN_DOFperJoint();
-  Alpha = NSE->GetAlpha();
+  BeginJb = NSE_matrix->GetBeginJb();
+  jb = NSE_matrix->GetJb();
+  N_DOFperJoint = NSE_matrix->GetN_DOFperJoint();
+  Alpha = NSE_matrix->GetAlpha();
 
-  USpace = NSE->GetFESpace();
+  USpace = NSE_matrix->GetFESpace();
   GlobalNumbers = USpace->GetGlobalNumbers();
   BeginIndex = USpace->GetBeginIndex();
 

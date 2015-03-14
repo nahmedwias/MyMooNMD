@@ -154,4 +154,26 @@ void NSType4NLSDFEMRotDD(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-#endif
+/***********************************************************************/
+//
+// FIXED POINT ITERATION WITHOUT CONVECTION
+//
+/***********************************************************************/
+
+// ======================================================================
+// Type 3, Standard Galerkin, (grad u, grad v)
+// ======================================================================
+void NSType3GalerkinRot_wo_conv(double Mult, double *coeff,
+                                double *param, double hK,
+                                double **OrigValues, int *N_BaseFuncts,
+                                double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// Type 3, Galerkin, (grad u, grad v)
+// ======================================================================
+void NSType3_4NLGalerkinRot_wo_conv(double Mult, double *coeff,
+                                    double *param, double hK,
+                                    double **OrigValues, int *N_BaseFuncts,
+                                    double ***LocMatrices, double **LocRhs);
+
+#endif // __NSE2DFIXPOROT__

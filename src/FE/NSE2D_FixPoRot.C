@@ -1239,20 +1239,23 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA22;
+  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
-  double *Matrix11Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U;
+  int i,j, N_U, N_P;
   double c0;
   double u1, u2;
   
   MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
+  MatrixA12 = LocMatrices[1];
+  MatrixA21 = LocMatrices[2];
+  MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
@@ -1266,6 +1269,8 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1280,7 +1285,12 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += u2*ansatz01*test00;
       Matrix11Row[j] += Mult * val;
-      // off diagonal matrices are missing !!!
+      val = -u2 * ansatz10*test00;
+      Matrix12Row[j] += Mult * val;
+
+      val = -u1 * ansatz01 * test00;
+      Matrix21Row[j] += Mult * val;
+
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += u1*ansatz10*test00;
       Matrix22Row[j] += Mult * val;
@@ -1297,9 +1307,9 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA22;
+  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
-  double *Matrix11Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
@@ -1308,7 +1318,9 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
   double u1, u2;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[1];
+  MatrixA12 = LocMatrices[1];
+  MatrixA21 = LocMatrices[2];
+  MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
 
@@ -1324,6 +1336,8 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1338,8 +1352,16 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += u2*ansatz01*test00;
       Matrix11Row[j] += Mult * val;
-      // off diagonal matrices are missing
-      val  = 2*c0*(0.5*test10*ansatz10+test01*ansatz01);
+
+      val  = c0*(test01*ansatz10);
+      val -= u2 * ansatz10*test00;
+      Matrix12Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz01);
+      val -= u1 * ansatz01 * test00;
+      Matrix21Row[j] += Mult * val;
+
+      val  = 2*(c0)*(0.5*test10*ansatz10+test01*ansatz01);
       val += u1*ansatz10*test00;
       Matrix22Row[j] += Mult * val;
     } // endfor j
@@ -1729,5 +1751,179 @@ void NSType4NLSDFEMRotDD(double Mult, double *coeff,
       MatrixRow2[j] += Mult*val;
     }
   } // endfor i
+}
+
+
+/***********************************************************************/
+//
+// FIXED POINT ITERATION WITHOUT CONVECTION
+//
+/***********************************************************************/
+
+// ======================================================================
+// Type 3, Standard Galerkin, (grad u, grad v)
+// ======================================================================
+void NSType3GalerkinRot_wo_conv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixB1, **MatrixB2;
+  double *Rhs1, *Rhs2, val;
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *MatrixRow1, *MatrixRow2;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j,N_U, N_P;
+  double c0, c1, c2;
+  double u1y, u2x, rotu;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA12 = LocMatrices[1];
+  MatrixA21 = LocMatrices[2];
+  MatrixA22 = LocMatrices[3];
+  MatrixB1  = LocMatrices[4];
+  MatrixB2  = LocMatrices[5];
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+  Orig3 = OrigValues[3];                          // p
+
+  c0 = coeff[0];                                  // nu
+  c1 = coeff[1];                                  // f1
+  c2 = coeff[2];                                  // f2
+
+  u2x = param[3];                                  // u2old_x
+  u1y = param[4];                                  // u1old_y
+  rotu = u2x-u1y;                                  // rotation
+ 
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      Matrix11Row[j] += Mult * val;
+
+      val = -rotu * ansatz00 * test00;
+      Matrix12Row[j] += Mult * val;
+
+      val = rotu * ansatz00 * test00;
+      Matrix21Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      Matrix22Row[j] += Mult * val;
+    }                                             // endfor j
+  }                                               // endfor i
+
+  for(i=0;i<N_P;i++)
+  {
+    MatrixRow1 = MatrixB1[i];
+    MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+
+      val = -Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }                                             // endfor j
+
+  }                                               // endfor i
+}
+// ======================================================================
+// Type 3, Galerkin, (grad u, grad v)
+// ======================================================================
+void NSType3_4NLGalerkinRot_wo_conv(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double val;
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U, N_P;
+  double c0;
+  double u1y, u2x, rotu;
+
+  MatrixA11 = LocMatrices[0];
+  MatrixA12 = LocMatrices[1];
+  MatrixA21 = LocMatrices[2];
+  MatrixA22 = LocMatrices[3];
+
+  N_U = N_BaseFuncts[0];
+  N_P = N_BaseFuncts[1];
+
+  Orig0 = OrigValues[0];                          // u_x
+  Orig1 = OrigValues[1];                          // u_y
+  Orig2 = OrigValues[2];                          // u
+
+  c0 = coeff[0];                                  // nu
+
+  u2x = param[3];                                  // u2old_x
+  u1y = param[4];                                  // u1old_y
+  rotu = u2x-u1y;                                  // rotation
+
+  for(i=0;i<N_U;i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      Matrix11Row[j] += Mult * val;
+
+      val = -rotu * ansatz00 * test00;
+      Matrix12Row[j] += Mult * val;
+
+      val = rotu * ansatz00 * test00;
+      Matrix21Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      Matrix22Row[j] += Mult * val;
+    }                                             // endfor j
+  }                                               // endfor i
 }
 

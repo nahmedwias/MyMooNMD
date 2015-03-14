@@ -140,7 +140,7 @@ void GridCoeffs(int n_points, double *X, double *Y, double *Z,
 
 void MovingTimeNSParamsVelo3D(double *in, double *out)
 {
-  if ( TDatabase::ParamDB->STOKES_PROBLEM )
+  if ( TDatabase::ParamDB->PROBLEM_TYPE == 3 )
   {
     out[0] = 0;
     out[1] = 0;
@@ -162,7 +162,7 @@ void MovingTimeNSParamsVelo3D_TwoPhase(double *in, double *out)
   
 //   cout << phase << endl;
   
-  if ( TDatabase::ParamDB->STOKES_PROBLEM )
+  if ( TDatabase::ParamDB->PROBLEM_TYPE == 3 )
   {
     out[0] = 0;
     out[1] = 0;

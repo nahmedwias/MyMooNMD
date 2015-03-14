@@ -248,8 +248,408 @@ void TNSE_MGLevel14::CorrectNodes(double *u1)
 void TNSE_MGLevel14::CellVanka(double *u1, double *rhs1, double *aux, 
         int N_Parameters, double *Parameters, int smoother,int N_Levels)
 {
-    OutPut("TNSE_MGLevel14::CellVanka not implemented !!!" << endl);
-    exit(4711);
+    #ifdef __2D__
+  const int RhsDim =  3*MaxN_BaseFunctions2D;
+  TFE2D *UEle, *PEle;
+  TSquareMatrix2D *sqmatrix[1];
+#endif
+#ifdef __3D__
+  const int RhsDim =  4*MaxN_BaseFunctions3D;
+  TFE3D *UEle, *PEle;
+  TSquareMatrix3D *sqmatrix[1];
+#endif
+  int i,j,k,l,m, N_Cells, N_LocalDOFs, ii;
+  int j1, j2, j3, j4, k1, k2, k3;
+  double value, value1, value2, value3;
+  double value11,value12,value13,value21,value22;
+  double value23,value31,value32,value33;
+  double *uold, *pold;
+  TCollection *Coll;
+  double System[RhsDim*RhsDim];
+  double Rhs[RhsDim], sol[RhsDim];
+  int *UGlobalNumbers, *UBeginIndex, *UDOFs, UDOF, N_U;
+  int *PGlobalNumbers, *PBeginIndex, *PDOFs, PDOF, N_P;
+  int N_LocalDOF, verbose;
+  int begin, end, ActiveBound, begin1, end1;
+  double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
+  TBaseCell *Cell;
+  double *u2, *u3, *p, *rhs2, *rhs3, *rhsp;
+  TItMethod *itmethod = NULL;
+  int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
+  MatVecProc *MatVect=MatVectFull;
+  DefectProc *Defect=DefectFull;
+  TSquareMatrix **matrix= (TSquareMatrix **)sqmatrix;
+ 
+  TDatabase::ParamDB->INTERNAL_LOCAL_DOF = -1;
+#ifdef __2D__
+  sqmatrix[0] = (TSquareMatrix2D *)System;
+#endif
+#ifdef __3D__
+  sqmatrix[0] = (TSquareMatrix3D *)System;
+#endif
+
+  if(VankaColl)
+    Coll = VankaColl;
+  else
+    Coll = USpace->GetCollection();
+  N_Cells = Coll->GetN_Cells();
+
+  UGlobalNumbers = USpace->GetGlobalNumbers();
+  UBeginIndex = USpace->GetBeginIndex();
+  ActiveBound = USpace->GetActiveBound();
+
+  PGlobalNumbers = PSpace->GetGlobalNumbers();
+  PBeginIndex = PSpace->GetBeginIndex();
+
+  // set pointers
+  u2 = u1 + N_UDOF;
+#ifdef __3D__
+  u3 = u2 + N_UDOF;
+#endif
+  p  = u1 + GEO_DIM*N_UDOF;
+
+  rhs2 = rhs1 + N_UDOF;
+#ifdef __3D__
+  rhs3 = rhs2 + N_UDOF;
+#endif
+  rhsp = rhs1 + GEO_DIM*N_UDOF;
+
+  // set Dirichlet values
+  memcpy(u1+HangingNodeBound, rhs1+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+  memcpy(u2+HangingNodeBound, rhs2+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+#ifdef __3D__
+  memcpy(u3+HangingNodeBound, rhs3+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+#endif
+
+  SetHangingNodes(u1);
+
+  // old values
+  uold = aux;
+  pold  = uold+GEO_DIM*N_UDOF;
+
+  // save current solution on 'old' vectors
+  memcpy(uold, u1, N_DOF*SizeOfDouble);
+
+  // start of cell loop
+  for(ii=0;ii<N_Cells;ii++)
+  {
+    //ii = downwind[i];
+    Cell = Coll->GetCell(ii);
+//    OutPut(i << downwind[i] << endl);
+#ifdef __2D__
+    UEle = TFEDatabase2D::GetFE2D(USpace->GetFE2D(ii, Cell));
+    PEle = TFEDatabase2D::GetFE2D(PSpace->GetFE2D(ii, Cell));
+#endif
+#ifdef __3D__
+    UEle = TFEDatabase3D::GetFE3D(USpace->GetFE3D(ii, Cell));
+    PEle = TFEDatabase3D::GetFE3D(PSpace->GetFE3D(ii, Cell));
+#endif
+
+    // get local number of dof
+    N_U = UEle->GetN_DOF();
+    N_P = PEle->GetN_DOF();
+    N_LocalDOF = GEO_DIM*N_U+N_P;
+
+    // reset local systems
+    /*if (N_LocalDOF > RhsDim)
+    {
+      OutPut(
+    "TNSE_MGLevel4::CellVanka - Not enough memory in array Rhs!!!"
+    << endl << "available " << RhsDim << " needed " <<
+    N_LocalDOF << endl);
+      exit(4711);
+      }*/
+    // reset local systems
+    // System contains the TRANSPOSED local matrix
+    memset(System, 0, SizeOfDouble*N_LocalDOF*N_LocalDOF);
+    if (N_LocalDOF > LargestDirectSolve)
+    {
+      // size of local system has changed
+      if (N_LocalDOF != TDatabase::ParamDB->INTERNAL_LOCAL_DOF)
+      {
+        // itmethod exists already
+        if ( TDatabase::ParamDB->INTERNAL_LOCAL_DOF >0)
+          delete itmethod;
+        // allocate new itmethod
+        itmethod = new TFgmresIte(MatVect, Defect, NULL, 0, N_LocalDOF, 1);
+        TDatabase::ParamDB->INTERNAL_LOCAL_DOF = N_LocalDOF;
+      }
+    }
+
+    UDOFs = UGlobalNumbers+UBeginIndex[ii];
+    PDOFs = PGlobalNumbers+PBeginIndex[ii];
+
+    // fill local matrix
+    for(j=0;j<N_U;j++)
+    {
+      j1 = j;
+      j2 = j+N_U;
+#ifdef __3D__
+      j3 = j2+N_U;
+#endif
+      UDOF = UDOFs[j];
+
+      // A block
+      begin = ARowPtr[UDOF];
+      end = ARowPtr[UDOF+1];
+
+      Rhs[j1] = rhs1[UDOF];
+      Rhs[j2] = rhs2[UDOF];
+#ifdef __3D__
+      Rhs[j3] = rhs3[UDOF];
+#endif
+
+      for(k=begin;k<end;k++)
+      {
+        l = AKCol[k];
+
+        value11 = A11Entries[k];
+        value12 = A12Entries[k];
+        value21 = A21Entries[k];
+        value22 = A22Entries[k];
+#ifdef __3D__
+        value13 = A13Entries[k];
+        value23 = A23Entries[k];
+        value31 = A31Entries[k];
+        value32 = A32Entries[k];
+        value33 = A33Entries[k];
+#endif
+
+#ifdef __2D__
+        if (UDOF>=ActiveBound) // Dirichlet node
+          value12 = value21 = 0;
+
+        Rhs[j1] -= value11*u1[l]+value12*u2[l];
+        Rhs[j2] -= value21*u1[l]+value22*u2[l];
+#endif
+#ifdef __3D__
+        if (UDOF>=ActiveBound) // Dirichlet node
+          value12 = value13 = value21 = value23 = value31 = value32 = 0;
+
+        Rhs[j1] -= value11*u1[l]+value12*u2[l]+value13*u3[l];
+        Rhs[j2] -= value21*u1[l]+value22*u2[l]+value23*u3[l];
+        Rhs[j3] -= value31*u1[l]+value32*u2[l]+value33*u3[l];
+#endif
+
+        for(m=0;m<N_U;m++)
+          if(UDOFs[m]==l)
+          {
+            // column belongs to local system
+            k1 = m*N_LocalDOF;
+            k2 = (m+N_U)*N_LocalDOF;
+            System[k1+j1] = value11;
+            System[k2+j1] = value12;
+            System[k1+j2] = value21;
+            System[k2+j2] = value22;
+#ifdef __3D__
+            k3 = (m+2*N_U)*N_LocalDOF;
+            System[k3+j1] = value13;
+            System[k3+j2] = value23;
+            System[k1+j3] = value31;
+            System[k2+j3] = value32;
+            System[k3+j3] = value33;
+#endif
+            break;
+          }
+      } // endfor k
+
+      if(UDOF<ActiveBound)  // active dof
+      {
+        // transpose(B) block for non-Dirichlet nodes
+        begin = BTRowPtr[UDOF];
+        end = BTRowPtr[UDOF+1];
+
+        for(k=begin;k<end;k++)
+        {
+          l = BTKCol[k];
+          value1 = B1TEntries[k];
+          value2 = B2TEntries[k];
+#ifdef __3D__
+          value3 = B3TEntries[k];
+#endif
+          value = p[l];
+          Rhs[j1] -= value1*value;
+          Rhs[j2] -= value2*value;
+#ifdef __3D__
+          Rhs[j3] -= value3*value;
+#endif
+
+          for(m=0;m<N_P;m++)
+            if(PDOFs[m]==l)
+            {
+              // column belongs to local system
+              k1 = (m+GEO_DIM*N_U)*N_LocalDOF;
+              System[k1+j1] = value1;
+              System[k1+j2] = value2;
+#ifdef __3D__
+              System[k1+j3] = value3;
+#endif
+              break;
+            }
+
+        } // endfor k
+      } // endif UDOF<ActiveBound
+    } // endfor j
+
+    for(j=0;j<N_P;j++)
+    {
+      j1 = j+GEO_DIM*N_U;
+      PDOF = PDOFs[j];
+      begin = BRowPtr[PDOF];
+      end = BRowPtr[PDOF+1];
+      Rhs[j1] = rhsp[PDOF];
+
+      for(k=begin;k<end;k++)
+      {
+        l=BKCol[k];
+        value1 = B1Entries[k];
+        value2 = B2Entries[k];
+#ifdef __3D__
+        value3 = B3Entries[k];
+#endif
+        Rhs[j1] -= value1*u1[l];
+        Rhs[j1] -= value2*u2[l];
+#ifdef __3D__
+        Rhs[j1] -= value3*u3[l];
+#endif
+
+        for(m=0;m<N_U;m++)
+          if(UDOFs[m]==l)
+          {
+            // column belongs to local system
+            k1 = m;
+            k2 = m+N_U;
+#ifdef __3D__
+            k3 = k2 + N_U;
+#endif
+            System[k1*N_LocalDOF+j1] = value1;
+            System[k2*N_LocalDOF+j1] = value2;
+#ifdef __3D__
+            System[k3*N_LocalDOF+j1] = value3;
+#endif
+            break;
+          }
+      } // endfor k
+    } // endfor j
+
+    // contribution of pressure-pressure coupling
+    for(j=0;j<N_P;j++)
+      {
+  // column in the matrix System (which stores the transposed)
+        j1 = j+GEO_DIM*N_U;
+        // pressure dof, row in block C
+        PDOF = PDOFs[j];
+        begin = CRowPtr[PDOF];
+        end = CRowPtr[PDOF+1];
+  //OutPut(PDOF << " ");
+  // row with the local pressure dofs
+        for(k=begin;k<end;k++)
+  {
+      // column in block C
+      l = CKCol[k];
+      value = CEntries[k]; 
+      // update right hand side
+      Rhs[j1] -= value*p[l];
+      // loop over local pressure dofs
+      for(m=0;m<N_P;m++)
+      {
+    // column belongs to local system
+    if(PDOFs[m] == l)
+    {
+        System[(m + GEO_DIM*N_U)*N_LocalDOF + j1] = value;
+        //OutPut(" pres k " << k << " index " << (m + GEO_DIM*N_U)*N_LocalDOF + j1 << " " << value);
+        break;
+    } // endif
+      }
+  } // endfor k
+  //OutPut(endl);
+      } // endfor j
+    //OutPut(endl);
+    // solve local system
+    if (smoother==1) 
+    {
+      // diagonal Vanka
+#ifdef __2D__
+      SolveDiagonalVanka2D(System, Rhs, N_U, N_P, N_LocalDOF);
+#endif
+#ifdef __3D__
+      SolveDiagonalVanka3D(System, Rhs, N_U, N_P, N_LocalDOF);
+#endif
+    }
+    else
+    {
+      // full Vanka
+      if (N_LocalDOF > LargestDirectSolve)
+      {
+        memset(sol,0,N_LocalDOF*SizeOfDouble);
+        verbose =  TDatabase::ParamDB->SC_VERBOSE;
+        TDatabase::ParamDB->SC_VERBOSE = -1;
+        itmethod->Iterate(matrix,NULL,sol,Rhs);
+        TDatabase::ParamDB->SC_VERBOSE = verbose;
+        memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
+      }
+      else
+      {
+        SolveLinearSystemLapack(System, Rhs, N_LocalDOF, N_LocalDOF);
+      }
+    }
+#ifdef __3D__
+    j1 = 2*N_U;
+#endif
+    for(j=0;j<N_U;j++)
+    {
+      l = UDOFs[j];
+      u1[l] += damp*Rhs[j];
+      u2[l] += damp*Rhs[j+N_U];
+#ifdef __3D__
+      u3[l] += damp*Rhs[j+j1];
+#endif  
+    }
+
+    j1 = GEO_DIM*N_U;
+    for(j=0;j<N_P;j++)
+    {
+      l = PDOFs[j];
+      p[l] += damp*Rhs[j+j1];
+    }
+  } // endfor loop over cells
+
+  // apply damping
+  if (fabs(1-alpha)>1e-3)
+    for(j=0;j<N_DOF;j++)
+       u1[j] = uold[j]+alpha*(u1[j]-uold[j]);
+
+  // set Dirichlet values
+  memcpy(u1+HangingNodeBound, rhs1+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+  memcpy(u2+HangingNodeBound, rhs2+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+#ifdef __3D__
+  memcpy(u3+HangingNodeBound, rhs3+HangingNodeBound,
+         N_Dirichlet*SizeOfDouble);
+#endif
+
+  SetHangingNodes(u1);
+
+  if(TDatabase::ParamDB->INTERNAL_LOCAL_DOF > 0)
+  {
+    delete itmethod;
+  }
+/*  OutPut("test downwind started" << endl);
+  for (i=0;i<N_Cells;i++)
+  {
+     if (test[i] != 1)
+     {
+        OutPut("test component " << i << " is "<< test[i] << endl);
+     }
+  }
+  OutPut("test downwind done" << endl);
+  delete test;
+*/
+
 } // end Vanka
 
 

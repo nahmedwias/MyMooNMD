@@ -1,3 +1,7 @@
+#ifndef __NSE2D_PARAMROUT__
+#define __NSE2D_PARAMROUT__
+#include <NSE2D_FixPo.h>
+
 // ======================================================================
 // setting for error calculation for all types
 // ======================================================================
@@ -15,8 +19,6 @@ MultiIndex2D NSErrorEstiamtorP_DerivativesEstimator[2] = { D10, D01 };
 // ========================================================================
 // parameters: u1old, u2old
 // ========================================================================
-void NSParamsVelo(double *in, double *out);
-
 int NSN_FESpacesVelo = 1;
 int NSN_FctVelo = 2;
 int NSN_ParamFctVelo = 1;
@@ -144,3 +146,22 @@ int NSFEFctIndexVelo_Press[4] = { 0, 1, 2, 2 };
 MultiIndex2D NSFEMultiIndexVelo_Press[6] = { D00, D00, D10, D10};
 ParamFct *NSFctVelo_Press[1] = { NSParamsVelo_Press};
 int NSBeginParamVelo_Press[1] = { 0 };
+
+// ========================================================================
+// parameters: u1old, u2old, temperature
+// ========================================================================
+/*
+void NSParamsVeloTemp(double *in, double *out);
+
+int NSN_FESpacesVeloTemp = 3;
+int NSN_FctVeloTemp = 3;
+int NSN_ParamFctVeloTemp = 1;
+int NSN_FEValuesVeloTemp = 3;
+int NSN_ParamsVeloTemp = 3;
+int NSFEFctIndexVeloTemp[3] = { 0, 1, 2 };
+MultiIndex2D NSFEMultiIndexVeloTemp[3] = { D00, D00, D00 };
+ParamFct *NSFctVeloTemp[1] = { NSParamsVeloTemp };
+int NSBeginParamVeloTemp[1] = { 0 };
+*/
+
+#endif // __NSE2D_PARAMROUT__

@@ -940,47 +940,71 @@ void TMGLevel3D::ILUDecomposition()
 {
   int i,j,jj,k,l,N_;
   double diag, pivot, update;
-  int begin, end, beginJ, endJ, found;
+  int begin, end, beginJ, endJ, found, index, diag_index;
   static double beta_ilu = TDatabase::ParamDB->SC_ILU_BETA;
 
   N_=RowPtr[N_DOF];
   Additional = new double[N_];
   memcpy(Additional, Entries, N_*SizeOfDouble);
-
+  
+  // compute ILU decomposition
+  // loop over all rows
   for(i=0;i<N_DOF;i++)
   {
+    // pointer to the entries for the columns
     begin = RowPtr[i];
     end = RowPtr[i+1];
-    diag = Additional[begin];
-    if(fabs(diag)<1e-8)
+    //diag = Additional[begin];
+    // find diagonal entry
+    diag = -4711;
+    for(j=begin;j<end;j++)
+    {
+      index = KCol[j];
+      if (index==i)
+      {
+        diag = Additional[j];
+        break;
+      }
+    }
+    if(fabs(diag)<1e-8) // ILU decomposition not possible
     {
       cerr << "ILU decomposition failed" << endl;
       return;
     }
-
+    // loop over the columns
     for(j=begin+1;j<end;j++)
     {
+      // upper triangular entry
       if( (jj=KCol[j]) > i)
       {
+        // find row jj
         beginJ = RowPtr[jj];
         endJ = RowPtr[jj+1];
+        // search a(jj,i)
         found = 0;
         for(k=beginJ+1;k<endJ;k++)
         {
           if(KCol[k] != i) continue;
+          // pivot element, store it in Additional
           pivot = Additional[k]/diag;
           Additional[k] = pivot;
           found = 1;
           break;
         } // endfor k
+        // row of Dirichlet dof
         if(!found) continue;
+        // diagonal in row jj, is in sparsity pattern of A
         Additional[beginJ] -= pivot*Additional[j];
+        // update row jj
         for(k=begin+1;k<end;k++)
         {
+          // left part already done
           if( KCol[k] <= KCol[j] ) continue;
           update = Additional[k] * pivot;
+          // check if (k,l) is in the sparsity pattern of A
           for(l=beginJ+1;l<endJ;l++)
           {
+            // same column, compute coeff of U
             if(KCol[k] == KCol[l])
             {
               Additional[l] -= update;
@@ -988,6 +1012,7 @@ void TMGLevel3D::ILUDecomposition()
               break;
             } // endif
           } // endfor l
+          // if not in pattern, add to diagonal
           Additional[beginJ] += beta_ilu * fabs(update);
         } // endfor k
       } //endif
@@ -1023,7 +1048,8 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
   int i,j,k, begin, end;
-
+  double diag;
+  
   if (Additional==NULL)
   {
     if (TDatabase::ParamDB->SC_VERBOSE>1)    
@@ -1051,7 +1077,17 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
     for(j=begin;j<end;j++)
       if( (k=KCol[j]) > i)
         aux[i] -= Additional[j]*aux[k];
-    aux[i] /= Additional[begin];
+    //aux[i] /= Additional[begin];
+    // find diagonal entry
+    for(j=begin;j<end;j++)
+    {
+       if (KCol[j]==i)
+      {
+        diag = Additional[j];
+        break;
+      }
+    }
+    aux[i] /= diag;
   }
 
   for(i=0;i<N_DOF;i++)

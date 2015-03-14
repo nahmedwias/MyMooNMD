@@ -71,10 +71,11 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
    
   // for computational comparisons of Oseen problems
-   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM 
+     || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
-      u1 = coeff[3];
-      u2 = coeff[4];
+    u1 = coeff[3];
+    u2 = coeff[4];
   }
   maxu = fabs(u1);
   if (fabs(u2)>maxu)
@@ -268,10 +269,11 @@ double ***LocMatrices, double **LocRhs)
   u2 = param[1];                 // u2old
 
   // for computational comparisons of Oseen problems
-  if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM)
+  if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == OSEEN_PROBLEM
+     || TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
   {
-      u1 = coeff[3];
-      u2 = coeff[4];
+    u1 = coeff[3];
+    u2 = coeff[4];
   }
   maxu = fabs(u1);
   if (fabs(u2)>maxu)
