@@ -1,4 +1,4 @@
-// // =======================================================================
+// =======================================================================
 // @(#)Database.h        1.23 06/27/00
 //
 // Class:       TDatabase
@@ -27,6 +27,15 @@
 struct TParaDB
 {
   int VERSION;
+  // indicate what kind of problem is solved (T means time dependent)
+  //  0: not set
+  //  1: CD
+  //  2: TCD
+  //  3: Stokes
+  //  4: TStokes
+  //  5: NSE
+  //  6: TNSE
+  int PROBLEM_TYPE;
 
   //======================================================================
   /** parameters data output and input files                            */
@@ -34,23 +43,22 @@ struct TParaDB
   char *GEOFILE;
   char *BNDFILE;
   char *MAPFILE;
-  char *LOGFILE;
   char *OUTFILE;
+  char *PODFILE;
+
 
   int SAVESOL;
-  char *SOLBASENAME;
-
-  char *PSBASENAME;
-  char *GRAPEBASENAME;
-  char *GNUBASENAME;
-  char *GMVBASENAME;
-  char *VTKBASENAME;
+  
+  char *BASENAME;
+  char *OUTPUTDIR;
   char *SAVE_DATA_FILENAME;
   char *READ_DATA_FILENAME;
-  char *READGRAPEBASENAME;
   char *MATLAB_MATRIX;
-  char *MATLABBASENAME;
   char *SMESHFILE;
+  
+  char *POD_FILENAME;
+  char *SNAP_FILENAME;
+  
   //======================================================================
   /** parameters for controling the program */
   //======================================================================
@@ -69,7 +77,6 @@ struct TParaDB
   int READ_GRAPE_FILE;
   int MEASURE_ERRORS;
   int ESTIMATE_ERRORS;
-  int SOLVE_ADJOINT_PROBLEM;
   int COMPUTE_VORTICITY_DIVERGENCE;
 
   //======================================================================
@@ -82,6 +89,7 @@ struct TParaDB
   int PRESSURE_SPACE;
   int PRESSURE_SEPARATION;
 
+  int EXAMPLE; // used (and explained) in derived classes of Example2D
   //======================================================================
   /** parameters for grid generation                                    */
   //======================================================================
@@ -95,6 +103,8 @@ struct TParaDB
   double DRIFT_Z;
   int REFINEMENT;
   int GRID_TYPE;
+  int GRID_TYPE_1;
+  int GRID_TYPE_2;
   double CHANNEL_GRID_STRETCH;
   int MESHGEN_ALLOW_EDGE_REF;
   int MESHGEN_REF_QUALITY;
@@ -152,6 +162,7 @@ struct TParaDB
   double SDFEM_POWER0;
   int    SDFEM_NORM_B;
   double ADJOINT_FACTOR_4_OMEGA_EQ_0;
+  int    CIP_TYPE;
   /** parameters for SOLD methods */
   int SOLD_TYPE;
   int SOLD_PARAMETER_TYPE;
@@ -163,12 +174,22 @@ struct TParaDB
   double SOLD_PARAMETER_SCALING_FACTOR;
 
   //======================================================================
+  /** parameters for vectorial FE (Raviart-Thomas, Brezzi-Douglas-Marini) */
+  //======================================================================
+  int NORMAL_ORIENTATION_QUAD[4];
+  int NORMAL_ORIENTATION_TRIA[3];
+  int NORMAL_ORIENTATION_TETRA[4];
+  int NORMAL_ORIENTATION_HEXA[6];
+
+  //======================================================================
   /** parameter for local projection stabilization */
   //======================================================================
   int LP_FULL_GRADIENT;
   int LP_STREAMLINE;
   int LP_DIVERGENCE;
   int LP_PRESSURE;
+  int LP_CROSSWIND;
+  int LP_COEFF_TYPE;
 
   double LP_FULL_GRADIENT_COEFF;
   double LP_STREAMLINE_COEFF;
@@ -185,6 +206,46 @@ struct TParaDB
   int LP_STREAMLINE_ORDER_DIFFERENCE;
   int LP_DIVERGENCE_ORDER_DIFFERENCE;
   int LP_PRESSURE_ORDER_DIFFERENCE;
+  
+  int LP_CROSSWIND_COEFF_TYPE;
+  double LP_CROSSWIND_COEFF;
+  double LP_CROSSWIND_EXPONENT; 
+
+  //======================================================================
+  /** parameter for a posteriori parameter computation with adjoint problem */
+  //======================================================================
+  int SOLVE_ADJOINT_PROBLEM;
+  int SOLD_ADJOINT;
+  int N_STAGES_ADJOINT;
+  int SC_NONLIN_ITE_ADJOINT;
+  int OPTIMIZATION_ITE_TYPE_ADJOINT;
+  int BFGS_VECTORS_ADJOINT;
+  int PENALTY_ADJOINT;
+  double RELATIVE_DECREASE_ADJOINT;
+  double PENALTY_VALUE_AT_ZERO_ADJOINT;
+  double PENALTY_SMALLEST_PARAM_FAC_ADJOINT;
+  double PENALTY_LARGEST_PARAM_FAC_ADJOINT;
+  double WEIGHT_RESIDUAL_L1_ADJOINT;
+  double WEIGHT_RESIDUAL_L2_ADJOINT;
+  double WEIGHT_GRADIENT_L1_ADJOINT;
+  double WEIGHT_GRADIENT_L2_ADJOINT;
+  double WEIGHT_STREAM_DER_L1_ADJOINT;
+  double WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT;
+  double WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT;
+  double REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT;
+  double MIN_VAL_ADJOINT;
+  double MAX_VAL_ADJOINT;
+  double MIN_MAX_EXPONENT_ONE_ADJOINT;
+  double MIN_MAX_EXPONENT_TWO_ADJOINT;
+  double MIN_MAX_FACTOR_ONE_ADJOINT;
+  double MIN_MAX_FACTOR_TWO_ADJOINT;
+  double WEIGHT_RESIDUAL_LP_ADJOINT;
+  double WEIGHT_RESIDUAL_EXP_LP_ADJOINT;
+  double WEIGHT_RESIDUAL_CW_ADJOINT;
+  double RESIDUAL_LP_ADJOINT;
+  int MIN_MAX_ADJOINT;
+  int INITIAL_STEEPEST_DESCENT_ADJOINT;
+
 
   /** parameter for superconvergence */
   int SUPERCONVERGENCE_ORDER;
@@ -226,20 +287,35 @@ struct TParaDB
   int FEM_FCT_LINEAR_TYPE;
   int FEM_FCT_PRELIMITING;
 
+  int FEM_FCT_GROUP_FEM; 
+  int GROUP_FEM; 
+   /** parameter for WENO scheme */
+  int WENO_TYPE;
+  
   //======================================================================
   /** PARAMETERS FOR STOKES AND NAVIER-STOKES PROBLEMS                  */
   //======================================================================
 
   /** general parameters */
   double RE_NR;
+  double RA_NR;
+  double ROSSBY_NR;
   double START_RE_NR;
   double RE_NR_INCREMENT;
-  int STOKES_PROBLEM;
+  int FLOW_PROBLEM_TYPE;
   int NSE_NONLINEAR_FORM;
   int NSTYPE;
   int LAPLACETYPE;
   int DEFECT_CORRECTION_TYPE;
+  double OSEEN_ZERO_ORDER_COEFF;
 
+  //======================================================================
+  /** PARAMETERS FOR DARCY PROBLEM                  */
+  //======================================================================
+  int DARCYTYPE; 
+  double SIGMA_PERM;
+  //======================================================================
+  
   double FR_NR;
   double WB_NR;
   double PR_NR;
@@ -311,11 +387,11 @@ struct TParaDB
   int    SC_LIN_MAXIT_SCALAR;
   double SC_LIN_RED_FACTOR_SCALAR;
   double SC_LIN_RES_NORM_MIN_SCALAR;
+  int    SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
 
   int    SC_LIN_MAXIT_SCALAR_SOLD;
   double SC_LIN_RED_FACTOR_SCALAR_SOLD;
   double SC_LIN_RES_NORM_MIN_SCALAR_SOLD;
-  int    SC_NONLIN_ITE_ADJOINT;
 
   // parameters which are used in multigrid for scalar problems
   int    SC_MG_TYPE_SCALAR;
@@ -376,7 +452,7 @@ struct TParaDB
   int    SC_STEP_LENGTH_CONTROL_ALL_SADDLE;
   int    SC_LARGEST_DIRECT_SOLVE;
   int    SC_DOWNWIND_TYPE;
-
+  
   //======================================================================
   /** AMG solver parameters */
   //======================================================================
@@ -419,6 +495,7 @@ struct TParaDB
   int    SC_SCHUR_STEP_LENGTH_CONTROL;
   int    SC_MIXED_BCGS_CGS_SWITCH_TOL;
   double SC_DIV_FACTOR;
+  double SC_NONLIN_DIV_FACTOR;
   int    SC_SMOOTHING_STEPS;
   int    SC_N1_PARAM;
   int    SC_N2_PARAM;
@@ -521,6 +598,7 @@ struct TParaDB
   int BULK_REACTION_DISC;
   int BULK_PB_DISC;
   int BULK_PB_DISC_STAB;
+  int BULK_PB_DISC_FCT_GROUP;
   int BULK_COUPLING;
   int BULK_GROWTH_RATE;
   int BULK_REACTION_MASS_LUMPING;
@@ -528,6 +606,7 @@ struct TParaDB
   int BULK_MOM_DISC;
   int BULK_SOLD_PARAMETER_TYPE;
   int N_CELL_LAYERS_PSD;
+  int N_CELL_LAYERS_PSD_2;
   int OUTPUT_NODE_LAYER_PSD;
   double BULK_REACTION_C_CUT;
 
@@ -568,6 +647,17 @@ struct TParaDB
   //======================================================================
   /** parameters for WINDTUNNEL computations */
   //======================================================================
+  double WINDTUNNEL_SHIFT; 
+  int WINDTUNNEL_CONFIGURATION; 
+  int WINDTUNNEL_INTERPOLATION;
+  int WINDTUNNEL_STEADY;
+  int WINDTUNNEL_SPATIAL;
+  double WINDTUNNEL_BROWNIAN ;
+  int WINDTUNNEL_POL_ORDER;
+  int WINDTUNNEL_SHEAR_FACTOR_TYPE;
+  double  WINDTUNNEL_SHEAR_FACTOR;
+  int WINDTUNNEL_QUAD_METHOD;
+  int WINDTUNNEL_MEASURE_MASS;
   int WINDTUNNEL_LAYER_NUMBER_X;
   int WINDTUNNEL_DIM_Y;
   int WINDTUNNEL_DIM_Z;
@@ -575,6 +665,7 @@ struct TParaDB
   //double WINDTUNNEL_Y[WINDTUNNEL_DIM_Y_CONST];
   //double WINDTUNNEL_Z[WINDTUNNEL_DIM_Z_CONST];
   double WINDTUNNEL_BOUND_VAL[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][2];
+  double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
   double WINDTUNNEL_DROP_VELO[WINDTUNNEL_LAYER_NUMBER_X_CONST][WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
   double WINDTUNNEL_BOUND_VAL_DROPS[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][WINDTUNNEL_DIM_R_CONST][2];
   double WINDTUNNEL_ENVIR_COND;
@@ -586,15 +677,19 @@ struct TParaDB
   double WINDTUNNEL_R_INFTY_EXPERIMENT;
   double WINDTUNNEL_F_INFTY;
   double WINDTUNNEL_kinematic_viscosity;
+  double WINDTUNNEL_dynamic_viscosity;
+  double WINDTUNNEL_density; 
+  //double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
 
   //======================================================================
   /** parameters for urea synthesis computations */
   //======================================================================
- int UREA_REACTION_DISC;
+  int UREA_REACTION_DISC;
   int UREA_PB_DISC;
   int UREA_MODEL;
   int UREA_PB_DISC_STAB;
   int UREA_SOLD_PARAMETER_TYPE;
+  int UREA_PIPE;
   int UREA_CONC_MAXIT;
   double UREA_inflow_time;
 
@@ -630,15 +725,97 @@ struct TParaDB
   double UREA_AGGR_SHEAR_FACTOR;
   double UREA_AGGR_BROWNIAN_TEMP;
   double UREA_AGGR_BROWNIAN_SCAL;
+  double UREA_PIPE_RADIUS;
+  int PB_DISC_TYPE;
+  int PB_TIME_DISC;
+  
+  //======================================================================
+  /** parameters for kdp synthesis computations */
+  //======================================================================
+  
+  int KDP_MODEL;
+  double KDP_D_P_0_2;
+  double KDP_D_P_MAX_2;
+  double KDP_l_infty;
+  double KDP_u_infty;
+  double KDP_c_infty;
+  double KDP_temp_infty;
+  double KDP_nu;
+  double KDP_rho;
+  double KDP_rho_water;
+  double KDP_c_p;
+  double KDP_lambda;
+  double KDP_D_P_0;
+  double KDP_D_P_MAX;
+  double KDP_f_infty;
+  double KDP_m_mol;
+  double KDP_D_J;
+  double KDP_rho_d;
+  double KDP_k_g_1;
+  double KDP_k_g_2;
+  double KDP_k_b;
+  double KDP_delta_h_cryst;
+  double KDP_g_1;
+  double KDP_g_2;
+  double KDP_b;
+  double KDP_w_sat_1;
+  double KDP_w_sat_2;
+  double KDP_w_sat_3;
+  double KDP_w_sat_1_Ma;
+  double KDP_w_sat_2_Ma;
+  double KDP_w_sat_3_Ma;
+  double KDP_INFLOW_SCALE;
+  double KDP_CONC_TOL;
+  double KDP_INTERNAL_NUC_A;
+  double KDP_INTERNAL_NUC_B;
+
+  int KDP_CONC_MAXIT;
+  double KDP_inflow_time;
+  
+  //======================================================================
+  /** parameters for Stokes--Darcy (StoDa) coupling */
+  //======================================================================
+  int StoDa_interfaceType; //Beavers-Joseph-Saffman or u.t=0
+  double StoDa_alpha; // from Beavers-Joseph-Saffman condition on interface
+  int StoDa_problemType; // Neumann--Neumann, Robin--Robin, ...
+  int StoDa_updatingStrategy; // update of the etas
+  double StoDa_theta_f; //damping in Stokes (flow) part
+  double StoDa_theta_p; //damping in Darcy (porous) part
+  double StoDa_gamma_f; // parameter for Robin condition on interface
+  double StoDa_gamma_p; // parameter for Robin condition on interface
+  double StoDa_weakGamma; // parameter for enforcing weak boundary conditions
+  double StoDa_solutionStrategy; // iterative (0), one big matrix (2), both (1)
+  int StoDa_algorithm; // Gauss--Seidel, Jacobi, ...
+  int StoDa_StokesFirst; // for Gauss--Seidel type method.
+  int StoDa_nIterations; // maximum number of iterations
+  // convergence criteria: 
+  // interface error e = ( ||uS.n-uD.n||^2_L2  +  ||nTn+pD||^2_L2 )^{1/2}
+  double StoDa_relDiff_interfaceError; // (e_k - e_{k+1})/e_k < this number
+  // E_k^2 = ( a1 * (||uS_{h,k}-uS_{h,k+1})/uS_{h,k} )^2
+  //        +( a2 * (||pS_{h,k}-pS_{h,k+1})/pS_{h,k} )^2
+  //        +( a3 * (||pD_{h,k}-pD_{h,k+1})/pD_{h,k} )^2
+  // a1,a2,a3 are the following
+  double StoDa_relDiff_factor1;
+  double StoDa_relDiff_factor2;
+  double StoDa_relDiff_factor3;
+  double StoDa_relDiff_solution; // E_k < this number
+  double StoDa_bigResidual; // residual of big System < this number
+  int StoDa_periodicBoundary; // true if there is a periodic boundary
+  // a prescribed pressure drop at the periodic boundary (to have a flow at all)
+  double StoDa_periodicBoundaryPressureDrop; 
+  
+
   //======================================================================
   /** internal parameters
   cannot be set in the readin file
   are used as global variables */
   //======================================================================
+  int    INTERNAL_PROBLEM_LINEAR;
   int    INTERNAL_PROJECT_PRESSURE;
   int    INTERNAL_PRESSURE_SPACE;
   int    INTERNAL_SLIP_WITH_FRICTION;
   int    INTERNAL_SLIP_WITH_FRICTION_IDENTITY;
+  int    INPUT_QUAD_RULE;
   int    INTERNAL_QUAD_HEXA;
   int    INTERNAL_QUAD_TETRA;
   int    INTERNAL_QUAD_QUAD;
@@ -667,13 +844,27 @@ struct TParaDB
   int    INTERNAL_SOLD_ACTIVE;
   int    INTERNAL_UMFPACK_FLAG;
   int    INTERNAL_SORT_AMG;
-
+  int    INTERNAL_FESPACE_CONSTRUCT; 
+  int    INTERNAL_DO_NOT_RESPECT_DIRICHLET_BC; 
+  
   double INTERNAL_COERCIVITY;
   double *INTERNAL_P1_Array;
+  double *INTERNAL_WEIGHT_Array;
+  int    *INTERNAL_INDICATOR_Array;
   int    INTERNAL_FACE_INTEGRALS;
   int    INTERNAL_NO_ESTIMATE_DIRICHLET_CELLS;
-
-    
+  int    INTERNAL_WRONG_NEUMANN_CHECKED;
+  double INTERNAL_BFGS_RESTART_ADJOINT;
+  int    INTERNAL_ARRAY_LENGTH;
+  int    INTERNAL_CELL;
+  int    INTERNAL_OUTFLOW_BOUNDARY[10];
+  double INTERNAL_WEIGHT_SUPG_ADJOINT;
+  double INTERNAL_WEIGHT_SOLD_ADJOINT;
+  int    INTERNAL_NEW_MATRICES_B;
+  int    INTERNAL_FULL_MATRIX_STRUCTURE;
+  int    INTERNAL_DISC_FLAG;
+  int    INTERNAL_START_PARAM;
+  
   // parameter for tetgen
   double TETGEN_QUALITY;
   double TETGEN_VOLUMEN;
@@ -704,7 +895,26 @@ struct TParaDB
   double Par_P19;
   double Par_P20;
 
-
+  //======================================================================
+  /** parameters for ROM */
+  //======================================================================
+  int WRITE_SNAPSHOTS;
+  int DO_ROM;
+  int DO_ROM_P;
+  int RANK_OF_BASIS;
+  int RANK_OF_BASIS_P;
+  int POD_INNER_PRODUCT;
+  int POD_INNER_PRODUCT_P;
+  int BUILD_PODFILE;
+  int POD_FLUCT_FIELD;
+  int POD_FLUCT_FIELD_P;
+  int P_ROM_METHOD;
+  
+  //======================================================================
+  /** parameters for projection methods (NSE) */
+  //======================================================================
+  int PROJECTION_METHOD;
+  
   //======================================================================
   /** parameters for population balance computations */
   //======================================================================
@@ -747,7 +957,6 @@ struct TParaDB
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/
   MPI_Comm Comm;
  #endif
-
 };
 
 typedef struct TParaDB TParamDB;
@@ -762,12 +971,32 @@ struct TTimDB
   double MAX_TIMESTEPLENGTH;
   double TIMESTEPLENGTH_TOL;
   int TIMESTEPLENGTH_CONTROL;
+  int TIMESTEPLENGTH_CONTROLLER;  // mlh
+  double TIMESTEPLENGTH_PARA_KK_I;
+  double TIMESTEPLENGTH_PARA_KK_P;
+  double TIMESTEPLENGTH_PARA_KK_E;
+  double TIMESTEPLENGTH_PARA_KK_R;
+  double TIMESTEPLENGTH_PARA_KK_D;
+  double TIMESTEPLENGTH_PARA_FAC;
+  double TIMESTEPLENGTH_PARA_FAC_MAX;
+  double TIMESTEPLENGTH_PARA_FAC_MIN;
+  double TIMESTEPLENGTH_PARA_TOL;
+  double TIMESTEPLENGTH_PARA_ATOL;
+  double TIMESTEPLENGTH_PARA_RTOL;
   int FIRST_SSC_STEP;
   int RESET_CURRENTTIME;
   double RESET_CURRENTTIME_STARTTIME;
   double STEADY_STATE_TOL;
   double SCALE_DIVERGENCE_CONSTRAINT;
 
+  int CONTROL;
+  double CONTROL_ALPHA;
+  double CONTROL_BETA;
+  double CONTROL_GAMMA;
+  double CONTROL_SAFTY;
+  double CONTROL_MAXSCALE;
+  double CONTROL_MINSCALE;
+  
   // control parameter
   double THETA1;
   double THETA2;
@@ -800,6 +1029,7 @@ struct TTimDB
 
   // write only every n-th time step
   int STEPS_PER_IMAGE;
+  int STEPS_PER_SNAP;
 
   // parameters for Rosenbrock methods
   int RB_TYPE;
@@ -824,6 +1054,36 @@ struct TTimDB
   double RB_S_IJ[10];
   double RB_M_I;
   double RB_MS_I;
+  
+  // parameters for higher order Galerkin-type methods
+  int INTERNAL_SYSTEMSIZE;  
+  double *INTERNAL_ALPHA;
+  double *INTERNAL_BETA;
+  double *VALUE_AT_ONE; 
+  double *VAL_AT_QUAD_POINTS;
+  double *DER_AT_QUAD_POINTS;
+  double *CORR_AT_QUAD_POINTS;  
+  double *DER_CORR_AT_QUAD_POINTS;
+  double *DER_AT_START;
+  double *DER_AT_ONE;
+  double *DER_COR_AT_ONE;
+  double NORMW;
+  double *ZETA;
+  double *WEIGHTS;
+  int N_QUADPOINTS;
+  int N_DEGREES;
+  double *ALPHA0;
+  double *BETA0;
+  double *GAMMA0;
+  double *CORRECTION;
+  double *POINTS;
+
+  double RK_A[5][5];
+  double RK_c[5];
+  double RK_b[5];
+  double RK_e[5];
+  int RK_ord;   // Ordnung des RK-Verfahrens    mlh
+  int RK_ord_e;   // Ordnung des eingebetteten RK-Verfahrens  mlh
 };
 
 typedef struct TTimDB TTimeDB;

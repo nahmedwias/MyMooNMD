@@ -40,6 +40,12 @@
 #include <RefTriBis0Desc.h>
 #include <RefTriBis1Desc.h>
 #include <RefTriBis2Desc.h>
+#include <RefTriBis01Desc.h>
+#include <RefTriBis02Desc.h>
+#include <RefTriBis10Desc.h>
+#include <RefTriBis12Desc.h>
+#include <RefTriBis20Desc.h>
+#include <RefTriBis21Desc.h>
 #include <It_Between.h>
 #include <It_EQ.h>
 #include <It_Finest.h>
@@ -72,6 +78,43 @@ extern "C" {
   #include <RefTetraReg0Desc.h>
   #include <RefTetraReg1Desc.h>
   #include <RefTetraReg2Desc.h>
+  #include <RefTetraBis0Desc.h>
+  #include <RefTetraBis1Desc.h>
+  #include <RefTetraBis2Desc.h>
+  #include <RefTetraBis3Desc.h>
+  #include <RefTetraBis4Desc.h>
+  #include <RefTetraBis5Desc.h>
+  #include <RefTetraBis01Desc.h>
+  #include <RefTetraBis02Desc.h>
+  #include <RefTetraBis03Desc.h>
+  #include <RefTetraBis04Desc.h>
+  #include <RefTetraBis05Desc.h>
+  #include <RefTetraBis10Desc.h>
+  #include <RefTetraBis12Desc.h>
+  #include <RefTetraBis13Desc.h>
+  #include <RefTetraBis14Desc.h>
+  #include <RefTetraBis15Desc.h>
+  #include <RefTetraBis20Desc.h>
+  #include <RefTetraBis21Desc.h>
+  #include <RefTetraBis23Desc.h>
+  #include <RefTetraBis24Desc.h>
+  #include <RefTetraBis25Desc.h>
+  #include <RefTetraBis30Desc.h>
+  #include <RefTetraBis32Desc.h>
+  #include <RefTetraBis34Desc.h>
+  #include <RefTetraBis35Desc.h>
+  #include <RefTetraBis40Desc.h>
+  #include <RefTetraBis41Desc.h>
+  #include <RefTetraBis43Desc.h>
+  #include <RefTetraBis45Desc.h>
+  #include <RefTetraBis51Desc.h>
+  #include <RefTetraBis52Desc.h>
+  #include <RefTetraBis53Desc.h>
+  #include <RefTetraBis54Desc.h>
+  #include <RefTetraQuad0Desc.h>
+  #include <RefTetraQuad1Desc.h>
+  #include <RefTetraQuad2Desc.h>
+  #include <RefTetraQuad3Desc.h>
   #include <RefHexaRegDesc.h>
 #endif
 
@@ -119,6 +162,12 @@ TDatabase::TDatabase()
   RefDescDB[N_SHAPES + TriBis0] = new TRefTriBis0Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis1] = new TRefTriBis1Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + TriBis2] = new TRefTriBis2Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis01]= new TRefTriBis01Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis02]= new TRefTriBis02Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis10]= new TRefTriBis10Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis12]= new TRefTriBis12Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis20]= new TRefTriBis20Desc(ShapeDB[Triangle]);
+  RefDescDB[N_SHAPES + TriBis21]= new TRefTriBis21Desc(ShapeDB[Triangle]);
   RefDescDB[N_SHAPES + QuadReg] = new TRefQuadRegDesc(ShapeDB[Quadrangle]);
   RefDescDB[N_SHAPES + ParallReg] = new TRefQuadRegDesc(ShapeDB[Parallelogram]);
   RefDescDB[N_SHAPES + RectReg] = new TRefQuadRegDesc(ShapeDB[Rectangle]);
@@ -146,6 +195,43 @@ TDatabase::TDatabase()
          new TRefTetraReg1Desc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + TetraReg2] =
          new TRefTetraReg2Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis0] = new TRefTetraBis0Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis1] = new TRefTetraBis1Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis2] = new TRefTetraBis2Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis3] = new TRefTetraBis3Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis4] = new TRefTetraBis4Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis5] = new TRefTetraBis5Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis01] = new TRefTetraBis01Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis02] = new TRefTetraBis02Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis03] = new TRefTetraBis03Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis04] = new TRefTetraBis04Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis05] = new TRefTetraBis05Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis10] = new TRefTetraBis10Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis12] = new TRefTetraBis12Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis13] = new TRefTetraBis13Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis14] = new TRefTetraBis14Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis15] = new TRefTetraBis15Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis20] = new TRefTetraBis20Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis21] = new TRefTetraBis21Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis23] = new TRefTetraBis23Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis24] = new TRefTetraBis24Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis25] = new TRefTetraBis25Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis30] = new TRefTetraBis30Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis32] = new TRefTetraBis32Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis34] = new TRefTetraBis34Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis35] = new TRefTetraBis35Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis40] = new TRefTetraBis40Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis41] = new TRefTetraBis41Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis43] = new TRefTetraBis43Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis45] = new TRefTetraBis45Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis51] = new TRefTetraBis51Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis52] = new TRefTetraBis52Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis53] = new TRefTetraBis53Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraBis54] = new TRefTetraBis54Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraQuad0] = new TRefTetraQuad0Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraQuad1] = new TRefTetraQuad1Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraQuad2] = new TRefTetraQuad2Desc(ShapeDB[Tetrahedron]);
+    RefDescDB[N_SHAPES + TetraQuad3] = new TRefTetraQuad3Desc(ShapeDB[Tetrahedron]);
     RefDescDB[N_SHAPES + HexaReg]  =
          new TRefHexaRegDesc(ShapeDB[Hexahedron]);
     RefDescDB[N_SHAPES + BrickReg]  =
@@ -161,9 +247,30 @@ TDatabase::TDatabase()
     MapperDB[MapTriBis00] = new TMapper(MapTriBis00);
     MapperDB[MapTriBis01] = new TMapper(MapTriBis01);
     MapperDB[MapTriBis02] = new TMapper(MapTriBis02);
+    MapperDB[MapTriBis10] = new TMapper(MapTriBis10);
     MapperDB[MapTriBis11] = new TMapper(MapTriBis11);
     MapperDB[MapTriBis12] = new TMapper(MapTriBis12);
+    MapperDB[MapTriBis20] = new TMapper(MapTriBis20);
+    MapperDB[MapTriBis21] = new TMapper(MapTriBis21);
     MapperDB[MapTriBis22] = new TMapper(MapTriBis22);
+    MapperDB[MapTriBis010] = new TMapper(MapTriBis010);
+    MapperDB[MapTriBis011] = new TMapper(MapTriBis011);
+    MapperDB[MapTriBis012] = new TMapper(MapTriBis012);
+    MapperDB[MapTriBis020] = new TMapper(MapTriBis020);
+    MapperDB[MapTriBis021] = new TMapper(MapTriBis021);
+    MapperDB[MapTriBis022] = new TMapper(MapTriBis022);
+    MapperDB[MapTriBis100] = new TMapper(MapTriBis100);
+    MapperDB[MapTriBis101] = new TMapper(MapTriBis101);
+    MapperDB[MapTriBis102] = new TMapper(MapTriBis102);
+    MapperDB[MapTriBis120] = new TMapper(MapTriBis120);
+    MapperDB[MapTriBis121] = new TMapper(MapTriBis121);
+    MapperDB[MapTriBis122] = new TMapper(MapTriBis122);
+    MapperDB[MapTriBis200] = new TMapper(MapTriBis200);
+    MapperDB[MapTriBis201] = new TMapper(MapTriBis201);
+    MapperDB[MapTriBis202] = new TMapper(MapTriBis202);
+    MapperDB[MapTriBis210] = new TMapper(MapTriBis210);
+    MapperDB[MapTriBis211] = new TMapper(MapTriBis211);
+    MapperDB[MapTriBis212] = new TMapper(MapTriBis212);
 
     MapperDB[MapQuadReg0] = new TMapper(MapQuadReg0);
     MapperDB[MapQuadReg1] = new TMapper(MapQuadReg1);
@@ -229,19 +336,23 @@ void TDatabase::SetDefaultParameters()
   strcpy(tmp,"NO_MAP_FILE");
   ParamDB->MAPFILE=tmp;
   tmp = new char[25];
-  strcpy(tmp,"MooN_MD_default_logfile");
-  ParamDB->LOGFILE=tmp;
-  tmp = new char[25];
   strcpy(tmp,"MooN_MD_default_outfile");
   ParamDB->OUTFILE=tmp;
+  
+  ParamDB->PROBLEM_TYPE = 0;
+  ParamDB->EXAMPLE = -1; // has to be set to some number >=0
+  
 
   ParamDB->MESHGEN_ALLOW_EDGE_REF=0;
   ParamDB->MESHGEN_REF_QUALITY=30;
  
   ParamDB->RE_NR=1.0;
+  ParamDB->RA_NR=1.0;
+  ParamDB->ROSSBY_NR=0.0;
   ParamDB->START_RE_NR= -4711;
   ParamDB->RE_NR_INCREMENT=1.0;
-  ParamDB->STOKES_PROBLEM = 0;
+  ParamDB->FLOW_PROBLEM_TYPE = 0;
+  ParamDB->OSEEN_ZERO_ORDER_COEFF = 0.0;
 
   ParamDB->FR_NR=1.0;
   ParamDB->WB_NR= 1.0;
@@ -266,7 +377,9 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DRIFT_Z = 0.41;
 
  
-  ParamDB->GRID_TYPE = 0;	
+  ParamDB->GRID_TYPE = 0;
+  ParamDB->GRID_TYPE_1 = 0;
+  ParamDB->GRID_TYPE_2 = 0;
   ParamDB->CHANNEL_GRID_STRETCH = 2.75;
   ParamDB->ADAPTIVE_REFINEMENT_CRITERION = 3;
   ParamDB->ERROR_CONTROL = 1;
@@ -289,6 +402,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SHISHKIN_MESH = 0;
   ParamDB->SHISHKIN_DIAM = 1.0;
   ParamDB->NSTYPE = 1;
+  ParamDB->DARCYTYPE = 1;
+  ParamDB->SIGMA_PERM = 1;
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -309,6 +424,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DELTA1=1.0;
   ParamDB->SDFEM_TYPE=2;
   ParamDB->SDFEM_NORM_B=0; // l_infty
+  ParamDB->CIP_TYPE=0;
   ParamDB->ADJOINT_FACTOR_4_OMEGA_EQ_0 = 10.0;
 
   ParamDB->FILTER_WIDTH_CONSTANT = 2;
@@ -342,6 +458,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->LP_STREAMLINE = 0;
   ParamDB->LP_DIVERGENCE = 0;
   ParamDB->LP_PRESSURE = 0;
+  ParamDB->LP_COEFF_TYPE = 0;
 
   ParamDB->LP_FULL_GRADIENT_COEFF = 1.0;
   ParamDB->LP_STREAMLINE_COEFF= 1.0;
@@ -358,25 +475,54 @@ void TDatabase::SetDefaultParameters()
   ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE = -123;
   ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = -123;
   ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = -123;
+  
+  ParamDB->LP_CROSSWIND = 0;
+  ParamDB->LP_CROSSWIND_COEFF_TYPE = 1;
+  ParamDB->LP_CROSSWIND_COEFF = 1.0;
+  ParamDB->LP_CROSSWIND_EXPONENT = 1.0;
+
+  //======================================================================
+  /** parameter for a posteriori parameter computation with adjoint problem */
+  //======================================================================
+  ParamDB->SOLVE_ADJOINT_PROBLEM = FALSE; 
+  ParamDB->SOLD_ADJOINT = 0;
+  ParamDB->N_STAGES_ADJOINT = 1;
+  ParamDB->SC_NONLIN_ITE_ADJOINT = 1000;
+  ParamDB->OPTIMIZATION_ITE_TYPE_ADJOINT = 0;
+  ParamDB->BFGS_VECTORS_ADJOINT = 25;
+  ParamDB->RELATIVE_DECREASE_ADJOINT = 1e-4;
+  ParamDB->PENALTY_ADJOINT = 0;
+  ParamDB->PENALTY_VALUE_AT_ZERO_ADJOINT = 1e6;
+  ParamDB->PENALTY_SMALLEST_PARAM_FAC_ADJOINT = 1e-2;
+  ParamDB->PENALTY_LARGEST_PARAM_FAC_ADJOINT = 1e1;
+  ParamDB->WEIGHT_RESIDUAL_L1_ADJOINT = 0;
+  ParamDB->WEIGHT_RESIDUAL_L2_ADJOINT = 1;
+  ParamDB->WEIGHT_GRADIENT_L1_ADJOINT = 0;
+  ParamDB->WEIGHT_GRADIENT_L2_ADJOINT = 0;
+  ParamDB->WEIGHT_STREAM_DER_L1_ADJOINT = 0;
+  ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT = 0;
+  ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT = 0;
+  ParamDB->REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT = 1.0;
+  ParamDB->MIN_VAL_ADJOINT = -1e20;
+  ParamDB->MAX_VAL_ADJOINT = 1e20;
+  ParamDB->MIN_MAX_EXPONENT_ONE_ADJOINT = 1;
+  ParamDB->MIN_MAX_EXPONENT_TWO_ADJOINT = 1;
+  ParamDB->MIN_MAX_FACTOR_ONE_ADJOINT = 1;
+  ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT = 1;
+  ParamDB->WEIGHT_RESIDUAL_LP_ADJOINT = 0;
+  ParamDB->WEIGHT_RESIDUAL_EXP_LP_ADJOINT = 0;
+  ParamDB->WEIGHT_RESIDUAL_CW_ADJOINT = 0;
+  ParamDB->RESIDUAL_LP_ADJOINT = 2.0;
+
+  ParamDB->MIN_MAX_ADJOINT = 0;
+  ParamDB->INITIAL_STEEPEST_DESCENT_ADJOINT = 0;
 
   tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_psbasefile");
-  ParamDB->PSBASENAME=tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_grapebasefile");
-  ParamDB->GRAPEBASENAME=tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_gnubasefile");
-  ParamDB->GNUBASENAME=tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_gmvbasefile");
-  ParamDB->GMVBASENAME=tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_vtkbasefile");
-  ParamDB->VTKBASENAME=tmp;
-  tmp = new char[30]; 
-  strcpy(tmp,"NO_READGRAPEBASENAME");
-  ParamDB->READGRAPEBASENAME=tmp;
+  strcpy(tmp,"MooN_MD_default_basefile");
+  ParamDB->BASENAME = tmp;
+  tmp = new char[2];
+  strcpy(tmp,"."); // current directory
+  ParamDB->OUTPUTDIR = tmp;
   tmp = new char[40];
   strcpy(tmp,"MooN_MD_default_save_data_filename");
   ParamDB->SAVE_DATA_FILENAME=tmp;
@@ -386,6 +532,14 @@ void TDatabase::SetDefaultParameters()
   tmp = new char[40];
   strcpy(tmp, "NO_SMESH_FILE");
   ParamDB->SMESHFILE = tmp;
+  tmp = new char[40];
+  strcpy(tmp,"MooNMD_default_pod_filename");
+  ParamDB->POD_FILENAME=tmp;
+  //file for storing snapshots (ROM, reduced order modeling)
+  tmp = new char[40];
+  strcpy(tmp,"MooNMD_default_snap_filename");
+  ParamDB->SNAP_FILENAME=tmp;
+
 
    /** parameters for SOLD schemes */
   ParamDB->SOLD_TYPE = 0;
@@ -434,6 +588,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD = ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
   ParamDB->SC_LIN_MAXIT_SCALAR_SOLD = ParamDB->SC_LIN_MAXIT_SCALAR;
   ParamDB->SC_NONLIN_ITE_ADJOINT = 1000;
+  ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER = 1;
+
 
   // parameters which are used in scalar multigrid
   ParamDB->SC_MG_TYPE_SCALAR = 0; 
@@ -526,10 +682,10 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SC_SMOOTHER_RED_FACTOR= 0.1;
   ParamDB->SC_OMEGA_COARSE_0=1.0;
   ParamDB->SC_OMEGA_P_0=1.0;
-  ParamDB->SC_ILUT_TOL=0.01;                     
-  ParamDB->SC_ILUT_ABSOLUTE_FILLIN=1;                     
-  ParamDB->SC_ILUT_RELATIVE_FILLIN=1.0;                     
-  ParamDB->SC_ILUT_SORT=ILUT_QUICK_SPLIT_0;                     
+  ParamDB->SC_ILUT_TOL=0.01;
+  ParamDB->SC_ILUT_ABSOLUTE_FILLIN=1;
+  ParamDB->SC_ILUT_RELATIVE_FILLIN=1.0;
+  ParamDB->SC_ILUT_SORT=ILUT_QUICK_SPLIT_0;
   ParamDB->SC_SCHUR_INV_OF_A= AMG_SSOR;
   ParamDB->SC_SCHUR_INV_OF_A_MAXIT= 1;
   ParamDB->SC_SCHUR_ITERATION_DAMP = 0.5;
@@ -537,6 +693,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL =0;
   ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL=100;
   ParamDB->SC_DIV_FACTOR=1e10;
+  ParamDB->SC_NONLIN_DIV_FACTOR=1e10;
   ParamDB->SC_SMOOTHING_STEPS=0;
   ParamDB->SC_N1_PARAM=1;
   ParamDB->SC_N2_PARAM=1;
@@ -567,11 +724,31 @@ void TDatabase::SetDefaultParameters()
   TimeDB->MAX_TIMESTEPLENGTH = 0.5;
   TimeDB->TIMESTEPLENGTH_TOL = 1e-3;
   TimeDB->TIMESTEPLENGTH_CONTROL = 0;
+  TimeDB->TIMESTEPLENGTH_CONTROLLER = 0;  // mlh
+  TimeDB->TIMESTEPLENGTH_PARA_KK_I = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_KK_P = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_KK_E = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_KK_R = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_KK_D = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_FAC = 0.8;
+  TimeDB->TIMESTEPLENGTH_PARA_FAC_MAX = 5.0;
+  TimeDB->TIMESTEPLENGTH_PARA_FAC_MIN = 0.2;
+  TimeDB->TIMESTEPLENGTH_PARA_TOL = 1.0;
+  TimeDB->TIMESTEPLENGTH_PARA_ATOL = 0.001;
+  TimeDB->TIMESTEPLENGTH_PARA_RTOL = 0.001;
   TimeDB->RESET_CURRENTTIME = 0;
   TimeDB->RESET_CURRENTTIME_STARTTIME = 0.0;
   TimeDB->STEADY_STATE_TOL = 1e-3;
   TimeDB->SCALE_DIVERGENCE_CONSTRAINT = -1.0;
 
+  TimeDB->CONTROL=0;
+  TimeDB->CONTROL_ALPHA=1;
+  TimeDB->CONTROL_BETA=1;
+  TimeDB->CONTROL_GAMMA=1;
+  TimeDB->CONTROL_SAFTY=0.9;
+  TimeDB->CONTROL_MINSCALE=0.1;
+  TimeDB->CONTROL_MAXSCALE=5.0;
+  
   // parameters for implicit Euler method
   TimeDB->THETA1 = 1;
   TimeDB->THETA2 = 0;
@@ -599,6 +776,7 @@ void TDatabase::SetDefaultParameters()
   TimeDB->T9 = 0;
 
   TimeDB->STEPS_PER_IMAGE = 1;
+  TimeDB->STEPS_PER_SNAP = 1;
 
   TimeDB->RB_TYPE = 3;
   TimeDB->RB_TYPE2 = -1;
@@ -611,7 +789,32 @@ void TDatabase::SetDefaultParameters()
 
   TimeDB->RB_APPROX_J = 0;
   TimeDB->RB_APPROX_C = 0;
+  
+  // parameters for higher order Galerkin-type methods
+  TimeDB->INTERNAL_SYSTEMSIZE = 0;
+  TimeDB->INTERNAL_ALPHA = NULL;
+  TimeDB->INTERNAL_BETA = NULL;
+  TimeDB->VALUE_AT_ONE = NULL;
+  TimeDB->VAL_AT_QUAD_POINTS = NULL;
+  TimeDB->DER_AT_QUAD_POINTS = NULL;
+  TimeDB->CORR_AT_QUAD_POINTS = NULL;
+  TimeDB->DER_CORR_AT_QUAD_POINTS = NULL;
+  TimeDB->DER_AT_START = NULL;
+  TimeDB->DER_AT_ONE = NULL;
+  TimeDB->DER_COR_AT_ONE = NULL;
+  TimeDB->NORMW = 0;
+  TimeDB->N_QUADPOINTS = 0;
+  TimeDB->N_DEGREES = 0;
+  TimeDB->ZETA = NULL;
+  TimeDB->WEIGHTS = NULL;
+  TimeDB->ALPHA0 = NULL;
+  TimeDB->BETA0 = NULL;
+  TimeDB->GAMMA0 = NULL;
+  TimeDB->CORRECTION = NULL;
+  TimeDB->POINTS = NULL;
 
+  ParamDB->INPUT_QUAD_RULE = 0;
+  ParamDB->INTERNAL_PROBLEM_LINEAR = 0;
   ParamDB->INTERNAL_PRESSURE_SPACE = 0;
   ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION = 0;
@@ -637,6 +840,17 @@ void TDatabase::SetDefaultParameters()
   ParamDB->INTERNAL_COERCIVITY = -4711.0;
   ParamDB->INTERNAL_FACE_INTEGRALS = 0;
   ParamDB->INTERNAL_NO_ESTIMATE_DIRICHLET_CELLS = 0;
+  ParamDB->INTERNAL_WRONG_NEUMANN_CHECKED = 0;
+  ParamDB->INTERNAL_BFGS_RESTART_ADJOINT = 0;
+  ParamDB->INTERNAL_NEW_MATRICES_B = 1;
+  ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0;
+  ParamDB->INTERNAL_DISC_FLAG = 0;
+
+  ParamDB->INTERNAL_FESPACE_CONSTRUCT = 0;
+  ParamDB->INTERNAL_DO_NOT_RESPECT_DIRICHLET_BC = 0;
+  ParamDB->INTERNAL_P1_Array = NULL;
+  ParamDB->INTERNAL_START_PARAM = 0;
+
   /** parameters for free surface calculation */
   ParamDB->FS_MAGNETLAW = 0;
 
@@ -698,6 +912,9 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SUPERCONVERGENCE_ORDER = 0;
   ParamDB->FEM_FCT_LINEAR_TYPE = 1;
   ParamDB->FEM_FCT_PRELIMITING = 0;
+  ParamDB->FEM_FCT_GROUP_FEM = 0;
+  ParamDB->GROUP_FEM = 0;
+  ParamDB->WENO_TYPE = 0;
 
   /* the following parameters are for membrane REACTOR */
   ParamDB->REACTOR_P0 = 0.0;
@@ -744,6 +961,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->BULK_REACTION_DISC = 1;
   ParamDB->BULK_PB_DISC = 3;
   ParamDB->BULK_PB_DISC_STAB = 1;
+  ParamDB->BULK_PB_DISC_FCT_GROUP = 1;
   ParamDB->BULK_COUPLING = 1;
   ParamDB->BULK_GROWTH_RATE = 1;
   ParamDB->BULK_REACTION_MASS_LUMPING = 0;
@@ -752,6 +970,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->BULK_MOM_DISC = 2;
   ParamDB->BULK_SOLD_PARAMETER_TYPE = 51;
   ParamDB->N_CELL_LAYERS_PSD = 16;
+  ParamDB->N_CELL_LAYERS_PSD_2 = 16;
   ParamDB->OUTPUT_NODE_LAYER_PSD = 1;
 
 // coefficients for the fluid
@@ -785,24 +1004,41 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SSMUM_INTERPOLATION = 0;
 
   // parameters for WINDTUNNEL computations 
+  ParamDB->WINDTUNNEL_CONFIGURATION = 1;
+  ParamDB->WINDTUNNEL_INTERPOLATION = 0;
+  ParamDB->WINDTUNNEL_STEADY = 0;
+  ParamDB->WINDTUNNEL_SPATIAL = 3;
+  ParamDB->WINDTUNNEL_BROWNIAN = 0;
+  ParamDB->WINDTUNNEL_POL_ORDER = 0;
+  ParamDB->WINDTUNNEL_SHEAR_FACTOR_TYPE = 0;
+  ParamDB->WINDTUNNEL_SHEAR_FACTOR = 0.05;
+  ParamDB->WINDTUNNEL_QUAD_METHOD=0;
+  ParamDB->WINDTUNNEL_MEASURE_MASS=0;
+  ParamDB->WINDTUNNEL_SHIFT=0.;
+  
   ParamDB->WINDTUNNEL_LAYER_NUMBER_X = WINDTUNNEL_LAYER_NUMBER_X_CONST-1;
   ParamDB->WINDTUNNEL_DIM_Y = WINDTUNNEL_DIM_Y_CONST-1;
   ParamDB->WINDTUNNEL_DIM_Z = WINDTUNNEL_DIM_Z_CONST-1;
   ParamDB->WINDTUNNEL_DIM_R = WINDTUNNEL_DIM_R_CONST-1;
-  ParamDB->WINDTUNNEL_ENVIR_COND = 1.26e-12;
-  ParamDB->WINDTUNNEL_SUPERSAT = 1.0 ;
+  ParamDB->WINDTUNNEL_ENVIR_COND = 5.0613e-10;
+  ParamDB->WINDTUNNEL_SUPERSAT = 0.01 ; //test normally supersaturation =0.01
   ParamDB->WINDTUNNEL_U_INFTY = 1; // m/s
   ParamDB->WINDTUNNEL_L_INFTY = 1; // m
   ParamDB->WINDTUNNEL_R_MIN = 0e-6; // = r_min in m
-  ParamDB->WINDTUNNEL_R_INFTY = 170e-6; // = r_max in m
-  ParamDB->WINDTUNNEL_F_INFTY = 1e5; // #/m^4
-  ParamDB->WINDTUNNEL_kinematic_viscosity = 15.68e-6;
+  ParamDB->WINDTUNNEL_R_INFTY = 175e-6;  // log -normal250e-6; // = r_max in m
+  ParamDB->WINDTUNNEL_F_INFTY = 1e12; // #/m^4
+  //ParamDB->WINDTUNNEL_kinematic_viscosity = 15.68e-6;
+  ParamDB->WINDTUNNEL_dynamic_viscosity = 18.15e-6;  // air (Rogers, Yau p. 103)
+  ParamDB->WINDTUNNEL_density = 1.2041;   // air
+  // ParamDB->WINDTUNNEL_BOUND_KOEFF=0;
+
 
   ParamDB->UREA_REACTION_DISC = 1;
-  ParamDB->UREA_PB_DISC = 0;
-  ParamDB->UREA_MODEL = 2;
+  ParamDB->UREA_PB_DISC = 3;
+  ParamDB->UREA_MODEL = 0;
   ParamDB->UREA_PB_DISC_STAB = 1;
   ParamDB->UREA_SOLD_PARAMETER_TYPE = 51;
+  ParamDB->UREA_PIPE = 0;
 
   ParamDB->UREA_l_infty = 0.01;
   ParamDB->UREA_u_infty = 0.01;
@@ -814,7 +1050,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->UREA_c_p =  2441.3;
   ParamDB->UREA_lambda = 0.167;
   ParamDB->UREA_D_P_0 = 2.5e-6;
-  ParamDB->UREA_D_P_MAX = 2000e-6;
+  ParamDB->UREA_D_P_MAX = 5000e-6;
   ParamDB->UREA_k_v = Pi/6.0;
   ParamDB->UREA_m_mol = 60.06e-3;
   ParamDB->UREA_D_J = 1.35e-9;
@@ -835,27 +1071,121 @@ void TDatabase::SetDefaultParameters()
   ParamDB->UREA_CONC_MAXIT = 1;
   ParamDB->UREA_inflow_time = 5;
 
-  ParamDB->UREA_AGGR_SPATIAL = 3;
-  ParamDB->UREA_AGGR_BROWNIAN = 1.;
-  ParamDB->UREA_AGGR_POL_ORDER = 0.;
-  ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE = 0.;
-  ParamDB->UREA_AGGR_SHEAR_FACTOR = 0.;
-  ParamDB->UREA_AGGR_BROWNIAN_TEMP = 0;
-  ParamDB->UREA_AGGR_BROWNIAN_SCAL = 0;
+  ParamDB->UREA_AGGR_SPATIAL = 3;              //spatial dimension
+  ParamDB->UREA_AGGR_BROWNIAN = 0.;            //include brownian kernel
+  ParamDB->UREA_AGGR_BROWNIAN_TEMP = 0;        //include temp in brownian kernel
+  ParamDB->UREA_AGGR_BROWNIAN_SCAL = 0.;       //scal for brownian kernel
+  ParamDB->UREA_AGGR_POL_ORDER = 0.;           //degree of the polynomial basis (at the moment 0 (constant) or 1 (linear))
+  ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE = 0.;   //shear induced kernel factor type (0 - constant factor, 1 - depends on the velocity)
+  ParamDB->UREA_AGGR_SHEAR_FACTOR = 0.05;      //the factor itself
+
+  //Param KDP model
+
+  ParamDB->KDP_MODEL = 0;
+  ParamDB->KDP_l_infty = 0.01;
+  ParamDB->KDP_u_infty = 0.01;
+  ParamDB->KDP_c_infty = 1;
+  ParamDB->KDP_temp_infty = 1;
+  ParamDB->KDP_f_infty = 1e13;
+  ParamDB->KDP_nu = 1.2931e-6;
+  ParamDB->KDP_rho = 1160;
+  ParamDB->KDP_c_p =  4181.3;
+  ParamDB->KDP_lambda = 0.602;
+  ParamDB->KDP_D_P_0 = 0.0;//1.25e-6;//2.5e-6;
+  ParamDB->KDP_D_P_0_2 =0.0;//1.25e-6;//2.5e-6;
+  // ParamDB->KDP_D_P_MAX = 2500e-6;
+  ParamDB->KDP_D_P_MAX = 1e-3;
+  //ParamDB->KDP_D_P_MAX_2 = 5000e-6;
+  ParamDB->KDP_D_P_MAX_2 = 1e-3;
+  ParamDB->KDP_m_mol = 136.08e-3;
+  ParamDB->KDP_D_J = 5.5e-10;
+  ParamDB->KDP_rho_d = 2338;
+  ParamDB->KDP_delta_h_cryst = 0.119e3;
+  // ParamDB->KDP_delta_h_cryst = 119e3;
+  ParamDB->KDP_k_g_1 = 1.221e-5;
+  ParamDB->KDP_k_g_2 = 10.075e-5;
+  //nach christian
+  ParamDB->KDP_k_b = 7.875e9;//7.49e10;
+  //ParamDB->KDP_k_b = 3.75e13;
+  ParamDB->KDP_g_1 = 1.48;
+  ParamDB->KDP_g_2 = 1.74;
+  ParamDB->KDP_b = 2.04;
+  ParamDB->KDP_w_sat_1 = 5.5843e-5;
+  ParamDB->KDP_w_sat_1_Ma = 9.3027e-5;
+  ParamDB->KDP_w_sat_2 = 2.8159e-2;
+  ParamDB->KDP_w_sat_2_Ma = 9.7629e-5;
+  ParamDB->KDP_w_sat_3 = 3.6832;
+  ParamDB->KDP_w_sat_3_Ma = 0.2087;
+  ParamDB->KDP_INTERNAL_NUC_A =0.0;
+  ParamDB->KDP_INTERNAL_NUC_B =0.0;
+  ParamDB->KDP_INFLOW_SCALE = 4.5e-2; // centimeter
+  ParamDB->KDP_CONC_TOL = 1e-6;
+  ParamDB->KDP_CONC_MAXIT = 1;
+  ParamDB->KDP_inflow_time = 10;
+    
+    
+  //======================================================================
+  /** parameters for Stokes--Darcy (StoDa) coupling */
+  //======================================================================
+  ParamDB->StoDa_interfaceType = 0; //Beavers-Joseph-Saffman or u.t=0
+  ParamDB->StoDa_alpha = 1; // from Beavers-Joseph-Saffman condition on interface
+  ParamDB->StoDa_problemType = 1;// Neumann--Neumann, Robin--Robin, ...
+  ParamDB->StoDa_updatingStrategy = 0; // update of the etas
+  ParamDB->StoDa_theta_f = 1; //damping in Stokes (flow) part
+  ParamDB->StoDa_theta_p = 1; //damping in Darcy (porous) part
+  ParamDB->StoDa_gamma_f = 1; // parameter for Robin condition on interface
+  ParamDB->StoDa_gamma_p = 1; // parameter for Robin condition on interface
+  ParamDB->StoDa_weakGamma = 1; // parameter for enforcing weak boundary conditions
+  ParamDB->StoDa_solutionStrategy = 1; // only iterative (0) or iterative and one big matrix (1)
+  ParamDB->StoDa_algorithm = 1; // Gauss--Seidel, Jacobi, ...
+  ParamDB->StoDa_StokesFirst = 0; // for Gauss--Seidel type method.
+  ParamDB->StoDa_nIterations = 100; // maximum number of iterations
+  ParamDB->StoDa_relDiff_interfaceError = 1e-10; // (e_k - e_{k+1})/e_k < this number
+  ParamDB->StoDa_relDiff_factor1 = 1; // factor of StokesU in computing E_k
+  ParamDB->StoDa_relDiff_factor2 = 1; // factor of StokesP in computing E_k
+  ParamDB->StoDa_relDiff_factor3 = 1; // factor of DarcyP  in computing E_k
+  ParamDB->StoDa_relDiff_solution = 1e-10; // E_k < this number
+  ParamDB->StoDa_bigResidual = 1e-10; // residual of big System < this number
+  ParamDB->StoDa_periodicBoundary = 0; // true if there is a periodic boundary
+  ParamDB->StoDa_periodicBoundaryPressureDrop = 1.0; // pressure drop at periodic boundary
+  
+  /** general parameters for population balances */
+  ParamDB->PB_DISC_TYPE = 3;
+  ParamDB->PB_TIME_DISC = 100;
+
   
   /** parameters for matlab output */
   tmp = new char[40];
   strcpy(tmp,"MooN_MD_default_matlab_matrix");
   ParamDB->MATLAB_MATRIX=tmp;
-  strcpy(tmp,"MooN_MD_default_matlabbasefile");
-  ParamDB->MATLABBASENAME=tmp;
-
+  
   ParamDB->WRITE_MATLAB = FALSE;
   ParamDB->WRITE_MATLAB_MATRIX = FALSE;
 
   /** parameter for non-conforming elements
       number corresponds to Apel-Matthies paper 2006 */
   ParamDB->NC_TYPE = 3;
+  
+  /** parameters for ROM*/
+  ParamDB->WRITE_SNAPSHOTS = FALSE;
+  ParamDB->DO_ROM = FALSE;
+  ParamDB->DO_ROM_P = FALSE;
+  ParamDB->RANK_OF_BASIS = 0;
+  ParamDB->RANK_OF_BASIS_P = 0;
+  ParamDB->POD_INNER_PRODUCT = 1;
+  ParamDB->POD_INNER_PRODUCT_P = 1;
+  
+  ParamDB->BUILD_PODFILE = FALSE;
+  ParamDB->POD_FLUCT_FIELD = FALSE;
+  ParamDB->POD_FLUCT_FIELD_P = FALSE;
+  ParamDB->P_ROM_METHOD = 1;
+
+  tmp = new char[12];
+  strcpy(tmp,"NO_PODFILE");
+  ParamDB->PODFILE= tmp;
+  
+  /** parameter for type of projection method (NSE)**/
+  ParamDB->PROJECTION_METHOD = 1;
 
   /** parameters for individual use in parallel computations */
   ParamDB->Par_P0 = 0;
@@ -935,8 +1265,9 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "GEOFILE: " << ParamDB->GEOFILE << endl;
   OutFile << "BNDFILE: " << ParamDB->BNDFILE << endl;
   OutFile << "MAPFILE: " << ParamDB->MAPFILE << endl;
-  OutFile << "LOGFILE: " << ParamDB->LOGFILE << endl;
   OutFile << "OUTFILE: " << ParamDB->OUTFILE << endl;
+  OutFile << "PROBLEM_TYPE: " << ParamDB->PROBLEM_TYPE << endl;
+  OutFile << "EXAMPLE: " << ParamDB->EXAMPLE << endl;
 
   OutFile << "MESHGEN_ALLOW_EDGE_REF: " << ParamDB->MESHGEN_ALLOW_EDGE_REF << endl;
   OutFile << "MESHGEN_REF_QUALITY: " << ParamDB->MESHGEN_REF_QUALITY << endl;
@@ -958,6 +1289,8 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "DRIFT_Z: " << ParamDB->DRIFT_Z << endl;
   OutFile << "REFINEMENT: " << ParamDB->REFINEMENT << endl;
   OutFile << "GRID_TYPE: " << ParamDB->GRID_TYPE << endl;
+  OutFile << "GRID_TYPE_1: " << ParamDB->GRID_TYPE_1 << endl;
+  OutFile << "GRID_TYPE_2: " << ParamDB->GRID_TYPE_2 << endl;
   OutFile << "CHANNEL_GRID_STRETCH: " << ParamDB->CHANNEL_GRID_STRETCH << endl;
 
   OutFile << "ADAPTIVE_REFINEMENT_CRITERION: " << ParamDB->ADAPTIVE_REFINEMENT_CRITERION << endl;
@@ -980,6 +1313,8 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SHISHKIN_MESH: " << ParamDB->SHISHKIN_MESH << endl;
   OutFile << "SHISHKIN_DIAM: " << ParamDB->SHISHKIN_DIAM << endl;
   OutFile << "NSTYPE: " << ParamDB->NSTYPE << endl;
+  OutFile << "DARCYTYPE: " << ParamDB->DARCYTYPE << endl;
+  OutFile << "SIGMA_PERM: " << ParamDB->SIGMA_PERM << endl;
   OutFile << "LAPLACETYPE: " << ParamDB->LAPLACETYPE << endl;
   OutFile << "USE_ISOPARAMETRIC: " << ParamDB->USE_ISOPARAMETRIC << endl;
   OutFile << "VMM_COARSE_LEVEL: " << ParamDB->VMM_COARSE_LEVEL << endl;
@@ -992,8 +1327,11 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "WEAK_BC: " << ParamDB->WEAK_BC << endl;
 
   OutFile << "RE_NR: " << ParamDB->RE_NR << endl;
+  OutFile << "RA_NR: " << ParamDB->RA_NR << endl;
+  OutFile << "ROSSBY_NR: " << ParamDB->ROSSBY_NR << endl;
   OutFile << "START_RE_NR: " << ParamDB->START_RE_NR << endl;
   OutFile << "RE_NR_INCREMENT: " << ParamDB->RE_NR_INCREMENT << endl;
+  OutFile << "FLOW_PROBLEM_TYPE: " << ParamDB->FLOW_PROBLEM_TYPE << endl;
   OutFile << "FR_NR: " << ParamDB->FR_NR << endl;
   OutFile << "WB_NR: " << ParamDB->WB_NR << endl;
   OutFile << "PR_NR: " << ParamDB->PR_NR << endl;
@@ -1001,12 +1339,12 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "BI_NR: " << ParamDB->BI_NR << endl;
   OutFile << "Axial3D: " << ParamDB->Axial3D << endl;
   OutFile << "Axial3DAxis: " << ParamDB->Axial3DAxis << endl;  
-  OutFile << "STOKES_PROBLEM: " << ParamDB->STOKES_PROBLEM << endl;
   OutFile << "DELTA0: " << ParamDB->DELTA0 << endl;
   OutFile << "SDFEM_POWER0: " << ParamDB->SDFEM_POWER0 << endl;
   OutFile << "SDFEM_TYPE: " << ParamDB->SDFEM_TYPE << endl;
   OutFile << "SDFEM_NORM_B: " << ParamDB->SDFEM_NORM_B << endl;
   OutFile << "DELTA1: " << ParamDB->DELTA1 << endl;
+  OutFile << "CIP_TYPE: " << ParamDB->CIP_TYPE << endl;
   OutFile << "ADJOINT_FACTOR_4_OMEGA_EQ_0: " << ParamDB->ADJOINT_FACTOR_4_OMEGA_EQ_0 << endl;
 
   OutFile << "SOLD_TYPE: " << ParamDB->SOLD_TYPE << endl;
@@ -1043,11 +1381,13 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "DIV_DIV_STAB_C1: " << ParamDB->DIV_DIV_STAB_C1 << endl; 
   OutFile << "DIV_DIV_STAB_C2: " << ParamDB->DIV_DIV_STAB_C2 << endl; 
   OutFile << "NSE_NONLINEAR_FORM: " << ParamDB->NSE_NONLINEAR_FORM << endl;
+  OutFile << "OSEEN_ZERO_ORDER_COEFF: " << ParamDB->OSEEN_ZERO_ORDER_COEFF << endl;
 
   OutFile << "LP_FULL_GRADIENT: " << ParamDB->LP_FULL_GRADIENT << endl;
   OutFile << "LP_STREAMLINE: " << ParamDB->LP_STREAMLINE << endl;
   OutFile << "LP_DIVERGENCE: " << ParamDB->LP_DIVERGENCE << endl;
   OutFile << "LP_PRESSURE: " << ParamDB->LP_PRESSURE << endl;
+  OutFile << "LP_COEFF_TYPE: " << ParamDB->LP_COEFF_TYPE << endl;
   OutFile << "LP_FULL_GRADIENT_COEFF: " << ParamDB->LP_FULL_GRADIENT_COEFF << endl;
   OutFile << "LP_STREAMLINE_COEFF: " << ParamDB->LP_STREAMLINE_COEFF << endl;
   OutFile << "LP_DIVERGENCE_COEFF: " << ParamDB->LP_DIVERGENCE_COEFF << endl;
@@ -1062,14 +1402,42 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "LP_DIVERGENCE_ORDER_DIFFERENCE: " << ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE << endl;
   OutFile << "LP_PRESSURE_ORDER_DIFFERENCE: " << ParamDB->LP_PRESSURE_ORDER_DIFFERENCE << endl;
 
-  OutFile << "PSBASENAME: " << ParamDB->PSBASENAME << endl;
-  OutFile << "GRAPEBASENAME: " << ParamDB->GRAPEBASENAME << endl;
-  OutFile << "GNUBASENAME: " << ParamDB->GNUBASENAME << endl;
-  OutFile << "GMVBASENAME: " << ParamDB->GMVBASENAME << endl;
-  OutFile << "VTKBASENAME: " << ParamDB->VTKBASENAME << endl;
+  OutFile << "SOLVE_ADJOINT_PROBLEM: " << ParamDB->SOLVE_ADJOINT_PROBLEM << endl;
+  OutFile << "SOLD_ADJOINT: " << ParamDB->SOLD_ADJOINT << endl;
+  OutFile << "N_STAGES_ADJOINT: " << ParamDB->N_STAGES_ADJOINT << endl;
+  OutFile << "SC_NONLIN_ITE_ADJOINT: " << ParamDB->SC_NONLIN_ITE_ADJOINT << endl;
+  OutFile << "OPTIMIZATION_ITE_TYPE_ADJOINT: " << ParamDB->OPTIMIZATION_ITE_TYPE_ADJOINT << endl;
+  OutFile << "BFGS_VECTORS_ADJOINT: " << ParamDB->BFGS_VECTORS_ADJOINT << endl;
+  OutFile << "RELATIVE_DECREASE_ADJOINT: " << ParamDB->RELATIVE_DECREASE_ADJOINT << endl;
+  OutFile << "PENALTY_ADJOINT: " << ParamDB->PENALTY_ADJOINT << endl;
+  OutFile << "PENALTY_VALUE_AT_ZERO_ADJOINT: " << ParamDB->PENALTY_VALUE_AT_ZERO_ADJOINT << endl;
+  OutFile << "PENALTY_SMALLEST_PARAM_FAC_ADJOINT: " << ParamDB->PENALTY_SMALLEST_PARAM_FAC_ADJOINT << endl;
+  OutFile << "PENALTY_LARGEST_PARAM_FAC_ADJOINT: " << ParamDB->PENALTY_LARGEST_PARAM_FAC_ADJOINT << endl;
+  OutFile << "WEIGHT_RESIDUAL_L1_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_L1_ADJOINT << endl;
+  OutFile << "WEIGHT_RESIDUAL_L2_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_L2_ADJOINT << endl;
+  OutFile << "WEIGHT_GRADIENT_L1_ADJOINT: " << ParamDB->WEIGHT_GRADIENT_L1_ADJOINT << endl;
+  OutFile << "WEIGHT_GRADIENT_L2_ADJOINT: " << ParamDB->WEIGHT_GRADIENT_L2_ADJOINT << endl;
+  OutFile << "WEIGHT_STREAM_DER_L1_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_L1_ADJOINT << endl;
+  OutFile << "WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT << endl;
+  OutFile << "WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT << endl;
+  OutFile << "REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: " << ParamDB->REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT << endl;
+  OutFile << "WEIGHT_RESIDUAL_LP_ADJONT: " << ParamDB->WEIGHT_RESIDUAL_LP_ADJOINT << endl;
+  OutFile << "WEIGHT_RESIDUAL_EXP_LP_ADJONT: " << ParamDB->WEIGHT_RESIDUAL_EXP_LP_ADJOINT << endl;
+  OutFile << "WEIGHT_RESIDUAL_CW_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_CW_ADJOINT << endl;
+  OutFile << "RESIDUAL_LP_ADJONT: " << ParamDB->RESIDUAL_LP_ADJOINT << endl;
+  OutFile << "MIN_VAL_ADJOINT: " <<ParamDB->MIN_VAL_ADJOINT <<endl;
+  OutFile << "MAX_VAL_ADJOINT: " <<ParamDB->MAX_VAL_ADJOINT << endl;
+  OutFile << "MIN_MAX_EXPONENT_ONE_ADJOINT: " <<ParamDB->MIN_MAX_EXPONENT_ONE_ADJOINT<< endl;
+  OutFile << "MIN_MAX_EXPONENT_TWO_ADJOINT: " <<ParamDB->MIN_MAX_EXPONENT_TWO_ADJOINT<< endl;
+  OutFile << "MIN_MAX_FACTOR_ONE_ADJOINT: " << ParamDB->MIN_MAX_FACTOR_ONE_ADJOINT<< endl;
+  OutFile << "MIN_MAX_FACTOR_TWO_ADJOINT: " << ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT<< endl;
+  OutFile << "MIN_MAX_ADJOINT: " << ParamDB->MIN_MAX_ADJOINT<< endl;
+  
+  OutFile << "BASENAME: " << ParamDB->BASENAME << endl;
   OutFile << "SAVE_DATA_FILENAME: " << ParamDB->SAVE_DATA_FILENAME << endl;
   OutFile << "READ_DATA_FILENAME: " << ParamDB->READ_DATA_FILENAME << endl;
-  OutFile << "READGRAPEBASENAME: " << ParamDB->READGRAPEBASENAME << endl;
+  OutFile << "POD_FILENAME: " << ParamDB->POD_FILENAME << endl;
+  OutFile << "SNAP_FILENAME: " << ParamDB->SNAP_FILENAME << endl;
 
   OutFile << "SOLVER_TYPE: " << ParamDB->SOLVER_TYPE << endl;
   OutFile << "WRITE_PS: " << ParamDB->WRITE_PS << endl;
@@ -1079,6 +1447,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "WRITE_GNU: " << ParamDB->WRITE_GNU << endl;
   OutFile << "WRITE_AMIRA: " << ParamDB->WRITE_AMIRA << endl;
   OutFile << "WRITE_VTK: " << ParamDB->WRITE_VTK << endl;
+  OutFile << "WRITE_SNAPSHOTS: " << ParamDB->WRITE_SNAPSHOTS << endl;
   OutFile << "WRITE_MATLAB_MATRIX: " << ParamDB->WRITE_MATLAB_MATRIX << endl; 
   OutFile << "WRITE_MATLAB: " << ParamDB->WRITE_MATLAB << endl;
   OutFile << "SAVE_DATA: " << ParamDB->SAVE_DATA << endl;
@@ -1088,6 +1457,10 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SOLVE_ADJOINT_PROBLEM: " << ParamDB->SOLVE_ADJOINT_PROBLEM << endl;
   OutFile << "COMPUTE_VORTICITY_DIVERGENCE: " << ParamDB->COMPUTE_VORTICITY_DIVERGENCE << endl;
   OutFile << "READ_GRAPE_FILE: " << ParamDB->READ_GRAPE_FILE  << endl;
+  OutFile << "BUILD_PODFILE:" << ParamDB->BUILD_PODFILE << endl;
+  OutFile << "POD_FLUCT_FIELD:" << ParamDB->POD_FLUCT_FIELD << endl;
+  OutFile << "POD_FLUCT_FIELD_P:" << ParamDB->POD_FLUCT_FIELD_P << endl;
+  OutFile << "PROJECTION_METHOD:" << ParamDB->PROJECTION_METHOD << endl;
 
   OutFile << "P0: " << ParamDB->P0 << endl;
   OutFile << "P1: " << ParamDB->P1 << endl;
@@ -1145,6 +1518,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SC_LIN_RED_FACTOR_SCALAR_SOLD: " << ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD << endl;
   OutFile << "SC_LIN_RES_NORM_MIN_SCALAR_SOLD: " << ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD << endl;
   OutFile << "SC_LIN_MAXIT_SCALAR_SOLD: " << ParamDB->SC_LIN_MAXIT_SCALAR_SOLD << endl;
+  OutFile << "SC_FLEXIBLE_KRYLOV_SPACE_SOLVER: " << ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER << endl;
   OutFile << "SC_NONLIN_ITE_ADJOINT: " << ParamDB->SC_NONLIN_ITE_ADJOINT << endl;
 
   OutFile << "SC_MG_TYPE_SCALAR: " << ParamDB->SC_MG_TYPE_SCALAR << endl; 
@@ -1228,10 +1602,10 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SC_SOR_OMEGA: " << ParamDB->SC_SOR_OMEGA << endl;
   OutFile << "SC_OMEGA_COARSE_0: " << ParamDB->SC_OMEGA_COARSE_0 << endl;
   OutFile << "SC_OMEGA_P_0: " << ParamDB->SC_OMEGA_P_0 << endl;
-  OutFile << "SC_ILUT_TOL: " << ParamDB->SC_ILUT_TOL << endl;                     
-  OutFile << "SC_ILUT_ABSOLUTE_FILLIN: " << ParamDB->SC_ILUT_ABSOLUTE_FILLIN << endl;                     
-  OutFile << "SC_ILUT_RELATIVE_FILLIN: " << ParamDB->SC_ILUT_RELATIVE_FILLIN << endl;                     
-  OutFile << "SC_ILUT_SORT: " << ParamDB->SC_ILUT_SORT << endl;                     
+  OutFile << "SC_ILUT_TOL: " << ParamDB->SC_ILUT_TOL << endl;
+  OutFile << "SC_ILUT_ABSOLUTE_FILLIN: " << ParamDB->SC_ILUT_ABSOLUTE_FILLIN << endl;
+  OutFile << "SC_ILUT_RELATIVE_FILLIN: " << ParamDB->SC_ILUT_RELATIVE_FILLIN << endl;
+  OutFile << "SC_ILUT_SORT: " << ParamDB->SC_ILUT_SORT << endl;
   OutFile << "SC_SCHUR_INV_OF_A: " << ParamDB->SC_SCHUR_INV_OF_A << endl;
   OutFile << "SC_SCHUR_INV_OF_A_MAXIT: " << ParamDB->SC_SCHUR_INV_OF_A_MAXIT << endl;
   OutFile << "SC_SCHUR_ITERATION_DAMP: " << ParamDB->SC_SCHUR_ITERATION_DAMP << endl;
@@ -1239,6 +1613,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SC_SCHUR_STEP_LENGTH_CONTROL: " << ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL << endl;
   OutFile << "SC_MIXED_BCGS_CGS_SWITCH_TOL: " << ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL << endl;
   OutFile << "SC_DIV_FACTOR: " << ParamDB->SC_DIV_FACTOR << endl;
+  OutFile << "SC_NONLIN_DIV_FACTOR: " << ParamDB->SC_NONLIN_DIV_FACTOR << endl;
   OutFile << "SC_SMOOTHING_STEPS: " << ParamDB->SC_SMOOTHING_STEPS << endl;
   OutFile << "SC_N1_PARAM: " << ParamDB->SC_N1_PARAM << endl;
   OutFile << "SC_N2_PARAM: " << ParamDB->SC_N2_PARAM << endl;
@@ -1269,6 +1644,24 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SUPERCONVERGENCE_ORDER: " << ParamDB->SUPERCONVERGENCE_ORDER << endl;
   OutFile << "FEM_FCT_LINEAR_TYPE: " << ParamDB->FEM_FCT_LINEAR_TYPE << endl;
   OutFile << "FEM_FCT_PRELIMITING: " << ParamDB->FEM_FCT_PRELIMITING << endl;
+  OutFile << "FEM_FCT_GROUP_FEM: " << ParamDB->FEM_FCT_GROUP_FEM << endl;
+  OutFile << "GROUP_FEM: " << ParamDB->GROUP_FEM << endl;
+  OutFile << "WENO_TYPE: " << ParamDB->WENO_TYPE << endl;
+  
+  OutFile << "WRITE_SNAPSHOTS: " << ParamDB->WRITE_SNAPSHOTS << endl;
+  OutFile << "DO_ROM: " << ParamDB->DO_ROM << endl;
+  OutFile << "DO_ROM_P: " << ParamDB->DO_ROM_P << endl;
+  OutFile << "RANK_OF_BASIS: " << ParamDB->RANK_OF_BASIS << endl;
+  OutFile << "RANK_OF_BASIS_P: " << ParamDB->RANK_OF_BASIS_P << endl;
+  OutFile << "POD_INNER_PRODUCT: " << ParamDB->POD_INNER_PRODUCT << endl;
+  OutFile << "POD_INNER_PRODUCT_P: " << ParamDB->POD_INNER_PRODUCT_P << endl;
+  OutFile << "BUILD_PODFILE: " << ParamDB->BUILD_PODFILE << endl;
+  OutFile << "POD_FILENAME: " << ParamDB->POD_FILENAME << endl;
+  OutFile << "SNAP_FILENAME: " << ParamDB->SNAP_FILENAME << endl;
+  OutFile << "POD_FLUCT_FIELD: " << ParamDB->POD_FLUCT_FIELD << endl;
+  OutFile << "POD_FLUCT_FIELD_P: " << ParamDB->POD_FLUCT_FIELD_P << endl;
+  OutFile << "P_ROM_METHOD: " << ParamDB->P_ROM_METHOD << endl;
+  OutFile << "PROJECTION_METHOD: " << ParamDB->PROJECTION_METHOD << endl;
 
   /** write parameter for non-conforming elements */
   OutFile << "NC_TYPE: " << ParamDB->NC_TYPE << endl;
@@ -1285,6 +1678,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "BULK_MOM_DISC: " << ParamDB->BULK_MOM_DISC <<endl;
   OutFile << "BULK_SOLD_PARAMETER_TYPE: " << ParamDB->BULK_SOLD_PARAMETER_TYPE <<endl;
   OutFile << "N_CELL_LAYERS_PSD: " << ParamDB->N_CELL_LAYERS_PSD <<endl;
+  OutFile << "N_CELL_LAYERS_PSD_2: " << ParamDB->N_CELL_LAYERS_PSD <<endl;
   OutFile << "OUTPUT_NODE_LAYER_PSD: " << ParamDB->OUTPUT_NODE_LAYER_PSD <<endl;
   OutFile << "BULK_l_infty: " << ParamDB->BULK_l_infty << endl;
   OutFile << "BULK_u_infty: " << ParamDB->BULK_u_infty << endl;
@@ -1308,6 +1702,31 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "SSMUM_MAX_CELLS_LAYERS: " << ParamDB->SSMUM_MAX_CELLS_LAYERS << endl;
   OutFile << "SSMUM_INTERPOLATION: " << ParamDB->SSMUM_INTERPOLATION << endl;
   
+  OutFile << "INPUT_QUAD_RULE: " << ParamDB->INPUT_QUAD_RULE << endl;
+  
+  /** Parameters for Stokes--Darcy */
+  OutFile << "StoDa_interfaceType: " << ParamDB->StoDa_interfaceType << endl;
+  OutFile << "StoDa_alpha: " << ParamDB->StoDa_alpha << endl;
+  OutFile << "StoDa_problemType: " << ParamDB->StoDa_problemType << endl;
+  OutFile << "StoDa_updatingStrategy: " << ParamDB->StoDa_updatingStrategy << endl;
+  OutFile << "StoDa_theta_f: " << ParamDB->StoDa_theta_f << endl;
+  OutFile << "StoDa_theta_p: " << ParamDB->StoDa_theta_p << endl;
+  OutFile << "StoDa_gamma_f: " << ParamDB->StoDa_gamma_f << endl;
+  OutFile << "StoDa_gamma_p: " << ParamDB->StoDa_gamma_p << endl;
+  OutFile << "StoDa_weakGamma: " << ParamDB->StoDa_weakGamma << endl;
+  OutFile << "StoDa_solutionStrategy: " << ParamDB->StoDa_solutionStrategy << endl;
+  OutFile << "StoDa_StokesFirst: " << ParamDB->StoDa_StokesFirst << endl;
+  OutFile << "StoDa_algorithm: " << ParamDB->StoDa_algorithm << endl;
+  OutFile << "StoDa_relDiff_interfaceError: " << ParamDB->StoDa_relDiff_interfaceError << endl;
+  OutFile << "StoDa_relDiff_factor1: " << ParamDB->StoDa_relDiff_factor1 << endl;
+  OutFile << "StoDa_relDiff_factor2: " << ParamDB->StoDa_relDiff_factor2 << endl;
+  OutFile << "StoDa_relDiff_factor3: " << ParamDB->StoDa_relDiff_factor3 << endl;
+  OutFile << "StoDa_relDiff_solution: " << ParamDB->StoDa_relDiff_solution << endl;
+  OutFile << "StoDa_bigResidual: " << ParamDB->StoDa_bigResidual << endl;
+  OutFile << "StoDa_periodicBoundary: " << ParamDB->StoDa_periodicBoundary << endl;
+  OutFile << "StoDa_periodicBoundaryPressureDrop: " << ParamDB->StoDa_periodicBoundaryPressureDrop << endl;
+  OutFile << "StoDa_nIterations: " << ParamDB->StoDa_nIterations << endl;
+
  
   OutFile << "HEAT_TANGENTIAL_STRESS_FACTOR: " << ParamDB->HEAT_TANGENTIAL_STRESS_FACTOR << endl;
   OutFile << "HEAT_SOLID_SURFACE_FACTOR: " << ParamDB->HEAT_SOLID_SURFACE_FACTOR << endl;
@@ -1328,11 +1747,31 @@ void TDatabase::WriteTimeDB()
   OutFile << "MAX_TIMESTEPLENGTH: " << TimeDB->MAX_TIMESTEPLENGTH << endl;
   OutFile << "TIMESTEPLENGTH_TOL: " << TimeDB->TIMESTEPLENGTH_TOL << endl;
   OutFile << "TIMESTEPLENGTH_CONTROL: " << TimeDB->TIMESTEPLENGTH_CONTROL << endl;
+  OutFile << "TIMESTEPLENGTH_CONTROLLER: " <<  TimeDB->TIMESTEPLENGTH_CONTROLLER <<endl;    
+  OutFile << "TIMESTEPLENGTH_PARA_KK_I: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_I <<endl;
+  OutFile << "TIMESTEPLENGTH_PARA_KK_P: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_P << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_KK_E: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_E << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_KK_R: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_R << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_KK_D: " << TimeDB->TIMESTEPLENGTH_PARA_KK_D << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_FAC: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_FAC_MAX: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC_MAX<< endl;
+  OutFile << "TIMESTEPLENGTH_PARA_FAC_MIN: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC_MIN << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_TOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_TOL << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_ATOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_ATOL << endl;
+  OutFile << "TIMESTEPLENGTH_PARA_RTOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_RTOL << endl;
   OutFile << "RESET_CURRENTTIME: " << TimeDB->RESET_CURRENTTIME << endl;
   OutFile << "RESET_CURRENTTIME_STARTTIME: " << TimeDB->RESET_CURRENTTIME_STARTTIME << endl;
   OutFile << "STEADY_STATE_TOL: "<< TimeDB->STEADY_STATE_TOL << endl;
   OutFile << "SCALE_DIVERGENCE_CONSTRAINT: "<< TimeDB->SCALE_DIVERGENCE_CONSTRAINT << endl;
 
+  OutFile << "CONTROL: "<< TimeDB->CONTROL << endl;
+  OutFile << "CONTROL_ALPHA: "<< TimeDB->CONTROL_ALPHA << endl;
+  OutFile << "CONTROL_BETA: "<< TimeDB->CONTROL_BETA << endl;
+  OutFile << "CONTROL_GAMMA: "<< TimeDB->CONTROL_GAMMA << endl;
+  OutFile << "CONTROL_SAFTY: "<< TimeDB->CONTROL_SAFTY << endl;
+  OutFile << "CONTROL_MAXSCALE: "<< TimeDB->CONTROL_MAXSCALE << endl;
+  OutFile << "CONTROL_MINSCALE: "<< TimeDB->CONTROL_MINSCALE << endl;
+  
   OutFile << "THETA1: " << TimeDB->THETA1 << endl;
   OutFile << "THETA2: " << TimeDB->THETA2 << endl;
   OutFile << "THETA3: " << TimeDB->THETA3 << endl;
@@ -1356,6 +1795,7 @@ void TDatabase::WriteTimeDB()
   OutFile << "T9: " << TimeDB->T9 << endl;
 
   OutFile << "STEPS_PER_IMAGE: " << TimeDB->STEPS_PER_IMAGE << endl;
+  OutFile << "STEPS_PER_SNAP: " << TimeDB->STEPS_PER_SNAP << endl;
 
   OutFile << "RB_TYPE: " << TimeDB->RB_TYPE << endl;
   OutFile << "RB_TYPE2: " << TimeDB->RB_TYPE2 << endl;
@@ -1397,6 +1837,26 @@ void TDatabase::CheckParameterConsistencyNSE()
       OutPut(" because of continuous pressure"<< endl);
     }
   }
+  if (ParamDB->GROUP_FEM)
+  {
+    if (ParamDB->DISCTYPE != GALERKIN)
+    {
+      ParamDB->DISCTYPE = GALERKIN;
+      OutPut("GROUP_FEM: changed DISCTYPE to " << ParamDB->DISCTYPE << endl);
+    }
+    if (ParamDB->NSTYPE != 1)
+    {
+      //ParamDB->NSTYPE = 1;
+      //OutPut("GROUP_FEM: changed NSTYPE to " << ParamDB->NSTYPE << endl);
+      OutPut("WARNING: GROUP_FEM works properly only with NSTYPE = 1" << endl);
+    }
+    if (ParamDB->SC_MG_TYPE_SADDLE != 0)
+    {
+      ParamDB->SC_MG_TYPE_SADDLE = 0;
+      OutPut("GROUP_FEM: changed SC_MG_TYPE_SADDLE to " << ParamDB->SC_MG_TYPE_SADDLE << endl);
+    }
+  }
+
 
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==1))
   {
@@ -1452,7 +1912,7 @@ void TDatabase::CheckParameterConsistencyNSE()
     ParamDB->SC_MG_TYPE_SADDLE=0;
   }
   
-  if (ParamDB->STOKES_PROBLEM == 1)
+  if (ParamDB->PROBLEM_TYPE == 3)
   {
      if (ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -1466,7 +1926,7 @@ void TDatabase::CheckParameterConsistencyNSE()
   }
 
   // rotational form
-  if (ParamDB->NSE_NONLINEAR_FORM==2)
+  if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
   {
       if (ParamDB->NSTYPE<=2)
       {
@@ -1562,4 +2022,34 @@ void TDatabase::CheckParameterConsistencyNSE()
     ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE = 1;
     ParamDB->LP_PRESSURE_ORDER_DIFFERENCE = 1;
   }
+  
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)  
+    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == OSEEN)
+  {
+    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
+    switch (TDatabase::ParamDB->NSTYPE)
+    {
+      case 1: OutPut("Galerkin discretization for Oseen because of NSTYPE "
+  << TDatabase::ParamDB->NSTYPE << endl);
+  TDatabase::ParamDB->DISCTYPE =  1;
+  break;
+      case 14:  OutPut("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE "
+  << TDatabase::ParamDB->NSTYPE << endl);
+  TDatabase::ParamDB->DISCTYPE =  2;
+  break;
+      default:
+  OutPut("No method for Oseen implemented for NSTYPE " << TDatabase::ParamDB->NSTYPE << endl);
+  exit(4711);
+    }
+    if (ParamDB->SC_NONLIN_MAXIT_SADDLE > 1)
+    {
+      ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
+      OutPut("Set SC_NONLIN_MAXIT_SADDLE " << ParamDB->SC_NONLIN_MAXIT_SADDLE <<
+      " for Oseen, further assembling not implemented"<<endl);
+      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
+      OutPut("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0" << endl);
+    }
+  }
+
 } // end CheckParameterConsistencyNSE
