@@ -7,6 +7,12 @@ LOGFILE:        logfile
 
 GEOFILE:      ../../ParMooN/data/UnitSquare.GEO
 BNDFILE:        ../../ParMooN/data/UnitSquare.PRM
+
+# choose the example (see also Examples/Example_NSE2D.C)
+# 0 - poiseuille flow
+# 1 - driven cavity
+# 2 - sine cosine
+EXAMPLE: 2
  
 ----------------------------------------------------------------------
 # number of uniform refinement steps at beginning
@@ -22,7 +28,10 @@ UNIFORM_STEPS: 5
 ----------------------------------------------------------------------
 VELOCITY_SPACE: 2
 
-STOKES_PROBLEM: 0
+# choose type of problem
+# 3 - Stokes
+# 5 - NSE
+PROBLEM_TYPE: 5
 Axial3D: 0
 USE_ISOPARAMETRIC: 1
 
@@ -54,6 +63,13 @@ NSTYPE: 1
 # Laplace type
 ----------------------------------------------------------------------
 LAPLACETYPE: 0
+
+---------------------------------------------------------------------
+# change the representation of the nonlinear form (default: 0)
+# 0:  convective form ( (u . nabla) u, v)
+# 1:  skew symmetric form (1/2) [ ((u . nabla) u, v) - ((u . nabla) v, u) ]
+# 2:  rotational form 
+NSE_NONLINEAR_FORM: 0
 
 ----------------------------------------------------------------------
 # order of upwind scheme
@@ -89,8 +105,8 @@ SC_NONLIN_MAXIT_SADDLE: 2
 ----------------------------------------------------------------------
 # output controls
 ----------------------------------------------------------------------
-PSBASENAME:  unitsquare
-VTKBASENAME: unitsquare
+BASENAME:  unitsquare
+OUTPUTDIR: VTK
 WRITE_PS: 0
 WRITE_VTK: 0
 
