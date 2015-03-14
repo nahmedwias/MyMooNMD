@@ -10,9 +10,23 @@
 */
 
 /* for all functionals */
-static double NF_C_H_UL1_3D_Xi[]   = { -1,  1, -1,  1, -1,  1, -1,  1, 0 };
-static double NF_C_H_UL1_3D_Eta[]  = { -1, -1,  1,  1, -1, -1,  1,  1, 0 };
-static double NF_C_H_UL1_3D_Zeta[] = { -1, -1, -1, -1,  1,  1,  1,  1, 0 };
+static double NF_C_H_UL1_3D_Xi[]   = { -1,  1, -1,  1, -1,  1, -1,  1,
+ -.5773502691896257645091486, .5773502691896257645091486,
+ -.5773502691896257645091486, .5773502691896257645091486,
+ -.5773502691896257645091486, .5773502691896257645091486,
+ -.5773502691896257645091486, .5773502691896257645091486 };
+
+static double NF_C_H_UL1_3D_Eta[]  = { -1, -1,  1,  1, -1, -1,  1,  1,
+ -.5773502691896257645091486, -.5773502691896257645091486,
+ .5773502691896257645091486, .5773502691896257645091486,
+ -.5773502691896257645091486, -.5773502691896257645091486,
+ .5773502691896257645091486, .5773502691896257645091486 };
+
+static double NF_C_H_UL1_3D_Zeta[] = { -1, -1, -1, -1,  1,  1,  1,  1,
+ -.5773502691896257645091486, -.5773502691896257645091486,
+ -.5773502691896257645091486, -.5773502691896257645091486,
+ .5773502691896257645091486, .5773502691896257645091486,
+ .5773502691896257645091486, .5773502691896257645091486 };
 
 /* face 0                               0   1   2   3 */
 static double NF_C_H_UL1_3D_F0_Xi[]   = { -1,  1, -1,  1 };
@@ -82,8 +96,14 @@ void NF_C_H_UL1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   Functionals[5] = PointValues[5];
   Functionals[6] = PointValues[6];
   Functionals[7] = PointValues[7];
-  Functionals[8] = PointValues[8];
-  
+  Functionals[8] = PointValues[8]
+			 +PointValues[9]
+			 +PointValues[10]
+			 +PointValues[11]
+			 +PointValues[12]
+			 +PointValues[13]
+			 +PointValues[14]
+			 +PointValues[15];
 }
 
 void NF_C_H_UL1_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
@@ -96,7 +116,7 @@ void NF_C_H_UL1_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint,
 }
 
 static int NF_C_H_UL1_3D_N_AllFunctionals = 9;
-static int NF_C_H_UL1_3D_N_PointsAll = 9;
+static int NF_C_H_UL1_3D_N_PointsAll = 16;
 static int NF_C_H_UL1_3D_N_FaceFunctionals[] = { 4, 4, 4, 4, 4, 4 };
 static int NF_C_H_UL1_3D_N_PointsFace[] = { 4, 4, 4, 4, 4, 4 };
 

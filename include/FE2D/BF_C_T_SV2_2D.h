@@ -287,7 +287,7 @@ static void C_T_SV2_2D_DeriveEtaEta(double xi, double eta, double *values)
 // ***********************************************************************
 
 TBaseFunct2D *BF_C_T_SV2_2D_Obj = new TBaseFunct2D
-        (10, BF_C_T_B2_2D, BFUnitTriangle, 
+        (10, BF_C_T_SV2_2D, BFUnitTriangle,
          C_T_SV2_2D_Funct, C_T_SV2_2D_DeriveXi,
          C_T_SV2_2D_DeriveEta, C_T_SV2_2D_DeriveXiXi,
          C_T_SV2_2D_DeriveXiEta, C_T_SV2_2D_DeriveEtaEta, 2, 2,

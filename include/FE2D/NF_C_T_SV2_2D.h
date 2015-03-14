@@ -45,5 +45,5 @@ void NF_C_T_SV2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
 }
 
 TNodalFunctional2D *NF_C_T_SV2_2D_Obj = new TNodalFunctional2D
-        (NF_C_T_B2_2D, 10, 3, 10, 3, NF_C_T_SV2_2D_Xi, NF_C_T_SV2_2D_Eta,
+        (NF_C_T_SV2_2D, 10, 3, 10, 3, NF_C_T_SV2_2D_Xi, NF_C_T_SV2_2D_Eta,
          NF_C_T_SV2_2D_T, NF_C_T_SV2_2D_EvalAll, NF_C_T_SV2_2D_EvalEdge);
