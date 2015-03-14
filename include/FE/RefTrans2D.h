@@ -61,6 +61,17 @@ class TRefTrans2D
 
     /** return volume of cell according to reference transformation */
     double GetVolume();
+    
+    // piola map, needed for vector values basis functions such as 
+    // Raviart-Thomas (RT) or Brezzi-Douglas-Marini (BDM)
+    virtual void PiolaMapOrigFromRef(int N_Functs, double *refD00, double *origD00 ) 
+    { cout << " Piola Map not defined for this element " << endl; };
+    
+    // piola map for derivatives
+    virtual void PiolaMapOrigFromRef(int N_Functs, double *refD10, 
+                                     double *refD01, double *origD10, 
+                                     double *origD01)
+    { cout << " Piola Map not defined for this element " << endl; };
 };
 
 #endif

@@ -276,7 +276,8 @@ void PrepareRHSLES(TFESpace3D **USpaces,
             ferhs[1] = USpaces[mg_level-1];
             ferhs[2] = USpaces[mg_level-1];
 
-	    if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<4)
+      if(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<4
+        ||(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE>=100))
             {
 		aux =  new TAuxParam3D(TimeNSN_FESpacesVelo_GradVeloLES,
 				       TimeNSN_FctVelo_GradVeloLES,
@@ -354,7 +355,8 @@ void PrepareRHSLES(TFESpace3D **USpaces,
             fefct[7] = du23ConvArray[mg_level-1];
             fefct[8] = du33ConvArray[mg_level-1];
 
-            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<=4)
+            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<=4
+              ||(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE>=100))
             {
               aux =  new TAuxParam3D(TimeNSN_FESpacesRHSGL00Convolution,
                 TimeNSN_FctRHSGL00Convolution,
@@ -367,7 +369,8 @@ void PrepareRHSLES(TFESpace3D **USpaces,
                 TimeNSN_ParamsRHSGL00Convolution,
                 TimeNSBeginParamRHSGL00Convolution);
             }
-            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE > 4)
+            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE > 4
+              ||(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE>=100))
             {
               // convoluted velocity
               fesp[2] = uConvSpaces[mg_level-1];
@@ -472,7 +475,8 @@ void PrepareRHSLES(TFESpace3D **USpaces,
             RHSs[1] = rhs+N_U;
             RHSs[2] = rhs+2*N_U;
 
-	    if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<=4)
+	    if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE<=4
+        ||(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE>=100))
             {
               aux =  new TAuxParam3D(
                 TimeNSN_FESpacesGL00AuxProblem,
@@ -487,7 +491,8 @@ void PrepareRHSLES(TFESpace3D **USpaces,
                 TimeNSBeginParamGL00AuxProblem);
             }
 
-            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE > 4)
+            if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE > 4
+              ||(TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE>=100))
             {
               // convoluted velocity
               fesp[1] = uConvSpaces[mg_level-1];
@@ -607,21 +612,171 @@ void ConvolveSolution(TNSE_MultiGrid *MG,
 }
 
 // ========================================================================
+// applies differential filter to the velocity
+// ========================================================================
+
+void ApplyDifferentialFilterToVelocity(TFESpace3D **USpaces,TFEVectFunct3D **UArray,
+       TSquareMatrix3D *sqmatrixGL00AuxProblem,
+       TDiscreteForm3D *DiscreteFormRHSAuxProblemU,
+       double *solGL00AuxProblem, BoundCondFunct3D **BoundaryConditionsAuxProblem, 
+       BoundValueFunct3D **BoundValuesAuxProblem,
+               int mg_level)
+
+{
+  int N_U;
+  double *rhsGL00AuxProblem, *RHSs[3], t1, t2;
+  TFESpace3D *fesp[1], *ferhs[3];
+  TFEFunction3D *fefct[3];
+  TAuxParam3D *aux;
+    //BoundCondFunct3D *BoundaryConditionsAuxProblem[3];
+    //BoundValueFunct3D *BoundValuesAuxProblem[3]; 
+  
+  /*   BoundaryConditionsAuxProblem[0] = BoundConditionAuxProblem;
+    BoundaryConditionsAuxProblem[1] = BoundConditionAuxProblem;
+    BoundaryConditionsAuxProblem[2] = BoundConditionAuxProblem;
+    BoundValuesAuxProblem[0] = BoundValueAuxProblem;
+    BoundValuesAuxProblem[1] = BoundValueAuxProblem;
+    BoundValuesAuxProblem[2] = BoundValueAuxProblem;*/
+ 
+    // prepare assembling
+  fesp[0] = USpaces[mg_level-1];
+     
+  fefct[0] = UArray[mg_level-1]->GetComponent(0);
+  fefct[1] = UArray[mg_level-1]->GetComponent(1);
+  fefct[2] = UArray[mg_level-1]->GetComponent(2);
+
+          aux =  new TAuxParam3D(TimeNSN_FESpacesVelo,
+            TimeNSN_FctVelo,
+            TimeNSN_ParamFctVelo,
+            TimeNSN_FEValuesVelo,
+            fesp, fefct,
+            TimeNSFctVelo,
+            TimeNSFEFctIndexVelo, TimeNSFEMultiIndexVelo,
+            TimeNSN_ParamsVelo, TimeNSBeginParamVelo);
+
+            ferhs[0] = USpaces[mg_level-1];
+            ferhs[1] = USpaces[mg_level-1];
+            ferhs[2] = USpaces[mg_level-1];
+    
+      N_U = fesp[0]->GetN_DegreesOfFreedom();
+      rhsGL00AuxProblem = new double[3*N_U*SizeOfDouble];     
+            memset(rhsGL00AuxProblem,0,3*N_U*SizeOfDouble);
+            RHSs[0] = rhsGL00AuxProblem;
+            RHSs[1] = rhsGL00AuxProblem+ N_U;
+            RHSs[2] = rhsGL00AuxProblem+ 2*N_U;
+
+      Assemble3D(1, fesp,
+           0, NULL,
+           0, NULL,
+           3, RHSs, ferhs,
+           DiscreteFormRHSAuxProblemU,
+           BoundaryConditionsAuxProblem,
+           BoundValuesAuxProblem,
+           aux);
+      delete aux;
+
+           // solve auxiliary problem
+            t1 = GetTime();
+      // solution on solGL00AuxProblem
+            Solver(sqmatrixGL00AuxProblem, RHSs[0], solGL00AuxProblem, 3);
+            t2 = GetTime();
+            OutPut( "differential filter: time for AMG solving: " << t2-t1 << endl);
+      delete rhsGL00AuxProblem;
+}
+
+// ========================================================================
 // boundary values for auxiliary problem in Galdi/Layton model
 // ========================================================================
 
 void BoundConditionAuxProblem(double x, double y, double z,
                               BoundCond &cond)
 {
+  double eps = 1e-6;
+ 
+  /** for Channel180.h */
+  /*  if ((fabs(z) < eps) || (fabs(z-2.0) < eps))
+    cond = DIRICHLET;
+  else
+    cond = NEUMANN;*/
+  /** for  CylinderSquare22000.h */
+  
   cond = NEUMANN;
-  //cond = DIRICHLET;
+  cond = DIRICHLET;
+ 
+ 
+    // inflow boundary condition
+    if (fabs(x)<1e-6)
+      cond  = DIRICHLET;
+
+  if ((fabs(x-0.45)<1e-6) && (y >= 0.65-1e-6) && (y<=0.75+1e-6))
+  {
+      cond  = DIRICHLET;
+      //cout << "left ";
+  }
+  if ((fabs(x-0.55)<1e-6) && (y >= 0.65-1e-6) && (y<=0.75+1e-6))
+  {
+      cond  = DIRICHLET;
+      //cout << "right ";
+  }
+  if ((fabs(y-0.65)<1e-6) && (x >= 0.45-1e-6) && (x<=0.55+1e-6))
+  {
+      cond  = DIRICHLET;
+      //cout << "lower ";
+  }
+  if ((fabs(y-0.75)<1e-6) && (x >= 0.45-1e-6) && (x<=0.55+1e-6))
+  {
+      cond  = DIRICHLET;
+      //cout << "upper ";
+  }
+    
+  if (fabs(x-2.5)<1e-6)
+    cond = NEUMANN;
 }
 
-void BoundValueAuxProblem(double x, double y, double z,
-                          double &value)
+void BoundValueAuxProblem(double x, double y, double z, double &value)
 {
+  /** for Channel180.h */
+  // value = 0;
+  /** for  CylinderSquare22000.h */
   value = 0;
 }
+
+void BoundValueAuxProblemU1(double x, double y, double z, double &value)
+{
+  double val[4];
+  /** for Channel180.h */
+  // value = 0;
+  /** for  CylinderSquare22000.h */
+  value = 1.5;
+   if (fabs(x)<1e-6)
+      value = 1;
+
+  if ((fabs(x-0.45)<1e-6) && (y >= 0.65-1e-6) && (y<=0.75+1e-6))
+  {
+     value = 2;
+      //cout << "left ";
+  }
+  if ((fabs(x-0.55)<1e-6) && (y >= 0.65-1e-6) && (y<=0.75+1e-6))
+  {
+      value = 3;
+      //cout << "right ";
+  }
+  if ((fabs(y-0.65)<1e-6) && (x >= 0.45-1e-6) && (x<=0.55+1e-6))
+  {
+      value = 4;
+      //cout << "lower ";
+  }
+  if ((fabs(y-0.75)<1e-6) && (x >= 0.45-1e-6) && (x<=0.55+1e-6))
+  {
+       value = 5; 
+      //cout << "upper ";
+  }
+   
+  if (fabs(x-2.5)<1e-6)
+    value = 0;  
+  OutPut(x << " " << y << " " << z << " " << value << " " << endl);
+ }
+
 
 #endif
 

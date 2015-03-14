@@ -75,8 +75,14 @@ class TQuadAffin : public TRefTrans2D
     /** calculate functions and derivatives from reference element
         to original element */
     void GetOrigValues(double xi, double eta, int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig);
+                       double *uref, double *uxiref, double *uetaref,
+                       double *uorig, double *uxorig, double *uyorig,
+                       int _BaseVectDim = 1);
+    
+    void GetOrigValues(int joint, double zeta, int N_BaseFunct,
+                       double *uref, double *uxiref, double *uetaref,
+                       double *uorig, double *uxorig, double *uyorig,
+                       int _BaseVectDim = 1);
 
     /** set element to cell */
     void SetCell(TBaseCell * cell);
@@ -96,6 +102,12 @@ class TQuadAffin : public TRefTrans2D
     /** transfer a  set of boundary points from reference to original element */
     void GetOrigBoundFromRef(int joint, int N_Points, double *zeta, double *X, double *Y);   
     
+    /** @brief Piola transformation for vector valued basis functions */
+    void PiolaMapOrigFromRef(int N_Functs, double *refD00, double *origD00);
+    /** @brief Piola transformation for the derivatives of vector valued basis 
+     *         functions */
+    void PiolaMapOrigFromRef(int N_Functs, double *refD10, double *refD01, 
+                             double *origD10, double *origD01);
 };
 
-#endif
+#endif // __QUADAFFIN__

@@ -13,6 +13,7 @@
 #include <MooNMD_Io.h>
 #include <LinAlg.h>
 
+#include <string.h>
 #include <stdlib.h>
 #ifdef __MAC64__
 #include <malloc/malloc.h>
@@ -20,9 +21,216 @@
 #include <malloc.h>
 #endif
 
+#include <ItMethod.h>
+#include <FEDatabase2D.h>
+#include <FixedPointIte.h>
+#include <FgmresIte.h>
+#include <Cg.h>
+#include <Bcgs.h>
+#include <JacobiIte.h>
+#include <SSORIte.h>
+#include <MultiGridScaIte.h>
+#include <DirectSolver.h>
+
 extern "C"
 {
   #include <amg_solve_main.h>
+}
+
+
+/******************************************************************************/
+// Solver
+// solves linear system
+// output in sol
+// scalar problems: ns_type == 0
+/******************************************************************************/
+
+void Solver(TSquareMatrix **sqmatrices, TMatrix **matrices,
+double *rhs, double *sol,
+MatVecProc *MatVect, DefectProc *Defect,
+TMultiGrid2D *MG,
+int N_Unknowns, int ns_type)
+{
+  int solver_type, prec_type;
+  double *itmethod_sol, *itmethod_rhs, t1, t2;
+  TItMethod *itmethod, *prec;
+  TSquareMatrix2D *A;
+
+  t1 = GetTime();
+//  memset(sol, 0, N_Unknowns * SizeOfDouble);
+
+  if (!ns_type)
+  {
+    prec_type = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
+    solver_type = TDatabase::ParamDB->SC_SOLVER_SCALAR;
+  }
+  else
+  {
+    prec_type = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE;
+    solver_type = TDatabase::ParamDB->SC_SOLVER_SADDLE;
+  }
+
+  // extract the matrices
+  switch(ns_type)
+  {
+    case 0:
+      A = (TSquareMatrix2D*) sqmatrices[0];
+      break;
+  }
+
+  // choose the solver
+  switch(TDatabase::ParamDB->SOLVER_TYPE)
+  {
+    case DIRECT:
+      switch(ns_type)
+      {
+        case 0:
+        //  OutPut("DIRECT!");
+          DirectSolver(A, rhs, sol);
+          break;
+      }
+      //TDatabase::ParamDB->SOLVER_TYPE = 1;
+      break;
+
+    case AMG_SOLVE:
+      switch(ns_type)
+      {
+        case 0:
+          Solver(A, rhs, sol);
+          break;
+      }
+      break;
+
+    case GMG:
+      switch (prec_type)
+      {
+        case 1:
+          prec = new TJacobiIte(MatVect, Defect, NULL,
+            0, N_Unknowns, 1);
+          break;
+        case 3:
+          prec = new TSSORIte(MatVect, Defect, NULL,
+            0, N_Unknowns, 1);
+          break;
+        case 5:
+#ifdef __2D__
+          prec = new TMultiGridScaIte(MatVect, Defect, NULL,
+              0, N_Unknowns, MG, 0);
+#else
+          prec = new TMultiGridScaIte(MatVect, Defect, NULL,
+              0, N_Unknowns, NULL, 0);
+#endif
+          break;
+        default:
+          OutPut("Unknown preconditioner !!!" << endl);
+          exit(4711);
+      }
+      switch (solver_type)
+      {
+        case 11:
+          itmethod = new TFixedPointIte(MatVect, Defect, prec,
+            0, N_Unknowns, 1);
+          if (prec_type == 5)
+          {
+            itmethod_sol = new double[N_Unknowns];
+            itmethod_rhs = new double[N_Unknowns];
+            memcpy(itmethod_sol, sol, N_Unknowns*SizeOfDouble);
+            memcpy(itmethod_rhs, rhs, N_Unknowns*SizeOfDouble);
+          }
+          else
+          {
+            itmethod_sol = sol;
+            itmethod_rhs = rhs;
+          }
+          break;
+        case 12:
+    itmethod = new TCg(MatVect, Defect, prec,
+           0, N_Unknowns, 1);
+          if (prec_type == 5)
+          {
+            itmethod_sol = new double[N_Unknowns];
+            itmethod_rhs = new double[N_Unknowns];
+            memcpy(itmethod_sol, sol, N_Unknowns*SizeOfDouble);
+            memcpy(itmethod_rhs, rhs, N_Unknowns*SizeOfDouble);
+          }
+          else
+          {
+            itmethod_sol = sol;
+            itmethod_rhs = rhs;
+          }
+          break;
+
+        case 13:
+          itmethod = new TBcgs(MatVect, Defect, prec,
+                      0, N_Unknowns, 1);
+          if (prec_type == 5)
+          {
+            itmethod_sol = new double[N_Unknowns];
+            itmethod_rhs = new double[N_Unknowns];
+            memcpy(itmethod_sol, sol, N_Unknowns*SizeOfDouble);
+            memcpy(itmethod_rhs, rhs, N_Unknowns*SizeOfDouble);
+          }
+          else
+          {
+            itmethod_sol = sol;
+            itmethod_rhs = rhs;
+          }
+          break;
+
+        case 16:
+          itmethod = new TFgmresIte(MatVect, Defect, prec,
+            0, N_Unknowns, 1);
+          if (prec_type == 5)
+          {
+            itmethod_sol = new double[N_Unknowns];
+            itmethod_rhs = new double[N_Unknowns];
+            memcpy(itmethod_sol, sol, N_Unknowns*SizeOfDouble);
+            memcpy(itmethod_rhs, rhs, N_Unknowns*SizeOfDouble);
+          }
+          else
+          {
+            itmethod_sol = sol;
+            itmethod_rhs = rhs;
+          }
+          break;
+        default:
+          OutPut("Unknown solver !!!" << endl);
+          exit(4711);
+      }
+      // solve linear system
+      itmethod->Iterate(sqmatrices,NULL,itmethod_sol,itmethod_rhs);
+
+      delete prec;
+      delete itmethod;
+
+      switch (solver_type)
+      {
+        case 11:
+          if (prec_type == 5)
+          {
+            memcpy(sol, itmethod_sol, N_Unknowns*SizeOfDouble);
+            memcpy(rhs, itmethod_rhs, N_Unknowns*SizeOfDouble);
+            delete itmethod_sol;
+            delete itmethod_rhs;
+          }
+          break;
+        case 12:
+        case 13:
+        case 16:
+          if (prec_type == 5)
+          {
+            memcpy(sol, itmethod_sol, N_Unknowns*SizeOfDouble);
+            memcpy(rhs, itmethod_rhs, N_Unknowns*SizeOfDouble);
+            delete itmethod_sol;
+            delete itmethod_rhs;
+          }
+          break;
+      }
+      break;
+  }
+  t2 = GetTime();
+  if (TDatabase::ParamDB->SC_VERBOSE>1)
+    OutPut("time for solving: " << t2-t1 << endl);
 }
 
 
@@ -158,6 +366,7 @@ memory[0]=memory[1]=memory[2]=0.;
   if (TDatabase::ParamDB->INTERNAL_SORT_AMG)
   {
       // sort matrix, diagonal entry
+      if (TDatabase::ParamDB->SC_VERBOSE>1)
       OutPut("AMG solver - reordering matrix structure, diagonal first"<< endl);
       changes = new int[n];
       for (i=0;i<n;i++)
@@ -218,6 +427,7 @@ memory[0]=memory[1]=memory[2]=0.;
   // redo reordering of the matrix, default
   if (TDatabase::ParamDB->INTERNAL_SORT_AMG)
   {
+      if (TDatabase::ParamDB->SC_VERBOSE>1)
       OutPut("AMG solver - reordering matrix structure redone"<< endl);
       for (i=0;i<n;i++)
       {                              // first entry in row
@@ -330,6 +540,7 @@ void Solver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
   B[1] = B[0];
 
   // sort matrix, diagonal entry
+  if (TDatabase::ParamDB->SC_VERBOSE>1)
   OutPut("AMG solver - reordering matrix structure, diagonal first"<< endl);
   changes = new int[n];
 

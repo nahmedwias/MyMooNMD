@@ -69,8 +69,14 @@ class TQuadBilinear : public TRefTrans2D
     /** calculate functions and derivatives from reference element
         to original element */
     void GetOrigValues(double xi, double eta, int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig);
+                       double *uref, double *uxiref, double *uetaref,
+                       double *uorig, double *uxorig, double *uyorig,
+                       int _BaseVectDim = 1);
+    
+    void GetOrigValues(int joint, double zeta, int N_BaseFunct,
+                       double *uref, double *uxiref, double *uetaref,
+                       double *uorig, double *uxorig, double *uyorig,
+                       int _BaseVectDim = 1);
 
     /** set element to cell */
     void SetCell(TBaseCell * cell);
@@ -84,6 +90,16 @@ class TQuadBilinear : public TRefTrans2D
                                 double &t1, double &t2);
     /** return volume of cell according to reference transformation */
     double GetVolume();
+    
+    /** @brief Piola transformation for vector valued basis functions */
+    void PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
+                                      double *origD00, double xi, double eta);
+    /** @brief Piola transformation for the derivatives of vector valued basis 
+     *         functions */
+    void PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
+                                      double *refD10, double *refD01, 
+                                      double *origD10, double *origD01,
+                                      double xi, double eta);
 };
 
 #endif

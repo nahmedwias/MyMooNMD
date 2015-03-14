@@ -58,6 +58,11 @@ class TRefTrans3D
     void GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
         double &t21, double &t22, double &t23);
+    
+    virtual void PiolaMapOrigFromRef(int N_Functs, double *refD00, 
+                                     double *origD00)
+    { ErrMsg(" Piola Map not defined for this element\n"); };
+
 };
 
 #endif

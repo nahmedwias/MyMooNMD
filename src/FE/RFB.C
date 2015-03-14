@@ -2453,7 +2453,7 @@ double *rhs)
   rhs_sub = new double[9 * N_nodes3];
   memset(rhs_sub, 0, 9*N_nodes3*SizeOfDouble);
 
-  coeff = new double[4];
+  coeff = new double[4*N_sub];
 
   // extract information about the fe space and the global d.o.f.
   fespace = u1->GetFESpace3D();

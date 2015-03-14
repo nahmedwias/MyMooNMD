@@ -57,86 +57,6 @@ void TQuadBilinear::GetOrigFromRef(double *ref, double *orig)
 /** transfer from original element to reference element */
 void TQuadBilinear::GetRefFromOrig(double x, double y, double &xi, double &eta)
 {
-/*
-  double t1, t2, t4, t5, t6, t7, t8, t9, t10, t11, t14, t15, t20;
-  double t21, t23, t24, t31, t32;
-  double XI, ETA;
-  double xv, yv;
-  double h,eps=1e-14;
-
-  xv = x - xc0;
-  yv = y - yc0;
-
-  if((fabs(xc3)<eps) && (fabs(yc3)<eps))
-  {
-    h = xc1*yc2-xc2*yc1;
-
-    xi  =  yc2*xv - xc2*yv;
-    eta = -yc1*xv + xc1*yv;
-
-    return;
-  }
-
-  h = MAX( MAX(ABS(xc1),ABS(xc2)) , MAX(ABS(yc1), ABS(yc2)));
-
-  x1=xc1/h;
-  x2=xc2/h;
-  x3=xc3/h;
-  y1=yc1/h;
-  y2=yc2/h;
-  y3=yc3/h;
-
-  xv /= h;
-  yv /= h;
-
-  t1 = y1*x3;
-  t2 = y3*x1;
-  t4 = 1/(-t1+t2);
-  t5 = yv*x3;
-  t6 = y1*x2;
-  t7 = y3*xv;
-  t8 = y2*x1;
-  t10 = y2 * y2;
-  t11 = x1 * x1;
-  t14 = y3 * y3;
-  t15 = xv*xv;
-  t20 = yv*yv;
-  t21 = x3 * x3;
-  t23 = y1 * y1;
-  t24 = x2 * x2;
-  t31 = 2.0*t5*t6+t10*t11-2.0*t6*t8+t14*t15+2.0*t6*t7-2.0*t5*t7
-       +2.0*t5*t8+t20*t21+t23*t24-4.0*t1*y2*xv-4.0*t2*yv*x2+2.0*t7*t8;
-  t32 = sqrt(t31);
-
-  XI = t4*(-t5+t6+t7-t8+t32)/2;
-  if((-1.0001<=XI) && (XI<=1.0001))
-  {
-    ETA = (-yv*x3+y3*xv+x3*y1*XI-y3*x1*XI)/(y3*x2-x3*y2);
-
-    if((-1.0001<=ETA) && (ETA<=1.0001))
-    {
-      xi = XI;
-      eta = ETA;
-
-      // remove rounding errors
-      if(eta>1) eta=1;
-      if(eta<-1) eta=-1;
-      if(xi>1) xi=1;
-      if(xi<-1) xi=-1;
-      return;
-    }
-  }
-
-  xi = t4*(-t5+t6+t7-t8-t32)/2;
-  eta = (-yv*x3+y3*xv+x3*y1*xi-y3*x1*xi)/(y3*x2-x3*y2);
-
-  // remove rounding errors
-  if(eta>1) eta=1;
-  if(eta<-1) eta=-1;
-  if(xi>1) xi=1;
-  if(xi<-1) xi=-1;
-*/
-
   double z0, z1, xi0, eta0;
   double recdetaffine;
   double eps=1e-14;
@@ -270,40 +190,62 @@ void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct,
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D02, origvaluesD02);
   }
 
-  // D00
-  for(i=0;i<N_Points;i++)
+  if(BaseVectDim == 1)
   {
-    refD00 = refvaluesD00[i];
-    origD00 = origvaluesD00[i];
-
-    for(j=0;j<N_Functs;j++)
+    // D00
+    for(i=0;i<N_Points;i++)
     {
-      origD00[j] = refD00[j];
-    } // endfor j
-  } // endfor i
-
-// /*
-  // D10 and D01
-  for(i=0;i<N_Points;i++)
+      refD00 = refvaluesD00[i];
+      origD00 = origvaluesD00[i];
+      
+      for(j=0;j<N_Functs;j++)
+      {
+        origD00[j] = refD00[j];
+      } // endfor j
+    } // endfor i
+    
+    // D10 and D01
+    for(i=0;i<N_Points;i++)
+    {
+      refD10 = refvaluesD10[i];
+      origD10 = origvaluesD10[i];
+      
+      refD01 = refvaluesD01[i];
+      origD01 = origvaluesD01[i];
+      
+      for(j=0;j<N_Functs;j++)
+      {
+        Xi = xi[i];
+        Eta = eta[i];
+        rec_detjk = 1/( (xc1+xc3*Eta)*(yc2+yc3*Xi)
+                      -(xc2+xc3*Xi)*(yc1+yc3*Eta));
+        origD10[j]=( (yc2+yc3*Xi) * refD10[j]
+                    -(yc1+yc3*Eta) * refD01[j]) * rec_detjk;
+        origD01[j]=(-(xc2+xc3*Xi) * refD10[j]
+                    +(xc1+xc3*Eta) * refD01[j]) * rec_detjk;
+      } // endfor j
+    } // endfor i
+  }
+  else 
   {
-    refD10 = refvaluesD10[i];
-    origD10 = origvaluesD10[i];
-
-    refD01 = refvaluesD01[i];
-    origD01 = origvaluesD01[i];
-
-    for(j=0;j<N_Functs;j++)
+    // D00
+    for(int j = 0; j < N_Points; j++)
     {
-      Xi = xi[i];
-      Eta = eta[i];
-      rec_detjk = 1/( (xc1+xc3*Eta)*(yc2+yc3*Xi)
-                     -(xc2+xc3*Xi)*(yc1+yc3*Eta));
-      origD10[j]=( (yc2+yc3*Xi) * refD10[j]
-                  -(yc1+yc3*Eta) * refD01[j]) * rec_detjk;
-      origD01[j]=(-(xc2+xc3*Xi) * refD10[j]
-                  +(xc1+xc3*Eta) * refD01[j]) * rec_detjk;
-    } // endfor j
-  } // endfor i
+      refD00 = refvaluesD00[j];
+      origD00 = origvaluesD00[j];
+      
+      refD10 = refvaluesD10[i];
+      origD10 = origvaluesD10[i];
+
+      refD01 = refvaluesD01[i];
+      origD01 = origvaluesD01[i];
+      
+      this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, origD00, xi[j], 
+                                           eta[j]);
+      this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, refD10, refD01, 
+                                         origD10, origD01, xi[j], eta[j]);
+    }
+  }
 // */
 
 /*
@@ -409,7 +351,7 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   int N_Functs;
   bool SecondDer;
 
-  SecondDer = FALSE;
+  SecondDer = false;
   for(i=0;i<N_Sets;i++)
   {
     BaseFunct=BaseFuncts[i];
@@ -429,9 +371,9 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD00==NULL)
     {
       origvaluesD00 = new double* [M];
-      aux = new double [M*MaxN_BaseFunctions2D];
+      aux = new double [M*N_Functs];
       for(j=0;j<M;j++)
-        origvaluesD00[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD00[j] = aux+j*N_Functs;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D00, origvaluesD00);
     }
   
@@ -440,7 +382,11 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       refD00 = refvaluesD00[j];
       origD00 = origvaluesD00[j];
 
-      memcpy(origD00, refD00, N_Functs*SizeOfDouble);
+      if(BaseVectDim == 1)
+        memcpy(origD00, refD00, N_Functs*SizeOfDouble);
+      else
+        this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, origD00, xi[j], 
+                                           eta[j]);
     } // endfor j
 
     refvaluesD10=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
@@ -448,9 +394,9 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD10==NULL)
     {
       origvaluesD10 = new double* [M];
-      aux = new double [M*MaxN_BaseFunctions2D];
+      aux = new double [M*N_Functs];
       for(j=0;j<M;j++)
-        origvaluesD10[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD10[j] = aux+j*N_Functs;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D10, origvaluesD10);
     }
   
@@ -459,15 +405,15 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     if(origvaluesD01==NULL)
     {
       origvaluesD01 = new double* [M];
-      aux = new double [M*MaxN_BaseFunctions2D];
+      aux = new double [M*N_Functs];
       for(j=0;j<M;j++)
-        origvaluesD01[j] = aux+j*MaxN_BaseFunctions2D;
+        origvaluesD01[j] = aux+j*N_Functs;
       TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D01, origvaluesD01);
     }
   
     if(Needs2ndDer[i])
     {
-      SecondDer = TRUE;
+      SecondDer = true;
 
       refvaluesD20=TFEDatabase2D::GetRefElementValues
                         (BaseFunct, QuadFormula, D20);
@@ -476,9 +422,9 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD20==NULL)
       {
         origvaluesD20 = new double* [M];
-        aux = new double [M*MaxN_BaseFunctions2D];
+        aux = new double [M*N_Functs];
         for(j=0;j<M;j++)
-          origvaluesD20[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD20[j] = aux+j*N_Functs;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D20, origvaluesD20);
       }
     
@@ -489,9 +435,9 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD11==NULL)
       {
         origvaluesD11 = new double* [M];
-        aux = new double [M*MaxN_BaseFunctions2D];
+        aux = new double [M*N_Functs];
         for(j=0;j<M;j++)
-          origvaluesD11[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD11[j] = aux+j*N_Functs;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D11, origvaluesD11);
       }
     
@@ -502,9 +448,9 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(origvaluesD02==NULL)
       {
         origvaluesD02 = new double* [M];
-        aux = new double [M*MaxN_BaseFunctions2D];
+        aux = new double [M*N_Functs];
         for(j=0;j<M;j++)
-          origvaluesD02[j] = aux+j*MaxN_BaseFunctions2D;
+          origvaluesD02[j] = aux+j*N_Functs;
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D02, origvaluesD02);
       }
     } // endfor Needs2ndDer[i]
@@ -518,6 +464,7 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     for(i=0;i<N_Sets;i++)
     {
       BaseFunct=BaseFuncts[i];
+      BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
       N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
   
       refvaluesD10=TFEDatabase2D::GetRefElementValues
@@ -540,16 +487,26 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     
         Xi = xi[j];
         Eta = eta[j];
-        rec_detjk = 1/( (xc1+xc3*Eta)*(yc2+yc3*Xi)
-                       -(xc2+xc3*Xi)*(yc1+yc3*Eta));
-        for(k=0;k<N_Functs;k++)
+        if(BaseVectDim == 1)
         {
-          origD10[k]=( (yc2+yc3*Xi) * refD10[k]
-                      -(yc1+yc3*Eta) * refD01[k]) * rec_detjk;
-          origD01[k]=(-(xc2+xc3*Xi) * refD10[k]
-                      +(xc1+xc3*Eta) * refD01[k]) * rec_detjk;
-        } // endfor k
+          rec_detjk = 1/( (xc1+xc3*Eta)*(yc2+yc3*Xi)
+                        -(xc2+xc3*Xi)*(yc1+yc3*Eta));
+          for(k=0;k<N_Functs;k++)
+          {
+            origD10[k]=( (yc2+yc3*Xi) * refD10[k]
+                        -(yc1+yc3*Eta) * refD01[k]) * rec_detjk;
+            origD01[k]=(-(xc2+xc3*Xi) * refD10[k]
+                        +(xc1+xc3*Eta) * refD01[k]) * rec_detjk;
+          } // endfor k
+        }
+        else // BaseVectDim == 2
+        {
+          refD00 = refvaluesD00[j];
+          this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, refD10, refD01, 
+                                             origD10, origD01, Xi, Eta);
+        }
       } // endfor j
+        
     } // endfor i
   }
   else
@@ -607,6 +564,15 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       for(i=0;i<N_Sets;i++)
       {
         BaseFunct=BaseFuncts[i];
+        BaseVectDim = 
+          TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
+        if(BaseVectDim > 1)
+        {
+          ErrMsg("Piola transform for bilinear reference transformation for " <<
+                 "second derivatives not yet implemented");
+          exit(1);
+        }
+
         N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
     
         refvaluesD10=TFEDatabase2D::GetRefElementValues
@@ -700,28 +666,68 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 void TQuadBilinear::GetOrigValues(double xi, double eta, 
                 int N_BaseFunct,
                 double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig)
+                double *uorig, double *uxorig, double *uyorig, int _BaseVectDim)
 {
   int i;
   double rec_detjk;
 
-  // D00
-  for(i=0;i<N_BaseFunct;i++)
+  if(_BaseVectDim==1) // standard case
   {
-    uorig[i] = uref[i];
-  } // endfor i
-
-  // D10 and D01
-  for(i=0;i<N_BaseFunct;i++)
+    // D00
+    for(i=0;i<N_BaseFunct;i++)
+    {
+      uorig[i] = uref[i];
+    } // endfor i
+    
+    // D10 and D01
+    rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi) - (xc2+xc3*xi)*(yc1+yc3*eta) );
+    for(i=0;i<N_BaseFunct;i++)
+    {
+      uxorig[i]= ( (yc2+yc3*xi) * uxiref[i] - (yc1+yc3*eta) * uetaref[i] )
+                 *rec_detjk;
+      uyorig[i]= (-(xc2+xc3*xi) * uxiref[i] + (xc1+xc3*eta) * uetaref[i] )
+                 *rec_detjk;
+    } // endfor i
+  }
+  else
   {
-    rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi)
-                     -(xc2+xc3*xi)*(yc1+yc3*eta));
-    uxorig[i]=( (yc2+yc3*xi) * uxiref[i]
-                  -(yc1+yc3*eta) * uetaref[i]) * rec_detjk;
-    uyorig[i]=(-(xc2+xc3*xi) * uxiref[i]
-                  +(xc1+xc3*eta) * uetaref[i]) * rec_detjk;
-  } // endfor i
+    // Piola transformation
+    // D00
+    this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uorig, xi, eta);
+    // D10, D01
+    this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uxiref, uetaref,
+                                       uxorig, uyorig, xi, eta);
+  }
 }
+
+void TQuadBilinear::GetOrigValues(int joint, double zeta, int N_BaseFunct,
+                                  double *uref, double *uxiref, double *uetaref,
+                                  double *uorig, double *uxorig, double *uyorig,
+                                  int _BaseVectDim)
+{
+  double xi, eta;
+  switch(joint)
+  {
+    case 0:
+      xi  = zeta; eta = -1;
+    break;
+
+    case 1:
+      xi = 1; eta = zeta;
+    break;
+
+    case 2:
+      xi  = -zeta; eta = 1;
+    break;
+
+    case 3:
+      xi = -1 ; eta = -zeta;
+    break;
+  }
+  this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, 
+                      uorig, uxorig, uyorig, _BaseVectDim);
+}
+
 
 void TQuadBilinear::SetCell(TBaseCell *cell)
 {
@@ -855,3 +861,97 @@ double TQuadBilinear::GetVolume()
 
   return locvol;
 }
+
+void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
+                                                 double *origD00, double xi, 
+                                                 double eta)
+{
+  double rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi)-(xc2+xc3*xi)*(yc1+yc3*eta));
+  double a11 = (xc1+xc3*eta)*rec_detjk;
+  double a12 = (xc2+xc3*xi )*rec_detjk;
+  double a21 = (yc1+yc3*eta)*rec_detjk;
+  double a22 = (yc2+yc3*xi )*rec_detjk;
+  
+  for(int k = 0; k < N_Functs; k++)
+  {
+    // Piola transformation
+    // phi = 1/|J| DF phi_hat
+    // def.gradient/detjk
+    origD00[k] = a11*refD00[k]+a12*refD00[N_Functs+k];
+    origD00[N_Functs+k] = a21*refD00[k]+a22*refD00[N_Functs+k];
+  }
+}
+
+void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
+                                                 double *refD10, 
+                                                 double *refD01, 
+                                                 double *origD10, 
+                                                 double *origD01, double xi,
+                                                 double eta)
+{
+  // Piola transformation
+  // phi = 1/|J| DF phi_hat
+  // 
+  double rec_detjk = 1/((xc1+xc3*eta)*(yc2+yc3*xi ) 
+                       -(xc2+xc3*xi )*(yc1+yc3*eta));
+  // this is \hat{D}F
+  double a11 = (xc1+xc3*eta);
+  double a12 = (xc2+xc3* xi);
+  double a21 = (yc1+yc3*eta);
+  double a22 = (yc2+yc3* xi);
+  // this is DF^{-1}
+  double z11 =  a22*rec_detjk;
+  double z12 = -a12*rec_detjk;
+  double z21 = -a21*rec_detjk;
+  double z22 =  a11*rec_detjk;
+  
+  for(int k = 0; k < N_Functs; k++)
+  {
+    // the derivative has three parts (since the Piola transform is a 
+    // product of three factors, namely 1/|J|, DF, and phi_hat) 
+    // according to the product rule
+  
+    // refPiola_(xy)_D.. is the derivative with respect to the 
+    // reference variables xi and eta. In the end we apply the chain 
+    // rule to get the derivative with respect to x and y.
+    double refPiola_x_D10,refPiola_x_D01,refPiola_y_D10,refPiola_y_D01;
+    
+    // first part (differentiate 1/|J|)
+    // \hat{D}F \hat{v}
+    double DFv1 = a11*refD00[k] + a12*refD00[k+N_Functs];
+    double DFv2 = a21*refD00[k] + a22*refD00[k+N_Functs];
+    // D(det(DF)) (row vector)
+    double b1 = xc1*yc3 - yc1*xc3;
+    double b2 = yc2*xc3 - xc2*yc3;
+    b1 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
+    b2 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
+    // Dfv (-sign(J)/(J^2))DJ
+    refPiola_x_D10 = DFv1*b1;
+    refPiola_x_D01 = DFv1*b2;
+    refPiola_y_D10 = DFv2*b1;
+    refPiola_y_D01 = DFv2*b2;
+    
+    // second part (differentiate DF)
+    // D^2F v /det(DF)
+    refPiola_x_D10 += refD00[k+N_Functs]*xc3*rec_detjk;
+    refPiola_x_D01 += refD00[k]         *xc3*rec_detjk;
+    refPiola_y_D10 += refD00[k+N_Functs]*yc3*rec_detjk;
+    refPiola_y_D01 += refD00[k]         *yc3*rec_detjk;
+    
+    // third part (differentiate phi_hat), similar to the affine linear 
+    // case
+    // \hat{D}F \hat{D}\hat{v} /|J|
+    refPiola_x_D10 += (a11*refD10[k]+a12*refD10[N_Functs+k])*rec_detjk;
+    refPiola_x_D01 += (a11*refD01[k]+a12*refD01[N_Functs+k])*rec_detjk;
+    refPiola_y_D10 += (a21*refD10[k]+a22*refD10[N_Functs+k])*rec_detjk;
+    refPiola_y_D01 += (a21*refD01[k]+a22*refD01[N_Functs+k])*rec_detjk;
+    
+    // apply DF^{-1} from right (chain rule)
+    origD10[k] = z11*refPiola_x_D10 + z21*refPiola_x_D01;
+    origD01[k] = z12*refPiola_x_D10 + z22*refPiola_x_D01;
+    origD10[k+N_Functs] = z11*refPiola_y_D10 + z21*refPiola_y_D01;
+    origD01[k+N_Functs] = z12*refPiola_y_D10 + z22*refPiola_y_D01;
+    
+  } // endfor k
+}
+

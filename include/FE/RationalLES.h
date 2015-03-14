@@ -71,12 +71,24 @@ void ConvolveSolution(TNSE_MultiGrid *MG,
 		      double *u_uConv,
 		      int mg_level, int N_U);
 
+void ApplyDifferentialFilterToVelocity(TFESpace3D **USpaces,
+                                       TFEVectFunct3D **UArray,
+                                       TSquareMatrix3D *sqmatrixGL00AuxProblem,
+                                       TDiscreteForm3D *DiscreteFormRHSAuxProblemU,
+                                       double *solGL00AuxProblem,
+                                       BoundCondFunct3D **BoundaryConditionsAuxProblem, 
+                                       BoundValueFunct3D **BoundValuesAuxProblem,
+                                       int mg_level);
+
+
 void BoundConditionAuxProblem(double x, double y, double z,
                               BoundCond &cond);
 
 void BoundValueAuxProblem(double x, double y, double z,
                           double &value);
+void BoundValueAuxProblemU1(double x, double y, double z,
+                          double &value);
 
 
-#endif
+#endif // __3D__
 
