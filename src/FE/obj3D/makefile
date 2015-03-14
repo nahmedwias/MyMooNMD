@@ -33,10 +33,13 @@ LIBRARY = $(LIBPATH)lib_FE.a
         $(SRCPATH)BaseFunct1D.o \
         $(SRCPATH)BaseFunct2D.o \
         $(SRCPATH)BaseFunct3D.o \
+        $(SRCPATH)Bcgs.o \
         $(SRCPATH)Blas1.o \
         $(SRCPATH)Blas2.o \
         $(SRCPATH)Bulk.o \
         $(SRCPATH)Bulk_3d4d.o \
+        $(SRCPATH)Cg.o \
+        $(SRCPATH)ConvDiff.o \
         $(SRCPATH)ConvDiff3D.o \
         $(SRCPATH)Convolution.o \
         $(SRCPATH)DirectSolver.o \
@@ -117,6 +120,7 @@ LIBRARY = $(LIBPATH)lib_FE.a
         $(SRCPATH)SquareStructure1D.o \
         $(SRCPATH)SquareStructure2D.o \
         $(SRCPATH)SquareStructure3D.o \
+        $(SRCPATH)SSORIte.o \
         $(SRCPATH)Structure.o \
         $(SRCPATH)Structure3D.o \
         $(SRCPATH)Superconvergence3D.o \

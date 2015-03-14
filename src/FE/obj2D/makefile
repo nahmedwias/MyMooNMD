@@ -37,6 +37,7 @@ LIBRARY = $(LIBPATH)lib_FE.a
         $(SRCPATH)Bulk.o \
 	$(SRCPATH)Bulk_2d3d.o \
 	$(SRCPATH)CD2DErrorEstimator.o \
+	$(SRCPATH)ConvDiff.o \
 	$(SRCPATH)ConvDiff2D.o \
 	$(SRCPATH)Convolution.o \
 	$(SRCPATH)Darcy2D.o \
@@ -67,8 +68,8 @@ LIBRARY = $(LIBPATH)lib_FE.a
 	$(SRCPATH)JacobiIte.o \
 	$(SRCPATH)LinAlg.o \
 	$(SRCPATH)LineAffin.o \
+	$(SRCPATH)LocalAssembling2D.o \
 	$(SRCPATH)LocalProjection.o \
-	$(SRCPATH)MainRoutines2D.o \
 	$(SRCPATH)MGComponents2D.o \
 	$(SRCPATH)MGLevel2D.o \
 	$(SRCPATH)Matrix.o \
@@ -103,6 +104,7 @@ LIBRARY = $(LIBPATH)lib_FE.a
 	$(SRCPATH)RefTrans1D.o \
 	$(SRCPATH)RefTrans2D.o \
 	$(SRCPATH)RFB.o \
+	$(SRCPATH)RKV_FDM.o \
 	$(SRCPATH)Solver.o \
 	$(SRCPATH)SquareMatrix.o \
 	$(SRCPATH)SquareMatrix1D.o \
