@@ -17,17 +17,21 @@
 TMatrix3D::TMatrix3D(TStructure3D *structure)
  : TMatrix(structure)
 {
-  Structure = structure;
-  N_Rows = structure->GetN_Rows();
-  N_Columns = structure->GetN_Columns();
-  N_Entries = structure->GetN_Entries();
-  KCol = structure->GetKCol();
-  RowPtr = structure->GetRowPtr();
-
-  Entries = new double[N_Entries];
-  memset(Entries, 0, N_Entries*SizeOfDouble);
+  this->structure = structure;
 }
 
 TMatrix3D::~TMatrix3D()
 {
+}
+
+
+void TMatrix3D::resetNonActive()
+{
+  int n_active = this->structure->GetTestSpace()->GetN_DegreesOfFreedom()
+                -this->structure->GetTestSpace()->GetN_Dirichlet();
+  int * rowPtr = this->structure->GetRowPtr();
+  int index_nonactive = rowPtr[n_active];
+  int n_nonactive_entries = rowPtr[this->structure->GetN_Rows()]
+                           - index_nonactive;
+  memset(Entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
 }

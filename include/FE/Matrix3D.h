@@ -21,7 +21,7 @@ class TMatrix3D : public TMatrix
 {
   protected:
     /** matrix structure */
-    TStructure3D *Structure;
+    TStructure3D *structure;
 
   public:
     /** generate the matrix */
@@ -31,8 +31,12 @@ class TMatrix3D : public TMatrix
     ~TMatrix3D();
 
     TStructure3D *GetStructure()
-    { return Structure; }
-
+    { return structure; }
+    
+    /** @brief set all Dirichlet rows to zero. That means all rows where the 
+     * test space has nonactive degrees of freedom. 
+     */
+    void resetNonActive();
 };
 
 #endif

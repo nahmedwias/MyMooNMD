@@ -20,26 +20,26 @@
 class TSquareMatrix3D : public TSquareMatrix
 {
   protected:
-    /** FESpace */
-    TFESpace3D *FESpace;
-
     /** matrix strcuture */
-    TSquareStructure3D *Structure;
+    TSquareStructure3D *structure;
 
   public:
     /** generate the matrix */
     TSquareMatrix3D(TSquareStructure3D *squarestructure);
 
+    /** generate an empty nxn matrix */
+    explicit TSquareMatrix3D(int n);
+    
     /** destructor: free Entries array */
     ~TSquareMatrix3D();
 
     /** return FESpace */
-    TFESpace3D *GetFESpace()
-    { return FESpace; }
+    TFESpace3D *GetFESpace() const
+    { return structure->GetFESpace(); }
 
     /** return used matrix structure */
-    TSquareStructure3D *GetMatrixStructure()
-    { return Structure; }
+    TSquareStructure3D *GetMatrixStructure() const
+    { return structure; }
 
 };
 

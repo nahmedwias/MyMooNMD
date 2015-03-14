@@ -17,21 +17,40 @@
 #include <MooNMD_Io.h>
 
 TSquareMatrix::TSquareMatrix(TSquareStructure *squarestructure)
+ : TMatrix(squarestructure), structure(squarestructure)
 {
 }
 
-void TSquareMatrix::Reset()
+TSquareMatrix::TSquareMatrix(int n)
+ : structure(new TSquareStructure(n)), TMatrix(structure)
 {
-  memset(Entries, 0, N_Entries*SizeOfDouble);
 }
 
 TSquareMatrix::~TSquareMatrix()
 {
-  if (Entries) delete [] Entries;
+}
+
+void TSquareMatrix::SetStructure(TSquareStructure *structure)
+{
+  this->structure = structure;
+  this->TMatrix::SetStructure((TStructure*)structure);
+}
+
+void TSquareMatrix::ResetActive()
+{
+  memset(Entries, 0, (structure->GetN_Entries() - structure->GetN_Rows()
+      + structure->GetActiveBound())*SizeOfDouble);
+}
+
+void TSquareMatrix::resetNonActive()
+{
+  int n_nonactive_rows = structure->GetN_Rows()-structure->GetActiveBound();
+  int index_nonactive = structure->GetN_Entries() - n_nonactive_rows;
+  memset(Entries + index_nonactive, 0.0, n_nonactive_rows*SizeOfDouble);
 }
 
 // find a renumbering of the DOFs from the matrix entries
-void TSquareMatrix::ReNumbering(int* &Numbers)
+void TSquareMatrix::ReNumbering(int* &Numbers) const
 {
   int i,j,k,l,N_;
   int *Inflow, N_Active;
@@ -39,11 +58,13 @@ void TSquareMatrix::ReNumbering(int* &Numbers)
   int Index, State, CurrentNumber;
   double aij, aji;
 
-  N_Active = ActiveBound;
+  N_Active = this->structure->GetActiveBound();
   Inflow = new int[N_Active];
   memset(Inflow, 0, N_Active*SizeOfInt);
   Numbers = new int[N_Active];
   memset(Numbers, -1, N_Active*SizeOfInt);
+  int *RowPtr = this->structure->GetRowPtr();
+  int *KCol = this->structure->GetKCol();
 
   for(i=0;i<N_Active;i++)
   {
@@ -139,14 +160,14 @@ int TSquareMatrix::Write(const char *filename)
     return -1;
   }
 
-  header[0] = N_Rows;
-  header[1] = N_Columns;
-  header[2] = N_Entries;
+  header[0] = this->structure->GetN_Rows();
+  header[1] = this->structure->GetN_Columns();
+  header[2] = this->structure->GetN_Entries();
 
   dat.write((char *)header, sizeof(int)*3);
-  dat.write((char *)RowPtr, sizeof(int)*(N_Rows+1));
-  dat.write((char *)KCol, sizeof(int)*N_Entries);
-  dat.write((char *)Entries, sizeof(double)*N_Entries);
+  dat.write((char *)this->structure->GetRowPtr(), sizeof(int)*(this->structure->GetN_Rows()+1));
+  dat.write((char *)this->structure->GetKCol(), sizeof(int)*this->structure->GetN_Entries());
+  dat.write((char *)Entries, sizeof(double)*this->structure->GetN_Entries());
 
   dat.close();
   
@@ -157,14 +178,14 @@ void TSquareMatrix::Print()
 {
   int begin, end, pos=0;
   
-  for (int i=0;i<N_Rows;++i)
+  for (int i=0;i<this->structure->GetN_Rows();++i)
   {
-    begin = RowPtr[i];
-    end   = RowPtr[i+1];
+    begin = this->structure->GetRowPtr()[i];
+    end   = this->structure->GetRowPtr()[i+1];
     
     for (int j=begin;j<end;++j)
     {
-      cout << "a(" << i << "," << KCol[pos] << ") = " << Entries[pos] << endl;
+      cout << "a(" << i << "," << this->structure->GetKCol()[pos] << ") = " << Entries[pos] << endl;
       ++pos;
     }
   }

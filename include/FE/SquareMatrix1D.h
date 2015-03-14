@@ -20,11 +20,8 @@
 class TSquareMatrix1D : public TSquareMatrix
 {
   protected:
-    /** FESpace */
-    TFESpace1D *FESpace;
-
     /** matrix strcuture */
-    TSquareStructure1D *Structure;
+    TSquareStructure1D *structure;
 
   public:
     /** generate the matrix */
@@ -34,12 +31,12 @@ class TSquareMatrix1D : public TSquareMatrix
     ~TSquareMatrix1D();
 
     /** return FESpace */
-    TFESpace1D *GetFESpace()
-    { return FESpace; }
+    TFESpace1D *GetFESpace() const
+    { return structure->GetFESpace(); }
 
     /** return used matrix structure */
-    TSquareStructure1D *GetMatrixStructure()
-    { return Structure; }
+    TSquareStructure1D *GetMatrixStructure() const
+    { return structure; }
 
 };
 

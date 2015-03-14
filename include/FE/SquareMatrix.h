@@ -14,42 +14,17 @@
 #ifndef __SQUAREMATRIX__
 #define __SQUAREMATRIX__
 
+#include <Matrix.h>
 #include <SquareStructure.h>
 
-class TSquareMatrix
+class TSquareMatrix : public TMatrix
 {
   protected:
-    /** number rof rows */
-    int N_Rows;
+    /** the sparsity structure of this matrix */
+    TSquareStructure *structure;
 
-    /** number columns */
-    int N_Columns;
-
-    /** number of matrix entries */
-    int N_Entries;
-
-    /** number of matrix entries for hanging nodes data */
-    int HangingN_Entries;
-
-    /** in which column is the current entry */
-    int *KCol;
-
-    /** KCol for hanging node data */
-    int *HangingKCol;
-
-    /** index in KCol where each row starts */
-    int *RowPtr;
-
-    /** RowPtr for hanging node data */
-    int *HangingRowPtr;
-    
-    /** matrix elements in an array */
-    double *Entries;
-
-    /** bound for active degrees of freedom */
-    int ActiveBound;
-
-    /** bound for hanging nodes */
+    /** bound for hanging nodes 
+     * @todo is this structure->HangingN_Entries ?? */
     int HangingBound;
 
     /** ordering of the column entries */
@@ -61,63 +36,37 @@ class TSquareMatrix
   public:
     /** generate the matrix */
     TSquareMatrix(TSquareStructure *structure);
+    
+    /** generate an empty n*n zero matrix */
+    explicit TSquareMatrix(int n);
 
     /** destructor: free Entries array */
     ~TSquareMatrix();
 
-    /** reset matrix entries to zero */
-    void Reset();
-
-    /** return number of rows */
-    int GetN_Rows()
-    { return N_Rows; }
-
-    /** return number of columns */
-    int GetN_Columns()
-    { return N_Columns; }
+    /** reset all entries in active rows */
+    void ResetActive();
     
-    /** return number of matrix entries */
-    int GetN_Entries()
-    { return N_Entries; }
-
-    /** return number of matrix entries for hanging node data */
-    int GetHangingN_Entries()
-    { return HangingN_Entries; }
-
-    /** return array KCol */
-    int *GetKCol()
-    { return KCol; }
-
-    /** return array HangingKCol */
-    int *GetHangingKCol()
-    { return HangingKCol; }
-
-    /** return array HangingRowPtr */
-    int *GetHangingRowPtr()
-    { return HangingRowPtr; }
-
-    /** return array RowPtr */
-    int *GetRowPtr()
-    { return RowPtr; }
-
-    /** return matrix entries */
-    double *GetEntries()
-    { return Entries; }
+    /** @brief set zeros in nonactive rows. 
+     * 
+     * This is e.g. for the off-diagonal blocks in a Stokes matrix 
+     */
+    void resetNonActive();
 
     /** determine renumbering */
-    void ReNumbering(int* &Numbers);
+    void ReNumbering(int* &Numbers) const;
 
     /** return ActiveBound */
-    int GetActiveBound()
-    { return ActiveBound; }
-
-    /** return HangingBound */
-    int GetHangingBound()
-    { return HangingBound; }
-
+    int GetActiveBound() const
+    { return structure->GetActiveBound(); }
+    
     /** return ordering of columns */
-    int GetColOrder()
-    { return ColOrder;}
+    int GetColOrder() const
+    { return structure->GetColOrder(); }
+    
+    void SetStructure(TSquareStructure *structure);
+    
+    TSquareStructure *GetStructure() const
+    { return structure; }
 
     /** write matrix into file */
     int Write(const char *filename);
