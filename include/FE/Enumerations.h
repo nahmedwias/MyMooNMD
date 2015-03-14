@@ -57,29 +57,29 @@ enum MultiIndex2D { D00,
                     D10, D01, 
                     D20, D11, D02 };
 
-#define N_FEs2D 150
+#define N_FEs2D 171
 enum FE2D { C_P00_2D_T_A, C_P0_2D_T_A, C_P1_2D_T_A, C_P2_2D_T_A, C_P3_2D_T_A,
             C_P4_2D_T_A, C_P5_2D_T_A, C_P6_2D_T_A, C_P7_2D_T_A,
             C_P8_2D_T_A, C_P9_2D_T_A,
-            N_P1_2D_T_A,
+            N_P1_2D_T_A, // 12
             C_Q00_2D_Q_A, C_Q0_2D_Q_A, C_Q1_2D_Q_A, C_Q2_2D_Q_A, C_Q3_2D_Q_A,
             C_Q4_2D_Q_A, C_Q5_2D_Q_A, C_Q6_2D_Q_A, C_Q7_2D_Q_A,
             C_Q8_2D_Q_A, C_Q9_2D_Q_A,
-            N_Q1_2D_Q_A,
+            N_Q1_2D_Q_A, // 24
             C_Q00_2D_Q_M, C_Q0_2D_Q_M, C_Q1_2D_Q_M, C_Q2_2D_Q_M, C_Q3_2D_Q_M,
             C_Q4_2D_Q_M, C_Q5_2D_Q_M, C_Q6_2D_Q_M, C_Q7_2D_Q_M,
             C_Q8_2D_Q_M, C_Q9_2D_Q_M,
-            N_Q1_2D_Q_M,
+            N_Q1_2D_Q_M, // 36
             D_P1_2D_Q_A, D_P2_2D_Q_A, D_P3_2D_Q_A,
             D_P1_2D_Q_M, D_P2_2D_Q_M, D_P3_2D_Q_M,
-            C_B2_2D_T_A, C_B3_2D_T_A,
-            D_P1_2D_T_A, D_P2_2D_T_A,
+            C_B2_2D_T_A, C_B3_2D_T_A, C_SV2_2D_T_A,
+            D_P1_2D_T_A, D_P2_2D_T_A, D_SV1_2D_T_A, // 48
 
             N_Q2_2D_Q_A, N_Q3_2D_Q_A, N_Q4_2D_Q_A, N_Q5_2D_Q_A,
             N_Q2_2D_Q_M, N_Q3_2D_Q_M, N_Q4_2D_Q_M, N_Q5_2D_Q_M,
 
             D_P4_2D_Q_A, D_P5_2D_Q_A, D_P6_2D_Q_A, D_P7_2D_Q_A,
-            D_P4_2D_Q_M, D_P5_2D_Q_M, D_P6_2D_Q_M, D_P7_2D_Q_M,
+            D_P4_2D_Q_M, D_P5_2D_Q_M, D_P6_2D_Q_M, D_P7_2D_Q_M, // 64
 
             N_P1MOD_2D_T_A,
 
@@ -89,112 +89,108 @@ enum FE2D { C_P00_2D_T_A, C_P0_2D_T_A, C_P1_2D_T_A, C_P2_2D_T_A, C_P3_2D_T_A,
 
             C_P1MINI_2D_T_A,
 
-            B_IB2_2D_Q_A, B_IB2_2D_Q_M,
+            B_IB2_2D_Q_A, B_IB2_2D_Q_M, // 74
 
             D_Q1_2D_Q_A, D_Q2_2D_Q_A, D_Q3_2D_Q_A, D_Q4_2D_Q_A,
             D_Q1_2D_Q_M, D_Q2_2D_Q_M, D_Q3_2D_Q_M, D_Q4_2D_Q_M,
 
             C_B4_2D_T_A,
 
-            D_D2_2D_Q_A, D_D2_2D_Q_M,
+            D_D2_2D_Q_A, D_D2_2D_Q_M, // 85
 
             C_UL1_2D_Q_A, C_UL2_2D_Q_A, C_UL3_2D_Q_A, C_UL4_2D_Q_A, C_UL5_2D_Q_A,
             C_UL1_2D_Q_M, C_UL2_2D_Q_M, C_UL3_2D_Q_M, C_UL4_2D_Q_M, C_UL5_2D_Q_M,
 
-            C_UL1_2D_T_A, C_UL2_2D_T_A, C_UL3_2D_T_A, C_UL4_2D_T_A, C_UL5_2D_T_A,
+            C_UL1_2D_T_A, C_UL2_2D_T_A, C_UL3_2D_T_A, C_UL4_2D_T_A, C_UL5_2D_T_A, // 100
 
             C_UL2S_2D_Q_A, C_UL3S_2D_Q_A, C_UL4S_2D_Q_A, C_UL5S_2D_Q_A,
             C_UL6S_2D_Q_A, C_UL7S_2D_Q_A, C_UL8S_2D_Q_A, C_UL9S_2D_Q_A,
             C_UL2S_2D_Q_M, C_UL3S_2D_Q_M, C_UL4S_2D_Q_M, C_UL5S_2D_Q_M,
-            C_UL6S_2D_Q_M, C_UL7S_2D_Q_M, C_UL8S_2D_Q_M, C_UL9S_2D_Q_M,
+            C_UL6S_2D_Q_M, C_UL7S_2D_Q_M, C_UL8S_2D_Q_M, C_UL9S_2D_Q_M, // 116
 
             C_UL2SE_2D_Q_A, C_UL3SE_2D_Q_A, C_UL4SE_2D_Q_A, C_UL5SE_2D_Q_A,
             C_UL6SE_2D_Q_A, C_UL7SE_2D_Q_A, C_UL8SE_2D_Q_A, C_UL9SE_2D_Q_A,
             C_UL2SE_2D_Q_M, C_UL3SE_2D_Q_M, C_UL4SE_2D_Q_M, C_UL5SE_2D_Q_M,
-            C_UL6SE_2D_Q_M, C_UL7SE_2D_Q_M, C_UL8SE_2D_Q_M, C_UL9SE_2D_Q_M,
+            C_UL6SE_2D_Q_M, C_UL7SE_2D_Q_M, C_UL8SE_2D_Q_M, C_UL9SE_2D_Q_M, // 132
 
             C_M2_2D_Q_A, C_M3_2D_Q_A, C_M4_2D_Q_A, C_M5_2D_Q_A,
             C_M6_2D_Q_A, C_M7_2D_Q_A, C_M8_2D_Q_A, C_M9_2D_Q_A,
             C_M2_2D_Q_M, C_M3_2D_Q_M, C_M4_2D_Q_M, C_M5_2D_Q_M,
             C_M6_2D_Q_M, C_M7_2D_Q_M, C_M8_2D_Q_M, C_M9_2D_Q_M,
             
-            N_RT1_2D_Q_A, N_RT1_2D_Q_M,
+            C_EL1_2D_Q_A, C_EL1_2D_Q_M, // 150
             
-            C_EL1_2D_Q_A, C_EL1_2D_Q_M
+            N_RT0_2D_Q_A, N_RT0_2D_Q_M, N_RT1_2D_Q_A, N_RT1_2D_Q_M,
+            N_RT2_2D_Q_A, N_RT2_2D_Q_M, N_RT3_2D_Q_A, N_RT3_2D_Q_M,
+            N_RT0_2D_T_A, N_RT1_2D_T_A, N_RT2_2D_T_A, N_RT3_2D_T_A, // 162
+            
+            N_BDM1_2D_Q_A, N_BDM2_2D_Q_A, N_BDM3_2D_Q_A,
+            N_BDM1_2D_Q_M, N_BDM2_2D_Q_M, N_BDM3_2D_Q_M,
+            N_BDM1_2D_T_A, N_BDM2_2D_T_A, N_BDM3_2D_T_A // 171
           };
 
-#define N_FEDescs2D 91
-enum FEDesc2D { FE_C_T_P00_2D, FE_C_T_P0_2D, FE_C_T_P1_2D, FE_C_T_P2_2D, FE_C_T_P3_2D, 
-                FE_C_T_P4_2D, FE_C_T_P5_2D, FE_C_T_P6_2D, FE_C_T_P7_2D, 
-                FE_C_T_P8_2D, FE_C_T_P9_2D,
-                FE_N_T_P1_2D,
-                FE_C_Q_Q00_2D, FE_C_Q_Q0_2D, FE_C_Q_Q1_2D, FE_C_Q_Q2_2D, FE_C_Q_Q3_2D, 
-                FE_C_Q_Q4_2D, FE_C_Q_Q5_2D, FE_C_Q_Q6_2D, FE_C_Q_Q7_2D, 
-                FE_C_Q_Q8_2D, FE_C_Q_Q9_2D,
-                FE_N_Q_Q1_2D,
+#define N_FEDescs2D 105
+enum FEDesc2D { FE_C_T_P00_2D, FE_C_T_P0_2D, FE_C_T_P1_2D, FE_C_T_P2_2D, 
+                FE_C_T_P3_2D, FE_C_T_P4_2D, FE_C_T_P5_2D, FE_C_T_P6_2D,
+                FE_C_T_P7_2D, FE_C_T_P8_2D, FE_C_T_P9_2D, FE_N_T_P1_2D,
+                FE_C_Q_Q00_2D, FE_C_Q_Q0_2D, FE_C_Q_Q1_2D, FE_C_Q_Q2_2D,
+                FE_C_Q_Q3_2D, FE_C_Q_Q4_2D, FE_C_Q_Q5_2D, FE_C_Q_Q6_2D, 
+                FE_C_Q_Q7_2D, FE_C_Q_Q8_2D, FE_C_Q_Q9_2D, FE_N_Q_Q1_2D, // 24
                 FE_D_Q_P1_2D, FE_D_Q_P2_2D, FE_D_Q_P3_2D,
-                FE_C_T_B2_2D, FE_C_T_B3_2D,
-                FE_D_T_P1_2D, FE_D_T_P2_2D,
+                FE_C_T_B2_2D, FE_C_T_B3_2D, FE_C_T_SV2_2D,
+                FE_D_T_P1_2D, FE_D_T_P2_2D, FE_D_T_SV1_2D, // 33
 
                 FE_N_Q_Q2_2D, FE_N_Q_Q3_2D, FE_N_Q_Q4_2D, FE_N_Q_Q5_2D,
-
                 FE_D_Q_P4_2D, FE_D_Q_P5_2D, FE_D_Q_P6_2D, FE_D_Q_P7_2D,
                 
-                FE_N_T_P1MOD_2D,
+                FE_N_T_P1MOD_2D, FE_N_T_P2_2D, FE_N_T_P3_2D, FE_N_T_P4_2D, 
+                FE_N_T_P5_2D, FE_D_T_P3_2D, FE_D_T_P4_2D, FE_C_T_P1MINI_2D, //49
 
-                FE_N_T_P2_2D, FE_N_T_P3_2D, FE_N_T_P4_2D, FE_N_T_P5_2D,
+                FE_B_Q_IB2_2D, 
+                FE_D_Q_Q1_2D, FE_D_Q_Q2_2D, FE_D_Q_Q3_2D, FE_D_Q_Q4_2D, 
+                FE_C_T_B4_2D, FE_D_Q_D2_2D, // 56
 
-                FE_D_T_P3_2D, FE_D_T_P4_2D,
-
-                FE_C_T_P1MINI_2D,
-
-                FE_B_Q_IB2_2D,
-
-                FE_D_Q_Q1_2D, FE_D_Q_Q2_2D, FE_D_Q_Q3_2D, FE_D_Q_Q4_2D,
-
-                FE_C_T_B4_2D,
-
-                FE_D_Q_D2_2D,
-
-                FE_C_T_UL1_2D, FE_C_T_UL2_2D, FE_C_T_UL3_2D, FE_C_T_UL4_2D, FE_C_T_UL5_2D,
-
-                FE_C_Q_UL1_2D, FE_C_Q_UL2_2D, FE_C_Q_UL3_2D, FE_C_Q_UL4_2D,
-                FE_C_Q_UL5_2D,
+                FE_C_T_UL1_2D, FE_C_T_UL2_2D, FE_C_T_UL3_2D, FE_C_T_UL4_2D, 
+                FE_C_T_UL5_2D, FE_C_Q_UL1_2D, FE_C_Q_UL2_2D, FE_C_Q_UL3_2D, 
+                FE_C_Q_UL4_2D, FE_C_Q_UL5_2D, // 66
 
                 FE_C_Q_UL2S_2D, FE_C_Q_UL3S_2D, FE_C_Q_UL4S_2D, FE_C_Q_UL5S_2D,
                 FE_C_Q_UL6S_2D, FE_C_Q_UL7S_2D, FE_C_Q_UL8S_2D, FE_C_Q_UL9S_2D,
 
                 FE_C_Q_UL2SE_2D, FE_C_Q_UL3SE_2D, FE_C_Q_UL4SE_2D, FE_C_Q_UL5SE_2D,
-                FE_C_Q_UL6SE_2D, FE_C_Q_UL7SE_2D, FE_C_Q_UL8SE_2D, FE_C_Q_UL9SE_2D,
+                FE_C_Q_UL6SE_2D, FE_C_Q_UL7SE_2D, FE_C_Q_UL8SE_2D, FE_C_Q_UL9SE_2D, // 82
 
                 FE_C_Q_M2_2D, FE_C_Q_M3_2D, FE_C_Q_M4_2D, FE_C_Q_M5_2D,
                 FE_C_Q_M6_2D, FE_C_Q_M7_2D, FE_C_Q_M8_2D, FE_C_Q_M9_2D,
                 
-                FE_N_Q_RT1_2D,
+                FE_C_Q_EL1_2D, // 91
                 
-                FE_C_Q_EL1_2D
+                FE_N_Q_RT0_2D, FE_N_Q_RT1_2D, FE_N_Q_RT2_2D, FE_N_Q_RT3_2D,
+                FE_N_T_RT0_2D, FE_N_T_RT1_2D, FE_N_T_RT2_2D, FE_N_T_RT3_2D,
+                FE_N_Q_BDM1_2D, FE_N_Q_BDM2_2D, FE_N_Q_BDM3_2D,
+                FE_N_T_BDM1_2D, FE_N_T_BDM2_2D, FE_N_T_BDM3_2D //105
               };
 
 #define MaxN_BaseFunctions2D 100
 
-#define N_BaseFuncts2D 91
+#define N_BaseFuncts2D 105
 enum BaseFunct2D { BF_C_T_P00_2D, BF_C_T_P0_2D, BF_C_T_P1_2D, BF_C_T_P2_2D, BF_C_T_P3_2D,
                    BF_N_T_P1_2D,
                    BF_C_Q_Q00_2D, BF_C_Q_Q0_2D, BF_C_Q_Q1_2D, BF_C_Q_Q2_2D, BF_C_Q_Q3_2D,
                    BF_N_Q_Q1_2D,
-                   BF_D_Q_P1_2D, BF_D_Q_P2_2D, BF_D_Q_P3_2D,
+                   BF_D_Q_P1_2D, BF_D_Q_P2_2D, BF_D_Q_P3_2D, // 15
                    BF_C_T_P4_2D, BF_C_T_P5_2D, BF_C_T_P6_2D, BF_C_T_P7_2D,
                    BF_C_T_P8_2D, BF_C_T_P9_2D,
                    BF_C_Q_Q4_2D, BF_C_Q_Q5_2D, BF_C_Q_Q6_2D, BF_C_Q_Q7_2D,
                    BF_C_Q_Q8_2D, BF_C_Q_Q9_2D,
-                   BF_C_T_B2_2D, BF_C_T_B3_2D,
-                   BF_D_T_P1_2D, BF_D_T_P2_2D,
+                   BF_C_T_B2_2D, BF_C_T_B3_2D, BF_C_T_SV2_2D,
+                   BF_D_T_P1_2D, BF_D_T_P2_2D, BF_D_T_SV1_2D, // 33
 
                    BF_N_Q_Q2_2D, BF_N_Q_Q3_2D, BF_N_Q_Q4_2D, BF_N_Q_Q5_2D,
 
                    BF_D_Q_P4_2D, BF_D_Q_P5_2D, BF_D_Q_P6_2D, BF_D_Q_P7_2D,
 
-                   BF_N_T_P1MOD_2D,
+                   BF_N_T_P1MOD_2D, // 42
 
                    BF_N_T_P2_2D, BF_N_T_P3_2D, BF_N_T_P4_2D, BF_N_T_P5_2D,
 
@@ -208,11 +204,13 @@ enum BaseFunct2D { BF_C_T_P00_2D, BF_C_T_P0_2D, BF_C_T_P1_2D, BF_C_T_P2_2D, BF_C
 
                    BF_C_T_B4_2D,
                    
-                   BF_D_Q_D2_2D,
+                   BF_D_Q_D2_2D, // 56
 
-                   BF_C_Q_UL1_2D, BF_C_Q_UL2_2D, BF_C_Q_UL3_2D, BF_C_Q_UL4_2D, BF_C_Q_UL5_2D,
+                   BF_C_Q_UL1_2D, BF_C_Q_UL2_2D, BF_C_Q_UL3_2D, BF_C_Q_UL4_2D, 
+                   BF_C_Q_UL5_2D,
 
-                   BF_C_T_UL1_2D, BF_C_T_UL2_2D, BF_C_T_UL3_2D, BF_C_T_UL4_2D, BF_C_T_UL5_2D,
+                   BF_C_T_UL1_2D, BF_C_T_UL2_2D, BF_C_T_UL3_2D, BF_C_T_UL4_2D, 
+                   BF_C_T_UL5_2D, // 66
 
                    BF_C_Q_UL2S_2D, BF_C_Q_UL3S_2D, BF_C_Q_UL4S_2D, BF_C_Q_UL5S_2D,
                    BF_C_Q_UL6S_2D, BF_C_Q_UL7S_2D, BF_C_Q_UL8S_2D, BF_C_Q_UL9S_2D,
@@ -221,35 +219,39 @@ enum BaseFunct2D { BF_C_T_P00_2D, BF_C_T_P0_2D, BF_C_T_P1_2D, BF_C_T_P2_2D, BF_C
                    BF_C_Q_UL6SE_2D, BF_C_Q_UL7SE_2D, BF_C_Q_UL8SE_2D, BF_C_Q_UL9SE_2D,
 
                    BF_C_Q_M2_2D, BF_C_Q_M3_2D, BF_C_Q_M4_2D, BF_C_Q_M5_2D,
-                   BF_C_Q_M6_2D, BF_C_Q_M7_2D, BF_C_Q_M8_2D, BF_C_Q_M9_2D,
+                   BF_C_Q_M6_2D, BF_C_Q_M7_2D, BF_C_Q_M8_2D, BF_C_Q_M9_2D, // 90
                    
-                   BF_N_Q_RT1_2D,
+                   BF_C_Q_EL1_2D,
                    
-                   BF_C_Q_EL1_2D
+                   BF_N_Q_RT0_2D, BF_N_Q_RT1_2D, BF_N_Q_RT2_2D, BF_N_Q_RT3_2D,
+                   BF_N_T_RT0_2D, BF_N_T_RT1_2D, BF_N_T_RT2_2D, BF_N_T_RT3_2D,
+                   
+                   BF_N_Q_BDM1_2D, BF_N_Q_BDM2_2D, BF_N_Q_BDM3_2D,
+                   BF_N_T_BDM1_2D, BF_N_T_BDM2_2D, BF_N_T_BDM3_2D //105
                  };
 
 enum BF2DRefElements { BFUnitTriangle, BFUnitSquare };
 
 #define MaxN_PointsForNodal2D 100
-#define N_NodalFunctionals2D 92
+#define N_NodalFunctionals2D 106
 enum NodalFunctional2D {
                 NF_C_T_P00_2D, NF_C_T_P0_2D, NF_C_T_P1_2D, NF_C_T_P2_2D, NF_C_T_P3_2D,
                 NF_C_T_P4_2D, NF_C_T_P5_2D, NF_C_T_P6_2D, NF_C_T_P7_2D,
                 NF_C_T_P8_2D, NF_C_T_P9_2D,
-                NF_N_T_P1_2D,
+                NF_N_T_P1_2D, // 12
                 NF_C_Q_Q00_2D, NF_C_Q_Q0_2D, NF_C_Q_Q1_2D, NF_C_Q_Q2_2D, NF_C_Q_Q3_2D,
                 NF_C_Q_Q4_2D, NF_C_Q_Q5_2D, NF_C_Q_Q6_2D, NF_C_Q_Q7_2D,
                 NF_C_Q_Q8_2D, NF_C_Q_Q9_2D,
-                NF_N_Q_Q1_2D,
+                NF_N_Q_Q1_2D, // 24
                 NF_D_Q_P1_2D, NF_D_Q_P2_2D, NF_D_Q_P3_2D,
-                NF_C_T_B2_2D, NF_C_T_B3_2D,
-                NF_D_T_P1_2D, NF_D_T_P2_2D,
+                NF_C_T_B2_2D, NF_C_T_B3_2D, NF_C_T_SV2_2D,
+                NF_D_T_P1_2D, NF_D_T_P2_2D, NF_D_T_SV1_2D, // 33
 
                 NF_N_Q_Q2_2D, NF_N_Q_Q3_2D, NF_N_Q_Q4_2D, NF_N_Q_Q5_2D,
 
                 NF_D_Q_P4_2D, NF_D_Q_P5_2D, NF_D_Q_P6_2D, NF_D_Q_P7_2D,
 
-                NF_N_T_P1MOD_2D,
+                NF_N_T_P1MOD_2D, // 42
 
                 NF_N_T_P2_2D, NF_N_T_P3_2D, NF_N_T_P4_2D, NF_N_T_P5_2D,
 
@@ -265,11 +267,13 @@ enum NodalFunctional2D {
 
                 NF_C_T_B4_2D,
 
-                NF_D_Q_D2_2D,
+                NF_D_Q_D2_2D, // 57
 
-                NF_C_Q_UL1_2D, NF_C_Q_UL2_2D, NF_C_Q_UL3_2D, NF_C_Q_UL4_2D, NF_C_Q_UL5_2D,
+                NF_C_Q_UL1_2D, NF_C_Q_UL2_2D, NF_C_Q_UL3_2D, NF_C_Q_UL4_2D, 
+                NF_C_Q_UL5_2D,
 
-                NF_C_T_UL1_2D, NF_C_T_UL2_2D, NF_C_T_UL3_2D, NF_C_T_UL4_2D, NF_C_T_UL5_2D,
+                NF_C_T_UL1_2D, NF_C_T_UL2_2D, NF_C_T_UL3_2D, NF_C_T_UL4_2D, 
+                NF_C_T_UL5_2D, // 67
 
                 NF_C_Q_UL2S_2D, NF_C_Q_UL3S_2D, NF_C_Q_UL4S_2D, NF_C_Q_UL5S_2D,
                 NF_C_Q_UL6S_2D, NF_C_Q_UL7S_2D, NF_C_Q_UL8S_2D, NF_C_Q_UL9S_2D,
@@ -278,11 +282,15 @@ enum NodalFunctional2D {
                 NF_C_Q_UL6SE_2D, NF_C_Q_UL7SE_2D, NF_C_Q_UL8SE_2D, NF_C_Q_UL9SE_2D,
 
                 NF_C_Q_M2_2D, NF_C_Q_M3_2D, NF_C_Q_M4_2D, NF_C_Q_M5_2D,
-                NF_C_Q_M6_2D, NF_C_Q_M7_2D, NF_C_Q_M8_2D, NF_C_Q_M9_2D,
+                NF_C_Q_M6_2D, NF_C_Q_M7_2D, NF_C_Q_M8_2D, NF_C_Q_M9_2D, // 91
                 
-                NF_N_Q_RT1_2D,
+                NF_C_Q_EL1_2D,
                 
-                NF_C_Q_EL1_2D
+                NF_N_Q_RT0_2D, NF_N_Q_RT1_2D, NF_N_Q_RT2_2D, NF_N_Q_RT3_2D,
+                NF_N_T_RT0_2D, NF_N_T_RT1_2D, NF_N_T_RT2_2D, NF_N_T_RT3_2D,
+                
+                NF_N_Q_BDM1_2D, NF_N_Q_BDM2_2D, NF_N_Q_BDM3_2D,
+                NF_N_T_BDM1_2D, NF_N_T_BDM2_2D, NF_N_T_BDM3_2D // 106
               };
 
 #define N_HNDescs 70
@@ -321,15 +329,16 @@ enum RefTrans2D { TriaAffin, QuadAffin, QuadBilinear,
                   TriaIsoparametric, QuadIsoparametric };
 
 #define MaxN_QuadPoints_2D 81
-#define N_QuadFormulas_2D 21
+#define N_QuadFormulas_2D 22
 enum QuadFormula2D { BaryCenterTria, MidPointTria, SevenPointTria,
-                      Gauss3Tria, VertexTria, Degree8Tria,  Degree9Tria,
-                      Degree11Tria, Degree19Tria,
-                      Gauss2Quad, Gauss3Quad, Gauss4Quad, 
-                      Gauss5Quad, Gauss6Quad, Gauss7Quad,
-                      Gauss8Quad, Gauss9Quad, VertexQuad,
-                      SimpsonQuad,
-                      CompGauss3Tria, Gauss_Degree8Tria};
+                     Gauss3Tria, VertexTria, Degree8Tria,  Degree9Tria,
+                     Degree11Tria, Degree19Tria,
+                     Gauss2Quad, Gauss3Quad, Gauss4Quad, 
+                     Gauss5Quad, Gauss6Quad, Gauss7Quad,
+                     Gauss8Quad, Gauss9Quad, VertexQuad,
+                     SimpsonQuad,
+                     CompGauss3Tria, CompGauss4Tria,
+                     Gauss_Degree8Tria};
 
 enum SpaceType { DiscP_USpace, DiscP_PSpace, ContP_USpace, ContP_PSpace,
                  Non_USpace };
@@ -352,71 +361,108 @@ enum QuadFormula3D { BaryCenterTetra, VertexTetra, P2Tetra, P4Tetra,
                      Gauss9Hexa, VerticesAndOrigin, VerticesAndOrigin15,
                      VerticesAndOrigin57, Degree7_Points38};
 
-#define N_FEs3D 44
+#define N_FEs3D 76
 enum FE3D { C_P00_3D_T_A, C_P0_3D_T_A, C_P1_3D_T_A, C_P2_3D_T_A, C_P3_3D_T_A,
             N_P1_3D_T_A,
             C_Q00_3D_H_A, C_Q0_3D_H_A, C_Q1_3D_H_A, C_Q2_3D_H_A, C_Q3_3D_H_A,
             C_Q4_3D_H_A,
             C_Q00_3D_H_M, C_Q0_3D_H_M, C_Q1_3D_H_M, C_Q2_3D_H_M, C_Q3_3D_H_M,
-            C_Q4_3D_H_M,
+            C_Q4_3D_H_M, // 18
             N_Q1_3D_H_A,
             N_Q1_3D_H_M,
             D_P1_3D_H_A, D_P2_3D_H_A, D_P3_3D_H_A,
             D_P1_3D_H_M, D_P2_3D_H_M, D_P3_3D_H_M,
             
-            B_IB2_3D_H_A, B_IB2_3D_H_M,
+            D_Q1_3D_H_A, D_Q1_3D_H_M, D_Q2_3D_H_A, D_Q2_3D_H_M,
+            
+            B_IB2_3D_H_A, B_IB2_3D_H_M, // 32
 
             N_P2_3D_T_A, N_P3_3D_T_A, N_P4_3D_T_A, N_P5_3D_T_A,
             N_Q2_3D_H_A, N_Q3_3D_H_A, N_Q4_3D_H_A, N_Q5_3D_H_A,
             N_Q2_3D_H_M, N_Q3_3D_H_M, N_Q4_3D_H_M, N_Q5_3D_H_M,
 
-            C_B2_3D_T_A, D_P1_3D_T_A, C_UL1_3D_H_A, C_UL1_3D_H_M
+            C_B2_3D_T_A, D_P1_3D_T_A, D_P2_3D_T_A, D_P3_3D_T_A, // 48
+            
+            C_UL1_3D_H_A, C_UL2_3D_H_A, C_UL3_3D_H_A, C_UL4_3D_H_A, C_UL5_3D_H_A,
+            C_UL1_3D_H_M, C_UL2_3D_H_M, C_UL3_3D_H_M, C_UL4_3D_H_M, C_UL5_3D_H_M,
+            C_UL1_3D_T_A, C_UL2_3D_T_A, C_UL3_3D_T_A, C_UL4_3D_T_A, C_UL5_3D_T_A, // 63
+            
+            N_RT0_3D_T_A, N_RT1_3D_T_A, N_RT2_3D_T_A, N_RT3_3D_T_A,
+            N_RT0_3D_H_A, N_RT1_3D_H_A, N_RT2_3D_H_A,
+            N_BDDF1_3D_T_A, N_BDDF2_3D_T_A, N_BDDF3_3D_T_A,
+            N_BDDF1_3D_H_A, N_BDDF2_3D_H_A, N_BDDF3_3D_H_A // 76
           };
 
-#define N_FEDescs3D 28
+#define N_FEDescs3D 54
 enum FEDesc3D { FE_C_T_P00_3D, FE_C_T_P0_3D, FE_C_T_P1_3D, FE_C_T_P2_3D, FE_C_T_P3_3D,
                 FE_N_T_P1_3D,
                 FE_C_H_Q00_3D, FE_C_H_Q0_3D, FE_C_H_Q1_3D, FE_C_H_Q2_3D, FE_C_H_Q3_3D,
                 FE_C_H_Q4_3D,
                 FE_N_H_Q1_3D,
-                FE_D_H_P1_3D, FE_D_H_P2_3D, FE_D_H_P3_3D,
+                FE_D_H_P1_3D, FE_D_H_P2_3D, FE_D_H_P3_3D, // 16
+                
+                FE_D_H_Q1_3D,  FE_D_H_Q2_3D,
 
                 FE_B_H_IB2_3D,
 
                 FE_N_T_P2_3D, FE_N_T_P3_3D, FE_N_T_P4_3D, FE_N_T_P5_3D,
                 FE_N_H_Q2_3D, FE_N_H_Q3_3D, FE_N_H_Q4_3D, FE_N_H_Q5_3D,
 
-                FE_C_T_B2_3D, FE_D_T_P1_3D, FE_C_H_UL1_3D
+                FE_C_T_B2_3D, FE_D_T_P1_3D, FE_D_T_P2_3D, FE_D_T_P3_3D, // 31
+                
+                FE_C_H_UL1_3D, FE_C_H_UL2_3D, FE_C_H_UL3_3D, FE_C_H_UL4_3D, 
+                FE_C_H_UL5_3D, 
+                FE_C_T_UL1_3D, FE_C_T_UL2_3D, FE_C_T_UL3_3D, FE_C_T_UL4_3D, 
+                FE_C_T_UL5_3D, // 41
+                
+                FE_N_T_RT0_3D, FE_N_T_RT1_3D, FE_N_T_RT2_3D, FE_N_T_RT3_3D,
+                FE_N_H_RT0_3D, FE_N_H_RT1_3D, FE_N_H_RT2_3D,
+                FE_N_T_BDDF1_3D, FE_N_T_BDDF2_3D, FE_N_T_BDDF3_3D,
+                FE_N_H_BDDF1_3D, FE_N_H_BDDF2_3D, FE_N_H_BDDF3_3D // 54
               };
 
 #define MaxN_BaseFunctions3D 125
-#define N_BaseFuncts3D 28
+#define N_BaseFuncts3D 54
 enum BaseFunct3D { BF_C_T_P00_3D, BF_C_T_P0_3D, BF_C_T_P1_3D, BF_C_T_P2_3D, BF_C_T_P3_3D,
                    BF_N_T_P1_3D,
                    BF_C_H_Q00_3D, BF_C_H_Q0_3D, BF_C_H_Q1_3D, BF_C_H_Q2_3D, BF_C_H_Q3_3D,
                    BF_C_H_Q4_3D,
                    BF_N_H_Q1_3D,
-                   BF_D_H_P1_3D, BF_D_H_P2_3D, BF_D_H_P3_3D,
-
+                   BF_D_H_P1_3D, BF_D_H_P2_3D, BF_D_H_P3_3D, // 16
+                   
+                   BF_D_H_Q1_3D, BF_D_H_Q2_3D,
+                   
                    BF_B_H_IB2_3D,
 
                    BF_N_T_P2_3D, BF_N_T_P3_3D, BF_N_T_P4_3D, BF_N_T_P5_3D,
                    BF_N_H_Q2_3D, BF_N_H_Q3_3D, BF_N_H_Q4_3D, BF_N_H_Q5_3D,
 
-                   BF_C_T_B2_3D, BF_D_T_P1_3D, BF_C_H_UL1_3D
+                   BF_C_T_B2_3D, BF_D_T_P1_3D, BF_D_T_P2_3D, BF_D_T_P3_3D, // 31
+                   
+                   BF_C_H_UL1_3D, BF_C_H_UL2_3D, BF_C_H_UL3_3D, BF_C_H_UL4_3D,
+                   BF_C_H_UL5_3D, 
+                   BF_C_T_UL1_3D, BF_C_T_UL2_3D, BF_C_T_UL3_3D, BF_C_T_UL4_3D,
+                   BF_C_T_UL5_3D, // 41
+                   
+                   BF_N_T_RT0_3D, BF_N_T_RT1_3D, BF_N_T_RT2_3D, BF_N_T_RT3_3D,
+                   BF_N_H_RT0_3D, BF_N_H_RT1_3D, BF_N_H_RT2_3D,
+                   BF_N_T_BDDF1_3D, BF_N_T_BDDF2_3D, BF_N_T_BDDF3_3D,
+                   BF_N_H_BDDF1_3D, BF_N_H_BDDF2_3D, BF_N_H_BDDF3_3D // 54
                  };
 
 enum BF3DRefElements { BFUnitTetrahedron, BFUnitHexahedron };
 
 #define MaxN_PointsForNodal3D 275
-#define N_NodalFunctionals3D 29
+#define N_NodalFunctionals3D 55
 enum NodalFunctional3D {
                 NF_C_T_P00_3D, NF_C_T_P0_3D, NF_C_T_P1_3D, NF_C_T_P2_3D, NF_C_T_P3_3D,
                 NF_N_T_P1_3D,
                 NF_C_H_Q00_3D, NF_C_H_Q0_3D, NF_C_H_Q1_3D, NF_C_H_Q2_3D, NF_C_H_Q3_3D,
                 NF_C_H_Q4_3D,
                 NF_N_H_Q1_3D,
-                NF_D_H_P1_3D, NF_D_H_P2_3D, NF_D_H_P3_3D,
+                NF_D_H_P1_3D, NF_D_H_P2_3D, NF_D_H_P3_3D, // 16
+                
+                NF_D_H_Q1_3D, NF_D_H_Q2_3D,
 
                 NF_B_H_IB2_3D,
 
@@ -425,7 +471,17 @@ enum NodalFunctional3D {
                 NF_N_T_P2_3D, NF_N_T_P3_3D, NF_N_T_P4_3D, NF_N_T_P5_3D,
                 NF_N_H_Q2_3D, NF_N_H_Q3_3D, NF_N_H_Q4_3D, NF_N_H_Q5_3D,
 
-                NF_C_T_B2_3D, NF_D_T_P1_3D, NF_C_H_UL1_3D
+                NF_C_T_B2_3D, NF_D_T_P1_3D, NF_D_T_P2_3D, NF_D_T_P3_3D, // 32
+                
+                NF_C_H_UL1_3D, NF_C_H_UL2_3D, NF_C_H_UL3_3D, NF_C_H_UL4_3D, 
+                NF_C_H_UL5_3D, 
+                NF_C_T_UL1_3D, NF_C_T_UL2_3D, NF_C_T_UL3_3D, NF_C_T_UL4_3D,
+                NF_C_T_UL5_3D, // 42
+                
+                NF_N_T_RT0_3D,  NF_N_T_RT1_3D, NF_N_T_RT2_3D, NF_N_T_RT3_3D,
+                NF_N_H_RT0_3D, NF_N_H_RT1_3D, NF_N_H_RT2_3D,
+                NF_N_T_BDDF1_3D, NF_N_T_BDDF2_3D, NF_N_T_BDDF3_3D,
+                NF_N_H_BDDF1_3D, NF_N_H_BDDF2_3D, NF_N_H_BDDF3_3D // 55
               };
 
 #define N_RefTrans3D 5

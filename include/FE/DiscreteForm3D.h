@@ -34,7 +34,7 @@ class TDiscreteForm3D
     int N_Spaces;
 
     /** Are second derivatives from space i needed */
-    boolean *Needs2ndDerivatives;
+    bool *Needs2ndDerivatives;
 
     /** multiindices for derivatives of ansatz functions */
     MultiIndex3D *Derivatives;
@@ -114,7 +114,7 @@ class TDiscreteForm3D
                         double ***LocMatrix, double **LocRhs);
 
     /** return array Needs2ndDerivatives */
-    boolean *GetNeeds2ndDerivatives()
+    bool *GetNeeds2ndDerivatives()
     { return Needs2ndDerivatives; };
 
     /** function for calculating the coefficients */
@@ -168,6 +168,7 @@ void InitializeDiscreteForms(
   TDiscreteForm3D *&DiscreteFormGL00AuxProblem, 
   TDiscreteForm3D *&DiscreteFormVMS_Projection, 
   TDiscreteForm3D *&DiscreteFormVMS_SUPG, 
+  TDiscreteForm3D *&DiscreteFormLerayAlpha,
   TDiscreteForm3D *&DiscreteFormNLGalerkin,
   TDiscreteForm3D *&DiscreteFormNLUpwind, 
   TDiscreteForm3D *&DiscreteFormNLUpwindNC, 
@@ -178,7 +179,8 @@ void InitializeDiscreteForms(
   TDiscreteForm3D *&DiscreteFormNLVMS_Projection, 
   TDiscreteForm3D *&DiscreteFormNLVMS_ProjectionExpl, 
   TDiscreteForm3D *&DiscreteFormNSRFBExplRhs,
-  TDiscreteForm3D *&DiscreteFormNLVMS_SUPG, 
+  TDiscreteForm3D *&DiscreteFormNLVMS_SUPG,
+  TDiscreteForm3D *&DiscreteFormNLLerayAlpha,
   TDiscreteForm3D *&DiscreteFormRHS,
   TDiscreteForm3D *&DiscreteFormRHSClassicalLES,
   TDiscreteForm3D *&DiscreteFormRHSLES,
@@ -204,6 +206,11 @@ void InitializeDiscreteFormsVMS(
   TDiscreteForm3D *&DiscreteForm_ho_RHS,
   CoeffFct3D *LinCoeffs, int NSTYPE);
   
+void InitializeDiscreteFormsOS_ST(
+  TDiscreteForm3D *&DiscreteFormGalerkin,
+  TDiscreteForm3D *&DiscreteFormStiffRhsOS_ST,
+  CoeffFct3D *LinCoeffs, int NSTYPE);
+
 void InitializeDiscreteForms
      ( TDiscreteForm3D *&DiscreteFormGalerkin,
        TDiscreteForm3D *&DiscreteFormNLGalerkin,

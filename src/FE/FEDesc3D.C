@@ -103,4 +103,39 @@ TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
   EdgeVertData_Filled = 1;  
 }
 
-#endif  
+#endif // _MPI
+
+/** return face on which the i-th local degree of freedom is   
+If i is not a dof on a face, return -1
+
+If i is a dof on two faces (e.g. on a vertex), one of these two faces is 
+returned. Don't use this function in this case.
+
+*/
+int TFEDesc3D::GetJointOfThisDOF(int localDOF) const
+{
+  bool is_DOF_on_edge = false;
+ 
+  for (int i = 0; i < N_OuterDOF; i++)
+  {
+    if(OuterDOF[i]==localDOF)
+    {
+      is_DOF_on_edge=true;
+      break;
+    }
+  }
+  if(!is_DOF_on_edge)
+    return -1;
+  //else // continue to find the edge
+  int i = 0;
+  while (true)
+  {
+    // this must terminate, since we already know localDOF is a dof on an edge
+    for (int j = 0; j < N_JointDOF; j++)
+    {
+      if(JointDOF[i][j] == localDOF)
+        return i;
+    }
+    i++;
+  }
+}

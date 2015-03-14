@@ -20,7 +20,7 @@
 #include <NSE3D_Newton.h>
 #include <TNSE3D_FixPo.h>
 #include <TNSE3D_Newton.h>
-#include <TNSE3D_Routines.h>
+//#include <TNSE3D_Routines.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ConvDiff3D.h>
@@ -70,9 +70,9 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
 
   N_Spaces = max+1;
 
-  Needs2ndDerivatives = new boolean[N_Spaces];
+  Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
     {
@@ -80,21 +80,22 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
       j = FESpaceNumber[i];
       if(alpha == D200 || alpha == D110 || alpha == D101 || 
          alpha == D020 || alpha == D011 || alpha == D002)
-        Needs2ndDerivatives[j] = TRUE;
+        Needs2ndDerivatives[j] = true;
     }
 
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0  && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
+  if(rank==TDatabase::ParamDB->Par_P0)
+#endif
+  if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-  cout << "---------------------" << endl;
-  cout << "number of spaces: " << N_Spaces << endl;
-  for(i=0;i<N_Spaces;i++)
-    cout << i << " " << Needs2ndDerivatives[i] << endl;
-  cout << "---------------------" << endl;
+    cout << "---------------------" << endl;
+    cout << "number of spaces: " << N_Spaces << endl;
+    for(i=0;i<N_Spaces;i++)
+      cout << i << " " << Needs2ndDerivatives[i] << endl;
+    cout << "---------------------" << endl;
  }
 }
 
@@ -142,9 +143,9 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
 
   N_Spaces = max+1;
 
-  Needs2ndDerivatives = new boolean[N_Spaces];
+  Needs2ndDerivatives = new bool[N_Spaces];
   for(i=0;i<N_Spaces;i++)
-    Needs2ndDerivatives[i] = FALSE;
+    Needs2ndDerivatives[i] = false;
 
   for(i=0;i<N_Terms;i++)
   {
@@ -152,7 +153,7 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
     j = FESpaceNumber[i];
     if(alpha == D200 || alpha == D110 || alpha == D101 || 
        alpha == D020 || alpha == D011 || alpha == D002) 
-      Needs2ndDerivatives[j] = TRUE;
+      Needs2ndDerivatives[j] = true;
   }
 
 
@@ -160,14 +161,15 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==TDatabase::ParamDB->Par_P0)
 #endif 
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
-  cout << "---------------------" << endl;
-  cout << "number of spaces: " << N_Spaces << endl;
-  for(i=0;i<N_Spaces;i++)
-    cout << i << " " << Needs2ndDerivatives[i] << endl;
-  cout << "---------------------" << endl;
+    cout << "---------------------" << endl;
+    cout << "number of spaces: " << N_Spaces << endl;
+    for(i=0;i<N_Spaces;i++)
+      cout << i << " " << Needs2ndDerivatives[i] << endl;
+    cout << "---------------------" << endl;
   }
 }
 
@@ -236,6 +238,11 @@ void TDiscreteForm3D::GetLocalForms(int N_Points, double *weights,
     AllOrigValues[i] = 
       TFEDatabase3D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]], 
                                           Derivatives[i]);
+    if(!(AllOrigValues[i]))
+    {
+      ErrMsg("second derivatives not yet supported. Exiting");
+      exit(1);
+    }
   }
 
 
@@ -1613,7 +1620,8 @@ void InitializeDiscreteForms(
   TDiscreteForm3D *&DiscreteFormGL00Convolution, 
   TDiscreteForm3D *&DiscreteFormGL00AuxProblem, 
   TDiscreteForm3D *&DiscreteFormVMS_Projection, 
-  TDiscreteForm3D *&DiscreteFormVMS_SUPG, 
+  TDiscreteForm3D *&DiscreteFormVMS_SUPG,
+  TDiscreteForm3D *&DiscreteFormLerayAlpha,
   TDiscreteForm3D *&DiscreteFormNLGalerkin,
   TDiscreteForm3D *&DiscreteFormNLUpwind, 
   TDiscreteForm3D *&DiscreteFormNLUpwindNC, 
@@ -1625,6 +1633,7 @@ void InitializeDiscreteForms(
   TDiscreteForm3D *&DiscreteFormNLVMS_ProjectionExpl, 
   TDiscreteForm3D *&DiscreteFormNLVMSRFBExplRhs,
   TDiscreteForm3D *&DiscreteFormNLVMS_SUPG, 
+  TDiscreteForm3D *&DiscreteFormNLLerayAlpha,
   TDiscreteForm3D *&DiscreteFormRHS,
   TDiscreteForm3D *&DiscreteFormRHSClassicalLES,
   TDiscreteForm3D *&DiscreteFormRHSLES,
@@ -1649,6 +1658,7 @@ void InitializeDiscreteForms(
   char nonlinear[] = "nonlinear";
   char all[] = "all";
   char Layton96[] = "Layton96";
+  char Leray[] = "Leray";
 
   DiscreteFormGalerkin = NULL;
   DiscreteFormUpwind = NULL;
@@ -1658,7 +1668,8 @@ void InitializeDiscreteForms(
   DiscreteFormGL00Convolution = NULL; 
   DiscreteFormGL00AuxProblem = NULL; 
   DiscreteFormVMS_Projection = NULL; 
-  DiscreteFormVMS_SUPG = NULL; 
+  DiscreteFormVMS_SUPG = NULL;
+  DiscreteFormLerayAlpha = NULL;
   DiscreteFormNLGalerkin = NULL;
   DiscreteFormNLUpwind = NULL; 
   DiscreteFormNLUpwindNC = NULL; 
@@ -1670,6 +1681,7 @@ void InitializeDiscreteForms(
   DiscreteFormNLVMS_ProjectionExpl = NULL; 
   DiscreteFormNLVMS_SUPG = NULL; 
   DiscreteFormNLVMSRFBExplRhs = NULL;
+  DiscreteFormNLLerayAlpha = NULL;
   DiscreteFormRHS = NULL;
   DiscreteFormRHSClassicalLES = NULL;
   DiscreteFormRHSSUPG = NULL;
@@ -2138,6 +2150,14 @@ void InitializeDiscreteForms(
                   TimeNSType4VMS_ProjectionN_Matrices, TimeNSType4N_Rhs, 
                   TimeNSType4VMS_ProjectionRowSpace, TimeNSType4VMS_ProjectionColumnSpace,
                   TimeNSType4RhsSpace, TimeNSType4VMS_ProjectionStreamlineDD3D, LinCoeffs, NULL);
+        
+          DiscreteFormLerayAlpha=  new TDiscreteForm3D(Leray, all,
+                  TimeNSType4N_Terms, TimeNSType4Derivatives, 
+                  TimeNSType4SpaceNumbers,
+                  TimeNSType4GL00AuxProblemN_Matrices, TimeNSType4N_Rhs, 
+                  TimeNSType4GL00AuxProblemRowSpace, TimeNSType4GL00AuxProblemColumnSpace,
+                  TimeNSType4RhsSpace, TimeNSType4LerayAlphaDD3D, LinCoeffs, NULL);
+
 	      
           DiscreteFormNLGalerkin = new TDiscreteForm3D(GalerkinString, nonlinear,
                   TimeNSType3_4NLN_Terms, TimeNSType3_4NLDerivatives, TimeNSType3_4NLSpaceNumbers,
@@ -2213,6 +2233,12 @@ void InitializeDiscreteForms(
                   TimeNSType3_4NLSmagorinskyN_Matrices, TimeNSType3_4NLN_Rhs, 
                   TimeNSType3_4NLSmagorinskyRowSpace, TimeNSType3_4NLSmagorinskyColumnSpace,
                   TimeNSType3_4NLRhsSpace, TimeNSType3_4NLDivDivDD3D, LinCoeffs, NULL);
+
+          DiscreteFormNLLerayAlpha = new TDiscreteForm3D(GalerkinString, nonlinear,
+                  TimeNSType3_4NLN_Terms, TimeNSType3_4NLDerivatives, TimeNSType3_4NLSpaceNumbers,
+                  TimeNSType3_4NLN_Matrices, TimeNSType3_4NLN_Rhs, 
+                  TimeNSType3_4NLRowSpace, TimeNSType3_4NLColumnSpace,
+                  TimeNSType3_4NLRhsSpace, TimeNSType3_4NLGalerkinDD3D, LinCoeffs, NULL);
          
        // Discrete Forms for Rosenbrock Methods
         DiscreteFormJ = new TDiscreteForm3D(GalerkinString, all,
@@ -2223,20 +2249,18 @@ void InitializeDiscreteForms(
 	  
         break;
       case 14:
-	  /* DiscreteFormVMS_SUPG = new TDiscreteForm3D(Smagorinsky, all,
-                  TimeNSType4VMS_SUPGN_Terms, TimeNSType4VMS_SUPGDerivatives, 
-                  TimeNSType4VMS_SUPGSpaceNumbers,
-                  TimeNSType4VMS_SUPGN_Matrices, TimeNSType4VMS_SUPGN_Rhs, 
-                  TimeNSType4VMS_SUPGRowSpace, TimeNSType4VMS_SUPGColumnSpace,
-                  TimeNSType4VMS_SUPGRhsSpace, TimeNSType4VMS_SUPGDD3D, LinCoeffs, NULL);
-          DiscreteFormNLVMS_SUPG = new TDiscreteForm3D(Smagorinsky, all,
-                  TimeNSType4VMS_SUPGN_Terms, TimeNSType4VMS_SUPGDerivatives, 
-                  TimeNSType4VMS_SUPGSpaceNumbers,
-                  TimeNSType4VMS_SUPGN_Matrices, TimeNSType4NLVMS_SUPGN_Rhs, 
-                  TimeNSType4VMS_SUPGRowSpace, TimeNSType4VMS_SUPGColumnSpace,
-                  TimeNSType4NLVMS_SUPGRhsSpace, TimeNSType4NLVMS_SUPGDD3D, LinCoeffs, NULL);
-	  */
-	  ;
+	      DiscreteFormVMS_SUPG = new TDiscreteForm3D(Smagorinsky, all,
+                  TimeNSType14VMS_SUPGN_Terms, TimeNSType14VMS_SUPGDerivatives, 
+                  TimeNSType14VMS_SUPGSpaceNumbers,
+                  TimeNSType14VMS_SUPGN_Matrices, TimeNSType14VMS_SUPGN_Rhs, 
+                  TimeNSType14VMS_SUPGRowSpace, TimeNSType14VMS_SUPGColumnSpace,
+                  TimeNSType14VMS_SUPGRhsSpace, TimeNSType14VMS_SUPGDD3D, LinCoeffs, NULL);
+        DiscreteFormNLVMS_SUPG = new TDiscreteForm3D(Smagorinsky, all,
+                  TimeNSType14NLVMS_SUPGN_Terms, TimeNSType14NLVMS_SUPGDerivatives, 
+                  TimeNSType14NLVMS_SUPGSpaceNumbers,
+                  TimeNSType14NLVMS_SUPGN_Matrices, TimeNSType14NLVMS_SUPGN_Rhs, 
+                  TimeNSType14NLVMS_SUPGRowSpace, TimeNSType14NLVMS_SUPGColumnSpace,
+                  TimeNSType14NLVMS_SUPGRhsSpace, TimeNSType14NLVMS_SUPGDD3D, LinCoeffs, NULL);
 	  break;
     } // endswitch
   else // Newton's method
@@ -3014,7 +3038,57 @@ void InitializeDiscreteFormsScalar(TDiscreteForm3D *&DiscreteFormMRhs_Galerkin, 
                           SpacesNumbers_Rhs, N_Matrices_Rhs, N_Rhs_Rhs,
                           RowSpace_Rhs, ColumnSpace_Rhs, RhsSpace_Rhs,
                           RhsAssemble, LinCoeff, NULL);
-  
- 
 }
 
+/*
+void InitializeDiscreteFormsOS_ST(
+  TDiscreteForm3D *&DiscreteFormGalerkin,
+  TDiscreteForm3D *&DiscreteFormStiffRhsOS_ST,
+  CoeffFct3D *LinCoeffs, int NSTYPE)
+{
+  char AllString[] = "mass, stiffness, rhs";
+  char StiffRhsString[] = "stiffness, rhs";
+  
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+      DiscreteFormGalerkin = new TDiscreteForm3D(
+        AllString, AllString, TimeOSType1N_Terms,
+        TimeOSType1Derivatives, TimeOSType1SpaceNumbers,
+        TimeOSType1N_Matrices, TimeOSType1N_Rhs, 
+        TimeOSType1RowSpace, TimeOSType1ColumnSpace,
+        TimeOSType1RhsSpace, TimeOSType1Galerkin3D,
+        LinCoeffs, NULL);
+      DiscreteFormStiffRhsOS_ST = new TDiscreteForm3D(
+        StiffRhsString, StiffRhsString, 
+        TimeOSType1_2N_TermsStiffRhs, TimeOSType1_2DerivativesStiffRhs,
+        TimeOSType1_2SpaceNumbersStiffRhs, TimeOSType1_2N_MatricesStiffRhs,
+        TimeOSType1_2N_RhsStiffRhs, TimeOSType1_2RowSpaceStiffRhs,
+        TimeOSType1_2ColumnSpaceStiffRhs, TimeOSType1_2RhsSpaceStiffRhs,
+        TimeOSType1_2StiffRhsAssemble3D, LinCoeffs, NULL);
+      break;
+    case 2:
+      DiscreteFormGalerkin = new TDiscreteForm3D(
+        AllString, AllString, TimeOSType2N_Terms,
+        TimeOSType2Derivatives, TimeOSType2SpaceNumbers,
+        TimeOSType2N_Matrices, TimeOSType2N_Rhs, 
+        TimeOSType2RowSpace, TimeOSType2ColumnSpace,
+        TimeOSType2RhsSpace, TimeOSType2Galerkin3D,
+        LinCoeffs, NULL);
+       
+       DiscreteFormStiffRhsOS_ST = new TDiscreteForm3D(
+        StiffRhsString, StiffRhsString, 
+        TimeOSType1_2N_TermsStiffRhs, TimeOSType1_2DerivativesStiffRhs,
+        TimeOSType1_2SpaceNumbersStiffRhs, TimeOSType1_2N_MatricesStiffRhs,
+        TimeOSType1_2N_RhsStiffRhs, TimeOSType1_2RowSpaceStiffRhs,
+        TimeOSType1_2ColumnSpaceStiffRhs, TimeOSType1_2RhsSpaceStiffRhs,
+        TimeOSType1_2StiffRhsAssemble3D, LinCoeffs, NULL);
+       
+       break;
+    case 4:
+      OutPut("not implemented ");
+      exit(-1);
+    break;
+  }
+}
+*/

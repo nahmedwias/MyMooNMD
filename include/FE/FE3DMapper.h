@@ -60,38 +60,38 @@ class TFE3DMapper
 
     // Methods
     /** return name of mapper */
-    char *GetName()
+    char *GetName() const
     { return Name; }
 
     /** return description of mapper */
-    char *GetDescription()
+    char *GetDescription() const
     { return Description; }
 
     /** return number of degrees on side 0 */
-    int GetN_DOF0()
+    int GetN_DOF0() const
     { return N_DOF0; }
 
     /** return number of degrees on side 1 */
-    int GetN_DOF1()
+    int GetN_DOF1() const
     { return N_DOF1; }
 
     /** return number of degrees on both sides */
-    void GetN_DOF(int &n0, int &n1)
+    void GetN_DOF(int &n0, int &n1) const
     {
       n0 = N_DOF1;
       n1 = N_DOF1;
     }
 
     /** return number of pairs */
-    int GetN_Pairs()
+    int GetN_Pairs() const
     { return N_Pairs; }
 
     /** return pairs of matching dof's */
-    int **GetPairs()
+    int **GetPairs() const
     { return Pairs; }
 
     /** return a pair of matching dof */
-    int *GetPairs(int i)
+    int *GetPairs(int i) const
     { return Pairs[i]; }
 
     /** map the given local degrees of freedom */

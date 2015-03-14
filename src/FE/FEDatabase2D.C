@@ -349,7 +349,23 @@ void TFEDatabase2D::RegisterAllFEDescs()
 
   RegisterFEDesc2D(FE_N_T_P1_2D, FE_N_T_P1_2D_Obj);
   RegisterFEDesc2D(FE_N_Q_Q1_2D, FE_N_Q_Q1_2D_Obj);
+  
+  RegisterFEDesc2D(FE_N_Q_RT0_2D, FE_N_Q_RT0_2D_Obj);
   RegisterFEDesc2D(FE_N_Q_RT1_2D, FE_N_Q_RT1_2D_Obj);
+  RegisterFEDesc2D(FE_N_Q_RT2_2D, FE_N_Q_RT2_2D_Obj);
+  RegisterFEDesc2D(FE_N_Q_RT3_2D, FE_N_Q_RT3_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_RT0_2D, FE_N_T_RT0_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_RT1_2D, FE_N_T_RT1_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_RT2_2D, FE_N_T_RT2_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_RT3_2D, FE_N_T_RT3_2D_Obj);
+
+  RegisterFEDesc2D(FE_N_Q_BDM1_2D, FE_N_Q_BDM1_2D_Obj);
+  RegisterFEDesc2D(FE_N_Q_BDM2_2D, FE_N_Q_BDM2_2D_Obj);
+  RegisterFEDesc2D(FE_N_Q_BDM3_2D, FE_N_Q_BDM3_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_BDM1_2D, FE_N_T_BDM1_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_BDM2_2D, FE_N_T_BDM2_2D_Obj);
+  RegisterFEDesc2D(FE_N_T_BDM3_2D, FE_N_T_BDM3_2D_Obj);
+
   
   RegisterFEDesc2D(FE_D_Q_P1_2D, FE_D_Q_P1_2D_Obj);
   RegisterFEDesc2D(FE_D_Q_P2_2D, FE_D_Q_P2_2D_Obj);
@@ -433,20 +449,13 @@ void TFEDatabase2D::RegisterAllFEDescs()
 
   RegisterFEDesc2D(FE_C_Q_EL1_2D, FE_C_Q_EL1_2D_Obj);
   
+  RegisterFEDesc2D(FE_C_T_SV2_2D, FE_C_T_SV2_2D_Obj);
+  RegisterFEDesc2D(FE_D_T_SV1_2D, FE_D_T_SV1_2D_Obj);
+  
 #ifdef _MPI
   if(rank==out_rank)
 #endif
-  cout << "FE descriptors registered" << endl;  
-
-#ifdef __SCOTT_VOGELIUS__
-  RegisterFEDesc2D(FE_C_T_B2_2D, FE_C_T_SV2_2D_Obj);
-  RegisterFEDesc2D(FE_D_T_P1_2D, FE_D_T_SV1_2D_Obj);
-
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "FEDesc2D for Scott-Vogelius elements" << endl;
-#endif
+  cout << "FE descriptors registered" << endl;
 }
 
 void TFEDatabase2D::RegisterAllBaseFunctions()
@@ -483,11 +492,25 @@ void TFEDatabase2D::RegisterAllBaseFunctions()
   RegisterBaseFunct2D(BF_C_Q_Q7_2D, BF_C_Q_Q7_2D_Obj);
   RegisterBaseFunct2D(BF_C_Q_Q8_2D, BF_C_Q_Q8_2D_Obj);
   RegisterBaseFunct2D(BF_C_Q_Q9_2D, BF_C_Q_Q9_2D_Obj);
+  
+  RegisterBaseFunct2D(BF_N_Q_RT0_2D, BF_N_Q_RT0_2D_Obj);
+  RegisterBaseFunct2D(BF_N_Q_RT1_2D, BF_N_Q_RT1_2D_Obj);
+  RegisterBaseFunct2D(BF_N_Q_RT2_2D, BF_N_Q_RT2_2D_Obj);
+  RegisterBaseFunct2D(BF_N_Q_RT3_2D, BF_N_Q_RT3_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_RT0_2D, BF_N_T_RT0_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_RT1_2D, BF_N_T_RT1_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_RT2_2D, BF_N_T_RT2_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_RT3_2D, BF_N_T_RT3_2D_Obj);
+
+  RegisterBaseFunct2D(BF_N_Q_BDM1_2D, BF_N_Q_BDM1_2D_Obj);
+  RegisterBaseFunct2D(BF_N_Q_BDM2_2D, BF_N_Q_BDM2_2D_Obj);
+  RegisterBaseFunct2D(BF_N_Q_BDM3_2D, BF_N_Q_BDM3_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_BDM1_2D, BF_N_T_BDM1_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_BDM2_2D, BF_N_T_BDM2_2D_Obj);
+  RegisterBaseFunct2D(BF_N_T_BDM3_2D, BF_N_T_BDM3_2D_Obj);
 
   RegisterBaseFunct2D(BF_N_T_P1_2D, BF_N_T_P1_2D_Obj);
   RegisterBaseFunct2D(BF_N_Q_Q1_2D, BF_N_Q_Q1_2D_Obj);
-  
-  RegisterBaseFunct2D(BF_N_Q_RT1_2D, BF_N_Q_RT1_2D_Obj);
   
   RegisterBaseFunct2D(BF_D_Q_P1_2D, BF_D_Q_P1_2D_Obj);
   RegisterBaseFunct2D(BF_D_Q_P2_2D, BF_D_Q_P2_2D_Obj);
@@ -571,21 +594,13 @@ void TFEDatabase2D::RegisterAllBaseFunctions()
 
   RegisterBaseFunct2D(BF_C_Q_EL1_2D, BF_C_Q_EL1_2D_Obj);  
   
+  RegisterBaseFunct2D(BF_C_T_SV2_2D, BF_C_T_SV2_2D_Obj);
+  RegisterBaseFunct2D(BF_D_T_SV1_2D, BF_D_T_SV1_2D_Obj);
+  
 #ifdef _MPI
   if(rank==out_rank)
 #endif
-  cout << "base functions registered" << endl;  
-
-#ifdef __SCOTT_VOGELIUS__
-  RegisterBaseFunct2D(BF_C_T_B2_2D, BF_C_T_SV2_2D_Obj);
-  RegisterBaseFunct2D(BF_D_T_P1_2D, BF_D_T_SV1_2D_Obj);
-
-
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "Base functions for Scott-Vogelius elements" << endl;
-#endif
+  cout << "base functions registered" << endl;
 }
 
 void TFEDatabase2D::RegisterAllNodalFunctionals()
@@ -622,11 +637,25 @@ void TFEDatabase2D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional2D(NF_C_Q_Q7_2D, NF_C_Q_Q7_2D_Obj);
   RegisterNodalFunctional2D(NF_C_Q_Q8_2D, NF_C_Q_Q8_2D_Obj);
   RegisterNodalFunctional2D(NF_C_Q_Q9_2D, NF_C_Q_Q9_2D_Obj);
+  
+  RegisterNodalFunctional2D(NF_N_Q_RT0_2D, NF_N_Q_RT0_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_Q_RT1_2D, NF_N_Q_RT1_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_Q_RT2_2D, NF_N_Q_RT2_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_Q_RT3_2D, NF_N_Q_RT3_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_RT0_2D, NF_N_T_RT0_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_RT1_2D, NF_N_T_RT1_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_RT2_2D, NF_N_T_RT2_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_RT3_2D, NF_N_T_RT3_2D_Obj);
+
+  RegisterNodalFunctional2D(NF_N_Q_BDM1_2D, NF_N_Q_BDM1_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_Q_BDM2_2D, NF_N_Q_BDM2_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_Q_BDM3_2D, NF_N_Q_BDM3_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_BDM1_2D, NF_N_T_BDM1_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_BDM2_2D, NF_N_T_BDM2_2D_Obj);
+  RegisterNodalFunctional2D(NF_N_T_BDM3_2D, NF_N_T_BDM3_2D_Obj);
 
   RegisterNodalFunctional2D(NF_N_T_P1_2D, NF_N_T_P1_2D_Obj);
   RegisterNodalFunctional2D(NF_N_Q_Q1_2D, NF_N_Q_Q1_2D_Obj);
-
-  RegisterNodalFunctional2D(NF_N_Q_RT1_2D, NF_N_Q_RT1_2D_Obj);
   
   RegisterNodalFunctional2D(NF_D_Q_P1_2D, NF_D_Q_P1_2D_Obj);
   RegisterNodalFunctional2D(NF_D_Q_P2_2D, NF_D_Q_P2_2D_Obj);
@@ -712,20 +741,13 @@ void TFEDatabase2D::RegisterAllNodalFunctionals()
  
   RegisterNodalFunctional2D(NF_C_Q_EL1_2D, NF_C_Q_EL1_2D_Obj);
   
+  RegisterNodalFunctional2D(NF_C_T_SV2_2D, NF_C_T_SV2_2D_Obj);
+  RegisterNodalFunctional2D(NF_D_T_SV1_2D, NF_D_T_SV1_2D_Obj);
+  
 #ifdef _MPI
   if(rank==out_rank)
 #endif
   cout << "nodal functionals registered" << endl;
-
-#ifdef __SCOTT_VOGELIUS__
-  RegisterNodalFunctional2D(NF_C_T_B2_2D, NF_C_T_SV2_2D_Obj);
-  RegisterNodalFunctional2D(NF_D_T_P1_2D, NF_D_T_SV1_2D_Obj);
-
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "Nodal functionals for Scott-Vogelius elements" << endl;
-#endif
 }
 
 void TFEDatabase2D::RegisterAllFEs()
@@ -780,12 +802,16 @@ void TFEDatabase2D::RegisterAllFEs()
   RegisterFE2D(N_P1_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_C_T_B2_2D, NF_C_T_B2_2D, TriaAffin, FE_C_T_B2_2D, 0);
   RegisterFE2D(C_B2_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_C_T_SV2_2D, NF_C_T_SV2_2D, TriaAffin, FE_C_T_SV2_2D, 0);
+  RegisterFE2D(C_SV2_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_C_T_B3_2D, NF_C_T_B3_2D, TriaAffin, FE_C_T_B3_2D, 0);
   RegisterFE2D(C_B3_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_C_T_B4_2D, NF_C_T_B4_2D, TriaAffin, FE_C_T_B4_2D, 0);
   RegisterFE2D(C_B4_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_D_T_P1_2D, NF_D_T_P1_2D, TriaAffin, FE_D_T_P1_2D, 0);
   RegisterFE2D(D_P1_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_D_T_SV1_2D, NF_D_T_SV1_2D, TriaAffin, FE_D_T_SV1_2D, 0);
+  RegisterFE2D(D_SV1_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_D_T_P2_2D, NF_D_T_P2_2D, TriaAffin, FE_D_T_P2_2D, 0);
   RegisterFE2D(D_P2_2D_T_A, ele2D);
 
@@ -810,6 +836,22 @@ void TFEDatabase2D::RegisterAllFEs()
   RegisterFE2D(D_P3_2D_T_A, ele2D);
   ele2D = new TFE2D(BF_D_T_P4_2D, NF_D_T_P4_2D, TriaAffin, FE_D_T_P4_2D, 0);
   RegisterFE2D(D_P4_2D_T_A, ele2D);
+  
+  ele2D = new TFE2D(BF_N_T_RT0_2D, NF_N_T_RT0_2D, TriaAffin, FE_N_T_RT0_2D, 0);
+  RegisterFE2D(N_RT0_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_N_T_RT1_2D, NF_N_T_RT1_2D, TriaAffin, FE_N_T_RT1_2D, 0);
+  RegisterFE2D(N_RT1_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_N_T_RT2_2D, NF_N_T_RT2_2D, TriaAffin, FE_N_T_RT2_2D, 0);
+  RegisterFE2D(N_RT2_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_N_T_RT3_2D, NF_N_T_RT3_2D, TriaAffin, FE_N_T_RT3_2D, 0);
+  RegisterFE2D(N_RT3_2D_T_A, ele2D);
+
+  ele2D = new TFE2D(BF_N_T_BDM1_2D, NF_N_T_BDM1_2D, TriaAffin, FE_N_T_BDM1_2D, 0);
+  RegisterFE2D(N_BDM1_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_N_T_BDM2_2D, NF_N_T_BDM2_2D, TriaAffin, FE_N_T_BDM2_2D, 0);
+  RegisterFE2D(N_BDM2_2D_T_A, ele2D);
+  ele2D = new TFE2D(BF_N_T_BDM3_2D, NF_N_T_BDM3_2D, TriaAffin, FE_N_T_BDM3_2D, 0);
+  RegisterFE2D(N_BDM3_2D_T_A, ele2D);
 
   //========LOCALPROJECTION==============
   ele2D = new TFE2D(BF_C_T_UL1_2D,NF_C_T_UL1_2D, TriaAffin, FE_C_T_UL1_2D, 0);
@@ -852,11 +894,24 @@ void TFEDatabase2D::RegisterAllFEs()
   ele2D = new TFE2D(BF_C_Q_Q9_2D, NF_C_Q_Q9_2D, QuadAffin, FE_C_Q_Q9_2D, 0);
   RegisterFE2D(C_Q9_2D_Q_A, ele2D);
 
-  ele2D = new TFE2D(BF_N_Q_Q1_2D, NF_N_Q_Q1_2D, QuadAffin, FE_N_Q_Q1_2D, 0);
-  RegisterFE2D(N_Q1_2D_Q_A, ele2D);
-
+  ele2D = new TFE2D(BF_N_Q_RT0_2D, NF_N_Q_RT0_2D, QuadAffin, FE_N_Q_RT0_2D, 0);
+  RegisterFE2D(N_RT0_2D_Q_A, ele2D);
   ele2D = new TFE2D(BF_N_Q_RT1_2D, NF_N_Q_RT1_2D, QuadAffin, FE_N_Q_RT1_2D, 0);
   RegisterFE2D(N_RT1_2D_Q_A, ele2D);
+  ele2D = new TFE2D(BF_N_Q_RT2_2D, NF_N_Q_RT2_2D, QuadAffin, FE_N_Q_RT2_2D, 0);
+  RegisterFE2D(N_RT2_2D_Q_A, ele2D);
+  ele2D = new TFE2D(BF_N_Q_RT3_2D, NF_N_Q_RT3_2D, QuadAffin, FE_N_Q_RT3_2D, 0);
+  RegisterFE2D(N_RT3_2D_Q_A, ele2D);
+  
+  ele2D = new TFE2D(BF_N_Q_BDM1_2D, NF_N_Q_BDM1_2D, QuadAffin, FE_N_Q_BDM1_2D, 0);
+  RegisterFE2D(N_BDM1_2D_Q_A, ele2D);
+  ele2D = new TFE2D(BF_N_Q_BDM2_2D, NF_N_Q_BDM2_2D, QuadAffin, FE_N_Q_BDM2_2D, 0);
+  RegisterFE2D(N_BDM2_2D_Q_A, ele2D);
+  ele2D = new TFE2D(BF_N_Q_BDM3_2D, NF_N_Q_BDM3_2D, QuadAffin, FE_N_Q_BDM3_2D, 0);
+  RegisterFE2D(N_BDM3_2D_Q_A, ele2D);
+  
+  ele2D = new TFE2D(BF_N_Q_Q1_2D, NF_N_Q_Q1_2D, QuadAffin, FE_N_Q_Q1_2D, 0);
+  RegisterFE2D(N_Q1_2D_Q_A, ele2D);
   
   ele2D = new TFE2D(BF_D_Q_P1_2D, NF_D_Q_P1_2D, QuadAffin, FE_D_Q_P1_2D, 0);
   RegisterFE2D(D_P1_2D_Q_A, ele2D);
@@ -987,13 +1042,27 @@ void TFEDatabase2D::RegisterAllFEs()
   RegisterFE2D(C_Q8_2D_Q_M, ele2D);
   ele2D = new TFE2D(BF_C_Q_Q9_2D, NF_C_Q_Q9_2D, QuadBilinear, FE_C_Q_Q9_2D, 0);
   RegisterFE2D(C_Q9_2D_Q_M, ele2D);
+  
+  // Raviart-Thomas elements (RT)
+  ele2D = new TFE2D(BF_N_Q_RT0_2D, NF_N_Q_RT0_2D, QuadBilinear, FE_N_Q_RT0_2D, 0);
+  RegisterFE2D(N_RT0_2D_Q_M, ele2D);
+  ele2D = new TFE2D(BF_N_Q_RT1_2D, NF_N_Q_RT1_2D, QuadBilinear, FE_N_Q_RT1_2D, 0);
+  RegisterFE2D(N_RT1_2D_Q_M, ele2D);
+  ele2D = new TFE2D(BF_N_Q_RT2_2D, NF_N_Q_RT2_2D, QuadBilinear, FE_N_Q_RT2_2D, 0);
+  RegisterFE2D(N_RT2_2D_Q_M, ele2D);
+  ele2D = new TFE2D(BF_N_Q_RT3_2D, NF_N_Q_RT3_2D, QuadBilinear, FE_N_Q_RT3_2D, 0);
+  RegisterFE2D(N_RT3_2D_Q_M, ele2D);
+  // Brezzi-Douglas-Marini elements (BDM)
+  ele2D = new TFE2D(BF_N_Q_BDM1_2D, NF_N_Q_BDM1_2D, QuadBilinear, FE_N_Q_BDM1_2D, 0);
+  RegisterFE2D(N_BDM1_2D_Q_M, ele2D);
+  ele2D = new TFE2D(BF_N_Q_BDM2_2D, NF_N_Q_BDM2_2D, QuadBilinear, FE_N_Q_BDM2_2D, 0);
+  RegisterFE2D(N_BDM2_2D_Q_M, ele2D);
+  ele2D = new TFE2D(BF_N_Q_BDM3_2D, NF_N_Q_BDM3_2D, QuadBilinear, FE_N_Q_BDM3_2D, 0);
+  RegisterFE2D(N_BDM3_2D_Q_M, ele2D);
 
   ele2D = new TFE2D(BF_N_Q_Q1_2D, NF_N_Q_Q1_2D, QuadBilinear, FE_N_Q_Q1_2D, 0);
   RegisterFE2D(N_Q1_2D_Q_M, ele2D);
 
-  ele2D = new TFE2D(BF_N_Q_RT1_2D, NF_N_Q_RT1_2D, QuadBilinear, FE_N_Q_RT1_2D, 0);
-  RegisterFE2D(N_RT1_2D_Q_M, ele2D);
-  
   ele2D = new TFE2D(BF_D_Q_P1_2D, NF_D_Q_P1_2D, QuadBilinear, FE_D_Q_P1_2D, 0);
   RegisterFE2D(D_P1_2D_Q_M, ele2D);
   ele2D = new TFE2D(BF_D_Q_P2_2D, NF_D_Q_P2_2D, QuadBilinear, FE_D_Q_P2_2D, 0);
@@ -1152,6 +1221,12 @@ void TFEDatabase2D::RegisterAllFEMappers()
   RegisterFE2DMapper(FE_C_T_P2_2D,FE_C_T_B2_2D,C2_2_C2_2);
   RegisterFE2DMapper(FE_C_Q_Q2_2D,FE_C_T_B2_2D,C2_2_C2_2);
   RegisterFE2DMapper(FE_C_T_B2_2D,FE_C_T_B2_2D,C2_2_C2_2);
+  
+  RegisterFE2DMapper(FE_C_T_SV2_2D,FE_C_T_P2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_C_T_SV2_2D,FE_C_Q_Q2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_C_T_P2_2D,FE_C_T_SV2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_C_Q_Q2_2D,FE_C_T_SV2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_C_T_SV2_2D,FE_C_T_SV2_2D,C2_2_C2_2);
 
   RegisterFE2DMapper(FE_C_T_P3_2D,FE_C_T_P3_2D,C3_2_C3_2);
   RegisterFE2DMapper(FE_C_T_P3_2D,FE_C_Q_Q3_2D,C3_2_C3_2);
@@ -1206,15 +1281,30 @@ void TFEDatabase2D::RegisterAllFEMappers()
   RegisterFE2DMapper(FE_C_Q_Q9_2D,FE_C_T_P9_2D,C9_2_C9_2);
   RegisterFE2DMapper(FE_C_Q_Q9_2D,FE_C_Q_Q9_2D,C9_2_C9_2);
 
+  RegisterFE2DMapper(FE_N_T_RT0_2D,FE_N_T_RT0_2D,N1_2_N1_2);
+  RegisterFE2DMapper(FE_N_T_RT0_2D,FE_N_Q_RT0_2D,N1_2_N1_2);
+  RegisterFE2DMapper(FE_N_T_RT1_2D,FE_N_T_RT1_2D,C1_2_C1_2);
+  RegisterFE2DMapper(FE_N_T_RT2_2D,FE_N_T_RT2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_N_T_RT3_2D,FE_N_T_RT3_2D,C3_2_C3_2);
+  
+  RegisterFE2DMapper(FE_N_T_BDM1_2D,FE_N_T_BDM1_2D,C1_2_C1_2);
+  RegisterFE2DMapper(FE_N_T_BDM2_2D,FE_N_T_BDM2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_N_T_BDM3_2D,FE_N_T_BDM3_2D,C3_2_C3_2);
+
+  RegisterFE2DMapper(FE_N_Q_RT0_2D,FE_N_Q_RT0_2D,N1_2_N1_2);
+  RegisterFE2DMapper(FE_N_Q_Q1_2D,FE_N_T_RT0_2D,N1_2_N1_2);
+  RegisterFE2DMapper(FE_N_Q_RT1_2D,FE_N_Q_RT1_2D,C1_2_C1_2);
+  RegisterFE2DMapper(FE_N_Q_RT2_2D,FE_N_Q_RT2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_N_Q_RT3_2D,FE_N_Q_RT3_2D,C3_2_C3_2);
+  
+  RegisterFE2DMapper(FE_N_Q_BDM1_2D,FE_N_Q_BDM1_2D,C1_2_C1_2);
+  RegisterFE2DMapper(FE_N_Q_BDM2_2D,FE_N_Q_BDM2_2D,C2_2_C2_2);
+  RegisterFE2DMapper(FE_N_Q_BDM3_2D,FE_N_Q_BDM3_2D,C3_2_C3_2);
+  
   RegisterFE2DMapper(FE_N_T_P1_2D,FE_N_T_P1_2D,N1_2_N1_2);
   RegisterFE2DMapper(FE_N_T_P1_2D,FE_N_Q_Q1_2D,N1_2_N1_2);
   RegisterFE2DMapper(FE_N_Q_Q1_2D,FE_N_T_P1_2D,N1_2_N1_2);
   RegisterFE2DMapper(FE_N_Q_Q1_2D,FE_N_Q_Q1_2D,N1_2_N1_2);
-
-//   RegisterFE2DMapper(FE_N_T_RT1_2D,FE_N_T_RT1_2D,N1_2_N1_2); // Not yet implemented
-//   RegisterFE2DMapper(FE_N_T_RT1_2D,FE_N_Q_RT1_2D,N1_2_N1_2);
-//   RegisterFE2DMapper(FE_N_Q_Q1_2D,FE_N_T_RT1_2D,N1_2_N1_2);
-  RegisterFE2DMapper(FE_N_Q_RT1_2D,FE_N_Q_RT1_2D,N1_2_N1_2);
   
   RegisterFE2DMapper(FE_D_Q_P1_2D,FE_D_Q_P1_2D,C0_2_C0_2); // ==== //
   RegisterFE2DMapper(FE_D_T_P1_2D,FE_D_T_P1_2D,C0_2_C0_2); // ==== //
@@ -1373,6 +1463,12 @@ void TFEDatabase2D::RegisterAllFEMappers()
   RegisterFE2DMapper1Reg(FE_C_T_P2_2D,FE_C_T_B2_2D,C2_2_C2_2_1Reg);
   RegisterFE2DMapper1Reg(FE_C_Q_Q2_2D,FE_C_T_B2_2D,C2_2_C2_2_1Reg);
   RegisterFE2DMapper1Reg(FE_C_T_B2_2D,FE_C_T_B2_2D,C2_2_C2_2_1Reg);
+  
+  RegisterFE2DMapper1Reg(FE_C_T_SV2_2D,FE_C_T_P2_2D,C2_2_C2_2_1Reg);
+  RegisterFE2DMapper1Reg(FE_C_T_SV2_2D,FE_C_Q_Q2_2D,C2_2_C2_2_1Reg);
+  RegisterFE2DMapper1Reg(FE_C_T_P2_2D,FE_C_T_SV2_2D,C2_2_C2_2_1Reg);
+  RegisterFE2DMapper1Reg(FE_C_Q_Q2_2D,FE_C_T_SV2_2D,C2_2_C2_2_1Reg);
+  RegisterFE2DMapper1Reg(FE_C_T_SV2_2D,FE_C_T_SV2_2D,C2_2_C2_2_1Reg);
 
   RegisterFE2DMapper1Reg(FE_C_T_P3_2D,FE_C_T_P3_2D,C3_2_C3_2_1Reg);
   RegisterFE2DMapper1Reg(FE_C_T_P3_2D,FE_C_Q_Q3_2D,C3_2_C3_2_1Reg);
@@ -1436,7 +1532,10 @@ void TFEDatabase2D::RegisterAllFEMappers()
   RegisterFE2DMapper1Reg(FE_D_T_P1_2D,FE_D_T_P1_2D,C0_2_C0_2_1Reg); // ==== //
   RegisterFE2DMapper1Reg(FE_D_T_P1_2D,FE_D_Q_P1_2D,C0_2_C0_2_1Reg); // ==== //
   RegisterFE2DMapper1Reg(FE_D_Q_P1_2D,FE_D_T_P1_2D,C0_2_C0_2_1Reg); // ==== //
-
+  
+  RegisterFE2DMapper1Reg(FE_D_T_SV1_2D,FE_D_T_SV1_2D,C0_2_C0_2_1Reg); // ==== //
+  RegisterFE2DMapper1Reg(FE_D_T_SV1_2D,FE_D_Q_P1_2D,C0_2_C0_2_1Reg); // ==== //
+  RegisterFE2DMapper1Reg(FE_D_Q_P1_2D,FE_D_T_SV1_2D,C0_2_C0_2_1Reg); // ==== //
   RegisterFE2DMapper1Reg(FE_D_Q_P2_2D,FE_D_Q_P2_2D,C0_2_C0_2_1Reg); // ==== //
   RegisterFE2DMapper1Reg(FE_D_T_P2_2D,FE_D_T_P2_2D,C0_2_C0_2_1Reg); // ==== //
   RegisterFE2DMapper1Reg(FE_D_T_P2_2D,FE_D_Q_P2_2D,C0_2_C0_2_1Reg); // ==== //
@@ -1623,8 +1722,9 @@ void TFEDatabase2D::GenerateArrays()
   QFTriaFromDegree[19] = Degree19Tria;
 
   QFTriaFromDegree[20] = Gauss_Degree8Tria;
-
-  HighestAccuracyTria = 19;
+  // Scott-Vogelius
+  QFTriaFromDegree[21] = CompGauss3Tria;
+  HighestAccuracyTria = 21;
 
   QFLineFromDegree[0] = Gauss1Line;
   QFLineFromDegree[1] = Gauss1Line;
@@ -1670,7 +1770,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
                           double* &weights, double* X, double* Y,
                           double* absdetjk)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Edges;
+  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Edges, N_terms;
   BF2DRefElements RefElement;
   QuadFormula2D QuadFormula;
   TQuadFormula2D *qf2;
@@ -1687,6 +1787,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
   double **origvaluesD00, **origvaluesD10, **origvaluesD01;
   double **origvaluesD20, **origvaluesD11, **origvaluesD02;
   int N_Functs;
+  int BaseVectDim = 1;
 
 #ifdef _MPI
   int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
@@ -1728,12 +1829,22 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       MaxApproxOrder = (ABS(TDatabase::ParamDB->VELOCITY_SPACE))%10;
     // cout << "MaxApproxOrder: " << MaxApproxOrder << endl;
   }
+  
+  // number of terms in products that need to be assembled
+  if (TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR)
+    N_terms = 2;
+  else
+    N_terms = 3;
 
   switch(RefElement)
   {
     case BFUnitSquare:
-      QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(3*MaxPolynomialDegree);
+      QuadFormula = TFEDatabase2D::GetQFQuadFromDegree(N_terms*MaxPolynomialDegree);
       
+      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
+      {
+        QuadFormula = GetQFQuadFromDegree(3);
+      }
       if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
       {
 	  QuadFormula = GetQFQuadFromDegree(18);
@@ -1746,7 +1857,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       {
 	  QuadFormula = GetQFQuadFromDegree(18);
       }
-      if (TDatabase::ParamDB->INTERNAL_QUAD_QUAD<3*MaxPolynomialDegree)
+      if (TDatabase::ParamDB->INTERNAL_QUAD_QUAD<N_terms*MaxPolynomialDegree)
       {
        #ifdef _MPI
        if(rank==out_rank)
@@ -1776,6 +1887,10 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
             OutPut("Quadrature formula for quadrilateral is Gauss9" << endl); 
             break;
         }
+        if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
+      {
+        OutPut("Quadrature formula for quadrilateral is Gauss3" << endl); 
+      }
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
 	{
 	    OutPut("Quadrature formula for quadrilateral is set to Gauss9" << endl); 
@@ -1791,7 +1906,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
         }
 
 
-        TDatabase::ParamDB->INTERNAL_QUAD_QUAD = 3*MaxPolynomialDegree;
+        TDatabase::ParamDB->INTERNAL_QUAD_QUAD = N_terms*MaxPolynomialDegree;
 	TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE = 4;
       }
       N_Edges = 4;
@@ -1799,7 +1914,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
 
     case BFUnitTriangle:
       if (MaxPolynomialDegree>0)
-	  QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(3*MaxPolynomialDegree-1);
+	  QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(N_terms*MaxPolynomialDegree-1);
       else
           QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(0);
       // more accurate quad rule for JohnMaubachTobiska1997.h
@@ -1820,14 +1935,18 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
       {
 	  QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(20);
       }
+      if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == -22)
+      {
+    QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(21);
+      }
       //   QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(5);
-      if (TDatabase::ParamDB->INTERNAL_QUAD_TRIA<3*MaxPolynomialDegree)
+      if (TDatabase::ParamDB->INTERNAL_QUAD_TRIA<N_terms*MaxPolynomialDegree)
       {
        #ifdef _MPI
        if(rank==0)
        #endif
        {
-        switch(3*MaxPolynomialDegree)
+        switch(N_terms*MaxPolynomialDegree)
         {
           case 3:
             OutPut("Quadrature formula for triangles is MidPointTria" << endl); 
@@ -1849,7 +1968,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
             break;
          }
         }
-        TDatabase::ParamDB->INTERNAL_QUAD_TRIA = 3*MaxPolynomialDegree;
+        TDatabase::ParamDB->INTERNAL_QUAD_TRIA = N_terms*MaxPolynomialDegree;
 	TDatabase::ParamDB->INTERNAL_MESH_CELL_TYPE = 3;
 
         #ifdef _MPI
@@ -2036,21 +2155,21 @@ void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
 {
   TRefTrans2D *rt;
   int N_BaseFunct = bf->GetDimension();
-
+  int BaseVectDim = bf->GetBaseVectDim();
   rt = ReferenceTrans2D[RefTrans];
   switch(RefTrans)
   {
     case TriaAffin: 
       ((TTriaAffin *)rt)->GetOrigValues(xi, eta, N_BaseFunct, 
-                  uref, uxiref, uetaref, uorig, uxorig, uyorig);
+                  uref, uxiref, uetaref, uorig, uxorig, uyorig, BaseVectDim);
       break;
     case QuadAffin:
        ((TQuadAffin *)rt)->GetOrigValues(xi, eta, N_BaseFunct, 
-                  uref, uxiref, uetaref, uorig, uxorig, uyorig);
+                  uref, uxiref, uetaref, uorig, uxorig, uyorig, BaseVectDim);
       break;
     case QuadBilinear:
       ((TQuadBilinear *)rt)->GetOrigValues(xi, eta, N_BaseFunct, 
-                  uref, uxiref, uetaref, uorig, uxorig, uyorig);
+                  uref, uxiref, uetaref, uorig, uxorig, uyorig, BaseVectDim);
       break;
     case TriaIsoparametric: 
       ((TTriaIsoparametric *)rt)->GetOrigValues(xi, eta, N_BaseFunct, 
@@ -2068,6 +2187,47 @@ void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
   bf->ChangeBF(Coll, cell, uorig);
   bf->ChangeBF(Coll, cell, uxorig);
   bf->ChangeBF(Coll, cell, uyorig);
+}
+
+void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
+                                  double zeta, TBaseFunct2D *bf, int edgeNumber,
+                                  double *uref, double *uxiref, double *uetaref,
+                                  double *uorig, double *uxorig, double *uyorig)
+{
+  TRefTrans2D *rt;
+  int N_BaseFunct = bf->GetDimension();
+  int BaseVectDim = bf->GetBaseVectDim();
+  rt = ReferenceTrans2D[RefTrans];
+  switch(RefTrans)
+  {
+    case TriaAffin:
+      ((TTriaAffin *)rt)->GetOrigValues(edgeNumber, zeta, N_BaseFunct,
+          uref, uxiref, uetaref,
+          uorig, uxorig, uyorig,
+          BaseVectDim);
+      break;
+    case QuadAffin:
+      ((TQuadAffin *)rt)->GetOrigValues(edgeNumber, zeta, N_BaseFunct,
+          uref, uxiref, uetaref,
+          uorig, uxorig, uyorig,
+          BaseVectDim);
+      break;
+    case QuadBilinear:
+      ((TQuadBilinear *)rt)->GetOrigValues(edgeNumber, zeta, N_BaseFunct,
+          uref, uxiref, uetaref, uorig, uxorig, uyorig, BaseVectDim);
+      break;
+    case TriaIsoparametric:
+      ((TTriaIsoparametric *)rt)->GetOrigValues(edgeNumber, zeta, N_BaseFunct,
+          uref, uxiref, uetaref, uorig, uxorig, uyorig);
+      break;
+    case QuadIsoparametric:
+      ((TQuadIsoparametric *)rt)->GetOrigValues(edgeNumber, zeta, N_BaseFunct,
+          uref, uxiref, uetaref, uorig, uxorig, uyorig);
+      break;
+    default:
+      cout << "wrong reference transformation identifier" << endl;
+      break;
+    }                                               // endswitch
 }
 
 void TFEDatabase2D::GetOrigFromRef(RefTrans2D RefTrans, int n_points, 
@@ -2232,6 +2392,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
           break;
         default:
           F_K = TriaAffin;
+          break;
       }
       TFEDatabase2D::GetOrigFromRef(F_K, N_Points, xi, eta,
                                   X, Y, AbsDetjk);
@@ -2542,3 +2703,21 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
 
   return ret;
 }
+
+QuadFormula2D TFEDatabase2D::GetQFFromDegree(int accuracy, 
+                                             BF2DRefElements RefElem)
+{
+  switch(RefElem)
+  {
+    case BFUnitSquare:
+      return GetQFQuadFromDegree(accuracy);
+      break;
+    case BFUnitTriangle:
+      return GetQFTriaFromDegree(accuracy);
+      break;
+    default:
+      ErrMsg("unknown reference element");
+      exit(0);
+  }
+};
+

@@ -106,20 +106,37 @@ class TDiscreteForm2D
 
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+                       double hK, double *X, double *Y,
+                       int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
+                       double **Parameters, double **AuxArray,
+                       TBaseCell *Cell, int N_Matrices, int N_Rhs,
+                       double ***LocMatrix, double **LocRhs,
+                       double factor = 1.);
+    
+    /** assemble local matrices and right hand sides 
+     * 
+     * This is a simplified version of the above GetLocalForms(...).
+     */
+    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
                         double hK, double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                        double **Parameters, double **AuxArray,
-                        TBaseCell *Cell,
-                        int N_Matrices, int N_Rhs,
-                        double ***LocMatrix, double **LocRhs);
+                        TBaseCell *Cell,double ***LocMatrix, double **LocRhs);
 
     /** return array Needs2ndDerivatives */
-    bool *GetNeeds2ndDerivatives()
+    bool *GetNeeds2ndDerivatives() const
     { return Needs2ndDerivatives; };
 
     /** function for calculating the coefficients */
-    CoeffFct2D *GetCoeffFct()
+    CoeffFct2D *GetCoeffFct() const
     { return Coeffs; }
+    
+    /** return the index of the row space of the i-th matrix */
+    int rowSpaceOfMat(int i) const
+    { return RowSpace[i]; }
+    
+    /** return the index of the column space of the i-th matrix */
+    int colSpaceOfMat(int i) const
+    { return ColumnSpace[i]; }
 };
 
 /******************************************************************************/
@@ -256,6 +273,9 @@ void InitializeDiscreteForms_SSMUM(
   TDiscreteForm2D *&DiscreteFormRHS1,
   CoeffFct2D *LinCoeffs);
 
+void InitializeDiscreteFormsCDAdapt2D(TDiscreteForm2D **DiscreteForms,
+              CoeffFct2D *BilinearCoeffs);
+
 void  InitializeDiscreteForms_Moving(TDiscreteForm2D *&DiscreteFormGalerkin, TDiscreteForm2D *&DiscreteFormNLGalerkin,
                                   TDiscreteForm2D *&DiscreteFormGrid, CoeffFct2D *LinCoeffs, CoeffFct2D *GridCoeffs);
 
@@ -276,6 +296,8 @@ void InitializeDiscreteForms_2PhaseAxial3D(
   TDiscreteForm2D *&DiscreteFormRHS,
   TDiscreteForm2D *&DiscreteFormGrid,
   CoeffFct2D *LinCoeffs, CoeffFct2D *GridCoeffs, int NSTYPE);
+
+
 
 #endif
 

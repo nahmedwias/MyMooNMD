@@ -595,6 +595,11 @@ class TFEDatabase2D
                 TCollection *Coll, TGridCell *cell,
                 double *uref, double *uxiref, double *uetaref,
                 double *uorig, double *uxorig, double *uyorig);
+    
+    static void GetOrigValues(RefTrans2D RefTrans,
+                              double zeta, TBaseFunct2D *bf, int edgeNumber,
+                              double *uref, double *uxiref, double *uetaref,
+                              double *uorig, double *uxorig, double *uyorig);
 
 //======================================================================
 //      reference transformation 2D
@@ -677,6 +682,10 @@ class TFEDatabase2D
       else
         return QFQuadFromDegree[HighestAccuracyQuad];
     };
+    
+    /** get quadrature formula on given reference element */
+    static QuadFormula2D GetQFFromDegree(int accuracy, BF2DRefElements RefElem);
+
 
 //======================================================================
 //      QuadFormula3D

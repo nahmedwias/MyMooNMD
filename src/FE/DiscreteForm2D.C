@@ -36,8 +36,10 @@
 #include <TCD2D.h>
 
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 #include <ConvDiff2D.h>
 #endif
+
 
 /** constructor with vector initialization */
 TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
@@ -101,12 +103,13 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
   #endif 
+  if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-  cout << "---------------------" << endl;
-  cout << "number of spaces: " << N_Spaces << endl;
-  for(i=0;i<N_Spaces;i++)
-    cout << i << " " << Needs2ndDerivatives[i] << endl;
-  cout << "---------------------" << endl;
+    cout << "---------------------" << endl;
+    cout << "number of spaces: " << N_Spaces << endl;
+    for(i=0;i<N_Spaces;i++)
+      cout << i << " " << Needs2ndDerivatives[i] << endl;
+    cout << "---------------------" << endl;
   }
 
 }
@@ -173,12 +176,13 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
 
   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
   #endif 
-  {    
-  cout << "---------------------" << endl;
-  cout << "number of spaces: " << N_Spaces << endl;
-  for(i=0;i<N_Spaces;i++)
-    cout << i << " " << Needs2ndDerivatives[i] << endl;
-  cout << "---------------------" << endl;
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+  {
+    cout << "---------------------" << endl;
+    cout << "number of spaces: " << N_Spaces << endl;
+    for(i=0;i<N_Spaces;i++)
+      cout << i << " " << Needs2ndDerivatives[i] << endl;
+    cout << "---------------------" << endl;
   }
 }
 
@@ -192,13 +196,13 @@ TDiscreteForm2D::~TDiscreteForm2D()
 }
 
 void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights, 
-                        double *AbsDetjk, double hK, 
-                        double *X, double *Y,
-                        int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                        double **Parameters, double **AuxArray,
-                        TBaseCell *Cell,
-                        int n_matrices, int n_rhs,
-                        double ***LocMatrix, double **LocRhs)
+                                    double *AbsDetjk, double hK, 
+                                    double *X, double *Y,
+                                    int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
+                                    double **Parameters, double **AuxArray,
+                                    TBaseCell *Cell, int n_matrices, int n_rhs,
+                                    double ***LocMatrix, double **LocRhs,
+                                    double factor)
 {
   int i,j,k,l, N_Rows, N_Columns;
   double **CurrentMatrix, *MatrixRow;
@@ -244,7 +248,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
 
   for(i=0;i<N_Points;i++)
   {
-    Mult = weights[i]*AbsDetjk[i];
+    Mult = weights[i] * AbsDetjk[i] * factor;
     Coeff = AuxArray[i];
     Coeff[19] = AbsDetjk[i];
     
@@ -270,7 +274,52 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
       AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, 
                     LocMatrix, LocRhs);
   } // endfor i
+}
 
+void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights, 
+                        double *AbsDetjk, double hK, 
+                        double *X, double *Y,
+                        int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
+                        TBaseCell *Cell,
+                        double ***LocMatrix, double **LocRhs)
+{
+  double Mult;
+  double *Coefficients[N_Points];
+  double *aux = new double [N_Points*20]; // do not change below 20
+  for(int j=0;j<N_Points;j++)
+    Coefficients[j] = aux + j*20;
+  
+  if(Coeffs)
+    Coeffs(N_Points, X, Y, NULL, Coefficients);
+
+  if(Manipulate)
+    Manipulate(N_Points, Coefficients, NULL, Cell);
+  for(int j=0;j<N_Terms;j++)
+  {
+    AllOrigValues[j] = 
+      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]], 
+                                        Derivatives[j]);
+  }
+  
+  for(int i=0;i<N_Points;i++)
+  {
+ 
+    Mult = weights[i]*AbsDetjk[i];
+    Coefficients[i][19] = AbsDetjk[i];
+    
+    for(int j=0;j<N_Terms;j++) {
+       OrigValues[j] = AllOrigValues[j][i];
+    }
+
+ 
+    if(Assemble)
+      Assemble(Mult, Coefficients[i], hK, OrigValues, N_BaseFuncts, 
+               LocMatrix, LocRhs);
+    if(AssembleParam)
+      AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts, 
+                    LocMatrix, LocRhs);
+  } // endfor i
+  delete [] aux;
 }
 
 /******************************************************************************/
@@ -283,7 +332,539 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
 #ifdef __2D__
 
 
-void InitializeDiscreteFormsScalar(TDiscreteForm2D *&DiscreteFormMatrixMRhs, TDiscreteForm2D *&DiscreteFormMatrixARhs, TDiscreteForm2D *&DiscreteFormMatrixMRhs_SUPG, TDiscreteForm2D *&DiscreteFormMatrixARhs_SUPG, CoeffFct2D *LinCoeffs)
+
+// part for standard Galerkin
+int N_Terms = 3;
+MultiIndex2D Derivatives[3] = { D10, D01, D00 };
+int SpacesNumbers[3] = { 0, 0, 0 };
+
+// part for SDFEM
+int N_Terms_SD = 5;
+MultiIndex2D Derivatives_SD[5] = { D10, D01, D00, D20, D02 };
+int SpacesNumbers_SD[5] = { 0, 0, 0, 0, 0 };
+
+// part for UPWIND with lumping of reaction term and rhs
+int N_Terms_UPW1 = 2;
+MultiIndex2D Derivatives_UPW1[2] = { D10, D01 };
+int SpacesNumbers_UPW1[2] = { 0, 0 };
+
+// part for UPWIND without lumping of reaction term and rhs
+int N_Terms_UPW2 = 3;
+MultiIndex2D Derivatives_UPW2[3] = { D10, D01, D00 };
+int SpacesNumbers_UPW2[3] = { 0, 0, 0 };
+
+// part for rhs
+int N_Terms_rhs = 1;
+MultiIndex2D Derivatives_rhs[1] = { D00 };
+int SpacesNumbers_rhs[1] = { 0 };
+
+// part for all
+int CD_N_Matrices = 1;
+int CD_RowSpace[1] = { 0 };
+int CD_ColumnSpace[1] = { 0 };
+int CD_N_Rhs = 1;
+int CD_RhsSpace[1] = { 0 };
+
+MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+MultiIndex2D ZeroDerivative[1] = { D00};
+
+// part for all
+int N_Matrices = 1;
+int RowSpace[1] = { 0 };
+int ColumnSpace[1] = { 0 };
+int N_Rhs = 1;
+int RhsSpace[1] = { 0 };
+
+
+// parameters for DC/CD shock capturing scheme
+void DC_CD_Params(double *in, double *out);
+
+
+
+// parameters: velocity field
+void Params_Velo(double *in, double *out);
+
+
+int DC_CD_N_FESpaces = 1;
+int DC_CD_N_Fct = 2;
+int DC_CD_N_ParamFct = 1;
+int DC_CD_N_FEValues = 2;
+int DC_CD_N_Params = 2;
+int DC_CD_FEFctIndex[2] = { 0, 1 };
+MultiIndex2D DC_CD_FEMultiIndex[2] = { D00, D00 };
+ParamFct *DC_CD_Fct[1] = { DC_CD_Params };
+int DC_CD_BeginParam[1] = { 0 };
+
+// parameters for SC_2 shock capturing scheme
+void SC_2_Params(double *in, double *out);
+
+int SC_2_N_FESpaces = 2;
+int SC_2_N_Fct = 3;
+int SC_2_N_ParamFct = 1;
+int SC_2_N_FEValues = 4;
+int SC_2_N_Params = 4;
+int SC_2_FEFctIndex[4] = { 0, 1, 2, 2 };
+MultiIndex2D SC_2_FEMultiIndex[4] = { D00, D00, D10, D01 };
+ParamFct *SC_2_Fct[1] = { SC_2_Params };
+int SC_2_BeginParam[1] = { 0 };
+
+// parameters for SOLD schemes
+void SOLD_Params(double *in, double *out);
+
+// parameters:  SOLD + velocity field
+void SOLD_Params_And_Velo(double *in, double *out);
+
+
+int SOLD_N_FESpaces = 2;
+int SOLD_N_Fct = 3;
+int SOLD_N_ParamFct = 1;
+int SOLD_N_FEValues = 7;
+int SOLD_N_Params = 7;
+int SOLD_FEFctIndex[7] = { 0, 0, 0, 0, 0, 1, 2 };
+MultiIndex2D SOLD_FEMultiIndex[7] = { D00, D10, D01, D20, D02, D00, D00 };
+ParamFct *SOLD_Fct[1] = { SOLD_Params };
+int SOLD_BeginParam[1] = { 0 };
+
+
+// ======================================================================
+// definitions for assembling the matrix A and rhs
+// ======================================================================
+int N_Terms_MatrixARhs = 3;
+MultiIndex2D Derivatives_MatrixARhs[3] = { D10, D01, D00};
+int SpacesNumbers_MatrixARhs[4] = { 0, 0, 0  };
+int N_Matrices_MatrixARhs = 1;
+int RowSpace_MatrixARhs[1] = { 0 };
+int ColumnSpace_MatrixARhs[1] = { 0 };
+int N_Rhs_MatrixARhs = 1;
+int RhsSpace_MatrixARhs[1] = { 0 };
+
+
+
+void MatrixARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
+  double ansatz00, ansatz10, ansatz01;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_;
+  double c0, c1, c2, c3, c4, Pe, h, x, r; 
+
+  MatrixA = LocMatrices[0];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // c
+  c4 = coeff[4]; // f
+
+  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
+      ||(TDatabase::ParamDB->DISCTYPE==7))
+  {
+    h = ComputeAlpha(hK);
+    c0+= h;  
+  }
+  
+  x  = coeff[20]; // see DiscreteForm2D.C
+  r  = fabs(x);
+  
+  if(r<1e-12)
+   {
+   OutPut("check MatrixMRhsAssemble_Axial3D x value zero !!!!! "<< x <<endl);
+   OutPut("Quad formula: Change all integral points as positive points"<<endl);
+   }
+   
+//   cout<< "r " <<  r<< "  c4  " << c4 << endl;
+//     exit(0);  */   
+  
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    Rhs[i] += r*Mult*test00*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+
+      val = c0*(test10*ansatz10+test01*ansatz01);
+      val += (c1*ansatz10+c2*ansatz01)*test00;
+      val += c3*ansatz00*test00;
+
+      MatrixRowA[j] += r*Mult * val;
+                
+    } // endfor j
+  } // endfor i
+}
+
+
+// ======================================================================
+// definitions for assembling the matrices A, K and rhs
+// ======================================================================
+int N_Terms_MatricesAKRhs_SUPG = 5;
+MultiIndex2D Derivatives_MatricesAKRhs_SUPG[5] = { D10, D01, D00, D20, D02 };
+int SpacesNumbers_MatricesAKRhs_SUPG[5] = { 0, 0, 0, 0, 0  };
+int N_Matrices_MatricesAKRhs_SUPG = 2;
+int RowSpace_MatricesAKRhs_SUPG[2] = { 0, 0 };
+int ColumnSpace_MatricesAKRhs_SUPG[2] = { 0, 0 };
+int N_Rhs_MatricesAKRhs_SUPG = 1;
+int RhsSpace_MatricesAKRhs_SUPG[1] = { 0 };
+
+int N_Matrices_MatricesAKRhs_SOLD = 3;
+int RowSpace_MatricesAKRhs_SOLD[3] = { 0, 0, 0 };
+int ColumnSpace_MatricesAKRhs_SOLD[3] = { 0, 0, 0 };
+
+void MatricesAKRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
+  double **MatrixS, *MatrixRowS, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test00, test10, test01, r, x;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  double val, val1, val2;
+  int i,j, N_;
+  double c0, c1, c2, c3, c4, c5, Pe; 
+  double c00, c11, c22, c33;
+  double tau, bgradv, bb, res, sigma, norm_b;
+  double theta1 = TDatabase::TimeDB->THETA1;
+  double theta2 = TDatabase::TimeDB->THETA2;
+  double theta3 = TDatabase::TimeDB->THETA3;
+  double theta4 = TDatabase::TimeDB->THETA4;
+  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+  MatrixA = LocMatrices[0];
+  MatrixK= LocMatrices[1];
+  
+  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)  
+   MatrixS= LocMatrices[2];
+  
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+  Orig3 = OrigValues[3];
+  Orig4 = OrigValues[4];
+
+  // coefficients of the problem
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // c
+  c4 = coeff[4]; // f
+
+  x  = coeff[20]; // see DiscreteForm2D.C
+  r  = fabs(x);
+  
+  if(r<1e-12)
+   {
+   OutPut("check MatrixMRhsAssemble_SUPG_Axial3D x value zero !!!!! "<< x <<endl);
+   OutPut("Quad formula: Change all integral points as positive points"<<endl);
+   }
+   
+  // coefficients for the stabilization parameter
+  val = theta1 * time_step;
+  c00 = val * c0;
+  c11 = val * c1;
+  c22 = val * c2;
+  // reactive coefficient, inclusive term from the temporal derivative
+  c33 = 1.0 + val * c3;
+  if (TDatabase::ParamDB->SDFEM_TYPE==8)
+  {
+      c33 = val * c3;
+  }
+  if (fabs(c11) > fabs(c22))
+      bb = fabs(c11);
+  else
+      bb = fabs(c22);
+  // this is tau
+  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+
+  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
+  {
+      // rhs from previous time step 
+      c5 = coeff[5];   
+      // compute residual
+      res = param[0] + theta1*time_step*(-c0*(param[3]+param[4]) + c1*param[1]
+           +c2*param[2] + c3*param[0])
+    -param[5] +  theta2*time_step*(-c0*(param[8]+param[9]) + c1*param[6]
+           +c2*param[7] + c3*param[5])
+    -theta3*time_step*c5 - theta4*time_step*c4;
+      /*c00 =  time_step * theta1 * c0;
+      c11 =  time_step * theta1 * c1;
+      c22 =  time_step * theta1 * c2;
+      c33 = 1.0 + time_step * theta1 *c3;*/
+      c5 = time_step * theta4 * c4;
+      // compute the parameter, c5 is just a dummy
+      sigma = Compute_SOLD_sigma(hK, c00, c11, c22, c33, c5, bb, tau, param, res, 1,1);
+      //OutPut( param[0] << " " << param[5] <<  " " << res << " " <<  sigma << endl);
+      val2 = Mult * sigma;
+      if (TDatabase::ParamDB->SOLD_TYPE==2)
+      {
+    norm_b = c1*c1 + c2*c2;
+    if (norm_b >1e-10)
+        val2 /= norm_b;
+    else
+        val2 = 0.0;
+      }
+  }
+  // scale appropriately, after it is used for the SOLD scheme
+  // do not apply for paper with J. Novo
+  // this is \tilde tau
+  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
+    tau *= val;
+
+  // loop over the basis functions
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    MatrixRowK = MatrixK[i];
+    if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
+  MatrixRowS = MatrixS[i];
+
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    bgradv = c1*test10+c2*test01;
+    // scaling with the stabilization parameter
+    // scaling with the time step is done in the main program
+    bgradv *= tau;
+    // THIS CHANGEs TEST00 !
+    test00 += bgradv;
+    Rhs[i] += r*Mult*test00*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];
+      ansatz20 = Orig3[j];
+      ansatz02 = Orig4[j];
+  
+      // Galerkin part of the bilinear form
+      val1 = c1*ansatz10+c2*ansatz01;
+      val1+= c3*ansatz00;
+
+      val = c0*(test10*ansatz10+test01*ansatz01);
+      // val1*test00 includes the SUPG part of the convective and reactive term
+      val += val1*test00;
+      // diffusion part of the SUPG stabilization
+      val -= c0*(ansatz20 + ansatz02) * bgradv;
+      
+      MatrixRowA[j] += r*Mult * val;
+      // time derivative part of the SUPG stabilization          
+      MatrixRowK[j] += r*Mult * ansatz00*bgradv;
+      
+      // isotropic SOLD method
+      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==1))
+      {
+    MatrixRowS[j] += val2 * (test10*ansatz10+test01*ansatz01);
+      }
+      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==2))
+      {
+
+    MatrixRowS[j] += val2 * (-c2*ansatz10+c1*ansatz01)*(-c2*test10+c1*test01);
+      }
+     
+    } // endfor j
+  } // endfor i
+}
+
+
+
+int N_Terms_MatrixMRhs_SUPG = 3;
+MultiIndex2D Derivatives_MatrixMRhs_SUPG[3] = { D10, D01, D00 };
+int SpacesNumbers_MatrixMRhs_SUPG[3] = { 0, 0, 0 };
+int N_Matrices_MatrixMRhs_SUPG = 1;
+int RowSpace_MatrixMRhs_SUPG[1] = { 0 };
+int ColumnSpace_MatrixMRhs_SUPG[1] = { 0 };
+int N_Rhs_MatrixMRhs_SUPG = 1;
+int RhsSpace_MatrixMRhs_SUPG[1] = { 0 };
+
+void MatrixMRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **Matrix, **MatrixS, *Rhs, val, *MatrixRow, *MatrixSRow;
+  double ansatz00, x, r;
+  double test00, test10, test01;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_;
+  double c0, c1, c2, c3, c4, c00, c11, c22, c33; 
+  double tau, bgradv, bb;
+  double theta1 = TDatabase::TimeDB->THETA1;
+  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+  Matrix = LocMatrices[0];
+  MatrixS= LocMatrices[1];
+  
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // c
+  c4 = coeff[4]; // f
+  
+  x  = coeff[20]; // see DiscreteForm2D.C
+  r  = fabs(x);
+  
+  if(r<1e-12)
+   {
+   OutPut("check MatrixMRhsAssemble_SUPG_Axial3D x value zero !!!!! "<< x <<endl);
+   OutPut("Quad formula: Change all integral points as positive points"<<endl);
+   }
+   
+   cout<< "r " <<  r<< "  c4  " << c4 << endl;
+//     exit(0);  
+  
+  c00 = theta1 * time_step * c0;
+  c11 = theta1 * time_step * c1;
+  c22 = theta1 * time_step * c2;
+  // reactive coefficient, inclusive term from the temporal derivative
+  c33 = 1.0 + theta1 * time_step * c3;
+  if (TDatabase::ParamDB->SDFEM_TYPE==8)
+  {
+    c33 = theta1 * time_step * c3;
+  }
+  if(fabs(c11) > fabs(c22))
+    bb = fabs(c11);
+  else
+      bb = fabs(c22);
+  // this is \tilde tau
+  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  // scale appropriately
+  //OutPut(tau << " ");
+  // do not apply for paper with J. Novo
+  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
+    tau *= theta1 * time_step;
+  //OutPut(theta1 << " " << tau << " : ");
+  for(i=0;i<N_;i++)
+  {
+    MatrixRow = Matrix[i];
+    MatrixSRow = MatrixS[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    bgradv = c1*test10+c2*test01;
+
+    Rhs[i] += r*Mult*(test00+tau*bgradv)*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz00 = Orig2[j];
+
+      MatrixRow[j] += r*Mult * ansatz00*test00;
+      MatrixSRow[j] += r*Mult * ansatz00*bgradv;    
+      
+    } // endfor j
+  } // endfor i
+}
+
+
+int N_Terms_MatrixMRhs = 1;
+MultiIndex2D Derivatives_MatrixMRhs[1] = { D00 };
+int SpacesNumbers_MatrixMRhs[1] = { 0 };
+int N_Matrices_MatrixMRhs = 1;
+int RowSpace_MatrixMRhs[1] = { 0 };
+int ColumnSpace_MatrixMRhs[1] = { 0 };
+int N_Rhs_MatrixMRhs = 1;
+int RhsSpace_MatrixMRhs[1] = { 0 };
+
+
+
+void MatrixMRhsAssemble_Axial3D(double Mult, double *coeff, double *param,
+                           double hK, 
+                           double **OrigValues, int *N_BaseFuncts,
+                           double ***LocMatrices, double **LocRhs)
+{
+  double **Matrix, *Rhs, *MatrixRow;
+  double ansatz00, x, r;
+  double test00;
+  double *Orig0;
+  int i,j, N_;
+  double c4; 
+
+  Matrix = LocMatrices[0];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+
+  c4 = coeff[4]; // f
+  x  = coeff[20]; // see DiscreteForm2D.C
+  r  = fabs(x);
+  
+  if(r<1e-12)
+   {
+   OutPut("check MatrixMRhsAssemble_Axial3D x value zero !!!!! "<< x <<endl);
+   OutPut("Quad formula: Change all integral points as positive points"<<endl);
+   }
+   
+//    cout<< "r " <<  r<< "  c4  " << c4 << endl;
+//     exit(0);
+
+  for(i=0;i<N_;i++)
+  {
+    MatrixRow = Matrix[i];
+    test00 = Orig0[i];
+
+    Rhs[i] += r*Mult*test00*c4;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz00 = Orig0[j];
+
+      MatrixRow[j] += r*Mult*ansatz00*test00;
+    } // endfor j
+  } // endfor i
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// ======================================================================
+// ======================================================================
+// ======================================================================
+// ======================================================================
+
+
+
+
+void InitializeDiscreteFormsScalar(TDiscreteForm2D *&DiscreteFormMatrixMRhs, 
+                                   TDiscreteForm2D *&DiscreteFormMatrixARhs,
+                                   TDiscreteForm2D *&DiscreteFormMatrixMRhs_SUPG,
+                                   TDiscreteForm2D *&DiscreteFormMatrixARhs_SUPG,
+                                   CoeffFct2D *LinCoeffs)
 {
   char GalerkinString[] = "Galerkin";
   char allString[] = "all";
@@ -4041,6 +4622,166 @@ void InitializeDiscreteForms_SSMUM(
 			  TimeNSType4_SSMUM_NLRhsSpace, TimeNSType3_4NLGalerkin_SSMUM_ALE, LinCoeffs, NULL);
 }
 
+/******************************************************************************/
+// InitializeDiscreteFormsCDAdapt2D()
+// initializes parameters of the data base for the main program CDAdap_2D.C
+/******************************************************************************/
+void InitializeDiscreteFormsCDAdapt2D(TDiscreteForm2D **DiscreteForms,
+CoeffFct2D *BilinearCoeffs)
+{
+  char CdString[] = "Conv-Diff";
+  char GalString[] = "Galerkin";
+  char SDFEMString[] = "SDFEM";
+  char UpwString[] = "Upwind";
+  char SoldString[] = "SOLD";
+  TDiscreteForm2D *DiscreteFormGalerkin;
+  TDiscreteForm2D *DiscreteFormGalerkinMatrix;
+  TDiscreteForm2D *DiscreteFormSDFEM;
+  TDiscreteForm2D *DiscreteFormUpwind;
+  TDiscreteForm2D *DiscreteFormSOLD;
+  TDiscreteForm2D *DiscreteFormSOLD_Orthogonal;
+  TDiscreteForm2D *DiscreteFormRhsLP96;
+  TDiscreteForm2D *DiscreteFormMH_Kno06;
+  TDiscreteForm2D *DiscreteFormSD_SOLD;
+  TDiscreteForm2D *DiscreteFormRhsAdjointEnergyErrorEstimate;
+  TDiscreteForm2D *DiscreteFormRhsAdjointTV;
+  TDiscreteForm2D *DiscreteFormRhsAdjointTV2;
+  TDiscreteForm2D *DiscreteFormRhsAdjointNormBL1_NormBorthL1;
+  TDiscreteForm2D *DiscreteFormRhsAdjointNormResidualL1_NormBorthL1;
+  TDiscreteForm2D *DiscreteFormRhsAdjointAll;
+  TDiscreteForm2D *DiscreteFormRhsAdjointL2Error;
+  TDiscreteForm2D *DiscreteFormRhsAdjointH1Error;
+  TDiscreteForm2D *DiscreteForm2LevelLPS_Q0;
+  int i;
+
+  ManipulateFct2D *manipulate;
+  if (TDatabase::ParamDB->SDFEM_NORM_B==0)
+    manipulate = linfb;
+  else
+    manipulate = ave_l2b_quad_points;
+
+  DiscreteFormGalerkin = new TDiscreteForm2D
+    (CdString, GalString, N_Terms, Derivatives, SpacesNumbers,
+    N_Matrices, N_Rhs, RowSpace, ColumnSpace, RhsSpace,
+    (AssembleFctParam2D*)BilinearAssembleGalerkin, BilinearCoeffs, NULL);
+
+  DiscreteFormSDFEM = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD,
+    N_Matrices, N_Rhs, RowSpace, ColumnSpace, RhsSpace,
+    BilinearAssemble_SD, BilinearCoeffs,  manipulate);
+
+  DiscreteFormUpwind = new TDiscreteForm2D
+    (CdString, UpwString , N_Terms, Derivatives, SpacesNumbers,
+    N_Matrices, N_Rhs, RowSpace, ColumnSpace, RhsSpace,
+    (AssembleFctParam2D*)BilinearAssemble_UPW2, BilinearCoeffs, NULL);
+
+  DiscreteFormSOLD = new TDiscreteForm2D
+    (CdString, SoldString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD,
+    N_Matrices, 0 , RowSpace, ColumnSpace, NULL,
+    BilinearAssemble_SOLD, BilinearCoeffs,  manipulate);
+
+  DiscreteFormSOLD_Orthogonal = new TDiscreteForm2D
+    (CdString, SoldString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD,
+    N_Matrices, 0 , RowSpace, ColumnSpace, NULL,
+    BilinearAssemble_SOLD_Orthogonal, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsLP96 = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms, Derivatives, SpacesNumbers,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_LP96, BilinearCoeffs,  manipulate);
+
+  DiscreteFormMH_Kno06 = new TDiscreteForm2D
+    (CdString, SoldString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD,
+    N_Matrices, 0 , RowSpace, ColumnSpace, NULL,
+    BilinearAssemble_MH_Kno06, BilinearCoeffs,  manipulate);
+
+  DiscreteFormSD_SOLD = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD,
+    N_Matrices, N_Rhs, RowSpace, ColumnSpace, RhsSpace,
+    BilinearAssemble_SD_SOLD, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointEnergyErrorEstimate = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointEnergyEstimate, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointTV = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointTV, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointTV2 = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointTV2, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointNormBL1_NormBorthL1 = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointNormBL1_NormBorthL1, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointNormResidualL1_NormBorthL1 = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointNormResidualL1_NormBorthL1, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointAll = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointAll, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointL2Error = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_rhs,
+    Derivatives_rhs, SpacesNumbers_rhs,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointL2Error, BilinearCoeffs,  manipulate);
+
+  DiscreteFormRhsAdjointH1Error = new TDiscreteForm2D
+    (CdString, SDFEMString, N_Terms_SD,
+    Derivatives_SD, SpacesNumbers_SD,
+    0, 1 , NULL, NULL,  RhsSpace,
+    RhsAssemble_RhsAdjointH1Error, BilinearCoeffs,  manipulate);
+
+  DiscreteFormGalerkinMatrix = new TDiscreteForm2D
+    (CdString, GalString, N_Terms, Derivatives, SpacesNumbers,
+    N_Matrices, 0, RowSpace, ColumnSpace, NULL,
+    (AssembleFctParam2D*)BilinearAssembleGalerkin, BilinearCoeffs, NULL);
+
+  DiscreteForm2LevelLPS_Q0 = new TDiscreteForm2D
+    (CdString, GalString, N_Terms, Derivatives, SpacesNumbers,
+    N_Matrices, N_Rhs, RowSpace, ColumnSpace, RhsSpace,
+    BilinearAssemble2LevelLPS_Q0, BilinearCoeffs, NULL);
+
+  // initializing
+  for (i=0;i<=17;i++)
+    DiscreteForms[i] = NULL;
+
+  DiscreteForms[0] = DiscreteFormGalerkin;
+  DiscreteForms[1] = DiscreteFormSDFEM;
+  DiscreteForms[2] = DiscreteFormUpwind;
+  DiscreteForms[3] = DiscreteFormSOLD;
+  DiscreteForms[4] = DiscreteFormSOLD_Orthogonal;
+  DiscreteForms[5] = DiscreteFormRhsLP96;
+  DiscreteForms[6] = DiscreteFormMH_Kno06;
+  DiscreteForms[7] = DiscreteFormSD_SOLD;
+  DiscreteForms[8] = DiscreteFormRhsAdjointEnergyErrorEstimate;
+  DiscreteForms[9] = DiscreteFormRhsAdjointTV;
+  DiscreteForms[10] = DiscreteFormRhsAdjointTV2;
+  DiscreteForms[11] = DiscreteFormRhsAdjointNormBL1_NormBorthL1;
+  DiscreteForms[12] = DiscreteFormRhsAdjointNormResidualL1_NormBorthL1;
+  DiscreteForms[13] = DiscreteFormRhsAdjointAll;
+  DiscreteForms[14] = DiscreteFormRhsAdjointL2Error;
+  DiscreteForms[15] = DiscreteFormRhsAdjointH1Error;
+  DiscreteForms[16] = DiscreteFormGalerkinMatrix;
+  DiscreteForms[17] = DiscreteForm2LevelLPS_Q0;
+}
+
 void  InitializeDiscreteForms_Moving(TDiscreteForm2D *&DiscreteFormGalerkin, TDiscreteForm2D *&DiscreteFormNLGalerkin,
                                   TDiscreteForm2D *&DiscreteFormGrid, CoeffFct2D *LinCoeffs, CoeffFct2D *GridCoeffs)
 {
@@ -4087,8 +4828,316 @@ void  InitializeDiscreteForms_Moving(TDiscreteForm2D *&DiscreteFormGalerkin, TDi
                                TimeNSType4NLRhsSpace, TimeNSType3_4NLGalerkinDD, LinCoeffs, NULL);
 
  }
-
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+int N_Terms_MatrixMARhs = 3;
+MultiIndex2D Derivatives_MatrixMARhs[3] = { D10, D01, D00};
+int SpacesNumbers_MatrixMARhs[3] = { 0, 0, 0  };
+int N_Matrices_MatrixMARhs = 2;
+int RowSpace_MatrixMARhs[2] = { 0, 0 };
+int ColumnSpace_MatrixMARhs[2] = { 0, 0};
+int N_Rhs_MatrixMARhs = 1;
+int RhsSpace_MatrixMARhs[1] = { 0 };
+
+void MatrixMARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
+                                 double hK, 
+                                 double **OrigValues, int *N_BaseFuncts,
+                                 double ***LocMatrices, double **LocRhs)
+{
+  int i,j, N_T;
+  
+  double c0, c1, c2, c3, c4, x, r;  
+  double **MatrixA, **MatrixM, *Rhs;
+  double *Orig0, *Orig1, *Orig2;  
+  double *MatrixARow, *MatrixMRow;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test00, test10, test01, val;
+  
+  MatrixA = LocMatrices[0];
+  MatrixM = LocMatrices[1];
+  
+  Rhs = LocRhs[0];
+
+  N_T = N_BaseFuncts[0]; 
+  
+  Orig0 = OrigValues[0]; // T_x
+  Orig1 = OrigValues[1]; // T_y
+  Orig2 = OrigValues[2]; // T
+
+  c0 = coeff[0]; // nu
+//   c1 = coeff[1];  
+//   c2 = coeff[2];  
+  c3 = coeff[3]; // concentration coeff
+  c4 = coeff[4]; // rhs
+ 
+  c1 = param[0]; // u1-w1
+  c2 = param[1]; // u2-w2
+ 
+  x  = param[2]; // x
+  r  = fabs(x);  
+   
+  //cout<< "x: "<< x<<" u1: "<< u1<< " u2: "<< u2<<endl;
+    
+  if(r<1e-12)
+   {
+   OutPut("check NSE2D Axisymmetric file x value zero !!!!! "<< x <<endl);
+   OutPut("Quad formula: Change all integral points as positive points"<<endl);
+   }
+   
+
+  for(i=0;i<N_T;i++)
+   {
+    MatrixARow = MatrixA[i];
+    MatrixMRow  = MatrixM[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    // rhs
+    Rhs[i] += r*Mult*test00*c4;
+
+    for(j=0;j<N_T;j++)
+     {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];    
+    
+      //stiffness mat
+      val  = r*c0*(test10*ansatz10+test01*ansatz01);
+      val  += r* ((c1*ansatz10+c2*ansatz01)*test00);
+      val += r*c3*ansatz00*test00;
+  
+      MatrixARow[j] += val*Mult;
+
+      // mass mat
+      val = r*Mult*ansatz00*test00;      
+      MatrixMRow[j] += val;
+      
+     } // for(j=0;j<N_T;j++)     
+   } //   for(i=0;i<N_T;i++)
+   
+}// MatrixMARhsAssemble_Axial3D
+
+void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
+                         double hK, double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs)
+{
+  int i,j, N_T;
+  
+  double c0, c1, c2, c3, c4;  
+  double **MatrixA, **MatrixM, *Rhs;
+  double *Orig0, *Orig1, *Orig2;  
+  double *MatrixARow, *MatrixMRow;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test00, test10, test01, val;
+  
+  MatrixA = LocMatrices[0];
+  MatrixM = LocMatrices[1];
+  
+  Rhs = LocRhs[0];
+
+  N_T = N_BaseFuncts[0]; 
+  
+  Orig0 = OrigValues[0]; // T_x
+  Orig1 = OrigValues[1]; // T_y
+  Orig2 = OrigValues[2]; // T
+
+  c0 = coeff[0]; // nu
+  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
+  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)  
+  c4 = coeff[4]; // rhs  
+  
+  if(TDatabase::ParamDB->P6==1) // con-ALE
+   {
+    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
+   }
+  else// non-conservative ALE
+   {
+    c3 = coeff[3]; 
+//     cout<< "div w: "<< param[0]  <<endl;
+   }
+//   cout<< " u1: "<< u1<< " u2: "<< u2<<endl;
+//  cout<< "div w: "<< param[3]  <<endl;
+
+  for(i=0;i<N_T;i++)
+   {
+    MatrixARow = MatrixA[i];
+    MatrixMRow  = MatrixM[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    // rhs
+    Rhs[i] += Mult*test00*c4;
+
+    for(j=0;j<N_T;j++)
+     {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];    
+    
+      //stiffness mat
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (c1*ansatz10+c2*ansatz01)*test00;
+      val += c3*ansatz00*test00;
+   
+      MatrixARow[j] += val*Mult;
+
+      // mass mat
+      val = Mult*ansatz00*test00;      
+      MatrixMRow[j] += val;
+      
+     } // for(j=0;j<N_T;j++)     
+   } //   for(i=0;i<N_T;i++)
+   
+}// MatrixMARhsAssemble
+
+
+int N_Terms_MatrixMARhs_SUPG = 5;
+MultiIndex2D Derivatives_MatrixMARhs_SUPG[5] = { D10, D01, D00, D20, D02 };
+int SpacesNumbers_MatrixMARhs_SUPG[5] = { 0, 0, 0, 0, 0  };
+int N_Matrices_MatrixMARhs_SUPG = 3;
+int RowSpace_MatrixMARhs_SUPG[3] = { 0, 0, 0 };
+int ColumnSpace_MatrixMARhs_SUPG[3] = { 0, 0, 0};
+int N_Rhs_MatrixMARhs_SUPG = 1;
+int RhsSpace_MatrixMARhs_SUPG[1] = { 0 };
+
+
+void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
+                                 double hK, 
+                                 double **OrigValues, int *N_BaseFuncts,
+                                 double ***LocMatrices, double **LocRhs)
+{
+  int i,j, N_T;
+  
+  double c0, c1, c2, c3, c4;  
+  double **MatrixA, **MatrixM, **MatrixK, *Rhs;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;  
+  double *MatrixARow, *MatrixMRow, *MatrixKRow;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double test00, test10, test01, val, val1;
+  double c00, c11, c22, c33;
+  double tau, bgradv, bb, res, sigma, norm_b;
+  double theta1 = TDatabase::TimeDB->THETA1;
+  double theta2 = TDatabase::TimeDB->THETA2;
+  double theta3 = TDatabase::TimeDB->THETA3;
+  double theta4 = TDatabase::TimeDB->THETA4;
+  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  
+  MatrixA = LocMatrices[0];
+  MatrixM = LocMatrices[1];
+  MatrixK = LocMatrices[2];
+  
+  Rhs = LocRhs[0];
+
+  N_T = N_BaseFuncts[0]; 
+  
+  Orig0 = OrigValues[0]; // T_x
+  Orig1 = OrigValues[1]; // T_y
+  Orig2 = OrigValues[2]; // T
+  Orig3 = OrigValues[3]; // 
+  Orig4 = OrigValues[4]; //
+
+  c0 = coeff[0]; // nu
+  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
+  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)
+  
+  if(TDatabase::ParamDB->P6==1) // con-ALE
+   {
+    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
+   }
+  else// non-conservative ALE
+   {
+    c3 = coeff[3]; 
+   }  
+  
+  c4 = coeff[4]; // rhs
+
+//  cout<< " u1: "<< u1<< " u2: "<< u2<<endl;
+//  cout<< "div w: "<< param[3]  <<endl;
+
+  // coefficients for the stabilization parameter
+  val = theta1 * time_step;
+  c00 = val * c0;
+  c11 = val * c1;
+  c22 = val * c2;
+  // reactive coefficient, inclusive term from the temporal derivative
+  c33 = 1.0 + val * c3;
+  // reactive coefficient, inclusive term from the temporal derivative
+//   c33 = 1.0/(val) + c3;  
+  
+  if (fabs(c11) > fabs(c22))
+      bb = fabs(c11);
+  else
+      bb = fabs(c22);
+  // this is tau
+  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+
+  for(i=0;i<N_T;i++)
+   {
+    MatrixARow = MatrixA[i];
+    MatrixMRow  = MatrixM[i];
+    MatrixKRow  = MatrixK[i];
+    
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    bgradv = c1*test10+c2*test01;
+    // scaling with the stabilization parameter
+    // scaling with the time step is done in the main program
+    bgradv *= tau;
+   
+    // rhs
+    Rhs[i] += Mult*(test00 + bgradv)*c4;
+
+    for(j=0;j<N_T;j++)
+     {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      ansatz00 = Orig2[j];    
+      ansatz20 = Orig3[j];
+      ansatz02 = Orig4[j];
+
+      // Galerkin part of the bilinear form
+      val1 = c1*ansatz10+c2*ansatz01;
+      val1+= c3*ansatz00;
+
+      val = c0*(test10*ansatz10+test01*ansatz01);
+      val += val1*(test00 + bgradv);
+      
+      // diffusion part of the SUPG stabilization
+      val -= c0*(ansatz20 + ansatz02) * bgradv; 
+        
+      MatrixARow[j] += val*Mult;
+
+      // mass mat
+      val = Mult*ansatz00*test00;      
+      MatrixMRow[j] += val;
+           
+      // time consistant term
+      val = Mult*ansatz00*bgradv;      
+      MatrixKRow[j] += val;        
+      
+      
+     } // for(j=0;j<N_T;j++)     
+   } //   for(i=0;i<N_T;i++)
+   
+}// MatrixMARhsAssemble_SUPG
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 
 void InitializeDiscreteForms_ScalarMoving(TDiscreteForm2D *&DiscreteFormGalerkin, TDiscreteForm2D *&DiscreteFormGrid,
@@ -4205,7 +5254,8 @@ void InitializeDiscreteForms_Stationary( TDiscreteForm2D *&DiscreteFormUpwind,  
    DiscreteFormGalerkin = new TDiscreteForm2D(GalerkinString, allString,
                                   N_Terms, Derivatives, SpacesNumbers,
                                   CD_N_Matrices, CD_N_Rhs, CD_RowSpace,
-                                  CD_ColumnSpace, CD_RhsSpace, BilinearAssemble_Axial3D,
+                                  CD_ColumnSpace, CD_RhsSpace, 
+                                  (AssembleFctParam2D*)BilinearAssemble_Axial3D,
                                   LinCoeffs, NULL); 
    
   
@@ -4222,13 +5272,15 @@ void InitializeDiscreteForms_Stationary( TDiscreteForm2D *&DiscreteFormUpwind,  
      DiscreteFormUpwind = new TDiscreteForm2D(GalerkinString, allString,
                                   N_Terms, Derivatives, SpacesNumbers,
                                   CD_N_Matrices, CD_N_Rhs, CD_RowSpace,
-                                  CD_ColumnSpace, CD_RhsSpace, BilinearAssemble_UPW2,
+                                  CD_ColumnSpace, CD_RhsSpace,
+                                  (AssembleFctParam2D*)BilinearAssemble_UPW2,
                                   LinCoeffs, NULL);  
    
      DiscreteFormGalerkin = new TDiscreteForm2D(GalerkinString, allString,
                                   N_Terms, Derivatives, SpacesNumbers,
                                   CD_N_Matrices, CD_N_Rhs, CD_RowSpace,
-                                  CD_ColumnSpace, CD_RhsSpace, BilinearAssemble,
+                                  CD_ColumnSpace, CD_RhsSpace, 
+                                  (AssembleFctParam2D*)BilinearAssembleGalerkin,
                                   LinCoeffs, NULL);
      
      DiscreteFormSDFEM = new TDiscreteForm2D(SUPGString, SUPGString, N_Terms_SD, Derivatives_SD, SpacesNumbers_SD, 
@@ -4369,13 +5421,7 @@ DiscreteFormRHS = new TDiscreteForm2D(GalerkinString, rhsString,
       }
     break;
   } // endswitch
-
-
 }
-
-
-
-
 
 
 

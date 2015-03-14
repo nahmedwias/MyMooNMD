@@ -46,11 +46,14 @@ void TFE3D::CheckNFandBF()
 {
   int i,j,k,l, N_Points;
   double *xi, *eta, *zeta;
-  double PointValues[MaxN_PointsForNodal3D];
-  double FunctionalValues[MaxN_BaseFunctions3D];
-  double AllPointValues[MaxN_PointsForNodal3D][MaxN_BaseFunctions3D];
-
+  
   NodalFunctional->GetPointsForAll(N_Points, xi, eta, zeta);
+  
+  int n_basis_functions = BaseFunct->GetDimension();
+  int baseVectDim = BaseFunct->GetBaseVectDim();
+  double PointValues[N_Points*baseVectDim];
+  double FunctionalValues[n_basis_functions];
+  double AllPointValues[N_Points][n_basis_functions*baseVectDim];
 
   for(k=0;k<N_Points;k++)
     BaseFunct->GetDerivatives(D000, xi[k], eta[k], zeta[k],
@@ -59,8 +62,9 @@ void TFE3D::CheckNFandBF()
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
+  if(rank==TDatabase::ParamDB->Par_P0)
+#endif
+  if(TDatabase::ParamDB->SC_VERBOSE > 0)
   {
    cout << "CheckNFandBF: " << "BaseFunct_ID: " << BaseFunct_ID << " ";
    cout << "NodalFunctional_ID: " << NodalFunctional_ID << endl;
@@ -68,7 +72,8 @@ void TFE3D::CheckNFandBF()
   for(k=0;k<N_DOF;k++)
   {
     for(l=0;l<N_Points;l++)
-      PointValues[l] = AllPointValues[l][k];
+      for(i = 0; i< baseVectDim; i++)
+        PointValues[l+N_Points*i] = AllPointValues[l][k+n_basis_functions*i];
 
     NodalFunctional->GetAllFunctionals(NULL, NULL, PointValues,
                           FunctionalValues);
@@ -87,7 +92,8 @@ void TFE3D::CheckNFandBF()
   }
 
 #ifdef _MPI
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==TDatabase::ParamDB->Par_P0)
 #endif 
+  if(TDatabase::ParamDB->SC_VERBOSE > 0)
   cout << endl;
 }

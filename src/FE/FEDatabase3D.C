@@ -33,8 +33,12 @@
 // =======================================================================
 // initialize static members
 // =======================================================================
+TQuadFormula1D *TFEDatabase3D::QuadFormulas1D[N_QuadFormulas_1D] =  { NULL };
 TQuadFormula2D *TFEDatabase3D::QuadFormulas2D[N_QuadFormulas_2D] =  { NULL };
 TQuadFormula3D *TFEDatabase3D::QuadFormulas3D[N_QuadFormulas_3D] = { NULL };
+
+QuadFormula1D TFEDatabase3D::QFLineFromDegree[MAXDEGREE] = { Gauss1Line };
+int TFEDatabase3D::HighestAccuracyLine = 0;
 
 QuadFormula2D TFEDatabase3D::QFTriaFromDegree[MAXDEGREE] = { BaryCenterTria };
 QuadFormula2D TFEDatabase3D::QFQuadFromDegree[MAXDEGREE] = { VertexQuad };
@@ -127,10 +131,82 @@ TFEDatabase3D::TFEDatabase3D()
 
 void TFEDatabase3D::RegisterAllQuadFormulas()
 {
+  TQuadFormula1D *qf1d;
   TQuadFormulaTetra *qftetra;
   TQuadFormulaHexa *qfhexa;
   TQuadFormulaTria *qftria;
   TQuadFormulaQuad *qfquad;
+  
+  // ===================================================================
+  // register 1d quadrature formulas
+  // ===================================================================
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss1();
+  RegisterQuadFormula1D(Gauss1Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss2();
+  RegisterQuadFormula1D(Gauss2Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss3();
+  RegisterQuadFormula1D(Gauss3Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss4();
+  RegisterQuadFormula1D(Gauss4Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss5();
+  RegisterQuadFormula1D(Gauss5Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss6();
+  RegisterQuadFormula1D(Gauss6Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss7();
+  RegisterQuadFormula1D(Gauss7Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss8();
+  RegisterQuadFormula1D(Gauss8Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss9();
+  RegisterQuadFormula1D(Gauss9Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss10();
+  RegisterQuadFormula1D(Gauss10Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss11();
+  RegisterQuadFormula1D(Gauss11Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss12();
+  RegisterQuadFormula1D(Gauss12Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss2W1();
+  RegisterQuadFormula1D(Gauss2W1Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss4W1();
+  RegisterQuadFormula1D(Gauss4W1Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss6W1();
+  RegisterQuadFormula1D(Gauss6W1Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss8W1();
+  RegisterQuadFormula1D(Gauss8W1Line, qf1d);
+
+  qf1d = new TQuadFormula1D();
+  qf1d->Gauss16W2();
+  RegisterQuadFormula1D(Gauss16W2Line, qf1d);
 
   // =====================================================================
   // register triangle quadrature formulas
@@ -320,10 +396,15 @@ void TFEDatabase3D::RegisterAllFEDescs()
   RegisterFEDesc3D(FE_N_T_P1_3D, FE_N_T_P1_3D_Obj);
 
   RegisterFEDesc3D(FE_D_T_P1_3D, FE_D_T_P1_3D_Obj);
+  RegisterFEDesc3D(FE_D_T_P2_3D, FE_D_T_P2_3D_Obj);
+  RegisterFEDesc3D(FE_D_T_P3_3D, FE_D_T_P3_3D_Obj);
 
   RegisterFEDesc3D(FE_D_H_P1_3D, FE_D_H_P1_3D_Obj);
   RegisterFEDesc3D(FE_D_H_P2_3D, FE_D_H_P2_3D_Obj);
   RegisterFEDesc3D(FE_D_H_P3_3D, FE_D_H_P3_3D_Obj);
+  
+  RegisterFEDesc3D(FE_D_H_Q1_3D, FE_D_H_Q1_3D_Obj);
+  RegisterFEDesc3D(FE_D_H_Q2_3D, FE_D_H_Q2_3D_Obj);
 
   RegisterFEDesc3D(FE_B_H_IB2_3D, FE_B_H_IB2_3D_Obj);
 
@@ -334,7 +415,25 @@ void TFEDatabase3D::RegisterAllFEDescs()
   RegisterFEDesc3D(FE_N_H_Q4_3D, FE_N_H_Q4_3D_Obj);
   
   RegisterFEDesc3D(FE_C_H_UL1_3D, FE_C_H_UL1_3D_Obj);  
+  RegisterFEDesc3D(FE_C_H_UL2_3D, FE_C_H_UL2_3D_Obj);
+  RegisterFEDesc3D(FE_C_H_UL3_3D, FE_C_H_UL3_3D_Obj);
   
+  RegisterFEDesc3D(FE_N_T_RT0_3D, FE_N_T_RT0_3D_Obj);
+  RegisterFEDesc3D(FE_N_T_RT1_3D, FE_N_T_RT1_3D_Obj);
+  RegisterFEDesc3D(FE_N_T_RT2_3D, FE_N_T_RT2_3D_Obj);
+  RegisterFEDesc3D(FE_N_T_RT3_3D, FE_N_T_RT3_3D_Obj);
+
+  RegisterFEDesc3D(FE_N_T_BDDF1_3D, FE_N_T_BDDF1_3D_Obj);
+  RegisterFEDesc3D(FE_N_T_BDDF2_3D, FE_N_T_BDDF2_3D_Obj);
+  RegisterFEDesc3D(FE_N_T_BDDF3_3D, FE_N_T_BDDF3_3D_Obj);
+
+  RegisterFEDesc3D(FE_N_H_RT0_3D, FE_N_H_RT0_3D_Obj);
+  RegisterFEDesc3D(FE_N_H_RT1_3D, FE_N_H_RT1_3D_Obj);
+  RegisterFEDesc3D(FE_N_H_RT2_3D, FE_N_H_RT2_3D_Obj);
+  
+  RegisterFEDesc3D(FE_N_H_BDDF1_3D, FE_N_H_BDDF1_3D_Obj);
+  RegisterFEDesc3D(FE_N_H_BDDF2_3D, FE_N_H_BDDF2_3D_Obj);
+  RegisterFEDesc3D(FE_N_H_BDDF3_3D, FE_N_H_BDDF3_3D_Obj);
   
 #ifdef _MPI
   int rank;
@@ -366,10 +465,15 @@ void TFEDatabase3D::RegisterAllBaseFunctions()
   RegisterBaseFunct3D(BF_N_T_P1_3D, BF_N_T_P1_3D_Obj);
 
   RegisterBaseFunct3D(BF_D_T_P1_3D, BF_D_T_P1_3D_Obj);
+  RegisterBaseFunct3D(BF_D_T_P2_3D, BF_D_T_P2_3D_Obj);
+  RegisterBaseFunct3D(BF_D_T_P3_3D, BF_D_T_P3_3D_Obj);
 
   RegisterBaseFunct3D(BF_D_H_P1_3D, BF_D_H_P1_3D_Obj);
   RegisterBaseFunct3D(BF_D_H_P2_3D, BF_D_H_P2_3D_Obj);
   RegisterBaseFunct3D(BF_D_H_P3_3D, BF_D_H_P3_3D_Obj);
+  
+  RegisterBaseFunct3D(BF_D_H_Q1_3D, BF_D_H_Q1_3D_Obj);
+  RegisterBaseFunct3D(BF_D_H_Q2_3D, BF_D_H_Q2_3D_Obj);
 
   RegisterBaseFunct3D(BF_B_H_IB2_3D, BF_B_H_IB2_3D_Obj);
 
@@ -380,7 +484,26 @@ void TFEDatabase3D::RegisterAllBaseFunctions()
   RegisterBaseFunct3D(BF_N_H_Q4_3D, BF_N_H_Q4_3D_Obj);
   
   RegisterBaseFunct3D(BF_C_H_UL1_3D, BF_C_H_UL1_3D_Obj);
+  RegisterBaseFunct3D(BF_C_H_UL2_3D, BF_C_H_UL2_3D_Obj);
+  RegisterBaseFunct3D(BF_C_H_UL3_3D, BF_C_H_UL3_3D_Obj);
   
+  RegisterBaseFunct3D(BF_N_T_RT0_3D, BF_N_T_RT0_3D_Obj);
+  RegisterBaseFunct3D(BF_N_T_RT1_3D, BF_N_T_RT1_3D_Obj);
+  RegisterBaseFunct3D(BF_N_T_RT2_3D, BF_N_T_RT2_3D_Obj);
+  RegisterBaseFunct3D(BF_N_T_RT3_3D, BF_N_T_RT3_3D_Obj);
+
+  RegisterBaseFunct3D(BF_N_T_BDDF1_3D, BF_N_T_BDDF1_3D_Obj);
+  RegisterBaseFunct3D(BF_N_T_BDDF2_3D, BF_N_T_BDDF2_3D_Obj);
+  RegisterBaseFunct3D(BF_N_T_BDDF3_3D, BF_N_T_BDDF3_3D_Obj);
+
+  RegisterBaseFunct3D(BF_N_H_RT0_3D, BF_N_H_RT0_3D_Obj);
+  RegisterBaseFunct3D(BF_N_H_RT1_3D, BF_N_H_RT1_3D_Obj);
+  RegisterBaseFunct3D(BF_N_H_RT2_3D, BF_N_H_RT2_3D_Obj);
+
+  RegisterBaseFunct3D(BF_N_H_BDDF1_3D, BF_N_H_BDDF1_3D_Obj);
+  RegisterBaseFunct3D(BF_N_H_BDDF2_3D, BF_N_H_BDDF2_3D_Obj);
+  RegisterBaseFunct3D(BF_N_H_BDDF3_3D, BF_N_H_BDDF3_3D_Obj);
+
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
@@ -411,10 +534,15 @@ void TFEDatabase3D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional3D(NF_N_T_P1_3D, NF_N_T_P1_3D_Obj);
 
   RegisterNodalFunctional3D(NF_D_T_P1_3D, NF_D_T_P1_3D_Obj);
+  RegisterNodalFunctional3D(NF_D_T_P2_3D, NF_D_T_P2_3D_Obj);
+  RegisterNodalFunctional3D(NF_D_T_P3_3D, NF_D_T_P3_3D_Obj);
 
   RegisterNodalFunctional3D(NF_D_H_P1_3D, NF_D_H_P1_3D_Obj);
   RegisterNodalFunctional3D(NF_D_H_P2_3D, NF_D_H_P2_3D_Obj);
   RegisterNodalFunctional3D(NF_D_H_P3_3D, NF_D_H_P3_3D_Obj);
+  
+  RegisterNodalFunctional3D(NF_D_H_Q1_3D, NF_D_H_Q1_3D_Obj);
+  RegisterNodalFunctional3D(NF_D_H_Q2_3D, NF_D_H_Q2_3D_Obj);
 
   RegisterNodalFunctional3D(NF_B_H_IB2_3D, NF_B_H_IB2_3D_Obj);
 
@@ -427,7 +555,26 @@ void TFEDatabase3D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional3D(NF_N_H_Q4_3D, NF_N_H_Q4_3D_Obj);
   
   RegisterNodalFunctional3D(NF_C_H_UL1_3D, NF_C_H_UL1_3D_Obj);
+  RegisterNodalFunctional3D(NF_C_H_UL2_3D, NF_C_H_UL2_3D_Obj);
+  RegisterNodalFunctional3D(NF_C_H_UL3_3D, NF_C_H_UL3_3D_Obj);
   
+  RegisterNodalFunctional3D(NF_N_T_RT0_3D, NF_N_T_RT0_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_T_RT1_3D, NF_N_T_RT1_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_T_RT2_3D, NF_N_T_RT2_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_T_RT3_3D, NF_N_T_RT3_3D_Obj);
+
+  RegisterNodalFunctional3D(NF_N_T_BDDF1_3D, NF_N_T_BDDF1_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_T_BDDF2_3D, NF_N_T_BDDF2_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_T_BDDF3_3D, NF_N_T_BDDF3_3D_Obj);
+
+  RegisterNodalFunctional3D(NF_N_H_RT0_3D, NF_N_H_RT0_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_H_RT1_3D, NF_N_H_RT1_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_H_RT2_3D, NF_N_H_RT2_3D_Obj);
+
+  RegisterNodalFunctional3D(NF_N_H_BDDF1_3D, NF_N_H_BDDF1_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_H_BDDF2_3D, NF_N_H_BDDF2_3D_Obj);
+  RegisterNodalFunctional3D(NF_N_H_BDDF3_3D, NF_N_H_BDDF3_3D_Obj);
+
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
@@ -466,6 +613,14 @@ void TFEDatabase3D::RegisterAllFEs()
 
   ele3D = new TFE3D(BF_D_T_P1_3D, NF_D_T_P1_3D, TetraAffin, FE_D_T_P1_3D, 0);
   RegisterFE3D(D_P1_3D_T_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_D_T_P2_3D, NF_D_T_P2_3D, TetraAffin, FE_D_T_P2_3D, 0);
+  RegisterFE3D(D_P2_3D_T_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_D_T_P3_3D, NF_D_T_P3_3D, TetraAffin, FE_D_T_P3_3D, 0);
+  RegisterFE3D(D_P3_3D_T_A, ele3D);
+  //ele3D->CheckNFandBF();
+
 
   // ======================================================================
   // elements on arbitrary hexahedrons
@@ -492,6 +647,11 @@ void TFEDatabase3D::RegisterAllFEs()
   RegisterFE3D(D_P2_3D_H_M, ele3D);
   ele3D = new TFE3D(BF_D_H_P3_3D, NF_D_H_P3_3D, HexaTrilinear, FE_D_H_P3_3D, 0);
   RegisterFE3D(D_P3_3D_H_M, ele3D);
+  
+  ele3D = new TFE3D(BF_D_H_Q1_3D, NF_D_H_Q1_3D, HexaTrilinear, FE_D_H_Q1_3D, 0);
+  RegisterFE3D(D_Q1_3D_H_M, ele3D);
+  ele3D = new TFE3D(BF_D_H_Q2_3D, NF_D_H_Q2_3D, HexaTrilinear, FE_D_H_Q2_3D, 0);
+  RegisterFE3D(D_Q2_3D_H_M, ele3D);
 
   ele3D = new TFE3D(BF_B_H_IB2_3D, NF_B_H_IB2_3D, HexaTrilinear, FE_B_H_IB2_3D, 0);
   RegisterFE3D(B_IB2_3D_H_M, ele3D);
@@ -503,6 +663,18 @@ void TFEDatabase3D::RegisterAllFEs()
   ele3D = new TFE3D(BF_N_H_Q4_3D, NF_N_H_Q4_3D, HexaTrilinear, FE_N_H_Q4_3D, 0);
   RegisterFE3D(N_Q4_3D_H_M, ele3D);
   ele3D->CheckNFandBF();
+  
+  //========LOCALPROJECTION==============
+  ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaTrilinear, FE_C_H_UL1_3D, 0);
+  RegisterFE3D(C_UL1_3D_H_M, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_C_H_UL2_3D, NF_C_H_UL2_3D, HexaTrilinear, FE_C_H_UL2_3D, 0);
+  RegisterFE3D(C_UL2_3D_H_M, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_C_H_UL3_3D, NF_C_H_UL3_3D, HexaTrilinear, FE_C_H_UL3_3D, 0);
+  RegisterFE3D(C_UL3_3D_H_M, ele3D);
+  ele3D->CheckNFandBF();
+  //=====================================
   
   // ======================================================================
   // elements on affine hexahedrons (bricks)
@@ -525,10 +697,20 @@ void TFEDatabase3D::RegisterAllFEs()
 
   ele3D = new TFE3D(BF_D_H_P1_3D, NF_D_H_P1_3D, HexaAffin, FE_D_H_P1_3D, 0);
   RegisterFE3D(D_P1_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
   ele3D = new TFE3D(BF_D_H_P2_3D, NF_D_H_P2_3D, HexaAffin, FE_D_H_P2_3D, 0);
   RegisterFE3D(D_P2_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
   ele3D = new TFE3D(BF_D_H_P3_3D, NF_D_H_P3_3D, HexaAffin, FE_D_H_P3_3D, 0);
   RegisterFE3D(D_P3_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  
+  ele3D = new TFE3D(BF_D_H_Q1_3D, NF_D_H_Q1_3D, HexaAffin, FE_D_H_Q1_3D, 0);
+  RegisterFE3D(D_Q1_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_D_H_Q2_3D, NF_D_H_Q2_3D, HexaAffin, FE_D_H_Q2_3D, 0);
+  RegisterFE3D(D_Q2_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
 
   ele3D = new TFE3D(BF_B_H_IB2_3D, NF_B_H_IB2_3D, HexaAffin, FE_B_H_IB2_3D, 0);
   RegisterFE3D(B_IB2_3D_H_A, ele3D);
@@ -543,9 +725,62 @@ void TFEDatabase3D::RegisterAllFEs()
 
   ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaTrilinear, FE_C_H_UL1_3D, 0);
   RegisterFE3D(C_UL1_3D_H_M, ele3D);
-
+  
+  //========LOCALPROJECTION==============
   ele3D = new TFE3D(BF_C_H_UL1_3D, NF_C_H_UL1_3D, HexaAffin, FE_C_H_UL1_3D, 0);
   RegisterFE3D(C_UL1_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_C_H_UL2_3D, NF_C_H_UL2_3D, HexaAffin, FE_C_H_UL2_3D, 0);
+  RegisterFE3D(C_UL2_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_C_H_UL3_3D, NF_C_H_UL3_3D, HexaAffin, FE_C_H_UL3_3D, 0);
+  RegisterFE3D(C_UL3_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  //=====================================
+  
+  // for mixed problems
+  ele3D = new TFE3D(BF_N_T_RT0_3D, NF_N_T_RT0_3D, TetraAffin, FE_N_T_RT0_3D, 0);
+  RegisterFE3D(N_RT0_3D_T_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_T_RT1_3D, NF_N_T_RT1_3D, TetraAffin, FE_N_T_RT1_3D, 0);
+  RegisterFE3D(N_RT1_3D_T_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_T_RT2_3D, NF_N_T_RT2_3D, TetraAffin, FE_N_T_RT2_3D, 0);
+  RegisterFE3D(N_RT2_3D_T_A, ele3D);
+  //ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_T_RT3_3D, NF_N_T_RT3_3D, TetraAffin, FE_N_T_RT3_3D, 0);
+  RegisterFE3D(N_RT3_3D_T_A, ele3D);
+  //ele3D->CheckNFandBF();
+
+  ele3D = new TFE3D(BF_N_T_BDDF1_3D, NF_N_T_BDDF1_3D, TetraAffin, FE_N_T_BDDF1_3D, 0);
+  RegisterFE3D(N_BDDF1_3D_T_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_T_BDDF2_3D, NF_N_T_BDDF2_3D, TetraAffin, FE_N_T_BDDF2_3D, 0);
+  RegisterFE3D(N_BDDF2_3D_T_A, ele3D);
+  //ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_T_BDDF3_3D, NF_N_T_BDDF3_3D, TetraAffin, FE_N_T_BDDF3_3D, 0);
+  RegisterFE3D(N_BDDF3_3D_T_A, ele3D);
+  //ele3D->CheckNFandBF();
+
+  ele3D = new TFE3D(BF_N_H_RT0_3D, NF_N_H_RT0_3D, HexaAffin, FE_N_H_RT0_3D, 0);
+  RegisterFE3D(N_RT0_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_H_RT1_3D, NF_N_H_RT1_3D, HexaAffin, FE_N_H_RT1_3D, 0);
+  RegisterFE3D(N_RT1_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_H_RT2_3D, NF_N_H_RT2_3D, HexaAffin, FE_N_H_RT2_3D, 0);
+  RegisterFE3D(N_RT2_3D_H_A, ele3D);
+  
+  ele3D = new TFE3D(BF_N_H_BDDF1_3D, NF_N_H_BDDF1_3D, HexaAffin, FE_N_H_BDDF1_3D, 0);
+  RegisterFE3D(N_BDDF1_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_H_BDDF2_3D, NF_N_H_BDDF2_3D, HexaAffin, FE_N_H_BDDF2_3D, 0);
+  RegisterFE3D(N_BDDF2_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+  ele3D = new TFE3D(BF_N_H_BDDF3_3D, NF_N_H_BDDF3_3D, HexaAffin, FE_N_H_BDDF3_3D, 0);
+  RegisterFE3D(N_BDDF3_3D_H_A, ele3D);
+  ele3D->CheckNFandBF();
+
   
 #ifdef _MPI
   int rank;
@@ -580,10 +815,15 @@ void TFEDatabase3D::RegisterAllFEMappers()
   RegisterFE3DMapper(FE_N_T_P1_3D, FE_N_T_P1_3D, NP1_NP1);
 
   RegisterFE3DMapper(FE_D_T_P1_3D, FE_D_T_P1_3D, D_D);
+  RegisterFE3DMapper(FE_D_T_P2_3D, FE_D_T_P2_3D, D_D);
+  RegisterFE3DMapper(FE_D_T_P3_3D, FE_D_T_P3_3D, D_D);
 
   RegisterFE3DMapper(FE_D_H_P1_3D, FE_D_H_P1_3D, D_D);
   RegisterFE3DMapper(FE_D_H_P2_3D, FE_D_H_P2_3D, D_D);
   RegisterFE3DMapper(FE_D_H_P3_3D, FE_D_H_P3_3D, D_D);
+  
+  RegisterFE3DMapper(FE_D_H_Q1_3D, FE_D_H_Q1_3D, D_D);
+  RegisterFE3DMapper(FE_D_H_Q2_3D, FE_D_H_Q2_3D, D_D);
 
   RegisterFE3DMapper(FE_B_H_IB2_3D, FE_B_H_IB2_3D, D_D);
 
@@ -592,6 +832,19 @@ void TFEDatabase3D::RegisterAllFEMappers()
   RegisterFE3DMapper(FE_N_H_Q2_3D, FE_N_H_Q2_3D, N2_N2);
   RegisterFE3DMapper(FE_N_H_Q3_3D, FE_N_H_Q3_3D, N3_N3);
   RegisterFE3DMapper(FE_N_H_Q4_3D, FE_N_H_Q4_3D, N4_N4);
+  
+  //========LOCALPROJECTION==============
+  RegisterFE3DMapper(FE_C_H_UL1_3D, FE_C_H_Q1_3D, Q1_Q1);
+  RegisterFE3DMapper(FE_C_H_UL2_3D, FE_C_H_Q2_3D, Q2_Q2);
+  RegisterFE3DMapper(FE_C_H_Q1_3D, FE_C_H_UL1_3D, Q1_Q1);
+  RegisterFE3DMapper(FE_C_H_Q2_3D, FE_C_H_UL2_3D, Q2_Q2);
+  RegisterFE3DMapper(FE_C_H_UL1_3D, FE_C_H_UL1_3D, Q1_Q1);
+  RegisterFE3DMapper(FE_C_H_UL2_3D, FE_C_H_UL2_3D, Q2_Q2);
+
+  RegisterFE3DMapper(FE_C_H_UL3_3D, FE_C_H_Q3_3D, Q3_Q3);
+  RegisterFE3DMapper(FE_C_H_Q3_3D, FE_C_H_UL3_3D, Q3_Q3);
+  RegisterFE3DMapper(FE_C_H_UL3_3D, FE_C_H_UL3_3D, Q3_Q3);
+  //=====================================
 
   // ========================================================================
   // discontinuous finite element spaces
@@ -623,6 +876,22 @@ void TFEDatabase3D::RegisterAllFEMappers()
   RegisterFE3DMapper(FE_D_T_P1_3D, FE_C_T_P00_3D, D_D);
   RegisterFE3DMapper(FE_C_T_P0_3D, FE_D_T_P1_3D, D_D);
   RegisterFE3DMapper(FE_D_T_P1_3D, FE_C_T_P0_3D, D_D);
+  
+  RegisterFE3DMapper(FE_N_T_RT0_3D, FE_N_T_RT0_3D, NP1_NP1);
+  RegisterFE3DMapper(FE_N_T_RT1_3D, FE_N_T_RT1_3D, NP2_NP2);
+  RegisterFE3DMapper(FE_N_T_RT2_3D, FE_N_T_RT2_3D, P2_P2);
+  RegisterFE3DMapper(FE_N_T_RT3_3D, FE_N_T_RT3_3D, P3_P3);
+  RegisterFE3DMapper(FE_N_T_BDDF1_3D, FE_N_T_BDDF1_3D, NP2_NP2);
+  RegisterFE3DMapper(FE_N_T_BDDF2_3D, FE_N_T_BDDF2_3D, P2_P2);
+  RegisterFE3DMapper(FE_N_T_BDDF3_3D, FE_N_T_BDDF3_3D, P3_P3);
+
+  RegisterFE3DMapper(FE_N_H_RT0_3D, FE_N_H_RT0_3D, N1_N1);
+  RegisterFE3DMapper(FE_N_H_RT1_3D, FE_N_H_RT1_3D, Q1_Q1);
+  RegisterFE3DMapper(FE_N_H_RT2_3D, FE_N_H_RT2_3D, Q2_Q2);
+  
+  RegisterFE3DMapper(FE_N_H_BDDF1_3D, FE_N_H_BDDF1_3D, N2_N2);
+  RegisterFE3DMapper(FE_N_H_BDDF2_3D, FE_N_H_BDDF2_3D, N3_N3);
+  RegisterFE3DMapper(FE_N_H_BDDF3_3D, FE_N_H_BDDF3_3D, N4_N4);
 
   // ========================================================================
   // 1-regular grid, same pattern on both sides
@@ -812,7 +1081,33 @@ void TFEDatabase3D::GenerateArrays()
   QFTriaFromDegree[17] = Degree19Tria;
   QFTriaFromDegree[18] = Degree19Tria;
   QFTriaFromDegree[19] = Degree19Tria;
-
+  
+  QFLineFromDegree[0] = Gauss1Line;
+  QFLineFromDegree[1] = Gauss1Line;
+  QFLineFromDegree[2] = Gauss2Line;
+  QFLineFromDegree[3] = Gauss2Line;
+  QFLineFromDegree[4] = Gauss3Line;
+  QFLineFromDegree[5] = Gauss3Line;
+  QFLineFromDegree[6] = Gauss4Line;
+  QFLineFromDegree[7] = Gauss4Line;
+  QFLineFromDegree[8] = Gauss5Line;
+  QFLineFromDegree[9] = Gauss5Line;
+  QFLineFromDegree[10] = Gauss6Line;
+  QFLineFromDegree[11] = Gauss6Line;
+  QFLineFromDegree[12] = Gauss7Line;
+  QFLineFromDegree[13] = Gauss7Line;
+  QFLineFromDegree[14] = Gauss8Line;
+  QFLineFromDegree[15] = Gauss8Line;
+  QFLineFromDegree[16] = Gauss9Line;
+  QFLineFromDegree[17] = Gauss9Line;
+  QFLineFromDegree[18] = Gauss10Line;
+  QFLineFromDegree[19] = Gauss10Line;
+  QFLineFromDegree[20] = Gauss11Line;
+  QFLineFromDegree[21] = Gauss11Line;
+  QFLineFromDegree[22] = Gauss12Line;
+  QFLineFromDegree[23] = Gauss12Line;
+  
+  HighestAccuracyLine = 23;
 } // end TFEDatabase3D::GenerateArrays
 
 
@@ -826,7 +1121,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
                           double* &zeta, double* &weights,
                           double* X, double* Y, double* Z, double* absdetjk)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Faces;
+  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
   BF3DRefElements RefElement;
   QuadFormula3D QuadFormula;
   TQuadFormula3D *qf2;
@@ -878,21 +1173,26 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
   cout << "RefElement: " << RefElement << endl;
   cout << "RefTrans: " << RefTrans << endl;
 */
+  
+  if (TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR)
+    N_terms = 2;
+  else
+    N_terms = 3;
 
   switch(RefElement)
   {
     case BFUnitHexahedron:
       if (TDatabase::ParamDB->INTERNAL_QUAD_RULE==0)
       {
-        QuadFormula = TFEDatabase3D::GetQFHexaFromDegree(3*MaxPolynomialDegree);
+        QuadFormula = TFEDatabase3D::GetQFHexaFromDegree(N_terms*MaxPolynomialDegree);
 	
-        if (TDatabase::ParamDB->INTERNAL_QUAD_HEXA<3*MaxPolynomialDegree)
+        if (TDatabase::ParamDB->INTERNAL_QUAD_HEXA<N_terms*MaxPolynomialDegree)
         {
 #ifdef _MPI
         if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
 #endif
          {
-          switch(3*MaxPolynomialDegree)
+          switch(N_terms*MaxPolynomialDegree)
           {
             case 0:
               OutPut("Quadrature formula for hexahedra is Gauss2" << endl); 
@@ -915,7 +1215,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
               break;
           }
          }
-          TDatabase::ParamDB->INTERNAL_QUAD_HEXA = 3*MaxPolynomialDegree;
+          TDatabase::ParamDB->INTERNAL_QUAD_HEXA = N_terms*MaxPolynomialDegree;
         }
       }
       else
@@ -940,15 +1240,15 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
     break;
 
     case BFUnitTetrahedron:
-      QuadFormula = TFEDatabase3D::GetQFTetraFromDegree(3*MaxPolynomialDegree);
+      QuadFormula = TFEDatabase3D::GetQFTetraFromDegree(N_terms*MaxPolynomialDegree);
       
-      if (TDatabase::ParamDB->INTERNAL_QUAD_TETRA<3*MaxPolynomialDegree)
+      if (TDatabase::ParamDB->INTERNAL_QUAD_TETRA<N_terms*MaxPolynomialDegree)
       {
 #ifdef _MPI
       if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
 #endif
        {
-        switch(3*MaxPolynomialDegree)
+        switch(N_terms*MaxPolynomialDegree)
         {
           case 0:
             OutPut("Quadrature formula for tetrahedra is P2Tetra" << endl); 
@@ -964,7 +1264,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
             break;
          }
        }
-        TDatabase::ParamDB->INTERNAL_QUAD_TETRA = 3*MaxPolynomialDegree;
+        TDatabase::ParamDB->INTERNAL_QUAD_TETRA = N_terms*MaxPolynomialDegree;
       }
       else
       {
@@ -1224,13 +1524,14 @@ void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
 {
   TRefTrans3D *rt;
   int N_BaseFunct = bf->GetDimension();
-
+  int BaseVectDim = bf->GetBaseVectDim();
   rt = ReferenceTrans3D[RefTrans];
   switch(RefTrans)
   {
     case TetraAffin: 
       ((TTetraAffin *)rt)->GetOrigValues(xi, eta, zeta, N_BaseFunct, 
-          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig);
+          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig, 
+          BaseVectDim);
       break;
     case TetraIsoparametric:
       ((TTetraIsoparametric *)rt)->GetOrigValues(xi, eta, zeta, N_BaseFunct, 
@@ -1238,11 +1539,13 @@ void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
       break;
     case HexaAffin:
       ((THexaAffin *)rt)->GetOrigValues(xi, eta, zeta, N_BaseFunct, 
-          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig);
+          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig, 
+          BaseVectDim);
       break;
     case HexaTrilinear:
       ((THexaTrilinear *)rt)->GetOrigValues(xi, eta, zeta, N_BaseFunct, 
-          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig);
+          uref, uxiref, uetaref, uzetaref, uorig, uxorig, uyorig, uzorig,
+          BaseVectDim);
       break;
     case HexaIsoparametric:
       ((THexaIsoparametric *)rt)->GetOrigValues(xi, eta, zeta, N_BaseFunct, 

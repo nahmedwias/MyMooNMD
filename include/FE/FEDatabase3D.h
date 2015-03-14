@@ -19,6 +19,7 @@
 #include <FE3D.h>
 #include <FE3DMapper1Reg.h>
 
+#include <QuadFormula1D.h>
 #include <QuadFormulaHexa.h>
 #include <QuadFormulaTetra.h>
 #include <QuadFormulaTria.h>
@@ -28,6 +29,18 @@
 class TFEDatabase3D
 {
   protected:
+//======================================================================
+//      1D data
+//======================================================================
+    /** 1D (line) quadrature formulas */
+    static TQuadFormula1D *QuadFormulas1D[N_QuadFormulas_1D];
+
+    /** get line quadrature formula for given acuracy */
+    static QuadFormula1D QFLineFromDegree[MAXDEGREE];
+
+    /** highest accuracy for which a quadrature formula is available */
+    static int HighestAccuracyLine;
+
 //======================================================================
 //      2D arrays for easier access of information
 //======================================================================
@@ -180,9 +193,28 @@ class TFEDatabase3D
   public:
     /** initialize the database */
     TFEDatabase3D();
+//======================================================================
+//      QuadFormula1D
+//======================================================================
+    static TQuadFormula1D *GetQuadFormula1D(QuadFormula1D QF)
+    { return QuadFormulas1D[QF]; };
+
+     /** register QuadFormula1D */
+    static void RegisterQuadFormula1D(QuadFormula1D QF, 
+                                      TQuadFormula1D *QuadForm)
+    { QuadFormulas1D[QF] = QuadForm; };
+
+    /** get line quadrature formula for given acuracy */
+    static QuadFormula1D GetQFLineFromDegree(int accuracy)
+    {
+      if(accuracy<=HighestAccuracyLine)
+         return QFLineFromDegree[accuracy];
+      else
+        return QFLineFromDegree[HighestAccuracyLine];
+    };
 
 //======================================================================
-//      QuadFormula3D
+//      QuadFormula2D
 //======================================================================
      /** return QuadFormula2D */
      static TQuadFormula2D *GetQuadFormula2D(QuadFormula2D QF)

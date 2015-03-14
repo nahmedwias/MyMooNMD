@@ -84,70 +84,77 @@ class TFEDesc3D
 
 
     /** return number of degrees of freedom per closure of each edge */
-    int GetN_EdgeDOF()
+    int GetN_EdgeDOF() const
       { return N_EdgeDOF; }
       
     /** return local numbers of degrees of freedom on each edge */
-    int **GetEdgeDOF()
+    int **GetEdgeDOF() const
       { return EdgeDOF; }
 
     /** return local numbers of degrees of freedom on edge i */
-    int *GetEdgeDOF(int i)
+    int *GetEdgeDOF(int i) const
       { return EdgeDOF[i]; } 
 
     /** return number of degrees of freedom per closure of each vertex */
-    int GetN_VertDOF()
+    int GetN_VertDOF() const
       { return N_VertDOF; }
 
     /** return local numbers of degrees of freedom on vertex i */
-    int  GetVertDOF(int i)
+    int  GetVertDOF(int i) const
       { return VertDOF[i]; }
 
-    int IsEdgeVertData_Filled()
+    int IsEdgeVertData_Filled() const
       {return EdgeVertData_Filled; }
       
 #endif        
       
     /** return description */
-    char *GetDescription()
+    char *GetDescription() const
       { return Description; }
 
     /** return number of degrees of freedom */
-    int GetN_DOF()
+    int GetN_DOF() const
       { return N_DOF; }
 
     /** return number of degrees of freedom per closure of each joint */
-    int GetN_JointDOF()
+    int GetN_JointDOF() const
       { return N_JointDOF; }
 
     /** return number of inner degrees of freedom */
-    int GetN_InnerDOF()
+    int GetN_InnerDOF() const
       { return N_InnerDOF; }
 
     /** return local numbers of inner degrees of freedom */
-    int *GetInnerDOF()
+    int *GetInnerDOF() const
       { return InnerDOF; }
 
     /** return number of degrees of freedom on cell boundary */
-    int GetN_OuterDOF()
+    int GetN_OuterDOF() const
       { return N_OuterDOF; }
 
     /** return local numbers of degrees of freedom on cell boundary */
-    int *GetOuterDOF()
+    int *GetOuterDOF() const
       { return OuterDOF; }
 
     /** return total number and local numbers of degrees of freedom
         on cell boundary */ 
-    void GetOuterDOF(int &n_outerdof, int* &outerdof)
+    void GetOuterDOF(int &n_outerdof, int* &outerdof) const
       { n_outerdof = N_OuterDOF; outerdof = OuterDOF; }
 
     /** return local numbers of degrees of freedom on each joint */
-    int **GetJointDOF()
+    int **GetJointDOF() const
       { return JointDOF; }
 
     /** return local numbers of degrees of freedom on joint i */
-    int *GetJointDOF(int i)
+    int *GetJointDOF(int i) const
       { return JointDOF[i]; }
+
+    /** return face on which the i-th local degree of freedom is   
+    If i is not a dof on a face, return -1.
+    If i is a dof on two faces (e.g. on a vertex), one of these two faces is 
+    returned. Don't use this function in this case.
+    */
+    int GetJointOfThisDOF(int localDOF) const;
 
 };
 

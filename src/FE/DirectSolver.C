@@ -167,6 +167,87 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
 //  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
 }
 
+/*******************************************************************/
+/*        SCALAR PROBLEMS                                          */
+/*******************************************************************/
+void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
+{
+  double t1, t2, t3, t4;
+  int ret, i, j, k, l, begin, end;
+  double value;
+  int N_Eqn;
+  int *Row, *KCol;
+  double *Values;
+  void *Symbolic, *Numeric;
+
+  N_Eqn = matrix->GetN_Columns();
+  Row = matrix->GetRowPtr();
+  KCol = matrix->GetKCol();
+  Values = matrix->GetEntries();
+
+  // check ordering of the matrix
+  if (matrix->GetColOrder() != 1)
+  {
+    // sort matrix
+    OutPut("umfpack: reordering of the columns will be performed"<<endl);
+    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+
+    for(i=0;i<N_Eqn;i++)
+    {
+      begin=Row[i];
+      end=Row[i+1];
+      for(j=begin;j<end;j++)
+      {
+        for(k=j+1;k<end;k++)
+        {
+          if(KCol[j] > KCol[k])
+          {
+            l = KCol[j];     value = Values[j];
+            KCol[j] = KCol[k]; Values[j] = Values[k];
+            KCol[k] = l;       Values[k] = value;
+          }                      // endif
+        }                        // endfor k
+      }                          // endfor j
+    }                            // endfor i
+  }
+
+  t1 = GetTime();
+  ret = umfpack_di_symbolic(N_Eqn, N_Eqn, Row, KCol, Values,
+    &Symbolic, NULL, NULL);
+  t2 = GetTime();
+  // error occured
+  if (ret!=0)
+  {
+    OutPut("error in umfpack_di_symbolic " << ret << endl);
+    exit(4711);
+  }
+
+  ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
+    &Numeric, NULL, NULL);
+  umfpack_di_free_symbolic(&Symbolic);
+  t3 = GetTime();
+  // error occured
+  if (ret!=0)
+  {
+    OutPut("error in umfpack_di_numeric " << ret << endl);
+    exit(4711);
+  }
+
+  ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
+    sol, rhs, Numeric, NULL, NULL);
+
+  umfpack_di_free_numeric(&Numeric);
+
+  t4 = GetTime();
+  if (ret!=0)
+  {
+    OutPut("error in umfpack_di_solve " << ret << endl);
+    exit(4711);
+  }
+//  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+}
+
+
 // rb_flag = 0 ==> allocation and LU-decomposition forward/backward.
 // rb_flag = 1 ==> only forward/backward.
 // rb_flag = 2 ==> forward/backward and free up memory
