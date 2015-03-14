@@ -68,6 +68,39 @@ void Build_4D_FEM_FCT_MassMatrix_Q1_Windtunnel(TCollection *coll,
                                     int* &index_test_ansatz, 
 				    TSquareMatrix3D *matM,
                                     double *lump_mass_PSD);
+
+void Build_4D_FEM_FCT_Matrices_Q1_GroupFEM_Windtunnel(TCollection *coll,
+int N_x, int N_y, int N_z, int N_a,
+double *x_coord, double *y_coord, double *z_coord, double *a_coord,
+TSquareMatrix3D *matM, TSquareMatrix3D *matU1,
+TSquareMatrix3D *matU2, TSquareMatrix3D *matU3,
+TSquareMatrix3D *matG,
+double *lump_mass_PSD,double *psd_coeff);
+
+void FEM_FCT_Matrix_Q1_GroupFEM_4D_Windtunnel(TCollection *coll,
+TFEFunction3D *velocity1, TFEFunction3D *velocity2,
+TFEFunction3D *velocity3, double ***diff_velo_air_drops,
+double *sol, double *oldsol, double *rhs_psd, double *rhs_psd_old,
+double *lump_mass_PSD, double *matrix_D_Entries_PSD,
+int *correspond_3dgrid,
+int N_x, int N_y, int N_z, int N_a,
+double *x_coord, double *y_coord, double *z_coord, double *a_coord, double *a_layers_coord,
+TSquareMatrix3D *mat,
+TSquareMatrix3D *matM_cons,
+TSquareMatrix3D *matM,
+TSquareMatrix3D *matU1,
+TSquareMatrix3D *matU2,
+TSquareMatrix3D *matU3,
+TSquareMatrix3D *matG,
+double *psd_coeff,
+int N_neum_to_diri,
+int *neum_to_diri,
+double *neum_to_diri_x,
+double *neum_to_diri_y,
+double *neum_to_diri_z,
+double *neum_to_diri_a);
+
+
 double normal_rand();
 
 double log_normal_rand(double mu, double sigma, double scal);
@@ -94,6 +127,30 @@ void alloc_cubix_int(int ****cubix, int dim_x, int dim_y, int dim_z);
 void disalloc_cubix_int(int ****cubix, int dim_x, int dim_y, int dim_z);
 void alloc_matrix(double ***matrix, int dim_x, int dim_y);
 void disalloc_matrix(double **matrix, int dim_x, int dim_y);
+void alloc_matrix_int(int ***matrix, int dim_x, int dim_y);
+void disalloc_matrix_int(int **matrix, int dim_x, int dim_y);
+
+void Q_criterion(TCollection *Coll,
+TFEFunction3D *velocity1, TFEFunction3D *velocity2,
+TFEFunction3D *velocity3,
+int N_x, int N_y, int N_z, int N_a,
+double *x_coord, double *y_coord, double *z_coord, double *Qcrit);
+
+void calc_inflow_outflow_mass(double *a_layers_coord, double *f, double *x_coord, int N_x,
+int N_y, int N_z, int N_r, double *mass_inflow, double  *mass_outflow );
+
+void calc_inflow_outflow_mass_m3(double *a_layers_coord, double *f, double *x_coord, double *y_coord, int N_x,
+int N_y, int N_z, int N_r, double *mass_inflow, double  *mass_outflow );
+
+void write_vtk_q_crit( int N_x, int N_y, int N_z, int N_a, double *x_coord, double *y_coord, double *z_coord, double *a_coord,
+double *q_crit, const char *name);
+
+void ComputeIntegralLengthScale(TCollection *coll,
+TFEFunction3D *velocity1,
+int N_x, int N_y, int N_z,
+double *x_coord, double *y_coord, double *z_coord,
+int *correspond_3dgrid);
+
 #endif
 
 
