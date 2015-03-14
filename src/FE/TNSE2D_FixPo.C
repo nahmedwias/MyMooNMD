@@ -548,6 +548,51 @@ double ***LocMatrices, double **LocRhs)
   }                              // endfor i
 }
 
+// ======================================================================
+// Type 1, for group fem (the matrices for the convective term)
+// ======================================================================
+void TimeNSType1GroupFEM(double Mult, double *coeff,
+double *param, double hK,
+double **OrigValues, int *N_BaseFuncts,
+double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixCx, **MatrixCy;
+  double val;
+  double *MatrixRow1, *MatrixRow2;
+  double ansatz10, ansatz01;
+  double test00;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j,N_U;
+
+  MatrixCx = LocMatrices[0];
+  MatrixCy = LocMatrices[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u_x
+  Orig1 = OrigValues[1];         // u_y
+  Orig2 = OrigValues[2];         // u
+
+  for(i=0;i<N_U;i++)
+  {
+    MatrixRow1 = MatrixCx[i];
+    MatrixRow2 = MatrixCy[i];
+    test00 = Orig2[i];
+
+    for(j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = ansatz10*test00;
+      MatrixRow1[j] += Mult * val;
+
+      val = ansatz01*test00;
+      MatrixRow2[j] += Mult * val;
+    }                            // endfor j
+  }                              // endfor i
+}
+
 
 // ======================================================================
 // Type 2, Standard Galerkin
@@ -5841,4 +5886,287 @@ void MovingTNSParams_Axial3D(double *in, double *out)
 
 // cout<< "out[2]  " << out[2]<<endl;
 }
+
+
+void TimeNSType2SUPG(double Mult, double *coeff, 
+                double *param, double hK, 
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs)
+{
+  double **MatA, **MatM, **MatK;
+  double **MatB1, **MatB2, **MatB1T, **MatB2T;
+  double *Rhs1, *Rhs2;
+  double *MatRowA, *MatRowM, *MatRowK, *MatRow1, *MatRow2;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5, *Orig6, *Orig7;
+  double test00, test10, test01, test20, test02;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double c0, c1, c2, u1, u2, val;
+  int N_U, N_P;
+
+  MatA=LocMatrices[0];
+  MatM=LocMatrices[1];
+  MatK=LocMatrices[2];
+  
+  MatB1=LocMatrices[3];
+  MatB2=LocMatrices[4];
+  MatB1T=LocMatrices[5];
+  MatB2T=LocMatrices[6];
+
+  Rhs1=LocRhs[0];
+  Rhs2=LocRhs[1];
+
+  N_U=N_BaseFuncts[0];
+  N_P=N_BaseFuncts[1];
+  
+
+  Orig0=OrigValues[0]; // u_x
+  Orig1=OrigValues[1]; // u_y 
+  Orig2=OrigValues[2]; // u 
+  Orig3=OrigValues[3]; // u_xx
+  Orig4=OrigValues[4]; // u_yy
+  Orig5=OrigValues[5]; // p_x 
+  Orig6=OrigValues[6]; // p_y
+  Orig7=OrigValues[7]; // p
+
+  c0=coeff[0];
+  c1=coeff[1];
+  c2=coeff[2];
+
+  u1=param[0];
+  u2=param[1];
+
+  // stabilization parameters have to defined
+  // for initial test its setted to delta0*hK*hK
+  double delta=TDatabase::ParamDB->DELTA0*hK*hK;
+  double ugrad;
+
+  for(int i=0;i<N_U;i++)
+  {
+    MatRowA=MatA[i];
+    MatRowM=MatM[i];
+    MatRowK=MatK[i];
+    
+    test10=Orig0[i];
+    test01=Orig1[i];
+    test00=Orig2[i];
+
+    ugrad= delta*(u1*test10 + u2*test01);
+
+    Rhs1[i] += Mult*(test00 + ugrad)*c1;
+    Rhs2[i] += Mult*(test00 + ugrad)*c2;
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10=Orig0[j];
+      ansatz01=Orig1[j];
+      ansatz00=Orig2[j];
+      ansatz20=Orig3[j];
+      ansatz02=Orig4[j];
+
+      // Galerkin terms
+      val =c0*(test10*ansatz10+test01*ansatz01); // diffusion term
+      val +=(u1*ansatz10 + u2*ansatz01)*test00; // nonlinear (convective term)
+      val +=(-c0*(ansatz20+ansatz02) + (u1*ansatz10 + u2*ansatz01))*ugrad; // SUPG terms
+      
+      MatRowA[j] += Mult*val; // A block
+      MatRowM[j] += Mult*ansatz00*test00;
+
+      MatRowK[j] += Mult*ansatz00*ugrad;
+    }
+
+    MatRow1=MatB1T[i];
+    MatRow2=MatB2T[i];
+    
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz10=Orig5[j];
+      ansatz01=Orig6[j];
+      ansatz00=Orig7[j];
+
+      val = -ansatz00*test10; // Galerkin term
+      val += ansatz10*ugrad;
+      MatRow1[j] += Mult*val;
+      
+      val = -ansatz00*test01; // term due to stabilization
+      val += ansatz01*ugrad;
+      MatRow2[j] += Mult*val;
+    }
+  }
+
+  for(int i=0;i<N_P; i++)
+  {
+    MatRow1=MatB1[i];
+    MatRow2=MatB2[i];
+
+    test00=Orig7[i];
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10=Orig0[j];
+      ansatz01=Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatRow1[j] += val;
+      
+      val = -Mult*test00*ansatz01;
+      MatRow2[j] += val;
+    }
+  }
+}
+
+
+void TimeNSType2NLSUPG(double Mult, double *coeff, 
+                double *param, double hK, 
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs)
+{
+  double **MatA, **MatK, **MatB1T, **MatB2T;
+  double *MatRowA, *MatRowK, *MatRow1, *MatRow2;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5, *Orig6, *Orig7;
+  double test00, test10, test01, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double *Rhs1, *Rhs2;
+  double c0, c1, c2, u1, u2, val, delta, ugrad;
+  int N_U, N_P;
+
+  MatA=LocMatrices[0];
+  MatK=LocMatrices[1];
+  MatB1T=LocMatrices[2];
+  MatB2T=LocMatrices[3];
+
+
+  Rhs1=LocRhs[0];
+  Rhs2=LocRhs[1];
+
+  N_U=N_BaseFuncts[0];
+  N_P=N_BaseFuncts[1];
+  
+
+  Orig0=OrigValues[0]; // u_x
+  Orig1=OrigValues[1]; // u_y 
+  Orig2=OrigValues[2]; // u 
+  Orig3=OrigValues[3]; // u_xx
+  Orig4=OrigValues[4]; // u_yy
+  Orig5=OrigValues[5]; // p_x 
+  Orig6=OrigValues[6]; // p_y
+  Orig7=OrigValues[7]; // p
+
+  c0=coeff[0];
+  c1=coeff[1];
+  c2=coeff[2];
+
+  u1=param[0];
+  u2=param[1];
+  
+  if(c0<hK)
+    delta=TDatabase::ParamDB->DELTA0*hK*hK;
+  else 
+    delta=TDatabase::ParamDB->DELTA1*hK*hK;
+
+  for(int i=0;i<N_U;i++)
+  {
+    MatRowA=MatA[i];
+    MatRowK=MatK[i];
+    
+    test10=Orig0[i]; 
+    test01=Orig1[i];
+    test00=Orig2[i];
+    
+    ugrad=delta*(u1*test10 + u2*test01);
+    
+    Rhs1[i] += Mult*ugrad*c1;
+    Rhs2[i] += Mult*ugrad*c2;
+    
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10=Orig0[j];
+      ansatz01=Orig1[j];
+      ansatz00=Orig2[j];
+      ansatz20=Orig3[j];
+      ansatz02=Orig4[j];
+      
+      val =c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
+      val +=(u1*ansatz10+u2*ansatz01)*test00; // nonlinear term
+      val +=(/*-c0*(ansatz20 + ansatz02) +*/ (u1*ansatz10 + u2*ansatz01))*ugrad; // SUPG terms
+      
+      MatRowA[j] += Mult*val;
+      
+      MatRowK[j] += Mult*ansatz00*ugrad;
+    }
+    
+    MatRow1=MatB1T[i];
+    MatRow2=MatB2T[i];
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz10=Orig5[j];
+      ansatz01=Orig6[j];
+      ansatz00=Orig7[j];
+      
+      val = -ansatz00*test10;
+      val += ansatz10*ugrad;
+      MatRow1[j] += Mult*val;
+      
+      val = -ansatz00*test01;
+      val += ansatz01*ugrad;
+      MatRow2[j] += Mult*val;
+    }
+  }
+}
+
+void TimeNSRHSSUPG(double Mult, double *coeff,
+                double *param, double hK,
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs)
+{
+  double *Rhs1, *Rhs2, *Rhs3, *Rhs4;
+  double *Orig0, *Orig1, *Orig2;
+  double test00, test10, test01;
+  double u1, u2, c0, c1, c2, ugrad, delta;
+  int N_U;
+  
+//   Rhs1=LocRhs[0];
+//   Rhs2=LocRhs[1];
+  Rhs3=LocRhs[0];
+  Rhs4=LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+  
+  Orig0=OrigValues[0]; // u_x
+  Orig1=OrigValues[1]; // u_y 
+  Orig2=OrigValues[2]; // u 
+
+  c0=coeff[0];
+  c1=coeff[1];
+  c2=coeff[2];
+
+  u1=param[0];
+  u2=param[1];
+  
+  if(c0<hK)
+    delta=TDatabase::ParamDB->DELTA0*hK*hK;
+  else 
+    delta=TDatabase::ParamDB->DELTA1*hK*hK;
+
+  for(int i=0;i<N_U;i++)
+  {
+    test10=Orig0[i]; 
+    test01=Orig1[i];
+    test00=Orig2[i];
+    
+    ugrad=delta*(u1*test10 + u2*test01);
+    /*
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;*/
+    
+    Rhs3[i] += Mult*ugrad*c1;
+    Rhs4[i] += Mult*ugrad*c2;
+  }   
+}
+
+void TimeNSParams4(double *in, double *out)
+{
+  out[0] = in[2];                // u1old
+  out[1] = in[3];                // u2old
+  out[2] = in[4];                // u1, previous time
+  out[3] = in[5];                // u2, previous time
+}
+
 

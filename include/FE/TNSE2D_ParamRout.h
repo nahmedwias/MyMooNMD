@@ -339,6 +339,22 @@ ParamFct *MovingTNSFct_Axial3D[1] = { MovingTNSParams_Axial3D };
 int MovingTNSBeginParam_Axial3D[1] = { 0 };
 
 
+// ========================================================================
+// parameters: u1old, u2old, u1 previous, u2 previous
+// used for : SUPG
+// ========================================================================
+int TimeNSN_FESpaces4 = 1; 
+int TimeNSN_Fct4 = 4;
+int TimeNSN_FEValues4 = 4;
+int TimeNSN_Params4 = 4; 
+int TimeNSFEFctIndex4[4] = { 0, 1, 2, 3 }; // size: TimeNSN_FEValues2
+MultiIndex2D TimeNSFEMultiIndex4[4] = { D00, D00, D00, D00 }; // size:TimeNSN_FEValues2
+
+int TimeNSN_ParamFct4 = 1;
+ParamFct *TimeNSFct4[1] = { TimeNSParams4 }; // size: TimeNSN_ParamFct2
+int TimeNSBeginParam4[1] = { 0 }; // size: TimeNSN_ParamFct2
+void TimeNSParams4(double *in, double *out);
+
 
 
 

@@ -163,5 +163,17 @@ MultiIndex3D TimeNSFEMultiIndexGL00AuxProblemNuT4[21] = { D000, D000, D000,
 ParamFct *TimeNSFctGL00AuxProblemNuT4[1] = { TimeNSParamsRHSGL00ConvolutionNuT4_3D };
 int TimeNSBeginParamGL00AuxProblemNuT4[1] = { 0 };
 
+
+int TimeNSN_FESpacesVelo;
+int TimeNSN_FctVelo;
+int TimeNSN_ParamFctVelo;
+int TimeNSN_FEValuesVelo;
+ParamFct *TimeNSFctVelo[1];
+int TimeNSFEFctIndexVelo[3];
+MultiIndex3D TimeNSFEMultiIndexVelo[3];
+int TimeNSN_ParamsVelo;
+int TimeNSBeginParamVelo[1];
+
+
 #endif
 

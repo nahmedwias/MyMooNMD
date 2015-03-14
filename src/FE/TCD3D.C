@@ -3,9 +3,10 @@
 // ======================================================================
 
 #include <Database.h>
-#include <ConvDiff3D_Routines.h>
+#include <ConvDiff.h>
 #include <math.h>
 #include <stdlib.h>
+#include <Enumerations.h>
 
 void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
                            double hK, 
@@ -418,6 +419,121 @@ void RhsAssemble(double Mult, double *coeff, double *param,
     Rhs[i] += Mult*test000*c5;
   } // endfor i
 }
+
+
+// ======================================================================
+//  definitions for assembling the matrix M, A group fem-fct
+// ======================================================================
+// int N_Terms_MatrixMAGroupFEMRhs = 4;
+// MultiIndex3D Derivatives_MatrixMAGroupFEMRhs[4] = { D100, D010, D001, D000 };
+// int SpacesNumbers_MatrixMAGroupFEMRhs[4] = { 0, 0, 0, 0 };
+// int N_Matrices_MatrixMAGroupFEMRhs = 2;
+// int RowSpace_MatrixMAGroupFEMRhs[2] = { 0, 0};
+// int ColumnSpace_MatrixMAGroupFEMRhs[2] = { 0, 0};
+// int N_Rhs_MatrixMAGroupFEMRhs = 1;
+// int RhsSpace_MatrixMAGroupFEMRhs = { 0 };
+
+void MatrixMAGroupFEMAssemble(double Mult, double *coeff, double *param,
+            double hK, 
+            double **OrigValues, int *N_BaseFuncts,
+            double ***LocMatrices, double **LocRhs)
+{
+    double **MatrixM, **MatrixA, val, *MatrixRowM, *MatrixRowA, *Rhs;;
+    double ansatz000, ansatz100, ansatz010, ansatz001;
+    double test000, test100, test010, test001;
+    double *Orig0, *Orig1, *Orig2, *Orig3;
+    int i,j, N_;
+    double c0, c5; 
+    
+  MatrixM = LocMatrices[0];
+  MatrixA = LocMatrices[1];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+  Orig3 = OrigValues[3];
+
+  c0 = coeff[0]; // eps
+  c5 = coeff[5]; // f
+ 
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowM = MatrixM[i];
+    MatrixRowA = MatrixA[i];
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    Rhs[i] += Mult*test000*c5;
+   for(j=0;j<N_;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      MatrixRowM[j] += Mult*ansatz000*test000;
+
+      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
+      MatrixRowA[j] += Mult * val;
+    } // endfor j
+  } // endfor i
+}
+
+void MatrixGroupFEMAssemble(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+    double **MatrixC1, **MatrixC2, **MatrixC3, **MatrixR, val;
+    double *MatrixRowC1, *MatrixRowC2, *MatrixRowC3, *MatrixRowR, *Rhs;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, c5;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_;
+
+  MatrixC1 = LocMatrices[0];
+  MatrixC2 = LocMatrices[1];
+  MatrixC3 = LocMatrices[2];
+  MatrixR = LocMatrices[3];
+  Rhs = LocRhs[0];
+  
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+  Orig3 = OrigValues[3];
+  
+  c5 = coeff[5]; // f
+
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowC1 = MatrixC1[i];
+    MatrixRowC2 = MatrixC2[i];
+    MatrixRowC3 = MatrixC3[i];
+    MatrixRowR = MatrixR[i];
+    test000 = Orig3[i];
+    Rhs[i] += Mult*test000*c5;
+    for(j=0;j<N_;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      MatrixRowC1[j] += Mult *ansatz100*test000;
+      MatrixRowC2[j] += Mult *ansatz010*test000;
+      MatrixRowC3[j] += Mult *ansatz001*test000;      
+      MatrixRowR[j] += Mult *ansatz000*test000;
+    } // endfor j
+  } // endfor i
+}
+
 
 // ======================================================================
 // MATRICES FOR REACTION PART OF BULK PRECIPITATION
@@ -900,6 +1016,13 @@ void TimeCDParamsSOLD(double *in, double *out)
   out[7] = in[10]; // old solution u_z
 }
 
+// this routine gives the fe value back
+void TimeCDParamsSolution(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[3]; // current solution u
+}
+
 void TimeCDParamsUrea(double *in, double *out)
 {
   // in[0], in[1], in[2] are coordinates
@@ -918,12 +1041,46 @@ void TimeCDParamsUrea_conc(double *in, double *out)
   out[3] = in[6]; // concentration
   out[4] = in[7]; // temp
   out[5] = in[8]; // integral conce
- 
 }
+
+void TimeCDParamsUrea_temp(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[3]; // u1
+  out[1] = in[4]; // u2
+  out[2] = in[5]; // u3
+  out[3] = in[6]; // concentration
+  out[4] = in[7]; // temp
+  out[5] = in[8]; // integral conce 
+}
+
 void TimeCDParamsUrea_conc_mat(double *in, double *out)
 {
   // in[0], in[1], in[2] are coordinates 
   out[0] = in[3]; // u1
   out[1] = in[4]; // u2
   out[2] = in[5]; // u3
+}
+
+void TimeCDParamsUrea_conc2(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[3]; // u1
+  out[1] = in[4]; // u2
+  out[2] = in[5]; // u3
+  out[3] = in[6]; // concentration
+  out[4] = in[7]; // temp
+  out[5] = in[8]; // integral conce
+  out[6] = in[9]; // integral conce
+}
+void TimeCDParamsUrea_temp2(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[3]; // u1
+  out[1] = in[4]; // u2
+  out[2] = in[5]; // u3
+  out[3] = in[6]; // concentration
+  out[4] = in[7]; // temp
+  out[5] = in[8]; // integral conce
+  out[6] = in[9]; // integral conce 
 }

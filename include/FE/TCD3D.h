@@ -121,6 +121,41 @@ void RhsAssemble_SUPG(double Mult, double *coeff, double *param,
                       double hK, 
                       double **OrigValues, int *N_BaseFuncts,
                       double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+//  definitions for assembling the matrix M, A group fem-fct
+// ======================================================================
+int N_Terms_MatrixMAGroupFEMRhs;// = 4;
+MultiIndex3D Derivatives_MatrixMAGroupFEMRhs[4];// = { D100, D010, D001, D000 };
+int SpacesNumbers_MatrixMAGroupFEMRhs[4];// = { 0, 0, 0, 0 };
+int N_Matrices_MatrixMAGroupFEMRhs;// = 2;
+int RowSpace_MatrixMAGroupFEMRhs[2];// = { 0, 0};
+int ColumnSpace_MatrixMAGroupFEMRhs[2];// = { 0, 0};
+int N_Rhs_MatrixMAGroupFEMRhs;// = 1;
+int RhsSpace_MatrixMAGroupFEMRhs[1];// = { 0 };
+          
+void MatrixMAGroupFEMAssemble(double Mult, double *coeff, double *param,
+                              double hK, 
+                              double **OrigValues, int *N_BaseFuncts,
+                              double ***LocMatrices, double **LocRhs);
+        
+// ======================================================================
+// definitions for assembling the matrix C1, C2, C3, R for group fem-fct
+// ======================================================================
+int N_Terms_MatrixGroupFEMRhs;
+MultiIndex3D Derivatives_MatrixGroupFEMRhs[4];
+int SpacesNumbers_MatrixGroupFEMRhs[4];
+int N_Matrices_MatrixGroupFEMRhs;
+int RowSpace_MatrixGroupFEMRhs[4];
+int ColumnSpace_MatrixGroupFEMRhs[4];
+int N_Rhs_MatrixGroupFEMRhs;
+int RhsSpace_MatrixGroupFEMRhs[1];
+
+void MatrixGroupFEMAssemble(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs);      
+
 // ======================================================================
 // definitions for assembling the mass matrix for bulk problem
 // ======================================================================
@@ -231,6 +266,22 @@ ParamFct *TimeCDParamsSOLDFct[1] = { TimeCDParamsSOLD };
 int TimeCDParamsSOLDBeginParam[1] = { 0 };
 
 // ======================================================================
+// parameter routine settings
+// for explicit reaction
+// ======================================================================
+void TimeCDParamsSolution(double *in, double *out);
+
+int TimeCDParamsSolutionN_FESpaces = 1;
+int TimeCDParamsSolutionN_Fct = 1;
+int TimeCDParamsSolutionN_ParamFct = 1;
+int TimeCDParamsSolutionN_FEValues = 1;
+int TimeCDParamsSolutionN_Params = 1;
+int TimeCDParamsSolutionFEFctIndex[1] = { 0 };
+MultiIndex3D TimeCDParamsSolutionFEMultiIndex[8] = { D000 };
+ParamFct *TimeCDParamsSolutionFct[1] = { TimeCDParamsSolution };
+int TimeCDParamsSolutionBeginParam[1] = { 0 };
+
+// ======================================================================
 // parameters for bulk problem
 // ======================================================================
 
@@ -337,6 +388,43 @@ MultiIndex3D TimeCDParamsUrea_concFEMultiIndex[6] = { D000, D000, D000, D000, D0
 ParamFct *TimeCDParamsUrea_concFct[1] = { TimeCDParamsUrea_conc };
 int TimeCDParamsUrea_concBeginParam[1] = { 0 };
 
+void TimeCDParamsUrea_temp(double *in, double *out);
+
+int TimeCDParamsUrea_tempN_FESpaces = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_tempN_Fct = 6; // u_1, u_2, u_3, conc, temp, integral_conce
+int TimeCDParamsUrea_tempN_ParamFct = 1; // number of ParamRout
+int TimeCDParamsUrea_tempN_FEValues = 6; // u_1, u_2, u_3, conc, temp integral_c_C
+int TimeCDParamsUrea_tempN_Params = 6;
+int TimeCDParamsUrea_tempFEFctIndex[6] = { 0, 1, 2, 3, 4, 5};
+MultiIndex3D TimeCDParamsUrea_tempFEMultiIndex[6] = { D000, D000, D000, D000, D000, D000};
+ParamFct *TimeCDParamsUrea_tempFct[1] = { TimeCDParamsUrea_temp };
+int TimeCDParamsUrea_tempBeginParam[1] = { 0 };
+
+void TimeCDParamsUrea_conc2(double *in, double *out);
+
+int TimeCDParamsUrea_concN_FESpaces2 = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_concN_Fct2 = 7; // u_1, u_2, u_3, conc, temp, integral_conce
+int TimeCDParamsUrea_concN_ParamFct2 = 1; // number of ParamRout
+int TimeCDParamsUrea_concN_FEValues2 = 7; // u_1, u_2, u_3, conc, temp integral_c_C
+int TimeCDParamsUrea_concN_Params2 = 7;
+int TimeCDParamsUrea_concFEFctIndex2[7] = { 0, 1, 2, 3, 4, 5, 6};
+MultiIndex3D TimeCDParamsUrea_concFEMultiIndex2[7] = { D000, D000, D000, D000, D000, D000, D000};
+ParamFct *TimeCDParamsUrea_concFct2[1] = { TimeCDParamsUrea_conc2 };
+int TimeCDParamsUrea_concBeginParam2[1] = { 0 };
+
+void TimeCDParamsUrea_temp2(double *in, double *out);
+
+int TimeCDParamsUrea_tempN_FESpaces2 = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_tempN_Fct2 = 7; // u_1, u_2, u_3, conc, temp, integral_conce
+int TimeCDParamsUrea_tempN_ParamFct2 = 1; // number of ParamRout
+int TimeCDParamsUrea_tempN_FEValues2 = 7; // u_1, u_2, u_3, conc, temp integral_c_C
+int TimeCDParamsUrea_tempN_Params2 = 7;
+int TimeCDParamsUrea_tempFEFctIndex2[7] = { 0, 1, 2, 3, 4, 5, 6};
+MultiIndex3D TimeCDParamsUrea_tempFEMultiIndex2[7] = { D000, D000, D000, D000, D000, D000, D000};
+ParamFct *TimeCDParamsUrea_tempFct2[1] = { TimeCDParamsUrea_temp2 };
+int TimeCDParamsUrea_tempBeginParam2[1] = { 0 };
+
+
 void TimeCDParamsUrea_conc_mat(double *in, double *out);
 
 int TimeCDParamsUrea_conc_matN_FESpaces = 1; // velocity
@@ -349,4 +437,4 @@ MultiIndex3D TimeCDParamsUrea_conc_matFEMultiIndex[3] = { D000, D000, D000};
 ParamFct *TimeCDParamsUrea_conc_matFct[1] = { TimeCDParamsUrea_conc_mat };
 int TimeCDParamsUrea_conc_matBeginParam[1] = { 0 };
 
-#endif
+#endif // __TIMECONVDIFF3D__

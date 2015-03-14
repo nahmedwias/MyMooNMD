@@ -2,12 +2,15 @@
 //  TCD2D.C 
 // ======================================================================
 
+#include <TCD2D.h>
 #include <Database.h>
-#include <ConvDiff2D_Routines.h>
 #include <MooNMD_Io.h>
+#include <FEFunction2D.h>
+#include <ConvDiff.h>
 #include <math.h>
 #include <stdlib.h>
 
+/*
 double ComputeAlpha(double hK)
 {
   double alpha;
@@ -27,701 +30,13 @@ double ComputeAlpha(double hK)
   alpha = t*hK/(2*b);
   return(alpha);
 }
+*/
 
-void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
-                           double hK, 
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, *MatrixRow;
-  double ansatz00;
-  double test00;
-  double *Orig0;
-  int i,j, N_;
-  double c4; 
 
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
 
-  N_ = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];
 
-  c4 = coeff[4]; // f
 
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test00 = Orig0[i];
-
-    Rhs[i] += Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz00 = Orig0[j];
-
-      MatrixRow[j] += Mult*ansatz00*test00;
-    } // endfor j
-  } // endfor i
-}
-
-
-void MatrixMRhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                           double hK, 
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, *MatrixRow;
-  double ansatz00, x, r;
-  double test00;
-  double *Orig0;
-  int i,j, N_;
-  double c4; 
-
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-
-  c4 = coeff[4]; // f
-  x  = coeff[20]; // see DiscreteForm2D.C
-  r  = fabs(x);
-  
-  if(r<1e-12)
-   {
-   OutPut("check MatrixMRhsAssemble_Axial3D x value zero !!!!! "<< x <<endl);
-   OutPut("Quad formula: Change all integral points as positive points"<<endl);
-   }
-   
-//    cout<< "r " <<  r<< "  c4  " << c4 << endl;
-//     exit(0);
-
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test00 = Orig0[i];
-
-    Rhs[i] += r*Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz00 = Orig0[j];
-
-      MatrixRow[j] += r*Mult*ansatz00*test00;
-    } // endfor j
-  } // endfor i
-}
-
-
-void MatrixMRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, **MatrixS, *Rhs, val, *MatrixRow, *MatrixSRow;
-  double ansatz00, x, r;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c00, c11, c22, c33; 
-  double tau, bgradv, bb;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
-  Matrix = LocMatrices[0];
-  MatrixS= LocMatrices[1];
-  
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-  
-  x  = coeff[20]; // see DiscreteForm2D.C
-  r  = fabs(x);
-  
-  if(r<1e-12)
-   {
-   OutPut("check MatrixMRhsAssemble_SUPG_Axial3D x value zero !!!!! "<< x <<endl);
-   OutPut("Quad formula: Change all integral points as positive points"<<endl);
-   }
-   
-   cout<< "r " <<  r<< "  c4  " << c4 << endl;
-//     exit(0);  
-  
-  c00 = theta1 * time_step * c0;
-  c11 = theta1 * time_step * c1;
-  c22 = theta1 * time_step * c2;
-  // reactive coefficient, inclusive term from the temporal derivative
-  c33 = 1.0 + theta1 * time_step * c3;
-  if (TDatabase::ParamDB->SDFEM_TYPE==8)
-  {
-      c33 = theta1 * time_step * c3;
-  }
-  if (fabs(c11) > fabs(c22))
-      bb = fabs(c11);
-  else
-      bb = fabs(c22);
-  // this is \tilde tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-  // scale appropriately
-  //OutPut(tau << " ");
-  // do not apply for paper with J. Novo
-  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
-    tau *= theta1 * time_step;
-  //OutPut(theta1 << " " << tau << " : ");
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    MatrixSRow = MatrixS[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-
-    Rhs[i] += r*Mult*(test00+tau*bgradv)*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz00 = Orig2[j];
-
-      MatrixRow[j] += r*Mult * ansatz00*test00;
-      MatrixSRow[j] += r*Mult * ansatz00*bgradv;    
-      
-    } // endfor j
-  } // endfor i
-}
-
-void MatricesAKRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
-  double **MatrixS, *MatrixRowS, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, r, x;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  double val, val1, val2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe; 
-  double c00, c11, c22, c33;
-  double tau, bgradv, bb, res, sigma, norm_b;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
-  MatrixA = LocMatrices[0];
-  MatrixK= LocMatrices[1];
-  
-  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)  
-   MatrixS= LocMatrices[2];
-  
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
-
-  // coefficients of the problem
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-
-  x  = coeff[20]; // see DiscreteForm2D.C
-  r  = fabs(x);
-  
-  if(r<1e-12)
-   {
-   OutPut("check MatrixMRhsAssemble_SUPG_Axial3D x value zero !!!!! "<< x <<endl);
-   OutPut("Quad formula: Change all integral points as positive points"<<endl);
-   }
-   
-  // coefficients for the stabilization parameter
-  val = theta1 * time_step;
-  c00 = val * c0;
-  c11 = val * c1;
-  c22 = val * c2;
-  // reactive coefficient, inclusive term from the temporal derivative
-  c33 = 1.0 + val * c3;
-  if (TDatabase::ParamDB->SDFEM_TYPE==8)
-  {
-      c33 = val * c3;
-  }
-  if (fabs(c11) > fabs(c22))
-      bb = fabs(c11);
-  else
-      bb = fabs(c22);
-  // this is tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-
-  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-  {
-      // rhs from previous time step 
-      c5 = coeff[5];   
-      // compute residual
-      res = param[0] + theta1*time_step*(-c0*(param[3]+param[4]) + c1*param[1]
-					 +c2*param[2] + c3*param[0])
-	  -param[5] +  theta2*time_step*(-c0*(param[8]+param[9]) + c1*param[6]
-					 +c2*param[7] + c3*param[5])
-	  -theta3*time_step*c5 - theta4*time_step*c4;
-      /*c00 =  time_step * theta1 * c0;
-      c11 =  time_step * theta1 * c1;
-      c22 =  time_step * theta1 * c2;
-      c33 = 1.0 + time_step * theta1 *c3;*/
-      c5 = time_step * theta4 * c4;
-      // compute the parameter, c5 is just a dummy
-      sigma = Compute_SOLD_sigma(hK, c00, c11, c22, c33, c5, bb, tau, param, res, 1,1);
-      //OutPut( param[0] << " " << param[5] <<  " " << res << " " <<  sigma << endl);
-      val2 = Mult * sigma;
-      if (TDatabase::ParamDB->SOLD_TYPE==2)
-      {
-	  norm_b = c1*c1 + c2*c2;
-	  if (norm_b >1e-10)
-	      val2 /= norm_b;
-	  else
-	      val2 = 0.0;
-      }
-  }
-  // scale appropriately, after it is used for the SOLD scheme
-  // do not apply for paper with J. Novo
-  // this is \tilde tau
-  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
-    tau *= val;
-
-  // loop over the basis functions
-  for(i=0;i<N_;i++)
-  {
-    MatrixRowA = MatrixA[i];
-    MatrixRowK = MatrixK[i];
-    if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-	MatrixRowS = MatrixS[i];
-
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-    // scaling with the stabilization parameter
-    // scaling with the time step is done in the main program
-    bgradv *= tau;
-    // THIS CHANGEs TEST00 !
-    test00 += bgradv;
-    Rhs[i] += r*Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-	
-      // Galerkin part of the bilinear form
-      val1 = c1*ansatz10+c2*ansatz01;
-      val1+= c3*ansatz00;
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      // val1*test00 includes the SUPG part of the convective and reactive term
-      val += val1*test00;
-      // diffusion part of the SUPG stabilization
-      val -= c0*(ansatz20 + ansatz02) * bgradv;
-      
-      MatrixRowA[j] += r*Mult * val;
-      // time derivative part of the SUPG stabilization          
-      MatrixRowK[j] += r*Mult * ansatz00*bgradv;
-      
-      // isotropic SOLD method
-      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==1))
-      {
-	  MatrixRowS[j] += val2 * (test10*ansatz10+test01*ansatz01);
-      }
-      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==2))
-      {
-
-	  MatrixRowS[j] += val2 * (-c2*ansatz10+c1*ansatz01)*(-c2*test10+c1*test01);
-      }
-     
-    } // endfor j
-  } // endfor i
-}
-
-
-void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, **MatrixS, *Rhs, val, *MatrixRow, *MatrixSRow;
-  double ansatz00;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c00, c11, c22, c33; 
-  double tau, bgradv, bb;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
-  Matrix = LocMatrices[0];
-  MatrixS = LocMatrices[0];
-    
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-  
-  c00 = theta1 * time_step * c0;
-  c11 = theta1 * time_step * c1;
-  c22 = theta1 * time_step * c2;
-  // reactive coefficient, inclusive term from the temporal derivative
-  c33 = 1.0 + theta1 * time_step * c3;
-  if (TDatabase::ParamDB->SDFEM_TYPE==8)
-  {
-      c33 = theta1 * time_step * c3;
-  }
-  if (fabs(c11) > fabs(c22))
-      bb = fabs(c11);
-  else
-      bb = fabs(c22);
-  // this is \tilde tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-  // scale appropriately
-  //OutPut(tau << " ");
-  // do not apply for paper with J. Novo
-  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
-    tau *= theta1 * time_step;
-  //OutPut(theta1 << " " << tau << " : ");
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    MatrixSRow = MatrixS[i];   
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-
-    Rhs[i] += Mult*(test00+tau*bgradv)*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz00 = Orig2[j];
-
-      MatrixRow[j] += Mult * ansatz00*test00;
-      MatrixSRow[j] += Mult * ansatz00*bgradv;     
-    } // endfor j
-  } // endfor i
-}
-
-void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
-  double **MatrixS, *MatrixRowS, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  double val, val1, val2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe; 
-  double c00, c11, c22, c33;
-  double tau, bgradv, bb, res, sigma, norm_b;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-
-  MatrixA = LocMatrices[0];
-  MatrixK= LocMatrices[1];
-  
-  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)  
-   MatrixS= LocMatrices[2];
-  
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
-
-  // coefficients of the problem
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-  
-  // coefficients for the stabilization parameter
-  val = theta1 * time_step;
-  c00 = val * c0;
-  c11 = val * c1;
-  c22 = val * c2;
-  // reactive coefficient, inclusive term from the temporal derivative
-  c33 = 1.0 + val * c3;
-  if (TDatabase::ParamDB->SDFEM_TYPE==8)
-  {
-      c33 = val * c3;
-  }
-  if (fabs(c11) > fabs(c22))
-      bb = fabs(c11);
-  else
-      bb = fabs(c22);
-  // this is tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-
-  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-  {
-      // rhs from previous time step 
-      c5 = coeff[5];   
-      // compute residual
-      res = param[0] + theta1*time_step*(-c0*(param[3]+param[4]) + c1*param[1]
-					 +c2*param[2] + c3*param[0])
-	  -param[5] +  theta2*time_step*(-c0*(param[8]+param[9]) + c1*param[6]
-					 +c2*param[7] + c3*param[5])
-	  -theta3*time_step*c5 - theta4*time_step*c4;
-      /*c00 =  time_step * theta1 * c0;
-      c11 =  time_step * theta1 * c1;
-      c22 =  time_step * theta1 * c2;
-      c33 = 1.0 + time_step * theta1 *c3;*/
-      c5 = time_step * theta4 * c4;
-      // compute the parameter, c5 is just a dummy
-      sigma = Compute_SOLD_sigma(hK, c00, c11, c22, c33, c5, bb, tau, param, res, 1,1);
-      //OutPut( param[0] << " " << param[5] <<  " " << res << " " <<  sigma << endl);
-      val2 = Mult * sigma;
-      if (TDatabase::ParamDB->SOLD_TYPE==2)
-      {
-	  norm_b = c1*c1 + c2*c2;
-	  if (norm_b >1e-10)
-	      val2 /= norm_b;
-	  else
-	      val2 = 0.0;
-      }
-  }
-  // scale appropriately, after it is used for the SOLD scheme
-  // do not apply for paper with J. Novo
-  // this is \tilde tau
-  if ((TDatabase::ParamDB->SDFEM_TYPE!=9)&&(TDatabase::ParamDB->SDFEM_TYPE!=10)&&(TDatabase::ParamDB->SDFEM_TYPE!=11))
-    tau *= val;
-
-  // loop over the basis functions
-  for(i=0;i<N_;i++)
-  {
-    MatrixRowA = MatrixA[i];
-    MatrixRowK = MatrixK[i];
-    if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-	MatrixRowS = MatrixS[i];
-
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-    // scaling with the stabilization parameter
-    // scaling with the time step is done in the main program
-    bgradv *= tau;
-    // THIS CHANGEs TEST00 !
-    test00 += bgradv;
-    Rhs[i] += Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-	
-      // Galerkin part of the bilinear form
-      val1 = c1*ansatz10+c2*ansatz01;
-      val1+= c3*ansatz00;
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      // val1*test00 includes the SUPG part of the convective and reactive term
-      val += val1*test00;
-      // diffusion part of the SUPG stabilization
-      val -= c0*(ansatz20 + ansatz02) * bgradv;
-      
-      MatrixRowA[j] += Mult * val;
-      // time derivative part of the SUPG stabilization          
-      MatrixRowK[j] += Mult * ansatz00*bgradv;
-      
-      // isotropic SOLD method
-      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==1))
-      {
-	  MatrixRowS[j] += val2 * (test10*ansatz10+test01*ansatz01);
-      }
-      if ((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) && (TDatabase::ParamDB->SOLD_TYPE==2))
-      {
-
-	  MatrixRowS[j] += val2 * (-c2*ansatz10+c1*ansatz01)*(-c2*test10+c1*test01);
-      }
-     
-    } // endfor j
-  } // endfor i
-}
-
-void MatrixARhsAssemble(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, Pe, h; 
-
-  MatrixA = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-
-  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
-      ||(TDatabase::ParamDB->DISCTYPE==7))
-  {
-    h = ComputeAlpha(hK);
-    c0+= h;  
-  }
-  for(i=0;i<N_;i++)
-  {
-    MatrixRowA = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs[i] += Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      val += c3*ansatz00*test00;
-
-      MatrixRowA[j] += Mult * val;
-                
-    } // endfor j
-  } // endfor i
-}
-
-
-
-void MatrixARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, Pe, h, x, r; 
-
-  MatrixA = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-
-  if ((TDatabase::ParamDB->DISCTYPE==5)||(TDatabase::ParamDB->DISCTYPE==6)
-      ||(TDatabase::ParamDB->DISCTYPE==7))
-  {
-    h = ComputeAlpha(hK);
-    c0+= h;  
-  }
-  
-  x  = coeff[20]; // see DiscreteForm2D.C
-  r  = fabs(x);
-  
-  if(r<1e-12)
-   {
-   OutPut("check MatrixMRhsAssemble_Axial3D x value zero !!!!! "<< x <<endl);
-   OutPut("Quad formula: Change all integral points as positive points"<<endl);
-   }
-   
-//   cout<< "r " <<  r<< "  c4  " << c4 << endl;
-//     exit(0);  */   
-  
-  for(i=0;i<N_;i++)
-  {
-    MatrixRowA = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    Rhs[i] += r*Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      val += c3*ansatz00*test00;
-
-      MatrixRowA[j] += r*Mult * val;
-                
-    } // endfor j
-  } // endfor i
-}
 
 // ==
 
@@ -730,7 +45,7 @@ void MatrixARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
 // ( A B )
 // ( C M ) 
 // ======================================================================
-
+/*
 void MatricesAssemble_VMM(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
@@ -797,13 +112,14 @@ void MatricesAssemble_VMM(double Mult, double *coeff, double *param,
      }
   }
 }
-
+*/
 // ======================================================================
 // assemble matrices B1, B2, C1, C2, M from 
 // ( A     B1 B2 )
 // ( C1 c2   M ) 
 // ======================================================================
 
+/*
 void MatricesAssemble_VMM_KL02(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
@@ -865,6 +181,7 @@ void MatricesAssemble_VMM_KL02(double Mult, double *coeff, double *param,
      } 
   }
 }
+*/
 
 // ======================================================================
 // MATRICES FOR REACTION PART OF BULK PRECIPITATION
@@ -1284,286 +601,7 @@ void MatricesA_Assemble_Galerkin_Bulk(double Mult, double *coeff, double *param,
 }
 
 
-void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                                 double hK, 
-                                 double **OrigValues, int *N_BaseFuncts,
-                                 double ***LocMatrices, double **LocRhs)
-{
-  int i,j, N_T;
-  
-  double c0, c1, c2, c3, c4;  
-  double **MatrixA, **MatrixM, **MatrixK, *Rhs;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;  
-  double *MatrixARow, *MatrixMRow, *MatrixKRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, val, val1;
-  double c00, c11, c22, c33;
-  double tau, bgradv, bb, res, sigma, norm_b;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  
-  MatrixA = LocMatrices[0];
-  MatrixM = LocMatrices[1];
-  MatrixK = LocMatrices[2];
-  
-  Rhs = LocRhs[0];
 
-  N_T = N_BaseFuncts[0]; 
-  
-  Orig0 = OrigValues[0]; // T_x
-  Orig1 = OrigValues[1]; // T_y
-  Orig2 = OrigValues[2]; // T
-  Orig3 = OrigValues[3]; // 
-  Orig4 = OrigValues[4]; //
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
-  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)
-  
-  if(TDatabase::ParamDB->P6==1) // con-ALE
-   {
-    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
-   }
-  else// non-conservative ALE
-   {
-    c3 = coeff[3]; 
-   }  
-  
-  c4 = coeff[4]; // rhs
-
-//  cout<< " u1: "<< u1<< " u2: "<< u2<<endl;
-//  cout<< "div w: "<< param[3]  <<endl;
-
-  // coefficients for the stabilization parameter
-  val = theta1 * time_step;
-  c00 = val * c0;
-  c11 = val * c1;
-  c22 = val * c2;
-  // reactive coefficient, inclusive term from the temporal derivative
-  c33 = 1.0 + val * c3;
-  // reactive coefficient, inclusive term from the temporal derivative
-//   c33 = 1.0/(val) + c3;  
-  
-  if (fabs(c11) > fabs(c22))
-      bb = fabs(c11);
-  else
-      bb = fabs(c22);
-  // this is tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-
-  for(i=0;i<N_T;i++)
-   {
-    MatrixARow = MatrixA[i];
-    MatrixMRow  = MatrixM[i];
-    MatrixKRow  = MatrixK[i];
-    
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-    // scaling with the stabilization parameter
-    // scaling with the time step is done in the main program
-    bgradv *= tau;
-   
-    // rhs
-    Rhs[i] += Mult*(test00 + bgradv)*c4;
-
-    for(j=0;j<N_T;j++)
-     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];    
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-
-      // Galerkin part of the bilinear form
-      val1 = c1*ansatz10+c2*ansatz01;
-      val1+= c3*ansatz00;
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      val += val1*(test00 + bgradv);
-      
-      // diffusion part of the SUPG stabilization
-      val -= c0*(ansatz20 + ansatz02) * bgradv; 
-        
-      MatrixARow[j] += val*Mult;
-
-      // mass mat
-      val = Mult*ansatz00*test00;      
-      MatrixMRow[j] += val;
-           
-      // time consistant term
-      val = Mult*ansatz00*bgradv;      
-      MatrixKRow[j] += val;        
-      
-      
-     } // for(j=0;j<N_T;j++)     
-   } //   for(i=0;i<N_T;i++)
-   
-}// MatrixMARhsAssemble_SUPG
-
-
-
-
-void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
-                                 double hK, 
-                                 double **OrigValues, int *N_BaseFuncts,
-                                 double ***LocMatrices, double **LocRhs)
-{
-  int i,j, N_T;
-  
-  double c0, c1, c2, c3, c4;  
-  double **MatrixA, **MatrixM, *Rhs;
-  double *Orig0, *Orig1, *Orig2;  
-  double *MatrixARow, *MatrixMRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, val;
-  
-  MatrixA = LocMatrices[0];
-  MatrixM = LocMatrices[1];
-  
-  Rhs = LocRhs[0];
-
-  N_T = N_BaseFuncts[0]; 
-  
-  Orig0 = OrigValues[0]; // T_x
-  Orig1 = OrigValues[1]; // T_y
-  Orig2 = OrigValues[2]; // T
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
-  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)  
-  c4 = coeff[4]; // rhs  
-  
-  if(TDatabase::ParamDB->P6==1) // con-ALE
-   {
-    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
-   }
-  else// non-conservative ALE
-   {
-    c3 = coeff[3]; 
-//     cout<< "div w: "<< param[0]  <<endl;
-   }
-//   cout<< " u1: "<< u1<< " u2: "<< u2<<endl;
-//  cout<< "div w: "<< param[3]  <<endl;
-
-  for(i=0;i<N_T;i++)
-   {
-    MatrixARow = MatrixA[i];
-    MatrixMRow  = MatrixM[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    // rhs
-    Rhs[i] += Mult*test00*c4;
-
-    for(j=0;j<N_T;j++)
-     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];    
-    
-      //stiffness mat
-      val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      val += c3*ansatz00*test00;
-   
-      MatrixARow[j] += val*Mult;
-
-      // mass mat
-      val = Mult*ansatz00*test00;      
-      MatrixMRow[j] += val;
-      
-     } // for(j=0;j<N_T;j++)     
-   } //   for(i=0;i<N_T;i++)
-   
-}// MatrixMARhsAssemble
-
-
-
-void MatrixMARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                                 double hK, 
-                                 double **OrigValues, int *N_BaseFuncts,
-                                 double ***LocMatrices, double **LocRhs)
-{
-  int i,j, N_T;
-  
-  double c0, c1, c2, c3, c4, x, r;  
-  double **MatrixA, **MatrixM, *Rhs;
-  double *Orig0, *Orig1, *Orig2;  
-  double *MatrixARow, *MatrixMRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, val;
-  
-  MatrixA = LocMatrices[0];
-  MatrixM = LocMatrices[1];
-  
-  Rhs = LocRhs[0];
-
-  N_T = N_BaseFuncts[0]; 
-  
-  Orig0 = OrigValues[0]; // T_x
-  Orig1 = OrigValues[1]; // T_y
-  Orig2 = OrigValues[2]; // T
-
-  c0 = coeff[0]; // nu
-//   c1 = coeff[1];  
-//   c2 = coeff[2];  
-  c3 = coeff[3]; // concentration coeff
-  c4 = coeff[4]; // rhs
- 
-  c1 = param[0]; // u1-w1
-  c2 = param[1]; // u2-w2
- 
-  x  = param[2]; // x
-  r  = fabs(x);  
-   
-  //cout<< "x: "<< x<<" u1: "<< u1<< " u2: "<< u2<<endl;
-    
-  if(r<1e-12)
-   {
-   OutPut("check NSE2D Axisymmetric file x value zero !!!!! "<< x <<endl);
-   OutPut("Quad formula: Change all integral points as positive points"<<endl);
-   }
-   
-
-  for(i=0;i<N_T;i++)
-   {
-    MatrixARow = MatrixA[i];
-    MatrixMRow  = MatrixM[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    // rhs
-    Rhs[i] += r*Mult*test00*c4;
-
-    for(j=0;j<N_T;j++)
-     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];    
-    
-      //stiffness mat
-      val  = r*c0*(test10*ansatz10+test01*ansatz01);
-      val  += r* ((c1*ansatz10+c2*ansatz01)*test00);
-      val += r*c3*ansatz00*test00;
-  
-      MatrixARow[j] += val*Mult;
-
-      // mass mat
-      val = r*Mult*ansatz00*test00;      
-      MatrixMRow[j] += val;
-      
-     } // for(j=0;j<N_T;j++)     
-   } //   for(i=0;i<N_T;i++)
-   
-}// MatrixMARhsAssemble_Axial3D
 
 
 // this routine gives the fe value back
@@ -1683,3 +721,202 @@ void TimeCDParamsBulk_SOLD_mom(double *in, double *out)
   out[2] = in[4]; // C_c
   out[3] = in[5]; // C_c_old
 }
+
+
+void TimeCDParamsUrea(double *in, double *out)
+{
+  // in[0], in[1]  are coordinates
+  out[0] = in[2]; // value of second input fe function (u1)
+  out[1] = in[3]; // value of third input fe function (u2)
+}
+
+void TimeCDParamsUrea_conc(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[2]; // u1
+  out[1] = in[3]; // u2
+  out[2] = in[4]; // concentration
+  out[3] = in[5]; // temp
+  out[4] = in[6]; // integral conce
+}
+
+void TimeCDParamsUrea_temp(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[2]; // u1
+  out[1] = in[3]; // u2
+  out[2] = in[4]; // concentration
+  out[3] = in[5]; // temp
+  out[4] = in[6]; // integral conce
+}
+
+void TimeCDParamsUrea_conc2(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[2]; // u1
+  out[1] = in[3]; // u2
+  out[2] = in[4]; // concentration
+  out[3] = in[5]; // temp
+  out[4] = in[6]; // integral conce
+  out[5] = in[7]; // integral conce
+}
+
+void TimeCDParamsUrea_temp2(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[2]; // u1
+  out[1] = in[3]; // u2
+  out[2] = in[4]; // concentration
+  out[3] = in[5]; // temp
+  out[4] = in[6]; // integral conce
+  out[5] = in[7]; // integral conce
+}
+
+void TimeCDParamsUrea_conc_mat(double *in, double *out)
+{
+  // in[0], in[1], in[2] are coordinates 
+  out[0] = in[2]; // u1
+  out[1] = in[3]; // u2
+}
+
+
+
+void JumpTermsForIMEX_P1(TFESpace2D *fespace,
+TFEFunction2D *u,
+BoundCondFunct2D *BoundaryConditions,
+double *sold_param)
+{
+  int i, j, k, ii, N_Cells, *ColInd, *RowPtr, *GlobalNumbers, *BeginIndex;
+  int ActiveBound, *DOF, *DOF_n, N_Edges, boundedge, locdof, found;
+  int com00, com01, com10, com11, com20, com21, com_other0, com_other1;
+  int loc_vert_n, comp;
+  double val[3], val_neigh[3], h, norm_t, x[3], y[3], oldval[3];
+  double x_n[3], y_n[3], eps = 1e-6;
+  double x0, x1, y0, y1, xs, ys, t1, t2, *coeff, jump, fac0, fac1, fac2;
+  double phi0_x, phi0_y, phi1_x, phi1_y, phi2_x, phi2_y, n1, n2, maxjump;
+  double phi0_n_x, phi0_n_y, phi1_n_x, phi1_n_y, phi2_n_x, phi2_n_y;
+  double phi_n_other_x, phi_n_other_y, p0, p1;
+  double sx, sy, tmp, meas, area, rho = 2.0, ansatz, test, area_n, meas_n;
+  double integral, norm_grad_u, ave, integral_ave;
+  TBaseCell *cell, *neigh;
+  TCollection *coll;
+  FE2D CurrentElement;
+  TJoint *joint;
+  TRefDesc *refdesc;
+  TVertex *ver0,*ver1;
+  BoundCond BdCond;
+  TBoundComp *BdComp;
+  TBoundEdge *bound_edge;
+  TIsoBoundEdge *isobound_edge;
+  const int *TmpEdVer;
+
+  // get arrays with the numbering of the dof
+  GlobalNumbers = fespace->GetGlobalNumbers();
+  BeginIndex = fespace->GetBeginIndex();
+
+  // get collection and number of cells
+  coll = fespace->GetCollection();
+  N_Cells = coll->GetN_Cells();
+
+  // assign a numbering to the cells
+  for(i=0;i<N_Cells;i++)                          // do for all mesh cells
+  {                                               // on the finest level
+    cell=coll->GetCell(i);
+    cell->SetClipBoard(i);
+  }                                               // endfor i
+
+  // loop over all cells for computing the jump terms
+  for(i=0;i<N_Cells;i++)
+  {
+    integral = integral_ave = 0;
+    // next cell
+    cell = coll->GetCell(i);
+    h = cell->GetDiameter();
+    //meas = cell->GetMeasure();
+    // pointer to global indices of dof connected with this cell
+    //DOF = GlobalNumbers + BeginIndex[i];
+
+    // local dofs are arranged as follows
+    // local dof 0 on vertex 0 opposite to edge 1
+    // local dof 1 on vertex 1 opposite to edge 2
+    // local dof 2 on vertex 2 opposite to edge 0
+
+    CurrentElement = fespace->GetFE2D(i, cell);
+    if (CurrentElement!=C_P1_2D_T_A)
+    {
+      OutPut("JumpTermsForIMEX_P1 for element " << CurrentElement <<
+        " not implemented !!!"<< endl);
+      exit(4711);
+    }
+    // # of edges
+    N_Edges = cell->GetN_Edges();
+    sx = sy = 0;
+    // compute derivatives for basis functions
+    for (j=0;j<N_Edges; j++)
+    {
+      x[j] = cell->GetVertex(j)->GetX();
+      y[j] = cell->GetVertex(j)->GetY();
+      sx += x[j];
+      sy += y[j];
+    }
+    sx /= N_Edges;
+    sy /= N_Edges;
+    u->FindGradientLocal(cell, i, sx, sy, val);
+    norm_grad_u = sqrt(val[1]*val[1]+val[2]*val[2]);
+
+    // get refinement descriptor
+    refdesc=cell->GetRefDesc();
+    refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
+
+    for(j=0;j<N_Edges;j++)                        // loop over all edges of cell
+    {
+      joint=cell->GetJoint(j);
+      ver0=cell->GetVertex(TmpEdVer[2*j]);        // get vertices of face j
+      ver1=cell->GetVertex(TmpEdVer[2*j+1]);
+      x0 = ver0->GetX();                          // coordinates of face j
+      y0 = ver0->GetY();
+      x1 = ver1->GetX();
+      y1 = ver1->GetY();
+      //OutPut(endl << "ed " << j << " " << x0 << " " << y0 << " ; " << x1 << " " <<y1
+      //  << endl);
+      // compute tangential
+      t1 = x1 - x0;
+      t2 = y1 - y0;
+      norm_t = sqrt(t1*t1+t2*t2);
+      t1 /= norm_t;
+      t2 /= norm_t;
+      // compute normal
+      n1 = t2;
+      n2 = -t1;
+      //OutPut(t1 << " " << t2 << " " << t1*t1+t2*t2 << endl);
+      // compute solution (including derivative) in midpoint of tangential
+      // from point of view of this mesh cell
+      xs = (x1+x0)/2;
+      ys = (y1+y0)/2;
+      // NO ADAPTIVE MESHES ALLOWED
+      neigh=joint->GetNeighbour(cell);            // neighbour cell
+      if (neigh!=NULL)
+      {
+        ii =  neigh->GetClipBoard();
+        //OutPut("ii " << ii << endl);
+        //DOF_n = GlobalNumbers + BeginIndex[ii];
+        u->FindGradientLocal(neigh, ii, xs, ys, val_neigh);
+        jump = (val_neigh[1] - val[1]) * n1 + (val_neigh[2] - val[2]) * n2;
+        ave = fabs( val[1]*n1 +   val[2]*n2) +  fabs( val_neigh[1]*n1 +   val_neigh[2]*n2);
+        ave /= 2;
+        integral += jump * jump * norm_t;
+        integral_ave += ave * ave * norm_t;
+      }
+    }
+    /*if (norm_grad_u > 0)
+      sold_param[i] = sqrt(integral)/norm_grad_u;
+    else
+    sold_param[i] = 0;*/
+    if (integral_ave > 0)
+      sold_param[i] = sqrt(integral/integral_ave);
+    else
+      sold_param[i] = 0;
+  }                                               // loop over cells
+}
+
+

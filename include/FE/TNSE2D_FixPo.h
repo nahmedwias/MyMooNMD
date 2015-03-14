@@ -88,6 +88,14 @@ void TimeNSType1GL00AuxProblem(double Mult, double *coeff,
                         double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+// Type 1, group fem
+// ======================================================================
+void TimeNSType1GroupFEM(double Mult, double *coeff, double *param, double hK,
+                         double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs);
+
+
+// ======================================================================
 // declaration for all Navier-Stokes problems of type 2
 //      one A block, 
 //      M block from time discretization
@@ -113,8 +121,50 @@ void TimeNSType2Galerkin(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
-// for Type 2 SDFEM is not available
+// declaration for all Navier-Stokes problems of type 2 SUPG
+//      one A block, 
+//      M block from time discretization
+//      K block from supg discretization 
+//      B1, B2 (divergence blocks), 
+//      B1T, B2T (gradient blocks)
 // ======================================================================
+int TimeNSType2N_TermsSUPG = 8;
+MultiIndex2D TimeNSType2DerivativesSUPG[8] = { D10, D01, D00, D00 };
+int TimeNSType2SpaceNumbersSUPG[8] = { 0, 0, 0, 1 };
+int TimeNSType2N_MatricesSUPG = 7;
+int TimeNSType2RowSpaceSUPG[7] = { 0, 0, 1, 1, 0, 0 };
+int TimeNSType2ColumnSpaceSUPG[7] = { 0, 0, 0, 0, 1, 1 };
+int TimeNSType2N_RhsSUPG = 2;
+int TimeNSType2RhsSpaceSUPG[2] = { 0, 0 };
+
+// ======================================================================
+// Type 2, Standard SUPG
+// ======================================================================
+void TimeNSType2SUPG(double Mult, double *coeff, double *param, double hK, 
+                     double **OrigValues, int *N_BaseFuncts,
+                     double ***LocMatrices, double **LocRhs);
+// ======================================================================
+// declaration for all Navier-Stokes problems of type 2
+//      one A block, one K block from time discretization
+//      B1T, B2T (gradient blocks)
+//      WITHOUT right hand sides
+// ======================================================================
+int TimeNSType2NLN_TermsSUPG = 8;
+MultiIndex2D TimeNSType2NLDerivativesSUPG[8] = { D10, D01, D00 };
+int TimeNSType2NLSpaceNumbersSUPG[8] = { 0, 0, 0 };
+int TimeNSType2NLN_MatricesSUPG = 4;
+int TimeNSType2NLRowSpaceSUPG[4] = { 0 };
+int TimeNSType2NLColumnSpaceSUPG[4] = { 0 };
+int TimeNSType2NLN_RhsSUPG = 2;
+int TimeNSType2NLRhsSpaceSUPG[2] = {0, 0};
+// ======================================================================
+// Type 2, Standard SUPG
+// ======================================================================
+void TimeNSType2NLSUPG(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+// ======================================================================
+
 
 // ======================================================================
 // Type 2, Upwind (only Laplacian in A block)
@@ -715,6 +765,21 @@ void TimeNSRHS(double Mult, double *coeff,
                double *param, double hK, 
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs);
+//=======================================================================
+//=======================================================================
+int TimeNSRHSN_TermsSUPG = 3;
+MultiIndex2D TimeNSRHSDerivativesSUPG[3] = { D10, D01, D00 };
+int TimeNSRHSSpaceNumbersSUPG[3] = { 0, 0, 0 };
+int TimeNSRHSN_MatricesSUPG = 0;
+int *TimeNSRHSRowSpaceSUPG = NULL;
+int *TimeNSRHSColumnSpaceSUPG = NULL;
+int TimeNSRHSN_RhsSUPG = 4;
+int TimeNSRHSRhsSpaceSUPG[4] = { 0, 0, 0, 0 };
+
+void TimeNSRHSSUPG(double Mult, double *coeff, double *param, double hK, 
+                   double **OrigValues, int *N_BaseFuncts,
+                   double ***LocMatrices, double **LocRhs);
+
 
 void TimeNSRHSAuxProblemU(double Mult, double *coeff, 
                           double *param, double hK, 
@@ -880,7 +945,7 @@ static int *TimeNS_ho_RHSRowSpace = NULL;
 static int *TimeNS_ho_RHSColumnSpace = NULL;
 static int TimeNS_ho_RHSN_Rhs = 2;
 static int TimeNS_ho_RHSRhsSpace[2] = { 0, 0 };
-#endif
+
 
 void TimeNSType1GalerkinRHS(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -947,5 +1012,4 @@ void GridAssemble4(double Mult, double *coeff,
 
 // ======================================================================
 
-
-
+#endif  // __TNSE2D_FIXPO__

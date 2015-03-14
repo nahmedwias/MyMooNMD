@@ -7,100 +7,21 @@
 #ifndef __TIMECONVDIFF2D__
 #define __TIMECONVDIFF2D__
 
+#include <Enumerations.h>
+#include <FESpace2D.h>
+#include <ConvDiff2D.h>
 // ======================================================================
 // definitions for assembling the mass matrix and rhs
 // ======================================================================
-int N_Terms_MatrixMRhs = 1;
-MultiIndex2D Derivatives_MatrixMRhs[1] = { D00 };
-int SpacesNumbers_MatrixMRhs[1] = { 0 };
-int N_Matrices_MatrixMRhs = 1;
-int RowSpace_MatrixMRhs[1] = { 0 };
-int ColumnSpace_MatrixMRhs[1] = { 0 };
-int N_Rhs_MatrixMRhs = 1;
-int RhsSpace_MatrixMRhs[1] = { 0 };
-
-void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
-                           double hK, 
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs);
-
-void MatrixMRhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                           double hK, 
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs);
 
 
-int N_Terms_MatrixMRhs_SUPG = 3;
-MultiIndex2D Derivatives_MatrixMRhs_SUPG[3] = { D10, D01, D00 };
-int SpacesNumbers_MatrixMRhs_SUPG[3] = { 0, 0, 0 };
-int N_Matrices_MatrixMRhs_SUPG = 1;
-int RowSpace_MatrixMRhs_SUPG[1] = { 0 };
-int ColumnSpace_MatrixMRhs_SUPG[1] = { 0 };
-int N_Rhs_MatrixMRhs_SUPG = 1;
-int RhsSpace_MatrixMRhs_SUPG[1] = { 0 };
 
-void MatrixMRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
 
-void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// definitions for assembling the matrices A, K and rhs
-// ======================================================================
-int N_Terms_MatricesAKRhs_SUPG = 5;
-MultiIndex2D Derivatives_MatricesAKRhs_SUPG[5] = { D10, D01, D00, D20, D02 };
-int SpacesNumbers_MatricesAKRhs_SUPG[5] = { 0, 0, 0, 0, 0  };
-int N_Matrices_MatricesAKRhs_SUPG = 2;
-int RowSpace_MatricesAKRhs_SUPG[2] = { 0, 0 };
-int ColumnSpace_MatricesAKRhs_SUPG[2] = { 0, 0 };
-int N_Rhs_MatricesAKRhs_SUPG = 1;
-int RhsSpace_MatricesAKRhs_SUPG[1] = { 0 };
-
-int N_Matrices_MatricesAKRhs_SOLD = 3;
-int RowSpace_MatricesAKRhs_SOLD[3] = { 0, 0, 0 };
-int ColumnSpace_MatricesAKRhs_SOLD[3] = { 0, 0, 0 };
-
-void MatricesAKRhsAssemble_SUPG_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
-
-void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
-
-// ======================================================================
-// definitions for assembling the matrix A and rhs
-// ======================================================================
-int N_Terms_MatrixARhs = 3;
-MultiIndex2D Derivatives_MatrixARhs[3] = { D10, D01, D00};
-int SpacesNumbers_MatrixARhs[4] = { 0, 0, 0  };
-int N_Matrices_MatrixARhs = 1;
-int RowSpace_MatrixARhs[1] = { 0 };
-int ColumnSpace_MatrixARhs[1] = { 0 };
-int N_Rhs_MatrixARhs = 1;
-int RhsSpace_MatrixARhs[1] = { 0 };
-
-void MatrixARhsAssemble(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
-
-void MatrixARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // definitions for assembling the matrices for VMM
 // ======================================================================
-
+/*
 // number of fe functions 
 int N_Terms_Matrices_VMM = 4;
 
@@ -202,6 +123,7 @@ void MatricesAssemble_VMM_KL02(double Mult, double *coeff, double *param,
 // ======================================================================
 // definitions for assembling the mass matrix for bulk problem
 // ======================================================================
+
 int N_Terms_MatrixM_Bulk = 1;
 MultiIndex2D Derivatives_MatrixM_Bulk[1] = { D00 };
 int SpacesNumbers_MatrixM_Bulk[1] = { 0 };
@@ -248,6 +170,12 @@ void MatricesA_Assemble_Galerkin_Bulk(double Mult, double *coeff, double *param,
 				  double **OrigValues, int *N_BaseFuncts,
 				  double ***LocMatrices, double **LocRhs);
 
+void MatricesA_Assemble_Galerkin_MOM(double Mult, double *coeff, double *param,
+          double hK, 
+          double **OrigValues, int *N_BaseFuncts,
+          double ***LocMatrices, double **LocRhs);
+
+
 // ======================================================================
 // definitions for assembling the rhs for bulk problem
 // ======================================================================
@@ -274,42 +202,10 @@ void Rhs_Assemble_Bulk(double Mult, double *coeff, double *param,
 				  double hK, 
 				  double **OrigValues, int *N_BaseFuncts,
 				  double ***LocMatrices, double **LocRhs);
+*/
 // ======================================================================
 // definitions for assembling the matrix M, A and rhs for moving mesh
 // ======================================================================
-int N_Terms_MatrixMARhs = 3;
-MultiIndex2D Derivatives_MatrixMARhs[3] = { D10, D01, D00};
-int SpacesNumbers_MatrixMARhs[3] = { 0, 0, 0  };
-int N_Matrices_MatrixMARhs = 2;
-int RowSpace_MatrixMARhs[2] = { 0, 0 };
-int ColumnSpace_MatrixMARhs[2] = { 0, 0};
-int N_Rhs_MatrixMARhs = 1;
-int RhsSpace_MatrixMARhs[1] = { 0 };
-
-void MatrixMARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
-                                 double hK, 
-                                 double **OrigValues, int *N_BaseFuncts,
-                                 double ***LocMatrices, double **LocRhs);
-
-void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
-                         double hK, 
-                         double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
-
-int N_Terms_MatrixMARhs_SUPG = 5;
-MultiIndex2D Derivatives_MatrixMARhs_SUPG[5] = { D10, D01, D00, D20, D02 };
-int SpacesNumbers_MatrixMARhs_SUPG[5] = { 0, 0, 0, 0, 0  };
-int N_Matrices_MatrixMARhs_SUPG = 3;
-int RowSpace_MatrixMARhs_SUPG[3] = { 0, 0, 0 };
-int ColumnSpace_MatrixMARhs_SUPG[3] = { 0, 0, 0};
-int N_Rhs_MatrixMARhs_SUPG = 1;
-int RhsSpace_MatrixMARhs_SUPG[1] = { 0 };
-
-
-void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                              double hK, 
-                              double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs);
 
 
 // int N_Terms_MatricesAKRhs_SUPG = 5;
@@ -336,6 +232,7 @@ void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
 // parameter routine settings
 // SOLD methods
 // ======================================================================
+/*
 void TimeCDParamsSOLD(double *in, double *out);
 
 int TimeCDParamsSOLDN_FESpaces = 1;
@@ -429,5 +326,137 @@ MultiIndex2D TimeCDParamsBulk_SOLD_momFEMultiIndex[4] = { D00, D00, D00, D00};
 ParamFct *TimeCDParamsBulk_SOLD_momFct[1] = { TimeCDParamsBulk_SOLD_mom };
 int TimeCDParamsBulk_SOLD_momBeginParam[1] = { 0 };
 
-#
+
+void JumpTermsForIMEX_P1(TFESpace2D *fespace,
+       TFEFunction2D *u,
+       BoundCondFunct2D *BoundaryConditions,
+       double *sold_param);
+
+// ======================================================================
+//
+// definitions for assembling the mass matrix for urea synthesis
+//
+// ======================================================================
+
+int N_Terms_MatrixM_Urea = 1;
+MultiIndex2D Derivatives_MatrixM_Urea[1] = { D00 };
+int SpacesNumbers_MatrixM_Urea[1] = { 0 };
+int N_Matrices_MatrixM_Urea = 1;
+int RowSpace_MatrixM_Urea[1] = { 0 };
+int ColumnSpace_MatrixM_Urea[1]= { 0 };
+int N_Rhs_MatrixM_Urea = 0;
+int *RhsSpace_MatrixM_Urea = NULL;
+
+// ======================================================================
+// definitions for assembling the matrices A for urea problem
+// ======================================================================
+
+int N_Terms_MatricesA_SUPG_Urea = 3;
+MultiIndex2D Derivatives_MatricesA_SUPG_Urea[3] = { D10, D01, D00 };
+int SpacesNumbers_MatricesA_SUPG_Urea[3] = { 0, 0, 0 };
+int N_Matrices_MatricesA_SUPG_Urea = 2;
+int RowSpace_MatricesA_SUPG_Urea[2] = { 0, 0 };
+int ColumnSpace_MatricesA_SUPG_Urea[2] = { 0, 0 };
+int N_Rhs_MatricesA_SUPG_Urea = 0;
+int *RhsSpace_MatricesA_SUPG_Urea = NULL;
+
+int N_Matrices_MatricesA_Galerkin_Urea = 1;
+int RowSpace_MatricesA_Galerkin_Urea[1] = { 0 };
+int ColumnSpace_MatricesA_Galerkin_Urea[1] = { 0 };
+
+// ======================================================================
+// definitions for assembling the rhs for bulk problem
+// ======================================================================
+
+int N_Terms_Rhs_SUPG_Urea = 3;
+MultiIndex2D Derivatives_Rhs_SUPG_Urea[3]  = { D10, D01, D00 };
+int SpacesNumbers_Rhs_SUPG_Urea[3] = { 0, 0, 0 };
+int N_Matrices_Rhs_SUPG_Urea = 0;
+int *RowSpace_Rhs_SUPG_Urea = NULL;
+int *ColumnSpace_Rhs_SUPG_Urea = NULL;
+int N_Rhs_Rhs_SUPG_Urea = 1;
+int RhsSpace_Rhs_SUPG_Urea[1] = { 0 };
+// assembling routine same as in BULK
+
+int N_Terms_Rhs_Galerkin_Urea = 1;
+MultiIndex2D Derivatives_Rhs_Galerkin_Urea[1] = { D00 };
+int SpacesNumbers_Rhs_Galerkin_Urea[1] = { 0 };
+// assembling routine same as in BULK
+
+
+void TimeCDParamsUrea(double *in, double *out);
+
+int TimeCDParamsUreaN_FESpaces = 1;
+int TimeCDParamsUreaN_Fct = 2;
+int TimeCDParamsUreaN_ParamFct = 1;
+int TimeCDParamsUreaN_FEValues = 2;
+int TimeCDParamsUreaN_Params = 2;
+int TimeCDParamsUreaFEFctIndex[2] = { 0, 1};
+MultiIndex2D TimeCDParamsUreaFEMultiIndex[2] = { D00, D00 };
+ParamFct *TimeCDParamsUreaFct[1] = { TimeCDParamsUrea };
+int TimeCDParamsUreaBeginParam[1] = { 0 };
+
+void TimeCDParamsUrea_conc(double *in, double *out);
+
+int TimeCDParamsUrea_concN_FESpaces = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_concN_Fct = 5; // u_1, u_2, conc, temp, integral_conce
+int TimeCDParamsUrea_concN_ParamFct = 1; // number of ParamRout
+int TimeCDParamsUrea_concN_FEValues = 5; // u_1, u_2, conc, temp integral_c_C
+int TimeCDParamsUrea_concN_Params = 5;
+int TimeCDParamsUrea_concFEFctIndex[5] = { 0, 1, 2, 3, 4 };
+MultiIndex2D TimeCDParamsUrea_concFEMultiIndex[5] = { D00, D00, D00, D00, D00 };
+ParamFct *TimeCDParamsUrea_concFct[1] = { TimeCDParamsUrea_conc };
+int TimeCDParamsUrea_concBeginParam[1] = { 0 };
+
+void TimeCDParamsUrea_temp(double *in, double *out);
+
+int TimeCDParamsUrea_tempN_FESpaces = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_tempN_Fct = 5; // u_1, u_2,, conc, temp, integral_conce
+int TimeCDParamsUrea_tempN_ParamFct = 1; // number of ParamRout
+int TimeCDParamsUrea_tempN_FEValues = 5; // u_1, u_2, , conc, temp integral_c_C
+int TimeCDParamsUrea_tempN_Params = 5;
+int TimeCDParamsUrea_tempFEFctIndex[5] = { 0, 1, 2, 3, 4};
+MultiIndex2D TimeCDParamsUrea_tempFEMultiIndex[5] = { D00, D00, D00, D00, D00};
+ParamFct *TimeCDParamsUrea_tempFct[1] = { TimeCDParamsUrea_temp };
+int TimeCDParamsUrea_tempBeginParam[1] = { 0 };
+
+void TimeCDParamsUrea_conc2(double *in, double *out);
+
+int TimeCDParamsUrea_concN_FESpaces2  = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_concN_Fct2 = 6; // u_1, u_2, u_3, conc, temp, integral_conce
+int TimeCDParamsUrea_concN_ParamFct2  = 1; // number of ParamRout
+int TimeCDParamsUrea_concN_FEValues2  = 6; // u_1, u_2, u_3, conc, temp integral_c_C
+int TimeCDParamsUrea_concN_Params2  = 6;
+int TimeCDParamsUrea_concFEFctIndex2[6]  = { 0, 1, 2, 3, 4, 5};
+MultiIndex2D TimeCDParamsUrea_concFEMultiIndex2[6]  = { D00, D00, D00, D00, D00, D00};
+ParamFct *TimeCDParamsUrea_concFct2[1] = { TimeCDParamsUrea_conc2 };
+int TimeCDParamsUrea_concBeginParam2[1] = { 0 };
+
+void TimeCDParamsUrea_temp2(double *in, double *out);
+
+int TimeCDParamsUrea_tempN_FESpaces2 = 4; // conc, velocity, temp, integral_conce
+int TimeCDParamsUrea_tempN_Fct2 = 6; // u_1, u_2, conc, temp, integral_conce
+int TimeCDParamsUrea_tempN_ParamFct2 = 1; // number of ParamRout
+int TimeCDParamsUrea_tempN_FEValues2 = 6; // u_1, u_2, conc, temp integral_c_C
+int TimeCDParamsUrea_tempN_Params2 = 6;
+int TimeCDParamsUrea_tempFEFctIndex2[6] = { 0, 1, 2, 3, 4, 5};
+MultiIndex2D TimeCDParamsUrea_tempFEMultiIndex2[6] = { D00, D00, D00, D00, D00, D00};
+ParamFct *TimeCDParamsUrea_tempFct2[1] = { TimeCDParamsUrea_temp2 };
+int TimeCDParamsUrea_tempBeginParam2[1] = { 0 };
+
+
+void TimeCDParamsUrea_conc_mat(double *in, double *out);
+
+int TimeCDParamsUrea_conc_matN_FESpaces = 1; // velocity
+int TimeCDParamsUrea_conc_matN_Fct = 2; // u_1, u_2
+int TimeCDParamsUrea_conc_matN_ParamFct = 1; // number of ParamRout
+int TimeCDParamsUrea_conc_matN_FEValues = 2; // u_1, u_2
+int TimeCDParamsUrea_conc_matN_Params = 2;
+int TimeCDParamsUrea_conc_matFEFctIndex[2] = { 0, 1};
+MultiIndex2D TimeCDParamsUrea_conc_matFEMultiIndex[2] = { D00, D00};
+ParamFct *TimeCDParamsUrea_conc_matFct[1] = { TimeCDParamsUrea_conc_mat };
+int TimeCDParamsUrea_conc_matBeginParam[1] = { 0 };
+*/
+
+
 #endif

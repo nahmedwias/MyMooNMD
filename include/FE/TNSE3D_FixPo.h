@@ -435,11 +435,35 @@ void TimeNSType4VMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
 		double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
+// declaration for SUPG
+// ONLY right hand sides
+// ======================================================================
+
+static int TimeNSVMS_Rhs_SUPGN_Terms = 7;
+static MultiIndex3D TimeNSVMS_Rhs_SUPGDerivatives[7] = { D100, D010, D001, D000,
+                                                         D100, D010, D001 };
+static int TimeNSVMS_Rhs_SUPGSpaceNumbers[7] = { 0, 0, 0, 0, 1, 1, 1 };
+static int TimeNSVMS_Rhs_SUPGN_Matrices = 0;
+static int *TimeNSVMS_Rhs_SUPGRowSpace = NULL;
+static int *TimeNSVMS_Rhs_SUPGColumnSpace = NULL;
+static int TimeNSVMS_Rhs_SUPGN_Rhs = 7;
+static int TimeNSVMS_Rhs_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
+
+// compute stabilization parameters
+void SUPG_Param3D(double u1, double u2, double u3, double* coeff, double* params);
+
+void TimeNSType14VMS_Rhs_SUPGDD3D(double Mult, double *coeff, double *param,
+                                  double hK, double **OrigValues,
+                                  int *N_BaseFuncts, double ***LocMatrices,
+                                  double **LocRhs);
+
+
+// ======================================================================
 // Type 4, VMS_SUPG, D(u):D(v)
 // ======================================================================
 static int TimeNSType4VMS_SUPGN_Terms = 8;
 static MultiIndex3D TimeNSType4VMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
-							  D100, D010, D001, D000 };
+                                                          D100, D010, D001, D000 };
 static int TimeNSType4VMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
 static int TimeNSType4VMS_SUPGN_Matrices = 28;
 static int TimeNSType4VMS_SUPGRowSpace[28] = { 0, 0, 0, 0, 0, 0, 
@@ -490,20 +514,76 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
 // ONLY right hand sides
 // ======================================================================
 
-static int TimeNSVMS_Rhs_SUPGN_Terms = 7;
-static MultiIndex3D TimeNSVMS_Rhs_SUPGDerivatives[7] = { D100, D010, D001, D000,
-                                                         D100, D010, D001 };
-static int TimeNSVMS_Rhs_SUPGSpaceNumbers[7] = { 0, 0, 0, 0, 1, 1, 1 };
-static int TimeNSVMS_Rhs_SUPGN_Matrices = 0;
-static int *TimeNSVMS_Rhs_SUPGRowSpace = NULL;
-static int *TimeNSVMS_Rhs_SUPGColumnSpace = NULL;
-static int TimeNSVMS_Rhs_SUPGN_Rhs = 4;
-static int TimeNSVMS_Rhs_SUPGRhsSpace[4] = { 0, 0, 0, 1};
-
 void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
               double *param, double hK,
               double **OrigValues, int *N_BaseFuncts,
 				 double ***LocMatrices, double **LocRhs);
+
+
+// ======================================================================
+// Type 14, VMS_SUPG, D(u):D(v)
+// ======================================================================
+static int TimeNSType14VMS_SUPGN_Terms =8;
+static MultiIndex3D TimeNSType14VMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
+                             D100, D010, D001, D000};
+static int TimeNSType14VMS_SUPGSpaceNumbers[11] = { 0, 0, 0, 0, 1, 1, 1, 1};
+static int TimeNSType14VMS_SUPGN_Matrices = 37;
+static int TimeNSType14VMS_SUPGRowSpace[37] = { 0, 0, 0, 0, 0, 0, 
+                                                0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0,
+                  1, 1, 1, 1, 0, 0, 0};
+                                           
+static int TimeNSType14VMS_SUPGColumnSpace[37] = {0, 0, 0, 0, 0, 0, 
+                                                  0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 1, 1, 1};
+                                                 
+static int TimeNSType14VMS_SUPGN_Rhs = 7;
+static int TimeNSType14VMS_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
+
+void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff, 
+                double *param, double hK, 
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+static int TimeNSType14NLVMS_SUPGN_Terms = 8;
+static MultiIndex3D TimeNSType14NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
+                   D100, D010, D001, D000};
+static int TimeNSType14NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1};
+static int TimeNSType14NLVMS_SUPGN_Matrices = 34;
+static int TimeNSType14NLVMS_SUPGRowSpace[34] = { 0, 0, 0, 0, 0, 0, 
+                                                  0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              0, 0, 0, 1, 1, 1,
+              1, 0, 0, 0};
+                                            
+static int TimeNSType14NLVMS_SUPGColumnSpace[34] = {0, 0, 0, 0, 0, 0, 
+                                                    0, 0, 0, 0, 0, 0,
+                                                    0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                                                    0, 0, 0, 1, 0, 0,
+                0, 1, 1, 1};
+
+static int TimeNSType14NLVMS_SUPGN_Rhs = 3;
+static int TimeNSType14NLVMS_SUPGRhsSpace[3] = {0, 0, 0};
+
+void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff, 
+                double *param, double hK, 
+                double **OrigValues, int *N_BaseFuncts,
+                double ***LocMatrices, double **LocRhs);
+
+// ======================================================================
+// Type 4, Leray-alpha  D(u):D(v)
+// ======================================================================
+void TimeNSType4LerayAlphaDD3D(double Mult, double *coeff,
+                        double *param, double hK,
+                        double **OrigValues, int *N_BaseFuncts,
+                        double ***LocMatrices, double **LocRhs);
 
 // ======================================================================
 // Assembling routine for all nonlinear matrices
