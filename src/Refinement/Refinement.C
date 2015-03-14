@@ -19,6 +19,7 @@
 
 #ifdef __2D__
   #include <BoundEdge.h>
+  #include <InnerInterfaceJoint.h>
 #else
   #include <IsoInterfaceJoint3D.h>
   #include <BoundFace.h>
@@ -41,7 +42,7 @@ int TGridCell::Refine(int reflevel)
   const int *TmpValues1, *TmpValues2, *TmpValues3, *TmpValues4;
   double TmpX, TmpY, T_0, T_1, auxd;
   const double *TmpPos;
-  boolean Inside;
+  bool Inside;
   TVertex *CurrVert;
   
   if (!IsToRefine()) return 1;
@@ -75,6 +76,8 @@ int TGridCell::Refine(int reflevel)
                         GetChildType(i)], reflevel);
 
     Children[i]->SetParent(this);
+    // copy physical reference
+    Children[i]->SetReference_ID(this->GetReference_ID());
   }
 
   // copy existing vertices
@@ -186,7 +189,7 @@ int TGridCell::Refine(int reflevel)
             Joints[i]->GetType() == IsoInterfaceJoint)
           Inside = ((TInterfaceJoint *) Joints[i])->CheckInside(this);
         else
-          Inside = TRUE;
+          Inside = true;
 
         N_2 = TmpValues3[i]+1;
 
@@ -242,9 +245,35 @@ int TGridCell::Refine(int reflevel)
 
   N_1 = RefDesc->GetN_Edges();
   for (i=0;i<N_1;i++)
+  {
     if (NewJoints[i]->GetType() == InterfaceJoint ||
         NewJoints[i]->GetType() == IsoInterfaceJoint)
       ((TInterfaceJoint *) NewJoints[i])->CheckOrientation();
+    else if (NewJoints[i]->GetType() == InnerInterfaceJoint)
+    {
+      const int *NewEdgeOnWhichOldEdge;
+      RefDesc->GetNewEdgeOldEdge(NewEdgeOnWhichOldEdge);
+      TJoint *joint = Joints[NewEdgeOnWhichOldEdge[i]];
+      ((TInnerInterfaceJoint *)joint)->SetChild(
+                                        (TInnerInterfaceJoint *)NewJoints[i]);
+      RefDesc->GetEdgeVertex(TmpValues1); // which Vertices lie on an edge
+      ((TInnerInterfaceJoint *)NewJoints[i])->SetParams(
+        NewVertices[TmpValues1[2*i]]->GetX(),
+        NewVertices[TmpValues1[2*i]]->GetY(),
+        NewVertices[TmpValues1[2*i+1]]->GetX()-NewVertices[TmpValues1[2*i]]->GetX(),
+        NewVertices[TmpValues1[2*i+1]]->GetY()-NewVertices[TmpValues1[2*i]]->GetY());
+      // which Index has this edge in the child(ren) it belongs to
+      // we only look at edges which are on the boundary of this cell
+      // (belong to only one child)
+      RefDesc->GetEdgeChildIndex(TmpValues1,TmpValues2,MaxLen1);
+      // which Index have the children to which this edge belongs
+      // we only look at edges which are on the boundary of this cell 
+      // (belong to only one child)
+      RefDesc->GetEdgeChild(TmpValues3,TmpValues4,MaxLen1);
+      ((TInnerInterfaceJoint *)NewJoints[i])->SetIndexInNeighbor(
+        Children[TmpValues3[i*MaxLen1]],TmpValues1[i*MaxLen1]);
+    }
+  }
 
   N_1 = RefDesc->GetN_Children();
   for (i=0;i<N_1;i++)
@@ -278,7 +307,7 @@ int TGridCell::Refine(int reflevel)
 
   return 0;
 }
-#else
+#else // __3D__
 
 int TGridCell::Refine(int reflevel)
 {
@@ -294,7 +323,7 @@ int TGridCell::Refine(int reflevel)
   TBoundFace *bdface;
   TBoundComp3D *bdcomp;
   const double *TmpPos;
-  boolean Inside;
+  bool Inside;
   Refinements FaceRefDescID;
   TRefDesc *FaceRefDesc;
   TShapeDesc *ChildDesc;
@@ -356,13 +385,17 @@ int TGridCell::Refine(int reflevel)
   } // endfor i
   // sort array RefinementOrder
   for(i=0;i<N_1-1;i++)
+  {
     for(j=i+1;j<N_1;j++)
+    {
       if(RefinementOrder[i]<RefinementOrder[j])
       {
         k = RefinementOrder[i];
         RefinementOrder[i] = RefinementOrder[j];
         RefinementOrder[j] = k;
       }
+    }
+  }
   for(i=0;i<N_1;i++)
     RefinementOrder[i] %= 1000;
 
@@ -382,6 +415,8 @@ int TGridCell::Refine(int reflevel)
     Children[i]->SetParent(this);
     Children[i]->SetClipBoard(i);
     
+    // copy physical reference
+    Children[i]->SetReference_ID(this->GetReference_ID());
     Children[i]->SetRegionID(this->GetRegionID());
     Children[i]->SetAsLayerCell(this->IsLayerCell());  
     
@@ -496,7 +531,8 @@ int TGridCell::Refine(int reflevel)
         CurrCell = CurrJoint->GetNeighbour(this);
         StopCell = NULL;
       }
-          
+      
+      // Get Local Index of Edge at Face
       RefDesc->GetShapeDesc()->GetFaceEdge(TmpValues3, TmpLen2, MaxLen3);
       auxj = LocFace1 * MaxLen3;
       N_Edges = TmpLen2[LocFace1];
@@ -508,6 +544,7 @@ int TGridCell::Refine(int reflevel)
       while ((CurrCell != StopCell) && (CurrCell != NULL))
       {
         CurrJoint->GetMapperOrig(MapOrigVert,MapOrigEdge);
+        // Get Local Index of Joint at Cell
         N_Faces = CurrCell->GetN_Faces();
         for(k = 0;k < N_Faces;k++)
           if (CurrCell->GetJoint(k) == CurrJoint)
@@ -688,7 +725,7 @@ int TGridCell::Refine(int reflevel)
           // cout << "II ";
         }
         else
-          Inside = TRUE;
+          Inside = true;
 
         // cout << i << " Inside: " << Inside << endl;
 
@@ -743,7 +780,7 @@ int TGridCell::Refine(int reflevel)
                 bdcomp->GetType() == Wall )
             {
               TmpX = TmpY = TmpZ = 0;
-              TmpT = TmpS = 0,
+              TmpT = TmpS = 0;
               auxj = (auxi + j) * MaxLen4;
               for (k=0;k<N_3;k++)
               {

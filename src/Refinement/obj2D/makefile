@@ -38,6 +38,12 @@ LIBRARY = $(LIBPATH)lib_refinement.a
 	$(SRCPATH)RefTriBis0Desc.o \
 	$(SRCPATH)RefTriBis1Desc.o \
 	$(SRCPATH)RefTriBis2Desc.o \
+	$(SRCPATH)RefTriBis01Desc.o \
+	$(SRCPATH)RefTriBis02Desc.o \
+	$(SRCPATH)RefTriBis10Desc.o \
+	$(SRCPATH)RefTriBis12Desc.o \
+	$(SRCPATH)RefTriBis20Desc.o \
+	$(SRCPATH)RefTriBis21Desc.o \
 	$(SRCPATH)RefTriRegDesc.o \
 	$(SRCPATH)RefineMortar.o \
 	$(SRCPATH)Refinement.o 
