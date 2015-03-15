@@ -116,28 +116,19 @@ void TDomain::TriMeshGen(struct triangulateio  *In)
 {
   struct triangulateio Out; 
    
-  TBoundComp *BoundComp;
-  TBdLine *UpdateAxialBound, *UpdateAxialBoundTop, *UpdatelBoundTop, *UpdateBoundWall, *UpdateHorizBoundWall;
-  TBdCircle *UpdateFreeBound;
-  TBaseCell **CellTree, *cell;
-  TBoundPart *BoundPart;
+  TBaseCell **CellTree;
   TJoint *Joint;
-  TCollection *coll;
-  TVertex **VertexDel, **NewVertices;
+  TVertex **NewVertices;
   
-  double dt, area = TDatabase::ParamDB->Area;
-  double mode_diff = TDatabase::ParamDB->P4;
-  double r, phi, t, T_a, T_b, x, y, theta;
-  double *Coordinates, temp;
+  double area = TDatabase::ParamDB->Area;
+  double T_a, T_b;
+  double *Coordinates;
   double left, right, bottom, top;
-  double y_begin, y_end, dx, deviation, y_AxialEnd;
-  double CHAR_L=TDatabase::ParamDB->CHAR_L0, Wall_R;
   
-  int i, j, k, ID, In_Index, N_Cells, N_G, *PointNeighb, maxEpV=0;
-  int a, b, len1, len2, Neighb_tmp, mode = int (TDatabase::ParamDB->P4);
-  int N_Interf_Vertices, CurrComp, CurrVertex, N_Joints, N_Vertices;
-  int N_RootCells, *PartMarker, *Triangles, Neib[2], CurrNeib;
-  int N_SlipBound_Vert, N_TopBound_Vert, N_HorizBound_Vert, N_WallBound_Vert;
+  int i, j, k, N_G, *PointNeighb, maxEpV=0;
+  int a, b, len1, len2, Neighb_tmp;
+  int CurrComp;
+  int N_RootCells, *Triangles, Neib[2], CurrNeib;
 
 //   bool AllowEdgeRef = (bool) TDatabase::ParamDB->MESHGEN_ALLOW_EDGE_REF;  
   
@@ -223,7 +214,7 @@ exit(0);
   // allocate auxillary fields
   Coordinates = Out.pointlist;
   Triangles = Out.trianglelist;
-  PartMarker = new int[Out.numberofpoints];
+  //int *PartMarker = new int[Out.numberofpoints];
 // generate new vertices
   N_G = Out.numberofpoints;
   NewVertices = new TVertex*[N_G];

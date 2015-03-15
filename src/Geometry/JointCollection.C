@@ -17,8 +17,6 @@
 /** constructor */
 TJointCollection::TJointCollection(int n_joints, TJoint **joints)
 {
- int i;
-
   N_Joints = n_joints;
   Joints = joints;
 }
@@ -30,14 +28,13 @@ TJointCollection::~TJointCollection()
  int i;
 
  if(N_Joints)
-  {
+ {
   for(i=0; i<N_Joints; i++)
    {
     delete Joints[i];
    }
-
    delete [] Joints;
-  }
+ }
 
 
 }

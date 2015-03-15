@@ -1380,7 +1380,7 @@ void TDomain::QuadShishkin(double tau1, double tau2)
 
 void TDomain::Rectangular(int n, int m)
 {
-  int i,j,k,l;
+  int i,j;
   TVertex **Vertices;
   TJoint **Horizontal;
   TJoint **Vertical;

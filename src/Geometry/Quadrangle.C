@@ -71,7 +71,7 @@ double TQuadrangle::GetShortestEdge(TVertex **Verts)
 double TQuadrangle::GetLengthWithReferenceMap(TVertex **Verts)
 {
     double x0, x1, x3, y0, y1, y3;
-    double xc0, xc1, xc2, yc0, yc1, yc2;
+    double xc1, xc2, yc1, yc2;
     double detjk, rec_detjk;
     double d11, d12, d21, d22;
 
@@ -83,11 +83,11 @@ double TQuadrangle::GetLengthWithReferenceMap(TVertex **Verts)
     y3 = Verts[3]->GetY();
     
 
-    xc0 = (x1 + x3) * 0.5;
+    //double xc0 = (x1 + x3) * 0.5;
     xc1 = (x1 - x0) * 0.5;
     xc2 = (x3 - x0) * 0.5;
     
-    yc0 = (y1 + y3) * 0.5;
+    //double yc0 = (y1 + y3) * 0.5;
     yc1 = (y1 - y0) * 0.5;
     yc2 = (y3 - y0) * 0.5;
     

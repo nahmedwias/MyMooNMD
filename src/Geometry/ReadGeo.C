@@ -37,7 +37,7 @@
 int TDomain::ReadGeo(char *GeoFile)
 {
   char line[100];
-  int i, j, N_Vertices, NVpF, NVE, NBCT, k;
+  int i, j, N_Vertices, NVpF, NVE, NBCT;
   double *DCORVG;
   int *KVERT, *KNPR;
   #ifdef __3D__
@@ -175,9 +175,9 @@ int TDomain::ReadGeo(char *GeoFile)
   dat.close();
 
   #ifdef __2D__
-       k = MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE);
+    MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE);
   #else
-    k = MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE,
+    MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE,
              BoundFaces, FaceParam, NBF, NVpF,
              InterfaceParam, N_Interfaces);
   delete [] BoundFaces;
@@ -204,7 +204,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   int *KVEL;
   TVertex **NewVertices, *LocVerts[4];
   TJoint **KMT, *Joint;
-  TBaseCell *JNeib1, *JNeib2, *cell;
+  TBaseCell *JNeib1, *JNeib2;
   Shapes CellType;
 
   double bd_parameter_a, bd_parameter_b;
@@ -620,8 +620,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
             nJoint = CellTree[NeighborID]->GetJoint(jj);
             JNeib1 = nJoint->GetNeighbour(0);
             JNeib2 = nJoint->GetNeighbour(1);
-            if(JNeib1 == CellTree[NeighborID] && JNeib2 == CellTree[i] 
-               || JNeib1 == CellTree[i] && JNeib2 == CellTree[NeighborID]) 
+            if((JNeib1 == CellTree[NeighborID] && JNeib2 == CellTree[i]) 
+               || (JNeib1 == CellTree[i] && JNeib2 == CellTree[NeighborID])) 
               break;
           }
           CellTree[i]->SetJoint(j, nJoint);

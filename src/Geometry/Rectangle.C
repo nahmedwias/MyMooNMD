@@ -44,55 +44,55 @@ double TRectangle::GetShortestEdge(TVertex **Verts)
 
 double TRectangle::GetLengthWithReferenceMap(TVertex **Verts)
 {
-    double x0, x1, x3, y0, y1, y3;
-    double xc0, xc1, xc2, yc0, yc1, yc2;
-    double detjk, rec_detjk;
-    double d11, d12, d21, d22;
+  double x0, x1, x3, y0, y1, y3;
+  double xc1, xc2, yc1, yc2;
+  double detjk, rec_detjk;
+  double d11, d12, d21, d22;
 
-    x0 = Verts[0]->GetX();
-    y0 = Verts[0]->GetY();
-    x1 = Verts[1]->GetX();
-    y1 = Verts[1]->GetY();
-    x3 = Verts[3]->GetX();
-    y3 = Verts[3]->GetY();
-    
-    x0 = 3;
-    y0 = 8;
-    x1 = 9;
-    y1 = 12;
-    x3 = 11;
-    y3 = 10; 
+  x0 = Verts[0]->GetX();
+  y0 = Verts[0]->GetY();
+  x1 = Verts[1]->GetX();
+  y1 = Verts[1]->GetY();
+  x3 = Verts[3]->GetX();
+  y3 = Verts[3]->GetY();
+  
+  x0 = 3;
+  y0 = 8;
+  x1 = 9;
+  y1 = 12;
+  x3 = 11;
+  y3 = 10; 
 
-    /*  x0 = -1;
-    y0 = -1;
-    x1 = 1;
-    y1 = -1;
-    x3 = -1;
-    y3 = 1; */
+  /*  x0 = -1;
+  y0 = -1;
+  x1 = 1;
+  y1 = -1;
+  x3 = -1;
+  y3 = 1; */
 
-   xc0 = (x1 + x3) * 0.5;
-    xc1 = (x1 - x0) * 0.5;
-    xc2 = (x3 - x0) * 0.5;
-    
-    yc0 = (y1 + y3) * 0.5;
-    yc1 = (y1 - y0) * 0.5;
-    yc2 = (y3 - y0) * 0.5;
-    
-    detjk=xc1*yc2-xc2*yc1;
-    rec_detjk=1/detjk;
-    
-    d11 = (y3-y0) * 0.5 * rec_detjk;  //dxi/dx
-    d12 = (x0-x3) * 0.5 * rec_detjk;  //dxi/dy
-    d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
-    d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
+  // double xc0 = (x1 + x3) * 0.5;
+  xc1 = (x1 - x0) * 0.5;
+  xc2 = (x3 - x0) * 0.5;
+  
+  // double yc0 = (y1 + y3) * 0.5;
+  yc1 = (y1 - y0) * 0.5;
+  yc2 = (y3 - y0) * 0.5;
+  
+  detjk=xc1*yc2-xc2*yc1;
+  rec_detjk=1/detjk;
+  
+  d11 = (y3-y0) * 0.5 * rec_detjk;  //dxi/dx
+  d12 = (x0-x3) * 0.5 * rec_detjk;  //dxi/dy
+  d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
+  d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
 
-    OutPut(detjk << " " << d11 << " " << d12 << " " << d21 << " " << d22 << 
-	   " " <<  2*sqrt(fabs(detjk)) << endl);
-    OutPut("This gives the same result as GetMeasure()" << endl);
-    exit(4711);
-    // factor 2 = sqrt(4) because of area of unit square
+  OutPut(detjk << " " << d11 << " " << d12 << " " << d21 << " " << d22 << 
+	 " " <<  2*sqrt(fabs(detjk)) << endl);
+  OutPut("This gives the same result as GetMeasure()" << endl);
+  exit(4711);
+  // factor 2 = sqrt(4) because of area of unit square
 
-    return 2*sqrt(fabs(detjk));
+  return 2*sqrt(fabs(detjk));
 }
 
 // measure of parallelogramm with vector product

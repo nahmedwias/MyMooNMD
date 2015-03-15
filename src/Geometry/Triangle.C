@@ -66,8 +66,8 @@ double TTriangle::GetShortestEdge(TVertex **Verts)
 
 double TTriangle::GetLengthWithReferenceMap(TVertex **Verts)
 {
-    double x0, x1, x2, y0, y1, y2;
-    double xc0, xc1, xc2, yc0, yc1, yc2;
+  double x0, x1, x2, y0, y1, y2;
+  double xc1, xc2, yc1, yc2;
 
   x0 = Verts[0]->GetX();
   y0 = Verts[0]->GetY();
@@ -76,11 +76,11 @@ double TTriangle::GetLengthWithReferenceMap(TVertex **Verts)
   x2 = Verts[2]->GetX();
   y2 = Verts[2]->GetY();
 
-  xc0=x0;
+  //double xc0=x0;
   xc1=x1-x0;
   xc2=x2-x0;
 
-  yc0=y0;
+  //double yc0=y0;
   yc1=y1-y0;
   yc2=y2-y0;
 
