@@ -5,6 +5,7 @@
 #include <LocalAssembling2D.h>
 #include <ConvDiff.h>
 #include <ConvDiff2D.h> // local assembling routines for 2D convection-diffusion
+#include <Darcy2D.h> // local assembling routines for 2D Darcy problems
 #include <NSE2D_FixPo.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
@@ -44,6 +45,10 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
       return std::string("NSE2D_Galerkin");
     case NSE2D_Galerkin_Nonlinear:
       return std::string("NSE2D_Galerkin_Nonlinear");
+    ///////////////////////////////////////////////////////////////////////////
+    // Darcy2D: stationary Darcy problems
+    case Darcy2D_Galerkin:
+      return std::string("Darcy2D_Galerkin");
     default: return std::string();
   }
 }
@@ -196,6 +201,20 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
     case NSE2D_Galerkin:
     case NSE2D_Galerkin_Nonlinear:
       this->set_parameters_for_nse(type);
+      break;
+    case Darcy2D_Galerkin:
+      this->N_Terms = 6;
+      this->Derivatives = { D00, D00, D10, D01, D10, D01 };
+      this->Needs2ndDerivatives = new bool[1];
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
+      this->N_Matrices = 4;
+      this->RowSpace = {0, 1, 0, 1};
+      this->ColumnSpace = { 0, 1, 1, 0};
+      this->N_Rhs = 2;
+      this->RhsSpace = { 0, 1 };
+      this->AssembleParam = BilinearAssembleDarcyGalerkin; 
+      this->Manipulate = NULL;
       break;
     default:
       ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);

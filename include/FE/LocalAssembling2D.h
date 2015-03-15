@@ -35,7 +35,8 @@ enum LocalAssembling2D_type { CD2D_Galerkin,
                               TCD2D_Mass_Rhs_SUPG, // mass matrix and rhs
                               TCD2D_Stiff_Rhs_SUPG, // stiffness matrix + rhs
                               NSE2D_Galerkin,
-                              NSE2D_Galerkin_Nonlinear
+                              NSE2D_Galerkin_Nonlinear,
+                              Darcy2D_Galerkin
 };
 
 /** a function from a finite element space */
