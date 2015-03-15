@@ -491,17 +491,20 @@ void TTriaAffin::GetOrigValues(double xi, double eta,
   }
 
   // D10 and D01
-  if(_BaseVectDim == 1) // standard
+  if (uxiref!=NULL && uetaref!=NULL && uxorig!=NULL && uyorig!=NULL)
   {
-    for(i=0;i<N_BaseFunct;i++)
+    if(_BaseVectDim == 1) // standard
     {
-      uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
-      uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
-    } // endfor i
-  }
-  else
-  {
-    this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+      for(i=0;i<N_BaseFunct;i++)
+      {
+        uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
+        uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
+      } // endfor i
+    }
+    else
+    {
+      this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+    }
   }
 }
 

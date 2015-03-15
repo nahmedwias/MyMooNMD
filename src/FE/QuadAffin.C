@@ -347,7 +347,7 @@ void TQuadAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     {
       refD00 = refvaluesD00[j];
       origD00 = origvaluesD00[j];
-
+       
       if(BaseVectDim == 1)
         memcpy(origD00, refD00, N_Functs*BaseVectDim*SizeOfDouble);
       else
@@ -551,8 +551,11 @@ void TQuadAffin::GetOrigValues(double xi, double eta, int N_BaseFunct,
       // D00
       uorig[i] = uref[i];
       // D10 and D01
-      uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
-      uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
+      if (uxiref!=NULL && uetaref!=NULL && uxorig!=NULL && uyorig!=NULL)
+      {
+        uxorig[i]=(yc2*uxiref[i]-yc1*uetaref[i]) * rec_detjk;
+        uyorig[i]=(-xc2*uxiref[i]+xc1*uetaref[i]) * rec_detjk;
+      }
     }
   }
   else if(_BaseVectDim == 2)
@@ -560,7 +563,10 @@ void TQuadAffin::GetOrigValues(double xi, double eta, int N_BaseFunct,
     // D00
     this->PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
     // D10 and D01
-    this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+    if (uxiref!=NULL && uetaref!=NULL && uxorig!=NULL && uyorig!=NULL)
+    {
+      this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+    }
   }
 }
 

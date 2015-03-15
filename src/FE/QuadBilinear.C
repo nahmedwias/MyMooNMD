@@ -680,14 +680,17 @@ void TQuadBilinear::GetOrigValues(double xi, double eta,
     } // endfor i
     
     // D10 and D01
-    rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi) - (xc2+xc3*xi)*(yc1+yc3*eta) );
-    for(i=0;i<N_BaseFunct;i++)
+    if (uxiref!=NULL && uetaref!=NULL && uxorig!=NULL && uyorig!=NULL)
     {
-      uxorig[i]= ( (yc2+yc3*xi) * uxiref[i] - (yc1+yc3*eta) * uetaref[i] )
-                 *rec_detjk;
-      uyorig[i]= (-(xc2+xc3*xi) * uxiref[i] + (xc1+xc3*eta) * uetaref[i] )
-                 *rec_detjk;
-    } // endfor i
+      rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi) - (xc2+xc3*xi)*(yc1+yc3*eta) );
+      for(i=0;i<N_BaseFunct;i++)
+      {
+        uxorig[i]= ( (yc2+yc3*xi) * uxiref[i] - (yc1+yc3*eta) * uetaref[i] )
+                  *rec_detjk;
+        uyorig[i]= (-(xc2+xc3*xi) * uxiref[i] + (xc1+xc3*eta) * uetaref[i] )
+                  *rec_detjk;
+      } // endfor i
+    }
   }
   else
   {
@@ -695,8 +698,11 @@ void TQuadBilinear::GetOrigValues(double xi, double eta,
     // D00
     this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uorig, xi, eta);
     // D10, D01
-    this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uxiref, uetaref,
-                                       uxorig, uyorig, xi, eta);
+    if (uxiref!=NULL && uetaref!=NULL && uxorig!=NULL && uyorig!=NULL)
+    {
+      this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uxiref, uetaref,
+                                         uxorig, uyorig, xi, eta);
+    }
   }
 }
 
