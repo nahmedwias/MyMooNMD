@@ -104,7 +104,7 @@ int VertexNumber(int IEH, int NVE)
 void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
                     TFESpace2D *stream, double *psi)
 {
-  int IEH,IEL,k,l, N_Cells, NVE, NVE2, NVT, VertNum, m, l1, l2;
+  int IEH,IEL,k,l, N_Cells, NVE, NVE2, NVT, VertNum, m, l1;
   TCollection *Coll;
   TBaseCell *cell, *neigh, **CellList;
   int ListPointer, ListInput;
@@ -118,7 +118,7 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
   double px1, px2, py1, py2, dn1, dn2;
   BaseFunct2D basefunct;
   double v1, v2;
-  int *JointDOFs, N_JointDOFs;
+  int *JointDOFs;
 
   VeloGlobalNumbers = velo->GetGlobalNumbers();
   VeloBeginIndex = velo->GetBeginIndex();
@@ -223,7 +223,7 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
         element = TFEDatabase2D::GetFE2D(ele);
         basefunct = element->GetBaseFunct2D_ID();
         desc = element->GetFEDesc2D();
-        N_JointDOFs = desc->GetN_JointDOF();
+        // int N_JointDOFs = desc->GetN_JointDOF();
         if(KVIND[IVTH]<1)
         {
           KVIND[IVTH]=1;
@@ -499,9 +499,9 @@ void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1,
   TFE2D *Element;
   TNodalFunctional2D *nf;
   RefTrans2D RefTrans;
-  double values[3], *xi_ref, *eta_ref, AbsDetjkVort[MaxN_QuadPoints_2D];
+  double *xi_ref, *eta_ref, AbsDetjkVort[MaxN_QuadPoints_2D];
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
-  double val[3], *div1;
+  double val[3];
 
   int N_LocalDOF;
   double PointValuesDiv[MaxN_PointsForNodal2D];
@@ -516,7 +516,7 @@ void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1,
   N_Vort = vorticity_space->GetN_DegreesOfFreedom();
   memset(vort,0,N_Vort*SizeOfDouble);
   memset(div,0,N_Vort*SizeOfDouble);
-  //div1 =  new double[N_Vort];
+  //doubel *div1 =  new double[N_Vort];
   //memset(div1,0,N_Vort*SizeOfDouble);
   N_Found = new int[N_Vort];
   memset(N_Found,0,N_Vort*SizeOfInt);
@@ -684,16 +684,16 @@ void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk,
                  double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
-  int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
+  int i;
   double *deriv, *exactval, w;
-  double *coeff, c0, c1, c2, c3, c5, alpha;
+  double *coeff, c0, c1, c2, c3, c5;
   double e0, e1, e2, e3;
   double loc0, loc1, loc2, loc3, loc4;
 
-  static double delta0 = TDatabase::ParamDB->DELTA0;
-  static double delta1 = TDatabase::ParamDB->DELTA1;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double delta, norm_b, nu, hk_project;
+  //static double delta0 = TDatabase::ParamDB->DELTA0;
+  //static double delta1 = TDatabase::ParamDB->DELTA1;
+  //double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double delta;
 
   loc0 = 0.0;
   loc1 = 0.0;
@@ -944,7 +944,7 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
 {
   int i;
   double *deriv, *exactval, w;
-  double *coeff, c0, c1, c2, c3, c5, alpha;
+  double *coeff, c0, c1, c2, c5;
   double e0, e1, e2, e3, e4;
   double loc0, loc1, loc2, loc3;
   double delta, c_inv;
@@ -982,7 +982,7 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
     c0 = coeff[0];
     c1 = coeff[1];
     c2 = coeff[2];
-    c3 = coeff[3];
+    // double c3 = coeff[3];
     c5 = MAX(fabs(c1),fabs(c2));
     delta = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], c5);
     if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 120814)
@@ -1026,16 +1026,16 @@ void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk,
                  double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
-  int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
+  int i;
   double *deriv, *exactval, w;
-  double *coeff, eps, u1, u2, c, alpha;
+  double *coeff, eps, u1, u2, c;
   double e0, e1, e2, e3;
   double loc0, loc1, loc2, loc3;
 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double delta, norm_b, nu, hk_project;
+  //double delta0 = TDatabase::ParamDB->DELTA0;
+  //double delta1 = TDatabase::ParamDB->DELTA1;
+  //double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double delta;
 
   loc0 = 0.0;
   loc1 = 0.0;
@@ -1084,16 +1084,16 @@ void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk
                  double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
-  int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
+  int i;
   double *deriv, *exactval, w;
-  double *coeff, eps, u1, u2, c, alpha;
+  double *coeff, eps, u1, u2, c;
   double e0, e1, e2, e3;
   double loc0, loc1, loc2;
 
-  double delta0 = TDatabase::ParamDB->DELTA0;
-  double delta1 = TDatabase::ParamDB->DELTA1;
-  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double delta, norm_b, nu, hk_project;
+  //double delta0 = TDatabase::ParamDB->DELTA0;
+  //double delta1 = TDatabase::ParamDB->DELTA1;
+  //double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  double delta;
 
   loc0 = 0.0;
   loc1 = 0.0;
@@ -2443,8 +2443,6 @@ int ReadGrapeFile(char *name, int N_FEFct, int N_FEVectFct,
   int N_ScalarVar, N_VectorVar, N_Parameters, N_, scalar;
   int i;
   int *N_LocDOF;
-  TFEFunction2D *fct;
-  TFEVectFunct2D *vectfct;
   int N_Comp, N_DOF;
   double *val;
   int SwitchBytes;
@@ -3267,15 +3265,14 @@ void SetPolynomialDegree()
 void CheckMaximumPrinciple(TSquareMatrix *A, double *sol, int N_Active,
                            double *errors)
 {
-  int i,j,k,l,index,ii,jj,kk,found;
-  double s, tol=1e-8, minimum, maximum, val, maxerror;
+  int i,j,k,index,ii,jj,kk,found;
+  double tol=1e-8, minimum, maximum, val, maxerror;
   int *RowPtr, *KCol;
-  double *Entries;
   int N_DOF, maxprinciple = 0; 
 
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
-  Entries = A->GetEntries();
+  //double *Entries = A->GetEntries();
   N_DOF = A->GetN_Rows();
   maxerror = 0;
 
@@ -3476,8 +3473,8 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix3D **SQMATRICES,
 #ifdef __3D__
     TSquareMatrix3D *MatrixA;
 #endif    
-    double *Entries_A, value;
-    int i, j, l, l0, l1, index, *RowPtr_A, *KCol_A;
+    double *Entries_A;
+    int i, l, l0, l1, index, *RowPtr_A, *KCol_A;
     
     //OutPut(N_neum_to_diri << endl);
     if (N_neum_to_diri == 0)

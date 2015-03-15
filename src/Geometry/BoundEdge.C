@@ -32,13 +32,14 @@ int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
 /** update parameters according to the new vertex positions */
 void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
 {
-  double x1, y1, z1, x2, y2, z2;
+  double x1, y1, x2, y2;
   double t1, t2;
 
 #ifdef __2D__
   Begin->GetCoords(x1, y1);
   End->GetCoords(x2, y2);
 #else
+  double z1, z2;
   Begin->GetCoords(x1, y1, z1);
   End->GetCoords(x2, y2, z2);
 #endif

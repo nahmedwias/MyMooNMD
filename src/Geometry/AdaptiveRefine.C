@@ -58,7 +58,7 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
 static void Sort(TVertex **Array, int length) /// Sorting the vertex list
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -110,38 +110,27 @@ static void Sort(TVertex **Array, int length) /// Sorting the vertex list
 int TDomain::AdaptRefineAll() 
 {
   
-  int i, j, N, MaxCpV, info, N_Cells, N_Cells_L1, N_VertInCell, N_JointsInCell, N_JointsInCell2, N_AllLocVert, *VertexNumbers, *PointNeighb, *vertexneibcellno, *vncn, *test, *vcn;
-  int N_RootVertices, *NumberVertex, N_CellsInThisVert, VertexCellNo, N_child, GlobCellNo;
+  int i, j, N, MaxCpV, N_Cells, N_VertInCell, N_JointsInCell, N_AllLocVert, *VertexNumbers, *PointNeighb, *vncn;
+  int N_RootVertices, *NumberVertex;
   
-  TBaseCell *CurrCell, *cell, *Vertexcell, *neib_cell, *neib_cell2, *vcell, *cell_child, *vvcell, *isocell;  
-  TCollection *coll, *coll_fine; 
-  TVertex **Vertices, *Last, *CurrVert, **IsoVertices, **IsoVertices2;   
-  TJoint *Joint, *NewJoint, *Joint2; 
-  JointType jointtype, jointtype2;
+  TBaseCell *cell, *neib_cell, *vcell;
+  TCollection *coll;
+  TVertex **Vertices, *Last, *CurrVert;
+  TJoint *Joint; 
   //TIsoInterfaceJoint *isojoint, *isojoint2;
   //TIsoBoundEdge *isoboundedge, *isoboundedge2;
-  TIsoBoundEdge *isojoint, *isojoint2;
-
+  
         double nrml[3];
       double tvect[3];
       double D[100000];
       double dprod[4];
       double xcoords[4];
       double ycoords[4];
-      double rangeMin = 0.0;
       double rangeMax = 1.0;
       double stepSize = 0.01;
       double novx[1001];
       double novy[1001];
-      double novxx[3];
-      double novyy[3];
-      double xc[3];
-      double yc[3];
-      double rad;
-      double xxc[3];
-      double yyc[3];
-      double DP;
-  
+      
   
   MaxCpV = 0;
   coll = this->GetCollection(It_Finest, 0);
@@ -266,7 +255,7 @@ int TDomain::AdaptRefineAll()
 
     //coll = this->GetCollection(It_Finest, 0);
     //N_Cells = coll->GetN_Cells();
-    int ii, mm, jj, l, vn, kk, vn1,qq, rr, ll;
+    int jj, l, vn, kk;
 #ifdef __2D__
     double x, y;
 #else
@@ -274,13 +263,13 @@ int TDomain::AdaptRefineAll()
 #endif
     //vncn = (int*) calloc(qq, sizeof(int));
     //vertexneibcellno = (int*) malloc(vn, sizeof(int));
-    vcn = new int[1000]; /// vertex cell number
+    //int *vcn = new int[1000]; /// vertex cell number
     vncn = new int[1000]; /// vertex cell number
-    vertexneibcellno = new int [1000]; /// vertex neibghor's cell number 
+    // int *vertexneibcellno = new int [1000]; /// vertex neibghor's cell number 
     cout<< "Number of cells " << N_Cells << endl;
-     mm=0; 
+    //int mm=0; 
      vn=0;
-     vn1=0;
+    //int vn1=0;
      x=0.75;
      y=0.75;
 #ifdef __3D__
@@ -336,7 +325,7 @@ int TDomain::AdaptRefineAll()
         for(jj=0;jj<N_JointsInCell;jj++)
         {
 	  Joint = vcell->GetJoint(jj);
- 	  jointtype = Joint->GetType();
+ 	  JointType jointtype = Joint->GetType();
  	  if(Joint->InnerJoint())
  	  {
  	    neib_cell = Joint->GetNeighbour(vcell);
@@ -396,7 +385,7 @@ int TDomain::AdaptRefineAll()
        for(jj=0;jj<N_JointsInCell;jj++)
        {
 	 Joint = vcell->GetJoint(jj);
-  	 jointtype = Joint->GetType();
+  	 JointType jointtype = Joint->GetType();
   	 if(Joint->InnerJoint())
   	 {
   	   neib_cell = Joint->GetNeighbour(vcell);
@@ -476,8 +465,8 @@ int TDomain::AdaptRefineAll()
       
 /// Type 2 (PRESENTLY WORKING): Using product of normal and tangent vectors algorithm (but specific to this problem)
 
-      double small, xcord, ycord, xxcord, yycord, xx, yy, xt,yt,xs, ys;
-      int k, ff, r, s, h, d, q;
+      double small, xcord, ycord, xx, yy, xt, yt;
+      int k, ff, r, s;
       x=1.0;
       y=1.0;
       yy=1.0;
@@ -632,7 +621,7 @@ int TDomain::AdaptRefineAll()
         {
 	  
 	  Joint = vcell->GetJoint(jj);
- 	  jointtype = Joint->GetType();
+ 	  JointType jointtype = Joint->GetType();
  	  if(Joint->InnerJoint())
  	  {
  	    neib_cell = Joint->GetNeighbour(vcell);
@@ -661,7 +650,7 @@ int TDomain::AdaptRefineAll()
         {
 	  
 	  Joint = vcell->GetJoint(jj);
- 	  jointtype = Joint->GetType();
+ 	  //JointType jointtype = Joint->GetType();
  	  if(Joint->InnerJoint())
  	  {
  	    neib_cell = Joint->GetNeighbour(vcell);
@@ -701,7 +690,7 @@ int TDomain::AdaptRefineAll()
 	      for(jj=0;jj<N_JointsInCell;jj++)
               {
 		Joint = vcell->GetJoint(jj);
-		jointtype = Joint->GetType();
+		JointType jointtype = Joint->GetType();
 		if(Joint->InnerJoint())
 		{
 		  neib_cell = Joint->GetNeighbour(vcell);
@@ -817,7 +806,7 @@ int TDomain::AdaptRefineAll()
         for(jj=0;jj<N_JointsInCell;jj++)
         {
 	  Joint = cell->GetJoint(jj);
- 	  jointtype = Joint->GetType();
+ 	  JointType jointtype = Joint->GetType();
 	  
   	  if(jointtype == IsoBoundEdge) // && jointtype != InterfaceJoint)
  	  {

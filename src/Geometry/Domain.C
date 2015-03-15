@@ -899,7 +899,7 @@ int TDomain::PS(const char *name, Iterators iterator, int arg)
 
 int TDomain::PS(const char *name, TCollection *Coll)
 {
-  int BX, BY, info;
+  int BX, BY;
   double scale;
   std::ofstream dat(name);
   TBaseCell *CurrCell;
@@ -1413,61 +1413,61 @@ int TDomain::CloseGrid(int level)
 {
   TBaseCell *CurrCell, *Cell, *Child, *Neigh;
   int i, j, k, clip;
-  int N_Joints, N_Edges, N_Children;
+  int N_Edges, N_Children;
   int info, LocEdge, CurrLocEdge, LocFace, NeighLocFace;
   int MapType;
   int first_bis, second_bis, neigh_first_bis, neigh_second_bis, neigh_type;
   TJoint *Joint, *LastJoint;
   const int *TmpEF, *TmpEF2;
-  int TmpFEMaxLen, TmpEFMaxLen, TmpEF2MaxLen;
+  int TmpEFMaxLen, TmpEF2MaxLen;
   bool RefineRegular;
   Refinements NeighFaceRef, MyFaceRef;
-  int N_ToRefine = 0, N_Refinements[64];
+  int N_ToRefine = 0;
 
   // Reset ClipBoards
   TDatabase::IteratorDB[It_EQ]->Init(level);
   k=0;
-  while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
-    {
-      N_Children = CurrCell->GetRefDesc()->GetN_Children();
-
-      // Check if CurrCell is refined irregularly but has a son which has to be refined
-      if(2 <= N_Children && N_Children < 8) // CurrCell is refined irregularly
+  while(CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
   {
-    RefineRegular = false;
+    N_Children = CurrCell->GetRefDesc()->GetN_Children();
 
-    for(i=0; i<N_Children; ++i)
+    // Check if CurrCell is refined irregularly but has a son which has to be refined
+    if(2 <= N_Children && N_Children < 8) // CurrCell is refined irregularly
+    {
+      RefineRegular = false;
+
+      for(i=0; i<N_Children; ++i)
       {
         Child = CurrCell->GetChild(i);
         // Check if Child is refined directly
-
+        
         //if(Child->GetRefDesc()->GetType() != NoRef) // TODO
         if(Child->GetClipBoard() > 0)
-    RefineRegular = true;
+          RefineRegular = true;
 
         // Check if Child contains an edge that is refined by a neighbour
         if(!RefineRegular)
-    {         
-      // TODO
-    }
-
+        {         
+          // TODO
+        }
+        
         if(RefineRegular)
-    {
-      CurrCell->SetRegRefine();
-      break;
-    }
+        {
+          CurrCell->SetRegRefine();
+          break;
+        }
         else
-    CurrCell->SetNoRefinement();
+        CurrCell->SetNoRefinement();
       }
-  }
-
-      // Initialize Clipboard
-      if(CurrCell->GetRefDesc()->GetType() >= TetraReg && 
-   CurrCell->GetRefDesc()->GetType() <= TetraReg2)
-  CurrCell->SetClipBoard(63);
-      else
-  CurrCell->SetClipBoard(-1);
     }
+    
+    // Initialize Clipboard
+    if(CurrCell->GetRefDesc()->GetType() >= TetraReg 
+       && CurrCell->GetRefDesc()->GetType() <= TetraReg2)
+      CurrCell->SetClipBoard(63);
+    else
+      CurrCell->SetClipBoard(-1);
+  }
 
   /*
    * Set Clipboard to 0 if element is unrefined but contains an edge that is refined by an other tetrahedron
@@ -1833,6 +1833,7 @@ int TDomain::CloseGrid(int level)
 
       CurrCell->Refine(level+1);
     }
+  return 0;
 }
 
 /**
@@ -1843,19 +1844,9 @@ int TDomain::CloseGrid(int level)
  */
 int TDomain::MakeConfClosure()
 {
-  TBaseCell *CurrCell, *Cell, *Child, *Neigh;
-  int m, i, j, k, clip;
-  int N_Joints, N_Edges, N_Children;
-  int info, LocEdge, CurrLocEdge, LocFace, NeighLocFace;
-  int MapType;
-  int first_bis, second_bis, neigh_first_bis, neigh_second_bis, neigh_type;
-  TJoint *Joint, *LastJoint;
-  const int *TmpEF, *TmpEF2;
-  int TmpFEMaxLen, TmpEFMaxLen, TmpEF2MaxLen;
-  int N_ToRefine, MaxLevel;
-  bool RefineRegular;
-  Refinements NeighFaceRef, MyFaceRef;
-
+  int m;
+  int MaxLevel;
+  
   // Generate 1-regular grid
   Gen1RegGrid();
 
@@ -1866,7 +1857,7 @@ int TDomain::MakeConfClosure()
     {
       CloseGrid(m);
     }
-
+  return 0;
 }
 #endif
 
@@ -1896,8 +1887,8 @@ int TDomain::Gen1RegGrid()
   int info;
 
   TDatabase::IteratorDB[It_Finest]->Init(0);
-  while (CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))    
-      CurrCell->Gen1RegGrid();
+  while(CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))    
+    CurrCell->Gen1RegGrid();
 
   return 0;
 }
@@ -2411,7 +2402,7 @@ void TDomain::DeRefine()
 static void Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
 
   len=(int)(2*log((double)length)/log(2.0)+2.0);
@@ -2519,6 +2510,9 @@ int TDomain::Grape(const char *name, TCollection *coll)
       case Brick:
         Type[i] = 1;
       break;
+      default:
+        ErrMsg("TDomain::Grape only in 3D");
+        exit(1);
     }
   }
 
@@ -2604,8 +2598,8 @@ int TDomain::Grape(const char *name, TCollection *coll)
 /** make boundary parameter consistent */
 void TDomain::MakeBdParamsConsistent(TCollection *coll)
 {
-  int i,j,k,l;
-  int N_Cells, N_Joints, NVJ;
+  int i,j,k;
+  int N_Cells, N_Joints;
   double Param1[4], Param2[4];
   TBaseCell *cell;
   TJoint *joint;
@@ -2901,21 +2895,17 @@ int TDomain::RefineallxDirection()
 /** @brief added by sashi */
 int TDomain::GenerateEdgeInfo()
 {
-  int i, ii, j, jj, k, m, I, n_cells, info, N_RootVertices, *PointNeighb, MaxCpV = 0, EMaxLen;
-  int level=0, N, NVert, NVert_All, *NumberVertex, *VertexNumbers, N_Edges, N_FaceEdges, N_FaceVert;
+  int i, ii, j, k, m, I, n_cells, info, N_RootVertices, *PointNeighb, MaxCpV = 0, EMaxLen;
+  int level=0, N, NVert_All, *NumberVertex, *VertexNumbers, N_Edges, N_FaceEdges, N_FaceVert;
   int *RootVer_Loc, *NeibRootVer_Loc, a, b, len1, len2, cell_a, N_Neibs, *Neibs, *Neib_EdgeNo;
-  int NeibN, NeibN_Edges, *VertBeginIndex, Neiba, Neibb, BoundEdgeMarker[MAXN_EDGES], N_Faces, MaxLen, N_Points;
+  int NeibN_Edges, *VertBeginIndex, Neiba, Neibb, BoundEdgeMarker[MAXN_EDGES], N_Faces, MaxLen;
   const int *EdgeVertex, *TmpFV, *TmpLen,  *TmpFE, *ETmpLen;;
  
-  double X, Y, Z;
-  
   TBaseCell **cells, *CurrCell, *NeibCell, **NeibCells;
   Iterators it=It_Finest;
   TVertex **Vertices_All, *Last, *Current;
   TShapeDesc *ShapeDesc, *NeibShapeDesc;
   TEdge *edge, *Neibedge;
-  TBDEdge3D *BDEdge;
-  TInnerEdge *InnerEdge;
   TJoint *joint;
 
 #ifdef _MPI
@@ -2926,11 +2916,11 @@ int TDomain::GenerateEdgeInfo()
   NVert_All=0;
   n_cells=0;
   TDatabase::IteratorDB[it]->Init(level);
-  while (CurrCell=TDatabase::IteratorDB[it]->Next(info))
-   {
+  while(CurrCell=TDatabase::IteratorDB[it]->Next(info))
+  {
     NVert_All +=CurrCell->GetN_Vertices();
     n_cells++;
-   }
+  }
 
   cells=new TBaseCell*[n_cells];
   VertBeginIndex = new int[n_cells+1];
@@ -2942,21 +2932,21 @@ int TDomain::GenerateEdgeInfo()
   n_cells=0;
   VertBeginIndex[0] = 0;
   TDatabase::IteratorDB[it]->Init(level);
-  while (CurrCell=TDatabase::IteratorDB[it]->Next(info))
-   {
+  while(CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  {
     cells[n_cells]=CurrCell;
     N=CurrCell->GetN_Vertices();
 
     for(i=0;i<N;i++)
-     {
+    {
       Vertices_All[NVert_All] = CurrCell->GetVertex(i);
       NVert_All++;
-     }
+    }
 
     n_cells++;
     VertBeginIndex[n_cells] = NVert_All;
 
-   } // while
+  } // while
 // NVert_All--;
   // sort the Vertices array
   Sort(Vertices_All, NVert_All);

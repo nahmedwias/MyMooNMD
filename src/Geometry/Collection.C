@@ -21,8 +21,6 @@
 /** constructor */
 TCollection::TCollection(int n_cells, TBaseCell **cells)
 {
- int i;
-
   N_Cells = n_cells;
   Cells = cells;
 
@@ -33,7 +31,7 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   N_OwnCells = 0;
   GlobalIndex = new int[N_Cells];
 
-  for(i=0; i<N_Cells; i++)
+  for(int i=0; i<N_Cells; i++)
    GlobalIndex[i] = Cells[i]->GetGlobalCellNo();
   #endif
 }
@@ -229,7 +227,7 @@ int TCollection::MarkBoundaryVertices()
 static void Sort(TJoint **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TJoint *Mid, *Temp;
   double lend = length;
 
@@ -281,7 +279,7 @@ static void Sort(TJoint **Array, int length)
 static void Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -334,7 +332,7 @@ static void Sort(TVertex **Array, int length)
 /** return Index of joints in Cells-array */
 TJointCollection *TCollection::GetJointCollection()
 {
- int i, j, k, N_Joints, N, N_RootJoints;
+ int i, j, N_Joints, N, N_RootJoints;
  TBaseCell *Me;
  TJoint **joints, **RootJoints, *Last, *Current;
  TJointCollection *JointColl;
