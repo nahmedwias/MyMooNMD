@@ -46,61 +46,45 @@
 
 int main(int argc, char* argv[])
 {
-// ======================================================================
-// variable declaration
-// ======================================================================
-  int i, j, l, img=1, N_G;
+  TDatabase Database;
+  TFEDatabase2D FEDatabase;
   
-  double errors[5];
-  double olderror, olderror1;
-  
-  TDatabase *Database = new TDatabase();
-  TFEDatabase2D *FEDatabase = new TFEDatabase2D();
-  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
-  
-// ======================================================================
-// set the database values and generate mesh
-// ======================================================================    
+  // ======================================================================
+  // set the database values and generate mesh
+  // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain *Domain = new TDomain(argv[1]);  
+  TDomain Domain(argv[1]);  
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
   OpenFiles();
-  OutFile.setf(std::ios::scientific);
 
-  Database->WriteParamDB(argv[0]);
-  Database->WriteTimeDB();
+  Database.WriteParamDB(argv[0]);
+  Database.WriteTimeDB();
   ExampleFile();
   
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh  
-  char *GEO = TDatabase::ParamDB->GEOFILE;
-  Domain->ReadGeo(GEO);
+  Domain.ReadGeo(TDatabase::ParamDB->GEOFILE);
 
   // refine grid up to the coarsest level
-  for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
-    Domain->RegRefineAll();  
+  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    Domain.RegRefineAll();  
   
+  // write grid into an Postscript file
   if(TDatabase::ParamDB->WRITE_PS)
-  {
-    // write grid into an Postscript file
-    Domain->PS("Domain.ps", It_Finest, 0);
- }
-
-     
+    Domain.PS("Domain.ps", It_Finest, 0);
+  
+  // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    // create output directory, if not already existing
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
    
-//=========================================================================
-// construct all finite element spaces
-//=========================================================================
+  //=========================================================================
+  // construct all finite element spaces
+  //=========================================================================
   int ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
   
-  TCollection *coll = Domain->GetCollection(It_Finest, 0);
+  TCollection *coll = Domain.GetCollection(It_Finest, 0);
   int N_Cells = coll->GetN_Cells();
   OutPut("N_Cells (space) : " << N_Cells <<endl);
   
@@ -112,6 +96,7 @@ int main(int argc, char* argv[])
   int N_DOF = Scalar_FeSpace->GetN_DegreesOfFreedom();
   int N_Active =  Scalar_FeSpace->GetActiveBound();
   OutPut("dof all      : "<< setw(10) << N_DOF  << endl);
+  OutPut("dof active   : "<< setw(10) << N_Active << endl);
    
 //======================================================================
 // construct all finite element functions
@@ -119,7 +104,6 @@ int main(int argc, char* argv[])
   double *sol = new double[N_DOF];
   double *rhs = new double[N_DOF];
   double *oldrhs = new double[N_DOF];
-  double *defect = new double[N_DOF];
     
   memset(sol, 0, N_DOF*SizeOfDouble);
   memset(rhs, 0, N_DOF*SizeOfDouble);
@@ -165,10 +149,11 @@ int main(int argc, char* argv[])
   //======================================================================
   // produce outout at t=0
   //======================================================================
-  TOutput2D Output(2, 2, 1, 1, Domain);
+  TOutput2D Output(2, 2, 1, 1, &Domain);
   Output.AddFEFunction(Scalar_FeFunction);
 
-  //Scalar_FeFunction->Interpolate(Exact);   
+  //Scalar_FeFunction->Interpolate(Exact);
+  int img = 1;
   if(TDatabase::ParamDB->WRITE_VTK)
   {
     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
@@ -183,16 +168,16 @@ int main(int argc, char* argv[])
     img++;
   }
 
+  double errors[5] = { 0., 0., 0., 0., 0. };
   double Linfty; // L^infty in time of L2 in space
+  double olderror, olderror1;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
   // measure errors to known solution
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
     TFESpace2D *fesp[1] = { Scalar_FeSpace }; 
     TAuxParam2D aux;
     
-    for(j=0;j<5;j++)
-      errors[j] = 0;
-   
     Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors, 
                                  BilinearCoeffs, &aux, 1, fesp, errors);
    
@@ -230,7 +215,7 @@ int main(int argc, char* argv[])
     m++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
 
-    for(l=0; l<N_SubSteps; l++) // sub steps of fractional step theta
+    for(int l=0; l<N_SubSteps; l++) // sub steps of fractional step theta
     {
       SetTimeDiscParameters();
 
@@ -273,7 +258,7 @@ int main(int argc, char* argv[])
       {
         SystemMatrix.RestoreMassMat();
       }   
-    } // for(l=0;l<N_SubSteps;l++) 
+    } // for(int l=0;l<N_SubSteps;l++) 
     //======================================================================
     // produce outout
     //======================================================================
@@ -324,10 +309,6 @@ int main(int argc, char* argv[])
     } //  if(TDatabase::ParamDB->MEASURE_ERRORS)  
   } // while(TDatabase::TimeDB->CURRENTTIME< end_time)
 
-  //======================================================================
-  // produce final outout
-  //======================================================================
-  
   CloseFiles();
   return 0;
 } // end main
