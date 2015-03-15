@@ -65,8 +65,6 @@ int main(int argc, char* argv[])
   //=========================================================================
   // construct all finite element spaces
   //=========================================================================
-  int ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
-  
   // a collection is basically only an array of cells, which is needed to create
   // a finite element space
   TCollection *coll = Domain.GetCollection(It_Finest, 0);
