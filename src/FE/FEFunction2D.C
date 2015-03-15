@@ -78,7 +78,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               double *errors)
 {
   int i,j,k,l,n,m, ij, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_, N_Edges;
+  int N_Cells, N_Points, N_Parameters, N_BaseFuncts, N_, N_Edges;
   int Used[N_FEs2D], *N_BaseFunct;
   TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
@@ -151,9 +151,8 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   BeginIndex = FESpace2D->GetBeginIndex();
 
-  for(i=0;i<N_Errors;i++)
-    errors[i] = 0.0;
-  errors[N_Errors] = 0.0;  // for L_infty-error
+  // for L_infty-error there is one extra entry
+  memset(errors,0,(N_Errors+1)*SizeOfDouble);
 
   // ########################################################################
   // loop over all cells
@@ -166,46 +165,42 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     cell = Coll->GetCell(i);
 
 #ifdef _MPI
-      int ID, rank;
-      MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-      ID  = cell->GetSubDomainNo();
+    int ID, rank;
+    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+    ID  = cell->GetSubDomainNo();
 
-      if(rank!=ID) // halo cells errors will not be calculated
-       {
-        continue; 
-       }
-#endif
-
-    switch (TDatabase::ParamDB->CELL_MEASURE)
+    if(rank!=ID) // halo cells errors will not be calculated
     {
-	case 0: // diameter
-	    hK = cell->GetDiameter();
-	    break;
-	    //case 1: // with reference map
-	    //OutPut("cell measure " << endl);
-	    //hK = cell->GetLengthWithReferenceMap();
-	    //break;
-	case 2: // shortest edge
-	    hK = cell->GetShortestEdge();
-	    break;
-	case 1: // with reference map
-	case 3: // measure
- 	    hK = cell->GetMeasure();
-	    hK = sqrt(hK);
-	    break;
-	case 4: // mesh size in convection direction, this is just a dummy
-	    hK = cell->GetDiameter();
-	    break;
-	case 5: // take value from an array
-	    // this is in general not the diameter but a pw constant value
-	    // which is needed for some reasons
-	    hK = cell->GetDiameter();
-	    break;
-	default: // diameter
-	    hK = cell->GetDiameter();
-	    break;
+      continue; 
     }
-
+#endif
+    CurrentElement = FESpace2D->GetFE2D(i, cell);
+    BaseFunct = BaseFuncts[CurrentElement];
+    N_BaseFuncts = N_BaseFunct[CurrentElement];
+    if(TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim() > 1)
+    {
+      ErrMsg("for vector valued basis functions, you should use "
+             << "TFEFunction2D::GetErrorsForVectorValuedFunction instead of "
+             << "TFEFunction2D::GetErrors");
+      OutPut("No error were computed\n");
+      return;
+    }
+    RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(CurrentElement);
+    BF2DRefElements ref_element = TFEDatabase2D::GetRefElementFromFE2D(
+      CurrentElement);
+    // get quadrature formula id
+    QuadFormula2D qf_id = TFEDatabase2D::GetQFFromDegree(
+      TDatabase::ParamDB->INPUT_QUAD_RULE, ref_element);
+    TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+    TRefTrans2D *F_K;
+    
+    TQuadFormula2D *quad_formula = TFEDatabase2D::GetQuadFormula2D(qf_id);
+    quad_formula->GetFormulaData(N_Points, weights, xi, eta);
+    
+    // get quadrature coordinates on original cell (also AbsDetjk is filled)
+    TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi,eta, X, Y, AbsDetjk);
+    hK = cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
+    
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
@@ -227,7 +222,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     }
     N_LocalUsedElements = j;
     
-
     // ####################################################################
     // calculate values on original element
     // ####################################################################
@@ -238,19 +232,19 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     if(N_Parameters>0)
       Aux->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
 
-    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)||
-	(TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
+    if((TDatabase::ParamDB->DISCTYPE == SDFEM)||
+       (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
     {
-	TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-	N_Edges = cell->GetN_Edges();
-	for (ij=0;ij<N_Edges;ij++)
-	{
-	    TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-	    TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-	}
-	if (N_Edges==3)
-	    TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-	TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
+      N_Edges = cell->GetN_Edges();
+      for (ij=0;ij<N_Edges;ij++)
+      {
+        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+      }
+      if(N_Edges==3)
+        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
+      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
 
     // calculate all needed derivatives of this FE function
@@ -263,7 +257,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     {
       FEFunctValues[l] = Values[DOF[l]];
     }
-    
     
     for(k=0;k<N_Derivatives;k++)
     {
@@ -290,7 +283,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
        // D.Sirch: computation of L^\inf-error
       if(fabs(*ExactVal[j] - Derivatives[j][0]) > errors[N_Errors])
       {
-	errors[N_Errors] = fabs(*ExactVal[j] - Derivatives[j][0]);
+        errors[N_Errors] = fabs(*ExactVal[j] - Derivatives[j][0]);
       }
     }
 
@@ -332,41 +325,41 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
 #ifdef __2D__
     if (!(ErrorMeth== &SDFEMErrors))
-      {
-       for(j=0;j<N_Errors;j++)
-	  errors[j] += LocError[j];
-      }
-    else
-      {
-       for(j=0;j<N_Errors-1;j++)
+    {
+      for(j=0;j<N_Errors;j++)
         errors[j] += LocError[j];
-        // L_infty error
-        if (errors[N_Errors-1] <  LocError[N_Errors-1])
-         errors[N_Errors-1] = LocError[N_Errors-1];
-      }
+    }
+    else
+    {
+      for(j=0;j<N_Errors-1;j++)
+        errors[j] += LocError[j];
+      // L_infty error
+      if(errors[N_Errors-1] <  LocError[N_Errors-1])
+        errors[N_Errors-1] = LocError[N_Errors-1];
+    }
 #endif
-  }                                               // endfor i
+  } // endfor i, loop over cells
 
 
 #ifndef _MPI // sqrt(errors[j]) in the main programm after collecting error from all subdomain
 #ifdef __2D__
   if (!(ErrorMeth== &L1Error))
-   {
+  {
     if (!(ErrorMeth== &SDFEMErrors))
-      {
-	for(j=0;j<N_Errors;j++)
-	  errors[j] = sqrt(errors[j]);
-      }
+    {
+      for(j=0;j<N_Errors;j++)
+        errors[j] = sqrt(errors[j]);
+    }
     else
-     {
-	for(j=0;j<N_Errors-1;j++)
-	  errors[j] = sqrt(errors[j]);
-     }
-   }
+    {
+      for(j=0;j<N_Errors-1;j++)
+        errors[j] = sqrt(errors[j]);
+    }
+  }
 #endif
 #ifdef __3D__
- 	for(j=0;j<N_Errors;j++)
-	  errors[j] = sqrt(errors[j]);
+  for(j=0;j<N_Errors;j++)
+    errors[j] = sqrt(errors[j]);
 #endif
 #endif
 
@@ -1308,7 +1301,7 @@ double x, double y, double *values)
 
 /** determine the value of function at the given point which lies within the
     cell *cell. This also works for vector valued basis functions as are used 
-    for Raviart-Thomas elements.    
+    for Raviart-Thomas elements.
 */
 void TFEFunction2D::FindValueLocal(TBaseCell *cell, int cell_no,
 double x, double y, double *values)
@@ -1396,7 +1389,7 @@ double x, double y, double *values)
     {
       k = Numbers[j];
       val = Values[k];
-      u += uorig[j]*val;
+      u += uorig[j+i*N_BaseFunct]*val;
     }
 
     values[i] = u;
@@ -1922,7 +1915,7 @@ errors[0] -- L2-Error for this function
 errors[1] -- L2-Error of divergence of this function 
 errors[2] -- H1-semi-Norm-Error of this function
 */
-void  TFEFunction2D::GetErrorsForVectorValuedFunction(
+void TFEFunction2D::GetErrorsForVectorValuedFunction(
                   const DoubleFunct2D * const * const Exact, 
                   const ErrorMethod2D * const ErrorMeth, 
                   double * const errors)
@@ -1945,30 +1938,13 @@ void  TFEFunction2D::GetErrorsForVectorValuedFunction(
     int * DOF = FESpace2D->GetGlobalDOF(i);
     RefTrans2D RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(CurrentElement);
     TRefTrans2D *F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
-    // get quadrature formula
-    QuadFormula2D quad_formula_id;
-    switch(RefTrans)
-    {
-      case TriaAffin:
-        ((TTriaAffin*)F_K)->SetCell(cell);
-        quad_formula_id = TFEDatabase2D::GetQFTriaFromDegree(
-            TDatabase::ParamDB->INPUT_QUAD_RULE);
-        break;
-      case QuadAffin:
-        ((TQuadAffin*)F_K)->SetCell(cell);
-        quad_formula_id = TFEDatabase2D::GetQFQuadFromDegree(
-            TDatabase::ParamDB->INPUT_QUAD_RULE);
-        break;
-      case QuadBilinear:
-        ((TQuadBilinear*)F_K)->SetCell(cell);
-        quad_formula_id = TFEDatabase2D::GetQFQuadFromDegree(
-            TDatabase::ParamDB->INPUT_QUAD_RULE);
-        break;
-      default:
-        OutPut("WARNING: FEFunction2D.C: GetErrorsForVectorValuedFunction: "
-             << " No such reference transformation supported!" << endl);
-        break;
-    }
+    BF2DRefElements ref_element = TFEDatabase2D::GetRefElementFromFE2D(
+      CurrentElement);
+    // get quadrature formula id
+    QuadFormula2D quad_formula_id = 
+      TFEDatabase2D::GetQFFromDegree(TDatabase::ParamDB->INPUT_QUAD_RULE,
+                                     ref_element);
+    TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
     
     TQuadFormula2D *qf = TFEDatabase2D::GetQuadFormula2D(quad_formula_id);
     int N_Points; // number of quadrature points in one cell
@@ -1982,21 +1958,19 @@ void  TFEFunction2D::GetErrorsForVectorValuedFunction(
     double *X = new double[N_Points];
     double *Y = new double[N_Points];
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
+    TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi,eta, X, Y, AbsDetjk);
+    // fill arrays, so call of GetOrigElementValues is now possible
     switch(RefTrans)
     {
       case TriaAffin:
-        ((TTriaAffin*)F_K)->GetOrigFromRef(N_Points, xi,eta, X, Y, AbsDetjk);
-        // fill arrays, so call of GetOrigElementValues is now possible
         ((TTriaAffin*)F_K)->GetOrigValues(
                      1,&BaseFunct,N_Points,xi,eta,quad_formula_id,&Needs2ndDer);
         break;
       case QuadAffin:
-        ((TQuadAffin*)F_K)->GetOrigFromRef(N_Points, xi,eta, X, Y, AbsDetjk);
         ((TQuadAffin*)F_K)->GetOrigValues(
                      1,&BaseFunct,N_Points,xi,eta,quad_formula_id,&Needs2ndDer);
         break;
       case QuadBilinear:
-        ((TQuadBilinear*)F_K)->GetOrigFromRef(N_Points, xi,eta, X, Y, AbsDetjk);
         ((TQuadBilinear*)F_K)->GetOrigValues(
                      1,&BaseFunct,N_Points,xi,eta,quad_formula_id,&Needs2ndDer);
         break;
