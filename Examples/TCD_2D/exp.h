@@ -54,15 +54,14 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
   double eps=1/TDatabase::ParamDB->PE_NR;
   double b1=1, b2=-1, c=1;
   int i;
-  double *coeff, *param;
+  double *coeff;
   double x, y;
   double t = TDatabase::TimeDB->CURRENTTIME;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    param = parameters[i];
-
+    
     x = X[i];
     y = Y[i];
 

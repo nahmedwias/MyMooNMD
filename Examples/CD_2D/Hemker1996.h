@@ -81,7 +81,7 @@ void BilinearCoeffs(int n_points, double *x, double *y,
   double eps=1/TDatabase::ParamDB->RE_NR;
   double angle = 0, v1, v2;
   int i;
-  double *coeff, *param;
+  double *coeff;
 
   v1 = cos(angle);
   v2 = sin(angle);
@@ -149,20 +149,16 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
   TBaseCell *cell;
   TCollection *Coll;
   TFESpace2D *FESpace2D;
-  TJoint *joint;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
   FE2D FE_ID;
   TFE2D *FE_Obj;
-  TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
-  int N_BaseFunct, comp;
-  double xi, eta, eps = 1e-6, edgeval[4];
+  int N_BaseFunct;
+  double xi, eta;
   double *uorig, *uxorig, *uyorig, *uref, *uxiref, *uetaref, u;
-  double linfty = 0, l2 = 0, l2interior = 0;
-  double *Values, fevalue[4], area, diam, local, x, y, val;
-  int *GlobalNumbers, *BeginIndex, index, N_Cells, N_Edges;
-  int i, j, k, boundary_cell, *Numbers;
+  double *Values, x, y, val;
+  int *GlobalNumbers, *BeginIndex, N_Cells, N_Edges;
+  int i, j, k, *Numbers;
   double extr[4];
 
   extr[0] = -1;
@@ -183,16 +179,8 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
   {
     cell = Coll->GetCell(i);
     N_Edges=cell->GetN_Edges();
-    diam = cell->GetDiameter();
-    if (N_Edges==3)
-	area = diam*diam / 4.0;
-    else
-	area = diam*diam/2.0;
-    for(j=0;j<N_Edges;j++)              // loop over all edges of cell
-    {                                  
-      fevalue[j] = 0;
-    }
-
+    //double diam = cell->GetDiameter();
+    
     FE_ID = FESpace2D->GetFE2D(i, cell);
     FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
     RefTrans = FE_Obj->GetRefTransID();
@@ -282,8 +270,8 @@ void CheckWrongNeumannNodes(TCollection *Coll, TFESpace2D *fespace,
 			    int* &neum_to_diri_bdry, 
 			    double* &neum_to_diri_param)
 {
-    const int max_entries = 50000;  
-    int i, j, N_, min_val, type;
+  const int max_entries = 50000;  
+  int i, j, min_val, type;
   int N_Cells, N_V, diri_counter = 0, found, diri_counter_1 = 0;
   int *global_numbers, *begin_index, *dof;
   int boundary_vertices[4], tmp_diri[max_entries], tmp_bdry[max_entries];
@@ -325,7 +313,7 @@ void CheckWrongNeumannNodes(TCollection *Coll, TFESpace2D *fespace,
        // finite element on the mesh cell
     CurrentElement = fespace->GetFE2D(i, cell);
     // number of basis functions (= number of d.o.f.)
-    N_ = TFEDatabase2D::GetN_BaseFunctFromFE2D(CurrentElement);
+    //int N_ = TFEDatabase2D::GetN_BaseFunctFromFE2D(CurrentElement);
     // the array which gives the mapping of the local to the global d.o.f.
     dof = global_numbers+begin_index[i];
     switch(CurrentElement)
@@ -633,8 +621,8 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix2D **SQMATRICES,
 				       double *neum_to_diri_param)
 {
     TSquareMatrix2D *MatrixA;
-    double *Entries_A, value;
-    int i, j, l, l0, l1, index, *RowPtr_A, *KCol_A;
+    double *Entries_A;
+    int i, l, l0, l1, index, *RowPtr_A, *KCol_A;
     
     MatrixA = SQMATRICES[0];
     RowPtr_A      = MatrixA->GetRowPtr();
