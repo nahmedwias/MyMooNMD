@@ -26,6 +26,7 @@ LIBRARY = $(LIBPATH)lib_System.a
    MEMBERS = \
 	$(SRCPATH)SystemMatNSE2D.o \
 	$(SRCPATH)SystemMatScalar2D.o \
+	$(SRCPATH)SystemMatDarcy2D.o \
 	$(SRCPATH)SystemMatTimeScalar2D.o \
 	$(SRCPATH)SystemMatTimeScalar2D_ALE.o \
 	$(SRCPATH)SystemMatTNSE2D.o \

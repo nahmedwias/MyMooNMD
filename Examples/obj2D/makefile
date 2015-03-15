@@ -19,6 +19,7 @@ LIBRARY = $(LIBPATH)lib_Examples.a
    MEMBERS = \
 	$(SRCPATH)Example2D.o \
 	$(SRCPATH)Example_CD2D.o \
+	$(SRCPATH)Example_Darcy2D.o \
 	$(SRCPATH)Example_NSE2D.o \
 
 ###############
