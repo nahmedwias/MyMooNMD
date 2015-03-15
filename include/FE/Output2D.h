@@ -84,8 +84,8 @@ class TOutput2D
 
       enum CELLTYPE {TRIA=2, QUAD} Type;
 
-      TOutputData() : N_Nodes(0), Nodes(0), N_Data(0),
-		      FEFuncValues(0), ConList(0) {};
+      TOutputData() : N_Nodes(0), N_Data(0), Nodes(0),
+		      ConList(0), FEFuncValues(0) {};
       ~TOutputData();
     };
 
