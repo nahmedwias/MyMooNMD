@@ -122,6 +122,13 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
                   TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
                   double *rhs, double *sol);
 
+//****************************************************************************/
+// for Darcy
+//****************************************************************************/
+void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
+                  TMatrix2D *matrixBT, TMatrix2D *matrixB,
+                  double *rhs, double *sol);
+
 #ifdef __3D__
 //****************************************************************************/
 // for NSTYPE == 2
@@ -144,6 +151,7 @@ void DirectSolver(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sqmatrixA12,
                   TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T, 
                   TMatrix3D *matrixB1,  TMatrix3D *matrixB2, TMatrix3D *matrixB3,
                   double *rhs, double *sol, int flag);
+
 
 void DirectSolver(TSquareMatrix3D **sqmatrices, int n_row, int n_column,
 		  double *sol, double *rhs);

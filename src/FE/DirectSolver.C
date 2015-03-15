@@ -2652,6 +2652,178 @@ double *rhs, double *sol)
   */
 }
 
+void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
+                  TMatrix2D *matrixBT, TMatrix2D *matrixB,
+                  double *rhs, double *sol)
+{
+  int *KColA, *RowPtrA, *KColC, *RowPtrC;
+  int *KColB, *RowPtrB;
+  int *KColBT, *RowPtrBT;
+  double *EntriesA, *EntriesC, *EntriesB, *EntriesBT;
+  int N_DOF, N_U, N_P, N_Entries;
+  double *Entries;
+  int *KCol, *RowPtr;
+  double *null = (double *) NULL;
+  void *Symbolic, *Numeric;
+  int i, j, k, l, begin, end, ret, pos;
+  double value;
+  int N_Active;
+  double t1, t2, t3, t4, t5;
+
+  t1 = GetTime();
+  // get information from the matrices
+  // size
+  N_U = sqmatrixA->GetN_Rows();
+  N_P = matrixB->GetN_Rows();
+  N_DOF = N_U + N_P;
+  N_Active = sqmatrixA->GetActiveBound();
+  
+  // pointer to the index arrays
+  KColA = sqmatrixA->GetKCol();
+  RowPtrA = sqmatrixA->GetRowPtr();
+
+  KColC = sqmatrixC->GetKCol();
+  RowPtrC = sqmatrixC->GetRowPtr();
+
+  KColB = matrixB->GetKCol();
+  RowPtrB = matrixB->GetRowPtr();
+
+  KColBT = matrixBT->GetKCol();
+  RowPtrBT = matrixBT->GetRowPtr();
+  // entries
+  EntriesA = sqmatrixA->GetEntries();
+  EntriesC = sqmatrixC->GetEntries();
+
+  EntriesB = matrixB->GetEntries();
+  EntriesBT = matrixBT->GetEntries();
+  
+  // allocate arrays for structure of combined matrix
+  // total number of entries
+  N_Entries = 4*RowPtrA[N_U] + RowPtrC[N_P] + RowPtrB[N_P] + RowPtrBT[N_U];
+  Entries = new double[N_Entries];
+  KCol = new int[N_Entries];
+  RowPtr = new int[N_DOF+1];
+  RowPtr[0] = 0;
+
+  pos = 0;
+  // fill combined matrix
+  for(i=0;i<N_U;i++)
+  {
+    // first velocity component
+    begin = RowPtrA[i];
+    end = RowPtrA[i+1];
+    for(j=begin;j<end;j++)
+    {
+      // A
+      Entries[pos] = EntriesA[j];
+      KCol[pos] = KColA[j];
+      pos++;
+    }
+    // BT
+    //if(i<N_Active)
+    {
+      begin = RowPtrBT[i];
+      end = RowPtrBT[i+1];
+      for(j=begin;j<end;j++)
+      {
+        Entries[pos] = EntriesBT[j];
+        KCol[pos] = KColBT[j]+N_U;
+        pos++;
+      }
+    }
+    RowPtr[i+1] = pos;
+  }
+  // pressure
+  for(i=0;i<N_P;i++)
+  {
+    // B
+    begin = RowPtrB[i];
+    end = RowPtrB[i+1];
+    for(j=begin;j<end;j++)
+    {
+      Entries[pos] = EntriesB[j];
+      KCol[pos] = KColB[j];
+      pos++;
+    }
+    // C
+    begin = RowPtrC[i];
+    end = RowPtrC[i+1];
+    for(j=begin;j<end;j++)
+    {
+      Entries[pos] = EntriesC[j];
+      KCol[pos] = KColC[j]+N_U;
+      pos++;
+    }
+    RowPtr[N_U+i+1] = pos;
+  }
+
+  // sort matrix
+  for(i=0;i<N_DOF;i++)
+  {
+    begin=RowPtr[i];
+    end=RowPtr[i+1];
+
+    for(j=begin;j<end;j++)
+    {
+      for(k=j+1;k<end;k++)
+      {
+        if(KCol[j] > KCol[k])
+        {
+          l = KCol[j];      value = Entries[j];
+          KCol[j] = KCol[k]; Entries[j] = Entries[k];
+          KCol[k] = l;       Entries[k] = value;
+        }                        // endif
+      }                          // endfor k
+    }                            // endfor j
+  }                              // endfor i
+
+  /*
+  for(i=0;i<N_DOF;i++)
+  {
+    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+      cout << "A(" << i+1 << "," << KCol[j]+1 << ") = " << Entries[j] << ";\n";
+  }
+  for(i=0;i<N_DOF;i++)
+  {
+    OutPut("rhs(" << i+1 << ") = " << rhs[i] << endl);
+  }
+  */
+  
+  t2 = GetTime();
+
+  ret = umfpack_di_symbolic(N_DOF, N_DOF, RowPtr, KCol, Entries, &Symbolic, 
+                            null, null);
+  if(ret!=0)
+    OutPut("symbolic: " << ret << endl);
+  t3 = GetTime();
+  ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, 
+                           null);
+  if(ret!=0)
+    OutPut("numeric: " << ret << endl);
+  t4 = GetTime();
+  umfpack_di_free_symbolic(&Symbolic);
+  ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
+    sol, rhs, Numeric, null, null);
+  if(ret!=0)
+    OutPut("solve: " << ret << endl);
+  umfpack_di_free_numeric(&Numeric);
+  t5 = GetTime();
+
+  delete [] Entries;
+  delete [] KCol;
+  delete [] RowPtr;
+
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+  {
+     cout << "UMFPACK Time:";
+     cout << "  data prep: " << t2-t1 << "s ";
+     cout << "  symbolic: " << t3-t2 << "s ";
+     cout << "  numeric: " << t4-t3 << "s ";
+     cout << "  solve: " << t5-t4 << "s "<< endl;
+     cout << "UMFPACK total time: " << t5-t1 << "s "<< endl;
+  }
+}
+
 
 #ifdef __3D__
 //****************************************************************************/
