@@ -194,7 +194,7 @@ int TOutput2D::AddParameter(double value, const char *descr)
 static void Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -287,6 +287,7 @@ int TOutput2D::Write(std::string basename, int i, double _current_time)
     WriteGnuplot(os.str().c_str());
   }
   // add more here if needed
+  return 0;
 }
 
 /** write stored data into a grape file */
@@ -667,7 +668,6 @@ int TOutput2D::WriteGnuplot(const char *name)
   int i,j,k,l,m,n;
   int N_Cells, N_Vertices, N_Comps, MaxN_VerticesPerCell;
   int N_BaseFunct, N_DOF;
-  TVertex *vertex;
   TBaseCell *cell;
   double x[4], y[4];
   double *Data;
@@ -874,33 +874,31 @@ int TOutput2D::WriteGnuplot(const char *name)
 
 int TOutput2D::WriteVtk(const char *name)
 {
-  int i,j,k,l,m,n,p;
-  int N_Cells, N_Vertices, N_CellVertices, N_Comps, MaxN_VerticesPerCell;
+  int i,j,k,l,m,n;
+  int N_Vertices, N_CellVertices, N_Comps;
   int  N_, N_Elements, N_LocVertices;
-  int N_BaseFunct, N_DOF, *FESpaceNumber;
+  int *FESpaceNumber;
   int N_LocDOF, Length, N_Comp;
-  int *GlobalNumbers, *BeginIndex, *Index, *DOF;
-  int *VertexNumbers, *BaseFuncts, *NumberVertex;
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  int *VertexNumbers, *NumberVertex;
 
   double xi, eta, value, *Coeffs, t;
   double BFValues[MaxN_BaseFunctions2D];
-  double *FEValues, s, *Coords, z, *WArray, *DoubleArray;
+  double *Coords, *WArray, *DoubleArray;
   /** this is needed to handle vector valued basis functions such as 
    * Raviart-Thomas (RT) or Brezzi-Douglas-Marini (BDM) element */
   double BFValuesOrig[MaxN_BaseFunctions2D];
   bool VectOutput = false;
-  BF2DRefElements RefElement;
   RefTrans2D RefTrans;
   TRefTrans2D *F_K;
   int BaseVectDim;
   double value_y;
   int edge, nsign;
   
-  double LocValues[MaxN_BaseFunctions2D];
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
 
-  char *Comment, *variable;
+  char *variable;
   char var1[2] = {'r', 'z'};
   char var2[2] = {'1', '2'};  
   
@@ -913,17 +911,10 @@ int TOutput2D::WriteVtk(const char *name)
   struct tm * timeinfo;
   
   TVertex **Vertices, *Last, *Current;
-  TFEFunction2D *fefunction;
-  TFEVectFunct2D *fevectfunct;
-  TVertex *vertex;
   TBaseCell *cell;
   TFESpace2D *fespace;
   TBaseFunct2D *bf;
-  BaseFunct2D BaseFunct;
   FE2D FE_ID;
-
-
-  MaxN_VerticesPerCell = 4; // 2D case
 
   std::ofstream dat(name);
   if (!dat)
@@ -1017,6 +1008,7 @@ int TOutput2D::WriteVtk(const char *name)
     if((Current=Vertices[i])!=Last)
     {
 #ifdef __3D__
+      double z;
       Vertices[i]->GetCoords(Coords[N_],Coords[N_+1], z);
 #else
       Vertices[i]->GetCoords(Coords[N_],Coords[N_+1]);
@@ -1153,7 +1145,7 @@ int TOutput2D::WriteVtk(const char *name)
       N_LocDOF = bf->GetDimension();
       
       RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FE_ID);
-      RefElement = TFEDatabase2D::GetRefElementFromFE2D(FE_ID);
+      //BF2DRefElements RefElement = TFEDatabase2D::GetRefElementFromFE2D(FE_ID);
       F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
       switch(RefTrans)
       {
@@ -1459,9 +1451,8 @@ int TOutput2D::WriteVtk(const char *name)
   delete [] Coords;
 
   dat.close();
-//   cout << endl;
-//   if( TDatabase::ParamDB->SC_VERBOSE > 0 )
-  OutPut("wrote output into vtk file: " << name << endl);
+  if( TDatabase::ParamDB->SC_VERBOSE > 0)
+    OutPut("wrote output into vtk file: " << name << endl);
   return 0;
 }
 
@@ -1508,7 +1499,6 @@ int TOutput2D::WriteVtk(const char *name)
 void TOutput2D::WriteVtkDiscontinuous(const char *fileName,
 int N_LocVertices, TVertex **Vertices)
 {
-  TVertex *curret_vertex;
   double x,y;                // coordinates of a vertex
   int N_Elements;            // number of all elements in this mesh
   int N_CellVertices;        // number of all vertices in this cell
@@ -1701,26 +1691,16 @@ int N_LocVertices, TVertex **Vertices)
 
 int TOutput2D::WriteMatlab(const char *name)
 {
-  int i,j,k,l,n,nx,ny ,counter;
+  int i,j,k,n,nx,ny ,counter;
   int N_Cells, N_Vertices, N_Comps, MaxN_VerticesPerCell;
-  int N_BaseFunct, N_DOF,N_Unknowns;
-  TVertex *vertex;
   TBaseCell *cell;
-  double x[4], y[4];
-  double *Data,*Data_sorted;
+  double *Data_sorted;
   double max_x, max_y, min_x, min_y, maxdist_x, maxdist_y;
   int *FESpaceNumber;
   TFESpace2D *fespace;
-  TBaseFunct2D *bf;
-  FE2D FE_ID;
-  double BFValues[4][MaxN_BaseFunctions2D];
-  //double *FEValues;
-  //int *GlobalNumbers, *BeginIndex, *Index;
-  double LocValues[MaxN_BaseFunctions2D];
-  double s, val[5], *X, *Y, *Val;
+  double val[5], *X, *Y, *Val;
   int cordx, cordy;
   TFEFunction2D *u;
-  char str[15];
   #ifdef __3D__
   double z;
   #endif
@@ -1761,7 +1741,7 @@ int TOutput2D::WriteMatlab(const char *name)
   OutPut("WriteMatlab: " << N_ScalarVar << " scalar fields, "
 	 << N_VectorVar << " vector fields; " <<
 	 " WRITING ONLY FIRST SCALAR FIELD !!!"<< endl);
-  N_Unknowns = fespace->GetN_DegreesOfFreedom();
+  //int N_Unknowns = fespace->GetN_DegreesOfFreedom();
   N_Cells = Coll->GetN_Cells();
   N_Vertices = Coll->GetCell(0)->GetN_Vertices();
   if (N_Vertices == 3)
@@ -1868,109 +1848,6 @@ for(j=0;j<=ny;j++)
   return 0;
 }
 
-/*
-int TOutput2D::WriteMatlab(const char *name)
-{
-  int i,j,k,l,m,n,counter;
-  int N_Cells, N_Vertices, N_Comps, MaxN_VerticesPerCell;
-  int N_BaseFunct, N_DOF;
-  TVertex *vertex;
-  TBaseCell *cell;
-  double x[4], y[4];
-  double *Data;
-  double *Data_aux;
-  double *Data_sorted;
-  int *FESpaceNumber;
-  TFESpace2D *fespace;
-  char *Comment;
-  double xi[4], eta[4];
-  TBaseFunct2D *bf;
-  FE2D FE_ID;
-  double BFValues[4][MaxN_BaseFunctions2D];
-  double *FEValues;
-  int *GlobalNumbers, *BeginIndex, *Index;
-  double LocValues[MaxN_BaseFunctions2D];
-  double s, val[5], *X, *Y, *Val;
-  TFEFunction2D *u;
-  char str[15];
-  #ifdef __3D__
-  double z;
-  #endif
-
-  MaxN_VerticesPerCell = 4;      // 2D case
-
-  std::ofstream dat(name);
-  if (!dat)
-  {
-    cerr << "cannot open file for output" << endl;
-    return -1;
-  }
-  dat.setf(std::ios::fixed);
-  dat << setprecision(8);
-
-  FESpaceNumber = new int[N_ScalarVar+N_VectorVar];
-
-  N_Comps = 0;
-  for(i=0;i<N_ScalarVar;i++)
-  {
-    N_Comps++;
-    fespace=FEFunctionArray[i]->GetFESpace2D();
-    j=0;
-    while(FESpaceArray[j]!=fespace) j++;
-    FESpaceNumber[i]=j;
-  }
-
-  k = N_ScalarVar;
-  for(i=0;i<N_VectorVar;i++,k++)
-  {
-    N_Comps += FEVectFunctArray[i]->GetN_Components();
-    fespace=FEVectFunctArray[i]->GetFESpace2D();
-    j=0;
-    while(FESpaceArray[j]!=fespace) j++;
-    FESpaceNumber[k]=j;
-  }
-
-  OutPut("WriteMatlab: " << N_ScalarVar << " scalar fields, "
-	 << N_VectorVar << " vector fields; " <<
-	 " WRITING ONLY FIRST SCALAR FIELD !!!"<< endl);
-
-  N_Cells = Coll->GetN_Cells();
-  X = new double[N_Cells*MaxN_VerticesPerCell];
-  Y = new double[N_Cells*MaxN_VerticesPerCell];
-  Val = new double[N_Cells*MaxN_VerticesPerCell];
-  u = FEFunctionArray[0];
-
-  counter = 0;
-  for(i=0;i<N_Cells;i++)
-  {
-    cell = Coll->GetCell(i);
-    N_Vertices = cell->GetN_Vertices();
-    for (j=0; j< N_Vertices; j++)
-    {
-	cell->GetVertex(j)->GetCoords(X[counter],Y[counter]);
-	u->FindGradientLocal(cell, i, X[counter], Y[counter], val);
-	Val[counter] = val[0];
-	counter++;
-    }
-  }
-  
-  for(i=0;i<counter;i++)
-      dat << setw(12) << X[i] << setw(12) << Y[i] << setw(12) << Val[i] << endl;
-      
-
-  dat.close();
-  
-  delete X;
-  delete Y;
-  delete Val;
-  delete FESpaceNumber;
-
-  cout << endl;
-  cout << "wrote output into matlab file: " << name << endl;
-
-  return 0;
-}
-*/
 #endif
 
 /** write stored data into a MATLAB file */
@@ -1979,12 +1856,9 @@ int TOutput2D::WriteMatlabOld(const char *name)
   int i,j,k,l,m,n;
   int N_Cells, N_Vertices, N_Comps, MaxN_VerticesPerCell;
   int N_BaseFunct, N_DOF;
-  TVertex *vertex;
   TBaseCell *cell;
   double x[4], y[4];
   double *Data;
-  double *Data_aux;
-  double *Data_sorted;
   int *FESpaceNumber;
   TFESpace2D *fespace;
   char *Comment;
@@ -2038,8 +1912,8 @@ int TOutput2D::WriteMatlabOld(const char *name)
   N_Comps++;
 
   Data = new double[MaxN_VerticesPerCell*N_Comps];
-  Data_aux = new double[MaxN_VerticesPerCell*N_Comps];
-  Data_sorted = new double[MaxN_VerticesPerCell*N_Comps];
+  //double *Data_aux = new double[MaxN_VerticesPerCell*N_Comps];
+  //double *Data_sorted = new double[MaxN_VerticesPerCell*N_Comps];
 
   dat << "# Matlab data generated by MooNMD" << endl;
   dat << "# useful only for rectangular domains" << endl;
@@ -2193,8 +2067,6 @@ int TOutput2D::WriteMatlabOld(const char *name)
 
 TOutput2D::~TOutput2D()
 {
-  int i;
-
   if(Data) delete Data;
   
   delete [] FESpaceArray;
@@ -2472,16 +2344,15 @@ int TOutput2D::WriteGMV(const char *name)
   int *VertexNumbers, *NumberVertex;
   int *IntArray;
   double *Coords, *DoubleArray;
-  Shapes ShapeType, ShapeType2;
-  TBaseCell *cell;		
+  TBaseCell *cell;
   TVertex **Vertices, *Current, *Last;
   FE2D FE_ID;
   TBaseFunct2D *bf;
   TFESpace2D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions2D], *Coeffs;
-  double xi, eta, value, zeta = 0;					// zeta wird entfernt
-  int MaxN_Comp, N_Comp, Length;
+  double xi, eta, value;
+  int N_Comp, Length;
   int Number;
   int MaxSubGridID;
 
@@ -2738,6 +2609,9 @@ int TOutput2D::WriteGMV(const char *name)
               xi = QuadCoords[2*j];
               eta = QuadCoords[2*j+1];
             break;
+            default:
+              ErrMsg("unsupported cell type");
+              exit(1);
           }
           bf->GetDerivatives(D00, xi, eta, BFValues);
           bf->ChangeBF(Coll, cell, BFValues);
@@ -2814,6 +2688,9 @@ int TOutput2D::WriteGMV(const char *name)
 	    xi = QuadCoords[2*j];
 	    eta = QuadCoords[2*j+1];
 	  break;
+        default:
+          ErrMsg("unsupported cell type");
+          exit(1);
 	}
         bf->GetDerivatives(D00, xi, eta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
@@ -2849,7 +2726,8 @@ int TOutput2D::WriteGMV(const char *name)
   dat.write(endgmv, 8);
   dat.close();
 
-  OutPut("wrote output into file: " << name << endl);
+  if(TDatabase::ParamDB->SC_VERBOSE > 0)
+    OutPut("wrote output into file: " << name << endl);
 
   return 0;
 }
@@ -2862,38 +2740,33 @@ int TOutput2D::Write_ParVTK(
 #endif
                                int img, char *subID)
 {
-  int i, j, k,l,m,n,p, rank, size, N_, N_Elements, N_LocVertices, N_BaseFunct, N_DOF;
-  int AnsatzSpace, N_Cells, N_Vertices, N_CellVertices, N_Comps, MaxN_VerticesPerCell;
-  int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *Index, *DOF;
-  int *VertexNumbers, *NumberVertex, *BaseFuncts, begin, ID;
+  int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
+  int N_Vertices, N_CellVertices, N_Comps;
+  int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
+  int *VertexNumbers, *NumberVertex, begin, ID;
 
-  double xi, eta, t, value, *Coeffs, *WArray, *DoubleArray;
+  double xi, eta, value, *Coeffs, *WArray, *DoubleArray;
 //   double *BubbleArray;
-  double BFValues[MaxN_BaseFunctions2D], LocValues[MaxN_BaseFunctions2D];
-  double *FEValues, *Coords, s, z;  // always 3D in Vtk
+  double BFValues[MaxN_BaseFunctions2D];
+  double *Coords;
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0, 0, 1};
 
   char *VtkBaseName, Dquot;
-  char *Comment;
   const char vtudir[] = "VTU";
   time_t rawtime;
   struct tm * timeinfo;
 
   TVertex **Vertices, *Last, *Current;
-  TFEFunction2D *fefunction;
-  TFEVectFunct2D *fevectfunct;
-  TVertex *vertex;
   TBaseCell *cell;
   TFESpace2D *fespace;
   TBaseFunct2D *bf;
-  BaseFunct2D BaseFunct;
   FE2D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
   VtkBaseName = TDatabase::ParamDB->BASENAME;
   char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
-  AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
+  // int AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -3073,7 +2946,7 @@ int TOutput2D::Write_ParVTK(
  if(rank==ID)
   {
   // determine data for vtu file of each processor
-  MaxN_VerticesPerCell = 4; // 2D case
+  //int MaxN_VerticesPerCell = 4; // 2D case
   FESpaceNumber = new int[N_ScalarVar+N_VectorVar];
    //cout << "N_ScalarVar: " <<  N_ScalarVar << endl;
   N_Comps = 0;
@@ -3142,6 +3015,7 @@ int TOutput2D::Write_ParVTK(
     if((Current=Vertices[i])!=Last)
     {
 #ifdef __3D__
+      double z;
       Vertices[i]->GetCoords(Coords[N_],Coords[N_+1], z);
 #else
       Vertices[i]->GetCoords(Coords[N_],Coords[N_+1]);
@@ -3602,7 +3476,6 @@ int TOutput2D::Write_ParVTK(
 int TOutput2D::WriteAsciiPlt(const char *filename)
 {
   TBaseCell *Cell;
-  TVertex *Vert;
   int N_Cells, N_;
 
   char tria[] = "ZONETYPE=FETRIANGLE";
@@ -3644,9 +3517,6 @@ int TOutput2D::WriteAsciiPlt(const char *filename)
   // write points and point values
   for(int i=0;i<Data->N_Nodes;i++)
   {
-    double x, y;
-      
-//     dat << x << "\t" << y;
     for(int j=0;j<N_ScalarVar+2;j++)
       dat << Data->FEFuncValues[j][i] << "\t";
 
