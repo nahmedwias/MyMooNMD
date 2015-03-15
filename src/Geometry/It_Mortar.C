@@ -73,15 +73,19 @@ TBaseCell *TIt_Mortar::Next(int &info)
         Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild);
 
   if (!ActiveLevel)
+  {
     if (Status[0].N_Children == Status[0].CurrentChild)
       return NULL;
     else
+    {
       if (!ActiveCell->GetN_Children())
       {
         Status[0].CurrentChild++;
         info = LocMortarFace[0];
         return ActiveCell;
       }
+    }
+  }
 
   ActiveCell->GetRefDesc()->GetOldEdgeNewEdge(TmpoEnE, TmpLen1, MaxLen1);
 

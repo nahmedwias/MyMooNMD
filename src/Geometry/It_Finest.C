@@ -38,7 +38,8 @@ int TIt_Finest::GetMaxLevel()
           Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild);
 
     if (!ActiveLevel &&
-          Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild)
+         Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild)
+    {
       if (ActiveRootCell < N_RootCells)
       {
         ActiveCell = CellTree[ActiveRootCell++];
@@ -47,6 +48,7 @@ int TIt_Finest::GetMaxLevel()
       }
       else
         break;
+    }
 
     while (Status[ActiveLevel].N_Children)
     {

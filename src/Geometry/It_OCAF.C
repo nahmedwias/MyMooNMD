@@ -38,7 +38,8 @@ TBaseCell *TIt_OCAF::Next(int &info)
           Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild);
 
     if (!ActiveLevel &&
-          Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild)
+         Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild)
+    {
       if (ActiveRootCell < N_RootCells)
       {
         ActiveCell = CellTree[ActiveRootCell++];
@@ -47,6 +48,7 @@ TBaseCell *TIt_OCAF::Next(int &info)
       }
       else
         return NULL;
+    }
 
     while (Status[ActiveLevel].N_Children)
     {

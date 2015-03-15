@@ -75,13 +75,14 @@ int TInterfaceJoint::GetXYofT(double T, double &X, double &Y)
 /** update parameters according to the new vertex positions */
 void TInterfaceJoint::UpdateParameters(TVertex *Begin, TVertex *End)
 {
-  double x1, y1, z1, x2, y2, z2;
+  double x1, y1, x2, y2;
   double t1, t2;
 
 #ifdef __2D__
   Begin->GetCoords(x1, y1);
   End->GetCoords(x2, y2);
 #else
+  double z1, z2;
   Begin->GetCoords(x1, y1, z1);
   End->GetCoords(x2, y2, z2);
 #endif
@@ -99,7 +100,7 @@ int TInterfaceJoint::CheckOrientation()
   int i, N_;
   const int *TmpEV;
   TVertex *Vert0;
-  double T0, X, Y;
+  double X, Y;
   TBaseCell *Neighb2;
 
   if (Neighb0)

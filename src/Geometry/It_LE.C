@@ -19,6 +19,7 @@ TBaseCell *TIt_LE::Next(int &info)
 
   if (!Level  || (!ActiveLevel &&
         Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild))
+  {
     if (ActiveRootCell < N_RootCells)
     {
       ActiveCell = CellTree[ActiveRootCell++];
@@ -27,6 +28,7 @@ TBaseCell *TIt_LE::Next(int &info)
     }
     else
       return NULL;
+  }
 
   if (!(ActiveCell->ExistChildren()))
     Status[ActiveLevel].N_Children = Status[ActiveLevel].CurrentChild = 0;

@@ -27,6 +27,7 @@ TBaseCell *TIt_EQ::Next(int &info)
 
     if (!Level  || (!ActiveLevel && 
           Status[ActiveLevel].N_Children == Status[ActiveLevel].CurrentChild))
+    {
       if (ActiveRootCell < N_RootCells)
       {
         ActiveCell = CellTree[ActiveRootCell++];
@@ -35,6 +36,7 @@ TBaseCell *TIt_EQ::Next(int &info)
       }
       else
         return NULL;
+    }
 
     while (Status[ActiveLevel].N_Children && ActiveLevel != Level)
     {
