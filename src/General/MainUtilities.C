@@ -3117,30 +3117,30 @@ extern "C" {
 // boundary values for auxiliary problem in Galdi/Layton model
 // ========================================================================
 
-void BoundConditionAuxProblem(int i, double t, BoundCond &cond)
-{
-  cond = NEUMANN;
-  //cond = DIRICHLET;
-}
-
-void BoundValueAuxProblem(int BdComp, double Param, double &value)
-{
-  value = 0;
-}
+// void BoundConditionAuxProblem(int i, double t, BoundCond &cond)
+// {
+//   cond = NEUMANN;
+//   //cond = DIRICHLET;
+// }
+// 
+// void BoundValueAuxProblem(int BdComp, double Param, double &value)
+// {
+//   value = 0;
+// }
 
 // ========================================================================
 // boundary values for higher order fe in VMS
 // ========================================================================
 
-void ho_BoundCondition(int i, double t, BoundCond &cond)
-{
-  cond = DIRICHLET;
-}
-
-void ho_BoundValue(int BdComp, double Param, double &value)
-{
-  value = 0;
-}
+// void ho_BoundCondition(int i, double t, BoundCond &cond)
+// {
+//   cond = DIRICHLET;
+// }
+// 
+// void ho_BoundValue(int BdComp, double Param, double &value)
+// {
+//   value = 0;
+// }
 
 
 void SetPolynomialDegree()

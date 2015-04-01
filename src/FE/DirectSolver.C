@@ -883,6 +883,7 @@ double *rhs, double *sol, int rb_flag)
   {
       OutPut("rb_flag: " << rb_flag << endl);
   }
+
   if (rb_flag==0 || rb_flag==3)
   {
     t1 = GetTime();

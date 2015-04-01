@@ -214,7 +214,7 @@ void ModifyBdCoords(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_
 {
  int i, j, k, l, m;
    
- double x, y, Fact=0.075;
+ double x, y, Fact=0.06;
  double disp, theta;
  
  
@@ -254,10 +254,7 @@ void ModifyBdCoords(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_
        disp = Fact*(x-0.5)*(x-0.5)*sin((2./5.)*Pi*t);
        theta = atan2(y,(x-0.5));
        x += (-0.25*disp*tan(theta) -y*sin(theta));
-       y += disp;   
-       
-//        Iso_refX[2*m] = x;
-//        Iso_refX[2*m+1] = y;      
+       y += disp;          
  
        Vertices[l]->SetCoords(x, y);    
        m++;

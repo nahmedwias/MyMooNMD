@@ -343,6 +343,7 @@ int MovingTNSBeginParam_Axial3D[1] = { 0 };
 // parameters: u1old, u2old, u1 previous, u2 previous
 // used for : SUPG
 // ========================================================================
+void TimeNSParams4(double *in, double *out);
 int TimeNSN_FESpaces4 = 1; 
 int TimeNSN_Fct4 = 4;
 int TimeNSN_FEValues4 = 4;
@@ -353,12 +354,7 @@ MultiIndex2D TimeNSFEMultiIndex4[4] = { D00, D00, D00, D00 }; // size:TimeNSN_FE
 int TimeNSN_ParamFct4 = 1;
 ParamFct *TimeNSFct4[1] = { TimeNSParams4 }; // size: TimeNSN_ParamFct2
 int TimeNSBeginParam4[1] = { 0 }; // size: TimeNSN_ParamFct2
-void TimeNSParams4(double *in, double *out);
-
-
-
-
-
+ 
 // ========================================================================
 // boundary values for auxiliary problem in Galdi/Layton model
 // ========================================================================

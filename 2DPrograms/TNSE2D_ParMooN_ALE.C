@@ -19,7 +19,7 @@
 #include <LinAlg.h>
 #include <CD2DErrorEstimator.h>
 #include <MainUtilities.h>
-#include <TimeUtilities.h>
+#include <TimeDiscRout.h>
 #include <TNSE2D_ParamRout.h>
 
 #include <BdLine.h>
@@ -42,7 +42,7 @@
 // #include "../Examples/TNSE_2D/DrivenCavity.h" //   in unit square
 // #include "../Examples/TNSE_2D/Bsp1.h" // smooth sol in unit square
 // #include "../Examples_All/TNSE_2D/Benchmark2.h"  
-#include "../Examples_All/TNSE_2D/beam.h"
+#include "Main_Users/Sashi/TNSE_2D/beam.h"
 // =======================================================================
 // main program
 // =======================================================================
@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 //======================================================================
 // produce outout
 //======================================================================
-   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
+   VtkBaseName = TDatabase::ParamDB->BASENAME;    
    Output = new TOutput2D(2, 2, 1, 1, Domain);
 
    Output->AddFEVectFunct(Velocity);
@@ -319,7 +319,12 @@ int main(int argc, char* argv[])
       Output->WriteVtk(os.str().c_str());
       img++;
      }       
- 
+//   if(TDatabase::ParamDB->WRITE_VTK)
+//   {
+//     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+//     filename += "/" + std::string(TDatabase::ParamDB->BASENAME) + ".vtk";
+//     Output->WriteVtk(filename.c_str());
+//   }   
 
 //======================================================================
 // time disc loop
@@ -370,7 +375,7 @@ int main(int argc, char* argv[])
      SystemMatrix_ALE->GetMeshVeloAndMove(TDatabase::TimeDB->CURRENTTIME, tau);
 #endif           
      
-         memset(MeshSol, 0, 2*N_G*SizeOfDouble);
+      // memset(MeshSol, 0, 2*N_G*SizeOfDouble);
         
       // assemble only rhs, nonlinear matrix for NSE will be assemble in fixed point iteration
       // not needed if rhs is not time-dependent
@@ -406,13 +411,14 @@ int main(int argc, char* argv[])
       {   
        // Solve the NSE system
        SystemMatrix_ALE->Solve(sol);
-      
+             
+       
        if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
         IntoL20FEFunction(sol+2*N_U, N_P, Pressure_FeSpace, velocity_space_code, pressure_space_code);   
 
        
        //no nonlinear iteration for Stokes problem  
-       if(TDatabase::ParamDB->STOKES_PROBLEM)
+       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
         break;
      
         // restore the mass matrix for the next nonlinear iteration      

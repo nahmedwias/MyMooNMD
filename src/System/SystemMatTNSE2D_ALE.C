@@ -518,6 +518,7 @@ void TSystemMatTNSE2D_ALE::GetMeshVeloAndMove(int N_MovVert, TVertex **MovBoundV
 
   // mesh velocity
   Dscal(2*N_GridDOFs, 1./tau, MeshVelo);
+   cout<< "MeshVelo " <<Ddot((2*N_GridDOFs), MeshVelo, MeshVelo)<<endl; 
 } // TSystemMatTNSE2D_ALE::GetMeshVelo
 
 
@@ -602,7 +603,7 @@ void TSystemMatTNSE2D_ALE::AssembleSystMat(double scale, double *oldrhs, double 
     case 4:     
          Dscal(MatrixB1T->GetN_Entries(), scale, MatrixB1T->GetEntries());
          Dscal(MatrixB2T->GetN_Entries(), scale, MatrixB2T->GetEntries());
-	 
+
       // scale divergence constraint
       if(val>0) 
        {
@@ -613,6 +614,7 @@ void TSystemMatTNSE2D_ALE::AssembleSystMat(double scale, double *oldrhs, double 
     } // switch(NSETyp
   } //  if (scale != 1.0)
     
+ 
    // Also currently : M := M + gamma A
    // M = M + (-gamma - tau*TDatabase::TimeDB->THETA2) A 
    // defect = M * sol
@@ -651,7 +653,7 @@ void TSystemMatTNSE2D_ALE::AssembleSystMat(double scale, double *oldrhs, double 
        Daxpy(N_Active, 1, defect+N_U, B+N_U);
        MatVectActive(SqmatrixM22, sol+N_U, defect+N_U);
        Daxpy(N_Active, 1, defect+N_U, B+N_U);
-   
+
        //assembling system matrix
        MatAdd(SqmatrixM11, SqmatrixA11, -gamma + tau*TDatabase::TimeDB->THETA1);
        MatAdd(SqmatrixM12, SqmatrixA12, -gamma + tau*TDatabase::TimeDB->THETA1);
@@ -666,6 +668,8 @@ void TSystemMatTNSE2D_ALE::AssembleSystMat(double scale, double *oldrhs, double 
    memcpy(B+N_U+N_Active, rhs+N_U+N_Active, N_DirichletDof*SizeOfDouble); 
 //                 cout<< "B " <<Ddot((2*N_U+N_P), B, B)<<endl; 
    SystMatAssembled  = TRUE;
+//    exit(0);
+   
 } // AssembleSystMat
 
 /* assemble only LHS, not rhs */
@@ -926,7 +930,7 @@ void TSystemMatTNSE2D_ALE::Solve(double *sol)
 
           case 4:
              DirectSolver(SqmatrixM11, SqmatrixM12, SqmatrixM21, SqmatrixM22, 
-                          MatrixB1T, MatrixB2T, MatrixB1,  MatrixB2, B, sol); 
+                          MatrixB1T, MatrixB2T, MatrixB1,  MatrixB2, B, sol);      
           break;
       } //  switch(NSEType) 
 
@@ -937,6 +941,10 @@ void TSystemMatTNSE2D_ALE::Solve(double *sol)
             exit(4711);;
      }    
 
+     
+//      cout << "NSEType " << NSEType << endl;
+//      exit(0);
+     
 }
 
 
@@ -949,19 +957,9 @@ void TSystemMatTNSE2D_ALE::GetTNSEResidual(double *sol, double *res)
     cout << "System Matrix is not assembled to calculate residual " <<endl;
     exit(0);
    }
-    
-    SQMATRICES[0] = SqmatrixM11;
-    SQMATRICES[1] = SqmatrixM12;
-    SQMATRICES[2] = SqmatrixM21;
-    SQMATRICES[3] = SqmatrixM22;
-       
-    MATRICES[0] = MatrixB1;
-    MATRICES[1] = MatrixB2;
-    MATRICES[2] = MatrixB1T;
-    MATRICES[3] = MatrixB2T;
-       
+
    Defect(sqmatrices, matrices, sol, B, res); 
-   
+
 } // TSystemMatTNSE2D_ALE::GetResidual
 
 

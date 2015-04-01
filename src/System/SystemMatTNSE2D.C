@@ -43,27 +43,23 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
     switch(NSEType)
      {
       case 1:
-        SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
-
-
-      break;
-
       case 2:
         SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
+
+        sqmatrices[0] = SqmatrixM11;
       break;
 
       case 3:
-        SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM12 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM21 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM22 = new TSquareMatrix2D(sqstructureA);
-      break;
-
       case 4:
         SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
         SqmatrixM12 = new TSquareMatrix2D(sqstructureA);
         SqmatrixM21 = new TSquareMatrix2D(sqstructureA);
         SqmatrixM22 = new TSquareMatrix2D(sqstructureA);
+
+        sqmatrices[0] = SqmatrixM11;
+        sqmatrices[1] = SqmatrixM12;
+        sqmatrices[2] = SqmatrixM21;
+        sqmatrices[3] = SqmatrixM22;
       break;
       
       default:
@@ -893,16 +889,6 @@ void TSystemMatTNSE2D::GetTNSEResidual(double *sol, double *res)
     cout << "System Matrix is not assembled to calculate residual " <<endl;
     exit(0);
    }
-    
-    SQMATRICES[0] = SqmatrixM11;
-    SQMATRICES[1] = SqmatrixM12;
-    SQMATRICES[2] = SqmatrixM21;
-    SQMATRICES[3] = SqmatrixM22;
-       
-    MATRICES[0] = MatrixB1;
-    MATRICES[1] = MatrixB2;
-    MATRICES[2] = MatrixB1T;
-    MATRICES[3] = MatrixB2T;
        
    Defect(sqmatrices, matrices, sol, B, res); 
    
