@@ -284,6 +284,7 @@ void  InitializeDiscreteForms_ScalarMoving(TDiscreteForm2D *&DiscreteFormGalerki
 
 void InitializeDiscreteForms_Moving(TDiscreteForm2D *&DiscreteFormGalerkin, TDiscreteForm2D *&DiscreteFormSUPG, CoeffFct2D *LinCoeffs);
 
+void InitializeDiscreteForms_HeatLine(TDiscreteForm2D *&DiscreteFormHeatLine, CoeffFct2D *LinCoeffs);
 
 void InitializeDiscreteForms_Stationary(TDiscreteForm2D *&DiscreteFormUpwind, TDiscreteForm2D *&DiscreteFormGalerkin, TDiscreteForm2D *&DiscreteFormSDFEM,
                                         TDiscreteForm2D *&DiscreteFormGLS, CoeffFct2D *LinCoeffs);

@@ -5903,6 +5903,24 @@ void MovingTNSParams_Axial3D(double *in, double *out)
 // cout<< "out[2]  " << out[2]<<endl;
 }
 
+// ======================================================================
+// parameters u1old, u2old, gridv_x, gridv_y
+// ======================================================================
+void MovingTNSParams_Axial3D_HeatLine(double *in, double *out)
+{
+  out[0] = in[2]; 
+  out[1] = in[3];
+  out[2] = in[4]; 
+  out[3] = in[5] - in[7];
+  out[4] = in[6] - in[8]; 
+  out[5] = in[9] - in[11]; 
+  out[6] = in[10] - in[12]; 
+  out[7] = in[0];  // x value for axial symmetric
+
+// cout<< "out[0]  " << out[0]<<endl;
+}
+
+
 
 void TimeNSType2SUPG(double Mult, double *coeff, 
                 double *param, double hK, 

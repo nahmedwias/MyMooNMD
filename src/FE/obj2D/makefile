@@ -119,6 +119,7 @@ LIBRARY = $(LIBPATH)lib_FE.a
 	$(SRCPATH)Structure2D.o \
 	$(SRCPATH)Superconvergence2D.o \
 	$(SRCPATH)TCD2D.o \
+	$(SRCPATH)TimeConvDiff2D.o \
 	$(SRCPATH)TimeDiscRout.o \
 	$(SRCPATH)TNSE2D_FixPo.o \
 	$(SRCPATH)TNSE2D_FixPoRot.o \

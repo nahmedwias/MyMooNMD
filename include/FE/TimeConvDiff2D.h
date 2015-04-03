@@ -3,6 +3,8 @@
 //
 // common declaration for time dependent convection diffusion problems
 // ======================================================================
+#include <Enumerations.h>
+#include <FESpace2D.h>
 
 #ifndef __TIMECONVDIFF2D__
 #define __TIMECONVDIFF2D__
@@ -18,11 +20,11 @@
 // int SpacesNumbers_SD[5] = { 0, 0, 0, 0 };
 
 // part for all
-int N_Matrices = 1;
-int RowSpace[2] = { 0 };
-int ColumnSpace[2] = { 0 };
-int N_Rhs = 1;
-int RhsSpace[1] = { 0 };
+// int N_Matrices = 1;
+// int RowSpace[2] = { 0 };
+// int ColumnSpace[2] = { 0 };
+// int N_Rhs = 1;
+// int RhsSpace[1] = { 0 };
 
 // part for mass matrix
 int N_Matrices_Mass = 1;
@@ -59,7 +61,6 @@ void TimeRhsAssembleRB(double Mult, double *coeff, double hK,
                     double **OrigValues, int *N_BaseFuncts,
                     double ***LocMatrices, double **LocRhs);
 
-
 // ======================================================================
 // parameter routine settings
 // convection is finite element velocity field 
@@ -85,3 +86,26 @@ int TimeCDParamsVeloFieldFEFctIndex_ALE[4] = { 0, 1, 2, 3 };
 MultiIndex2D TimeCDParamsVeloFieldFEMultiIndex_ALE[4] = { D00, D00,  D10, D01 };
 ParamFct *TimeCDParamsVeloFieldFct_ALE[1] = { TimeCDParamsVeloField_ALE };
 #endif
+
+
+void MatrixMARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
+                                 double hK, 
+                                 double **OrigValues, int *N_BaseFuncts,
+                                 double ***LocMatrices, double **LocRhs);
+
+void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
+                         double hK, double **OrigValues, int *N_BaseFuncts,
+                         double ***LocMatrices, double **LocRhs);
+
+void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
+                                 double hK, 
+                                 double **OrigValues, int *N_BaseFuncts,
+                                 double ***LocMatrices, double **LocRhs);
+
+void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param, double hK, 
+                    double **OrigValues, int *N_BaseFuncts,
+                    double ***LocMatrices, double **LocRhs);
+
+void MatrixARhsAssembleHeatLine_Axial3D(double Mult, double *coeff, double *param, double hK, 
+                    double **OrigValues, int *N_BaseFuncts,
+                    double ***LocMatrices, double **LocRhs);

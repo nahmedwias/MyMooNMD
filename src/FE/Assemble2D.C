@@ -2200,7 +2200,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   // ####################################################################
   // print the whole matrix -- SECOND
   // ####################################################################
-  /*
+//   /*
     for(k=0;k<n_sqmatrices;k++)
     {
       cout << endl;
@@ -2258,7 +2258,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
 //   //cout << setw(10) << i << setw(20) << RHS[i] << endl;
 //   OutPut("f"<<k<<"("<< i+1  << ")=   " << RHS[i] << endl);
 //   }
-  */
+//   */
 }                                                 // end of Assemble
 
 

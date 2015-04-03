@@ -244,7 +244,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
     OutPut("error in umfpack_di_solve " << ret << endl);
     exit(4711);
   }
-//  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+ OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
 }
 
 

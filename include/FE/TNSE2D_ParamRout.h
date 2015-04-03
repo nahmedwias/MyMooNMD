@@ -353,6 +353,22 @@ ParamFct *MovingTNSFct_Axial3D[1] = { MovingTNSParams_Axial3D };
 int MovingTNSBeginParam_Axial3D[1] = { 0 };
 
 
+// ======================================================================
+// parameters u1old, u2old, gridv_x, gridv_y
+//  for axial symmetric case
+// ======================================================================
+void MovingTNSParams_Axial3D_HeatLine(double *in, double *out);
+
+int MovingTNSN_FESpaces_Axial3D_HeatLine = 3;
+int MovingTNSN_Fct_Axial3D_HeatLine = 7;
+int MovingTNSN_ParamFct_Axial3D_HeatLine = 1;
+int MovingTNSN_FEValues_Axial3D_HeatLine = 11;
+int MovingTNSN_Params_Axial3D_HeatLine = 8;
+int MovingTNSFEFctIndex_Axial3D_HeatLine[11] = { 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4};
+MultiIndex2D MovingTNSFEMultiIndex_Axial3D_HeatLine[11] = { D00, D10, D01, D00, D00, D00, D00, D01, D10, D01, D10};
+ParamFct *MovingTNSFct_Axial3D_HeatLine[1] = { MovingTNSParams_Axial3D_HeatLine };
+int MovingTNSBeginParam_Axial3D_HeatLine[1] = { 0 };
+
 // ========================================================================
 // parameters: u1old, u2old, u1 previous, u2 previous
 // used for : SUPG
