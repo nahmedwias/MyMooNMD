@@ -68,6 +68,20 @@ ParamFct *TimeNSFctVelo_GradVelo[1] = { TimeNSParamsVelo_GradVelo };
 int TimeNSBeginParamVelo_GradVelo[1] = { 0 };
 
 // ========================================================================
+// coletti, without g_\delta \ast u, in ALE 
+// ========================================================================
+void TimeNSParamsVelo_GradVelo_ALE(double *in, double *out);
+int TimeNSN_FESpacesVelo_GradVelo_ALE = 2;
+int TimeNSN_FctVelo_GradVelo_ALE = 4;
+int TimeNSN_ParamFctVelo_GradVelo_ALE  = 1;
+int TimeNSN_FEValuesVelo_GradVelo_ALE  = 8;
+int TimeNSN_ParamsVelo_GradVelo_ALE  = 8;
+int TimeNSFEFctIndexVelo_GradVelo_ALE[8] = { 0, 1, 0, 1, 0, 1, 2, 3 };
+MultiIndex2D TimeNSFEMultiIndexVelo_GradVelo_ALE[8] = { D00, D00, D10, D10, D01, D01, D00, D00};
+ParamFct *TimeNSFctVelo_GradVelo_ALE[1] = { TimeNSParamsVelo_GradVelo_ALE };
+int TimeNSBeginParamVelo_GradVelo_ALE[1] = { 0 };
+
+// ========================================================================
 // velocity, gradient and convolution of velocity
 // ========================================================================
 

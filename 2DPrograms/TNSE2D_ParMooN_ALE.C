@@ -235,17 +235,15 @@ int main(int argc, char* argv[])
       case GL00_CONVOLUTION:
       case GL00_AUX_PROBLEM:
 
-      cout << "Aux not yet implemented for  Disctype " << Disctype<< endl;  
-      exit(0);	
-//        aux =  new TAuxParam2D(TimeNSN_FESpacesVelo_GradVelo, TimeNSN_FctVelo_GradVelo,
-//                         TimeNSN_ParamFctVelo_GradVelo,
-//                         TimeNSN_FEValuesVelo_GradVelo,
-//                         fesp, fefct,
-//                         TimeNSFctVelo_GradVelo,
-//                         TimeNSFEFctIndexVelo_GradVelo,
-//                         TimeNSFEMultiIndexVelo_GradVelo,
-//                         TimeNSN_ParamsVelo_GradVelo,
-//                         TimeNSBeginParamVelo_GradVelo);
+       aux =  new TAuxParam2D(TimeNSN_FESpacesVelo_GradVelo_ALE, TimeNSN_FctVelo_GradVelo_ALE,
+                        TimeNSN_ParamFctVelo_GradVelo_ALE,
+                        TimeNSN_FEValuesVelo_GradVelo_ALE,
+                        fesp, fefct,
+                        TimeNSFctVelo_GradVelo_ALE,
+                        TimeNSFEFctIndexVelo_GradVelo_ALE,
+                        TimeNSFEMultiIndexVelo_GradVelo_ALE,
+                        TimeNSN_ParamsVelo_GradVelo_ALE,
+                        TimeNSBeginParamVelo_GradVelo_ALE);
 
         break;
 
@@ -274,6 +272,18 @@ int main(int argc, char* argv[])
                                MovingTNSN_Params, MovingTNSBeginParam);   
         }
     }
+    
+    
+   int MovingTNSN_FESpaces = 2;
+int MovingTNSN_Fct = 4;
+int MovingTNSN_ParamFct = 1;
+int MovingTNSN_FEValues = 4;
+int MovingTNSN_Params = 3;
+int MovingTNSFEFctIndex[4] = { 0, 1, 2, 3 };
+MultiIndex2D MovingTNSFEMultiIndex[4] = { D00, D00, D00, D00 };
+ParamFct *MovingTNSFct[1] = { MovingTNSParams };
+int MovingTNSBeginParam[1] = { 0 }; 
+    
     
    // aux for calculating the error
    if(TDatabase::ParamDB->MEASURE_ERRORS)

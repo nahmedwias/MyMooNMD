@@ -5597,6 +5597,22 @@ void TimeNSParamsVelo_GradVelo(double *in, double *out)
   out[5] = in[7];                // D2u2
 }
 
+// ========================================================================
+// parameters: u1old, u2old,
+// used for : COLETTI, Smagorinsky
+// ========================================================================
+void TimeNSParamsVelo_GradVelo_ALE(double *in, double *out)
+{
+  out[0] = in[2] - in[8];       // u1old - w1old
+  out[1] = in[3] - in[9];       // u2old - w2old
+
+  out[2] = in[4];               // D1u1
+  out[3] = in[5];               // D1u2
+  out[4] = in[6];               // D2u1
+  out[5] = in[7];               // D2u2
+  
+//   cout <<in[8] << " E " << in[9] << endl;
+}
 
 // ========================================================================
 // parameters: u1old, u2old,
