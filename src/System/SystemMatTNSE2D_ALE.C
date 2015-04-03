@@ -518,7 +518,7 @@ void TSystemMatTNSE2D_ALE::GetMeshVeloAndMove(int N_MovVert, TVertex **MovBoundV
 
   // mesh velocity
   Dscal(2*N_GridDOFs, 1./tau, MeshVelo);
-   cout<< "MeshVelo " <<Ddot((2*N_GridDOFs), MeshVelo, MeshVelo)<<endl; 
+//    cout<< "MeshVelo " <<Ddot((2*N_GridDOFs), MeshVelo, MeshVelo)<<endl; 
 } // TSystemMatTNSE2D_ALE::GetMeshVelo
 
 

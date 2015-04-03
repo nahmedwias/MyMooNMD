@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
                         TimeNSN_ParamsVelo_GradVelo_ALE,
                         TimeNSBeginParamVelo_GradVelo_ALE);
 
-        break;
+      break;
 
       default:
      // 4 parameters are needed for assembling (u1, u2, w1, w2)	
