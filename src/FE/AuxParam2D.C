@@ -51,11 +51,11 @@ TAuxParam2D::TAuxParam2D(
   N_BaseFunct = new int[N_FEValues];
 }
 
-// empty aux class
-TAuxParam2D::TAuxParam2D()
- : TAuxParam2D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL)
-{
-}
+//   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
+// // empty aux class
+// TAuxParam2D::TAuxParam2D() : TAuxParam2D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL)
+// {
+// }
 
 // set aux parameters giving a keyword
 TAuxParam2D::TAuxParam2D(std::string name, TFEFunction2D **fefunctions2d)

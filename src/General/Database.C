@@ -520,6 +520,7 @@ void TDatabase::SetDefaultParameters()
   tmp = new char[30];
   strcpy(tmp,"MooN_MD_default_basefile");
   ParamDB->BASENAME = tmp;
+  ParamDB->VTKBASENAME = tmp;
   tmp = new char[2];
   strcpy(tmp,"."); // current directory
   ParamDB->OUTPUTDIR = tmp;
@@ -1434,6 +1435,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "MIN_MAX_ADJOINT: " << ParamDB->MIN_MAX_ADJOINT<< endl;
   
   OutFile << "BASENAME: " << ParamDB->BASENAME << endl;
+  OutFile << "VTKBASENAME: " << ParamDB->VTKBASENAME << endl;
   OutFile << "SAVE_DATA_FILENAME: " << ParamDB->SAVE_DATA_FILENAME << endl;
   OutFile << "READ_DATA_FILENAME: " << ParamDB->READ_DATA_FILENAME << endl;
   OutFile << "POD_FILENAME: " << ParamDB->POD_FILENAME << endl;

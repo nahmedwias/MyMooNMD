@@ -50,6 +50,7 @@ struct TParaDB
   int SAVESOL;
   
   char *BASENAME;
+  char *VTKBASENAME;  
   char *OUTPUTDIR;
   char *SAVE_DATA_FILENAME;
   char *READ_DATA_FILENAME;

@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
 
      for(l=0;l<N_SubSteps;l++) // sub steps of fractional step theta
       {
-       SetTimeDiscParameters();
+       SetTimeDiscParameters(1);
 
       if(m==1)
        {

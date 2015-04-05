@@ -122,6 +122,9 @@ void SetTimeDiscParameters(int increase_count)
             theta * TDatabase::TimeDB->TIMESTEPLENGTH;
 
         break;
+      default:
+          OutPut("Pass 1 as the argument in SetTimeDiscParameters() for FRACTIONAL_STEP scheme; !!!"<<endl);
+          exit(4711);
       }
       if(count==3) count=0;
     break; // FRACTIONAL_STEP

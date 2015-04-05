@@ -711,6 +711,14 @@ int TDomain::ReadParam(char *ParamFile)
       TDatabase::ParamDB->BASENAME = aux_char;
       N_Param++;
     }
+    if (!strcmp(line, "VTKBASENAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      TDatabase::ParamDB->VTKBASENAME = aux_char;
+      N_Param++;
+    }    
     if (!strcmp(line, "OUTPUTDIR:"))
     {
       dat >> line;
