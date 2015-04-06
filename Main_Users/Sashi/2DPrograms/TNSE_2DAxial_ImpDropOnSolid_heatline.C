@@ -6692,22 +6692,12 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
 #ifdef __HEATLINE__  
   Sol_All[6] = new double[N_heatfuncDOF];
   Rhs_All[3] = new double[N_heatfuncDOF];
-//   oldsol_heatfunc = new double[N_heatfuncDOF];
-//   heatfunc_defect = new double[N_heatfuncDOF];
-//   Heatfunc_B = new double[N_heatfuncDOF];  
-
-  //vectors for flux calculations
-//   Flux_A_heatfunc = new double[N_heatfuncDOF];
-//   Flux_M_heatfunc = new double[N_heatfuncDOF];
   
   memset(Sol_All[6], 0, N_heatfuncDOF*SizeOfDouble);
-//   memset(oldsol_heatfunc, 0, N_heatfuncDOF*SizeOfDouble);
   memset(Rhs_All[3], 0, N_heatfuncDOF*SizeOfDouble);
 
   // heatfunction fefunction
   FEFunctions_All[8] = new TFEFunction2D(FESpaces_All[5], HString, HString, Sol_All[6], N_heatfuncDOF);
-  FEFunctions_All[8]->Interpolate(InitialHeatFunc);
-//   memcpy(oldsol_heatfunc, Sol_All[6], N_heatfuncDOF*SizeOfDouble); 
 #endif
   
   
@@ -8474,6 +8464,9 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
 //      OutputAll->AddFEVectFunct(FEVectFuncts_All[1]); 
 //      OutputAll->AddFEVectFunct(FEVectFuncts_All[2]);       
      OutputAll->AddFEFunction(FEFunctions_All[5]);  
+#ifdef __HEATLINE__      
+   OutputAll->AddFEFunction(FEFunctions_All[8]);    
+#endif      
      OutputAll->AddParameter(TDatabase::TimeDB->CURRENTTIME,os.str().c_str());   
      
      if(TDatabase::ParamDB->REACTOR_P22>0)

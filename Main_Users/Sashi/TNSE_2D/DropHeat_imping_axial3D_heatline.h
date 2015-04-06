@@ -382,10 +382,10 @@ void HeatFuncBoundCondition(int i, double t, BoundCond &cond)
 // 	 break;    
 // 	 
 //          case 4:
-             cond = NEUMANN;
+//              cond = NEUMANN;
 //  
 //         break;
-
+             cond = DIRICHLET;
 /*
       default:
             Error("Unknown Boundary component ref example file" << endl);
@@ -421,22 +421,6 @@ void HeatFuncBoundValue(int BdComp, double Param, double &value)
          exit(0);
      }
 }
-
-
-void InitialHeatFunc(double x, double y, double *values)
-{
-  
-
-  if(y<=0)
-   values[0] = 1.;
-  else
-   values[0] = 0;
- 
-  values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
-}
-
 
 void HeatfuncCoeffs(int n_points, double *x, double *y,
         double **parameters, double **coeffs)
