@@ -433,7 +433,7 @@ int SOLD_BeginParam[1] = { 0 };
 // ======================================================================
 int N_Terms_MatrixARhs = 3;
 MultiIndex2D Derivatives_MatrixARhs[3] = { D10, D01, D00};
-int SpacesNumbers_MatrixARhs[4] = { 0, 0, 0  };
+int SpacesNumbers_MatrixARhs[3] = { 0, 0, 0  };
 int N_Matrices_MatrixARhs = 1;
 int RowSpace_MatrixARhs[1] = { 0 };
 int ColumnSpace_MatrixARhs[1] = { 0 };

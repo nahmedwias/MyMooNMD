@@ -2350,11 +2350,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    delete [] Vertices;
    
 
-
-    /**Metis partition done!! code for all processors */
-    //MPI_Bcast(Cell_Rank, N_Cells, MPI_INT, 0, comm);
-    
-
 /********** VARIABLES FOR MULTIGRID ****************/	
 
   int Nchildren,childn,parentglobalno;
@@ -2757,6 +2752,38 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
        } // if(cell->IsDependentCell() 
      }// for(i=0;i<N_Cel
 
+//      ===========================================================================================   
+    /** set the Hallo BD face as BD face: 07 April 2015 - by Sashi  */
+    for(i=0;i<N_Cells;i++)
+     {     
+      cell = coll->GetCell(i);
+      
+       // cell in this collection
+       if(cell->GetSubDomainNo()==rank || cell->IsHaloCell() )
+        { cell->SetClipBoard(i); }
+       else
+        {cell->SetClipBoard(-1); }
+     } // 
+     
+    for(i=0;i<N_HalloCells;i++)
+     {     
+      cell =  SubDomainCells[N_OwnCells + i]; 
+      for(j=0;j<N_JointsInCell;j++)
+       {
+        Joint = cell->GetJoint(j);
+
+        if(Joint->GetType() == JointEqN)
+         {
+          neib_cell = Joint->GetNeighbour(cell);
+          //j is a Halo BD face
+          if(neib_cell->GetClipBoard() == -1)
+	   {  
+             Joint-> ChangeType(SubDomainHaloJoint);
+	   } // if(neib_cell->GetCl
+       } //   if(Joint->GetTy  
+      } //for(j=0;j<N_JointsInCel
+     } //   for(i=0;i<N_HalloCells;i+
+//      ===========================================================================================
      
     /** find cross edges (if any) */
     for(i=0;i<N_OwnCells;i++)
@@ -2992,8 +3019,10 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
      cell = coll->GetCell(i);
      cell->SetCellIndex(i);
    }
+  
+
    
- 
+   
   delete [] VertexNumbers;
   //delete [] Vert_Rank;
   delete [] Cell_Rank;

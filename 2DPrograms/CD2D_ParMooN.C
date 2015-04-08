@@ -17,8 +17,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <LocalAssembling2D.h>
-#include <Example_CD2D.h>
+// =======================================================================
+// include current example
+// =======================================================================
+// #include "../Examples/CD_2D/Hemker1996.h" // circle in a channel
+#include "../Examples/CD_2D/SineLaplace.h" // smooth sol in unitsquares
+// #include "../Examples/CD_2D/TwoInteriorLayers.h" // smooth sol in unitsquares
+
 
 // =======================================================================
 // main program
@@ -26,12 +31,29 @@
 int main(int argc, char* argv[])
 {
   //  declaration of database, you need this in every program
-  TDatabase Database;
-  TFEDatabase2D FEDatabase;
+  int i, ORDER, N_Cells, N_DOF, img=0;
   
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);  
-
+  double *sol, *rhs, t1, t2, errors[4];
+     
+  char *VtkBaseName;
+     
+  TDatabase *Database = new TDatabase();
+  TFEDatabase2D *FEDatabase = new TFEDatabase2D(); 
+  TCollection *coll;
+  TDomain *Domain;
+  TFESpace2D *Scalar_FeSpace, *fesp[1];
+  TFEFunction2D *Scalar_FeFunction;
+  TSystemMatScalar2D *SystemMatrix;
+  TOutput2D *Output;
+  TAuxParam2D *aux;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+  
+  std::ostringstream os;
+  os << " ";     
+  
+  // set variables' value in TDatabase using argv[1] (*.dat file) 
+  Domain = new TDomain(argv[1]);
+  
   //set PROBLEM_TYPE to CD if not yet set
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 1;
@@ -39,122 +61,121 @@ int main(int argc, char* argv[])
   OpenFiles();
  
   // write all Parameters to the OUTFILE (not to console) for later reference
-  Database.WriteParamDB(argv[0]);
-  
+  Database->WriteParamDB(argv[0]);
+  ExampleFile();
+    
   /* include the mesh from a mesh generator, for a standard mesh use the 
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  Domain->Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
    
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain.RegRefineAll();  
+  for(i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    Domain->RegRefineAll();  
   
   // write grid into an Postscript file
   if(TDatabase::ParamDB->WRITE_PS)
-    Domain.PS("Domain.ps", It_Finest, 0);
+    Domain->PS("Domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   
   // choose example according to the value of TDatabase::ParamDB->EXAMPLE
-  Example_CD2D example;
+//   Example_CD2D example;
    
   //=========================================================================
   // construct all finite element spaces
   //=========================================================================
-  int ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
+  ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
   
   // a collection is basically only an array of cells, which is needed to create
   // a finite element space
-  TCollection *coll = Domain.GetCollection(It_Finest, 0);
+  coll = Domain->GetCollection(It_Finest, 0);
   // print out some information about the mesh
-  int N_Cells = coll->GetN_Cells();
+  N_Cells = coll->GetN_Cells();
   OutPut("N_Cells : " << N_Cells <<endl);
   
   // create fespace for scalar equation
-  TFESpace2D Scalar_FeSpace (coll, (char*)"name", (char*)"description", 
-                             example.get_bc(0), ORDER, NULL);
+  Scalar_FeSpace = new TFESpace2D(coll, (char*)"name", (char*)"description", BoundCondition, ORDER, NULL);
   // print out some information on the finite element space
-  int N_DOF = Scalar_FeSpace.GetN_DegreesOfFreedom();
+  N_DOF = Scalar_FeSpace->GetN_DegreesOfFreedom();
   OutPut("dof all      : "<< setw(10) << N_DOF  << endl);
  
   //======================================================================
   // construct all finite element functions
   //======================================================================
-  double *sol = new double[N_DOF];
-  double *rhs = new double[N_DOF];
+  sol = new double[N_DOF];
+  rhs = new double[N_DOF];
   // set solution and right hand side vectors to zero
   memset(sol, 0, N_DOF*SizeOfDouble);
   memset(rhs, 0, N_DOF*SizeOfDouble);
 
   // create a finite element function
-  TFEFunction2D Scalar_FeFunction(&Scalar_FeSpace, (char*)"C", (char*)"C", sol,
-                                  N_DOF);
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
-  TFEFunction2D *fe_function[1] = { &Scalar_FeFunction };
-  
+  Scalar_FeFunction = new TFEFunction2D(Scalar_FeSpace, (char*)"C", (char*)"C", sol, N_DOF);
+    
   //======================================================================
   // SystemMatrix construction and solution
   //====================================================================== 
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatScalar2D SystemMatrix(&Scalar_FeSpace, SDFEM, DIRECT);
+  SystemMatrix = new TSystemMatScalar2D(Scalar_FeSpace, SDFEM, DIRECT);
   
   // initilize the system matrix with the functions defined in the example
-  SystemMatrix.Init(example.get_bc(0), example.get_bd(0));
-  
-  // create a local assembling object which is needed to assemble the matrix
-  LocalAssembling2D la(CD2D_SUPG, fe_function, example.get_coeffs());
-       
-  // assemble the system matrix with given local assembling, sol and rhs 
-  SystemMatrix.Assemble(la, sol, rhs);
+  SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
+
+  // assemble the system matrix with given aux, sol and rhs 
+  // aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
+  // otherwise, just pass with NULL 
+  SystemMatrix->Assemble(NULL, sol, rhs);
+
   
   //Solve the system
-  {
-    double t1 = GetTime();
-    SystemMatrix.Solve(sol, rhs);
-    double t2 = GetTime();
+    t1 = GetTime();
+    SystemMatrix->Solve(sol, rhs);
+    t2 = GetTime();
     OutPut( "time for solving: " << t2-t1 << endl);
-  }
     
   //======================================================================
   // produce outout
   //======================================================================
-  TOutput2D Output(1, 1, 0, 0, &Domain);
-  Output.AddFEFunction(&Scalar_FeFunction);
+  VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
+  Output = new TOutput2D  (1, 1, 0, 0, Domain);
+  Output->AddFEFunction(Scalar_FeFunction);
 
-  //Scalar_FeFunction.Interpolate(example.get_exact(0));
-  // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME) + ".vtk";
-    Output.WriteVtk(filename.c_str());
-  }   
+//     Scalar_FeFunction->Interpolate(Exact);   
+    if(TDatabase::ParamDB->WRITE_VTK)
+     {
+      os.seekp(std::ios::beg);
+       if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
+         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
+          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
+           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
+            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
+      Output->WriteVtk(os.str().c_str());
+      img++;
+     }  
    
   //====================================================================== 
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
   //======================================================================    
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
-  {
-    double errors[4];
-    TAuxParam2D aux;
-    MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
-    TFESpace2D *fespace[1] = { &Scalar_FeSpace };
+    if(TDatabase::ParamDB->MEASURE_ERRORS)
+     {
+      fesp[0] = Scalar_FeSpace;
+      aux =  new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
 
-    Scalar_FeFunction.GetErrors(example.get_exact(0), 3, AllDerivatives, 2, 
-                                 L2H1Errors, example.get_coeffs(), &aux, 1,
-                                 fespace, errors);
+      Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors,
+                                   BilinearCoeffs, aux, 1, fesp, errors);
 
-    OutPut( "L2: " << errors[0] << endl);
-    OutPut( "H1-semi: " << errors[1] << endl);
-    OutPut( "SD: " << errors[2] << endl);
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+      delete aux;
 
+      OutPut( "L2: " << errors[0] << endl);
+      OutPut( "H1-semi: " << errors[1] << endl);
+      OutPut( "SD: " << errors[2] << endl);
+
+     } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+ 
   delete [] sol;
   delete [] rhs;
   delete coll;

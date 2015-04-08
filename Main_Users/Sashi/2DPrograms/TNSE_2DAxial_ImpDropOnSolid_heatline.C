@@ -570,7 +570,7 @@ void BDChangeFERemap(TFESpace2D *&FESpace, TFEFunction2D *&FEFunction, double *&
  TCollection *coll; 
  FE2D *fes;
   
-  char TString[] = "T";
+  char TString[] = "H";
   char NameString[]  = "name"; 
  
   // assumed that both old and new fe spaces have same coll but different no. edges 
@@ -3862,7 +3862,7 @@ void RemeshAxial3D_ImpDrop(TDomain * &Domain, TFESpace2D ** &FESpaces_All,
   // strings
   char ReadinDat[] = "readin.dat";
   char TString[] = "T";
-  char HeatString[] = "T";  
+  char HeatString[] = "H";  
   char NameString[]  = "name";
   char UString[] = "U";
   char PString[] = "P";
@@ -5404,7 +5404,7 @@ int main(int argc, char* argv[])
   TDiscreteForm2D *DiscreteForm;
   TMatrix2D *MATRICES[4];
   TSquareMatrix2D *SQMATRICES[8], *SQMATRICES_GRID[4];
-  TSquareMatrix2D *SQMATRICES_HEAT[2], *SQMATRICES_HEATFUNC[2];
+  TSquareMatrix2D *SQMATRICES_HEAT[2], *SQMATRICES_HEATFUNC[1];
   TDiscreteForm2D *DiscreteFormGalerkin;
   TDiscreteForm2D *DiscreteFormNLGalerkin;
   TDiscreteForm2D *DiscreteFormGrid, *DiscreteFormHeat, *DiscreteFormHeatfunc  ,*DiscreteFormHeat_SUPG;
@@ -5475,7 +5475,7 @@ int main(int argc, char* argv[])
   char WString[] = "W";
   char VortString[] = "Vort";
   char DivString[] = "Div";  
-    char HeatString[] = "Heat";
+  char HeatString[] = "H";
   const char vtkdir[] = "VTK";
   const char BDdir[] = "BDData";
   
@@ -6725,11 +6725,6 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
   SquareStructure_All[2] = new TSquareStructure2D(FESpaces_All[3]);
   SquareStructure_All[2]->Sort();
   
-  //heatfunction
-#ifdef __HEATLINE__    
-  SquareStructure_All[3] = new TSquareStructure2D(FESpaces_All[5]);
-  SquareStructure_All[3]->Sort();
-#endif
   
   // for NSE
   MatVect = MatVect_NSE4;
@@ -6756,8 +6751,11 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
   SqMat_All[10]  = new TSquareMatrix2D(SquareStructure_All[2]); // T_M
   SqMat_All[11] = new TSquareMatrix2D(SquareStructure_All[2]); // T_A  
   
-  // for heatfunction
+  //heatfunction
 #ifdef __HEATLINE__    
+  SquareStructure_All[3] = new TSquareStructure2D(FESpaces_All[5]);
+  SquareStructure_All[3]->Sort();
+  
   SqMat_All[12]  = new TSquareMatrix2D(SquareStructure_All[3]); // Heatfunc_A
 #endif  
   
@@ -7847,41 +7845,44 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
                 aux);
     
      delete aux;
-   
- cout << "Heat Line " <<endl;
+    
+   cout << "Solve Heat Line1 : " << Ddot(N_heatfuncDOF, Rhs_All[3], Rhs_All[3] ) << endl;
    DirectSolver(SqMat_All[12], RHSs_Heatfunc[0], Sol_All[6]);   
+   
+   cout << "Solve Heat Line2 :  " << Ddot(N_heatfuncDOF, Sol_All[6], Sol_All[6] ) << endl;
+   
 #endif
    
-    if((m % (int)(TDatabase::TimeDB->STEPS_PER_IMAGE) ) == 0   || m==1 )
-  {
-     if(TDatabase::ParamDB->WRITE_VTK)
-       { 
-        if(TDatabase::ParamDB->REACTOR_P22>0)
-         {  
-         ComputeVorticityDivergence(FESpaces_All[0], FEFunctions_All[0], FEFunctions_All[1], Grid_space_NSE, Sol_All[4],Sol_All[5]);
-         }  
- 
-        os.seekp(std::ios::beg);
-        if(img<10) os << "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
-         else if(img<100) os << "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
-          else if(img<1000) os << "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
-           else if(img<10000) os << "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
-            else  os << "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
-        Output->WriteVtk(os.str().c_str());
-
-        GetHeatConvectionALEVect(FEVectFuncts_All, GridVect_NSE, GridVect_S);
-
-        os.seekp(std::ios::beg);
-         if(img<10) os << "VTK/"<<Gnubasename<<".0000"<<img<<".vtk" << ends;
-         else if(img<100) os << "VTK/"<<Gnubasename<<".000"<<img<<".vtk" << ends;
-         else if(img<1000) os << "VTK/"<<Gnubasename<<".00"<<img<<".vtk" << ends;
-         else if(img<10000) os << "VTK/"<<Gnubasename<<".0"<<img<<".vtk" << ends;
-         else  os << "VTK/"<<Gnubasename<<"."<<img<<".vtk" << ends;
-        OutputAll->WriteVtk(os.str().c_str());   
-
-        img++;
-       }       
-   }
+//     if((m % (int)(TDatabase::TimeDB->STEPS_PER_IMAGE) ) == 0   || m==1 )
+//   {
+//      if(TDatabase::ParamDB->WRITE_VTK)
+//        { 
+//         if(TDatabase::ParamDB->REACTOR_P22>0)
+//          {  
+//          ComputeVorticityDivergence(FESpaces_All[0], FEFunctions_All[0], FEFunctions_All[1], Grid_space_NSE, Sol_All[4],Sol_All[5]);
+//          }  
+//  
+//         os.seekp(std::ios::beg);
+//         if(img<10) os << "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
+//          else if(img<100) os << "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
+//           else if(img<1000) os << "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
+//            else if(img<10000) os << "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
+//             else  os << "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
+//         Output->WriteVtk(os.str().c_str());
+// 
+//         GetHeatConvectionALEVect(FEVectFuncts_All, GridVect_NSE, GridVect_S);
+// 
+//         os.seekp(std::ios::beg);
+//          if(img<10) os << "VTK/"<<Gnubasename<<".0000"<<img<<".vtk" << ends;
+//          else if(img<100) os << "VTK/"<<Gnubasename<<".000"<<img<<".vtk" << ends;
+//          else if(img<1000) os << "VTK/"<<Gnubasename<<".00"<<img<<".vtk" << ends;
+//          else if(img<10000) os << "VTK/"<<Gnubasename<<".0"<<img<<".vtk" << ends;
+//          else  os << "VTK/"<<Gnubasename<<"."<<img<<".vtk" << ends;
+//         OutputAll->WriteVtk(os.str().c_str());   
+// 
+//         img++;
+//        }       
+//    }
    
 // exit(0);
 
@@ -8137,6 +8138,8 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
    
    delete [] Rhs_All[3];
    Rhs_All[3] = new double[N_heatfuncDOF];   
+   
+ 
 #endif    
     
     delete [] oldsol_T; 
@@ -8170,8 +8173,8 @@ CellTree[Neib[1]]->SetJoint(j, Joint);
 #ifdef __HEATLINE__      
    OutputAll->AddFEFunction(FEFunctions_All[8]);    
 #endif      
-    OutputAll->AddParameter(TDatabase::TimeDB->CURRENTTIME,os.str().c_str()); 
-
+    OutputAll->AddParameter(TDatabase::TimeDB->CURRENTTIME,os.str().c_str());    
+    
 // ==============================================================================================
 // move solid BD begin
 // ==============================================================================================

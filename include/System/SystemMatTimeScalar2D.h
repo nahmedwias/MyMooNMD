@@ -23,22 +23,22 @@ class TSystemMatTimeScalar2D : public TSystemMatScalar2D
     TSquareMatrix2D *sqmatrixM;
     
     /** working rhs, used in AssembleSystMat() */
-    double *B;
+    double *B;   
    
     /** to store defect */
-    double *defect;
+    double *defect;   
     
     /** factor that multplied with Mat A in working rhs */
-    double gamma;
+    double gamma;   
     
     /** Stiffness part of the SUPG matrix */
-    TSquareMatrix2D *sqmatrixK;
+    TSquareMatrix2D *sqmatrixK;    
     
     /** time-consistent part of the SUPG matrix */
     TSquareMatrix2D *sqmatrixS;
     
     /** Discrete form of the M and rhs matrics */
-    TDiscreteForm2D *DiscreteFormMRhs, *DiscreteFormARhs; 
+    TDiscreteForm2D *DiscreteFormMRhs; 
     
     /** Systmat assemble indicator */
     bool SystMatAssembled;
@@ -58,10 +58,10 @@ class TSystemMatTimeScalar2D : public TSystemMatScalar2D
     { return sqmatrixA; }
     
     /** assemble the Mass mat and rhs */
-    void AssembleMRhs(LocalAssembling2D& la, double *sol, double *rhs); 
+    void AssembleMRhs(TAuxParam2D *aux, double *sol, double *rhs); 
     
     /** assemble the stifness mat and rhs */
-    void AssembleARhs(LocalAssembling2D& la, double *sol, double *rhs);   
+    void AssembleARhs(TAuxParam2D *aux, double *sol, double *rhs);   
     
     /** M = M + (tau*TDatabase::TimeDB->THETA1)*A */ 
     /** B = (tau*TDatabase::TimeDB->THETA1)*rhs +(tau*TDatabase::TimeDB->THETA2)*oldrhs + [ M - (tau*TDatabase::TimeDB->THETA2)A]*oldsol */  

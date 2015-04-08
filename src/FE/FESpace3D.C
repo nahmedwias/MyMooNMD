@@ -750,7 +750,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
             {
              // the neighbour is not a member of current collection
              Cond0 = SUBDOMAIN_HALOBOUND;
-             exit(0);
+//              exit(0);
              BoundaryUpperBound[Cond0 - 1] += l; //  SUBDOMAIN_INTERFACE == 8, see constants.h
             }
             else if(joint->GetType() == SubDomainJoint)
@@ -1103,8 +1103,8 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 	    else if(joint->GetType() == SubDomainHaloJoint)
             {
              Cond0 = SUBDOMAIN_HALOBOUND;
-             OutPut("Halo Boundary Edge" << endl);
-             exit(0);
+//              OutPut("Halo Boundary Edge" << endl);
+//              exit(0);
              mapper=TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc0);
              mapper->MapBound(GlobalNumbers, I_K0, Indices0,
                               BoundCounter[Cond0-1],

@@ -358,39 +358,32 @@ void HeatCoeffs(int n_points, double *x, double *y,
 // ========================================================================
 void HeatFuncBoundCondition(int i, double t, BoundCond &cond)
 {
-//   switch(i)
-//       {
-//         case 0:
-// //              cond = NEUMANN;
-// //              cond = DIRICHLET;
-//              cond = FREESURF;
-//         break;
-// 
-//         case 1:
-//              cond = FREESURF;
-//         break;
-// 
-//         case 2:
-//              cond = NEUMANN;
-//         break;
-// 
-//         case 3:
-// 	case 4:
-//         case 5:
-//         case 6:  
-//                cond = NEUMANN;
-// 	 break;    
-// 	 
-//          case 4:
-//              cond = NEUMANN;
-//  
-//         break;
-             cond = DIRICHLET;
-/*
+  switch(i)
+      {
+        case 0:
+             cond = FREESURF;
+        break;
+
+        case 1:
+             cond = NEUMANN;
+        break;
+
+        case 2:
+             cond = NEUMANN;
+        break;
+
+        case 3:
+	case 4:
+        case 5:
+        case 6:  
+               cond = DIRICHLET;
+	 break;    
+
+
       default:
             Error("Unknown Boundary component ref example file" << endl);
          exit(0);
-       }*/
+       }
      }
 
 void HeatFuncBoundValue(int BdComp, double Param, double &value)
@@ -401,25 +394,27 @@ void HeatFuncBoundValue(int BdComp, double Param, double &value)
       {
        case 0:
        case 1:
-       case 2:
-       case 3:
        case 4:  
        case 5:
        case 6: 
            value = 0.;
         break;
 
-        
-//         case 4:  
-//         
-//            value = T_W;
-//         break;
-
-
+       case 2:
+         value = 0.01;
+        break;	 
+       case 3:
+           value = 1;
+        break;
       default:
             Error("ref example file" << endl);
          exit(0);
      }
+     
+     
+//       cout << " HeatFuncBoundCondition value " << value << endl;
+	     
+	     
 }
 
 void HeatfuncCoeffs(int n_points, double *x, double *y,

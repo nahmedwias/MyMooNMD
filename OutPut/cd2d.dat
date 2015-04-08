@@ -55,7 +55,7 @@ LP_FULL_GRADIENT_ORDER_DIFFERENCE: 1
 ----------------------------------------------------------------------
 # output controls
 ----------------------------------------------------------------------
-BASENAME: unitsquare
+VTKBASENAME: unitsquare
 OUTPUTDIR: VTK
 WRITE_PS: 0
 WRITE_VTK: 0
