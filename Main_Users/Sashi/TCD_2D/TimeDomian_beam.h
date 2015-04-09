@@ -169,17 +169,22 @@ void ModifyBdCoords(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_
     {
      MovBoundVert[i]->GetCoords(x, y);
      
-     disp = Fact*(x-0.5)*(x-0.5)*sin((2./5.)*Pi*t);
+     disp = Fact*(x-0.5)*(x-0.5)*sin(-(2./5.)*Pi*t);
        
 //      if(  fabs(x - 0.970031)<1e-3    && fabs(y - 0.24298)<1e-3)
 //         cout<<i<<  "x " << x << " y : "<< y<<   " y_new : "<< y + disp<<endl;
      theta = atan2(y,(x-0.5));
+     
+//      if(i==186)
+//     cout  <<   y <<   " RefMaxy : "<< tau*disp <<endl;
+     
+     
      x += tau*(0.25*disp*tan(theta) -y*sin(theta));
      y += tau*disp; 
-     
+
      MovBoundVert[i]->SetCoords(x, y);    
     }
-   
+ /*     cout<<   " RefMaxy : "<< disp <<endl*/;
  // update iso points
    m = 0;     
    for(i=0;i<N_MovVert;i++)
@@ -205,7 +210,7 @@ void ModifyBdCoords(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_
       }      
     }// for(i=0;i<N_MovVert;i++) 
  
-//    cout<<   " RefMaxy : "<< RefMaxy<<endl;
+//    cout<<   " RefMaxy : "<< disp <<endl;
 //    exit(0);
 } // ModifyBdCoords
 

@@ -3,7 +3,6 @@
 //
 // common declaration for time dependent convection diffusion problems
 // ======================================================================
-#include <TimeConvDiff2D.h>
 #include <Database.h>
 #include <ConvDiff.h>
 
@@ -433,13 +432,13 @@ void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
   Orig2 = OrigValues[2]; // T
 
   c0 = coeff[0]; // nu
-  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
-  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)  
+  c1 = coeff[1] - param[0]; // u1-w1  
+  c2 = coeff[2] - param[1]; // u2-w2  
   c4 = coeff[4]; // rhs  
   
   if(TDatabase::ParamDB->P6==1) // con-ALE
    {
-    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
+    c3 = coeff[3] - param[3]; // concentration coeff - div w  
    }
   else// non-conservative ALE
    {
@@ -518,12 +517,12 @@ void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   Orig4 = OrigValues[4]; //
 
   c0 = coeff[0]; // nu
-  c1 = coeff[1] + param[0]; // u1-w1 (- to w is added in main prg)
-  c2 = coeff[2] + param[1]; // u2-w2 (- to w is added in main prg)
+  c1 = coeff[1] - param[0]; // u1-w1  
+  c2 = coeff[2] - param[1]; // u2-w2  
   
   if(TDatabase::ParamDB->P6==1) // con-ALE
    {
-    c3 = coeff[3] + param[3]; // concentration coeff - div w (- to w is added in main prg)
+    c3 = coeff[3] - param[3]; // concentration coeff - div w  
    }
   else// non-conservative ALE
    {

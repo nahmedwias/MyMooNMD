@@ -22,7 +22,7 @@
 #include <LinAlg.h>
 #include <CD2DErrorEstimator.h>
 #include <MainUtilities.h>
-#include <TimeUtilities.h>
+#include <TimeDiscRout.h>
 
 #include <MacroCell.h>
 #include <BoundEdge.h>
@@ -32,6 +32,7 @@
 #include <BdLine.h>
 #include <BdCircle.h>
 #include <GridCell.h>
+#include <TimeConvDiff2D.h>
 
 #include <string.h>
 #include <sstream>
@@ -52,7 +53,7 @@
 // #include "../Examples_All/TCD_2D/exp_1.h"
 // #include  "../Examples_All/TCD_2D/TimeDomianNoSource.h"
 // #include  "../Examples_All/TCD_2D/Hemker.h"
-#include  "../Examples_All/TCD_2D/TimeDomian_beam.h"
+#include  "Main_Users/Sashi/TCD_2D/TimeDomian_beam.h"
 
 int main(int argc, char* argv[])
 {
@@ -82,6 +83,8 @@ int main(int argc, char* argv[])
   TIsoBoundEdge **Free_Joint, *IsoJoint;
   TVertex **MovBoundVert;
   TBaseCell **Free_Cells;
+  TAuxParam2D *Aux_ALE;
+  TFEFunction2D  *fefct[4];
   
   const char vtkdir[] = "VTK"; 
   char *PsBaseName, *VtkBaseName, *GEO;
@@ -194,7 +197,25 @@ int main(int argc, char* argv[])
 #endif                                                      
     );
     
-    SystemMatrix_ALE->Init(BilinearCoeffs, BoundCondition, BoundValue, GridCoeffs, GridBoundCondition, GridBoundValue);
+   fesp[0] = GridFESpace;
+   fefct[0] = MeshVelocity->GetComponent(0);
+   fefct[1] = MeshVelocity->GetComponent(1);
+   fefct[2] = MeshVelocity->GetComponent(0);
+   fefct[3] = MeshVelocity->GetComponent(1);
+    
+   Aux_ALE =  new TAuxParam2D(TimeCDParamsVeloFieldN_FESpaces,
+                            TimeCDParamsVeloFieldN_Fct,
+                            TimeCDParamsVeloFieldN_ParamFct,
+                            TimeCDParamsVeloFieldN_FEValues_ALE,
+                            fesp, fefct,
+                            TimeCDParamsVeloFieldFct_ALE,
+                            TimeCDParamsVeloFieldFEFctIndex_ALE,
+                            TimeCDParamsVeloFieldFEMultiIndex_ALE,
+                            TimeCDParamsVeloFieldN_Params_ALE,
+                            TimeCDParamsVeloFieldBeginParam);  
+    
+    
+    SystemMatrix_ALE->Init(BilinearCoeffs, BoundCondition, BoundValue, GridCoeffs, GridBoundCondition, GridBoundValue, Aux_ALE);
   
     
 #if defined(__HEMKER__) || defined(__BEAM__)   
@@ -218,7 +239,7 @@ int main(int argc, char* argv[])
 //======================================================================
     VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
     Output = new TOutput2D(2, 2, 1, 1, Domain);
-
+//    Output->AddFEVectFunct(MeshVelocity);
     Output->AddFEFunction(Scalar_FeFunction);
 
 //     Scalar_FeFunction->Interpolate(Exact);   
@@ -331,7 +352,7 @@ int main(int argc, char* argv[])
        tau1 = CurrTime - oldt;
        oldt = CurrTime;
 #if defined(__HEMKER__) || defined(__BEAM__) 
-       SystemMatrix_ALE->MoveMesh(N_MovVert, MovBoundVert, Free_Joint, Iso_refX, CurrTime);
+       SystemMatrix_ALE->MoveMesh(N_MovVert, MovBoundVert, Free_Joint, Iso_refX, CurrTime); 
 #else     
        SystemMatrix_ALE->MoveMesh(CurrTime);
 #endif   

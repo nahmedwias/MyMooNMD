@@ -8,7 +8,7 @@
 #include <SystemMatTimeScalar2D_ALE.h>
 #include <SystemMatTimeScalar2D.h>
 #include <FEVectFunct2D.h>
-#include <TimeConvDiff2D.h>
+// #include <TimeConvDiff2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
 #include <DirectSolver.h>
@@ -86,8 +86,13 @@ TSystemMatTimeScalar2D_ALE::TSystemMatTimeScalar2D_ALE(TFESpace2D *fespace, int 
 
 
 void TSystemMatTimeScalar2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue, 
-                                      CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue)
+                                      CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue,
+                                      TAuxParam2D *aux      
+                                      )
 {
+  
+  Aux_ALE = aux;
+     
   BoundaryConditions[0] =  BoundCond;
   BoundaryValues[0] = BoundValue;
   
@@ -102,7 +107,7 @@ void TSystemMatTimeScalar2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct
   TDiscreteForm2D *DiscreteFormMARhs_Galerkin;
   TDiscreteForm2D *DiscreteFormMatrixMARhs_SUPG;
      
-   InitializeDiscreteForms_ScalarMoving(DiscreteFormMARhs_Galerkin, DiscreteFormGrid, DiscreteFormMatrixMARhs_SUPG,
+  InitializeDiscreteForms_ScalarMoving(DiscreteFormMARhs_Galerkin, DiscreteFormGrid, DiscreteFormMatrixMARhs_SUPG,
                                         BilinearCoeffs, GridBilinearCoeffs);
    
   
@@ -166,12 +171,13 @@ void TSystemMatTimeScalar2D_ALE::MoveMesh(int N_MovVert, TVertex **MovBoundVert,
   Daxpy(N_GridBDDOFs, -1., gridpos_old+(N_GridDOFs+N_GridActive), GridRhs+(N_GridDOFs+N_GridActive));    
      
   memcpy(griddisp, GridRhs, 2*N_GridDOFs*SizeOfDouble);   
-    
+/*       cout << " MoveMesh " << gridpos_old[N_GridDOFs+N_GridActive+359]  << " new  : " << gridpos[N_GridDOFs+N_GridActive+359]  << " rhs : "<<   GridRhs[N_GridDOFs+N_GridActive+359] <<endl; */ 
   SolveGridEquation(Entries, griddisp, GridRhs, GridKCol, GridRowPtr, N_GridDOFs);
            
   memcpy(gridpos, gridpos_old, 2*N_GridDOFs*SizeOfDouble);
   Daxpy(2*N_GridDOFs, 1., griddisp, gridpos);
   GridPos->DataToGrid();     
+  
 
 } // MoveMesh
  
@@ -197,6 +203,7 @@ void TSystemMatTimeScalar2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVe
   memcpy(gridpos_old, gridpos, 2*N_GridDOFs*SizeOfDouble);  
  
   // modyfy the boundary 
+  RefGridPos->DataToGrid();    
   ModifyBoudary(N_MovVert, MovBoundVert, Free_Joint, Iso_refX, Currtime);    
   
   // data with updated BD values
@@ -211,17 +218,27 @@ void TSystemMatTimeScalar2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVe
   Daxpy(N_GridBDDOFs, -1., gridpos_old+N_GridActive, GridRhs+N_GridActive);
   Daxpy(N_GridBDDOFs, -1., gridpos_old+(N_GridDOFs+N_GridActive), GridRhs+(N_GridDOFs+N_GridActive));    
      
-  memcpy(MeshVelo, GridRhs, 2*N_GridDOFs*SizeOfDouble);   
-    
+//   memcpy(MeshVelo, GridRhs, 2*N_GridDOFs*SizeOfDouble);   
+ memset(MeshVelo, 0, 2*N_GridDOFs*SizeOfDouble); 
+ 
+//    for(i=0;i<N_GridBDDOFs;i++)
+//      if(fabs( GridRhs[N_GridDOFs+N_GridActive+i])>0)
+//      cout << gridpos_old[N_GridDOFs+N_GridActive+359]  << " new  : " << gridpos[N_GridDOFs+N_GridActive+359]  << " rhs : "<<   GridRhs[N_GridDOFs+N_GridActive+359] <<endl;
+     
+//       OutPut("MeshVelo " << Ddot(2*N_GridDOFs, GridRhs, GridRhs ) << endl);  
+      
   SolveGridEquation(Entries, MeshVelo, GridRhs, GridKCol, GridRowPtr, N_GridDOFs);
          
-  Dscal(2*N_GridDOFs, -1./tau, MeshVelo); // - sign due to -w\cdot\nabla C in the equation    
+  Dscal(2*N_GridDOFs, 1./tau, MeshVelo); // - sign due to -w\cdot\nabla C in the equation    
   
   memcpy(gridpos, gridpos_old, 2*N_GridDOFs*SizeOfDouble);
   //   Daxpy(2*N_GridDOFs, 1., MeshVelo, gridpos);
   // move the mesh back to original pos, as we calculate only the mesh velocity
   GridPos->DataToGrid();   
+  
 
+   
+   
 } // TSystemMatTimeScalar2D_ALE::GetMeshVelo
 
 
@@ -239,7 +256,7 @@ void TSystemMatTimeScalar2D_ALE::GetMeshVelo(double Currtime, double tau)
    //compute mesh velocity
    memcpy(MeshVelo, gridpos, 2*N_GridDOFs*SizeOfDouble);     
    Daxpy(2*N_GridDOFs, -1., gridpos_old, MeshVelo);        
-   Dscal(2*N_GridDOFs, -1./tau, MeshVelo); // - sign du*/ //e to -w\cdot\nabla C in the equation   
+   Dscal(2*N_GridDOFs, 1./tau, MeshVelo); // - sign du*/ //e to -w\cdot\nabla C in the equation   
    memcpy(gridpos_old, gridpos, 2*N_GridDOFs*SizeOfDouble); 
 } //TSystemMatTimeScalar2D_ALE::GetMeshVelo(
   
@@ -366,21 +383,21 @@ void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
     fefct[2] = MeshVeloFct[0]; //for calculating divergence of w
     fefct[3] = MeshVeloFct[1]; //for calculating divergence of w    
 
-    if(Aux_ALE==NULL)
-     { 
+//     if(Aux_ALE==NULL)
+//      { 
       // defined in TimeConvDiff2D.h
-      Aux_ALE =  new TAuxParam2D(TimeCDParamsVeloFieldN_FESpaces,
-                            TimeCDParamsVeloFieldN_Fct,
-                            TimeCDParamsVeloFieldN_ParamFct,
-                            TimeCDParamsVeloFieldN_FEValues_ALE,
-                            fesp+1, fefct,
-                            TimeCDParamsVeloFieldFct_ALE,
-                            TimeCDParamsVeloFieldFEFctIndex_ALE,
-                            TimeCDParamsVeloFieldFEMultiIndex_ALE,
-                            TimeCDParamsVeloFieldN_Params_ALE,
-                            TimeCDParamsVeloFieldBeginParam);
+//       Aux_ALE =  new TAuxParam2D(TimeCDParamsVeloFieldN_FESpaces,
+//                             TimeCDParamsVeloFieldN_Fct,
+//                             TimeCDParamsVeloFieldN_ParamFct,
+//                             TimeCDParamsVeloFieldN_FEValues_ALE,
+//                             fesp+1, fefct,
+//                             TimeCDParamsVeloFieldFct_ALE,
+//                             TimeCDParamsVeloFieldFEFctIndex_ALE,
+//                             TimeCDParamsVeloFieldFEMultiIndex_ALE,
+//                             TimeCDParamsVeloFieldN_Params_ALE,
+//                             TimeCDParamsVeloFieldBeginParam);
 
-     }
+//      }
 
     // assemble
     Assemble2D(2, fesp,
