@@ -149,7 +149,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
   int i;
   double *coeff, x, y, z, u1, u2, u3, ux, uy, uz;
 
-  if (TDatabase::ParamDB->STOKES_PROBLEM)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
   {
     for(i=0;i<n_points;i++)
     {
@@ -171,7 +171,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         - 4*cos(y+4*z);   // f3
     }
   }
-  else
+  else if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==NSE)
   {
     for(i=0;i<n_points;i++)
     {
@@ -212,5 +212,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
       coeff[0] = eps;
     }
   }
+  else
+  {  OutPut("Oseen type not included.... Change FLOW_PROBLEM_TYPE"<<endl);
+     exit(0);
     
+  } 
 }

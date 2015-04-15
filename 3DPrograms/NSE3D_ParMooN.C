@@ -31,9 +31,9 @@ double bound = 0;
 // =======================================================================
 // include current example
 // =======================================================================
-// #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
+ #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
 // #include "../Examples/NSE_3D/AnsatzLinConst.h"
-#include "../Examples/NSE_3D/DrivenCavity3D.h"
+// #include "../Examples/NSE_3D/DrivenCavity3D.h"
 
 // =======================================================================
 // main program
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
   ExampleFile();
   
   /** needed in the new implementation */
-  if(TDatabase::ParamDB->STOKES_PROBLEM == 1)
+  if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)
    {  TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 1; }
  
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
       SystemMatrix->Solve(sol, rhs);
 
       //no nonlinear iteration for Stokes problem  
-      if(TDatabase::ParamDB->STOKES_PROBLEM) 
+      if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES) 
        break;
       
       // assemble the system matrix with given aux, sol and rhs 

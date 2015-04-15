@@ -1,6 +1,6 @@
 #############################
-#GEO = 2D
-GEO = 3D
+GEO = 2D
+#GEO = 3D
 
 IN = main$(GEO)
 OUT = main
