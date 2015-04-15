@@ -731,14 +731,23 @@ int main(int argc, char* argv[])
 //======================================================================  
   if(profiling){
 #ifdef _MPI
+    int Total_cells, Total_dof;
+    MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    MPI_Reduce(&N_DOF, &Total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    N_Cells = Total_cells;
+    N_DOF   = Total_dof;
     if(rank == out_rank){
 #endif
+    OutPut(endl<<"#Levels :: "<<LEVELS<<"  #Uniform refinement :: "<<TDatabase::ParamDB->UNIFORM_STEPS <<"  Order :: "<<TDatabase::ParamDB->ANSATZ_ORDER<<endl);  
+    OutPut("Total Cells :: "<<N_Cells<<"     Total_dof :: "<<N_DOF<<endl<<endl);  
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl); 
     OutPut( "Total time taken for initializing System Matrix : " << (total_int) << "("<<100*(total_int)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for assembling : " << (total_assembling) << "("<<100*(total_assembling)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for solving : " << (total_solve) << "("<<100*(total_solve)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(stop_time-start_time) <<"%)"<< endl);
     OutPut( "Total time taken throughout : " << (stop_time-start_time) << endl);
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
 #ifdef _MPI
     }
 #endif

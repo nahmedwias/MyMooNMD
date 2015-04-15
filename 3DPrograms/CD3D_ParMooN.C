@@ -48,8 +48,6 @@ double timeC = 0;
 #include "../Examples/CD_3D/Laplace.h"
 // =======================================================================
 
- double timeC = 0;
-
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
@@ -134,7 +132,7 @@ int main(int argc, char* argv[])
   // standard mesh
   PRM = TDatabase::ParamDB->BNDFILE;
   GEO = TDatabase::ParamDB->GEOFILE;
-  PsBaseName = TDatabase::ParamDB->PSBASENAME;
+  PsBaseName = TDatabase::ParamDB->BASENAME;
   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
   Domain->Init(PRM, GEO);
    
@@ -384,13 +382,8 @@ int main(int argc, char* argv[])
       fesp[0] = Scalar_FeSpaces[mg_level-1];
       aux =  new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
      
-#ifdef _MPI
-       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
-                                   BilinearCoeffs, aux, 1, fesp, errors,Comm);
-#else  
       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
                                    BilinearCoeffs, aux, 1, fesp, errors);
-#endif
       
       delete aux;
       
@@ -431,14 +424,23 @@ int main(int argc, char* argv[])
 //======================================================================  
   if(profiling){
 #ifdef _MPI
+    int Total_cells, Total_dof;
+    MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    MPI_Reduce(&N_DOF, &Total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    N_Cells = Total_cells;
+    N_DOF   = Total_dof;
     if(rank == out_rank){
 #endif
+    OutPut("#Levels :: "<<LEVELS<<"  #Uniform refinement :: "<<TDatabase::ParamDB->UNIFORM_STEPS <<"  Order :: "<<TDatabase::ParamDB->ANSATZ_ORDER<<endl);  
+    OutPut("Total Cells :: "<<N_Cells<<"     Total_dof :: "<<N_DOF<<endl<<endl);  
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl); 
     OutPut( "Total time taken for initializing System Matrix : " << (construction) << "("<<100*(construction)/(total)<<"%)"<<endl);
     //OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for assembling : " << (assembling) << "("<<100*(assembling)/(total)<<"%)"<<endl);
     OutPut( "Total time taken for solving : " << (solving) << "("<<100*(solving)/(total)<<"%)"<<endl);
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(total) <<"%)"<< endl);
     OutPut( "Total time taken throughout : " << (total) << endl);
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
 #ifdef _MPI
     }
 #endif

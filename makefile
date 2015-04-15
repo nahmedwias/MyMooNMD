@@ -1,6 +1,6 @@
 #############################
-GEO = 2D
-#GEO = 3D
+#GEO = 2D
+GEO = 3D
 
 IN = main$(GEO)
 OUT = main
@@ -12,7 +12,7 @@ MACH = LINUX64
 #MACH = MAC64
 
 FLAG = OPTI
-FLAG = FAST
+#FLAG = FAST
 #FLAG = DEBUG
 
 # profing options
