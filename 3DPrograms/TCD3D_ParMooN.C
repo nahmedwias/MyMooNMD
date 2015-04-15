@@ -62,8 +62,8 @@ double timeC = 0;
 // #include "../Examples/TCD_3D/Sin4.h"
 // #include "../Examples/TCD_3D/ConstTSmooth.h"
 //  #include "../Examples/TCD_3D/ConstT.h"
-// #include "../Examples/TCD_3D/amc.h"
-#include "../Main_Users/Sashi/TCD_3D/TeraHertzBreast.h"
+#include "../Examples/TCD_3D/amc.h"
+// #include "../Main_Users/Sashi/TCD_3D/TeraHertzBreast.h"
 
 
 int main(int argc, char* argv[])
@@ -81,7 +81,10 @@ int main(int argc, char* argv[])
 	 start_assembling=0, end_assembling=0, total_assembling=0,
 	 start_solve=0, end_solve=0, total_solve=0,
 	 start_int=0, end_int=0, total_int=0;
- 
+
+  TDomain *Domain;
+  TDatabase *Database = new TDatabase();
+
   bool UpdateStiffnessMat, UpdateRhs,  ConvectionFirstTime;
   
   const char vtkdir[] = "VTK"; 
@@ -116,8 +119,6 @@ int main(int argc, char* argv[])
 #endif
   }
   
-  TDomain *Domain;
-  TDatabase *Database = new TDatabase();
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
   TCollection *coll;
   TFESpace3D **Scalar_FeSpaces, *fesp[1];
@@ -127,6 +128,7 @@ int main(int argc, char* argv[])
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = {D000, D100, D010, D001};
   
+ 
 
   std::ostringstream os;
   os << " ";   
