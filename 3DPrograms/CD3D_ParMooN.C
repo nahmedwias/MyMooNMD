@@ -27,7 +27,7 @@
 #include "mpi.h"
 #include <MeshPartition.h>
 //#include <MeshPartition2D.h>
-#include <ParFECommunicator3D.h>
+// #include <ParFECommunicator3D.h>
 // #include <MumpsSolver.h>
 // #include <ParVector3D.h>
 // #include <ParVectorNSE3D.h>
@@ -41,14 +41,14 @@
 #define profiling 1
 
 double bound = 0;
+double timeC = 0;
 // =======================================================================
 // include current example
 // =======================================================================
 #include "../Examples/CD_3D/Laplace.h"
 // =======================================================================
 
- double timeC;
-
+ double timeC = 0;
 
 // main program
 // =======================================================================
@@ -62,8 +62,14 @@ int main(int argc, char* argv[])
   
   double *sol, *rhs, **Sol_array, **Rhs_array, t1, t2, errors[4];
   double start_time, end_time;
+  double construction, assembling, solving, total;                         //time calc
   
   TDatabase *Database = new TDatabase();
+  const char vtkdir[] = "VTK"; 
+  char *PsBaseName, *VtkBaseName, *GEO, *PRM;
+  char Name[] = "name";
+  char Description[] = "description";
+  char CString[] = "C";
   char SubID[] = "";
   
   if(profiling)	start_time = GetTime();
@@ -85,9 +91,6 @@ int main(int argc, char* argv[])
   if(profiling){
     start_time = MPI_Wtime();
   }
-
-  TFESpace3D **OwnScalar_Spaces;
-  TCollection *own_coll;
   #endif 
 
   TDomain *Domain;
@@ -100,13 +103,11 @@ int main(int argc, char* argv[])
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 
-  char Name[] = "name";
-  char Description[] = "description";
-  char CString[] = "C";
-   
   std::ostringstream os;
   os << " ";   
-      
+  
+  mkdir(vtkdir, 0777);
+  
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================    
@@ -124,20 +125,24 @@ int main(int argc, char* argv[])
   if(rank == out_rank)
   #endif
    {
-  Database->WriteParamDB(argv[0]);
+    Database->WriteParamDB(argv[0]);
     Database->WriteTimeDB();
     ExampleFile();
    }
 
-  /* include the mesh from a mesh generator, for a standard mesh use the 
-   * build-in function */
-  Domain->Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-
+  /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
+  // standard mesh
+  PRM = TDatabase::ParamDB->BNDFILE;
+  GEO = TDatabase::ParamDB->GEOFILE;
+  PsBaseName = TDatabase::ParamDB->PSBASENAME;
+  VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
+  Domain->Init(PRM, GEO);
+   
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
 
-#ifdef _MPI
+  #ifdef _MPI
   Domain->GenerateEdgeInfo();
   
   if(profiling)  t1 = MPI_Wtime();
@@ -150,11 +155,11 @@ int main(int argc, char* argv[])
     if(rank == out_rank)
       printf("Time taken for Domain Decomposition is %e\n", time1);
   }
- 
+
   Domain->GenerateEdgeInfo();
   MaxSubDomainPerDof = MIN(MaxCpV, size);
   TDatabase::ParamDB->WRITE_PS = 0;
-#endif 
+  #endif 
  
   if(TDatabase::ParamDB->WRITE_PS)
    {
@@ -164,13 +169,6 @@ int main(int argc, char* argv[])
     Domain->PS(os.str().c_str(),It_Finest,0);
    }
   
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    // create output directory, if not already existing
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
-   
-   
 //=========================================================================
 // set data for multigrid
 //=========================================================================  
@@ -217,9 +215,6 @@ int main(int argc, char* argv[])
   Scalar_FeFunctions = new TFEFunction3D*[LEVELS+1]; 
   Sol_array = new double*[LEVELS+1];
   Rhs_array = new double*[LEVELS+1];
-#ifdef _MPI    
-  OwnScalar_Spaces = new TFESpace3D*[LEVELS+1];   
-#endif 
 
 //=========================================================================
 // construct all finite element spaces
@@ -227,6 +222,7 @@ int main(int argc, char* argv[])
 //=========================================================================
   for(i=0;i<LEVELS;i++)
    {  
+     //if(i=LEVELS-1) exit(0);
     if(i)
      { Domain->RegRefineAll(); }
      
@@ -241,17 +237,12 @@ int main(int argc, char* argv[])
      #endif
      
      coll = Domain->GetCollection(It_Finest, 0);
-     
-
-     
+  
      // fespaces for scalar equation 
      Scalar_FeSpaces[i] =  new TFESpace3D(coll, Name, Description, BoundCondition, ORDER);     
       
      #ifdef _MPI
      Scalar_FeSpaces[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
-     
-     own_coll = Domain->GetOwnCollection(It_Finest, 0, rank);
-     OwnScalar_Spaces[i] = new TFESpace3D(own_coll,  Name, Description, BoundCondition, ORDER); 
      #endif
      
      //multilevel multigrid disc
@@ -260,9 +251,7 @@ int main(int argc, char* argv[])
        ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
        Scalar_FeSpaces[mg_level-1] =  new TFESpace3D(coll, Name, Description, BoundCondition, ORDER);
        #ifdef _MPI
-       Scalar_FeSpaces[mg_level-1]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
-       
-       OwnScalar_Spaces[mg_level-1] = new TFESpace3D(own_coll,  Name, Description, BoundCondition, ORDER); 
+       Scalar_FeSpaces[mg_level-1]->SetMaxSubDomainPerDof(MaxSubDomainPerDof); 
        #endif
       } //  if(i==LEVELS-1 && i!=mg_level-1) 
      
@@ -304,22 +293,16 @@ int main(int argc, char* argv[])
     // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
     if(profiling)	t1 = GetTime();
-    SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE
-    #ifdef _MPI
-                                         , OwnScalar_Spaces, Scalar_FeFunctions
-    #endif
-                                         );
+    
+    SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
+
     if(profiling){
       t2 = GetTime();
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-      if(rank == out_rank)
 #endif
-      {
-	OutPut(endl);
-	OutPut( "time for constructing and initializing System Mat Components: " << t1 << endl);
-      }
+      construction = t2;
     } 
    
     // initilize the system matrix with the functions defined in Example file
@@ -329,37 +312,36 @@ int main(int argc, char* argv[])
     // aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
     // otherwise, just pass it with NULL 
     if(profiling)	t1 = GetTime();
+    
     SystemMatrix->Assemble(NULL, Sol_array, Rhs_array);
+    
     if(profiling){
       t2 = GetTime();
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-      if(rank == out_rank)
 #endif
-      {
-	OutPut( "time for assembling: " << t1 << endl);
-      }
+      assembling = t2;
     }
     
     //Solve the system
     if(profiling)	t1 = GetTime();
+    
     SystemMatrix->Solve(sol, rhs);
+    
     if(profiling){
       t2 = GetTime();
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-      if(rank == out_rank)
 #endif
-      {
-	OutPut( "time for solving: " << t1 << endl);
-      }
+      solving = t2;
     }
    
 //======================================================================
 // produce outout
 //======================================================================
+    VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
     Output = new TOutput3D(2, 2, 1, 1, Domain);
 
     Output->AddFEFunction(Scalar_FeFunction);
@@ -367,27 +349,22 @@ int main(int argc, char* argv[])
      //Scalar_FeFunction->Interpolate(Exact);   
 #ifdef _MPI
      double t_par1, t_par2;
-     if(profiling)
-       t_par1 = MPI_Wtime();
+     if(profiling)		t_par1 = MPI_Wtime();
 
      if(TDatabase::ParamDB->WRITE_VTK)
-       Output->Write_ParVTK(MPI_COMM_WORLD, img, SubID);
-     img++;
-     if(profiling)
-     {
+      Output->Write_ParVTK(MPI_COMM_WORLD, img, SubID);
+        img++;       
+     if(profiling){
        t_par2 = MPI_Wtime();
        t_par2 = t_par2-t_par1;
        MPI_Reduce(&t_par2, &t_par1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
        if(rank == out_rank)
-         printf("Time taken for writing the parvtk file %e\n", (t_par1));
+	printf("Time taken for writing the parvtk file %e\n", (t_par1));
      }
 #else
     if(TDatabase::ParamDB->WRITE_VTK)
-    {
-      char *VtkBaseName = TDatabase::ParamDB->BASENAME;
-      char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+     {
       os.seekp(std::ios::beg);
-      os << "VTK/" << output_directory << "/" << VtkBaseName;
        if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
          else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
           else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
@@ -407,8 +384,13 @@ int main(int argc, char* argv[])
       fesp[0] = Scalar_FeSpaces[mg_level-1];
       aux =  new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
      
+#ifdef _MPI
+       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
+                                   BilinearCoeffs, aux, 1, fesp, errors,Comm);
+#else  
       Scalar_FeFunction->GetErrors(Exact, 4, AllDerivatives, 2, L2H1Errors,
                                    BilinearCoeffs, aux, 1, fesp, errors);
+#endif
       
       delete aux;
       
@@ -419,13 +401,13 @@ int main(int argc, char* argv[])
 	OutPut(endl);
 	OutPut( "L2: " << sqrt(reduced_errors[0]) << endl);
 	OutPut( "H1-semi: " << sqrt(reduced_errors[1]) << endl);
-	OutPut( "SD: " << sqrt(reduced_errors[2]) << endl);
+	//OutPut( "SD: " << sqrt(reduced_errors[2]) << endl);
       }
 #else
       OutPut(endl);
       OutPut( "L2: " << errors[0] << endl);
       OutPut( "H1-semi: " << errors[1] << endl);
-      OutPut( "SD: " << errors[2] << endl);
+      //OutPut( "SD: " << errors[2] << endl);
 #endif
      } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 
@@ -438,13 +420,34 @@ int main(int argc, char* argv[])
     end_time = MPI_Wtime();
     MPI_Reduce(&start_time, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
     MPI_Reduce(&end_time,   &t2, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-    if(rank == out_rank)
-      OutPut( "Total time taken: " << (t2-t1) << endl);
-  }
-  MPI_Finalize();  
+    total = t2 - t1;
+  } 
   #else 
-  if(profiling)	OutPut( "Total time taken: " << (end_time-start_time) << endl);
+  total = end_time - start_time;
   #endif
+
+  //======================================================================
+// Time profiling Output
+//======================================================================  
+  if(profiling){
+#ifdef _MPI
+    if(rank == out_rank){
+#endif
+    OutPut( "Total time taken for initializing System Matrix : " << (construction) << "("<<100*(construction)/(total)<<"%)"<<endl);
+    //OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
+    OutPut( "Total time taken for assembling : " << (assembling) << "("<<100*(assembling)/(total)<<"%)"<<endl);
+    OutPut( "Total time taken for solving : " << (solving) << "("<<100*(solving)/(total)<<"%)"<<endl);
+    OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(total) <<"%)"<< endl);
+    OutPut( "Total time taken throughout : " << (total) << endl);
+#ifdef _MPI
+    }
+#endif
+  }
+      
   CloseFiles();
+#ifdef _MPI
+  MPI_Finalize(); 
+#endif
+  
   return 0;
 } // end main

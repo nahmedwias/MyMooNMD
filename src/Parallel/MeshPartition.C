@@ -1727,8 +1727,23 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       } //  for (i=0;i<N_Cells;i++)
 
       N_HalloCells = N_LocalCells - N_OwnCells;
-   //  printf("Rank: %d N_own Cells %d\n ", rank,  N_OwnCells);   
       
+   //  printf("Rank: %d N_own Cells %d\n ", rank,  N_OwnCells);   
+      //      int aa;
+//      for(aa=0;aa<size;aa++){
+//      if(rank==aa)
+//       printf("Rank:: %d N_own Cells:: %d  N_cells:: %d\n ", rank,  N_OwnCells, N_LocalCells);
+//      //MPI_Barrier(comm);
+//      }
+//      MPI_Barrier(comm);
+     //exit(0);
+     if(N_OwnCells == 0){
+       printf("\n----------------------------------------------------------------------------------------\n");
+       printf("rank = %d has not been allocated any cells. Hence not a good partion type.\n",rank);
+       printf("change the metis partion type in readin file (TDatabase::ParamDB->Par_P2)\n");
+       printf("----------------------------------------------------------------------------------------\n\n");
+       exit(0);
+     }
       
      if(N_LocalCells)
       {
@@ -2350,6 +2365,11 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    delete [] Vertices;
    
 
+
+    /**Metis partition done!! code for all processors */
+    //MPI_Bcast(Cell_Rank, N_Cells, MPI_INT, 0, comm);
+    
+
 /********** VARIABLES FOR MULTIGRID ****************/	
 
   int Nchildren,childn,parentglobalno;
@@ -2752,7 +2772,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
        } // if(cell->IsDependentCell() 
      }// for(i=0;i<N_Cel
 
-//      ===========================================================================================   
+     //      ===========================================================================================   
     /** set the Hallo BD face as BD face: 07 April 2015 - by Sashi  */
     for(i=0;i<N_Cells;i++)
      {     
@@ -2773,12 +2793,14 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
         Joint = cell->GetJoint(j);
 
         if(Joint->GetType() == JointEqN)
+	//if(Joint->GetType() == SubDomainHaloJoint)  
          {
+	   //exit(0);
           neib_cell = Joint->GetNeighbour(cell);
           //j is a Halo BD face
           if(neib_cell->GetClipBoard() == -1)
 	   {  
-             Joint-> ChangeType(SubDomainHaloJoint);
+             Joint-> ChangeType(SubDomainHaloJoint);//BoundaryFace);
 	   } // if(neib_cell->GetCl
        } //   if(Joint->GetTy  
       } //for(j=0;j<N_JointsInCel
@@ -3019,10 +3041,8 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
      cell = coll->GetCell(i);
      cell->SetCellIndex(i);
    }
-  
-
    
-   
+ 
   delete [] VertexNumbers;
   //delete [] Vert_Rank;
   delete [] Cell_Rank;

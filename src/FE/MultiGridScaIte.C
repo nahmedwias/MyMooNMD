@@ -65,6 +65,7 @@ int TMultiGridScaIte::Iterate (TSquareMatrix **sqmat,
                                double *rhs)
 {
   double res, *mgsol, *mgrhs;
+  double t1,t2;
   
   // set data for multigrid cycle
   mgsol= mg->GetLevel(mg->GetN_Levels()-1)->GetSolution();
@@ -82,14 +83,19 @@ int TMultiGridScaIte::Iterate (TSquareMatrix **sqmat,
       //do not know why SetDirichletNodes is not needed for MPI, Check!!!
   //cout << "TMultiGridScaIte::Iterate " <<endl;
   //exit(0);
-  double t1 = MPI_Wtime();
+  t1 = MPI_Wtime();
+#else
+  t1 = GetTime();
 #endif
+  
  mg->Cycle(mg->GetN_Levels()-1, res); 
  
-  #ifdef _MPI
-  double t2 = MPI_Wtime();
+#ifdef _MPI
+  t2 = MPI_Wtime();
+#else
+  t2 = GetTime();
+#endif
   tCyc += (t2-t1);
-  #endif
    
   // store solution on rhs
   memcpy(sol, mgsol, N_DOF*SizeOfDouble);

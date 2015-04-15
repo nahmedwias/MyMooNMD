@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <Solver.h> 
+#include <Solver.h>
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <JacobiIte.h>
@@ -37,20 +37,9 @@
 #define profiling 0
 
 //#ifdef _MPI
-TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver
-#ifdef _MPI
-                  , TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions
-#endif
-)
+TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver)
 {
   int i;
-  
-#ifdef _MPI  
-  double t1,t2,tdiff;
-  int out_rank=TDatabase::ParamDB->Par_P0;
-  int rank;
-#endif
-  
   /** need it for solver */
   sqmatrices = (TSquareMatrix **)SQMATRICES;
   
@@ -59,12 +48,9 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
   //store the FEspace
   FeSpaces = fespaces;
-  
 #ifdef _MPI
-  Own_FeSpaces = OwnScalar_Spaces;
-  FEFunctArray = Scalar_FeFunctions;
+  Comm = TDatabase::ParamDB->Comm;
 #endif
-  
   //set the discretization type
   Disctype = disctype;
   
@@ -77,7 +63,6 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   // first build matrix structure
   sqstructure = new TSquareStructure3D*[N_Levels];
   sqmatrixA = new TSquareMatrix3D*[N_Levels];
-
   
   if(SOLVER==AMG_SOLVE || SOLVER==DIRECT)
    {
@@ -109,24 +94,27 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
   
 #ifdef _MPI
-  Comm = TDatabase::ParamDB->Comm;
-
+  double t1,t2,tdiff;
   ParComm = new TParFECommunicator3D*[N_levels]; 
-  
   if(profiling)  t1 = MPI_Wtime();
   for(i=Start_Level;i<N_levels;i++)
    {   
     sqstructure[i]->Sort();
+    //if(i==Start_Level+1)	exit(0);
+    //printf("LEVEL::%d  --------------------------------------------------------",i);
     ParComm[i] = new TParFECommunicator3D(Comm, FeSpaces[i], sqstructure[i]);
 //     int n_OwnDof; int *ownDofs;
 //     ParComm[i]->GetOwnDofs(n_OwnDof, ownDofs);
 //     OutPut("NDOF-->::"<<n_OwnDof<<endl);
    }// for(i=0;i<N_levels;i++)
-
+//   printf("exit at sysmatscalar\n");
+//   exit(0);
    if(profiling)
    {
      t2 = MPI_Wtime();
      tdiff = t2-t1;
+     int out_rank=TDatabase::ParamDB->Par_P0;
+     int rank;
      MPI_Comm_rank(Comm, &rank);
      MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
      if(rank == out_rank)
@@ -135,7 +123,7 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
      }
    }
 #endif
-
+//exit(0);
    //initialize multigrid solver
    if(SOLVER==GMG)
    {
@@ -149,17 +137,17 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
      {  N_aux= 4; }
         else
      {  N_aux= 2; }   
-     
+//exit(0);     
     // build preconditioner
     switch (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
      {
       case 1:
             prec = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, 1
 #ifdef _MPI   
-                                  ,ParComm[N_Levels-1]
+                               ,ParComm[N_Levels-1]
 #endif    
-                                  );
-            break;
+							      );
+	    break;	    
       case 5:
             prec = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, MG, 1);
             Itmethod_sol = new double[N_DOF];
@@ -169,7 +157,7 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
             OutPut("Unknown preconditioner !!!" << endl);
             exit(4711);
      }     
-     
+//  exit(0);    
        switch (TDatabase::ParamDB->SC_SOLVER_SCALAR)
         {
           case 11:
@@ -192,7 +180,7 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
         }     
      
    }// if(solver==GMG)  
-  
+//   exit(0);
 } //TSystemMatScalar3D::TSystemMatScalar3D
 //#endif
 
@@ -294,7 +282,7 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
      if(SOLVER==GMG)
       {
 #ifdef _MPI  
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], FEFunctArray[i], ParComm[i], Own_FeSpaces[i], N_aux, NULL);
+       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], N_aux, NULL);
 #else
        MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], N_aux, NULL);
 #endif
@@ -302,7 +290,7 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
       }
       
 #ifdef _MPI  
-    ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), RHSs[0]);     
+   // ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), RHSs[0]);     
 #endif
       
     } //  for(i=Start_Level;i<N_Levels;i++)    

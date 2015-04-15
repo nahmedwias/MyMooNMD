@@ -2163,9 +2163,9 @@ void TetraGenWithInputCells(TDomain *&Domain)
   TBdSphere *UpdateParam;  
   TShapeDesc *ShapeDesc;
    
-  char *SMESH, *NODE, line[100];
+  char *SMESH, line[100];
   SMESH = TDatabase::ParamDB->SMESHFILE;
-  NODE  = TDatabase::ParamDB->GRAPEBASENAME;
+//  char  *NODE  = TDatabase::ParamDB->GRAPEBASENAME;
   
 #ifdef _MPI  
   int rank, size;  

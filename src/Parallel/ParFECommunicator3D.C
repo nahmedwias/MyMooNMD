@@ -29,6 +29,8 @@
 #define HALOCELL 0
 #define NONHALO  1
 
+extern double timeC;
+
 TParFECommunicator3D::TParFECommunicator3D(MPI_Comm comm, TFESpace3D *fespace, TSquareStructure3D* Sqstruct)
 {
  int N_U;
@@ -39,835 +41,31 @@ TParFECommunicator3D::TParFECommunicator3D(MPI_Comm comm, TFESpace3D *fespace, T
  MaxSubDomainPerDof = fespace->GetMaxSubDomainPerDof();
 
  if(MaxSubDomainPerDof<0)
-  {
+ {
    printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator2D \n");
    MPI_Finalize();
    exit(0);
-  }
+ }
 
-  N_U = FESpace->GetN_DegreesOfFreedom();
+ N_U = FESpace->GetN_DegreesOfFreedom();
 
-  MPI_Allreduce(&N_U, &MaxN_LocalDofAllRank, 1, MPI_INT, MPI_MAX, Comm);
+ MPI_Allreduce(&N_U, &MaxN_LocalDofAllRank, 1, MPI_INT, MPI_MAX, Comm);
 
- // ConstructDofRankIndex();
-  
- 
-   if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==5)
-   {
-    ConstructDofMapRe();
-#ifdef _HYBRID
-    /**    */
-    ColorAndReorder(0,N_Master,N_CMaster,ptrCMaster);
-    ColorAndReorder(N_Master,N_Master+N_Int,N_CInt,ptrCInt);
-    ColorAndReorder(N_Master+N_Int,N_Master+N_Int+N_Dept,N_CDept,ptrCDept);
-#endif
-    /**    */
-    SetNewGN();
-   }
-
-   else
-      ConstructDofMap();
-     
-  SetFENeibCommunicationSteps();
- 
-
- //ScheduleParFEComm3D();
-
- // MapDofFromNeib3D();
-
- // ConstructGlobalDofFromNeib3D();
-}
-
-   int partition( int a[],int b[], int l, int r);
-
-static void quickSort( int a[], int b[],int l, int r)
-{
-   int j;
-
-   if( l < r ) 
-   {
-       // divide and conquer
-       j = partition( a,b, l, r);
-       quickSort( a, b,l, j-1);
-       quickSort( a,b, j+1, r);
-   }
-}
-
-
-
-int partition( int a[], int b[], int l, int r) {
-   int pivot, i, j, t,t2;
-   pivot = a[l];
-   i = l; j = r+1;
-		
-   while( 1)
-   {
-   	do ++i; while( a[i] <= pivot && i <= r );
-   	do --j; while( a[j] > pivot );
-   	if( i >= j ) break;
-   	t = a[i]; a[i] = a[j]; a[j] = t;
-	t2=b[i]; b[i]=b[j]; b[j]=t2;
-   }
-   t = a[l]; a[l] = a[j]; a[j] = t;
-   t2=b[l]; b[l]=b[j]; b[j]=t2;
-   return j;
-}
-
-static void SortPos(int *Array, int *Array2,int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
-  int Mid, Temp, Temp2;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-  
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-      
-      m=(l+r)/2;
-      if(m>length || m<0) printf("accessing out of bounds\n");
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) {i++;
-               if(i>length || i<0) printf("accessing out of bounds\n");
-	}
-        while(Array[j] < Mid) {j--;
-	   if(j>length || j<0) printf("accessing out of bounds\n");
-	}
-
-        if (i<=j)
-        {
-	   if(i>length || i<0) printf("accessing out of bounds\n");
-	     if(j>length || j<0) printf("accessing out of bounds\n");
-          Temp=Array[i];  Temp2=Array2[i];
-          Array[i]=Array[j]; Array2[i]=Array2[j];
-          Array[j]=Temp; Array2[j]=Temp2;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-    
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-static int GetLocalCellIndex(int N_DependentCells, int *DeptCellGlobalNo, int *DependentCellIndex, int GlobalCellNo)
-{
-  
-  int l=0, r=N_DependentCells, m=(r+l)/2;
-  int Mid;
-
-  Mid= DeptCellGlobalNo[m];
-
-  while(Mid!=GlobalCellNo)
-  {
-    if(Mid>GlobalCellNo)
-    {  r=m; }
-    else
-    { l=m; }
-
-    m=(r+l)/2;
-    Mid=DeptCellGlobalNo[m];
-  }
-
-    return DependentCellIndex[m];
-}
-
-static int GetDeptIndex(int N, int *array, int val)
-{
-
-  int l=0, r=N, m=(r+l)/2;
-  int Mid;
-
-  Mid= array[m];
-
-  while(Mid != val)
-  {
-    if(Mid>val)
-    {  r=m; }
-    else
-    { l=m; }
-
-    m=(r+l)/2;
-    Mid=array[m];
-  }
-
-  return m;
-}
-
-
-/** Construct DofRankIndex based on used FESpace */
-void TParFECommunicator3D::ConstructDofRankIndex_old()
-{
- int rank, size, i, j, k, l, m, m1, P, N_Cells, N_U, N_LocDof, ID;
- int M, N, N_Vert, N_Joints, N_JointDOF, Neib_ID;
- int *DOF, *GlobalNumbers, *BeginIndex, *JointDof, Disp, N_EdgeDOF, *EdgeDof;
- int N_CrossEdgeNeibs, *CrossEdgeNeibsRank, N_Edges, N_VertInCell;
- int N_VertCrossNeibs, *VertCrossNeibs, VertDof;
- int test, N_Dof;
-
- double x,y,z;
-
- bool UPDATE;
-
- TCollection *Coll;
- TBaseCell *cell, *Neib_cell;
- TVertex *Vert;
- TJoint *Joint;
- FE3D FeId;
- TFEDesc3D *FeDesc;
- TEdge *edge;
-
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  N_U = FESpace->GetN_DegreesOfFreedom();
-
-  BeginIndex = FESpace->GetBeginIndex();
-  GlobalNumbers = FESpace->GetGlobalNumbers();
-  N_DofRankIndex = new int[N_U];
-  DofRankIndex = new int[MaxSubDomainPerDof*N_U];
-  memset(N_DofRankIndex, 0, N_U*SizeOfInt);
-
-  Disp = N_U*MaxSubDomainPerDof;
-  for(i=0; i<Disp; i++)
-   DofRankIndex[i] = -1;       
-  
-  N_DependentCells=0;
-  /** own dofs */
-  // find how many SubDomain contain each dof and their corresponding IDs
-  for(i=0; i<N_Cells; i++)
-   {
-    cell = Coll->GetCell(i);
-    ID = cell->GetSubDomainNo();
-
-//     if(rank!=ID)
-//      continue;
-
-    DOF = GlobalNumbers + BeginIndex[i];
-    N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-
-    for(j=0; j<N_LocDof; j++)
-     {
-      N = DOF[j];
-      M = N_DofRankIndex[N];
-
-      /** adding own process ID */
-      UPDATE = TRUE;
-      for(k=0; k<M; k++)
-      if(ID==DofRankIndex[N*MaxSubDomainPerDof + k ])
-       {
-        UPDATE = FALSE;
-        break;
-       } // for(k=0; k<M; k++)
-
-      if(UPDATE)
-       {
-        DofRankIndex[N*MaxSubDomainPerDof + M ] = ID;
-        N_DofRankIndex[N]++;
-	
-//    if(rank==0 && N==72)
-//      printf("%d index %d own N_neibs  %d \n", rank, N,  N_DofRankIndex[N]);
-// 
-//     if(rank==3  && N==5566)
-//      printf("%d index %d own N_neibs %d \n", rank, 5566,  N_DofRankIndex[5566]);  	
-// 	
-       }
-      }  // for(j=0; j<N_DOF; j++)
-      
- 
-    /** adding the neib process ID */
-    if(cell->IsDependentCell())
-     {
-      N_DependentCells++;
-      N_Vert= cell->GetN_Vertices();
-
-      for(j=0; j<N_Vert; j++)
-       {
-        Vert = cell->GetVertex(j);
-        Vert->SetClipBoard(-1);
-       } // for(j=0; j<N_Vert
-      } // if(cell->IsDependen
-   } //  for(i=0; i<N_Cells
-
+ if((TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR != 6 && TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6) ||
+     (TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR == 6 && TDatabase::ParamDB->SC_SMOOTHER_SCALAR!=6)){
+   printf("use consistent smoother types\n (set 6 smoother for both smoother and coarese smoother if using 6 for any of them)\n");
+   MPI_Finalize();
+   exit(0);
+ }
    
- 
-   
-   
-/*    if(rank==2 )
-     printf("%d index %d  N_neibs after  %d \n", rank, 5981,  N_DofRankIndex[5981]);
-
-    if(rank==3 )
-     printf("%d index %d N_neibs after %d \n", rank, 5566,  N_DofRankIndex[5566]);  	
-	*/   
-   
-  if(N_DependentCells)
-   {
-    DependentCellIndex = new int[N_DependentCells];
-    DeptCellGlobalNo = new int[N_DependentCells];
-   }
-
-    /** for cross edge cells set clioboard (if any) */
-    N_DependentCells=0;
-    for(i=0;i<N_Cells;i++)
-     {
-      cell = Coll->GetCell(i);
-      ID = cell->GetSubDomainNo();
-
-//       if(rank!=ID)
-//        continue;
-
-      if(cell->IsDependentCell())
-       {
-        DependentCellIndex[N_DependentCells] = i;
-        DeptCellGlobalNo[N_DependentCells] = cell->GetGlobalCellNo();
-        N_DependentCells++;
-       }
-
-      if(cell->IsCrossEdgeCell())
-       {
-        N_Edges=cell->GetN_Edges();
-
-        for(j=0;j<N_Edges;j++)
-         (cell->GetEdge(j))->SetClipBoard(-1);
-
-       } // if(cell->IsDependentCell())
-     }// for(i=0;i<N_OwnCel
-
-  /** dofs on faces/joints */
-  test=0;
-  for(i=0; i<N_Cells; i++)
-   {
-    cell = Coll->GetCell(i);
-    ID = cell->GetSubDomainNo();
-
-//    if(rank==1 &&  cell->GetGlobalCellNo()==39 )
-//     for(j=0; j<4; j++)
-//      {
-//       (cell->GetVertex(j))->GetCoords(x,y,z);
-//        printf("ConstructDofRankIndex vert %d j %d x %f y %f z %f\n", i, j, x,y,z);
-//      }
-    
-    
-//     if(rank!=ID)
-//      continue;
-
-// //     if(!(  i==18|| i==17|| i==16|| i==13|| i==12|| i==11|| i==18))
-// //      continue;
-
-//     if(!( i==0 || i==14 || i==8 || i==16 || i==10|| i==18|| i==15|| i==7|| i==18|| i==5))
-//      continue;
-
-//  if(!(  i==0 || i==9 || i==10  || i==4 || i==2 || i==1 || i==14  || i==3 || i==11 ))
-//      continue;
-
-    if(cell->IsDependentCell())
-     {
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_Joints = cell->GetN_Joints();
-      FeId = FESpace->GetFE3D(i, cell);
-      FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-      N_JointDOF = FeDesc->GetN_JointDOF();
-      N_Dof = FeDesc->GetN_DOF();
-
-//       if(rank==8 && i==5)
-//       for(j=0; j<N_Dof; j++)
-//        printf("ConstructDofRankIndex  j %d dof %d \n", j, DOF[j]);
-
-//    if(rank==0 &&  cell->GetGlobalCellNo()==35 )
-//     for(j=0; j<4; j++)
-//      {
-//       (cell->GetVertex(j))->GetCoords(x,y,z);
-//        printf("ConstructDofRankIndex vert %d j %d x %f y %f z %f\n", i, j, x,y,z);
-//      }
-
-
-
-     // Discspace (assumed all cells haveing same FEID)
-     if(N_JointDOF<=0)
-      break;
-
-      for(j=0; j<N_Joints; j++)
-       {
-        Joint = cell->GetJoint(j);
-
-//  if((i==5 && j==5))
-//         if( (i==5 && j==3))
-//  if( (i==5 && j==2))
-//  if((i==10 && j==4) || (i==4 && j==4))
-//         continue;
-
-         // put neib joint subdomain ID in all DOF in the joint
-        if(Joint->GetType() == SubDomainJoint)
-         {
-          Neib_ID = ((TSubDomainJoint *)Joint)->GetNeibRank();
-          JointDof = FeDesc->GetJointDOF(j);
-
-            Neib_cell = Joint->GetNeighbour(cell);
-//             Neib_ID = Neib_cell->GetSubDomainNo();
-
-
-          for(k=0; k<N_JointDOF; k++)
-           {
-            N = DOF[ JointDof[k] ];
-            M = N_DofRankIndex[N];
-
-//            if(rank==0 && cell->GetGlobalCellNo()==35 && j== 0)
-//            printf("Rank %d DOF %d \n", rank,  N );
-
-// 
-//           if(rank==0 && i==169 && j==2)
-//            printf("Rank %d DOF %d \n", rank,  N,  Neib_ID );
-
-
-
-            UPDATE = TRUE;
-            for(l=0; l<M; l++)
-            if(Neib_ID==DofRankIndex[N*MaxSubDomainPerDof + l ])
-             {
-
-//           if(rank==TDatabase::ParamDB->Par_P5 && Neib_ID==TDatabase::ParamDB->Par_P6 )
-//              printf("DofRankIndex cell %d joint %d JointDof  %d Dof %d M %d !!!\n",
-//                       i, j, JointDof[k], N, M);
-
-//           if(rank==TDatabase::ParamDB->Par_P5 && Neib_ID==TDatabase::ParamDB->Par_P6 )
-//            test++;
-
-              UPDATE = FALSE;
-              break;
-             } // for(l=0; l<M; l++)
-
-            if(UPDATE)
-             {
-              DofRankIndex[N*MaxSubDomainPerDof + M ] = Neib_ID;
-              N_DofRankIndex[N]++;
-
-//                if(rank==0 && N==66)
-//                 printf("%d Glob_CellNo %d face N_DOFNeibs  %d localjointno  %d Neib_ID  %d Neib GCellNo %d\n", rank, cell->GetGlobalCellNo(),  N_DofRankIndex[N], j, Neib_ID, Neib_cell->GetGlobalCellNo());
-// 	       
-//                if(rank==1 && Neib_cell->GetGlobalCellNo()==39)
-//                 printf("%d Glob_CellNo %d face N_DOFNeibs  %d localjointno  %d Neib_ID  %d Neib GCellNo %d\n", rank, i,  N_DofRankIndex[N], j, Neib_ID, Neib_cell->GetGlobalCellNo());
-//                if(rank==2  && N==3745)
-//                 printf("%d Glob_CellNo %d face N_DOFNeibs  %d localjointno  %d  Neib_ID  %d, Neib GCellNo %d\n", rank, i,  N_DofRankIndex[3745], j, Neib_ID, Neib_cell->GetGlobalCellNo());  	
-//      
-//               if(rank==TDatabase::ParamDB->Par_P5 && N==19)
-//                 printf("Rank %d i %d   j %d  Neib_ID %d \n", rank, i,  j, DofRankIndex[N*MaxSubDomainPerDof + M ]);
-             }
-           } //for(k=0; k<N_JointDOF; 
-//            printf("%d SubDomainJoint Neib_ID %d \n", rank, Neib_ID);
-         }// if(Joint->GetT  
-       } // for(j=0; j<N_Joints; j+
-     }//if(cell->IsDep
-   } //  for(i=0; i<N_Cells
-
-
-//    N=72;
-//    if(rank==0)
-//       printf("%d index %d N_neibs  %d \n", rank, N,  N_DofRankIndex[N]);
-   
-/*  MPI_Finalize();
- exit(0);   */   
-   
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P6)
-//         M++;
-// 
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//    printf("Face  Test %d M %d!!!\n", test, M);
-// 
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P5)
-//         M++;
-// 
-
-//     if(rank==1 )
-//      printf("%d index %d  N_neibs face  %d \n", rank, 4038,  N_DofRankIndex[4038]);
-// 
-//     if(rank==2 )
-//      printf("%d index %d N_neibs face   %d \n", rank, 3745,  N_DofRankIndex[3745]);  	
-// 	   
-
-
-  /** dofs on edges */
-   // put neib cross edge subdomain ID in all DOF in the edge 
-   for(i=0; i<N_Cells; i++)
-    {
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-//      if(rank!=ID)
-//       continue;
-
-     if(cell->IsCrossEdgeCell())
-       { 
-        DOF = GlobalNumbers + BeginIndex[i];
-        N_Edges=cell->GetN_Edges();
-        FeId = FESpace->GetFE3D(i, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        
-        if(!(FeDesc->IsEdgeVertData_Filled()) )
-        {
-           printf("Rank %d, Error! Edge and vertes data are not set in FEdesc3D for this FE : %d\n", rank, FeId);
-           MPI_Abort(MPI_COMM_WORLD,  0);  
-        }
-        
-        N_EdgeDOF = FeDesc->GetN_EdgeDOF();
-
-       // Discspace or non-conforming space
-       if(N_EdgeDOF<=0)
-         break;
-
-        for(j=0;j<N_Edges;j++)
-         {
-          edge = cell->GetEdge(j);
-
-          if( edge->IsSubDomainCrossEdge() &&  (edge->GetClipBoard()==-1) )
-           {
-            edge->SetClipBoard(5);
-            edge->GetCrossEdgeNeibs(N_CrossEdgeNeibs, CrossEdgeNeibsRank);
-            EdgeDof = FeDesc->GetEdgeDOF(j);
-
-            for(k=0; k<N_CrossEdgeNeibs; k++)
-             {
-              Neib_ID = CrossEdgeNeibsRank[k];
-
-              for(l=0; l<N_EdgeDOF; l++) 
-               {
-                N = DOF[ EdgeDof[l] ];
-                M = N_DofRankIndex[N];
-
-               UPDATE = TRUE;
-               for(m=0; m<M; m++)
-                if(Neib_ID== DofRankIndex[N*MaxSubDomainPerDof + m])
-                 {
-
-//          if(rank==TDatabase::ParamDB->Par_P6 && Neib_ID==TDatabase::ParamDB->Par_P5 )
-//             printf("Cross edge Update FALSE rank %d edge %d M %d dofa % dofb %d NeibID %d\n", rank, j , M, N, DOF[ EdgeDof[1] ], Neib_ID);
-// 
-
-                  UPDATE = FALSE;
-                  break;
-                 }
-
-               if(UPDATE)
-                {
-                 DofRankIndex[N*MaxSubDomainPerDof + M] = Neib_ID;
-                 N_DofRankIndex[N]++;
-                }
-               } // for(l=0; l<N_EdgeDOF; l++)
-
-//                M = N_DofRankIndex[N];
-// 
-//           if(rank==TDatabase::ParamDB->Par_P5 && Neib_ID==TDatabase::ParamDB->Par_P6 )
-//             printf("Cross edge !!!\n");
-// 
-//                UPDATE = TRUE;
-//                for(l=0; l<M; l++)
-//                 if(Neib_ID== DofRankIndex[N*MaxSubDomainPerDof + l ])
-//                  {
-// 
-//          if(rank==TDatabase::ParamDB->Par_P6 && Neib_ID==TDatabase::ParamDB->Par_P5 )
-//             printf("Cross edge Update FALSE rank %d edge %d M %d dofa % dofb %d NeibID %d\n", rank, j , M, N, DOF[ EdgeDof[1] ], Neib_ID);
-// 
-// 
-//                   UPDATE = FALSE;
-//                   break;
-//                  }
-// 
-// 
-// 
-//                if(UPDATE)
-//                 {
-//                  for(l=0; l<N_EdgeDOF; l++) 
-//                   {
-//                    P = DOF[ EdgeDof[l] ];
-//                    DofRankIndex[P*MaxSubDomainPerDof + N_DofRankIndex[P] ] = Neib_ID;
-//                    N_DofRankIndex[P]++;
-// 
-//           if(rank==TDatabase::ParamDB->Par_P5 && Neib_ID==TDatabase::ParamDB->Par_P6 )
-//              printf("DofRankIndex Rank %d cell %d joint %d Edgeindex  %d Dof %d M %d !!!\n",
-//                       rank, i, j,  EdgeDof[l], P, N_DofRankIndex[P]);
-//                   }//for(l=0; l<N_Ed
-//                  } // if(UPDATE)
-              } // for(k=0; k<N_CrossEd
-           } // if( edge->IsSubDomainCrossEdge() &&  (edge
-         } // for(j=0;j<N_Edges
-       } // if(cell->IsCrossEdgeCe
-   } //  for(i=0; i<N_Cells
-
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P6)
-//         M++;
-// 
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//    printf("Edge  Test rank %d Neib %d  M %d!!!\n", rank,TDatabase::ParamDB->Par_P6, M);
-// 
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P5)
-//         M++;
-// 
-// 
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//    printf("Edge  Test rank %d Neib %d M %d!!!\n", rank,TDatabase::ParamDB->Par_P5, M);
-
-//  MPI_Finalize();
-//  exit(0);
-
-
-  /** dofs on vertices */
- // put neib cross vertex subdomain ID in all DOF in the vertex 
-   for(i=0; i<N_Cells; i++)
-    {
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-//      if(rank!=ID)
-//       continue;
-
-     if(cell->IsCrossVertexCell())
-       { 
-        DOF = GlobalNumbers + BeginIndex[i];
-        N_VertInCell = cell->GetN_Vertices();
-        FeId = FESpace->GetFE3D(i, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-
-       // Discspace or non-conforming space
-       if(FeDesc->GetN_VertDOF()<=0)
-        break;
-
-        for(j=0;j<N_VertInCell;j++)
-         {
-          Vert=cell->GetVertex(j);
-
-          if( Vert->IsCrossVert() &&  (Vert->GetClipBoard()==-1) )
-           {
-            Vert->SetClipBoard(5);
-            Vert->GetCrossNeibs(N_VertCrossNeibs, VertCrossNeibs);
-            VertDof = FeDesc->GetVertDOF(j);
-            N = DOF[VertDof];
-
-             for(k=0; k<N_VertCrossNeibs; k++)
-              {
-               Neib_ID = VertCrossNeibs[k];
-               M = N_DofRankIndex[N];
-
-//           if(rank==TDatabase::ParamDB->Par_P5 && Neib_ID==TDatabase::ParamDB->Par_P6 )
-//              printf("DofRankIndex cell %d joint %d VertDof  %d Dof %d M %d !!!\n",
-//                       i, j, VertDof, N, M);
-
-
-               UPDATE = TRUE;
-               for(l=0; l<M; l++)
-                if(Neib_ID== DofRankIndex[N*MaxSubDomainPerDof + l ])
-                 {
-                  UPDATE = FALSE;
-                  break;
-                 }
-
-               if(UPDATE)
-                {
-                 DofRankIndex[N*MaxSubDomainPerDof + M ] = Neib_ID;
-                 N_DofRankIndex[N]++;
-
-                } // if(UPDATE)
-              } // for(k=0; k<N_VertCrossNeibs
-           } //  if( Vert->IsCrossVert() &&  (V
-         } //  for(j=0;j<N_VertIn
-       } // if(cell->IsCrossVertexCell())
-   } //  for(i=0; i<N_Cells
-
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P6)
-//         M++;
-// 
-// 
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//    printf("Rank %d Vert  Test %d M %d!!!\n", rank, test, M);
-// 
-//   M=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_U; i++)
-//      for(j=0; j<N_DofRankIndex[i]; j++)
-//       if(DofRankIndex[i*MaxSubDomainPerDof + j ]==TDatabase::ParamDB->Par_P5)
-//         M++;
-// 
-// 
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//    printf("Rank %d Vert  Test %d M %d!!!\n", rank, test, M);
-// 
-
-//  MPI_Finalize();
-//  exit(0);
-
-
-  N_Neibs = 0;
-  for(i=0;i<N_U;i++)
-    if(N_Neibs <N_DofRankIndex[i])
-     {
-      N_Neibs=N_DofRankIndex[i]; 
-      break;
-     }
-
-  N = 0;
-  if(N_Neibs)
-   {
-    NeibsRank =  new int[size];
-
-    for(i=0;i<N_U;i++)
-     {
-      M = N_DofRankIndex[i];
-
-      for(j=0; j<M; j++)
-       {
-        ID = DofRankIndex[i*MaxSubDomainPerDof + j];
-
-        UPDATE = TRUE;
-        for(k=0; k<N; k++)
-         if(ID== NeibsRank[k])  
-	  {
-           UPDATE = FALSE;
-	   break;
-	  }
-
-	if(UPDATE)
-	 {
-	  NeibsRank[N] = ID;
-	  N++;
-	 } // if(UPDATE)
-       } //  for(j=0; j<M; 
-     } // or(i=0;i<N_U
-   } // if(N_Neibs)
-
-  N_Neibs = N;
-
-  N_DeptDofs = 0;
-  for(i=0;i<N_U;i++)
-    if(N_DofRankIndex[i]>1)
-     N_DeptDofs++;
-
-  MPI_Allreduce(&N_DeptDofs, &MaxN_DeptDofs_All, 1, MPI_INT, MPI_MAX, Comm); 
-//   if(rank==0)
-//    MaxN_DeptDofs_All = 0;
-
-  N=0;
-  if(N_DeptDofs)
-   {
-    DeptDofs = new int [N_DeptDofs];
-    N_DeptDofNeibs = new int [N_DeptDofs];
-    DeptDofMaster = new int[N_DeptDofs];
-    DeptDofNeibRanks = new int [N_DeptDofs*MaxSubDomainPerDof];
-    DeptDofNeibRanksLocalDOF = new int [N_DeptDofs*MaxSubDomainPerDof];
-    DeptDofLocalIndexOfNeibRanks = new int [N_DeptDofs*MaxSubDomainPerDof];
-    DepDofIndexOfLocDof = new int [N_U];
- 
-    memset(DepDofIndexOfLocDof, -1, N_U*SizeOfInt);    
-//     for(i=0;i<N_DeptDofs;i++)
-//      DeptDofMaster[i] = -1;
-
-    for(i=0;i<N_DeptDofs*MaxSubDomainPerDof;i++)
-     DeptDofNeibRanksLocalDOF[i] = -1;
-
-    N=0;
-    for(i=0;i<N_U;i++)
-     {
-     if(N_DofRankIndex[i]>1)
-      {
-       DepDofIndexOfLocDof[i] = N;
-       DeptDofs[N++] = i;
-      }
-     }      
-   }//if(N_DeptDofs)
-
-    //sort DeptCellGlobalNo in assending order, useful in finding local cell no
-    for(i=0;i<N_DependentCells-1;i++)
-     for(j=i+1;j<N_DependentCells;j++)
-      if(DeptCellGlobalNo[i] > DeptCellGlobalNo[j])
-       {
-        M =  DeptCellGlobalNo[i];
-        DeptCellGlobalNo[i] = DeptCellGlobalNo[j];
-        DeptCellGlobalNo[j] = M;
-
-         M = DependentCellIndex[i];
-         DependentCellIndex[i] = DependentCellIndex[j];
-         DependentCellIndex[j] = M;
-       }
-
-//    N = 0;
-//    if(rank==TDatabase::ParamDB->Par_P5)
-//     for(k=0; k<N_U; k++)
-//      if(N_DofRankIndex[k]>1)
-//      printf("rank %d sl %d index %d SubDomainJoint Neib_ID %d \n", rank, N++, k,  DeptDofs[N]);
-
-// if(rank==TDatabase::ParamDB->Par_P5)
-//   printf("Rank %d ConstructDofRankIndex   N_DependentCells info %d \n", rank, N_DependentCells);
-//   printf("Rank %d ConstructDofRankIndex %d \n", rank, N_Neibs-1);
-
-//   printf("rank %d Final N_Neibs  %d   \n", rank,   N_Neibs);
-
-//    if(rank==TDatabase::ParamDB->Par_P5)
-//     for(k=0; k<N_Neibs; k++)
-//      printf("Rank %d ConstructDofRankIndex %d \n", rank, NeibsRank[k]);
-
-//   if(rank==TDatabase::ParamDB->Par_P5)
-//    for(i=0; i<N_DependentCells; i++)
-//      printf("%d ConstructDofRankIndex done %d\n", i, DependentCellIndex[i]);
-
-
-// //                if(rank==0 )
-//                 printf("Final %d  face N_DOFNeibs  %d   \n", rank,   N_DofRankIndex[4038]);
-// // 
-// //                if(rank==1 )
-// //                 printf("Final %d  face N_DOFNeibs  %d    \n", rank,   N_DofRankIndex[3745]);  	
-// //      
-
-//   MPI_Finalize();
-//   exit(0);
-  
-  if(TDatabase::ParamDB->SC_VERBOSE>4)
-  if(rank==TDatabase::ParamDB->Par_P0)
-   printf("ConstructDofRankIndex done !!!\n");
-
-//   MPI_Finalize();
-//   exit(0);
+ if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
+   ConstructDofMap_light();
+ }
+ else{
+   ConstructDofMap();
+   SetFENeibCommunicationSteps();
+ }
 }
-
 
 static int GetLocalIndex(int N, int *array, int val)
 {
@@ -877,992 +75,1241 @@ static int GetLocalIndex(int N, int *array, int val)
  return m;
 }
 
-
-void TParFECommunicator3D::ConstructDofRankIndex()
-{
- 
- int rank, size, i,jj,ii, j, k, l, m, m1, P, N_Cells, N_U, N_LocDof, ID;
- int M, N, N_Vert, N_Joints, N_JointDOF, Neib_ID;
- int *DOF, *GlobalNumbers, *BeginIndex, *JointDof, Disp, N_EdgeDOF, *EdgeDof,*LocalIndex;
- int N_CrossEdgeNeibs, *CrossEdgeNeibsRank, N_Edges, N_VertInCell;
- int N_VertCrossNeibs, *VertCrossNeibs, VertDof;
- int test, N_Dof;
-
- double x,y,z;
-
- bool UPDATE;
-
- TCollection *Coll;
- TBaseCell *cell, *Neib_cell;
-
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  N_U = FESpace->GetN_DegreesOfFreedom();
-  
-  printf("N_U is %d----Rank %d\n",N_U,rank);
-
-  /** *************************************************************************************/
-  /** ARRAY CONTAINING GLOBAL DOF numbers (GLOBAL means LOCALLY GLOBAL for the subdomain) */ 
-  /** BeginIndex: START ID IN GlobalNumbers ARRAY Cellwise*********************************/
-  BeginIndex = FESpace->GetBeginIndex();		
-  GlobalNumbers = FESpace->GetGlobalNumbers();          
-   
-  /** Array containing number of ranks(process ID) associated (surrounding) with each DOF (including halo DOF) */ 
-  N_DofRankIndex = new int[N_U];
-  /** Array containing the rank ID surrounding each DOF (includeing HALO) */
-  DofRankIndex = new int[MaxSubDomainPerDof*N_U];
-  memset(N_DofRankIndex, 0, N_U*SizeOfInt);
-  /** Array containing global number of all Local cells */
-  LocalIndex = new int[N_Cells]; 
-
- 
-  Disp = N_U*MaxSubDomainPerDof;
-  
-  for(i=0; i<Disp; i++)       /** Initializing DofRankIndex Array */                   
-   DofRankIndex[i] = -1;       
-  
-  N_DependentCells=0;
-    
-  
-  /** Array contains a flag denoting which type of cells (Halo and Other) have been visited to determine its Master */ 
-  int **celltypevisited;	
-  int **MappingData;
-  
-  celltypevisited = new int*[2];
-  for(i=0;i<2;i++)
-  {
-    celltypevisited[i] = new int[N_U];
-    memset(celltypevisited[i], 0, N_U*SizeOfInt);
+int TParFECommunicator3D::find_min(int *arr, int N, char *temp_arr){
+  int i,j;
+  int min = 1000000; 
+  j = 0;
+  for(i=0;i<N;i++){
+    if(temp_arr[i] == 'x')   continue;
+    if(arr[i]<min){
+      min = arr[i];
+      j = i;
+    }
   }
-  
-  MappingData = new int*[2];
-  for(i=0;i<2;i++)
-  {
-    MappingData[i] = new int[N_U];
-    memset(MappingData[i], 0, N_U*SizeOfInt);
+  if(min == 1000000){
+    printf("\n................this shudnt happen...................\n");
+    MPI_Finalize();
+    exit(0);
   }
-  
- /** START ---> [ DofRankIndex ------- N_DofRankIndex -------- N_DependentCells ] **/ 
- 
-  for(i=0; i<N_Cells; i++)
-   {
-      cell = Coll->GetCell(i);
-      ID = cell->GetSubDomainNo();
-      LocalIndex[i] = cell->GetGlobalCellNo();
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-
-      for(j=0; j<N_LocDof; j++)
-      {
-	N = DOF[j];
-	M = N_DofRankIndex[N];
-	/** adding own process ID */
-	
-	UPDATE = TRUE;
-        /**======================================================================
-	  * FOLLOWING 'for' LOOP CHECKS WHETHER THE CURRENT RANK ID (i.e) 
-          * VARIABLE ID HAS ALREADY BEEN INCLUDED IN THE LIST OF THE PRESENT DOF
-          * =====================================================================*/
-	for(k=0; k<M; k++)
-	  if(ID==DofRankIndex[N*MaxSubDomainPerDof + k])
-          {
-           UPDATE = FALSE;
-	   break;
-	  } // for(k=0; k<M; k++)
-
-        if(UPDATE)
-	{
-	  DofRankIndex[N*MaxSubDomainPerDof + M ] = ID;
-	  N_DofRankIndex[N]++;
-		  
-	  /** Keeping a note of which type of Cells contain this dof */
-	 if(cell->IsHaloCell())
-	 {
-	   MappingData[GLOBAL_NO][N]    = cell->GetGlobalCellNo();
-	   MappingData[DOF_NO][N]       = j; 
-	   celltypevisited[HALOCELL][N] = 1;
-	 }
-	 else
-	   celltypevisited[NONHALO][N]  = 1;
-	}
-       }  // for(j=0; j<N_DOF; j++)
-    } //  for(i=0; i<N_Cells
-   
-  /** END ---> [ DofRankIndex ------- N_DofRankIndex -------- N_DependentCells ] **/ 
-    
-  /** START ---> [ TemporaryMaster ------------ Verify] **/ 
-  
-    int *Verify;
-    int temp,temp_globalno,temp_dofno;
-   
-    
-    Master = new int[N_U];
-    Verify = new int[N_U];
-	    
-    memset(Verify, 0, N_U*SizeOfInt);
-	    
-    for(i=0;i<N_U;i++)
-    {
-        temp = size ;
-	for(j=0;j<N_DofRankIndex[i];j++)
-	{
-	  if(temp > DofRankIndex[i*MaxSubDomainPerDof + j])
-	  temp = DofRankIndex[i*MaxSubDomainPerDof + j];
-	}
-	Master[i] = temp;
-	if( celltypevisited[0][i] == 1 && celltypevisited[1][i] == 0)
-	  Verify[i] = 1;			      
-   }
-    
-  
-   /** END ---> [ Master ------------ Verify] **/ 
-  
-    int *N_DOFtobeverified;	  /** Array containing how many DOF's need to be verified from other processors(ranks) */
-    int *N_DOFverifiedbythisrank; /** Array containing how many DOF's need to be verified by this rank for other processors(ranks) */
-    int VerifiedDOF = 0;	  /** Total no of DOF's that need to be verified from other ranks */
-    int Verifiedbythisrank =0;    /** Total no of DOF verified by this rank */
-    int **sendbuf,**recvbuf,*verrecvbuf,*versendbuf;
-     
-    /** PROTECTED VARIABLES  * int *sdispl,*rdispl;*/
-    int *temp_arr;
-	
-    sendbuf 	= new int*[2];
-    recvbuf 	= new int*[2];
-    sdispl  	= new int[size];
-    rdispl  	= new int[size];
-    temp_arr	= new int[size];
-	
-    N_DOFtobeverified = new int[size];
-    memset(N_DOFtobeverified,0,size*SizeOfInt);
-    N_DOFverifiedbythisrank = new int[size];
-    memset(N_DOFtobeverified,0,size*SizeOfInt);
-	
-    for(i=0;i<N_U;i++)
-    {
-      if(Verify[i] == 1)
-      {
-	N_DOFtobeverified[Master[i]]++;
-	VerifiedDOF++;
-      }
-    }
-		
-    MPI_Alltoall(N_DOFtobeverified,1, MPI_INT,N_DOFverifiedbythisrank ,1, MPI_INT, Comm);
-					
-    for(i=0;i<size;i++)
-      Verifiedbythisrank +=  N_DOFverifiedbythisrank[i];
-		
-    for(i=0;i<2;i++)
-    {
-      sendbuf[i] = new int[VerifiedDOF];
-      recvbuf[i] = new int[Verifiedbythisrank];
-    }
-		
-    //printf("Rank F %d----------%d\n",rank,Verifiedbythisrank);
-    sdispl[0] = 0;
-    for(i=1;i<size;i++)
-    {
-      sdispl[i] = N_DOFtobeverified[i-1] + sdispl[i-1];
-      if(rank == 0);
-      //printf(" %d \n",sdispl[i]);
-    }
-					
-    rdispl[0] = 0;
-    for(i=1;i<size;i++)
-      rdispl[i] = N_DOFverifiedbythisrank[i-1] + rdispl[i-1];
-					
-					
-    memcpy (temp_arr,sdispl, size*SizeOfInt );
-					
-    for(i=0;i<N_U;i++)
-     {
-      if(Verify[i] == 1)
-      {
-	//printf("%d ",temp_arr[Master[i]]);
-	sendbuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
-	sendbuf[DOF_NO][temp_arr[Master[i]]] = MappingData[DOF_NO][i];
-	temp_arr[Master[i]]++;
-      }
-    }
-
-    MPI_Alltoallv(sendbuf[GLOBAL_NO],N_DOFtobeverified, sdispl, MPI_INT,recvbuf[GLOBAL_NO], N_DOFverifiedbythisrank, rdispl, MPI_INT, Comm);
-    MPI_Alltoallv(sendbuf[DOF_NO],N_DOFtobeverified, sdispl, MPI_INT,recvbuf[DOF_NO], N_DOFverifiedbythisrank, rdispl, MPI_INT, Comm);
-	      
-    verrecvbuf  	= new int[Verifiedbythisrank];
-    versendbuf  	= new int[VerifiedDOF];
-
-    for(i=0;i<Verifiedbythisrank;i++)
-    {
-      temp = GetLocalIndex(N_Cells,LocalIndex,recvbuf[GLOBAL_NO][i]);
-      verrecvbuf[i] = Master[GlobalNumbers[temp * N_LocDof + recvbuf[DOF_NO][i]]];
-    }
-	
-    MPI_Alltoallv(verrecvbuf, N_DOFverifiedbythisrank, rdispl, MPI_INT,versendbuf,N_DOFtobeverified, sdispl, MPI_INT, Comm);
-					
-    for(i=0;i<VerifiedDOF;i++)
-    {
-      temp_globalno = sendbuf[GLOBAL_NO][i];
-      temp_dofno    = sendbuf[DOF_NO][i];
-      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
-      temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
-      if(Verify[temp] != 1)
-	printf("Error : This degree of Freedom (%d) didn't require verification\n",temp);
-      Master[temp] = versendbuf[i];
-    }
-					
-/**===================================== END : MASTER FOR ALL DEGREES OF FREEDOM HAS BEEN DECIDED ========================*/
-
-    delete [] verrecvbuf;
-    delete [] versendbuf;
-    delete [] N_DOFtobeverified;
-    delete [] N_DOFverifiedbythisrank;
-    delete [] temp_arr;
-
-		
-    for(i=0;i<2;i++)
-    {
-      delete [] sendbuf[i];
-      delete [] recvbuf[i];
-    }
-
-    delete [] sendbuf;
-    delete [] recvbuf;
-		
-					
-/**==================================START : NOW FIRST GATHERING INFORMATION REGARDING WHICH 
- *                                    DOF's have to be received from OTHER PROCESSORS==================*/
-					
-    int **SlaveBuf,**MasterBuf,SizeDofSend = 0,*Test_Recv,*Test_Send;
-    /** PROTECTED VARIABLES * int *N_DofSend,*N_DofRecv,*DofSend,*DofRecv;*/
-    N_Slave = 0;
-    N_OwnDof = 0;
-					
-    N_DofSend = new int[size];
-    N_DofRecv = new int[size];
-    temp_arr  = new int[size];
-    SlaveBuf  = new int*[2];
-    MasterBuf = new int*[2];
-	
-		
-    memset(N_DofRecv,0,size*SizeOfInt);
-			
-    for(i=0;i<N_U;i++)
-    {
-     if(Master[i] != rank)
-     {  
-      N_Slave++;
-      N_DofRecv[Master[i]]++;
-     }
-     else
-       N_OwnDof++;
-    }
-    printf("Rank %d      OwnDofs is %d---------\n",rank,N_OwnDof);
-    OwnDofs = new int[N_OwnDof];
-    rdispl[0] = 0; 
-
-    MPI_Alltoall(N_DofRecv,1, MPI_INT,N_DofSend ,1, MPI_INT, Comm);
-
-    for(i=1;i<size;i++)
-      rdispl[i] = rdispl[i-1] + N_DofRecv[i-1];
-	
-    sdispl[0] = 0;
-    for(i=0;i<size;i++)
-    {
-      SizeDofSend += N_DofSend[i];
-      sdispl[i] = sdispl[i-1] + N_DofSend[i-1];
-    }
-
-
-    DofSend  = new int[SizeDofSend];
-    Test_Send = new int[SizeDofSend];
-    DofRecv  = new int[N_Slave];
-    Test_Recv = new int[N_Slave];
-    
-    N_SendDof = SizeDofSend;
-	
-    for(i=0;i<2;i++)
-    {
-      SlaveBuf[i]  = new int[N_Slave];
-      MasterBuf[i] = new int[SizeDofSend];
-    }
-	
-    memcpy (temp_arr,rdispl, size*SizeOfInt );
-	
-    m=0;
-    for(i=0;i<N_U;i++)
-    {
-      if(Master[i] != rank)
-      {
-	SlaveBuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
-	SlaveBuf[DOF_NO]   [temp_arr[Master[i]]] = MappingData[DOF_NO]   [i];
-	DofRecv[temp_arr[Master[i]]] = i;
-	temp_arr[Master[i]]++;
-      }
-      else
-      {
-	OwnDofs[m]=i;
-	m++;
-      }
-    }
-			
-    MPI_Alltoallv(SlaveBuf[GLOBAL_NO],N_DofRecv, rdispl, MPI_INT,MasterBuf[GLOBAL_NO], N_DofSend, sdispl, MPI_INT, Comm);
-    MPI_Alltoallv(SlaveBuf[DOF_NO],N_DofRecv, rdispl, MPI_INT,MasterBuf[DOF_NO], N_DofSend, sdispl, MPI_INT, Comm);
-		
-    for(i=0;i<SizeDofSend;i++)
-    {
-      temp_globalno = MasterBuf[GLOBAL_NO][i];
-      temp_dofno    = MasterBuf[DOF_NO][i];
-      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
-      temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
-      DofSend[i] = temp;  
-    }
-    if(TDatabase::ParamDB->SC_VERBOSE>1)   
-	printf(" Rank %d ------ NUMBER OF DOF's to be sent = %d -------- NUMBER OF DOF's to be recv = %d\n",rank,N_SendDof,N_Slave); 
-
-    if(TDatabase::ParamDB->SC_VERBOSE>2)
-      if(rank==TDatabase::ParamDB->Par_P0)
-	printf("ConstructDofRankIndex done !!!\n");
+  return j;
 }
 
-void TParFECommunicator3D::ConstructDofMapRe()
-{
-   
- int rank, size, i,jj,ii, j, k, l, m, m1, P, N_Cells, N_U, N_Active, N_LocDof, ID;
- int M, N, N_Vert, N_Joints, N_JointDOF, Neib_ID;
- int *DOF, *GlobalNumbers, *BeginIndex, *JointDof, Disp, N_EdgeDOF, *EdgeDof,*LocalIndex,*Verify;
- int N_CrossEdgeNeibs, *CrossEdgeNeibsRank, N_Edges, N_VertInCell,N_OwnCells;
- int N_VertCrossNeibs, *VertCrossNeibs, VertDof;
- int test, N_Dof;
-
- double x,y,z;
-
- bool UPDATE;
-
- TCollection *Coll;
- TBaseCell *cell, *Neib_cell;
-
+void TParFECommunicator3D::ConstructDofMap_light(){
+//#################################################################  Variable Declarations  ##################################################################################//  
+  int rank,size;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
+  
+  int i,j,k,aa,bb,N;
+  int N_Cells, N_OwnCells, N_Active, N_Dof, N_LocDof, ID;
+  int *GlobalNumbers, *BeginIndex, *LocalIndex, *DOF;
+  int **MappingData;
+  int temp,temp_globalno,temp_dofno;
+  double global_start_time, start_time, end_time;
+  
+  TCollection *Coll;
+  TBaseCell *cell;
+//#################################################################  Variable Declarations  ##################################################################################//  
 
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  N_Active = FESpace->GetN_ActiveDegrees();
-  N_U = FESpace->GetN_DegreesOfFreedom();
+  
+  Coll       = FESpace->GetCollection();
+  N_Cells    = Coll->GetN_Cells();
   N_OwnCells = Coll->GetN_OwnCells();
+  N_Dof      = FESpace->GetN_DegreesOfFreedom();
+  N_Active   = FESpace->GetN_ActiveDegrees();
   
- // printf("N_U is %d----Rank %d\n",N_U,rank);
+  start_time = MPI_Wtime();
+  global_start_time = start_time;
   
-  for(i=0;i<N_OwnCells;i++)
-  {
+  //check if the first N_OwnCells are OwnCells
+  for(i=0;i<N_OwnCells;i++){
     cell = Coll->GetCell(i);
-    if(cell->IsHaloCell()) printf("This shudnt happen--------\n");
+    if(cell->IsHaloCell()){ 
+      printf("This shudnt happen---- Why am i(rank=%d) halo?? ----\n",rank);
+      printf("rank=%d OwnCells infected\n",rank);break;
+    }
   }
+  
+  //check if the remaining are halo cells
   for(i=N_OwnCells;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
-    if(!cell->IsHaloCell()) printf("This shudnt happen--------\n");
+    if(!cell->IsHaloCell()){
+      printf("This shudnt happen--- Why am i(rank=%d, cell_id=%d) own cell?? -----\n",rank,cell->GetSubDomainNo());
+//       if(cell->IsOwnCell())
+// 	printf("Recheck::Yes I am own cell\n");
+//       else
+// 	printf("Recheck::No I am not own cell\n");
+      printf("rank=%d HaloCells infected\n",rank);break;
+    }
   }
-
+  
   /** *************************************************************************************/
   /** ARRAY CONTAINING GLOBAL DOF numbers (GLOBAL means LOCALLY GLOBAL for the subdomain) */ 
-  /** BeginIndex: START ID IN GlobalNumbers ARRAY Cellwise*********************************/
-  BeginIndex = FESpace->GetBeginIndex();		
-  GlobalNumbers = FESpace->GetGlobalNumbers();          
-   
-  /** Array containing number of ranks(process ID) associated (surrounding) with each DOF (including halo DOF) */ 
-  N_DofRankIndex = new int[N_U];
- 
-  memset(N_DofRankIndex, 1, N_U*SizeOfInt);
-  /** Array containing global number of all Local cells */
-  LocalIndex = new int[N_Cells]; 
+  /** BeginIndex: START ID IN GlobalNumbers ARRAY Cellwise                                */
+  /** *************************************************************************************/
+  BeginIndex = FESpace->GetBeginIndex();
+  GlobalNumbers = FESpace->GetGlobalNumbers();
   
-  int **MappingData;
+  /** *************************************************************************************/
+  /** LocalIndex :: Array containing global number of all Local cells                     */ 
+  /** MappingData for mapping the dofs across processors                                  */
+  /** *************************************************************************************/
+  LocalIndex = new int[N_Cells];
   MappingData = new int*[2];
-  for(i=0;i<2;i++)
-  {
-    MappingData[i] = new int[N_U];
-    memset(MappingData[i], 0, N_U*SizeOfInt);
+  for(i=0;i<2;i++){
+    MappingData[i] = new int[N_Dof];
+    memset(MappingData[i], 0, N_Dof*SizeOfInt);
   }
   
-  Master = new int[N_U];
-  for(i=0;i<N_U;i++) Master[i]=rank;
-    
-  Verify = new int[N_U];
-  memset(Verify, 0, N_U*SizeOfInt);
+  /** *************************************************************************************/
+  /** Master:: Array containing the rank to which the Dof belongs                         */ 
+  /** Verify:: Array to help finding Master, Slave, Dependent, Halo                       */
+  /** Verify:: ALL the Dofs are marked 'i'                                                */
+  /** *************************************************************************************/
+  Master = new int[N_Dof];
+  for(i=0;i<N_Dof;i++) Master[i]=rank;
+  char *Verify = new char[N_Dof];
+  memset(Verify, 'i', N_Dof*sizeof(char)); 
   
- /** START ---> [ DofRankIndex ------- N_DofRankIndex -------- N_DependentCells ] **/ 
- for(i=0; i<N_Cells; i++)
-  {
+  /** *************************************************************************************/
+  /** Local Index Array is filled with GlobalNumbers of each cell                         */ 
+  /** Verify::Dofs of Dependent cells are marked 'd'                                      */
+  /** *************************************************************************************/
+  for(i=0; i<N_Cells; i++){
      cell = Coll->GetCell(i);
      LocalIndex[i] = cell->GetGlobalCellNo();
      
-     if(cell->IsDependentCell() && !cell->IsHaloCell())
-     {
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-      for(j=0; j<N_LocDof; j++)
-      {
-	N = DOF[j];
-	Verify[N] = -1;
-      }  // for(j=0; j<N_DOF; j++)
-      
-     }
-  } //  for(i=0; i<N_Cells
-    
- for(i=N_OwnCells;i<N_Cells;i++)
- {
-      cell = Coll->GetCell(i);
-      ID = cell->GetSubDomainNo();
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-
-      for(j=0; j<N_LocDof; j++)
-      {
-	N = DOF[j];
-	//if(N>=N_Active) continue;
-	if(Verify[N] == 0) 
-	{
-	  Verify[N] = 1;
-	  Master[N] = ID;
-	}
-	if(ID < Master[N]) Master[N] = ID;
-	MappingData[GLOBAL_NO][N]    = cell->GetGlobalCellNo();
-	MappingData[DOF_NO][N]       = j; 
-      }
-      
-  }
- 
-   
-    int temp,temp_globalno,temp_dofno;
-  
-  
-   /** END ---> [ Master ------------ Verify] **/ 
-  
-    int *N_DOFtobeverified;	  /** Array containing how many DOF's need to be verified from other processors(ranks) */
-    int *N_DOFverifiedbythisrank; /** Array containing how many DOF's need to be verified by this rank for other processors(ranks) */
-    int VerifiedDOF = 0;	  /** Total no of DOF's that need to be verified from other ranks */
-    int Verifiedbythisrank =0;    /** Total no of DOF verified by this rank */
-    int **sendbuf,**recvbuf,*verrecvbuf,*versendbuf;
-     
-    /** PROTECTED VARIABLES  * int *sdispl,*rdispl;*/
-    int *temp_arr;
-	
-    sendbuf 	= new int*[2];
-    recvbuf 	= new int*[2];
-    sdispl  	= new int[size];
-    rdispl  	= new int[size];
-    temp_arr	= new int[size];
-	
-    N_DOFtobeverified = new int[size];
-    memset(N_DOFtobeverified,0,size*SizeOfInt);
-    N_DOFverifiedbythisrank = new int[size];
-    memset(N_DOFtobeverified,0,size*SizeOfInt);
-	
-    for(i=0;i<N_U;i++)
-    {
-      if(Verify[i] == 1)
-      {
-	N_DOFtobeverified[Master[i]]++;
-	VerifiedDOF++;
-      }
-    }
-		
-    MPI_Alltoall(N_DOFtobeverified,1, MPI_INT,N_DOFverifiedbythisrank ,1, MPI_INT, Comm);
-					
-    for(i=0;i<size;i++)
-      Verifiedbythisrank +=  N_DOFverifiedbythisrank[i];
-		
-    for(i=0;i<2;i++)
-    {
-      sendbuf[i] = new int[VerifiedDOF];
-      recvbuf[i] = new int[Verifiedbythisrank];
-    }
-		
-    //printf("Rank F %d----------%d\n",rank,Verifiedbythisrank);
-    sdispl[0] = 0;
-    for(i=1;i<size;i++)
-    {
-      sdispl[i] = N_DOFtobeverified[i-1] + sdispl[i-1];
-      if(rank == 0);
-      //printf(" %d \n",sdispl[i]);
-    }
-					
-    rdispl[0] = 0;
-    for(i=1;i<size;i++)
-      rdispl[i] = N_DOFverifiedbythisrank[i-1] + rdispl[i-1];
-					
-					
-    memcpy (temp_arr,sdispl, size*SizeOfInt );
-					
-    for(i=0;i<N_U;i++)
-     {
-      if(Verify[i] == 1)
-      {
-	//printf("%d ",temp_arr[Master[i]]);
-	sendbuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
-	sendbuf[DOF_NO][temp_arr[Master[i]]] = MappingData[DOF_NO][i];
-	temp_arr[Master[i]]++;
-      }
-    }
-
-    MPI_Alltoallv(sendbuf[GLOBAL_NO],N_DOFtobeverified, sdispl, MPI_INT,recvbuf[GLOBAL_NO], N_DOFverifiedbythisrank, rdispl, MPI_INT, Comm);
-    MPI_Alltoallv(sendbuf[DOF_NO],N_DOFtobeverified, sdispl, MPI_INT,recvbuf[DOF_NO], N_DOFverifiedbythisrank, rdispl, MPI_INT, Comm);
-	      
-    verrecvbuf  	= new int[Verifiedbythisrank];
-    versendbuf  	= new int[VerifiedDOF];
-
-    for(i=0;i<Verifiedbythisrank;i++)
-    {
-      temp = GetLocalIndex(N_Cells,LocalIndex,recvbuf[GLOBAL_NO][i]);
-      verrecvbuf[i] = Master[GlobalNumbers[temp * N_LocDof + recvbuf[DOF_NO][i]]];
-    }
-	
-    MPI_Alltoallv(verrecvbuf, N_DOFverifiedbythisrank, rdispl, MPI_INT,versendbuf,N_DOFtobeverified, sdispl, MPI_INT, Comm);
-					
-    for(i=0;i<VerifiedDOF;i++)
-    {
-      temp_globalno = sendbuf[GLOBAL_NO][i];
-      temp_dofno    = sendbuf[DOF_NO][i];
-      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
-      temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
-      if(Verify[temp] != 1)
-	printf("Error : This degree of Freedom (%d) didn't require verification\n",temp);
-      Master[temp] = versendbuf[i];
-    }
-					
-/**===================================== END : MASTER FOR ALL DEGREES OF FREEDOM HAS BEEN DECIDED ========================*/
-
-    delete [] verrecvbuf;
-    delete [] versendbuf;
-    delete [] N_DOFtobeverified;
-    delete [] N_DOFverifiedbythisrank;
-    delete [] temp_arr;
-
-		
-    for(i=0;i<2;i++)
-    {
-      delete [] sendbuf[i];
-      delete [] recvbuf[i];
-    }
-
-    delete [] sendbuf;
-    delete [] recvbuf;
-		
-		
-/**==================================START : NOW FIRST GATHERING INFORMATION REGARDING WHICH 
- *                                    DOF's have to be received from OTHER PROCESSORS==================*/
-  int *Verify2;
-  bool dept=FALSE;
-   Verify2 = new int[N_U];
-  memset(Verify2, 0, N_U*SizeOfInt);
-  for(i=N_OwnCells;i<N_Cells;i++)
-  {
-   cell = Coll->GetCell(i);
-   DOF = GlobalNumbers + BeginIndex[i];
-   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-
-    for(j=0; j<N_LocDof; j++)
-     {
-      N = DOF[j];
-      Verify2[N]=-1;
-     }  // for(j=0; j<N_DOF; j++)
-  }
-  
-  for(i=0; i<N_Cells; i++)
-  {
-     cell = Coll->GetCell(i);
-
-     if(cell->IsDependentCell() && !cell->IsHaloCell())
-     {
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-
-      for(j=0; j<N_LocDof; j++)
-      {
-	N = DOF[j];
-	if(Master[N] !=rank)
-	    dept = TRUE;
-      }  // for(j=0; j<N_DOF; j++) 
-      
-      if(dept)
-      {
-       for(j=0; j<N_LocDof; j++)
-       {
+     if(cell->IsDependentCell() && !cell->IsHaloCell()){
+       DOF = GlobalNumbers + BeginIndex[i];
+       N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+       
+       for(j=0; j<N_LocDof; j++){
 	 N = DOF[j];
-	 if(Verify2[N]!=-1 && Master[N]==rank)
-	    Verify[N]=-2;
-       }  // for(j=0; j<N_DOF; j++) 
-      }
-	
-     }
-  } //  for(i=0; i<N_Cells
-   delete [] Verify2;
-
-    int **SlaveBuf,**MasterBuf,**SlaveBufH,**MasterBufH,SizeDofSend = 0;
-    int *temp_arr2,*temp_arr3,*sdisp, *rdisp ,*N_DofSendTemp, *N_DofRecvTemp;
-    // PROTECTED VARIABLES * int *N_DofSend,*N_DofRecv,*DofSend,*DofRecv;
-   
-    N_OwnDof = 0;
-    N_Slave = 0;  N_Halo = 0; N_Master = 0; N_Int=0; N_Dept = 0;
-    N_SendDof = 0; N_SendDofH = 0; N_ActiveSlave=0; N_ActiveHalo=0;
-    
-    N_DofSend = new int[size]; N_DofSendH = new int[size];
-    N_DofRecv = new int[size]; N_DofRecvH = new int[size];
-    temp_arr  = new int[size];
-    SlaveBuf  = new int*[2];
-    MasterBuf = new int*[2];
-
-    memset(N_DofRecv,0,size*SizeOfInt);
-    memset(N_DofRecvH,0,size*SizeOfInt);
-   
-    for(i=0;i<N_U;i++)
-    {
-     if(Master[i] != rank)
-     {
-       if(Verify[i] == -1)
-       {
-	 N_Slave++; 
-	 N_DofRecv[Master[i]]++;
-	 if(i<N_Active) N_ActiveSlave++;
-       }
-       else
-       {
-        N_Halo++;
-        N_DofRecvH[Master[i]]++;
-	if(i<N_Active) N_ActiveHalo++;
+	 Verify[N] = 'd';
        }
      }
-     else
-     {
-       N_OwnDof++;
-       if(i<N_Active)
-       {
-        if(Verify[i] == -1)
-         N_Master++; 
-        else if(Verify[i] == -2)
-	 N_Dept++;
-        else 
-	 N_Int++;
-       }
-     }
-    }
+  }
 
-  /* int N_SlFE= FESpace->GetN_SlaveDegrees(), N_InnerBound=FESpace->GetInnerBound();
-  printf("Rank %d N_U %d OwnDofs is %d N_ActiveSlave %d N_ActiveHalo %d N_InnerBound %d---------\n",rank,N_U,N_OwnDof,N_ActiveSlave,N_ActiveHalo,N_InnerBound);
-  printf("Rank %d N_Master %d N_Dept %d N_Int %d N_Active %d N_SlFE %d---------\n",rank,N_Master,N_Dept,N_Int,N_Active,N_SlFE);
-  MPI_Finalize();exit(0);*/
-     //  printf("Rank %d      OwnDofs is %d---------\n",rank,N_OwnDof);
-    sdisp = new int[size];
-    rdisp = new int[size];
-    sdisplH = new int[size];
-    rdisplH  = new int[size];
-    OwnDofs = new int[N_OwnDof];
-    rdispl[0] = 0; rdisplH[0]=0; rdisp[0] = 0;
-
-    MPI_Alltoall(N_DofRecv,1, MPI_INT,N_DofSend ,1, MPI_INT, Comm);
-    MPI_Alltoall(N_DofRecvH,1, MPI_INT,N_DofSendH ,1, MPI_INT, Comm);
-
-    for(i=1;i<size;i++)
-    {
-      rdispl[i] = rdispl[i-1] + N_DofRecv[i-1];
-      rdisplH[i] = rdisplH[i-1] + N_DofRecvH[i-1];
-    }
-   
-    sdispl[0] = 0; 
-    for(i=0;i<size;i++)
-    {
-      SizeDofSend += N_DofSend[i] + N_DofSendH[i];
-      N_SendDof += N_DofSend[i];
-      N_SendDofH += N_DofSendH[i];
-      sdispl[i] = sdispl[i-1] + N_DofSend[i-1];
-      sdisplH[i] = sdisplH[i-1] + N_DofSendH[i-1];
-    }
+  /** *************************************************************************************/
+  /** MappingData for dofs to be updated across domains are stored                        */ 
+  /** Verify::Dofs of Halo cells not a part of dependent cells are marked 'h'             */
+  /** *************************************************************************************/  
+  for(i=N_OwnCells;i<N_Cells;i++){
+    cell = Coll->GetCell(i);
+    ID = cell->GetSubDomainNo();
+    DOF = GlobalNumbers + BeginIndex[i];
+    N_LocDof = BeginIndex[i+1] - BeginIndex[i];
     
-    DofSend  = new int[N_SendDof];
-    DofSendH  = new int[N_SendDofH]; 
-    DofRecv  = new int[N_Slave];
-    DofRecvH  = new int[N_Halo];
-   
-    for(i=0;i<2;i++)
-    {
-      SlaveBuf[i]  = new int[N_Slave];
-      MasterBuf[i] = new int[N_SendDof];
-    }
-     
-    Reorder = new int[N_U];
-    NewGN = new int[N_U];
-    int xx=0,xy=N_Master,xz=N_Master+N_Int,yy=N_Master+N_Int+N_Dept,zz=N_Master+N_Int+N_Dept+N_ActiveSlave;
-    memcpy (temp_arr,rdispl, size*SizeOfInt );
-    m=0;
-    for(i=0;i<N_U;i++)
-    {
-      if(Master[i] != rank)  
-      {
-	if(Verify[i]==-1)
-	{
-	  SlaveBuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
-	  SlaveBuf[DOF_NO]   [temp_arr[Master[i]]] = MappingData[DOF_NO]   [i];
-	  DofRecv[temp_arr[Master[i]]] = i;
-          temp_arr[Master[i]]++;
-	  if(i<N_Active) { Reorder[yy] = i ; NewGN[i]=yy; yy++;}
-	}
-	else
-	{
-	  if(i<N_Active) {Reorder[zz] = i ; NewGN[i]=zz; zz++;}
-	}
+    for(j=0; j<N_LocDof; j++){
+      N = DOF[j];
+      if(Verify[N] == 'i'){
+	Verify[N] = 'h';
+	Master[N] = ID;
       }
-      else 
-      {
-	OwnDofs[m]=i;
-	m++;
-	if(i<N_Active) 
-	{
-	 if(Verify[i] == -1)
-	 {
-	  Reorder[xx] = i ; NewGN[i]=xx; xx++;
-	 }
-	 else if(Verify[i] == -2)
-	 {
-	  Reorder[xz] = i ; NewGN[i]=xz; xz++;
-	 }
-         else
-         {
-	  Reorder[xy] = i ; NewGN[i]=xy; xy++;
-         }
-	}
-      }
-    }
-
- MPI_Alltoallv(SlaveBuf[GLOBAL_NO],N_DofRecv, rdispl, MPI_INT,MasterBuf[GLOBAL_NO], N_DofSend, sdispl, MPI_INT, Comm);	
- MPI_Alltoallv(SlaveBuf[DOF_NO],N_DofRecv, rdispl, MPI_INT,MasterBuf[DOF_NO], N_DofSend, sdispl, MPI_INT, Comm);
- 
-    for(i=0;i<N_SendDof;i++)
-    {
-      temp_globalno = MasterBuf[GLOBAL_NO][i];
-      temp_dofno    = MasterBuf[DOF_NO][i];
-      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
-      temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
-      DofSend[i] = temp; 
-    }
- 
-    for(i=0;i<2;i++)
-    {
-      delete [] SlaveBuf[i];
-      delete [] MasterBuf[i];
-    }
-    
-    for(i=0;i<2;i++)
-    {
-      SlaveBuf[i]  = new int[N_Halo];
-      MasterBuf[i] = new int[N_SendDofH];
-    }
- memcpy (temp_arr,rdisplH, size*SizeOfInt );
-    for(i=0;i<N_U;i++)
-    {
-      if(Master[i] != rank && Verify[i]!=-1)
-      {
-	SlaveBuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
-	SlaveBuf[DOF_NO]   [temp_arr[Master[i]]] = MappingData[DOF_NO]   [i];
-	  DofRecvH[temp_arr[Master[i]]] = i;
-          temp_arr[Master[i]]++;
-      }
-    }
- 
- MPI_Alltoallv(SlaveBuf[GLOBAL_NO],N_DofRecvH, rdisplH, MPI_INT,MasterBuf[GLOBAL_NO], N_DofSendH, sdisplH, MPI_INT, Comm);	
- MPI_Alltoallv(SlaveBuf[DOF_NO],N_DofRecvH, rdisplH, MPI_INT,MasterBuf[DOF_NO], N_DofSendH, sdisplH, MPI_INT, Comm);
- 
-    for(i=0;i<N_SendDofH;i++)
-    {
-      temp_globalno = MasterBuf[GLOBAL_NO][i];
-      temp_dofno    = MasterBuf[DOF_NO][i];
-      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
-      temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
-      DofSendH[i] = temp; 
-    }
-   
-    for(i=0;i<2;i++)
-    {
-      delete [] SlaveBuf[i];
-      delete [] MasterBuf[i];
-    }
-    delete [] SlaveBuf;
-    delete [] MasterBuf;
-
-    //DofSendPos = new int[SizeDofSend];
-    //DofRecvPos = new int[N_Slave];
-   // for(i=0;i<SizeDofSend;i++) DofSendPos[i]=i;
-   // for(i=0;i<N_Slave;i++) DofRecvPos[i]=i;
-     //SortPos(DofSend,DofSendPos,SizeDofSend);
-    //quickSort(DofSend,DofSendPos,0,SizeDofSend);
-  if(N_SendDof>0)
-   Send_Info = new double[N_SendDof];
-  if(N_Slave>0)
-   Recv_Info = new double[N_Slave];
-    
-    
- if(N_SendDofH>0)
-   Send_InfoH = new double[N_SendDofH];
- if(N_Halo>0)
-   Recv_InfoH = new double[N_Halo];
-    
-    if(TDatabase::ParamDB->SC_VERBOSE>2)
-      if(rank==TDatabase::ParamDB->Par_P0)
-	printf("ConstructDofMap done !!!\n");
-       
-}
-
-void TParFECommunicator3D::SetNewGN()
-{
- int rank, size, i,jj,ii, j, k, l, m;
- int *DOF, *GlobalNumbers, *BeginIndex,N_LocDof, *NewGlobalNumbers, *temp,N_Active;
- int N_U, N_OwnCells, N, N_Cells;
-  TCollection *Coll;
-  TBaseCell *cell, *Neib_cell;
-
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-  
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  N_U = FESpace->GetN_DegreesOfFreedom();
-  N_Active = FESpace->GetN_ActiveDegrees();
-  N_OwnCells = Coll->GetN_OwnCells();
-  BeginIndex = FESpace->GetBeginIndex();		
-  GlobalNumbers = FESpace->GetGlobalNumbers(); 
-  N_LocDof = BeginIndex[1] - BeginIndex[0];
-
-  temp = new int[N_U];
-  memcpy (temp,Master, N_U*SizeOfInt );
- 
-  for(i=0; i<N_Cells; i++)
-  {
-     cell = Coll->GetCell(i);
-     DOF = GlobalNumbers + BeginIndex[i];
-      for(j=0; j<N_LocDof; j++)
-      {
-	N = DOF[j];
-	if(N<N_Active) GlobalNumbers[BeginIndex[i]+j] = NewGN[N];
-      }  // for(j=0; j<N_DOF; j++)
-  } //  for(i=0; i<N_Cells
-
-   // FESpace->SetGlobalNumbers(NewGlobalNumbers);
-    
-    for(i=0;i<N_SendDof;i++)  if(DofSend[i]<N_Active) DofSend[i] = NewGN[DofSend[i]];
-    for(i=0;i<N_SendDofH;i++) if(DofSendH[i]<N_Active) DofSendH[i]= NewGN[DofSendH[i]];
-    for(i=0;i<N_Slave;i++)    if(DofRecv[i]<N_Active) DofRecv[i] = NewGN[DofRecv[i]];
-    for(i=0;i<N_Halo;i++)     if(DofRecvH[i]<N_Active) DofRecvH[i]= NewGN[DofRecvH[i]];
-    
-    for(i=0;i<N_Active;i++) Master[NewGN[i]]=temp[i];
-    
-    delete [] temp;
-
-   temp = new int[N_OwnDof];
-   memcpy (temp, OwnDofs, N_OwnDof*SizeOfInt );
-       
-   for(i=0;i<N_OwnDof;i++) if(OwnDofs[i]<N_Active) OwnDofs[i]=temp[NewGN[i]];
-   delete [] temp;
-   if(rank==TDatabase::ParamDB->Par_P0)  
-       cout<<"New global numbers set"<<"\n";
-}
-
-void TParFECommunicator3D::ColorAndReorder(int start, int end, int &numColors, int *&ptrColors)
-{
-  int i,j,u,V,max,rank,nDof = (end-start);
-  int *RowPtr,*KCol,*temp;
-  
-  RowPtr = sqstruct->GetRowPtr();
-  KCol = sqstruct->GetKCol();
-  V = nDof;
-  MPI_Comm_rank(Comm, &rank);
-  
- if(nDof)
- {
-  int result[V];
-  max = RowPtr[Reorder[start]+1]-RowPtr[Reorder[start]];
- 
-    // Assign the first color to first vertex
-    result[0]  = 0;
- 
-    // Initialize remaining V-1 vertices as unassigned
-    for (i = 1; i < V; i++)
-    {
-        result[i] = -1;  // no color is assigned to u
-        u = Reorder[start+i];
-        if(max<(RowPtr[u+1]-RowPtr[u])) 
-             max=(RowPtr[u+1]-RowPtr[u]);
-    }
-  
-    // A temporary array to store the available colors. True
-    // value of available[cr] would mean that the color cr is
-    // assigned to one of its adjacent vertices
-    bool available[max];
-    int ptr[max+1]; ptr[max]=0;
-    for (int cr = 0; cr < max; cr++)
-    {
-        available[cr] = false; ptr[cr]=0;
-    }
-        ptr[1]=1;
-    // Assign colors to remaining V-1 vertices
-    for (j = 1; j < V; j++)
-    {
-        // Process all adjacent vertices and flag their colors as unavailable
-        u = Reorder[start+j];
-	
-        for (i = RowPtr[u]; i < RowPtr[u+1]; ++i)
-            if (NewGN[KCol[i]]>=start && NewGN[KCol[i]]<end && result[NewGN[KCol[i]]-start] != -1)
-                available[result[NewGN[KCol[i]]-start]] = true;
-
-        // Find the first available color
-        int cr;
-        for (cr = 0; cr < max; cr++)
-            if (available[cr] == false)
-                break;
- 
-        result[j] = cr; // Assign the found color
-        ptr[cr+1]++; 
-        // Reset the values back to false for the next iteration
-        for (i = RowPtr[u]; i < RowPtr[u+1]; ++i)
-            if (NewGN[KCol[i]]>=start && NewGN[KCol[i]]<end && result[NewGN[KCol[i]]-start] != -1)
-                available[result[NewGN[KCol[i]]-start]] = false;
-	  
-    }
-    
-    for(i=1;i<max;i++) if(!ptr[i]) break;
-    numColors = (i-1);
-    
-    ptrColors = new int[numColors+1];
-   
-      temp = new int[nDof];
-      memcpy(temp,&Reorder[start],nDof*SizeOfInt);
-     
-      for(i=1;i<=max;i++) ptr[i] += ptr[i-1];
-      memcpy(ptrColors,ptr,(numColors+1)*SizeOfInt);
       
-      for(i=0;i<=numColors;i++) ptrColors[i]+=start;
-      
-//         if(rank==0) {
-//     for(i=0;i<(numColors+1);i++) cout<<ptrColors[i]<<"\t";
-//     cout<<"\n"; 
-     //  cout<<numColors<<"nDof "<<nDof<<"\n";
-// }
-      
-      for(i=0;i<nDof;i++)
-      {
-	Reorder[start+ptr[result[i]]] = temp[i];
-	NewGN[temp[i]] = start+ptr[result[i]];
-	ptr[result[i]]++;
-      }
+      if(ID < Master[N]) Master[N] = ID;
+      MappingData[GLOBAL_NO][N]    = cell->GetGlobalCellNo();
+      MappingData[DOF_NO][N]       = j; 
+   }   
  }
- else
-   numColors = 0;
+
+//#################################################################  Master verification  ##################################################################################//  
+ //------------------------------------------//
+ /** Master DOF verification by other ranks **/
+ //------------------------------------------//
+ 
+ int *N_DOFtobeverified_otherRank;		//Array containing how many DOF's need to be verified from other processors(ranks) 
+ int Total_DOFtobeverified_otherRank=0;		//Array containing how many DOF's need to be verified by this rank for other processors(ranks)
+ int *N_DOFtobeverified_thisRank;		//Total no of DOF's that need to be verified from other ranks
+ int Total_DOFtobeverified_thisRank=0;		//Total no of DOF verified by this rank
+ int **sendbuf;
+ int **recvbuf;
+ int *verrecvbuf;
+ int *versendbuf;
+ int *temp_arr;
+ 
+ sendbuf  = new int*[2];
+ recvbuf  = new int*[2];
+ sdispl   = new int[size];
+ rdispl   = new int[size];
+ temp_arr = new int[size];
+
+ N_DOFtobeverified_otherRank = new int[size];
+ memset(N_DOFtobeverified_otherRank,0,size*SizeOfInt);
+ N_DOFtobeverified_thisRank = new int[size];
+ memset(N_DOFtobeverified_thisRank,0,size*SizeOfInt); 
+ 
+ //only the dofs in HALO cells (not dependent cells) needs to be verified
+ for(i=0;i<N_Dof;i++){
+    if(Verify[i] == 'h'){
+      N_DOFtobeverified_otherRank[Master[i]]++;
+      Total_DOFtobeverified_otherRank++;
+    }
+ }
+ 
+ MPI_Alltoall(N_DOFtobeverified_otherRank,1, MPI_INT,N_DOFtobeverified_thisRank ,1, MPI_INT, Comm);
+ for(i=0;i<size;i++)
+    Total_DOFtobeverified_thisRank +=  N_DOFtobeverified_thisRank[i];
+ 
+ for(i=0;i<2;i++){
+   sendbuf[i] = new int[Total_DOFtobeverified_otherRank];
+   recvbuf[i] = new int[Total_DOFtobeverified_thisRank];
+ }
+ 
+  //Send dof info to other processors and verify for master
+  sdispl[0] = 0;
+  for(i=1;i<size;i++){
+    sdispl[i] = N_DOFtobeverified_otherRank[i-1] + sdispl[i-1];
+  }
+      
+  rdispl[0] = 0;
+  for(i=1;i<size;i++)
+    rdispl[i] = N_DOFtobeverified_thisRank[i-1] + rdispl[i-1];
   
- /*
-    // print the result
-    for (int u = 0; u < V; u++)
-        cout << "Vertex " << u << " --->  Color "
-             << result[u] << endl;*/
+  memcpy (temp_arr,sdispl, size*SizeOfInt );
+  
+  for(i=0;i<N_Dof;i++){
+     if(Verify[i] == 'h'){
+       //if(rank==0) printf("%d ",temp_arr[Master[i]]);
+       sendbuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
+       sendbuf[DOF_NO][temp_arr[Master[i]]] = MappingData[DOF_NO][i];
+       temp_arr[Master[i]]++;
+     }
+  }
+  
+  MPI_Alltoallv(sendbuf[GLOBAL_NO],N_DOFtobeverified_otherRank, sdispl, MPI_INT,recvbuf[GLOBAL_NO], N_DOFtobeverified_thisRank, rdispl, MPI_INT, Comm);
+  MPI_Alltoallv(sendbuf[DOF_NO],   N_DOFtobeverified_otherRank, sdispl, MPI_INT,recvbuf[DOF_NO],    N_DOFtobeverified_thisRank, rdispl, MPI_INT, Comm);
+  
+  verrecvbuf  	= new int[Total_DOFtobeverified_thisRank];
+  versendbuf  	= new int[Total_DOFtobeverified_otherRank];
+
+  for(i=0;i<Total_DOFtobeverified_thisRank;i++){
+    temp = GetLocalIndex(N_Cells,LocalIndex,recvbuf[GLOBAL_NO][i]);
+    verrecvbuf[i] = Master[GlobalNumbers[temp * N_LocDof + recvbuf[DOF_NO][i]]];
+  }
+  
+  MPI_Alltoallv(verrecvbuf, N_DOFtobeverified_thisRank, rdispl, MPI_INT,versendbuf,N_DOFtobeverified_otherRank, sdispl, MPI_INT, Comm);
+
+  for(i=0;i<Total_DOFtobeverified_otherRank;i++){
+    temp_globalno = sendbuf[GLOBAL_NO][i];
+    temp_dofno    = sendbuf[DOF_NO][i];
+    temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
+    temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
+    if(Verify[temp] != 'h')
+      printf("Error : This degree of Freedom (%d) didn't require verification\n",temp);
+    Master[temp] = versendbuf[i];
+  }
+  
+ //-----------------------------------------------------//
+ /** Master DOF verification by other ranks completed  **/
+ //-----------------------------------------------------//
+  
+  delete [] verrecvbuf;                       verrecvbuf = NULL;
+  delete [] versendbuf;                       versendbuf = NULL; 
+  delete [] N_DOFtobeverified_otherRank;      N_DOFtobeverified_otherRank = NULL;
+  delete [] N_DOFtobeverified_thisRank;       N_DOFtobeverified_thisRank  = NULL;
+  
+  for(i=0;i<2;i++){
+    delete [] sendbuf[i];                     sendbuf[i] = NULL;
+    delete [] recvbuf[i];                     recvbuf[i] = NULL;
+  }
+  delete [] sendbuf;                          sendbuf = NULL;
+  delete [] recvbuf;                          recvbuf = NULL;  
+  
+  end_time = MPI_Wtime();
+  if(rank == 0)
+    printf("total time taken for master verification = %lf\n",end_time-start_time);
+//#################################################################  Master verification  ##################################################################################//   
+
+    {  
+//################################################################# Redistribution of interface dofs #######################################################################//
+//*/
+  start_time = MPI_Wtime();
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------//  
+  int total_interface_dofs        = 0;                    //these are the dofs which lie on the interface of sub domains (total over all sub domains)
+  int N_own_interface_dofs        = 0;                    //these are the own interface dofs
+  int N_interface_dofs            = 0;                    //these are the interface dofs including shared ones
+  int T_interface_dofs            = 0;                    //these are the total of N_interface_dofs over all sub domains
+  int total_own_dofs              = 0;                    //these are the dofs which belongs to my rank (total implies total over all sub domains)
+  int start = 0,           end    = 0;                    //temporary variables used for numbering the dofs
+  int max_n_ranks_interface_dofs  = 0;                    //maximum number of ranks sharing any interface dof
+  
+  int *GlobalDofNo                = new int[N_Dof];       //this array is used to assign unique global dof no. over all sub domains 
+      memset(GlobalDofNo, -1, N_Dof*sizeof(int));         //all is set to -1 for a default value
+  int *N_Dof_Slave                = new int[size];        //array of number of slave interface dofs to be verified by other ranks
+      memset(N_Dof_Slave, 0, size*sizeof(int));
+  int *N_Dof_Master               = new int[size];        //array of interface dofs to be verified by this rank for other ranks 
+  int **MasterPos                 = new int*[2];          //a double array for storing the position info for master interface dofs
+  int **SlavePos                  = new int*[2];          //a double array for storing the position info for slave interface dofs 
+  int *masterInfo, *slaveInfo;                            //these are used to update the global dof no for interface master-slave dofs
+  int *GlobalDofNo_interface;                             //this array contains only the globaldof no. of interface dofs
+  int *all_own_dofs_info          = new int[size];        //array of N_own dofs by each rank
+  int *all_interface_dofs_info    = new int[size];        //array of N_own interface dofs by each rank
+  int *all_T_interface_dofs_info  = new int[size];        //array of interface dofs(including shared ones) by each rank
+  int *all_GlobalDofNo;                                   //array of global interface dof no from all ranks
+  int *N_ranks_per_interface_dofs;                        //array of count of number of ranks sharing an interface dof
+  int *N_allocated_masters        = new int[size];        //array containing number of masters(interface dofs) allocated to each processors
+  char *tempc                     = new char[size];       //temporary array
+  char **Master_Table             = new char*[size];      //a Table to mark the shared interface dofs
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------//   
+  
+  //mark all (interface) dofs as 'z'
+  for(i=N_OwnCells;i<N_Cells;i++){
+    cell = Coll->GetCell(i);
+    ID = cell->GetSubDomainNo();
+    DOF = GlobalNumbers + BeginIndex[i];
+    N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+    
+    //z is both interface and dependent dof, while d is only dependent dof
+    for(j=0; j<N_LocDof; j++){
+      N = DOF[j];
+      if(Verify[N] == 'd'){
+	Verify[N] = 'z';
+      }
+    }
+  }
+  
+  //count total number of OWN interface_dofs and own dofs
+  N_OwnDof = 0;
+  for(i=0;i<N_Dof;i++){
+    if(Verify[i] == 'z')
+      if(Master[i] == rank)
+        N_own_interface_dofs++;
+    
+    if(Master[i] == rank)
+      N_OwnDof++;
+  }
+  
+  //Send the count info to all ranks
+  MPI_Allgather(&N_own_interface_dofs, 1, MPI_INT, all_interface_dofs_info, 1, MPI_INT, Comm);
+  MPI_Allgather(&N_OwnDof,             1, MPI_INT, all_own_dofs_info,       1, MPI_INT, Comm);
+    
+  for(aa=0;aa<size;aa++){
+    total_interface_dofs += all_interface_dofs_info[aa];
+    total_own_dofs       += all_own_dofs_info[aa];
+  }
+  
+  //start- numbering position for interface dofs
+  aa=0;
+  while(aa<rank){
+    start += all_interface_dofs_info[aa];
+    aa++;
+  } 
+  //printf("###########   rank = %d       start=%d\n",rank,start);
+  
+  Total_DOFtobeverified_otherRank = 0;                                               //this counts the total number of interface dofs(slave) that needs to be verified from other ranks(master) 
+  Total_DOFtobeverified_thisRank  = 0;                                               //this counts the total number of interface dofs(masters) that needs to be verified for other ranks(slaves)
+  
+  //number the own interface dofs
+  //count the total dofs to be verified by this and other rank
+  for(i=0;i<N_Dof;i++){
+    if(Verify[i]=='z'){
+      if(Master[i]==rank){
+	GlobalDofNo[i] = start;
+	start++;
+      }
+      else{
+	N_Dof_Slave[Master[i]]++;
+	Total_DOFtobeverified_otherRank++;
+      }
+    }
+  }
+ 
+ MPI_Alltoall(N_Dof_Slave, 1, MPI_INT, N_Dof_Master, 1, MPI_INT, Comm);
+ for(i=0;i<size;i++)
+    Total_DOFtobeverified_thisRank +=  N_Dof_Master[i];
+ 
+  for(i=0;i<2;i++){
+   MasterPos[i] = new int[Total_DOFtobeverified_thisRank];
+   SlavePos[i]  = new int[Total_DOFtobeverified_otherRank];
+  }
+  
+  masterInfo  = new int[Total_DOFtobeverified_thisRank];
+  slaveInfo   = new int[Total_DOFtobeverified_otherRank];
+  
+  rdispl[0] = 0;
+  sdispl[0] = 0;
+  for(i=1;i<size;i++){
+    rdispl[i] = rdispl[i-1] + N_Dof_Master[i-1];
+    sdispl[i] = sdispl[i-1] + N_Dof_Slave[i-1];                                 //slaves will be sent to gather info about their global dof no.
+  }
+ 
+  memcpy (temp_arr, sdispl, size*SizeOfInt );
+ 
+  //store the position info of the slave dofs
+  for(i=0;i<N_Dof;i++){
+    if(Verify[i]=='z'){
+      if(Master[i]!=rank){
+       SlavePos[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
+       SlavePos[DOF_NO][temp_arr[Master[i]]]    = MappingData[DOF_NO][i];
+       temp_arr[Master[i]]++;
+      }
+    }
+  }
+  
+//   for(aa=0;aa<size;aa++){
+//     if(rank==aa){
+//       printf("rank = %d\n",rank);	
+//       for(i=0;i<size;i++){
+// 	printf("N_Dof_Master[%d] = %d\t N_Dof_Slave[%d]=%d\n",i,N_Dof_Master[i],i,N_Dof_Slave[i]);
+//       }
+//     }
+//     MPI_Barrier(Comm);
+//   }
+//   exit(0);
+
+  //send the slave info to masters
+  MPI_Alltoallv(SlavePos[GLOBAL_NO], N_Dof_Slave, sdispl, MPI_INT, MasterPos[GLOBAL_NO], N_Dof_Master, rdispl, MPI_INT, Comm);
+  MPI_Alltoallv(SlavePos[DOF_NO],    N_Dof_Slave, sdispl, MPI_INT, MasterPos[DOF_NO],    N_Dof_Master, rdispl, MPI_INT, Comm);
+ 
+  start = 0;
+  for(aa=0;aa<size;aa++){
+    end = start + N_Dof_Master[aa];
+    for(i=start;i<end;i++){
+      //get the cell with global cell no = MasterPos[GLOBAL_NO][i]
+      temp = GetLocalIndex(N_Cells,LocalIndex,MasterPos[GLOBAL_NO][i]);
+      
+      //the master of this dof, i should be rank
+      if(Master[GlobalNumbers[temp * N_LocDof + MasterPos[DOF_NO][i]]] != rank){
+	printf("....................Wrong Master.....................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      //this dof should be a category z dof
+      if(Verify[GlobalNumbers[temp * N_LocDof + MasterPos[DOF_NO][i]]] != 'z'){
+	printf("....................Wrong Dof.........................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      //this dof should have a GlobalDofNo
+      if(GlobalDofNo[GlobalNumbers[temp * N_LocDof + MasterPos[DOF_NO][i]]] == -1){
+	printf("....................Wrong GlobalDofNo.........................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      masterInfo[i] = GlobalDofNo[GlobalNumbers[temp * N_LocDof + MasterPos[DOF_NO][i]]];
+    }
+    start = end;
+  }
+
+  MPI_Alltoallv(masterInfo, N_Dof_Master, rdispl, MPI_INT, slaveInfo, N_Dof_Slave, sdispl, MPI_INT, Comm);
+
+  start = 0;
+  for(aa=0;aa<size;aa++){
+    end = start + N_Dof_Slave[aa];
+    for(i=start;i<end;i++){
+      temp_globalno = SlavePos[GLOBAL_NO][i];
+      temp_dofno    = SlavePos[DOF_NO][i];
+      temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
+      temp = GlobalNumbers[temp * N_LocDof + temp_dofno];
+      
+      //the master of this dof, i should be aa
+      if(Master[temp] != aa){
+	printf("...................2.Wrong Master.....master[%d]=%d....rank=%d............\n",temp,Master[temp],rank);
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      //this dof should be a category z dof
+      if(Verify[temp] != 'z'){
+	printf("...................2.Wrong Dof.........................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      //this dof should not have a GlobalDofNo
+      if(GlobalDofNo[temp] != -1){
+	printf("...................2.Wrong GlobalDofNo.........................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      //assign the global dof no to the slave obtained from master
+      GlobalDofNo[temp] = slaveInfo[i];
+    }
+    start = end;
+  }
+  
+  //now we mark the own dofs apart from the interface ones
+  aa=0;
+  start = total_interface_dofs;
+  while(aa<rank){
+    start += all_own_dofs_info[aa];
+    aa++;
+  }
+
+  for(i=0;i<N_Dof;i++){
+    if(Verify[i] != 'z'){
+      if(Master[i]==rank){
+	GlobalDofNo[i] = start;
+	start++;
+      }
+    }
+    
+    if(Master[i]==rank){
+      if(GlobalDofNo[i] == -1){
+	printf("......................This shudnt happen.................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+    }
+    
+    if(Verify[i]=='z'){
+      if(GlobalDofNo[i]>=total_interface_dofs){
+	printf("......................This shudnt happen.................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+      
+      N_interface_dofs++;
+    }
+  }
+  
+  GlobalDofNo_interface = new int[N_interface_dofs];
+  aa = 0;
+  for(i=0;i<N_Dof;i++){
+     if(Verify[i]=='z'){
+      GlobalDofNo_interface[aa] = GlobalDofNo[i];
+      aa++;
+     }
+  }
+  
+  MPI_Allreduce(&N_interface_dofs, &T_interface_dofs, 1, MPI_INT, MPI_SUM, Comm);
+  
+  delete [] N_Dof_Master;
+  delete [] N_Dof_Slave;
+  
+  for(i=0;i<2;i++){
+    delete [] MasterPos[i];                    MasterPos[i] = NULL;
+    delete [] SlavePos[i];                     SlavePos[i]  = NULL;
+  }
+  delete [] MasterPos;                         MasterPos = NULL;
+  delete [] SlavePos;                          SlavePos  = NULL;  
+  
+  delete [] masterInfo;                        masterInfo = NULL;
+  delete [] slaveInfo;                         slaveInfo  = NULL;
+  
+  MPI_Allgather(&N_interface_dofs, 1, MPI_INT, all_T_interface_dofs_info, 1, MPI_INT, Comm);
+  all_GlobalDofNo = new int[T_interface_dofs];
+  
+//   for(aa=0;aa<size;aa++){
+//     if(rank==aa){
+//       printf("rank = %d      #total interface(own) dofs = %d       #interface dofs(own) = %d\n",rank,total_interface_dofs,N_own_interface_dofs);
+//       printf("              #total interface dofs      = %d      #interface dofs      = %d\n",T_interface_dofs,N_interface_dofs);
+//     }
+//     MPI_Barrier(MPI_COMM_WORLD);
+//   }
+  
+  rdispl[0] = 0;
+  for(aa=1;aa<size;aa++)
+    rdispl[aa] = rdispl[aa-1] + all_T_interface_dofs_info[aa-1];
+  MPI_Allgatherv(GlobalDofNo_interface, N_interface_dofs, MPI_INT, all_GlobalDofNo, all_T_interface_dofs_info, rdispl, MPI_INT, Comm);
+  
+  //table is created only over the total own interface dofs over the sub domains
+  for(i=0;i<size;i++){
+    Master_Table[i] = new char[total_interface_dofs];
+    memset(Master_Table[i], 'x', total_interface_dofs*sizeof(char));
+  }
+  
+  start = 0;end = 0;
+  for(i=0;i<size;i++){
+    end += all_T_interface_dofs_info[i];
+    for(aa=start;aa<end;aa++){
+      Master_Table[i][all_GlobalDofNo[aa]] = 'y';
+    }
+    start = end; 
+  }
+  
+  N_ranks_per_interface_dofs = new int[total_interface_dofs];
+  memset(N_ranks_per_interface_dofs, 0, total_interface_dofs*sizeof(int));
+  
+  for(j=0;j<total_interface_dofs;j++){
+    //check how many ranks share the interface dof
+    for(i=0;i<size;i++){
+      if(Master_Table[i][j] == 'y'){
+	N_ranks_per_interface_dofs[j]++;
+      }
+    }
+    //compute the max munber of rank sharing any interface dof
+    if(max_n_ranks_interface_dofs<N_ranks_per_interface_dofs[j])
+      max_n_ranks_interface_dofs = N_ranks_per_interface_dofs[j];
+  }
+  
+//   if(rank==1)
+//   for(i=0;i<size;i++){
+//     for(aa=0;aa<20;aa++){
+//       printf("%c\t",Master_Table[i][aa]);
+//     }
+//     printf("\n");
+//   }
+  
+  for(j=0;j<total_interface_dofs;j++){
+  //a interface dof should have at least one neighbour from other rank
+    if(N_ranks_per_interface_dofs[j] == 1){
+	printf("......................This shudnt happen.....j=%d............\n",j);
+	MPI_Finalize();
+	exit(0);
+    }
+  }
+ 
+  memset(N_allocated_masters, 0, size*sizeof(int));
+  for(i=0; i<N_Dof; i++){
+    if(Verify[i]=='z'){
+      N_allocated_masters[Master[i]]++;
+    }
+  }
+  
+  
+//   for(aa=0;aa<size;aa++){
+//      if(rank==aa){
+//        printf("\nrank=%d\n",rank);
+//        for(i=0;i<size;i++)
+// 	 printf("Before Redistribution::             N_allocated_masters[%d] = %d\n",i,N_allocated_masters[i]);
+//      }
+//      MPI_Barrier(Comm);
+//      //break;
+//   }
+  
+  memset(N_allocated_masters, 0, size*sizeof(int));
+  int min = 0;
+  //a interface dof should have at least one neighbour from other rank
+  for(i=2; i<=max_n_ranks_interface_dofs;i++){
+    for(j=0;j<total_interface_dofs;j++){
+      if(N_ranks_per_interface_dofs[j] == i){
+	
+	for(aa=0;aa<size;aa++){
+	  tempc[aa] = Master_Table[aa][j];
+	}
+	
+	min = find_min(N_allocated_masters,size,tempc);
+	N_allocated_masters[min]++;
+	
+	for(aa=0;aa<N_Dof;aa++){
+	  if(GlobalDofNo[aa] == j){
+	    Master[aa] = min;
+	  }
+	}
+	N_ranks_per_interface_dofs[j] = -1;
+      }
+    }
+  }
+  
+//   for(aa=0;aa<size;aa++){
+//      if(rank==aa){
+//        printf("\nrank=%d\n",rank);
+//        for(i=0;i<size;i++)
+// 	 printf("After Redistribution::             N_allocated_masters[%d] = %d\n",i,N_allocated_masters[i]);
+//      }
+//      MPI_Barrier(Comm);
+//   }
+  
+  memset(N_allocated_masters, 0, size*sizeof(int));
+  for(i=0; i<N_Dof; i++){
+    if(Verify[i]=='z'){
+      N_allocated_masters[Master[i]]++;
+      
+      if(GlobalDofNo[i] == -1){
+	printf("......................This shudnt happen.................\n");
+	MPI_Finalize();
+	exit(0);
+      }
+    }
+  }
+  
+//   for(aa=0;aa<size;aa++){
+//      if(rank==aa){
+//        printf("\nrank=%d\n",rank);
+//        for(i=0;i<size;i++)
+// 	 printf("N_allocated_masters[%d] = %d\n",i,N_allocated_masters[i]);
+//      }
+//      MPI_Barrier(Comm);
+//      //break;
+//   }
+  
+  delete [] all_GlobalDofNo;                  all_GlobalDofNo            = NULL;
+  for(i=0;i<size;i++) 
+    delete [] Master_Table[i];                Master_Table[i]            = NULL;
+  delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = NULL;     
+  delete [] N_allocated_masters;              N_allocated_masters        = NULL;
+  delete [] temp_arr;                         temp_arr                   = NULL;
+  
+  end_time = MPI_Wtime();
+  if(rank == 0)
+    printf("Total Time Taken for Redistribution of master dofs = %lf\n",end_time-start_time);
+  //*/
+//   MPI_Finalize();
+//   exit(0);
+//################################################################# Redistribution of interface dofs #######################################################################//
+    }
+
+//#################################################################  Marking The Dofs ######################################################################################//     
+ //------------------------------------------------------------------//
+ /** Gather information about other DOFs ::                          */
+ /**    ## dofs marked as 'i'             -->independent             */
+ /**    ## dofs marked as 's'             -->slave                   */
+ /**    ## dofs marked as 'D'             -->dependent_type1         */
+ /**    ## dofs marked as 'd'             -->dependent_type2         */
+ /**    ## dofs marked as 'H'             -->halo_type1              */
+ /**    ## dofs marked as 'h'             -->halo_type2              */
+ //------------------------------------------------------------------//
+ start_time = MPI_Wtime();
+
+ memset(Verify, 'i', N_Dof*sizeof(char));		//all dofs marked as independent
+ //all dofs in halo cell marked as halo_type2(unused)
+ for(i=N_OwnCells;i<N_Cells;i++){
+   cell     = Coll->GetCell(i);
+   DOF      = GlobalNumbers + BeginIndex[i];
+   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+   
+   for(j=0;j<N_LocDof;j++){
+     N = DOF[j];
+     Verify[N]='h';
+   }
+ }
+ 
+ for(i=0;i<N_OwnCells;i++){
+   cell = Coll->GetCell(i);
+   //now mark dofs in dependent cells
+   if(cell->IsDependentCell()){
+     DOF      = GlobalNumbers + BeginIndex[i];
+     N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+     
+     for(j=0;j<N_LocDof;j++){
+       N = DOF[j];
+       if(Verify[N]!='h')	//if dof is not marked halo then it is dependent dof
+	 Verify[N]='d';
+     }
+   }
+ }
+ 
+ for(i=0;i<N_OwnCells;i++){
+   cell = Coll->GetCell(i);
+   //now mark dofs in dependent cells
+   if(cell->IsDependentCell()){
+     DOF      = GlobalNumbers + BeginIndex[i];
+     N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+     
+     for(j=0;j<N_LocDof;j++){
+       N = DOF[j];
+       if(Verify[N] == 'h'){
+	 if(Master[N]!=rank)
+	   Verify[N]='s';	//if dof is marked halo and master of it is some other proc then it is a slave
+	 else
+	   Verify[N]='m';	//else it is a master
+       }
+     }
+   }
+ }
+ 
+ //mark dependent type1 & type2
+ bool flag = false;
+ for(i=0;i<N_OwnCells;i++){
+   cell = Coll->GetCell(i);
+   //now mark dofs in dependent cells
+   if(cell->IsDependentCell()){
+     DOF      = GlobalNumbers + BeginIndex[i];
+     N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+     
+     for(j=0;j<N_LocDof;j++){
+       N = DOF[j];
+       if(Master[N]!=rank){
+	 flag = true;
+	 break;
+       }
+     }
+     //dependent dofs connected to slave dofs are marked as type1(D) else type2(d)
+     //type1 dofs must be smoothed first as they are the halo dofs (type1 i.e. useful) to other procs
+     if(flag==true){
+       for(j=0;j<N_LocDof;j++){
+	 N = DOF[j];
+	 if(Verify[N]=='d')
+	   Verify[N]='D';
+       }
+       flag=false;
+     }
+   }
+ }
+ 
+ //mark halo type1(H)-->useful & type2(h)
+ flag = false;
+ for(i=N_OwnCells;i<N_Cells;i++){
+   DOF      = GlobalNumbers + BeginIndex[i];
+   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+   
+   for(j=0;j<N_LocDof;j++){
+     N = DOF[j];
+     if(Master[N]==rank){
+       flag = true;
+       break;
+     }
+   }
+   //halo dofs connected to master dofs are marked as type1(H) else type2(h)
+   //type2 halo dofs are not required in smoothing operations
+   if(flag==true){
+     for(j=0;j<N_LocDof;j++){
+       N = DOF[j];
+       if(Verify[N]=='h')
+	 Verify[N]='H';  
+     }
+     flag=false;
+   }
+ }
+ 
+ //identify dependent3 dofs
+ //mark dependent3 type dofs as 'x'
+ flag = false;
+ for(i=0;i<N_OwnCells;i++){
+   DOF      = GlobalNumbers + BeginIndex[i];
+   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+   
+   cell = Coll->GetCell(i);
+   if(cell->IsDependentCell()) continue;
+   
+   for(j=0;j<N_LocDof;j++){
+     N = DOF[j];
+     if(Verify[N] == 'd' || Verify[N] == 'D'){
+       flag = true;
+       break;
+     }
+   }
+   //interior dofs connected to dependent dofs are marked as dependent3 type i.e. 'x'
+   if(flag==true){
+     for(j=0;j<N_LocDof;j++){
+       N = DOF[j];
+       if(Verify[N]=='i')
+	 Verify[N]='x';  
+     }
+     flag=false;
+   }
+ }
+ 
+ DofMarker = Verify;
+ 
+ end_time = MPI_Wtime();
+ if(rank == 0)
+    printf("Total Time Taken for marking the dofs = %lf",end_time-start_time);
+ 
+//#################################################################  Marking The Dofs ######################################################################################// 
+
+ 
+//#############################################################  Mapper for Master Dof are set ##############################################################################//  
+ start_time = MPI_Wtime();
+ 
+ int **SlaveBuf,**MasterBuf;
+ int *temp_arrH1,*temp_arrH2;
+ 
+ N_InterfaceM = 0;      N_InterfaceS  = 0;
+ N_Slave      = 0;     
+ N_OwnDof     = 0; 
+ N_Master     = 0;
+ N_Int        = 0; 
+ N_Dept       = 0;      N_Dept1 = 0;    N_Dept2 = 0;    N_Dept3 = 0;
+ N_Halo       = 0;      N_Halo1 = 0;    N_Halo2 = 0;    
+ 
+ N_DofSend    = new int[size];
+ N_DofSendMS  = new int[size]; 
+ N_DofSendH2  = new int[size];
+ N_DofSendH1  = new int[size];
+ 
+ N_DofRecv    = new int[size];
+ N_DofRecvMS  = new int[size]; 
+ N_DofRecvH2  = new int[size];
+ N_DofRecvH1  = new int[size];
+ 
+ memset(N_DofRecvMS  ,0,size*SizeOfInt);
+ memset(N_DofRecvH1,0,size*SizeOfInt);
+ memset(N_DofRecvH2,0,size*SizeOfInt);
+ 
+ temp_arr   = new int[size];
+ temp_arrH1 = new int[size];
+ temp_arrH2 = new int[size];
+ 
+ SlaveBuf  = new int*[2];
+ MasterBuf = new int*[2];
+ 
+ for(N=0;N<N_Dof;N++){
+   
+   if(Master[N] != rank){
+     N_Slave++;
+     N_DofRecv[Master[N]]++;
+     
+     if(Verify[N] == 's'){
+       N_InterfaceS++;
+       N_DofRecvMS[Master[N]]++;
+     }
+     else if(Verify[N] == 'H'){
+       N_Halo1++;       
+       N_DofRecvH1[Master[N]]++;
+     }
+     else{
+       N_Halo2++;
+       N_DofRecvH2[Master[N]]++;
+     }
+   }
+   else{
+     N_OwnDof++;
+     N_Master++;
+     if(Verify[N] == 'm')
+       N_InterfaceM++;
+     else if(Verify[N] == 'D')
+       N_Dept1++;
+     else if(Verify[N] == 'd')
+       N_Dept2++;
+     else if(Verify[N] == 'x')
+       N_Dept3++;
+     else
+       N_Int++;
+   }
+ }
+ 
+ N_Halo = N_Halo1 + N_Halo2;
+ N_Dept = N_Dept1 + N_Dept2 + N_Dept3;
+ 
+  //DEBUG
+  if(size<5);
+  for(aa=0;aa<size;aa++){
+     if(rank==aa){
+          printf("\nRank::%d\n",rank);
+	  printf("N_Dof               = %d\t N_OwnDof           = %d\n", N_Dof, N_OwnDof);
+	  printf("N_Master(Total)     = %d\t N_Slave(Total)     = %d\n", N_Master, N_Slave);
+	  printf("N_Master(Interface) = %d\t N_Slave(Interface) = %d\n", N_InterfaceM, N_InterfaceS);
+	  printf("N_Halo              = %d\t N_Halo1            = %d\t   N_Halo2  = %d\n",N_Halo,N_Halo1,N_Halo2);
+	  printf("N_Depndt            = %d\t N_Dept1            = %d\t   N_Dept2  = %d\t  N_Dept3  = %d\n",N_Dept,N_Dept1,N_Dept2,N_Dept3);
+	  printf("N_Indpdt            = %d\n",N_Int); 
+     }
+     MPI_Barrier(MPI_COMM_WORLD);
+  }//verified
+
+ rdispl[0] = 0; sdispl[0] = 0; 
+ sdisplMS  = new int[size];   sdisplMS[0] = 0;  
+ rdisplMS  = new int[size];   rdisplMS[0] = 0;
+ sdisplH1  = new int[size];   sdisplH1[0] = 0;  
+ rdisplH1  = new int[size];   rdisplH1[0] = 0;
+ sdisplH2  = new int[size];   sdisplH2[0] = 0;
+ rdisplH2  = new int[size];   rdisplH2[0] = 0;
+ 
+ OwnDofs = new int[N_OwnDof];
+ 
+ N_SendDofMS = 0; 
+ N_SendDofH1 = 0; 
+ N_SendDofH2 = 0;
+
+ MPI_Alltoall(N_DofRecv  , 1, MPI_INT,N_DofSend   , 1, MPI_INT, Comm);
+ MPI_Alltoall(N_DofRecvMS, 1, MPI_INT,N_DofSendMS , 1, MPI_INT, Comm);
+ MPI_Alltoall(N_DofRecvH1, 1, MPI_INT,N_DofSendH1 , 1, MPI_INT, Comm);
+ MPI_Alltoall(N_DofRecvH2, 1, MPI_INT,N_DofSendH2 , 1, MPI_INT, Comm);
+ 
+ for(i=1;i<size;i++){
+   rdispl[i]   = rdispl[i-1]   + N_DofRecv[i-1];
+   rdisplMS[i] = rdisplMS[i-1] + N_DofRecvMS[i-1];
+   rdisplH1[i] = rdisplH1[i-1] + N_DofRecvH1[i-1];
+   rdisplH2[i] = rdisplH2[i-1] + N_DofRecvH2[i-1];
+   
+   sdispl[i]   = sdispl[i-1]   + N_DofSend[i-1];
+   sdisplMS[i] = sdisplMS[i-1] + N_DofSendMS[i-1];
+   sdisplH1[i] = sdisplH1[i-1] + N_DofSendH1[i-1];
+   sdisplH2[i] = sdisplH2[i-1] + N_DofSendH2[i-1];
+ }
+ 
+ for(i=0;i<size;i++){
+   N_SendDofMS += N_DofSendMS[i];
+   N_SendDofH1 += N_DofSendH1[i];
+   N_SendDofH2 += N_DofSendH2[i];
+ }
+ N_SendDof = N_SendDofMS + N_SendDofH1 + N_SendDofH2;
+ 
+ memcpy (temp_arr,   rdisplMS, size*SizeOfInt );
+ memcpy (temp_arrH1, rdisplH1, size*SizeOfInt );
+ memcpy (temp_arrH2, rdisplH2, size*SizeOfInt );
+ 
+ DofSend    = new int[N_SendDofMS+N_SendDofH1+N_SendDofH2];
+ DofSendMS  = DofSend;
+ DofSendH1  = DofSend + N_SendDofMS;
+ DofSendH2  = DofSend + N_SendDofMS + N_SendDofH1;
+ 
+ DofRecv    = new int[N_InterfaceS+N_Halo1+N_Halo2];
+ DofRecvMS  = DofRecv;
+ DofRecvH1  = DofRecv + N_InterfaceS;
+ DofRecvH2  = DofRecv + N_InterfaceS + N_Halo1;
+ 
+ for(i=0;i<2;i++){
+   if(N_InterfaceS>0)
+     SlaveBuf[i]  = new int[N_InterfaceS];
+   if(N_SendDofMS>0)
+     MasterBuf[i] = new int[N_SendDofMS];
+   //memset (SlaveBuf[i] , 0, size*SizeOfInt);
+   //memset (MasterBuf[i], 0, size*SizeOfInt);
+ }
+ 
+ Reorder = new int[N_Dof];
+ int m = 0;
+
+ int Mstr  = 0;                  Reorder_M  = Reorder;
+ int Indpt = N_InterfaceM;       Reorder_I  = Reorder + Indpt;
+ int Dept1 = Indpt + N_Int;      Reorder_D1 = Reorder + Dept1;
+ int Dept2 = Dept1 + N_Dept1;    Reorder_D2 = Reorder + Dept2;
+ int Dept3 = Dept2 + N_Dept2;    Reorder_D3 = Reorder + Dept3;
+ int Slv   = Dept3 + N_Dept3;
+ int Hl1   = Slv   + N_InterfaceS;
+ int Hl2   = Hl1   + N_Halo1;
+
+ for(i=0;i<N_Dof;i++){
+   //slave dofs
+   if(Master[i] != rank){
+     if(Verify[i] == 's'){
+       SlaveBuf[GLOBAL_NO][temp_arr[Master[i]]] = MappingData[GLOBAL_NO][i];
+       SlaveBuf[DOF_NO]   [temp_arr[Master[i]]] = MappingData[DOF_NO]   [i];
+   
+       if(SlaveBuf[0][temp_arr[Master[i]]]<0 || Master[i]>=size || Master[i]<0 || temp_arr[Master[i]]>N_Dof){
+	printf("\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); 
+	printf("\n.................This shudnt happen!!!(rank=%d,cell=%d,dof=%d)\n",rank,MappingData[GLOBAL_NO][i],i);
+	exit(0);
+       }
+   
+       DofRecvMS[temp_arr[Master[i]]] = i;
+       temp_arr[Master[i]]++;
+       
+       {
+         Reorder[Slv] = i;
+         Slv++;
+       }
+     }
+     else if(Verify[i] == 'H'){
+       {
+	 Reorder[Hl1] = i;
+	 Hl1++;
+       }
+     }
+     else{
+       {
+	 Reorder[Hl2] = i;
+	 Hl2++;
+       }
+     }
+   }
+   else{
+     OwnDofs[m++]=i;
+       {
+       if(Verify[i]=='m'){
+	 Reorder[Mstr] = i;
+	 Mstr++;
+       }
+       else if(Verify[i]=='D'){
+	 Reorder[Dept1] = i;
+	 Dept1++;
+       }
+       else if(Verify[i]=='d'){
+	 Reorder[Dept2] = i;
+	 Dept2++;
+       }
+       else if(Verify[i]=='x'){
+	 Reorder[Dept3] = i;
+	 Dept3++;
+       }
+       else{
+	 Reorder[Indpt] = i;
+	 Indpt++;
+       }
+     }
+   }
+ }
+  
+ MPI_Alltoallv(SlaveBuf[GLOBAL_NO], N_DofRecvMS, rdisplMS, MPI_INT, MasterBuf[GLOBAL_NO], N_DofSendMS, sdisplMS, MPI_INT, Comm);	
+ MPI_Alltoallv(SlaveBuf[DOF_NO],    N_DofRecvMS, rdisplMS, MPI_INT, MasterBuf[DOF_NO],    N_DofSendMS, sdisplMS, MPI_INT, Comm);
+ 
+ for(i=0;i<N_SendDofMS;i++){
+   temp_globalno = MasterBuf[GLOBAL_NO][i];
+   temp_dofno    = MasterBuf[DOF_NO][i];
+   temp = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
+   temp = GlobalNumbers[temp*N_LocDof + temp_dofno];
+   DofSendMS[i] = temp; 
+ }
+
+ for(i=0;i<2;i++){
+    if(N_InterfaceS>0){
+      delete [] SlaveBuf[i];
+      SlaveBuf[i] = NULL;
+    }
+    if(N_SendDofMS>0){
+      delete [] MasterBuf[i];
+      MasterBuf[i] = NULL;
+    }
+ }
+ delete [] SlaveBuf;    SlaveBuf  = NULL;
+ delete [] MasterBuf;   MasterBuf = NULL;
+ delete [] temp_arr;    temp_arr  = NULL;  
+
+ //*********************************************************************************************************************************//
+ //                                                  Mapper for Halo Dof are set                                              //
+ //*********************************************************************************************************************************//
+ int **SlaveBufH1,**MasterBufH1;
+ int **SlaveBufH2,**MasterBufH2;
+ 
+ SlaveBufH1  = new int*[2];
+ MasterBufH1 = new int*[2];
+ 
+ SlaveBufH2  = new int*[2];
+ MasterBufH2 = new int*[2];
+ 
+ for(i=0;i<2;i++){
+   if(N_Halo1>0)
+     SlaveBufH1[i]  = new int[N_Halo1];
+   if(N_SendDofH1>0)
+     MasterBufH1[i] = new int[N_SendDofH1];
+   //memset (SlaveBufH1[i] , 0, size*SizeOfInt);
+   //memset (MasterBufH1[i], 0, size*SizeOfInt);
+   if(N_Halo2>0)
+     SlaveBufH2[i]  = new int[N_Halo2];
+   if(N_SendDofH2>0)
+     MasterBufH2[i] = new int[N_SendDofH2];
+   //memset (SlaveBufH2[i] , 0, size*SizeOfInt);
+   //memset (MasterBufH2[i], 0, size*SizeOfInt);
+ }
+ 
+ for(i=0;i<N_Dof;i++){
+   if(Verify[i] == 'H'){
+     if(Master[i] == rank){
+       printf("\nThis should be a HALO_1 dof\n");
+       exit(0);
+     }
+     
+     SlaveBufH1[GLOBAL_NO][temp_arrH1[Master[i]]] = MappingData[GLOBAL_NO][i];
+     SlaveBufH1[DOF_NO]   [temp_arrH1[Master[i]]] = MappingData[DOF_NO]   [i];
+	  
+     DofRecvH1[temp_arrH1[Master[i]]] = i;
+     temp_arrH1[Master[i]]++;
+    }
+    else if(Verify[i] == 'h'){
+     if(Master[i] == rank){
+       printf("\nThis should be a HALO_2 dof\n");
+       exit(0);
+     }
+     
+     SlaveBufH2[GLOBAL_NO][temp_arrH2[Master[i]]] = MappingData[GLOBAL_NO][i];
+     SlaveBufH2[DOF_NO]   [temp_arrH2[Master[i]]] = MappingData[DOF_NO]   [i];
+	  
+     DofRecvH2[temp_arrH2[Master[i]]] = i;
+     temp_arrH2[Master[i]]++;
+    }
+ }
+ 
+ MPI_Alltoallv(SlaveBufH1[GLOBAL_NO], N_DofRecvH1, rdisplH1, MPI_INT, MasterBufH1[GLOBAL_NO], N_DofSendH1, sdisplH1, MPI_INT, Comm);	
+ MPI_Alltoallv(SlaveBufH1[DOF_NO],    N_DofRecvH1, rdisplH1, MPI_INT, MasterBufH1[DOF_NO],    N_DofSendH1, sdisplH1, MPI_INT, Comm);
+ 
+ for(i=0;i<N_SendDofH1;i++){
+   temp_globalno = MasterBufH1[GLOBAL_NO][i];
+   temp_dofno    = MasterBufH1[DOF_NO][i];
+   temp          = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
+   temp          = GlobalNumbers[temp*N_LocDof + temp_dofno];
+   DofSendH1[i]  = temp; 
+ }
+ 
+ for(i=0;i<2;i++){
+   if(N_Halo1>0){
+    delete [] SlaveBufH1[i];
+    SlaveBufH1[i] = NULL;
+   }
+   if(N_SendDofH1>0){
+     delete [] MasterBufH1[i];
+     MasterBufH1[i] = NULL;
+   }
+ }
+ delete [] SlaveBufH1;    SlaveBufH1  = NULL;
+ delete [] MasterBufH1;   MasterBufH1 = NULL;
+ delete [] temp_arrH1;    temp_arrH1  = NULL;
+
+
+ MPI_Alltoallv(SlaveBufH2[GLOBAL_NO], N_DofRecvH2, rdisplH2, MPI_INT, MasterBufH2[GLOBAL_NO], N_DofSendH2, sdisplH2, MPI_INT, Comm);	
+ MPI_Alltoallv(SlaveBufH2[DOF_NO],    N_DofRecvH2, rdisplH2, MPI_INT, MasterBufH2[DOF_NO],    N_DofSendH2, sdisplH2, MPI_INT, Comm);
+
+ for(i=0;i<N_SendDofH2;i++){
+   temp_globalno = MasterBufH2[GLOBAL_NO][i];
+   temp_dofno    = MasterBufH2[DOF_NO][i];
+   temp          = GetLocalIndex(N_Cells,LocalIndex,temp_globalno);
+   temp          = GlobalNumbers[temp*N_LocDof + temp_dofno];
+   DofSendH2[i]  = temp; 
+ }
+ 
+ for(i=0;i<2;i++){
+   if(N_Halo2>0){
+    delete [] SlaveBufH2[i];
+    SlaveBufH2[i] = NULL;
+   }
+   if(N_SendDofH2>0){
+     delete [] MasterBufH2[i];
+     MasterBufH2[i] = NULL;
+   }
+ }
+ delete [] SlaveBufH2;    SlaveBufH2  = NULL;
+ delete [] MasterBufH2;   MasterBufH2 = NULL;
+ delete [] temp_arrH2;    temp_arrH2  = NULL;
+ 
+ if(N_SendDof>0)        Send_Info   = new double[N_SendDof];
+ if(N_SendDofMS>0)      Send_InfoMS = Send_Info;
+ if(N_SendDofH1>0)      Send_InfoH1 = Send_Info + N_SendDofMS;
+ if(N_SendDofH2>0)      Send_InfoH2 = Send_Info + N_SendDofMS + N_SendDofH1;
+ 
+ if(N_Slave>0)          Recv_Info   = new double[N_Slave];
+ if(N_Slave>0)          Recv_InfoMS = Recv_Info;
+ if(N_Halo1>0)          Recv_InfoH1 = Recv_Info + N_InterfaceS;
+ if(N_Halo2>0)          Recv_InfoH2 = Recv_Info + N_InterfaceS + N_Halo1;
+ 
+ end_time = MPI_Wtime();
+ if(rank == 0)
+    printf("Total Time Taken for creating the mapper = %lf",end_time-start_time);
+ 
+ //if(TDatabase::ParamDB->SC_VERBOSE>2)
+    if(rank==TDatabase::ParamDB->Par_P0)
+      printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
+  
+  if(rank == 0)
+      printf("total time taken by the ConstructDofMap_light() = %lf\n",MPI_Wtime()-global_start_time);  
+      
+ //only for checking purpose   
+ if(0){
+	  int Total_Own = 0;   
+	  for(i=0;i<N_Dof;i++)
+	  {
+	    if(Master[i]!=rank){
+	      if(!(Verify[i]=='s' || Verify[i]=='h' || Verify[i]=='H')){
+		printf("\n................1.This shudnt happen...................\n");
+		MPI_Finalize();
+		exit(0);
+	      }
+	    }
+	    else if(Master[i]==rank){
+	      Total_Own++;
+	      if(!(Verify[i]=='m' || Verify[i]=='d' || Verify[i]=='D' || Verify[i]=='i' || Verify[i]=='x')){
+		printf("\n................2.This shudnt happen...........Verify[%d]=%c........\n",i,Verify[i]);
+		MPI_Finalize();
+		exit(0);
+	      }
+	    }
+	    else{
+		printf("\n................3.This shudnt happen...................\n");
+		MPI_Finalize();
+		exit(0);
+	    } 
+	  }
+	  
+// 	  //DEBUG
+// 	  //if(size<5)
+// 	  for(aa=0;aa<size;aa++){
+// 	      if(rank==aa){
+// 		    printf("\nRank::%d\n",rank);
+// 		    printf("N_OwnDof     = %d\t Not_Own = %d\n",Total_Own,N_Dof-Total_Own);
+// 	      }
+// 	      MPI_Barrier(MPI_COMM_WORLD);
+// 	    }//verified
+ }
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+//  MPI_Finalize();   
+//  exit(0);
 }
 
 void TParFECommunicator3D::ConstructDofMap()
@@ -2016,6 +1463,7 @@ void TParFECommunicator3D::ConstructDofMap()
     for(i=0;i<size;i++)
       Verifiedbythisrank +=  N_DOFverifiedbythisrank[i];
 		
+    
     for(i=0;i<2;i++)
     {
       sendbuf[i] = new int[VerifiedDOF];
@@ -2205,8 +1653,17 @@ void TParFECommunicator3D::ConstructDofMap()
     if(TDatabase::ParamDB->SC_VERBOSE>2)
       if(rank==TDatabase::ParamDB->Par_P0)
 	printf("ConstructDofMap done !!!\n");
+      
+       //DEBUG
+ int aa;
+ for(aa=0;aa<size;aa++){
+     if(rank==aa){
+          printf("\nRank::%d\n",rank);
+	  printf("N_OwnDof     = %d\t Not_Own = %d\n",N_OwnDof,N_Slave);
+    }
+     MPI_Barrier(MPI_COMM_WORLD);
+  }//verified
 }
-
 
 void TParFECommunicator3D::SetFENeibCommunicationSteps()
 {
@@ -2413,276 +1870,140 @@ void TParFECommunicator3D::SetFENeibCommunicationSteps()
        //     exit(0);
 }
 
+void TParFECommunicator3D::CommUpdate(double *sol)
+{
+  int i, j, k, l, N,iter, rank, size;
+  int sendID, recvID, *val_send, *val_recv;
+  double t1,t2=0.0,t3,tSum=0.;
+ 
+  MPI_Status status;
+  MPI_Comm_rank(Comm,&rank);	
+  MPI_Comm_size(Comm, &size);
+  
+  t1=MPI_Wtime();
+  
+  //ConstructDofMap_light
+  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
+#ifdef _HYBRID
+    int t;
+    printf("not yet implemented\n");
+    MPI_Finalize();
+    exit(0);
+#else
+  CommUpdateMS(sol);
+  CommUpdateH1(sol);
+  CommUpdateH2(sol);
+#endif
+  }
+  else{
+    for(i=0;i<N_SendDof;i++)
+      Send_Info[i]=sol[DofSend[i]];
+    
+    for(i=0; i<Max_CommunicationSteps; i++)
+    {
+      N = N_CommunicationProcesses[i];
+      for(j=0;j<N;j++)
+      {
+	sendID = SendID_Index[i*size +j];
+	recvID = ReceiveID_Index[i*size +j];
+
+	if((rank!=sendID) && (rank!=recvID))  continue;
+	
+	if(rank==sendID && N_DofSend[recvID]>0)
+	  MPI_Send(&Send_Info[sdispl[recvID]], N_DofSend[recvID], MPI_DOUBLE,  recvID, 100, Comm);
+	
+	else if(rank==recvID && N_DofRecv[sendID]>0)
+	  MPI_Recv(&Recv_Info[rdispl[sendID]], N_DofRecv[sendID], MPI_DOUBLE,  sendID, 100, Comm, &status);
+
+	if(rank==recvID && N_DofSend[sendID])
+	  MPI_Send(&Send_Info[sdispl[sendID]], N_DofSend[sendID], MPI_DOUBLE,  sendID, 200, Comm);
+	
+	else if(rank==sendID && N_DofRecv[recvID])
+	  MPI_Recv(&Recv_Info[rdispl[recvID]], N_DofRecv[recvID], MPI_DOUBLE,  recvID, 200, Comm, &status);
+      } //for(j=0;j<N
+    } //for(i=0; i<Max_CommunicationSteps
+
+    for(i=0;i<N_Slave;i++)
+      sol[DofRecv[i]] = Recv_Info[i];
+  
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  
+  t2=MPI_Wtime(); 
+  timeC+=(t2-t1);
+}
 
 void TParFECommunicator3D::CommUpdate(double *sol, double *rhs)
 {
- double timeC;
-  int i, j, k, l, N,iter, rank, size;
- int sendID, recvID, *val_send, *val_recv;
- double t1,t2=0.0,t3,tSum=0.;
- 
- MPI_Status status;
- MPI_Comm_rank(Comm,&rank);	
- MPI_Comm_size(Comm, &size);
-  
-timeC = 0;
-
-//  if(N_SendDof>0)
-//    Send_Info = new double[N_SendDof];
-//  if(N_Slave>0)
-//    Recv_Info = new double[N_Slave];
- 
-  t1=MPI_Wtime();
-  for(i=0;i<N_SendDof;i++)
-  {
-   Send_Info[i]=sol[DofSend[i]];
-   //Send_Info[DofSendPos[i]]=sol[DofSend[i]];
-  }
-  t2=MPI_Wtime(); 
-  timeC+=(t2-t1);
- 
-  for(i=0; i<Max_CommunicationSteps; i++)
-  {
-    N= N_CommunicationProcesses[i];
-    for(j=0;j<N;j++)
-    {
-      sendID = SendID_Index[i*size +j];
-      recvID = ReceiveID_Index[i*size +j];
-
-      if((rank!=sendID) && (rank!=recvID))  continue;
-      
-      if(rank==sendID && N_DofSend[recvID]>0)
-        MPI_Send(&Send_Info[sdispl[recvID]], N_DofSend[recvID], MPI_DOUBLE,  recvID, 100, Comm);
-      
-      else if(rank==recvID && N_DofRecv[sendID]>0)
-        MPI_Recv(&Recv_Info[rdispl[sendID]], N_DofRecv[sendID], MPI_DOUBLE,  sendID, 100, Comm, &status);
-
-
-      if(rank==recvID && N_DofSend[sendID])
-         MPI_Send(&Send_Info[sdispl[sendID]], N_DofSend[sendID], MPI_DOUBLE,  sendID, 200, Comm);
-       
-      else if(rank==sendID && N_DofRecv[recvID])
-         MPI_Recv(&Recv_Info[rdispl[recvID]], N_DofRecv[recvID], MPI_DOUBLE,  recvID, 200, Comm, &status);
-     } //for(j=0;j<N
-   } //for(i=0; i<Max_CommunicationSteps
-
-  for(i=0;i<N_Slave;i++)
-  {  
-      rhs[DofRecv[i]] = Recv_Info[i];
-      sol[DofRecv[i]] = Recv_Info[i];
-  }
-  
-//   if(N_SendDof>0)
-//      delete [] Send_Info;
-//   if(N_Slave>0)
-//      delete [] Recv_Info;
-  
-   MPI_Barrier(MPI_COMM_WORLD);
- 
-  
-  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==5)
-    CommUpdateH(sol,rhs);
-  //CommUpdateAlltoAllv(sol, rhs);
+  printf("GMRES not yet verified. Check if rhs update is reqd????\n");
+  MPI_Finalize();
+  exit(0);
 }
 
-void TParFECommunicator3D::CommUpdateM(double *sol, double *rhs)
+void TParFECommunicator3D::CommUpdate_M_H1(double *sol)
 {
-  double timeC;
-  int i, j, k, l, N,iter, rank, size;
- int sendID, recvID, *val_send, *val_recv;
- double t1,t2=0.0,t3,tSum=0.;
- 
- MPI_Status status;
- MPI_Comm_rank(Comm,&rank);	
- MPI_Comm_size(Comm, &size);
-
-//  if(N_SendDof>0)
-//    Send_Info = new double[N_SendDof];
-//  if(N_Slave>0)
-//    Recv_Info = new double[N_Slave];
- 
+  double t1,t2;
   t1=MPI_Wtime();
-  for(i=0;i<N_SendDof;i++)
-  {
-   Send_Info[i]=sol[DofSend[i]];
-   //Send_Info[DofSendPos[i]]=sol[DofSend[i]];
-  }
+  
+  CommUpdateMS(sol);
+  CommUpdateH1(sol);
+  
   t2=MPI_Wtime(); 
   timeC+=(t2-t1);
- 
-  for(i=0; i<Max_CommunicationSteps; i++)
-  {
-    N= N_CommunicationProcesses[i];
-    for(j=0;j<N;j++)
-    {
-      sendID = SendID_Index[i*size +j];
-      recvID = ReceiveID_Index[i*size +j];
-
-      if((rank!=sendID) && (rank!=recvID))  continue;
-      
-      if(rank==sendID && N_DofSend[recvID]>0)
-        MPI_Send(&Send_Info[sdispl[recvID]], N_DofSend[recvID], MPI_DOUBLE,  recvID, 100, Comm);
-      
-      else if(rank==recvID && N_DofRecv[sendID]>0)
-        MPI_Recv(&Recv_Info[rdispl[sendID]], N_DofRecv[sendID], MPI_DOUBLE,  sendID, 100, Comm, &status);
-
-
-      if(rank==recvID && N_DofSend[sendID])
-         MPI_Send(&Send_Info[sdispl[sendID]], N_DofSend[sendID], MPI_DOUBLE,  sendID, 200, Comm);
-       
-      else if(rank==sendID && N_DofRecv[recvID])
-         MPI_Recv(&Recv_Info[rdispl[recvID]], N_DofRecv[recvID], MPI_DOUBLE,  recvID, 200, Comm, &status);
-     } //for(j=0;j<N
-   } //for(i=0; i<Max_CommunicationSteps
-
-  for(i=0;i<N_Slave;i++)
-  {  
-      rhs[DofRecv[i]] = Recv_Info[i];
-      sol[DofRecv[i]] = Recv_Info[i];
-  }
-  
-//   if(N_SendDof>0)
-//      delete [] Send_Info;
-//   if(N_Slave>0)
-//      delete [] Recv_Info;
-  
-   MPI_Barrier(MPI_COMM_WORLD);
- 
-   
-  //CommUpdateAlltoAllv(sol, rhs);
 }
 
-void TParFECommunicator3D::CommUpdateH(double *sol, double *rhs)
+void TParFECommunicator3D::CommUpdateH1(double *sol)
 {
-    double timeC;
-  int i, j, k, l, N,iter, rank, size;
- int sendID, recvID, *val_send, *val_recv;
- double t1,t2=0.0,t3,tSum=0.;
- 
- MPI_Status status;
- MPI_Comm_rank(Comm,&rank);	
- MPI_Comm_size(Comm, &size);
- 
-//  if(N_SendDofH>0)
-//    Send_Info = new double[N_SendDofH];
-//  if(N_Halo>0)
-//    Recv_Info = new double[N_Halo];
- 
+  int i;
+  double t1,t2;
   t1=MPI_Wtime();
-  for(i=0;i<N_SendDofH;i++)
-  {
-   Send_InfoH[i]=sol[DofSendH[i]];
-   //Send_InfoH[DofSendPos[i]]=sol[DofSend[i]];
-  }
+  
+  for(i=0;i<N_SendDofH1;i++)
+      Send_InfoH1[i]=sol[DofSendH1[i]];
+
+  MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
+  
+  for(i=0;i<N_Halo1;i++)  
+    sol[DofRecvH1[i]] = Recv_InfoH1[i];
+  
   t2=MPI_Wtime(); 
   timeC+=(t2-t1);
- 
-  for(i=0; i<Max_CommunicationSteps; i++)
-  {
-    N= N_CommunicationProcesses[i];
-    for(j=0;j<N;j++)
-    {
-      sendID = SendID_Index[i*size +j];
-      recvID = ReceiveID_Index[i*size +j];
-
-      if((rank!=sendID) && (rank!=recvID))  continue;
-      
-      if(rank==sendID && N_DofSendH[recvID]>0)
-        MPI_Send(&Send_InfoH[sdisplH[recvID]], N_DofSendH[recvID], MPI_DOUBLE,  recvID, 100, Comm);
-      
-      else if(rank==recvID && N_DofRecvH[sendID]>0)
-        MPI_Recv(&Recv_InfoH[rdisplH[sendID]], N_DofRecvH[sendID], MPI_DOUBLE,  sendID, 100, Comm, &status);
-
-
-      if(rank==recvID && N_DofSendH[sendID])
-         MPI_Send(&Send_InfoH[sdisplH[sendID]], N_DofSendH[sendID], MPI_DOUBLE,  sendID, 200, Comm);
-       
-      else if(rank==sendID && N_DofRecvH[recvID])
-         MPI_Recv(&Recv_InfoH[rdisplH[recvID]], N_DofRecvH[recvID], MPI_DOUBLE,  recvID, 200, Comm, &status);
-     } //for(j=0;j<N
-   } //for(i=0; i<Max_CommunicationSteps
-
-   
-  for(i=0;i<N_Halo;i++)
-  {  
-      rhs[DofRecvH[i]] = Recv_InfoH[i];
-      sol[DofRecvH[i]] = Recv_InfoH[i];
-  }
-   
-    
-//   if(N_SendDofH>0)
-//      delete [] Send_Info;
-//   if(N_Halo>0)
-//      delete [] Recv_Info;
 }
 
-void TParFECommunicator3D::CommUpdate(double *sol)
+void TParFECommunicator3D::CommUpdateH2(double *sol)
 {
- int i, j, k, l, N,iter, rank, size;
- int sendID, recvID, *val_send, *val_recv;
- double t1,t2=0.0,t3,tSum=0.;
-  double timeC; 
- MPI_Status status;
- MPI_Comm_rank(Comm,&rank);	
- MPI_Comm_size(Comm, &size);
-  
-
-//  if(N_SendDof>0)
-//    Send_Info = new double[N_SendDof];
-//  if(N_Slave>0)
-//    Recv_Info = new double[N_Slave];
- 
+  int i;
+  double t1,t2;
   t1=MPI_Wtime();
-  for(i=0;i<N_SendDof;i++)
-  {
-   Send_Info[i]=sol[DofSend[i]];
-   //Send_Info[DofSendPos[i]]=sol[DofSend[i]];
-  }
+  
+  for(i=0;i<N_SendDofH2;i++)
+      Send_InfoH2[i]=sol[DofSendH2[i]];
+  
+  MPI_Alltoallv(Send_InfoH2,N_DofSendH2,sdisplH2,MPI_DOUBLE,Recv_InfoH2,N_DofRecvH2,rdisplH2,MPI_DOUBLE,Comm);
+  
+  for(i=0;i<N_Halo2;i++)  
+    sol[DofRecvH2[i]] = Recv_InfoH2[i];
+  
   t2=MPI_Wtime(); 
   timeC+=(t2-t1);
- 
-  for(i=0; i<Max_CommunicationSteps; i++)
-  {
-    N= N_CommunicationProcesses[i];
-    for(j=0;j<N;j++)
-    {
-      sendID = SendID_Index[i*size +j];
-      recvID = ReceiveID_Index[i*size +j];
+}
 
-      if((rank!=sendID) && (rank!=recvID))  continue;
-      
-      if(rank==sendID && N_DofSend[recvID]>0)
-        MPI_Send(&Send_Info[sdispl[recvID]], N_DofSend[recvID], MPI_DOUBLE,  recvID, 100, Comm);
-      
-      else if(rank==recvID && N_DofRecv[sendID]>0)
-        MPI_Recv(&Recv_Info[rdispl[sendID]], N_DofRecv[sendID], MPI_DOUBLE,  sendID, 100, Comm, &status);
-
-
-      if(rank==recvID && N_DofSend[sendID])
-         MPI_Send(&Send_Info[sdispl[sendID]], N_DofSend[sendID], MPI_DOUBLE,  sendID, 200, Comm);
-       
-      else if(rank==sendID && N_DofRecv[recvID])
-         MPI_Recv(&Recv_Info[rdispl[recvID]], N_DofRecv[recvID], MPI_DOUBLE,  recvID, 200, Comm, &status);
-     } //for(j=0;j<N
-   } //for(i=0; i<Max_CommunicationSteps
-
-  for(i=0;i<N_Slave;i++)
-  {  
-     // rhs[DofRecv[i]] = Recv_Info[i];
-      sol[DofRecv[i]] = Recv_Info[i];
-  }
+void TParFECommunicator3D::CommUpdateMS(double *sol)
+{
+  int i;
+  double t1,t2;
+  t1=MPI_Wtime();
   
-//   if(N_SendDof>0)
-//      delete [] Send_Info;
-//   if(N_Slave>0)
-//      delete [] Recv_Info;
+  for(i=0;i<N_SendDofMS;i++)
+      Send_InfoMS[i]=sol[DofSendMS[i]];
   
-   MPI_Barrier(MPI_COMM_WORLD);
- 
+  MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
   
-//   if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==5)
-//     CommUpdateH(sol,rhs);
-  //CommUpdateAlltoAllv(sol, rhs);
+  for(i=0;i<N_InterfaceS;i++)  
+    sol[DofRecvMS[i]] = Recv_InfoMS[i];
+  
+  t2=MPI_Wtime(); 
+  timeC+=(t2-t1);
 }
 
 void TParFECommunicator3D::CommUpdateAlltoAllv(double *sol, double *rhs)
@@ -2694,16 +2015,40 @@ void TParFECommunicator3D::CommUpdateAlltoAllv(double *sol, double *rhs)
 //   Send_Info = new double[N_SendDof];
 //   Recv_Info = new double[N_Slave];
 
-  for(i=0;i<N_SendDof;i++)
+//   for(i=0;i<N_SendDof;i++)
+//   {
+//       Send_Info[i]=sol[DofSend[i]];
+//   }
+//   MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
+//   
+//   for(i=0;i<N_Slave;i++)
+//   {  
+//     rhs[DofRecv[i]] = Recv_Info[i];
+//     sol[DofRecv[i]] = Recv_Info[i];
+//   }
+//   
+  for(i=0;i<N_SendDofH1;i++)
   {
-      Send_Info[i]=sol[DofSend[i]];
+      Send_InfoH1[i]=sol[DofSendH1[i]];
   }
-  MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
+  MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
   
-  for(i=0;i<N_Slave;i++)
+  for(i=0;i<N_Halo1;i++)
   {  
-    rhs[DofRecv[i]] = Recv_Info[i];
-    sol[DofRecv[i]] = Recv_Info[i];
+    //rhs[DofRecvH1[i]] = Recv_InfoH1[i];
+    sol[DofRecvH1[i]] = Recv_InfoH1[i];
+  }
+  
+  for(i=0;i<N_SendDofH2;i++)
+  {
+      Send_InfoH2[i]=sol[DofSendH2[i]];
+  }
+  MPI_Alltoallv(Send_InfoH2,N_DofSendH2,sdisplH2,MPI_DOUBLE,Recv_InfoH2,N_DofRecvH2,rdisplH2,MPI_DOUBLE,Comm);
+  
+  for(i=0;i<N_Halo2;i++)
+  {  
+    //rhs[DofRecvH2[i]] = Recv_InfoH2[i];
+    sol[DofRecvH2[i]] = Recv_InfoH2[i];
   }
   
 //   delete [] Send_Info;
@@ -2728,48 +2073,12 @@ void TParFECommunicator3D::CommUpdateAlltoAllv(double *sol, double *rhs)
   delete [] Recv_Info;*/
 }
 
-void TParFECommunicator3D::SetSlaveDofRows(int *Row,int *KCol,double *Values,double *rhs)
-{
-  int i, j,begin, end;
-  
-  for(i=0;i<N_Slave;i++)
-    {
-      begin=Row[DofRecv[i]];
-      end=Row[DofRecv[i]+1];
-      for(j=begin;j<end;j++)
-      {
-         if(KCol[j] == DofRecv[i])
-	   Values[j] = 1;
-	 else
-	   Values[j] = 0;
-      }
-     // rhs[DofRecv[i]] = 0;
-    } 
-  //  CommUpdate(rhs);
-    /*
-    for(i=0;i<N_Halo;i++)
-    {
-      begin=Row[DofRecvH[i]];
-      end=Row[DofRecvH[i]+1];
-      for(j=begin;j<end;j++)
-      {
-         if(KCol[j] == DofRecvH[i])
-	   Values[j] = 1;
-	 else
-	   Values[j] = 0;
-      }
-      rhs[DofRecvH[i]] = 0;
-    }*/
-}
-
 void TParFECommunicator3D::CommUpdateReduce(double *sol,double *rhs)
 {
   int i,j,rank,size,sendID, recvID,N;
   MPI_Status status;
   MPI_Comm_rank(Comm,&rank);		
   MPI_Comm_size(Comm, &size);
-//  Send_Info = new double[N_SendDof];
-//  Recv_Info = new double[N_Slave];
   
   for(i=0;i<N_Slave;i++)
   {
@@ -2812,7 +2121,6 @@ void TParFECommunicator3D::CommUpdateReduce(double *sol,double *rhs)
   for(i=0;i<N_SendDof;i++)
   {  
       rhs[DofSend[i]] += Send_Info[i];
-      sol[DofSend[i]] += Send_Info[i];
   }
 
 /** MASTER HAS FINAL VALUE **/  
@@ -2857,1928 +2165,39 @@ void TParFECommunicator3D::CommUpdateReduce(double *sol,double *rhs)
   for(i=0;i<N_Slave;i++)
   {  
       rhs[DofRecv[i]] = Recv_Info[i];
-      sol[DofRecv[i]] = Recv_Info[i];
   }
   
-//   delete [] Send_Info;
-//   delete [] Recv_Info;  
 }
 
-
-/** Scheduling for communication between processor based on used FESpace */
-void TParFECommunicator3D::ScheduleParFEComm3D()
+void TParFECommunicator3D::CommUpdateReduceMS(double *rhs)
 {
- int rank, size;
- int i, j, k, l, m, S_ID, R_ID, N_U, M, N, P, MaxNeibs_All, N_Entries;
- int *pos, *N_DofNeibs_Array, *DofNeibs_Array, N_Update;
-
- bool UPDATE;
-
-  MPI_Comm_rank(Comm, &rank);
+  double t1,t2;
+  t1=MPI_Wtime();
+  int i,j,rank,size;
+  MPI_Status status;
+  MPI_Comm_rank(Comm,&rank);		
   MPI_Comm_size(Comm, &size);
-
-  // first find the N_Neibs of each procesor and its neib ranks
-  N_U = FESpace->GetN_DegreesOfFreedom();
-
-  if(rank==0)
-   {
-    pos = new int[size]; 
-    N_DofNeibs_Array = new int[size];
-   }
-
-  MPI_Allreduce(&N_Neibs, &MaxNeibs_All, 1, MPI_INT, MPI_MAX, Comm); 
-
-  if(rank==0)
-   {
-    for(i=0;i<size;i++)
-     pos[i] = i*MaxNeibs_All;
-
-    DofNeibs_Array= new int[size*MaxNeibs_All];
-   }
-
-   MPI_Gather(&N_Neibs, 1, MPI_INT, N_DofNeibs_Array, 1, MPI_INT, 0, Comm);
-   MPI_Gatherv(NeibsRank, N_Neibs, MPI_INT, DofNeibs_Array, N_DofNeibs_Array, pos, MPI_INT, 0, Comm);
-
-   if(rank==0)
-    {
-     int step, *Entries, *ColInd, *RowPtr, *Collection, MaxPossibleSteps;
-
-     N_Entries = 0;
-     for(i=0;i<size;i++)
-      N_Entries +=N_DofNeibs_Array[i];
-
-     // adjacency matrix memory allocation
-     Entries = new int[N_Entries];
-     ColInd  = new int[N_Entries];
-     RowPtr = new int[size+1];
-
-     RowPtr[0] = 0;
-     m = 0;
-
-     for(i=0;i<size;i++)
-      {
-       N = N_DofNeibs_Array[i];
-       RowPtr[i+1] = RowPtr[i] + N;
-       for(j=0;j<N;j++)
-        {
-         ColInd[m] = DofNeibs_Array[i*MaxNeibs_All + j];
-         // assmeble the matrix
-         Entries[m] =-1;
-         m++;
-        }
-      }// for(i=0;i<size;
-
-//     // print adjacency matrix
-//     for(i=0;i<size;i++)
-//      for(j=RowPtr[i];j<RowPtr[i+1];j++)
-//        printf("a( %d , %d )=  %d \n",i, ColInd[j], Entries[j]);
-
-    // find number of steps to communicate between neibs (edge coloring alogrithm)
-     Collection = new int[size];
-     Max_CommunicationSteps = -1;
-
-     N_Update = 0;
-     for(i=0;i<size;i++)
-      for(j=RowPtr[i];j<RowPtr[i+1];j++)
-       if(i<ColInd[j])
-        N_Update++;
-
-//         printf("a( %d , %d )=  %d \n",i, ColInd[j], Entries[j]); 
-
-     //if max. order of any vertex is N, the max. no. diff color is N+1
-     MaxPossibleSteps = 2*MaxNeibs_All; // excluding own rank
-
-     // printf("Possible steps %d N_Update %d\n", MaxPossibleSteps, N_Update);
-
-     for(step=0;step<MaxPossibleSteps;step++)
-      {
-       m=0;
-       for(k=0;k<size;k++)
-        {
-         UPDATE = TRUE;
-         for(l=0;l<m;l++)
-           if(Collection[l] == k)
-            {
-             UPDATE = FALSE;
-             break;
-            }
-
-         if(UPDATE)
-          {
-           Collection[m] = k;
-           m++;
-          }
-         else
-          { continue; }
- 
-         for(l=RowPtr[k];l<RowPtr[k+1];l++)
-          {
-           // only upper tirangular martix is enough (due to symmetry)
-           if( ColInd[l]<k) continue;
-
-           UPDATE = TRUE;
-           for(P=0;P<m;P++)
-            if(Collection[P] == ColInd[l])
-             {
-              // ColInd[l] is already in the collection
-              UPDATE = FALSE;
-              break;
-             } 
-
-            if(UPDATE)
-             {
-              if(Entries[l]<0)
-               {
-                Entries[l] = step;
-                if(Max_CommunicationSteps<step+1) Max_CommunicationSteps=step+1;
-                Collection[m] = ColInd[l];
-                m++;
-
-                N_Update--;
-//                 printf("a( %d , %d )=  %d \n",k, ColInd[l], Entries[l]);
-                break;
-               }
-             }
-          } //  for(l=RowPtr[k];
-        } // for(k=0;
-
-        if(N_Update==0) break;
-       } //  for(step=0;step<
-
-  if(Max_CommunicationSteps<0)
-     {Max_CommunicationSteps=0;}
-
-//   printf("Possible steps %d N_Update %d\n", step, N_Update);
-  printf("Total number of steps needed to communicate is %d\n",Max_CommunicationSteps);
-
-    // print adjacency matrix
-    for(i=0;i<size;i++)
-     for(j=RowPtr[i];j<RowPtr[i+1];j++)
-      if(i<ColInd[j] && i==18)
-       printf("a( %d , %d )=  %d \n",i, ColInd[j], Entries[j]);
-
-
-  if(Max_CommunicationSteps>0)
-   {
-    N_ActiveCommuPross = new int[Max_CommunicationSteps];
-    SendID_Index= new int[Max_CommunicationSteps*size];
-    ReceiveID_Index = new int[Max_CommunicationSteps*size];
-
-    for(j=0;j<Max_CommunicationSteps;j++)
-     N_ActiveCommuPross[j] =0;
-
-    for(i=0;i<Max_CommunicationSteps*size;i++)
-     {
-      SendID_Index[i] = -1;
-      ReceiveID_Index[i] = -1;
-     }
-
-    for(i=0;i<size;i++)
-     for(j=RowPtr[i];j<RowPtr[i+1];j++)
-      {
-       if(i<ColInd[j])
-        {
-         if( Entries[j]<0)
-          {
-           printf("Error in finding DOF communication steps (%d, %d) : %d\n", i, ColInd[j], Entries[j]);
-           MPI_Abort(MPI_COMM_WORLD,  0);
-          }
-         k =  Entries[j];
-         SendID_Index[k*size + N_ActiveCommuPross[k]] = i;
-         ReceiveID_Index[k*size + N_ActiveCommuPross[k]] =  ColInd[j];
-         N_ActiveCommuPross[k]++;
-        }
-       }
-
-     for(i=0;i<Max_CommunicationSteps;i++)
-      {
-       printf("Step %d:\n",i);
-       N= N_ActiveCommuPross[i];
-       for(j=0;j<N;j++)
-        printf("Send from process %d to %d -------- and onto\n",
-                   SendID_Index[i*size +j], ReceiveID_Index[i*size +j]);
-       printf("\n");
-      }
-     } // if(Max_CommunicationSteps>0)
-
-     delete [] Entries;
-     delete [] ColInd;
-     delete [] RowPtr; 
-     delete [] Collection;
-     delete [] pos;
-     delete [] N_DofNeibs_Array;
-     delete [] DofNeibs_Array;
-    }//if(rank==0)
-
-
-  MPI_Bcast(&Max_CommunicationSteps, 1, MPI_INT, 0, Comm);
-     
-   if(rank!=0 && Max_CommunicationSteps>0)
-    {
-     N_ActiveCommuPross = new int[Max_CommunicationSteps];
-     SendID_Index= new int[Max_CommunicationSteps*size];
-     ReceiveID_Index = new int[Max_CommunicationSteps*size];
-    }
-
-  MPI_Bcast(N_ActiveCommuPross, Max_CommunicationSteps, MPI_INT, 0, Comm);
-  MPI_Bcast(SendID_Index, Max_CommunicationSteps*size, MPI_INT, 0, Comm);
-  MPI_Bcast(ReceiveID_Index, Max_CommunicationSteps*size, MPI_INT,  0, Comm);
-
-  N=0;
-  if(Max_CommunicationSteps>0 && N_Neibs>0)
-   {
-    delete [] NeibsRank;
-    NeibsRank = new int[N_Neibs];
-
-    for(i=0;i<Max_CommunicationSteps;i++)
-     {
-      M = N_ActiveCommuPross[i];
-
-      for(j=0;j<M;j++)
-       {
-        R_ID = ReceiveID_Index[i*size +j];
-        S_ID = SendID_Index[i*size +j];
-
-        UPDATE = FALSE;
-         if( (rank==S_ID || rank==R_ID) && S_ID!=R_ID  )
-           UPDATE = TRUE;
-
-        if(UPDATE)
-         {
-
-          if(S_ID!=rank)
-           { NeibsRank[N]=S_ID; }
-          else
-           { NeibsRank[N]=R_ID; }
-          N++;
-         } // if(UPDATE)
-       } //  for(j=0;j<M;j++)
-      } // for(i=0;i<Max_Communicati
-   } // if(rank!=0)
-
-
-  if(N_Neibs!=0 && N_Neibs!=N+1)
-   { 
-    printf("Rank %d Error in finding N_Neibs  %d\n",rank, N_Neibs);
-    MPI_Abort(MPI_COMM_WORLD,  0);
-   }
-
-  N_Neibs = N;
-
-  if(N_Neibs)
-   {
-    IndexOfNeibRank = new int[size];
-
-    for(i=0; i<size; i++)
-     IndexOfNeibRank[i] = -1;
-
-    for(i=0; i<N_Neibs; i++)
-     IndexOfNeibRank[NeibsRank[i]] = i;
-   }
-
- 
-     
-     
-   // only for testing
-   // check the N_DepDofmapping
-   MPI_Status status;
-   for(i=0;i<Max_CommunicationSteps;i++)
-   {
-    N = N_ActiveCommuPross[i];
-
-//          if(rank==size-1)
-//         for(j=0;j<N;j++)
-//            printf("Send from process %d to %d -------- and onto\n",
-//                    SendID_Index[i*size +j], ReceiveID_Index[i*size +j]); 
-//     
-//           MPI_Finalize();
-//      exit(0);  
-    
-    for(j=0;j<N;j++)
-     {
-      S_ID = SendID_Index[i*size +j];
-      R_ID = ReceiveID_Index[i*size +j];
-
-      M=0;
-      P=0;
-      if(rank==S_ID)
-       {
-        for(k=0; k<N_U; k++)
-         for(l=0; l<N_DofRankIndex[k]; l++)
-          if(DofRankIndex[k*MaxSubDomainPerDof + l]==R_ID)
-           M++;
-        MPI_Send(&M, 1, MPI_INT,  R_ID, 100, Comm);
-       }
-     else if(rank==R_ID)
-       {
-        for(k=0; k<N_U; k++)
-         for(l=0; l<N_DofRankIndex[k]; l++)
-          if(DofRankIndex[k*MaxSubDomainPerDof + l]==S_ID)
-           M++;
-
-        MPI_Recv(&P, 1, MPI_INT,  S_ID, 100, Comm, &status);
-
-        if(M !=P)
-         {
-          printf("Error in dept. Dof Mapping, check DofRankIndex in ScheduleParFEComm3D !!!\n");
-          printf("Rank %d NeibRank %d P %d M %d!!!\n", rank, S_ID, P, M);
-          MPI_Abort(Comm, 0);
-         }
-       }
-     } // for(j=0;j<N;j++)
-    //if(rank==TDatabase::ParamDB->Par_P5)
-      //printf("\n");
-    } //for(i=0;i<Max_CommunicationSteps;i++)
-
-  if(TDatabase::ParamDB->SC_VERBOSE>4)
-  if(rank==TDatabase::ParamDB->Par_P0)
-   printf("ScheduleParFEComm3D done !!!\n");
-   //   MPI_Finalize();
-   // exit(0);
-} // ScheduleParFEComm3D
-
-
-/** Mapping of DOFs between subdomains */
-void TParFECommunicator3D::MapDofFromNeib3D()
-{
- int i, ii, j, jj, k, kk, l, m, n, P, rank, size, N_Cells, M, N;
- int *GlobalNumbers, *BeginIndex, *DOF, ID, N_Joints;
- int *JointDof, Neib_ID, N_JointDOF, *N_SubDJointsOfNeib;
- int Max_N_SubDJointsOfNeib, MaxN_JointDofs, MapType, joint_No;
- int **SendBuf, **RecvBuf, **NeibLocalDof, *MapPair, N1, N2;
- int N_Edges, N_EdgeDOF;
- int N_CrossEdgeNeibs, *CrossEdgeNeibsRank, *CrossEdgeNeibsGlobalNo;
- int *CrossEdgeNeibsLocalEdgeNo, *CrossEdgeNeibsMaptype, *EdgeDof;
- int *N_SubDEdgesOfNeib, Max_N_SubDEdgesOfNeib, **EdgeSendBuf, **NeibEdgeLocalDof;
- int **EdgeRecvBuf, **RecvEdgeLocalDof, *N_CrossVertNeibs, *CrossVertNeibs;
- int N_VertInCell, Max_N_CrossVertNeibs, N_CrossVertNeibCells, *CrossVertNeibCellRank;
- int *CrossVertNeibCellGlobalNo, *CrossVertNeibCellLocVertNo;
- int VertDof;
-
- bool UPDATE;
-
- TCollection *Coll;
- TBaseCell *cell, *NeibCell;
- TVertex *Vert;
- TJoint *Joint;
- FE3D FeId;
- TFEDesc3D *FeDesc;
- TEdge *edge;
- TFE3D *FE;
- FEDesc3D FEDesc0, FEDesc1;
- Refinements Ref0, Ref1;
- TFE3DMapper *Mapper;
-
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  BeginIndex = FESpace->GetBeginIndex();
-  GlobalNumbers = FESpace->GetGlobalNumbers();
-  MaxN_JointDofs = 0;
-  Max_N_SubDJointsOfNeib=0;
-  Max_N_SubDEdgesOfNeib=0;
-  Max_N_CrossVertNeibs=0;
-
-//   MasterDofCounter = new int[size];
-
-//====================================================================
-/** mapping of SubDomain Joint Dof start */
-//====================================================================
-
-  if(N_Neibs)
-   {
-    N_SubDJointsOfNeib = new int[N_Neibs];
-    memset(N_SubDJointsOfNeib, 0, N_Neibs*SizeOfInt);
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-     N_Joints = cell->GetN_Joints();
-     FeId = FESpace->GetFE3D(i, cell);
-     FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-     N_JointDOF = FeDesc->GetN_JointDOF();
-
-     // Discspace space
-     if(N_JointDOF<=0)
-      break; 
-
-      for(j=0; j<N_Joints; j++)
-       {
-        Joint = cell->GetJoint(j);
-        if(MaxN_JointDofs < FeDesc->GetN_JointDOF())
-         MaxN_JointDofs = FeDesc->GetN_JointDOF();
-
-         // put neib joint subdomain ID in all DOF in the joint
-        if(Joint->GetType() == SubDomainJoint)
-         {
-          Neib_ID = ((TSubDomainJoint *)Joint)->GetNeibRank();
-
-          k=0;
-          while(Neib_ID != NeibsRank[k]) k++;
-
-          N_SubDJointsOfNeib[k]++;
-         }// if(Joint->GetType(
-       } // for(j=0; j<N_Joint
-     } // for(ii=0; ii<N_DependentCells; ii++)
-
-    // find max. of all N_SubDJointsOfNeib
-    for(k=0; k<N_Neibs; k++)
-     if(Max_N_SubDJointsOfNeib < N_SubDJointsOfNeib[k])
-       Max_N_SubDJointsOfNeib = N_SubDJointsOfNeib[k];
-
- if(Max_N_SubDJointsOfNeib)
-  {
-   SendBuf = new int*[4];
-   RecvBuf = new int*[4];
-
-   for(j=0; j<4; j++)
-    {
-     SendBuf[j] = new int[N_Neibs*Max_N_SubDJointsOfNeib];
-     RecvBuf[j] = new int[N_Neibs*Max_N_SubDJointsOfNeib];
-    }
-
-   memset(N_SubDJointsOfNeib, 0, N_Neibs*SizeOfInt);
-
-   // first find SubDomain Joint neibs RefDesc and FeDesc
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_Joints = cell->GetN_Joints();
-      FeId = FESpace->GetFE3D(i, cell);
-      FE = TFEDatabase3D::GetFE3D(FeId);
-      FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-      N_JointDOF = FeDesc->GetN_JointDOF();
-
-      // Discspace space
-       if(N_JointDOF<=0)
-        break;  
-
-      for(j=0; j<N_Joints; j++)
-       {
-        Joint = cell->GetJoint(j);
-
-         // put neib joint subdomain ID in all DOF in the joint
-        if(Joint->GetType() ==  SubDomainJoint)
-         {
-          Neib_ID = ((TSubDomainJoint *)Joint)->GetNeibRank();
-          N =((TSubDomainJoint *)Joint)->GetNeibLocalJointNo();
-          NeibCell = Joint->GetNeighbour(cell);
-
-           k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-           M = k*Max_N_SubDJointsOfNeib + N_SubDJointsOfNeib[k];
-
-           SendBuf[0][M] = NeibCell->GetGlobalCellNo(); // SubDJntNeibGlobalNo
-           SendBuf[1][M] = N;                            //  SubDJntNeibLocalEdgeNo
-           SendBuf[2][M] = (int)(FE->GetFEDesc3D_ID()); //  SubDJntOwnFEDesc
-           SendBuf[3][M] = (int)(cell->GetRefDesc()->GetType()); //  SubDJntOwnRefDesc
-
-           N_SubDJointsOfNeib[k]++;
-
-         }// if(Joint->GetType(
-       } // for(j=0; j<N_Joint
-     } // for(ii=0; ii<N_DependentCells; ii++)
-    } // if(Max_N_SubDJointsOfNeib)
-   } // if(N_Neibs)
-
-    // communicate between neibs 
-    FECommunicateNeib(SendBuf, Max_N_SubDJointsOfNeib, N_SubDJointsOfNeib, RecvBuf,  N_SubDJointsOfNeib, 4);
-
-//     check the neib subdomain cells are using same FEDisc
-   if(Max_N_SubDJointsOfNeib)
-    for(i=0; i<N_Neibs; i++)
-     {
-      N = N_SubDJointsOfNeib[i];
-      for(j=0; j<N; j++)
-       {
-        M = i*Max_N_SubDJointsOfNeib + j;
-        ii= RecvBuf[0][M];
-
-        k = GetLocalCellIndex(N_DependentCells, DeptCellGlobalNo, DependentCellIndex, ii);
-        cell =  Coll->GetCell(k);
-
-        if(ii != cell->GetGlobalCellNo())
-         {
-           printf("Error  check MapDofFromNeib3D   \n" );
-           printf("Neib Rank %d  CellIndex %d ii, Global No %d   %d \n", NeibsRank[i], k, ii,  Coll->GetCell(k)->GetGlobalCellNo());
-           MPI_Finalize();
-           exit(0);
-         }
-
-        DOF = GlobalNumbers + BeginIndex[k];
-        N_Joints = cell->GetN_Joints();
-        FeId = FESpace->GetFE3D(k, cell);
-        FE = TFEDatabase3D::GetFE3D(FeId);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        Joint = cell->GetJoint(RecvBuf[1][M]);
-
-        if(Joint->GetType() !=  SubDomainJoint)
-         {
-          printf("Error  check MapDofFromNeib3D   \n" );
-          printf("Neib Rank %d  CellIndex %d SubDomainJoint  %d \n", NeibsRank[i], k, SubDomainJoint);
-          MPI_Finalize();
-          exit(0);
-         }
-
-        FEDesc0 = FE->GetFEDesc3D_ID();
-        FEDesc1 = (FEDesc3D)RecvBuf[2][M];
-        if(FEDesc0 !=  FEDesc1)
-         {
-          printf("Error  heterogeneous FE discretisation not yet allowed btween subdomains \n" );
-          printf("Rank %d FEDesc0 %d  FEDesc1 %d \n", rank, FEDesc0, FEDesc1);
-          MPI_Finalize();
-          exit(0);
-         }
-
-        Ref0 = cell->GetRefDesc()->GetType();
-        Ref1 = (Refinements)RecvBuf[3][M];
-
-        if(Ref0 !=  Ref1)
-         {
-          printf("Error  NonMatching refinments are not yet allowed btween subdomains \n" );
-          printf("Rank %d Ref0 %d  Ref1 %d \n", rank, Ref0, Ref1);
-          MPI_Finalize();
-          exit(0);
-         }
-       } // for(j=0; j<N;
-     } // for(i=0; i<N_Nei
- 
-//   if(N_Neibs>0)
-//    MasterOfSubDomainDofs = new int[N_JointDOF];
-
-   //mapping starts, first mapping between SubDomain Joints
-  if(N_Neibs>0 &&  Max_N_SubDJointsOfNeib>0)
-   {
-    for(j=0; j<4; j++)
-     delete []  SendBuf[j];
-
-    delete [] SendBuf;
-
-   SendBuf = new int*[1];
-   NeibLocalDof = new int*[1];
-   SendBuf[0] = new int[N_Neibs*Max_N_SubDJointsOfNeib*N_JointDOF];
-   NeibLocalDof[0] = new int[N_Neibs*Max_N_SubDJointsOfNeib*N_JointDOF];
-
-   memset(N_SubDJointsOfNeib, 0, N_Neibs*SizeOfInt);
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-      DOF = GlobalNumbers + BeginIndex[i];
-      N_Joints = cell->GetN_Joints();
-      FeId = FESpace->GetFE3D(i, cell);
-      FE = TFEDatabase3D::GetFE3D(FeId);
-      FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-      FEDesc0 = FE->GetFEDesc3D_ID();
-      Mapper=TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc0);
-
-      if(FeDesc->GetN_JointDOF() !=  N_JointDOF)
-       {
-        printf("Error  N_JointDOF should be equal in all cells   \n" );
-        printf("Rank %d  N_JointDOF %d N_JointDOF  %d \n", rank, FeDesc->GetN_JointDOF(), N_JointDOF);
-        MPI_Finalize();
-        exit(0);
-       }
-
-      for(j=0; j<N_Joints; j++)
-       {
-        Joint = cell->GetJoint(j);
-
-        if(Joint->GetType() ==  SubDomainJoint)
-         {
-          Neib_ID = ((TSubDomainJoint *)Joint)->GetNeibRank();
-          k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-          M = k*Max_N_SubDJointsOfNeib + N_SubDJointsOfNeib[k];
-
-          JointDof = FeDesc->GetJointDOF(j);
-          MapType = Joint->GetMapType();
-          MapPair = Mapper->GetPairs(MapType);
-
-          if(Mapper->GetN_Pairs() !=  N_JointDOF)
-           {
-            printf("Error  N_JointDOF should be equal N_Pairs   \n" );
-            printf("Rank %d  N_JointDOF %d N_Pairs  %d \n", rank, N_JointDOF, Mapper->GetN_Pairs());
-            MPI_Finalize();
-            exit(0);
-           }
-
-          N1 = M*N_JointDOF;
-          for(jj=0; jj<N_JointDOF; jj++)
-           {
-            N2 = MapPair[2*jj + 1]-N_JointDOF;
-            SendBuf[0][N1 + N2] =  DOF[ JointDof[jj] ];
-           } // for(jj=0; jj<N_JointDOF; jj
-
-          N_SubDJointsOfNeib[k]++;
-         }// if(Joint->GetType(
-       } // for(j=0; j<N_Joint
-     } // for(ii=0; ii<N_DependentCells; ii++)
-   } //if(N_Neibs)
- 
-
-//    N2=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_Neibs; i++)
-//      {
-//       N = N_SubDJointsOfNeib[i];
-//       if(NeibsRank[i]==TDatabase::ParamDB->Par_P5)
-//        for(j=0; j<N; j++)
-//        {
-//         M = i*Max_N_SubDJointsOfNeib + j;
-//         N1 = M*N_JointDOF;
-//         for(jj=0; jj<N_JointDOF; jj++)
-//          printf("M %d, Neib Rank %d OwnDof %d \n", N2++, NeibsRank[i],  SendBuf[0][N1 + jj]  );
-//        } // for(j=0; j<N_Joints; 
-//      }
-// 
-//  MPI_Finalize();
-//  exit(0);
-
-    // communicate JointDof between neibs
-    for(i=0; i<N_Neibs; i++)
-     N_SubDJointsOfNeib[i] *=N_JointDOF;
-    FECommunicateNeib(SendBuf, Max_N_SubDJointsOfNeib*N_JointDOF, N_SubDJointsOfNeib, NeibLocalDof, N_SubDJointsOfNeib, 1);
-
-    for(i=0; i<N_Neibs; i++)
-     N_SubDJointsOfNeib[i] /=N_JointDOF;
-
-    if(N_Neibs>0 && Max_N_SubDJointsOfNeib>0)
-      memset(N_DeptDofNeibs, 0, N_DeptDofs*SizeOfInt);
-
-   if(Max_N_SubDJointsOfNeib>0)
-    for(i=0; i<N_Neibs; i++)
-     {
-      ID = NeibsRank[i];
-      N = N_SubDJointsOfNeib[i];
-      for(j=0; j<N; j++)
-       {
-        M = i*Max_N_SubDJointsOfNeib + j;
-
-        ii= RecvBuf[0][M]; // global cell no
-        joint_No = RecvBuf[1][M]; // local joint no of global cell
-
-        k = GetLocalCellIndex(N_DependentCells, DeptCellGlobalNo, DependentCellIndex, ii);
-
-        DOF = GlobalNumbers + BeginIndex[k];
-        cell =  Coll->GetCell(k);
-        FeId = FESpace->GetFE3D(k, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        JointDof = FeDesc->GetJointDOF(joint_No);
-        N1 = M*N_JointDOF;
-
-//         //identify the master of all dofs on this joint
-//         ShapeDesc = cell->GetShapeDesc();
-//         ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
-//         N_FV = TmpLen[joint_No];
-// 
-// 
-//         for(jj=0; jj<N_JointDOF; jj++)
-//          MasterOfSubDomainDofs[jj] = -1;
-// 
-//         for(jj=0; jj<size; jj++)
-//          MasterDofCounter[jj] = 0;
-// 
-//         for(jj=0; jj<N_FV; jj++)
-//          {
-//           m = TmpFV[joint_No*MaxLen+jj];  // local vert No
-//           MasterID = (cell->GetVertex(m))->GetRank_ID();
-//           n = FeDesc->GetVertDOF(m);
-//           kk=0;
-//           while(JointDof[kk] != n ) kk++;
-//           MasterOfSubDomainDofs[kk] = MasterID;
-//           MasterDofCounter[MasterID]++;
-// 
-//           if(MasterID!=rank || MasterID!=ID)
-//             printf("Rank %d  Neib %d MasterID %d \n", rank, ID, MasterID);
-//          }
-// 
-//         // vert rank with min no. of indices will take all unassined (inner) dofs
-//         m=-1;
-//         for(jj=0; jj<size; jj++)
-//          if(m < MasterDofCounter[jj])
-//           {
-//            m = MasterDofCounter[jj];
-//            MasterID = jj;
-//           }
-
-        for(jj=0; jj<N_JointDOF; jj++)
-         {
-          m = DOF[JointDof[jj]];
-//           n = GetDeptIndex(N_DeptDofs, DeptDofs, m);
-          n = DepDofIndexOfLocDof[m];
-          P = N_DeptDofNeibs[n];
-
-          UPDATE=TRUE;
-          for(l=0; l<P; l++)
-           if(DeptDofNeibRanks[n*MaxSubDomainPerDof + l] == ID)
-           {
-            UPDATE=FALSE;
-            break;
-           }
-
-          if(UPDATE)
-           {
-            DeptDofNeibRanksLocalDOF[n*MaxSubDomainPerDof + P] = NeibLocalDof[0][N1 + jj];
-            DeptDofNeibRanks[n*MaxSubDomainPerDof + P] = ID;
-            N_DeptDofNeibs[n]++;
-
-//             if(MasterOfSubDomainDofs[jj]==-1)
-//              {
-// //               DeptDofMaster[n] = MasterID;
-//               }
-//             else
-//              { DeptDofMaster[n] = MasterOfSubDomainDofs[jj]; }
-
-           }
-         } //  for(jj=0; jj<N_JointDOF;
-       } // for(j=0; j<N;
-     } // for(i=0; i<N_Nei
-
-  if(N_Neibs>0 && Max_N_SubDJointsOfNeib>0)
-   {
-    delete []  SendBuf[0];
-
-    for(j=0; j<4; j++)
-     delete []  RecvBuf[j];
-
-    delete [] SendBuf;
-    delete [] RecvBuf;
-   }
-
-
-//====================================================================
-/** mapping of SubDomain Joint Dof --- end */
-
-/** now map the cross edge DOFs --- start */
-// =====================================================================
-
-  if(N_Neibs)
-   {
-    N_SubDEdgesOfNeib = new int[N_Neibs];
-    memset(N_SubDEdgesOfNeib, 0, N_Neibs*SizeOfInt);
-
-    /** for cross edge cells set clioboard (if any) */
-    for(ii=0; ii<N_DependentCells; ii++)
-     {
-      i = DependentCellIndex[ii];
-      cell = Coll->GetCell(i);
-      if(cell->IsCrossEdgeCell())
-       {
-        N_Edges=cell->GetN_Edges();
-        for(j=0;j<N_Edges;j++)
-         (cell->GetEdge(j))->SetClipBoard(-1);
-       } // if(cell->IsDependentCell())
-     }// for(ii=0; ii<N_DependentCells; ii++)
-
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-//      if(rank!=ID)
-//       continue;
-
-     if(cell->IsCrossEdgeCell())
-      {
-       DOF = GlobalNumbers + BeginIndex[i];
-       N_Edges=cell->GetN_Edges();
-       FeId = FESpace->GetFE3D(i, cell);
-       FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-       N_EdgeDOF = FeDesc->GetN_EdgeDOF();
-
-       // Discspace and non-conforming space
-       if(N_EdgeDOF<=0)
-        break;
-       
-       for(j=0;j<N_Edges;j++)
-        {
-         edge = cell->GetEdge(j);
-
-          if( edge->IsSubDomainCrossEdge() &&  (edge->GetClipBoard()==-1) )
-           {
-            edge->SetClipBoard(5);
-
-            edge->GetCrossEdgeNeibs(N_CrossEdgeNeibs, CrossEdgeNeibsRank, CrossEdgeNeibsGlobalNo,
-                                    CrossEdgeNeibsLocalEdgeNo, CrossEdgeNeibsMaptype);
-
-            for(jj=0;jj<N_CrossEdgeNeibs;jj++)
-             {
-              Neib_ID = CrossEdgeNeibsRank[jj];
-              k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-              N_SubDEdgesOfNeib[k]++;
-             } // for(jj=0;jj<N_CrossEdgeNe
-            } // if( edge->IsSubDomainCrossEdge() &&  (edge
-         } // for(j=0;j<N_Edges
-      } //  if(cell->IsCrossEdgeCell())
-    } // for(ii=0; ii<N_DependentCells; ii
-
-    // find max. of all N_SubDEdgesOfNeib
-    for(k=0; k<N_Neibs; k++)
-     if(Max_N_SubDEdgesOfNeib < N_SubDEdgesOfNeib[k])
-       Max_N_SubDEdgesOfNeib = N_SubDEdgesOfNeib[k];
-
-   memset(N_SubDEdgesOfNeib, 0, N_Neibs*SizeOfInt);
-    
-//    printf("  rank %d  N_SubDEdgesOfNeib  %d\n", rank, Max_N_SubDEdgesOfNeib); 
-
-   if(Max_N_SubDEdgesOfNeib>0)
-    {
-     EdgeSendBuf = new int*[2];
-     EdgeRecvBuf = new int*[2];
-     NeibEdgeLocalDof = new int*[1];
-     RecvEdgeLocalDof = new int*[1];
-
-     EdgeSendBuf[0] = new int[N_Neibs*Max_N_SubDEdgesOfNeib];
-     EdgeSendBuf[1] = new int[N_Neibs*Max_N_SubDEdgesOfNeib];
-     EdgeRecvBuf[0] = new int[N_Neibs*Max_N_SubDEdgesOfNeib];
-     EdgeRecvBuf[1] = new int[N_Neibs*Max_N_SubDEdgesOfNeib];
-
-     NeibEdgeLocalDof[0] = new int[N_Neibs*Max_N_SubDEdgesOfNeib*N_EdgeDOF];
-     RecvEdgeLocalDof[0] = new int[N_Neibs*Max_N_SubDEdgesOfNeib*N_EdgeDOF];
-
-    /** for cross edge cells set clioboard (if any) */
-    for(ii=0; ii<N_DependentCells; ii++)
-     {
-      i = DependentCellIndex[ii];
-      cell = Coll->GetCell(i);
-      if(cell->IsCrossEdgeCell())
-       {
-        N_Edges=cell->GetN_Edges();
-        for(j=0;j<N_Edges;j++)
-         (cell->GetEdge(j))->SetClipBoard(-1);
-       } // if(cell->IsDependentCell())
-     }// for(i=0;i<N_OwnCel
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-//      if(rank!=ID)
-//       continue;
-
-     if(cell->IsCrossEdgeCell())
-      {
-       DOF = GlobalNumbers + BeginIndex[i];
-       N_Edges=cell->GetN_Edges();
-       FeId = FESpace->GetFE3D(i, cell);
-       FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-       N_EdgeDOF = FeDesc->GetN_EdgeDOF();
-
-       for(j=0;j<N_Edges;j++)
-        {
-          edge = cell->GetEdge(j);
-
-          if( edge->IsSubDomainCrossEdge() &&  (edge->GetClipBoard()==-1) )
-           {
-            edge->SetClipBoard(5);
-            EdgeDof = FeDesc->GetEdgeDOF(j);
-
-            edge->GetCrossEdgeNeibs(N_CrossEdgeNeibs, CrossEdgeNeibsRank, CrossEdgeNeibsGlobalNo,
-                                    CrossEdgeNeibsLocalEdgeNo, CrossEdgeNeibsMaptype);
-
-            for(jj=0;jj<N_CrossEdgeNeibs;jj++)
-             {
-              Neib_ID = CrossEdgeNeibsRank[jj];
-              k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-              M = k*Max_N_SubDEdgesOfNeib + N_SubDEdgesOfNeib[k];
-
-              EdgeSendBuf[0][M] = CrossEdgeNeibsGlobalNo[jj];
-              EdgeSendBuf[1][M] = CrossEdgeNeibsLocalEdgeNo[jj];
- 
-              MapType = CrossEdgeNeibsMaptype[jj];
-              N1 = M*N_EdgeDOF;
-
-              for(kk=0; kk<N_EdgeDOF; kk++)
-               if(MapType==1)
-                { NeibEdgeLocalDof[0][N1 + kk] =  DOF[ EdgeDof[kk] ]; }
-               else if(MapType==-1)
-                { NeibEdgeLocalDof[0][N1 + N_EdgeDOF-1 - kk] =  DOF[ EdgeDof[kk] ]; }
-               else
-                {
-                 printf("Error  CrossEdgeNeibsMaptype rank %d\n", rank );
-                 MPI_Finalize();
-                 exit(0);
-                }
-
-              N_SubDEdgesOfNeib[k]++;
-
-             } // for(jj=0;jj<N_CrossEdgeNe
-            } // if( edge->IsSubDomainCrossEdge() &&  (edge
-         } // for(j=0;j<N_Edges
-      } //  if(cell->IsCrossEdgeCell())
-     } // for(ii=0; ii<N_DependentCells; ii
-
-//   N2=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_Neibs; i++)
-//      {
-//       N = N_SubDEdgesOfNeib[i];
-//       if(NeibsRank[i]==TDatabase::ParamDB->Par_P5)
-//        for(j=0; j<N; j++)
-//        {
-//         M = i*Max_N_SubDEdgesOfNeib + j;
-//         printf("Index %d, Rank %d, NeibRank %d NeibGlobal No %d Edge %d \n", 
-// 	       N2++, rank, NeibsRank[i],  EdgeSendBuf[0][M], EdgeSendBuf[1][M] );
-//        } // for(j=0; j<N_Joints; 
-//      } 
-     
-    } // if(Max_N_SubDEdgesOfNeib>0)    
-   } //  if(N_Neibs)
-   
   
-   // communicate between neibs 
-   FECommunicateNeib(EdgeSendBuf, Max_N_SubDEdgesOfNeib, N_SubDEdgesOfNeib, EdgeRecvBuf, N_SubDEdgesOfNeib, 2);
-
-    //check the cross edge neib 
-   if(Max_N_SubDEdgesOfNeib>0)    
-    for(i=0; i<N_Neibs; i++)
-     {
-      N = N_SubDEdgesOfNeib[i];
-      for(j=0; j<N; j++)
-       {
-        M = i*Max_N_SubDEdgesOfNeib + j;
-        ii= EdgeRecvBuf[0][M];
-
-        k = GetLocalCellIndex(N_DependentCells, DeptCellGlobalNo, DependentCellIndex, ii);
-        cell =  Coll->GetCell(k);
-
-        if(ii != cell->GetGlobalCellNo())
-         {
-           printf("Error  check MapDofFromNeib3D SubDEdgesOfNeib  \n" );
-           printf("Neib Rank %d  CellIndex %d ii, Global No %d   %d \n", NeibsRank[i], k, ii,  Coll->GetCell(k)->GetGlobalCellNo());
-           MPI_Finalize();
-           exit(0);
-         }
-
-         edge = cell->GetEdge(EdgeRecvBuf[1][M]);
-
-        if(!(edge->IsSubDomainCrossEdge()))
-         {
-          printf("Error  check MapDofFromNeib3D SubDEdgesOfNeib  \n" );
-          printf("Neib Rank %d  edge must be SubDomainCrossEdge \n", NeibsRank[i]);
-          MPI_Finalize();
-          exit(0);
-         }
-       } // for(j=0; j<N;
-      } // for(i=0; i<N_Nei   
-
-//    if(rank==TDatabase::ParamDB->Par_P5)
-//    for(i=0; i<N_DeptDofs; i++)
-//     printf("Rankk %d i %d  DeptDofs %d \n",rank, i, DeptDofs[i] ); 
-
-    // communicate JointDof between neibs
-   if(Max_N_SubDEdgesOfNeib>0)
-    for(i=0; i<N_Neibs; i++)
-     N_SubDEdgesOfNeib[i] *=N_EdgeDOF;
-    FECommunicateNeib(NeibEdgeLocalDof, Max_N_SubDEdgesOfNeib*N_EdgeDOF, N_SubDEdgesOfNeib, RecvEdgeLocalDof, N_SubDEdgesOfNeib, 1);
-
-   if(Max_N_SubDEdgesOfNeib>0)
-    for(i=0; i<N_Neibs; i++)
-     N_SubDEdgesOfNeib[i] /=N_EdgeDOF;
-
-    //put the cross edge neibs local DOF
-    if(Max_N_SubDEdgesOfNeib>0)
-    for(i=0; i<N_Neibs; i++)
-     {
-      ID = NeibsRank[i];
-      N = N_SubDEdgesOfNeib[i];
-      for(j=0; j<N; j++)
-       {
-        M = i*Max_N_SubDEdgesOfNeib + j;
-        ii= EdgeRecvBuf[0][M];
-
-        k = GetLocalCellIndex(N_DependentCells, DeptCellGlobalNo, DependentCellIndex, ii);
-        cell =  Coll->GetCell(k);
-
-        FeId = FESpace->GetFE3D(k, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        N_EdgeDOF = FeDesc->GetN_EdgeDOF();
-        EdgeDof = FeDesc->GetEdgeDOF(EdgeRecvBuf[1][M]);
-
-        DOF = GlobalNumbers + BeginIndex[k];
-        N1 = M*N_EdgeDOF;
-
-//         //start vert rank will be master for all but end dofs in this edge
-//         ShapeDesc = cell->GetShapeDesc();
-//         ShapeDesc->GetEdgeVertex(TmpFV);
-//         m = TmpFV[2*EdgeRecvBuf[1][M]];
-//         MasterID = (cell->GetVertex(m))->GetRank_ID();
-// 
-//         m = TmpFV[2*EdgeRecvBuf[1][M] +1];
-//         MasterID_1 = (cell->GetVertex(m))->GetRank_ID();
-// 
-//        //max rank will take all dofs in this edge
-//        if(MasterID < MasterID_1)
-//          MasterID = MasterID_1;
-
-        for(kk=0; kk<N_EdgeDOF; kk++)
-         {
-          m = DOF[EdgeDof[kk]];
-//           n = GetDeptIndex(N_DeptDofs, DeptDofs, m);
-          n = DepDofIndexOfLocDof[m];  
-          P = N_DeptDofNeibs[n];
-
-          UPDATE=TRUE;
-          for(l=0; l<P; l++)
-           if(DeptDofNeibRanks[n*MaxSubDomainPerDof + l] == ID)
-           {
-            UPDATE=FALSE;
-            break;
-           }
-
-          if(UPDATE)
-           {
-            DeptDofNeibRanksLocalDOF[n*MaxSubDomainPerDof + P] = RecvEdgeLocalDof[0][N1 + kk] ;
-            DeptDofNeibRanks[n*MaxSubDomainPerDof + P] = ID;
-            N_DeptDofNeibs[n]++;
-//             DeptDofMaster[n] = MasterID;
-           }
-         } //  for(kk=0; kk<N_EdgeDOF; kk+
-       } // for(j=0; j<N;
-      } // for(i=0; i<N_Nei
-
-  if(N_Neibs)
-   delete [] N_SubDEdgesOfNeib;
-
-  if(Max_N_SubDEdgesOfNeib>0)
-   {
-
-    delete [] EdgeSendBuf[0];
-    delete [] EdgeSendBuf[1];
-
-    delete [] EdgeRecvBuf[0];
-    delete [] EdgeRecvBuf[1];
-
-    delete [] NeibEdgeLocalDof[0];
-    delete [] RecvEdgeLocalDof[0];
-
-    delete [] EdgeSendBuf;
-    delete [] EdgeRecvBuf;
-    delete [] NeibEdgeLocalDof;
-    delete [] RecvEdgeLocalDof;
-   }
-
-// ====================================================================
-/** now map the cross edge DOFs --- end */
-/** now map the cross vertex DOFs  --- start  */
-// ====================================================================
-  if(N_Neibs)
-   {
-    N_CrossVertNeibs = new int[N_Neibs];
-    memset(N_CrossVertNeibs, 0, N_Neibs*SizeOfInt);
-   }
-
-//     printf("MapDofFromNeib3D done %d\n", N_DependentCells);
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-
-     if(cell->IsCrossVertexCell())
-      {
-       N_VertInCell = cell->GetN_Vertices();
-       for(j=0; j<N_VertInCell; j++)
-         (cell->GetVertex(j))->SetClipBoard(-1);
-      } // if(cell->IsCrossVertexCell())
-     } // for(ii=0; ii<N_DependentCells; ii++)
-
-//    if(rank==TDatabase::ParamDB->Par_P0)
-//     printf("rank %d MapDofFromNeib3D done %d\n", rank, N_DependentCells);
-// 
-//  MPI_Finalize();
-//  exit(0);
-
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-
-//      if(rank!=ID)
-//       continue;
-
-     if(cell->IsCrossVertexCell())
-       {
-        N_VertInCell = cell->GetN_Vertices();
-        FeId = FESpace->GetFE3D(i, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        M = FeDesc->GetN_VertDOF();
-
-       // Discspace and non-conforming space
-       if(M<=0)
-        break;
-
-        for(j=0;j<N_VertInCell;j++)
-         {
-          Vert=cell->GetVertex(j);
-
-          if( Vert->IsCrossVert() &&  (Vert->GetClipBoard()==-1) )
-           {
-            Vert->SetClipBoard(5);
-            Vert->GetCrossNeibsInfo(N_CrossVertNeibCells, CrossVertNeibCellRank, 
-                                    CrossVertNeibCellGlobalNo, CrossVertNeibCellLocVertNo);
-
-             for(jj=0; jj<N_CrossVertNeibCells; jj++)
-              {
-               Neib_ID = CrossVertNeibCellRank[jj];
-               k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-               N_CrossVertNeibs[k]++;
-               // if(rank==6)
-               // printf("Rankk %d N_Neibs %d Neib_ID %d\n",rank,  N_CrossVertNeibs[k], Neib_ID);
-              } // for(k=0; k<N_CrossVertNeibCells
-           } //  if( Vert->IsCrossVert() &&  (V
-         } //  for(j=0;j<N_VertIn
-       } // if(cell->IsCrossVertexCell())
-   } //  for(i=0; i<N_Cells
-
-
-
-
-   // find max. of all Max_N_CrossVertNeibs
-   for(k=0; k<N_Neibs; k++)
-    if(Max_N_CrossVertNeibs < N_CrossVertNeibs[k])
-      Max_N_CrossVertNeibs = N_CrossVertNeibs[k];
-
-  if(N_Neibs)
-   memset(N_CrossVertNeibs, 0, N_Neibs*SizeOfInt);
-
-   if(Max_N_CrossVertNeibs)
-    {
-     SendBuf = new int*[3];
-     RecvBuf = new int*[3];
-
-     for(j=0; j<3; j++)
-      {
-       SendBuf[j] = new int[N_Neibs*Max_N_CrossVertNeibs];
-       RecvBuf[j] = new int[N_Neibs*Max_N_CrossVertNeibs];
-      }
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-
-     if(cell->IsCrossVertexCell())
-      {
-       N_VertInCell = cell->GetN_Vertices();
-       for(j=0; j<N_VertInCell; j++)
-        (cell->GetVertex(j))->SetClipBoard(-1);
-      } // for(j=0; j<N_Vert
-     } // for(ii=0; ii<N_DependentCells; ii++)
-
-   for(ii=0; ii<N_DependentCells; ii++)
-    {
-     i = DependentCellIndex[ii];
-     cell = Coll->GetCell(i);
-     ID = cell->GetSubDomainNo();
-/*
-     if(rank!=ID)
-      continue;*/
-
-     if(cell->IsCrossVertexCell())
-       {
-        N_VertInCell = cell->GetN_Vertices();
-        FeId = FESpace->GetFE3D(i, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-        M = FeDesc->GetN_VertDOF();
-        DOF = GlobalNumbers + BeginIndex[i];
-
-        for(j=0;j<N_VertInCell;j++)
-         {
-          Vert=cell->GetVertex(j);
-
-          if( Vert->IsCrossVert() &&  (Vert->GetClipBoard()==-1.) )
-           {
-            Vert->SetClipBoard(5);
-            VertDof = FeDesc->GetVertDOF(j);
-            Vert->GetCrossNeibsInfo(N_CrossVertNeibCells, CrossVertNeibCellRank, 
-                                    CrossVertNeibCellGlobalNo, CrossVertNeibCellLocVertNo);
-             for(jj=0; jj<N_CrossVertNeibCells; jj++)
-              {
-               Neib_ID = CrossVertNeibCellRank[jj];
-               k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-
-               M = k*Max_N_CrossVertNeibs + N_CrossVertNeibs[k];
-
-               SendBuf[0][M] = CrossVertNeibCellGlobalNo[jj];
-               SendBuf[1][M] = CrossVertNeibCellLocVertNo[jj];
-               SendBuf[2][M] = DOF[VertDof];
-
-               N_CrossVertNeibs[k]++;
-              } // for(k=0; k<N_CrossVertNeibCells
-           } //  if( Vert->IsCrossVert() &&  (V
-         } //  for(j=0;j<N_VertIn
-       } // if(cell->IsCrossVertexCell())
-     } //  for(i=0; i<N_Cells
-    } // if(Max_N_CrossVertNeibs)
-
-//   N2=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//     for(i=0; i<N_Neibs; i++)
-//      {
-//       N = N_CrossVertNeibs[i];
-//       
-//            printf("rank %d  N_CrossVertNeibs  %d \n", rank, N);     
-//       
-//       
-//       if(NeibsRank[i]==TDatabase::ParamDB->Par_P5)
-//        for(j=0; j<N; j++)
-//        {
-//         M = i*Max_N_CrossVertNeibs + j;
-//         printf("M %d, Neib Rank %d Global No %d vert %d \n", N2++, NeibsRank[i],  SendBuf[0][M], SendBuf[1][M] );
-//        } // for(j=0; j<N_Joints; 
-//      }
-
-//  MPI_Finalize();
-//  exit(0);
-
-    // communicate between neibs 
-    FECommunicateNeib(SendBuf, Max_N_CrossVertNeibs, N_CrossVertNeibs, RecvBuf, N_CrossVertNeibs, 3);
-
-   if(Max_N_CrossVertNeibs>0)
-    {
-     for(i=0; i<N_Neibs; i++)
-     {
-      ID = NeibsRank[i];
-      N = N_CrossVertNeibs[i];
-      for(j=0; j<N; j++)
-       {
-        M = i*Max_N_CrossVertNeibs + j;
-        ii= RecvBuf[0][M];
-
-        k = GetLocalCellIndex(N_DependentCells, DeptCellGlobalNo, DependentCellIndex, ii);
-        cell =  Coll->GetCell(k);
-
-        if(!( cell->IsCrossVertexCell() ))
-         {
-          printf("Error  check cell must be Cross Vertex Cell  \n" );
-//           printf("Rank: %d Neib Rank %d  own global cell %d neib global cell %d local vert no %d \n", rank, NeibsRank[i], cell->GetGlobalCellNo(), ii, RecvBuf[1][M]);
-           
-          printf("Rank: %d localcellNo %d GlobalcellNo %d  Neib Rank %d  \n",rank, k, cell->GetGlobalCellNo(),  NeibsRank[i] );
-          MPI_Finalize();
-          exit(0);
-         }
-
-        FeId = FESpace->GetFE3D(k, cell);
-        FeDesc = TFEDatabase3D::GetFEDesc3DFromFE3D(FeId);
-
-//         MasterID = (cell->GetVertex(RecvBuf[1][M]))->GetRank_ID();
-
-        // should be only one DOF on each vert
-        if(FeDesc->GetN_VertDOF())
-         {
-          VertDof = FeDesc->GetVertDOF(RecvBuf[1][M]);
-
-          DOF = GlobalNumbers + BeginIndex[k];
-          m = DOF[VertDof];
-//           n = GetDeptIndex(N_DeptDofs, DeptDofs, m);
-          n = DepDofIndexOfLocDof[m];	  
-          P = N_DeptDofNeibs[n];
-
-          UPDATE=TRUE;
-          for(l=0; l<P; l++)
-           if(DeptDofNeibRanks[n*MaxSubDomainPerDof + l] == ID)
-           {
-            UPDATE=FALSE;
-            break;
-           }
-
-          if(UPDATE)
-           {
-            DeptDofNeibRanksLocalDOF[n*MaxSubDomainPerDof + P] = RecvBuf[2][M];
-            DeptDofNeibRanks[n*MaxSubDomainPerDof + P] = ID;
-            N_DeptDofNeibs[n]++;
-//             DeptDofMaster[n] = MasterID;
-           }
-          } //  if(FeDesc->GetN_VertDOF()) 
-       } // for(j=0; j<N;
-      } // for(i=0; i<N_Nei
-
-     for(j=0; j<3; j++)
-      {
-       delete [] SendBuf[j];
-       delete [] RecvBuf[j];
-      }
-
-     delete [] SendBuf;
-     delete [] RecvBuf;
-    } // if(Max_N_CrossVertNeibs)   
-
-  if(N_Neibs)
-   {
-    delete [] N_CrossVertNeibs;
-    delete [] NeibLocalDof[0];
-
-    delete [] NeibLocalDof;
-    delete [] N_SubDJointsOfNeib;
-//     delete [] MasterOfSubDomainDofs;
-   }
-
-//  delete [] MasterDofCounter;
-
-//    if(rank==TDatabase::ParamDB->Par_P5)
-//    for(i=0; i<N_DeptDofs; i++)
-//     if(N_DeptDofNeibs[i]- N_DeptDofNeibs[i] )
-//     printf("Rankk %d i %d  N_DeptDofNeibs %d test %d \n",rank, i, N_DeptDofNeibs[i], N_DeptDofNeibs[i] ); 
-
-//  M=0;
-//   if(rank==TDatabase::ParamDB->Par_P6)
-//    for(i=0; i<N_DeptDofs; i++)
-//       for(j=0; j<N_DeptDofNeibs[i]; j++)
-//     if(DeptDofNeibRanks[i*MaxSubDomainPerDof + j]==TDatabase::ParamDB->Par_P5)
-//         printf("Rankk %d index %d dof %d Neib %d NeibDof %d  \n",
-// 	   rank,  M++, DeptDofs[i], DeptDofNeibRanks[i*MaxSubDomainPerDof + j], DeptDofNeibRanksLocalDOF[i*MaxSubDomainPerDof + j] );
-
-//  MPI_Finalize();
-//  exit(0);
-
-  if(TDatabase::ParamDB->SC_VERBOSE>4)
-   if(rank==TDatabase::ParamDB->Par_P0)
-    printf("MapDofFromNeib3D done !!!\n");
-
-//  MPI_Finalize();
-//  exit(0);
-
-} //  TParFECommunicator3D::MapDofFromNeib3D()
-
-/** Construct Global Dof From Neib dofs, min. rank of dept. dof will be their master*/
-void TParFECommunicator3D::ConstructGlobalDofFromNeib3D()
-{
- int i, j, k, m1, m2, M, N, rank, size, ID, Neib_ID, N_Cells;
- int N_U, GblDOfStart;
- int N_SlaveDof, N_MasterDof, N_SelfDof;
- int *N_SendDofs, *N_RecevDofs, **sendbuf, **recevbuf;
- int *BeginIndex, N_LocDof, *GlobalNumbers, *DofMarker, *pos, *DipDeoDof;
-
- bool Found;
- TCollection *Coll;
-
-   MPI_Comm_rank(Comm, &rank);
-   MPI_Comm_size(Comm, &size);
-
-   N_U = FESpace->GetN_DegreesOfFreedom();
-   Coll = FESpace->GetCollection();
-   N_Cells = Coll->GetN_Cells();
-   BeginIndex = FESpace->GetBeginIndex();
-   N_LocDof = BeginIndex[1] - BeginIndex[0];  // assume that  all cells in fespace have same FE
-   GlobalNumbers = FESpace->GetGlobalNumbers();
-
-   N_SelfDof = 0;  // dof not connected with neib subdomains
-   N_MasterDof = 0;// dept. dof, but this process is the master
-   N_SlaveDof = 0; // dept. dof, but master is neib process
-   N_OwnDof = 0; // N_SelfDof + N_MasterDof
-
-    for(i=0;i<N_DeptDofs;i++)
-     {
-      DipDeoDof = DeptDofNeibRanks + (i*MaxSubDomainPerDof);
-
-      DeptDofMaster[i] = rank;
-      ID = rank;
-
-      // find the small rank index among this dept. dofs
-      for(j=0;j<N_DeptDofNeibs[i];j++)
-       if(ID < DipDeoDof[j])
-        ID = DipDeoDof[j];
-
-      if(ID!=rank)
-       {
-        DeptDofMaster[i] = ID;
-        N_SlaveDof++;
-       }
-
-//        if(rank==TDatabase::ParamDB->Par_P5 && ID==TDatabase::ParamDB->Par_P6)
-//          printf("Error: rank %d Dof %d masterrank %d\n", rank, DeptDofs[i],  DeptDofMaster[i]);
-     } //for(i=0;i<N_DeptDofs;
-
-//   MPI_Finalize();
-//   exit(0);  
-//      if(rank==TDatabase::ParamDB->Par_P5)
-//       {
-//        i = GetDeptIndex(N_DeptDofs, DeptDofs, 1);
-// 
-//        if(rank==TDatabase::ParamDB->Par_P5)
-//          printf("Error: rank %d Dof %d masterrank %d\n", rank, 12,  DeptDofMaster[i]);
-//      }
-
-   N_SelfDof = N_U - N_DeptDofs;
-   N_MasterDof = N_DeptDofs - N_SlaveDof;
-   N_OwnDof = N_SelfDof + N_MasterDof;
-
-// printf("Rank %d, N_U %d N_OwnDof %d\n", rank, N_U, N_OwnDof+N_SlaveDof);
-
-
-//   if(rank==0)
-//    {
-//     printf("Rank %d, N_OwnDof %d\n", rank, N_U);
-//     N_OwnDof = 0;
-//    }
-
-  MPI_Allreduce(&N_OwnDof, &N_GlobalDegreesOfFreedom, 1, MPI_INT, MPI_SUM, Comm);
-
-//   FESpace->SetN_GlobalDegreesOfFreedom(N_OwnDofSum);
-
-//   N_OwnDofSum = FESpace->GetN_GlobalDegreesOfFreedom();
-// 
-//   if(rank==0)
-    printf("Rank %d, N_OwnDof %d\n", rank, N_GlobalDegreesOfFreedom);
-// 
-//   MPI_Finalize();
-//   exit(0);  
-
-  N_DistDofAll = new int[size];
-
-  MPI_Allgather(&N_OwnDof, 1, MPI_INT, N_DistDofAll, 1, MPI_INT, Comm);
-
-   GblDOfStart = 0;
-   for(i=0;i<rank;i++)
-    GblDOfStart +=N_DistDofAll[i];
-
-   GlobalDofOfLocalDof = new int[N_U];
-   for(i=0;i<N_U;i++)
-    GlobalDofOfLocalDof[i] = -1;
-
-
-   DofMarker = new int[N_U];
-   memset(DofMarker, 0, N_U*SizeOfInt);
-
-   // first fill the dept. dof
-   for(i=0;i<N_DeptDofs;i++)
-    if(DeptDofMaster[i] == rank)
-      DofMarker[DeptDofs[i]] = 2;
-
-   for(i=0;i<N_U;i++)
-    if(N_DofRankIndex[i]==1)
-      DofMarker[i] = 1;
-
-
-   if(N_OwnDof)
-    {
-     OwnDofs = new int[N_OwnDof];
-
-//      // first fill the dept. dof
-//      m1=GblDOfStart+N_SelfDof;
-//      for(i=0;i<N_DeptDofs;i++)
-//       if(DeptDofMaster[i] == rank)
-//         GlobalDofOfLocalDof[DeptDofs[i]] = m1++;
-// 
-// 
-//      m1=GblDOfStart;
-//      for(i=0;i<N_U;i++)
-//       if(N_DofRankIndex[i]==1)
-//         GlobalDofOfLocalDof[i] = m1++;
-
-     m1=GblDOfStart;
-     for(i=0;i<N_U;i++)
-      if(DofMarker[i]>0)
-       {
-//  if(rank==TDatabase::ParamDB->Par_P5)
-//   printf("Row %d:  GlobalDofOfLocalDof  %d  \n", i,  m1 );
-        GlobalDofOfLocalDof[i] = m1++;
-       }
-
-     if(m1-GblDOfStart !=  N_OwnDof)
-      {
-       printf("Error: in GlobalDOf construction Rank %d i %d \n",rank, i);
-       MPI_Finalize();
-       exit(0);
-      }
-
-     m1 = 0;
-     for(i=0;i<N_U;i++)
-      if(DofMarker[i]>0) // self or master
-        OwnDofs[m1++] = i;
-
-     if(m1 !=  N_OwnDof)
-      {
-       printf("Error: in GlobalDOf construction Rank %d i %d \n",rank, i);
-       MPI_Finalize();
-       exit(0);
-      }
-
-
-    } // if(N_OwnDof)
-
-    delete [] DofMarker;
-
-  MPI_Allreduce(&N_MasterDof, &MaxN_MasterDofs_All, 1, MPI_INT, MPI_MAX, Comm);
-
-
-  MPI_Allreduce(&N_SlaveDof, &MaxN_SlaveDofs_All, 1, MPI_INT, MPI_MAX, Comm);
-
-//printf("Rank %d MaxN_SlaveDofs_All %d  N_SlaveDof %d \n", rank, MaxN_SlaveDofs_All, N_SlaveDof);
-
-  if(N_Neibs)
-   {
-    N_SendDofs = new int[N_Neibs];
-    N_RecevDofs = new int[N_Neibs];
-
-    memset(N_SendDofs, 0, N_Neibs*SizeOfInt);
-
-    sendbuf = new int*[2];
-    recevbuf = new int*[2];
-    sendbuf[0] = new int[N_Neibs*MaxN_DeptDofs_All];
-    sendbuf[1] = new int[N_Neibs*MaxN_DeptDofs_All];
-    recevbuf[0] = new int[N_Neibs*MaxN_DeptDofs_All];
-    recevbuf[1] = new int[N_Neibs*MaxN_DeptDofs_All];
-
-    // first built DeptDofLocalIndexOfNeibRanks
-    for(i=0;i<N_DeptDofs;i++)
-     {
-      N = N_DeptDofNeibs[i];
-      for(j=0;j<N;j++)
-       {
-        Neib_ID = DeptDofNeibRanks[i*MaxSubDomainPerDof + j];
-        k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-        M = k*MaxN_DeptDofs_All + N_SendDofs[k];
-        N_SendDofs[k]++;
-
-        sendbuf[0][M] = DeptDofNeibRanksLocalDOF[i*MaxSubDomainPerDof + j];
-       } // for(j=0;j<N;j++)
-     } //for(i=0;i<N_DeptDofs;
-   } // if(N_Neibs)
-
-   FECommunicateNeib(sendbuf, MaxN_DeptDofs_All, N_SendDofs, recevbuf, N_SendDofs, 1);
-
-  if(N_Neibs)
-   {
-    memset(N_RecevDofs, 0, N_Neibs*SizeOfInt);
-
-    for(i=0;i<N_DeptDofs;i++)
-     {
-      N = N_DeptDofNeibs[i];
-      for(j=0;j<N;j++)
-       {
-        m1 = i*MaxSubDomainPerDof + j;
-        Neib_ID = DeptDofNeibRanks[m1];
-        k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-        M = k*MaxN_DeptDofs_All + N_RecevDofs[k];
-        N_RecevDofs[k]++;
-        DeptDofLocalIndexOfNeibRanks[m1] = recevbuf[0][M];
-       } // for(j=0;j<N;j++)
-     } //for(i=0;i<N_DeptDofs;
-   } // if(N_Neibs)
-
-
-  if(N_Neibs)
-   {
-    memset(N_SendDofs, 0, N_Neibs*SizeOfInt);
-    memset(N_RecevDofs, 0, N_Neibs*SizeOfInt);
-
-    for(i=0;i<N_DeptDofs;i++)
-     {
-      ID = DeptDofMaster[i];
-
-      if(ID==rank) // master of this dof
-       {
-        N = N_DeptDofNeibs[i];
-        for(j=0;j<N;j++)
-         {
-          Neib_ID = DeptDofNeibRanks[i*MaxSubDomainPerDof + j];
-          k = IndexOfNeibRank[Neib_ID]; // LocindexOfNeib_ID
-          M = k*MaxN_MasterDofs_All + N_SendDofs[k];
-          N_SendDofs[k]++;
-
-          sendbuf[0][M] = DeptDofNeibRanksLocalDOF[i*MaxSubDomainPerDof + j];
-          sendbuf[1][M] = GlobalDofOfLocalDof[DeptDofs[i]];
-         } // for(j=0;j<N;j++)
-       } // if(ID==rank) 
-      else // slave of this dof, info have to be obtained from neibs
-       {
-        k = IndexOfNeibRank[ID]; // LocindexOfNeib_ID
-        N_RecevDofs[k]++;
-       } // elsei(ID==rank) 
-     } //for(i=0;i<N_DeptDofs;
-   } // if(N_Neibs)
-
-  // type =1, i.e., higher to lower ranks
-  FECommunicateOneWay(sendbuf, MaxN_MasterDofs_All, N_SendDofs, recevbuf, N_RecevDofs, 2, 1);
-
-  for(i=0; i<N_Neibs; i++)
-   {
-    N = N_RecevDofs[i];
-    for(j=0;j<N;j++)
-     {
-      M = i*MaxN_MasterDofs_All + j;
-
-      if(GlobalDofOfLocalDof[recevbuf[0][M]]!=-1)
-       printf("Error: rank %d NeibsRank %d Dof %d RecevGlobalDof %d GlobalDof %d\n",
-              rank, NeibsRank[i], recevbuf[0][M], recevbuf[1][M], GlobalDofOfLocalDof[recevbuf[0][M]]);
-
-
-      GlobalDofOfLocalDof[recevbuf[0][M]] = recevbuf[1][M];
-     } // for(j=0;j<N;j++)
-    } // for(i=0; i<N_Nei*/
-
-
-//    if(rank!=0)
-   for(i=0;i<N_U;i++)
-    if(GlobalDofOfLocalDof[i] == -1)
-     {
-      printf("Error: in GlobalDOf construction Rank %d i %d \n",rank, i);
-      MPI_Finalize();
-      exit(0);
-    }
-
-//    if(rank==1)
-//    for(i=0;i<N_U;i++)
-//       printf("%d Rank %d  GlobalDofOfLocalDof   %d \n",i, rank, GlobalDofOfLocalDof[i]);
-
-  // Mapping of global dof from all subdomains to root
-//  int *SubDomainParentCellNo, *SubDomainDofGlobalNumbers;
-//  int *SubDomainGlobalNumbers, *SubDomainBeginIndex;
-//  int *IntArray = new int[2];
-
-   pos = new int[size];
-   for(i=0;i<size;i++)
-    pos[i] = i*MaxN_LocalDofAllRank;
-
-   GlobalDofOFLocalDofAllRank = new int[size*MaxN_LocalDofAllRank];
-   N_LocalDofAllRank = new int[size];
-   MPI_Allgather(&N_U, 1, MPI_INT, N_LocalDofAllRank, 1, MPI_INT, Comm);
-
-   MPI_Allgatherv(GlobalDofOfLocalDof, N_U, MPI_INT, GlobalDofOFLocalDofAllRank, N_LocalDofAllRank,
-                  pos, MPI_INT, Comm);
-
-   delete [] pos;
-
-//  MPI_Status status;
-//   if(rank!=0)
-//    {
-// //      IntArray[0] = N_Cells;
-// //      IntArray[1] = N_U;
-//      MPI_Send(&N_U, 1, MPI_INT, 0, 100, Comm);
-// 
-// //      SubDomainParentCellNo = Coll->GetGlobalIndex();
-// //      MPI_Isend(SubDomainParentCellNo, N_Cells, MPI_INT, 0, 200, Comm, &request001);
-//      MPI_Send(GlobalDofOfLocalDof, N_U, MPI_INT, 0, 300, Comm);
-// //      MPI_Isend(GlobalNumbers, N_Cells*N_LocDof, MPI_INT, 0, 400, Comm, &request003);
-// //      MPI_Isend(BeginIndex, N_Cells, MPI_INT, 0, 500, Comm, &request004);
-//    }
-//   else
-//    {
-// //     int l, P, N_SubDomainCells, N_SubDomainDOF, *GlobNo, *DOF, *SubDomainDOF;
-// //     int *NewGlobalNumbers, *NewDOF;
-//     int N_SubDomainDOF, *GlobNo;
-// 
-// 
-// //      NewGlobalNumbers = new int[N_Cells*N_LocDof];
-// 
-//      N_LocalDofAllRank = new int[size];
-//      GlobalDofOFLocalDofAllRank = new int[size*MaxN_LocalDofAllRank];
-//      N_LocalDofAllRank[rank] =  N_U;
-// 
-//      //copy own GlobalDofOfLocalDof values first
-//      memcpy(GlobalDofOFLocalDofAllRank, GlobalDofOfLocalDof,  N_U*SizeOfInt);
-// 
-//      for(j=1;j<size;j++)
-//       {
-//        MPI_Recv(&N_SubDomainDOF, 1, MPI_INT, j, 100, Comm, &status);
-// 
-// //        N_SubDomainCells = IntArray[0]; // including halo cells if any
-// //        N_SubDomainDOF = IntArray[1];   // including halo cells DOF if any 
-//        N_LocalDofAllRank[j] = N_SubDomainDOF;
-// 
-// //        if(j>1)
-// //         {
-// //          delete [] SubDomainParentCellNo;
-// //          delete [] SubDomainGlobalNumbers;
-// //          delete [] SubDomainBeginIndex;
-// //         }
-// 
-//        // /** get the subdomain cells' global cell numbers */
-// //        SubDomainParentCellNo = new int[N_SubDomainCells];
-// //        MPI_Recv(SubDomainParentCellNo, N_SubDomainCells, MPI_INT, j, 200, Comm, &status);
-// 
-//        GlobNo =  GlobalDofOFLocalDofAllRank +j*MaxN_LocalDofAllRank;
-//        MPI_Recv(GlobNo, N_SubDomainDOF, MPI_INT, j, 300, Comm, &status);
-// 
-// //        SubDomainGlobalNumbers = new int[N_SubDomainCells*N_LocDof];
-// //     MPI_Recv(SubDomainGlobalNumbers, N_SubDomainCells*N_LocDof, MPI_INT, j, 400, Comm, &status);
-// // 
-// //        SubDomainBeginIndex = new int[N_SubDomainCells];
-// //        MPI_Recv(SubDomainBeginIndex, N_SubDomainCells, MPI_INT, j, 500, MPI_COMM_WORLD, &status);
-// 
-// //        for(k=0;k<N_SubDomainCells;k++)
-// //         {
-// //          M = SubDomainParentCellNo[k];
-// //          DOF = GlobalNumbers + BeginIndex[M];
-// // //          NewDOF = NewGlobalNumbers + BeginIndex[M];
-// // 
-// //          SubDomainDOF = SubDomainGlobalNumbers + SubDomainBeginIndex[k];
-// // 
-// //          for(l=0; l<N_LocDof; l++)
-// //           {
-// //            N=DOF[l];
-// //            P=GlobNo[SubDomainDOF[l]];
-// // 
-// //            if(GlobalDofOfLocalDof[N]==-1)
-// //             {
-// //              GlobalDofOfLocalDof[N] = P;
-// //             }
-// //            else if(GlobalDofOfLocalDof[N] != P)
-// //             {
-// //              printf("Root: error in GlobalDOf mapping Rank %d   old %d new %d\n",j,  GlobalDofOfLocalDof[N], P);
-// //              MPI_Abort(Comm,  0);
-// //             }
-// // 
-// // //            NewDOF[l]=P;
-// //           } // for(l=0; l<N_LocDof; l++)
-// //         } //
-//       }// for(j=1;j<size;j++)
-// 
-// //        if(j>1)
-// //         {
-// //          delete [] SubDomainParentCellNo;
-// //          delete [] SubDomainGlobalNumbers;
-// //          delete [] SubDomainBeginIndex;
-// //         }
-// 
-// //     // new global numbers assigned by subdomains will be put in the root
-// //     memcpy(GlobalNumbers, NewGlobalNumbers, N_Cells*N_LocDof*SizeOfInt);
-// //     delete [] NewGlobalNumbers;
-// 
-// //    for(i=0;i<N_U;i++)
-// //     if(GlobalDofOfLocalDof[i] == -1)
-// //      {
-// //       printf("Error: in GlobalDOf construction Rank %d i %d \n",rank, i);
-// //       MPI_Finalize();
-// //       exit(0);
-// //     }
-// 
-// // //     // no need in root, since GlobalNumbers and GlobalDofOfLocalDof are same
-// // // //     delete [] GlobalDofOfLocalDof;
-//    } // else if(rank==0)
-
-
-
-  if(N_Neibs)
-   {
-    delete [] N_SendDofs;
-    delete [] N_RecevDofs;
-
-
-    for(i=0;i<2;i++)
-     {
-      delete [] sendbuf[i];
-      delete [] recevbuf[i];
-     }
-
-    delete [] sendbuf;
-    delete [] recevbuf;
-   }
-
-//    delete [] N_OwnDofAll;
-//    delete [] IntArray;
-
-//  if(rank==TDatabase::ParamDB->Par_P5)
-//   printf("Rank %d, N_MasterDof_All %d\n", rank, MaxN_MasterDofs_All);
-
-  if(TDatabase::ParamDB->SC_VERBOSE>4)
-  if(rank==TDatabase::ParamDB->Par_P0)
-   printf("ConstructGlobalDofFromNeib3D done !!!\n");
-
-//      MPI_Finalize();
-//      exit(0);
-
+  for(i=0;i<N_InterfaceS;i++)
+      Recv_InfoMS[i]=rhs[DofRecvMS[i]];
+ 
+  MPI_Alltoallv(Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Comm);
+  
+  for(i=0;i<N_SendDofMS;i++) 
+      rhs[DofSendMS[i]] += Send_InfoMS[i];
+
+  /** MASTER HAS FINAL VALUE **/  
+  for(i=0;i<N_SendDofMS;i++)
+      Send_InfoMS[i]=rhs[DofSendMS[i]];
+  
+  MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
+  
+  for(i=0;i<N_InterfaceS;i++)
+      rhs[DofRecvMS[i]] = Recv_InfoMS[i];
+  
+  t2=MPI_Wtime(); 
+  timeC+=(t2-t1);
 }
-
-
-/** Mapping of global dof from root to all subdomains */
-void TParFECommunicator3D::MapDofFromRoot3D()
-{
- int i, j, k, l, M, rank, size, N_Cells;
- int N_U, N_LocDof;
- int *GlobalNumbers, *BeginIndex, *DOF, *SubDomainDOF, P, N;
- int *IntArray = new int[2];
- int *SubDomainParentCellNo, *SubDomainDofGlobalNumbers;
- int *SubDomainGlobalNumbers, *SubDomainBeginIndex;
-
- TCollection *Coll;
- TBaseCell *cell;
-
- MPI_Status status;
-
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-
-  N_U = FESpace->GetN_DegreesOfFreedom();
-  Coll = FESpace->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-
-  BeginIndex = FESpace->GetBeginIndex();
-  GlobalNumbers = FESpace->GetGlobalNumbers();
-  N_LocDof = BeginIndex[1] - BeginIndex[0];  // assume that  all cells in fespace have same FE
-
-   if(rank==0)
-    {
-     int N_SubDomainCells, N_SubDomainDOF;
-
-     N_LocalDofAllRank = new int[size];
-     N_LocalDofAllRank[rank] =  N_U;
-     GlobalDofOFLocalDofAllRank = new int[(size-1)*MaxN_LocalDofAllRank];
-
-     for(j=1;j<size;j++)
-      {
-       MPI_Recv(IntArray, 2, MPI_INT, j, 100, Comm, &status);
-
-       N_SubDomainCells = IntArray[0]; // including halo cells if any
-       N_SubDomainDOF = IntArray[1];   // including halo cells DOF if any   
-       N_LocalDofAllRank[j] = N_SubDomainDOF;
-
-       if(j>1)
-        {
-         delete [] SubDomainParentCellNo;
-         delete [] SubDomainGlobalNumbers;
-         delete [] SubDomainBeginIndex;
-        }
-
-       /** get the subdomain cells' global cell numbers */
-       SubDomainParentCellNo = new int[N_SubDomainCells];
-       MPI_Recv(SubDomainParentCellNo, N_SubDomainCells, MPI_INT, j, 200, Comm, &status);
-
-       SubDomainGlobalNumbers = new int[N_SubDomainCells*N_LocDof];
-       MPI_Recv(SubDomainGlobalNumbers, N_SubDomainCells*N_LocDof, MPI_INT, j, 300, Comm, &status);
-
-       SubDomainBeginIndex = new int[N_SubDomainCells];
-       MPI_Recv(SubDomainBeginIndex, N_SubDomainCells, MPI_INT, j, 400, MPI_COMM_WORLD, &status);
-
-       /** mapping begin*/
-       for(k=0; k<N_SubDomainCells; k++)
-        {
-         M = SubDomainParentCellNo[k];
-         DOF = GlobalNumbers + BeginIndex[M];
-         SubDomainDOF = SubDomainGlobalNumbers + SubDomainBeginIndex[k];
-
-         for(l=0; l<N_LocDof; l++)
-          {
-           N=DOF[l];
-           P = SubDomainDOF[l];
-
-           GlobalDofOFLocalDofAllRank[(j-1)*MaxN_LocalDofAllRank +  P] = N;
-          } // for(l=0; l<N_LocDof; l++)
-        } // for(i=0; i<N_SubDomainCells; i++)
-
-       if(j>1)
-        MPI_Wait(&request006, MPI_STATUS_IGNORE);
-
-//         MPI_Isend(GlobalDofOFLocalDofAllRank+(j-1)*MaxN_LocalDofAllRank, N_SubDomainDOF, MPI_INT,
-//                   j, 500, Comm, &request006);
-        MPI_Send(GlobalDofOFLocalDofAllRank+(j-1)*MaxN_LocalDofAllRank, N_SubDomainDOF, MPI_INT,
-                  j, 500, Comm);
-      }//for(j=1;j<size
-
-     delete [] SubDomainParentCellNo;
-     delete [] SubDomainGlobalNumbers;
-     delete [] SubDomainBeginIndex;
-    }
-   else
-    {
-     IntArray[0] = N_Cells;
-     IntArray[1] = N_U;
-     MPI_Send(IntArray, 2, MPI_INT, 0, 100, Comm);
-
-     SubDomainParentCellNo = Coll->GetGlobalIndex();
-     MPI_Send(SubDomainParentCellNo, N_Cells, MPI_INT, 0, 200, Comm);
-
-     MPI_Send(GlobalNumbers, N_Cells*N_LocDof, MPI_INT, 0, 300, Comm);
-     MPI_Send(BeginIndex, N_Cells, MPI_INT, 0, 400, Comm);
-
-     GlobalDofOfLocalDof = new int[N_U];
-//      MPI_Irecv(GlobalDofOfLocalDof, N_U, MPI_INT, 0, 500, Comm, &request006);
-     MPI_Recv(GlobalDofOfLocalDof, N_U, MPI_INT, 0, 500, Comm, MPI_STATUS_IGNORE);
-// // //       WaitForMapDofFromRoot3D();
-//      MPI_Wait(&request006, MPI_STATUS_IGNORE);
-//       if(rank==1)
-//        {
-//         for(i=0; i<N_U; i++)
-//          printf("In rank LocalDof %d:  GlobalDofOfLocalDof  : %d \n",i,  GlobalDofOfLocalDof[i]);
-//        }
-    } // else if(rank==0)
-
-  delete [] IntArray;
-
-//  printf("Rankk %d MapDofFromRoot3D  %d  \n",rank, N_Neibs );
-//  MPI_Finalize();
-// exit(0);
-}
-
 
 /** Communication between processor based on defined schedule */
 /** arrays (send & recev) with same (senddisp) size */
@@ -4900,8 +2319,6 @@ int TParFECommunicator3D::FECommunicateNeib(int **sendbuf, int senddisp, int *se
   return 0;
 } // FECommunicateNeib
 
-
-
 /** Communication between processor based on defined schedule */
 /** send and recev arrays with same size */
 int TParFECommunicator3D::FECommunicateNeib(double **sendbuf, int senddisp, int *sendlen,
@@ -5017,7 +2434,6 @@ int TParFECommunicator3D::FECommunicateNeib(double **sendbuf, int senddisp, int 
 
   return 0;
 } // FECommunicateNeib
-
 
 int TParFECommunicator3D::FECommunicateNeib(double *sendbuf, int senddisp, int *sendlen,
                                             double *recvbuf, int N_dim)
@@ -5292,27 +2708,6 @@ int TParFECommunicator3D::FECommunicateOneWay(double *sendbuf, int disp, double 
 // 
 //   return 0;
 } // FECommunicateNeib
-
-
-// root should not be called this function
-int TParFECommunicator3D::WaitForGlobalDofFromNeib3D()
-{
-//    MPI_Wait(&request001, MPI_STATUS_IGNORE);
-//    MPI_Wait(&request002, MPI_STATUS_IGNORE);
-//    MPI_Wait(&request003, MPI_STATUS_IGNORE);
-//    MPI_Wait(&request004, MPI_STATUS_IGNORE);
-
-  return 0;
-}
-
-
-int TParFECommunicator3D::WaitForMapDofFromRoot3D()
-{
-   MPI_Wait(&request006, MPI_STATUS_IGNORE);
-
-  return 0;
-}
-
 
 #endif
 

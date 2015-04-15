@@ -125,6 +125,7 @@ LIBRARY = $(LIBPATH)lib_FE_par.a
         $(SRCPATH)Structure3D.o \
         $(SRCPATH)Superconvergence3D.o \
         $(SRCPATH)TCD3D.o \
+	$(SRCPATH)TimeDiscRout.o \
         $(SRCPATH)TNSE3D_FixPo.o \
         $(SRCPATH)TNSE3D_Newton.o \
         $(SRCPATH)TetraAffin.o \

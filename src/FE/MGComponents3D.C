@@ -209,6 +209,8 @@ void Prolongate(TFESpace3D *CoarseSpace,
   double t1,t2;
 #ifdef _MPI
   t1 = MPI_Wtime();
+#else
+  t1 = GetTime();
 #endif
   // begin code
   CoarseColl = CoarseSpace->GetCollection();
@@ -240,8 +242,17 @@ void Prolongate(TFESpace3D *CoarseSpace,
   {
     cell = FineColl->GetCell(i);
     cell->SetClipBoard(-1);
+    
+    DOF = FineGlobalNumbers+FineBeginIndex[i];
+    FineId = FineSpace->GetFE3D(i, cell);
+    FineElement = TFEDatabase3D::GetFE3D(FineId);
+    FineBF = FineElement->GetBaseFunct3D_ID();
+    N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
+    for(j=0;j<N_Fine;j++)
+      #pragma omp atomic 
+      aux[DOF[j]] += 1;
   }
-
+  
 #ifdef _HYBRID
 #pragma omp for schedule(static) nowait 
 #endif
@@ -279,6 +290,10 @@ void Prolongate(TFESpace3D *CoarseSpace,
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
+#ifdef _MPI
+    if(cell->IsHaloCell())   continue;
+#endif
+    
     k = cell->GetClipBoard();
     if (k == -2)
     {
@@ -319,8 +334,8 @@ void Prolongate(TFESpace3D *CoarseSpace,
          cell->SetClipBoard(-2);
         }
 #ifdef _HYBRID
-        if(k==-2) continue;
-#endif
+	  if(k==-2) continue;
+	#endif
 	FineNumber = -(k+10);
         FineId = FineSpace->GetFE3D(FineNumber, cell);
         FineElement = TFEDatabase3D::GetFE3D(FineId);
@@ -371,10 +386,8 @@ void Prolongate(TFESpace3D *CoarseSpace,
 	 #pragma omp atomic
 #endif	   
           FineFunction[Index] += Val2[k];
-#ifdef _HYBRID  
-	  #pragma omp atomic
-#endif  
-          aux[Index] += 1;
+	  //#pragma omp atomic
+          //aux[Index] += 1;
 	 }
         }
       } // endfor j
@@ -443,10 +456,8 @@ void Prolongate(TFESpace3D *CoarseSpace,
 	  #pragma omp atomic
 #endif	  
          FineFunction[Index] += Val2[k];
-#ifdef _HYBRID 
-	 #pragma omp atomic
-#endif 
-         aux[Index] += 1;
+	 //#pragma omp atomic
+         //aux[Index] += 1;
 	}
       }
 #ifdef _HYBRID
@@ -466,10 +477,13 @@ void Prolongate(TFESpace3D *CoarseSpace,
   {
     FineFunction[i] /= aux[i];
   }
-  #ifdef _MPI
+  
+#ifdef _MPI
   t2 = MPI_Wtime();
-  tP += (t2-t1);
+#else
+  t2 = GetTime();
 #endif
+  tP += (t2-t1);
 }
 
 void Prolongate(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
@@ -726,6 +740,8 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
   double t1,t2;
 #ifdef _MPI
   t1 = MPI_Wtime();
+#else
+  t1 = GetTime();
 #endif
   // begin code
   CoarseColl = CoarseSpace->GetCollection();
@@ -745,6 +761,9 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
 
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
   memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
+  
+  
+  
   
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i,j,k,cell,DOF,FineId,FineElement,FineBF,N_Fine)
@@ -769,7 +788,6 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
       aux[DOF[j]] += 1;
   }
 
-  
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i,k,cell)
 {
@@ -777,7 +795,7 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
 #endif
   // modify fine function values, will be repaired at end
   for(i=0;i<N_FineDOFs;i++)
-  {
+  {    
     FineFunction[i] /= aux[i];
   }
  
@@ -817,6 +835,10 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
+#ifdef _MPI
+    if(cell->IsHaloCell())	continue;
+#endif
+    
     k = cell->GetClipBoard();
     if (k == -2)
     {
@@ -990,10 +1012,13 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
     FineFunction[i] *= aux[i];
   }
    
-  #ifdef _MPI
+#ifdef _MPI
   t2 = MPI_Wtime();
-  tR+=(t2-t1);
+#else
+  t2 = GetTime();
 #endif
+  tR+=(t2-t1);
+  
 }
 
 /** defect restriction from level+1 to level */

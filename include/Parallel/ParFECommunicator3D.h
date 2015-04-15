@@ -24,20 +24,41 @@
 class TParFECommunicator3D
 {
   protected:
-    
+//public:
      int *N_DofSend,*N_DofRecv,*DofSend,*DofRecv,*sdispl,*rdispl,*DofSendPos,*DofRecvPos;  
      
      int *N_DofSendH,*N_DofRecvH,*DofSendH,*DofRecvH,*sdisplH,*rdisplH;
      
-     int N_SendDof, N_SendDofH, *Master, *Reorder, *NewGN; 
+     int N_SendDof, N_SendDofH, *Master,*Reorder, *NewGN; 
      
      int N_Slave, N_Halo, N_Master, N_Dept, N_Int, N_ActiveSlave, N_ActiveHalo;
+     
+     
+     //new implement march'15
+     int N_InterfaceM, N_InterfaceS, N_Halo1, N_Halo2, N_Dept1, N_Dept2, N_Dept3;
+     
+     int *N_DofSendMS, *N_DofSendH1, *N_DofSendH2, *N_DofRecvMS, *N_DofRecvH1, *N_DofRecvH2;
+     
+     int *sdisplMS, *sdisplH1, *sdisplH2, *rdisplMS, *rdisplH1, *rdisplH2;
+     
+     int N_SendDofMS, N_SendDofH1, N_SendDofH2;
+     
+     int *DofSendMS, *DofSendH1, *DofSendH2, *DofRecvMS, *DofRecvH1, *DofRecvH2;
+     
+     double *Send_InfoMS, *Send_InfoH1, *Send_InfoH2, *Recv_InfoMS, *Recv_InfoH1, *Recv_InfoH2; 
+     
+     char *DofMarker;
+     
+     int *Reorder_M, *Reorder_I, *Reorder_D1, *Reorder_D2, *Reorder_D3;
+     //new implement march'15
      
      int N_CMaster, N_CDept, N_CInt, *ptrCMaster, *ptrCDept, *ptrCInt;
 
      double *Send_Info,*Recv_Info; 
      
      double *Send_InfoM,*Recv_InfoM, *Send_InfoH,*Recv_InfoH;
+     
+     int N_ActiveInterfaceS, N_ActiveInterfaceM, N_ActiveHalo1, N_ActiveHalo2;
 
     /** MPI_Comm for which the fespace communications are needed */
      MPI_Comm Comm;
@@ -156,6 +177,7 @@ class TParFECommunicator3D
     int *N_CommunicationProcesses;
     
   public:
+
     TParFECommunicator3D(MPI_Comm comm, TFESpace3D *fespace, TSquareStructure3D *Sqstruct);
 
     ~TParFECommunicator3D();
@@ -169,25 +191,13 @@ class TParFECommunicator3D
     void ConstructDofMapRe();
     /**Set new Global numbers */
     void SetNewGN();
+    void SetNewGN_light();
+    
+    /** Construct DofRankIndex based using only useful halo */
+    void ConstructDofMap_light();
     
     /** Reorder matrix after coloring */
     void ColorAndReorder(int start, int end, int &numColors, int *&ptrColors);
-    
-    void ConstructDofRankIndex();
-    
-    void ConstructDofRankIndex_old();
-
-    /** Construct DofRankIndex based on used FESpace */
-    void ConstructDofRankIndex_New();
-
-    /** Scheduling for communication between processor based on used FESpace */
-    void ScheduleParFEComm3D();
-
-    /** Mapping of DOFs between subdomains */
-    void MapDofFromNeib3D();
-
-    /** Mapping of DOFs between subdomains */
-    void ConstructGlobalDofFromNeib3D();
     
     void SetFENeibCommunicationSteps();
     
@@ -215,10 +225,6 @@ class TParFECommunicator3D
 
     TFESpace3D *Getfespace()
       {return FESpace; }
-
-    int WaitForGlobalDofFromNeib3D();
-
-    int WaitForMapDofFromRoot3D();
 
     void GetDofNeibInfo(int &maxrankpDof, int &n_Neibs, int *&neibsRank, int &n_DeptDofs, 
                         int *&deptDofs, int *&n_DeptDofNeibs, 
@@ -295,19 +301,23 @@ class TParFECommunicator3D
     { return DepDofIndexOfLocDof; }
     
     /*=========================== MODOFIED PAR FE COMMUNICATOR using Alltoall =================================*/
-     void SetSlaveDofRows(int *Row,int *KCol,double *Values,double *rhs);
-
-    void CommUpdate(double *sol,double *rhs);
+    void CommUpdate(double *sol);
     
-    void CommUpdateH(double *sol,double *rhs);
+    void CommUpdate(double *sol, double *rhs);
     
-    void CommUpdateM(double *sol,double *rhs);
-   // void CommUpdate(double *sol);   
+    void CommUpdateH1(double *sol);
+    
+    void CommUpdateH2(double *sol);
+    
+    void CommUpdateMS(double *sol);
+     
     void CommUpdateAlltoAllv(double *sol,double *rhs);  
     
     void CommUpdateReduce(double *sol,double *rhs);
     
-    void CommUpdate(double *sol);
+    void CommUpdateReduceMS(double *rhs);
+    
+    void CommUpdate_M_H1(double *sol);
     
     int *GetMaster()
     {return Master;}
@@ -336,7 +346,39 @@ class TParFECommunicator3D
     int* GetptrCInt()
     {return ptrCInt;}
     
+    int find_min(int *arr, int N, char *temp_arr);
+    char *Get_DofMarker()
+    {  return DofMarker; }
     
+    int* GetReorder_M()
+    {return Reorder_M;}
+    
+    int* GetReorder_I()
+    {return Reorder_I;}
+    
+    int* GetReorder_D1()
+    {return Reorder_D1;}
+    
+    int* GetReorder_D2()
+    {return Reorder_D2;}
+    
+    int* GetReorder_D3()
+    {return Reorder_D3;}
+    
+    int GetN_InterfaceM()
+    {return N_InterfaceM;}
+    
+    int GetN_Int_light()
+    {return N_Int;}
+    
+    int GetN_Dept1()
+    {return N_Dept1;}
+    
+    int GetN_Dept2()
+    {return N_Dept2;}
+    
+    int GetN_Dept3()
+    {return N_Dept3;}
 };
 
 #endif

@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern double tSor,tCyc,tP,tR,tD,tS,tSmoother;
+double tt=0.0;
 /** constructor with initialization */
 TFixedPointIte::TFixedPointIte(MatVecProc *MatVec, 
                                DefectProc *Defect, 
@@ -142,9 +144,7 @@ TFixedPointIte::~TFixedPointIte()
     delete AuxArray[0];
   }
 }
-#ifdef _MPI
-extern double tSor,tCyc,tC,tC1,tC2,tP,tR,tD,tS;
-#endif
+
 int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
                              TMatrix **mat, double *sol, 
                              double *rhs)
@@ -164,35 +164,28 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
    t1 = GetTime();
 #endif    
 
-#ifdef _MPI 
-   ParComm->CommUpdate(sol,rhs);
-#endif
-  
   matvecdefect(sqmat, mat, sol, rhs, defect);
-#ifdef _MPI  
+   
+
+#ifdef _MPI
    res=0.;
    for(ii=0; ii<N_DOF; ii++)
-    if(MasterOfDof[ii] == rank)
+    if(MasterOfDof[ii] == rank){
       res += defect[ii]*defect[ii];
+    }
     
    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+
    res=res0=reslast = sqrt(resglobal); 
 #else  
   
   res=res0=reslast=sqrt(Ddot(N_DOF,defect,defect));     
-     
 #endif  
- 
-//  start_residual=res;
-//  residuals[0]=res;
-//  residual_cnt++;
-// #ifdef _MPI  
-//   
-// #endif  
+
    if (TDatabase::ParamDB->SC_VERBOSE>0     
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
-#endif        
+#endif      
        )   
      printf("Fixed Point Iteration 0: %e\n",  res);    
   
@@ -200,33 +193,43 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   if (res<=res_norm_min)
     maxite=minit;
 
- for (i=1; i<=maxite; i++)
+  for (i=1; i<=maxite; i++)
   { 
 #ifdef _MPI 
-   ParComm->CommUpdate(defect, defect);
+//   ParComm->CommUpdate(defect, defect);
+    if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5)
+      ParComm->CommUpdate(defect);
 #endif  
-   
+
     // solve defect equation with the preconditioner
     // rhs and result are on last component 
+// #ifdef _MPI
+//     if(rank==0)
+// #endif
+//      printf("Fixed Point Iteration %d: %e\n", i, res); 
+    
     prec->Iterate(sqmat, mat, defect, defect); 
+   
     // add to sol and damp
     Daxpy(N_DOF,1.0,defect,sol);
     // compute new defect
     matvecdefect(sqmat, mat, sol, rhs, defect);
     
-#ifdef _MPI    
+#ifdef _MPI
    res=0.;
    for(ii=0; ii<N_DOF; ii++)
-    if(MasterOfDof[ii] == rank)
-      res += defect[ii]*defect[ii];    
+    if(MasterOfDof[ii] == rank){
+      res += defect[ii]*defect[ii];
+    }
     
    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
-   res= sqrt(resglobal);    
-#else     
-    res=sqrt(Ddot(N_DOF,defect,defect));
-#endif     
-    
-    if (TDatabase::ParamDB->SC_VERBOSE>0     
+
+   res = sqrt(resglobal); 
+#else  
+   res = sqrt(Ddot(N_DOF,defect,defect));     
+#endif 
+ 
+   if (TDatabase::ParamDB->SC_VERBOSE>0     
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
 #endif        
@@ -257,7 +260,8 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   t2 = MPI_Wtime();
 #else
   t2 = GetTime();  
-#endif  
+#endif 
+  tt += t2-t1 ;
   // iteration stopped because of reaching maximal iteration number
  /* if (i>=maxite && res>res_norm_min && res>res0*red_factor )
     {
@@ -268,28 +272,28 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   
   if (i>maxite) 
     i=maxite;*/
+ if(1)
 #ifdef _MPI
   if(rank==0)
 #endif
   {
-  OutPut("FP ITE: " << setw(4) << i);
-  OutPut(" t: " << setw(6) << t2-t1);
-  OutPut(" t/cyc: " << setw(6) << (t2-t1)/i);
-#ifdef _MPI
-  OutPut(" tSor: " << setw(6) << tSor);
-  OutPut(" tCyc: " << setw(6) << tCyc);
-#endif
-  OutPut(" res : "  << setw(8) << res);
-  OutPut(" rate: " << pow(res/res0,1.0/i) << endl);
-#ifdef _MPI
-  OutPut(" tC: " << setw(6) << tC);
-  OutPut(" tC1: " << setw(6) << tC1);
-  OutPut(" tC2: " << setw(6) << tC2 <<endl);
-  OutPut(" tSD: " << setw(6) << tS);
-  OutPut(" tDef: " << setw(6) << tD);
-  OutPut(" tP: " << setw(6) << tP);
-  OutPut(" tR: " << setw(6) << tR<<endl);
-#endif
+  OutPut("----------------------------------------------------------------------------------------"<<endl);  
+  OutPut(" FP ITE: " << setw(4) << i <<endl);
+  OutPut(" t (time taken for this FP) : " << setw(6) << t2-t1 <<endl);
+  OutPut(" t (total time taken for FP) : " << setw(6) << tt <<endl);
+  OutPut(" t/cyc (time taken per FP cycle) : " << setw(6) << (t2-t1)/i <<endl<<endl);
+
+  OutPut(" tSmoother: " << setw(6) << tSmoother <<endl);
+  OutPut(" tCyc (time taken for all MG cycles in FP) : " << setw(6) << tCyc <<endl<<endl);
+
+  OutPut(" res : "  << setw(8) << res <<endl);
+  OutPut(" rate: " << pow(res/res0,1.0/i) << endl<<endl);
+
+  OutPut(" tSD (time taken for scalar defect computation): " << setw(6) << tS <<endl);
+  OutPut(" tDef (time taken for defect computation): " << setw(6) << tD <<endl <<endl);
+  OutPut(" tP (Prolongation): " << setw(6) << tP <<endl);
+  OutPut(" tR (Restriction) : " << setw(6) << tR<<endl);
+  OutPut("----------------------------------------------------------------------------------------"<<endl);
   }
   // iteration_cnt=i;
   // end_residual=res;                

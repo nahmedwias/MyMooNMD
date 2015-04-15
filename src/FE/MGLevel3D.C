@@ -21,6 +21,9 @@
 #include <ParFECommunicator3D.h>
 #include <FEFunction3D.h>
 
+double tSor=0.0;
+double tD=0.0,tS=0.0;
+
 /** constructor */
 TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a,
                        double *rhs, double *sol, int n_aux,
@@ -63,18 +66,18 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a,
   Additional = NULL;
 
   Permutation = permutation;
+  
 }
 
 
 #ifdef _MPI
 /** constructor for parallel */
 TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol, 
-                       TFEFunction3D *c, TParFECommunicator3D *parComm,TFESpace3D *ownScalarSpace, int n_aux,
+                       TParFECommunicator3D *parComm, int n_aux,
                        int *permutation)
 {
   int i;
   double *aux;
-  char UString[] = "u";
 
   Level = level;
 
@@ -82,22 +85,9 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 
   N_Active = FESpace->GetN_ActiveDegrees();
   HangingNodeBound = FESpace->GetHangingBound();
-  
- // if(N_Active == HangingNodeBound) printf("actve hangbnd equal\n");
   N_Dirichlet = FESpace->GetN_Dirichlet();
   N_DOF = FESpace->GetN_DegreesOfFreedom();
   
-  Reorder = parComm->GetReorder();
-  N_Master = parComm->GetN_Master();
-  N_Int = parComm->GetN_Int();
-  N_Dept = parComm->GetN_Dept();
-  
-  N_CMaster = parComm->GetN_CMaster();
-  ptrCMaster = parComm->GetptrCMaster();
-  N_CInt = parComm->GetN_CInt();
-  ptrCInt = parComm->GetptrCInt();
-  N_CDept = parComm->GetN_CDept();
-  ptrCDept = parComm->GetptrCDept();
 /*
   cout << "N_Active: " << N_Active << endl;
   cout << "HangingNodeBound: " << HangingNodeBound << endl;
@@ -106,7 +96,6 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 */
 
   A = a;
-  C = c;
   MatrixStructure = a->GetMatrixStructure();
   RowPtr = a->GetRowPtr();
   KCol = a->GetKCol();
@@ -125,13 +114,30 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 
   Permutation = permutation;
   
+  Reorder = parComm->GetReorder();
+  N_Master = parComm->GetN_Master();
+  N_Int = parComm->GetN_Int();
+  N_Dept = parComm->GetN_Dept();
   
-  ParComm = parComm;
-  OwnScalarSpace = ownScalarSpace;  
-  OwnN_DOF = OwnScalarSpace->GetN_DegreesOfFreedom();
-  OwnSolArray = new double[OwnN_DOF];
- 
-  OwnC = new TFEFunction3D(OwnScalarSpace, UString, UString, OwnSolArray, OwnN_DOF);
+  N_CMaster = parComm->GetN_CMaster();
+  ptrCMaster = parComm->GetptrCMaster();
+  N_CInt = parComm->GetN_CInt();
+  ptrCInt = parComm->GetptrCInt();
+  N_CDept = parComm->GetN_CDept();
+  ptrCDept = parComm->GetptrCDept();
+  
+  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6)
+  {
+    N_InterfaceM = parComm->GetN_InterfaceM();
+    N_Int        = parComm->GetN_Int_light();
+    N_Dept1      = parComm->GetN_Dept1();
+    N_Dept2      = parComm->GetN_Dept2();
+    N_Dept3      = parComm->GetN_Dept3();
+  }
+  
+  ParComm = parComm; 
+  Temp_arr    = new double[N_DOF];
+
 }
 #endif
 
@@ -162,42 +168,47 @@ double *TMGLevel3D::GetAuxVector(int i)
   return ret;
 } // GetAuxVector
 
-
-double tD=0.0,tS=0.0;
 void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
 {
   double t1,t2;
 #ifdef _MPI
-  t1 = MPI_Wtime();
-#endif
-  ScalarDefect(A, sol, f, d, res);
-  #ifdef _MPI
-  t2 = MPI_Wtime();
-  tS += (t2-t1);
-  t1 = MPI_Wtime();
-#endif
-#ifdef _MPI  
   int i, rank, *MasterOfDof, dof,numThreads= TDatabase::ParamDB->OMPNUMTHREADS;
-  double res_global,res1;
+  double res_global=0,res1=0;
   
   MPI_Comm_rank(ParComm->GetComm(), &rank); 
   MasterOfDof = ParComm->GetMaster();
   
+  t1 = MPI_Wtime();
+  
+  ParComm->CommUpdate(sol);
+#endif
+  
+  ScalarDefect(A, sol, f, d, res);
+
+#ifdef _MPI
+  t2 = MPI_Wtime();
+  tS += (t2-t1);
+  t1 = MPI_Wtime();
+#endif
+  
+#ifdef _MPI  
 #ifdef _HYBRID
   omp_set_num_threads(numThreads);
 #pragma omp parallel default(shared) private(i)
 {
 #pragma omp for schedule(guided) nowait reduction(+:res1)
 #endif
-  for(i=0; i<N_DOF; i++)
+  for(i=0; i<N_DOF; i++){
     if(MasterOfDof[i] == rank)
       res1 += d[i]*d[i];
+  }
 #ifdef _HYBRID
 }
 #endif
 
   MPI_Allreduce(&res1, &res_global, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
-  res = sqrt(res_global); 
+  res = sqrt(res_global);
+  //printf("\n.......rank=%d.............res::%lf         res_global::%lf             res1::%lf",rank,res,res_global,res1);
 #endif 
 #ifdef _MPI
 t2 = MPI_Wtime();
@@ -214,7 +225,13 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
   double omega;
 
   omega = Parameters[0];
- 
+  
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  int *master =ParComm->GetMaster();
+#endif
+  
   // set Dirichlet nodes
   memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
            N_Dirichlet*SizeOfDouble);
@@ -226,6 +243,10 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
  
   for(ii=0;ii<N_Active;ii++)
   {
+#ifdef _MPI
+    if(master[ii] != rank)
+      continue;
+#endif
     i = ii;
     // i = Permutation[ii];
     // cout << "row: " << i << "   " << endl;
@@ -250,15 +271,19 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
 
 
   // set hanging nodes 
-  j = RowPtr[N_Active];
+//   j = RowPtr[N_Active];
 #ifdef _HYBRID
 #pragma omp for schedule(dynamic) nowait 
 #endif
   for(i=N_Active;i<HangingNodeBound;i++)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i+1];
-    for(;j<k;j++)
+    for(j=RowPtr[i];j<k;j++)
     {
       index = KCol[j];
       if(index != i)
@@ -274,384 +299,6 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
 
 } // SOR
 
-#ifdef _MPI
-void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
-        int N_Parameters, double *Parameters)
-{
-  int ii, i,j,k,l,index,rank;
-  double s, t, diag;
-  double omega;
-
-  omega = Parameters[0];
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  // set Dirichlet nodes
-  memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
-           N_Dirichlet*SizeOfDouble);
-  
-#ifdef _HYBRID
-#pragma omp parallel default(shared) private(i,ii,s,k,j,index,diag,t)
-{
-#pragma omp for schedule(dynamic) nowait 
-#endif
-
-  for(ii=0;ii<N_Master;ii++)
-  {
-    i = ii;
-    // i = Permutation[ii];
-    // cout << "row: " << i << "   " << endl;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
- 
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-  
-//  MPI_Barrier(MPI_COMM_WORLD);
-  ParComm->CommUpdateM(sol,f);
-//  MPI_Barrier(MPI_COMM_WORLD);
-     for(ii=N_Master;ii<N_Int;ii++)
-  {
-    i = ii;
-    // i = Permutation[ii];
-    // cout << "row: " << i << "   " << endl;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//   MPI_Barrier(MPI_COMM_WORLD);
- 
-  for(ii=N_Int;ii<N_Dept;ii++)
-  {
-    i = ii;
-    // i = Permutation[ii];
-    // cout << "row: " << i << "   " << endl;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//   MPI_Barrier(MPI_COMM_WORLD);
-  ParComm->CommUpdateH(sol,f);
-//   MPI_Barrier(MPI_COMM_WORLD);
-  
-
- /* 
-  for(ii=N_Dept;ii<N_Active;ii++)
-  {
-    i = Reorder[ii];
-    // i = Permutation[ii];
-    // cout << "row: " << i << "   " << endl;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i*/
-// MPI_Barrier(MPI_COMM_WORLD);
-  // set hanging nodes 
-  j = RowPtr[N_Active];
-#ifdef _HYBRID
-#pragma omp for schedule(dynamic) nowait 
-#endif
-  for(i=N_Active;i<HangingNodeBound;i++)
-  {
-    s = f[i];
-    k = RowPtr[i+1];
-    for(;j<k;j++)
-    {
-      index = KCol[j];
-      if(index != i)
-        s -= Entries[j] * sol[index];
-      else
-        diag = Entries[j];
-    } // endfor j
-    sol[i] = s/diag;
-  } // endfor i
-#ifdef _HYBRID
-}
-#endif
-
-} // SOR_Re
-
-double tSor=0.0;
-//double tM=0.0,tH=0.0;
-void TMGLevel3D::SOR_Color(double *sol, double *f, double *aux,
-        int N_Parameters, double *Parameters)
-{
-  int ii, i,j,jj,k,l,index,rank,tid,nrows=0,numThreads;
-  double s, t, diag,t1,t2;
-  double omega;
-  numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
-  #ifdef _MPI
-  t1 = MPI_Wtime();
-#endif
-  omega = Parameters[0];
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  // set Dirichlet nodes
-  memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
-           N_Dirichlet*SizeOfDouble);
-
-#ifdef _HYBRID
-  omp_set_num_threads(numThreads);
-#pragma omp parallel default(shared) private(i,ii,s,k,j,jj,tid,index,diag,t) 
-{
-  tid = omp_get_thread_num();
-#endif
-  for(ii=0;ii<N_CMaster;ii++)
-  {
-#ifdef _HYBRID
-    #pragma omp for schedule(guided) 
-#endif
-    for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
-    {
-//       nrows+=1;
-     i = jj;
-     // i = Permutation[ii];
-     // cout << "row: " << i << "   " << endl;
-      s = f[i];
-      k = RowPtr[i+1];
-      for(j=RowPtr[i];j<k;j++)
-      {
-       index = KCol[j];
-       if(index == i)
-       {
-          diag = Entries[j];
-       }
-       else
-       {
-        s -= Entries[j] * sol[index];
-       }
-      }  // endfor j
- 
-      t = sol[i];
-     sol[i] = omega*(s/diag-t) + t;
-    }
-//      #pragma omp barrier
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-  
-//   MPI_Barrier(MPI_COMM_WORLD);
-//  if(tid==0)
-#pragma omp master
-{
-    ParComm->CommUpdateM(sol,f);
-}
- //cout<<"01"<<"\n";
- //   MPI_Barrier(MPI_COMM_WORLD);
- //cout<<"02"<<"\n";
- #ifdef _HYBRID
-  #pragma omp for schedule(guided) 
-#endif
-    for(jj=ptrCInt[0];jj<ptrCInt[1];jj++)
-    {
-//      nrows+=1;
-     i = jj;
-     
-     // i = Permutation[ii];
-     // cout << "row: " << i << "   " << endl;
-     s = f[i];
-     k = RowPtr[i+1];
-     for(j=RowPtr[i];j<k;j++)
-     {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-     } // endfor j
-     t = sol[i];
-     sol[i] = omega*(s/diag-t) + t;
-    }
- #pragma omp barrier
- 
-  for(ii=0;ii<N_CDept;ii++)
-  {
-  
-#ifdef _HYBRID
-  #pragma omp for schedule(guided) 
-#endif
-    for(jj=ptrCDept[ii];jj<ptrCDept[ii+1];jj++)
-    {
-//         nrows+=1;
-      i = jj;
-      // i = Permutation[ii];
-      // cout << "row: " << i << "   " << endl;
-       s = f[i];
-       k = RowPtr[i+1];
-      for(j=RowPtr[i];j<k;j++)
-      {
-       index = KCol[j];
-       if(index == i)
-       {
-        diag = Entries[j];
-       }
-       else
-       {
-         s -= Entries[j] * sol[index];
-       }
-      } // endfor j
-     t = sol[i];
-     sol[i] = omega*(s/diag-t) + t;
-    }
-    
-//     #pragma omp barrier
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//   MPI_Barrier(MPI_COMM_WORLD);
-//  if(tid==0)
- 
-#pragma omp master
-{
-   ParComm->CommUpdateH(sol,f);
-}
-
-   
-  for(ii=1;ii<N_CInt;ii++)
-  {
-   
-#ifdef _HYBRID
-  #pragma omp for schedule(guided) 
-#endif
-    for(jj=ptrCInt[ii];jj<ptrCInt[ii+1];jj++)
-    {
-//      nrows+=1;
-     i = jj;
-     
-     // i = Permutation[ii];
-     // cout << "row: " << i << "   " << endl;
-     s = f[i];
-     k = RowPtr[i+1];
-     for(j=RowPtr[i];j<k;j++)
-     {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-     } // endfor j
-     t = sol[i];
-     sol[i] = omega*(s/diag-t) + t;
-    }
-//     #pragma omp barrier
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-   
- //  cout<<"03"<<"\n";
-//   MPI_Barrier(MPI_COMM_WORLD);
- /* 
-  for(ii=N_Dept;ii<N_Active;ii++)
-  {
-    i = Reorder[ii];
-    // i = Permutation[ii];
-    // cout << "row: " << i << "   " << endl;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i*/
-// MPI_Barrier(MPI_COMM_WORLD);
-  // set hanging nodes 
-  j = RowPtr[N_Active];
-#ifdef _HYBRID
-#pragma omp for schedule(static) 
-#endif
-  for(i=N_Active;i<HangingNodeBound;i++)
-  {
-    s = f[i];
-    k = RowPtr[i+1];
-    for(;j<k;j++)
-    {
-      index = KCol[j];
-      if(index != i)
-        s -= Entries[j] * sol[index];
-      else
-        diag = Entries[j];
-    } // endfor j
-    sol[i] = s/diag;
-  } // endfor i
-
-#ifdef _HYBRID
-}
-#endif
-#ifdef _MPI
- t2 = MPI_Wtime();
- tSor += (t2-t1);
-#endif
-} // SOR_Coloring
-#endif
 // SSOR smoother
 void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
@@ -659,6 +306,12 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   int i,j,k,l,index;
   double s, t, diag;
   double omega;
+  
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  int *master =ParComm->GetMaster();
+#endif
 
   omega = Parameters[0];
  
@@ -669,9 +322,13 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   j = RowPtr[0];
   for(i=0;i<N_Active;i++)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i+1];
-    for(;j<k;j++)
+    for(j = RowPtr[i];j<k;j++)
     {
       index = KCol[j];
       if(index == i)
@@ -687,9 +344,13 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   j = RowPtr[N_Active];
   for(i=N_Active;i<HangingNodeBound;i++)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i+1];
-    for(;j<k;j++)
+    for(j=RowPtr[i];j<k;j++)
     {
       index = KCol[j];
       if(index != i)
@@ -704,9 +365,13 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   j = RowPtr[N_Active]-1;
   for(i=N_Active-1;i>=0;i--)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif    
     s = f[i];
     k = RowPtr[i];
-    for(;j>=k;j--)
+    for(j=RowPtr[i+1]-1;j>=k;j--)
     {
       index = KCol[j];
       if(index == i)
@@ -722,9 +387,13 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   j = RowPtr[HangingNodeBound]-1;
   for(i=HangingNodeBound-1;i>=N_Active;i--)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i];
-    for(;j>=k;j--)
+    for(j=RowPtr[i+1]-1;j>=k;j--)
     {
       index = KCol[j];
       if(index != i)
@@ -744,10 +413,46 @@ void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
   double t, s, diag, omega;
 
   omega = Parameters[0];
+  
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  int *master =ParComm->GetMaster();
+#endif
 
+  //SHOULD THIS BE AFTER SETTING DRICHLET????
   memcpy(aux, sol, N_DOF*SizeOfDouble);
 
-  // set Dirichlet nodes
+//----------------------------------------------------------------------------------------------------  
+//   double rhs_norm        = 0.0, sol_norm        = 0.0;
+// #ifdef _MPI
+//    double rhs_norm_global = 0.0, sol_norm_global = 0.0;
+   
+//    for(i=0; i<N_DOF; i++)
+//     if(master[i] == rank){
+//       rhs_norm += f[i]*f[i];
+//       sol_norm += sol[i]*sol[i];
+//     }
+//    MPI_Allreduce(&rhs_norm, &rhs_norm_global, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+//    MPI_Allreduce(&sol_norm, &sol_norm_global, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+   
+//    sol_norm = sqrt(sol_norm_global);
+//    rhs_norm = sqrt(rhs_norm_global);
+   
+//    if(rank==0)
+// #else
+//      sol_norm = sqrt(Ddot((N_DOF)   ,sol,sol));
+//      rhs_norm = sqrt(Ddot((N_DOF)   ,f,f));
+// #endif
+//     {
+//        cout << "sol: " << sol_norm << endl;
+//        cout << "rhs: " << rhs_norm << endl;
+//     }
+  
+//------------------------------------------------------------------------------------------------------
+  // set Dirichlet node
+//   memcpy(sol+N_Active, f+N_Active, 
+//            (N_DOF-N_Active)*SizeOfDouble);
   memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
            N_Dirichlet*SizeOfDouble);
 
@@ -755,9 +460,13 @@ void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
   j = RowPtr[0];
   for(i=0;i<N_Active;i++)
   {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i+1];
-    for(;j<k;j++)
+    for(j = RowPtr[i];j<k;j++)
     {
       index = KCol[j];
       if(index == i)
@@ -773,9 +482,14 @@ void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
   j = RowPtr[N_Active];
   for(i=N_Active;i<HangingNodeBound;i++)
   {
+   // printf("yes\n");
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
     s = f[i];
     k = RowPtr[i+1];
-    for(;j<k;j++)
+    for(j = RowPtr[i];j<k;j++)
     {
       index = KCol[j];
       if(index != i)
@@ -836,6 +550,26 @@ void TMGLevel3D::CorrectNodes(double *vect)
 void TMGLevel3D::CorrectDefect(double *vect)
 {
   memset(vect+N_Active, 0, SizeOfDouble*(N_DOF-N_Active));
+  
+//   int i, *master;
+//   double sum = 0.,global_sum;
+// #ifdef _MPI
+//   int rank;
+//   MPI_Comm_rank(ParComm->GetComm(), &rank);
+//   master = ParComm->GetMaster();
+//   for(i=0;i<N_DOF;i++){
+//     if(master[i] == rank){
+//       sum+=vect[i]*vect[i];
+//     }
+//   }
+//   MPI_Allreduce(&sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+//   sum = global_sum;
+//   if(rank==0)
+// #else
+//   sum = ( Ddot(N_DOF,vect,vect) );
+// #endif
+//   
+//   printf("rhs: %lf\n",sqrt(sum));
 }
 
 // block 2x2 smoother
@@ -935,76 +669,53 @@ void TMGLevel3D::Block2x2(double *sol, double *f, double *aux,
 
 } // Block2x2
 
+//shamim :: check ILU (currently iterating for slaves also)
 // generate ILU decomposition
 void TMGLevel3D::ILUDecomposition()
 {
   int i,j,jj,k,l,N_;
   double diag, pivot, update;
-  int begin, end, beginJ, endJ, found, index, diag_index;
+  int begin, end, beginJ, endJ, found;
   static double beta_ilu = TDatabase::ParamDB->SC_ILU_BETA;
 
   N_=RowPtr[N_DOF];
   Additional = new double[N_];
   memcpy(Additional, Entries, N_*SizeOfDouble);
-  
-  // compute ILU decomposition
-  // loop over all rows
+
   for(i=0;i<N_DOF;i++)
   {
-    // pointer to the entries for the columns
     begin = RowPtr[i];
     end = RowPtr[i+1];
-    //diag = Additional[begin];
-    // find diagonal entry
-    diag = -4711;
-    for(j=begin;j<end;j++)
-    {
-      index = KCol[j];
-      if (index==i)
-      {
-        diag = Additional[j];
-        break;
-      }
-    }
-    if(fabs(diag)<1e-8) // ILU decomposition not possible
+    diag = Additional[begin];
+    if(fabs(diag)<1e-8)
     {
       cerr << "ILU decomposition failed" << endl;
       return;
     }
-    // loop over the columns
+
     for(j=begin+1;j<end;j++)
     {
-      // upper triangular entry
       if( (jj=KCol[j]) > i)
       {
-        // find row jj
         beginJ = RowPtr[jj];
         endJ = RowPtr[jj+1];
-        // search a(jj,i)
         found = 0;
         for(k=beginJ+1;k<endJ;k++)
         {
           if(KCol[k] != i) continue;
-          // pivot element, store it in Additional
           pivot = Additional[k]/diag;
           Additional[k] = pivot;
           found = 1;
           break;
         } // endfor k
-        // row of Dirichlet dof
         if(!found) continue;
-        // diagonal in row jj, is in sparsity pattern of A
         Additional[beginJ] -= pivot*Additional[j];
-        // update row jj
         for(k=begin+1;k<end;k++)
         {
-          // left part already done
           if( KCol[k] <= KCol[j] ) continue;
           update = Additional[k] * pivot;
-          // check if (k,l) is in the sparsity pattern of A
           for(l=beginJ+1;l<endJ;l++)
           {
-            // same column, compute coeff of U
             if(KCol[k] == KCol[l])
             {
               Additional[l] -= update;
@@ -1012,7 +723,6 @@ void TMGLevel3D::ILUDecomposition()
               break;
             } // endif
           } // endfor l
-          // if not in pattern, add to diagonal
           Additional[beginJ] += beta_ilu * fabs(update);
         } // endfor k
       } //endif
@@ -1043,13 +753,13 @@ void TMGLevel3D::ILUDecomposition()
 
 } // ILUDecomposition
 
+//shamim :: check ILU (currently iterating for slaves also)
 // ILU smoother
 void TMGLevel3D::ILU(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
   int i,j,k, begin, end;
-  double diag;
-  
+
   if (Additional==NULL)
   {
     if (TDatabase::ParamDB->SC_VERBOSE>1)    
@@ -1077,17 +787,7 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
     for(j=begin;j<end;j++)
       if( (k=KCol[j]) > i)
         aux[i] -= Additional[j]*aux[k];
-    //aux[i] /= Additional[begin];
-    // find diagonal entry
-    for(j=begin;j<end;j++)
-    {
-       if (KCol[j]==i)
-      {
-        diag = Additional[j];
-        break;
-      }
-    }
-    aux[i] /= diag;
+    aux[i] /= Additional[begin];
   }
 
   for(i=0;i<N_DOF;i++)
@@ -1095,6 +795,8 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
     sol[i] += 1.0*aux[i];
   }
 } // ILU
+
+//shamim :: check exact (currently iterating for slaves also)
 /** solve exact on this level */
 void TMGLevel3D::SolveExact(double *u1, double *rhs1)
 {  
@@ -1192,3 +894,195 @@ double TMGLevel3D::StepLengthControl(double *u,
   //cout << sqrt(Ddot(N_DOF,def,def)) << " " << numerator << " " << nominator<< " omega " << omega << endl;
   return(omega);
 }
+
+#ifdef _MPI
+void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
+        int N_Parameters, double *Parameters)
+{
+  int ii, i,j,k,l,index,rank;
+  double s, t, diag;
+  double omega;
+  
+  omega = Parameters[0];
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  // set Dirichlet nodes
+  memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
+           N_Dirichlet*SizeOfDouble);
+
+#ifdef _HYBRID
+#pragma omp parallel default(shared) private(i,ii,s,k,j,index,diag,t)
+{
+#pragma omp for schedule(dynamic) nowait 
+#endif
+//########################################## MASTERS DOFS ########################################################//
+  Reorder = ParComm->GetReorder_M();
+  for(ii=0;ii<N_InterfaceM;ii++)
+  {
+    i = Reorder[ii];
+    if(i >= N_Active)     continue;
+    
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index == i)
+      {
+        diag = Entries[j];
+      }
+      else
+      {
+        s -= Entries[j] * sol[index];
+      }
+    } // endfor j
+ 
+    t = sol[i];
+    sol[i] = omega*(s/diag-t) + t;
+    // cout << "sol[i]: " << sol[i] << endl;
+  } // endfor i
+  
+  ParComm->CommUpdateMS(sol);
+//################################################################################################################//
+
+//########################################## INDEPENDENT DOFS ####################################################//  
+  
+  Reorder = ParComm->GetReorder_I();
+  for(ii=0;ii<N_Int;ii++)
+  {
+    i = Reorder[ii];
+    if(i >= N_Active)     continue;
+    
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index == i)
+      {
+        diag = Entries[j];
+      }
+      else
+      {
+        s -= Entries[j] * sol[index];
+      }
+    } // endfor j
+    t = sol[i];
+    sol[i] = omega*(s/diag-t) + t;
+    // cout << "sol[i]: " << sol[i] << endl;
+  } // endfor i
+//################################################################################################################//
+
+//########################################## DEPENDENT1 DOFS #####################################################//
+  Reorder = ParComm->GetReorder_D1();
+  for(ii=0;ii<N_Dept1;ii++)
+  {
+    i = Reorder[ii];
+    if(i >= N_Active)     continue;
+    
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index == i)
+      {
+        diag = Entries[j];
+      }
+      else
+      {
+        s -= Entries[j] * sol[index];
+      }
+    } // endfor j
+    t = sol[i];
+    sol[i] = omega*(s/diag-t) + t;
+    // cout << "sol[i]: " << sol[i] << endl;
+  } // endfor i
+//################################################################################################################//
+
+//########################################## DEPENDENT2 DOFS #####################################################//
+  Reorder = ParComm->GetReorder_D2();
+  for(ii=0;ii<N_Dept2;ii++)
+  {
+    i = Reorder[ii];
+    if(i >= N_Active)     continue;
+    
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index == i)
+      {
+        diag = Entries[j];
+      }
+      else
+      {
+        s -= Entries[j] * sol[index];
+      }
+    } // endfor j
+    t = sol[i];
+    sol[i] = omega*(s/diag-t) + t;
+    // cout << "sol[i]: " << sol[i] << endl;
+  } // endfor i
+//################################################################################################################//
+
+//########################################### DEPENDENT3 DOFS ####################################################//
+  Reorder = ParComm->GetReorder_D3();
+  for(ii=0;ii<N_Dept3;ii++)
+  {
+    i = Reorder[ii];
+    if(i >= N_Active)     continue;
+    
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index == i)
+      {
+        diag = Entries[j];
+      }
+      else
+      {
+        s -= Entries[j] * sol[index];
+      }
+    } // endfor j
+    t = sol[i];
+    sol[i] = omega*(s/diag-t) + t;
+    // cout << "sol[i]: " << sol[i] << endl;
+  } // endfor i
+//################################################################################################################//
+
+  ParComm->CommUpdateH1(sol);
+
+//############################################# Hanging NODES ####################################################//  
+  // set hanging nodes
+  int *master = ParComm->GetMaster();
+#ifdef _HYBRID
+#pragma omp for schedule(dynamic) nowait 
+#endif
+  for(i=N_Active;i<HangingNodeBound;i++)
+  {
+#ifdef _MPI
+    if(master[i] != rank)
+      continue;
+#endif
+    s = f[i];
+    k = RowPtr[i+1];
+    for(j=RowPtr[i];j<k;j++)
+    {
+      index = KCol[j];
+      if(index != i)
+        s -= Entries[j] * sol[index];
+      else
+        diag = Entries[j];
+    } // endfor j
+    sol[i] = s/diag;
+  } // endfor i
+#ifdef _HYBRID
+}
+#endif
+//################################################################################################################//
+}
+#endif

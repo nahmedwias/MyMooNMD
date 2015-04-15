@@ -2839,8 +2839,7 @@ void Defect_NSE4(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
   N_UDOF = A[0]->GetN_Rows();
   N_PDOF = B[0]->GetN_Rows();
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
-    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,
-                    TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
+    IntoL20Vector2D(r+2*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
   return;
 }
 

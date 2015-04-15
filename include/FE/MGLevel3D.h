@@ -75,27 +75,19 @@ class TMGLevel3D
     
 #ifdef _MPI
      /** number of all degrees of freedom in own cells*/
-     int OwnN_DOF;   
-    
-     TParFECommunicator3D *ParComm;
-
-     /** FEFunction in own+Hallo fe space */
-     TFEFunction3D *C;     
+     int OwnN_DOF;  
      
-     /** Own FE space */
-     TFESpace3D *OwnScalarSpace;
-
-     /** FEFunction in own fe space */
-     TFEFunction3D *OwnC;
- 
-     /** Own solution */
-     double *OwnSolArray;
+     double *Temp_arr;
+    
+     TParFECommunicator3D *ParComm;   
      
      /** Reorder of sol array */
      int *Reorder,N_Master,N_Int,N_Dept;
      
      /** Coloring variables */
      int N_CMaster, N_CDept, N_CInt, *ptrCMaster, *ptrCDept, *ptrCInt;
+     
+     int N_InterfaceM, N_Dept1, N_Dept2, N_Dept3;
      
 #endif    
 
@@ -110,8 +102,10 @@ class TMGLevel3D
 #ifdef _MPI
 /** constructor for parallel */
     TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol, 
-                       TFEFunction3D *c, TParFECommunicator3D *parComm,TFESpace3D *ownScalarSpace, int n_aux,
+                       TParFECommunicator3D *parComm, int n_aux,
                        int *permutation);
+    double *GetTemp_arr()
+    { return Temp_arr; }
 #endif  
 
     /** destructor */
@@ -127,6 +121,8 @@ class TMGLevel3D
     /** return Rhs */
     double *GetRhs()
     { return Rhs; }
+    
+    
 
     /** return AuxVectors */
     double **GetAuxVectors()
@@ -174,12 +170,6 @@ class TMGLevel3D
     /** smoother */
     void SOR(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters);
-    
-    void SOR_Re(double *sol, double *f, double *aux,
-        int N_Parameters, double *Parameters);
-    
-    void SOR_Color(double *sol, double *f, double *aux,
-        int N_Parameters, double *Parameters);
 
     /** smoother */
     void SSOR(double *sol, double *f, double *aux,
@@ -188,7 +178,9 @@ class TMGLevel3D
     /** smoother */
     void Jacobi(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters);
+     
 
+    
     /** smoother */
     void Block2x2(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters);
@@ -205,22 +197,13 @@ class TMGLevel3D
     
     
         
-    #ifdef _MPI       
-    TFESpace3D *GetOwnFESpace()
-       { return OwnScalarSpace; }
+#ifdef _MPI       
 
     TParFECommunicator3D *GetParComm()
       { return ParComm; }
-
-    double *GetOwnSolution()
-      { return OwnSolArray; }  
-
-     TFEFunction3D *GetFEFunction()
-      { return C; }
-
-     TFEFunction3D *GetOwnFEFunction()
-      { return OwnC; }
-
+      
+       void SOR_Re(double *sol, double *f, double *aux,
+        int N_Parameters, double *Parameters);   
     
 #endif
 

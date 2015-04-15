@@ -18,7 +18,7 @@
 class TSystemMatTimeScalar3D : public TSystemMatScalar3D
 {
   protected:
-    
+        
     /** M mass matrix */
     TSquareMatrix3D **sqmatrixM;
     
@@ -45,11 +45,7 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver
-#ifdef _MPI
-                          , TFESpace3D **OwnScalar_Spaces, TFEFunction3D **Scalar_FeFunctions
-#endif       
-    );
+     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver);
 
     /** destrcutor */
     ~TSystemMatTimeScalar3D();
@@ -72,8 +68,8 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     void AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
 #ifdef _MPI
                          , double **Rhs_array
-#endif      
-    );
+#endif
+                         );
     
     /** restoring the mass matrix */
     void RestoreMassMat();
@@ -84,6 +80,14 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     /** return the residual of the system for the given sol*/
     double GetResidual(double *sol);
     
+    double value(double *sol,int N){
+      int i;
+      double sum=0.;
+      for(i=0;i<N;i++)	sum+=sol[i];
+      return sum;
+    }
+    
 };
 
 #endif
+

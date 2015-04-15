@@ -23,6 +23,11 @@
 #include <FEFunction3D.h>
 #endif
 
+#define PreSmooth -1
+#define CoarseSmooth 0
+#define PostSmooth 1
+
+double tSmoother = 0.0;
 /** constructor */
 TMultiGrid3D::TMultiGrid3D(int n_problems, int n_parameters, 
                        double *parameters)
@@ -83,231 +88,294 @@ void TMultiGrid3D::RestrictToAllGrids()
   } // endfor lev
 } // RestrictToAllGrids
 
-
-#ifdef _MPI  
-/***************************************************************************************
-/** Copy Values (own+Hallo) to Own FeFunct sol  
-************************************************************************************** */
-double tC1=0.0,tC2=0.0;
-void CopyValuesToOwnFeFunct(TFEFunction3D *C, TFEFunction3D *OwnC, double *value)
-{
-int i,j,N_owncells,N_cells,N_LocDof,*OwnBeginIndex,*BeginIndex,*OwnGN,*GN,*DOF,*OwnDOF;
-double *Solution,*OwnSolution;	
-TCollection *coll,*owncoll;
-TBaseCell *cell,*owncell;
-TFESpace3D *ScalarSpace,*OwnScalarSpace;
-double t1,t2;
+void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level, 
 #ifdef _MPI
-t1 = MPI_Wtime();
+			  TParFECommunicator3D *ParComm, 
 #endif
-ScalarSpace = C->GetFESpace3D();
-OwnScalarSpace = OwnC->GetFESpace3D();
-coll = ScalarSpace->GetCollection();
-owncoll = OwnScalarSpace->GetCollection();
-
-BeginIndex = ScalarSpace->GetBeginIndex();		
-GN = ScalarSpace->GetGlobalNumbers();         
-
-OwnBeginIndex = OwnScalarSpace->GetBeginIndex();		
-OwnGN = OwnScalarSpace->GetGlobalNumbers();         
-
-N_owncells = owncoll->GetN_OwnCells();
-N_cells = coll->GetN_Cells();
-
-#ifdef _HYBRID
-#pragma omp parallel default(shared) private(i,cell)
-#pragma omp for schedule(guided) nowait 
-#endif
-  for(i=0;i<N_cells;i++)
-   {
-   cell = coll->GetCell(i);
-    cell->SetLocalCellNo(i);
-   }
-
-  Solution = C->GetValues();
-  OwnSolution = OwnC->GetValues();
-  N_LocDof = BeginIndex[1]-BeginIndex[0];
-  //printf("NLOC %d\n",OwnScalarSpace->GetN_DegreesOfFreedom());
-
-#ifdef _HYBRID
-  #pragma omp parallel default(shared) private(i,owncell,DOF,OwnDOF,j)
-  #pragma omp for schedule(guided) nowait 
-#endif
-  for(i=0;i<N_owncells;i++)
-  {
-    owncell = owncoll->GetCell(i);
-    DOF = GN + BeginIndex[owncell->GetLocalCellNo()];
-    OwnDOF = OwnGN + OwnBeginIndex[i];
-
-    for(j=0;j<N_LocDof;j++)
-     OwnSolution[OwnDOF[j]] = value[DOF[j]];		
-    }
-#ifdef _MPI
-    t2= MPI_Wtime();
-    tC1 += (t2-t1);
-#endif
-} // CopyValuesToOwnFeFunct 
-
-
-/** Copy Own FeFunct sol To Values (own+Hallo) */
-void CopyOwnFeFunctToValues(TFEFunction3D *C,TFEFunction3D *OwnC,double *value, double *aux, int flag)
+			  double &oldres)
 {
-int i,j,N_owncells,N_cells,N_LocDof,*OwnBeginIndex,*BeginIndex,*OwnGN,*GN,*DOF,*OwnDOF, N_FineDOFs;
-double *Solution,*OwnSolution;	
-TCollection *coll,*owncoll;
-TBaseCell *cell,*owncell;
-TFESpace3D *ScalarSpace,*OwnScalarSpace;
-double t1,t2;
-#ifdef _MPI
-t1 = MPI_Wtime();
-#endif
-ScalarSpace = C->GetFESpace3D();
-OwnScalarSpace = OwnC->GetFESpace3D();
-coll = ScalarSpace->GetCollection();
-owncoll = OwnScalarSpace->GetCollection();
-
-BeginIndex = ScalarSpace->GetBeginIndex();		
-GN = ScalarSpace->GetGlobalNumbers();         
-
-OwnBeginIndex = OwnScalarSpace->GetBeginIndex();		
-OwnGN = OwnScalarSpace->GetGlobalNumbers();         
-
-N_owncells = owncoll->GetN_OwnCells();
-N_cells = coll->GetN_Cells();
-N_FineDOFs = ScalarSpace->GetN_DegreesOfFreedom();
- 
-#ifdef _HYBRID
-#pragma omp parallel default(shared) private(i,cell)
-//{
-#pragma omp for schedule(guided) nowait 
-#endif
-for(i=0;i<N_cells;i++)
-{
-  cell = coll->GetCell(i);
-  cell->SetLocalCellNo(i);
-}
-
-Solution = C->GetValues();
-OwnSolution = OwnC->GetValues();
-N_LocDof = BeginIndex[1]-BeginIndex[0];
-//printf("NLOC %d\n",OwnScalarSpace->GetN_DegreesOfFreedom());
-
-if(flag!=0)
-  memset(aux, 0, SizeOfDouble*N_FineDOFs);
-
-if(flag == 0)
-{
- #ifdef _HYBRID
-   #pragma omp parallel default(shared) private(i,owncell,DOF,OwnDOF,j)
-   #pragma omp for schedule(guided) nowait 
- #endif
- for(i=0;i<N_owncells;i++)
- {
-	owncell = owncoll->GetCell(i);
-	DOF = GN + BeginIndex[owncell->GetLocalCellNo()];
-	OwnDOF = OwnGN + OwnBeginIndex[i];
-	
-	for(j=0;j<N_LocDof;j++)
-	 {
-	    value[DOF[j]] = OwnSolution[OwnDOF[j]];
-//          printf("OwnDof %d DOF %d GlobalCellNo %d\n", OwnDOF[j], DOF[j], owncell->GetGlobalCellNo());
-	 }	
- }
-}
-else
-{
- #ifdef _HYBRID
-//    #pragma omp parallel default(shared) private(i,owncell,DOF,OwnDOF,j)
-//    #pragma omp for schedule(guided) nowait 
- #endif
- for(i=0;i<N_owncells;i++)
- {
-	owncell = owncoll->GetCell(i);
-	DOF = GN + BeginIndex[owncell->GetLocalCellNo()];
-	OwnDOF = OwnGN + OwnBeginIndex[i];
-	
-	for(j=0;j<N_LocDof;j++)
-	 {
-//  	     #pragma omp critical 
-	     if( fabs(aux[DOF[j]])<1.e-10)
-	     {
-	      {
-// 	      #pragma omp atomic 
-               value[DOF[j]] += TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR*OwnSolution[OwnDOF[j]];  
-// 	       #pragma omp atomic
-	       aux[DOF[j]] += 1.;
-	      }
-	     }
-	 }	
- }
-}
-#ifdef _MPI
-t2 = MPI_Wtime();
-tC2 += (t2-t1);
-#endif
-}// 
-
-double tC = 0.0; 
-/** defect restriction from level+1 to level */
-void CellsPerDOF(TFESpace3D *FineSpace, double *aux)
-{
-  int i,j;
-  TBaseCell *cell;
-  TCollection *CoarseColl, *FineColl;
-  FE3D CoarseId, FineId;
-  TFE3D *CoarseElement, *FineElement;
-  BaseFunct3D FineBF;
-  int N_FineCells;
-  int N_FineDOFs;
-  int  *FineBeginIndex;
-  int *FineGlobalNumbers;
-  int *FineDOF;
-  int N_Fine;
-  int *DOF;
-  double t1,t2;
-#ifdef _MPI
-  t1 = MPI_Wtime();
-#endif  
-  FineColl = FineSpace->GetCollection();
-  N_FineCells = FineColl->GetN_Cells();
-  FineBeginIndex = FineSpace->GetBeginIndex();
-  FineGlobalNumbers = FineSpace->GetGlobalNumbers();
-  N_FineDOFs = FineSpace->GetN_DegreesOfFreedom();
-
-   memset(aux, 0, SizeOfDouble*N_FineDOFs);
-   
- #ifdef _HYBRID
-#pragma omp parallel default(shared) private(i,j,cell,DOF,FineId,FineElement,FineBF,N_Fine)
-#pragma omp for schedule(guided) nowait 
-#endif
-  // set fine grid clipboard to -1
-  for(i=0;i<N_FineCells;i++)
-  {
-    cell = FineColl->GetCell(i);
+  int i,j,k;
+  double *CurrentSol, *CurrentRhs, *CurrentDefect, *CurrentAux;
   
-    DOF = FineGlobalNumbers+FineBeginIndex[i];
-    FineId = FineSpace->GetFE3D(i, cell);
-    FineElement = TFEDatabase3D::GetFE3D(FineId);
-    FineBF = FineElement->GetBaseFunct3D_ID();
-    N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
-    for(j=0;j<N_Fine;j++)
-    #pragma omp atomic 
-      aux[DOF[j]] += 1;
-  }
-#ifdef _MPI
-  t2 = MPI_Wtime();
-  tC += (t2-t1);
+  CurrentSol    = Level->GetSolution();
+  CurrentRhs    = Level->GetRhs();
+  CurrentDefect = Level->GetAuxVector(0);
+  CurrentAux    = Level->GetAuxVector(1);
+  
+  if(smoother_type == PreSmooth)			//presmoothing
+  {
+    switch(TDatabase::ParamDB->SC_SMOOTHER_SCALAR)
+    {
+      case 1: // Jacobi
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+         ParComm->CommUpdate(CurrentSol);
 #endif
+	}
+        break;
+      case 2: // SOR
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+         ParComm->CommUpdate(CurrentSol);
+#endif
+	}
+        break;
+      case 3: // SSOR
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+         ParComm->CommUpdate(CurrentSol);
+#endif
+	}
+        break;
+      case 4: // ILU
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+        {
+          Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, 
+                oldres);
+          Level->ILU(CurrentSol, CurrentRhs, CurrentDefect,
+                N_Parameters, Parameters);
+        }
+        break;
+#ifdef _MPI
+  #ifdef _HYBRID
+	case 5: //SOR_Reorder
+	printf("Not Working\n");
+	MPI_Finalize();
+	exit(0);
+        break;
+  #else	
+	case 5: //SOR_Reorder
+	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+	}
+        break;
+  #endif
+#endif
+// 	case 6: // SOR/Jacobi Light
+//         for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+// 	{
+//           Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+//                 N_Parameters, Parameters);
+// // 	  Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+// //                 N_Parameters, Parameters);
+// #ifdef _MPI  
+//          ParComm->CommUpdate_M_H1(CurrentSol);
+// #endif
+// 	}
+//         break;
+#ifdef _MPI
+	case 6: // SOR_Reorder
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+	}
+        break;
+#endif
+      default:
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+            N_Parameters, Parameters);
+    } // endswitch SC_SMOOTHER
+  }
+  else if(smoother_type == CoarseSmooth)
+  {
+    switch(TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR)
+          {
+               case 1: // Jacobi
+                       Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+                                                       N_Parameters, Parameters);
+#ifdef _MPI  
+                       ParComm->CommUpdate(CurrentSol);
+#endif
+                       break;
+		       
+               case 2: // SOR
+                       Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                                                   N_Parameters, Parameters);
+#ifdef _MPI  
+                       ParComm->CommUpdate(CurrentSol);
+#endif
+                       break;
+		       
+               case 3: // SSOR
+                       Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
+                                                    N_Parameters, Parameters);
+#ifdef _MPI  
+                       ParComm->CommUpdate(CurrentSol);
+#endif
+                       break;
+        
+	       case 4: // ILU
+                       Level->ILU(CurrentSol, CurrentRhs, CurrentDefect,
+                                                      N_Parameters, Parameters);
+                       break;
+		       
+               case 17: // solution with Gaussian elimination
+                        Level->SolveExact(CurrentSol, CurrentRhs);
+                        break;
+#ifdef _MPI
+  #ifdef _HYBRID
+	       case 5: //SOR_Reorder
+	               printf("Not Working\n");
+	               MPI_Finalize();
+	               exit(0);
+                       break;
+  #else
+               case 5: //SOR_Reorder
+	               for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	               {
+                             Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                                                            N_Parameters, Parameters);
+	               }
+                       break;
+  #endif
+#endif
+// 	       case 6: // SSOR Light
+//                        Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+//                                                    N_Parameters, Parameters);
+// // 		       Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+// //                                                    N_Parameters, Parameters);
+// #ifdef _MPI  
+//                        //ParComm->CommUpdate(CurrentSol,CurrentRhs);
+// 		       ParComm->CommUpdate_M_H1(CurrentSol);
+// #endif
+//                        break;
+#ifdef _MPI 
+	       case 6: // SOR_Reorder
+		        Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+			       N_Parameters, Parameters);
+		        break;
+#endif		
+               default:
+                       OutPut("Coarse smoother not implemented !! Use coarse smoother 3" << endl);
+                       Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
+                                                    N_Parameters, Parameters);
+#ifdef _MPI  
+                       ParComm->CommUpdate(CurrentSol);
+#endif
+          } // endswitch SC_COARSE_SMOOTHER_SCALAR
+  }
+  else if(smoother_type == PostSmooth)
+  {
+    switch(TDatabase::ParamDB->SC_SMOOTHER_SCALAR)
+    {
+      case 1: // Jacobi
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+          // communicate the values (sol & rhs) to the slave DOFs from master DOF
+          ParComm->CommUpdate(CurrentSol);
+#endif 
+	}
+        break;
+      case 2: // SOR
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+          // communicate the values (sol & rhs) to the slave DOFs from master DOF
+          ParComm->CommUpdate(CurrentSol);
+#endif 
+	}
+        break;
+      case 3: // SSOR
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+#ifdef _MPI  
+          // communicate the values (sol & rhs) to the slave DOFs from master DOF
+          ParComm->CommUpdate(CurrentSol);
+#endif 
+	}
+        break;
+      case 4: // ILU
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+        {
+          Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, 
+                oldres);
+          Level->ILU(CurrentSol, CurrentRhs, CurrentDefect,
+                N_Parameters, Parameters);
+        }
+        break;
+#ifdef _MPI
+  #ifdef _HYBRID
+	case 5: //SOR_Reorder
+	printf("Not Working\n");
+	MPI_Finalize();
+	exit(0);
+        break;
+  #else	
+	case 5: //SOR_Reorder
+	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+	}
+        break;
+  #endif
+#endif
+// 	case 6: // SSOR Light
+//         for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+// 	{
+//           Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+//                 N_Parameters, Parameters);
+// // 	  Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+// //                 N_Parameters, Parameters);
+// #ifdef _MPI  
+//          ParComm->CommUpdate_M_H1(CurrentSol);
+// #endif
+// 	}
+//         break;
+#ifdef _MPI	
+	case 6: // SOR_Reorder
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
+	}
+        break;
+#endif
+      default:
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+            N_Parameters, Parameters);
+#ifdef _MPI  
+          // communicate the values (sol & rhs) to the slave DOFs from master DOF
+          ParComm->CommUpdate(CurrentSol);
+#endif 
+	}
+    } // endswitch SC_SMOOTHER_SCALAR
+  }
+  else{
+    printf("Wrong smoother_type \n");
+#ifdef _MPI
+    MPI_Finalize();
+#endif
+    exit(0);
+    }
 }
-
-#endif  
-
-
 
 /** one cycle on level i */
 void TMultiGrid3D::Cycle(int i, double &res)
 {
-  double s;
+  double s,t1,t2;
   
   TMGLevel3D *CurrentLevel, *CoarserLevel;
   double *CurrentSol, *CoarserSol, *CoarserRhs;
@@ -365,65 +433,17 @@ void TMultiGrid3D::Cycle(int i, double &res)
     reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
     while ((res>reduction)&&(it<maxit))
     {
-      switch(TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR)
-      {
-        case 1: // Jacobi
-          CurrentLevel->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
-            N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-          break;
-        case 2: // SOR
-          CurrentLevel->SOR(CurrentSol, CurrentRhs, CurrentAux,
-            N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-          break;
-        case 3: // SSOR
-          CurrentLevel->SSOR(CurrentSol, CurrentRhs, CurrentAux,
-            N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-          break;
-        case 4: // ILU
-          CurrentLevel->ILU(CurrentSol, CurrentRhs, CurrentDefect,
-            N_Parameters, Parameters);
-          break;
-        case 17: // solution with Gaussian elimination
-           CurrentLevel->SolveExact(CurrentSol, CurrentRhs);
-           break;
 #ifdef _MPI
-  #ifdef _HYBRID
-	case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #else
-       case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #endif
+     t1 = MPI_Wtime();
+     Smooth(CoarseSmooth, CurrentLevel, ParComm, oldres); 
+     t2 = MPI_Wtime();
+#else
+     t1 = GetTime();
+     Smooth(CoarseSmooth, CurrentLevel, oldres);
+     t2 = GetTime();
 #endif
-        default:
-           OutPut("Coarse smoother not implemented !! Use coarse smoother 3" << endl);
-           CurrentLevel->SSOR(CurrentSol, CurrentRhs, CurrentAux,
-                              N_Parameters, Parameters);
-      } // endswitch SC_COARSE_SMOOTHER_SCALAR
-
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-   
+     tSmoother += t2-t1 ;
+     
       CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
       it++;
       if(TDatabase::ParamDB->SC_VERBOSE>=2
@@ -431,8 +451,8 @@ void TMultiGrid3D::Cycle(int i, double &res)
         && rank==TDatabase::ParamDB->Par_P0
 #endif
         )
-         OutPut("res on coarse: " << res << endl);
-    }
+         OutPut("itr no. :: "<<it-1<<"        res on coarse: " << res << endl);
+    }//end while
   }
   else
   {
@@ -451,7 +471,6 @@ void TMultiGrid3D::Cycle(int i, double &res)
 #ifdef _MPI  
   CoarseParComm = CoarserLevel->GetParComm();      
 #endif  
- 
     // smoothing
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);  
     firstres = initres = oldres;  
@@ -465,82 +484,27 @@ void TMultiGrid3D::Cycle(int i, double &res)
        OutPut("level " << i << " ");
        OutPut("res before presmoothing: " << oldres << endl);
       }
-   
+
     if (slc)
     {
       memcpy(OldSol, CurrentSol, N_DOF*SizeOfDouble);
       memcpy(OldDefect, CurrentDefect, N_DOF*SizeOfDouble);
     }
 
-    switch(TDatabase::ParamDB->SC_SMOOTHER_SCALAR)
-    {
-      case 1: // Jacobi
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-	}
-        break;
-      case 2: // SOR
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-	}
-        break;
-      case 3: // SSOR
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SSOR(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-         ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif
-	}
-        break;
-      case 4: // ILU
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-        {
-          CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, 
-                oldres);
-          CurrentLevel->ILU(CurrentSol, CurrentRhs, CurrentDefect,
-                N_Parameters, Parameters);
-        }
-        break;
 #ifdef _MPI
-  #ifdef _HYBRID
-	case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #else	
-	case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #endif
+     t1 = MPI_Wtime();
+     Smooth(PreSmooth, CurrentLevel, ParComm, oldres); 
+     t2 = MPI_Wtime();
+#else
+     t1 = GetTime();
+     Smooth(PreSmooth, CurrentLevel, oldres);
+     t2 = GetTime();
 #endif
-      default:
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-          CurrentLevel->SOR(CurrentSol, CurrentRhs, CurrentAux,
-            N_Parameters, Parameters);
-    } // endswitch SC_SMOOTHER
-
+     tSmoother += t2-t1 ;
     // calculate defect
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
-if (TDatabase::ParamDB->SC_VERBOSE>=2
+    
+    if (TDatabase::ParamDB->SC_VERBOSE>=2
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
 #endif 
@@ -552,28 +516,29 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
          OutPut("Smoothing (" << i << "): " << oldres/normsol << endl);
       }
     // restrict defect
+    
 #ifdef _MPI  
-        ParComm->CommUpdate(CurrentDefect,CurrentRhs);
-        CellsPerDOF(CurrentLevel->GetFESpace(),CurrentAux);
-       // CopyValuesToOwnFeFunct(CurrentLevel->GetFEFunction(),  CurrentLevel->GetOwnFEFunction(), CurrentAux);
-        memcpy(CurrentAux,CurrentLevel->GetOwnFEFunction()->GetValues(),(CurrentLevel->GetOwnFESpace()->GetN_DegreesOfFreedom())*sizeof(double));
-
-        CopyValuesToOwnFeFunct(CurrentLevel->GetFEFunction(),  CurrentLevel->GetOwnFEFunction(), CurrentDefect);
-
-        // first restrict defect to coarse sol, then copy coarse own sol to all (hallo) coarse rhs  
-         DefectRestriction(CoarserLevel->GetOwnFESpace(), CurrentLevel->GetOwnFESpace(),
-                           CoarserLevel->GetOwnSolution(), CurrentLevel->GetOwnSolution(),
+        ParComm->CommUpdate(CurrentDefect);
+  
+	memcpy(CurrentLevel->GetTemp_arr(),CurrentDefect,CurrentLevel->GetN_DOF());
+    
+	DefectRestriction(CoarserLevel->GetFESpace(), CurrentLevel->GetFESpace(),
+                           CoarserRhs, CurrentDefect,
                            CurrentAux);
-
-         memset(CoarserRhs, 0, SizeOfDouble*CoarserLevel->GetN_DOF());
-         CopyOwnFeFunctToValues(CoarserLevel->GetFEFunction(),  CoarserLevel->GetOwnFEFunction(), CoarserRhs, CurrentAux, 0); 
-         CoarseParComm->CommUpdateReduce(CoarserSol,CoarserRhs);       
+	
+	if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
+	  CoarseParComm->CommUpdateReduceMS(CoarserRhs);
+	}
+	else{
+	  CoarseParComm->CommUpdateReduce(CoarserSol,CoarserRhs);	 
+	}
 #else
-    DefectRestriction(FESpaces[i-1], FESpaces[i],CoarserRhs, CurrentDefect, CurrentAux);
+        DefectRestriction(FESpaces[i-1], FESpaces[i],CoarserRhs, CurrentDefect, CurrentAux);
 #endif
 
-    CoarserLevel->CorrectDefect(CoarserRhs);
-    CoarserLevel->Reset(CoarserSol);
+    CoarserLevel->CorrectDefect(CoarserRhs);  //non-active part set to 0
+    CoarserLevel->Reset(CoarserSol);          //all set to 0
+       
     // coarse grid correction
     // coarse grid correction, apply mg recursively*/
     for(j=0;j<mg_recursions[i];j++)
@@ -582,17 +547,20 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
 
     // prolongate correction
 #ifdef _MPI  
-      // copy sol from own+Hallo fespace to own fespace
-      CopyValuesToOwnFeFunct(CoarserLevel->GetFEFunction(),  CoarserLevel->GetOwnFEFunction(),  CoarserSol);
-      
-      // first restrict to coarse sol, then copy coarse sol to all (hallo) coarse rhs 
-      Prolongate(CoarserLevel->GetOwnFESpace(), CurrentLevel->GetOwnFESpace(),
-                       CoarserLevel->GetOwnSolution(), CurrentLevel->GetOwnSolution(),
+      Prolongate(CoarserLevel->GetFESpace(), CurrentLevel->GetFESpace(),
+                       CoarserSol, CurrentLevel->GetTemp_arr(),
                        CurrentLevel->GetAuxVector(1));
-
-      CopyOwnFeFunctToValues(CurrentLevel->GetFEFunction(),  CurrentLevel->GetOwnFEFunction(), CurrentSol, CurrentLevel->GetAuxVector(1), 1);    
       
-      ParComm->CommUpdate(CurrentSol,CurrentRhs);
+      if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
+	ParComm->CommUpdateReduceMS(CurrentLevel->GetTemp_arr());
+      }
+      else{
+	ParComm->CommUpdateReduce(CurrentLevel->GetTemp_arr(),CurrentLevel->GetTemp_arr());
+      }
+      
+      CurrentLevel->Update(CurrentSol, CurrentLevel->GetTemp_arr());
+      
+      ParComm->CommUpdate(CurrentSol);
 #else 
     Prolongate(FESpaces[i-1], FESpaces[i], 
                    CoarserSol, CurrentAux2, CurrentAux);
@@ -603,9 +571,11 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
 #endif  
     
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
+  
     initres = oldres;
     normsol = sqrt(Ddot(N_DOF, CurrentSol, CurrentSol));
- /*   if (TDatabase::ParamDB->SC_VERBOSE>=2
+    
+    if (TDatabase::ParamDB->SC_VERBOSE>=2
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
 #endif  
@@ -613,85 +583,20 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
       {
         OutPut("level " << i << " ");
         OutPut("res before postsmoothing: " << oldres << endl);
-      }*/
+      }
+      
     // smoothing
-    switch(TDatabase::ParamDB->SC_SMOOTHER_SCALAR)
-    {
-      case 1: // Jacobi
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-          // communicate the values (sol & rhs) to the slave DOFs from master DOF
-          ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif 
-	}
-        break;
-      case 2: // SOR
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-          // communicate the values (sol & rhs) to the slave DOFs from master DOF
-          ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif 
-	}
-        break;
-      case 3: // SSOR
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SSOR(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-#ifdef _MPI  
-          // communicate the values (sol & rhs) to the slave DOFs from master DOF
-          ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif 
-	}
-        break;
-      case 4: // ILU
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-        {
-          CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, 
-                oldres);
-          CurrentLevel->ILU(CurrentSol, CurrentRhs, CurrentDefect,
-                N_Parameters, Parameters);
-        }
-        break;
 #ifdef _MPI
-  #ifdef _HYBRID
-	case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #else	
-	case 5: //SOR_Reorder
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters);
-	}
-        break;
-  #endif
+     t1 = MPI_Wtime();
+     Smooth(PostSmooth, CurrentLevel, ParComm, oldres); 
+     t2 = MPI_Wtime();
+#else
+     t1 = GetTime();
+     Smooth(PostSmooth, CurrentLevel, oldres);
+     t2 = GetTime();
 #endif
-      default:
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-	{
-          CurrentLevel->SOR(CurrentSol, CurrentRhs, CurrentAux,
-            N_Parameters, Parameters);
-#ifdef _MPI  
-          // communicate the values (sol & rhs) to the slave DOFs from master DOF
-          ParComm->CommUpdate(CurrentSol,CurrentRhs);
-#endif 
-	}
-    } // endswitch SC_SMOOTHER_SCALAR
-
-    // calculate defect
-
+     tSmoother += t2-t1 ;
+     
     if (slc)
     {
       alpha = CurrentLevel->StepLengthControl(CurrentSol, OldSol,
@@ -703,7 +608,8 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
     }
 
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
-  /*  if (TDatabase::ParamDB->SC_VERBOSE>=2
+    
+    if (TDatabase::ParamDB->SC_VERBOSE>=2
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
 #endif  
@@ -713,7 +619,7 @@ if (TDatabase::ParamDB->SC_VERBOSE>=2
         OutPut("res after postsmoothing: " << res);
         OutPut(" rate: " << res/firstres << endl);
         // OutPut("Smoothing2 (" << i << "): " << initres/normsol << endl);
-      }*/
+      }
   }
 }
 

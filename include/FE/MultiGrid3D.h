@@ -79,6 +79,13 @@ class TMultiGrid3D
 
     /** set recursion for multigrid */ 
     void SetRecursion(int levels);
+    
+    /** Smoother Cycles are called here */
+    void Smooth(int smoother_type, TMGLevel3D *Level, 
+#ifdef _MPI
+		TParFECommunicator3D *ParComm, 
+#endif
+		double &oldres);
 };
 
 #endif
