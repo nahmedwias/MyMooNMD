@@ -530,7 +530,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 	  CoarseParComm->CommUpdateReduceMS(CoarserRhs);
 	}
 	else{
-	  CoarseParComm->CommUpdateReduce(CoarserSol,CoarserRhs);	 
+	  CoarseParComm->CommUpdateReduce(CoarserRhs);	 
 	}
 #else
         DefectRestriction(FESpaces[i-1], FESpaces[i],CoarserRhs, CurrentDefect, CurrentAux);
@@ -555,7 +555,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 	ParComm->CommUpdateReduceMS(CurrentLevel->GetTemp_arr());
       }
       else{
-	ParComm->CommUpdateReduce(CurrentLevel->GetTemp_arr(),CurrentLevel->GetTemp_arr());
+	ParComm->CommUpdateReduce(CurrentLevel->GetTemp_arr());
       }
       
       CurrentLevel->Update(CurrentSol, CurrentLevel->GetTemp_arr());

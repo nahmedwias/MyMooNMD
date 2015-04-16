@@ -114,17 +114,6 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 
   Permutation = permutation;
   
-  Reorder = parComm->GetReorder();
-  N_Master = parComm->GetN_Master();
-  N_Int = parComm->GetN_Int();
-  N_Dept = parComm->GetN_Dept();
-  
-  N_CMaster = parComm->GetN_CMaster();
-  ptrCMaster = parComm->GetptrCMaster();
-  N_CInt = parComm->GetN_CInt();
-  ptrCInt = parComm->GetptrCInt();
-  N_CDept = parComm->GetN_CDept();
-  ptrCDept = parComm->GetptrCDept();
   
   if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6)
   {

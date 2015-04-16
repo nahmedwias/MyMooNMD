@@ -50,9 +50,9 @@ class TParFECommunicator3D
      char *DofMarker;
      
      int *Reorder_M, *Reorder_I, *Reorder_D1, *Reorder_D2, *Reorder_D3;
-     //new implement march'15
      
-     int N_CMaster, N_CDept, N_CInt, *ptrCMaster, *ptrCDept, *ptrCInt;
+     int N_CMaster, N_CDept1, N_CDept2, N_CDept3, N_CInt, *ptrCMaster, *ptrCDept1, *ptrCDept2, *ptrCDept3, *ptrCInt;
+     //new implement march'15
 
      double *Send_Info,*Recv_Info; 
      
@@ -311,9 +311,9 @@ class TParFECommunicator3D
     
     void CommUpdateMS(double *sol);
      
-    void CommUpdateAlltoAllv(double *sol,double *rhs);  
+    void CommUpdateAlltoAllv(double *sol);  
     
-    void CommUpdateReduce(double *sol,double *rhs);
+    void CommUpdateReduce(double *rhs);
     
     void CommUpdateReduceMS(double *rhs);
     
@@ -321,30 +321,6 @@ class TParFECommunicator3D
     
     int *GetMaster()
     {return Master;}
-    
-    int* GetReorder()
-    {return Reorder;}
-    
-    int GetN_Master()
-    {return N_Master;}
-    int GetN_Int()
-    {return N_Master+N_Int;}
-    int GetN_Dept()
-    {return N_Master+N_Int+N_Dept;}
-    
-    int GetN_CMaster()
-    {return N_CMaster;}
-    int GetN_CDept()
-    {return N_CDept;}
-    int GetN_CInt()
-    {return N_CInt;}
-    
-    int* GetptrCMaster()
-    {return ptrCMaster;}
-    int* GetptrCDept()
-    {return ptrCDept;}
-    int* GetptrCInt()
-    {return ptrCInt;}
     
     int find_min(int *arr, int N, char *temp_arr);
     char *Get_DofMarker()
@@ -379,6 +355,32 @@ class TParFECommunicator3D
     
     int GetN_Dept3()
     {return N_Dept3;}
+    
+    int GetN_CMaster()
+    {return N_CMaster;}
+    int GetN_CDept1()
+    {return N_CDept1;}
+    int GetN_CDept2()
+    {return N_CDept2;}
+    int GetN_CDept3()
+    {return N_CDept3;}
+    int GetN_CInt()
+    {return N_CInt;}
+    
+    int* GetptrCMaster()
+    {return ptrCMaster;}
+    int* GetptrCDept1()
+    {return ptrCDept1;}
+    int* GetptrCDept2()
+    {return ptrCDept2;}
+    int* GetptrCDept3()
+    {return ptrCDept3;}
+    int* GetptrCInt()
+    {return ptrCInt;}
+    
+// #ifdef _HYBRID
+    void Color(int &numColors, int *&ptrColors, char type);
+// #endif
 };
 
 #endif

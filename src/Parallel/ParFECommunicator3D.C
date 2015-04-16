@@ -60,6 +60,11 @@ TParFECommunicator3D::TParFECommunicator3D(MPI_Comm comm, TFESpace3D *fespace, T
    
  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
    ConstructDofMap_light();
+//    Color(N_CInt,ptrCInt,'i');
+//    Color(N_CMaster,ptrCMaster,'m');
+//    Color(N_CDept1,ptrCDept1,'D');
+//    Color(N_CDept2,ptrCDept2,'d');
+//    Color(N_CDept3,ptrCDept3,'x');
  }
  else{
    ConstructDofMap();
@@ -1046,6 +1051,7 @@ void TParFECommunicator3D::ConstructDofMap_light(){
  }
  
  Reorder = new int[N_Dof];
+ NewGN = new int[N_Dof];
  int m = 0;
 
  int Mstr  = 0;                  Reorder_M  = Reorder;
@@ -1056,7 +1062,8 @@ void TParFECommunicator3D::ConstructDofMap_light(){
  int Slv   = Dept3 + N_Dept3;
  int Hl1   = Slv   + N_InterfaceS;
  int Hl2   = Hl1   + N_Halo1;
-
+ int ts = 0, th1 = 0, th2 = 0, ti = 0, tm = 0, td1 = 0, td2 = 0, td3 = 0;
+ 
  for(i=0;i<N_Dof;i++){
    //slave dofs
    if(Master[i] != rank){
@@ -1075,18 +1082,21 @@ void TParFECommunicator3D::ConstructDofMap_light(){
        
        {
          Reorder[Slv] = i;
+	 NewGN[i]     = ts++;//Slv;
          Slv++;
        }
      }
      else if(Verify[i] == 'H'){
        {
 	 Reorder[Hl1] = i;
+	 NewGN[i]     = th1++;//Hl1; 
 	 Hl1++;
        }
      }
      else{
        {
 	 Reorder[Hl2] = i;
+	 NewGN[i]     = th2++;//Hl2;
 	 Hl2++;
        }
      }
@@ -1096,22 +1106,27 @@ void TParFECommunicator3D::ConstructDofMap_light(){
        {
        if(Verify[i]=='m'){
 	 Reorder[Mstr] = i;
+	 NewGN[i]      = tm++;//Mstr;
 	 Mstr++;
        }
        else if(Verify[i]=='D'){
 	 Reorder[Dept1] = i;
+	 NewGN[i]       = td1++;//Dept1;
 	 Dept1++;
        }
        else if(Verify[i]=='d'){
 	 Reorder[Dept2] = i;
+	 NewGN[i]       = td2++;//Dept2;
 	 Dept2++;
        }
        else if(Verify[i]=='x'){
 	 Reorder[Dept3] = i;
+	 NewGN[i]       = td3++;//Dept3;
 	 Dept3++;
        }
        else{
 	 Reorder[Indpt] = i;
+	 NewGN[i]       = ti++;//Indpt;
 	 Indpt++;
        }
      }
@@ -1870,6 +1885,95 @@ void TParFECommunicator3D::SetFENeibCommunicationSteps()
        //     exit(0);
 }
 
+// #ifdef _HYBRID
+
+void TParFECommunicator3D::Color(int &numColors, int *&ptrColors, char type)
+{
+  int i,j,k;
+  int *RowPtr, *KCol;
+  
+  int *myReorder;
+  int ndof;   
+
+  //find the type of dof that needs to be colored
+  if(type == 'm'){
+    myReorder = Reorder_M;	ndof = N_InterfaceM; }
+  else if(type == 'i'){
+    myReorder = Reorder_I;	ndof = N_Int;        }
+  else if(type == 'D'){
+    myReorder = Reorder_D1;	ndof = N_Dept1;      }
+  else if(type == 'd'){
+    myReorder = Reorder_D2;	ndof = N_Dept2;      }
+  else if(type == 'x'){
+    myReorder = Reorder_D3;	ndof = N_Dept3;      }
+  else{
+    printf("wrong type!!!\n"); exit(0);              }
+  
+  //this stores the total number of colrs used for coloring
+  numColors = 0;
+  if(!ndof)	return;
+  
+  int max, temp, t;
+  //this stores the color number for dofs
+  int *allocatedColor = new int[ndof];
+  //initialize all colors with default
+  for(i=0;i<ndof;i++)
+    allocatedColor[i] = -1;
+  
+  //get the system matrix  
+  RowPtr = sqstruct->GetRowPtr();
+  KCol   = sqstruct->GetKCol();
+  
+  //now we start coloring the dofs
+  for(i=0;i<ndof;i++)
+  {
+    temp = -1;
+    k = myReorder[i];
+    for(j=RowPtr[k];j<RowPtr[k+1];j++)
+    {
+      if(KCol[j] >= k || DofMarker[KCol[j]] != type)	continue;
+      
+      t = NewGN[KCol[j]];		    //locate the pos of the dof in myreorder to identify its color in allocatedColor
+      if(temp < allocatedColor[t])
+	temp = allocatedColor[t];
+    }
+    
+    allocatedColor[i] = temp+1;
+    
+    if(numColors < allocatedColor[i])
+      numColors = allocatedColor[i];
+  }
+  //colors were numbered from 0, hece total will be 1 more
+  numColors++;
+  
+  ptrColors = new int[numColors+1];
+  temp = 0; k = 0;
+  //arrange the dofs, such that same color dofs are together
+  for(i=0;i<numColors;i++)
+  {
+    ptrColors[i] = k;
+    for(j=0;j<ndof;j++)
+    {
+      if(allocatedColor[j] == i)
+      {
+	temp = myReorder[j];
+	myReorder[j] = myReorder[k];
+	myReorder[k] = temp;
+	k++;
+	
+	allocatedColor[j] = -1;
+      }
+    }
+  }
+  
+  ptrColors[numColors] = k;
+  printf("numcolors (type = %c):: %d\t total dof = %d\n",type,numColors,ndof);
+//   exit(0);
+}
+
+// #endif
+
+
 void TParFECommunicator3D::CommUpdate(double *sol)
 {
   int i, j, k, l, N,iter, rank, size;
@@ -2006,79 +2110,40 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateAlltoAllv(double *sol, double *rhs)
+void TParFECommunicator3D::CommUpdateAlltoAllv(double *sol)
 {
-   int i,rank;
+  int i,rank;
+  double t1,t2;
+  t1=MPI_Wtime();
    
   MPI_Comm_rank(Comm,&rank);		
 
-//   Send_Info = new double[N_SendDof];
-//   Recv_Info = new double[N_Slave];
+  Send_Info = new double[N_SendDof];
+  Recv_Info = new double[N_Slave];
 
-//   for(i=0;i<N_SendDof;i++)
-//   {
-//       Send_Info[i]=sol[DofSend[i]];
-//   }
-//   MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
-//   
-//   for(i=0;i<N_Slave;i++)
-//   {  
-//     rhs[DofRecv[i]] = Recv_Info[i];
-//     sol[DofRecv[i]] = Recv_Info[i];
-//   }
-//   
-  for(i=0;i<N_SendDofH1;i++)
+  for(i=0;i<N_SendDof;i++)
   {
-      Send_InfoH1[i]=sol[DofSendH1[i]];
+      Send_Info[i]=sol[DofSend[i]];
   }
-  MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
+  MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
   
-  for(i=0;i<N_Halo1;i++)
+  for(i=0;i<N_Slave;i++)
   {  
-    //rhs[DofRecvH1[i]] = Recv_InfoH1[i];
-    sol[DofRecvH1[i]] = Recv_InfoH1[i];
+    sol[DofRecv[i]] = Recv_Info[i];
   }
   
-  for(i=0;i<N_SendDofH2;i++)
-  {
-      Send_InfoH2[i]=sol[DofSendH2[i]];
-  }
-  MPI_Alltoallv(Send_InfoH2,N_DofSendH2,sdisplH2,MPI_DOUBLE,Recv_InfoH2,N_DofRecvH2,rdisplH2,MPI_DOUBLE,Comm);
-  
-  for(i=0;i<N_Halo2;i++)
-  {  
-    //rhs[DofRecvH2[i]] = Recv_InfoH2[i];
-    sol[DofRecvH2[i]] = Recv_InfoH2[i];
-  }
-  
-//   delete [] Send_Info;
-//   delete [] Recv_Info;
-  /*
-  Send_Info = new double[N_SendDofH];
-  Recv_Info = new double[N_Halo];
-
-  for(i=0;i<N_SendDofH;i++)
-  {
-      Send_Info[i]=sol[DofSendH[i]];
-  }
-  MPI_Alltoallv(Send_Info,N_DofSendH,sdisplH,MPI_DOUBLE,Recv_Info,N_DofRecvH,rdisplH,MPI_DOUBLE,Comm);
-  
-  for(i=0;i<N_Halo;i++)
-  {  
-    rhs[DofRecvH[i]] = Recv_Info[i];
-    sol[DofRecvH[i]] = Recv_Info[i];
-  }
-  
-  delete [] Send_Info;
-  delete [] Recv_Info;*/
+  t2=MPI_Wtime(); 
+  timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateReduce(double *sol,double *rhs)
+void TParFECommunicator3D::CommUpdateReduce(double *rhs)
 {
   int i,j,rank,size,sendID, recvID,N;
   MPI_Status status;
   MPI_Comm_rank(Comm,&rank);		
   MPI_Comm_size(Comm, &size);
+  double t1,t2;
+  t1=MPI_Wtime();
   
   for(i=0;i<N_Slave;i++)
   {
@@ -2167,6 +2232,8 @@ void TParFECommunicator3D::CommUpdateReduce(double *sol,double *rhs)
       rhs[DofRecv[i]] = Recv_Info[i];
   }
   
+  t2=MPI_Wtime(); 
+  timeC+=(t2-t1);
 }
 
 void TParFECommunicator3D::CommUpdateReduceMS(double *rhs)
