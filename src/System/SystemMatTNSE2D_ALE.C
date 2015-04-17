@@ -57,7 +57,6 @@ TSystemMatTNSE2D_ALE::TSystemMatTNSE2D_ALE(TFESpace2D *velocity_fespace, TFESpac
   SQMATRICES_GRID[1] = SqmatrixG12;
   SQMATRICES_GRID[2] = SqmatrixG21;
   SQMATRICES_GRID[3] = SqmatrixG22;
-
   
   Entries[0] = SqmatrixG11->GetEntries();
   Entries[1] = SqmatrixG12->GetEntries();
@@ -958,6 +957,50 @@ void TSystemMatTNSE2D_ALE::GetTNSEResidual(double *sol, double *res)
     exit(0);
    }
 
+   
+     switch(NSEType)
+      {
+        case 1:
+          SQMATRICES[0] = SqmatrixM11;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;  
+         break;
+
+        case 2:
+          SQMATRICES[0] = SqmatrixM11;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;
+          MATRICES[2] = MatrixB1T;
+          MATRICES[3] = MatrixB2T;
+        break;
+
+        case 3:
+          SQMATRICES[0] = SqmatrixM11;
+          SQMATRICES[1] = SqmatrixM12;
+          SQMATRICES[2] = SqmatrixM21;
+          SQMATRICES[3] = SqmatrixM22;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;  
+  
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixM11;
+          SQMATRICES[1] = SqmatrixM12;
+          SQMATRICES[2] = SqmatrixM21;
+          SQMATRICES[3] = SqmatrixM22;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;
+          MATRICES[2] = MatrixB1T;
+          MATRICES[3] = MatrixB2T;
+ 
+        break;
+      } //  switch(NSEType)
+      
    Defect(sqmatrices, matrices, sol, B, res); 
 
 } // TSystemMatTNSE2D_ALE::GetResidual

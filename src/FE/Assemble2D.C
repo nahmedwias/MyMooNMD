@@ -2814,7 +2814,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
                     break;
     
                 default:
-                 Error("Slip with friction Type not maching" << endl);
+                 Error("Slip with friction Type not maching !!!!!!!!!!" << endl);
                  Error("file: " << __FILE__ << " line " << __LINE__ << endl);
                  exit(-1);  
 

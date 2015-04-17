@@ -13,7 +13,7 @@
 #include <AuxParam2D.h>
 #include <FEDatabase2D.h>
 #include <MooNMD_Io.h>
-#include <NSE2D_ParamRout.h>
+// #include <NSE2D_ParamRout.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fstream>
@@ -57,45 +57,45 @@ TAuxParam2D::TAuxParam2D(
 // {
 // }
 
-// set aux parameters giving a keyword
-TAuxParam2D::TAuxParam2D(std::string name, TFEFunction2D **fefunctions2d)
-{
-  if (name=="Velocity") // for Navier-Stokes
-  {
-    N_FESpace2D = 0;
-    FESpaces2D = NULL;
-   
-    N_FEFunction2D = 2;
-    FEFunctions2D = fefunctions2d;
-
-    N_ParamFct = 1;
-    N_FEValues = 2;
-    
-    // for all arrays defined below: see NSE2D_ParamRout.h and NSE2D_FixPo.C
-    ParameterFct = NSFctVelo;
-    FEValue_FctIndex = NSFEFctIndexVelo; // {0,1}
-    FEValue_MultiIndex = NSFEMultiIndexVelo; // {D00,D00}
-    
-    N_Parameters = 2;
-    BeginParameter = NSBeginParamVelo; // {0}
-    
-  } 
-  else
-  {
-    cout << " AuxParam2D:: Constructor: ERROR, name " << name 
-         << " for initialization not imlpemented " << endl;
-    exit(1);
-  }
-  
-  Temp = new double[2 + N_FEValues];
-  
-  Values = new double* [N_FEValues];
-  OrigValues = new double** [N_FEValues];
-  Index = new int* [N_FEValues];
-  N_BaseFunct = new int[N_FEValues];
-
-
-}
+// // set aux parameters giving a keyword
+// TAuxParam2D::TAuxParam2D(std::string name, TFEFunction2D **fefunctions2d)
+// {
+//   if (name=="Velocity") // for Navier-Stokes
+//   {
+//     N_FESpace2D = 0;
+//     FESpaces2D = NULL;
+//    
+//     N_FEFunction2D = 2;
+//     FEFunctions2D = fefunctions2d;
+// 
+//     N_ParamFct = 1;
+//     N_FEValues = 2;
+//     
+//     // for all arrays defined below: see NSE2D_ParamRout.h and NSE2D_FixPo.C
+//     ParameterFct = NSFctVelo;
+//     FEValue_FctIndex = NSFEFctIndexVelo; // {0,1}
+//     FEValue_MultiIndex = NSFEMultiIndexVelo; // {D00,D00}
+//     
+//     N_Parameters = 2;
+//     BeginParameter = NSBeginParamVelo; // {0}
+//     
+//   } 
+//   else
+//   {
+//     cout << " AuxParam2D:: Constructor: ERROR, name " << name 
+//          << " for initialization not imlpemented " << endl;
+//     exit(1);
+//   }
+//   
+//   Temp = new double[2 + N_FEValues];
+//   
+//   Values = new double* [N_FEValues];
+//   OrigValues = new double** [N_FEValues];
+//   Index = new int* [N_FEValues];
+//   N_BaseFunct = new int[N_FEValues];
+// 
+// 
+// }
 
 
 

@@ -341,7 +341,7 @@ int main(int argc, char* argv[])
         IntoL20FEFunction(sol+2*N_U, N_P, Pressure_FeSpace, velocity_space_code, pressure_space_code);   
 
        //no nonlinear iteration for Stokes problem  
-       if(TDatabase::ParamDB->STOKES_PROBLEM)
+       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
         break;
      
         // restore the mass matrix for the next nonlinear iteration      

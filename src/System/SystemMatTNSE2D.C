@@ -32,7 +32,7 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
 #ifdef __PRIVATE__  
                                    ,TFESpace2D *Projection_space
 #endif    
-                                   ) : TSystemMatNSE2D(Velocity, p, disctype, nsetype, solver)
+                                   ) : TSystemMatNSE2D(velocity_fespace, presssure_fespace, Velocity, p, disctype, nsetype, solver)
 {
   B = new double[2*N_U+N_P];
   defect = new double[2*N_U+N_P];
@@ -56,10 +56,10 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
         SqmatrixM21 = new TSquareMatrix2D(sqstructureA);
         SqmatrixM22 = new TSquareMatrix2D(sqstructureA);
 
-        sqmatrices[0] = SqmatrixM11;
-        sqmatrices[1] = SqmatrixM12;
-        sqmatrices[2] = SqmatrixM21;
-        sqmatrices[3] = SqmatrixM22;
+//         sqmatrices[0] = SqmatrixM11;
+//         sqmatrices[1] = SqmatrixM12;
+//         sqmatrices[2] = SqmatrixM21;
+//         sqmatrices[3] = SqmatrixM22;
       break;
       
       default:
@@ -209,7 +209,7 @@ void TSystemMatTNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+      if (TDatabase::ParamDB->PROBLEM_TYPE == STOKES)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -383,7 +383,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         NSEaux);
 
        
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
        {
         switch(NSEType)
          {
@@ -758,7 +758,7 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
        {
         switch(NSEType)
          {
@@ -889,7 +889,50 @@ void TSystemMatTNSE2D::GetTNSEResidual(double *sol, double *res)
     cout << "System Matrix is not assembled to calculate residual " <<endl;
     exit(0);
    }
-       
+     
+     switch(NSEType)
+      {
+        case 1:
+          SQMATRICES[0] = SqmatrixM11;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;  
+         break;
+
+        case 2:
+          SQMATRICES[0] = SqmatrixM11;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;
+          MATRICES[2] = MatrixB1T;
+          MATRICES[3] = MatrixB2T;
+        break;
+
+        case 3:
+          SQMATRICES[0] = SqmatrixM11;
+          SQMATRICES[1] = SqmatrixM12;
+          SQMATRICES[2] = SqmatrixM21;
+          SQMATRICES[3] = SqmatrixM22;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;  
+  
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixM11;
+          SQMATRICES[1] = SqmatrixM12;
+          SQMATRICES[2] = SqmatrixM21;
+          SQMATRICES[3] = SqmatrixM22;
+
+          MATRICES[0] = MatrixB1;
+          MATRICES[1] = MatrixB2;
+          MATRICES[2] = MatrixB1T;
+          MATRICES[3] = MatrixB2T;
+ 
+        break;
+      } //  switch(NSEType)
+          
    Defect(sqmatrices, matrices, sol, B, res); 
    
 } // TSystemMatTNSE2D::GetResidual

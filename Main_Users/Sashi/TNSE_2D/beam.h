@@ -78,10 +78,17 @@ void BoundCondition(int i, double t, BoundCond &cond)
 {
   switch(i)
   {
+    case 0:
+    case 2:
+             cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
+             TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
+    break;   
+    
     case 1:
       cond = NEUMANN;
       TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-      break;
+    break;
+    
     default:
       cond = DIRICHLET;
       break;
@@ -98,7 +105,9 @@ void U1BoundValue(int BdComp, double Param, double &value)
             break;
     case 2: value = 0;
             break;
-    case 3: value=6*Param*(1-Param); // 6
+    case 3: 
+//         value=6*Param*(1-Param); // 6
+             value= 1.0;
             break;
     case 4: value=0;
             break;

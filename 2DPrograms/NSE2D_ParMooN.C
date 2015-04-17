@@ -11,228 +11,254 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
+#include <FESpace2D.h>
 #include <SystemMatNSE2D.h>
+#include <SquareStructure2D.h>
+#include <Structure2D.h>
 #include <Output2D.h>
+#include <LinAlg.h>
+#include <CD2DErrorEstimator.h>
 #include <MainUtilities.h>
-#include <LocalAssembling2D.h>
-#include <Example_NSE2D.h>
 
+#include <string.h>
+#include <sstream>
 #include <MooNMD_Io.h>
+#include <stdlib.h>
+#include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+// =======================================================================
+// include current example
+// =======================================================================
+#include "../Examples/NSE_2D/SinCos.h" // smooth sol in unit square
 
 // =======================================================================
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  //  declaration of database, you need this in every program
-  TDatabase Database;
-  TFEDatabase2D FEDatabase; 
-   
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);  
+  // ======================================================================
+  //  declaration of variables
+  // ======================================================================
+  int i, j, N_Cells, ORDER, N_U, N_P, N_TotalDOF, img=1, pressure_space_code;
+  int Max_It, NSEType, velocity_space_code;
   
-  //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
-    TDatabase::ParamDB->PROBLEM_TYPE = 5;
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  double *sol, *rhs, *defect, t1, t2, errors[4], residual, impuls_residual;
+  double limit, u_error[4], p_error[2];
+  
+  TDomain *Domain;
+  TDatabase *Database = new TDatabase();
+  TFEDatabase2D *FEDatabase = new TFEDatabase2D(); 
+  TCollection *coll, *mortarcoll = NULL;
+  TFESpace2D *Velocity_FeSpace, *Pressure_FeSpace, *fesp[1];
+  TFEVectFunct2D *Velocity;
+  TFEFunction2D *u1, *u2, *Pressure, *fefct[2];
+  TOutput2D *Output;
+  TSystemMatNSE2D *SystemMatrix;
+  TAuxParam2D *aux;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+   
+  const char vtkdir[] = "VTK"; 
+  char *PsBaseName, *VtkBaseName, *GEO;
+  char UString[] = "u";
+  char PString[] = "p";
+  
+  std::ostringstream os;
+  os << " ";   
+      
+  // ======================================================================
+  // set the database values and generate mesh
+  // ======================================================================    
+  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
+  Domain = new TDomain(argv[1]);  
+  
   OpenFiles();
+  OutFile.setf(std::ios::scientific);
 
-  // possibly change parameters in the database, if they are not meaningful now
-  Database.CheckParameterConsistencyNSE();
-  // write all Parameters to the OUTFILE (not to console) for later reference
-  Database.WriteParamDB(argv[0]);
+  Database->CheckParameterConsistencyNSE();
+  Database->WriteParamDB(argv[0]);
+  ExampleFile();
   
-  /* include the mesh from a mesh generator, for a standard mesh use the 
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
-  
-  // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain.RegRefineAll();  
-  
-  // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
-    Domain.PS("Domain.ps",It_Finest,0);
-  
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
-  Example_NSE2D example;
+  /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
+  // standard mesh
+   GEO = TDatabase::ParamDB->GEOFILE;
+   Domain->Init(NULL, GEO);
    
-  //=========================================================================
-  // construct all finite element spaces
-  //=========================================================================
-  // a collection is basically only an array of cells, which is needed to create
-  // a finite element space
-  TCollection *coll = Domain.GetCollection(It_Finest, 0);
-  TCollection *mortarcoll = NULL;
-  // print out some information about the mesh
-  int N_Cells = coll->GetN_Cells();
+  // refine grid up to the coarsest level
+  for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
+    Domain->RegRefineAll();  
+  
+  if(TDatabase::ParamDB->WRITE_PS)
+   {
+    // write grid into an Postscript file
+    os.seekp(std::ios::beg);
+    os << "Domain" << ".ps" << ends;
+    Domain->PS(os.str().c_str(),It_Finest,0);
+   }
+   
+  if(TDatabase::ParamDB->WRITE_VTK)
+   { mkdir(vtkdir, 0777); }   
+   
+//=========================================================================
+// construct all finite element spaces
+//=========================================================================
+  ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
+  
+  coll=Domain->GetCollection(It_Finest, 0);
+  N_Cells = coll->GetN_Cells();
   OutPut("N_Cells : " << N_Cells <<endl);
   
-  // create finite element spaces for velocity and pressure
-  TFESpace2D *Velocity_FeSpace, *Pressure_FeSpace;
-  int pressure_space_code;
-  // the following function will create an inf-sup stable pair of finite element
-  // spaces, if PRESSURE_SPACE is not set (-4711)
-  GetVelocityAndPressureSpace(coll, example.get_bc(0), mortarcoll, 
-                              Velocity_FeSpace, Pressure_FeSpace,
-                              &pressure_space_code,
+  // fespaces for velocity and pressure  
+  GetVelocityAndPressureSpace(coll, BoundCondition, mortarcoll, Velocity_FeSpace,
+                              Pressure_FeSpace, &pressure_space_code,
                               TDatabase::ParamDB->VELOCITY_SPACE,
                               TDatabase::ParamDB->PRESSURE_SPACE);
   
-  // defaulty inf-sup pressure space will be selected based on the velocity 
-  // space, so update it in database
+  // defaulty inf-sup pressure space will be selected based on the velocity space, so update it in database
   TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE = pressure_space_code;
-  int velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-  // print out some information on the finite element spaces
-  int N_U = Velocity_FeSpace->GetN_DegreesOfFreedom();
-  int N_P = Pressure_FeSpace->GetN_DegreesOfFreedom();    
-  int N_TotalDOF = 2*N_U + N_P;
+  velocity_space_code =   TDatabase::ParamDB->VELOCITY_SPACE;
+    
+  N_U = Velocity_FeSpace->GetN_DegreesOfFreedom();
+  N_P = Pressure_FeSpace->GetN_DegreesOfFreedom();    
+  N_TotalDOF = 2*N_U + N_P;
+
   OutPut("Dof Velocity : "<< setw(10) << 2* N_U << endl);
   OutPut("Dof Pressure : "<< setw(10) << N_P << endl);
   OutPut("Total Dof all: "<< setw(10) << N_TotalDOF  << endl);
-  
-  //======================================================================
-  // construct all finite element functions
-  //======================================================================
-  double *sol = new double[N_TotalDOF];
-  double *rhs = new double[N_TotalDOF];
-  // set solution and right hand side vectors to zero
-  memset(sol, 0, N_TotalDOF*SizeOfDouble);
-  memset(rhs, 0, N_TotalDOF*SizeOfDouble);
+//======================================================================
+// construct all finite element functions
+//======================================================================
+    sol = new double[N_TotalDOF];
+    rhs = new double[N_TotalDOF];
 
-  // create the finite element functions
-  TFEVectFunct2D Velocity(Velocity_FeSpace, (char*)"u", (char*)"u",  sol, N_U,
-                          2);
-  TFEFunction2D Pressure(Pressure_FeSpace, (char*)"p", (char*)"p", sol+2*N_U,
-                         N_P);
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
-  TFEFunction2D *fe_functions[3] = { Velocity.GetComponent(0),
-                                     Velocity.GetComponent(1), &Pressure };
-  
-  //======================================================================
-  // SystemMatrix construction and solution
-  //======================================================================  
-  // Disc type: GALERKIN 
-  // Solver: AMG_SOLVE (or) GMG  (or) DIRECT
-  int NSEType = TDatabase::ParamDB->NSTYPE;
-  
-  TSystemMatNSE2D SystemMatrix(&Velocity, &Pressure, GALERKIN, NSEType, DIRECT);
+    memset(sol, 0, N_TotalDOF*SizeOfDouble);
+    memset(rhs, 0, N_TotalDOF*SizeOfDouble);
+
+    Velocity = new TFEVectFunct2D(Velocity_FeSpace, UString,  UString,  sol, N_U, 2);
+    u1 = Velocity->GetComponent(0);
+    u2 = Velocity->GetComponent(1);
+    Pressure = new TFEFunction2D(Pressure_FeSpace, PString,  PString,  sol+2*N_U, N_P);
+    
+//======================================================================
+// SystemMatrix construction and solution
+//======================================================================  
+    // Disc type: GALERKIN 
+    // Solver: AMG_SOLVE (or) GMG  (or) DIRECT
+    NSEType = TDatabase::ParamDB->NSTYPE;
+    
+    SystemMatrix = new TSystemMatNSE2D(Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, GALERKIN, NSEType, DIRECT);
  
-  // initilize the system matrix with the functions defined in Example file
-  SystemMatrix.Init(example.get_coeffs(), example.get_bc(0), example.get_bd(0),
-                    example.get_bd(1));
-  
-  // create a local assembling objects which are needed to assemble the matrices
-  LocalAssembling2D la(NSE2D_Galerkin, fe_functions, example.get_coeffs());
-  LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
-                                 example.get_coeffs());
-  
-  // assemble the system matrix with given sol and rhs 
-  SystemMatrix.Assemble(la, sol, rhs);
-  
-  // calculate the residual
-  double *defect = new double[N_TotalDOF];
-  memset(defect,0,N_TotalDOF*SizeOfDouble);
-  
-  SystemMatrix.GetResidual(sol, rhs, defect);
-  
-  //correction due to L^2_O Pressure space 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    IntoL20Vector2D(defect+2*N_U, N_P, pressure_space_code);
-  
-  double residual =  Ddot(N_TotalDOF, defect, defect);
-  double impuls_residual = Ddot(2*N_U, defect, defect);  
-
-  OutPut("Nonlinear iteration step   0");
-  OutPut(setw(14) << impuls_residual);
-  OutPut(setw(14) << residual-impuls_residual);
-  OutPut(setw(14) << sqrt(residual) << endl);     
-
-  //====================================================================== 
-  //Solve the system
-  // the nonlinear iteration
-  //======================================================================
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  
-  for(int j=1; j<=Max_It; j++)
-  {
-    // Solve the NSE system
-    SystemMatrix.Solve(sol, rhs);
+    // initilize the system matrix with the functions defined in Example file
+    //last argument is aux that is used to pass additional fe functions (eg. mesh velocity)
+    // otherwise, just pass with NULL so that the default NSE aux value will be used 
+    SystemMatrix->Init(LinCoeffs, BoundCondition, U1BoundValue, U2BoundValue, NULL);
+       
+    // assemble the system matrix with given sol and rhs 
+    SystemMatrix->Assemble(sol, rhs);
     
-    //no nonlinear iteration for Stokes problem  
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3 ) 
-      break;
-    
-    // assemble the system matrix with given aux, sol and rhs 
-    SystemMatrix.AssembleNonLinear(la_nonlinear, sol, rhs);     
-    
-    // get the residual
+    // calculate the residual
+    defect = new double[N_TotalDOF];
     memset(defect,0,N_TotalDOF*SizeOfDouble);
-    SystemMatrix.GetResidual(sol, rhs, defect);
+    
+    SystemMatrix->GetResidual(sol, rhs, defect);
     
     //correction due to L^2_O Pressure space 
-    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-      IntoL20Vector2D(defect+2*N_U, N_P, pressure_space_code);
+     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       IntoL20Vector2D(defect+2*N_U, N_P, pressure_space_code);
     
-    residual =  Ddot(N_TotalDOF, defect, defect);
-    impuls_residual = Ddot(2*N_U, defect, defect); 
-    
-    OutPut("nonlinear iteration step " << setw(3) << j);
-    OutPut(setw(14) << impuls_residual);
-    OutPut(setw(14) << residual-impuls_residual);
-    OutPut(setw(14) << sqrt(residual) << endl);
-    
-    if((sqrt(residual)<=limit) || (j==Max_It))
-    { // stop the nonlinear iteration
-      break;
-    }
-  } //for(j=1;j<=Max_It;j
-  
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    IntoL20FEFunction(sol+2*N_U, N_P, Pressure_FeSpace, velocity_space_code, 
-                      pressure_space_code);
-  
-  //======================================================================
-  // produce outout
-  //======================================================================
-  TOutput2D Output(2, 2, 1, 1, &Domain);
-  
-  Output.AddFEVectFunct(&Velocity);
-  Output.AddFEFunction(&Pressure);
-  
-  //fe_functions[0]->Interpolate(ExactU1);
-  //fe_functions[1]->Interpolate(ExactU2);
-  //fe_functions[2]->Interpolate(ExactP);
-   
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME) + ".vtk";
-    Output.WriteVtk(filename.c_str());
-  }   
-   
-  //====================================================================== 
-  // measure errors to known solution
-  //======================================================================    
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
-  {
-    double u_error[4], p_error[2];
-    SystemMatrix.MeasureErrors(example.get_exact(0), example.get_exact(1),
-                               example.get_exact(2), u_error, p_error);
+      residual =  Ddot(N_TotalDOF, defect, defect);
+      impuls_residual = Ddot(2*N_U, defect, defect);  
 
-    OutPut("L2(u): " <<  sqrt(u_error[0]*u_error[0]+u_error[2]*u_error[2]) << endl);
-    OutPut("H1-semi(u): " <<  sqrt(u_error[1]*u_error[1]+u_error[3]*u_error[3]) << endl);
-    OutPut("L2(p): " <<  p_error[0] << endl);
-    OutPut("H1-semi(p): " <<  p_error[1] << endl); 
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
-  
+      OutPut("Nonlinear iteration step   0");
+      OutPut(setw(14) << impuls_residual);
+      OutPut(setw(14) << residual-impuls_residual);
+      OutPut(setw(14) << sqrt(residual) << endl);     
+
+//====================================================================== 
+//Solve the system
+// the nonlinear iteration
+//======================================================================
+    limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+    Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+    
+    for(j=1;j<=Max_It;j++)
+     {   
+      // Solve the NSE system
+      SystemMatrix->Solve(sol, rhs);
+      
+      //no nonlinear iteration for Stokes problem  
+      if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
+       break;
+      
+      // assemble the system matrix with given aux, sol and rhs 
+      SystemMatrix->AssembleNonLinear(sol, rhs);     
+      
+      // get the residual
+      memset(defect,0,N_TotalDOF*SizeOfDouble);
+      SystemMatrix->GetResidual(sol, rhs, defect);
+
+    //correction due to L^2_O Pressure space 
+     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       IntoL20Vector2D(defect+2*N_U, N_P, pressure_space_code);
+    
+      residual =  Ddot(N_TotalDOF, defect, defect);
+      impuls_residual = Ddot(2*N_U, defect, defect); 
+
+      OutPut("nonlinear iteration step " << setw(3) << j);
+      OutPut(setw(14) << impuls_residual);
+      OutPut(setw(14) << residual-impuls_residual);
+      OutPut(setw(14) << sqrt(residual) << endl);
+ 
+      if ((sqrt(residual)<=limit)||(j==Max_It))
+       {
+        break;
+       }//if ((sqrt(residual)<=limit)||(j==Max_It))
+       
+     } //for(j=1;j<=Max_It;j
+    
+    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       IntoL20FEFunction(sol+2*N_U, N_P, Pressure_FeSpace, velocity_space_code, pressure_space_code);
+    
+//======================================================================
+// produce outout
+//======================================================================
+   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
+   Output = new TOutput2D(2, 2, 1, 1, Domain);
+
+   Output->AddFEVectFunct(Velocity);
+   Output->AddFEFunction(Pressure);
+   
+//    u1->Interpolate(ExactU1);
+//    u2->Interpolate(ExactU2);
+//    Pressure->Interpolate(ExactP);
+   
+    if(TDatabase::ParamDB->WRITE_VTK)
+     {
+      os.seekp(std::ios::beg);
+       if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
+         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
+          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
+           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
+            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
+      Output->WriteVtk(os.str().c_str());
+      img++;
+     }   
+     
+//====================================================================== 
+// measure errors to known solution
+//======================================================================    
+    if(TDatabase::ParamDB->MEASURE_ERRORS)
+     {   
+      SystemMatrix->MeasureErrors(ExactU1, ExactU2, ExactP, u_error, p_error);
+
+       OutPut("L2(u): " <<  sqrt(u_error[0]*u_error[0]+u_error[2]*u_error[2]) << endl);
+       OutPut("H1-semi(u): " <<  sqrt(u_error[1]*u_error[1]+u_error[3]*u_error[3]) << endl);
+       OutPut("L2(p): " <<  p_error[0] << endl);
+       OutPut("H1-semi(p): " <<  p_error[1] << endl); 
+     } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+
+
   CloseFiles();
+  
   return 0;
 } // end main
