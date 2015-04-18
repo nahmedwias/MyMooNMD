@@ -90,7 +90,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
   int i;
   double *coeff, x, y, z;
 
-  if (TDatabase::ParamDB->STOKES_PROBLEM)
+ if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
   {
     for(i=0;i<n_points;i++)
     {

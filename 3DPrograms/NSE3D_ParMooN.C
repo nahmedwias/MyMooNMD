@@ -31,10 +31,10 @@ double bound = 0;
 // =======================================================================
 // include current example
 // =======================================================================
- #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
+//  #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
 // #include "../Examples/NSE_3D/AnsatzLinConst.h"
 // #include "../Examples/NSE_3D/DrivenCavity3D.h"
-
+#include "../Main_Users/Sashi/NSE_3D/DrivenCavity3D.h"
 // =======================================================================
 // main program
 // =======================================================================
@@ -246,7 +246,15 @@ int main(int argc, char* argv[])
     OutPut("Dof velocity : "<< setw(10) << 3*N_U << endl);
     OutPut("Dof pressure : "<< setw(10) << N_P << endl);
     OutPut("Dof all      : "<< setw(10) << N_TotalDOF  << endl);  
+//======================================================================
+// produce outout
+//======================================================================
+   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
+   Output = new TOutput3D(2, 2, 1, 1, Domain);
 
+   Output->AddFEVectFunct(u);
+   Output->AddFEFunction(p);
+   
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  
@@ -279,6 +287,18 @@ int main(int argc, char* argv[])
       OutPut(setw(14) << residual-impuls_residual);
       OutPut(setw(14) << sqrt(residual) << endl);     
 
+    if(TDatabase::ParamDB->WRITE_VTK)
+     {
+      os.seekp(std::ios::beg);
+       if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
+         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
+          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
+           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
+            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
+      Output->WriteVtk(os.str().c_str());
+      img++;
+     }   
+//      exit(0);
 //====================================================================== 
 //Solve the system
 // the nonlinear iteration
@@ -323,15 +343,8 @@ int main(int argc, char* argv[])
     
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
         IntoL20FEFunction3D(sol+3*N_U, N_P, Pressure_FeSpace[mg_level-1]);
-//======================================================================
-// produce outout
-//======================================================================
-   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
-   Output = new TOutput3D(2, 2, 1, 1, Domain);
 
-   Output->AddFEVectFunct(u);
-   Output->AddFEFunction(p);
-   
+//  ==============================================================  
    if(TDatabase::ParamDB->WRITE_VTK)
      {
       os.seekp(std::ios::beg);

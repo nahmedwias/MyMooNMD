@@ -91,17 +91,7 @@ class TAuxParam3D
      * choose this constructor. This is equivalent to calling 
      * TAuxParam3D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
      */
-    TAuxParam3D();
-    /** @brief constructor used if finite element function values are needed 
-     *         during assembling
-     * 
-     * Depending on the given parameter 'name', this object will be initialized
-     * properly. Currently supported values for 'name' are:
-     *  - "velocity", this is used for Navier-Stokes problems
-     * 
-     * You can achieve the same behavior using the first constructor above, but 
-     * this constructor is easier.
-     */
+
     TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d);
     
 

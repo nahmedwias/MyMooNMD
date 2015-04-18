@@ -342,7 +342,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->PROBLEM_TYPE==3)
+      if (TDatabase::ParamDB->PROBLEM_TYPE==STOKES)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -516,7 +516,7 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                   NSEaux);
  
    
-       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
+       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==STOKES) )
         {
          switch(NSEType)
           {
@@ -732,7 +732,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==STOKES) )
        {
         switch(NSEType)
          {
@@ -828,7 +828,6 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
             memcpy(sol, Itmethod_sol, N_TotalDOF*SizeOfDouble);
             memcpy(rhs, Itmethod_rhs, N_TotalDOF*SizeOfDouble);
            }
-        cout << "GMG solver not yet implemented " <<endl;
       break;
 
       case DIRECT:
