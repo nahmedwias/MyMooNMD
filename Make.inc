@@ -31,13 +31,13 @@ endif
 # ======================================================================
 # LINUX64: Linux with gnu
 # ======================================================================
-CPPFLAG_LINUX64_OPTI  = -O3 -openmp -s $(INC) -std=c++11
-CPPFLAG_LINUX64_FAST  = -s $(INC) -openmp -std=c++11
-CPPFLAG_LINUX64_DEBUG = -g $(INC) -openmp -std=c++11
+CPPFLAG_LINUX64_OPTI  = -O3 -s $(INC) -std=c++11 -fopenmp
+CPPFLAG_LINUX64_FAST  = -s $(INC) -std=c++11 -fopenmp 
+CPPFLAG_LINUX64_DEBUG = -g $(INC) -std=c++11 -fopenmp
 DEFINE_LINUX64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
-CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -openmp
-CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -openmp
-CCFLAG_LINUX64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -openmp
+CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
+CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
+CCFLAG_LINUX64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fopenmp
  
 
 ifeq ($(PARALLEL_TYPE),$(filter $(PARALLEL_TYPE),OPENMP SEQUENTIAL))
@@ -61,7 +61,6 @@ BLACS_PATH = EXT_LIB/MPIBLACS
 MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
                         $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  
 endif
-
 
 # ======================================================================
 # MAC64: MAC with CLANG

@@ -3500,9 +3500,15 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
     
-    if (!strcmp(line, "DEPENDENT_BASIS_Q2:"))
+    if (!strcmp(line, ":"))
     {
       dat >> TDatabase::ParamDB->DEPENDENT_BASIS_Q2;
+      N_Param++;
+    }
+    
+    if (!strcmp(line, "timeprofiling:"))
+    {
+      dat >> TDatabase::ParamDB->timeprofiling;
       N_Param++;
     }
         

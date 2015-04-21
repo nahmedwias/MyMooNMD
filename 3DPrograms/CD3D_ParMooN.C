@@ -34,11 +34,11 @@
 // #include <Scalar_ParSolver.h>
 #endif
 
+#include <omp.h>
+
 #define AMG 0
 #define GMG 1
 #define DIRECT 2
-
-#define profiling 1
 
 double bound = 0;
 double timeC = 0;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   
   double *sol, *rhs, **Sol_array, **Rhs_array, t1, t2, errors[4];
   double start_time, end_time;
-  double construction, assembling, solving, total;                         //time calc
+  double construction, assembling, solving, vtk, total;                         //time calc
   
   TDatabase *Database = new TDatabase();
   const char vtkdir[] = "VTK"; 
@@ -70,8 +70,7 @@ int main(int argc, char* argv[])
   char CString[] = "C";
   char SubID[] = "";
   
-  if(profiling)	start_time = GetTime();
-  
+  int profiling;
   #ifdef _MPI
   int rank, size, out_rank;
   int MaxCpV, MaxSubDomainPerDof;
@@ -85,12 +84,8 @@ int main(int argc, char* argv[])
   MPI_Comm_size(Comm, &size);
  
   TDatabase::ParamDB->Comm = Comm;
-    
-  if(profiling){
-    start_time = MPI_Wtime();
-  }
   #endif 
-
+  
   TDomain *Domain;
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
   TCollection *coll;
@@ -105,12 +100,21 @@ int main(int argc, char* argv[])
   os << " ";   
   
   mkdir(vtkdir, 0777);
-  
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================    
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   Domain = new TDomain(argv[1]);  
+  
+  profiling = TDatabase::ParamDB->timeprofiling;
+  if(profiling)
+  {
+#ifdef _MPI
+    start_time = MPI_Wtime();
+#else
+    start_time = GetTime();
+#endif
+  }
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 1;
@@ -128,6 +132,8 @@ int main(int argc, char* argv[])
     ExampleFile();
    }
 
+     
+  
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh
   PRM = TDatabase::ParamDB->BNDFILE;
@@ -158,7 +164,7 @@ int main(int argc, char* argv[])
   MaxSubDomainPerDof = MIN(MaxCpV, size);
   TDatabase::ParamDB->WRITE_PS = 0;
   #endif 
- 
+
   if(TDatabase::ParamDB->WRITE_PS)
    {
     // write grid into an Postscript file
@@ -276,13 +282,20 @@ int main(int argc, char* argv[])
       Scalar_FeFunction = new TFEFunction3D(Scalar_FeSpaces[mg_level-1], CString, CString, sol, N_DOF);   
       Scalar_FeFunctions[mg_level-1] = Scalar_FeFunction;
      }//  if(i==LEVELS-1 && i!=mg_level-1) 
-    
+     
+#ifdef _MPI
+     N_Cells = coll->GetN_Cells();
+     printf("rank=%d\t N_Cells   : %d\t Dof all   :%d\n",rank,N_Cells,N_DOF);
+#endif
 
    }// for(i=0;i<LEVELS;i++)
 
+#ifndef _MPI   
    N_Cells = coll->GetN_Cells();
    OutPut("N_Cells   : " << N_Cells <<endl);
    OutPut("Dof all   : " << N_DOF  << endl);  
+   OutPut(endl);
+#endif 
 //    OutPut(endl);  
 
 //======================================================================
@@ -290,31 +303,51 @@ int main(int argc, char* argv[])
 //======================================================================  
     // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-    if(profiling)	t1 = GetTime();
+    if(profiling){
+#ifdef _MPI
+      t1 = MPI_Wtime();
+#else
+      t1 = GetTime();
+#endif
+    }
     
     SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
 
+    // initilize the system matrix with the functions defined in Example file
+    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
+    
     if(profiling){
+#ifdef _MPI
+      t2 = MPI_Wtime();
+#else
       t2 = GetTime();
+#endif
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
 #endif
       construction = t2;
     } 
-   
-    // initilize the system matrix with the functions defined in Example file
-    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
 
     // assemble the system matrix with given aux, sol and rhs 
     // aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
     // otherwise, just pass it with NULL 
-    if(profiling)	t1 = GetTime();
-    
+    if(profiling){
+#ifdef _MPI
+      t1 = MPI_Wtime();
+#else
+      t1 = GetTime();
+#endif
+    }
+  
     SystemMatrix->Assemble(NULL, Sol_array, Rhs_array);
     
     if(profiling){
+#ifdef _MPI
+      t2 = MPI_Wtime();
+#else
       t2 = GetTime();
+#endif
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
@@ -323,12 +356,22 @@ int main(int argc, char* argv[])
     }
     
     //Solve the system
-    if(profiling)	t1 = GetTime();
+    if(profiling){
+#ifdef _MPI
+      t1 = MPI_Wtime();
+#else
+      t1 = GetTime();
+#endif
+    }
     
     SystemMatrix->Solve(sol, rhs);
     
     if(profiling){
+#ifdef _MPI
+      t2 = MPI_Wtime();
+#else
       t2 = GetTime();
+#endif
       t2 = t2-t1;
 #ifdef _MPI
       MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
@@ -339,6 +382,14 @@ int main(int argc, char* argv[])
 //======================================================================
 // produce outout
 //======================================================================
+    if(profiling){
+#ifdef _MPI
+      t1 = MPI_Wtime();
+#else
+      t1 = GetTime();
+#endif
+    }
+    
     VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
     Output = new TOutput3D(2, 2, 1, 1, Domain);
 
@@ -346,19 +397,9 @@ int main(int argc, char* argv[])
 
      //Scalar_FeFunction->Interpolate(Exact);   
 #ifdef _MPI
-     double t_par1, t_par2;
-     if(profiling)		t_par1 = MPI_Wtime();
-
      if(TDatabase::ParamDB->WRITE_VTK)
       Output->Write_ParVTK(MPI_COMM_WORLD, img, SubID);
         img++;       
-     if(profiling){
-       t_par2 = MPI_Wtime();
-       t_par2 = t_par2-t_par1;
-       MPI_Reduce(&t_par2, &t_par1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-       if(rank == out_rank)
-	printf("Time taken for writing the parvtk file %e\n", (t_par1));
-     }
 #else
     if(TDatabase::ParamDB->WRITE_VTK)
      {
@@ -373,7 +414,19 @@ int main(int argc, char* argv[])
      }
        img++;    
 #endif 
-     
+
+    if(profiling){
+#ifdef _MPI
+      t2 = MPI_Wtime();
+#else
+      t2 = GetTime();
+#endif
+      t2 = t2-t1;
+#ifdef _MPI
+      MPI_Reduce(&t2, &t1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
+#endif
+      vtk = t2;
+    }       
 //====================================================================== 
 // measure errors to known solution
 //======================================================================    
@@ -405,21 +458,19 @@ int main(int argc, char* argv[])
      } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 
   
-  
-  if(profiling)	end_time = GetTime();
-  #ifdef _MPI
-  if(profiling){
-    //printf("rank = %d out_rank = %d\n",rank,out_rank);
-    end_time = MPI_Wtime();
-    MPI_Reduce(&start_time, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
-    MPI_Reduce(&end_time,   &t2, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
-    total = t2 - t1;
-  } 
-  #else 
-  total = end_time - start_time;
-  #endif
+    if(profiling){
+#ifdef _MPI
+      end_time = MPI_Wtime();
+      MPI_Reduce(&start_time, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
+      MPI_Reduce(&end_time,   &t2, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
+      total = t2 - t1;
+#else
+      end_time = GetTime();
+      total = end_time - start_time;
+#endif
+    } 
 
-  //======================================================================
+//======================================================================
 // Time profiling Output
 //======================================================================  
   if(profiling){
@@ -435,7 +486,7 @@ int main(int argc, char* argv[])
     OutPut("Total Cells :: "<<N_Cells<<"     Total_dof :: "<<N_DOF<<endl<<endl);  
     OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl); 
     OutPut( "Total time taken for initializing System Matrix : " << (construction) << "("<<100*(construction)/(total)<<"%)"<<endl);
-    //OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
+    OutPut( "Total time taken for vtk writing : " << (vtk) << "("<<100*(vtk)/(total)<<"%)"<<endl);
     OutPut( "Total time taken for assembling : " << (assembling) << "("<<100*(assembling)/(total)<<"%)"<<endl);
     OutPut( "Total time taken for solving : " << (solving) << "("<<100*(solving)/(total)<<"%)"<<endl);
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(total) <<"%)"<< endl);

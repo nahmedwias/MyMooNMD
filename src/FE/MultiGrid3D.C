@@ -96,6 +96,9 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 {
   int i,j,k;
   double *CurrentSol, *CurrentRhs, *CurrentDefect, *CurrentAux;
+#ifdef _HYBRID
+  bool firstTime, LastTime;
+#endif
   
   CurrentSol    = Level->GetSolution();
   CurrentRhs    = Level->GetRhs();
@@ -175,13 +178,38 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 // 	}
 //         break;
 #ifdef _MPI
-	case 6: // SOR_Reorder
-        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+  #ifdef _HYBRID
+	case 6: //SOR Reorder and color
+	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+	  if(j == 0){
+	    firstTime = true;
+	    LastTime  = false;
+	  }
+	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
+	  {
+	    firstTime = false;
+	    LastTime  = true;
+	  }
+	  else
+	  {
+	    firstTime = false;
+	    LastTime  = false;
+	  }
+	  
+          Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters, firstTime, LastTime);
+	}
+        break;
+  #else	
+	case 6: //SOR_Reorder
+	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
 	{
           Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
                 N_Parameters, Parameters);
 	}
         break;
+  #endif
 #endif
       default:
         for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
@@ -191,55 +219,77 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
   }
   else if(smoother_type == CoarseSmooth)
   {
-    switch(TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR)
-          {
-               case 1: // Jacobi
-                       Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
+#ifdef _MPI  
+  int rank;
+  MPI_Comm_rank(ParComm->GetComm(), &rank); 
+#endif  
+    double res;
+    int it = 0;
+    int maxit =  TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
+    
+    Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
+     if(TDatabase::ParamDB->SC_VERBOSE>=2 
+#ifdef _MPI  
+        && rank==TDatabase::ParamDB->Par_P0
+#endif  
+     )
+     {
+      OutPut("residual before on coarse "<<res << endl);
+     }
+     
+    double reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
+  
+    while ((res>reduction)&&(it<maxit))
+    {  
+      switch(TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR)
+            {
+                 case 1: // Jacobi
+                         Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
                                                        N_Parameters, Parameters);
 #ifdef _MPI  
-                       ParComm->CommUpdate(CurrentSol);
+                         ParComm->CommUpdate(CurrentSol);
 #endif
-                       break;
+                         break;
 		       
-               case 2: // SOR
-                       Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
-                                                   N_Parameters, Parameters);
+                 case 2: // SOR
+                         Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                                                     N_Parameters, Parameters);
 #ifdef _MPI  
-                       ParComm->CommUpdate(CurrentSol);
+                         ParComm->CommUpdate(CurrentSol);
 #endif
-                       break;
+                         break;
 		       
-               case 3: // SSOR
-                       Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
+                 case 3: // SSOR
+                         Level->SSOR(CurrentSol, CurrentRhs, CurrentAux,
                                                     N_Parameters, Parameters);
 #ifdef _MPI  
-                       ParComm->CommUpdate(CurrentSol);
+                         ParComm->CommUpdate(CurrentSol);
 #endif
-                       break;
+                         break;
         
-	       case 4: // ILU
-                       Level->ILU(CurrentSol, CurrentRhs, CurrentDefect,
-                                                      N_Parameters, Parameters);
-                       break;
+	         case 4: // ILU
+                         Level->ILU(CurrentSol, CurrentRhs, CurrentDefect,
+                                                        N_Parameters, Parameters);
+                         break;
 		       
-               case 17: // solution with Gaussian elimination
-                        Level->SolveExact(CurrentSol, CurrentRhs);
-                        break;
+                 case 17: // solution with Gaussian elimination
+                          Level->SolveExact(CurrentSol, CurrentRhs);
+                          break;
 #ifdef _MPI
   #ifdef _HYBRID
-	       case 5: //SOR_Reorder
-	               printf("Not Working\n");
-	               MPI_Finalize();
-	               exit(0);
-                       break;
+	         case 5: //SOR_Reorder
+	                 printf("Not Working\n");
+	                 MPI_Finalize();
+	                 exit(0);
+                         break;
   #else
-               case 5: //SOR_Reorder
-	               for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	               {
-                             Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
+                 case 5: //SOR_Reorder
+	                 for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	                 {
+                               Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
                                                             N_Parameters, Parameters);
-	               }
-                       break;
+	                 }
+                         break;
   #endif
 #endif
 // 	       case 6: // SSOR Light
@@ -252,11 +302,34 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 // 		       ParComm->CommUpdate_M_H1(CurrentSol);
 // #endif
 //                        break;
-#ifdef _MPI 
-	       case 6: // SOR_Reorder
-		        Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
-			       N_Parameters, Parameters);
-		        break;
+#ifdef _MPI
+  #ifdef _HYBRID
+	  case 6: //SOR_Reorder
+	    if(it == 0)
+	    {
+	      firstTime = true;
+	      LastTime  = false;
+	    }
+	    else if(it == maxit-1)
+	    {
+	      firstTime = false;
+	      LastTime  = true;
+	    }
+	    else
+	    {
+	      firstTime = false;
+	      LastTime  = false;
+	    }
+	      
+	    Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters, firstTime, LastTime);
+          break;
+  #else	
+	  case 6: //SOR_Reorder
+            Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                  N_Parameters, Parameters);
+          break;
+  #endif
 #endif		
                default:
                        OutPut("Coarse smoother not implemented !! Use coarse smoother 3" << endl);
@@ -266,6 +339,17 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
                        ParComm->CommUpdate(CurrentSol);
 #endif
           } // endswitch SC_COARSE_SMOOTHER_SCALAR
+          
+       Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
+       it++;
+       if(TDatabase::ParamDB->SC_VERBOSE>=2
+#ifdef _MPI  
+        && rank==TDatabase::ParamDB->Par_P0
+#endif
+        )
+         OutPut("itr no. :: "<<it-1<<"        res on coarse: " << res << endl);   
+    }//endwhile
+    oldres = res;
   }
   else if(smoother_type == PostSmooth)
   {
@@ -342,14 +426,39 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 // #endif
 // 	}
 //         break;
-#ifdef _MPI	
-	case 6: // SOR_Reorder
-        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+#ifdef _MPI
+  #ifdef _HYBRID
+	case 6: //SOR Reorder and color
+	for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+	  if(j == 0){
+	    firstTime = true;
+	    LastTime  = false;
+	  }
+	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
+	  {
+	    firstTime = false;
+	    LastTime  = true;
+	  }
+	  else
+	  {
+	    firstTime = false;
+	    LastTime  = false;
+	  }
+	  
+          Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters, firstTime, LastTime);
+	}
+        break;
+  #else	
+	case 6: //SOR_Reorder
+	for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
 	{
           Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
                 N_Parameters, Parameters);
 	}
         break;
+  #endif	
 #endif
       default:
         for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
@@ -415,44 +524,44 @@ void TMultiGrid3D::Cycle(int i, double &res)
   if(i==0)
   {
     // coarse grid
-    // cout << "coarse grid" << endl;
-    res = 1;
-    maxit =  TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-    it = 0;
-    CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
+//     cout << "coarse grid" << endl;
+//     res = 1;
+//     maxit =  TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
+//     it = 0;
+//     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
     
-   if(TDatabase::ParamDB->SC_VERBOSE>=2 
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif  
-     )
-     {
-      OutPut("residual before on coarse "<<res << endl);
-     }
+//    if(TDatabase::ParamDB->SC_VERBOSE>=2 
+// #ifdef _MPI  
+//         && rank==TDatabase::ParamDB->Par_P0
+// #endif  
+//      )
+//      {
+//       OutPut("residual before on coarse "<<res << endl);
+//      }
      
-    reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
-    while ((res>reduction)&&(it<maxit))
-    {
+//     reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
+//     while ((res>reduction)&&(it<maxit))
+//     {
 #ifdef _MPI
      t1 = MPI_Wtime();
-     Smooth(CoarseSmooth, CurrentLevel, ParComm, oldres); 
+     Smooth(CoarseSmooth, CurrentLevel, ParComm, res); 
      t2 = MPI_Wtime();
 #else
      t1 = GetTime();
-     Smooth(CoarseSmooth, CurrentLevel, oldres);
+     Smooth(CoarseSmooth, CurrentLevel, res);
      t2 = GetTime();
 #endif
      tSmoother += t2-t1 ;
      
-      CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
-      it++;
-      if(TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif
-        )
-         OutPut("itr no. :: "<<it-1<<"        res on coarse: " << res << endl);
-    }//end while
+//       CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
+//       it++;
+//       if(TDatabase::ParamDB->SC_VERBOSE>=2
+// #ifdef _MPI  
+//         && rank==TDatabase::ParamDB->Par_P0
+// #endif
+//         )
+//          OutPut("itr no. :: "<<it-1<<"        res on coarse: " << res << endl);
+//     }//end while
   }
   else
   {
@@ -469,7 +578,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
     CoarserRhs = CoarserLevel->GetRhs();
   
 #ifdef _MPI  
-  CoarseParComm = CoarserLevel->GetParComm();      
+  CoarseParComm = CoarserLevel->GetParComm();   
 #endif  
     // smoothing
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);  
@@ -516,7 +625,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
          OutPut("Smoothing (" << i << "): " << oldres/normsol << endl);
       }
     // restrict defect
-    
+//     exit(0);
 #ifdef _MPI  
         ParComm->CommUpdate(CurrentDefect);
   
@@ -525,20 +634,23 @@ void TMultiGrid3D::Cycle(int i, double &res)
 	DefectRestriction(CoarserLevel->GetFESpace(), CurrentLevel->GetFESpace(),
                            CoarserRhs, CurrentDefect,
                            CurrentAux);
-	
+// 	OutPut("restriction "<<endl);
+// 	exit(0);
 	if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
 	  CoarseParComm->CommUpdateReduceMS(CoarserRhs);
 	}
 	else{
 	  CoarseParComm->CommUpdateReduce(CoarserRhs);	 
 	}
+// 	OutPut("2.restriction "<<endl);
+	//exit(0);
 #else
         DefectRestriction(FESpaces[i-1], FESpaces[i],CoarserRhs, CurrentDefect, CurrentAux);
 #endif
 
     CoarserLevel->CorrectDefect(CoarserRhs);  //non-active part set to 0
     CoarserLevel->Reset(CoarserSol);          //all set to 0
-       
+     
     // coarse grid correction
     // coarse grid correction, apply mg recursively*/
     for(j=0;j<mg_recursions[i];j++)
@@ -584,7 +696,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
         OutPut("level " << i << " ");
         OutPut("res before postsmoothing: " << oldres << endl);
       }
-      
+//        exit(0);
     // smoothing
 #ifdef _MPI
      t1 = MPI_Wtime();

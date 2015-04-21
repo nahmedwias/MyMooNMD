@@ -15,7 +15,7 @@
 
 #include <SquareMatrix3D.h>
 #include <ParFECommunicator3D.h>
-
+#include <omp.h>
 class TMGLevel3D
 {
   protected:
@@ -84,12 +84,14 @@ class TMGLevel3D
      /** Reorder of sol array */
      int *Reorder,N_Master,N_Int,N_Dept;
      
+     int N_InterfaceM, N_Dept1, N_Dept2;// N_Dept3;
+     
+#endif
+     
+#ifdef _HYBRID     
      /** Coloring variables */
-     int N_CMaster, N_CDept, N_CInt, *ptrCMaster, *ptrCDept, *ptrCInt;
-     
-     int N_InterfaceM, N_Dept1, N_Dept2, N_Dept3;
-     
-#endif    
+     int N_CMaster, N_CDept1, N_CDept2, N_CInt, *ptrCMaster, *ptrCDept1, *ptrCDept2, *ptrCInt;
+#endif
 
   public:
 
@@ -207,6 +209,13 @@ class TMGLevel3D
     
 #endif
 
+#ifdef _HYBRID
+        void SOR_Re_Color(double *sol, double *f, double *aux,
+			  int N_Parameters, double *Parameters, bool firstTime, bool lastTime);
+	void SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
+				 int N_Parameters, double *Parameters);
+#endif
+       
 };
 
 #endif

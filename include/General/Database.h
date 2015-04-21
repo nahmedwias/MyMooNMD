@@ -79,6 +79,8 @@ struct TParaDB
   int MEASURE_ERRORS;
   int ESTIMATE_ERRORS;
   int COMPUTE_VORTICITY_DIVERGENCE;
+  
+  int timeprofiling;  //(time profiling)
 
   //======================================================================
   /** parameters for setting finite element spaces                      */
@@ -874,11 +876,11 @@ struct TParaDB
   //======================================================================
   /** parameters for individual use in parallel computations */
   //======================================================================
-  int Par_P0;
+  int Par_P0; //out rank
   int Par_P1; // 1 - root takes part in computation; 0 - not
   int Par_P2; // mesh partition type: 1 - dual; 0 - nodal
   int Par_P3; // 1 - use halocells; 0 - dont
-  int Par_P4;
+  int Par_P4; // 1-redistribution of masters 0-otherwise
   int Par_P5;
   int Par_P6;
   int Par_P7;
