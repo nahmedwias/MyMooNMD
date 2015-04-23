@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix->Solve(sol, rhs);
+    //SystemMatrix->Solve(sol, rhs);
     
     if(profiling){
 #ifdef _MPI
@@ -492,6 +492,8 @@ int main(int argc, char* argv[])
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(total) <<"%)"<< endl);
     OutPut( "Total time taken throughout : " << (total) << endl);
     OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
+//     OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0));
+//     OutPut(" MB" << endl); 
 #ifdef _MPI
     }
 #endif

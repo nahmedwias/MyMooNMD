@@ -755,8 +755,9 @@ if(TDatabase::ParamDB->Par_P4){
   end_time = MPI_Wtime();
   if(rank == 0)
     printf("Total Time Taken for Redistribution of master dofs = %lf\n",end_time-start_time);
+    } //if(TDatabase::ParamDB->Par_P4)  
   //*/
-    } //if(TDatabase::ParamDB->Par_P4)
+
 //################################################################# Redistribution of interface dofs #######################################################################//
 
 
@@ -848,30 +849,46 @@ if(TDatabase::ParamDB->Par_P4){
    }
  }
  
- //mark halo type1(H)-->useful & type2(h)
- flag = false;
- for(i=N_OwnCells;i<N_Cells;i++){
-   DOF      = GlobalNumbers + BeginIndex[i];
-   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-   
-   for(j=0;j<N_LocDof;j++){
-     N = DOF[j];
-     if(Master[N]==rank){
-       flag = true;
-       break;
-     }
-   }
-   //halo dofs connected to master dofs are marked as type1(H) else type2(h)
-   //type2 halo dofs are not required in smoothing operations
-   if(flag==true){
-     for(j=0;j<N_LocDof;j++){
-       N = DOF[j];
-       if(Verify[N]=='h')
-	 Verify[N]='H';  
-     }
-     flag=false;
-   }
- }
+//  //mark halo type1(H)-->useful & type2(h)
+//  flag = false;
+//  for(i=N_OwnCells;i<N_Cells;i++){
+//    DOF      = GlobalNumbers + BeginIndex[i];
+//    N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+//    
+//    for(j=0;j<N_LocDof;j++){
+//      N = DOF[j];
+//      if(Master[N]==rank){
+//        flag = true;
+//        break;
+//      }
+//    }
+//    //halo dofs connected to master dofs are marked as type1(H) else type2(h)
+//    //type2 halo dofs are not required in smoothing operations
+//    if(flag==true){
+//      for(j=0;j<N_LocDof;j++){
+//        N = DOF[j];
+//        if(Verify[N]=='h')
+// 	 Verify[N]='H';  
+//      }
+//      flag=false;
+//    }
+//  }
+ 
+  int *RowPtr = sqstruct->GetRowPtr();
+  int *KCol   = sqstruct->GetKCol();
+  
+  for(i=0;i<N_Dof;i++)
+  {
+    if(Verify[i]!='m')	continue;
+    
+    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+    {
+      if(Verify[KCol[j]] == 'h')
+      {
+	Verify[KCol[j]] = 'H';
+      }
+    }
+  }
  
  //identify dependent3 dofs
  //mark dependent3 type dofs as 'x'
@@ -1286,15 +1303,15 @@ if(TDatabase::ParamDB->Par_P4){
  delete [] MasterBufH2;   MasterBufH2 = NULL;
  delete [] temp_arrH2;    temp_arrH2  = NULL;
  
- if(N_SendDof>0)        Send_Info   = new double[N_SendDof];
- if(N_SendDofMS>0)      Send_InfoMS = Send_Info;
- if(N_SendDofH1>0)      Send_InfoH1 = Send_Info + N_SendDofMS;
- if(N_SendDofH2>0)      Send_InfoH2 = Send_Info + N_SendDofMS + N_SendDofH1;
+ if(N_SendDof>0);        Send_Info   = new double[N_SendDof];
+ if(N_SendDofMS>0);      Send_InfoMS = Send_Info;
+ if(N_SendDofH1>0);      Send_InfoH1 = Send_Info + N_SendDofMS;
+ if(N_SendDofH2>0);      Send_InfoH2 = Send_Info + N_SendDofMS + N_SendDofH1;
  
- if(N_Slave>0)          Recv_Info   = new double[N_Slave];
- if(N_Slave>0)          Recv_InfoMS = Recv_Info;
- if(N_Halo1>0)          Recv_InfoH1 = Recv_Info + N_InterfaceS;
- if(N_Halo2>0)          Recv_InfoH2 = Recv_Info + N_InterfaceS + N_Halo1;
+ if(N_Slave>0);          Recv_Info   = new double[N_Slave];
+ if(N_Slave>0);          Recv_InfoMS = Recv_Info;
+ if(N_Halo1>0);          Recv_InfoH1 = Recv_Info + N_InterfaceS;
+ if(N_Halo2>0);          Recv_InfoH2 = Recv_Info + N_InterfaceS + N_Halo1;
  
  end_time = MPI_Wtime();
  if(rank == 0)

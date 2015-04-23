@@ -27,7 +27,23 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _MPI
+#include "mpi.h"
+#include <MeshPartition.h>
+//#include <MeshPartition2D.h>
+// #include <ParFECommunicator3D.h>
+// #include <MumpsSolver.h>
+// #include <ParVector3D.h>
+// #include <ParVectorNSE3D.h>
+// #include <Scalar_ParSolver.h>
+#endif
+
 double bound = 0;
+double timeC = 0;
+
+#define AMG 0
+#define GMG 1
+#define DIRECT 2
 // =======================================================================
 // include current example
 // =======================================================================
@@ -50,9 +66,28 @@ int main(int argc, char* argv[])
   double *sol, *rhs, *defect, t1, t2, errors[4], residual, impuls_residual;
   double **Sol_array, **Rhs_array;
   double limit, u_error[6], p_error[3];
+  double start_time, end_time;
+  double construction, assembling, solving, vtk, total;                         //time calc
+  
+  TDatabase *Database = new TDatabase();
+  
+  int profiling;
+  #ifdef _MPI
+  int rank, size, out_rank;
+  int MaxCpV, MaxSubDomainPerDof;
+  
+  MPI_Comm Comm = MPI_COMM_WORLD;
+  MPI_Init(&argc, &argv);
+
+  double time1, time2;
+
+  MPI_Comm_rank(Comm, &rank);
+  MPI_Comm_size(Comm, &size);
+ 
+  TDatabase::ParamDB->Comm = Comm;
+  #endif 
   
   TDomain *Domain;
-  TDatabase *Database = new TDatabase();
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
   TCollection *coll, *mortarcoll = NULL;
   TFESpace3D *velocity_space, *pressure_space, **Velocity_FeSpace, **Pressure_FeSpace, *fesp[1];
@@ -64,7 +99,7 @@ int main(int argc, char* argv[])
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
    
   const char vtkdir[] = "VTK"; 
-  char *PsBaseName, *VtkBaseName, *GEO;
+  char *PsBaseName, *VtkBaseName, *GEO, *PRM;
  
   char Name[] = "name";
   char UString[] = "u";
@@ -82,25 +117,67 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   Domain = new TDomain(argv[1]);  
   
+  profiling = TDatabase::ParamDB->timeprofiling;
+  if(profiling)
+  {
+#ifdef _MPI
+    start_time = MPI_Wtime();
+#else
+    start_time = GetTime();
+#endif
+  }
+
   OpenFiles();
   OutFile.setf(std::ios::scientific);
    
   Database->CheckParameterConsistencyNSE();
-  Database->WriteParamDB(argv[0]);
-  ExampleFile();
   
+  #ifdef _MPI
+  out_rank=TDatabase::ParamDB->Par_P0;
+  //out_rank = 0;
+  if(rank == out_rank)
+  #endif
+   {
+    Database->WriteParamDB(argv[0]);
+//     Database->WriteTimeDB();
+    ExampleFile();
+   }
+   
   /** needed in the new implementation */
   if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)
    {  TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 1; }
  
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh
+   PRM = TDatabase::ParamDB->BNDFILE;
    GEO = TDatabase::ParamDB->GEOFILE;
-   Domain->Init(NULL, GEO);
+   PsBaseName = TDatabase::ParamDB->BASENAME;
+   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
+   Domain->Init(PRM, GEO);
+//    Domain->Init(NULL, GEO);
    
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
+
+#ifdef _MPI
+  Domain->GenerateEdgeInfo();
+  
+  if(profiling)  t1 = MPI_Wtime();
+  Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
+  if(profiling)  t2 = MPI_Wtime(); 
+  
+  if(profiling){
+    time2 = t2-t1;
+    MPI_Reduce(&time2, &time1, 1, MPI_DOUBLE, MPI_MAX, out_rank, Comm);
+    if(rank == out_rank)
+      printf("Time taken for Domain Decomposition is %e\n", time1);
+  }
+
+  Domain->GenerateEdgeInfo();
+  MaxSubDomainPerDof = MIN(MaxCpV, size);
+  TDatabase::ParamDB->WRITE_PS = 0;
+  #endif 
   
   if(TDatabase::ParamDB->WRITE_PS)
    {
@@ -109,7 +186,8 @@ int main(int argc, char* argv[])
     os << "Domain" << ".ps" << ends;
     Domain->PS(os.str().c_str(),It_Finest,0);
    }
-
+// MPI_Finalize();
+// exit(0);
 //=========================================================================
 // set data for multigrid
 //=========================================================================  
@@ -130,7 +208,10 @@ int main(int argc, char* argv[])
    { mg_level = LEVELS; }
    
   if(TDatabase::ParamDB->SOLVER_TYPE==GMG)
-   {
+#ifdef _MPI  
+    if(rank == out_rank)
+#endif   
+  {   
     OutPut("=======================================================" << endl);
     OutPut("======           GEOMETRY  LEVEL ");
     OutPut(LEVELS << "              ======" << endl);
@@ -156,6 +237,16 @@ int main(int argc, char* argv[])
     if(i)
      { Domain->RegRefineAll(); }
 
+     #ifdef _MPI
+     if(rank == out_rank)
+       printf("Level :: %d\n\n",i);
+     if(i)
+     {
+       Domain->GenerateEdgeInfo();
+       Domain_Crop(Comm, Domain);       // removing unwanted cells in the hallo after refinement 
+     }
+     #endif
+     
      coll=Domain->GetCollection(It_Finest, 0);
 
 //=========================================================================
@@ -178,6 +269,11 @@ int main(int argc, char* argv[])
          // defaulty inf-sup pressure space will be selected based on the velocity space, so update it in database
          TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE = pressure_space_code;
          velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE; 
+	 
+	 #ifdef _MPI
+         Velocity_FeSpace[LEVELS]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
+         Pressure_FeSpace[LEVELS]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
+         #endif
         }
        
       }
@@ -195,6 +291,10 @@ int main(int argc, char* argv[])
        velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
       }
    
+     #ifdef _MPI
+     Velocity_FeSpace[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
+     Pressure_FeSpace[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
+     #endif
 //======================================================================
 // construct all finite element functions
 //======================================================================   
@@ -234,19 +334,27 @@ int main(int argc, char* argv[])
        p = new TFEFunction3D(Pressure_FeSpace[i+1], PString,  PString,  sol+3*N_U, N_P);    
        Pressure[i+1] = p;    
       }// if(i==LEVELS-1 && mg_type==1)
-      
+#ifdef _MPI
+     N_Cells = coll->GetN_Cells();
+     printf("rank=%d\t N_Cells   : %d\t Dof all   :%d\n Dof Velocity :%d\t Dof Pressure: %d\n",rank,N_Cells,N_TotalDOF,3*N_U,N_P);
+#endif
     } //  for(i=0;i<LEVELS;i++)
    
     u1 = Velocity[mg_level-1]->GetComponent(0);
     u2 = Velocity[mg_level-1]->GetComponent(1);
     u3 = Velocity[mg_level-1]->GetComponent(2);  
    
+#ifndef _MPI       
     N_Cells = coll->GetN_Cells();
     OutPut("N_Cells      : "<< setw(10) << N_Cells <<endl);
     OutPut("Dof velocity : "<< setw(10) << 3*N_U << endl);
     OutPut("Dof pressure : "<< setw(10) << N_P << endl);
     OutPut("Dof all      : "<< setw(10) << N_TotalDOF  << endl);  
+#endif 
 
+cout<<"exit before system mat construction"<<endl;    
+MPI_Finalize();
+exit(0);
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  

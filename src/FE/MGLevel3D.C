@@ -189,6 +189,8 @@ void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
   t1 = MPI_Wtime();
   
   ParComm->CommUpdate(sol);
+#else
+  t1 = GetTime();
 #endif
 
   ScalarDefect(A, sol, f, d, res);
@@ -197,6 +199,10 @@ void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
   t2 = MPI_Wtime();
   tS += (t2-t1);
   t1 = MPI_Wtime();
+#else
+  t2  = GetTime();
+  tS += (t2-t1);
+  t1  = GetTime();
 #endif
   
 #ifdef _MPI  
@@ -220,6 +226,9 @@ void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
 #endif 
 #ifdef _MPI
 t2 = MPI_Wtime();
+tD +=(t2-t1);
+#else
+t2 = GetTime();
 tD +=(t2-t1);
 #endif
 } // end Defect
