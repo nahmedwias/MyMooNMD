@@ -34,12 +34,11 @@
 #define GMG 1
 #define DIRECT 2
 
-#define profiling 0
-
 //#ifdef _MPI
 TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver)
 {
   int i;
+  int profiling = TDatabase::ParamDB->timeprofiling;
   /** need it for solver */
   sqmatrices = (TSquareMatrix **)SQMATRICES;
   
@@ -287,6 +286,7 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
        MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], N_aux, NULL);
 #endif
        MG->AddLevel(MGLevel);
+       
       }
       
 #ifdef _MPI  

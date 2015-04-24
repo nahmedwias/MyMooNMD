@@ -342,6 +342,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PROBLEM_TYPE = 0;
   ParamDB->EXAMPLE = -1; // has to be set to some number >=0
   
+  ParamDB->timeprofiling = 0; //time profiling
 
   ParamDB->MESHGEN_ALLOW_EDGE_REF=0;
   ParamDB->MESHGEN_REF_QUALITY=30;
@@ -1210,7 +1211,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->Par_P18 = 0;
   ParamDB->Par_P19 = 0;
   ParamDB->Par_P20 = 0;
-
+  
   /** parameters for population balance computations */
   ParamDB->PBE_P0 = 0;
   ParamDB->PBE_P1 = 0;
@@ -1269,7 +1270,8 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "OUTFILE: " << ParamDB->OUTFILE << endl;
   OutFile << "PROBLEM_TYPE: " << ParamDB->PROBLEM_TYPE << endl;
   OutFile << "EXAMPLE: " << ParamDB->EXAMPLE << endl;
-
+  OutFile << "profiling: " << ParamDB->timeprofiling << endl;
+  
   OutFile << "MESHGEN_ALLOW_EDGE_REF: " << ParamDB->MESHGEN_ALLOW_EDGE_REF << endl;
   OutFile << "MESHGEN_REF_QUALITY: " << ParamDB->MESHGEN_REF_QUALITY << endl;
 

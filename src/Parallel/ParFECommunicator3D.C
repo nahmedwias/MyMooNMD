@@ -60,11 +60,13 @@ TParFECommunicator3D::TParFECommunicator3D(MPI_Comm comm, TFESpace3D *fespace, T
    
  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
    ConstructDofMap_light();
-//    Color(N_CInt,ptrCInt,'i');
-//    Color(N_CMaster,ptrCMaster,'m');
-//    Color(N_CDept1,ptrCDept1,'D');
-//    Color(N_CDept2,ptrCDept2,'d');
+#ifdef _HYBRID
+   Color(N_CInt,ptrCInt,'i');
+   Color(N_CMaster,ptrCMaster,'m');
+   Color(N_CDept1,ptrCDept1,'D');
+   Color(N_CDept2,ptrCDept2,'d');
 //    Color(N_CDept3,ptrCDept3,'x');
+#endif
  }
  else{
    ConstructDofMap();
@@ -327,9 +329,9 @@ void TParFECommunicator3D::ConstructDofMap_light(){
     printf("total time taken for master verification = %lf\n",end_time-start_time);
 //#################################################################  Master verification  ##################################################################################//   
 
-    {  
 //################################################################# Redistribution of interface dofs #######################################################################//
 //*/
+if(TDatabase::ParamDB->Par_P4){      
   start_time = MPI_Wtime();
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------//  
   int total_interface_dofs        = 0;                    //these are the dofs which lie on the interface of sub domains (total over all sub domains)
@@ -583,7 +585,7 @@ void TParFECommunicator3D::ConstructDofMap_light(){
      }
   }
   
-  MPI_Allreduce(&N_interface_dofs, &T_interface_dofs, 1, MPI_INT, MPI_SUM, Comm);
+//   MPI_Allreduce(&N_interface_dofs, &T_interface_dofs, 1, MPI_INT, MPI_SUM, Comm);
   
   delete [] N_Dof_Master;
   delete [] N_Dof_Slave;
@@ -597,8 +599,13 @@ void TParFECommunicator3D::ConstructDofMap_light(){
   
   delete [] masterInfo;                        masterInfo = NULL;
   delete [] slaveInfo;                         slaveInfo  = NULL;
-  
+
   MPI_Allgather(&N_interface_dofs, 1, MPI_INT, all_T_interface_dofs_info, 1, MPI_INT, Comm);
+  
+  T_interface_dofs = 0;
+  for(aa=0;aa<size;aa++)
+    T_interface_dofs += all_T_interface_dofs_info[aa];
+  
   all_GlobalDofNo = new int[T_interface_dofs];
   
 //   for(aa=0;aa<size;aa++){
@@ -612,8 +619,9 @@ void TParFECommunicator3D::ConstructDofMap_light(){
   rdispl[0] = 0;
   for(aa=1;aa<size;aa++)
     rdispl[aa] = rdispl[aa-1] + all_T_interface_dofs_info[aa-1];
+
   MPI_Allgatherv(GlobalDofNo_interface, N_interface_dofs, MPI_INT, all_GlobalDofNo, all_T_interface_dofs_info, rdispl, MPI_INT, Comm);
-  
+
   //table is created only over the total own interface dofs over the sub domains
   for(i=0;i<size;i++){
     Master_Table[i] = new char[total_interface_dofs];
@@ -736,6 +744,8 @@ void TParFECommunicator3D::ConstructDofMap_light(){
 //   }
   
   delete [] all_GlobalDofNo;                  all_GlobalDofNo            = NULL;
+  delete [] GlobalDofNo;                      GlobalDofNo                = NULL;
+  delete [] GlobalDofNo_interface;            GlobalDofNo_interface      = NULL;
   for(i=0;i<size;i++) 
     delete [] Master_Table[i];                Master_Table[i]            = NULL;
   delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = NULL;     
@@ -745,11 +755,11 @@ void TParFECommunicator3D::ConstructDofMap_light(){
   end_time = MPI_Wtime();
   if(rank == 0)
     printf("Total Time Taken for Redistribution of master dofs = %lf\n",end_time-start_time);
+    } //if(TDatabase::ParamDB->Par_P4)  
   //*/
-//   MPI_Finalize();
-//   exit(0);
+
 //################################################################# Redistribution of interface dofs #######################################################################//
-    }
+
 
 //#################################################################  Marking The Dofs ######################################################################################//     
  //------------------------------------------------------------------//
@@ -839,30 +849,46 @@ void TParFECommunicator3D::ConstructDofMap_light(){
    }
  }
  
- //mark halo type1(H)-->useful & type2(h)
- flag = false;
- for(i=N_OwnCells;i<N_Cells;i++){
-   DOF      = GlobalNumbers + BeginIndex[i];
-   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-   
-   for(j=0;j<N_LocDof;j++){
-     N = DOF[j];
-     if(Master[N]==rank){
-       flag = true;
-       break;
-     }
-   }
-   //halo dofs connected to master dofs are marked as type1(H) else type2(h)
-   //type2 halo dofs are not required in smoothing operations
-   if(flag==true){
-     for(j=0;j<N_LocDof;j++){
-       N = DOF[j];
-       if(Verify[N]=='h')
-	 Verify[N]='H';  
-     }
-     flag=false;
-   }
- }
+//  //mark halo type1(H)-->useful & type2(h)
+//  flag = false;
+//  for(i=N_OwnCells;i<N_Cells;i++){
+//    DOF      = GlobalNumbers + BeginIndex[i];
+//    N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+//    
+//    for(j=0;j<N_LocDof;j++){
+//      N = DOF[j];
+//      if(Master[N]==rank){
+//        flag = true;
+//        break;
+//      }
+//    }
+//    //halo dofs connected to master dofs are marked as type1(H) else type2(h)
+//    //type2 halo dofs are not required in smoothing operations
+//    if(flag==true){
+//      for(j=0;j<N_LocDof;j++){
+//        N = DOF[j];
+//        if(Verify[N]=='h')
+// 	 Verify[N]='H';  
+//      }
+//      flag=false;
+//    }
+//  }
+ 
+  int *RowPtr = sqstruct->GetRowPtr();
+  int *KCol   = sqstruct->GetKCol();
+  
+  for(i=0;i<N_Dof;i++)
+  {
+    if(Verify[i]!='m')	continue;
+    
+    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+    {
+      if(Verify[KCol[j]] == 'h')
+      {
+	Verify[KCol[j]] = 'H';
+      }
+    }
+  }
  
  //identify dependent3 dofs
  //mark dependent3 type dofs as 'x'
@@ -881,7 +907,7 @@ void TParFECommunicator3D::ConstructDofMap_light(){
        break;
      }
    }
-   //interior dofs connected to dependent dofs are marked as dependent3 type i.e. 'x'
+   //interior dofs connected to dependent dofs are marked as dependent3 type i.e. 'x' (now dependent3 dofs changed to dependent2 dofs)
    if(flag==true){
      for(j=0;j<N_LocDof;j++){
        N = DOF[j];
@@ -889,6 +915,20 @@ void TParFECommunicator3D::ConstructDofMap_light(){
 	 Verify[N]='x';  
      }
      flag=false;
+   }
+ }
+ 
+ for(i=0;i<N_OwnCells;i++){
+   DOF      = GlobalNumbers + BeginIndex[i];
+   N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+   
+   cell = Coll->GetCell(i);
+   
+   for(j=0;j<N_LocDof;j++){
+     N = DOF[j];
+     if(Verify[N] == 'x'){
+       Verify[N] = 'd';
+     }
    }
  }
  
@@ -912,7 +952,7 @@ void TParFECommunicator3D::ConstructDofMap_light(){
  N_OwnDof     = 0; 
  N_Master     = 0;
  N_Int        = 0; 
- N_Dept       = 0;      N_Dept1 = 0;    N_Dept2 = 0;    N_Dept3 = 0;
+ N_Dept       = 0;      N_Dept1 = 0;    N_Dept2 = 0;    //N_Dept3 = 0;
  N_Halo       = 0;      N_Halo1 = 0;    N_Halo2 = 0;    
  
  N_DofSend    = new int[size];
@@ -964,15 +1004,15 @@ void TParFECommunicator3D::ConstructDofMap_light(){
        N_Dept1++;
      else if(Verify[N] == 'd')
        N_Dept2++;
-     else if(Verify[N] == 'x')
-       N_Dept3++;
+    // else if(Verify[N] == 'x')
+       //N_Dept3++;
      else
        N_Int++;
    }
  }
  
  N_Halo = N_Halo1 + N_Halo2;
- N_Dept = N_Dept1 + N_Dept2 + N_Dept3;
+ N_Dept = N_Dept1 + N_Dept2;// + N_Dept3;
  
   //DEBUG
   if(size<5);
@@ -983,7 +1023,7 @@ void TParFECommunicator3D::ConstructDofMap_light(){
 	  printf("N_Master(Total)     = %d\t N_Slave(Total)     = %d\n", N_Master, N_Slave);
 	  printf("N_Master(Interface) = %d\t N_Slave(Interface) = %d\n", N_InterfaceM, N_InterfaceS);
 	  printf("N_Halo              = %d\t N_Halo1            = %d\t   N_Halo2  = %d\n",N_Halo,N_Halo1,N_Halo2);
-	  printf("N_Depndt            = %d\t N_Dept1            = %d\t   N_Dept2  = %d\t  N_Dept3  = %d\n",N_Dept,N_Dept1,N_Dept2,N_Dept3);
+	  printf("N_Depndt            = %d\t N_Dept1            = %d\t   N_Dept2  = %d\n",N_Dept,N_Dept1,N_Dept2);
 	  printf("N_Indpdt            = %d\n",N_Int); 
      }
      MPI_Barrier(MPI_COMM_WORLD);
@@ -1058,11 +1098,11 @@ void TParFECommunicator3D::ConstructDofMap_light(){
  int Indpt = N_InterfaceM;       Reorder_I  = Reorder + Indpt;
  int Dept1 = Indpt + N_Int;      Reorder_D1 = Reorder + Dept1;
  int Dept2 = Dept1 + N_Dept1;    Reorder_D2 = Reorder + Dept2;
- int Dept3 = Dept2 + N_Dept2;    Reorder_D3 = Reorder + Dept3;
- int Slv   = Dept3 + N_Dept3;
+ //int Dept3 = Dept2 + N_Dept2;    Reorder_D3 = Reorder + Dept3;
+ int Slv   = Dept2 + N_Dept2;
  int Hl1   = Slv   + N_InterfaceS;
  int Hl2   = Hl1   + N_Halo1;
- int ts = 0, th1 = 0, th2 = 0, ti = 0, tm = 0, td1 = 0, td2 = 0, td3 = 0;
+ int ts = 0, th1 = 0, th2 = 0, ti = 0, tm = 0, td1 = 0, td2 = 0;// td3 = 0;
  
  for(i=0;i<N_Dof;i++){
    //slave dofs
@@ -1119,11 +1159,11 @@ void TParFECommunicator3D::ConstructDofMap_light(){
 	 NewGN[i]       = td2++;//Dept2;
 	 Dept2++;
        }
-       else if(Verify[i]=='x'){
-	 Reorder[Dept3] = i;
-	 NewGN[i]       = td3++;//Dept3;
-	 Dept3++;
-       }
+       //else if(Verify[i]=='x'){
+	 //Reorder[Dept3] = i;
+	 //NewGN[i]       = td3++;//Dept3;
+	 //Dept3++;
+       //}
        else{
 	 Reorder[Indpt] = i;
 	 NewGN[i]       = ti++;//Indpt;
@@ -1263,15 +1303,15 @@ void TParFECommunicator3D::ConstructDofMap_light(){
  delete [] MasterBufH2;   MasterBufH2 = NULL;
  delete [] temp_arrH2;    temp_arrH2  = NULL;
  
- if(N_SendDof>0)        Send_Info   = new double[N_SendDof];
- if(N_SendDofMS>0)      Send_InfoMS = Send_Info;
- if(N_SendDofH1>0)      Send_InfoH1 = Send_Info + N_SendDofMS;
- if(N_SendDofH2>0)      Send_InfoH2 = Send_Info + N_SendDofMS + N_SendDofH1;
+ if(N_SendDof>0);        Send_Info   = new double[N_SendDof];
+ if(N_SendDofMS>0);      Send_InfoMS = Send_Info;
+ if(N_SendDofH1>0);      Send_InfoH1 = Send_Info + N_SendDofMS;
+ if(N_SendDofH2>0);      Send_InfoH2 = Send_Info + N_SendDofMS + N_SendDofH1;
  
- if(N_Slave>0)          Recv_Info   = new double[N_Slave];
- if(N_Slave>0)          Recv_InfoMS = Recv_Info;
- if(N_Halo1>0)          Recv_InfoH1 = Recv_Info + N_InterfaceS;
- if(N_Halo2>0)          Recv_InfoH2 = Recv_Info + N_InterfaceS + N_Halo1;
+ if(N_Slave>0);          Recv_Info   = new double[N_Slave];
+ if(N_Slave>0);          Recv_InfoMS = Recv_Info;
+ if(N_Halo1>0);          Recv_InfoH1 = Recv_Info + N_InterfaceS;
+ if(N_Halo2>0);          Recv_InfoH2 = Recv_Info + N_InterfaceS + N_Halo1;
  
  end_time = MPI_Wtime();
  if(rank == 0)
@@ -1904,8 +1944,8 @@ void TParFECommunicator3D::Color(int &numColors, int *&ptrColors, char type)
     myReorder = Reorder_D1;	ndof = N_Dept1;      }
   else if(type == 'd'){
     myReorder = Reorder_D2;	ndof = N_Dept2;      }
-  else if(type == 'x'){
-    myReorder = Reorder_D3;	ndof = N_Dept3;      }
+  //else if(type == 'x'){
+    //myReorder = Reorder_D3;	ndof = N_Dept3;      }
   else{
     printf("wrong type!!!\n"); exit(0);              }
   
@@ -1932,6 +1972,7 @@ void TParFECommunicator3D::Color(int &numColors, int *&ptrColors, char type)
     for(j=RowPtr[k];j<RowPtr[k+1];j++)
     {
       if(KCol[j] >= k || DofMarker[KCol[j]] != type)	continue;
+      //if(DofMarker[KCol[j]] != type)	continue;
       
       t = NewGN[KCol[j]];		    //locate the pos of the dof in myreorder to identify its color in allocatedColor
       if(temp < allocatedColor[t])
@@ -1988,16 +2029,16 @@ void TParFECommunicator3D::CommUpdate(double *sol)
   
   //ConstructDofMap_light
   if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
-#ifdef _HYBRID
-    int t;
-    printf("not yet implemented\n");
-    MPI_Finalize();
-    exit(0);
-#else
+// #ifdef _HYBRID
+//     int t;
+//     printf("not yet implemented\n");
+//     MPI_Finalize();
+//     exit(0);
+// #else
   CommUpdateMS(sol);
   CommUpdateH1(sol);
   CommUpdateH2(sol);
-#endif
+// #endif
   }
   else{
     for(i=0;i<N_SendDof;i++)

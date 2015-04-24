@@ -53,7 +53,6 @@
 // #include <Scalar_ParSolver.h>
 #endif
 
-#define profiling 1
 double bound = 0;
 double timeC = 0;
 // =======================================================================
@@ -95,6 +94,7 @@ int main(int argc, char* argv[])
   double Linfty=0;
   char SubID[] = "";
   
+  int profiling;
 #ifdef _MPI
   int rank, size, out_rank;
   int MaxCpV, MaxSubDomainPerDof;
@@ -110,14 +110,6 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->Comm = Comm;
 
 #endif
-
-  if(profiling){
-#ifdef _MPI
-    start_time = MPI_Wtime();
-#else
-    start_time = GetTime();
-#endif
-  }
   
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
   TCollection *coll;
@@ -127,8 +119,6 @@ int main(int argc, char* argv[])
   TSystemMatTimeScalar3D *SystemMatrix;
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = {D000, D100, D010, D001};
-  
- 
 
   std::ostringstream os;
   os << " ";   
@@ -140,6 +130,16 @@ int main(int argc, char* argv[])
 // ======================================================================    
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   Domain = new TDomain(argv[1]);  
+  
+  profiling = TDatabase::ParamDB->timeprofiling;
+  if(profiling)
+  {
+#ifdef _MPI
+    start_time = MPI_Wtime();
+#else
+    start_time = GetTime();
+#endif
+  }  
   
   OpenFiles();
   OutFile.setf(std::ios::scientific);

@@ -35,7 +35,7 @@ class TParFECommunicator3D
      
      
      //new implement march'15
-     int N_InterfaceM, N_InterfaceS, N_Halo1, N_Halo2, N_Dept1, N_Dept2, N_Dept3;
+     int N_InterfaceM, N_InterfaceS, N_Halo1, N_Halo2, N_Dept1, N_Dept2;// N_Dept3;
      
      int *N_DofSendMS, *N_DofSendH1, *N_DofSendH2, *N_DofRecvMS, *N_DofRecvH1, *N_DofRecvH2;
      
@@ -51,7 +51,7 @@ class TParFECommunicator3D
      
      int *Reorder_M, *Reorder_I, *Reorder_D1, *Reorder_D2, *Reorder_D3;
      
-     int N_CMaster, N_CDept1, N_CDept2, N_CDept3, N_CInt, *ptrCMaster, *ptrCDept1, *ptrCDept2, *ptrCDept3, *ptrCInt;
+     int N_CMaster, N_CDept1, N_CDept2, N_CInt, *ptrCMaster, *ptrCDept1, *ptrCDept2, *ptrCInt;
      //new implement march'15
 
      double *Send_Info,*Recv_Info; 
@@ -353,8 +353,8 @@ class TParFECommunicator3D
     int GetN_Dept2()
     {return N_Dept2;}
     
-    int GetN_Dept3()
-    {return N_Dept3;}
+//     int GetN_Dept3()
+//     {return N_Dept3;}
     
     int GetN_CMaster()
     {return N_CMaster;}
@@ -362,8 +362,8 @@ class TParFECommunicator3D
     {return N_CDept1;}
     int GetN_CDept2()
     {return N_CDept2;}
-    int GetN_CDept3()
-    {return N_CDept3;}
+//     int GetN_CDept3()
+//     {return N_CDept3;}
     int GetN_CInt()
     {return N_CInt;}
     
@@ -373,8 +373,8 @@ class TParFECommunicator3D
     {return ptrCDept1;}
     int* GetptrCDept2()
     {return ptrCDept2;}
-    int* GetptrCDept3()
-    {return ptrCDept3;}
+//     int* GetptrCDept3()
+//     {return ptrCDept3;}
     int* GetptrCInt()
     {return ptrCInt;}
     
