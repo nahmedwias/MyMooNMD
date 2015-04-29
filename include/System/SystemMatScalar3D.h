@@ -18,7 +18,7 @@
 //#include "mpi.h"
 #include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
-#include <MumpsSolver.h>
+
 #include <ParDirectSolver.h>
 #endif
 

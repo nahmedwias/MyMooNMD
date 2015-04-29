@@ -118,9 +118,9 @@ allclean: clean2D clean2D_PAR clean3D clean3D_PAR
 	@(cd $(SRC)/Geometry/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/General/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/FE/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
-	@(cd $(SRC)/System/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/PBE/obj3D; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/Parallel/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
+	@(cd $(SRC)/System/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@$(MAKE) -f Makefile3D GEO=3D EFENCE=$(EFENCE) $(ARGS_PAR)
 
 clean2D:

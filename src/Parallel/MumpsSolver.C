@@ -29,7 +29,7 @@
 
 extern "C"
  {
-  #  include "dmumps_c.h"
+  #include "dmumps_c.h"
  }
 
 #  define JOB_INIT -1

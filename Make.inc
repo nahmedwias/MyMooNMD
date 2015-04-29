@@ -290,10 +290,7 @@ LIB_GEOxD     = $(LIB_GEO$(GEO))
 MEMBERS_GEOxD = $(MEMBERS_GEO$(GEO))
 LDFLAG        = $(BLASFLAG_$(MACH)) $(LDFLAG_$(MACH))
 
-
- 
-
- UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH)   -lsuitesparseconfig_$(MACH)  
+UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH)   -lsuitesparseconfig_$(MACH)  
         
 TECPLOT       = -LEXT_LIB/tecplot/lib -ltecio_$(MACH)
 BLAS          = $(BLAS_$(MACH))
@@ -310,9 +307,8 @@ ifeq ($(PARALLEL_TYPE),MPI)
 MUMPSLIB = EXT_LIB/MUMPS/lib
 PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                 -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
-                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lptscotcherr_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
+                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
                  $(MPIBLACS_$(MACH))
- 
 endif
 
 

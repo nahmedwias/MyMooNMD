@@ -21,7 +21,8 @@
 #include <Database.h>
 #include <SquareMatrix3D.h>
 #include <ParFECommunicator3D.h>
-
+ #include <MumpsSolver.h>
+ 
 TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TSquareMatrix3D *mat)
 {
 //   Mapper = mapper;

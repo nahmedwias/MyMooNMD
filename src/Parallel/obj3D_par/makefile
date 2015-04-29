@@ -12,9 +12,8 @@ INC    = -I../../../include/General -I../../../include/FE \
          -I../../../include/Geometry -I../../../include/QuadFormulas \
          -I../../../include/FE2D -I../../../include/FE1D \
          -I../../../include/FE3D -I../../../include/AMG \
-         -I../../../include/Parallel \
          -I../../../EXT_LIB/Metis/MetisInclude -I../../../EXT_LIB/Metis/Lib  \
-	 -I../../../EXT_LIB/MUMPS/include
+	  -I../../../EXT_LIB/MUMPS/include -I../../../include/Parallel 
 
 include ../../../Make.inc
 
@@ -26,10 +25,6 @@ MEMBERS = \
 	$(SRCPATH)ParFEMapper3D.o \
 	$(SRCPATH)ParFECommunicator3D.o \
 	$(SRCPATH)ParDirectSolver.o 
-	
-
-	
-
 
 ###############
 
