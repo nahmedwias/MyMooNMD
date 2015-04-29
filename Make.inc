@@ -52,7 +52,7 @@ endif
 BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
 
 ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
-BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran  -lpthread
+BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -lpthread
  
 
 ifeq ($(PARALLEL_TYPE), MPI)
@@ -291,10 +291,10 @@ MEMBERS_GEOxD = $(MEMBERS_GEO$(GEO))
 LDFLAG        = $(BLASFLAG_$(MACH)) $(LDFLAG_$(MACH))
 
 
-UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH) \
-                -lcholmod_$(MACH) -lcamd_$(MACH) -lcolamd_$(MACH) -lccolamd_$(MACH) \
-                -LEXT_LIB/Metis -lmetis_$(MACH)
-                
+ 
+
+ UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH)   -lsuitesparseconfig_$(MACH)  
+        
 TECPLOT       = -LEXT_LIB/tecplot/lib -ltecio_$(MACH)
 BLAS          = $(BLAS_$(MACH))
 

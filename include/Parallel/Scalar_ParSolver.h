@@ -10,7 +10,7 @@
 //
 // =======================================================================
 #ifdef _MPI
-#  include "mpi.h"
+// #  include "mpi.h"
 
 #ifdef __3D__
 #include <SquareStructure3D.h>

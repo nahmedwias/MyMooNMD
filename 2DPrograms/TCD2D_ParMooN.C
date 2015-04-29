@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
   
   bool UpdateStiffnessMat, UpdateRhs,  ConvectionFirstTime;
   char *VtkBaseName;
+  const char vtkdir[] = "VTK"; 
   
   TDomain *Domain;
   TDatabase *Database = new TDatabase();
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
   
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+    mkdir(vtkdir, 0777);
    
   //=========================================================================
   // construct all finite element spaces

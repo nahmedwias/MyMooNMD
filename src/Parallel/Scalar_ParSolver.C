@@ -10,7 +10,7 @@
 //        :    Iterative solved added 05.07.2012 (Sashikumaar Ganesan)
 // =======================================================================
 #ifdef _MPI
-#  include "mpi.h"
+// #  include "mpi.h"
 
 #include <stdio.h>
 #include <string.h>
