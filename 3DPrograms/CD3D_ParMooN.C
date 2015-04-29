@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    //SystemMatrix->Solve(sol, rhs);
+    SystemMatrix->Solve(sol, rhs);
     
     if(profiling){
 #ifdef _MPI

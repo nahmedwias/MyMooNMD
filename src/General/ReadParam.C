@@ -3511,6 +3511,11 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->timeprofiling;
       N_Param++;
     }
+    if (!strcmp(line, "MapperType:"))
+    {
+      dat >> TDatabase::ParamDB->MapperType;
+      N_Param++;
+    }
         
     
  

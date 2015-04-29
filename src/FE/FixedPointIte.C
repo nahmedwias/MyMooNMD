@@ -157,7 +157,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   int ii, rank, *MasterOfDof;  
   double  resglobal;
   
-   MPI_Comm_rank(ParComm->GetComm(), &rank);
+   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
    MasterOfDof = ParComm->GetMaster();
    t1 = MPI_Wtime();
 #else
@@ -174,7 +174,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
       res += defect[ii]*defect[ii];
     }
     
-   MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+   MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
 
    res=res0=reslast = sqrt(resglobal); 
 #else  
@@ -222,7 +222,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
       res += defect[ii]*defect[ii];
     }
     
-   MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+   MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
 
    res = sqrt(resglobal); 
 #else  

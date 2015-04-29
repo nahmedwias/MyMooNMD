@@ -75,7 +75,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a,
 #ifdef _MPI
 /** constructor for parallel */
 TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol, 
-                       TParFECommunicator3D *parComm, int n_aux,
+                       TParFECommunicator3D *parComm, TParFEMapper3D *parMapper, int n_aux,
                        int *permutation)
 {
   int i;
@@ -117,26 +117,26 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
   Permutation = permutation;
   
   
-  if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6)
+  if(TDatabase::ParamDB->MapperType != 2)
   {
-    N_InterfaceM = parComm->GetN_InterfaceM();
-    N_Int        = parComm->GetN_Int_light();
-    N_Dept1      = parComm->GetN_Dept1();
-    N_Dept2      = parComm->GetN_Dept2();
-//     N_Dept3      = parComm->GetN_Dept3();
+    N_InterfaceM = parMapper->GetN_InterfaceM();
+    N_Int        = parMapper->GetN_Int_light();
+    N_Dept1      = parMapper->GetN_Dept1();
+    N_Dept2      = parMapper->GetN_Dept2();
+//     N_Dept3      = parMapper->GetN_Dept3();
     
 #ifdef _HYBRID
-    N_CMaster  = parComm->GetN_CMaster();
-    ptrCMaster = parComm->GetptrCMaster();
+    N_CMaster  = parMapper->GetN_CMaster();
+    ptrCMaster = parMapper->GetptrCMaster();
     
-    N_CInt  = parComm->GetN_CInt();
-    ptrCInt = parComm->GetptrCInt();
+    N_CInt  = parMapper->GetN_CInt();
+    ptrCInt = parMapper->GetptrCInt();
     
-    N_CDept1  = parComm->GetN_CDept1();
-    ptrCDept1 = parComm->GetptrCDept1();
+    N_CDept1  = parMapper->GetN_CDept1();
+    ptrCDept1 = parMapper->GetptrCDept1();
     
-    N_CDept2  = parComm->GetN_CDept2();
-    ptrCDept2 = parComm->GetptrCDept2();
+    N_CDept2  = parMapper->GetN_CDept2();
+    ptrCDept2 = parMapper->GetptrCDept2();
     
 //     N_CDept3  = parComm->GetN_CDept3();
 //     ptrCDept3 = parComm->GetptrCDept3();
@@ -144,6 +144,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
   }
   
   ParComm = parComm; 
+  ParMapper = parMapper;
   Temp_arr    = new double[N_DOF];
 
 }
@@ -178,17 +179,19 @@ double *TMGLevel3D::GetAuxVector(int i)
 
 void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
 {
+  
   double t1,t2;
 #ifdef _MPI
   int i, rank, *MasterOfDof, dof,numThreads= TDatabase::ParamDB->OMPNUMTHREADS;
   double res_global=0,res1=0;
   
-  MPI_Comm_rank(ParComm->GetComm(), &rank); 
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
   MasterOfDof = ParComm->GetMaster();
   
   t1 = MPI_Wtime();
   
   ParComm->CommUpdate(sol);
+  
 #else
   t1 = GetTime();
 #endif
@@ -220,7 +223,7 @@ void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
 }
 #endif
 
-  MPI_Allreduce(&res1, &res_global, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+  MPI_Allreduce(&res1, &res_global, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
   res = sqrt(res_global);
   //printf("\n.......rank=%d.............res::%lf         res_global::%lf             res1::%lf",rank,res,res_global,res1);
 #endif 
@@ -245,7 +248,7 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
   
 #ifdef _MPI
   int rank;
-  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
   int *master =ParComm->GetMaster();
 #endif
   
@@ -326,7 +329,7 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
   
 #ifdef _MPI
   int rank;
-  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
   int *master =ParComm->GetMaster();
 #endif
 
@@ -433,7 +436,7 @@ void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
   
 #ifdef _MPI
   int rank;
-  MPI_Comm_rank(ParComm->GetComm(), &rank);
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
   int *master =ParComm->GetMaster();
 #endif
 
@@ -932,7 +935,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
            N_Dirichlet*SizeOfDouble);
 
 //########################################## MASTERS DOFS ########################################################//
-  Reorder = ParComm->GetReorder_M();
+  Reorder = ParMapper->GetReorder_M();
   for(ii=0;ii<N_InterfaceM;ii++)
   {
     i = Reorder[ii];
@@ -963,7 +966,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
 
 //########################################## INDEPENDENT DOFS ####################################################//  
   
-  Reorder = ParComm->GetReorder_I();
+  Reorder = ParMapper->GetReorder_I();
   for(ii=0;ii<N_Int;ii++)
   {
     i = Reorder[ii];
@@ -990,7 +993,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
 //################################################################################################################//
 
 //########################################## DEPENDENT1 DOFS #####################################################//
-  Reorder = ParComm->GetReorder_D1();
+  Reorder = ParMapper->GetReorder_D1();
   for(ii=0;ii<N_Dept1;ii++)
   {
     i = Reorder[ii];
@@ -1017,7 +1020,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
 //################################################################################################################//
 
 //########################################## DEPENDENT2 DOFS #####################################################//
-  Reorder = ParComm->GetReorder_D2();
+  Reorder = ParMapper->GetReorder_D2();
   for(ii=0;ii<N_Dept2;ii++)
   {
     i = Reorder[ii];
@@ -1121,7 +1124,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //########################################## MASTERS DOFS ########################################################//
     if(firstTime)
     {
-      Reorder = ParComm->GetReorder_M();
+      Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
@@ -1160,7 +1163,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## DEPENDENT1 DOFS #####################################################//
-    Reorder = ParComm->GetReorder_D1();
+    Reorder = ParMapper->GetReorder_D1();
     for(ii=0;ii<N_CDept1;ii++)
       {
 	#pragma omp for schedule(guided) 
@@ -1194,7 +1197,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
       ParComm->CommUpdateH1(sol);
     }
 //########################################## DEPENDENT2 DOFS #####################################################//
-    Reorder = ParComm->GetReorder_D2();
+    Reorder = ParMapper->GetReorder_D2();
     for(ii=0;ii<N_CDept2;ii++)
     {
       #pragma omp for schedule(guided) 
@@ -1258,7 +1261,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //########################################## MASTERS DOFS ########################################################//
     if(!lastTime)
     {
-      Reorder = ParComm->GetReorder_M();
+      Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
@@ -1296,7 +1299,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
     }
     
 //########################################## INDEPENDENT DOFS ####################################################//  
-    Reorder = ParComm->GetReorder_I();
+    Reorder = ParMapper->GetReorder_I();
     for(ii=0;ii<N_CInt;ii++)
     {
       #pragma omp for schedule(guided) 
@@ -1375,7 +1378,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 #pragma omp parallel default(shared) private(i,ii,s,k,j,jj,tid,index,diag,t)
   {
 //########################################## MASTERS DOFS ########################################################//
-      Reorder = ParComm->GetReorder_M();
+      Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
@@ -1413,7 +1416,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## DEPENDENT1 DOFS #####################################################//
-    Reorder = ParComm->GetReorder_D1();
+    Reorder = ParMapper->GetReorder_D1();
     for(ii=0;ii<N_CDept1;ii++)
       {
 	#pragma omp for schedule(guided) 
@@ -1447,7 +1450,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
       ParComm->CommUpdateH1(sol);
     }
 //########################################## DEPENDENT2 DOFS #####################################################//
-    Reorder = ParComm->GetReorder_D2();
+    Reorder = ParMapper->GetReorder_D2();
     for(ii=0;ii<N_CDept2;ii++)
     {
       #pragma omp for schedule(guided) 
@@ -1478,7 +1481,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## INDEPENDENT DOFS ####################################################//  
-    Reorder = ParComm->GetReorder_I();
+    Reorder = ParMapper->GetReorder_I();
     for(ii=0;ii<N_CInt;ii++)
     {
       #pragma omp for schedule(guided) 

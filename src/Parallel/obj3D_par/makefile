@@ -23,17 +23,12 @@ LIBRARY = $(LIBPATH)lib_par.a
 MEMBERS = \
 	$(SRCPATH)MeshPartition.o \
 	$(SRCPATH)MumpsSolver.o  \
-	$(SRCPATH)NSE_ParSolver.o \
-	$(SRCPATH)NSE_ParSolver2.o \
-	$(SRCPATH)NSE_ParSolver4.o \
-	$(SRCPATH)ParDirectSolver.o \
+	$(SRCPATH)ParFEMapper3D.o \
 	$(SRCPATH)ParFECommunicator3D.o \
-	$(SRCPATH)ParMGComponents3D.o \
-	$(SRCPATH)ParSolver.o \
-	$(SRCPATH)ParVector.o \
-	$(SRCPATH)ParVector3D.o \
-	$(SRCPATH)ParVectorNSE3D.o  \
-	$(SRCPATH)Scalar_ParSolver.o
+	$(SRCPATH)ParDirectSolver.o 
+	
+
+	
 
 
 ###############

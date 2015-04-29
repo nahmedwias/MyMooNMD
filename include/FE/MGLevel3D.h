@@ -79,7 +79,8 @@ class TMGLevel3D
      
      double *Temp_arr;
     
-     TParFECommunicator3D *ParComm;   
+     TParFECommunicator3D *ParComm; 
+     TParFEMapper3D *ParMapper;
      
      /** Reorder of sol array */
      int *Reorder,N_Master,N_Int,N_Dept;
@@ -104,7 +105,7 @@ class TMGLevel3D
 #ifdef _MPI
 /** constructor for parallel */
     TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol, 
-                       TParFECommunicator3D *parComm, int n_aux,
+                       TParFECommunicator3D *parComm, TParFEMapper3D *parMapper, int n_aux,
                        int *permutation);
     double *GetTemp_arr()
     { return Temp_arr; }

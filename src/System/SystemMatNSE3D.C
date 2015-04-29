@@ -27,6 +27,19 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 
+#ifdef _MPI
+//#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+//#include <MumpsSolver.h>
+//#include <ParVector3D.h>
+//#include <ParVectorNSE3D.h>
+//#include <Scalar_ParSolver.h>
+#endif
+
+#define AMG 0
+#define GMG 1
+#define DIRECT 2
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +50,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
                      TFEFunction3D **pressure, int disctype, int nsetype, int solver)
 {
   int i, zerostart;
+  int profiling = TDatabase::ParamDB->timeprofiling;
 //   TFESpace3D *fesp[1];
 //   TFEFunction3D *fefct[3];
  
@@ -48,7 +62,9 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
     { N_aux= 4; }
    else
     { N_aux= 2; }
-
+#ifdef _MPI
+  Comm = TDatabase::ParamDB->Comm;
+#endif
   //set number of multigrid levels
   N_Levels = N_levels;
    
@@ -195,7 +211,52 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
      OutPut(endl;)
     } //  for(i=Start_Level;i<N_Levels;i++)
     
-    
+#ifdef _MPI
+  double t1,t2,tdiff;
+  if(profiling)  t1 = MPI_Wtime();
+  
+  if(SOLVER==GMG)
+  {
+    ParMapper_U = new TParFEMapper3D*[N_levels]; 
+    ParMapper_P = new TParFEMapper3D*[N_levels];
+  }
+  ParComm_U = new TParFECommunicator3D*[N_levels];
+  ParComm_P = new TParFECommunicator3D*[N_levels];
+  
+  for(i=Start_Level;i<N_levels;i++)
+  {
+//     if(SOLVER == GMG)
+    {
+      ParMapper_U[i] = new TParFEMapper3D(3, U_Space[i], sqstructureA[i]->GetRowPtr(),sqstructureA[i]->GetKCol());
+      //what to use??? structureB or structureBT
+      ParMapper_P[i] = new TParFEMapper3D(1, P_Space[i], structureB[i]->GetRowPtr(),  structureB[i]->GetKCol());
+      
+      ParComm_U[i] = new TParFECommunicator3D(ParMapper_U[i]);
+      ParComm_P[i] = new TParFECommunicator3D(ParMapper_P[i]);
+    }
+//     else
+//     {
+//       ParComm_U[i] = new TParFECommunicator3D();
+//       ParComm_P[i] = new TParFECommunicator3D();
+//     }
+
+  }// for(i=0;i<N_levels;i++)
+  printf("exit at sysmat\n");
+  exit(0);
+   if(profiling)
+   {
+     t2 = MPI_Wtime();
+     tdiff = t2-t1;
+     int out_rank=TDatabase::ParamDB->Par_P0;
+     int rank;
+     MPI_Comm_rank(Comm, &rank);
+     MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
+     if(rank == out_rank)
+     {
+      printf("Time taken for ParFEMapper3D for all levels is %e\n", t1);
+     }
+   }
+#endif
    //initialize multigrid solver
    if(SOLVER==GMG)
    {    

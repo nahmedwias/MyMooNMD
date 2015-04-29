@@ -23,8 +23,9 @@
 
 #ifdef _MPI
 //#include "mpi.h"
+#include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
-//#include <MumpsSolver.h>
+// #include <MumpsSolver.h>
 //#include <ParVector3D.h>
 //#include <ParVectorNSE3D.h>
 //#include <Scalar_ParSolver.h>
@@ -79,7 +80,7 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
     
    sqstructure[i] = new TSquareStructure3D(FeSpaces[i]);
    
-   if(SOLVER==DIRECT)
+   if(SOLVER==DIRECT || SOLVER==GMG)
    { sqstructure[i]->Sort(); } // sort column numbers: numbers are in increasing order
    else if(SOLVER==AMG_SOLVE)
    { sqstructure[i]->SortDiagFirst(); }
@@ -94,20 +95,32 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
 #ifdef _MPI
   double t1,t2,tdiff;
-  ParComm = new TParFECommunicator3D*[N_levels]; 
+  if(SOLVER==GMG)
+  {
+    ParMapper = new TParFEMapper3D*[N_levels]; 
+  }
+  ParComm     = new TParFECommunicator3D*[N_levels];
+  
   if(profiling)  t1 = MPI_Wtime();
   for(i=Start_Level;i<N_levels;i++)
    {   
-    sqstructure[i]->Sort();
-    //if(i==Start_Level+1)	exit(0);
-    //printf("LEVEL::%d  --------------------------------------------------------",i);
-    ParComm[i] = new TParFECommunicator3D(Comm, FeSpaces[i], sqstructure[i]);
-//     int n_OwnDof; int *ownDofs;
-//     ParComm[i]->GetOwnDofs(n_OwnDof, ownDofs);
-//     OutPut("NDOF-->::"<<n_OwnDof<<endl);
+//      if(SOLVER == GMG)
+//      {
+        ParMapper[i] = new TParFEMapper3D(1, FeSpaces[i], sqstructure[i]->GetRowPtr(), sqstructure[i]->GetKCol());
+        ParComm[i]   = new TParFECommunicator3D(ParMapper[i]);
+//      }
+//      else
+//      {
+//         ParComm[i] = new TParFECommunicator3D();
+//      }
    }// for(i=0;i<N_levels;i++)
 //   printf("exit at sysmatscalar\n");
 //   exit(0);
+   if(SOLVER == DIRECT)
+   {
+     DS = new TParDirectSolver(ParComm[N_Levels-1],sqmatrixA[N_Levels-1]);
+   }
+
    if(profiling)
    {
      t2 = MPI_Wtime();
@@ -281,7 +294,7 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
      if(SOLVER==GMG)
       {
 #ifdef _MPI  
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], N_aux, NULL);
+       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], ParMapper[i], N_aux, NULL);
 #else
        MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], N_aux, NULL);
 #endif
@@ -331,21 +344,11 @@ void TSystemMatScalar3D::Solve(double *sol, double *rhs)
       break;
 
       case DIRECT:
+#ifdef _MPI
+	DS->Solve(sol, rhs, true);
+#else
         DirectSolver((TSquareMatrix*)sqmatrixA[N_Levels-1], rhs, sol);
-// #ifndef _MPI
-//         //t1 = GetTime();
-//         DirectSolver(sqmatrixA[N_Levels-1], rhs, sol);
-// // 	OutPut("Norm of sol " <<  sqrt(Ddot(N_Unknowns,sol,sol))  << endl);
-//         //t2 = GetTime();     
-// #else
-//         //t1 = MPI_Wtime();
-//         Par_Solver->Solve(sqmatrixA, FACTORIZE);
-// 
-// // 	ParSolVect->ParDdot(BYOWN, norm);
-// //       
-// //         if(rank==out_rank)
-// //          OutPut("Norm of Par sol " << sqrt( norm[0])  << endl);   
-// #endif
+#endif
       break;      
  
       default:

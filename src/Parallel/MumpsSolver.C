@@ -17,9 +17,15 @@
  #include <string.h>
  #include <Database.h>
  #include <MumpsSolver.h>
+#ifdef __2D__
  #include <ParFECommunicator2D.h>
- #include <ParVector.h>
- #include <ParVectorNSE3D.h>
+#endif
+#ifdef __3D__
+ #include <ParFECommunicator3D.h>
+#endif
+ 
+//  #include <ParVector.h>
+//  #include <ParVectorNSE3D.h>
 
 extern "C"
  {
@@ -44,63 +50,78 @@ extern "C"
 /** constructor */
 TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_dist_Jcn, int N_Rhs)
 {
- int i, j, k, rank;
- double t1;
+   int i, j, k, rank;
+   double t1;
 
-  Comm = TDatabase::ParamDB->Comm;
-  MPI_Comm_rank(Comm, &rank);
+   Comm = TDatabase::ParamDB->Comm;
+   MPI_Comm_rank(Comm, &rank);
 
-  t1 = MPI_Wtime();
+   t1 = MPI_Wtime();
 
-  id.job=JOB_INIT;
-  id.par = 1;       // host will not take part in computations
-  id.comm_fortran = MPI_Comm_c2f(Comm);
-  id.sym = 0;       // unsymmetric matrix
-//   id.ooc_tmpdir=/home/sashikum/MumpsOutOfCore
-//  id.comm_fortran=USE_COMM_WORLD;
+   // calls initmumps for initializing mumps solver
+   id.job = JOB_INIT;
+   
+   // host will take part in computations
+   id.par = 1;  
+   
+   id.comm_fortran = MPI_Comm_c2f(Comm);
+//    id.comm_fortran = 1;
+   
+   // unsymmetric matrix
+   id.sym = 0;       
 
-
+   //   id.ooc_tmpdir=/home/sashikum/MumpsOutOfCore
+   //  id.comm_fortran=USE_COMM_WORLD;
 
   //init the MUMPS solver
-  dmumps_c(&id);
+   dmumps_c(&id);
 
-  id.ICNTL(1) = -1; 
-  id.ICNTL(2) = -1; 
-  id.ICNTL(3) = -1; 
-  id.ICNTL(4) = 2; 
-  id.ICNTL(4) = 4; 
+   id.ICNTL(1) = 6; 
+   id.ICNTL(2) = 6; 
+   id.ICNTL(3) = 6; 
+   id.ICNTL(4) = 4; 
 
-  id.ICNTL(5) = 0; // martix will be given in assembled form
-  id.ICNTL(6) = 1; 
+   // martix will be given in assembled form
+   id.ICNTL(5) = 0; 
+   
+   id.ICNTL(6) = 1; 
 
-  // 3 is good or 5 is slightly better than 3
-  id.ICNTL(7)=5; // 0 AMD, 2 AMF, 3 SCOTCH, 4 PORD, 5  METIS, 6 QAMD, 7  Automatic choice (default)
+   // 3 is good or 5 is slightly better than 3
+   // 0 AMD, 2 AMF, 3 SCOTCH, 4 PORD, 5  METIS, 6 QAMD, 7  Automatic choice (default)
+   id.ICNTL(7)=5;
+   
 //   id.ICNTL(8)=4; 
 //   id.ICNTL(10)=5;  // maximum number of allowed iterative refinement steps
 //   id.ICNTL(13)=1; 
 //   id.ICNTL(14)=100; //the percentage increase in the estimated working space
-  id.ICNTL(18) = 3;  // 3 - structure and values on slave process
-//   id.ICNTL(22)=1; // out of core
-  id.ICNTL(28)=0; // parallel analysis: 0 automatic, 1 sequential, 2 parallel
+   
+   // 3 - structure and values on slave process
+   id.ICNTL(18) = 3;
+   
+   //id.ICNTL(22)=1; // out of core
+   
+   // parallel analysis: 0 automatic, 1 sequential, 2 parallel
+   id.ICNTL(28)=0; 
+   
+   
 //   id.ICNTL(29)=1; // 1 - PT-SCOTCH, 2 ParMetis parallel ordering tool
-// 
 //   id.CNTL(1)=0.00001; //threshold for numerical pivoting a larger value of CNTL(1) increases 
                       // fill-in but leads to a more accurate factorization
 //   id.CNTL(2)=1.e-6;  // stoping criterion for iterative refinement steps
 
    //set the structure into the MUMPS solver
-   id.nz_loc  = M_dist_Nz;
-   id.irn_loc = M_dist_Irn;
+   id.nz_loc   = M_dist_Nz;
+   id.irn_loc  = M_dist_Irn;
    id.jcn_loc  = M_dist_Jcn;
 
-   if(rank==0)
+   if(rank == 0)
      id.n  = N_Eqns;
 
-  if(N_Rhs>1)
-   {
-    id.nrhs = N_Rhs;
-    id.lrhs = N_Eqns;
-   }
+//    if(N_Rhs>1)
+//    {
+     id.nrhs = N_Rhs;
+     id.lrhs = N_Eqns;
+//    }
    
   if(rank==TDatabase::ParamDB->Par_P0)
    OutPut("MUMPS Analysis : ");
@@ -171,6 +192,13 @@ void TMumpsSolver::Solve(double *Mat_loc, double *rhs)
 
   id.job=JOB_SOLVE;
   dmumps_c(&id);
+  
+   if(id.INFOG(1)<0)
+     {
+      printf("MUMPS Solve failed INFOG(1) %d \n",  id.INFOG(1));
+      MPI_Finalize();
+      exit(0); 
+     }
 
   if(id.INFO(1)==8) // more than ICNTL(10) iterative refinement is required
    {
@@ -183,10 +211,19 @@ void TMumpsSolver::Solve(double *Mat_loc, double *rhs)
 //     id.job=JOB_SOLVE;
 //     dmumps_c(&id);
 
-    if(rank==0)
-     printf("MUMPS: Number of iterative refinement steps (after factorize): %d \n", id.INFOG(15));
+//     if(rank==0)
+//      printf("MUMPS: Number of iterative refinement steps (after factorize): %d \n", id.INFOG(15));
    }
 }
+
+void TMumpsSolver::Clean()
+{
+  id.job=JOB_END;
+  dmumps_c(&id);
+  printf("MUMPS: Exiting\n");
+}
+
+
 
 
 #endif

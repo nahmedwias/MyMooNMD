@@ -221,7 +221,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
   {
 #ifdef _MPI  
   int rank;
-  MPI_Comm_rank(ParComm->GetComm(), &rank); 
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
 #endif  
     double res;
     int it = 0;
@@ -517,7 +517,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
  
    ParComm = CurrentLevel->GetParComm();  
 
-   MPI_Comm_rank(ParComm->GetComm(), &rank); 
+   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
 #endif  
  // OutPut("Norm of B rhs in cycle " <<  sqrt(Ddot(N_DOF,CurrentRhs,CurrentRhs)) <<"i is:"<<i <<endl); 
   
@@ -584,6 +584,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);  
     firstres = initres = oldres;  
     normsol = sqrt(Ddot(N_DOF, CurrentSol, CurrentSol));
+  
     if(TDatabase::ParamDB->SC_VERBOSE>=2
 #ifdef _MPI  
         && rank==TDatabase::ParamDB->Par_P0
@@ -636,12 +637,9 @@ void TMultiGrid3D::Cycle(int i, double &res)
                            CurrentAux);
 // 	OutPut("restriction "<<endl);
 // 	exit(0);
-	if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
-	  CoarseParComm->CommUpdateReduceMS(CoarserRhs);
-	}
-	else{
+
 	  CoarseParComm->CommUpdateReduce(CoarserRhs);	 
-	}
+
 // 	OutPut("2.restriction "<<endl);
 	//exit(0);
 #else
@@ -662,13 +660,10 @@ void TMultiGrid3D::Cycle(int i, double &res)
       Prolongate(CoarserLevel->GetFESpace(), CurrentLevel->GetFESpace(),
                        CoarserSol, CurrentLevel->GetTemp_arr(),
                        CurrentLevel->GetAuxVector(1));
-      
-      if(TDatabase::ParamDB->SC_SMOOTHER_SCALAR==6){
-	ParComm->CommUpdateReduceMS(CurrentLevel->GetTemp_arr());
-      }
-      else{
+
+
 	ParComm->CommUpdateReduce(CurrentLevel->GetTemp_arr());
-      }
+
       
       CurrentLevel->Update(CurrentSol, CurrentLevel->GetTemp_arr());
       

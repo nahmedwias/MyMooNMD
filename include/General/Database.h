@@ -81,6 +81,7 @@ struct TParaDB
   int COMPUTE_VORTICITY_DIVERGENCE;
   
   int timeprofiling;  //(time profiling)
+  
 
   //======================================================================
   /** parameters for setting finite element spaces                      */
@@ -886,6 +887,7 @@ struct TParaDB
   int Par_P7;
   int Par_P8;
   int Par_P9;
+  int MapperType;
   double Par_P10;
   double Par_P11;
   double Par_P12;

@@ -303,7 +303,7 @@ double *rhs)
   int ii, rank, *MasterOfDof;  
   double  resglobal;
   
-   MPI_Comm_rank(ParComm->GetComm(), &rank);
+   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
    MasterOfDof = ParComm->GetMaster();
    ParComm->CommUpdate(sol, rhs);
 #endif 
@@ -334,7 +334,7 @@ double *rhs)
       if(MasterOfDof[ii] == rank)
         res += v[0][ii]*v[0][ii];
     
-    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+    MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
     res=res0=reslast = sqrt(resglobal); 
 #else  
     
@@ -414,7 +414,7 @@ double *rhs)
                 if(MasterOfDof[ii] == rank)
                   res += defect[ii]*defect[ii];
     
-              MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+              MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
               res=res0=reslast = sqrt(resglobal); 
 #else  
    
@@ -446,7 +446,7 @@ double *rhs)
               temp += v[k][ii]*defect[ii];
        
           MPI_Allreduce(&temp, &H[k][i], 1, MPI_DOUBLE, MPI_SUM, 
-                        ParComm->GetComm());
+                        TDatabase::ParamDB->Comm);
 #else  
           H[k][i]= Ddot(N_DOF, defect,v[k]);    
 #endif 
@@ -463,7 +463,7 @@ double *rhs)
           if(MasterOfDof[ii] == rank)
             temp += defect[ii]*defect[ii];    
     
-        MPI_Allreduce(&temp, &tempGlobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+        MPI_Allreduce(&temp, &tempGlobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
         H[i+1][i]= sqrt(tempGlobal);    
 #else   
         H[i+1][i]=sqrt(Ddot(N_DOF,defect,defect));
@@ -576,7 +576,7 @@ double *rhs)
         if(MasterOfDof[ii] == rank)
           res += v[0][ii]*v[0][ii];
     
-      MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+      MPI_Allreduce(&res, &resglobal, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
       res=res0=reslast = sqrt(resglobal); 
 #else  
    

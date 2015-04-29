@@ -157,7 +157,7 @@ void TSystemMatTimeScalar3D::AssembleMRhs(TAuxParam3D *aux, double **sol, double
      if(SOLVER==GMG)
       {
 #ifdef _MPI  
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], N_aux, NULL);
+       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], ParMapper[i], N_aux, NULL);
 #else
        MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], N_aux, NULL);
 #endif

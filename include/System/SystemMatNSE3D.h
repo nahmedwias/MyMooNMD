@@ -16,11 +16,23 @@
 #include <NSE_MultiGrid.h>
 #include <ItMethod.h>
 
+#ifdef _MPI
+//#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 /**class for 3D  NSE system matrix */
 class TSystemMatNSE3D
 {
   protected:
 
+#ifdef _MPI
+    TParFEMapper3D **ParMapper_U, **ParMapper_P;
+    TParFECommunicator3D **ParComm_U, **ParComm_P;
+    MPI_Comm Comm;
+#endif
+    
     /** Number of multigrid levels */
     int N_Levels;
     

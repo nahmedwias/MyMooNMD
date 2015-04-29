@@ -343,6 +343,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->EXAMPLE = -1; // has to be set to some number >=0
   
   ParamDB->timeprofiling = 0; //time profiling
+  ParamDB->MapperType = 1;
 
   ParamDB->MESHGEN_ALLOW_EDGE_REF=0;
   ParamDB->MESHGEN_REF_QUALITY=30;
@@ -1271,6 +1272,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "PROBLEM_TYPE: " << ParamDB->PROBLEM_TYPE << endl;
   OutFile << "EXAMPLE: " << ParamDB->EXAMPLE << endl;
   OutFile << "profiling: " << ParamDB->timeprofiling << endl;
+  OutFile << "MapperType: " << ParamDB->MapperType << endl;
   
   OutFile << "MESHGEN_ALLOW_EDGE_REF: " << ParamDB->MESHGEN_ALLOW_EDGE_REF << endl;
   OutFile << "MESHGEN_REF_QUALITY: " << ParamDB->MESHGEN_REF_QUALITY << endl;

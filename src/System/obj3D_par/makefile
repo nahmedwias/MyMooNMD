@@ -15,7 +15,7 @@ INC    = -I../../../include/General -I../../../include/FE \
          -I../../../include/PBE -I../../../EXT_LIB/UMFPACK/Include \
          -I../../../include/System \
          -I../../../include/Parallel \
-         -I../../../EXT_LIB/tecplot/include
+         -I../../../EXT_LIB/MUMPS/include   -I../../../EXT_LIB/tecplot/include
 
 include ../../../Make.inc
 

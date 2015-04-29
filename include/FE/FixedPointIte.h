@@ -14,6 +14,7 @@
 
 #include <ItMethod.h>
 #include <NSE_MultiGrid.h>
+#include <ParFECommunicator3D.h>
 
 /** iteration method */
 class TFixedPointIte : public TItMethod

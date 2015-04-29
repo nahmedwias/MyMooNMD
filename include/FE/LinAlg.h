@@ -10,7 +10,7 @@
 
 #ifdef _MPI
 #  include "mpi.h"
-#include <ParVector3D.h>
+// #include <ParVector3D.h>
 #endif
 
 #ifndef __LINALG__

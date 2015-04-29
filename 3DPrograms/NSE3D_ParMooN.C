@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
       }// if(i==LEVELS-1 && mg_type==1)
 #ifdef _MPI
      N_Cells = coll->GetN_Cells();
-     printf("rank=%d\t N_Cells   : %d\t Dof all   :%d\n Dof Velocity :%d\t Dof Pressure: %d\n",rank,N_Cells,N_TotalDOF,3*N_U,N_P);
+     printf("rank=%d\t N_Cells   : %d\t Dof all   :%d\t Dof Velocity :%d\t Dof Pressure: %d\n",rank,N_Cells,N_TotalDOF,3*N_U,N_P);
 #endif
     } //  for(i=0;i<LEVELS;i++)
    
@@ -352,16 +352,16 @@ int main(int argc, char* argv[])
     OutPut("Dof all      : "<< setw(10) << N_TotalDOF  << endl);  
 #endif 
 
-cout<<"exit before system mat construction"<<endl;    
-MPI_Finalize();
-exit(0);
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  
     NSEType = TDatabase::ParamDB->NSTYPE;
     SystemMatrix = new TSystemMatNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
                                        TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
- 
+
+MPI_Finalize();
+exit(0);
+    
     // initilize the system matrix with the functions defined in Example file
     SystemMatrix->Init(LinCoeffs, BoundCondition, U1BoundValue, U2BoundValue, U3BoundValue);
        

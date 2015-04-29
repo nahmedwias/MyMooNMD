@@ -18,7 +18,6 @@
 #ifndef __MUMPSSOLVER__
 #define __MUMPSSOLVER__
 
-
  #include <SquareMatrix.h>
  #include <Matrix.h>
  #include <SquareMatrix3D.h>
@@ -43,6 +42,7 @@ class TMumpsSolver
   /** */
   bool FactorFlag;
   
+  
   public:
    /** constructor */
    TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_dist_Jcn, int N_Rhs);
@@ -50,7 +50,9 @@ class TMumpsSolver
    void FactorizeAndSolve(double *Mat_loc, double *rhs);
 
    void Solve(double *Mat_loc, double *rhs);
-      
+   
+   void Clean();
+  
     /** destructor */
     ~TMumpsSolver();
 };

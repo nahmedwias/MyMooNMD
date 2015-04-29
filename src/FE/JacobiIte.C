@@ -157,9 +157,9 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 #endif
      Defect(sqmat,sol,rhs,d,res);
 #ifdef _MPI   
-     MPI_Comm_rank(ParComm->GetComm(), &rank); 
+     MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
      
-     ParComm->CommUpdate(sol,rhs);
+     ParComm->CommUpdate(sol);
      tend = MPI_Wtime();
      tcomm+=(tend-tstrt);
    //ParComm->CommUpdateAlltoAllv(sol,rhs);
@@ -205,8 +205,8 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 
 #ifdef _MPI
    tcomp=tcomp/iter; tcomm=tcomm/iter;
-   MPI_Allreduce (&tcomp,&comp,1,MPI_DOUBLE,MPI_MAX,ParComm->GetComm());
-   MPI_Allreduce (&tcomm,&comm,1,MPI_DOUBLE,MPI_MAX,ParComm->GetComm());
+   MPI_Allreduce (&tcomp,&comp,1,MPI_DOUBLE,MPI_MAX,TDatabase::ParamDB->Comm);
+   MPI_Allreduce (&tcomm,&comm,1,MPI_DOUBLE,MPI_MAX,TDatabase::ParamDB->Comm);
    if(rank==0) printf("no.of iterations %d comp %lf comm %lf per iter\n",iter,comp,comm);
 #else
      printf("no.of iterations----%d\n",iter);
@@ -223,14 +223,14 @@ void TJacobiIte::Defect(TSquareMatrix **A, double *sol, double *f, double *d, do
   int i, rank, *MasterOfDof, dof;
   double res_global;
   
-  MPI_Comm_rank(ParComm->GetComm(), &rank); 
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
   MasterOfDof = ParComm->GetMaster();
   
   for(i=0; i<N_DOF; i++)
     if(MasterOfDof[i] == rank)
       res += d[i]*d[i];
     
-  MPI_Allreduce(&res, &res_global, 1, MPI_DOUBLE, MPI_SUM, ParComm->GetComm());
+  MPI_Allreduce(&res, &res_global, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
   res = sqrt(res_global); 
  
 #endif  
