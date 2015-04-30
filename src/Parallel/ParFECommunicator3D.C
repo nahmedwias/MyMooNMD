@@ -123,8 +123,8 @@ void TParFECommunicator3D::CommUpdateH1(double *sol)
 
   MPI_Alltoallv(Send_InfoH1,N_DofSendH1,sdisplH1,MPI_DOUBLE,Recv_InfoH1,N_DofRecvH1,rdisplH1,MPI_DOUBLE,Comm);
   
-  for(i=0;i<N_Halo1;i++)  
-    sol[DofRecvH1[i]] = Recv_InfoH1[i];
+//   for(i=0;i<N_Halo1;i++)  
+//     sol[DofRecvH1[i]] = Recv_InfoH1[i];
   
   for(i=0;i<N_Halo1;i++)  
   {

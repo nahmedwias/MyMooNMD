@@ -95,24 +95,15 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
   
 #ifdef _MPI
   double t1,t2,tdiff;
-  if(SOLVER==GMG)
-  {
-    ParMapper = new TParFEMapper3D*[N_levels]; 
-  }
-  ParComm     = new TParFECommunicator3D*[N_levels];
+  
+  ParMapper = new TParFEMapper3D*[N_levels]; 
+  ParComm   = new TParFECommunicator3D*[N_levels];
   
   if(profiling)  t1 = MPI_Wtime();
   for(i=Start_Level;i<N_levels;i++)
    {   
-//      if(SOLVER == GMG)
-//      {
         ParMapper[i] = new TParFEMapper3D(1, FeSpaces[i], sqstructure[i]->GetRowPtr(), sqstructure[i]->GetKCol());
         ParComm[i]   = new TParFECommunicator3D(ParMapper[i]);
-//      }
-//      else
-//      {
-//         ParComm[i] = new TParFECommunicator3D();
-//      }
    }// for(i=0;i<N_levels;i++)
 //   printf("exit at sysmatscalar\n");
 //   exit(0);
@@ -308,7 +299,12 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
       
     } //  for(i=Start_Level;i<N_Levels;i++)    
 
-    delete aux;     
+    delete aux;  
+
+#ifdef _MPI     
+    if(SOLVER == DIRECT)
+      DS->AssembleLocMatrix(sqmatrixA[N_Levels-1]);
+#endif
     
 } // void TSystemMatScalar3D::Assemble(T
 

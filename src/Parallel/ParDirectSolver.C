@@ -33,8 +33,7 @@ TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TSquareMatrix3D
   Mat     = mat;
   
   InitMumps();
-  AssembleLocMatrix();
-  
+
   //check if the parameters are global or local????
   Mumps = new TMumpsSolver(N_Eqns, N_Nz, I_rn, J_cn, N_rhs);
   
@@ -54,8 +53,9 @@ TParDirectSolver::~TParDirectSolver()
 void TParDirectSolver::InitMumps()
 {
   int i,j,k,t;
-  int *Master = ParComm->GetMaster();
-  
+  int *Master       = ParComm->GetMaster();
+  int *local2global = ParComm->Get_Local2Global();
+   
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -77,7 +77,6 @@ void TParDirectSolver::InitMumps()
   
   I_rn   = new int[N_Nz];
   J_cn   = new int[N_Nz];
-  OwnRhs = new double[N_Nz];
   
   k = 0;t = 0;
   N_Master = 0;
@@ -88,16 +87,21 @@ void TParDirectSolver::InitMumps()
       N_Master++;
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	I_rn[k] = i + 1;              //fortran format
-	J_cn[k] = KCol[j] + 1;        //fortran format
+	I_rn[k] = local2global[i] + 1;              //fortran format
+	J_cn[k] = local2global[KCol[j]] + 1;        //fortran format
+// 	cout<<"local2global[i]::"<<local2global[i]<<endl;
+// 	cout<<"local2global[KCol[j]]::"<<local2global[KCol[j]]<<endl;
 	k++;
       }
     }
   }
+
+  OwnRhs = new double[N_Master];
   
   MPI_Allreduce(&N_Master, &N_Eqns,    1, MPI_INT, MPI_SUM, Comm);
   
-  MPI_Allreduce(&N_Nz, &GlobalRhsSize, 1, MPI_INT, MPI_SUM, Comm);
+  GlobalRhsSize = N_Eqns;
+//   MPI_Allreduce(&N_Master, &GlobalRhsSize, 1, MPI_INT, MPI_SUM, Comm);
   
   if(rank == 0)
     GlobalRhs = new double[GlobalRhsSize];
@@ -105,7 +109,7 @@ void TParDirectSolver::InitMumps()
 //         printf("N_Nz :: %d\t k :: %d\n",N_Nz,k);
 }
 
-void TParDirectSolver::AssembleLocMatrix()
+void TParDirectSolver::AssembleLocMatrix(TSquareMatrix3D *matrix)
 {
   int i,j,k;
   int *Master = ParComm->GetMaster();
@@ -114,9 +118,8 @@ void TParDirectSolver::AssembleLocMatrix()
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
   MatLoc = new double[N_Nz];
-  
-  
-  double *EntriesA = Mat->GetEntries();  
+
+  double *EntriesA = matrix->GetEntries();  
   k =0;
   for(i=0;i<NDof;i++)
   {
@@ -149,7 +152,7 @@ void TParDirectSolver::GetRhs(double *Rhs)
     }
   }
   
-  ParComm->GatherToRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Nz, 0);
+  ParComm->GatherToRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master, 0);
     
 }
 
@@ -162,7 +165,7 @@ void TParDirectSolver::UpdateSol(double *Sol)
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
   
-  ParComm->ScatterFromRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Nz, 0);
+  ParComm->ScatterFromRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master, 0);
   
   t = 0;
   for(i=0;i<NDof;i++)
@@ -171,11 +174,14 @@ void TParDirectSolver::UpdateSol(double *Sol)
     {
       Sol[i] = OwnRhs[t++];
     }
-  }   
+  }
+  ParComm->CommUpdate(Sol);
 }
 
 void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
 {
+  double t = MPI_Wtime();
+  
   GetRhs(Rhs);
   
   if(Factorize)
@@ -191,6 +197,8 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
   
   UpdateSol(Sol);
   
+  
+  printf("time taken for solving::%lf\n",MPI_Wtime()-t);
 }
 
 #endif

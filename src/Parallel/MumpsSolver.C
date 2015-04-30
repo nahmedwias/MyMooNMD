@@ -76,10 +76,10 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
   //init the MUMPS solver
    dmumps_c(&id);
 
-   id.ICNTL(1) = 6; 
-   id.ICNTL(2) = 6; 
-   id.ICNTL(3) = 6; 
-   id.ICNTL(4) = 4; 
+   id.ICNTL(1) = 1; 
+   id.ICNTL(2) = -1; 
+   id.ICNTL(3) = -1; 
+   id.ICNTL(4) = 1; 
 
    // martix will be given in assembled form
    id.ICNTL(5) = 0; 
@@ -88,7 +88,7 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
 
    // 3 is good or 5 is slightly better than 3
    // 0 AMD, 2 AMF, 3 SCOTCH, 4 PORD, 5  METIS, 6 QAMD, 7  Automatic choice (default)
-   id.ICNTL(7)=5;
+   id.ICNTL(7) = 5;
    
 //   id.ICNTL(8)=4; 
 //   id.ICNTL(10)=5;  // maximum number of allowed iterative refinement steps
@@ -117,11 +117,11 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
    if(rank == 0)
      id.n  = N_Eqns;
 
-//    if(N_Rhs>1)
-//    {
+   if(N_Rhs>1)
+   {
      id.nrhs = N_Rhs;
      id.lrhs = N_Eqns;
-//    }
+   }
    
   if(rank==TDatabase::ParamDB->Par_P0)
    OutPut("MUMPS Analysis : ");
@@ -143,48 +143,46 @@ if(rank==TDatabase::ParamDB->Par_P0)
 
 void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
 {
- int rank;
-
+  int rank;
   MPI_Comm_rank(Comm, &rank);
 
   // for centralized input to the host
-  if(rank==0)
+  if(rank == 0)
     id.rhs = rhs;
 
   // define the local system matrix
   id.a_loc  = Mat_loc;
  
-   id.job=JOB_FACTORIZ;
-   dmumps_c(&id);
+  id.job=JOB_FACTORIZ;
+  dmumps_c(&id);
    
-   FactorFlag = TRUE;   
+  FactorFlag = TRUE;   
     
-    if(id.INFOG(1)<0)
-     {
-      printf("MUMPS Factorize failed INFOG(1) %d \n",  id.INFOG(1));
-      MPI_Finalize();
-      exit(0); 
-     }
+  if(id.INFOG(1)<0)
+  {
+    printf("MUMPS Factorize failed INFOG(1) %d \n",  id.INFOG(1));
+    MPI_Finalize();
+    exit(0); 
+  }
 
-    id.job=JOB_SOLVE;
-    dmumps_c(&id);
+  id.job=JOB_SOLVE;
+  dmumps_c(&id);
 
-    if(id.INFOG(1)<0)
-     {
-      printf("MUMPS Solve failed INFOG(1) %d \n",  id.INFOG(1));
-      MPI_Finalize();
-      exit(0); 
-     }
+  if(id.INFOG(1)<0)
+  {
+    printf("MUMPS Solve failed INFOG(1) %d \n",  id.INFOG(1));
+    MPI_Finalize();
+    exit(0); 
+  }
 }
 
 void TMumpsSolver::Solve(double *Mat_loc, double *rhs)
 {
- int rank;
-
+  int rank;
   MPI_Comm_rank(Comm, &rank);
 
   // for centralized input to the host
-  if(rank==0)
+  if(rank == 0)
     id.rhs = rhs;
 
   // define the local system matrix
@@ -193,27 +191,27 @@ void TMumpsSolver::Solve(double *Mat_loc, double *rhs)
   id.job=JOB_SOLVE;
   dmumps_c(&id);
   
-   if(id.INFOG(1)<0)
-     {
-      printf("MUMPS Solve failed INFOG(1) %d \n",  id.INFOG(1));
-      MPI_Finalize();
-      exit(0); 
-     }
+  if(id.INFOG(1)<0)
+  {
+    printf("MUMPS Solve failed INFOG(1) %d \n",  id.INFOG(1));
+    MPI_Finalize();
+    exit(0); 
+  }
 
-  if(id.INFO(1)==8) // more than ICNTL(10) iterative refinement is required
-   {
-    if(rank==0)
-    printf("MUMPS: Number of iterative refinement steps: %d \n", id.INFOG(15));
-
-//     id.job=JOB_FACTORIZ;
-//     dmumps_c(&id);
-// 
-//     id.job=JOB_SOLVE;
-//     dmumps_c(&id);
-
+//   if(id.INFO(1)==8) // more than ICNTL(10) iterative refinement is required
+//   {
 //     if(rank==0)
-//      printf("MUMPS: Number of iterative refinement steps (after factorize): %d \n", id.INFOG(15));
-   }
+//     printf("MUMPS: Number of iterative refinement steps: %d \n", id.INFOG(15));
+// 
+// //     id.job=JOB_FACTORIZ;
+// //     dmumps_c(&id);
+// // 
+// //     id.job=JOB_SOLVE;
+// //     dmumps_c(&id);
+// 
+// //     if(rank==0)
+// //      printf("MUMPS: Number of iterative refinement steps (after factorize): %d \n", id.INFOG(15));
+//    }
 }
 
 void TMumpsSolver::Clean()

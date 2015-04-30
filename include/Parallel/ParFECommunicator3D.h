@@ -86,6 +86,9 @@ class TParFECommunicator3D
     int GetNDof()
     {return N_Dof;}
     
+    int* Get_Local2Global()
+    { return Mapper->Get_Local2Global();}
+    
 };
 
 #endif

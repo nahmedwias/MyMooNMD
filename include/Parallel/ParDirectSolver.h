@@ -62,7 +62,7 @@ public:
   
   ~TParDirectSolver();
   
-  void AssembleLocMatrix();
+  void AssembleLocMatrix(TSquareMatrix3D *matrix);
   
   void InitMumps();
   

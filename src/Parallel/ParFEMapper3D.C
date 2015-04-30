@@ -63,7 +63,9 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
   {
     ConstructDofMap();
   }
-    
+  
+//   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
+    Assign_GlobalDofNo();
 
 }
 
@@ -1688,7 +1690,127 @@ void TParFEMapper3D::ConstructDofMap()
 
 
 void TParFEMapper3D::Assign_GlobalDofNo()
-{
+{ 
+  int rank, size;
+  MPI_Comm_rank(Comm, &rank);
+  MPI_Comm_size(Comm, &size);
+  
+  int *Send_data = new int[N_SendDof];
+  int *Recv_data = new int[N_Slave];
+  
+  int *Send_dataMS, *Send_dataH1, *Send_dataH2;
+  int *Recv_dataMS, *Recv_dataH1, *Recv_dataH2;
+  
+  int i,j,k,start;
+  double t1 = MPI_Wtime();
+  int *all_own_dofs_info = new int[size];
+
+  Local2Global = new int[N_Dof];
+  for(i=0;i<N_Dof;i++)
+    Local2Global[i] == -1;
+  
+  MPI_Allgather(&N_OwnDof, 1, MPI_INT, all_own_dofs_info, 1, MPI_INT, Comm);
+  
+  k     = 0;
+  start = 0;
+  while(k<rank){
+    start += all_own_dofs_info[k];
+    k++;
+  }
+  
+  for(i=0;i<N_Dof;i++)
+  {
+    if(Master[i] != rank) continue;
+    
+    Local2Global[i] = start++;
+  }
+  
+//   cout<<"..................rank:: "<<rank<<"  start::"<<start<<"    N_OwnDof::"<<N_OwnDof<<endl;
+
+  if(TDatabase::ParamDB->MapperType != 2)
+  {
+    Send_dataMS = Send_data;
+    Send_dataH1 = Send_data + N_SendDofMS;
+    Send_dataH2 = Send_data + N_SendDofMS +N_SendDofH1;
+  
+    Recv_dataMS = Recv_data;
+    Recv_dataH1 = Recv_data + N_InterfaceS;
+    Recv_dataH2 = Recv_data + N_InterfaceS +N_Halo1;
+  
+//---------------------------------------------------------------------  
+    for(i=0;i<N_SendDofMS;i++)
+    {
+      Send_dataMS[i] = Local2Global[DofSendMS[i]];
+    }
+
+    MPI_Alltoallv(Send_dataMS,N_DofSendMS,sdisplMS,MPI_INT,Recv_dataMS,N_DofRecvMS,rdisplMS,MPI_INT,Comm);
+  
+    for(i=0;i<N_InterfaceS;i++)  
+    {
+      Local2Global[DofRecvMS[i]] = Recv_dataMS[i];
+    }
+//----------------------------------------------------------------------    
+    for(i=0;i<N_SendDofH1;i++)
+    {
+      Send_dataH1[i] = Local2Global[DofSendH1[i]];
+    }
+
+    MPI_Alltoallv(Send_dataH1,N_DofSendH1,sdisplH1,MPI_INT,Recv_dataH1,N_DofRecvH1,rdisplH1,MPI_INT,Comm);
+  
+    for(i=0;i<N_Halo1;i++)  
+    {
+      Local2Global[DofRecvH1[i]] = Recv_dataH1[i];
+    }
+//------------------------------------------------------------------------
+    for(i=0;i<N_SendDofH2;i++)
+    {
+      Send_dataH2[i] = Local2Global[DofSendH2[i]];
+    }
+  
+    MPI_Alltoallv(Send_dataH2,N_DofSendH2,sdisplH2,MPI_INT,Recv_dataH2,N_DofRecvH2,rdisplH2,MPI_INT,Comm);
+  
+    for(i=0;i<N_Halo2;i++)  
+    {
+      Local2Global[DofRecvH2[i]] = Recv_dataH2[i];
+    }
+//-------------------------------------------------------------------------    
+  }
+  else
+  {
+    int *Send_data = new int[N_SendDof];
+    int *Recv_data = new int[N_Slave];
+    
+    for(i=0;i<N_SendDof;i++)
+    {
+	Send_data[i] = Local2Global[DofSend[i]];
+    }
+  
+    MPI_Alltoallv(Send_data,N_DofSend,sdispl,MPI_INT,Recv_data,N_DofRecv,rdispl,MPI_INT,Comm);
+  
+    for(i=0;i<N_Slave;i++)  
+    {
+        Local2Global[DofRecv[i]] = Recv_data[i];
+    }
+      
+  }
+  
+  delete [] Send_data;
+  delete [] Recv_data;
+  
+  //verification
+  if(1)
+  for(i=0;i<N_Dof;i++)
+  {
+    if(Local2Global[i] == -1)
+    {
+      printf("..........all global dof number not assigned..............\n");
+      MPI_Finalize();
+      exit(0);
+    }
+  }
+  
+  if(rank == 0)
+    printf("Time taken for Assign_GlobalDofNo :: %lf\n",MPI_Wtime()-t1);
   
 }
 

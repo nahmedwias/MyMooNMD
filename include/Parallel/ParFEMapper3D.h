@@ -50,6 +50,9 @@ class TParFEMapper3D
     /**array which carries info across procs**/
     double *Send_Info,*Recv_Info; 
     
+    /**array to store globalDofNo of all its dofs**/
+    int *Local2Global;
+    
     /** info of number of dofs to be send/recv from other procs**/
     int *sdispl, *rdispl;
     
@@ -180,6 +183,9 @@ class TParFEMapper3D
     
     int GetN_Dept2()
     {return N_Dept2;}
+    
+    int* Get_Local2Global()
+    { return Local2Global;}
 
 #ifdef _HYBRID
     void Color(int &numColors, int *&ptrColors, char type);
