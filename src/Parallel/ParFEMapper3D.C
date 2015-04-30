@@ -1687,6 +1687,12 @@ void TParFEMapper3D::ConstructDofMap()
 }
 
 
+void TParFEMapper3D::Assign_GlobalDofNo()
+{
+  
+}
+
+
 #ifdef _HYBRID
 void TParFEMapper3D::Color(int &numColors, int *&ptrColors, char type)
 {

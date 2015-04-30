@@ -400,13 +400,14 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    TVertex **Vertices;    
 
    
-    if(N_VertInCell!=4 || N_VertInCell !=8)
+    if(!(N_VertInCell==4 || N_VertInCell ==8))
      {
       cout<<" Error only  Tetra or Hexa mesh can be partitioned !!" <<endl;
       MPI_Finalize();
       exit(0);
      }
-     
+//    cout<<"N_VertInCell::"<<N_VertInCell<<endl;
+//    exit(0);
    eptr[0] = 0;  
    for(i=1;i<=N_Cells;i++)
     eptr[i] = eptr[i-1] + N_VertInCell;

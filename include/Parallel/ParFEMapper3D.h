@@ -184,7 +184,8 @@ class TParFEMapper3D
 #ifdef _HYBRID
     void Color(int &numColors, int *&ptrColors, char type);
 #endif
-     
+  
+    void Assign_GlobalDofNo();
 };
 
 #endif
