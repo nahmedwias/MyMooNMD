@@ -366,13 +366,6 @@ int main(int argc, char* argv[])
     
     SystemMatrix->Solve(sol, rhs);
     
-//     double temp = 0;
-//     for(i=0;i<N_DOF;i++)
-//     {
-//       temp += rhs[i]*rhs[i];
-//     }
-//     printf("~~~~~~~~NDOF=%d~~~~~~~~~~~~~~~```sol = %lf\n",N_DOF,temp);
-    
     if(profiling){
 #ifdef _MPI
       t2 = MPI_Wtime();

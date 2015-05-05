@@ -30,6 +30,8 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
     /** factor that multplied with Mat A in working rhs */
     double gamma;   
+    
+    bool factorize;
 //     
 //     /** Stiffness part of the SUPG matrix */
 //     TSquareMatrix3D *sqmatrixK;    

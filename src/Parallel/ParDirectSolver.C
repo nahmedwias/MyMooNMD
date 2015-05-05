@@ -264,7 +264,7 @@ TParDirectSolver::TParDirectSolver(TSquareMatrix3D *mat)
 
 TParDirectSolver::~TParDirectSolver()
 {
-//   ParDiso->Clean(Mat_Values, Rhs, Sol);
+  ParDiso->Clean(Mat_Values);
   delete [] Mat_Values; Mat_Values = NULL;
 }
 
@@ -307,8 +307,7 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
   }
   
   printf("time taken for solving::%lf\n",GetTime()-t);
-
-   ParDiso->Clean(Mat_Values, Rhs, Sol);
+ 
 }
 
 #endif

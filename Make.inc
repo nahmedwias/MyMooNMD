@@ -287,7 +287,7 @@ endif
    PRG_DEFINE = -D_PAR -D_MPI -D_HYBRID
    OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
   endif
-  ifeq ($(PARALLEL_TYPE),D_OMPONLY)
+  ifeq ($(PARALLEL_TYPE),OMPONLY)
    PRG_DEFINE = -D_OMPONLY
    OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
   endif
@@ -323,7 +323,7 @@ MUMPSLIB = EXT_LIB/MUMPS/lib
 PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                 -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
                 -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
-                 $(MPIBLACS_$(MACH)) -lpardiso500-MPI-GNU463-X86-64_$(MACH)
+                 $(MPIBLACS_$(MACH))
 endif
 
 ifeq ($(PARALLEL_TYPE),HYBRID)
@@ -332,7 +332,7 @@ MUMPSLIB = EXT_LIB/MUMPS/lib
 PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                 -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
                 -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
-                 $(MPIBLACS_$(MACH)) -lpardiso500-MPI-GNU461-X86-64_$(MACH)
+                 $(MPIBLACS_$(MACH))
 endif
 
 ifeq ($(PARALLEL_TYPE),OMPONLY)

@@ -119,6 +119,9 @@ void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *
 
 void TSystemMatTimeScalar3D::AssembleMRhs(TAuxParam3D *aux, double **sol, double **rhs)
 {
+ 
+  //this is set to true for direct solver factorization
+  factorize = true;
   
   int i, N_DOF_low, N_Active;
   
@@ -163,10 +166,6 @@ void TSystemMatTimeScalar3D::AssembleMRhs(TAuxParam3D *aux, double **sol, double
 #endif
        MG->AddLevel(MGLevel);
       }
-      
-// #ifdef _MPI  
-// 	ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), rhs[i]);     
-// #endif
 
     } //  for(i=Start_Level;i<N_Levels;i++)
 
@@ -178,6 +177,9 @@ void TSystemMatTimeScalar3D::AssembleMRhs(TAuxParam3D *aux, double **sol, double
 
 void TSystemMatTimeScalar3D::AssembleARhs(TAuxParam3D *aux, double **sol, double **rhs)
 {
+  //this is set to true for direct solver factorization
+  factorize = true;
+  
   int i, N_DOF_low, N_Active;
     
    if(aux==NULL)
@@ -303,7 +305,17 @@ void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, dou
 	//ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), Rhs_array[i]);     
 #endif
       }
-     gamma = tau*TDatabase::TimeDB->THETA1;    
+     gamma = tau*TDatabase::TimeDB->THETA1;
+     
+#ifdef _MPI     
+    if(SOLVER == DIRECT)
+      DS->AssembleMatrix(sqmatrixM[N_Levels-1]);
+#endif
+    
+#ifdef _OMPONLY     
+    if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+      DS->AssembleMatrix(sqmatrixM[N_Levels-1]);
+#endif
      
      SystMatAssembled  = TRUE;
 
@@ -365,16 +377,33 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
       break;
 
       case DIRECT:
+#ifdef _MPI
+	DS->Solve(sol, B, factorize);
+#endif
+
+#ifdef _OMPONLY
+	if(TDatabase::ParamDB->DSType == 1)
+	  DS->Solve(sol, B, factorize);
+	else{
+	  OutPut("Select Proper Solver" << endl);
+	  exit(0);
+	}
+#endif
+
+#ifdef _SEQ
         DirectSolver(sqmatrixM[N_Levels-1], B, sol);
+#endif
+	
+	//this is set to false for direct solver factorization
+        factorize = false;
       break;      
  
       default:
             OutPut("Unknown Solver" << endl);
             exit(4711);;
      }
+     
 }
-
-
 
 double TSystemMatTimeScalar3D::GetResidual(double *sol)
 {

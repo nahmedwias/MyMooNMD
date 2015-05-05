@@ -17,16 +17,6 @@
 #include <math.h>
 // #include <mpi.h>
 
-#ifdef _HYBRID
-#define _AnyParallel_
-#endif
-#ifdef _MPI
-#define _AnyParallel_
-#endif
-#ifdef _OPENMP
-#define _AnyParallel_
-#endif
-
 int main()
 {
   int i;
@@ -42,10 +32,12 @@ int main()
 #ifdef _OPENMP
   printf("IN OPENMP\n");
 #endif
-
-#ifdef _AnyParallel_  
-  printf("#############\n");
+  
+  #ifdef _OMPONLY
+  printf("IN OPENMP ONLY\n");
 #endif
+
+
 //   int a =3;
 //   printf("iparam(3)::%d\nNumber of OpenMP tasks per host",a);
 //     printf("iparam(11)::%d\n", iparam(11), "Scaling");
