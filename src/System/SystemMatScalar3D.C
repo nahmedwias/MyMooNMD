@@ -22,13 +22,8 @@
 #include <MultiGridScaIte.h>
 
 #ifdef _MPI
-//#include "mpi.h"
 #include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
-// #include <MumpsSolver.h>
-//#include <ParVector3D.h>
-//#include <ParVectorNSE3D.h>
-//#include <Scalar_ParSolver.h>
 #endif
 
 #define AMG 0
@@ -81,7 +76,10 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
    sqstructure[i] = new TSquareStructure3D(FeSpaces[i]);
    
    if(SOLVER==DIRECT || SOLVER==GMG)
-   { sqstructure[i]->Sort(); } // sort column numbers: numbers are in increasing order
+   { 
+     sqstructure[i]->Sort(); 
+     
+  } // sort column numbers: numbers are in increasing order
    else if(SOLVER==AMG_SOLVE)
    { sqstructure[i]->SortDiagFirst(); }
    
@@ -126,6 +124,14 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
      }
    }
 #endif
+
+#ifdef _OMPONLY
+   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+   {
+     DS = new TParDirectSolver(sqmatrixA[N_Levels-1]);
+   }
+#endif 
+   
 //exit(0);
    //initialize multigrid solver
    if(SOLVER==GMG)
@@ -292,18 +298,18 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
        MG->AddLevel(MGLevel);
        
       }
-      
-#ifdef _MPI  
-   // ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), RHSs[0]);     
-#endif
-      
     } //  for(i=Start_Level;i<N_Levels;i++)    
 
     delete aux;  
 
 #ifdef _MPI     
     if(SOLVER == DIRECT)
-      DS->AssembleLocMatrix(sqmatrixA[N_Levels-1]);
+      DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
+#endif
+    
+#ifdef _OMPONLY     
+    if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+      DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
 #endif
     
 } // void TSystemMatScalar3D::Assemble(T
@@ -342,8 +348,19 @@ void TSystemMatScalar3D::Solve(double *sol, double *rhs)
       case DIRECT:
 #ifdef _MPI
 	DS->Solve(sol, rhs, true);
-#else
-        DirectSolver((TSquareMatrix*)sqmatrixA[N_Levels-1], rhs, sol);
+#endif
+	
+#ifdef _OMPONLY
+	if(TDatabase::ParamDB->DSType == 1)
+	  DS->Solve(sol, rhs, true);
+	else{
+	  OutPut("Select Proper Solver" << endl);
+	  exit(0);
+	}
+#endif
+
+#ifdef _SEQ
+	DirectSolver((TSquareMatrix*)sqmatrixA[N_Levels-1], rhs, sol);
 #endif
       break;      
  

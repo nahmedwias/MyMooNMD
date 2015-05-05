@@ -3516,6 +3516,11 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->MapperType;
       N_Param++;
     }
+    if (!strcmp(line, "DSType:"))
+    {
+      dat >> TDatabase::ParamDB->DSType;
+      N_Param++;
+    }
         
     
  

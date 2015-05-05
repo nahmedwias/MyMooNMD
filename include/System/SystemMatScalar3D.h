@@ -22,18 +22,26 @@
 #include <ParDirectSolver.h>
 #endif
 
+#ifdef _OMPONLY
+#include <ParDirectSolver.h>
+#endif
+
 /** class for 3D scalar system matrix */
 class TSystemMatScalar3D
 {
   protected:
     /** own fespace and parallel FE Communicator */
-    #ifdef _MPI
+#ifdef _MPI
     TParFEMapper3D **ParMapper;
     TParFECommunicator3D **ParComm;
     MPI_Comm Comm;
     TParDirectSolver *DS;
-    #endif
+#endif
     
+#ifdef _OMPONLY
+    TParDirectSolver *DS;
+#endif
+  
     /** Number of multigrid levels */
     int N_Levels;
     

@@ -89,6 +89,9 @@ class TParFECommunicator3D
     int* Get_Local2Global()
     { return Mapper->Get_Local2Global();}
     
+    int GetN_Master()
+    { return Mapper->GetN_Master();}
+    
 };
 
 #endif

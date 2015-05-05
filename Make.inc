@@ -40,7 +40,7 @@ CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 
 CCFLAG_LINUX64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fopenmp
  
 
-ifeq ($(PARALLEL_TYPE),$(filter $(PARALLEL_TYPE),OPENMP SEQUENTIAL))
+ifeq ($(PARALLEL_TYPE),$(filter $(PARALLEL_TYPE),OMPONLY OPENMP SEQUENTIAL))
  CPP_LINUX64           = g++
  CC_LINUX64            = gcc
 else
@@ -56,6 +56,15 @@ BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -l
  
 
 ifeq ($(PARALLEL_TYPE), MPI)
+
+BLACS_PATH = EXT_LIB/MPIBLACS
+MPI_PATH = /opt/mpich2/lib64
+MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
+                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
+                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
+endif
+
+ifeq ($(PARALLEL_TYPE), HYBRID)
 
 BLACS_PATH = EXT_LIB/MPIBLACS
 MPI_PATH = /opt/mpich2/lib64
@@ -278,6 +287,10 @@ endif
    PRG_DEFINE = -D_PAR -D_MPI -D_HYBRID
    OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
   endif
+  ifeq ($(PARALLEL_TYPE),D_OMPONLY)
+   PRG_DEFINE = -D_OMPONLY
+   OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
+  endif
  else
   PRG_DEFINE = -D_SEQ
  endif
@@ -310,10 +323,26 @@ MUMPSLIB = EXT_LIB/MUMPS/lib
 PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                 -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
                 -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
-                 $(MPIBLACS_$(MACH))
+                 $(MPIBLACS_$(MACH)) -lpardiso500-MPI-GNU463-X86-64_$(MACH)
 endif
 
+ifeq ($(PARALLEL_TYPE),HYBRID)
 
+MUMPSLIB = EXT_LIB/MUMPS/lib
+PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
+                -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
+                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
+                 $(MPIBLACS_$(MACH)) -lpardiso500-MPI-GNU461-X86-64_$(MACH)
+endif
+
+ifeq ($(PARALLEL_TYPE),OMPONLY)
+
+MUMPSLIB = EXT_LIB/MUMPS/lib
+PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
+                -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
+                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
+                 $(MPIBLACS_$(MACH)) -lpardiso500-GNU481-X86-64_$(MACH)
+endif
 
 ifeq ($(MACH),SUN)
 AR            = CC -xar -o

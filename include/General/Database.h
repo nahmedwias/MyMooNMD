@@ -888,6 +888,7 @@ struct TParaDB
   int Par_P8;
   int Par_P9;
   int MapperType;
+  int DSType;
   double Par_P10;
   double Par_P11;
   double Par_P12;

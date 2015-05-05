@@ -151,6 +151,9 @@ class TParFEMapper3D
       n_Halo2      = N_Halo2;
     }
     
+    int GetN_Master()
+    {return N_Master;}
+    
     int *GetMaster()
     {return Master;}
     
@@ -189,6 +192,27 @@ class TParFEMapper3D
 
 #ifdef _HYBRID
     void Color(int &numColors, int *&ptrColors, char type);
+    
+    int GetN_CMaster()
+    {return N_CMaster;}
+    int* GetptrCMaster()
+    {return ptrCMaster;}
+    
+    int GetN_CDept1()
+    {return N_CDept1;}
+    int* GetptrCDept1()
+    {return ptrCDept1;}
+    
+    int GetN_CDept2()
+    {return N_CDept2;}
+    int* GetptrCDept2()
+    {return ptrCDept2;}
+    
+    int GetN_CInt()
+    {return N_CInt;}
+    int* GetptrCInt()
+    {return ptrCInt;}
+    
 #endif
   
     void Assign_GlobalDofNo();

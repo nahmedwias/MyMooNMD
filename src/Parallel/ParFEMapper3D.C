@@ -960,7 +960,7 @@ if(TDatabase::ParamDB->Par_P4){
   for(aa=0;aa<size;aa++){
      if(rank==aa){
           printf("\nRank::%d\n",rank);
-	  printf("N_Dof               = %d\t N_OwnDof           = %d\n", N_Dof, N_OwnDof);
+	  printf("N_Dof               = %d\t N_OwnDof           = %d\t N_Active           = %d\n", N_Dof, N_OwnDof,N_Active);
 	  printf("N_Master(Total)     = %d\t N_Slave(Total)     = %d\n", N_Master, N_Slave);
 	  printf("N_Master(Interface) = %d\t N_Slave(Interface) = %d\n", N_InterfaceM, N_InterfaceS);
 	  printf("N_Halo              = %d\t N_Halo1            = %d\t   N_Halo2  = %d\n",N_Halo,N_Halo1,N_Halo2);

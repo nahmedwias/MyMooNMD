@@ -28,7 +28,13 @@ MORTAR =
 #PARALLEL_TYPE = HYBRID
 PARALLEL_TYPE = MPI
 #PARALLEL_TYPE = OPENMP
- 
+PARALLEL_TYPE = OMPONLY
+
+#hybrid  = takes all, mpi, hybrid, openmp
+#MPI     = takes both mpi & openmp
+#openmp  = takes only openmp
+#seq compilation takes openmp
+#omponly = takes omp only
 #############################
 
 SRC = src

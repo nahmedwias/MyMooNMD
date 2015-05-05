@@ -24,7 +24,8 @@ MEMBERS = \
 	$(SRCPATH)MumpsSolver.o  \
 	$(SRCPATH)ParFEMapper3D.o \
 	$(SRCPATH)ParFECommunicator3D.o \
-	$(SRCPATH)ParDirectSolver.o 
+	$(SRCPATH)ParDirectSolver.o \
+	$(SRCPATH)ParDiso.o
 
 ###############
 

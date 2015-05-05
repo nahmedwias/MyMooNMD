@@ -344,6 +344,7 @@ void TDatabase::SetDefaultParameters()
   
   ParamDB->timeprofiling = 0; //time profiling
   ParamDB->MapperType = 1;
+  ParamDB->DSType = 1;		//Parallel Direct Solver Type
 
   ParamDB->MESHGEN_ALLOW_EDGE_REF=0;
   ParamDB->MESHGEN_REF_QUALITY=30;
@@ -1273,6 +1274,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "EXAMPLE: " << ParamDB->EXAMPLE << endl;
   OutFile << "profiling: " << ParamDB->timeprofiling << endl;
   OutFile << "MapperType: " << ParamDB->MapperType << endl;
+  OutFile << "DSType: " << ParamDB->DSType << endl;
   
   OutFile << "MESHGEN_ALLOW_EDGE_REF: " << ParamDB->MESHGEN_ALLOW_EDGE_REF << endl;
   OutFile << "MESHGEN_REF_QUALITY: " << ParamDB->MESHGEN_REF_QUALITY << endl;
