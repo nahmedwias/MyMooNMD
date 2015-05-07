@@ -443,7 +443,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
               } // endif
             } // endfor n
             if(l2 == 0)
-              cout << "not found" << endl;
+              cout << "(assemble3d.c) not found" << endl;
           } // endfor k
         } // endif l
         else

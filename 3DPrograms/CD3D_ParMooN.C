@@ -365,7 +365,7 @@ int main(int argc, char* argv[])
     }
     
     SystemMatrix->Solve(sol, rhs);
-    
+
     if(profiling){
 #ifdef _MPI
       t2 = MPI_Wtime();

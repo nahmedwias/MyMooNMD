@@ -307,11 +307,7 @@ void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, dou
       }
      gamma = tau*TDatabase::TimeDB->THETA1;
      
-#ifdef _MPI     
-    if(SOLVER == DIRECT)
-      DS->AssembleMatrix(sqmatrixM[N_Levels-1]);
-#endif
-    
+//have to shift this in pardirectsolver     
 #ifdef _OMPONLY     
     if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
       DS->AssembleMatrix(sqmatrixM[N_Levels-1]);

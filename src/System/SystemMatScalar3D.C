@@ -107,7 +107,8 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
 //   exit(0);
    if(SOLVER == DIRECT)
    {
-     DS = new TParDirectSolver(ParComm[N_Levels-1],sqmatrixA[N_Levels-1]);
+     SQMATRICES[0] = sqmatrixA[N_Levels-1];
+     DS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
    }
 
    if(profiling)
@@ -302,11 +303,7 @@ void TSystemMatScalar3D::Assemble(TAuxParam3D *aux, double **sol, double **rhs)
 
     delete aux;  
 
-#ifdef _MPI     
-    if(SOLVER == DIRECT)
-      DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
-#endif
-    
+//have to shift this in pardirectsolver    
 #ifdef _OMPONLY     
     if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
       DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
@@ -369,7 +366,6 @@ void TSystemMatScalar3D::Solve(double *sol, double *rhs)
             exit(4711);;
      }    
   
-//   exit(0);
 }
 
 

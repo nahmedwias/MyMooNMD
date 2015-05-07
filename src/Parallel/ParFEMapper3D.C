@@ -1726,7 +1726,32 @@ void TParFEMapper3D::Assign_GlobalDofNo()
   }
   
 //   cout<<"..................rank:: "<<rank<<"  start::"<<start<<"    N_OwnDof::"<<N_OwnDof<<endl;
-
+     if(N_Dim>1)
+  {
+     for(i=0;i<size;i++)
+     {
+        sdispl[i]   /= N_Dim;
+	sdisplMS[i] /= N_Dim;
+	sdisplH1[i] /= N_Dim;
+	sdisplH2[i] /= N_Dim;
+	
+	rdispl[i]     /= N_Dim;
+	rdisplMS[i]   /= N_Dim;
+	rdisplH1[i]   /= N_Dim;
+	rdisplH2[i]   /= N_Dim;
+	
+	N_DofSend[i]   /= N_Dim;
+        N_DofSendMS[i] /= N_Dim;
+        N_DofSendH1[i] /= N_Dim;
+        N_DofSendH2[i] /= N_Dim;
+     
+        N_DofRecv[i]    /= N_Dim;
+        N_DofRecvMS[i]  /= N_Dim;
+        N_DofRecvH1[i]  /= N_Dim;
+        N_DofRecvH2[i]  /= N_Dim;
+     }
+  }
+   
   if(TDatabase::ParamDB->MapperType != 2)
   {
     Send_dataMS = Send_data;
@@ -1793,6 +1818,33 @@ void TParFEMapper3D::Assign_GlobalDofNo()
     }
       
   }
+  
+  if(N_Dim>1)
+  {
+     for(i=0;i<size;i++)
+     {
+        sdispl[i]   *= N_Dim;
+	sdisplMS[i] *= N_Dim;
+	sdisplH1[i] *= N_Dim;
+	sdisplH2[i] *= N_Dim;
+	
+	rdispl[i]     *= N_Dim;
+	rdisplMS[i]   *= N_Dim;
+	rdisplH1[i]   *= N_Dim;
+	rdisplH2[i]   *= N_Dim;
+	
+	N_DofSend[i]   *= N_Dim;
+        N_DofSendMS[i] *= N_Dim;
+        N_DofSendH1[i] *= N_Dim;
+        N_DofSendH2[i] *= N_Dim;
+     
+        N_DofRecv[i]    *= N_Dim;
+        N_DofRecvMS[i]  *= N_Dim;
+        N_DofRecvH1[i]  *= N_Dim;
+        N_DofRecvH2[i]  *= N_Dim;
+     }
+  }
+  
   
   delete [] Send_data;
   delete [] Recv_data;

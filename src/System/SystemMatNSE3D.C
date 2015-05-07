@@ -28,13 +28,8 @@
 #include <NSE_MGLevel4.h>
 
 #ifdef _MPI
-//#include "mpi.h"
 #include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
-//#include <MumpsSolver.h>
-//#include <ParVector3D.h>
-//#include <ParVectorNSE3D.h>
-//#include <Scalar_ParSolver.h>
 #endif
 
 #define AMG 0
@@ -62,9 +57,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
     { N_aux= 4; }
    else
     { N_aux= 2; }
-#ifdef _MPI
-  Comm = TDatabase::ParamDB->Comm;
-#endif
+    
   //set number of multigrid levels
   N_Levels = N_levels;
    
@@ -73,6 +66,16 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   
   // NSE type
   NSEType = nsetype;
+  
+#ifdef _MPI
+  Comm = TDatabase::ParamDB->Comm;
+  if(NSEType!=4)
+  {
+    printf("parallel implemented for NSTYPE 4 only\n");
+    MPI_Finalize();
+    exit(0);
+  }
+#endif  
   
   //set the solver type
   SOLVER = solver;
@@ -111,7 +114,6 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   MatrixB1T = new TMatrix3D*[N_levels];
   MatrixB2T = new TMatrix3D*[N_levels];
   MatrixB3T = new TMatrix3D*[N_levels];    
- 
   
   if(SOLVER==AMG_SOLVE || SOLVER==DIRECT)
    {
@@ -212,39 +214,72 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
     } //  for(i=Start_Level;i<N_Levels;i++)
     
 #ifdef _MPI
+  i = N_Levels-1; 
+  switch(NSEType)
+      {
+        case 1:
+          printf("parallel implemented for NSTYPE 4 only\n");
+	  MPI_Finalize();
+	  exit(0);
+        break;
+
+        case 2:
+          printf("parallel implemented for NSTYPE 4 only\n");
+	  MPI_Finalize();
+	  exit(0);
+        break;
+
+        case 3:
+          printf("parallel implemented for NSTYPE 4 only\n");
+	  MPI_Finalize();
+	  exit(0);
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA12[i];
+          SQMATRICES[2] = SqmatrixA13[i];	  
+          SQMATRICES[3] = SqmatrixA21[i];
+          SQMATRICES[4] = SqmatrixA22[i];
+          SQMATRICES[5] = SqmatrixA23[i]; 
+          SQMATRICES[6] = SqmatrixA31[i];
+          SQMATRICES[7] = SqmatrixA32[i];
+          SQMATRICES[8] = SqmatrixA33[i];  
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+          MATRICES[3] = MatrixB1T[i];
+          MATRICES[4] = MatrixB2T[i];
+          MATRICES[5] = MatrixB3T[i];
+
+          break;
+      } //  switch(NSEType)
+
   double t1,t2,tdiff;
   if(profiling)  t1 = MPI_Wtime();
-  
-  if(SOLVER==GMG)
-  {
-    ParMapper_U = new TParFEMapper3D*[N_levels]; 
-    ParMapper_P = new TParFEMapper3D*[N_levels];
-  }
+
+  ParMapper_U = new TParFEMapper3D*[N_levels]; 
+  ParMapper_P = new TParFEMapper3D*[N_levels];
+
   ParComm_U = new TParFECommunicator3D*[N_levels];
   ParComm_P = new TParFECommunicator3D*[N_levels];
   
   for(i=Start_Level;i<N_levels;i++)
   {
-//     if(SOLVER == GMG)
-    {
-      ParMapper_U[i] = new TParFEMapper3D(3, U_Space[i], sqstructureA[i]->GetRowPtr(),sqstructureA[i]->GetKCol());
-      //what to use??? structureB or structureBT
-      ParMapper_P[i] = new TParFEMapper3D(1, P_Space[i], structureB[i]->GetRowPtr(),  structureB[i]->GetKCol());
+    ParMapper_U[i] = new TParFEMapper3D(3, U_Space[i], sqstructureA[i]->GetRowPtr(),sqstructureA[i]->GetKCol());
+    ParMapper_P[i] = new TParFEMapper3D(1, P_Space[i], structureBT[i]->GetRowPtr(),  structureBT[i]->GetKCol());
       
-      ParComm_U[i] = new TParFECommunicator3D(ParMapper_U[i]);
-      ParComm_P[i] = new TParFECommunicator3D(ParMapper_P[i]);
-    }
-//     else
-//     {
-//       ParComm_U[i] = new TParFECommunicator3D();
-//       ParComm_P[i] = new TParFECommunicator3D();
-//     }
+    ParComm_U[i] = new TParFECommunicator3D(ParMapper_U[i]);
+    ParComm_P[i] = new TParFECommunicator3D(ParMapper_P[i]);
+  }
 
-  }// for(i=0;i<N_levels;i++)
-  printf("exit at sysmat\n");
-  exit(0);
-   if(profiling)
-   {
+  if(SOLVER == DIRECT)
+  {
+     DS = new TParDirectSolver(ParComm_U[N_Levels-1],ParComm_P[N_Levels-1],SQMATRICES,MATRICES);
+  }
+
+  if(profiling)
+  {
      t2 = MPI_Wtime();
      tdiff = t2-t1;
      int out_rank=TDatabase::ParamDB->Par_P0;
@@ -255,7 +290,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
      {
       printf("Time taken for ParFEMapper3D for all levels is %e\n", t1);
      }
-   }
+  }
 #endif
    //initialize multigrid solver
    if(SOLVER==GMG)
@@ -912,11 +947,26 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
           break;
 
           case 4:
+#ifdef _MPI
+        	DS->Solve(sol, rhs, true);
+#endif
+	
+#ifdef _OMPONLY
+	       if(TDatabase::ParamDB->DSType == 1)
+	         DS->Solve(sol, rhs, true);
+	       else{
+	         OutPut("Select Proper Solver" << endl);
+	         exit(0);
+	       }
+#endif
+
+#ifdef _SEQ
              DirectSolver(SqmatrixA11[N_Levels-1], SqmatrixA12[N_Levels-1], SqmatrixA13[N_Levels-1], 
                           SqmatrixA21[N_Levels-1], SqmatrixA22[N_Levels-1], SqmatrixA23[N_Levels-1],  
                           SqmatrixA31[N_Levels-1], SqmatrixA32[N_Levels-1], SqmatrixA33[N_Levels-1],  
                           MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
                           MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol, 0);
+#endif
           break;
          } //  switch(NSEType) 
 

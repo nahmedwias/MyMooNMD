@@ -25,6 +25,8 @@ class TParDirectSolver
 protected:
   TParFECommunicator3D *ParComm;
   
+  TParFECommunicator3D *ParComm_P;
+  
   MPI_Comm Comm;
   
   TMumpsSolver *Mumps;
@@ -34,12 +36,15 @@ protected:
   
   //Mumps Solver Parameters
   int N_Master, NDof;
+  int N_Master_U, N_Master_P, NDof_U, NDof_P;
   
   //row ptr and col ptr of system matrix
   int *RowPtr, *KCol, *RowPtr_global;
+  int *RowPtr_P, *KCol_P, *RowPtr_PT, *KCol_PT;
   
   // number of non zeroes in system matrix
   int N_Nz, N_Nz_global;
+  int N_Nz_U, N_Nz_P;
   
   // number of global degrees of freedom over all ranks
   int N_Eqns;
@@ -56,6 +61,15 @@ protected:
   
   //SqMatrix
   TSquareMatrix3D *Mat;
+  TMatrix3D *MatB, *MatBT;
+  
+  //for NSTYPE 4
+  TSquareMatrix3D *MatA11,*MatA12,*MatA13,
+                  *MatA21,*MatA22,*MatA23,
+		  *MatA31,*MatA32,*MatA33;
+		  
+  TMatrix3D       *MatB1, *MatB2, *MatB3,
+                  *MatBT1,*MatBT2,*MatBT3;
   
   //MatLoc is the system matrix entry values(only master rows)
   double *MatLoc;
@@ -65,11 +79,12 @@ protected:
   int *all_Nnz;
   
 public:
-  TParDirectSolver(TParFECommunicator3D *parcomm,TSquareMatrix3D *mat);
+ 
+  TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunicator3D *parcomm_p,TSquareMatrix3D **mat,TMatrix3D **matB);
   
   ~TParDirectSolver();
   
-  void AssembleMatrix(TSquareMatrix3D *matrix);
+  void AssembleMatrix();
   
   void InitMumps();
   

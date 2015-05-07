@@ -30,12 +30,6 @@
 #ifdef _MPI
 #include "mpi.h"
 #include <MeshPartition.h>
-//#include <MeshPartition2D.h>
-// #include <ParFECommunicator3D.h>
-// #include <MumpsSolver.h>
-// #include <ParVector3D.h>
-// #include <ParVectorNSE3D.h>
-// #include <Scalar_ParSolver.h>
 #endif
 
 double bound = 0;
@@ -72,7 +66,7 @@ int main(int argc, char* argv[])
   TDatabase *Database = new TDatabase();
   
   int profiling;
-  #ifdef _MPI
+#ifdef _MPI
   int rank, size, out_rank;
   int MaxCpV, MaxSubDomainPerDof;
   
@@ -85,7 +79,7 @@ int main(int argc, char* argv[])
   MPI_Comm_size(Comm, &size);
  
   TDatabase::ParamDB->Comm = Comm;
-  #endif 
+#endif 
   
   TDomain *Domain;
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
@@ -132,11 +126,11 @@ int main(int argc, char* argv[])
    
   Database->CheckParameterConsistencyNSE();
   
-  #ifdef _MPI
+#ifdef _MPI
   out_rank=TDatabase::ParamDB->Par_P0;
   //out_rank = 0;
   if(rank == out_rank)
-  #endif
+#endif
    {
     Database->WriteParamDB(argv[0]);
 //     Database->WriteTimeDB();
@@ -177,7 +171,7 @@ int main(int argc, char* argv[])
   Domain->GenerateEdgeInfo();
   MaxSubDomainPerDof = MIN(MaxCpV, size);
   TDatabase::ParamDB->WRITE_PS = 0;
-  #endif 
+#endif 
   
   if(TDatabase::ParamDB->WRITE_PS)
    {
@@ -237,7 +231,7 @@ int main(int argc, char* argv[])
     if(i)
      { Domain->RegRefineAll(); }
 
-     #ifdef _MPI
+#ifdef _MPI
      if(rank == out_rank)
        printf("Level :: %d\n\n",i);
      if(i)
@@ -245,7 +239,7 @@ int main(int argc, char* argv[])
        Domain->GenerateEdgeInfo();
        Domain_Crop(Comm, Domain);       // removing unwanted cells in the hallo after refinement 
      }
-     #endif
+#endif
      
      coll=Domain->GetCollection(It_Finest, 0);
 
@@ -270,10 +264,10 @@ int main(int argc, char* argv[])
          TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE = pressure_space_code;
          velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE; 
 	 
-	 #ifdef _MPI
+#ifdef _MPI
          Velocity_FeSpace[LEVELS]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
          Pressure_FeSpace[LEVELS]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
-         #endif
+#endif
         }
        
       }
@@ -291,10 +285,10 @@ int main(int argc, char* argv[])
        velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
       }
    
-     #ifdef _MPI
+#ifdef _MPI
      Velocity_FeSpace[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
      Pressure_FeSpace[i]->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
-     #endif
+#endif
 //======================================================================
 // construct all finite element functions
 //======================================================================   
@@ -358,9 +352,6 @@ int main(int argc, char* argv[])
     NSEType = TDatabase::ParamDB->NSTYPE;
     SystemMatrix = new TSystemMatNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
                                        TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
-
-MPI_Finalize();
-exit(0);
     
     // initilize the system matrix with the functions defined in Example file
     SystemMatrix->Init(LinCoeffs, BoundCondition, U1BoundValue, U2BoundValue, U3BoundValue);
@@ -369,12 +360,15 @@ exit(0);
     // assemble the system matrix with given sol and rhs 
     SystemMatrix->Assemble(Sol_array, Rhs_array);
     
+//     MPI_Finalize();
+//     exit(0);
+    
     // calculate the residual
     defect = new double[N_TotalDOF];
     memset(defect,0,N_TotalDOF*SizeOfDouble);
     
     SystemMatrix->GetResidual(sol, rhs, defect);
-    
+//    exit(0); 
     //correction due to L^2_O Pressure space 
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        IntoL20Vector3D(defect+3*N_U, N_P, pressure_space_code);
