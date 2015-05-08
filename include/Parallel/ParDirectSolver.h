@@ -78,6 +78,8 @@ protected:
   
   int *all_Nnz;
   
+  int offset;
+  
 public:
  
   TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunicator3D *parcomm_p,TSquareMatrix3D **mat,TMatrix3D **matB);

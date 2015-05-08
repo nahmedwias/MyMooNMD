@@ -234,7 +234,7 @@ void TParDirectSolver::InitMumps()
     {
       if(Master_P[i] == rank)
       {
-	//Mat B(l)
+	//Mat B(m)
 	for(l=0;l<3;l++)
 	{
 	  for(j=RowPtr_P[i];j<RowPtr_P[i+1];j++)
@@ -282,14 +282,12 @@ void TParDirectSolver::AssembleMatrix()
   else
   {
     //test
-    int tmpi = I_rn[0];
-    printf("(%d,%d) :: MatLoc[%d] = %lf\n");
-    for(i=1;i<N_Nz;i++)
+    for(i=0;i<N_Nz;i++)
     {
       if(I_rn[i]==J_cn[i])
-	MatLoc[i]=I_rn[i]+J_cn[i] + i+1;
+	MatLoc[i]=i+100;
       else
-	MatLoc[i]=I_rn[i]+J_cn[i]+i+1; 
+	MatLoc[i]=i+200; 
     }
     
     return;
@@ -418,7 +416,17 @@ void TParDirectSolver::GetRhs(double *Rhs)
     temp  = GlobalRhs+offset;
     temp2 = OwnRhs+3*N_Master_U;
     ParComm->GatherToRoot(temp	, GlobalRhsSize, temp2, N_Master_P, 0);
-
+    
+//     if(rank == 0)
+//     {
+//       double res=0;
+//       for(i=0;i<GlobalRhsSize;i++)
+// 	res += GlobalRhs[i]*GlobalRhs[i];
+//       
+//       printf("res :: %lf\n",res);
+//     }
+//     MPI_Finalize();
+//     exit(0);
   }
 }
 
@@ -494,20 +502,18 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
     if(Factorize)
     {
       AssembleMatrix();
-      
-//       //TEST
-// 	int rank, size;
-// 	MPI_Comm_rank(Comm, &rank);
-// 	MPI_Comm_size(Comm, &size);
-// 	if(rank==0)
-// 	  for(i=0;i<GlobalRhsSize;i++)
-// 	  {
-// 	    GlobalRhs[i] = i;
-// 	  }
+      int rank, size;
+  MPI_Comm_rank(Comm, &rank);
+  MPI_Comm_size(Comm, &size);
+    AssembleMatrix();
+  if(rank==0)
+      for(i=0;i<GlobalRhsSize;i++)
+      {
+	GlobalRhs[i] = i;
+      }
       
       Mumps->FactorizeAndSolve(MatLoc,GlobalRhs);
-      MPI_Finalize();
-      exit(0);
+      
     }
     else
     {

@@ -3098,7 +3098,7 @@ TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T,
 TMatrix3D *matrixB1,  TMatrix3D *matrixB2, TMatrix3D *matrixB3,
 double *rhs, double *sol, int flag)
 {
-  if (TDatabase::ParamDB->SC_VERBOSE>1)  
+  if (TDatabase::ParamDB->SC_VERBOSE>3)  
       OutPut("umf3d"<<endl);
   int *KColA, *RowPtrA;
   int *KColB, *RowPtrB;
@@ -3127,7 +3127,7 @@ double *rhs, double *sol, int flag)
     return;
   }
 
-  if (verbose>1)
+  if (verbose>3)
   {
       OutPut("flag: " << flag << endl);
   }
@@ -3381,7 +3381,7 @@ double *rhs, double *sol, int flag)
       delete [] RowPtr;
   }
 
-  if (verbose>1)
+  if (verbose>3)
   {
   OutPut( "UMFPACK:");
   if (flag==0 || flag==3)

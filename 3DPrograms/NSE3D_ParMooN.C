@@ -400,6 +400,9 @@ int main(int argc, char* argv[])
       // assemble the system matrix with given aux, sol and rhs 
       SystemMatrix->AssembleNonLinear(Sol_array, Rhs_array);  
       
+
+/*MPI_Finalize();
+exit(0);*/      
       // get the residual
       memset(defect,0,N_TotalDOF*SizeOfDouble);
       SystemMatrix->GetResidual(sol, rhs, defect);
