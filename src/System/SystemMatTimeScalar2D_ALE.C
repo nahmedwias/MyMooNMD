@@ -20,12 +20,12 @@
 TSystemMatTimeScalar2D_ALE::TSystemMatTimeScalar2D_ALE(TFESpace2D *fespace, int disctype, int solver, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, 
                                                        bool conservativeale) : TSystemMatTimeScalar2D(fespace,  disctype, solver)
 {
-  char WString[] = "w";  
+  char WString[] = "w";
   TFESpace2D *fesp[1];
     
   
   /** old M mass matrix */
-  sqmatrixM_old = new TSquareMatrix2D(sqstructure);  
+  sqmatrixM_old = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());  
   
   GridFESpace = gridFESpace;
   N_GridDOFs = gridFESpace->GetN_DegreesOfFreedom();
@@ -109,7 +109,7 @@ void TSystemMatTimeScalar2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct
   InitializeDiscreteFormsScalar(DiscreteFormMRhs_Galerkin, DiscreteFormARhs_Galerkin, DiscreteFormMRhs_SUPG,
                                   DiscreteFormARhs_SUPG, BilinearCoeffs);
   
-    switch(Disctype)
+    switch(TDatabase::ParamDB->DISCTYPE)
      {
       case GALERKIN:
       case LOCAL_PROJECTION:
@@ -144,7 +144,7 @@ void TSystemMatTimeScalar2D_ALE::StoreMmat()
 void TSystemMatTimeScalar2D_ALE::MoveMesh(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
                                              double * Iso_refX, double Currtime)
 {
- int i, N_GridBDDOFs;
+  int N_GridBDDOFs;
  
   GridPos->GridToData();   
   memcpy(gridpos_old, gridpos, 2*N_GridDOFs*SizeOfDouble);  
@@ -191,7 +191,7 @@ void TSystemMatTimeScalar2D_ALE::MoveMesh(double Currtime)
 void TSystemMatTimeScalar2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
                                              double * Iso_refX,  double Currtime, double tau)
 {
- int i, N_GridBDDOFs;
+  int N_GridBDDOFs;
  
   GridPos->GridToData();   
   memcpy(gridpos_old, gridpos, 2*N_GridDOFs*SizeOfDouble);  
@@ -277,55 +277,54 @@ void TSystemMatTimeScalar2D_ALE::AssembleMRhs(double *sol, double *rhs)
   double *RHSs[1];
 
   TFESpace2D *fesp[2], *ferhs[1];
-  TFEFunction2D  *fefct[4];
   TAuxParam2D *aux;
   
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();
-    
-    RHSs[0] = rhs;
-    memset(rhs, 0, N_DOF*SizeOfDouble);
+  N_DOF = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  N_Active = this->fe_spaces[0]->GetActiveBound();
   
-    fesp[0] = FeSpace;
-    fesp[1] = GridFESpace;    
-    ferhs[0] = FeSpace;
-    
-    // initialize matrices
-    TSquareMatrix2D *SQMATRICES[2] = { sqmatrixM, NULL };
-    SQMATRICES[0]->Reset();
+  RHSs[0] = rhs;
+  memset(rhs, 0, N_DOF*SizeOfDouble);
+  
+  fesp[0] = this->fe_spaces[0];
+  fesp[1] = GridFESpace;
+  ferhs[0] = this->fe_spaces[0];
+  
+  // initialize matrices
+  TSquareMatrix2D *SQMATRICES[2] = { sqmatrixM, NULL };
+  SQMATRICES[0]->Reset();
 
-    N_SquareMatrices =1;
-    
-   if(Disctype == SUPG)
-   {
-     N_SquareMatrices = 2;  
-     SQMATRICES[1] = sqmatrixS;
-     SQMATRICES[1]->Reset();  
-   }
+  N_SquareMatrices =1;
+  
+  if(TDatabase::ParamDB->DISCTYPE == SUPG)
+  {
+    N_SquareMatrices = 2;  
+    SQMATRICES[1] = sqmatrixS;
+    SQMATRICES[1]->Reset();  
+  }
 
-    
-   aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); 
+   
+  aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); 
 
-    // assemble
-    Assemble2D(2, fesp,
-               N_SquareMatrices, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormMRhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
-     
-    delete aux;
-    
-   // copy Dirichlet values from rhs into sol
-   memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
+  // assemble
+  Assemble2D(2, fesp,
+             N_SquareMatrices, SQMATRICES,
+             0, NULL,
+             1, RHSs, ferhs,
+             DiscreteFormMRhs,
+             BoundaryConditions,
+             BoundaryValues,
+             aux);
+   
+  delete aux;
+  
+  // copy Dirichlet values from rhs into sol
+  memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
 
-   if(Disctype==SUPG)
-    {     
-     MatAdd(sqmatrixM, sqmatrixS, 1.);
-    }
-     
+  if(TDatabase::ParamDB->DISCTYPE==SUPG)
+  {
+    MatAdd(sqmatrixM, sqmatrixS, 1.);
+  }
+  
 } // TSystemMatScalar2D::AssembleMRhs 
 
 void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
@@ -336,73 +335,73 @@ void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
   TFESpace2D *fesp[2], *ferhs[1];
   TFEFunction2D  *fefct[4];
     
-    // assemble the mass mat and rhs 
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();
-    
-    RHSs[0] = rhs;
-    memset(rhs, 0, N_DOF*SizeOfDouble);
+  // assemble the mass mat and rhs 
+  N_DOF = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  N_Active = this->fe_spaces[0]->GetActiveBound();
   
-    fesp[0] = FeSpace;
-    fesp[1] = GridFESpace;    
-    ferhs[0] = FeSpace;
+  RHSs[0] = rhs;
+  memset(rhs, 0, N_DOF*SizeOfDouble);
+  
+  fesp[0] = this->fe_spaces[0];
+  fesp[1] = GridFESpace;
+  ferhs[0] = this->fe_spaces[0];
+  
+  // initialize matrices
+  TSquareMatrix2D *SQMATRICES[3] = { this->sq_matrices[0], sqmatrixM, NULL };
+  SQMATRICES[0]->Reset();
+  SQMATRICES[1]->Reset();
+  
+  N_SquareMatrices =2;
+  
+  if(TDatabase::ParamDB->DISCTYPE == SDFEM)
+  {
+    N_SquareMatrices = 3;
+    SQMATRICES[2] = sqmatrixS;
+    SQMATRICES[2]->Reset();  
+  }
+
+  fefct[0] = MeshVeloFct[0];
+  fefct[1] = MeshVeloFct[1];
+  fefct[2] = MeshVeloFct[0]; //for calculating divergence of w
+  fefct[3] = MeshVeloFct[1]; //for calculating divergence of w    
+
+  if(Aux_ALE==NULL)
+  { 
+    // defined in TimeConvDiff2D.h
+    Aux_ALE =  new TAuxParam2D(TimeCDParamsVeloFieldN_FESpaces,
+                          TimeCDParamsVeloFieldN_Fct,
+                          TimeCDParamsVeloFieldN_ParamFct,
+                          TimeCDParamsVeloFieldN_FEValues_ALE,
+                          fesp+1, fefct,
+                          TimeCDParamsVeloFieldFct_ALE,
+                          TimeCDParamsVeloFieldFEFctIndex_ALE,
+                          TimeCDParamsVeloFieldFEMultiIndex_ALE,
+                          TimeCDParamsVeloFieldN_Params_ALE,
+                          TimeCDParamsVeloFieldBeginParam);
+
+  }
+
+  // assemble
+  Assemble2D(2, fesp,
+             N_SquareMatrices, SQMATRICES,
+             0, NULL,
+             1, RHSs, ferhs,
+             DiscreteFormMARhs,
+             BoundaryConditions,
+             BoundaryValues,
+             Aux_ALE);
+   
+  // copy Dirichlet values from rhs into sol
+  memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
     
-    // initialize matrices
-    TSquareMatrix2D *SQMATRICES[3] = { sqmatrixA, sqmatrixM, NULL };
-    SQMATRICES[0]->Reset();
-    SQMATRICES[1]->Reset();
     
-    N_SquareMatrices =2;
-    
-   if(Disctype == SDFEM)
-    {
-     N_SquareMatrices = 3;
-     SQMATRICES[2] = sqmatrixS;
-     SQMATRICES[2]->Reset();  
-    }      
-
-    fefct[0] = MeshVeloFct[0];
-    fefct[1] = MeshVeloFct[1];
-    fefct[2] = MeshVeloFct[0]; //for calculating divergence of w
-    fefct[3] = MeshVeloFct[1]; //for calculating divergence of w    
-
-    if(Aux_ALE==NULL)
-     { 
-      // defined in TimeConvDiff2D.h
-      Aux_ALE =  new TAuxParam2D(TimeCDParamsVeloFieldN_FESpaces,
-                            TimeCDParamsVeloFieldN_Fct,
-                            TimeCDParamsVeloFieldN_ParamFct,
-                            TimeCDParamsVeloFieldN_FEValues_ALE,
-                            fesp+1, fefct,
-                            TimeCDParamsVeloFieldFct_ALE,
-                            TimeCDParamsVeloFieldFEFctIndex_ALE,
-                            TimeCDParamsVeloFieldFEMultiIndex_ALE,
-                            TimeCDParamsVeloFieldN_Params_ALE,
-                            TimeCDParamsVeloFieldBeginParam);
-
-     }
-
-    // assemble
-    Assemble2D(2, fesp,
-               N_SquareMatrices, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormMARhs,
-               BoundaryConditions,
-               BoundaryValues,
-               Aux_ALE);
-     
-      // copy Dirichlet values from rhs into sol
-      memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
-      
-      
-    if(Disctype==SUPG)
-     {     
-      MatAdd(sqmatrixM, sqmatrixS, 1.);
-     }
+  if(TDatabase::ParamDB->DISCTYPE==SUPG)
+  {     
+    MatAdd(sqmatrixM, sqmatrixS, 1.);
+  }
      
 //                  memset(defect, 0, N_DOF*SizeOfDouble);   
-//         MatVectActive(sqmatrixA, sol, defect);
+//         MatVectActive(this->sq_matrices[0], sol, defect);
 //         OutPut("MatA-Sol " << Ddot(N_DOF, defect, defect ) << endl);  
 //        OutPut("MatA-Sol " << Ddot(N_DOF, sol, sol ) << endl); 
 //     
@@ -413,11 +412,11 @@ void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
 
 void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
 {
-    int N_DOF, N_Active, N_SquareMatrices;
+    int N_DOF, N_Active;
     double tau;
     
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();   
+    N_DOF = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+    N_Active = this->fe_spaces[0]->GetActiveBound();   
     
     tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   
@@ -432,9 +431,9 @@ void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol,
     // defect = M * oldsol
     memset(defect, 0, N_DOF*SizeOfDouble);      
 
-    if(CONSERVATIVEALE)        
+    if(CONSERVATIVEALE)
      {
-      MatAdd(sqmatrixM_old, sqmatrixA, - tau*TDatabase::TimeDB->THETA2);
+      MatAdd(sqmatrixM_old, this->sq_matrices[0], - tau*TDatabase::TimeDB->THETA2);
       gamma = 0.;
 
       MatVectActive(sqmatrixM_old, oldsol, defect);
@@ -444,7 +443,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol,
      }
     else
      {
-      MatAdd(sqmatrixM, sqmatrixA, - tau*TDatabase::TimeDB->THETA2);
+      MatAdd(sqmatrixM, this->sq_matrices[0], - tau*TDatabase::TimeDB->THETA2);
       gamma = -tau*TDatabase::TimeDB->THETA2;  
      
       MatVectActive(sqmatrixM, oldsol, defect);  
@@ -461,7 +460,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol,
      memcpy(sol+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
      
      //assemble the system matrix
-     MatAdd(sqmatrixM, sqmatrixA, -gamma + tau*TDatabase::TimeDB->THETA1);
+     MatAdd(sqmatrixM, this->sq_matrices[0], -gamma + tau*TDatabase::TimeDB->THETA1);
      
 //                OutPut("B  " << Ddot(N_DOF, B, B ) << endl);
 } // AssembleSystMat
@@ -469,7 +468,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol,
 void TSystemMatTimeScalar2D_ALE::Solve(double *sol, double *rhs)
 {
   
-    switch(SOLVER)
+    switch(TDatabase::ParamDB->SOLVER_TYPE)
      {
       case AMG_SOLVE:
         cout << "AMG_SOLVE not yet implemented " <<endl;
