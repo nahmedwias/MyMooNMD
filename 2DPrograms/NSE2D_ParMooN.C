@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
-   
+  
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1]);  
   
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->PROBLEM_TYPE = 5;
   //open OUTFILE, this is where all output is written to (addionally to console)
   OpenFiles();
-
+  
   // possibly change parameters in the database, if they are not meaningful now
   Database.CheckParameterConsistencyNSE();
   // write all Parameters to the OUTFILE (not to console) for later reference
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   
   Example_NSE2D example;
-   
+  
   //=========================================================================
   // construct all finite element spaces
   //=========================================================================
@@ -118,15 +118,10 @@ int main(int argc, char* argv[])
   //======================================================================
   // SystemMatrix construction and solution
   //======================================================================  
-  // Disc type: GALERKIN 
-  // Solver: AMG_SOLVE (or) GMG  (or) DIRECT
-  int NSEType = TDatabase::ParamDB->NSTYPE;
-  
-  TSystemMatNSE2D SystemMatrix(&Velocity, &Pressure, GALERKIN, NSEType, DIRECT);
+  TSystemMatNSE2D SystemMatrix(&Velocity, &Pressure);
  
   // initilize the system matrix with the functions defined in Example file
-  SystemMatrix.Init(example.get_coeffs(), example.get_bc(0), example.get_bd(0),
-                    example.get_bd(1));
+  SystemMatrix.Init(example.get_bd(0), example.get_bd(1));
   
   // create a local assembling objects which are needed to assemble the matrices
   LocalAssembling2D la(NSE2D_Galerkin, fe_functions, example.get_coeffs());
@@ -135,6 +130,8 @@ int main(int argc, char* argv[])
   
   // assemble the system matrix with given sol and rhs 
   SystemMatrix.Assemble(la, sol, rhs);
+  // if solution was not zero up to here, you should call 
+  //SystemMatrix.AssembleNonLinear(la_nonlinear, sol, rhs);
   
   // calculate the residual
   double *defect = new double[N_TotalDOF];
@@ -152,7 +149,7 @@ int main(int argc, char* argv[])
   OutPut("Nonlinear iteration step   0");
   OutPut(setw(14) << impuls_residual);
   OutPut(setw(14) << residual-impuls_residual);
-  OutPut(setw(14) << sqrt(residual) << endl);     
+  OutPut(setw(14) << sqrt(residual) << endl);
 
   //====================================================================== 
   //Solve the system
@@ -166,12 +163,12 @@ int main(int argc, char* argv[])
     // Solve the NSE system
     SystemMatrix.Solve(sol, rhs);
     
-    //no nonlinear iteration for Stokes problem  
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3 ) 
+    //no nonlinear iteration for Stokes problem
+    if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
       break;
     
     // assemble the system matrix with given aux, sol and rhs 
-    SystemMatrix.AssembleNonLinear(la_nonlinear, sol, rhs);     
+    SystemMatrix.AssembleNonLinear(la_nonlinear, sol, rhs);
     
     // get the residual
     memset(defect,0,N_TotalDOF*SizeOfDouble);
@@ -181,8 +178,8 @@ int main(int argc, char* argv[])
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
       IntoL20Vector2D(defect+2*N_U, N_P, pressure_space_code);
     
-    residual =  Ddot(N_TotalDOF, defect, defect);
-    impuls_residual = Ddot(2*N_U, defect, defect); 
+    residual = Ddot(N_TotalDOF, defect, defect);
+    impuls_residual = Ddot(2*N_U, defect, defect);
     
     OutPut("nonlinear iteration step " << setw(3) << j);
     OutPut(setw(14) << impuls_residual);
@@ -223,14 +220,28 @@ int main(int argc, char* argv[])
   //======================================================================    
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double u_error[4], p_error[2];
-    SystemMatrix.MeasureErrors(example.get_exact(0), example.get_exact(1),
-                               example.get_exact(2), u_error, p_error);
-
-    OutPut("L2(u): " <<  sqrt(u_error[0]*u_error[0]+u_error[2]*u_error[2]) << endl);
-    OutPut("H1-semi(u): " <<  sqrt(u_error[1]*u_error[1]+u_error[3]*u_error[3]) << endl);
-    OutPut("L2(p): " <<  p_error[0] << endl);
-    OutPut("H1-semi(p): " <<  p_error[1] << endl); 
+    double err[4];
+    TAuxParam2D NSEaux_error;
+    MultiIndex2D NSAllDerivatives[3] = {D00, D10, D01};
+    
+    // errors in first velocity component
+    fe_functions[0]->GetErrors(example.get_exact(0), 3, NSAllDerivatives, 2, 
+                               L2H1Errors, NULL, &NSEaux_error, 1,
+                               &Velocity_FeSpace, err);
+    
+    // errors in second velocity component
+    fe_functions[1]->GetErrors(example.get_exact(1), 3, NSAllDerivatives, 2,
+                               L2H1Errors, NULL, &NSEaux_error, 1,
+                               &Velocity_FeSpace, err+2);
+    OutPut("L2(u)     : " << sqrt(err[0]*err[0] + err[2]*err[2]) << endl);
+    OutPut("H1-semi(u): " << sqrt(err[1]*err[1] + err[3]*err[3]) << endl);
+    
+    // errors in pressure
+    fe_functions[2]->GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2,
+                               L2H1Errors, NULL, &NSEaux_error, 1,
+                               &Pressure_FeSpace, err);
+    OutPut("L2(p)     : " <<  err[0] << endl);
+    OutPut("H1-semi(p): " <<  err[1] << endl); 
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
   
   CloseFiles();
