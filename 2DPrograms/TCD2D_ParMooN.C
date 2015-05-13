@@ -122,12 +122,10 @@ int main(int argc, char* argv[])
   // TCD2D_Mass_Rhs_SUPG+TCD2D_Stiff_Rhs_SUPG
   LocalAssembling2D_type mass_type = TCD2D_Mass_Rhs_Galerkin;
   LocalAssembling2D_type stiff_type = TCD2D_Stiff_Rhs_Galerkin;
-  int disc_type = GALERKIN;
   if(0) // choose SUPG
   {
     mass_type = TCD2D_Mass_Rhs_SUPG;
     stiff_type = TCD2D_Stiff_Rhs_SUPG;
-    disc_type = SDFEM;
   }
   LocalAssembling2D la_mass_rhs(mass_type, &Scalar_FeFunction,
                                 BilinearCoeffs);
@@ -136,7 +134,7 @@ int main(int argc, char* argv[])
   
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatTimeScalar2D SystemMatrix(Scalar_FeSpace, disc_type, DIRECT);
+  TSystemMatTimeScalar2D SystemMatrix(Scalar_FeSpace);
   
   // initilize the system matrix with the functions defined in Example file
   SystemMatrix.Init(BilinearCoeffs, BoundCondition, BoundValue);
