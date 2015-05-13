@@ -10,49 +10,33 @@
 #ifndef __SYSTEMMATDARCY2D__
 #define __SYSTEMMATDARCY2D__
 
-#include <SquareMatrix2D.h>
 #include <LocalAssembling2D.h>
+#include <SystemMat2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatDarcy2D
+class TSystemMatDarcy2D : public SystemMat2D
 {
   protected:
     
-    /** fespaces for velocity and pressure */
-    TFESpace2D *fe_spaces[2];
-    
-    /** number of matrices in the system matrix */
-    int N_Matrices;
-
-    // ( A  B1' )   ( 0 2 )
-    // ( B2 C   )   ( 3 1 )
-    
-    /** A is the stiffness/system mat for stationary problem   */
-    TSquareMatrix2D *sq_matrices[2];
-    
-    TMatrix2D *rect_matrices[2];
-    
     /** Boundary conditon (one for u.n and one for pressure) */
     BoundCondFunct2D *BoundaryConditions[2];
-
-     /** Boundary value */ 
+    
+    /** Boundary value */ 
     BoundValueFunct2D *BoundaryValues[2];
     
   public:
     /** constructor */
-     TSystemMatDarcy2D(TFESpace2D **fespaces);
-
+     TSystemMatDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
+                       BoundValueFunct2D **BoundValue);
+    
     /** destrcutor */
     ~TSystemMatDarcy2D();
     
-    /** Initilize the discrete forms and the matrices */
-    void Init(BoundCondFunct2D **BoundCond, BoundValueFunct2D **BoundValue);
- 
     /** assemble the system matrix */
     void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
-
+    
     /** solve the system matrix */
-    void  Solve(double *sol, double *rhs);
+    void Solve(double *sol, double *rhs);
 };
 
 #endif // __SYSTEMMATDARCY2D__
