@@ -5,87 +5,37 @@
 * @author    Sashikumaar Ganesan, 
 * @date      23.08.14
 * @History   Added methods (Sashi, 23.08.14)
- ************************************************************************  */
+*            made this class a derived class fo SystemMat2D (Ulrich, 19.03.2015)
+*            further simplifications (Ulrich, 25.03.2015)
+* ************************************************************************  */
 
 
 #ifndef __SYSTEMMATNSE2D__
 #define __SYSTEMMATNSE2D__
 
-#include <SquareMatrix2D.h>
+#include <SystemMat2D.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D  NSE system matrix */
-class TSystemMatNSE2D
+class TSystemMatNSE2D : public SystemMat2D
 {
   protected:
-
-    /** DOFs of velocity and pressure spaces */    
-    int N_U, N_P, N_Active, N_DirichletDof;
-    
-    /** velocity fespace */
-    TFESpace2D *FeSpaces[5];
-    
-    /** Fe functions of NSE */
-    TFEFunction2D *FeFct[5];
-    
-    /** Discretization type */
-    int Disctype;
-       
-    /** NSE type */
-    int NSEType; 
-           
-    /** Bilinear coefficient   */
-    CoeffFct2D *LinCoeffs[1];    
-    
-    /** NSEaux is used to pass additional fe functions (eg. mesh velocity) that is nedded for assembling */
-    TAuxParam2D *NSEaux, *NSEaux_error;
-    
-    /** method for resudual calculation */
-    DefectProc *Defect;   
-    
-    /** Solver type */
-    int Solver;
-       
-    /** number of matrices in the system matrix*/
-    int N_Matrices;
-
-    /** sqstructureA of the system matrix */
-    TSquareStructure2D *sqstructureA, *sqstructureC;
-
-    /** structure of the system matrix */
-    TStructure2D *structureB, *structureBT;
-    
-    /** A is the stiffness/system mat for NSE velocity component   */
-    TSquareMatrix2D *SqmatrixA11, *SqmatrixA12, *SqmatrixA21, *SqmatrixA22, *SQMATRICES[9];
-    TSquareMatrix *sqmatrices[9];
-  
-    /** B is the  system mat for NSE pressure component   */
-    TMatrix2D *MatrixB1, *MatrixB2, *MatrixB1T, *MatrixB2T, *MATRICES[8];
-    TMatrix *matrices[4];
-    
     /** Boundary conditon */
     BoundCondFunct2D *BoundaryConditions[2];
-  
-     /** Boundary values */   
+    
+    /** Boundary values */
     BoundValueFunct2D *BoundaryValues[2];
-        
-    /** Discrete form for the equation */
-    TDiscreteForm2D *DiscreteFormARhs, *DiscreteFormNL;
-
     
   public:
     /** constructor */
-     TSystemMatNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p, int disctype,
-                     int nsetype, int solver);
-
+     TSystemMatNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p);
+     
     /** destrcutor */
     ~TSystemMatNSE2D();
-
-    /** methods */
-    /** Initilize the discrete forms and the matrices */    
-    void Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond,
-              BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue);
     
+    /** methods */
+    /** Initilize the discrete forms and the matrices */
+    void Init(BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue);
     
     /** assemble the system matrix */
     void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
@@ -97,11 +47,7 @@ class TSystemMatNSE2D
     void GetResidual(double *sol, double *rhs, double *res);
     
     /** solve the system matrix */
-    void  Solve(double *sol, double *rhs);
-  
-    /** measure the error in the NSE */
-    void MeasureErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2, DoubleFunct2D *ExactP,
-                                    double *u_error, double *p_error);
+    void Solve(double *sol, double *rhs);
 };
 
-#endif
+#endif // __SYSTEMMATNSE2D__
