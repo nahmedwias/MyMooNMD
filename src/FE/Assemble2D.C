@@ -8831,15 +8831,11 @@ TAuxParam2D *Parameters)
   int *EdgeDOF, N_EdgeDOF;
   int N_LinePoints;
   double *LineWeights, *zeta;
-  double x0, x1, y0, y1, hE, nx, ny, tx, ty, x, y, val, eps=1e-12;
-  double penetration_penalty, friction_parameter;
-  double **JointValues, *JointValue, u1_values[3], u2_values[3];
-  double delta;
+  double x0, x1, y0, y1, hE, nx, ny, eps=1e-12;
   bool *SecondDer;
 
   double *Coefficients1D[MaxN_QuadPoints_2D];
-  double *Parameters1D[MaxN_QuadPoints_2D];
-
+  
   double xi1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D], eta1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D];
   double**** xietaval_ref1D = new double*** [N_BaseFuncts2D];
   double**** xideriv_ref1D = new double*** [N_BaseFuncts2D];
@@ -8849,8 +8845,6 @@ TAuxParam2D *Parameters)
   double *yderiv_ref1D[4][MaxN_QuadPoints_1D];
   double *X1D[4], *Y1D[4], *X1D_neigh[4], *Y1D_neigh[4];
   RefTrans2D RefTrans;
-  int N_DOF;
-  double *Values;
   double*** value_basefunct_ref1D = new double** [N_BaseFuncts2D];
   double*** xderiv_basefunct_ref1D = new double** [N_BaseFuncts2D];
   double*** yderiv_basefunct_ref1D = new double** [N_BaseFuncts2D];
@@ -8869,32 +8863,16 @@ TAuxParam2D *Parameters)
   double dummy2[6];
 
   int neigh_edge;
-  int neigh_N_,N_Neigh;
-  double absdet1D_neigh[MaxN_QuadPoints_2D];
-  double xi1DNeigh[N_BaseFuncts2D][MaxN_QuadPoints_1D], eta1DNeigh[N_BaseFuncts2D][MaxN_QuadPoints_1D];
-  double *X1DNeigh,*Y1DNeigh;
+  int N_Neigh;
   TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
-  QuadFormula2D QuadFormulaNeigh;
-  TQuadFormula2D *qfNeigh;
-  QuadFormula1D LineQuadFormulaNeigh;
-  TQuadFormula1D *qf1DNeigh;
-  int LocN_BF_neigh[N_BaseFuncts2D];
-  BaseFunct2D LocBF_neigh[N_BaseFuncts2D];
-  int N_Points1DNeigh,N_PointsNeigh;
-  double *weights1DNeigh,*zetaNeigh,*weightsNeigh,*xiNeigh,*etaNeigh;
   TFE2D *eleNeigh;
   RefTrans2D RefTransNeigh;
-  BF2DRefElements bf2DrefelementsNeigh;
   int *DOF_neigh;
-  double xietaval_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
-  double xideriv_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
-  double etaderiv_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
   double *xyval_refNeigh1D[MaxN_QuadPoints_1D];
   double *xderiv_refNeigh1D[MaxN_QuadPoints_1D];
   double *yderiv_refNeigh1D[MaxN_QuadPoints_1D];
-  double *xderiv_Neigh1D, *yderiv_Neigh1D, *xyval_Neigh1D;
 
   double jump_xyval[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
   double jump_xderiv[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
@@ -9248,10 +9226,6 @@ TAuxParam2D *Parameters)
   for(j=0;j<MaxN_QuadPoints_2D;j++)
     Coeffs[j] = aux2 + j*20;
 
-  aux3 = new double [MaxN_QuadPoints_2D*N_Parameters];
-  for(j=0;j<MaxN_QuadPoints_2D;j++)
-    Parameters1D[j] = aux3 + j*N_Parameters;
-
   aux4 = new double [MaxN_QuadPoints_2D*20];
   for(j=0;j<MaxN_QuadPoints_2D;j++)
     Coefficients1D[j] = aux4 + j*20;
@@ -9405,9 +9379,6 @@ TAuxParam2D *Parameters)
 
             LocalUsedElements_neigh[0] = CurrEleNeigh;
                                                   // local basis functions
-            LocN_BF_neigh[0] = N_BaseFunct[CurrEleNeigh];
-            LocBF_neigh[0] = BaseFuncts[CurrEleNeigh];
-
             RefTransNeigh = TFEDatabase2D::GetOrig(1, LocalUsedElements_neigh,
               Coll, neigh, SecondDer,
               N_Points, xi_neigh, eta_neigh, weights_neigh, X_neigh, Y_neigh, AbsDetjk_neigh);
@@ -9649,8 +9620,8 @@ TAuxParam2D *Parameters)
             nx = (y1-y0)/hE;
             ny = (x0-x1)/hE;
             // tangential normal vector to this boundary (normalized)
-            tx = (x1-x0)/hE;
-            ty = (y1-y0)/hE;
+            //double tx = (x1-x0)/hE;
+            //double ty = (y1-y0)/hE;
             tau_par = TDatabase::ParamDB->FACE_SIGMA;
             tau_par = tau_par*hE*hE;
             if (out>2){ OutPut(" tau edge stabilization: " << tau_par << endl)};
@@ -10051,8 +10022,8 @@ TAuxParam2D *Parameters)
             nx = (y1-y0)/hE;
             ny = (x0-x1)/hE;
             // tangential normal vector to this boundary (normalized)
-            tx = (x1-x0)/hE;
-            ty = (y1-y0)/hE;
+            //double tx = (x1-x0)/hE;
+            //double ty = (y1-y0)/hE;
             sigma_par = TDatabase::ParamDB->WEAK_BC_SIGMA;
             if(out>2){OutPut("weak_bc: tau edge stabilization: " << tau_par << endl)};
 
@@ -10256,8 +10227,8 @@ TAuxParam2D *Parameters)
                 nx = (y1-y0)/hE;
                 ny = (x0-x1)/hE;
                 // tangential normal vector to this boundary (normalized)
-                tx = (x1-x0)/hE;
-                ty = (y1-y0)/hE;
+                //double tx = (x1-x0)/hE;
+                //double ty = (y1-y0)/hE;
                 sigma_par = TDatabase::ParamDB->WEAK_BC_SIGMA;
 
                 // compute boundary integral: ansatz function from cell with Dirichlet boundary value
@@ -10383,7 +10354,6 @@ TAuxParam2D *Parameters)
   delete aux;
   delete aux2;
   delete aux4;
-  delete aux3;
 
   if(n_rhs)
   {
