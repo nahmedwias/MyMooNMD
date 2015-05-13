@@ -24,13 +24,15 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
     double *B;   
    
     /** to store defect */
-    double *defect;   
+    double *defect;
     
     /** factor that multplied with Mat A in working rhs */
     double gamma;      
 
     /** Discrete form of the M and rhs matrics */
     TDiscreteForm2D *DiscreteFormRhs; 
+    
+    TDiscreteForm2D *DiscreteFormNL, *DiscreteFormARhs;
     
     /** NSE_Rhsaux is used to for assembling rhs only*/
     TAuxParam2D *NSE_Rhsaux;
