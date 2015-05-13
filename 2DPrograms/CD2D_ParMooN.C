@@ -1,10 +1,10 @@
 // =======================================================================
 //
-// Purpose:     main program for solving a stationary scalar equation using ParMooN
+// Purpose:  main program for solving a stationary scalar equation using ParMooN
 //
-// Author:      Sashikumaar Ganesan
+// Author:   Sashikumaar Ganesan
 //
-// History:     Implementation started on 22.08.2014
+// History:  Implementation started on 22.08.2014
 // =======================================================================
 #include <Domain.h>
 #include <Database.h>
@@ -98,9 +98,7 @@ int main(int argc, char* argv[])
   //======================================================================
   // SystemMatrix construction and solution
   //====================================================================== 
-  // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
-  // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatScalar2D SystemMatrix(&Scalar_FeSpace, SDFEM, DIRECT);
+  TSystemMatScalar2D SystemMatrix(&Scalar_FeSpace);
   
   // initilize the system matrix with the functions defined in the example
   SystemMatrix.Init(example.get_bc(0), example.get_bd(0));
@@ -132,7 +130,7 @@ int main(int argc, char* argv[])
     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
     filename += "/" + std::string(TDatabase::ParamDB->BASENAME) + ".vtk";
     Output.WriteVtk(filename.c_str());
-  }   
+  }
    
   //====================================================================== 
   // measure errors to known solution
