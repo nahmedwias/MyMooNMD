@@ -184,6 +184,9 @@ class LocalAssembling2D
     
     int GetN_Parameters() const
     { return N_Parameters; }
+    
+    TFEFunction2D* get_fe_function(int i) const
+    { return FEFunctions2D[i]; }
 };
 
 
