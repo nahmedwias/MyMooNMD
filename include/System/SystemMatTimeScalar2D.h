@@ -18,7 +18,7 @@
 class TSystemMatTimeScalar2D : public TSystemMatScalar2D
 {
   protected:
-        
+    
     /** M mass matrix */
     TSquareMatrix2D *sqmatrixM;
     
@@ -45,7 +45,7 @@ class TSystemMatTimeScalar2D : public TSystemMatScalar2D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype, int solver);
+     TSystemMatTimeScalar2D(TFESpace2D *fespace);
 
     /** destrcutor */
     ~TSystemMatTimeScalar2D();
@@ -55,7 +55,7 @@ class TSystemMatTimeScalar2D : public TSystemMatScalar2D
     
     /** return the stiffness matric */
     TSquareMatrix2D *GetAMatrix()
-    { return sqmatrixA; }
+    { return sq_matrices[0]; }
     
     /** assemble the Mass mat and rhs */
     void AssembleMRhs(LocalAssembling2D& la, double *sol, double *rhs); 
