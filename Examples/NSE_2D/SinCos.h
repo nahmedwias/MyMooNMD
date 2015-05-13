@@ -17,7 +17,6 @@ void ExactU1(double x, double y, double *values)
     values[1] = Pi*cos(Pi*x);
     values[2] = 0;
     values[3] = -Pi*Pi*sin(Pi*x);
-    return;
 }
 
 void ExactU2(double x, double y, double *values)
@@ -30,11 +29,10 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-    values[0] = sin(Pi*x)*cos(Pi*y);
+  values[0] = sin(Pi*x)*cos(Pi*y);
   values[1] = Pi*cos(Pi*x)*cos(Pi*y);
   values[2] = -Pi*sin(Pi*x)*sin(Pi*y);
- values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);
-  return;
+  values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);
 }
 
 void InitialU1(double x, double y, double *values)

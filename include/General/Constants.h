@@ -195,6 +195,7 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 #define FD               0
 #define ENO_3           13
 #define WENO_5          14
+#define HEATLINE        100
 
 #define OSEEN_PROBLEM    13
 

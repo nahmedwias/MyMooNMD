@@ -15,7 +15,7 @@
 
 #include <SquareMatrix3D.h>
 #include <ParFECommunicator3D.h>
-#include <omp.h>
+// #include <omp.h>
 class TMGLevel3D
 {
   protected:

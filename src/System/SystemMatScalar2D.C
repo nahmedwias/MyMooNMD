@@ -55,10 +55,17 @@ void TSystemMatScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *Boun
   TDiscreteForm2D *DiscreteFormGalerkin;
   TDiscreteForm2D *DiscreteFormSDFEM;
   TDiscreteForm2D *DiscreteFormGLS;  
-
-  InitializeDiscreteForms_Stationary(DiscreteFormUpwind, DiscreteFormGalerkin, DiscreteFormSDFEM, DiscreteFormGLS,
+  TDiscreteForm2D *DiscreteFormHeatLine;
+  
+  if(Disctype==HEATLINE)
+   {
+    InitializeDiscreteForms_HeatLine(DiscreteFormHeatLine, BilinearCoeffs);  
+   }
+  else
+   {
+    InitializeDiscreteForms_Stationary(DiscreteFormUpwind, DiscreteFormGalerkin, DiscreteFormSDFEM, DiscreteFormGLS,
                                      BilinearCoeffs);
-
+   }
     switch(Disctype)
      {
       case GALERKIN:
@@ -78,6 +85,11 @@ void TSystemMatScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *Boun
            DiscreteFormARhs = DiscreteFormGLS;
       break;
       
+      case HEATLINE:
+           DiscreteFormARhs = DiscreteFormHeatLine;
+      break;
+
+      
       default:
             OutPut("Unknown DISCTYPE" << endl);
             exit(4711);;
@@ -94,9 +106,6 @@ void TSystemMatScalar2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
  
 
   TFESpace2D *fesp[1], *ferhs[1];
-//   TSquareMatrix2D *SQMATRICES[2];
-
-
    
     N_DOF = FeSpace->GetN_DegreesOfFreedom();
     N_Active =  FeSpace->GetActiveBound();
@@ -145,9 +154,7 @@ void TSystemMatScalar2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
       
     // set rhs for Dirichlet nodes
     memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);     
-      
-//     cout << "Test Assemble " << endl;
-    
+     
 } // void TSystemMatScalar2D::Assemble(T
 
 

@@ -625,6 +625,7 @@ void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param,
   Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
 
+      
   c1 = param[0]; // T
   c2 = param[1]; // T_x
   c3 = param[2]; // T_y
@@ -635,6 +636,10 @@ void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param,
      
   fact = c5*c2 + c1*c7 - c4*c3 -c1*c6;
 
+//     for(i=0;i<7;i++)
+//    cout<< "fact: "<< param[i] <<endl;
+//    cout <<endl;
+   
   for(i=0;i<N_;i++)
   {
     MatrixRow = Matrix[i];
@@ -654,6 +659,7 @@ void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param,
       MatrixRow[j] += val;
     } // endfor j
   } // endfor i
+
 }
 
 
@@ -677,6 +683,8 @@ void MatrixARhsAssembleHeatLine_Axial3D(double Mult, double *coeff, double *para
   Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
 
+
+   
   c1 = param[0]; // T
   c2 = param[1]; // T_x
   c3 = param[2]; // T_y

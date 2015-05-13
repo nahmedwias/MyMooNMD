@@ -32,11 +32,11 @@ endif
 # LINUX64: Linux with gnu
 # ======================================================================
 CPPFLAG_LINUX64_OPTI  = -O3 -s $(INC) -std=c++11 -fopenmp
-CPPFLAG_LINUX64_FAST  = -s $(INC) -std=c++11 -fopenmp 
+CPPFLAG_LINUX64_FAST  =  $(INC) -std=c++11 -fopenmp 
 CPPFLAG_LINUX64_DEBUG = -g $(INC) -std=c++11 -fopenmp
 DEFINE_LINUX64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
 CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
-CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
+CCFLAG_LINUX64_FAST   =  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
 CCFLAG_LINUX64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fopenmp
  
 
@@ -72,9 +72,9 @@ CPPFLAG_MAC64_OPTI  = -O3 $(INC) -fapple-pragma-pack
 CPPFLAG_MAC64_FAST  =  $(INC) -fapple-pragma-pack 
 CPPFLAG_MAC64_DEBUG = -g $(INC) -fapple-pragma-pack 
 DEFINE_MAC64        = -D__$(GEO)__ -D__MAC64__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
-CCFLAG_MAC64_OPTI   = -O3  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fapple-pragma-pack 
+CCFLAG_MAC64_OPTI   = -O3  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fapple-pragma-pack  
 CCFLAG_MAC64_FAST   = -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fapple-pragma-pack 
-CCFLAG_MAC64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fapple-pragma-pack 
+CCFLAG_MAC64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fapple-pragma-pack  
  
 ifeq ($(PARALLEL_TYPE),$(filter $(PARALLEL_TYPE),OPENMP SEQUENTIAL))
   CPP_MAC64           = clang++ 

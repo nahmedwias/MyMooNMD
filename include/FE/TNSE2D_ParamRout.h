@@ -369,6 +369,22 @@ MultiIndex2D MovingTNSFEMultiIndex_Axial3D_HeatLine[11] = { D00, D10, D01, D00, 
 ParamFct *MovingTNSFct_Axial3D_HeatLine[1] = { MovingTNSParams_Axial3D_HeatLine };
 int MovingTNSBeginParam_Axial3D_HeatLine[1] = { 0 };
 
+
+// ======================================================================
+// parameters for heatline   
+// ======================================================================
+void  ParamsFct_HeatLine(double *in, double *out);
+
+int N_FESpaces_HeatLine = 2;
+int N_FEFct_HeatLine = 5;
+int N_ParamFct_HeatLine = 1;
+int N_FEValues_HeatLine = 7;
+int N_Parameters_HeatLine = 7;
+int FEFctIndex_HeatLine[7] = { 0, 0, 0, 1, 2, 1, 2};
+MultiIndex2D FEValueMultiIndex_HeatLine[7] = {D00, D10, D01, D00, D00, D01, D10};
+ParamFct *ParamFct_HeatLineAll[1] = { ParamsFct_HeatLine };
+int BeginParam_HeatLine[1] = { 0 };
+
 // ========================================================================
 // parameters: u1old, u2old, u1 previous, u2 previous
 // used for : SUPG

@@ -920,3 +920,17 @@ double *sold_param)
 }
 
 
+void ParamsFct_HeatLine(double *in, double *out)
+{
+  out[0] = in[2]; 
+  out[1] = in[3];
+  out[2] = in[4]; 
+  out[3] = in[5];
+  out[4] = in[6]; 
+  out[5] = in[7]; 
+  out[6] = in[8]; 
+
+// cout<< "ParamsFct_HeatLine out[0]  " << out[0]<<endl;
+}
+
+
