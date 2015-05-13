@@ -13,7 +13,7 @@ int GetIndex(TVertex **Array, int Length, TVertex *Element);
 #ifdef  _MPI 
 void Partition_Mesh(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
 
-void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
+int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
 
 void Domain_Crop(MPI_Comm comm, TDomain *Domain);
 

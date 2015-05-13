@@ -214,6 +214,7 @@ void TParDirectSolver::InitMumps()
 	    {
 	      I_rn[k] = NDof_U*m + local2global[i] + 1;              //fortran format
 	      J_cn[k] = NDof_U*l + local2global[KCol[j]] + 1;        //fortran format
+// 	      MatLoc[k] = m*100000 + l;
 	      k++;
 	    }//for(j=
 	  }//for(l=
@@ -223,6 +224,7 @@ void TParDirectSolver::InitMumps()
 	  {
 	    I_rn[k] = NDof_U*m + local2global[i] + 1;                //fortran format
 	    J_cn[k] = NDof_U*3 + local2global_P[KCol_PT[j]] + 1;       //fortran format
+// 	    MatLoc[k] = m*300000 + l;
 	    k++;
 	  }//for(j=
 	  
@@ -241,6 +243,7 @@ void TParDirectSolver::InitMumps()
 	  {
 	    I_rn[k] = NDof_U*3 + local2global_P[i] + 1;                //fortran format
 	    J_cn[k] = NDof_U*l + local2global[KCol_P[j]] + 1;        //fortran format
+// 	    MatLoc[k] = m*600000 + l;
 	    k++;
 	  }//for(j=
 	}//for(l=
@@ -281,15 +284,16 @@ void TParDirectSolver::AssembleMatrix()
   }
   else
   {
-    //test
-    int tmpi = I_rn[0];
-    printf("(%d,%d) :: MatLoc[%d] = %lf\n");
-    for(i=1;i<N_Nz;i++)
+    for(i=0;i<N_Nz;i++)
     {
-      if(I_rn[i]==J_cn[i])
-	MatLoc[i]=I_rn[i]+J_cn[i] + i+1;
-      else
-	MatLoc[i]=I_rn[i]+J_cn[i]+i+1; 
+//       if(I_rn[i]==J_cn[i])
+// 	MatLoc[i]= 1;//I_rn[i]+J_cn[i] + i+1;
+//       else
+// 	MatLoc[i]= 2;//I_rn[i]+J_cn[i]+i+1;
+      
+      //test
+      if(rank==0 && I_rn[i]==J_cn[i])
+	printf("(%d,%d) :: MatLoc[%d] = %lf\t\tN_U=%d\t N_P=%d\n",I_rn[i],J_cn[i],i,MatLoc[i],3*N_Master_U,N_Master_P);
     }
     
     return;

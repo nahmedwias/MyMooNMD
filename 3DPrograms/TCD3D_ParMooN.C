@@ -109,6 +109,8 @@ int main(int argc, char* argv[])
  
   TDatabase::ParamDB->Comm = Comm;
 
+  int Refine;
+  int metisType[2] = {0,0};
 #endif
   
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
@@ -167,11 +169,40 @@ int main(int argc, char* argv[])
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();
   
-  #ifdef _MPI
+#ifdef _MPI
   Domain->GenerateEdgeInfo();
   
   if(profiling)  t1 = MPI_Wtime();
-  Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
+  
+  if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("metis type set to %d\n",TDatabase::ParamDB->Par_P2);
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+  
+  do
+  {
+    metisType[TDatabase::ParamDB->Par_P2] = 1;
+    Refine = Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
+    
+    if(metisType[0]*metisType[1] == 1 && Refine)
+    {
+      metisType[0] = 0;      metisType[1] = 0;
+      TDatabase::ParamDB->Par_P2 = 0;
+      if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("Warning :: both metisType used. Now refining the mesh by one step \n");
+	  printf("metis type set to 0\n");
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+      Domain->RegRefineAll();
+      Domain->GenerateEdgeInfo();
+      TDatabase::ParamDB->UNIFORM_STEPS +=1;
+    }
+  }while(Refine);
+  
   if(profiling)  t2 = MPI_Wtime(); 
   
   if(profiling){
@@ -184,7 +215,7 @@ int main(int argc, char* argv[])
   Domain->GenerateEdgeInfo();
   MaxSubDomainPerDof = MIN(MaxCpV, size);
   TDatabase::ParamDB->WRITE_PS = 0;
-  #endif   
+#endif   
   
   if(TDatabase::ParamDB->WRITE_PS)
    {

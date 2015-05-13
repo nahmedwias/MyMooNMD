@@ -15,6 +15,8 @@
 #include <Constants.h>
 #include <string.h>
 #include <MooNMD_Io.h>
+#include <stdlib.h>
+
 
 TSquareMatrix::TSquareMatrix(TSquareStructure *squarestructure)
  : TMatrix(squarestructure), structure(squarestructure)

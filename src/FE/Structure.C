@@ -20,6 +20,8 @@
 #include <MooNMD_Io.h>
 #include <cstring>
 #include <vector>
+#include <stdlib.h>
+
 
 /** generate the matrix structure, both spaces are 2D */
 TStructure::TStructure() 

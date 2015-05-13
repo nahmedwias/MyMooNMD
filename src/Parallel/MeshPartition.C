@@ -296,7 +296,7 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
 
 #else // 3D
 
-void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
+int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 {
  idx_t *Cell_Rank, *Vert_Rank, ne, nn, *eptr, nparts, objval, edgecut=0, ncommon=3; 
 
@@ -352,13 +352,31 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
  // if(rank==0)
  //  printf("Number of  ranks: %d\n",  size);
 
+  int global_flag,flag = 0;
   if(N_Cells<size)
    {
-     printf("Number of cells less than number of processors !!!, %d\n",  N_Cells);
-     MPI_Finalize();
-     exit(0);
+//      printf("Number of cells less than number of processors !!!, %d\n",  N_Cells);
+     flag = 1;
+//      MPI_Finalize();
+//      exit(0);
    }
 
+   MPI_Allreduce(&flag, &global_flag, 1, MPI_INT, MPI_SUM, comm);
+     
+   if(global_flag != 0)
+     {
+       if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("Warning :: some ranks have Number of cells less than number of processors !!!. \n");
+	  printf("metis type being changed from %d to %d\n",TDatabase::ParamDB->Par_P2,abs(TDatabase::ParamDB->Par_P2-1));
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+       
+       TDatabase::ParamDB->Par_P2 = abs(TDatabase::ParamDB->Par_P2 - 1);
+       return 1;  		//partinioning unsuccessful
+     }
+   
  if(size==1)
    {
     cout <<  "Total number of process should be grater than 1 (or 2 if root is not involved in computation), but you have " << size<<endl;
@@ -561,6 +579,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    delete [] MetisVertexNumbers;
    delete [] NumberVertex;
    delete [] Vertices;
+   
   }
  else
   {
@@ -763,12 +782,27 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 //      }
 //      MPI_Barrier(comm);
      //exit(0);
+ 
+     global_flag=0;
+     flag = 0;
      if(N_OwnCells == 0){
-       printf("\n----------------------------------------------------------------------------------------\n");
-       printf("rank = %d has not been allocated any cells. Hence not a good partion type.\n",rank);
-       printf("change the metis partion type in readin file (TDatabase::ParamDB->Par_P2)\n");
-       printf("----------------------------------------------------------------------------------------\n\n");
-       exit(0);
+       flag = 1;
+     }
+     
+     MPI_Allreduce(&flag, &global_flag, 1, MPI_INT, MPI_SUM, comm);
+     
+     if(global_flag != 0)
+     {
+       if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("Warning :: some ranks have not been allocated any cells. \n");
+	  printf("metis type being changed from %d to %d\n",TDatabase::ParamDB->Par_P2,abs(TDatabase::ParamDB->Par_P2-1));
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+       
+       TDatabase::ParamDB->Par_P2 = abs(TDatabase::ParamDB->Par_P2 - 1);
+       return 1;  		//partinioning unsuccessful
      }
       
      if(N_LocalCells)
@@ -780,7 +814,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
      else
       {
        SubDomainCells = NULL;
-       GlobalCellIndex = NULL;
+       GlobalCellIndex = NULL; 
       }
 
 
@@ -1226,6 +1260,7 @@ void Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 // 
 //      MPI_Finalize();
 //     exit(0);  
+   return 0;		//partinioning successful
 }
 #endif // 3D
 

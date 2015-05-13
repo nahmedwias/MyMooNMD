@@ -15,6 +15,7 @@
 #include <string.h>
 #include <Constants.h>
 #include <LinAlg.h>
+#include <stdlib.h>
 
 #include <MooNMD_Io.h>
 

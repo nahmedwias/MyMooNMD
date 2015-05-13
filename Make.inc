@@ -49,7 +49,7 @@ else
 endif
 
 
-BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
+#BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
 
 ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
 BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -lpthread
@@ -64,6 +64,17 @@ MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI
                         $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
                       -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
 endif
+
+ifeq ($(PARALLEL_TYPE), HYBRID)
+
+BLACS_PATH = EXT_LIB/MPIBLACS
+MPI_PATH = /opt/mpich2/lib64
+MPI_PATH = /home/sashi/Software/lib64
+MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
+                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
+                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
+endif
+
 
 # ======================================================================
 # MAC64: MAC with CLANG
@@ -118,19 +129,23 @@ else
 endif
 
 ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran  -lpthread
+BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
   BLACS_PATH = EXT_LIB/MPIBLACS
+  MPI_PATH = /opt/mvapich2-1.8-r5423/gcc/lib
   MPIBLACS_TYRONE64  = -L$(BLACS_PATH) -lscalapack_TYRONE64 $(BLACS_PATH)/blacs_MPI_TYRONE64-0.a \
                       $(BLACS_PATH)/blacsF77init_MPI_TYRONE64-0.a $(BLACS_PATH)/blacs_MPI_TYRONE64-0.a \
-		       -lmpich   -lgfortran 
+		      -L$(MPI_PATH)  -lmpich \
+                      -L$(MPI_PATH) -lmpichf90 \
+                      -L$(MPI_PATH) -lmpichcxx
+ 
  else
 
- ACML_PATH = EXT_LIB/ACML/gfortran64/lib
- BLAS_TYRONE64 = $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran -lpthread
- PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
+ACML_PATH = EXT_LIB/ACML/gfortran64/lib
+BLAS_TYRONE64 = $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
+PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
  OMP_COMPILE_FLAGS_TYRONE64 = -fopenmp
 
  endif
@@ -304,6 +319,10 @@ UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) \
                 -lamd_$(MACH) -lsuitesparseconfig_$(MACH)
 endif
 
+ifeq ($(MACH),TYRONE64)
+UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH) -lsuitesparseconfig_$(MACH) -lcholmod_$(MACH) -lcolamd_$(MACH) -lrt
+endif 
+
 
 ifeq ($(PARALLEL_TYPE),MPI)
 
@@ -314,6 +333,14 @@ PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                  $(MPIBLACS_$(MACH))
 endif
 
+ifeq ($(PARALLEL_TYPE),HYBRID)
+
+MUMPSLIB = EXT_LIB/MUMPS/lib
+PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
+                -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
+                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
+                 $(MPIBLACS_$(MACH))
+endif
 
 
 ifeq ($(MACH),SUN)
