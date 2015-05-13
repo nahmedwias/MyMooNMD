@@ -28,38 +28,44 @@
 #endif
 
 TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
-                                   TFEFunction2D *p, int disctype, int nsetype, int solver
+                                   TFEFunction2D *p
 #ifdef __PRIVATE__  
                                    ,TFESpace2D *Projection_space
 #endif    
-                                   ) : TSystemMatNSE2D(velocity_fespace, presssure_fespace, Velocity, p, disctype, nsetype, solver)
+                                   ) : TSystemMatNSE2D(Velocity, p)
 {
+  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
   B = new double[2*N_U+N_P];
   defect = new double[2*N_U+N_P];
 
   gamma =0.;  
   
     // allocate the mass matrices in addition
-    switch(NSEType)
+    switch(TDatabase::ParamDB->NSTYPE)
      {
       case 1:
-      case 2:
-        SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
+        SqmatrixM11 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
 
-        sqmatrices[0] = SqmatrixM11;
+
+      break;
+
+      case 2:
+        SqmatrixM11 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
       break;
 
       case 3:
-      case 4:
-        SqmatrixM11 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM12 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM21 = new TSquareMatrix2D(sqstructureA);
-        SqmatrixM22 = new TSquareMatrix2D(sqstructureA);
+        SqmatrixM11 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM12 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM21 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM22 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+      break;
 
-//         sqmatrices[0] = SqmatrixM11;
-//         sqmatrices[1] = SqmatrixM12;
-//         sqmatrices[2] = SqmatrixM21;
-//         sqmatrices[3] = SqmatrixM22;
+      case 4:
+        SqmatrixM11 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM12 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM21 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
+        SqmatrixM22 = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
       break;
       
       default:
@@ -69,15 +75,17 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
      }  
  
 #ifdef __PRIVATE__ 
-   if (Disctype == VMS_PROJECTION)
-   { 
-     if(NSEType==1 || NSEType==2)
+   if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
+   {
+     if(TDatabase::ParamDB->NSTYPE==1 || TDatabase::ParamDB->NSTYPE==2)
      {
       Error("NSETYPE should be 3 or 4 for VMS_PROJECTION !!!" << endl);
       exit(-1);          
      }
-    FeSpaces[2] = velocity_fespace; //  to be included the convolution space if needed
-    FeSpaces[3] = Projection_space; 
+    //FeSpaces[2] = velocity_fespace; //  to be included the convolution space if needed
+    //FeSpaces[3] = Projection_space;
+    fe_spaces.push_back(fe_spaces[0]);
+    fe_spaces.push_back(Projection_space);
      
     sqstructureL = new TSquareStructure2D(Projection_space);
     sqstructureL->Sort();
@@ -142,14 +150,12 @@ void TSystemMatTNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
   // save the boundary values  
   BoundaryValues[0] = U1BoundValue;
   BoundaryValues[1] = U2BoundValue;
- 
-  // save the nse bilinear coefficient   
-  LinCoeffs[0] = lincoeffs;
   
   //default, i.e., velocity for nonlinear term
   NSEaux = aux;
   
-  NSE_Rhsaux = new TAuxParam2D(1, 0, 0, 0, FeSpaces, NULL, NULL, NULL, NULL, 0, NULL);
+  NSE_Rhsaux = new TAuxParam2D(1, 0, 0, 0, &this->fe_spaces[0], NULL, NULL, 
+                               NULL, NULL, 0, NULL);
   
   // aux for calculating the error
   NSEaux_error = nseaux_error;
@@ -172,10 +178,10 @@ void TSystemMatTNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
               DiscreteFormRHSSmagorinskyExpl,
               DiscreteFormMatrixAuxProblemU,
               DiscreteFormRHSAuxProblemU,
-              LinCoeffs[0], NSEType);
+              lincoeffs, TDatabase::ParamDB->NSTYPE);
 
     // find discrete form
-    switch(Disctype)
+    switch(TDatabase::ParamDB->DISCTYPE)
        {
           case GALERKIN:
             DiscreteFormARhs = DiscreteFormGalerkin;
@@ -204,12 +210,12 @@ void TSystemMatTNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
 #endif
 	    
           default:
-            Error("Unknown DISCTYPE" << Disctype << endl);
+            Error("Unknown DISCTYPE" << TDatabase::ParamDB->DISCTYPE << endl);
             exit(-1);
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->PROBLEM_TYPE == STOKES)
+      if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -229,16 +235,19 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
   TFESpace2D *fesprhs[3];
   
   N_Rhs = 2;
-  N_FESpaces = 2;   
+  N_FESpaces = 2;
+  
+  TSquareMatrix2D* SQMATRICES[9];
+  TMatrix2D* MATRICES[4];
       
      // initialize matrices
-     switch(NSEType)
+     switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
-         SQMATRICES[0] = SqmatrixA11;
+         SQMATRICES[0] = this->sq_matrices[0];
          SQMATRICES[1] = SqmatrixM11;
-         MATRICES[0] = MatrixB1;
-         MATRICES[1] = MatrixB2;
+         MATRICES[0] = this->rect_matrices[0];
+         MATRICES[1] = this->rect_matrices[1];
 
          SQMATRICES[0]->Reset();
          SQMATRICES[1]->Reset();
@@ -251,12 +260,12 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
          break;
 
         case 2:
-          SQMATRICES[0] = SqmatrixA11;
+          SQMATRICES[0] = this->sq_matrices[0];
           SQMATRICES[0] = SqmatrixM11;
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;
-          MATRICES[2] = MatrixB1T;
-          MATRICES[3] = MatrixB2T;
+          MATRICES[0] = this->rect_matrices[0];
+          MATRICES[1] = this->rect_matrices[1];
+          MATRICES[2] = this->rect_matrices[2];
+          MATRICES[3] = this->rect_matrices[3];
 
           SQMATRICES[0]->Reset();
           SQMATRICES[1]->Reset();
@@ -270,14 +279,14 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         break;
 
         case 3:
-          SQMATRICES[0] = SqmatrixA11;
-          SQMATRICES[1] = SqmatrixA12;
-          SQMATRICES[2] = SqmatrixA21;
-          SQMATRICES[3] = SqmatrixA22;
+          SQMATRICES[0] = this->sq_matrices[0];
+          SQMATRICES[1] = this->sq_matrices[1];
+          SQMATRICES[2] = this->sq_matrices[2];
+          SQMATRICES[3] = this->sq_matrices[3];
           SQMATRICES[4] = SqmatrixM11;
           SQMATRICES[5] = SqmatrixM22;
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;
+          MATRICES[0] = this->rect_matrices[0];
+          MATRICES[1] = this->rect_matrices[1];
 
           SQMATRICES[0]->Reset();
           SQMATRICES[1]->Reset();
@@ -292,7 +301,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
           N_RectMatrices = 2;
   
 #ifdef __PRIVATE__  
-        if(Disctype == VMS_PROJECTION)
+        if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
         {
           N_SquareMatrices = 7;
           SQMATRICES[6] =  MatricesL;
@@ -315,16 +324,16 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         break;
 
         case 4:
-          SQMATRICES[0] = SqmatrixA11;
-          SQMATRICES[1] = SqmatrixA12;
-          SQMATRICES[2] = SqmatrixA21;
-          SQMATRICES[3] = SqmatrixA22;
+          SQMATRICES[0] = this->sq_matrices[0];
+          SQMATRICES[1] = this->sq_matrices[1];
+          SQMATRICES[2] = this->sq_matrices[2];
+          SQMATRICES[3] = this->sq_matrices[3];
           SQMATRICES[4] = SqmatrixM11;
           SQMATRICES[5] = SqmatrixM22;
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;
-          MATRICES[2] = MatrixB1T;
-          MATRICES[3] = MatrixB2T;
+          MATRICES[0] = this->rect_matrices[0];
+          MATRICES[1] = this->rect_matrices[1];
+          MATRICES[2] = this->rect_matrices[2];
+          MATRICES[3] = this->rect_matrices[3];
 
           SQMATRICES[0]->Reset();
           SQMATRICES[1]->Reset();
@@ -341,7 +350,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
           N_RectMatrices = 4;
 
 #ifdef __PRIVATE__  
-        if(Disctype == VMS_PROJECTION)
+        if(TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
         {
           N_SquareMatrices = 7;
           SQMATRICES[6] =  MatricesL;
@@ -361,19 +370,23 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         }
 #endif        
           break;
-      } //  switch(NSEType)
+      } //  switch(TDatabase::ParamDB->NSTYPE)
      
+      int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+      int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
+      int N_Active = this->fe_spaces[0]->GetN_ActiveDegrees();
+      int N_DirichletDof = N_U - N_Active;
       RHSs[0] = rhs;
       RHSs[1] = rhs + N_U;
       RHSs[2] = rhs + 2*N_U;
       memset(rhs, 0, (2*N_U+N_P)*SizeOfDouble);
      
-      fesprhs[0] = FeSpaces[0];
-      fesprhs[1] = FeSpaces[0];
-      fesprhs[2] = FeSpaces[1];
+      fesprhs[0] = this->fe_spaces[0];
+      fesprhs[1] = this->fe_spaces[0];
+      fesprhs[2] = this->fe_spaces[1];
   
       // assemble
-      Assemble2D(N_FESpaces, FeSpaces,
+      Assemble2D(N_FESpaces, &this->fe_spaces[0],
         N_SquareMatrices, SQMATRICES,
         N_RectMatrices, MATRICES,
         N_Rhs, RHSs, fesprhs,
@@ -382,15 +395,17 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         BoundaryValues,
         NSEaux);
 
-       
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
+       CoeffFct2D* coeff = DiscreteFormARhs->GetCoeffFct();
+      if( (TDatabase::ParamDB->DISCTYPE==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
-        switch(NSEType)
+        switch(TDatabase::ParamDB->NSTYPE)
          {
           case 1:
           case 2:
             // do upwinding with one matrix
-            UpwindForNavierStokes(LinCoeffs[0], SQMATRICES[0], FeFct[0], FeFct[1]);
+            ErrMsg("UpwindForNavierStokes does not work");
+            exit(1);
+            //UpwindForNavierStokes(coeff, SQMATRICES[0], FeFct[0], FeFct[1]);
             cout << "UPWINDING DONE : level " << endl;
             break;
 
@@ -398,8 +413,10 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
           case 4:
             // do upwinding with two matrices
             cout << "UPWINDING DONE : level " << endl;
-            UpwindForNavierStokes(LinCoeffs[0], SQMATRICES[0], FeFct[0], FeFct[1]);
-            UpwindForNavierStokes(LinCoeffs[0],SQMATRICES[3], FeFct[0], FeFct[1]);
+            ErrMsg("UpwindForNavierStokes does not work");
+            exit(1);
+            //UpwindForNavierStokes(coeff, SQMATRICES[0], FeFct[0], FeFct[1]);
+            //UpwindForNavierStokes(coeff, SQMATRICES[3], FeFct[0], FeFct[1]);
            break;
          }                        // endswitch
        }                          // endif     
@@ -407,7 +424,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
       // slip with boundary condition
       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
       {
-        if(NSEType <4)
+        if(TDatabase::ParamDB->NSTYPE <4)
          {
           OutPut("For slip with friction bc NSTYPE 4 is ");
           OutPut("necessary !!!!! " << endl);
@@ -419,20 +436,23 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         N_RectMatrices = 2;
         N_Rhs = 2;
 
-        SQMATRICES[0] = SqmatrixA11;
-        SQMATRICES[1] = SqmatrixA22;
-        SQMATRICES[2] = SqmatrixA12;
-        SQMATRICES[3] = SqmatrixA21;
+        SQMATRICES[0] = this->sq_matrices[0];
+        SQMATRICES[1] = this->sq_matrices[3];
+        SQMATRICES[2] = this->sq_matrices[1];
+        SQMATRICES[3] = this->sq_matrices[2];
         SQMATRICES[4] = SqmatrixM11;
         SQMATRICES[5] = SqmatrixM22;
         SQMATRICES[6] = SqmatrixM12;
         SQMATRICES[7] = SqmatrixM21;
 
-        MATRICES[0] = MatrixB1T;
-        MATRICES[1] = MatrixB2T;
+        MATRICES[0] = this->rect_matrices[2];
+        MATRICES[1] = this->rect_matrices[3];
 
 
-        Assemble2DSlipBC(N_FESpaces, FeSpaces,
+        ErrMsg("Assemble2DSlipBC does not work");
+        exit(1);
+        /*
+        Assemble2DSlipBC(N_FESpaces, &this->fe_spaces[0],
                          N_SquareMatrices, SQMATRICES,
                          N_RectMatrices, MATRICES,
                          N_Rhs, RHSs, fesprhs,
@@ -441,6 +461,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
                          BoundaryValues,
                          NSEaux,
                          FeFct[0], FeFct[1]);
+        */
 
       }// (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=      
     
@@ -450,19 +471,20 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
      
 #ifdef __PRIVATE__   
       // update matrices
-      if (Disctype == VMS_PROJECTION)
+      if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
         {
-         SQMATRICES[0] = SqmatrixA11;
-         SQMATRICES[1] = SqmatrixA12;
-         SQMATRICES[2] = SqmatrixA21;
-         SQMATRICES[3] = SqmatrixA22;
+         SQMATRICES[0] = this->sq_matrices[0];
+         SQMATRICES[1] = this->sq_matrices[1];
+         SQMATRICES[2] = this->sq_matrices[2];
+         SQMATRICES[3] = this->sq_matrices[3];
          SQMATRICES[6] =  MatricesL;
          MATRICES[2] = Matrices_tilde_G11;
          MATRICES[3] = Matrices_tilde_G22;
          MATRICES[4] = Matrices_G11;
          MATRICES[5] = Matrices_G22;
 
-         VMSProjectionUpdateMatrices(N_U, FeSpaces[0]->GetActiveBound(), FeSpaces[3]->GetN_DegreesOfFreedom(),
+         VMSProjectionUpdateMatrices(N_U, this->fe_spaces[0]->GetActiveBound(),
+                                     this->fe_spaces[3]->GetN_DegreesOfFreedom(),
                                      SQMATRICES, MATRICES);
         }
 #endif  
@@ -473,6 +495,8 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
 void TSystemMatTNSE2D::AssembleRhs(double *sol, double *rhs)
 {
   int N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
+  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
   
   double *RHSs[3];
   
@@ -489,12 +513,12 @@ void TSystemMatTNSE2D::AssembleRhs(double *sol, double *rhs)
 
       memset(rhs, 0, (2*N_U+N_P)*SizeOfDouble);
      
-      fesprhs[0] = FeSpaces[0];
-      fesprhs[1] = FeSpaces[0];
-      fesprhs[2] = FeSpaces[1];  
+      fesprhs[0] = this->fe_spaces[0];
+      fesprhs[1] = this->fe_spaces[0];
+      fesprhs[2] = this->fe_spaces[1];
   
       // assemble
-      Assemble2D(N_FESpaces, FeSpaces,
+      Assemble2D(N_FESpaces, &this->fe_spaces[0],
         N_SquareMatrices, NULL,
         N_RectMatrices, NULL,
         N_Rhs, RHSs, fesprhs,
@@ -509,6 +533,10 @@ void TSystemMatTNSE2D::AssembleRhs(double *sol, double *rhs)
 void TSystemMatTNSE2D::AssembleSystMat(double scale, double *oldrhs, double *rhs, double *sol)
 {
  double tau, val = TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT;
+  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
+  int N_Active = this->fe_spaces[0]->GetN_ActiveDegrees();
+  int N_DirichletDof = N_U - N_Active;
   
   tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
      
@@ -525,24 +553,24 @@ void TSystemMatTNSE2D::AssembleSystMat(double scale, double *oldrhs, double *rhs
   // scale the pressure matrices, not in nonlinear step 
   if (scale != 1.0)
   {
-   switch(NSEType)
+   switch(TDatabase::ParamDB->NSTYPE)
     {
      case 1:
      case 3:
-        Dscal(MatrixB1->GetN_Entries(), scale, MatrixB1->GetEntries());
-        Dscal(MatrixB2->GetN_Entries(), scale, MatrixB2->GetEntries());
+        Dscal(this->rect_matrices[0]->GetN_Entries(), scale, this->rect_matrices[0]->GetEntries());
+        Dscal(this->rect_matrices[1]->GetN_Entries(), scale, this->rect_matrices[1]->GetEntries());
      break;
 
     case 2:
     case 4:     
-         Dscal(MatrixB1T->GetN_Entries(), scale, MatrixB1T->GetEntries());
-         Dscal(MatrixB2T->GetN_Entries(), scale, MatrixB2T->GetEntries());
+         Dscal(this->rect_matrices[2]->GetN_Entries(), scale, this->rect_matrices[2]->GetEntries());
+         Dscal(this->rect_matrices[3]->GetN_Entries(), scale, this->rect_matrices[3]->GetEntries());
 	 
       // scale divergence constraint
       if(val>0) 
        {
-        Dscal(MatrixB1->GetN_Entries(), val*scale, MatrixB1->GetEntries());
-        Dscal(MatrixB2->GetN_Entries(), val*scale, MatrixB2->GetEntries());
+        Dscal(this->rect_matrices[0]->GetN_Entries(), val*scale, this->rect_matrices[0]->GetEntries());
+        Dscal(this->rect_matrices[1]->GetN_Entries(), val*scale, this->rect_matrices[1]->GetEntries());
        }
       break;
     } // switch(NSETyp
@@ -553,11 +581,11 @@ void TSystemMatTNSE2D::AssembleSystMat(double scale, double *oldrhs, double *rhs
    // defect = M * sol
    // B:= B + defect 
    memset(defect, 0, (2*N_U+N_P)*SizeOfDouble);  
-   switch(NSEType)
+   switch(TDatabase::ParamDB->NSTYPE)
     {
      case 1:
      case 2:
-       MatAdd(SqmatrixM11, SqmatrixA11, -tau*TDatabase::TimeDB->THETA2);          
+       MatAdd(SqmatrixM11, this->sq_matrices[0], -tau*TDatabase::TimeDB->THETA2);          
        gamma = - tau*TDatabase::TimeDB->THETA2;
    
        MatVectActive(SqmatrixM11, sol, defect);
@@ -566,16 +594,16 @@ void TSystemMatTNSE2D::AssembleSystMat(double scale, double *oldrhs, double *rhs
        Daxpy(N_Active, 1, defect+N_U, B+N_U);
  
        // assembling of system matrix       
-       MatAdd(SqmatrixM11, SqmatrixA11, -gamma + tau*TDatabase::TimeDB->THETA1);   
+       MatAdd(SqmatrixM11, this->sq_matrices[0], -gamma + tau*TDatabase::TimeDB->THETA1);   
        gamma = tau*TDatabase::TimeDB->THETA1;
      break;
 
      case 3:
      case 4:
-       MatAdd(SqmatrixM11, SqmatrixA11, - tau*TDatabase::TimeDB->THETA2);
-       MatAdd(SqmatrixM12, SqmatrixA12, - tau*TDatabase::TimeDB->THETA2);
-       MatAdd(SqmatrixM21, SqmatrixA21, - tau*TDatabase::TimeDB->THETA2);
-       MatAdd(SqmatrixM22, SqmatrixA22, - tau*TDatabase::TimeDB->THETA2);       
+       MatAdd(SqmatrixM11, this->sq_matrices[0], - tau*TDatabase::TimeDB->THETA2);
+       MatAdd(SqmatrixM12, this->sq_matrices[1], - tau*TDatabase::TimeDB->THETA2);
+       MatAdd(SqmatrixM21, this->sq_matrices[2], - tau*TDatabase::TimeDB->THETA2);
+       MatAdd(SqmatrixM22, this->sq_matrices[3], - tau*TDatabase::TimeDB->THETA2);       
        gamma = - tau*TDatabase::TimeDB->THETA2;
 
        MatVectActive(SqmatrixM11, sol, defect);
@@ -588,10 +616,10 @@ void TSystemMatTNSE2D::AssembleSystMat(double scale, double *oldrhs, double *rhs
        Daxpy(N_Active, 1, defect+N_U, B+N_U);
 
        //assembling system matrix
-       MatAdd(SqmatrixM11, SqmatrixA11, -gamma + tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM12, SqmatrixA12, -gamma + tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM21, SqmatrixA21, -gamma + tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM22, SqmatrixA22, -gamma + tau*TDatabase::TimeDB->THETA1);       
+       MatAdd(SqmatrixM11, this->sq_matrices[0], -gamma + tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM12, this->sq_matrices[1], -gamma + tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM21, this->sq_matrices[2], -gamma + tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM22, this->sq_matrices[3], -gamma + tau*TDatabase::TimeDB->THETA1);       
        gamma = tau*TDatabase::TimeDB->THETA1;     
      break;
     } 
@@ -614,22 +642,22 @@ void TSystemMatTNSE2D::AssembleSystMatNonLinear()
     cout << "Restore System mat before calling AssembleSystMat" <<endl;
    }
 
-   switch(NSEType)
+   switch(TDatabase::ParamDB->NSTYPE)
     {
      case 1:
      case 2: 
        // assembling of system matrix       
-       MatAdd(SqmatrixM11, SqmatrixA11,   tau*TDatabase::TimeDB->THETA1);   
+       MatAdd(SqmatrixM11, this->sq_matrices[0],   tau*TDatabase::TimeDB->THETA1);   
        gamma = tau*TDatabase::TimeDB->THETA1;
      break;
 
      case 3:
      case 4:       
        //assembling system matrix
-       MatAdd(SqmatrixM11, SqmatrixA11, tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM12, SqmatrixA12,  tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM21, SqmatrixA21,  tau*TDatabase::TimeDB->THETA1);
-       MatAdd(SqmatrixM22, SqmatrixA22,  tau*TDatabase::TimeDB->THETA1);       
+       MatAdd(SqmatrixM11, this->sq_matrices[0], tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM12, this->sq_matrices[1],  tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM21, this->sq_matrices[2],  tau*TDatabase::TimeDB->THETA1);
+       MatAdd(SqmatrixM22, this->sq_matrices[3],  tau*TDatabase::TimeDB->THETA1);       
        gamma = tau*TDatabase::TimeDB->THETA1;     
      break;
     } 
@@ -647,21 +675,21 @@ void TSystemMatTNSE2D::RestoreMassMat()
   if(SystMatAssembled)
    {
     // restore the mass matrix
-    switch(NSEType)
+    switch(TDatabase::ParamDB->NSTYPE)
      {
       case 1:
       case 2:
-       MatAdd(SqmatrixM11, SqmatrixA11, -gamma);          
+       MatAdd(SqmatrixM11, this->sq_matrices[0], -gamma);          
        gamma = 0.;
       break;
 
      case 3:
      case 4:
        //assembling system matrix
-       MatAdd(SqmatrixM11, SqmatrixA11, -gamma);
-       MatAdd(SqmatrixM12, SqmatrixA12, -gamma);
-       MatAdd(SqmatrixM21, SqmatrixA21, -gamma);
-       MatAdd(SqmatrixM22, SqmatrixA22, -gamma);       
+       MatAdd(SqmatrixM11, this->sq_matrices[0], -gamma);
+       MatAdd(SqmatrixM12, this->sq_matrices[1], -gamma);
+       MatAdd(SqmatrixM21, this->sq_matrices[2], -gamma);
+       MatAdd(SqmatrixM22, this->sq_matrices[3], -gamma);       
        gamma = 0.;     
      break;
     } 
@@ -681,18 +709,26 @@ void TSystemMatTNSE2D::RestoreMassMat()
 
 void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
 {
- int N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces, last_sq;
+  int N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces, last_sq;
 
-     N_RectMatrices = 0;          
-     N_Rhs = 0;
-     N_FESpaces = 1;
+  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
+  int N_Active = this->fe_spaces[0]->GetN_ActiveDegrees();
+  int N_DirichletDof = N_U - N_Active;
+  
+  N_RectMatrices = 0;
+  N_Rhs = 0;
+  N_FESpaces = 1;
+  
+  TSquareMatrix2D* SQMATRICES[9];
+  TMatrix2D* MATRICES[4];
  
      // set the nonliner matrices
       switch(TDatabase::ParamDB->NSTYPE)
        {
         case 1:
         case 2:
-          SQMATRICES[0] = SqmatrixA11;
+          SQMATRICES[0] = this->sq_matrices[0];
           SQMATRICES[0]->Reset();
 
           N_SquareMatrices = 1;
@@ -702,8 +738,8 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
         case 4:
           if (TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==0)
            {
-            SQMATRICES[0] = SqmatrixA11;
-            SQMATRICES[1] = SqmatrixA22;
+            SQMATRICES[0] = this->sq_matrices[0];
+            SQMATRICES[1] = this->sq_matrices[3];
             SQMATRICES[0]->Reset();
             SQMATRICES[1]->Reset();
 
@@ -711,12 +747,12 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
             last_sq = 1;
 
 #ifdef __PRIVATE__   
-            if (Disctype == VMS_PROJECTION)
+            if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
               {
-               SQMATRICES[0] = SqmatrixA11;
-               SQMATRICES[1] = SqmatrixA12;
-               SQMATRICES[2] = SqmatrixA21;
-               SQMATRICES[3] = SqmatrixA22;
+               SQMATRICES[0] = this->sq_matrices[0];
+               SQMATRICES[1] = this->sq_matrices[1];
+               SQMATRICES[2] = this->sq_matrices[2];
+               SQMATRICES[3] = this->sq_matrices[3];
                SQMATRICES[0]->Reset();
                SQMATRICES[1]->Reset();
                SQMATRICES[2]->Reset();
@@ -748,7 +784,7 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
          
     
       // assemble the nonlinear part of NSE
-      Assemble2D(N_FESpaces, FeSpaces,
+      Assemble2D(N_FESpaces, &this->fe_spaces[0],
                  N_SquareMatrices, SQMATRICES,
                  N_RectMatrices, MATRICES,
                  N_Rhs, NULL, NULL,
@@ -757,24 +793,29 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
                  BoundaryValues,
                  NSEaux);    
 
+      CoeffFct2D* coeff = DiscreteFormNL->GetCoeffFct();
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
+      if( (TDatabase::ParamDB->DISCTYPE==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
-        switch(NSEType)
+        switch(TDatabase::ParamDB->NSTYPE)
          {
           case 1:
           case 2:
             // do upwinding with one matrix
-            UpwindForNavierStokes(LinCoeffs[0], SQMATRICES[0], FeFct[0], FeFct[1]);
+            ErrMsg("UpwindForNavierStokes does not work");
+            exit(1);
+            //UpwindForNavierStokes(coeff, SQMATRICES[0], FeFct[0], FeFct[1]);
             cout << "UPWINDING DONE : level " << endl;
             break;
 
           case 3:
           case 4:
             // do upwinding with two matrices
+            ErrMsg("UpwindForNavierStokes does not work");
+            exit(1);
             cout << "UPWINDING DONE : level " << endl;
-            UpwindForNavierStokes(LinCoeffs[0], SQMATRICES[0], FeFct[0], FeFct[1]);
-            UpwindForNavierStokes(LinCoeffs[0],SQMATRICES[last_sq], FeFct[0], FeFct[1]);
+            //UpwindForNavierStokes(coeff, SQMATRICES[0], FeFct[0], FeFct[1]);
+            //UpwindForNavierStokes(coeff, SQMATRICES[last_sq], FeFct[0], FeFct[1]);
           break;
          }                        // endswitch
        }                          // endif     
@@ -788,12 +829,15 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
         N_RectMatrices = 0;
         N_Rhs = 0;
 
-        SQMATRICES[0] = SqmatrixA11;
-        SQMATRICES[1] = SqmatrixA12;
-        SQMATRICES[2] = SqmatrixA21;
-        SQMATRICES[3] = SqmatrixA22;
+        SQMATRICES[0] = this->sq_matrices[0];
+        SQMATRICES[1] = this->sq_matrices[1];
+        SQMATRICES[2] = this->sq_matrices[2];
+        SQMATRICES[3] = this->sq_matrices[3];
 
-        Assemble2DSlipBC(N_FESpaces, FeSpaces,
+        ErrMsg("Assemble2DSlipBC does not work");
+        exit(1);
+        /*
+        Assemble2DSlipBC(N_FESpaces, &this->fe_spaces[0],
                          N_SquareMatrices, SQMATRICES,
                          N_RectMatrices, NULL,
                          N_Rhs, NULL, NULL,
@@ -802,7 +846,7 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
                          BoundaryValues,
                          NSEaux,
                          FeFct[0], FeFct[1]);
-
+        */
       }// (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=         
 
      // set rhs for Dirichlet nodes
@@ -811,19 +855,20 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
      
 #ifdef __PRIVATE__   
       // update matrices
-      if (Disctype == VMS_PROJECTION)
+      if (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)
         {
-         SQMATRICES[0] = SqmatrixA11;
-         SQMATRICES[1] = SqmatrixA12;
-         SQMATRICES[2] = SqmatrixA21;
-         SQMATRICES[3] = SqmatrixA22;
+         SQMATRICES[0] = this->sq_matrices[0];
+         SQMATRICES[1] = this->sq_matrices[1];
+         SQMATRICES[2] = this->sq_matrices[2];
+         SQMATRICES[3] = this->sq_matrices[3];
          SQMATRICES[6] =  MatricesL;
          MATRICES[2] = Matrices_tilde_G11;
          MATRICES[3] = Matrices_tilde_G22;
          MATRICES[4] = Matrices_G11;
          MATRICES[5] = Matrices_G22;
 
-         VMSProjectionUpdateMatrices(N_U, FeSpaces[0]->GetActiveBound(), FeSpaces[3]->GetN_DegreesOfFreedom(),
+         VMSProjectionUpdateMatrices(N_U, this->fe_spaces[0]->GetActiveBound(),
+                                     this->fe_spaces[3]->GetN_DegreesOfFreedom(),
                                      SQMATRICES, MATRICES);
         }
 #endif       
@@ -839,7 +884,7 @@ void TSystemMatTNSE2D::Solve(double *sol)
     exit(0);
   }
   
-    switch(Solver)
+    switch(TDatabase::ParamDB->SOLVER_TYPE)
      {
       case AMG_SOLVE:
         cout << "AMG_SOLVE not yet implemented " <<endl;
@@ -850,14 +895,14 @@ void TSystemMatTNSE2D::Solve(double *sol)
       break;
 
       case DIRECT:
-        switch(NSEType)
+        switch(TDatabase::ParamDB->NSTYPE)
          {
           case 1:
-            DirectSolver(SqmatrixM11, MatrixB1,  MatrixB2, B, sol);
+            DirectSolver(SqmatrixM11, this->rect_matrices[0],  this->rect_matrices[1], B, sol);
           break;
 
           case 2:
-             DirectSolver(SqmatrixA11, MatrixB1T, MatrixB2T, MatrixB1,  MatrixB2, B, sol);
+             DirectSolver(this->sq_matrices[0], this->rect_matrices[2], this->rect_matrices[3], this->rect_matrices[0],  this->rect_matrices[1], B, sol);
           break;
 
           case 3:
@@ -866,9 +911,9 @@ void TSystemMatTNSE2D::Solve(double *sol)
 
           case 4:
              DirectSolver(SqmatrixM11, SqmatrixM12, SqmatrixM21, SqmatrixM22, 
-                          MatrixB1T, MatrixB2T, MatrixB1,  MatrixB2, B, sol); 
+                          this->rect_matrices[2], this->rect_matrices[3], this->rect_matrices[0],  this->rect_matrices[1], B, sol); 
           break;
-      } //  switch(NSEType) 
+      } //  switch(TDatabase::ParamDB->NSTYPE) 
 
       break;      
  
@@ -885,103 +930,74 @@ void TSystemMatTNSE2D::GetTNSEResidual(double *sol, double *res)
 {
   
   if(!SystMatAssembled)
-   {
+  {
     cout << "System Matrix is not assembled to calculate residual " <<endl;
     exit(0);
-   }
-     
-     switch(NSEType)
-      {
-        case 1:
-          SQMATRICES[0] = SqmatrixM11;
-
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;  
-         break;
-
-        case 2:
-          SQMATRICES[0] = SqmatrixM11;
-
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;
-          MATRICES[2] = MatrixB1T;
-          MATRICES[3] = MatrixB2T;
-        break;
-
-        case 3:
-          SQMATRICES[0] = SqmatrixM11;
-          SQMATRICES[1] = SqmatrixM12;
-          SQMATRICES[2] = SqmatrixM21;
-          SQMATRICES[3] = SqmatrixM22;
-
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;  
+  }
   
-        break;
-
-        case 4:
-          SQMATRICES[0] = SqmatrixM11;
-          SQMATRICES[1] = SqmatrixM12;
-          SQMATRICES[2] = SqmatrixM21;
-          SQMATRICES[3] = SqmatrixM22;
-
-          MATRICES[0] = MatrixB1;
-          MATRICES[1] = MatrixB2;
-          MATRICES[2] = MatrixB1T;
-          MATRICES[3] = MatrixB2T;
- 
-        break;
-      } //  switch(NSEType)
-          
-   Defect(sqmatrices, matrices, sol, B, res); 
-   
+  /*
+  TSquareMatrix2D* SQMATRICES[9];
+  TMatrix2D* MATRICES[4];
+  
+  SQMATRICES[0] = SqmatrixM11;
+  SQMATRICES[1] = SqmatrixM12;
+  SQMATRICES[2] = SqmatrixM21;
+  SQMATRICES[3] = SqmatrixM22;
+  
+  MATRICES[0] = this->rect_matrices[0];
+  MATRICES[1] = this->rect_matrices[1];
+  MATRICES[2] = this->rect_matrices[2];
+  MATRICES[3] = this->rect_matrices[3];
+  */
+  this->SystemMat2D::defect((TSquareMatrix**)&this->sq_matrices[0],
+                            (TMatrix**)&this->rect_matrices[0], sol, B, res);
 } // TSystemMatTNSE2D::GetResidual
 
 
-void TSystemMatTNSE2D::MeasureTNSEErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2, DoubleFunct2D *ExactP,
-                                    double *AllErrors)
-{
-  MultiIndex2D TimeNSAllDerivatives[3] = { D00, D10, D01 };
-
-  double errors[4],  u_error[4];    
-    
-     // errors in first velocity component
-     FeFct[0]->GetErrors(ExactU1, 3, TimeNSAllDerivatives, 2,
-                         L2H1Errors,
-                         NULL, NSEaux_error, 1, FeSpaces, errors);
-      u_error[0] = errors[0];
-      u_error[1] = errors[1];
-      
-     // errors in second velocity component
-     FeFct[1]->GetErrors(ExactU2, 3, TimeNSAllDerivatives, 2,
-                         L2H1Errors,
-                         NULL, NSEaux_error, 1, FeSpaces, errors);
-     u_error[2] = errors[0];
-     u_error[3] = errors[1];      
-      
-      // errors in pressure
-     FeFct[2]->GetErrors(ExactP, 3, TimeNSAllDerivatives, 2,
-                         L2H1Errors,
-                         NULL, NSEaux_error, 1, FeSpaces+1, errors);     
-
-     
-     // calculate all errors
-     AllErrors[0] = sqrt(u_error[0]*u_error[0]+u_error[2]*u_error[2]);
-     AllErrors[1] = sqrt(u_error[1]*u_error[1]+u_error[3]*u_error[3]);
-     AllErrors[2] = errors[0];
-     AllErrors[3] = errors[1];    
-     
-      // error in L^infty(0,t,L^2)
-      if(AllErrors[0] > AllErrors[5])
-       {
-        AllErrors[5]  = AllErrors[0];
-        AllErrors[4]  =  TDatabase::TimeDB->CURRENTTIME;
-      }
-
-      
-      // error in L^2(0,t,L^2)    
-      AllErrors[6] += (u_error[0]*u_error[0] + u_error[2]*u_error[2] +olderror_l_2_l_2u)*TDatabase::TimeDB->TIMESTEPLENGTH/2.0;      
-      olderror_l_2_l_2u = u_error[0]*u_error[0] + u_error[2]*u_error[2];
-     
-}
+// void TSystemMatTNSE2D::MeasureTNSEErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2, DoubleFunct2D *ExactP,
+//                                     double *AllErrors)
+// {
+//   MultiIndex2D TimeNSAllDerivatives[3] = { D00, D10, D01 };
+// 
+//   double errors[4],  u_error[4];    
+//   
+//      // errors in first velocity component
+//      FeFct[0]->GetErrors(ExactU1, 3, TimeNSAllDerivatives, 2,
+//                          L2H1Errors,
+//                          NULL, NSEaux_error, 1, &this->fe_spaces[0], errors);
+//       u_error[0] = errors[0];
+//       u_error[1] = errors[1];
+//       
+//      // errors in second velocity component
+//      FeFct[1]->GetErrors(ExactU2, 3, TimeNSAllDerivatives, 2,
+//                          L2H1Errors,
+//                          NULL, NSEaux_error, 1, &this->fe_spaces[0], errors);
+//      u_error[2] = errors[0];
+//      u_error[3] = errors[1];      
+//       
+//       // errors in pressure
+//      FeFct[2]->GetErrors(ExactP, 3, TimeNSAllDerivatives, 2,
+//                          L2H1Errors,
+//                          NULL, NSEaux_error, 1, &this->fe_spaces[0]+1, errors);     
+// 
+//      
+//      // calculate all errors
+//      AllErrors[0] = sqrt(u_error[0]*u_error[0]+u_error[2]*u_error[2]);
+//      AllErrors[1] = sqrt(u_error[1]*u_error[1]+u_error[3]*u_error[3]);
+//      AllErrors[2] = errors[0];
+//      AllErrors[3] = errors[1];    
+//      
+//       // error in L^infty(0,t,L^2)
+//       if(AllErrors[0] > AllErrors[5])
+//        {
+//         AllErrors[5]  = AllErrors[0];
+//         AllErrors[4]  =  TDatabase::TimeDB->CURRENTTIME;
+//       }
+// 
+//       
+//       // error in L^2(0,t,L^2)    
+//       AllErrors[6] += (u_error[0]*u_error[0] + u_error[2]*u_error[2] +olderror_l_2_l_2u)*TDatabase::TimeDB->TIMESTEPLENGTH/2.0;      
+//       olderror_l_2_l_2u = u_error[0]*u_error[0] + u_error[2]*u_error[2];
+//      
+// }
     

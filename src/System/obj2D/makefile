@@ -12,7 +12,7 @@ INC    = -I../../../include/General -I../../../include/FE \
          -I../../../include/Geometry -I../../../include/QuadFormulas \
          -I../../../include/FE1D -I../../../include/FE2D \
          -I../../../include/AMG \
-         -I../../../include/System \
+         -I../../../include/System -I../../../Examples \
          -I../../../include/Parallel \
          -I../../../EXT_LIB/UMFPACK/Include \
          -I../../../EXT_LIB/tecplot/include
@@ -24,9 +24,11 @@ DEFINEPARAMS = ../../../include/General/DefineParams.h
 
 LIBRARY = $(LIBPATH)lib_System.a
    MEMBERS = \
+	$(SRCPATH)CD2D.o \
 	$(SRCPATH)SystemMatNSE2D.o \
 	$(SRCPATH)SystemMatScalar2D.o \
 	$(SRCPATH)SystemMatDarcy2D.o \
+	$(SRCPATH)NSE2D.o \
 	$(SRCPATH)SystemMatTimeScalar2D.o \
 	$(SRCPATH)SystemMatTimeScalar2D_ALE.o \
 	$(SRCPATH)SystemMatTNSE2D.o \

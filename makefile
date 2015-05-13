@@ -12,8 +12,8 @@ MACH = LINUX64
 #MACH = MAC64
 
 #FLAG = OPTI
-FLAG = FAST
-#FLAG = DEBUG
+#FLAG = FAST
+FLAG = DEBUG
 
 # profing options
 # HP-UX: -G, SUN: -xpg,
@@ -137,6 +137,7 @@ clean2D:
 	@(cd $(SRC)/Geometry/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/General/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj2D; $(MAKE) clean )
+	@(cd Examples/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/PBE/obj2D; $(MAKE) clean )
 	@($(RM) ii_files lib2D/lib_repository lib2D/SunWS_cache )
@@ -150,6 +151,7 @@ clean2D_PAR:
 	@(cd $(SRC)/Geometry/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/General/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj2D_par; $(MAKE) clean )
+	@(cd Examples/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/Parallel/obj2D_par; $(MAKE) clean )
 	@($(RM) ii_files lib2D/lib_repository lib2D/SunWS_cache )

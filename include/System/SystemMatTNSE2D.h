@@ -24,7 +24,7 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
     double *B;   
    
     /** to store defect */
-    double *defect;   
+    double *defect;
     
     /** factor that multplied with Mat A in working rhs */
     double gamma;      
@@ -32,8 +32,10 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
     /** Discrete form of the M and rhs matrics */
     TDiscreteForm2D *DiscreteFormRhs; 
     
+    TDiscreteForm2D *DiscreteFormNL, *DiscreteFormARhs;
+    
     /** NSE_Rhsaux is used to for assembling rhs only*/
-    TAuxParam2D *NSE_Rhsaux;
+    TAuxParam2D *NSE_Rhsaux, *NSEaux_error, *NSEaux;
     
     /** Systmat assemble indicator */
     bool SystMatAssembled;
@@ -61,7 +63,7 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
   public:
     /** constructor */
      TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
-                      TFEFunction2D *p, int disctype, int nsetype, int solver
+                      TFEFunction2D *p
 #ifdef __PRIVATE__  
                                    ,TFESpace2D *Projection_space
 #endif    

@@ -3,7 +3,7 @@
 ======================================================================
 VERSION:      1
 LOGFILE:      logfile
-OUTFILE:      tcd2d.out
+OUTFILE:      tcd2d_local.out
 
 GEOFILE:        ../data/UnitSquare.GEO
 BNDFILE:        ../data/UnitSquare.PRM
@@ -50,6 +50,8 @@ TIME_DISC: 2
 STARTTIME: 0
 ENDTIME: 1
 TIMESTEPLENGTH: 0.05
+
+SOLVER_TYPE: 2
 
 ----------------------------------------------------------------------
 # output controls

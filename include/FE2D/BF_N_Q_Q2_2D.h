@@ -220,7 +220,7 @@ static void N_Q_Q2_2D_DeriveEta(double xi, double eta, double *values)
 {
   double t1, t2, t3, t6, t8, t10, t11, t15, t17;
   double t4, t5, t7, t12, t13;
-  double t9, t14, t16, t19, t20, t21, t22;
+  double t9;
 
   switch(TDatabase::ParamDB->NC_TYPE)
   {

@@ -33,7 +33,7 @@ endif
 # ======================================================================
 CPPFLAG_LINUX64_OPTI  = -O3 -s $(INC) -std=c++11 -fopenmp
 CPPFLAG_LINUX64_FAST  = -s $(INC) -std=c++11 -fopenmp 
-CPPFLAG_LINUX64_DEBUG = -g $(INC) -std=c++11 -fopenmp
+CPPFLAG_LINUX64_DEBUG = -g $(INC) -Wall -std=c++11 -fopenmp
 DEFINE_LINUX64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
 CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
 CCFLAG_LINUX64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
@@ -58,11 +58,12 @@ BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -l
 ifeq ($(PARALLEL_TYPE), MPI)
 
 BLACS_PATH = EXT_LIB/MPIBLACS
-MPI_PATH = /opt/mpich2/lib64
+#MPI_PATH = /opt/mpich2/lib64
 MPI_PATH = /home/sashi/Software/lib64
+
 MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
+                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a \
+                      -L$(MPI_PATH) -lmpifort -lmpicxx
 endif
 
 # ======================================================================

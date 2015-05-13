@@ -66,16 +66,26 @@ class TSystemMatTNSE2D_ALE : public TSystemMatTNSE2D
   public:
     
     /** constructor */
-     TSystemMatTNSE2D_ALE(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
-                                           TFEFunction2D *p,  int disctype, int nsetype, int solver,TFESpace2D *Projection_space, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, bool conservativeale);
+     TSystemMatTNSE2D_ALE(TFESpace2D *velocity_fespace, 
+                          TFESpace2D *presssure_fespace,
+                          TFEVectFunct2D *Velocity,
+                          TFEFunction2D *p, 
+#ifdef __PRIVATE__
+                          TFESpace2D *Projection_space,
+#endif
+                          TFESpace2D *gridFESpace,
+                          TFEVectFunct2D *MeshVelocity, bool conservativeale);
 // 
 //     /** destrcutor */
 //     ~TSystemMatTNSE2D_ALE();
 // 
     /** methods */
     /** Initilize the discrete forms and the matrices */    
-    void Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue,
-              CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue, TAuxParam2D *aux, TAuxParam2D *nseaux_error);
+    void Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, 
+              BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue,
+              CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond,
+              BoundValueFunct2D *gridBoundValue, TAuxParam2D *aux,
+              TAuxParam2D *nseaux_error);
     
     
     void AddMeshModifyFunction(ModifyMeshCoords *modifyCoord)

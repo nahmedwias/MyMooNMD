@@ -1,4 +1,4 @@
-HOSTNAME: nmnb4.wias-berlin.de started on Sun Mar 15 17:06:48 2015
+HOSTNAME: nmnb4.wias-berlin.de started on Wed May 13 15:04:22 2015
 
 EXECUTED FILE: ./darcy2d
 VERSION: 1
@@ -8,6 +8,9 @@ MAPFILE: NO_MAP_FILE
 OUTFILE: darcy2d.out
 PROBLEM_TYPE: 1
 EXAMPLE: 0
+profiling: 0
+MapperType: 1
+DSType: 1
 MESHGEN_ALLOW_EDGE_REF: 0
 MESHGEN_REF_QUALITY: 30
 ANSATZ_ORDER: 2
@@ -157,6 +160,7 @@ MIN_MAX_FACTOR_ONE_ADJOINT: 1.000000e+00
 MIN_MAX_FACTOR_TWO_ADJOINT: 1.000000e+00
 MIN_MAX_ADJOINT: 0
 BASENAME: darcy
+VTKBASENAME: MooN_MD_default_basefile
 SAVE_DATA_FILENAME: MooN_MD_default_save_data_filename
 READ_DATA_FILENAME: MooN_MD_default_read_data_filename
 POD_FILENAME: MooNMD_default_pod_filename
@@ -432,7 +436,7 @@ N_Cells : 1024
  dof pressure                 :  4096
  dof all                      : 12416
 Quadrature formula for quadrilateral is Gauss5
-time for solving: 1.130000e-01
+time for solving: 1.070000e-01
  L2(u):      2.796496e-03
  L2(div(u)): 1.356179e-03
  H1-semi(u): 1.581563e+00

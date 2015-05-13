@@ -74,8 +74,7 @@ class TSystemMatTimeScalar2D_ALE : public TSystemMatTimeScalar2D
 
     /** methods */
     void Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue, 
-              CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue,
-              TAuxParam2D *aux);
+              CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue);
 
     void AddMeshModifyFunction(ModifyMeshCoords *modifyCoord)
     {  ModifyCoord = modifyCoord; SolveLinearElastic = FALSE; }
