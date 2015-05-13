@@ -11,31 +11,13 @@
 #ifndef __SYSTEMMATSCALAR2D__
 #define __SYSTEMMATSCALAR2D__
 
-#include <SquareMatrix2D.h>
+#include <SystemMat2D.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatScalar2D
+class TSystemMatScalar2D : public SystemMat2D
 {
   protected:
-    
-    /** fespace */
-    TFESpace2D *FeSpace;
-    
-    /** Discretization type */
-    int Disctype;
-    
-    /** Solver type */
-    int SOLVER;
-       
-    /** number of matrices in the system matrix */
-    int N_Matrices;
-
-    /** sqstructure of the system matrix */
-    TSquareStructure2D *sqstructure;
-
-    /** A is the stiffness/system mat for stationary problem   */
-    TSquareMatrix2D *sqmatrixA;
     
     /** Boundary conditon */
     BoundCondFunct2D *BoundaryConditions[1];
@@ -45,7 +27,7 @@ class TSystemMatScalar2D
     
   public:
     /** constructor */
-     TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int solver);
+     TSystemMatScalar2D(TFESpace2D *fespace);
 
     /** destrcutor */
     ~TSystemMatScalar2D();
@@ -58,7 +40,7 @@ class TSystemMatScalar2D
     void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
 
     /** solve the system matrix */
-    void  Solve(double *sol, double *rhs);
+    void Solve(double *sol, double *rhs);
 };
 
-#endif
+#endif // __SYSTEMMATSCALAR2D__

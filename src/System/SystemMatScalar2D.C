@@ -17,64 +17,61 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int solver)
+TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace)
+ : SystemMat2D(1, 1, 0)
 {
   //store the FEspace
-  FeSpace = fespace;
-  
-  //set the discretization type
-  Disctype = disctype;
-  
-  //set the solver type
-  SOLVER = solver;
+  this->SystemMat2D::fe_spaces[0] = fespace;
   
   // build matrices
   // first build matrix structure
-  sqstructure = new TSquareStructure2D(fespace);
+  TSquareStructure2D* sqstructure = new TSquareStructure2D(fespace);
   sqstructure->Sort();  // sort column numbers: numbers are in increasing order
 
   /** A is the stiffness/system matrix for a stationary convection diffusion 
    * problem */
-  sqmatrixA = new TSquareMatrix2D(sqstructure);  
-  N_Matrices = 1;
+  this->SystemMat2D::sq_matrices[0] = new TSquareMatrix2D(sqstructure);  
+  this->SystemMat2D::defect = Defect_Scalar;
 }
 
 TSystemMatScalar2D::~TSystemMatScalar2D()
 {
-  delete sqstructure;
-  delete sqmatrixA;
+  delete this->SystemMat2D::sq_matrices[0]->GetStructure();
+  delete this->SystemMat2D::sq_matrices[0];
 }
   
   
 void TSystemMatScalar2D::Init(BoundCondFunct2D *BoundCond,
                               BoundValueFunct2D *BoundValue)
 {
-  BoundaryConditions[0] =  BoundCond;
-  BoundaryValues[0] = BoundValue;
+  this->BoundaryConditions[0] = BoundCond;//should be the same as in fe_space[0]
+  this->BoundaryValues[0] = BoundValue;
 } // TSystemMatScalar2D::Init
 
 
-void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
+void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol,
+                                  double *rhs)
 {
-  int N_DOF = FeSpace->GetN_DegreesOfFreedom();
-  int N_Active =  FeSpace->GetActiveBound();
+  int N_DOF = this->SystemMat2D::fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_Active = this->SystemMat2D::fe_spaces[0]->GetActiveBound();
   int N_DirichletDof = N_DOF - N_Active;
   
+  // reset right hand side and matrix to zero
   memset(rhs, 0, N_DOF*SizeOfDouble);
- 
-  // initialize matrices
-  sqmatrixA->Reset();
+  this->SystemMat2D::sq_matrices[0]->Reset();
   
+  int N_Matrices = 1;
   // assemble
-  Assemble2D(1, &FeSpace, N_Matrices, &sqmatrixA, 0, NULL, 1, &rhs, &FeSpace,
-             BoundaryConditions, BoundaryValues, la);
+  Assemble2D(1, &fe_spaces[0], N_Matrices, &sq_matrices[0], 0, NULL, 1, &rhs, 
+             &fe_spaces[0], BoundaryConditions, BoundaryValues, la);
  
   // apply local projection stabilization method
-  if(Disctype==LOCAL_PROJECTION && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+  if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION 
+     && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
   {
     if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
     { 
-      UltraLocalProjection((void *)sqmatrixA, false);
+      UltraLocalProjection((void *)&sq_matrices[0], false);
     }
     else
     {
@@ -82,7 +79,7 @@ void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol, double *rh
       exit(4711);
     }
   }
-    
+  
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
   memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);
@@ -90,8 +87,8 @@ void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol, double *rh
 
 
 void TSystemMatScalar2D::Solve(double *sol, double *rhs)
-{ 
-  switch(SOLVER)
+{
+  switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
    case AMG_SOLVE:
      cout << "AMG_SOLVE not yet implemented " <<endl;
@@ -102,8 +99,8 @@ void TSystemMatScalar2D::Solve(double *sol, double *rhs)
    break;
 
    case DIRECT:
-     DirectSolver(sqmatrixA, rhs, sol);
-   break;      
+     DirectSolver(this->SystemMat2D::sq_matrices[0], rhs, sol);
+   break;
  
    default:
      OutPut("Unknown Solver" << endl);
