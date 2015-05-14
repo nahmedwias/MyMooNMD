@@ -67,9 +67,9 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   
 #ifdef _MPI
   Comm = TDatabase::ParamDB->Comm;
-  if(NSEType!=4)
+  if(NSEType!=2)
   {
-    printf("parallel implemented for NSTYPE 4 only\n");
+    printf("parallel implemented for NSTYPE 2 only\n");
     MPI_Finalize();
     exit(0);
   }
@@ -216,33 +216,39 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   switch(NSEType)
       {
         case 1:
-          printf("parallel implemented for NSTYPE 4 only\n");
+          printf("parallel implemented for NSTYPE 2 only\n");
 	  MPI_Finalize();
 	  exit(0);
         break;
 
         case 2:
-          printf("parallel implemented for NSTYPE 4 only\n");
-	  MPI_Finalize();
-	  exit(0);
+	  SQMATRICES[0] = SqmatrixA11[i];
+  
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+          MATRICES[3] = MatrixB1T[i];
+          MATRICES[4] = MatrixB2T[i];
+          MATRICES[5] = MatrixB3T[i];
+          
         break;
 
         case 3:
-          printf("parallel implemented for NSTYPE 4 only\n");
+          printf("parallel implemented for NSTYPE 2 only\n");
 	  MPI_Finalize();
 	  exit(0);
         break;
 
         case 4:
-          SQMATRICES[0] = SqmatrixA11[i];
-          SQMATRICES[1] = SqmatrixA12[i];
-          SQMATRICES[2] = SqmatrixA13[i];	  
-          SQMATRICES[3] = SqmatrixA21[i];
-          SQMATRICES[4] = SqmatrixA22[i];
-          SQMATRICES[5] = SqmatrixA23[i]; 
-          SQMATRICES[6] = SqmatrixA31[i];
-          SQMATRICES[7] = SqmatrixA32[i];
-          SQMATRICES[8] = SqmatrixA33[i];  
+            SQMATRICES[0] = SqmatrixA11[i];
+	    SQMATRICES[1] = SqmatrixA12[i];
+            SQMATRICES[2] = SqmatrixA13[i];
+	    SQMATRICES[3] = SqmatrixA21[i];
+	    SQMATRICES[4] = SqmatrixA22[i];
+	    SQMATRICES[5] = SqmatrixA23[i];
+	    SQMATRICES[6] = SqmatrixA31[i];
+	    SQMATRICES[7] = SqmatrixA32[i];
+	    SQMATRICES[8] = SqmatrixA33[i];
           MATRICES[0] = MatrixB1[i];
           MATRICES[1] = MatrixB2[i];
           MATRICES[2] = MatrixB3[i];

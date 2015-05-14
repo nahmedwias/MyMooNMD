@@ -391,9 +391,9 @@ int main(int argc, char* argv[])
       OutPut("Nonlinear iteration step   0");
       OutPut(setw(14) << impuls_residual);
       OutPut(setw(14) << residual-impuls_residual);
-      OutPut(setw(14) << sqrt(residual) << endl);   
+      OutPut(setw(14) << sqrt(residual) << endl);  
      
-// exit(0);
+ 
 //====================================================================== 
 //Solve the system
 // the nonlinear iteration

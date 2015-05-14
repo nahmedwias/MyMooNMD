@@ -43,7 +43,7 @@ protected:
   
   //row ptr and col ptr of system matrix
   int *RowPtr, *KCol, *RowPtr_global;
-  int *RowPtr_P, *KCol_P, *RowPtr_PT, *KCol_PT;
+  int *RowPtr_B, *KCol_B, *RowPtr_BT, *KCol_BT;
   
   // number of non zeroes in system matrix
   int N_Nz, N_Nz_global;
