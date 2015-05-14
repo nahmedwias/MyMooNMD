@@ -102,9 +102,11 @@ BLAS_MAC64 =   -framework Accelerate -lpthread
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
+MPI_MACPATH = /opt/local/lib/mpich-mp
 BLACS_PATH = EXT_LIB/MPIBLACS
-MPIBLACS_MAC64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  
+MPIBLACS_MAC64  = -L$(BLACS_PATH) -lscalapack_MAC64 -llapack_MAC64 \
+                  -L$(MPI_MACPATH)  -lmpi -lmpifort -lmpicxx
+                        
 endif
 
 
@@ -328,7 +330,7 @@ ifeq ($(PARALLEL_TYPE),MPI)
 
 MUMPSLIB = EXT_LIB/MUMPS/lib
 PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
-                -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
+                -LEXT_LIB/Metis  -lmetis_$(MACH) -lparmetis_$(MACH) \
                 -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
                  $(MPIBLACS_$(MACH))
 endif
