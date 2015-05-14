@@ -438,7 +438,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->PROBLEM_TYPE==STOKES)
+      if (TDatabase::ParamDB->PROBLEM_TYPE==3)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -612,7 +612,7 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                   NSEaux);
  
    
-       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==STOKES) )
+       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
         {
          switch(NSEType)
           {
@@ -828,7 +828,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==STOKES) )
+      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
        {
         switch(NSEType)
          {
@@ -902,7 +902,7 @@ void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res)
 void TSystemMatNSE3D::Solve(double *sol, double *rhs)
 {
   int N_LinIter=0;
-  
+
     switch(SOLVER)
      {
       case AMG_SOLVE:
@@ -924,6 +924,8 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
             memcpy(sol, Itmethod_sol, N_TotalDOF*SizeOfDouble);
             memcpy(rhs, Itmethod_rhs, N_TotalDOF*SizeOfDouble);
            }
+ 
+        cout << "GMG solver not yet implemented " <<endl;
       break;
 
       case DIRECT:
@@ -965,7 +967,7 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
                           SqmatrixA21[N_Levels-1], SqmatrixA22[N_Levels-1], SqmatrixA23[N_Levels-1],  
                           SqmatrixA31[N_Levels-1], SqmatrixA32[N_Levels-1], SqmatrixA33[N_Levels-1],  
                           MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
-                          MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol, 0);
+                          MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol,0);
 #endif
           break;
          } //  switch(NSEType) 

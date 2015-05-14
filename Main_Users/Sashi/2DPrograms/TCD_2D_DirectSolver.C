@@ -35,7 +35,7 @@
 #include <JointCollection.h>
 // #include <TCD2D.h>
 // #include <TimeConvDiff2D.h>
-#include <ConvDiff2D_Routines.h>
+//#include <ConvDiff2D_Routines.h>
 #include <LocalProjection.h>
 #include <BaseFunct1D.h>
 #include <NodalFunctional1D.h>
@@ -64,7 +64,7 @@
 double bound = 0;
  
 #include <MainUtilities.h>
-#include <TimeUtilities.h>
+//#include <TimeUtilities.h>
 #include <FEM_TVD_FCT.h>
 
 #ifdef _MPI
@@ -117,9 +117,9 @@ double bound = 0;
 
 // #include "../Examples/TCD_2D/SimPaTurS.h"
 // #include "../Examples/TCD_2D/2D_1D_ADI_SimPaTurS.h"
-#include "../Examples_All/TCD_2D/2D_1D_ADI_SimPaTurS_Axial3D.h"
+// #include "../Examples_All/TCD_2D/2D_1D_ADI_SimPaTurS_Axial3D.h"
 // #include "../Examples/TCD_2D/2D_1D_ConstT_UnitSqr.h"
-// #include "../Examples/TCD_2D/2D_1D_Smmoth.h"
+ #include "../TCD_2D/2D_1D_Smmoth.h"
 // #include "../Examples/TCD_2D/2D_1D_ConstT_UnitSqr_IntlOnly.h"
 // #include "../Examples/TCD_2D/terahertz.h"
 // #include "../Examples/TCD_2D/TeraHertz.h"

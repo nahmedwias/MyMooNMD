@@ -42,6 +42,8 @@ struct TParaDB
   //======================================================================
   char *GEOFILE;
   char *BNDFILE;
+  char *GEOFILE_INTL;
+  char *BNDFILE_INTL;
   char *MAPFILE;
   char *OUTFILE;
   char *PODFILE;

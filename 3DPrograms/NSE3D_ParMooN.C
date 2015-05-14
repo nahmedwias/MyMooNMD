@@ -19,6 +19,8 @@
 #include <LinAlg.h>
 #include <MainUtilities.h>
 
+#include <tetgen.h>
+
 #include <string.h>
 #include <sstream>
 #include <MooNMD_Io.h>
@@ -26,6 +28,8 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+
 
 #ifdef _MPI
 #include "mpi.h"
@@ -41,9 +45,9 @@ double timeC = 0;
 // =======================================================================
 // include current example
 // =======================================================================
- #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
+//  #include "../Examples/NSE_3D/BSExample.h" // smooth sol in unit square
 // #include "../Examples/NSE_3D/AnsatzLinConst.h"
-// #include "../Examples/NSE_3D/DrivenCavity3D.h"
+ #include "../Examples/NSE_3D/CircularChannel.h"
 
 // =======================================================================
 // main program
@@ -93,7 +97,7 @@ int main(int argc, char* argv[])
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
    
   const char vtkdir[] = "VTK"; 
-  char *PsBaseName, *VtkBaseName, *GEO, *PRM;
+  char *PsBaseName, *VtkBaseName, *GEO, *PRM, *SMESH;
  
   char Name[] = "name";
   char UString[] = "u";
@@ -148,11 +152,14 @@ int main(int argc, char* argv[])
    PsBaseName = TDatabase::ParamDB->BASENAME;
    VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
    Domain->Init(PRM, GEO);
-//    Domain->Init(NULL, GEO);
+   
    
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
+  
+ TetrameshGen(Domain);
+
 
 #ifdef _MPI
   Domain->GenerateEdgeInfo();
@@ -346,6 +353,7 @@ int main(int argc, char* argv[])
     OutPut("Dof all      : "<< setw(10) << N_TotalDOF  << endl);  
 #endif 
 
+    
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  
@@ -379,55 +387,56 @@ int main(int argc, char* argv[])
       OutPut("Nonlinear iteration step   0");
       OutPut(setw(14) << impuls_residual);
       OutPut(setw(14) << residual-impuls_residual);
-      OutPut(setw(14) << sqrt(residual) << endl);     
+      OutPut(setw(14) << sqrt(residual) << endl);   
+     
 
-//====================================================================== 
-//Solve the system
-// the nonlinear iteration
-//======================================================================
-    limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-    Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-
-    for(j=1;j<=Max_It;j++)
-     {   
-      // Solve the NSE system
-      SystemMatrix->Solve(sol, rhs);
-
-      //no nonlinear iteration for Stokes problem  
-      if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES) 
-       break;
-      
-      // assemble the system matrix with given aux, sol and rhs 
-      SystemMatrix->AssembleNonLinear(Sol_array, Rhs_array);  
-      
-
-/*MPI_Finalize();
-exit(0);*/      
-      // get the residual
-      memset(defect,0,N_TotalDOF*SizeOfDouble);
-      SystemMatrix->GetResidual(sol, rhs, defect);
-      
-    //correction due to L^2_O Pressure space 
-     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       IntoL20Vector3D(defect+3*N_U, N_P, pressure_space_code);
-    
-      residual =  Ddot(N_TotalDOF, defect, defect);
-      impuls_residual = Ddot(3*N_U, defect, defect);  
-
-      OutPut("nonlinear iteration step " << setw(3) << j);
-      OutPut(setw(14) << impuls_residual);
-      OutPut(setw(14) << residual-impuls_residual);
-      OutPut(setw(14) << sqrt(residual) << endl);
- 
-      if ((sqrt(residual)<=limit)||(j==Max_It))
-       {
-        break;
-       }//if ((sqrt(residual)<=limit)||(j==Max_It))
-       
-     } //for(j=1;j<=Max_It;j
-    
-    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-        IntoL20FEFunction3D(sol+3*N_U, N_P, Pressure_FeSpace[mg_level-1]);
+// //====================================================================== 
+// //Solve the system
+// // the nonlinear iteration
+// //======================================================================
+//     limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+//     Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+// 
+//     for(j=1;j<=Max_It;j++)
+//      {   
+//       // Solve the NSE system
+//       SystemMatrix->Solve(sol, rhs);
+// 
+//       //no nonlinear iteration for Stokes problem  
+//       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES) 
+//        break;
+//       
+//       // assemble the system matrix with given aux, sol and rhs 
+//       SystemMatrix->AssembleNonLinear(Sol_array, Rhs_array);  
+//       
+// 
+// /*MPI_Finalize();
+// exit(0);*/      
+//       // get the residual
+//       memset(defect,0,N_TotalDOF*SizeOfDouble);
+//       SystemMatrix->GetResidual(sol, rhs, defect);
+//       
+//     //correction due to L^2_O Pressure space 
+//      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+//        IntoL20Vector3D(defect+3*N_U, N_P, pressure_space_code);
+//     
+//       residual =  Ddot(N_TotalDOF, defect, defect);
+//       impuls_residual = Ddot(3*N_U, defect, defect);  
+// 
+//       OutPut("nonlinear iteration step " << setw(3) << j);
+//       OutPut(setw(14) << impuls_residual);
+//       OutPut(setw(14) << residual-impuls_residual);
+//       OutPut(setw(14) << sqrt(residual) << endl);
+//  
+//       if ((sqrt(residual)<=limit)||(j==Max_It))
+//        {
+//         break;
+//        }//if ((sqrt(residual)<=limit)||(j==Max_It))
+//        
+//      } //for(j=1;j<=Max_It;j
+//     
+//     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+//         IntoL20FEFunction3D(sol+3*N_U, N_P, Pressure_FeSpace[mg_level-1]);
 //======================================================================
 // produce outout
 //======================================================================
@@ -452,23 +461,23 @@ exit(0);*/
    
    
    
-//    u1->Interpolate(ExactU1);
-//    u2->Interpolate(ExactU2);
-//    u3->Interpolate(ExactU3);
-//    p->Interpolate(ExactP);
-//    
-//     if(TDatabase::ParamDB->WRITE_VTK)
-//      {
-//       os.seekp(std::ios::beg);
-//        if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
-//          else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
-//           else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
-//            else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
-//             else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
-//       Output->WriteVtk(os.str().c_str());
-//       img++;
-//      }   
-//  
+   u1->Interpolate(ExactU1);
+   u2->Interpolate(ExactU2);
+   u3->Interpolate(ExactU3);
+   p->Interpolate(ExactP);
+   
+    if(TDatabase::ParamDB->WRITE_VTK)
+     {
+      os.seekp(std::ios::beg);
+       if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
+         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
+          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
+           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
+            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
+      Output->WriteVtk(os.str().c_str());
+      img++;
+     }   
+ 
 
 
 

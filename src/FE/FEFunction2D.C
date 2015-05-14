@@ -48,8 +48,9 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 TFEFunction2D::TFEFunction2D(TFESpace2D *fespace2D, char *name,
 char *description, double *values, int length)
 {
-  FESpace2D=fespace2D;
 
+  FESpace2D=fespace2D;
+ 
   Name=strdup(name);
 
   Description=strdup(description);

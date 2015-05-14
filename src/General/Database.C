@@ -329,9 +329,18 @@ void TDatabase::SetDefaultParameters()
   tmp = new char[12];
   strcpy(tmp,"NO_GEO_FILE");
   ParamDB->GEOFILE=tmp;
+  tmp = new char[17];
+  strcpy(tmp,"NO_GEO_FILE_INTL");
+  ParamDB->GEOFILE_INTL=tmp;
+  
   tmp = new char[12];
   strcpy(tmp,"NO_BND_FILE");
   ParamDB->BNDFILE=tmp;
+    
+  tmp = new char[17];
+  strcpy(tmp,"NO_BND_FILE_INTL");
+  ParamDB->BNDFILE_INTL=tmp;
+  
   tmp = new char[12];
   strcpy(tmp,"NO_MAP_FILE");
   ParamDB->MAPFILE=tmp;

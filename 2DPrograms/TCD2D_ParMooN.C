@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
-  OpenFiles();
+ // OpenFiles();
 
   Database->WriteParamDB(argv[0]);
   Database->WriteTimeDB();
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
   coll->GetHminHmax(&hmin,&hmax);
   OutPut("h_min : " << hmin << " h_max : " << hmax << endl);
 
-  // TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
+   TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
 
 
   // TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
