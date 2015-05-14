@@ -890,6 +890,61 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
 void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res)
 {
 
+     switch(NSEType)
+      {
+        case 1:
+          SQMATRICES[0] = SqmatrixA11[N_Levels-1];
+          MATRICES[0] = MatrixB1[N_Levels-1];
+          MATRICES[1] = MatrixB2[N_Levels-1];
+          MATRICES[2] = MatrixB3[N_Levels-1];
+        break;
+
+        case 2:
+          SQMATRICES[0] = SqmatrixA11[N_Levels-1];
+          MATRICES[0] = MatrixB1[N_Levels-1];
+          MATRICES[1] = MatrixB2[N_Levels-1];
+          MATRICES[2] = MatrixB3[N_Levels-1];
+          MATRICES[3] = MatrixB1T[N_Levels-1];
+          MATRICES[4] = MatrixB2T[N_Levels-1];
+          MATRICES[5] = MatrixB3T[N_Levels-1];
+	  
+        break;
+
+        case 3:
+          SQMATRICES[0] = SqmatrixA11[N_Levels-1];
+          SQMATRICES[1] = SqmatrixA12[N_Levels-1];
+          SQMATRICES[2] = SqmatrixA13[N_Levels-1];	  
+          SQMATRICES[3] = SqmatrixA21[N_Levels-1];
+          SQMATRICES[4] = SqmatrixA22[N_Levels-1];
+          SQMATRICES[5] = SqmatrixA23[N_Levels-1]; 
+          SQMATRICES[6] = SqmatrixA31[N_Levels-1];
+          SQMATRICES[7] = SqmatrixA32[N_Levels-1];
+          SQMATRICES[8] = SqmatrixA33[N_Levels-1];  
+
+          MATRICES[0] = MatrixB1[N_Levels-1];
+          MATRICES[1] = MatrixB2[N_Levels-1];
+          MATRICES[2] = MatrixB3[N_Levels-1];
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixA11[N_Levels-1];
+          SQMATRICES[1] = SqmatrixA12[N_Levels-1];
+          SQMATRICES[2] = SqmatrixA13[N_Levels-1];	  
+          SQMATRICES[3] = SqmatrixA21[N_Levels-1];
+          SQMATRICES[4] = SqmatrixA22[N_Levels-1];
+          SQMATRICES[5] = SqmatrixA23[N_Levels-1]; 
+          SQMATRICES[6] = SqmatrixA31[N_Levels-1];
+          SQMATRICES[7] = SqmatrixA32[N_Levels-1];
+          SQMATRICES[8] = SqmatrixA33[N_Levels-1];  
+          MATRICES[0] = MatrixB1[N_Levels-1];
+          MATRICES[1] = MatrixB2[N_Levels-1];
+          MATRICES[2] = MatrixB3[N_Levels-1];
+          MATRICES[3] = MatrixB1T[N_Levels-1];
+          MATRICES[4] = MatrixB2T[N_Levels-1];
+          MATRICES[5] = MatrixB3T[N_Levels-1];
+        break;
+      } //  switch(NSEType)  
+  
    Defect(sqmatrices, matrices, sol, rhs, res); 
    
 } // TSystemMatNSE3D::GetResidual
@@ -963,6 +1018,7 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
                           SqmatrixA31[N_Levels-1], SqmatrixA32[N_Levels-1], SqmatrixA33[N_Levels-1],  
                           MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
                           MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol,0);
+
 #endif
           break;
          } //  switch(NSEType) 
