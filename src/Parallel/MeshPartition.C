@@ -21,7 +21,7 @@
 #include <sstream>
 #include <MooNMD_Io.h>
 #include <stdlib.h>
-#include <malloc.h>
+// #include <malloc.h>
 #include <Joint.h>
 #include <SubDomainJoint.h>
 #include <SubDomainHaloJoint.h>

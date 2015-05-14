@@ -25,6 +25,9 @@
 
 TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunicator3D *parcomm_p,TSquareMatrix3D **mat,TMatrix3D **matB)
 {
+  int rank,size;
+  int NSEType = TDatabase::ParamDB->NSTYPE;  
+  
   ParComm   = parcomm;
   NDof      = ParComm->GetNDof();
   Comm      = TDatabase::ParamDB->Comm;
@@ -32,53 +35,119 @@ TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunica
   Mat       = mat[0];
   DSType    = TDatabase::ParamDB->DSType;
   
-  //for NSTYPE 4
+  MPI_Comm_rank(Comm, &rank);
+  MPI_Comm_size(Comm, &size);  
+  
   if(matB != NULL)
+   { SystemType = NSE; }
+  else
+   { SystemType = SCALAR; }   
+  
+  if(SystemType==NSE)
   {
     ParComm_P   = parcomm_p;
     NDof_P      = ParComm_P->GetNDof();
     NDof_U      = ParComm->GetNDof();
-    NDof        = 3*NDof_U + NDof_P;
-    MatB        = matB[0];   
-    MatBT       = matB[3];
+    NDof        = 3*NDof_U + NDof_P;   
     
-    MatA11 = mat[0];    MatA12 = mat[1];    MatA13 = mat[2];	MatBT1 = matB[3];
-    MatA21 = mat[3];    MatA22 = mat[4];    MatA23 = mat[5];	MatBT2 = matB[4];
-    MatA31 = mat[6];    MatA32 = mat[7];    MatA33 = mat[8];	MatBT3 = matB[5];
-    MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];      //[0]
+   switch(NSEType)
+     {
+      case 1:
+             if(rank == 0)
+              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+              MPI_Finalize();
+              exit(0);
+      break;
+
+      case 2:
+             if(rank == 0)
+              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+              MPI_Finalize();
+              exit(0);
+      break;
     
-  }
-  else
-  {
+      case 3:
+             if(rank == 0)
+              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+              MPI_Finalize();
+              exit(0);
+      break;
+    
+      case 4:
+             MatB  = matB[0];   
+             MatBT = matB[3];
+    
+             MatA11 = mat[0];    MatA12 = mat[1];    MatA13 = mat[2];	MatBT1 = matB[3];
+             MatA21 = mat[3];    MatA22 = mat[4];    MatA23 = mat[5];	MatBT2 = matB[4];
+             MatA31 = mat[6];    MatA32 = mat[7];    MatA33 = mat[8];	MatBT3 = matB[5];
+             MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];      //[0]
+       break;
+      
+      default:
+            OutPut("Unknown NSETYPE " << NSEType <<"  it must be 1 to 4" << endl);
+            exit(4711);;      
+      
+     }  
+   }
+  else //scalar problem
+   {
     MatB = NULL;
-  }
-    
-  int rank,size;
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
+   }
+
   
   if(DSType == 1)
-  {
+   {
     if(rank == 0)
       printf("ParDirectSolver Type ---(Select _OMPONLY in makefile)---> ParDiso\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  else if(DSType == 2)
-  {
+      MPI_Finalize();
+      exit(0);
+   }
+  else if(DSType == 2) // Mumps
+   {
     if(rank == 0)
       printf("ParDirectSolver Type ------> Mumps\n");
     
-    InitMumps(); 
+    if(SystemType==NSE)
+     { 
+      switch(NSEType)
+       {
+        case 1:
+             if(rank == 0)
+              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+              MPI_Finalize();
+              exit(0);
+        break;
+
+        case 2:
+              InitMumps_NSE2();
+        break;
+    
+        case 3:
+            if(rank == 0)
+             printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+             MPI_Finalize();
+             exit(0);
+        break;
+    
+        case 4:
+              InitMumps_NSE4();
+        break; 
+       } //  switch(NSEType)     
+     }
+    else
+     {
+      InitMumps_Scalar();
+     }
+    
+    //initilize the Mumps solver
     Mumps = new TMumpsSolver(N_Eqns, N_Nz, I_rn, J_cn, N_rhs);
-//     exit(0);
-  }
+   }
   else
-  {
+   {
     printf("Select ParDirectSolver Type\n");
     MPI_Finalize();
     exit(0);
-  }
+   }
   
 }
 
@@ -95,7 +164,7 @@ TParDirectSolver::~TParDirectSolver()
 //   delete Mumps;
 }
 
-void TParDirectSolver::InitMumps()
+void TParDirectSolver::InitMumps_Scalar()
 {
   int i,j,k,l,m,t;
   int *Master_P,*local2global_P;
@@ -106,8 +175,6 @@ void TParDirectSolver::InitMumps()
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
   
-  if(MatB == NULL)
-  {
     RowPtr = Mat->GetRowPtr();
     KCol   = Mat->GetKCol();
     
@@ -144,9 +211,26 @@ void TParDirectSolver::InitMumps()
     
     if(rank == 0)
       GlobalRhs = new double[GlobalRhsSize];
-  }
-  else
-  {
+}
+
+void TParDirectSolver::InitMumps_NSE2()
+{
+             printf("ParDirectSolver->InitMumps_NSE2(): NSEType 2 to be  implemented\n");
+             MPI_Finalize();
+             exit(0); 
+}
+
+void TParDirectSolver::InitMumps_NSE4()
+{
+  int i,j,k,l,m,t;
+  int *Master_P,*local2global_P;
+  int *Master         = ParComm->GetMaster();
+  int *local2global   = ParComm->Get_Local2Global();
+
+  int rank,size;
+  MPI_Comm_rank(Comm, &rank);
+  MPI_Comm_size(Comm, &size);
+
     Master_P       = ParComm_P->GetMaster();
     local2global_P = ParComm_P->Get_Local2Global();
     
@@ -253,8 +337,8 @@ void TParDirectSolver::InitMumps()
     MPI_Allreduce(&N_Master_U, &offset, 1, MPI_INT, MPI_SUM, Comm);
     offset *=3;	//require in GetRhs and UpdateSol routines
   
-  }
 }
+
 
 void TParDirectSolver::AssembleMatrix()
 { 

@@ -31,6 +31,9 @@ protected:
   
   TMumpsSolver *Mumps;
  
+  //problem type: NSE 0, SCALAR 100
+  int SystemType;
+  
   //Select ParDirectSolver type
   int DSType;
   
@@ -88,7 +91,11 @@ public:
   
   void AssembleMatrix();
   
-  void InitMumps();
+  void InitMumps_Scalar();
+  
+  void InitMumps_NSE2();  
+  
+  void InitMumps_NSE4();  
   
   void InitPardiso();
   

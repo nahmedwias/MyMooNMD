@@ -46,8 +46,6 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
 {
   int i, zerostart;
   int profiling = TDatabase::ParamDB->timeprofiling;
-//   TFESpace3D *fesp[1];
-//   TFEFunction3D *fefct[3];
  
   /** need it for solver */
   sqmatrices = (TSquareMatrix **)SQMATRICES;
@@ -438,7 +436,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
         } 
      
      // set the discrete form for the Stokes equation
-      if (TDatabase::ParamDB->PROBLEM_TYPE==3)
+      if (TDatabase::ParamDB->PROBLEM_TYPE==STOKES)
        {
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
@@ -599,8 +597,7 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
       NSEaux =  new TAuxParam3D(NSN_FESpacesVelo, NSN_FctVelo, NSN_ParamFctVelo, NSN_FEValuesVelo,
                                 fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
                                  NSN_ParamsVelo, NSBeginParamVelo);
-      
-      
+
        /** assemble */
        Assemble3D(N_FESpaces, fesp,
                   N_SquareMatrices, SQMATRICES,
@@ -678,38 +675,39 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
       memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
       memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
       
-      //setup the multigrid solver
-       alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-       alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;  
-       velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-       pressure_space_code = TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE;
 
-       if(mg_type==1)
-        {
-         if(i==0)
-          {
-           alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-           alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-          }     
-         else if(i==N_Levels-1)
-          {
-           alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-           alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE;  
-          }
-          
-         if(i<N_Levels-1)
-          {
-           velocity_space_code = -1;
-           pressure_space_code = 0; 
-          }
-          
-        }
  
 //         cout << velocity_space_code << " velocity_space_code " << pressure_space_code << endl;
 
        // initialize matrices
        if(SOLVER==GMG)
-        {      
+        {       
+         //setup the multigrid solver
+         alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
+         alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;  
+         velocity_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
+         pressure_space_code = TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE;
+
+         if(mg_type==1)
+          {
+           if(i==0)
+            {
+             alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
+             alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
+            }     
+           else if(i==N_Levels-1)
+            {
+             alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+             alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE;  
+            }
+          
+           if(i<N_Levels-1)
+            {
+             velocity_space_code = -1;
+             pressure_space_code = 0; 
+            }          
+          }  
+  
          switch(NSEType)
           {
            case 1:
@@ -828,7 +826,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
+      if( (Disctype==UPWIND) && (TDatabase::ParamDB->PROBLEM_TYPE!=STOKES) )
        {
         switch(NSEType)
          {
@@ -885,9 +883,6 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
       memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
       memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
       } //
-      
-//       cout << "Test AssembleNonLinear " << endl; 
-//       exit(0);
       
 } //TSystemMatNSE3D::AssembleNonLinear(
 

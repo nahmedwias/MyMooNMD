@@ -292,6 +292,7 @@ int GetMemory();
 #define STOKES 1
 #define OSEEN  2
 
+#define SCALAR 100
 
 #define MAXN_LEVELS 100
 
