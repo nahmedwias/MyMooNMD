@@ -766,8 +766,6 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
 // 	  }
       
       Mumps->FactorizeAndSolve(MatLoc,GlobalRhs);
-      MPI_Finalize();
-      exit(0);
     }
     else
     {
@@ -783,8 +781,7 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
     exit(0);
   }
   
-  printf("time taken for solving::%lf\n",MPI_Wtime()-t);
-exit(0);
+//   printf("time taken for solving::%lf\n",MPI_Wtime()-t);
 }
 
 #else

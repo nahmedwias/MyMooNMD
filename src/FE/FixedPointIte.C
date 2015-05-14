@@ -272,7 +272,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   
   if (i>maxite) 
     i=maxite;*/
- if(1)
+ if(0)
 #ifdef _MPI
   if(rank==0)
 #endif

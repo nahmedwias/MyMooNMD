@@ -10,6 +10,9 @@
 */
 
 /* for all functionals */
+#include <stdlib.h>
+
+
 static double NF_D_H_Q2_3D_Weights[] = {
   0.4209147749053145E-1, 0.7891151579507055E-1,
   0.7891151579507055E-1, 0.4209147749053145E-1,

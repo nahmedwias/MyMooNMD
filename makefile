@@ -11,8 +11,8 @@ OUT = main
 MACH = LINUX64
 #MACH = MAC64
 
-#FLAG = OPTI
-FLAG = FAST
+FLAG = OPTI
+#FLAG = FAST
 #FLAG = DEBUG
 
 # profing options

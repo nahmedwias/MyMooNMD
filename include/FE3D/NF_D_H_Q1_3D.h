@@ -10,6 +10,9 @@
 */
 
 /* for all functionals */
+#include <stdlib.h>
+
+
 static double NF_D_H_Q1_3D_Xi[]   = { 
          -0.7745966692414833770358530, 0,
          0.7745966692414833770358530,

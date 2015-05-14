@@ -48,6 +48,15 @@ TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespac
 //    }
    
   SystMatAssembled  = FALSE;
+#ifdef _MPI
+
+   if(SOLVER == DIRECT)
+   {
+     SQMATRICES[0] = sqmatrixM[N_Levels-1];
+     TDS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
+   }
+#endif
+  
 } // constructor
 
 
@@ -375,6 +384,7 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
       case DIRECT:
 #ifdef _MPI
 	DS->Solve(sol, B, factorize);
+// 	exit(0);
 #endif
 
 #ifdef _OMPONLY

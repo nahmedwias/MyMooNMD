@@ -13,6 +13,7 @@
 
 #include <SquareMatrix2D.h>
 #include <string.h>
+#include <stdlib.h>
 
 TSquareMatrix2D::TSquareMatrix2D(TSquareStructure2D *squarestructure)
   : TSquareMatrix(squarestructure), structure(squarestructure)

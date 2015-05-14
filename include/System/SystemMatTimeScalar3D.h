@@ -18,7 +18,9 @@
 class TSystemMatTimeScalar3D : public TSystemMatScalar3D
 {
   protected:
-        
+#ifdef _MPI
+    TParDirectSolver *TDS;
+#endif   
     /** M mass matrix */
     TSquareMatrix3D **sqmatrixM;
     

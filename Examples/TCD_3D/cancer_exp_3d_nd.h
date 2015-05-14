@@ -7,7 +7,7 @@
 void ExampleFile()
 {
   
-  OutPut("Example: cancer_exp_3d_nd.h" << endl); //OutPut("GRID_TYPE set to " << TDatabase::ParamDB->GRID_TYPE << endl);
+  OutPut("Example: cancer_exp_3d.h" << endl); //OutPut("GRID_TYPE set to " << TDatabase::ParamDB->GRID_TYPE << endl);
 }
 
 // ========================================================================
@@ -172,7 +172,7 @@ void W_BoundValue(double x, double y, double z, double &value)
 void BilinearCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  double eps= 1.0/TDatabase::ParamDB->RE_NR;
+  double eps= 0.0/TDatabase::ParamDB->RE_NR;
   int i;
   double *coeff;                                  // *param;
   double x, y, z, c, a[3], b[3], s[3], h;
@@ -2284,7 +2284,7 @@ void TetraGenWithInputCells(TDomain *&Domain)
   TBdSphere *UpdateParam;  
   TShapeDesc *ShapeDesc;
    
-  char *SMESH, *NODE, line[100];
+  char *SMESH, line[100];
   SMESH = TDatabase::ParamDB->SMESHFILE;
 //   NODE  = TDatabase::ParamDB->GRAPEBASENAME;
   

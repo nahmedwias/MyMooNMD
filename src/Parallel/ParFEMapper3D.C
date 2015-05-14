@@ -1282,7 +1282,7 @@ if(TDatabase::ParamDB->Par_P4){
  
   end_time = MPI_Wtime();
   if(rank == 0)
-    printf("Total Time Taken for marking the dofs = %lf\n",end_time-temp_time);
+    printf("Total Time Taken for mapping the dofs = %lf\n",end_time-temp_time);
   
   //if(TDatabase::ParamDB->SC_VERBOSE>2)
     if(rank==TDatabase::ParamDB->Par_P0)
