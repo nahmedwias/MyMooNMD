@@ -839,6 +839,38 @@ if(TDatabase::ParamDB->Par_P4){
       }
     }
   }
+
+// #ifdef _HYBRID
+// 
+//   flag = false;
+//   for(i=0;i<N_OwnCells;i++){
+//     cell = Coll->GetCell(i);
+//     //now mark dofs in independent cells
+//     if( !(cell->IsDependentCell()) ){
+//       DOF      = GlobalNumbers + BeginIndex[i];
+//       N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+//      
+//       for(j=0;j<N_LocDof;j++){
+//         N = DOF[j];
+//         if(DofMarker[N] == d || DofMarker[N] == D){
+// 	  flag = true;
+// 	  break;
+//         }
+//       }
+//      //dependent dofs connected to slave dofs are marked as type1(D) else type2(d)
+//      //here we increase the ratio of dependent_type2 dofs to independent dofs
+//      if(flag == true){
+//        for(j=0;j<N_LocDof;j++){
+// 	 N = DOF[j];
+// 	 if(DofMarker[N] == 'i')
+// 	   DofMarker[N] = 't';
+//          }
+//          flag = false;
+//       }
+//     }
+//   }
+// 
+// #endif
   
    //mark halo type1(H)-->useful & type2(h)
   flag = false;

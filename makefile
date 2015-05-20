@@ -10,9 +10,10 @@ OUT = main
 #MACH = TYRONE64  
 MACH = LINUX64
 #MACH = MAC64
+#MACH = CRAY64
 
 FLAG = OPTI
-#FLAG = FAST
+FLAG = FAST
 #FLAG = DEBUG
 
 # profing options

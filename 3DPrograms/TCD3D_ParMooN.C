@@ -761,6 +761,22 @@ int main(int argc, char* argv[])
 //======================================================================  
   if(profiling){
 #ifdef _MPI
+    int min_Ncells;
+    MPI_Allreduce(&N_Cells, &min_Ncells, 1, MPI_INT, MPI_MIN, Comm);
+    if(min_Ncells == N_Cells)
+    {
+      OutPut( "min NCells : " << N_Cells << endl);
+      OutPut( "corresponding min Ndof : " << N_DOF << endl);
+    }
+    int max_Ncells;
+    MPI_Allreduce(&N_Cells, &max_Ncells, 1, MPI_INT, MPI_MAX, Comm);
+    if(max_Ncells == N_Cells)
+    {
+      OutPut( "max NCells : " << N_Cells << endl);
+      OutPut( "corresponding max Ndof : " << N_DOF << endl);
+    }
+
+
     int Total_cells, Total_dof;
     MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
     MPI_Reduce(&N_DOF, &Total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
@@ -768,9 +784,9 @@ int main(int argc, char* argv[])
     N_DOF   = Total_dof;
     if(rank == out_rank){
 #endif
-    OutPut(endl<<"#Levels :: "<<LEVELS<<"  #Uniform refinement :: "<<TDatabase::ParamDB->UNIFORM_STEPS <<"  Order :: "<<TDatabase::ParamDB->ANSATZ_ORDER<<endl);  
-    OutPut("Total Cells :: "<<N_Cells<<"     Total_dof :: "<<N_DOF<<endl<<endl);  
-    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl); 
+    OutPut(endl<<"#Levels :: "<<LEVELS<<"  #Uniform refinement :: "<<TDatabase::ParamDB->UNIFORM_STEPS <<"  Order :: "<<TDatabase::ParamDB->ANSATZ_ORDER<<endl);
+    OutPut("Total Cells :: "<<N_Cells<<"     Total_dof :: "<<N_DOF<<endl<<endl);
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
     OutPut( "Total time taken for initializing System Matrix : " << (total_int) << "("<<100*(total_int)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
     OutPut( "Total time taken for assembling : " << (total_assembling) << "("<<100*(total_assembling)/(stop_time-start_time)<<"%)"<<endl);
@@ -782,10 +798,10 @@ int main(int argc, char* argv[])
     }
 #endif
   }
-      
+
   CloseFiles();
 #ifdef _MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
   return 0;
 } // end main

@@ -68,7 +68,7 @@ static const int DatNewFaceEqOldFace[] = {2, 5};
 static const int DatNewFaceEqOldFaceIndex[] = {1, 3};
 
 static const int DatInteriorFaceOfCell[] = {6};
-static const int DatInteriorEdgeOfCell[] = {};
+static const int DatInteriorEdgeOfCell[] = {NULL};
 
 static const int DatInteriorVertexOfEdge[][REFTETRABIS1MAXN_iVpE] =
   { {}, {4}, {}, {}, {}, {} };

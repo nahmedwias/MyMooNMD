@@ -383,7 +383,7 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
 
       case DIRECT:
 #ifdef _MPI
-	DS->Solve(sol, B, factorize);
+	TDS->Solve(sol, B, factorize);
 // 	exit(0);
 #endif
 

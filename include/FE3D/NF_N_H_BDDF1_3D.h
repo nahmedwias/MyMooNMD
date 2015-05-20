@@ -66,8 +66,8 @@ static double *NF_N_H_BDDF1_3D_ZetaArray[6] = {
                         NF_N_H_BDDF1_3D_F4_Zeta,
                         NF_N_H_BDDF1_3D_F5_Zeta };
 
-static double NF_N_H_BDDF1_3D_T[] = {};//???
-static double NF_N_H_BDDF1_3D_S[] = {};//???
+static double NF_N_H_BDDF1_3D_T[] = {NULL};//???
+static double NF_N_H_BDDF1_3D_S[] = {NULL};//???
 
 
 

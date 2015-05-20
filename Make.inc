@@ -61,7 +61,7 @@ BLACS_PATH = EXT_LIB/MPIBLACS
 MPI_PATH = /opt/mpich/lib64
 MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
                         $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                      -L$(MPI_PATH)  -lmpich -lfmpich -lmpichcxx
+                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
 endif
 
 ifeq ($(PARALLEL_TYPE), HYBRID)
@@ -153,12 +153,12 @@ PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
 # ======================================================================
 #CRAY64: Linux on SUSE Linux 64 CRAY64 cluster
 # ======================================================================
-CPPFLAG_CRAY64_OPTI  = -O3 -s $(INC)
-CPPFLAG_CRAY64_FAST  = -s $(INC)
+CPPFLAG_CRAY64_OPTI  = -O3 $(INC)
+CPPFLAG_CRAY64_FAST  =  $(INC)
 CPPFLAG_CRAY64_DEBUG = -g $(INC)
 DEFINE_CRAY64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL) -DMPICH_IGNORE_CXX_SEEK -D__$(FLAG)  
-CCFLAG_CRAY64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
-CCFLAG_CRAY64_FAST   = -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
+CCFLAG_CRAY64_OPTI   = -O3  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
+CCFLAG_CRAY64_FAST   =  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
 CCFLAG_CRAY64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
  
 
@@ -170,8 +170,6 @@ else
   CC_CRAY64            = cc
 endif
 
-ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_CRAY64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran  -lpthread
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
@@ -181,8 +179,7 @@ ifeq ($(PARALLEL_TYPE), MPI)
 		       -lmpich   -lgfortran 
  else
 
- ACML_PATH = EXT_LIB/ACML/gfortran64/lib
- BLAS_CRAY64 = $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran -lpthread
+ BLAS_CRAY64 = 
  PARADISO_CRAY64 =  -LEXT_LIB/PARDISO/CRAY64/OpenMP -lpardiso400_GNU430_IA64
  OMP_COMPILE_FLAGS_CRAY64 = -fopenmp
 
@@ -323,6 +320,9 @@ ifeq ($(MACH),TYRONE64)
 UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH) -lsuitesparseconfig_$(MACH) -lcholmod_$(MACH) -lcolamd_$(MACH) -lrt
 endif 
 
+ifeq ($(MACH),CRAY64)
+UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH) -lsuitesparseconfig_$(MACH) -lcholmod_$(MACH) -lcolamd_$(MACH) -lrt
+endif 
 
 ifeq ($(PARALLEL_TYPE),MPI)
 
@@ -331,6 +331,7 @@ PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                 -LEXT_LIB/Metis  -lmetis_$(MACH) -lparmetis_$(MACH) \
                 -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
                  $(MPIBLACS_$(MACH))
+                 
 endif
 
 ifeq ($(PARALLEL_TYPE),HYBRID)
@@ -342,6 +343,7 @@ PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
                  $(MPIBLACS_$(MACH))
 endif
 
+ 
 
 ifeq ($(MACH),SUN)
 AR            = CC -xar -o
