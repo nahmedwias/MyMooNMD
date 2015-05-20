@@ -34,7 +34,7 @@
 // #include <Scalar_ParSolver.h>
 #endif
 
-#include <omp.h>
+// #include <omp.h>
 
 #define AMG 0
 #define GMG 1
@@ -45,7 +45,8 @@ double timeC = 0;
 // =======================================================================
 // include current example
 // =======================================================================
-#include "../Examples/CD_3D/Laplace.h"
+// #include "../Examples/CD_3D/Laplace.h"
+#include "../Examples/CD_3D/HeatChanel.h"
 // =======================================================================
 
 // main program
