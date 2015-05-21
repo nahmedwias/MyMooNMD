@@ -156,36 +156,31 @@ PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
 CPPFLAG_CRAY64_OPTI  = -O3 $(INC)
 CPPFLAG_CRAY64_FAST  =  $(INC)
 CPPFLAG_CRAY64_DEBUG = -g $(INC)
-DEFINE_CRAY64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL) -DMPICH_IGNORE_CXX_SEEK -D__$(FLAG)  
-CCFLAG_CRAY64_OPTI   = -O3  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
-CCFLAG_CRAY64_FAST   =  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
+DEFINE_CRAY64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL) -DMPICH_IGNORE_CXX_SEEK -D__$(FLAG)
+CCFLAG_CRAY64_OPTI   = -O3 -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
+CCFLAG_CRAY64_FAST   = -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
 CCFLAG_CRAY64_DEBUG  = -g -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC)
- 
+
 
 ifeq ($(PARALLEL_TYPE),$(filter $(PARALLEL_TYPE),OPENMP SEQUENTIAL))
   CPP_CRAY64           = CC
-  CC_CRAY64            = cc  
+  CC_CRAY64            = cc
 else
-  CPP_CRAY64           = CC  
+  CPP_CRAY64           = CC
   CC_CRAY64            = cc
 endif
 
-
 ifeq ($(PARALLEL_TYPE), MPI)
 
-  BLACS_PATH = EXT_LIB/MPIBLACS
-  MPIBLACS_CRAY64  = -L$(BLACS_PATH) -lscalapack_CRAY64 $(BLACS_PATH)/blacs_MPI_CRAY64-0.a \
-                      $(BLACS_PATH)/blacsF77init_MPI_CRAY64-0.a $(BLACS_PATH)/blacs_MPI_CRAY64-0.a \
-		       -lmpich   -lgfortran 
+ # BLACS_PATH =
+ # MPIBLACS_CRAY64  =
  else
 
- BLAS_CRAY64 = 
+ BLAS_CRAY64 =
  PARADISO_CRAY64 =  -LEXT_LIB/PARDISO/CRAY64/OpenMP -lpardiso400_GNU430_IA64
  OMP_COMPILE_FLAGS_CRAY64 = -fopenmp
 
  endif
-
-
 
 # ======================================================================
 # LINUX: Linux
@@ -322,7 +317,8 @@ endif
 
 ifeq ($(MACH),CRAY64)
 UMFPACK       = -LEXT_LIB/UMFPACK/Lib -lumfpack_$(MACH) -lamd_$(MACH) -lsuitesparseconfig_$(MACH) -lcholmod_$(MACH) -lcolamd_$(MACH) -lrt
-endif 
+endif
+
 
 ifeq ($(PARALLEL_TYPE),MPI)
 

@@ -165,6 +165,12 @@ int main(int argc, char* argv[])
   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
   Domain->Init(PRM, GEO);
 
+  LEVELS = TDatabase::ParamDB->LEVELS;
+  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+  {
+    TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
+    LEVELS = 1;
+  }
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();
@@ -180,7 +186,9 @@ int main(int argc, char* argv[])
 	  printf("metis type set to %d\n",TDatabase::ParamDB->Par_P2);
 	  printf("----------------------------------------------------------------------------------------\n\n");
        }
-  
+  //this loop checks if number of cells are sufficient in the coarsest level, such that each 
+  //rank get some own cells to work on
+  //it does so by changing the metis type first, if not possible then refine and start again
   do
   {
     metisType[TDatabase::ParamDB->Par_P2] = 1;
@@ -229,7 +237,6 @@ int main(int argc, char* argv[])
 //=========================================================================
 // set data for multigrid
 //=========================================================================  
-  LEVELS = TDatabase::ParamDB->LEVELS;
 
   // set type of multilevel
   mg_type = TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
