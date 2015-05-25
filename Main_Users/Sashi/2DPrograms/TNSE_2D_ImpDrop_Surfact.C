@@ -51,7 +51,8 @@
 #include <FreeSurface2D.h>
 
 #include <MainUtilities.h>
-#include <TimeUtilities.h>
+#include <TimeDiscRout.h>
+
 
 #include <MacroCell.h>
 #include <BoundEdge.h>
@@ -74,8 +75,9 @@
 // #include "../Examples/TNSE_2D/Droponsolid.h"
 // #include "../Examples/TNSE_2D/Drop_Imping_Axial3D.h"
 // #include "../Examples/TNSE_2D/DropHeat_imping_axial3D.h"
-// #include "../Examples/TNSE_2D/Drop_Imping_Axial3D_DiffusionTest.h"
-#include "../Examples_All/TNSE_2D/Drop_Imping_Axial3D_ConvTest.h"
+// #include "../TNSE_2D/Drop_Imping_Axial3D_DiffusionTest.h"
+#include "../TNSE_2D/Drop_Imping_Axial3D_ConvTest.h"
+
 extern "C"
 {
   void triangulate(char*, struct triangulateio*,
@@ -6268,7 +6270,7 @@ int main(int argc, char* argv[])
   PRM = TDatabase::ParamDB->BNDFILE;
   GEO = TDatabase::ParamDB->GEOFILE;
   
-  PsBaseName = TDatabase::ParamDB->PSBASENAME;
+  PsBaseName = TDatabase::ParamDB->BASENAME;
   VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
 
   mkdir(vtkdir, 0777);
@@ -7059,7 +7061,7 @@ int main(int argc, char* argv[])
 
       for(l=0;l<N_SubSteps;l++)   // sub steps of fractional step theta
       {    
-        SetTimeDiscParameters();
+        SetTimeDiscParameters(1);
 
         if (m==1)
         {

@@ -3036,9 +3036,9 @@ int main(int argc, char* argv[])
   //======================================================================
   total_time = GetTime();
   if(argc>=2)
-    { ret=Domain->ReadParam(argv[1]); }
-    else
-      { ret=Domain->ReadParam(Readin); }
+   { ret=Domain->ReadParam(argv[1]); }
+  else
+   { ret=Domain->ReadParam(Readin); }
 
       OpenFiles();
   OutFile.setf(std::ios::scientific);
@@ -5733,7 +5733,7 @@ int main(int argc, char* argv[])
         //        sprintf (RankBaseName, "%d", j);
         //        strcat(SubID, RankBaseName);
         //        Output_PBS->Write_ParVTK(MPI_COMM_WORLD, img, SubID);
-        //
+        // 
         //        } // if(N_PBEqns)
         //       #endif
         //      img++;
