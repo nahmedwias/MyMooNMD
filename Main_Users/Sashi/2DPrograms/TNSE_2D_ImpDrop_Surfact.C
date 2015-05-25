@@ -6109,7 +6109,8 @@ int main(int argc, char* argv[])
   TSquareMatrix2D **SqMat_All = new TSquareMatrix2D *[18];
   TMatrix2D **Mat_All = new TMatrix2D *[4];
   
-#ifdef __SURFACT__ 
+
+#if defined(__SURFACT__) || defined(__SURFACTCONVTEST__)
   // variables for surfactant
   TDomain *IFaceDomain = new TDomain();  
   
