@@ -5,7 +5,7 @@ void ExampleFile()
   #define __IMPINGINGDROPLET__
   #define __AXIAL3D__
 //   #define __EXPERIMENTAL__
- #define __SURFACT__
+//  #define __SURFACT__
 //  #define __SURFACTDIFFTEST__
  
  #define __SURFACTCONVTEST__
