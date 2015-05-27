@@ -62,6 +62,7 @@ double timeC = 0;
 // #include "../Examples/TCD_3D/ConstTSmooth.h"
 //  #include "../Examples/TCD_3D/ConstT.h"
 #include "../Examples/TCD_3D/amc.h"
+// #include "../Examples/TCD_3D/HeatChanel.h"
 // #include "../Main_Users/Sashi/TCD_3D/TeraHertzBreast.h"
 
 
@@ -421,6 +422,7 @@ int main(int argc, char* argv[])
 #else
       end_assembling = GetTime();
 #endif
+      total_assembling += (end_assembling-start_assembling);
     }
   //exit(0);  
    /** copy rhs to oldrhs before calling the solver, as rhs will change in multigrid solver */
@@ -513,7 +515,7 @@ int main(int argc, char* argv[])
 #endif
       OutPut("h_min : " << hmin << " h_max : " << hmax << endl);
       
-     TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
+//      TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
   
 //======================================================================
 // time disc loop
@@ -562,8 +564,7 @@ int main(int argc, char* argv[])
       OutPut(endl << "CURRENT TIME: "<<TDatabase::TimeDB->CURRENTTIME << endl);
       
       /** unless the stiffness matrix or rhs change in time, it is enough to assemble only once at the begning   */
-      if(profiling){
-	total_assembling += (end_assembling-start_assembling); 
+      if(profiling){ 
 #ifdef _MPI
 	start_assembling = MPI_Wtime();
 #else
@@ -577,6 +578,9 @@ int main(int argc, char* argv[])
         { SystemMatrix->AssembleARhs(NULL, Sol_array, Rhs_array); }
         else
          { SystemMatrix->AssembleARhs(NULL, Sol_array, Rhs_array); }
+         
+//          for(i=0;i<N_DOF;i++)
+// 	   rhs[i]=0;
          
         /**  M:= M + (tau*TDatabase::TimeDB->THETA1)*A
          *   rhs: =(tau*THETA4)*rhs +(tau*THETA3)*oldrhs + [ M - (tau*THETA2)A]*oldsol **/
@@ -596,10 +600,10 @@ int main(int argc, char* argv[])
 #else
 	end_assembling = GetTime();
 #endif
+	total_assembling += (end_assembling-start_assembling);
       }
       // solve the system matrix 
       if(profiling){
-	total_solve += (end_solve-start_solve);
 #ifdef _MPI
 	start_solve = MPI_Wtime();
 #else
@@ -608,12 +612,14 @@ int main(int argc, char* argv[])
       }
 
       SystemMatrix->Solve(sol);
+      
       if(profiling){
 #ifdef _MPI
 	end_solve = MPI_Wtime();
 #else
 	end_solve = GetTime();
 #endif
+	total_solve += (end_solve-start_solve);
       }
       
       /** restore the mass matrix for the next time step unless the stiffness matrix 
@@ -768,6 +774,7 @@ int main(int argc, char* argv[])
 //======================================================================  
   if(profiling){
 #ifdef _MPI
+    
     int min_Ncells;
     MPI_Allreduce(&N_Cells, &min_Ncells, 1, MPI_INT, MPI_MIN, Comm);
     if(min_Ncells == N_Cells)
@@ -782,7 +789,6 @@ int main(int argc, char* argv[])
       OutPut( "max NCells : " << N_Cells << endl);
       OutPut( "corresponding max Ndof : " << N_DOF << endl);
     }
-
 
     int Total_cells, Total_dof;
     MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);

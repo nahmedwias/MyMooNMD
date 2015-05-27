@@ -2342,6 +2342,7 @@ void Defect_NSE1(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
    N_PDOF = B[0]->GetN_Rows();
   }
 
+  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE :: "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
     IntoL20Vector3D(r+3*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
   return;
@@ -2588,6 +2589,8 @@ void Defect_NSE2(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
   CoupledDefect(A[0], B[0], B[1], B[2], B[3], B[4], B[5], x, b, r);
   N_UDOF = A[0]->GetN_Rows();
   N_PDOF = B[0]->GetN_Rows();
+  
+  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE :: "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
   
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
     IntoL20Vector3D(r+3*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);

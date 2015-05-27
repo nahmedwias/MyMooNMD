@@ -29,8 +29,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
-
 #ifdef _MPI
 #include "mpi.h"
 #include <MeshPartition.h>
@@ -84,6 +82,9 @@ int main(int argc, char* argv[])
   MPI_Comm_size(Comm, &size);
  
   TDatabase::ParamDB->Comm = Comm;
+  
+  int Refine;
+  int metisType[2] = {0,0};  
 #endif 
   
   TDomain *Domain;
@@ -154,7 +155,12 @@ int main(int argc, char* argv[])
    VtkBaseName = TDatabase::ParamDB->VTKBASENAME;
    Domain->Init(PRM, GEO);
    
-   
+  LEVELS = TDatabase::ParamDB->LEVELS;
+  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+  {
+    TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
+    LEVELS = 1;
+  } 
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
@@ -169,7 +175,38 @@ int main(int argc, char* argv[])
   Domain->GenerateEdgeInfo();
   
   if(profiling)  t1 = MPI_Wtime();
-  Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
+  
+  if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("metis type set to %d\n",TDatabase::ParamDB->Par_P2);
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+  //this loop checks if number of cells are sufficient in the coarsest level, such that each 
+  //rank get some own cells to work on
+  //it does so by changing the metis type first, if not possible then refine and start again
+  do
+  {
+    metisType[TDatabase::ParamDB->Par_P2] = 1;
+    Refine = Partition_Mesh3D(Comm, Domain, MaxCpV);	//MaxCpV=maximum cell per vertex
+    
+    if(metisType[0]*metisType[1] == 1 && Refine)
+    {
+      metisType[0] = 0;      metisType[1] = 0;
+      TDatabase::ParamDB->Par_P2 = 0;
+      if(rank == 0)
+       {
+	  printf("\n----------------------------------------------------------------------------------------\n");
+	  printf("Warning :: both metisType used. Now refining the mesh by one step \n");
+	  printf("metis type set to 0\n");
+	  printf("----------------------------------------------------------------------------------------\n\n");
+       }
+      Domain->RegRefineAll();
+      Domain->GenerateEdgeInfo();
+      TDatabase::ParamDB->UNIFORM_STEPS +=1;
+    }
+  }while(Refine);
+  
   if(profiling)  t2 = MPI_Wtime(); 
   
   if(profiling){
@@ -196,7 +233,6 @@ int main(int argc, char* argv[])
 //=========================================================================
 // set data for multigrid
 //=========================================================================  
-  LEVELS = TDatabase::ParamDB->LEVELS;
 
   // set type of multilevel
   mg_type = TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
@@ -372,30 +408,29 @@ int main(int argc, char* argv[])
     // assemble the system matrix with given sol and rhs 
     SystemMatrix->Assemble(Sol_array, Rhs_array);
     
-//     MPI_Finalize();
-//     exit(0);
-    
     // calculate the residual
     defect = new double[N_TotalDOF];
     memset(defect,0,N_TotalDOF*SizeOfDouble);
     
-    SystemMatrix->GetResidual(sol, rhs, defect);
-//    exit(0); 
+    SystemMatrix->GetResidual(sol, rhs, defect,impuls_residual,residual);
+
+    //    exit(0); 
     //correction due to L^2_O Pressure space 
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        IntoL20Vector3D(defect+3*N_U, N_P, pressure_space_code);
     
-      residual =  Ddot(N_TotalDOF, defect, defect);
-      impuls_residual = Ddot(3*N_U, defect, defect);  
-
-      OutPut("Nonlinear iteration step   0");
-      OutPut(setw(14) << impuls_residual);
-      OutPut(setw(14) << residual-impuls_residual);
-      OutPut(setw(14) << sqrt(residual) << endl);  
-     
- 
+#ifdef _MPI
+     if(rank == out_rank)
+#endif
+     {
+       OutPut("Nonlinear iteration step   0" << 
+               setw(14) << impuls_residual   << 
+               setw(14) << residual-impuls_residual << 
+               setw(14) << sqrt(residual) << endl);
+     }
+// exit(0);
 //====================================================================== 
-//Solve the system
+// Solve the system
 // the nonlinear iteration
 //======================================================================
     limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
@@ -406,12 +441,6 @@ int main(int argc, char* argv[])
       // Solve the NSE system
       SystemMatrix->Solve(sol, rhs);
 
-      
- 
-//       cout << "Sol " << Ddot(N_TotalDOF,sol,sol)<<endl;
-
-      
-      
       //no nonlinear iteration for Stokes problem  
       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES) 
        break;
@@ -421,19 +450,22 @@ int main(int argc, char* argv[])
     
       // get the residual          
       memset(defect,0,N_TotalDOF*SizeOfDouble);
-      SystemMatrix->GetResidual(sol, rhs, defect);
+      SystemMatrix->GetResidual(sol, rhs, defect,impuls_residual,residual);
       
     //correction due to L^2_O Pressure space 
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        IntoL20Vector3D(defect+3*N_U, N_P, pressure_space_code);
-    
-      residual =  Ddot(N_TotalDOF, defect, defect);
-      impuls_residual = Ddot(3*N_U, defect, defect);  
 
-      OutPut("nonlinear iteration step " << setw(3) << j);
-      OutPut(setw(14) << impuls_residual);
-      OutPut(setw(14) << residual-impuls_residual);
-      OutPut(setw(14) << sqrt(residual) << endl);
+#ifdef _MPI
+     if(rank == out_rank)
+#endif
+     {
+       OutPut("Nonlinear iteration step " << setw(3) << j << 
+               setw(14) << impuls_residual   << 
+               setw(14) << residual-impuls_residual << 
+               setw(14) << sqrt(residual) << endl);
+     }     
+      
  
       if ((sqrt(residual)<=limit)||(j==Max_It))
        {
@@ -498,7 +530,8 @@ int main(int argc, char* argv[])
        OutPut("H1-semi(p): " <<  p_error[1] << endl); 
      } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 
-
+  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
+     
   CloseFiles();
   
   return 0;

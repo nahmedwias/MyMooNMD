@@ -111,19 +111,34 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int 
      DS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
    }
 
+   int out_rank=TDatabase::ParamDB->Par_P0;
+   int rank;
+   MPI_Comm_rank(Comm, &rank);
+   
    if(profiling)
    {
      t2 = MPI_Wtime();
      tdiff = t2-t1;
-     int out_rank=TDatabase::ParamDB->Par_P0;
-     int rank;
-     MPI_Comm_rank(Comm, &rank);
      MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
      if(rank == out_rank)
      {
       printf("Time taken for FeSpace SubDomain dof mapping for all levels is %e\n", t1);
      }
    }
+   
+  TCollection *coll = fespaces[N_levels-1]->GetCollection();
+  int owncells = coll->GetN_OwnCells();
+  int problemSize=0;
+  MPI_Reduce(&owncells, &problemSize, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+  if(rank==0)
+    OutPut( "total own cells over all sub domains : " << problemSize << endl);
+  
+  problemSize=0;
+  int n_master = ParComm[N_levels-1]->GetN_Master();
+  MPI_Reduce(&n_master, &problemSize, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+  if(rank==0)
+    OutPut( "total own dofs over all sub domains : " << problemSize << endl);
+  
 #endif
 
 #ifdef _OMPONLY

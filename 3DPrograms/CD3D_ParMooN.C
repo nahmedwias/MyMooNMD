@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   LEVELS = TDatabase::ParamDB->LEVELS;
   if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
   {
-    TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
+    TDatabase::ParamDB->UNIFORM_STEPS += (LEVELS-1);
     LEVELS = 1;
   }
   

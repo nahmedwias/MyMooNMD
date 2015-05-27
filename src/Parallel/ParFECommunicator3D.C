@@ -80,7 +80,7 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      Send_InfoMS[k]=sol[DofSendMS[i]+j*N_Dof*N_Dim];
+      Send_InfoMS[k]=sol[DofSendMS[i]+j*N_Dof];
     }
   }
 
@@ -91,7 +91,7 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      sol[DofRecvMS[i]+j*N_Dof*N_Dim] = Recv_InfoMS[k];
+      sol[DofRecvMS[i]+j*N_Dof] = Recv_InfoMS[k];
     }
   }
   
@@ -117,7 +117,7 @@ void TParFECommunicator3D::CommUpdateH1(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      Send_InfoH1[k]=sol[DofSendH1[i]+j*N_Dof*N_Dim];
+      Send_InfoH1[k]=sol[DofSendH1[i]+j*N_Dof];
     }
   }
 
@@ -131,7 +131,7 @@ void TParFECommunicator3D::CommUpdateH1(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      sol[DofRecvH1[i]+j*N_Dof*N_Dim] = Recv_InfoH1[k];
+      sol[DofRecvH1[i]+j*N_Dof] = Recv_InfoH1[k];
     }
   }
   
@@ -157,7 +157,7 @@ void TParFECommunicator3D::CommUpdateH2(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      Send_InfoH2[k]=sol[DofSendH2[i]+j*N_Dof*N_Dim];
+      Send_InfoH2[k]=sol[DofSendH2[i]+j*N_Dof];
     }
   }
   
@@ -168,7 +168,7 @@ void TParFECommunicator3D::CommUpdateH2(double *sol)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      sol[DofRecvH2[i]+j*N_Dof*N_Dim] = Recv_InfoH2[k];
+      sol[DofRecvH2[i]+j*N_Dof] = Recv_InfoH2[k];
     }
   }
   
@@ -219,7 +219,7 @@ void TParFECommunicator3D::CommUpdate(double *sol)
       for(j=0;j<N_Dim;j++)
       {
 	k = i*N_Dim + j;
-	Send_Info[k]=sol[DofSend[i]+j*N_Dof*N_Dim];
+	Send_Info[k]=sol[DofSend[i]+j*N_Dof];
       }
     }
   
@@ -230,7 +230,7 @@ void TParFECommunicator3D::CommUpdate(double *sol)
       for(j=0;j<N_Dim;j++)
       {
         k = i*N_Dim + j;
-        sol[DofRecv[i]+j*N_Dof*N_Dim] = Recv_Info[k];
+        sol[DofRecv[i]+j*N_Dof] = Recv_Info[k];
       }
     }
     
@@ -294,7 +294,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      Recv_Info_temp[k]=rhs[DofRecv_temp[i]+j*N_Dof*N_Dim];
+      Recv_Info_temp[k]=rhs[DofRecv_temp[i]+j*N_Dof];
     }
   }
  
@@ -305,7 +305,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      rhs[DofSend_temp[i]+j*N_Dof*N_Dim] += Send_Info_temp[k];
+      rhs[DofSend_temp[i]+j*N_Dof] += Send_Info_temp[k];
     }
   }
 
@@ -315,7 +315,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      Send_Info_temp[k]=rhs[DofSend_temp[i]+j*N_Dof*N_Dim];
+      Send_Info_temp[k]=rhs[DofSend_temp[i]+j*N_Dof];
     }
   }
   
@@ -326,7 +326,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
     for(j=0;j<N_Dim;j++)
     {
       k = i*N_Dim + j;
-      rhs[DofRecv_temp[i]+j*N_Dof*N_Dim] = Recv_Info_temp[k];
+      rhs[DofRecv_temp[i]+j*N_Dof] = Recv_Info_temp[k];
     }
   }
   

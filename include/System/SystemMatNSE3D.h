@@ -129,7 +129,7 @@ class TSystemMatNSE3D
     void AssembleNonLinear(double **sol, double **rhs);
     
     /** get the resudual of the NSE system */
-    void GetResidual(double *sol, double *rhs, double *res);
+    void GetResidual(double *sol, double *rhs, double *res, double &impuls_residual, double &residual);
     
     /** solve the system matrix */
     void  Solve(double *sol, double *rhs);

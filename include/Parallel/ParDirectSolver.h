@@ -37,6 +37,8 @@ protected:
   //Select ParDirectSolver type
   int DSType;
   
+  int NSEType;
+  
   //Mumps Solver Parameters
   int N_Master, NDof;
   int N_Master_U, N_Master_P, NDof_U, NDof_P;
@@ -55,7 +57,7 @@ protected:
   // number of rhs, OwnRhs(only master dofs)
   int N_rhs;
   double *OwnRhs;
-  
+  int Global_N_DOF_U;
   double *GlobalRhs,*GlobalSol;
   int GlobalRhsSize;
   
@@ -90,6 +92,8 @@ public:
   ~TParDirectSolver();
   
   void AssembleMatrix();
+  
+  void AssembleMatrix_NSE2();
   
   void InitMumps_Scalar();
   

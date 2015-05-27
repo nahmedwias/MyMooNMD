@@ -93,7 +93,7 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
 //   id.ICNTL(8)=4; 
 //   id.ICNTL(10)=5;  // maximum number of allowed iterative refinement steps
 //   id.ICNTL(13)=1; 
-//   id.ICNTL(14)=100; //the percentage increase in the estimated working space
+  id.ICNTL(14)=100; //the percentage increase in the estimated working space
    
    // 3 - structure and values on slave process
    id.ICNTL(18) = 3;

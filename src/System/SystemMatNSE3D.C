@@ -351,7 +351,34 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
 //     fefct[0] = Velocity[N_Levels-1]->GetComponent(0);
 //     fefct[1] = Velocity[N_Levels-1]->GetComponent(1);
 //     fefct[2] = Velocity[N_Levels-1]->GetComponent(2);
-      
+    int rank;
+     MPI_Comm_rank(Comm, &rank);
+      TCollection *coll = U_Space[N_levels-1]->GetCollection();
+  int owncells = coll->GetN_OwnCells();
+  int problemSize=0;
+  MPI_Reduce(&owncells, &problemSize, 1, MPI_INT, MPI_SUM, 0, Comm);
+  if(rank==0)
+    OutPut( "total own cells over all sub domains : " << problemSize << endl);
+  
+  problemSize=0;
+  int n_master = ParComm_U[N_levels-1]->GetN_Master();
+  MPI_Reduce(&n_master, &problemSize, 1, MPI_INT, MPI_SUM, 0, Comm);
+  if(rank==0)
+    OutPut( "total own dofs over all sub domains : " << problemSize*3 << endl);
+  
+    coll = P_Space[N_levels-1]->GetCollection();
+  owncells = coll->GetN_OwnCells();
+  problemSize=0;
+  MPI_Reduce(&owncells, &problemSize, 1, MPI_INT, MPI_SUM, 0, Comm);
+  if(rank==0)
+    OutPut( "pressure :: total own cells over all sub domains : " << problemSize << endl);
+  
+  problemSize=0;
+  n_master = ParComm_P[N_levels-1]->GetN_Master();
+  MPI_Reduce(&n_master, &problemSize, 1, MPI_INT, MPI_SUM, 0, Comm);
+  if(rank==0)
+    OutPut( "pressure :: total own dofs over all sub domains : " << problemSize << endl);
+    
     NSEaux_error = NULL;
     NSEaux = NULL;
 }
@@ -893,7 +920,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
 } //TSystemMatNSE3D::AssembleNonLinear(
 
 
-void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res)
+void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res, double &impuls_residual, double &residual)
 {
 
      switch(NSEType)
@@ -953,12 +980,162 @@ void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res)
   
    Defect(sqmatrices, matrices, sol, rhs, res); 
    
+#ifdef _MPI
+   double residual_scalar = 0.0;
+   double sum =0.;
+   int i,j,rank;
+   MPI_Comm_rank(Comm, &rank);
+   int *master = ParComm_U[N_Levels-1]->GetMaster();
+   
+   for(i=0;i<N_U;i++)
+   {
+     if(master[i]!=rank)    continue;
+      
+      residual_scalar += res[i]*res[i];
+      residual_scalar += res[i+N_U]*res[i+N_U];
+      residual_scalar += res[i+2*N_U]*res[i+2*N_U];
+    }
+
+    MPI_Allreduce(&residual_scalar, &sum, 1, MPI_DOUBLE, MPI_SUM, Comm);
+    impuls_residual = (sum);
+
+    master = ParComm_P[N_Levels-1]->GetMaster();
+    for(i=0;i<N_P;i++)
+    {
+      if(master[i]!=rank)    continue;
+      
+      residual_scalar += res[i+3*N_U]*res[i+3*N_U];
+    }
+    
+    sum = 0;
+    MPI_Allreduce(&residual_scalar, &sum, 1, MPI_DOUBLE, MPI_SUM, Comm);
+    residual = (sum);
+    
+//     int k,t=0;
+//     double temp=0;
+//     double *Entries = SQMATRICES[0]->GetEntries();
+//     int *RowPtr = SQMATRICES[0]->GetRowPtr();
+//     int *KCol = SQMATRICES[0]->GetKCol();
+//     
+//     int *master_p = ParComm_P[N_Levels-1]->GetMaster();
+//     master   = ParComm_U[N_Levels-1]->GetMaster();
+//     for(i=0;i<N_U;i++) 
+//     {
+//       for(j=RowPtr[i];j<RowPtr[i+1];j++)
+//       { 
+// // 	temp += (Entries[t]*Entries[t]);
+// 	t++;
+//       }
+//     }
+//     temp *=3;
+//     
+//     temp=0;
+//     for(k=0;k<3;k++)
+//     {
+//       t=0;
+//       Entries = MATRICES[k]->GetEntries();
+//       RowPtr = MATRICES[k]->GetRowPtr();
+//       KCol = MATRICES[k]->GetKCol();
+//       for(i=0;i<N_P;i++)
+//       {
+// 	if(master_p[i] != rank) continue;
+// 	
+// 	for(j=RowPtr[i];j<RowPtr[i+1];j++)
+// 	{
+// 	  temp += (Entries[t]*Entries[t]);
+// 	  t++;
+// 	}
+//       }
+//     }
+//     for(k=3;k<6;k++)
+//     {
+//       t=0;
+//       Entries = MATRICES[k]->GetEntries();
+//       RowPtr = MATRICES[k]->GetRowPtr();
+//       KCol = MATRICES[k]->GetKCol();
+//       for(i=0;i<N_U;i++)
+//       {
+// 	if(master[i] != rank) continue;
+// 	
+// 	for(j=RowPtr[i];j<RowPtr[i+1];j++)
+// 	{
+// 	  temp += (Entries[t]*Entries[t]);
+// 	  t++;
+// 	}
+//       }
+//     }
+//     double temp2;
+//     MPI_Allreduce(&temp, &temp2, 1, MPI_DOUBLE, MPI_SUM, Comm);
+// //     if(rank==0)
+// //       cout<<"temp :: "<<temp2<<endl;
+// //      exit(0);
+#else
+    Defect(sqmatrices, matrices, sol, rhs, res);
+    impuls_residual  =  Ddot(3*N_U, res, res);
+    residual         =  Ddot(N_TotalDOF, res, res); 
+    
+//     int i,j,k,t=0;
+//     double temp=0;
+//     double *Entries = SQMATRICES[0]->GetEntries();
+//     int *RowPtr = SQMATRICES[0]->GetRowPtr();
+//     int *KCol = SQMATRICES[0]->GetKCol();
+//     for(i=0;i<N_U;i++) 
+//     {
+//       for(j=RowPtr[i];j<RowPtr[i+1];j++)
+//       {
+// 	temp += (Entries[t]*Entries[t]);
+// 	t++;
+//       }
+//     }
+//     temp *=3;
+//     
+// //     temp=0;
+//     for(k=0;k<3;k++)
+//     {
+//       t=0;
+//       Entries = MATRICES[k]->GetEntries();
+//       RowPtr = MATRICES[k]->GetRowPtr();
+//       KCol = MATRICES[k]->GetKCol();
+//       for(i=0;i<N_P;i++)
+//       {
+// 	for(j=RowPtr[i];j<RowPtr[i+1];j++)
+// 	{
+// 	  temp += (Entries[t]*Entries[t]);
+// 	  t++;
+// 	}
+//       }
+//     }
+// //     temp=0;
+//     for(k=3;k<6;k++)
+//     {
+//       t=0;
+//       Entries = MATRICES[k]->GetEntries();
+//       RowPtr = MATRICES[k]->GetRowPtr();
+//       KCol = MATRICES[k]->GetKCol();
+//       for(i=0;i<N_U;i++)
+//       {
+// 	for(j=RowPtr[i];j<RowPtr[i+1];j++)
+// 	{
+// 	  temp += (Entries[t]*Entries[t]);
+// 	  t++;
+// 	}
+//       }
+//     }
+//      cout<<"temp :: "<<temp<<endl;
+//      exit(0);
+#endif
+   
 } // TSystemMatNSE3D::GetResidual
 
 void TSystemMatNSE3D::Solve(double *sol, double *rhs)
 {
   int N_LinIter=0;
-
+	    double summ = 0;
+	    double residual,residual_scalar = 0.0;
+            double sum =0.;
+            int i,j,rank;
+	    int *master;
+	    
     switch(SOLVER)
      {
       case AMG_SOLVE:
@@ -994,8 +1171,87 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
           break;
 
           case 2:
-             DirectSolver(SqmatrixA11[N_Levels-1], MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
+#ifdef _MPI
+	    DS->Solve(sol, rhs, true);
+	    
+            MPI_Comm_rank(Comm, &rank);
+            master = ParComm_U[N_Levels-1]->GetMaster();
+            
+	    residual_scalar = 0;
+            for(i=0;i<N_U;i++)
+	    {
+	      if(master[i]!=rank)    continue;
+	      
+	      residual_scalar += sol[i]*sol[i];
+	      residual_scalar += sol[i+N_U]*sol[i+N_U];
+	      residual_scalar += sol[i+2*N_U]*sol[i+2*N_U];
+	    }
+    
+	    master = ParComm_P[N_Levels-1]->GetMaster();
+	    for(i=0;i<N_P;i++)
+	    {
+	      if(master[i]!=rank)    continue;
+	    
+	      residual_scalar += sol[i+3*N_U]*sol[i+3*N_U];
+	    }
+	  
+	    sum = 0;
+	    MPI_Allreduce(&residual_scalar, &sum, 1, MPI_DOUBLE, MPI_SUM, Comm);
+	    residual = (sum);
+	    if(rank==0)
+	      cout<<"norm of sol :: "<<sqrt(sum)<<endl;
+	    
+	    master = ParComm_U[N_Levels-1]->GetMaster();
+            residual_scalar=0;
+            for(i=0;i<N_U;i++)
+	    {
+	      if(master[i]!=rank)    continue;
+	      
+	      residual_scalar += rhs[i]*rhs[i];
+	      residual_scalar += rhs[i+N_U]*rhs[i+N_U];
+	      residual_scalar += rhs[i+2*N_U]*rhs[i+2*N_U];
+	    }
+    
+	    master = ParComm_P[N_Levels-1]->GetMaster();
+	    for(i=0;i<N_P;i++)
+	    {
+	      if(master[i]!=rank)    continue;
+	    
+	      residual_scalar += rhs[i+3*N_U]*rhs[i+3*N_U];
+	    }
+	  
+	    sum = 0;
+	    MPI_Allreduce(&residual_scalar, &sum, 1, MPI_DOUBLE, MPI_SUM, Comm);
+	    residual = (sum);
+	    if(rank==0)
+	      cout<<"norm of RHS :: "<<sqrt(sum)<<endl;
+	  
+	 
+	    MPI_Finalize();
+	    exit(0);
+#else
+	    for(i=0;i<N_TotalDOF;i++)
+	      rhs[i]=1;
+	    
+            DirectSolver(SqmatrixA11[N_Levels-1], MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
                           MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol);
+	   
+	    summ = 0;
+	    for(i=0;i<N_TotalDOF;i++)
+	      summ += rhs[i]*rhs[i];
+	    cout<<"norm of RHS :: "<<sqrt(summ)<<endl;
+	    
+	    summ=0;
+	    for(i=0;i<N_TotalDOF;i++)
+	      summ += sol[i]*sol[i];
+	    cout<<"norm of sol :: "<<sqrt(summ)<<endl;
+	    
+	    cout<<"N_TotalDOF :: "<<N_TotalDOF<<endl;
+	    
+// 	    for(i=0;i<N_TotalDOF;i++)
+// 	      sol[i]=1;
+	    exit(0);
+#endif
           break;
 
           case 3:

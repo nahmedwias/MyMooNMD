@@ -62,6 +62,7 @@ void ExactP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
   if (fabs(z-10)<1e-6)
   {
     cond = NEUMANN;
