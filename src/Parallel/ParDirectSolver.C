@@ -218,7 +218,7 @@ void TParDirectSolver::InitMumps_Scalar()
 void TParDirectSolver::InitMumps_NSE2()
 {
              
-  int i,j,k,l,m,t,N_Active;
+  int i,j,k,l,m,t,N_Active, row_index, col_index_disp3U;
   int *Master_P,*local2global_P;
   int *Master         = ParComm->GetMaster();
   int *local2global   = ParComm->Get_Local2Global();
@@ -285,15 +285,18 @@ void TParDirectSolver::InitMumps_NSE2()
     MatLoc = new double[N_Nz];
     
     
+    col_index_disp3U = 3*Global_N_DOF_U;
  /** U1 component */   
     k = 0;
     for(i=0;i<NDof_U;i++)
     {
       if(Master[i] == rank)
        {
+        row_index = local2global[i] + 1; //fortran format
+
 	 for(j=RowPtr[i];j<RowPtr[i+1];j++)
 	  {
-	   I_rn[k] =  local2global[i] + 1;              //fortran format
+	   I_rn[k] =  row_index;     
 	   J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
 	   k++;
 	  }//for(j=
@@ -303,8 +306,8 @@ void TParDirectSolver::InitMumps_NSE2()
 	 if(i<N_Active)
 	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
 	   {
-	    I_rn[k] = local2global[i] + 1;                //fortran format
-	    J_cn[k] = Global_N_DOF_U*3 + local2global_P[KCol_BT[j]] + 1;       //fortran format
+	    I_rn[k] = row_index;                
+	    J_cn[k] = col_index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
 	    k++;
 	   }//for(j=
       }//if(Master_P[i] == rank)
@@ -316,9 +319,11 @@ void TParDirectSolver::InitMumps_NSE2()
     {
      if(Master[i] == rank)
       {
+       row_index = Global_N_DOF_U + local2global[i] + 1;              //fortran format
+
        for(j=RowPtr[i];j<RowPtr[i+1];j++)
         {
-         I_rn[k] = Global_N_DOF_U + local2global[i] + 1;              //fortran format
+         I_rn[k] = row_index;
          J_cn[k] = Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
          k++;
        }//for(j=
@@ -328,8 +333,8 @@ void TParDirectSolver::InitMumps_NSE2()
 	 if(i<N_Active)
 	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U + local2global[i] + 1;                //fortran format
-	    J_cn[k] = Global_N_DOF_U*3 + local2global_P[KCol_BT[j]] + 1;       //fortran format
+	    I_rn[k] = row_index;  
+	    J_cn[k] = col_index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
 	    k++;
 	  }//for(j=
 	  
@@ -342,20 +347,22 @@ void TParDirectSolver::InitMumps_NSE2()
     {
       if(Master[i] == rank)
       {
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	      I_rn[k] = Global_N_DOF_U*2 + local2global[i] + 1;              //fortran format
-	      J_cn[k] = Global_N_DOF_U*2 + local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	    }//for(j=
+       row_index = Global_N_DOF_U*2 + local2global[i] + 1;              //fortran format
+       
+	for(j=RowPtr[i];j<RowPtr[i+1];j++)
+	 {
+	  I_rn[k] = row_index;
+          J_cn[k] = Global_N_DOF_U*2 + local2global[KCol[j]] + 1;        //fortran format
+           k++;
+	  }//for(j=
 	 
 	
 	  //Mat BT(m)
         if(i<N_Active)
 	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U*2 + local2global[i] + 1;                //fortran format
-	    J_cn[k] = Global_N_DOF_U*3 + local2global_P[KCol_BT[j]] + 1;       //fortran format
+	    I_rn[k] = row_index;
+	    J_cn[k] = col_index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
 	    k++;
 	  }//for(j=  
       }//if(Master_P[i] == rank)
@@ -377,21 +384,21 @@ void TParDirectSolver::InitMumps_NSE2()
 	//Mat B(l)
         for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U*3 + local2global_P[i] + 1;                //fortran format
+	    I_rn[k] = col_index_disp3U + local2global_P[i] + 1;                //fortran format
 	    J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
 	    k++;
 	  }//for(j=
  
          for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U*3 + local2global_P[i] + 1;                //fortran format
+	    I_rn[k] = col_index_disp3U + local2global_P[i] + 1;                //fortran format
 	    J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
 	    k++;
 	  }//for(j=
 	  
 	 for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U*3 + local2global_P[i] + 1;                //fortran format
+	    I_rn[k] = col_index_disp3U + local2global_P[i] + 1;                //fortran format
 	    J_cn[k] = Global_N_DOF_U*2 + local2global[KCol_B[j]] + 1;        //fortran format
 	    k++;
 	  }//for(j=
