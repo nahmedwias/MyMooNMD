@@ -413,7 +413,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY; 
    options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT; 
    options[METIS_OPTION_NUMBERING] = 0; 
-   
+   options[METIS_OPTION_CONTIG] = 1;
 
    TVertex **Vertices;    
 
