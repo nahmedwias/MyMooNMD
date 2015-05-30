@@ -95,6 +95,8 @@ public:
   
   void AssembleMatrix_NSE2();
   
+  void AssembleMatrix_NSE4();
+  
   void InitMumps_Scalar();
   
   void InitMumps_NSE2();  

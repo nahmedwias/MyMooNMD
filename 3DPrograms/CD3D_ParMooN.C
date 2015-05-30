@@ -45,8 +45,8 @@ double timeC = 0;
 // =======================================================================
 // include current example
 // =======================================================================
-// #include "../Examples/CD_3D/Laplace.h"
-#include "../Examples/CD_3D/HeatChanel.h"
+#include "../Examples/CD_3D/Laplace.h"
+// #include "../Examples/CD_3D/HeatChanel.h"
 // =======================================================================
 
 // main program

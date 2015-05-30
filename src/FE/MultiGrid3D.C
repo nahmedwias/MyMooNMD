@@ -165,41 +165,43 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
         break;
   #endif
 #endif
-// 	case 6: // SOR/Jacobi Light
-//         for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-// 	{
-//           Level->SOR(CurrentSol, CurrentRhs, CurrentAux,
-//                 N_Parameters, Parameters);
-// // 	  Level->Jacobi(CurrentSol, CurrentRhs, CurrentAux,
-// //                 N_Parameters, Parameters);
-// #ifdef _MPI  
-//          ParComm->CommUpdate_M_H1(CurrentSol);
-// #endif
-// 	}
-//         break;
+
 #ifdef _MPI
   #ifdef _HYBRID
 	case 6: //SOR Reorder and color
-	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
-	{
-	  if(j == 0){
-	    firstTime = true;
-	    LastTime  = false;
-	  }
-	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
-	  {
-	    firstTime = false;
-	    LastTime  = true;
-	  }
-	  else
-	  {
-	    firstTime = false;
-	    LastTime  = false;
-	  }
+// 	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+// 	{
+// 	  if(j == 0){
+// 	    firstTime = true;
+// 	    LastTime  = false;
+// 	  }
+// 	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
+// 	  {
+// 	    firstTime = false;
+// 	    LastTime  = true;
+// 	  }
+// 	  else
+// 	  {
+// 	    firstTime = false;
+// 	    LastTime  = false;
+// 	  }
+// 	  
+//           Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+//                 N_Parameters, Parameters, firstTime, LastTime);
+// 	}
+	 
 	  
-          Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters, firstTime, LastTime);
+	  
+// 	  Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux, N_Parameters, Parameters, PreSmooth);
+	  
+	    //this above routine somehow is slower than mpi only. find out??
+            //hence for now using mpi only
+	  for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
 	}
+// 	}
         break;
   #else	
 	case 6: //SOR_Reorder
@@ -305,24 +307,31 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 #ifdef _MPI
   #ifdef _HYBRID
 	  case 6: //SOR_Reorder
-	    if(it == 0)
-	    {
-	      firstTime = true;
-	      LastTime  = false;
-	    }
-	    else if(it == maxit-1)
-	    {
-	      firstTime = false;
-	      LastTime  = true;
-	    }
-	    else
-	    {
-	      firstTime = false;
-	      LastTime  = false;
-	    }
-	      
-	    Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters, firstTime, LastTime);
+// 	    if(it == 0)
+// 	    {
+// 	      firstTime = true;
+// 	      LastTime  = false;
+// 	    }
+// 	    else if(it == maxit-1)
+// 	    {
+// 	      firstTime = false;
+// 	      LastTime  = true;
+// 	    }
+// 	    else
+// 	    {
+// 	      firstTime = false;
+// 	      LastTime  = false;
+// 	    }
+// 	      
+// 	    Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+//                 N_Parameters, Parameters, firstTime, LastTime);
+	    
+	    
+// 	    Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux, N_Parameters, Parameters, CoarseSmooth);
+	      //this above routine somehow is slower than mpi only. find out??
+              //hence for now using mpi only
+	    Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                  N_Parameters, Parameters);
           break;
   #else	
 	  case 6: //SOR_Reorder
@@ -429,26 +438,38 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 #ifdef _MPI
   #ifdef _HYBRID
 	case 6: //SOR Reorder and color
-	for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
-	{
-	  if(j == 0){
-	    firstTime = true;
-	    LastTime  = false;
-	  }
-	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
-	  {
-	    firstTime = false;
-	    LastTime  = true;
-	  }
-	  else
-	  {
-	    firstTime = false;
-	    LastTime  = false;
-	  }
+// 	for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+// 	{
+// 	  if(j == 0){
+// 	    firstTime = true;
+// 	    LastTime  = false;
+// 	  }
+// 	  else if(j == TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR - 1)
+// 	  {
+// 	    firstTime = false;
+// 	    LastTime  = true;
+// 	  }
+// 	  else
+// 	  {
+// 	    firstTime = false;
+// 	    LastTime  = false;
+// 	  }
+// 	  
+//           Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
+//                 N_Parameters, Parameters, firstTime, LastTime);
+// 	}
 	  
-          Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux,
-                N_Parameters, Parameters, firstTime, LastTime);
+	  
+	  
+// 	  Level->SOR_Re_Color(CurrentSol, CurrentRhs, CurrentAux, N_Parameters, Parameters, PostSmooth);
+	  //this above routine somehow is slower than mpi only. find out??
+              //hence for now using mpi only
+	  for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;j++)
+	{
+          Level->SOR_Re(CurrentSol, CurrentRhs, CurrentAux,
+                N_Parameters, Parameters);
 	}
+// 	}
         break;
   #else	
 	case 6: //SOR_Reorder

@@ -231,12 +231,15 @@ void Prolongate(TFESpace3D *CoarseSpace,
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
   memset(FineFunction, 0, SizeOfDouble*N_FineDOFs);
 
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i,cell,k)
-// {
-//   //printf("num thrds is %d---\n",omp_get_num_threads());
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp parallel default(shared) private(i,j,k,l,cell,DOF,FineId,FineElement,FineBF,N_Fine, \
+                                             parent, N_Children, CoarseNumber, CoarseId, CoarseElement, \
+                                             CoarseBF, BaseFunctions, Ref, FineNumber,\
+                                             QQ, FineDOF, CoarseDOF, Val, s, Val2, \
+                                             Index, N_Coarse, entry)
+{
+#pragma omp for schedule(guided) 
+#endif
   // set fine grid clipboard to -1
   for(i=0;i<N_FineCells;i++)
   {
@@ -249,13 +252,15 @@ void Prolongate(TFESpace3D *CoarseSpace,
     FineBF = FineElement->GetBaseFunct3D_ID();
     N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
     for(j=0;j<N_Fine;j++)
-//       #pragma omp atomic 
+#ifdef _HYBRID      
+      #pragma omp atomic 
+#endif  
       aux[DOF[j]] += 1;
   }
   
-// #ifdef _HYBRID
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided) 
+#endif
   // set coarse grid clipboard to implicit number
   for(i=0;i<N_CoarseCells;i++)
   {
@@ -264,9 +269,9 @@ void Prolongate(TFESpace3D *CoarseSpace,
   }
 
 
-// #ifdef _HYBRID
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif
   // if a cell with clipboard==-1 is found
   // => this cell is only on the fine grid
   // set clipboard to "-number-10"
@@ -277,16 +282,9 @@ void Prolongate(TFESpace3D *CoarseSpace,
     if(k==-1) cell->SetClipBoard(-i-10);
   }
   
-// #ifdef _HYBRID
-// }
-// #endif
-
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i,j,k,l,Index,s,entry,cell,parent,N_Children,CoarseNumber,FineNumber,CoarseId,FineId,\
-//                   CoarseElement,FineElement,CoarseBF,FineBF,BaseFunctions,N_Coarse,N_Fine,Ref,CoarseDOF,FineDOF,Val,Val2,QQ)
-// {
-// #pragma omp for schedule(guided) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
@@ -327,36 +325,32 @@ void Prolongate(TFESpace3D *CoarseSpace,
         // cout << "child: " << j << endl;
         cell = parent->GetChild(j);
 // #ifdef _HYBRID
-// #pragma omp critical
+// 	#pragma omp critical
 // #endif
         {
          k = cell->GetClipBoard();
          cell->SetClipBoard(-2);
         }
+        
 #ifdef _HYBRID
 	  if(k==-2) continue;
-	#endif
+#endif
 	FineNumber = -(k+10);
         FineId = FineSpace->GetFE3D(FineNumber, cell);
         FineElement = TFEDatabase3D::GetFE3D(FineId);
         FineBF = FineElement->GetBaseFunct3D_ID();
         N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
 
-        // do prolongation
-/*
-        cout << "CoarseId: " << CoarseId << endl;
-        cout << "Ref: " << Ref << endl;
-        cout << "FineId: " << FineId << endl;
-        cout << "j: " << j << endl;
-*/
-        QQ = TFEDatabase3D::GetProlongationMatrix3D 
+#ifdef _HYBRID
+       #pragma omp critical
+#endif
+	{
+	  QQ = TFEDatabase3D::GetProlongationMatrix3D 
                 (CoarseId, Ref, FineId, j);
+	}
 
         FineDOF = FineGlobalNumbers+FineBeginIndex[FineNumber];
-#ifdef _HYBRID
-//    #pragma omp parallel default(shared) private(k,s,entry,l)
-//     #pragma omp for schedule(static) nowait 
-#endif
+
         for(k=0;k<N_Fine;k++)
         {
           s = 0;
@@ -373,21 +367,14 @@ void Prolongate(TFESpace3D *CoarseSpace,
         TFEDatabase3D::GetBaseFunct3D(FineBF)
                         ->ChangeBF(FineColl, cell, Val2);
 			
-#ifdef _HYBRID
-//    #pragma omp parallel default(shared) private(k,Index)
-//     #pragma omp for schedule(guided) nowait 
-#endif
         for(k=0;k<N_Fine;k++)
         {
           Index = FineDOF[k];
-// 	 #pragma omp critical 
 	 {
-/*#ifdef _HYBRID   
-	 #pragma omp atomic
-#endif	*/   
+#ifdef _HYBRID
+       #pragma omp atomic
+#endif  
           FineFunction[Index] += Val2[k];
-	  //#pragma omp atomic
-          //aux[Index] += 1;
 	 }
         }
       } // endfor j
@@ -411,26 +398,22 @@ void Prolongate(TFESpace3D *CoarseSpace,
       BaseFunctions = TFEDatabase3D::GetBaseFunct3D(CoarseBF);
       N_Coarse = BaseFunctions->GetDimension();
 
-      // do prolongation
-      QQ = TFEDatabase3D::GetProlongationMatrix3D 
+#ifdef _HYBRID
+       #pragma omp critical
+#endif
+	{
+	  QQ = TFEDatabase3D::GetProlongationMatrix3D 
               (CoarseId, Ref, FineId, 0);
+	}
 
       FineDOF = FineGlobalNumbers+FineBeginIndex[FineNumber];
       CoarseDOF = CoarseGlobalNumbers+CoarseBeginIndex[CoarseNumber];
       
-#ifdef _HYBRID
-// #pragma omp parallel default(shared) private(k,s,l,Val2,Index)
-// {
-// #pragma omp for schedule(guided) nowait 
-#endif
       for(l=0;l<N_Coarse;l++)
         Val[l] = CoarseFunction[CoarseDOF[l]];
 
       BaseFunctions->ChangeBF(CoarseColl, cell, Val);
       
-#ifdef _HYBRID
-// #pragma omp for schedule(guided) nowait 
-#endif
       for(k=0;k<N_Fine;k++)
       {
         s = 0;
@@ -444,40 +427,30 @@ void Prolongate(TFESpace3D *CoarseSpace,
       TFEDatabase3D::GetBaseFunct3D(FineBF)
                       ->ChangeBF(FineColl, cell, Val2);
       
-#ifdef _HYBRID
-// #pragma omp for schedule(guided) nowait 
-#endif
       for(k=0;k<N_Fine;k++)
       {
         Index = FineDOF[k];
-// 	#pragma omp critical 
 	{
-/*#ifdef _HYBRID	  
-	  #pragma omp atomic
-#endif	*/  
+#ifdef _HYBRID
+       #pragma omp atomic
+#endif  
          FineFunction[Index] += Val2[k];
-	 //#pragma omp atomic
-         //aux[Index] += 1;
 	}
       }
-#ifdef _HYBRID
-// }
-#endif
     } // endelse
   } // endfor i
-#ifdef _HYBRID
-// }
-#endif
 
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i)
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif 
   for(i=0;i<N_FineDOFs;i++)
   {
     FineFunction[i] /= aux[i];
   }
-  
+#ifdef _HYBRID
+} 
+#endif
+
 #ifdef _MPI
   t2 = MPI_Wtime();
 #else
@@ -765,12 +738,16 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
   
   
   
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i,j,k,cell,DOF,FineId,FineElement,FineBF,N_Fine)
-// //{
-// #pragma omp for schedule(guided) nowait 
-// #endif
-  // set fine grid clipboard to -1
+#ifdef _HYBRID
+#pragma omp parallel default(shared) private(i,j,k,l,cell,DOF,FineId,FineElement,FineBF,N_Fine, \
+                                             parent, N_Children, CoarseNumber, CoarseId, CoarseElement, \
+                                             CoarseBF, BaseFunctions, Ref, FineNumber,\
+                                             QQ, FineDOF, CoarseDOF, Val, s, Val2, \
+                                             Index, N_Coarse)
+{
+#pragma omp for schedule(guided) 
+#endif
+//   set fine grid clipboard to -1
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
@@ -782,26 +759,24 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
     FineBF = FineElement->GetBaseFunct3D_ID();
     N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
     for(j=0;j<N_Fine;j++)
-/*#ifdef _HYBRID      
+#ifdef _HYBRID      
       #pragma omp atomic 
-#endif  */    
+#endif      
       aux[DOF[j]] += 1;
   }
 
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i,k,cell)
-// {
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided) nowait 
+#endif
   // modify fine function values, will be repaired at end
   for(i=0;i<N_FineDOFs;i++)
   {    
     FineFunction[i] /= aux[i];
   }
- 
-// #ifdef _HYBRID
-// #pragma omp for schedule(static) nowait 
-// #endif
+   
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif
   // set coarse grid clipboard to implicit number
   for(i=0;i<N_CoarseCells;i++)
   {
@@ -809,9 +784,9 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
     cell->SetClipBoard(i);
   }
 
-// #ifdef _HYBRID
-// #pragma omp for schedule(static) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif
   // if a cell with clipboard==-1 is found
   // => this cell is only on the fine grid
   // set clipboard to "-number-10"
@@ -821,17 +796,10 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
     k = cell->GetClipBoard();
     if(k==-1) cell->SetClipBoard(-i-10);
   }
-// #ifdef _HYBRID
-// } 
-// #endif
 
-
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i,j,k,l,Index,s,cell,parent,N_Children,CoarseNumber,FineNumber,CoarseId,FineId,\
-//                   CoarseElement,FineElement,CoarseBF,FineBF,BaseFunctions,N_Coarse,N_Fine,Ref,CoarseDOF,FineDOF,Val,Val2,QQ)
-// {
-// #pragma omp for schedule(guided) nowait 
-// #endif
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif
   for(i=0;i<N_FineCells;i++)
   {
     cell = FineColl->GetCell(i);
@@ -859,13 +827,7 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
       N_Coarse = BaseFunctions->GetDimension();
 
       Ref = parent->GetRefDesc()->GetType();
-
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(j,cell,k,l,FineNumber,FineId,FineElement,FineBF,N_Fine,QQ,\
-                                FineDOF,CoarseDOF,s,Val2,Val,Index)
-
-// #pragma omp for schedule(guided) nowait 
-// #endif    
+  
       for(j=0;j<N_Children;j++)
       {
         cell = parent->GetChild(j);
@@ -876,24 +838,23 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
          k = cell->GetClipBoard();
          cell->SetClipBoard(-2);
 	}
-	#ifdef _HYBRID
+	
+#ifdef _HYBRID
 	  if(k==-2) continue;
-	#endif
+#endif
+	  
 	FineNumber = -(k+10);
         FineId = FineSpace->GetFE3D(FineNumber, cell);
         FineElement = TFEDatabase3D::GetFE3D(FineId);
         FineBF = FineElement->GetBaseFunct3D_ID();
         N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
-
-        // do restriction
-/*
-        cout << "CoarseId: " << CoarseId << endl;
-        cout << "Ref: " << Ref << endl;
-        cout << "FineId: " << FineId << endl;
-        cout << "j: " << j << endl;
-*/
-        QQ = TFEDatabase3D::GetProlongationMatrix3D 
+#ifdef _HYBRID
+       #pragma omp critical
+#endif
+	{
+	  QQ = TFEDatabase3D::GetProlongationMatrix3D 
                 (CoarseId, Ref, FineId, j);
+	}
 
         FineDOF = FineGlobalNumbers+FineBeginIndex[FineNumber];
         CoarseDOF = CoarseGlobalNumbers+CoarseBeginIndex[CoarseNumber];
@@ -920,7 +881,9 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
         for(k=0;k<N_Coarse;k++)
         {
           Index = CoarseDOF[k];
-// 	  #pragma omp atomic 
+#ifdef _HYBRID
+       #pragma omp atomic
+#endif
            CoarseFunction[Index] += Val2[k];
         }
       } // endfor j
@@ -943,35 +906,23 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
       N_Coarse = BaseFunctions->GetDimension();
 
       Ref = NoRef;
-
-      // do restriction
-/*
-      cout << "CoarseId: " << CoarseId << endl;
-      cout << "Ref: " << Ref << endl;
-      cout << "FineId: " << FineId << endl;
-      cout << "j: " << j << endl;
-      cout << endl;
-*/
-      QQ = TFEDatabase3D::GetProlongationMatrix3D 
+#ifdef _HYBRID
+       #pragma omp critical
+#endif
+	{
+	  QQ = TFEDatabase3D::GetProlongationMatrix3D 
               (CoarseId, Ref, FineId, 0);
+	}
 
       FineDOF = FineGlobalNumbers+FineBeginIndex[FineNumber];
       CoarseDOF = CoarseGlobalNumbers+CoarseBeginIndex[CoarseNumber];
 
-// #ifdef _HYBRID
-// // #pragma omp parallel default(shared) private(k,l,s,Val2)
-// {
-// // #pragma omp for schedule(guided) nowait 
-// #endif
       for(l=0;l<N_Fine;l++)
         Val[l] = FineFunction[FineDOF[l]];
 
       TFEDatabase3D::GetBaseFunct3D(FineBF)
                         ->ChangeBF(FineColl, cell, Val);
 
-// #ifdef _HYBRID
-// // #pragma omp for schedule(guided) nowait 
-// #endif
       for(k=0;k<N_Coarse;k++)
       {
         s = 0;
@@ -985,33 +936,28 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
       TFEDatabase3D::GetBaseFunct3D(CoarseBF)
                       ->ChangeBF(CoarseColl, cell, Val2);
 
-// #ifdef _HYBRID
-// // #pragma omp for schedule(guided) nowait 
-// #endif
       for(k=0;k<N_Coarse;k++)
       {
-//        #pragma omp atomic
-        CoarseFunction[CoarseDOF[k]] += Val2[k];
+#ifdef _HYBRID
+       #pragma omp atomic
+#endif
+	CoarseFunction[CoarseDOF[k]] += Val2[k];
       }
-// #ifdef _HYBRID
-// }
-// #endif
     } // endelse
   } // endfor i
-// #ifdef _HYBRID
-// } 
-// #endif
 
-// #ifdef _HYBRID
-// #pragma omp parallel default(shared) private(i)
-// #pragma omp for schedule(static) nowait 
-// #endif
   // repair fine function values since they are modified at beginning
+#ifdef _HYBRID
+#pragma omp for schedule(guided)
+#endif  
   for(i=0;i<N_FineDOFs;i++)
   {
     FineFunction[i] *= aux[i];
   }
-   
+#ifdef _HYBRID
+} 
+#endif
+  
 #ifdef _MPI
   t2 = MPI_Wtime();
 #else
@@ -2342,7 +2288,6 @@ void Defect_NSE1(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
    N_PDOF = B[0]->GetN_Rows();
   }
 
-  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE :: "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
     IntoL20Vector3D(r+3*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);
   return;
@@ -2589,8 +2534,6 @@ void Defect_NSE2(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r
   CoupledDefect(A[0], B[0], B[1], B[2], B[3], B[4], B[5], x, b, r);
   N_UDOF = A[0]->GetN_Rows();
   N_PDOF = B[0]->GetN_Rows();
-  
-  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE :: "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
   
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE) 
     IntoL20Vector3D(r+3*N_UDOF, N_PDOF,TDatabase::ParamDB->INTERNAL_PRESSURE_SPACE);

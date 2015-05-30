@@ -167,11 +167,11 @@ int main(int argc, char* argv[])
   Domain->Init(PRM, GEO);
 
   LEVELS = TDatabase::ParamDB->LEVELS;
-  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
-  {
-    TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
-    LEVELS = 1;
-  }
+//   if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+//   {
+//     TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
+//     LEVELS = 1;
+//   }
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();
@@ -395,8 +395,6 @@ int main(int argc, char* argv[])
     SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
     if(profiling){
 #ifdef _MPI
-      //if(rank==0)
-      //printf("-----------------------------      exit from main (352)      ------------------------------\n");MPI_Finalize();exit(0);
       end_int = MPI_Wtime();
 #else
       end_int = GetTime();

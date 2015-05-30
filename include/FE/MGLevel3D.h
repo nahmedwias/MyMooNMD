@@ -213,6 +213,8 @@ class TMGLevel3D
 #ifdef _HYBRID
         void SOR_Re_Color(double *sol, double *f, double *aux,
 			  int N_Parameters, double *Parameters, bool firstTime, bool lastTime);
+	void SOR_Re_Color(double *sol, double *f, double *aux, int N_Parameters, double *Parameters,int smooth);
+	
 	void SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 				 int N_Parameters, double *Parameters);
 #endif

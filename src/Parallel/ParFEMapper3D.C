@@ -840,37 +840,84 @@ if(TDatabase::ParamDB->Par_P4){
     }
   }
 
-// #ifdef _HYBRID
-// 
-//   flag = false;
-//   for(i=0;i<N_OwnCells;i++){
-//     cell = Coll->GetCell(i);
-//     //now mark dofs in independent cells
-//     if( !(cell->IsDependentCell()) ){
-//       DOF      = GlobalNumbers + BeginIndex[i];
-//       N_LocDof = BeginIndex[i+1] - BeginIndex[i];
-//      
-//       for(j=0;j<N_LocDof;j++){
-//         N = DOF[j];
-//         if(DofMarker[N] == d || DofMarker[N] == D){
-// 	  flag = true;
-// 	  break;
-//         }
-//       }
-//      //dependent dofs connected to slave dofs are marked as type1(D) else type2(d)
-//      //here we increase the ratio of dependent_type2 dofs to independent dofs
-//      if(flag == true){
-//        for(j=0;j<N_LocDof;j++){
-// 	 N = DOF[j];
-// 	 if(DofMarker[N] == 'i')
-// 	   DofMarker[N] = 't';
-//          }
-//          flag = false;
-//       }
-//     }
-//   }
-// 
-// #endif
+#ifdef _HYBRID
+   N_InterfaceM = 0;
+   N_Halo1 = 0;
+   N_Dept2 = 0;
+   N_Int = 0;
+  
+  for(i=0;i<N_Dof;i++)
+  {
+    if(DofMarker[i] == 'H')
+      N_Halo1++;
+    else if(DofMarker[i] == 'd')
+      N_Dept2++;
+    else if(DofMarker[i] == 'i')
+      N_Int++;
+    else if(DofMarker[i] == 'm')
+      N_InterfaceM++;
+    else if(DofMarker[i] == 's')
+      N_InterfaceS++;
+    else if(DofMarker[i] == 'D')
+      N_Dept1++;
+  }
+  
+  double reqd_ratio;
+  double ratio = TDatabase::ParamDB->Par_P10;
+  if(ratio <= 0)
+    ratio = (N_InterfaceM+N_InterfaceS)/(N_Dept1+N_Halo1);
+  int ctr = 0;
+  
+  while(ratio<reqd_ratio && ctr<4)
+  {
+    ctr++;
+      flag = false;
+      for(i=0;i<N_OwnCells;i++){
+	cell = Coll->GetCell(i);
+	//now mark dofs in independent cells
+	if( !(cell->IsDependentCell()) ){
+	  DOF      = GlobalNumbers + BeginIndex[i];
+	  N_LocDof = BeginIndex[i+1] - BeginIndex[i];
+	
+	  for(j=0;j<N_LocDof;j++){
+	    N = DOF[j];
+	    if(DofMarker[N] == 'd' || DofMarker[N] == 'D'){
+	      flag = true;
+	      break;
+	    }
+	  }
+	//dependent dofs connected to slave dofs are marked as type1(D) else type2(d)
+	//here we increase the ratio of dependent_type2 dofs to independent dofs
+	if(flag == true){
+	  for(j=0;j<N_LocDof;j++){
+	    N = DOF[j];
+	    if(DofMarker[N] == 'i')
+	      DofMarker[N] = 't';
+	    }
+	    flag = false;
+	  }
+	}
+      }
+      
+      for(i=0;i<N_Dof;i++)
+      {
+	if(DofMarker[i] == 't')
+	  DofMarker[i] = 'd';
+      }
+    
+      N_Dept2 = 0;
+      N_Int = 0;
+      for(i=0;i<N_Dof;i++)
+      {
+	if(DofMarker[i] == 'd')
+	  N_Dept2++;
+	else if(DofMarker[i] == 'i')
+	  N_Int++;
+      }
+      ratio = N_Int/N_Dept2;
+  }
+
+#endif
   
    //mark halo type1(H)-->useful & type2(h)
   flag = false;

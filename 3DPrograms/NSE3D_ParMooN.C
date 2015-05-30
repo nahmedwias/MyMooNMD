@@ -63,9 +63,15 @@ int main(int argc, char* argv[])
   double *sol, *rhs, *defect, t1, t2, errors[4], residual, impuls_residual;
   double **Sol_array, **Rhs_array;
   double limit, u_error[6], p_error[3];
-  double start_time, end_time;
-  double construction, assembling, solving, vtk, total;                         //time calc
   
+  double start_time, stop_time, 
+// 	 start_vtk=0, end_vtk=0, total_vtk=0,
+// 	 start_assembling=0, end_assembling=0, total_assembling=0,
+// 	 start_solve=0, end_solve=0, total_solve=0,
+         start_assembling_solving=0, end_assembling_solving=0, total_assembling_solving=0,
+	 start_int=0, end_int=0, total_int=0;
+  
+  TDomain *Domain;
   TDatabase *Database = new TDatabase();
   
   int profiling;
@@ -87,7 +93,7 @@ int main(int argc, char* argv[])
   int metisType[2] = {0,0};  
 #endif 
   
-  TDomain *Domain;
+  
   TFEDatabase3D *FEDatabase = new TFEDatabase3D(); 
   TCollection *coll, *mortarcoll = NULL;
   TFESpace3D *velocity_space, *pressure_space, **Velocity_FeSpace, **Pressure_FeSpace, *fesp[1];
@@ -105,7 +111,6 @@ int main(int argc, char* argv[])
   char UString[] = "u";
   char PString[] = "p";
  
-  
   std::ostringstream os;
   os << " ";   
   
@@ -118,6 +123,7 @@ int main(int argc, char* argv[])
   Domain = new TDomain(argv[1]);  
   
   profiling = TDatabase::ParamDB->timeprofiling;
+
   if(profiling)
   {
 #ifdef _MPI
@@ -156,11 +162,11 @@ int main(int argc, char* argv[])
    Domain->Init(PRM, GEO);
    
   LEVELS = TDatabase::ParamDB->LEVELS;
-  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
-  {
-    TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
-    LEVELS = 1;
-  } 
+//   if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+//   {
+//     TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
+//     LEVELS = 1;
+//   } 
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  
@@ -398,12 +404,42 @@ int main(int argc, char* argv[])
 // SystemMatrix construction and solution
 //======================================================================  
     NSEType = TDatabase::ParamDB->NSTYPE;
+    
+    if(profiling){
+#ifdef _MPI
+      start_int = MPI_Wtime();
+#else
+      start_int = GetTime();
+#endif
+    }
+    
     SystemMatrix = new TSystemMatNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
                                        TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
     
     // initilize the system matrix with the functions defined in Example file
     SystemMatrix->Init(LinCoeffs, BoundCondition, U1BoundValue, U2BoundValue, U3BoundValue);
        
+#ifdef _MPI
+    if(rank==0)
+#endif
+    printf("SystemMatrix constructed\n");
+    
+    if(profiling){
+#ifdef _MPI
+      end_int = MPI_Wtime();
+#else
+      end_int = GetTime();
+#endif
+      total_int = end_int-start_int;
+    }
+
+    if(profiling){
+#ifdef _MPI
+      start_assembling_solving = MPI_Wtime();
+#else
+      start_assembling_solving = GetTime();
+#endif
+    }    
     
     // assemble the system matrix with given sol and rhs 
     SystemMatrix->Assemble(Sol_array, Rhs_array);
@@ -476,6 +512,15 @@ int main(int argc, char* argv[])
     
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
         IntoL20FEFunction3D(sol+3*N_U, N_P, Pressure_FeSpace[mg_level-1]);
+    
+    if(profiling){
+#ifdef _MPI
+      end_assembling_solving = MPI_Wtime();
+#else
+      end_assembling_solving = GetTime();
+#endif
+      total_assembling_solving += (end_assembling_solving-start_assembling_solving);
+    }
 //======================================================================
 // produce outout
 //======================================================================
@@ -530,9 +575,63 @@ int main(int argc, char* argv[])
        OutPut("H1-semi(p): " <<  p_error[1] << endl); 
      } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 
-  cout<<"TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = "<<TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE<<endl;
-     
-  CloseFiles();
+//======================================================================
+// Time profiling Output
+//====================================================================== 
+  if(profiling){
+#ifdef _MPI
+    stop_time = MPI_Wtime();
+#else
+    stop_time = GetTime();
+#endif
+  }
   
-  return 0;
+  if(profiling){
+#ifdef _MPI
+    
+    int min_Ncells;
+    MPI_Allreduce(&N_Cells, &min_Ncells, 1, MPI_INT, MPI_MIN, Comm);
+    if(min_Ncells == N_Cells)
+    {
+      OutPut( "min NCells : " << N_Cells << endl);
+      OutPut( "velocity :: corresponding min Ndof : " << 3*N_U << endl);
+      OutPut( "pressure :: corresponding min Ndof : " << N_P << endl);
+    }
+    int max_Ncells;
+    MPI_Allreduce(&N_Cells, &max_Ncells, 1, MPI_INT, MPI_MAX, Comm);
+    if(max_Ncells == N_Cells)
+    {
+      OutPut( "velocity :: corresponding min Ndof : " << 3*N_U << endl);
+      OutPut( "pressure :: corresponding min Ndof : " << N_P << endl);
+    }
+
+    int Total_cells, Total_dof;
+    MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    MPI_Reduce(&N_U, &Total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    N_Cells = Total_cells;
+    N_U     = 3*Total_dof;
+    MPI_Reduce(&N_P, &Total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+    N_P     = Total_dof;
+    if(rank == out_rank){
+#endif
+    OutPut(endl<<"#Levels :: "<<LEVELS<<"  #Uniform refinement :: "<<TDatabase::ParamDB->UNIFORM_STEPS <<"  Order :: "<<TDatabase::ParamDB->ANSATZ_ORDER<<endl);
+    OutPut("Total Cells :: "<<N_Cells<<"     Total_dof_U :: "<<N_U<<"      Total_dof_P :: "<<N_P<<endl<<endl);
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
+    OutPut( "Total time taken for initializing System Matrix : " << (total_int) << "("<<100*(total_int)/(stop_time-start_time)<<"%)"<<endl);
+//     OutPut( "Total time taken for vtk writing : " << (total_vtk) << "("<<100*(total_vtk)/(stop_time-start_time)<<"%)"<<endl);
+//     OutPut( "Total time taken for assembling : " << (total_assembling) << "("<<100*(total_assembling)/(stop_time-start_time)<<"%)"<<endl);
+//     OutPut( "Total time taken for solving : " << (total_solve) << "("<<100*(total_solve)/(stop_time-start_time)<<"%)"<<endl);
+    OutPut( "Total time taken for assembling+solving : " << (total_assembling_solving) << "("<<100*(total_assembling_solving)/(stop_time-start_time)<<"%)"<<endl);
+    OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(stop_time-start_time) <<"%)"<< endl);
+    OutPut( "Total time taken throughout : " << (stop_time-start_time) << endl);
+    OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
+#ifdef _MPI
+    }
+#endif
+  }
+
+  CloseFiles();
+#ifdef _MPI
+  MPI_Finalize();
+#endif
 } // end main

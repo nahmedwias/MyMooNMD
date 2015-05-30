@@ -635,6 +635,57 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
   } // end switch
 }
 
+// #ifdef _HYBRID
+// /** change basis functions on cell if needed */
+// void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values, int &maptype, TJoint *joint)
+// {
+//   int i, j, k, *JointArray;
+//   TBaseCell *neigh;
+// 
+//   if(BF2Change == NULL) return;
+// 
+//   switch(RefElement)
+//   {
+//     case BFUnitTetrahedron:
+//     break;
+// 
+//     case BFUnitHexahedron:
+//       for(i=0;i<6;i++)
+//       {
+//         joint = Cell->GetJoint(i);
+//         maptype = joint->GetMapType();
+//         if(maptype == 1 || maptype == 2)
+//         {
+//           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
+//           if(neigh != NULL && neigh-Cell < 0)
+//           {
+//             JointArray = BF2Change[0][i];
+//             for(j=0;j<N_BF2Change;j++)
+//             {
+//               k = JointArray[j];
+//               Values[k] = -Values[k];
+//             }
+//           }
+//         }
+//         if(maptype == 2 || maptype == 3)
+//         {
+//           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
+//           if(neigh != NULL && neigh-Cell < 0)
+//           {
+//             JointArray = BF2Change[1][i];
+//             for(j=0;j<N_BF2Change;j++)
+//             {
+//               k = JointArray[j];
+//               Values[k] = -Values[k];
+//             }
+//           }
+//         }
+//       } // endfor i
+//     break;
+//   } // end switch
+// }
+// #endif
+
 /** change basis functions on cell in all points if needed */
 void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values)
 {

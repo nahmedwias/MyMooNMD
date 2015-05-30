@@ -1101,7 +1101,6 @@ int TTetGenMeshLoader::DistributeJoints(TBaseCell **CellTree)
   {
     mAllJoints[i]->SetMapType();
   }
-  
   return(0);  
   
 }

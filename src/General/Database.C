@@ -1207,11 +1207,11 @@ void TDatabase::SetDefaultParameters()
   ParamDB->Par_P3 = 1;
   ParamDB->Par_P4 = 0;
   ParamDB->Par_P5 = 10;
-  ParamDB->Par_P6 = 0;
+  ParamDB->Par_P6 = 1;
   ParamDB->Par_P7 = 0;
   ParamDB->Par_P8 = 0;
   ParamDB->Par_P9 = 0;
-  ParamDB->Par_P10 = 0;
+  ParamDB->Par_P10 = -1.0;
   ParamDB->Par_P11 = 0;
   ParamDB->Par_P12 = 0;
   ParamDB->Par_P13 = 0;

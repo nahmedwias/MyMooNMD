@@ -926,7 +926,7 @@ int TGridCell::Refine(int reflevel)
   N_1 = RefDesc->GetN_Faces();
   for (i=0;i<N_1;i++)
     NewJoints[i]->SetMapType();
-
+//   cout<<"````````````````````````````````````````jfcdjcgsdjcgsdjcgsdkcgsd``````````````````````````"<<endl;
   N_1 = RefDesc->GetN_Faces();
   for (i=0;i<N_1;i++)
     if (NewJoints[i]->GetType() == InterfaceJoint3D)

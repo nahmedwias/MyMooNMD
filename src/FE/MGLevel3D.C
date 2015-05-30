@@ -21,6 +21,10 @@
 #include <ParFECommunicator3D.h>
 #include <FEFunction3D.h>
 
+#define PreSmooth -1
+#define CoarseSmooth 0
+#define PostSmooth 1
+
 // #include <omp.h>
 
 double tSor=0.0;
@@ -923,183 +927,437 @@ double TMGLevel3D::StepLengthControl(double *u,
 void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
-  int ii, i,j,k,l,index,rank;
+  int ii, i,j,k,l,index,rank,loop;
   double s, t, diag;
   double omega;
+  int repeat = TDatabase::ParamDB->Par_P6;
+  if(repeat <= 0)
+    repeat = 1;
   
   omega = Parameters[0];
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  // set Dirichlet nodes
-  memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
-           N_Dirichlet*SizeOfDouble);
-
-//########################################## MASTERS DOFS ########################################################//
-  Reorder = ParMapper->GetReorder_M();
-  for(ii=0;ii<N_InterfaceM;ii++)
+  for(loop=0;loop<repeat;loop++)
   {
-    i = Reorder[ii];
-    if(i >= N_Active)     continue;
+      // set Dirichlet nodes
+      memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
+	      N_Dirichlet*SizeOfDouble);
+
+    //########################################## MASTERS DOFS ########################################################//
+      Reorder = ParMapper->GetReorder_M();
+      for(ii=0;ii<N_InterfaceM;ii++)
+      {
+	i = Reorder[ii];
+	if(i >= N_Active)     continue;
+	
+	s = f[i];
+	k = RowPtr[i+1];
+	for(j=RowPtr[i];j<k;j++)
+	{
+	  index = KCol[j];
+	  if(index == i)
+	  {
+	    diag = Entries[j];
+	  }
+	  else
+	  {
+	    s -= Entries[j] * sol[index];
+	  }
+	} // endfor j
     
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
-      {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
- 
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-  
-  ParComm->CommUpdateMS(sol);
-//################################################################################################################//
+	t = sol[i];
+	sol[i] = omega*(s/diag-t) + t;
+	// cout << "sol[i]: " << sol[i] << endl;
+      } // endfor i
+      
+      if(loop == 0)
+	ParComm->CommUpdateMS(sol);
+    //################################################################################################################//
 
-//########################################## INDEPENDENT DOFS ####################################################//  
-  
-  Reorder = ParMapper->GetReorder_I();
-  for(ii=0;ii<N_Int;ii++)
-  {
-    i = Reorder[ii];
-    if(i >= N_Active)     continue;
-    
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
+    //########################################## INDEPENDENT DOFS ####################################################//  
+      
+      Reorder = ParMapper->GetReorder_I();
+      for(ii=0;ii<N_Int;ii++)
       {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//################################################################################################################//
+	i = Reorder[ii];
+	if(i >= N_Active)     continue;
+	
+	s = f[i];
+	k = RowPtr[i+1];
+	for(j=RowPtr[i];j<k;j++)
+	{
+	  index = KCol[j];
+	  if(index == i)
+	  {
+	    diag = Entries[j];
+	  }
+	  else
+	  {
+	    s -= Entries[j] * sol[index];
+	  }
+	} // endfor j
+	t = sol[i];
+	sol[i] = omega*(s/diag-t) + t;
+	// cout << "sol[i]: " << sol[i] << endl;
+      } // endfor i
+    //################################################################################################################//
 
-//########################################## DEPENDENT1 DOFS #####################################################//
-  Reorder = ParMapper->GetReorder_D1();
-  for(ii=0;ii<N_Dept1;ii++)
-  {
-    i = Reorder[ii];
-    if(i >= N_Active)     continue;
-    
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
+    //########################################## DEPENDENT1 DOFS #####################################################//
+      Reorder = ParMapper->GetReorder_D1();
+      for(ii=0;ii<N_Dept1;ii++)
       {
-        diag = Entries[j];
-      }
-      else
+	i = Reorder[ii];
+	if(i >= N_Active)     continue;
+	
+	s = f[i];
+	k = RowPtr[i+1];
+	for(j=RowPtr[i];j<k;j++)
+	{
+	  index = KCol[j];
+	  if(index == i)
+	  {
+	    diag = Entries[j];
+	  }
+	  else
+	  {
+	    s -= Entries[j] * sol[index];
+	  }
+	} // endfor j
+	t = sol[i];
+	sol[i] = omega*(s/diag-t) + t;
+	// cout << "sol[i]: " << sol[i] << endl;
+      } // endfor i
+    //################################################################################################################//
+
+    //########################################## DEPENDENT2 DOFS #####################################################//
+      Reorder = ParMapper->GetReorder_D2();
+      for(ii=0;ii<N_Dept2;ii++)
       {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//################################################################################################################//
+	i = Reorder[ii];
+	if(i >= N_Active)     continue;
+	
+	s = f[i];
+	k = RowPtr[i+1];
+	for(j=RowPtr[i];j<k;j++)
+	{
+	  index = KCol[j];
+	  if(index == i)
+	  {
+	    diag = Entries[j];
+	  }
+	  else
+	  {
+	    s -= Entries[j] * sol[index];
+	  }
+	} // endfor j
+	t = sol[i];
+	sol[i] = omega*(s/diag-t) + t;
+	// cout << "sol[i]: " << sol[i] << endl;
+      } // endfor i
+    //################################################################################################################//
 
-//########################################## DEPENDENT2 DOFS #####################################################//
-  Reorder = ParMapper->GetReorder_D2();
-  for(ii=0;ii<N_Dept2;ii++)
-  {
-    i = Reorder[ii];
-    if(i >= N_Active)     continue;
-    
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index == i)
+    // //########################################### DEPENDENT3 DOFS ####################################################//
+    //   Reorder = ParComm->GetReorder_D3();
+    //   for(ii=0;ii<N_Dept3;ii++)
+    //   {
+    //     i = Reorder[ii];
+    //     if(i >= N_Active)     continue;
+    //     
+    //     s = f[i];
+    //     k = RowPtr[i+1];
+    //     for(j=RowPtr[i];j<k;j++)
+    //     {
+    //       index = KCol[j];
+    //       if(index == i)
+    //       {
+    //         diag = Entries[j];
+    //       }
+    //       else
+    //       {
+    //         s -= Entries[j] * sol[index];
+    //       }
+    //     } // endfor j
+    //     t = sol[i];
+    //     sol[i] = omega*(s/diag-t) + t;
+    //     // cout << "sol[i]: " << sol[i] << endl;
+    //   } // endfor i
+    // //################################################################################################################//
+
+    if(loop == 0)
+      ParComm->CommUpdateH1(sol);
+
+    //############################################# Hanging NODES ####################################################//  
+      // set hanging nodes
+      int *master = ParComm->GetMaster();
+      for(i=N_Active;i<HangingNodeBound;i++)
       {
-        diag = Entries[j];
-      }
-      else
-      {
-        s -= Entries[j] * sol[index];
-      }
-    } // endfor j
-    t = sol[i];
-    sol[i] = omega*(s/diag-t) + t;
-    // cout << "sol[i]: " << sol[i] << endl;
-  } // endfor i
-//################################################################################################################//
-
-// //########################################### DEPENDENT3 DOFS ####################################################//
-//   Reorder = ParComm->GetReorder_D3();
-//   for(ii=0;ii<N_Dept3;ii++)
-//   {
-//     i = Reorder[ii];
-//     if(i >= N_Active)     continue;
-//     
-//     s = f[i];
-//     k = RowPtr[i+1];
-//     for(j=RowPtr[i];j<k;j++)
-//     {
-//       index = KCol[j];
-//       if(index == i)
-//       {
-//         diag = Entries[j];
-//       }
-//       else
-//       {
-//         s -= Entries[j] * sol[index];
-//       }
-//     } // endfor j
-//     t = sol[i];
-//     sol[i] = omega*(s/diag-t) + t;
-//     // cout << "sol[i]: " << sol[i] << endl;
-//   } // endfor i
-// //################################################################################################################//
-
-  ParComm->CommUpdateH1(sol);
-
-//############################################# Hanging NODES ####################################################//  
-  // set hanging nodes
-  int *master = ParComm->GetMaster();
-  for(i=N_Active;i<HangingNodeBound;i++)
-  {
-    if(master[i] != rank)
-      continue;
-    s = f[i];
-    k = RowPtr[i+1];
-    for(j=RowPtr[i];j<k;j++)
-    {
-      index = KCol[j];
-      if(index != i)
-        s -= Entries[j] * sol[index];
-      else
-        diag = Entries[j];
-    } // endfor j
-    sol[i] = s/diag;
-  } // endfor i
+	if(master[i] != rank)
+	  continue;
+	s = f[i];
+	k = RowPtr[i+1];
+	for(j=RowPtr[i];j<k;j++)
+	{
+	  index = KCol[j];
+	  if(index != i)
+	    s -= Entries[j] * sol[index];
+	  else
+	    diag = Entries[j];
+	} // endfor j
+	sol[i] = s/diag;
+      } // endfor i
+  }//loop
 }
 //################################################################################################################//
 #endif
 
 //*****************************************************************************************************************//
 #ifdef _HYBRID
+
+void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Parameters, double *Parameters,int smooth) 
+{
+//   SOR_Re(sol,f,aux,N_Parameters,Parameters);
+//   return;
+  
+  int itr,ii, i,j,jj,k,l,index,rank,tid,nrows=0,numThreads,end,loop;
+  double s, t, diag;
+  double omega;
+  
+  int repeat = TDatabase::ParamDB->Par_P6;
+  
+  if(repeat <= 0)
+    repeat = 1;
+  
+  omega = Parameters[0];
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
+  omp_set_num_threads(numThreads);
+
+  if(smooth == -1)
+    end = TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
+  else if(smooth == 0)
+    end = 1;//TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
+  else
+    end = TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
+  
+#pragma omp parallel default(shared) private(i,ii,s,k,j,jj,tid,index,diag,t,loop,itr)
+  {
+    // set Dirichlet nodes    
+    for(itr=0;itr<end;itr++)
+    {
+      for(loop=0;loop<repeat;loop++)
+      {
+#pragma omp master
+    memcpy(sol+HangingNodeBound, f+HangingNodeBound, N_Dirichlet*SizeOfDouble);
+#pragma omp barrier
+      //########################################## MASTERS DOFS ########################################################//
+	    if(itr == 0)
+	    {
+	      Reorder = ParMapper->GetReorder_M();
+	      for(ii=0;ii<N_CMaster;ii++)
+	      {
+		#pragma omp for schedule(guided) 
+		for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
+		{
+		  i = Reorder[jj];
+		  if(i >= N_Active)     continue;
+      
+		  s = f[i];
+		  k = RowPtr[i+1];
+		  for(j=RowPtr[i];j<k;j++)
+		  {
+		    index = KCol[j];
+		    if(index == i)
+		    {
+		      diag = Entries[j];
+		    }
+		    else
+		    {
+		      s -= Entries[j] * sol[index];
+		    }
+		  } // endfor j
+		  
+		  t = sol[i];
+		  sol[i] = omega*(s/diag-t) + t;
+		  // cout << "sol[i]: " << sol[i] << endl;
+		} // endfor jj
+	      } //end for ii
+	    
+	    #pragma omp master
+	    {
+	      if(loop == (repeat-1))
+		ParComm->CommUpdateMS(sol);
+	    }
+#pragma omp barrier
+	  } //end firstTime
+      //########################################## DEPENDENT1 DOFS #####################################################//
+	    Reorder = ParMapper->GetReorder_D1();
+	    for(ii=0;ii<N_CDept1;ii++)
+	    {
+	      #pragma omp for schedule(guided) 
+	      for(jj=ptrCDept1[ii];jj<ptrCDept1[ii+1];jj++)
+	      {
+		i = Reorder[jj];
+		if(i >= N_Active)     continue;
+		
+		s = f[i];
+		k = RowPtr[i+1];
+		for(j=RowPtr[i];j<k;j++)
+		{
+		  index = KCol[j];
+		  if(index == i)
+		  {
+		    diag = Entries[j];
+		  }
+		  else
+		  {
+		    s -= Entries[j] * sol[index];
+		  }
+		} // endfor j
+		t = sol[i];
+		sol[i] = omega*(s/diag-t) + t;
+		// cout << "sol[i]: " << sol[i] << endl;
+	      } // endfor jj
+	    } //end for ii  
+      //################################################################################################################//
+	    #pragma omp master
+	    {
+	      if(loop == (repeat-1))
+		ParComm->CommUpdateH1(sol);
+	    }    
+      //########################################## DEPENDENT2 DOFS #####################################################//
+	    Reorder = ParMapper->GetReorder_D2();
+	    for(ii=0;ii<N_CDept2;ii++)
+	    {
+	    #pragma omp for schedule(guided) 
+	    for(jj=ptrCDept2[ii];jj<ptrCDept2[ii+1];jj++)
+	    {
+	      i = Reorder[jj];
+	      if(i >= N_Active)     continue;
+	  
+	      s = f[i];
+	      k = RowPtr[i+1];
+	      for(j=RowPtr[i];j<k;j++)
+	      {
+		index = KCol[j];
+		if(index == i)
+		{
+		  diag = Entries[j];
+		}
+		else
+		{
+		  s -= Entries[j] * sol[index];    
+		}
+	      } // endfor j
+	      t = sol[i];
+	      sol[i] = omega*(s/diag-t) + t;
+	      // cout << "sol[i]: " << sol[i] << endl;
+	    } // endfor jj
+	  } //end for ii
+      //################################################################################################################//    
+
+      //########################################## MASTERS DOFS ########################################################//
+	    if(itr!=(end-1))
+	    {
+	    Reorder = ParMapper->GetReorder_M();
+	    for(ii=0;ii<N_CMaster;ii++)
+	    {
+	      #pragma omp for schedule(guided) 
+	      for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
+	      {
+		i = Reorder[jj];
+		if(i >= N_Active)     continue;
+	  
+		s = f[i];
+		k = RowPtr[i+1];
+		for(j=RowPtr[i];j<k;j++)
+		{
+		  index = KCol[j];
+		  if(index == i)
+		  {
+		    diag = Entries[j];
+		  }
+		  else
+		  {
+		    s -= Entries[j] * sol[index];
+		  }
+		} // endfor j
+      
+		t = sol[i];
+		sol[i] = omega*(s/diag-t) + t;
+		// cout << "sol[i]: " << sol[i] << endl;
+	      } // endfor jj
+	    } //end for ii
+	  } //end !lastTime
+      //################################################################################################################//
+	    if(itr!=(end-1))
+	    #pragma omp master
+	    {
+	      if(loop == (repeat-1))
+		ParComm->CommUpdateMS(sol);
+	    }    
+      //########################################## INDEPENDENT DOFS ####################################################//  
+	    Reorder = ParMapper->GetReorder_I();
+	    for(ii=0;ii<N_CInt;ii++)
+	    {
+	    #pragma omp for schedule(guided) 
+	    for(jj=ptrCInt[ii];jj<ptrCInt[ii+1];jj++)
+	    {
+	      i = Reorder[jj];
+	      if(i >= N_Active)     continue;
+	    
+	      s = f[i];
+	      k = RowPtr[i+1];
+	      for(j=RowPtr[i];j<k;j++)
+	      {
+		index = KCol[j];
+		if(index == i)
+		{
+		  diag = Entries[j];
+		}
+		else
+		{
+		  s -= Entries[j] * sol[index];
+		}
+	      } // endfor jj
+	      t = sol[i];
+	      sol[i] = omega*(s/diag-t) + t;
+	      // cout << "sol[i]: " << sol[i] << endl;
+	    } // endfor jj
+	  } //endfor ii
+      //################################################################################################################//      
+
+      //############################################# Hanging NODES ####################################################//  
+	    // set hanging nodes
+	    int *master = ParComm->GetMaster();
+
+	    #pragma omp for schedule(dynamic) nowait 
+
+	    for(i=N_Active;i<HangingNodeBound;i++)
+	    {
+
+	    if(master[i] != rank)
+	      continue;
+
+	    s = f[i];
+	    k = RowPtr[i+1];
+	    for(j=RowPtr[i];j<k;j++)
+	    {
+	      index = KCol[j];
+	      if(index != i)
+		s -= Entries[j] * sol[index];
+	      else
+		diag = Entries[j];
+	    } // endfor j
+	    sol[i] = s/diag;
+	  } // endfor i
+
+      }//loop
+    }
+//################################################################################################################//
+  
+    
+  }
+}  
 
 void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters, bool firstTime, bool lastTime)
@@ -1115,6 +1373,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
   omp_set_num_threads(numThreads);
+//   omp_set_num_threads(1);
   // set Dirichlet nodes
   memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
            N_Dirichlet*SizeOfDouble);
@@ -1197,6 +1456,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
       ParComm->CommUpdateH1(sol);
     }
 //########################################## DEPENDENT2 DOFS #####################################################//
+//make a variable to control the fraction of d2 dofs
     Reorder = ParMapper->GetReorder_D2();
     for(ii=0;ii<N_CDept2;ii++)
     {
@@ -1227,36 +1487,6 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
     } //end for ii
 //################################################################################################################//
 
-// //########################################### DEPENDENT3 DOFS ####################################################//
-//     Reorder = ParComm->GetReorder_D3();
-//     for(ii=0;ii<N_CDept3;ii++)
-//     {
-//       #pragma omp for schedule(guided)
-//       for(jj=ptrCDept3[ii];jj<ptrCDept3[ii+1];jj++)
-//       {    
-// 	i = Reorder[jj];
-// 	if(i >= N_Active)     continue;
-// 
-// 	s = f[i];
-// 	k = RowPtr[i+1];
-// 	for(j=RowPtr[i];j<k;j++)
-// 	{
-// 	  index = KCol[j];
-// 	  if(index == i)
-// 	  {
-// 	    diag = Entries[j];    
-// 	  }
-// 	  else
-// 	  {
-// 	    s -= Entries[j] * sol[index];
-// 	  }
-// 	} // endfor j
-// 	t = sol[i];
-// 	sol[i] = omega*(s/diag-t) + t;
-// 	// cout << "sol[i]: " << sol[i] << endl;
-//       } // endfor jj
-//     } //endfor ii
-// //################################################################################################################//
 
 //########################################## MASTERS DOFS ########################################################//
     if(!lastTime)
