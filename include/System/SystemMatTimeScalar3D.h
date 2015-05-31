@@ -34,7 +34,11 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     double gamma;   
     
     bool factorize;
-//     
+
+    
+    /** instance of the Assemble class */
+    TAssembleMat3D **MMatRhsAssemble;
+    
 //     /** Stiffness part of the SUPG matrix */
 //     TSquareMatrix3D *sqmatrixK;    
 //     
@@ -49,23 +53,23 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver);
+     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
 
     /** destrcutor */
     ~TSystemMatTimeScalar3D();
 
     /** methods */
-    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue);
+    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue, TAuxParam3D *aux);
     
     /** return the stiffness matric */
     TSquareMatrix3D **GetAMatrix()
     { return sqmatrixA; }
     
     /** assemble the Mass mat and rhs */
-    void AssembleMRhs(TAuxParam3D *aux, double **sol, double **rhs); 
+    void AssembleMRhs(); 
     
     /** assemble the stifness mat and rhs */
-    void AssembleARhs(TAuxParam3D *aux, double **sol, double **rhs);   
+    void AssembleARhs();   
     
 //     /** M = M + (tau*THETA1)*A */ 
 //     /** B = (tau*THETA1)*rhs +(tau*THETA2)*oldrhs + [ M - (tau*THETA2)A]*oldsol */  

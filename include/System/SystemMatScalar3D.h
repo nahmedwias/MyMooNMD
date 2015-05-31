@@ -13,6 +13,7 @@
 
 #include <SquareMatrix3D.h>
 #include <ItMethod.h>
+#include <AssembleMat3D.h>
 
 #ifdef _MPI
 //#include "mpi.h"
@@ -69,6 +70,9 @@ class TSystemMatScalar3D
     /** number of matrices in the system matrix*/
     int N_Matrices;
 
+    /** instance of the Assemble class */
+    TAssembleMat3D **AMatRhsAssemble;
+    
     /** sqstructure of the system matrix */
     TSquareStructure3D **sqstructure;
 
@@ -80,7 +84,7 @@ class TSystemMatScalar3D
     TDiscreteForm3D *DiscreteFormARhs;
     
     /** rhs for assemble */
-    double *RHSs[1];
+    double **SolArray, **RhsArray, *RHSs[1];
     
    /** variables for multigrid */
     double Parameters[2], N_aux, *Itmethod_sol, *Itmethod_rhs;
@@ -90,16 +94,17 @@ class TSystemMatScalar3D
    
   public:
     /** Constructor*/
-  TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver);
+  TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
     
     /** destrcutor */
     ~TSystemMatScalar3D();
     
     /** Initilize the discrete forms and the matrices */
-    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue);
+    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
+              TAuxParam3D *aux);
  
     /** assemble the system matrix */
-    void Assemble(TAuxParam3D *aux, double **sol, double **rhs);
+    void Assemble();
 
     /** solve the system matrix */
     void  Solve(double *sol, double *rhs);

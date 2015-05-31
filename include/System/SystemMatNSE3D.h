@@ -15,6 +15,7 @@
 #include <FEVectFunct3D.h>
 #include <NSE_MultiGrid.h>
 #include <ItMethod.h>
+#include <AssembleMat3D.h>
 
 #ifdef _MPI
 //#include "mpi.h"
@@ -52,6 +53,14 @@ class TSystemMatNSE3D
     
     /** Fe functions of NSE */
     TFEFunction3D **Pressure;    
+
+    double **SolArray, **RhsArray, *RHSs[4];
+
+    TFESpace3D *fesp[2], *fesprhs[3];
+    TFEFunction3D *fefct[7];
+  
+    // Assembling */
+    TAssembleMat3D **AMatRhsAssemble, **AMatAssembleNonLinear;
     
     /** Discretization type */
     int Disctype;
@@ -112,7 +121,7 @@ class TSystemMatNSE3D
   public:
     /** constructor */
      TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
-                     TFEFunction3D **pressure, int disctype, int nsetype, int solver);
+                     TFEFunction3D **pressure, double **sol, double **rhs, int disctype, int nsetype, int solver);
 
     /** destrcutor */
 //     ~TSystemMatNSE3D();
@@ -123,7 +132,7 @@ class TSystemMatNSE3D
               BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue);
     
     /** assemble the system matrix */
-    void Assemble(double **sol, double **rhs);
+    void Assemble();
     
     /** assemble the nonlinear part of the NSE system */
     void AssembleNonLinear(double **sol, double **rhs);

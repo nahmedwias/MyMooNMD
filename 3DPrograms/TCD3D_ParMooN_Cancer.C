@@ -974,20 +974,20 @@ int main(int argc, char* argv[])
     }
    
    //u sysytem
-   SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, 
-					      TDatabase::ParamDB->SOLVER_TYPE);
+   SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+                                              TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     
     /** initilize the system matrix with the functions defined in Example file */
     SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
 
     //v sysytem
-    V_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_V_FeSpaces, TDatabase::ParamDB->DISCTYPE, 
-						TDatabase::ParamDB->SOLVER_TYPE);
+    V_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_V_FeSpaces, VSol_array, VRhs_array,
+                                                TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     V_SystemMatrix->Init(V_BilinearCoeffs, V_BoundCondition, V_BoundValue);
   
     //w sysytem
-    W_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_W_FeSpaces, TDatabase::ParamDB->DISCTYPE, 
- 						TDatabase::ParamDB->SOLVER_TYPE);
+    W_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_W_FeSpaces, WSol_array, WRhs_array,
+                                                TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     W_SystemMatrix->Init(W_BilinearCoeffs, W_BoundCondition, W_BoundValue);
    
     

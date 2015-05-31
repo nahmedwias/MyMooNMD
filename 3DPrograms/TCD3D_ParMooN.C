@@ -385,17 +385,21 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
+    SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+                                              TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     
 #ifdef _MPI
     if(rank==0)
 #endif
     printf("SystemMatrix constructed\n");
     /** initilize the system matrix with the functions defined in Example file */
-    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
+    // last argument aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
+    // otherwise, just pass it with NULL 
+    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue, NULL);
     if(profiling){
 #ifdef _MPI
       end_int = MPI_Wtime();
+
 #else
       end_int = GetTime();
 #endif
@@ -412,7 +416,7 @@ int main(int argc, char* argv[])
       start_assembling = GetTime();
 #endif
     }
-    SystemMatrix->AssembleMRhs(NULL, Sol_array, Rhs_array); 
+    SystemMatrix->AssembleMRhs(); 
     
     if(profiling){
 #ifdef _MPI
@@ -573,9 +577,9 @@ int main(int argc, char* argv[])
       if(UpdateStiffnessMat || UpdateRhs ||  ConvectionFirstTime)
        {  
         if(UpdateRhs)
-        { SystemMatrix->AssembleARhs(NULL, Sol_array, Rhs_array); }
+        { SystemMatrix->AssembleARhs(); }
         else
-         { SystemMatrix->AssembleARhs(NULL, Sol_array, Rhs_array); }
+         { SystemMatrix->AssembleARhs(); }
          
 //          for(i=0;i<N_DOF;i++)
 // 	   rhs[i]=0;
@@ -584,9 +588,9 @@ int main(int argc, char* argv[])
          *   rhs: =(tau*THETA4)*rhs +(tau*THETA3)*oldrhs + [ M - (tau*THETA2)A]*oldsol **/
 	SystemMatrix->AssembleSystMat(oldrhs, oldsol, rhs, sol
 #ifdef _MPI
-					    , Rhs_array
+                                      , Rhs_array
 #endif
-							);
+                                     );
         /** copy rhs to oldrhs before calling the solver, as rhs will change in multigrid solver */
         memcpy(oldrhs, rhs, N_DOF*SizeOfDouble); 
         ConvectionFirstTime = FALSE;

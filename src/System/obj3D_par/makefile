@@ -21,6 +21,8 @@ include ../../../Make.inc
 
 LIBRARY = $(LIBPATH)lib_System_par.a
    MEMBERS = \
+        $(SRCPATH)Assemble.o \
+        $(SRCPATH)AssembleMat3D.o \
         $(SRCPATH)SystemMatScalar3D.o \
         $(SRCPATH)SystemMatTimeScalar3D.o \
         $(SRCPATH)SystemMatNSE3D.o 

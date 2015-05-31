@@ -352,10 +352,13 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
+    SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+                                          TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
 
     // initilize the system matrix with the functions defined in Example file
-    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
+    // last argument aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
+    // otherwise, just pass it with NULL 
+    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue, NULL);
     
     if(profiling){
 #ifdef _MPI
@@ -370,9 +373,6 @@ int main(int argc, char* argv[])
       construction = t2;
     } 
 
-    // assemble the system matrix with given aux, sol and rhs 
-    // aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
-    // otherwise, just pass it with NULL 
     if(profiling){
 #ifdef _MPI
       t1 = MPI_Wtime();
@@ -381,7 +381,7 @@ int main(int argc, char* argv[])
 #endif
     }
   
-    SystemMatrix->Assemble(NULL, Sol_array, Rhs_array);
+    SystemMatrix->Assemble();
     
     if(profiling){
 #ifdef _MPI

@@ -414,11 +414,12 @@ int main(int argc, char* argv[])
     }
     
     SystemMatrix = new TSystemMatNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
-                                       TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
+                                       Sol_array, Rhs_array, TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
     
     // initilize the system matrix with the functions defined in Example file
     SystemMatrix->Init(LinCoeffs, BoundCondition, U1BoundValue, U2BoundValue, U3BoundValue);
-       
+//         SystemMatrix->Assemble();
+    
 #ifdef _MPI
     if(rank==0)
 #endif
@@ -442,7 +443,7 @@ int main(int argc, char* argv[])
     }    
     
     // assemble the system matrix with given sol and rhs 
-    SystemMatrix->Assemble(Sol_array, Rhs_array);
+    SystemMatrix->Assemble();
     
     // calculate the residual
     defect = new double[N_TotalDOF];

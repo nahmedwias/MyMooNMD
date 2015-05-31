@@ -20,6 +20,7 @@
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <Upwind3D.h>
+#include <AssembleMat3D.h>
 
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
@@ -42,7 +43,7 @@
 // #include <MooNMD_Io.h>
 
 TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
-                     TFEFunction3D **pressure, int disctype, int nsetype, int solver)
+                     TFEFunction3D **pressure, double **sol, double **rhs, int disctype, int nsetype, int solver)
 {
   int i, zerostart;
   int profiling = TDatabase::ParamDB->timeprofiling;
@@ -80,6 +81,9 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   
   Velocity = velocity;
   Pressure = pressure;
+ 
+  SolArray = sol;
+  RhsArray = rhs;
   
   U_Space = velocity_fespace;
   P_Space = presssure_fespace;
@@ -112,6 +116,10 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   MatrixB1T = new TMatrix3D*[N_levels];
   MatrixB2T = new TMatrix3D*[N_levels];
   MatrixB3T = new TMatrix3D*[N_levels];    
+ 
+  AMatRhsAssemble = new TAssembleMat3D*[N_levels];  
+  AMatAssembleNonLinear = new TAssembleMat3D*[N_levels];  
+  
   
   if(SOLVER==AMG_SOLVE || SOLVER==DIRECT)
    {
@@ -398,6 +406,13 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
 void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *U1BoundValue, 
                            BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue)
 {  
+  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
+  int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
+  int velocity_space_code, pressure_space_code;
+  int mg_type = TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
+    
+  double alpha[2];  
+  
   TDiscreteForm3D *DiscreteFormGalerkin, *DiscreteFormSDFEM, *DiscreteFormUpwind, *DiscreteFormSmagorinsky;
   TDiscreteForm3D *DiscreteFormVMSProjection, *DiscreteFormNLGalerkin, *DiscreteFormNLSDFEM, *DiscreteFormNLUpwind;
   TDiscreteForm3D *DiscreteFormNLSmagorinsky, *DiscreteFormNLVMSProjection, *DiscreteFormPressSep, *DiscreteFormAuxProbPressSep;
@@ -428,7 +443,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
                           DiscreteFormPressSep,
                           DiscreteFormAuxProbPressSep,
                           DiscreteFormNSRFBRhs,
-                          LinCoeffs[0], TDatabase::ParamDB->NSTYPE);
+                          LinCoeffs[0], NSEType);
   
   
     /** find discrete form */
@@ -456,7 +471,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
 
           case VMS_PROJECTION:
 	      DiscreteFormARhs = DiscreteFormVMSProjection;
-	      if (TDatabase::ParamDB->NSTYPE != 1)
+	      if (NSEType != 1)
 	       {
                 OutPut("VMS only for NSTYPE 1 implemented !!!"<<endl);
 		exit(4711);
@@ -476,22 +491,10 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
        }
-} // TSystemMatNSE3D::Init
-
- 
-void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
-{
-  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
-  int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
-  int velocity_space_code, pressure_space_code;
-  int mg_type = TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
-    
-  double *RHSs[4], alpha[2];
-
-  TFESpace3D *fesp[2], *fesprhs[3];
-  TFEFunction3D *fefct[7];
-  
-   for(i=Start_Level;i<N_Levels;i++)
+       
+       
+   // initilize the assemble    
+    for(i=Start_Level;i<N_Levels;i++)
     {     
      // initialize matrices
      switch(NSEType)
@@ -612,11 +615,11 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
       N_DirichletDof = N_U_Current - N_Active_Current;
       N_P_Current = P_Space[i]->GetN_DegreesOfFreedom();      
       
-      RHSs[0] = rhs[i];
-      RHSs[1] = rhs[i] + N_U_Current;
-      RHSs[2] = rhs[i] + 2*N_U_Current;
-      RHSs[3] = rhs[i] + 3*N_U_Current;     
-      memset(rhs[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
+      RHSs[0] = RhsArray[i];
+      RHSs[1] = RhsArray[i] + N_U_Current;
+      RHSs[2] = RhsArray[i] + 2*N_U_Current;
+      RHSs[3] = RhsArray[i] + 3*N_U_Current;     
+      memset(RhsArray[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
 
       fesp[0] =  U_Space[i];
       fesp[1] =  P_Space[i];
@@ -633,88 +636,87 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                                 fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
                                  NSN_ParamsVelo, NSBeginParamVelo);
 
-       /** assemble */
-       Assemble3D(N_FESpaces, fesp,
-                  N_SquareMatrices, SQMATRICES,
-                  N_RectMatrices, MATRICES,
-                  N_Rhs, RHSs, fesprhs,
-                  DiscreteFormARhs,
-                  BoundaryConditions,
-                  BoundaryValues,
-                  NSEaux);
+     // array of assemble objects
+     AMatRhsAssemble[i] = new TAssembleMat3D(N_FESpaces, fesp, N_SquareMatrices, SQMATRICES, N_RectMatrices, MATRICES,
+                              N_Rhs, RHSs, fesprhs, DiscreteFormARhs, BoundaryConditions, BoundaryValues, NSEaux);
+     AMatRhsAssemble[i]->Init();    
  
-   
-       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
-        {
-         switch(NSEType)
-          {
-           case 1:
-           case 2:
-            // do upwinding with one matrix
-            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
-            cout << "UPWINDING DONE : level " << endl;
-            break;
-
-          case 3:
-          case 4:
-            // do upwinding with three matrices
-            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
-            UpwindForNavierStokes3D(SQMATRICES[4], fefct[0], fefct[1], fefct[2]);
-            UpwindForNavierStokes3D(SQMATRICES[8], fefct[0], fefct[1], fefct[2]);
-            cout << "UPWINDING DONE : level " << endl;
-           break;
-         }                        // endswitch
-        }                          // endif     
-       
-
-       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
-        {
-         if(NSEType <4)
-          {
-           OutPut("For slip with friction bc NSTYPE 4 is ");
-           OutPut("necessary !!!!! " << endl);
-           exit(4711);
-          }
-          
-          // prepare everything for the assembling of slip with friction bc
-          // on all levels
-          N_FESpaces = 1;
-          N_SquareMatrices = 9;
-          N_RectMatrices = 0;
-          N_Rhs = 3; 
-       
+     //===============================================================================================================
+     // set the nonliner matrices
+     switch(NSEType)
+       {
+        case 1:
+        case 2:
           SQMATRICES[0] = SqmatrixA11[i];
-          SQMATRICES[1] = SqmatrixA22[i];
-          SQMATRICES[2] = SqmatrixA33[i];
-          SQMATRICES[3] = SqmatrixA12[i];
-          SQMATRICES[4] = SqmatrixA13[i];
-          SQMATRICES[5] = SqmatrixA21[i];
-          SQMATRICES[6] = SqmatrixA23[i];
-          SQMATRICES[7] = SqmatrixA31[i];
-          SQMATRICES[8] = SqmatrixA32[i];
+          N_SquareMatrices = 1;
+        break;
 
-          Assemble3DSlipBC(N_FESpaces, fesp,
-            N_SquareMatrices, SQMATRICES,
-            N_RectMatrices, MATRICES,
-            N_Rhs, RHSs, fesprhs,
-            NULL,
-            BoundaryConditions,
-            BoundaryValues,
-            NSEaux);
-        } //  if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRIC
+        case 3:
+        case 4:
+          if (TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==0)
+           {
+            SQMATRICES[0] = SqmatrixA11[i];
+            SQMATRICES[1] = SqmatrixA22[i];
+            SQMATRICES[2] = SqmatrixA33[i];
+            N_SquareMatrices = 3;
+           }
+          else
+           {
+            // Newton method
+            cout<< "Newton method not tested " <<endl;
+            exit(0);
+           }
 
-      delete NSEaux;   
-    
-      // set rhs for Dirichlet nodes
-      memcpy(sol[i]+N_Active_Current, rhs[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
-      memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
-      memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
-      
-
- 
-//         cout << velocity_space_code << " velocity_space_code " << pressure_space_code << endl;
-
-       // initialize matrices
+         break;
+        } // switch(NSEType)
+            
+      N_RectMatrices = 0;          
+      N_Rhs = 0;
+      N_FESpaces = 1;
+     
+     AMatAssembleNonLinear[i] = new TAssembleMat3D(N_FESpaces, fesp, N_SquareMatrices, SQMATRICES, N_RectMatrices, NULL,
+                              N_Rhs, NULL, NULL, DiscreteFormNL, BoundaryConditions, BoundaryValues, NSEaux);
+     AMatAssembleNonLinear[i]->Init();       
+     //===============================================================================================================
+//      // set the slip with friction assemble matrices
+//        if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+//         {
+//          if(NSEType <4)
+//           {
+//            OutPut("For slip with friction bc NSTYPE 4 is necessary !!!!! " << endl);
+//            exit(4711);
+//           }
+          
+//           // prepare everything for the assembling of slip with friction bc
+//           // on all levels
+//           N_FESpaces = 1;
+//           N_SquareMatrices = 9;
+//           N_RectMatrices = 0;
+//           N_Rhs = 3; 
+//       
+//           SQMATRICES[0] = SqmatrixA11[i];
+//           SQMATRICES[1] = SqmatrixA22[i];
+//           SQMATRICES[2] = SqmatrixA33[i];
+//           SQMATRICES[3] = SqmatrixA12[i];
+//           SQMATRICES[4] = SqmatrixA13[i];
+//           SQMATRICES[5] = SqmatrixA21[i];
+//           SQMATRICES[6] = SqmatrixA23[i];
+//           SQMATRICES[7] = SqmatrixA31[i];
+//           SQMATRICES[8] = SqmatrixA32[i];
+// 
+//           Assemble3DSlipBC(N_FESpaces, fesp,
+//             N_SquareMatrices, SQMATRICES,
+//             N_RectMatrices, NULL,
+//             N_Rhs, RHSs, fesprhs,
+//             NULL,
+//             BoundaryConditions,
+//             BoundaryValues,
+//             NSEaux);     
+//      
+     
+// 	} // if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+     //===============================================================================================================     
+     // initialize solver
        if(SOLVER==GMG)
         {       
          //setup the multigrid solver
@@ -747,14 +749,14 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
           {
            case 1:
               MGLevel = new TNSE_MGLevel1(i, SqmatrixA11[i],  MatrixB1[i], MatrixB2[i], MatrixB3[i],
-                                             structureBT[i], rhs[i], sol[i], N_aux, alpha,
+                                             structureBT[i], RhsArray[i], SolArray[i], N_aux, alpha,
                                              velocity_space_code, pressure_space_code,
                                              NULL, NULL);
               MG->AddLevel(MGLevel);
           break;
           case 2:
               MGLevel = new TNSE_MGLevel2(i, SqmatrixA11[i], MatrixB1[i], MatrixB2[i], MatrixB3[i],
-                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], rhs[i], sol[i], N_aux, alpha,
+                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], RhsArray[i], SolArray[i], N_aux, alpha,
                                              velocity_space_code, pressure_space_code,
                                              NULL, NULL);
               MG->AddLevel(MGLevel);
@@ -764,7 +766,7 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                                              SqmatrixA21[i], SqmatrixA22[i], SqmatrixA23[i],
                                              SqmatrixA31[i], SqmatrixA32[i], SqmatrixA33[i],
                                              MatrixB1[i], MatrixB2[i], MatrixB3[i],
-                                             structureBT[i], rhs[i], sol[i], N_aux, alpha,
+                                             structureBT[i], RhsArray[i], SolArray[i], N_aux, alpha,
                                              velocity_space_code, pressure_space_code,
                                              NULL, NULL);
               MG->AddLevel(MGLevel);
@@ -774,14 +776,216 @@ void TSystemMatNSE3D::Assemble(double **sol, double **rhs)
                                              SqmatrixA21[i], SqmatrixA22[i], SqmatrixA23[i],
                                              SqmatrixA31[i], SqmatrixA32[i], SqmatrixA33[i],
                                              MatrixB1[i], MatrixB2[i], MatrixB3[i],
-                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], rhs[i], sol[i], N_aux, alpha,
+                                             MatrixB1T[i], MatrixB2T[i], MatrixB3T[i], RhsArray[i], SolArray[i], N_aux, alpha,
                                              velocity_space_code, pressure_space_code,
                                              NULL, NULL);
               MG->AddLevel(MGLevel);
           break;	
         } //  switch(NSEType)
        }  // if(SOLVER==GMG)    
+//            AMatRhsAssemble[i]->Assemble3D();  
+     } // for(i=Start_Level;i<N_Levels;i++)      
+              
+//  cout << " TSystemMatNSE3D::Init done ! " << endl; 
+              
+} // TSystemMatNSE3D::Init
+
+ 
+void TSystemMatNSE3D::Assemble()
+{
+  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
+  int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
+    
+  double alpha[2];
+
+  
+   for(i=Start_Level;i<N_Levels;i++)
+    {     
+     // initialize matrices
+     switch(NSEType)
+      {
+        case 1:
+          SQMATRICES[0] = SqmatrixA11[i];
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+
+          SQMATRICES[0]->Reset();
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+        break;
+
+        case 2:
+            SqmatrixA11[i]->Reset();
+            MatrixB1[i]->Reset();
+            MatrixB2[i]->Reset();
+            MatrixB3[i]->Reset();
+            MatrixB1T[i]->Reset();
+            MatrixB2T[i]->Reset();
+            MatrixB3T[i]->Reset();
+        break;
+
+        case 3:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA12[i];
+          SQMATRICES[2] = SqmatrixA13[i];	  
+          SQMATRICES[3] = SqmatrixA21[i];
+          SQMATRICES[4] = SqmatrixA22[i];
+          SQMATRICES[5] = SqmatrixA23[i]; 
+          SQMATRICES[6] = SqmatrixA31[i];
+          SQMATRICES[7] = SqmatrixA32[i];
+          SQMATRICES[8] = SqmatrixA33[i];  
+
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+
+          SQMATRICES[0]->Reset();
+          SQMATRICES[1]->Reset();
+          SQMATRICES[2]->Reset();
+          SQMATRICES[3]->Reset();
+          SQMATRICES[4]->Reset();
+          SQMATRICES[5]->Reset();
+          SQMATRICES[6]->Reset();
+          SQMATRICES[7]->Reset();
+          SQMATRICES[8]->Reset();
+
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+
+//           N_SquareMatrices = 9;
+//           N_RectMatrices = 3;
+        break;
+
+        case 4:
+          SQMATRICES[0] = SqmatrixA11[i];
+          SQMATRICES[1] = SqmatrixA12[i];
+          SQMATRICES[2] = SqmatrixA13[i];	  
+          SQMATRICES[3] = SqmatrixA21[i];
+          SQMATRICES[4] = SqmatrixA22[i];
+          SQMATRICES[5] = SqmatrixA23[i]; 
+          SQMATRICES[6] = SqmatrixA31[i];
+          SQMATRICES[7] = SqmatrixA32[i];
+          SQMATRICES[8] = SqmatrixA33[i];  
+          MATRICES[0] = MatrixB1[i];
+          MATRICES[1] = MatrixB2[i];
+          MATRICES[2] = MatrixB3[i];
+          MATRICES[3] = MatrixB1T[i];
+          MATRICES[4] = MatrixB2T[i];
+          MATRICES[5] = MatrixB3T[i];
+
+          SQMATRICES[0]->Reset();
+          SQMATRICES[1]->Reset();
+          SQMATRICES[2]->Reset();
+          SQMATRICES[3]->Reset();
+          SQMATRICES[4]->Reset();
+          SQMATRICES[5]->Reset();
+          SQMATRICES[6]->Reset();
+          SQMATRICES[7]->Reset();
+          SQMATRICES[8]->Reset();
+          MATRICES[0]->Reset();
+          MATRICES[1]->Reset();
+          MATRICES[2]->Reset();
+          MATRICES[3]->Reset();
+          MATRICES[4]->Reset();
+          MATRICES[5]->Reset();
+          break;
+      } //  switch(NSEType)
+ 
+      N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();
+      N_Active_Current  = U_Space[i]->GetActiveBound();     
+      N_DirichletDof = N_U_Current - N_Active_Current;
+      N_P_Current = P_Space[i]->GetN_DegreesOfFreedom();      
       
+      RHSs[0] = RhsArray[i];
+      RHSs[1] = RhsArray[i] + N_U_Current;
+      RHSs[2] = RhsArray[i] + 2*N_U_Current;
+      RHSs[3] = RhsArray[i] + 3*N_U_Current;     
+      memset(RhsArray[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
+ 
+      AMatRhsAssemble[i]->Assemble3D();
+ 
+      fefct[0] = Velocity[i]->GetComponent(0);
+      fefct[1] = Velocity[i]->GetComponent(1);
+      fefct[2] = Velocity[i]->GetComponent(2);
+      
+       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
+        {
+         switch(NSEType)
+          {
+           case 1:
+           case 2:
+            // do upwinding with one matrix
+            UpwindForNavierStokes3D(SqmatrixA11[i], fefct[0], fefct[1], fefct[2]);
+            cout << "UPWINDING DONE : level " << endl;
+            break;
+
+          case 3:
+          case 4:
+            // do upwinding with three matrices
+            UpwindForNavierStokes3D(SqmatrixA11[i], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SqmatrixA22[i], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SqmatrixA33[i], fefct[0], fefct[1], fefct[2]);
+            cout << "UPWINDING DONE : level " << endl;
+           break;
+         }                        // endswitch
+        }                          // endif     
+       
+
+       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+        {
+         if(NSEType <4)
+          {
+           OutPut("For slip with friction bc NSTYPE 4 is ");
+           OutPut("necessary !!!!! " << endl);
+           exit(4711);
+          }
+          
+         AMatRhsAssemble[i]->AssembleNavierSlip(); 
+// 	 OutPut("necessary !!!!! " << endl);
+          
+//           // prepare everything for the assembling of slip with friction bc
+//           // on all levels
+//           N_FESpaces = 1;
+//           N_SquareMatrices = 9;
+//           N_RectMatrices = 0;
+//           N_Rhs = 3; 
+// 	  
+//           fesp[0] =  U_Space[i];
+// 	  
+//           fesprhs[0] =  U_Space[i];
+//           fesprhs[1] =  U_Space[i];
+//           fesprhs[2] =  U_Space[i];
+//       
+//           SQMATRICES[0] = SqmatrixA11[i];
+//           SQMATRICES[1] = SqmatrixA22[i];
+//           SQMATRICES[2] = SqmatrixA33[i];
+//           SQMATRICES[3] = SqmatrixA12[i];
+//           SQMATRICES[4] = SqmatrixA13[i];
+//           SQMATRICES[5] = SqmatrixA21[i];
+//           SQMATRICES[6] = SqmatrixA23[i];
+//           SQMATRICES[7] = SqmatrixA31[i];
+//           SQMATRICES[8] = SqmatrixA32[i];
+// 
+//           Assemble3DSlipBC(N_FESpaces, fesp,
+//             N_SquareMatrices, SQMATRICES,
+//             N_RectMatrices, NULL,
+//             N_Rhs, RHSs, fesprhs,
+//             NULL,
+//             BoundaryConditions,
+//             BoundaryValues,
+//             NSEaux);
+        } //  if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRIC
+
+//       delete NSEaux;   
+    
+      // set rhs for Dirichlet nodes
+      memcpy(SolArray[i]+N_Active_Current, RhsArray[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
+      memcpy(SolArray[i]+N_U_Current+N_Active_Current, RhsArray[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
+      memcpy(SolArray[i]+2*N_U_Current+N_Active_Current, RhsArray[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
+        
      } // for(i=Start_Level;i<N_Levels;i++)
       
 
@@ -792,9 +996,6 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
 {
  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
  int N_U_Current, N_Active_Current, N_DirichletDof;
- 
- TFESpace3D *fesp[2];
- TFEFunction3D *fefct[3];
   
    for(i=Start_Level;i<N_Levels;i++)
     {    
@@ -803,62 +1004,33 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
       N_DirichletDof = N_U_Current - N_Active_Current;
       
      // set the nonliner matrices
-      switch(TDatabase::ParamDB->NSTYPE)
+      switch(NSEType)
        {
         case 1:
         case 2:
           SQMATRICES[0] = SqmatrixA11[i];
           SQMATRICES[0]->Reset();
-
-          N_SquareMatrices = 1;
         break;
 
         case 3:
         case 4:
-          if (TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==0)
-           {
             SQMATRICES[0] = SqmatrixA11[i];
             SQMATRICES[1] = SqmatrixA22[i];
             SQMATRICES[2] = SqmatrixA33[i];
             SQMATRICES[0]->Reset();
             SQMATRICES[1]->Reset();
             SQMATRICES[2]->Reset();
-
-            N_SquareMatrices = 3;
-           }
-          else
-           {
-            // Newton method
-            cout<< "Newton method not tested " <<endl;
-            exit(0);
-           }
-
          break;
-        } // switch(TDatabase::ParamDB->NSTYPE)
+        } // switch(NSEType)
             
-      N_RectMatrices = 0;          
-      N_Rhs = 0;
-      N_FESpaces = 1;
- 
+      // assemble the nonlinear matrix */      
+      AMatAssembleNonLinear[i]->Assemble3D();      
+            
       fesp[0] =  U_Space[i];
       
       fefct[0] = Velocity[i]->GetComponent(0);
       fefct[1] = Velocity[i]->GetComponent(1);
       fefct[2] = Velocity[i]->GetComponent(2);
-
-       NSEaux =  new TAuxParam3D(NSN_FESpacesVelo, NSN_FctVelo, NSN_ParamFctVelo, NSN_FEValuesVelo,
-                                fesp, fefct, NSFctVelo, NSFEFctIndexVelo, NSFEMultiIndexVelo,
-                                 NSN_ParamsVelo, NSBeginParamVelo);
-      
-       // assemble the nonlinear part of NSE
-       Assemble3D(N_FESpaces, fesp,
-                 N_SquareMatrices, SQMATRICES,
-                 N_RectMatrices, NULL,
-                 N_Rhs, NULL, NULL,
-                 DiscreteFormNL,
-                 BoundaryConditions,
-                 BoundaryValues,
-                 NSEaux);    
 
        // apply upwind disc
       if( (Disctype==UPWIND) && (TDatabase::ParamDB->PROBLEM_TYPE!=STOKES) )
@@ -868,7 +1040,7 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
           case 1:
           case 2:
             // do upwinding with one matrix
-            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);	    
+            UpwindForNavierStokes3D(SqmatrixA11[i], fefct[0], fefct[1], fefct[2]);	    
             cout << "UPWINDING DONE : level " << endl;
             break;
 
@@ -876,47 +1048,49 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
           case 4:
             // do upwinding with two matrices
             cout << "UPWINDING DONE : level " << endl;
-            UpwindForNavierStokes3D(SQMATRICES[0], fefct[0], fefct[1], fefct[2]);
-            UpwindForNavierStokes3D(SQMATRICES[1], fefct[0], fefct[1], fefct[2]);
-            UpwindForNavierStokes3D(SQMATRICES[2], fefct[0], fefct[1], fefct[2]);    
+            UpwindForNavierStokes3D(SqmatrixA11[i], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SqmatrixA22[i], fefct[0], fefct[1], fefct[2]);
+            UpwindForNavierStokes3D(SqmatrixA33[i], fefct[0], fefct[1], fefct[2]);    
           break;
          }                        // endswitch
        }                          // endif     
-       
-       
+        
       // slip with boundary condition
       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
       { 
-        N_FESpaces = 1;
-        N_SquareMatrices = 9;
-        N_RectMatrices = 0;
-        N_Rhs = 0;
+	AMatRhsAssemble[i]->AssembleNavierSlip(); 
 
-        SQMATRICES[0] = SqmatrixA11[i];
-        SQMATRICES[1] = SqmatrixA22[i];
-        SQMATRICES[2] = SqmatrixA33[i];
-        SQMATRICES[3] = SqmatrixA12[i];
-        SQMATRICES[4] = SqmatrixA13[i];
-        SQMATRICES[5] = SqmatrixA21[i];
-        SQMATRICES[6] = SqmatrixA23[i];
-        SQMATRICES[7] = SqmatrixA31[i];
-        SQMATRICES[8] = SqmatrixA32[i];
-
-        Assemble3DSlipBC(N_FESpaces, fesp,
-                         N_SquareMatrices, SQMATRICES,
-                         N_RectMatrices, NULL,
-                         N_Rhs, NULL, NULL, NULL,
-                         BoundaryConditions,
-                         BoundaryValues,
-                         NSEaux);
+//         N_FESpaces = 1;
+//         N_SquareMatrices = 9;
+//         N_RectMatrices = 0;
+//         N_Rhs = 0;
+// 
+//         SQMATRICES[0] = SqmatrixA11[i];
+//         SQMATRICES[1] = SqmatrixA22[i];
+//         SQMATRICES[2] = SqmatrixA33[i];
+//         SQMATRICES[3] = SqmatrixA12[i];
+//         SQMATRICES[4] = SqmatrixA13[i];
+//         SQMATRICES[5] = SqmatrixA21[i];
+//         SQMATRICES[6] = SqmatrixA23[i];
+//         SQMATRICES[7] = SqmatrixA31[i];
+//         SQMATRICES[8] = SqmatrixA32[i];
+// 
+//         Assemble3DSlipBC(N_FESpaces, fesp,
+//                          N_SquareMatrices, SQMATRICES,
+//                          N_RectMatrices, NULL,
+//                          N_Rhs, NULL, NULL, NULL,
+//                          BoundaryConditions,
+//                          BoundaryValues,
+//                          NSEaux);
 
        }// (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=         
      
      /** no change in rhs, so no need to update */
-      // set rhs for Dirichlet nodes
-      memcpy(sol[i]+N_Active_Current, rhs[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
-      memcpy(sol[i]+N_U_Current+N_Active_Current, rhs[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
-      memcpy(sol[i]+2*N_U_Current+N_Active_Current, rhs[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
+      // set rhs for Dirichlet nodes 
+      memcpy(SolArray[i]+N_Active_Current, RhsArray[i]+N_Active_Current, N_DirichletDof*SizeOfDouble);
+      memcpy(SolArray[i]+N_U_Current+N_Active_Current, RhsArray[i]+N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble); 
+      memcpy(SolArray[i]+2*N_U_Current+N_Active_Current, RhsArray[i]+2*N_U_Current+N_Active_Current, N_DirichletDof*SizeOfDouble);     
+        
       } //
       
 } //TSystemMatNSE3D::AssembleNonLinear(
@@ -1126,8 +1300,8 @@ void TSystemMatNSE3D::MeasureErrors(DoubleFunct3D *ExactU1, DoubleFunct3D *Exact
                                     double *u_error, double *p_error)
 {
   double errors[4];
-  TFEFunction3D *fefct[3];
-  TFESpace3D *fesp[1];
+//   TFEFunction3D *fefct[3];
+//   TFESpace3D *fesp[1];
   fesp[0] =  U_Space[N_Levels-1];
 
     fefct[0] = Velocity[N_Levels-1]->GetComponent(0);

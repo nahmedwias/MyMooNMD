@@ -7,6 +7,8 @@ class TADISystem;
 class TADISystem1D;
 class TAuxParam2D;
 class TAuxParam3D;
+class TAssemble;
+class TAssemble3D;
 class TBaseCell;
 class TBaseFunct1D;
 class TBaseFunct2D;

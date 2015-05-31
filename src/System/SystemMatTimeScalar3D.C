@@ -14,17 +14,20 @@
 #include <LocalProjection.h>
 #include <DirectSolver.h>
 #include <Solver.h>
+#include <AssembleMat3D.h>
 
 #include <stdlib.h>
 #include <string.h>
 
-TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, int disctype, int solver):TSystemMatScalar3D(N_levels, fespaces, disctype, solver)
+TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver):TSystemMatScalar3D(N_levels, fespaces, sol, rhs, disctype, solver)
 {
   int i;
   
   /** M mass and system matrix */
   sqmatrixM = new TSquareMatrix3D*[N_Levels];
   N_Matrices++;
+  
+  MMatRhsAssemble = new TAssembleMat3D*[N_Levels];
   
   for(i=Start_Level;i<N_Levels;i++)
    {
@@ -91,8 +94,11 @@ TSystemMatTimeScalar3D::~TSystemMatTimeScalar3D()
 }
 
 
-void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue)
+void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
+                              TAuxParam3D *aux )
 {
+ int i; 
+  
   BoundaryConditions[0] = BoundCond;
   BoundaryValues[0] = BoundValue;
   
@@ -121,112 +127,110 @@ void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *
             OutPut("Unknown or not yet implemented DISCTYPE" << endl);
             exit(4711);;
      }  
-       
+   
+   // initialize the assemble 
+   if(aux==NULL)
+    { aux = new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
+    
+    for(i=Start_Level;i<N_Levels;i++)
+    { 
+     fesp[0] = FeSpaces[i];
+     ferhs[0] = FeSpaces[i];  
+     
+     RHSs[0] = RhsArray[i];
+     
+     SQMATRICES[0] = sqmatrixA[i];
+     SQMATRICES[0]->Reset();  
+     
+     // A Matrix
+     AMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
+                              DiscreteFormARhs, BoundaryConditions, BoundaryValues, aux);
+     AMatRhsAssemble[i]->Init();
   
+     SQMATRICES[0] = sqmatrixM[i];
+     SQMATRICES[0]->Reset(); 
+     
+     // M matrix
+     MMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
+                              DiscreteFormMRhs, BoundaryConditions, BoundaryValues, aux);
+     MMatRhsAssemble[i]->Init();   
+     
+     
+    //setup the multigrid solver
+     //setup the multigrid solver
+     if(SOLVER==GMG)
+      {
+#ifdef _MPI  
+       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], SolArray[i], ParComm[i], ParMapper[i], N_aux, NULL);
+#else
+       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], SolArray[i], N_aux, NULL);
+#endif
+       MG->AddLevel(MGLevel);
+      }  
+      
+    } // for(i=Star 
 } // Init
 
 
-void TSystemMatTimeScalar3D::AssembleMRhs(TAuxParam3D *aux, double **sol, double **rhs)
+void TSystemMatTimeScalar3D::AssembleMRhs()
 {
- 
   //this is set to true for direct solver factorization
   factorize = true;
   
   int i, N_DOF_low, N_Active;
-  
-   if(aux==NULL)
-    { aux = new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
-     
+
    for(i=Start_Level;i<N_Levels;i++)
     {      
      N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
      N_Active =  FeSpaces[i]->GetActiveBound();
 
-     RHSs[0] = rhs[i];
+     RHSs[0] = RhsArray[i];
      memset(RHSs[0], 0, N_DOF_low*SizeOfDouble);
   
-     fesp[0] = FeSpaces[i];
-     ferhs[0] = FeSpaces[i];
-    
      /** initialize matrices */
      SQMATRICES[0] = sqmatrixM[i];
      SQMATRICES[0]->Reset(); 
      
-    /** assemble */
-    Assemble3D(1, fesp,
-               1, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormMRhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
-
-     /** set rhs for Dirichlet nodes */
-     memcpy(sol[i]+N_Active, rhs[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);         
+     // assemble
+     MMatRhsAssemble[i]->Assemble3D();
      
-     //setup the multigrid solver
-     if(SOLVER==GMG)
-      {
-#ifdef _MPI  
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], ParComm[i], ParMapper[i], N_aux, NULL);
-#else
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], sol[i], N_aux, NULL);
-#endif
-       MG->AddLevel(MGLevel);
-      }
-
+     /** free the Mass mat array, no need in time loop */
+     MMatRhsAssemble[i]->DeAllocate();
+     
+     /** set rhs for Dirichlet nodes */
+     memcpy(SolArray[i]+N_Active, RhsArray[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);         
     } //  for(i=Start_Level;i<N_Levels;i++)
-
-   delete aux;
 
 } // TSystemMatScalar3D::AssembleMRhs 
 
 
 
-void TSystemMatTimeScalar3D::AssembleARhs(TAuxParam3D *aux, double **sol, double **rhs)
+void TSystemMatTimeScalar3D::AssembleARhs()
 {
   //this is set to true for direct solver factorization
   factorize = true;
   
   int i, N_DOF_low, N_Active;
-    
-   if(aux==NULL)
-    { aux = new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
-     
+
    for(i=Start_Level;i<N_Levels;i++)
     {    
      N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
      N_Active =  FeSpaces[i]->GetActiveBound();
 
-     RHSs[0] = rhs[i];
+     RHSs[0] = RhsArray[i];
      memset(RHSs[0], 0, N_DOF_low*SizeOfDouble);
-  
-     fesp[0] = FeSpaces[i];
-     ferhs[0] = FeSpaces[i];
-    
-     /** initialize matrices */
+
+     /** reset the matrix */
      SQMATRICES[0] = sqmatrixA[i];
      SQMATRICES[0]->Reset(); 
-     
-    /** assemble */
-    Assemble3D(1, fesp,
-               1, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormARhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
- 
+    
+     // assemble
+     AMatRhsAssemble[i]->Assemble3D();     
+
      /** set rhs for Dirichlet nodes */
-    memcpy(sol[i]+N_Active, rhs[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);         
-     
+     memcpy(SolArray[i]+N_Active, RhsArray[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);           
     }//   for(i=Start_Level;i<N_Le  
     
-   delete aux;    
-
-
 } // TSystemMatScalar3D::AssembleARhs 
 
 void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
