@@ -267,6 +267,9 @@ class TDomain
 
     /** @brief convert all finest quadrangles into two triangles */
     int ConvertQuadToTri(int type);
+    
+    int get_ref_level() const
+    { return RefLevel; }
 
     /** @brief produce a collection with all cells returned by iterator it */
     TCollection *GetCollection(Iterators it, int level);
