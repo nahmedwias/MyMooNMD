@@ -80,8 +80,9 @@ TAssembleMat3D::TAssembleMat3D(int n_fespaces, TFESpace3D **fespaces,
 
 TAssembleMat3D::~TAssembleMat3D()
 {
-  
-  
+
+   
+   
 }
 
 void TAssembleMat3D::Init()
@@ -90,7 +91,7 @@ void TAssembleMat3D::Init()
  TFESpace3D *fespace;
   
    for(i=0;i<N_SqMatrices;i++)
-     {
+     {      
       N = SqMatrices[i]->GetHangingN_Entries();
       if(N>0)
        {
@@ -101,7 +102,7 @@ void TAssembleMat3D::Init()
      
     for(i=0;i<N_Rhs;i++)
      {
-      fespace = FeRhs[i];
+      fespace = FeRhs[i];      
       N = fespace->GetN_Hanging();
       if(N>0)
        {
@@ -180,6 +181,24 @@ void TAssembleMat3D::DeAllocate()
     } // endif N_AllMatrices 
   
 } // DeAllocate
+
+void TAssembleMat3D::Reset()
+{
+  int i, N;
+  
+   // reset to zero
+   for(i=0;i<N_SqMatrices;i++)
+      SqMatrices[i]->Reset(); 
+     
+    for(i=0;i<N_Matrices;i++)
+      RecMatrices[i]->Reset(); 
+   
+    for(i=0;i<N_Rhs;i++)
+     {   
+      N = FeRhs[i]->GetN_DegreesOfFreedom();
+      memset(Rhs[i], 0, N*SizeOfDouble);
+     }   
+} // TAssembleMat3D::Reset()
 
 
 void TAssembleMat3D::Assemble3D()

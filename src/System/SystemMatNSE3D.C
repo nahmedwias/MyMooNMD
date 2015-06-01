@@ -353,18 +353,15 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
         
      } //  if(SOLVER==GMG)  
    
-   
-//     fesp[0] =  U_Space[N_Levels-1];
-// 
-//     fefct[0] = Velocity[N_Levels-1]->GetComponent(0);
-//     fefct[1] = Velocity[N_Levels-1]->GetComponent(1);
-//     fefct[2] = Velocity[N_Levels-1]->GetComponent(2);
+
 #ifdef _MPI
-    int rank;
-     MPI_Comm_rank(Comm, &rank);
-      TCollection *coll = U_Space[N_levels-1]->GetCollection();
+  int rank;
+  TCollection *coll = U_Space[N_levels-1]->GetCollection();
   int owncells = coll->GetN_OwnCells();
   int problemSize=0;
+  
+  MPI_Comm_rank(Comm, &rank);
+    
   MPI_Reduce(&owncells, &problemSize, 1, MPI_INT, MPI_SUM, 0, Comm);
   if(rank==0)
     OutPut( "total own cells over all sub domains : " << problemSize << endl);
@@ -407,7 +404,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
                            BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue)
 {  
   int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
-  int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
+  int N_U_Current;
   int velocity_space_code, pressure_space_code;
   int mg_type = TDatabase::ParamDB->SC_MG_TYPE_SADDLE;
     
@@ -505,11 +502,6 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
           MATRICES[1] = MatrixB2[i];
           MATRICES[2] = MatrixB3[i];
 
-          SQMATRICES[0]->Reset();
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-
           N_SquareMatrices = 1;
           N_RectMatrices = 3;
         break;
@@ -522,15 +514,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
           MATRICES[3] = MatrixB1T[i];
           MATRICES[4] = MatrixB2T[i];
           MATRICES[5] = MatrixB3T[i];
-
-          SQMATRICES[0]->Reset();
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-          MATRICES[3]->Reset();
-          MATRICES[4]->Reset();
-          MATRICES[5]->Reset();
-	  
+  
           N_SquareMatrices = 1;
           N_RectMatrices = 6;
         break;
@@ -549,20 +533,6 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
           MATRICES[0] = MatrixB1[i];
           MATRICES[1] = MatrixB2[i];
           MATRICES[2] = MatrixB3[i];
-
-          SQMATRICES[0]->Reset();
-          SQMATRICES[1]->Reset();
-          SQMATRICES[2]->Reset();
-          SQMATRICES[3]->Reset();
-          SQMATRICES[4]->Reset();
-          SQMATRICES[5]->Reset();
-          SQMATRICES[6]->Reset();
-          SQMATRICES[7]->Reset();
-          SQMATRICES[8]->Reset();
-
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
 
           N_SquareMatrices = 9;
           N_RectMatrices = 3;
@@ -585,22 +555,6 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
           MATRICES[4] = MatrixB2T[i];
           MATRICES[5] = MatrixB3T[i];
 
-          SQMATRICES[0]->Reset();
-          SQMATRICES[1]->Reset();
-          SQMATRICES[2]->Reset();
-          SQMATRICES[3]->Reset();
-          SQMATRICES[4]->Reset();
-          SQMATRICES[5]->Reset();
-          SQMATRICES[6]->Reset();
-          SQMATRICES[7]->Reset();
-          SQMATRICES[8]->Reset();
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-          MATRICES[3]->Reset();
-          MATRICES[4]->Reset();
-          MATRICES[5]->Reset();
-
           N_SquareMatrices = 9;
           N_RectMatrices = 6;
 
@@ -610,16 +564,12 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
       N_Rhs = 3;
       N_FESpaces = 2;   
      
-      N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();
-      N_Active_Current  = U_Space[i]->GetActiveBound();     
-      N_DirichletDof = N_U_Current - N_Active_Current;
-      N_P_Current = P_Space[i]->GetN_DegreesOfFreedom();      
+      N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();   
       
       RHSs[0] = RhsArray[i];
       RHSs[1] = RhsArray[i] + N_U_Current;
       RHSs[2] = RhsArray[i] + 2*N_U_Current;
-      RHSs[3] = RhsArray[i] + 3*N_U_Current;     
-      memset(RhsArray[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
+      RHSs[3] = RhsArray[i] + 3*N_U_Current;
 
       fesp[0] =  U_Space[i];
       fesp[1] =  P_Space[i];
@@ -782,8 +732,7 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
               MG->AddLevel(MGLevel);
           break;	
         } //  switch(NSEType)
-       }  // if(SOLVER==GMG)    
-//            AMatRhsAssemble[i]->Assemble3D();  
+       }  // if(SOLVER==GMG)     
      } // for(i=Start_Level;i<N_Levels;i++)      
               
 //  cout << " TSystemMatNSE3D::Init done ! " << endl; 
@@ -801,110 +750,15 @@ void TSystemMatNSE3D::Assemble()
   
    for(i=Start_Level;i<N_Levels;i++)
     {     
-     // initialize matrices
-     switch(NSEType)
-      {
-        case 1:
-          SQMATRICES[0] = SqmatrixA11[i];
-          MATRICES[0] = MatrixB1[i];
-          MATRICES[1] = MatrixB2[i];
-          MATRICES[2] = MatrixB3[i];
-
-          SQMATRICES[0]->Reset();
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-        break;
-
-        case 2:
-            SqmatrixA11[i]->Reset();
-            MatrixB1[i]->Reset();
-            MatrixB2[i]->Reset();
-            MatrixB3[i]->Reset();
-            MatrixB1T[i]->Reset();
-            MatrixB2T[i]->Reset();
-            MatrixB3T[i]->Reset();
-        break;
-
-        case 3:
-          SQMATRICES[0] = SqmatrixA11[i];
-          SQMATRICES[1] = SqmatrixA12[i];
-          SQMATRICES[2] = SqmatrixA13[i];	  
-          SQMATRICES[3] = SqmatrixA21[i];
-          SQMATRICES[4] = SqmatrixA22[i];
-          SQMATRICES[5] = SqmatrixA23[i]; 
-          SQMATRICES[6] = SqmatrixA31[i];
-          SQMATRICES[7] = SqmatrixA32[i];
-          SQMATRICES[8] = SqmatrixA33[i];  
-
-          MATRICES[0] = MatrixB1[i];
-          MATRICES[1] = MatrixB2[i];
-          MATRICES[2] = MatrixB3[i];
-
-          SQMATRICES[0]->Reset();
-          SQMATRICES[1]->Reset();
-          SQMATRICES[2]->Reset();
-          SQMATRICES[3]->Reset();
-          SQMATRICES[4]->Reset();
-          SQMATRICES[5]->Reset();
-          SQMATRICES[6]->Reset();
-          SQMATRICES[7]->Reset();
-          SQMATRICES[8]->Reset();
-
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-
-//           N_SquareMatrices = 9;
-//           N_RectMatrices = 3;
-        break;
-
-        case 4:
-          SQMATRICES[0] = SqmatrixA11[i];
-          SQMATRICES[1] = SqmatrixA12[i];
-          SQMATRICES[2] = SqmatrixA13[i];	  
-          SQMATRICES[3] = SqmatrixA21[i];
-          SQMATRICES[4] = SqmatrixA22[i];
-          SQMATRICES[5] = SqmatrixA23[i]; 
-          SQMATRICES[6] = SqmatrixA31[i];
-          SQMATRICES[7] = SqmatrixA32[i];
-          SQMATRICES[8] = SqmatrixA33[i];  
-          MATRICES[0] = MatrixB1[i];
-          MATRICES[1] = MatrixB2[i];
-          MATRICES[2] = MatrixB3[i];
-          MATRICES[3] = MatrixB1T[i];
-          MATRICES[4] = MatrixB2T[i];
-          MATRICES[5] = MatrixB3T[i];
-
-          SQMATRICES[0]->Reset();
-          SQMATRICES[1]->Reset();
-          SQMATRICES[2]->Reset();
-          SQMATRICES[3]->Reset();
-          SQMATRICES[4]->Reset();
-          SQMATRICES[5]->Reset();
-          SQMATRICES[6]->Reset();
-          SQMATRICES[7]->Reset();
-          SQMATRICES[8]->Reset();
-          MATRICES[0]->Reset();
-          MATRICES[1]->Reset();
-          MATRICES[2]->Reset();
-          MATRICES[3]->Reset();
-          MATRICES[4]->Reset();
-          MATRICES[5]->Reset();
-          break;
-      } //  switch(NSEType)
- 
       N_U_Current = U_Space[i]->GetN_DegreesOfFreedom();
       N_Active_Current  = U_Space[i]->GetActiveBound();     
       N_DirichletDof = N_U_Current - N_Active_Current;
       N_P_Current = P_Space[i]->GetN_DegreesOfFreedom();      
       
-      RHSs[0] = RhsArray[i];
-      RHSs[1] = RhsArray[i] + N_U_Current;
-      RHSs[2] = RhsArray[i] + 2*N_U_Current;
-      RHSs[3] = RhsArray[i] + 3*N_U_Current;     
-      memset(RhsArray[i], 0, (3*N_U_Current+N_P_Current)*SizeOfDouble);
+      // initialize matrices
+      AMatRhsAssemble[i]->Reset();
  
+      /** assemble */
       AMatRhsAssemble[i]->Assemble3D();
  
       fefct[0] = Velocity[i]->GetComponent(0);
@@ -1003,30 +857,11 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
       N_Active_Current  = U_Space[i]->GetActiveBound();     
       N_DirichletDof = N_U_Current - N_Active_Current;
       
-     // set the nonliner matrices
-      switch(NSEType)
-       {
-        case 1:
-        case 2:
-          SQMATRICES[0] = SqmatrixA11[i];
-          SQMATRICES[0]->Reset();
-        break;
-
-        case 3:
-        case 4:
-            SQMATRICES[0] = SqmatrixA11[i];
-            SQMATRICES[1] = SqmatrixA22[i];
-            SQMATRICES[2] = SqmatrixA33[i];
-            SQMATRICES[0]->Reset();
-            SQMATRICES[1]->Reset();
-            SQMATRICES[2]->Reset();
-         break;
-        } // switch(NSEType)
+      // reset the nonliner matrices
+      AMatAssembleNonLinear[i]->Reset();
             
       // assemble the nonlinear matrix */      
       AMatAssembleNonLinear[i]->Assemble3D();      
-            
-      fesp[0] =  U_Space[i];
       
       fefct[0] = Velocity[i]->GetComponent(0);
       fefct[1] = Velocity[i]->GetComponent(1);
@@ -1059,7 +894,8 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
       if (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
       { 
 	AMatRhsAssemble[i]->AssembleNavierSlip(); 
-
+            
+         fesp[0] =  U_Space[i];
 //         N_FESpaces = 1;
 //         N_SquareMatrices = 9;
 //         N_RectMatrices = 0;

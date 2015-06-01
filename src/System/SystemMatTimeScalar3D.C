@@ -138,25 +138,19 @@ void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *
      ferhs[0] = FeSpaces[i];  
      
      RHSs[0] = RhsArray[i];
-     
+  
+     // A Matrix     
      SQMATRICES[0] = sqmatrixA[i];
-     SQMATRICES[0]->Reset();  
-     
-     // A Matrix
      AMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
                               DiscreteFormARhs, BoundaryConditions, BoundaryValues, aux);
      AMatRhsAssemble[i]->Init();
   
+     // M matrix     
      SQMATRICES[0] = sqmatrixM[i];
-     SQMATRICES[0]->Reset(); 
-     
-     // M matrix
      MMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
                               DiscreteFormMRhs, BoundaryConditions, BoundaryValues, aux);
      MMatRhsAssemble[i]->Init();   
-     
-     
-    //setup the multigrid solver
+      
      //setup the multigrid solver
      if(SOLVER==GMG)
       {
@@ -183,13 +177,9 @@ void TSystemMatTimeScalar3D::AssembleMRhs()
     {      
      N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
      N_Active =  FeSpaces[i]->GetActiveBound();
-
-     RHSs[0] = RhsArray[i];
-     memset(RHSs[0], 0, N_DOF_low*SizeOfDouble);
   
-     /** initialize matrices */
-     SQMATRICES[0] = sqmatrixM[i];
-     SQMATRICES[0]->Reset(); 
+     /** initialize matrices and rhs */
+     MMatRhsAssemble[i]->Reset(); 
      
      // assemble
      MMatRhsAssemble[i]->Assemble3D();
@@ -204,7 +194,6 @@ void TSystemMatTimeScalar3D::AssembleMRhs()
 } // TSystemMatScalar3D::AssembleMRhs 
 
 
-
 void TSystemMatTimeScalar3D::AssembleARhs()
 {
   //this is set to true for direct solver factorization
@@ -217,12 +206,8 @@ void TSystemMatTimeScalar3D::AssembleARhs()
      N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
      N_Active =  FeSpaces[i]->GetActiveBound();
 
-     RHSs[0] = RhsArray[i];
-     memset(RHSs[0], 0, N_DOF_low*SizeOfDouble);
-
-     /** reset the matrix */
-     SQMATRICES[0] = sqmatrixA[i];
-     SQMATRICES[0]->Reset(); 
+     /** reset the matrix and rhs */
+     AMatRhsAssemble[i]->Reset(); 
     
      // assemble
      AMatRhsAssemble[i]->Assemble3D();     
@@ -235,9 +220,9 @@ void TSystemMatTimeScalar3D::AssembleARhs()
 
 void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
 #ifdef _MPI
-					    , double **Rhs_array
+                                             , double **Rhs_array
 #endif
-								)
+                                             )
 {
     int i, N_Active;
     double tau;
@@ -269,42 +254,14 @@ void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, dou
      memset(defect, 0, N_DOF*SizeOfDouble);  
      MatVectActive(sqmatrixM[N_Levels-1], oldsol, defect); 
     //cout << "defect " << Ddot(N_Active, sol, sol)<< endl;      
-    //cout << "defect " << Ddot(N_Active, defect, defect)<< endl; 
     
      /** B:= B + defec  */
      Daxpy(N_Active, 1, defect, B);
 
-  /** set Dirichlet values */
-     memcpy(B+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
-     
-     
-/*    int rank;
-  MPI_Comm_rank(Comm, &rank);         
-               if(rank==0)
-       cout << "Sol AssembleSystMat: " << Ddot( (N_DOF-N_Active),sol+N_Active,sol+N_Active) << endl;  */ 
-       
-    memcpy(sol+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
-    
-       
-//       if(rank==0)
-//        cout << "Sol " << Ddot((N_DOF-N_Active)   ,sol+N_Active,sol+N_Active) << endl;          
-//        
-//       ParComm[N_Levels-1]->CommUpdate(sol,B);
-//   
-//       if(rank==0)
-//        cout << "Sol " << Ddot((N_DOF-N_Active)   ,sol+N_Active,sol+N_Active) << endl;          
-//          
-//       
-//      MPI_Finalize();
-//   exit(0);    
-    
-    //###########################debugging##########################################//
-    //memcpy(sol, rhs, (N_DOF)*SizeOfDouble);
-//     for(i=N_Active; i<N_DOF; i++)
-//       sol[i] = rhs[i];
-    //ParComm[N_Levels-1]->CommUpdate(sol,rhs);
-    //###########################debugging##########################################//
-    
+     /** set Dirichlet values */
+     memcpy(B+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);  
+     memcpy(sol+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
+          
      /** assemble the system matrix */
      for(i=Start_Level;i<N_Levels;i++)   
       {
@@ -314,10 +271,9 @@ void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, dou
          { MatAdd(sqmatrixM[i], sqmatrixA[i], tau*TDatabase::TimeDB->THETA1);} 
          
 #ifdef _MPI  
-	SQMATRICES[0] = sqmatrixM[i];
-	//ParComm[i]->SetSlaveDofRows(SQMATRICES[0]->GetRowPtr(), SQMATRICES[0]->GetKCol(), SQMATRICES[0]->GetEntries(), Rhs_array[i]);     
+       SQMATRICES[0] = sqmatrixM[i];  
 #endif
-      }
+       }
      gamma = tau*TDatabase::TimeDB->THETA1;
      
 //have to shift this in pardirectsolver     
@@ -342,7 +298,6 @@ void TSystemMatTimeScalar3D::RestoreMassMat()
      
      gamma = 0.;
      SystMatAssembled  = FALSE;
-
    }
   else
   {
@@ -365,7 +320,6 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
          {
           memcpy(Itmethod_sol, sol, N_DOF*SizeOfDouble);
           memcpy(Itmethod_rhs, B, N_DOF*SizeOfDouble);
-
          }
         else
          {
@@ -403,7 +357,6 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
 #ifdef _SEQ
         DirectSolver(sqmatrixM[N_Levels-1], B, sol);
 #endif
-	
 	//this is set to false for direct solver factorization
         factorize = false;
       break;      
@@ -417,7 +370,6 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
 
 double TSystemMatTimeScalar3D::GetResidual(double *sol)
 {
-//   cout<<"qsd"<<endl;
   double residual_scalar=0.0;
   
   if(SystMatAssembled)
@@ -425,8 +377,7 @@ double TSystemMatTimeScalar3D::GetResidual(double *sol)
     memset(defect, 0, N_DOF*SizeOfDouble);         
     ScalarDefect(sqmatrixM[N_Levels-1], sol, B, defect, residual_scalar);
     
-#ifdef _MPI
-    
+#ifdef _MPI 
     residual_scalar = 0.0;
     double sum =0.;
     int i,rank;
@@ -446,7 +397,6 @@ double TSystemMatTimeScalar3D::GetResidual(double *sol)
     OutPut("Assemble the System Matrix before calculating the GetResidual" << endl);
     exit(4711);;   
    }
-//    cout<<"asd"<<endl;
    return residual_scalar;    
 }
 

@@ -57,7 +57,10 @@ class TAssembleMat3D: public TAssemble
     
    /** deallocate memorey for all aux array */
   void DeAllocate();
- 
+
+  /** reset all values of Mat and rhs to zero */
+  void Reset();
+  
    /** assemble the matrices */
   void Assemble3D(); 
   
