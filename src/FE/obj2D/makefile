@@ -32,11 +32,13 @@ LIBRARY = $(LIBPATH)lib_FE.a
         $(SRCPATH)AuxParam2D.o \
 	$(SRCPATH)BaseFunct1D.o \
 	$(SRCPATH)BaseFunct2D.o \
+	$(SRCPATH)Bcgs.o \
 	$(SRCPATH)Blas1.o \
 	$(SRCPATH)Blas2.o \
         $(SRCPATH)Bulk.o \
 	$(SRCPATH)Bulk_2d3d.o \
 	$(SRCPATH)CD2DErrorEstimator.o \
+	$(SRCPATH)Cg.o \
 	$(SRCPATH)ConvDiff.o \
 	$(SRCPATH)ConvDiff2D.o \
 	$(SRCPATH)Convolution.o \
@@ -115,6 +117,7 @@ LIBRARY = $(LIBPATH)lib_FE.a
 	$(SRCPATH)SquareStructure1D.o \
 	$(SRCPATH)SquareStructure2D.o \
 	$(SRCPATH)SSMUM.o \
+	$(SRCPATH)SSORIte.o \
 	$(SRCPATH)Structure.o \
 	$(SRCPATH)Structure2D.o \
 	$(SRCPATH)Superconvergence2D.o \
