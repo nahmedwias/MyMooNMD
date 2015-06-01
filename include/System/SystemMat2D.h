@@ -46,6 +46,17 @@ class SystemMat2D
       : fe_spaces(n_spaces, NULL), sq_matrices(n_sq_matrices, NULL),
         rect_matrices(n_rect_matrices, NULL), defect(NULL)
      {};
+     
+     // some getters
+     
+     TFESpace2D* get_space(unsigned int i = 0)
+     { return fe_spaces.at(i); }
+     
+     TSquareMatrix2D* get_square_matrix(unsigned int i = 0)
+     { return sq_matrices.at(i); }
+     
+     TMatrix2D* get_rectangular_matrix(unsigned int i = 0)
+     { return rect_matrices.at(i); }
 };
 
 #endif // __SYSTEMMAT2D__
