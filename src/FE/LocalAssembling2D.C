@@ -12,6 +12,8 @@
 #include <MooNMD_Io.h>
 #include <string.h>
 
+#include <DiscreteForm2D.h> // to be removed
+
 /** @brief a helper function returning a string with for the name of the 
  *         LocalAssembling2D_type. This returns an empty string in case the type
  *         is not known. */
@@ -56,12 +58,11 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs)
- : FEFunctions2D(fefunctions2d), Coeffs(coeffs)
+ : name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
+   FEFunctions2D(fefunctions2d)
 {
-  this->name = LocalAssembling2D_type_to_string(type);
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
     OutPut("Constructor of LocalAssembling2D: using type " << name << endl);
-  
   
   
 //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
@@ -224,8 +225,8 @@ switch(type)
     throw("unknown LocalAssembling2D_type");
 }
 
-AllOrigValues = new double** [N_Terms];
-OrigValues = new double* [N_Terms];
+  AllOrigValues = new double** [N_Terms];
+  OrigValues = new double* [N_Terms];
 
   // some consistency checks
   if(Coeffs == NULL)
@@ -237,6 +238,69 @@ OrigValues = new double* [N_Terms];
   {
     ErrMsg("a local assmebling routine was not set");
     exit(1);
+  }
+}
+
+LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux, 
+                                     const TDiscreteForm2D& df)
+ : name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
+   Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
+   FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
+   ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),
+   Coeffs(df.GetCoeffFct()), AssembleParam(df.get_AssembleParam()),
+   Manipulate(df.get_Manipulate()), AllOrigValues(new double** [N_Terms]),
+   OrigValues(new double* [N_Terms]), N_Matrices(df.get_N_Matrices()),
+   N_Rhs(df.get_N_Rhs()), N_ParamFct(aux.GetN_ParamFct()), 
+   ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
+   N_Parameters(aux.GetN_Parameters()), N_FEValues(aux.get_N_FEValues()), 
+   FEFunctions2D(aux.get_FEFunctions2D()), FEValue_FctIndex(this->N_FEValues,0),
+   FEValue_MultiIndex(this->N_FEValues, D00)
+{
+  // copy the array indicating if second derivatives are needed (because the 
+  // destructor deletes this array)
+  this->Needs2ndDerivatives = new bool[this->N_Spaces];
+  for(int i = 0; i < this->N_Spaces; ++i)
+    this->Needs2ndDerivatives[i] = df.GetNeeds2ndDerivatives()[i];
+  
+  for(int i = 0; i < this->N_Terms; ++i)
+  {
+    this->Derivatives.at(i) = df.get_derivative(i);
+    this->FESpaceNumber.at(i) = df.get_FESpaceNumber(i);
+  }
+  
+  for(int i = 0; i < this->N_Matrices; ++i)
+  {
+    this->RowSpace.at(i) = df.rowSpaceOfMat(i);
+    this->ColumnSpace.at(i) = df.colSpaceOfMat(i);
+  }
+  
+  for(int i = 0; i < this->N_Rhs; ++i)
+    this->RhsSpace.at(i) = df.get_RhsSpace(i);
+  
+  for(int i = 0; i < this->N_ParamFct; ++i)
+  {
+    this->ParameterFct.at(i) = aux.get_ParameterFct(i);
+    this->BeginParameter.at(i) = aux.get_BeginParameter(i);
+  }
+  
+  for(int i = 0; i < this->N_FEValues; ++i)
+  {
+    this->FEValue_FctIndex.at(i) = aux.get_FEValue_FctIndex(i);
+    this->FEValue_MultiIndex.at(i) = aux.get_FEValue_MultiIndex(i);
+  }
+  
+  // some consistency checks
+  if(Coeffs == NULL)
+  {
+    ErrMsg("You need to specify a valid function for the coefficients");
+    exit(1);
+  }
+  if(this->AssembleParam == NULL)
+  {
+    // this means in the discrete form there was only a pointer to a
+    // AssembleFct2D rather than a AssembleFctParam2D.
+    ErrMsg("can't create LocalAssembling2D object, missing AssembleFctParam2D");
+    throw("can't create LocalAssembling2D object, missing AssembleFctParam2D");
   }
 }
 

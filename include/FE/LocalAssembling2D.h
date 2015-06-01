@@ -106,12 +106,12 @@ class LocalAssembling2D
     // number of parameters
     int N_Parameters;
     
-    /** array of stored FEFunction2D */
-    TFEFunction2D **FEFunctions2D;
-    
     /** number of FE values */
     int N_FEValues;
     
+    /** array of stored FEFunction2D */
+    TFEFunction2D **FEFunctions2D;
+        
     /** index of FEFunction2D used for FE value i */
     std::vector<int> FEValue_FctIndex;
     
@@ -123,13 +123,21 @@ class LocalAssembling2D
      * in case of Navier-Stokes problems. It only exists in order to not make 
      * the constructor huge. 
      * 
-     * Basically this function implements three nested switches.
+     * Basically this function implements four nested switches (discretization 
+     * type, NSTYOE, Laplace type, nonlinear form type)
      */
     void set_parameters_for_nse(LocalAssembling2D_type type);
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
                       CoeffFct2D *coeffs);
+    
+    /** @brief constructor for backward compatibility
+     * 
+     * This uses the deprecated classes TAuxParam2D and TDiscreteForm2D to 
+     * construct an object of this class.
+     */
+    LocalAssembling2D(const TAuxParam2D& aux, const TDiscreteForm2D& df);
 
     /** destructor */
     ~LocalAssembling2D();
