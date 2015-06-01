@@ -44,6 +44,19 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
                 , int AssemblePhaseID
 )
 {
+  ErrMsg("This function is deprecated/outdated. Use the one with the "
+         << "LocalAssembling2D object!");
+  LocalAssembling2D la(*Parameters, *DiscreteForm);
+  Assemble2D(n_fespaces, fespaces, n_sqmatrices, sqmatrices, n_matrices,
+             matrices, n_rhs, rhs, ferhs, BoundaryConditions, BoundaryValues,
+             la, 
+#ifdef __3D__
+             Aux2D3D,
+#endif
+             AssemblePhaseID
+            );
+  return;
+  
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
   int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ii,jj,ll,ij;
