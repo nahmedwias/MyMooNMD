@@ -1,6 +1,42 @@
+#############################
+#GEO = 2D
+GEO = 3D
 
+IN = main$(GEO)
+OUT = main
 
-include ConfigParMoON.inc
+#MACH = LINUX
+#MACH = INTEL64 
+#MACH = TYRONE64  
+MACH = LINUX64
+MACH = MAC64
+#MACH = CRAY64
+
+FLAG = OPTI
+FLAG = FAST
+#FLAG = DEBUG
+
+# profing options
+# HP-UX: -G, SUN: -xpg,
+# other platform: -pg
+#GPROF  = -pg
+
+#EFENCE = YES
+
+#MORTAR = -D__MORTAR__
+MORTAR =
+
+PARALLEL_TYPE = HYBRID
+PARALLEL_TYPE = MPI
+#PARALLEL_TYPE = OPENMP
+#PARALLEL_TYPE = OMPONLY
+
+#hybrid  = takes all, mpi, hybrid, openmp
+#MPI     = takes both mpi & openmp
+#openmp  = takes only openmp
+#seq compilation takes openmp
+#omponly = takes omp only
+#############################
 
 SRC = src
 

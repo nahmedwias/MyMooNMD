@@ -291,7 +291,8 @@ void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *Boun
      // array of assemble objects
      AMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
                               DiscreteFormARhs, BoundaryConditions, BoundaryValues, aux);
-     AMatRhsAssemble[i]->Init(); 
+     AMatRhsAssemble[i]->Init();
+  
      
      //setup the multigrid solver
      if(SOLVER==GMG)

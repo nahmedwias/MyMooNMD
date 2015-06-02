@@ -30,28 +30,40 @@ TAssembleMat3D::TAssembleMat3D(int n_fespaces, TFESpace3D **fespaces,
  int i, j, N;
  
   TFESpace3D *fespace;
- 
-   FeSpaces = fespaces;
-   FeRhs = ferhs;
-   SqMatrices = sqmatrices; 
-   RecMatrices = matrices;
+
    DiscreteForm = discreteform;
    BoundaryConditions = boundarybonditions;
    BoundaryValues = boundaryvalues;
    AuxParam = parameters; 
    
-    N_Parameters = AuxParam->GetN_Parameters();   
-    SecondDer = discreteform->GetNeeds2ndDerivatives();
+   N_Parameters = AuxParam->GetN_Parameters();   
+   SecondDer = discreteform->GetNeeds2ndDerivatives();
   
-//     cout << "N_Parameters " << N_Parameters <<endl;
+  if(n_fespaces)
+   FeSpaces = new TFESpace3D *[n_fespaces];
+  if(n_rhs)
+   FeRhs = new TFESpace3D *[n_rhs];
+  if(n_sqmatrices)
+   SqMatrices = new TSquareMatrix3D* [n_sqmatrices]; 
+  if(n_matrices)
+   RecMatrices = new TMatrix3D *[n_matrices];    
     
     // all spaces use same Coll
     Coll = fespaces[0]->GetCollection();
     N_Cells = Coll->GetN_Cells();  
-   
-   
+ 
+     for(i=0;i<n_fespaces;i++)   
+       FeSpaces[i] = fespaces[i];    
+    
+     for(i=0;i<n_rhs;i++)
+     { 
+      Rhs[i] = rhs[i];     
+      FeRhs[i] = ferhs[i];      
+     }
+    
     for(i=0;i<N_SqMatrices;i++)
      {
+      SqMatrices[i] = sqmatrices[i];
       fespace = sqmatrices[i]->GetFESpace();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
@@ -59,6 +71,7 @@ TAssembleMat3D::TAssembleMat3D(int n_fespaces, TFESpace3D **fespaces,
      
     for(i=0;i<N_Matrices;i++)
      {
+      RecMatrices[i] = matrices[i];
       fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
@@ -588,7 +601,7 @@ void TAssembleMat3D::ModifyMatHang()
 void TAssembleMat3D::AddLocalSqMatToGlobal(int i, TBaseCell *cell, int *N_BaseFunct)
 {
  int j, k, m, n, l, N_, l2, end, *RowPtr, *ColInd, *HangingRowPtr, *HangingColInd;
- int *DOF, ActiveBound, DirichletBound;
+ int *DOF, ActiveBound, DirichletBound, H_N=0;
  
  double **Matrix, *MatrixRow, *CurrentHangingEntries, *Entries;
  
@@ -607,10 +620,14 @@ void TAssembleMat3D::AddLocalSqMatToGlobal(int i, TBaseCell *cell, int *N_BaseFu
       RowPtr = SqMatrices[j]->GetRowPtr();
       ColInd = SqMatrices[j]->GetKCol();
 
-      CurrentHangingEntries = HangingEntries[j];
-      HangingRowPtr = SqMatrices[j]->GetHangingRowPtr();
-      HangingColInd = SqMatrices[j]->GetHangingKCol();
-
+      H_N = SqMatrices[j]->GetHangingN_Entries();
+      if(H_N>0)
+      {
+       CurrentHangingEntries = HangingEntries[j];
+       HangingRowPtr = SqMatrices[j]->GetHangingRowPtr();
+       HangingColInd = SqMatrices[j]->GetHangingKCol();
+      }
+      
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
       DOF = GlobalNumbers[j] + BeginIndex[j][i];
@@ -642,7 +659,10 @@ void TAssembleMat3D::AddLocalSqMatToGlobal(int i, TBaseCell *cell, int *N_BaseFu
               } // endif
             } // endfor n
             if(l2 == 0)
-              cout << "(assemble3d.c) not found" << endl;
+	    {
+              cout << k << "(assemble3d.c) not found" << n<< endl;
+	      exit(0);
+	    }
           } // endfor k
         } // endif l
         else
@@ -650,6 +670,8 @@ void TAssembleMat3D::AddLocalSqMatToGlobal(int i, TBaseCell *cell, int *N_BaseFu
           if(l<DirichletBound)
           {
             // hanging node
+	    if(H_N==0) continue;
+	    
             l -= ActiveBound;
             end = HangingRowPtr[l+1];
             for(n=HangingRowPtr[l];n<end;n++)
@@ -806,6 +828,8 @@ void TAssembleMat3D::AddLocalRhsToGlobal(int i, TBaseCell *cell, int *N_BaseFunc
           if(l<DirichletBound)
           {
             // hanging node
+            if(N_H==0) continue;
+
             l -= ActiveBound;
             CurrentHangingRhs[l] += local_rhs[m];
           }

@@ -14,10 +14,11 @@ TAssemble::TAssemble(int n_fespaces, int n_sqmatrices, int n_matrices, int n_rhs
   N_SqMatrices = n_sqmatrices;
   N_Matrices = n_matrices;
   N_FeSpaces = n_fespaces;    
-  N_Rhs = n_rhs;  
-  Rhs = rhs;
-  
+  N_Rhs = n_rhs;
   N_AllMatrices = n_sqmatrices+n_matrices;
+  
+  if(n_rhs)
+    Rhs = new double*[n_rhs];
   
   if(N_SqMatrices)
    {  
