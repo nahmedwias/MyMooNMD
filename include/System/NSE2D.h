@@ -22,6 +22,14 @@
 #include <vector>
 #include <MultiGrid2D.h>
 
+
+#include <NSE_MultiGrid.h>
+#include <NSE_MGLevel1.h>
+#include <NSE_MGLevel2.h>
+#include <NSE_MGLevel3.h>
+#include <NSE_MGLevel4.h>
+#include <NSE_MGLevel14.h>
+
 class NSE2D
 {
   protected:
@@ -59,7 +67,7 @@ class NSE2D
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    TMultiGrid2D * multigrid;
+    TNSE_MultiGrid * multigrid;
     
     /** @brief an array to store defect, so that we don't have to reallocate
      *         so often
@@ -145,6 +153,15 @@ class NSE2D
      * @param i suffix for output file name, -1 means no suffix
      */
     void output(int i = -1);
+    
+    /**
+   * @brief initialize multigrid levels for different NSTYPE's
+   */
+    TNSE_MGLevel* mg_levels(int i, int index);
+    /**
+   * @brief multigrid solver
+   */
+    void mg_solver();
     
     // getters and setters
     TSystemMatNSE2D* getMatrix() const
