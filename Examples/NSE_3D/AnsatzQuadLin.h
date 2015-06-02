@@ -120,7 +120,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
   int i;
   double *coeff, x, y, z;
 
-  if (TDatabase::ParamDB->STOKES_PROBLEM)
+  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)// STOKES 
   {
     for(i=0;i<n_points;i++)
     {
@@ -132,7 +132,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
       coeff[3] = -10*eps + 7; // f3
     }
   }
-  else
+  else // Navier-Stokes
   {
     for(i=0;i<n_points;i++)
     {
