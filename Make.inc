@@ -73,6 +73,14 @@ MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI
                       -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
 endif
 
+ifeq ($(PARALLEL_TYPE),OMPONLY)
+
+MUMPSLIB = EXT_LIB/MUMPS/lib
+PARSOLVER_LIB = -L$(MUMPSLIB)  -ldmumps_$(MACH) -lmumps_common_$(MACH)  \
+                -LEXT_LIB/Metis  -lparmetis_$(MACH) -lmetis_$(MACH) \
+                -L$(MUMPSLIB) -lpord_$(MACH) -lptesmumps_$(MACH) -lptscotch_$(MACH) -lscotch_$(MACH) -lptscotcherrexit_$(MACH) -lptscotchparmetis_$(MACH) \
+                 $(MPIBLACS_$(MACH)) -lpardiso500-GNU481-X86-64_$(MACH)
+endif
 
 # ======================================================================
 # MAC64: MAC with CLANG
@@ -284,6 +292,10 @@ endif
   endif
   ifeq ($(PARALLEL_TYPE),HYBRID)
    PRG_DEFINE = -D_PAR -D_MPI -D_HYBRID
+   OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
+  endif
+  ifeq ($(PARALLEL_TYPE),OMPONLY)
+   PRG_DEFINE = -D_PAR -D_OMPONLY
    OMP_COMPILE_FLAGS = $(OMP_COMPILE_FLAGS_$(MACH))
   endif
  else

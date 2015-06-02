@@ -51,8 +51,8 @@ TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespac
 //    }
    
   SystMatAssembled  = FALSE;
+  
 #ifdef _MPI
-
    if(SOLVER == DIRECT)
    {
      SQMATRICES[0] = sqmatrixM[N_Levels-1];

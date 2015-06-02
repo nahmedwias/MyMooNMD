@@ -29,7 +29,7 @@ MORTAR =
 # PARALLEL_TYPE = HYBRID
 PARALLEL_TYPE = MPI
 #PARALLEL_TYPE = OPENMP
-#PARALLEL_TYPE = OMPONLY
+PARALLEL_TYPE = OMPONLY
 
 #hybrid  = takes all, mpi, hybrid, openmp
 #MPI     = takes both mpi & openmp

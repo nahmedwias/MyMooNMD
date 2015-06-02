@@ -24,6 +24,10 @@
 #include <ParDirectSolver.h>
 #endif
 
+#ifdef _OMPONLY
+#include <ParDirectSolver.h>
+#endif
+
 /**class for 3D  NSE system matrix */
 class TSystemMatNSE3D
 {
@@ -33,6 +37,10 @@ class TSystemMatNSE3D
     TParFEMapper3D **ParMapper_U, **ParMapper_P;
     TParFECommunicator3D **ParComm_U, **ParComm_P;
     MPI_Comm Comm;
+    TParDirectSolver *DS;
+#endif
+    
+#ifdef _OMPONLY
     TParDirectSolver *DS;
 #endif
     
