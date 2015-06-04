@@ -47,6 +47,7 @@ class SystemMat2D
         rect_matrices(n_rect_matrices, NULL), defect(NULL)
      {};
      
+     ~SystemMat2D();
      // some getters
      
      TFESpace2D* get_space(unsigned int i = 0)
@@ -57,6 +58,33 @@ class SystemMat2D
      
      TMatrix2D* get_rectangular_matrix(unsigned int i = 0)
      { return rect_matrices.at(i); }
+     
+     /** @brief adding a scaled matrix to this
+      * only active d.o.f
+      */
+     void add_active(const SystemMat2D &A, double factor = 1.0);
+     
+     /** @brief adding a scaled matrix to this 
+      * all d.o.f
+      */
+     void add(const SystemMat2D &A, double factor = 1.0);
+
+     /** @brief scale a matrix
+      * active d.o.f
+      */
+     void scale_active(double factor);
+     
+     /** @brief scale a matrix
+      * all d.o.f
+      */ 
+     void scale(double factor);
+     
+    /** @brief matrix vector multiplication
+     * y += factor* A*x;
+     */
+    void apply(const double *x, double *y, double factor = 1.0);
+     
+     
 };
 
 #endif // __SYSTEMMAT2D__
