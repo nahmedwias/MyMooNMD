@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatDarcy2D
+* @brief     source file for SystemMatDarcy2D
 * @author    Ulrich Wilbrandt,
 * @date      15.03.15
  ************************************************************************  */
@@ -17,7 +17,7 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
+SystemMatDarcy2D::SystemMatDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
                                      BoundValueFunct2D **BoundValue)
  : SystemMat2D(2,2,2)
 {
@@ -54,7 +54,7 @@ TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
   this->SystemMat2D::defect = NULL; // to be implemented
 }
 
-TSystemMatDarcy2D::~TSystemMatDarcy2D()
+SystemMatDarcy2D::~SystemMatDarcy2D()
 {
   delete this->SystemMat2D::sq_matrices[0]->GetStructure();
   delete this->SystemMat2D::sq_matrices[1]->GetStructure();
@@ -66,7 +66,7 @@ TSystemMatDarcy2D::~TSystemMatDarcy2D()
   delete this->SystemMat2D::rect_matrices[1];
 }
 
-void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
+void SystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
                                  double *rhs)
 {
   int N_U = this->SystemMat2D::fe_spaces[0]->GetN_DegreesOfFreedom();
@@ -102,10 +102,10 @@ void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
   memcpy(sol+N_U_Active, rhs+N_U_Active, (N_U-N_U_Active)*SizeOfDouble);
-} // void TSystemMatDarcy2D::Assemble
+} // void SystemMatDarcy2D::Assemble
 
 
-void TSystemMatDarcy2D::Solve(double *sol, double *rhs)
+void SystemMatDarcy2D::Solve(double *sol, double *rhs)
 {
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
@@ -128,9 +128,40 @@ void TSystemMatDarcy2D::Solve(double *sol, double *rhs)
   }
 }
 
+void SystemMatDarcy2D::apply(const double *x, double *y, double factor) const
+{
+  ErrMsg("SystemMatDarcy2D::apply is not yet implemented");
+  throw("SystemMatDarcy2D::apply is not yet implemented");
+}
 
+void SystemMatDarcy2D::apply_scaled_add(const double *x, double *y,
+                                  double factor) const
+{
+  ErrMsg("SystemMatDarcy2D::apply_scaled_add is not yet implemented");
+  throw("SystemMatDarcy2D::apply_scaled_add is not yet implemented");
+}
 
+unsigned int SystemMatDarcy2D::n_rows() const
+{
+  return 2;
+}
 
+unsigned int SystemMatDarcy2D::n_cols() const
+{
+  return 2;
+}
+
+unsigned int SystemMatDarcy2D::n_total_rows() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Rows() 
+       + this->SystemMat2D::rect_matrices[1]->GetN_Rows();
+}
+
+unsigned int SystemMatDarcy2D::n_total_cols() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Columns() 
+       + this->SystemMat2D::rect_matrices[0]->GetN_Columns();
+}
 
 
 

@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   //====================================================================== 
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatDarcy2D SystemMatrix(&v_space, &p_space, example.get_bd());
+  SystemMatDarcy2D SystemMatrix(&v_space, &p_space, example.get_bd());
   
   // create a local assembling object which is needed to assemble the matrix
   LocalAssembling2D la(Darcy2D_Galerkin, fe_functions, example.get_coeffs());
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     double t1 = GetTime();
     SystemMatrix.Solve(sol, rhs);
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       // this sould be done in TSystemMatDarcy2D::Solve, but we don't have 
+       // this sould be done in SystemMatDarcy2D::Solve, but we don't have 
        // access to p there
        //p.project_into_L20();
        IntoL20Vector2D(sol+N_U, N_P, p_space_code);
