@@ -42,10 +42,11 @@ class TMatrix
     TMatrix(int nRows, int nCols);
 
     /** destructor: free Entries array */
-    ~TMatrix();
+    virtual ~TMatrix();
 
-    /** reset matrix entries to zero */
-    void Reset();
+    /** reset all matrix entries to zero */
+    void Reset() { this->reset(); } // to be removed
+    void reset();
 
     /** return number of rows */
     int GetN_Rows() const
@@ -214,6 +215,22 @@ class TMatrix
      * @param a scaling factor, default is 1.0
      */ 
     TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
+    
+    /** @brief adding a scaled matrix to this matrix
+     * 
+     * The summation is index-wise, i.e. A(i,j) += factor*m(i.j), where A is 
+     * this matrix. 
+     * 
+     * Note that this only works if the sparsity structure is the same for this
+     * matrix and m.
+     */
+    void add(const TMatrix& m, double factor = 1.0);
+    
+    /** @brief scale this matrix
+     * 
+     * That means all entries are scaled.
+     */
+    void scale(double factor);
     
     /**
      * @brief scale a matrix using a vector

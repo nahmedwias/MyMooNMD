@@ -46,9 +46,9 @@ void TMatrix::SetStructure(TStructure *structure)
   memset(Entries, 0, structure->GetN_Entries()*SizeOfDouble);
 }
 
-void TMatrix::Reset()
+void TMatrix::reset()
 {
-  memset(Entries, 0, structure->GetN_Entries()*SizeOfDouble);
+  memset(this->Entries, 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
 TMatrix::~TMatrix()
@@ -207,7 +207,7 @@ double TMatrix::GetNorm(int p) const
       for(int row=0; row<this->GetN_Rows(); row++)
       {
         double row_sum = 0.0;
-//#pragma omp parallel for
+        //#pragma omp parallel for
         for(int i=rows[row]; i<rows[row+1]; i++)
         {
           row_sum += fabs(Entries[i]);
@@ -226,16 +226,16 @@ double TMatrix::GetNorm(int p) const
       }
       break;
     case 1:
-      Error("spectral norm of a matrix not yet implemented!\n");
+      ErrMsg("spectral norm of a matrix not yet implemented!\n");
       exit(0);
       break;
     case 2:
-      Error(" maximum absolute column sum norm of a matrix not yet "
+      ErrMsg("maximum absolute column sum norm of a matrix not yet "
             << "implemented!\n");
       exit(0);
       break;
     default:
-      Error("undefined norm of a matrix!\n");
+      ErrMsg("undefined norm of a matrix!\n");
       exit(0);
       break;
   }
@@ -434,6 +434,23 @@ void TMatrix::remove_zeros(double tol)
 }
 
 
+void TMatrix::add(const TMatrix& m, double factor)
+{
+  if(this->structure != m.GetStructure() // compare pointers
+     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  {
+    ErrMsg("TMatrix::add : the two matrices do not match.");
+    throw("TMatrix::add : the two matrices do not match.");
+  }
+  
+  Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->Entries);
+}
+
+void TMatrix::scale(double factor)
+{
+  Dscal(this->GetN_Entries(), factor, this->Entries);
+}
+
 void TMatrix::scale(const double * const factor, bool from_left)
 {
   int *rowPtr = GetRowPtr();
@@ -467,7 +484,7 @@ void TMatrix::scale(const double * const factor, bool from_left)
 
 TMatrix & TMatrix::operator*=(const double a)
 {
-  Dscal(this->GetN_Entries(), a, Entries);
+  this->scale(a);
   return *this;
 }
 
