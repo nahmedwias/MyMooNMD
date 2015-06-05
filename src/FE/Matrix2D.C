@@ -17,6 +17,7 @@
 #include <SquareStructure2D.h>
 #include <Structure2D.h>
 #include <string.h>
+#include <LinAlg.h>
 
 TMatrix2D::TMatrix2D(TStructure2D *structure)
  : TMatrix(structure)
@@ -29,27 +30,59 @@ TMatrix2D::~TMatrix2D()
 }
 
 
-void TMatrix2D::resetNonActive()
+void TMatrix2D::reset_non_active()
 {
-  int n_active = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
-  int index_nonactive = rowPtr[n_active];
+  int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
   memset(Entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
 }
 
+void TMatrix2D::reset_active()
+{
+  int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
+  int * rowPtr = this->structure->GetRowPtr();
+  // numer of entries in active rows
+  int n_active = rowPtr[n_active_rows];
+  memset(this->Entries, 0.0, n_active * SizeOfDouble);
+}
+
+void TMatrix2D::scale_active(double factor)
+{
+  if(factor == 1.0)
+    return; // no scaling
+  if(factor == 0.0)
+    this->reset_active();
+  
+  // number of active rows
+  int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
+  int * rowPtr = this->structure->GetRowPtr();
+  // numer of entries in active rows
+  int n_active = rowPtr[n_active_rows];
+  Dscal(n_active, factor, this->Entries);
+}
+
+void TMatrix2D::add_active(const TMatrix2D& m, double factor)
+{
+  if(this->structure != m.GetStructure() // compare pointers
+     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  {
+    ErrMsg("TMatrix::add : the two matrices do not match.");
+    throw("TMatrix::add : the two matrices do not match.");
+  }
+  
+  // number of active rows
+  int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
+  int * rowPtr = this->structure->GetRowPtr();
+  // numer of entries in active rows
+  int n_active = rowPtr[n_active_rows];
+  Daxpy(n_active, factor, m.GetEntries(), this->Entries);
+}
+
 TMatrix2D& TMatrix2D::operator*=(double alpha)
 {
-  int* RowPtr = structure->GetRowPtr();
-  TFESpace2D *fespace = GetStructure()->GetTestSpace2D();
-  int nDOFActive = fespace->GetN_ActiveDegrees();
-  for (int i=0; i<nDOFActive; i++)
-  {
-    for (int j=RowPtr[i]; j<RowPtr[i+1]; j++)
-    {
-      Entries[j] *= alpha;
-    }
-  }
+  this->scale_active(alpha);
   return *this;
 }
 
