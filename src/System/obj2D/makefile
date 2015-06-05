@@ -25,6 +25,7 @@ DEFINEPARAMS = ../../../include/General/DefineParams.h
 LIBRARY = $(LIBPATH)lib_System.a
    MEMBERS = \
 	$(SRCPATH)CD2D.o \
+	$(SRCPATH)SystemMat2D.o \
 	$(SRCPATH)SystemMatNSE2D.o \
 	$(SRCPATH)SystemMatScalar2D.o \
 	$(SRCPATH)SystemMatDarcy2D.o \
