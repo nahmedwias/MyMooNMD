@@ -382,3 +382,114 @@ void TSystemMatNSE2D::Solve(double *sol, double *rhs)
   }
 }
 
+void TSystemMatNSE2D::apply(const double *x, double *y, double factor) const
+{
+  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows*SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
+}
+
+void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y, 
+                                       double factor) const
+{
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      break;
+    case 2:
+      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      break;
+    case 3:
+      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      break;
+    case 4:
+    case 14:
+    {
+      unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+      
+      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
+      this->SystemMat2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      
+      this->SystemMat2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
+      this->SystemMat2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
+      this->SystemMat2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      
+      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      if(TDatabase::ParamDB->NSTYPE == 14)
+      this->SystemMat2D::sq_matrices[4]->multiply(  x+2*n_v, y+2*n_v, factor);
+      break;
+    }
+    default:
+      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
+      throw("unknown NSTYPE");
+  }
+}
+
+unsigned int TSystemMatNSE2D::n_rows() const
+{
+  return 3;
+}
+
+unsigned int TSystemMatNSE2D::n_cols() const
+{
+  return 3;
+}
+
+unsigned int TSystemMatNSE2D::n_total_rows() const
+{
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+      return 2 * this->sq_matrices[0]->GetN_Rows()
+          + this->rect_matrices[0]->GetN_Columns();
+      break;
+    case 2:
+      return 2 * this->sq_matrices[0]->GetN_Rows()
+          + this->rect_matrices[2]->GetN_Rows();
+      break;
+    case 3:
+      return this->sq_matrices[0]->GetN_Rows()
+          + this->sq_matrices[2]->GetN_Rows()
+          + this->rect_matrices[0]->GetN_Columns();
+      break;
+    case 4:
+    case 14:
+      return this->sq_matrices[0]->GetN_Rows()
+          + this->sq_matrices[2]->GetN_Rows()
+          + this->rect_matrices[2]->GetN_Rows();
+      break;
+    default:
+      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
+      throw("unknown NSTYPE");
+  }
+}
+
+unsigned int TSystemMatNSE2D::n_total_cols() const
+{
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      return 2 * this->sq_matrices[0]->GetN_Columns()
+          + this->rect_matrices[0]->GetN_Columns();
+      break;
+    case 3:
+    case 4:
+    case 14:
+      return this->sq_matrices[0]->GetN_Columns()
+          + this->sq_matrices[2]->GetN_Columns()
+          + this->rect_matrices[0]->GetN_Columns();
+      break;
+    default:
+      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
+      throw("unknown NSTYPE");
+  }
+}
+

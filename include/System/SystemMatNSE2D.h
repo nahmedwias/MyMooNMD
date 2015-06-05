@@ -48,6 +48,38 @@ class TSystemMatNSE2D : public SystemMat2D
     
     /** solve the system matrix */
     void Solve(double *sol, double *rhs);
+    
+    /** @brief compute y = factor* A*x 
+     *
+     * write the matrix-vector product "Ax" scaled by a factor to y. 
+     * "A" is this matrix. Both "A" and "x" remain unchanged. If the factor is
+     * 0.0, the vector y is only reset without performing the actual 
+     * multiplication.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling factor, default to 1.0
+     */
+    void apply(const double *x, double *y, double factor = 1.0) const;
+    
+    /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y.
+     * "A" is this matrix.
+     * 
+     * This function can be used to compute the residual r = b - Ax.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void apply_scaled_add(const double *x, double *y,
+                                  double factor = 1.0) const;
+    
+    unsigned int n_rows() const; // number of block rows
+    unsigned int n_cols() const; // number of block columns
+    unsigned int n_total_rows() const; // total number of rows (> nRows)
+    unsigned int n_total_cols() const; // total number of columns (> nCols)
 };
 
 #endif // __SYSTEMMATNSE2D__
