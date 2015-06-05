@@ -108,7 +108,19 @@ void TSystemMatScalar2D::Solve(double *sol, double *rhs)
   }
 }
 
-
+void TSystemMatScalar2D::apply(const double *x, double *y, double factor) const
+{
+  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows*SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
+}
+    
+void TSystemMatScalar2D::apply_scaled_add(const double *x, double *y, 
+                                          double factor) const
+{
+  this->SystemMat2D::sq_matrices[0]->multiply(x, y, factor);
+}
 
 
 
