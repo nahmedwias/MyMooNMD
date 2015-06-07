@@ -61,7 +61,7 @@ BLACS_PATH = EXT_LIB/MPIBLACS
 MPI_PATH = /opt/mpich/lib64
 <!--MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
                         $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx-->
+                     -L$(MPI_PATH)  -lmpich -lmpichf90 -lmpichcxx
                       
 MPIBLACS_LINUX64  =  -L$(BLACS_PATH)  -lscalapack_LINUX64  -lblacs_MPI_LINUX64-0 -lblacsF77init_MPI_LINUX64-0 \
                       -lblacs_MPI_LINUX64-0    -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx

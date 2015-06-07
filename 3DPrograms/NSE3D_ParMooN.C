@@ -400,6 +400,9 @@ int main(int argc, char* argv[])
 #endif 
 
     
+    
+    
+    
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  
@@ -465,7 +468,9 @@ int main(int argc, char* argv[])
                setw(14) << residual-impuls_residual << 
                setw(14) << sqrt(residual) << endl);
      }
-// exit(0);
+ 
+ 
+
 //====================================================================== 
 // Solve the system
 // the nonlinear iteration
@@ -474,13 +479,14 @@ int main(int argc, char* argv[])
     Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
 
     for(j=1;j<=Max_It;j++)
-     {   
+     {      
       // Solve the NSE system
       SystemMatrix->Solve(sol, rhs);
-
+   
       //no nonlinear iteration for Stokes problem  
       if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES) 
        break;
+      
       
       // assemble the system matrix with given aux, sol and rhs 
       SystemMatrix->AssembleNonLinear(Sol_array, Rhs_array);  

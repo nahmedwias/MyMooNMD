@@ -93,13 +93,13 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
 //   id.ICNTL(8)=4; 
 //   id.ICNTL(10)=5;  // maximum number of allowed iterative refinement steps
 //   id.ICNTL(13)=1; 
-//   id.ICNTL(14)=100; //the percentage increase in the estimated working space
+   id.ICNTL(14)=200; //the percentage increase in the estimated working space
    
    // 3 - structure and values on slave process
    id.ICNTL(18) = 3;
    
    //id.ICNTL(22)=1; // out of core
-//    id.ICNTL(23) = 100;
+  //  id.ICNTL(23) = 100;
    // parallel analysis: 0 automatic, 1 sequential, 2 parallel
    id.ICNTL(28)=0; 
    
@@ -142,14 +142,15 @@ if(rank==TDatabase::ParamDB->Par_P0)
 
 
 void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
-{
+{               	  	        
+ 
   int rank;
   MPI_Comm_rank(Comm, &rank);
 
   // for centralized input to the host
   if(rank == 0)
     id.rhs = rhs;
-
+ 
   // define the local system matrix
   id.a_loc  = Mat_loc;
  
@@ -157,13 +158,14 @@ void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
   dmumps_c(&id);
    
   FactorFlag = TRUE;   
-    
+
   if(id.INFOG(1)<0)
   {
     printf("MUMPS Factorize failed INFOG(1) %d \n",  id.INFOG(1));
     MPI_Finalize();
     exit(0); 
   }
+
 
   id.job=JOB_SOLVE;
   dmumps_c(&id);

@@ -409,6 +409,7 @@ void TParDirectSolver::InitMumps_NSE2()
     
     /** since the BT entries of Dirichlet U DOF row is not added */
     N_Nz = k ; 
+   
 }
 
 
@@ -490,39 +491,131 @@ void TParDirectSolver::InitMumps_NSE4()
       {
 	row_index = local2global[i] + 1; //fortran format
 	
-	for(m=0;m<3;m++)
-	{
-	  //Mat A(m,l)
-	  for(l=0;l<3;l++)
-	  {
+	
 	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
 	    {
-	      I_rn[k] = Global_N_DOF_U*m + row_index;              //fortran format
-	      J_cn[k] = Global_N_DOF_U*l + local2global[KCol[j]] + 1;        //fortran format
-// 	      MatLoc[k] = m*100000 + l;
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
 	      k++;
+	      
+	      if(i<N_Active)
+	    {	
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;
+	    }
+	    if(i<N_Active)
+	    {
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;     
+	    } 
 	    }//for(j=
-	  }//for(l=
 	
 	  //Mat BT(m)
 	 if(i<N_Active)
 	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
 	  {
-	    I_rn[k] = Global_N_DOF_U*m + row_index;                //fortran format
-	    J_cn[k] = Global_N_DOF_U*3 + local2global_P[KCol_BT[j]] + 1;       //fortran format
-// 	    MatLoc[k] = m*300000 + l;
+	    I_rn[k] =  row_index;                //fortran format
+	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
 	    k++;
 	  }//for(j=
 	  
-        }//for(m=
-      }//if(Master_P[i] == rank)
+      
+      }//if(Master[i] == rank)
     }//for(i=0;i<
+    
+        for(i=0;i<NDof_U;i++)
+    {
+      
+      if(Master[i] == rank)
+      {
+	row_index = Global_N_DOF_U + local2global[i] + 1; //fortran format
+	
+	
+	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+	    {
+	          if(i<N_Active)
+	    {	
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+	      k++;
+	    }
+	  
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;
+	  
+	    if(i<N_Active)
+	    {
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;     
+	    } 
+	    }//for(j=
+	
+	  //Mat BT(m)
+	 if(i<N_Active)
+	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+	  {
+	    I_rn[k] =  row_index;                //fortran format
+	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+	    k++;
+	  }//for(j=
+	  
+      
+      }//if(Master[i] == rank)
+    }//for(i=0;i<
+    
+            for(i=0;i<NDof_U;i++)
+    {
+      
+      if(Master[i] == rank)
+      {
+	row_index = index_disp2U + local2global[i] + 1; //fortran format
+	
+	
+	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+	    {
+	          if(i<N_Active)
+	    {	
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+	      k++;
+	    }
+	    
+	   if(i<N_Active)
+	    {
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;
+	    }
+	   
+	      I_rn[k] =  row_index;              //fortran format
+	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+	      k++;     
+	   
+	    }//for(j=
+	
+	  //Mat BT(m)
+	 if(i<N_Active)
+	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+	  {
+	    I_rn[k] =  row_index;                //fortran format
+	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+	    k++;
+	  }//for(j=
+	  
+      
+      }//if(Master[i] == rank)
+    }
+    
     
     for(i=0;i<NDof_P;i++)
     {
       if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
       {  
-        printf("ParDirectSolver->InitMumps_NSE2(): NSEType 2  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
+        printf("ParDirectSolver->InitMumps_NSE2(): NSEType 4  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
         MPI_Finalize();
         exit(0); 
       }
@@ -530,24 +623,44 @@ void TParDirectSolver::InitMumps_NSE4()
       if(Master_P[i] == rank)
       {
 	row_index = index_disp3U + local2global_P[i] + 1;                //fortran format
-	//Mat B(l)
-	for(l=0;l<3;l++)
-	{
+	
+	//Mat B1
 	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
 	  {
 	    I_rn[k] = row_index;                //fortran format
-	    J_cn[k] = Global_N_DOF_U*l + local2global[KCol_B[j]] + 1;        //fortran format
-// 	    MatLoc[k] = m*600000 + l;
+	    J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
 	    k++;
 	  }//for(j=
-	}//for(l=
+	  
+	  	//Mat B2
+	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+	  {
+	    I_rn[k] = row_index;                //fortran format
+	    J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
+	    k++;
+	  }//for(j=
+	  
+	  	//Mat B3
+	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+	  {
+	    I_rn[k] = row_index;                //fortran format
+	    J_cn[k] = index_disp2U + local2global[KCol_B[j]] + 1;        //fortran format
+	    k++;
+	  }//for(j=
+	  
+	  
+
       }//if(Master_P[i] == rank)
     }//for(i=0;i<
     
      /** since the BT entries of Dirichlet U DOF row is not added */
     N_Nz = k ; 
+
+  
   
 }
+
+
 
 
 void TParDirectSolver::AssembleMatrix()
@@ -621,6 +734,8 @@ void TParDirectSolver::AssembleMatrix_NSE2()
   
   N_Active = Mat->GetActiveBound();
   
+
+  
   k = 0;
   for(i=0;i<NDof_U;i++)
   {
@@ -629,6 +744,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
 	MatLoc[k] = EntriesA[j];
+	
 	k++;
       }//for(j=
       
@@ -637,6 +753,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
       {
 	MatLoc[k] = EntriesB[j];
+
 	k++;
       }//for(j=
     }//if(Master_P[i] == rank)
@@ -650,6 +767,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
 	MatLoc[k] = EntriesA[j];
+
 	k++;
       }//for(j=
 
@@ -658,6 +776,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
       {
 	MatLoc[k] = EntriesB[j];
+
 	k++;
       }//for(j=
     }//if(Master_P[i] == rank)
@@ -671,6 +790,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
        MatLoc[k] = EntriesA[j];
+
 	k++;
       }//for(j=
 
@@ -679,6 +799,7 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
       {
 	MatLoc[k] = EntriesB[j];
+
 	k++;
       }//for(j=
     }//if(Master_P[i] == rank)  
@@ -696,23 +817,28 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
 	MatLoc[k] = EntriesB[j];
+
 	k++;
       }//for(j=
       
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
 	MatLoc[k] = EntriesB2[j];
+
 	k++;
       }//for(j=
 
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
 	MatLoc[k] = EntriesB3[j];
+
 	k++;
       }//for(j=
     }//if(Master_P[i] == rank)  
   }//for(i=0;i<
 
+
+  
 }
 
 void TParDirectSolver::AssembleMatrix_NSE4()
@@ -750,52 +876,150 @@ void TParDirectSolver::AssembleMatrix_NSE4()
   
   N_Active = Mat->GetActiveBound();
 
-    k = 0;
+     k = 0;
     for(i=0;i<NDof_U;i++)
     {
       
       if(Master[i] == rank)
       {
-	for(m=0;m<3;m++)
-	{
-	  //Mat A(m,l)
-	  for(l=0;l<3;l++)
-	  {
+
 	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
 	    {
-	      MatLoc[k] = EntriesA[m*3+l][j];
+	      MatLoc[k] = EntriesA[0][j]; 
 	      k++;
-	    }//for(j=
-	  }//for(l=
-	
+	      
+	      if(i<N_Active)
+	      {
+	       MatLoc[k] = EntriesA[1][j];
+	      k++;
+	      }
+	      
+	       if(i<N_Active)
+	       {
+		 MatLoc[k] = EntriesA[2][j];
+	         k++;
+	       }
+
+	    }
+
+
 	  //Mat BT(m)
 	 if(i<N_Active)
 	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
 	  {
-	    MatLoc[k] = EntriesB[m][j];
+	    MatLoc[k] = EntriesB[0][j];
 	    k++;
 	  }//for(j=
 	  
-        }//for(m=
+     
       }//if(Master_P[i] == rank)
     }//for(i=0;i<
+    
+    
+        for(i=0;i<NDof_U;i++)
+    {
+      
+      if(Master[i] == rank)
+      {
+
+	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+	    {
+	      if(i<N_Active)
+	      {
+	       MatLoc[k] = EntriesA[3][j];
+	       k++;
+	      }
+	        MatLoc[k] = EntriesA[4][j];
+	        k++;
+	      
+	       if(i<N_Active)
+	       {
+		 MatLoc[k] = EntriesA[5][j];
+	          k++; 
+	      }
+
+	      
+	    }
+
+	  //Mat BT(m)
+	 if(i<N_Active)
+	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+	  {
+	    MatLoc[k] = EntriesB[1][j];     
+	    k++;
+	  }//for(j=
+	  
+     
+      }//if(Master_P[i] == rank)
+    }//for(i=0;i<
+    
+    
+        for(i=0;i<NDof_U;i++)
+    {
+      
+      if(Master[i] == rank)
+      {
+
+	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
+	    {
+	      if(i<N_Active)
+	      {
+		MatLoc[k] = EntriesA[6][j];
+	      k++;
+		
+	      }
+	      
+	      if(i<N_Active)
+	      {
+		MatLoc[k] = EntriesA[7][j];
+	      k++;
+	      }
+	      
+	      MatLoc[k] = EntriesA[8][j];
+	      k++;  
+	    }
+
+	  //Mat BT(m)
+	 if(i<N_Active)
+	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+	  {
+	    MatLoc[k] = EntriesB[2][j]; 
+	    k++;
+	  }//for(j=
+	  
+     
+      }//if(Master_P[i] == rank)
+    }//for(i=0;i<
+    
+    
+    
     
     for(i=0;i<NDof_P;i++)
     {
       if(Master_P[i] == rank)
       {
-	//Mat B(l)
-	for(l=0;l<3;l++)
-	{
 	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
 	  {
-	    MatLoc[k] = EntriesB[3+l][j];
+	    MatLoc[k] = EntriesB[3][j];
 	    k++;
-	  }//for(j=
-	}//for(l=
+	  }
+	  
+	  // if(i<N_Active)
+	   for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+	  {
+	    MatLoc[k] = EntriesB[4][j];
+	    k++;
+	  }
+	  
+	//   if(i<N_Active)
+	   for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+	  {
+	    MatLoc[k] = EntriesB[5][j];
+	    k++;
+	  }
+	
       }//if(Master_P[i] == rank)
     }//for(i=0;i<
-
 
 }
 
@@ -970,9 +1194,9 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
     if(Factorize)
     {
       AssembleMatrix();
-      
+ 
       Mumps->FactorizeAndSolve(MatLoc,GlobalRhs);
-
+ 
     }
     else
     {

@@ -4,7 +4,7 @@
 * @date      30.05.15
 * @History 
  ************************************************************************  */
-
+#include <string.h>
 #include <AssembleMat3D.h>
 #include <SquareMatrix3D.h>
 #include <Matrix3D.h>

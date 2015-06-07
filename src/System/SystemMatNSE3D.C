@@ -52,6 +52,9 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
   sqmatrices = (TSquareMatrix **)SQMATRICES;
   matrices = (TMatrix **)MATRICES;
 
+  
+  
+  
    if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE) || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
     { N_aux= 4; }
    else
@@ -591,8 +594,8 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
                               N_Rhs, RHSs, fesprhs, DiscreteFormARhs, BoundaryConditions, BoundaryValues, NSEaux);
      AMatRhsAssemble[i]->Init();    
  
-     //===============================================================================================================
-     // set the nonliner matrices
+ //    ===============================================================================================================
+ //    set the nonliner matrices
      switch(NSEType)
        {
         case 1:
@@ -994,9 +997,13 @@ void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res, double 
     ParComm_U[N_Levels-1]->CommUpdate(sol);
     ParComm_P[N_Levels-1]->CommUpdate(sol+3*N_U);
 #endif
+       
+
     
     Defect(sqmatrices, matrices, sol, rhs, res); 
-   
+  
+
+     
 #ifdef _MPI
    double residual_scalar = 0.0;
    double sum =0.;
@@ -1072,7 +1079,11 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
         cout << "GMG solver not yet implemented " <<endl;
       break;
 
+      
       case DIRECT:
+	
+	
+      
         switch(NSEType)
          {
           case 1:
@@ -1082,14 +1093,21 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
           break;
 
           case 2:
+
+	    
 #ifdef _MPI
 	    DS->Solve(sol, rhs, true);
 	    
 #else	    
-            DirectSolver(SqmatrixA11[N_Levels-1], MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
+
+	    
+	    
+	    DirectSolver(SqmatrixA11[N_Levels-1], MatrixB1T[N_Levels-1], MatrixB2T[N_Levels-1], MatrixB3T[N_Levels-1],
                           MatrixB1[N_Levels-1], MatrixB2[N_Levels-1], MatrixB3[N_Levels-1], rhs, sol);
 
 #endif
+
+	    
           break;
 
           case 3:
@@ -1113,6 +1131,9 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
 #endif
 
 #ifdef _SEQ
+
+         
+     
              DirectSolver(SqmatrixA11[N_Levels-1], SqmatrixA12[N_Levels-1], SqmatrixA13[N_Levels-1], 
                           SqmatrixA21[N_Levels-1], SqmatrixA22[N_Levels-1], SqmatrixA23[N_Levels-1],  
                           SqmatrixA31[N_Levels-1], SqmatrixA32[N_Levels-1], SqmatrixA33[N_Levels-1],  
