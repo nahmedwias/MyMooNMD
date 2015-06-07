@@ -34,6 +34,9 @@ set(PARMOON_EXTLIB_PATH ${PROJECT_SOURCE_DIR}/EXT_LIB)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 
+
+find_package(MPI REQUIRED PATH /opt/local/include  /opt/local/lib)
+
 # search the blas in the system, if available it will be default
 message("==================Searching BLAS in the System - begin===================================================")
 find_package(BLAS REQUIRED)
