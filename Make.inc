@@ -371,5 +371,10 @@ endif
 
 %.o : ../%.c
 	@echo $<
+	
+	@echo $(CC)
+	@echo $(ARGS)
+	@echo $(CCFLAG) 
+	@echo $(PARMS_FLAG)
 	@$(CC) $(CCFLAG) $(PARMS_FLAG)    -c $< -o $@
 
