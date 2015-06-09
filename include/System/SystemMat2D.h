@@ -8,7 +8,10 @@
 * 
 * @author    Ulrich Wilbrandt,
 * @date      17.03.15
- ************************************************************************  */
+* 
+* @history Ulrich Wilbrandt, June 2015, added some linear algebra routines
+* 
+* ************************************************************************  */
 #ifndef __SYSTEMMAT2D__
 #define __SYSTEMMAT2D__
 
@@ -20,10 +23,10 @@ class SystemMat2D
 {
   protected:
 
-    /** @brief vector of finite element fespaces 
+    /** @brief vector of finite element spaces 
      * 
      * Each space appears exactly once in this vector. Typically this vector has
-     * size 1 (scalar) or two (Saddle-point problems).
+     * size 1 (scalar) or two (saddle-point problems).
      */
     std::vector<TFESpace2D*> fe_spaces;
     
@@ -37,27 +40,29 @@ class SystemMat2D
     DefectProc *defect;
     
   public:
-    /** constructor */
+    /** @brief standard constructor
+     * 
+     * This initializes the vectors with nullptr. The vectors are filled within
+     * the derived classes. 
+     */
     SystemMat2D(unsigned int n_spaces, unsigned int n_sq_matrices, 
                 unsigned int n_rect_matrices)
-     : fe_spaces(n_spaces, NULL), sq_matrices(n_sq_matrices, NULL),
-       rect_matrices(n_rect_matrices, NULL), defect(NULL)
+     : fe_spaces(n_spaces, nullptr), sq_matrices(n_sq_matrices, nullptr),
+       rect_matrices(n_rect_matrices, nullptr), defect(nullptr)
     {};
     
-    ~SystemMat2D();
-    // some getters
+    virtual ~SystemMat2D();
     
-    TFESpace2D* get_space(unsigned int i = 0)
-    { return fe_spaces.at(i); }
-    
-    TSquareMatrix2D* get_square_matrix(unsigned int i = 0)
-    { return sq_matrices.at(i); }
-    
-    TMatrix2D* get_rectangular_matrix(unsigned int i = 0)
-    { return rect_matrices.at(i); }
-    
-    /** @brief adding a scaled matrix to this
-     * only active d.o.f
+    /** @brief adding a scaled matrix to this matrix
+     * 
+     * The summation is index-wise, i.e. M(i,j) += factor*A(i.j), where M is 
+     * this matrix.
+     * 
+     * Only the rows corresponding to active degrees of freedom are scaled, all
+     * other rows are left unchanged.
+     * 
+     * Note that this only works if the sparsity structure is the same for this
+     * matrix and A.
      */
     void add_active(const SystemMat2D &A, double factor = 1.0);
     
@@ -73,8 +78,8 @@ class SystemMat2D
 
     /** @brief scale this matrix by a factor
      * 
-     * Only rows corresponding to active d.o.f are scaled. Other rows remain
-     * unscaled.
+     * Only rows corresponding to active degrees of freedom are scaled. Other 
+     * rows remain unchanged.
      */
     void scale_active(double factor);
     
@@ -100,7 +105,8 @@ class SystemMat2D
     /** @brief compute y = y + a * Ax 
      *
      * add the matrix-vector product "Ax", scaled by "a", to y.
-     * "A" is this matrix.
+     * "A" is this matrix. Both "A" and "x" remain unchanged. If the factor is
+     * 0.0, nothing is done.
      * 
      * This function can be used to compute the residual r = b - Ax.
      *
@@ -111,11 +117,25 @@ class SystemMat2D
     virtual void apply_scaled_add(const double *x, double *y, 
                                   double factor = 1.0) const;
     
+    // some getters
+    const TFESpace2D* get_space(unsigned int i = 0) const 
+    { return fe_spaces.at(i); }
+    
+    const TSquareMatrix2D* get_square_matrix(unsigned int i = 0) const
+    { return sq_matrices.at(i); }
+    TSquareMatrix2D* get_square_matrix(unsigned int i = 0) 
+    { return sq_matrices.at(i); }
+    
+    const TMatrix2D* get_rectangular_matrix(unsigned int i = 0) const
+    { return rect_matrices.at(i); }
+    TMatrix2D* get_rectangular_matrix(unsigned int i = 0)
+    { return rect_matrices.at(i); }
+    
     unsigned int n_blocks() const; // total number of blocks
     virtual unsigned int n_rows() const; // number of block rows
     virtual unsigned int n_cols() const; // number of block columns
-    virtual unsigned int n_total_rows() const; // total number of rows (> nRows)
-    virtual unsigned int n_total_cols() const; // total number of columns (> nCols)
+    virtual unsigned int n_total_rows() const;//total number of rows(>n_rows)
+    virtual unsigned int n_total_cols() const;//total number of columns(>n_cols)
     unsigned int n_total_entries() const; // total number of entries
 };
 
