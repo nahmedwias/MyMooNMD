@@ -18,6 +18,7 @@ include ../../Make.inc
 LIBRARY = $(LIBPATH)lib_Examples3D.a
    MEMBERS = \
 	$(SRCPATH)Example3D.o \
+	$(SRCPATH)Example_CD3D.o \
 	$(SRCPATH)Example_NSE3D.o \
 
 ###############
