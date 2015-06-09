@@ -194,13 +194,25 @@ class TMatrix
     /** @brief compute y += a * A*x
      *
      * 'A' is this TMatrix and 'x', and 'y' are given vectors. The scalar 'a'
-     * is a scaling factor
+     * is a scaling factor.
      * 
      * @param x array representing the vector which is multiplied by this matrix
      * @param y array representing the vector to which a * A*x is added
      * @param a scaling factor, default is 1.0
      */
     void multiply(const double * const x, double *y, double a = 1.0) const;
+    
+    /** @brief compute y += a * A^T * x
+     *
+     * 'A^T' is the transposed of this TMatrix and 'x', and 'y' are given 
+     * vectors. The scalar 'a' is a scaling factor. 
+     * 
+     * @param x array representing the vector which is multiplied by this matrix
+     * @param y array representing the vector to which a * A*x is added
+     * @param a scaling factor, default is 1.0
+     */
+    void transpose_multiply(const double * const x, double *y, double a = 1.0)
+      const;
     
     /**
      * @brief compute matrix-matrix product C = a*A*B, 

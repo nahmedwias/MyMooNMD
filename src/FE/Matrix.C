@@ -354,6 +354,31 @@ void TMatrix::multiply(const double * const x, double *y, double a) const
   }
 }
 
+void TMatrix::transpose_multiply(const double * const x, double *y, double a)
+      const
+{
+  if(a == 0.0)
+    return;
+  
+  int *rowPtr = GetRowPtr();
+  int *colIndex = GetKCol();
+  
+  int nrows = GetN_Rows();
+  
+  double value = 0.;
+  int i, j, end;
+  for(i = 0; i < nrows; i++)
+  {
+    value = a*x[i];
+    end = rowPtr[i + 1];
+    for(j = rowPtr[i]; j < end; j++)
+    {
+      // Entries[j] is the (i,colIndex[j])-th entry of this matrix
+      y[colIndex[j]] += Entries[j] * value;
+    }
+  }
+}
+
 TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
 {
   const int n_A_rows = this->GetN_Rows();   // = n_C_rows
