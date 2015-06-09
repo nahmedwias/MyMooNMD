@@ -43,7 +43,7 @@ void TMatrix2D::reset_active()
 {
   int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
-  // numer of entries in active rows
+  // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
   memset(this->Entries, 0.0, n_active * SizeOfDouble);
 }
@@ -58,7 +58,7 @@ void TMatrix2D::scale_active(double factor)
   // number of active rows
   int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
-  // numer of entries in active rows
+  // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
   Dscal(n_active, factor, this->Entries);
 }
@@ -75,7 +75,7 @@ void TMatrix2D::add_active(const TMatrix2D& m, double factor)
   // number of active rows
   int n_active_rows = this->structure->GetTestSpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
-  // numer of entries in active rows
+  // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
   Daxpy(n_active, factor, m.GetEntries(), this->Entries);
 }
