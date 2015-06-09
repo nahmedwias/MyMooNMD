@@ -13,7 +13,7 @@ INC    = -I../../../include/General -I../../../include/FE \
          -I../../../include/FE2D -I../../../include/FE1D \
          -I../../../include/FE3D -I../../../include/AMG \
          -I../../../include/PBE -I../../../EXT_LIB/UMFPACK/Include \
-         -I../../../include/System \
+         -I../../../include/System -I../../../Examples \
          -I../../../include/Parallel  -I../../../EXT_LIB/MUMPS/include \
          -I../../../EXT_LIB/tecplot/include
 
@@ -21,6 +21,8 @@ include ../../../Make.inc
 
 LIBRARY = $(LIBPATH)lib_System_par.a
    MEMBERS = \
+        $(SRCPATH)CD3D.o \
+        $(SRCPATH)SystemMat3D.o \
         $(SRCPATH)SystemMatScalar3D.o \
         $(SRCPATH)SystemMatTimeScalar3D.o \
         $(SRCPATH)SystemMatNSE3D.o 
