@@ -40,6 +40,13 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
+      /*
+       * ( A  0  B1^T )
+       * ( 0  A  B2^T )
+       * ( B1 B2 0    )
+       * 
+       * B1^T and B2^T are not explicitly stored.
+       */
       this->sq_matrices = { new TSquareMatrix2D(sqstructureA) };
       this->rect_matrices = { new TMatrix2D(structureB),
                               new TMatrix2D(structureB) };
@@ -47,8 +54,14 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
       break;
       
     case 2:
-      this->sq_matrices =
-      { new TSquareMatrix2D(sqstructureA)};
+      /*
+       * ( A  0  B1T )
+       * ( 0  A  B2T )
+       * ( B1 B2 0    )
+       * 
+       * B1T and B2T are explicitly stored.
+       */
+      this->sq_matrices = { new TSquareMatrix2D(sqstructureA)};
       this->rect_matrices = { new TMatrix2D(structureB),
                               new TMatrix2D(structureB),
                               new TMatrix2D(structureBT),
@@ -57,6 +70,13 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
       break;
       
     case 3:
+      /*
+       * ( A11 A12 B1^T )
+       * ( A21 A22 B2^T )
+       * ( B1  B2  0    )
+       * 
+       * B1^T and B2^T are not explicitly stored.
+       */
       this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
@@ -67,6 +87,13 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
       break;
       
     case 4:
+      /*
+       * ( A11 A12 B1T )
+       * ( A21 A22 B2T )
+       * ( B1  B2  0    )
+       * 
+       * B1T and B2T are explicitly stored.
+       */
       this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
@@ -79,6 +106,13 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
       break;
       
     case 14:
+      /*
+       * ( A11 A12 B1^T )
+       * ( A21 A22 B2^T )
+       * ( B1  B2  C    )
+       * 
+       * B1^T and B2^T are not explicitly stored.
+       */
       this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
@@ -393,25 +427,54 @@ void TSystemMatNSE2D::apply(const double *x, double *y, double factor) const
 void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y, 
                                        double factor) const
 {
+  if(factor == 0.0)
+    // nothing needs to be done
+    return;
+  
+  // number of velocity degrees of freedom
+  unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
-      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->SystemMat2D::rect_matrices[0]->transpose_multiply(
+                                                    x+2*n_v, y,       factor);
+      
+      this->SystemMat2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
+      this->SystemMat2D::rect_matrices[1]->transpose_multiply(
+                                                    x+2*n_v, y+n_v,   factor);
+      
+      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 2:
-      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
-      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->SystemMat2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      
+      this->SystemMat2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
+      this->SystemMat2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      
+      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 3:
       ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
       throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
+      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
+      this->SystemMat2D::rect_matrices[0]->transpose_multiply(
+                                                    x+2*n_v, y,       factor);
+      
+      this->SystemMat2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
+      this->SystemMat2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
+      this->SystemMat2D::rect_matrices[1]->transpose_multiply(
+                                                    x+2*n_v, y+n_v,   factor);
+      
+      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 4:
     case 14:
-    {
-      unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
-      
       this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
       this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
       this->SystemMat2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
@@ -425,7 +488,6 @@ void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y,
       if(TDatabase::ParamDB->NSTYPE == 14)
       this->SystemMat2D::sq_matrices[4]->multiply(  x+2*n_v, y+2*n_v, factor);
       break;
-    }
     default:
       ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
       throw("unknown NSTYPE");
