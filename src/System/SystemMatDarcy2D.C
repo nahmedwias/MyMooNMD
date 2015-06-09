@@ -130,15 +130,23 @@ void SystemMatDarcy2D::Solve(double *sol, double *rhs)
 
 void SystemMatDarcy2D::apply(const double *x, double *y, double factor) const
 {
-  ErrMsg("SystemMatDarcy2D::apply is not yet implemented");
-  throw("SystemMatDarcy2D::apply is not yet implemented");
+  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows * SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
 }
 
 void SystemMatDarcy2D::apply_scaled_add(const double *x, double *y,
                                   double factor) const
 {
-  ErrMsg("SystemMatDarcy2D::apply_scaled_add is not yet implemented");
-  throw("SystemMatDarcy2D::apply_scaled_add is not yet implemented");
+  // number of velocity degrees of freedom
+  unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  
+  this->SystemMat2D::sq_matrices[0]->multiply(  x,     y,     factor);
+  this->SystemMat2D::rect_matrices[0]->multiply(x+n_v, y,     factor);
+  
+  this->SystemMat2D::rect_matrices[1]->multiply(x,     y+n_v, factor);
+  this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v, y+n_v, factor);
 }
 
 unsigned int SystemMatDarcy2D::n_rows() const
