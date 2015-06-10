@@ -4,6 +4,8 @@
 * @date      08.08.14
 * @History 
  ************************************************************************  */
+#ifdef __2D__
+
 #include <Database.h>
 #include <SystemMatTimeScalar2D.h>
 #include <SystemMatScalar2D.h>
@@ -322,4 +324,5 @@ double TSystemMatTimeScalar2D::GetResidual(double *sol)
       
 }
 
+#endif // #ifdef __2D__
 

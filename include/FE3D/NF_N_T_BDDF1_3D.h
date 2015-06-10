@@ -63,8 +63,8 @@ static double *NF_N_T_BDDF1_3D_ZetaArray[4] = {
                         NF_N_T_BDDF1_3D_F2_Zeta,
                         NF_N_T_BDDF1_3D_F3_Zeta };
 
-static double NF_N_T_BDDF1_3D_T[] = {NULL};// ???
-static double NF_N_T_BDDF1_3D_S[] = {NULL};// ???
+static double NF_N_T_BDDF1_3D_T[] = {-100};// ???
+static double NF_N_T_BDDF1_3D_S[] = {-100};// ???
 
 void NF_N_T_BDDF1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                           double *PointValues, double *Functionals)

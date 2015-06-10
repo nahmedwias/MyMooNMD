@@ -82,7 +82,7 @@
 #define AMG_MIXED_BCGS_CGS             18
 #define AMG_LCD                        19
 
-#define SCALAR                          0
+#define SCALAR1                         0         /* scalar system with 1 rhs */
 #define SCALAR2                         1         /* scalar system with 2 rhs */
 #define SCALAR3                         2         /* scalar system with 3 rhs */
 #define SCALAR6                         5         /* scalar system with 6 rhs */

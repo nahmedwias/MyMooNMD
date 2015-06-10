@@ -408,6 +408,9 @@ double GetVolume(TCollection *Coll)
           RefTrans = HexaTrilinear;
           QuadFormula = TFEDatabase3D::GetQFHexaFromDegree(2);
         break;
+	  default:
+	    
+	  break;
       } // endswitch GetType
 
       jointtype = joint->GetType();
@@ -445,6 +448,9 @@ double GetVolume(TCollection *Coll)
         case TetraAffin:
           RefTrans = TetraIsoparametric;
         break;
+	  default:
+	    
+	  break;
       } // endswitch
     } // endif IsIsoparametric
 
@@ -557,7 +563,7 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
     {
       joint = cell->GetJoint(j);
       jointtype = joint->GetType();
-      if( (jointtype == BoundaryFace) )
+      if(jointtype == BoundaryFace)
       {
         bdface = (TBoundFace *)joint;
         comp = bdface->GetBoundComp()->GetID();
@@ -635,7 +641,7 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
     {
       joint = cell->GetJoint(j);
       jointtype = joint->GetType();
-      if( (jointtype == BoundaryFace) )
+      if( jointtype == BoundaryFace )
       {
         bdface = (TBoundFace *)joint;
         comp = bdface->GetBoundComp()->GetID();
@@ -1028,7 +1034,7 @@ void FindFreeSurface(TCollection *Coll,
               for(l=0;l<N_Joints1;l++)
                 if(neigh->GetJoint(l) == joint)
                   neigh->SetJoint(l, isojoint);
-              delete joint;
+//               delete (TJoint *)joint;
               isojoint->SetMapType();
             }
             else

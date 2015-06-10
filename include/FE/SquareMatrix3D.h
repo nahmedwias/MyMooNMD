@@ -27,8 +27,8 @@ class TSquareMatrix3D : public TSquareMatrix
     /** generate the matrix */
     TSquareMatrix3D(TSquareStructure3D *squarestructure);
 
-    /** generate an empty nxn matrix */
-    explicit TSquareMatrix3D(int n);
+//     /** generate an empty nxn matrix */
+//     explicit TSquareMatrix3D(int n);
     
     /** destructor: free Entries array */
     ~TSquareMatrix3D();

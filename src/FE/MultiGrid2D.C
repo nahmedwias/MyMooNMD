@@ -10,6 +10,8 @@
 //
 // =======================================================================
 
+#ifdef __2D__
+
 #include <MultiGrid2D.h>
 #include <FEDatabase2D.h>
 #include <Database.h>
@@ -666,3 +668,5 @@ void TMultiGrid2D::SetRecursion(int levels)
     for (k=2;k<=levels;k++)        
       mg_recursions[k] = 2;
 }
+
+#endif // #ifdef __2D__

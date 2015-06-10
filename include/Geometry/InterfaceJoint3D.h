@@ -62,6 +62,8 @@ class TInterfaceJoint3D : public TJointEqN
       else
         return false;
     }
+    // Destructor
+    virtual ~TInterfaceJoint3D();    
 };
 
 #endif

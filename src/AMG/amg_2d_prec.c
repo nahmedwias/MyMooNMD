@@ -43,6 +43,11 @@
 #include <amg_1d_prec.h>
 #include <amg_2d_prec.h>
 
+
+void AMG_ApplyPlaneRotation(double *dx, double *dy, double cs, double sn);
+void AMG_GeneratePlaneRotation(double dx, double dy, double *cs, double *sn);
+void AMG_Update(AMG_VECTOR *x, int Len_x, int k, AMG_VECTOR **h, AMG_VECTOR *s, AMG_VECTOR **v);
+
 /****************************************************************************/
 /*                                                                            */
 /* defines in the following order                                            */
@@ -125,7 +130,7 @@ int SymmetrizeSaddleProblem (AMG_SolverContext *sc,AMG_MATRIX *A,
 
   switch(sc->system_type)
     {
-    case SCALAR : 
+    case SCALAR1 : 
       return(0);
       break;
     case SADDLE_1_TYPE_1 :
@@ -295,7 +300,7 @@ int Build_B_Block_for_Dirichlet(AMG_SolverContext *sc,AMG_MATRIX *A,
 
   switch(sc->system_type)
     {
-    case SCALAR : 
+    case SCALAR1 : 
       return(0);
       break;
     case SADDLE_1_TYPE_1 :

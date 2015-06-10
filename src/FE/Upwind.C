@@ -7,6 +7,7 @@
 //              Volker John, bug fixes 18. - 22.10.99
 //
 // =======================================================================
+#ifdef __2D__
 
 #include <Database.h>
 #include <DiscreteForm2D.h>
@@ -1362,3 +1363,5 @@ BoundCondFunct2D *BoundaryCondition)
     }
   }
 }
+
+#endif // #ifdef __2D__

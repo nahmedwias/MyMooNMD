@@ -168,6 +168,8 @@ void TJoint::GetMapperRef(const int *&MapVerts, const int *&MapFaces)
       case Hexahedron: TDatabase::MapperDB[MapQuadReg0 + MapType]->
                          GetMapperRef(MapVerts, MapFaces);
                        break;
+      default:
+      break;	
     }
   else
   {
@@ -189,6 +191,8 @@ void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
       case Hexahedron: TDatabase::MapperDB[MapQuadReg0 + MapType]->
                          GetMapperOrig(MapVerts, MapEdges);
                        break;
+      default:
+      break;
     }
   else
   {

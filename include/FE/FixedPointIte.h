@@ -14,7 +14,13 @@
 
 #include <ItMethod.h>
 #include <NSE_MultiGrid.h>
-#include <ParFECommunicator3D.h>
+#ifdef _MPI   
+   #ifdef __3D__
+    #include <ParFECommunicator3D.h>
+   #else
+    #include <ParFECommunicator2D.h>
+   #endif
+#endif 
 
 /** iteration method */
 class TFixedPointIte : public TItMethod

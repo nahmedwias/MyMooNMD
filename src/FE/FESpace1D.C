@@ -273,10 +273,10 @@ void TFESpace1D::ConstructSpace()
       
       // if (N_JointDOF)
       if(joint)
-        if(!(neigh = joint->GetNeighbour(cell)))
+       {
+        if(!(neigh = (joint->GetNeighbour(cell))))
         {
           // boundary joint
-
           for(k=0;k<N_JointDOF;k++)
           {
             if(J_K0[Indices0[k]]==-1)
@@ -287,7 +287,7 @@ void TFESpace1D::ConstructSpace()
             }
           }
         } // boundary joint
-        else
+       else
         {
           // no boundary joint
           n = neigh->GetClipBoard();
@@ -332,6 +332,7 @@ void TFESpace1D::ConstructSpace()
             }
           } // end neigh
         } // no boundary joint
+       }
     } // endfor j
 
     // handle inner degrees of freedom

@@ -909,9 +909,9 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
       MPI_Abort(comm, 0);
      } 
      
-   /** ***********************************************************************************/
-  /** STEP 13 : Edges will be flaged as SubDomainEdges and subdomain infos are filled    */
-  /** ************************************************************************************/ 
+   // ********************************************************************************** */
+   // STEP 13 : Edges will be flaged as SubDomainEdges and subdomain infos are filled     */
+   // *********************************************************************************** */ 
   
     for(i=0;i<N_OwnCells;i++)
      {
@@ -1723,9 +1723,9 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
       MPI_Abort(comm, 0);
      } 
      
-   /** ***********************************************************************************/
-  /** STEP 13 : Edges will be flaged as SubDomainEdges and subdomain infos are filled    */
-  /** ************************************************************************************/ 
+   // ***********************************************************************************/
+   //** STEP 13 : Edges will be flaged as SubDomainEdges and subdomain infos are filled    */
+   //** ************************************************************************************/ 
   
     for(i=0;i<N_OwnCells;i++)
      {

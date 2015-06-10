@@ -10,7 +10,7 @@
 //
 // =======================================================================
 #ifndef __SSORITE__
-#define __SSORIITE__
+#define __SSORITE__
 
 #include <ItMethod.h>
 

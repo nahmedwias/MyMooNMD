@@ -18,15 +18,13 @@ set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C" CACHE STRING "Enter 
 set(ARCH "MAC64" CACHE STRING "select the machine type")  
 
 #  selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
-set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
+set(PARALLEL_TYPE "MPI" CACHE STRING "select the parallel type")
 
 #  set MORTAR, if needed
 set(MORTAR " ")
 
-
-
 # set the path to save the exe file
-set(DESTDIR "${CMAKE_SOURCE_DIR}/ParMooN/OutPut" CACHE STRING "select the model")
+set(DESTDIR "${CMAKE_SOURCE_DIR}/../ParMooN_Output/cd3d" CACHE STRING "select the model")
 
 # ========================================================================================================================
 # no need to change anyting after this line
@@ -62,4 +60,18 @@ set_property(CACHE PARALLEL_TYPE PROPERTY STRINGS SEQUENTIAL MPI OMPONLY HYBRID)
    set(PARMOON_PRG_DEFINE "-D_SEQ")
  endif()
 
-set(PARMOON_CXX_DEF "-D__$(GEO)__ -DTETLIBRARY -D__PRIVATE__ ${MORTAR} ${PARALLEL_TYPE}")
+ if("${ARCH}" STREQUAL "LINUX64")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  -DTRILIBRARY -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fopenmp")
+ elseif("${ARCH}" STREQUAL "MAC64")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack -Wmacro-redefined -Wdangling-else
+                         -Wcomment -Wparentheses-equality -Wdelete-non-virtual-dtor -Wnull-conversion")
+ elseif("${ARCH}" STREQUAL "INTEL64")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  ")
+ elseif("${ARCH}" STREQUAL "TYRONE64")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DTRILIBRARY -DREDUCED -DNO_TIMER -DMPICH_IGNORE_CXX_SEEK")
+ elseif("${ARCH}" STREQUAL "CRAY64")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} ")  
+ endif()
+ 
+ 
+set(PARMOON_CXX_DEF "-D__${GEO}__ -D__${ARCH}__ -DTETLIBRARY -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")

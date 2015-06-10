@@ -78,6 +78,10 @@ class TInterfaceJoint : public TJointEqN
       else
         return false;
     }
+    
+    // Destructor
+    virtual ~TInterfaceJoint();
+   
 };
 
 #endif

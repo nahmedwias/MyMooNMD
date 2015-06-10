@@ -6,6 +6,7 @@
 // Authors:     Volker John, 2008/05/22
 //
 // =======================================================================
+#ifdef __2D__
 
 #include <Database.h>
 #include <DiscreteForm2D.h>
@@ -2262,3 +2263,6 @@ void MakeBubblesDivFree(TCollection *coll,
     }
     //OutPut("done"<<endl);
   }
+
+  
+#endif // #ifdef __2D__  

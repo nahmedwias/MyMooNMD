@@ -14,6 +14,8 @@
 #ifndef __CD2D_ERROR_ESTIMATOR__
 #define __CD2D_ERROR_ESTIMATOR__
 
+#ifdef __2D__
+
 #include <FEFunction2D.h>
 
 #define cd_gradient_indicator                      0
@@ -134,3 +136,5 @@ public:
 
 };
 #endif
+
+#endif // #ifdef __2D__

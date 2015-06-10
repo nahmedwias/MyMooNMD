@@ -7,7 +7,7 @@
 #ifndef __CONVDIFF2D__
 #define __CONVDIFF2D__
 
-
+#ifdef __2D__
 /** the local assembling routines. Each of them corresponds to one 
  * LocalAssembling2D_type */
 
@@ -150,3 +150,5 @@ void RhsAssemble_RhsAdjointH1Error(double Mult, double *coeff, double *param,
 
 
 #endif // __CONVDIFF2D__
+
+#endif // #ifdef __2D__

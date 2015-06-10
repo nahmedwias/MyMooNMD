@@ -430,7 +430,7 @@ int TGridCell::Refine(int reflevel)
     NewVertices[TmpValues1[i]] = Vertices[TmpValues2[i]];
 
   // create new inner vertices
-  if (N_1 = RefDesc->GetN_InnerVertices())
+  if( (N_1 = RefDesc->GetN_InnerVertices()) )
   {
     RefDesc->GetInnerVerts(TmpValues1, TmpPos, MaxLen1);
 
@@ -452,7 +452,7 @@ int TGridCell::Refine(int reflevel)
   }
 
   // copy existing joints
-  if (N_1 = RefDesc->GetN_NewFaceEqOldFace())
+  if ((N_1 = RefDesc->GetN_NewFaceEqOldFace()))
   {
     RefDesc->GetNewFaceEqOldFace(TmpValues1, TmpValues2);
     RefDesc->GetFaceChild(TmpValues4, TmpValues3, MaxLen3);
@@ -489,7 +489,7 @@ int TGridCell::Refine(int reflevel)
                                MaxLen1, MaxLen2);
   for (i=0;i<N_1;i++)
   {
-    if (FaceRefDescID = RefDesc->GetFaceRef(i))
+    if ((FaceRefDescID = RefDesc->GetFaceRef(i)))
       if (Tmp[i].Filled)
       {
         FaceRefDesc = TDatabase::RefDescDB[N_SHAPES + FaceRefDescID];
@@ -519,7 +519,7 @@ int TGridCell::Refine(int reflevel)
       LocFace1 = TmpValues2[auxi++];
       
       CurrJoint = Joints[LocFace1];
-      if (CurrCell = CurrJoint->GetNeighbour(this))
+      if ((CurrCell = CurrJoint->GetNeighbour(this)))
       {
         StopCell = Joints[TmpValues2[auxi]]->GetNeighbour(this);
         LocFace1tmp = TmpValues2[auxi];
@@ -676,7 +676,7 @@ int TGridCell::Refine(int reflevel)
   {
     i = RefinementOrder[I];
     // cout << "order: " << i << endl;
-    if (FaceRefDescID = RefDesc->GetFaceRef(i))
+    if ((FaceRefDescID = RefDesc->GetFaceRef(i)))
     {
       FaceRefDesc = TDatabase::RefDescDB[N_SHAPES + FaceRefDescID];
       if (Tmp[i].Filled)

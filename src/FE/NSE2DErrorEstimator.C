@@ -10,6 +10,7 @@
 // History:     04.02.1998 start implementation
 //
 // =======================================================================
+#ifdef __2D__
 
 #include <NSE2DErrorEstimator.h>
 #include <FEFunction2D.h>
@@ -2132,3 +2133,5 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
   for (i=0;i<4;i++)
     estimated_local_error[i]=estimated_error[i];
 }
+
+#endif // #ifdef __2D__

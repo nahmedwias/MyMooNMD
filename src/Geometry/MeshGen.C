@@ -8,6 +8,8 @@
    
 ************************************************************************  */
 
+#ifdef __2D__
+
 #include <Database.h>
 #include <Domain.h>
 #include <MacroCell.h>
@@ -463,4 +465,4 @@ if (Out.edgemarkerlist[i]) // 0 for inner edges and Boundcomp+1 for Boundedge re
   
 
 
-
+#endif // #ifdef __2D__

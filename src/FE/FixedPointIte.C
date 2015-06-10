@@ -21,7 +21,9 @@
 #include <Database.h>
 #include <LinAlg.h>
 #include <NSE_MultiGrid.h>
+#ifdef _MPI 
 #include <ParFECommunicator3D.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

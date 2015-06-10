@@ -3,6 +3,7 @@
 //
 // common declaration for time dependent convection diffusion problems
 // ======================================================================
+#ifdef __2D__
 #include <Database.h>
 #include <ConvDiff.h>
 
@@ -730,3 +731,4 @@ void MatrixARhsAssembleHeatLine_Axial3D(double Mult, double *coeff, double *para
 
 
 
+#endif // #ifdef __2D__

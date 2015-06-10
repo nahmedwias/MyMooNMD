@@ -419,7 +419,7 @@ void TMatrix::remove_zeros(double tol)
     new_entries[row]; // empty row
     for(int col = rows[row]; col < rows[row + 1]; col++)
     {
-      if(abs(Entries[col]) > tol)
+      if(fabs(Entries[col]) > tol)
         (new_entries[row])[cols[col]] = Entries[col];
     }
     n_removed += rows[row + 1] - rows[row] - new_entries[row].size();

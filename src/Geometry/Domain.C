@@ -234,7 +234,7 @@ TCollection *TDomain::GetMortarColl(Iterators it, int level)
     lev = level + (i << 8);
     TDatabase::IteratorDB[it]->Init(lev);
     LastCell = NULL;
-    while (CurrCell = TDatabase::IteratorDB[it]->Next(info))
+    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
     {
       NewCell = new TGridCell(TDatabase::RefDescDB[S_Line], RefLevel);
 
@@ -277,7 +277,7 @@ int TDomain::InitMortarJoints(Iterators it, int level, TCollection *coll)
   {
     lev = level + (i << 8);
     TDatabase::IteratorDB[it]->Init(lev);
-    while (CurrCell = TDatabase::IteratorDB[it]->Next(info))
+    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
       if (CurrCell->GetParent())
         ((TMortarJoint *) CurrCell->GetJoint(info))->SetMEdgeInColl(ncell++);
       else
@@ -291,7 +291,7 @@ int TDomain::InitMortarJoints(Iterators it, int level, TCollection *coll)
     TDatabase::IteratorDB[it]->Init(lev);
     ncell = BeginMFace[i];
     Ncell = BeginMFace[i+1] - 1;
-    while (CurrCell = TDatabase::IteratorDB[it]->Next(info))
+    while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
     {
       CurrCell->GetRefDesc()->GetShapeDesc()->GetEdgeVertex(TmpEV);
       X0 = CurrCell->GetVertex(TmpEV[2*info])->GetX();
@@ -1427,7 +1427,7 @@ int TDomain::CloseGrid(int level)
   // Reset ClipBoards
   TDatabase::IteratorDB[It_EQ]->Init(level);
   k=0;
-  while(CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+  while( (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
   {
     N_Children = CurrCell->GetRefDesc()->GetN_Children();
 
@@ -1474,7 +1474,7 @@ int TDomain::CloseGrid(int level)
    */
   k = -1;
   TDatabase::IteratorDB[It_EQ]->Init(level);
-  while (Cell = TDatabase::IteratorDB[It_EQ]->Next(info))
+  while ( (Cell = TDatabase::IteratorDB[It_EQ]->Next(info)))
     {
       Cell->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
       N_Edges = Cell->GetN_Edges();
@@ -1484,7 +1484,7 @@ int TDomain::CloseGrid(int level)
   {
     for (i=0;i<N_Edges;i++)
       {
-        if(Cell->GetClipBoard() & pow(2, i) == 0)
+        if(Cell->GetClipBoard() & (pow(2, i) == 0))
     continue;
 
         LocEdge = i;
@@ -1527,7 +1527,7 @@ int TDomain::CloseGrid(int level)
     {
       TDatabase::IteratorDB[It_EQ]->Init(level);
       k=0;
-      while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+      while ( (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)) )
   {
     if(CurrCell->GetClipBoard() == 0)
       {
@@ -1540,7 +1540,7 @@ int TDomain::CloseGrid(int level)
       
   k=-1;
   TDatabase::IteratorDB[It_EQ]->Init(level);
-  while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+  while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
     {
       k++;
       clip = CurrCell->GetClipBoard();
@@ -1887,7 +1887,7 @@ int TDomain::Gen1RegGrid()
   int info;
 
   TDatabase::IteratorDB[It_Finest]->Init(0);
-  while(CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))    
+  while((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)) )   
     CurrCell->Gen1RegGrid();
 
   return 0;
@@ -1999,7 +1999,7 @@ TCollection *TDomain::GetCollection(Iterators it, int level)
   cells=new TBaseCell*[n_cells];
   TDatabase::IteratorDB[it]->Init(level);
   i=0;
-  while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
+  while (((CurrCell = TDatabase::IteratorDB[it]->Next(info))))
   {
     cells[i]=CurrCell;
     cells[i]->SetCellIndex(i);
@@ -2026,7 +2026,7 @@ TCollection *TDomain::GetOwnCollection(Iterators it, int level, int ID)
 
   TDatabase::IteratorDB[it]->Init(level);
   n_cells=0;
-  while (CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
   {
    if(ID == CurrCell->GetSubDomainNo() )
     n_cells++;
@@ -2035,7 +2035,7 @@ TCollection *TDomain::GetOwnCollection(Iterators it, int level, int ID)
   cells=new TBaseCell*[n_cells];
   TDatabase::IteratorDB[it]->Init(level);
   i=0;
-  while (CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  while ((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
   {
    if(ID == CurrCell->GetSubDomainNo())
     {
@@ -2916,7 +2916,7 @@ int TDomain::GenerateEdgeInfo()
   NVert_All=0;
   n_cells=0;
   TDatabase::IteratorDB[it]->Init(level);
-  while(CurrCell=TDatabase::IteratorDB[it]->Next(info))
+  while((CurrCell=TDatabase::IteratorDB[it]->Next(info)))
   {
     NVert_All +=CurrCell->GetN_Vertices();
     n_cells++;
@@ -2932,7 +2932,7 @@ int TDomain::GenerateEdgeInfo()
   n_cells=0;
   VertBeginIndex[0] = 0;
   TDatabase::IteratorDB[it]->Init(level);
-  while(CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  while((CurrCell = TDatabase::IteratorDB[it]->Next(info)))
   {
     cells[n_cells]=CurrCell;
     N=CurrCell->GetN_Vertices();

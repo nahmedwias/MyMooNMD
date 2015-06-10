@@ -796,7 +796,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     
 #ifdef _MPI 
    /** identify BD edges but not part of BD faces */
-  if(l = FEDesc0_Obj->GetN_EdgeDOF() > 0) //conforming FE
+  if( (l = FEDesc0_Obj->GetN_EdgeDOF()) > 0) //conforming FE
   {
    cell->GetShapeDesc()->GetEdgeVertex(EdgeVertex);   
     
@@ -847,7 +847,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
    
   /** identify BD vert but not part of BD faces/edge */
   /** I hope, it is enough to check BD vertices, sice other vertices are anyway inner, so no prob with Dirichlet BD */
-  if(l=FEDesc0_Obj->GetN_VertDOF() > 0) //conforming FE
+  if( (l=FEDesc0_Obj->GetN_VertDOF()) > 0) //conforming FE
    {
     for(j=0;j<N_VertInCell;j++)
      {

@@ -15,11 +15,16 @@
 #include <Database.h>
 #include <LinAlg.h>
 #include <MooNMD_Io.h>
+#include <FEFunction3D.h>
+
+#ifdef _MPI 
+#include <ParFECommunicator3D.h>
+#endif
 
 #include <stdlib.h>
 #include <string.h>
-#include <ParFECommunicator3D.h>
-#include <FEFunction3D.h>
+
+
 
 #define PreSmooth -1
 #define CoarseSmooth 0

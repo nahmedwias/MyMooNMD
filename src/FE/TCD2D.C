@@ -2,6 +2,8 @@
 //  TCD2D.C 
 // ======================================================================
 
+#ifdef __2D__
+
 #include <TCD2D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
@@ -934,3 +936,4 @@ void ParamsFct_HeatLine(double *in, double *out)
 }
 
 
+#endif // #ifdef __2D__

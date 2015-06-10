@@ -614,8 +614,9 @@ int TGridCell::MakeConfClosure()
       for(i=0; i<N_Edges; ++i)
         {
     // Check if edge is marked for refinement
-    if((clip >> i) & 1 == 1) continue;
-
+    if( clip >> i) continue;
+//     if( (clip >> i) & 1 == 1) continue;
+    
     LocEdge = i;
     for(j=0; j<TmpEFMaxLen; ++j)
             {
@@ -872,6 +873,9 @@ int TGridCell::SetRegRefine()
     case Brick:
            RefDesc = TDatabase::RefDescDB[N_SHAPES + BrickReg];
            break;
+    default:
+     break;
+	   
   }
 
   return 0;

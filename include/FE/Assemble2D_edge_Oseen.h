@@ -5,6 +5,7 @@
   #include <Aux2D3D.h>
 #endif
 
+#ifdef __2D__
 void Assemble2D_edge_Oseen(CoeffFct2D *Coeff, int n_fespaces, TFESpace2D **fespaces,
                       int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                       int n_matrices, TMatrix2D **matrices,
@@ -13,3 +14,4 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff, int n_fespaces, TFESpace2D **fespa
                       BoundValueFunct2D **BoundaryValues,
                       TAuxParam2D *Parameters);
  
+#endif

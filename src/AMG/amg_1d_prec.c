@@ -44,6 +44,12 @@
 #include <amg_solve_main.h>
 #include <amg_1d_prec.h>
 
+
+
+int AMG_sorfb_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega);
+int AMG_ilub_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_);
+int AMG_iluf_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_);
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -1530,7 +1536,7 @@ int mgc (AMG_SolverContext *sc, int k, int depth,
                                                   /* defect d=b-Ax is valid on entry */
   if (k==depth)                               /* coarse grid solve */
     {
-      if ((sc->system_type!=SCALAR)||(sc->system_type!=SCALAR3)) 
+      if ((sc->system_type!=SCALAR1)||(sc->system_type!=SCALAR3)) 
         if (sc->preconditioner==AMG_MGC)
           AverageRHS(A[k],b[k],d[k]);
       dnorm0=sqrt(AMG_ddot(d[k],d[k]))*sc->coarse_red_factor;

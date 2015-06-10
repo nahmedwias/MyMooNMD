@@ -6,6 +6,7 @@
  *  routines for simulation of precipitation process in 2d cavity                       *
  *                                                                                      *
  ***************************************************************************************/
+#ifdef __2D__
 
 #include <SquareStructure2D.h>
 #include <SquareMatrix2D.h>
@@ -3659,3 +3660,5 @@ void write_psd(int N_x, int N_y, int N_z,
 
   fclose(out);
 }
+
+#endif // #ifdef __2D__

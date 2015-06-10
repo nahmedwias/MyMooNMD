@@ -1984,8 +1984,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
                   JNeib1 = KMT[aux1]->GetNeighbour(0);
                   JNeib2 = KMT[aux1]->GetNeighbour(1);
     
-                  if (JNeib1 == CellTree[Neib] && JNeib2 == CellTree[i] ||
-                      JNeib1 == CellTree[i] && JNeib2 == CellTree[Neib]) break;
+                  if ( (JNeib1 == CellTree[Neib] && JNeib2 == CellTree[i]) ||
+                       (JNeib1 == CellTree[i] && JNeib2 == CellTree[Neib])) break;
                 }
               }
     

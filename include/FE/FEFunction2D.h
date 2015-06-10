@@ -78,8 +78,8 @@ class TFEFunction2D
     /** @brief use this for vector valued basis functions (Raviart-Thomas (RT)
      *         or Brezzi-Douglas-Marini (BDM) elements) */
     void  GetErrorsForVectorValuedFunction(
-                  const DoubleFunct2D * const * const Exact, 
-                  const ErrorMethod2D * const ErrorMeth, 
+                  DoubleFunct2D * const * const Exact, 
+                  ErrorMethod2D * const ErrorMeth, 
                   double * const errors);
     
     void GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,

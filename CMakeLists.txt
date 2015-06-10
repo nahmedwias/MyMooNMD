@@ -33,10 +33,6 @@ set(PARMOON_EXTLIB_PATH ${PROJECT_SOURCE_DIR}/EXT_LIB)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-
-
-find_package(MPI REQUIRED PATH /opt/local/include  /opt/local/lib)
-
 # search the blas in the system, if available it will be default
 message("==================Searching BLAS in the System - begin===================================================")
 find_package(BLAS REQUIRED)
@@ -77,33 +73,33 @@ if(CMAKE_VERBOSE_MAKEFILE)
 endif()
 message("==================Searching UMFPACK in the System - end=====================================================")
 
-
-# search the MUMPS in the system, if available it wil be default
-message("==================Searching MUMPS in the System - begin=====================================================")
-find_package(MUMPS)
-include_directories(${MUMPS_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
+if("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+ # search the MUMPS in the system, if available it wil be default
+ message("==================Searching MUMPS in the System - begin=====================================================")
+ find_package(MUMPS)
+ include_directories(${MUMPS_INCLUDE_DIRS})
+ if(CMAKE_VERBOSE_MAKEFILE)
   if(MUMPS_FOUND)
     message("Available system MUMPS_LIB =${MUMPS_LIBRARIES}")
   elseif(NOT MUMPS_FOUND)
     message(FATAL_ERROR "MUMPS_NOT_FOUND in your system or in the ParMooN")
   endif()
-endif()
-message("==================Searching MUMPS in the System - end=======================================================")
+ endif()
+ message("==================Searching MUMPS in the System - end=======================================================")
+endif("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 
-
-# search the TRIANGLE in the system, if available it wil be default
-message("==================Searching TRIANGLE in the System - begin==================================================")
-find_package(TRIANGLE)
-include_directories(${TRIANGLE_INCLUDE_DIRS})
+# search the GRIDGEN in the system, if available it wil be default
+message("==================Searching GRIDGEN in the System - begin==================================================")
+find_package(GRIDGEN)
+include_directories(${GRIDGEN_INCLUDE_DIRS})
 if(CMAKE_VERBOSE_MAKEFILE)
-  if(TRIANGLE_FOUND)
-    message("Available system TRIANGLE_LIB =${TRIANGLE_LIBRARIES}")
-  elseif(NOT TRIANGLE_FOUND)
-    message(FATAL_ERROR "TRIANGLE_NOT_FOUND in your system or in the ParMooN")
+  if(GRIDGEN_FOUND)
+    message("Available system GRIDGEN_LIB =${GRIDGEN_LIBRARIES}")
+  elseif(NOT GRIDGEN_FOUND)
+    message(FATAL_ERROR "GRIDGEN_NOT_FOUND in your system or in the ParMooN")
   endif()
 endif()
-message("==================Searching TRIANGLE in the System - end====================================================")
+message("==================Searching GRIDGEN in the System - end====================================================")
 
 # search the TETGEN in the system, if available it wil be default
 if("${GEO}" STREQUAL "3D")
@@ -127,25 +123,48 @@ if (NOT CONFIGURED_ONCE)
         CACHE STRING "Flags used by the compiler during all build types." FORCE)
 endif()
 
+# search the TECPLOT in the system, if available it wil be default
+message("==================Searching TECPLOT in the System - begin==================================================")
+find_package(TECPLOT)
+include_directories(${TECPLOT_INCLUDE_DIRS})
+if(CMAKE_VERBOSE_MAKEFILE)
+  if(TECPLOT_FOUND)
+    message("Available system TECPLOT_LIB =${TECPLOT_LIBRARIES}")
+  elseif(NOT TECPLOT_FOUND)
+    message(FATAL_ERROR "TECPLOT_NOT_FOUND in your system or in the ParMooN")
+  endif()
+endif()
+message("==================Searching TECPLOT in the System - end====================================================")
+
 
 # select the compiler type,
 # CMAKE_BUILD_TYPE [DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL]
 
-set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "options")
+set(CMAKE_BUILD_TYPE MINSIZEREL CACHE STRING "options")
 set(PARMOON_INCLUDE )
 
 include (CMakeForceCompiler)
   set(CMAKE_SYSTEM_NAME ${ARCH})
   
 if("${ARCH}" STREQUAL "MAC64")
-  CMAKE_FORCE_C_COMPILER   (clang Clang)
-  CMAKE_FORCE_CXX_COMPILER (clang++ Clang)
-  set(CMAKE_C_FLAGS "-O3 -fapple-pragma-pack")
-  set(CMAKE_C_FLAGS_DEBUG "-g -fapple-pragma-pack")
-  set(CMAKE_C_FLAGS_RELEASE "O3 -fapple-pragma-pack")
-  set(CMAKE_CXX_FLAGS "-O3 ${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack")
-  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 ${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack") 
+  if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+    find_path(MPI_CPATH   mpicc-mpich-mp)
+    set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc-mpich-mp)
+    find_path(MPI_CXXPATH   mpicxx-mpich-mp)  
+    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx-mpich-mp)      
+  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+    find_path(CPATH  clang)
+    set(CMAKE_C_COMPILER ${CPATH}/clang)
+    find_path(CXXPATH Clang)  
+    set(CMAKE_CXX_COMPILER ${CXXPATH}/Clang)  
+  endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+  
+  set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
+  set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
+  set(CMAKE_C_FLAGS_RELEASE "O3 ${PARMOON_CXX_DEF}")
+  set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}" )
+  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 ${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}") 
 elseif("${ARCH}" STREQUAL "LINUX64")
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
     CMAKE_FORCE_C_COMPILER   (mpicc)
@@ -165,87 +184,55 @@ elseif("${ARCH}" STREQUAL "LINUX64")
 endif()
 
 
+     
 
-
-include_directories("${CMAKE_SOURCE_DIR}/include/AMG")
-include_directories("${CMAKE_SOURCE_DIR}/include/Refinement")
-include_directories("${CMAKE_SOURCE_DIR}/include/QuadFormulas")
-include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
+         
 include_directories("${CMAKE_SOURCE_DIR}/include/General")
 include_directories("${CMAKE_SOURCE_DIR}/include/FE")
-include_directories("${CMAKE_SOURCE_DIR}/include/System")
+include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
+include_directories("${CMAKE_SOURCE_DIR}/include/QuadFormulas")
+include_directories("${CMAKE_SOURCE_DIR}/include/FE1D")
+include_directories("${CMAKE_SOURCE_DIR}/include/FE2D")
+include_directories("${CMAKE_SOURCE_DIR}/include/FE3D")
+include_directories("${CMAKE_SOURCE_DIR}/include/AMG")
 include_directories("${CMAKE_SOURCE_DIR}/include/PBE")
+include_directories("${CMAKE_SOURCE_DIR}/include/Refinement")
+include_directories("${CMAKE_SOURCE_DIR}/include/System")
+include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
 include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
 
-# message( "INCLUDE_DIRECTORIES = ${INCLUDE_DIRECTORIES}")
-
-
 add_subdirectory(src/AMG) 
-
-add_subdirectory(src/General)  
+add_subdirectory(src/Refinement) 
+add_subdirectory(src/QuadFormulas)  
 add_subdirectory(src/Geometry)          
+add_subdirectory(src/General) 
+add_subdirectory(src/FE) 
+add_subdirectory(src/System) 
+# add_subdirectory(src/PBE) 
 
-# link_directories(${CMAKE_BINARY_DIR}/src/AMG/obj3D)
-# link_directories(${CMAKE_BINARY_DIR}/src/General/obj3D)
 
+add_executable(parmoon_${PARALLEL_TYPE}  ${MODEL})
 
-
-add_executable(parmoon  ${MODEL})
-
-target_link_libraries(parmoon PRIVATE "amg" ${BLAS_LIBRARIES})
-
-# target_link_libraries(parmoon PRIVATE "gen" "geo" )
-
+if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+   add_subdirectory(src/Parallel) 
+   target_link_libraries(parmoon_${PARALLEL_TYPE} PRIVATE "par" "geo"  "fe" "gen"  "sys"
+                      "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
+                      ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} ${MUMPS_LIBRARIES} "mpi" "mpifort" "mpicxx")  
+elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+   target_link_libraries(parmoon_${PARALLEL_TYPE} PRIVATE  "geo"  "fe" "gen"  "sys"
+                      "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
+                      ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} )
+endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 
 message("============================================================================================================"  )        
 message("Configuration for the ParMooN Version 1.1")  
-message("Written by Sashikumaar Ganesan, SERC, IISc Bangalore, India")  
+message("Author: Sashikumaar Ganesan")
+message("        Numerical Mathematics and Scientific Computing")
+message("        Supercomputer Edu. and Research Centre")
+message("        Indian Institute of Science")
+message("        Bangalore, India")  
+message("web:    www.serc.iisc.ernet.in/~sashi/") 
 message("============================================================================================================"  ) 
 
-
-# FOREACH(var ${CMAKE_SYSTEM_PREFIX_PATH})
-#     MESSAGE(STATUS "CMAKE_SYSTEM_PREFIX_PATH = " ${var})
-# ENDFOREACH(var)
-# MESSAGE(STATUS)
-
-#         
-
-# if (USE_MUMPS)
-#   include_directories ("${PROJECT_SOURCE_DIR}/EXT_LIB/MUMPS/")
-#   add_subdirectory (EXT_LIB/MUMPS/)
-#   set (EXTRA_LIBS ${EXTRA_LIBS} EXT_LIB/MUMPS/)
-# endif (USE_MUMPS)        
-        
-
-
-#  add_library(mylib src1.c src2.c)
-#  add_executable(myexe main1.c)
-#   set_property(
-#    DIRECTORY
-#    PROPERTY COMPILE_DEFINITIONS A AV=1
-#    )
-#  set_property(
-#    TARGET mylib
-#    PROPERTY COMPILE_DEFINITIONS B BV=2
-#    )
-#  set_property(
-#    SOURCE src1.c
-#    PROPERTY COMPILE_DEFINITIONS C CV=3
-#    )
-#  set_property(
-#    SOURCE src1.c
-#    APPEND PROPERTY COMPILE_DEFINITIONS D DV=4
-#    )
-# will build the source files with these definitions:
-#  src1.c:   -DA -DAV=1 -DB -DBV=2 -DC -DCV=3
-#  src2.c:   -DA -DAV=1 -DB -DBV=2
-#  main2.c:  -DA -DAV=1
-
-
-# find_package (BZip2)
-# if (BZIP2_FOUND)
-#   include_directories(${BZIP_INCLUDE_DIRS})
-#   target_link_libraries (helloworld ${BZIP2_LIBRARIES})
-# endif (BZIP2_FOUND)
 

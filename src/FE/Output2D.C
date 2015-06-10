@@ -10,6 +10,9 @@
 //        :     parallel vtk output 26.09.09 (Sashikumaar Ganesan)
 // =======================================================================
 
+#include <FESpace2D.h>
+#include <FEFunction2D.h>
+#include <FEVectFunct2D.h>
 #include <FEDatabase2D.h>
 #include <Output2D.h>
 #include <BaseCell.h>
@@ -116,7 +119,7 @@ int TOutput2D::AddFEFunction(TFEFunction2D *fefunction)
 {
   TFEFunction2D **NewStorage;
 
-  if(!(AddFESpace(fefunction->GetFESpace2D()))) return 0;
+  if(!(AddFESpace(((TFEFunction2D *)fefunction)->GetFESpace2D()))) return 0;
 
   if(MaxN_ScalarVar<=N_ScalarVar)
   {
@@ -2249,18 +2252,18 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
       for(k=0;k<N_BaseFct;k++)
         value += LocValues[k]*BFValues[LocVertex][k];
 
-      #ifdef __3D__
+#ifdef __3D__
       CellY->GetVertex(LocVertex)->GetCoords(X, Y, z);
-      #else
+#else
       CellY->GetVertex(LocVertex)->GetCoords(X, Y);
-      #endif
+#endif
       dat << setw(12) << X << setw(12) << Y << setw(12) << value << endl;
 
-    } while (JointY = CellY->GetJoint(nexty));
+    } while ( (JointY = CellY->GetJoint(nexty) ) );
 
     dat << endl;
 
-  } while (JointX = CellX->GetJoint(nextx));
+  } while ( (JointX = CellX->GetJoint(nextx)));
 
   CellY = CellX;
 
@@ -2326,7 +2329,7 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
     #endif
     dat << setw(12) << X << setw(12) << Y << setw(12) << value << endl;
 
-  } while (JointY = (CellY->GetJoint(nexty)) );
+  } while ((JointY = CellY->GetJoint(nexty)) );
 
   dat.close();
 

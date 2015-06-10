@@ -30,6 +30,17 @@ TJointEqN::TJointEqN(TBaseCell *neighb0, TBaseCell *neighb1) : TJoint()
   Neighb1 = neighb1;
 }
 
+    // Destructor
+TJointEqN::~TJointEqN()
+   {
+    if(Neighb0)
+     { Neighb0 = NULL;}
+  
+    if(Neighb1)
+     { Neighb1 = NULL;}   
+   }
+   
+   
 // Methods
 
 int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
@@ -173,8 +184,8 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     NeibFaceRef = Neighb->GetRefDesc()->GetFaceRef(J_j);
     MyFaceRef = Me->GetRefDesc()->GetFaceRef(J_i);
 
-    if(NeibFaceRef == TriReg && MyFaceRef != TriReg ||
-       NeibFaceRef != TriReg && MyFaceRef == TriReg)
+    if((NeibFaceRef == TriReg && MyFaceRef != TriReg) ||
+       (NeibFaceRef != TriReg && MyFaceRef == TriReg) )
         return -2;
     if(MyFaceRef >= TriBis0 && MyFaceRef <= TriBis2)
     {

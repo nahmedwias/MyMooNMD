@@ -777,7 +777,7 @@ void TFEFunction3D::GetErrorsOPTPDE(DoubleFunct3D *Exact, int N_Derivatives,
 
 
 void TFEFunction3D::GetErrorsForVectorValuedFunction(
-  const DoubleFunct3D ** const Exact, const ErrorMethod3D * const ErrMeth,
+    DoubleFunct3D ** const Exact, ErrorMethod3D * const ErrMeth,
   double * const errors)
 {
   // write zeros into the array "errors"
@@ -1756,6 +1756,9 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
       case NF_C_H_Q2_3D:
 	nf = TFEDatabase3D::GetNodalFunctional3D(NF_S_H_Q2_3D);
       break;
+	  default:
+	    
+	  break;      
     }
     N_LocalDOFs = Element->GetN_DOF();
 
@@ -2417,6 +2420,10 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
                // cout << i << setw(20) << Values[DOF[EdgeDOF[j]]] << endl;
              }
              break;
+	  default:
+	    
+	  break;	     
+	     
          }         
        }///endif
     }///for m<N_Joints

@@ -4,6 +4,8 @@
 // common declaration for all convection diffusion problems
 // ======================================================================
 
+#ifdef __2D__
+
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <FEFunction2D.h>
@@ -1921,4 +1923,5 @@ void Params_Sol4(double *in, double *out)
 // ========================================================================
 // ========================================================================
 
+#endif // #ifdef __2D__
 

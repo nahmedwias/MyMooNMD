@@ -72,6 +72,18 @@ TInterfaceJoint3D::TInterfaceJoint3D(TBoundComp3D *bdcomp,
   Neighb0 = neigh0;
 }
 
+    // Destructor
+TInterfaceJoint3D::~TInterfaceJoint3D()
+   {
+    if(Neighb0)
+     { Neighb0 = NULL;}
+  
+    if(Neighb1)
+     { Neighb1 = NULL;}   
+   }
+   
+  
+  
 // Methods
 TJoint *TInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *Me)
 {

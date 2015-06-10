@@ -10,6 +10,7 @@
 // History:     29.01.98 start implementation
 //
 // =======================================================================
+#ifdef __2D__
 
 #ifndef __NS_ERROR_ESTIMATOR__
 #define __NS_ERROR_ESTIMATOR__
@@ -129,3 +130,5 @@ public:
 };
 
 #endif
+
+#endif // #ifdef __2D__

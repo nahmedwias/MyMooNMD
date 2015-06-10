@@ -1917,9 +1917,9 @@ errors[1] -- L2-Error of divergence of this function
 errors[2] -- H1-semi-Norm-Error of this function
 */
 void TFEFunction2D::GetErrorsForVectorValuedFunction(
-                  const DoubleFunct2D * const * const Exact, 
-                  const ErrorMethod2D * const ErrorMeth, 
-                  double * const errors)
+                    DoubleFunct2D * const * const Exact, 
+                    ErrorMethod2D * const ErrorMeth, 
+                    double * const errors)
 {
   // set all errors to zero at first
   memset(errors,0,3*SizeOfDouble);

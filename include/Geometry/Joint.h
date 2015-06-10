@@ -152,7 +152,7 @@ class TJoint
     { return NeibSubDomainLocalJointNo; }  
     
     // Destructor
-    ~TJoint();
+    virtual ~TJoint();
 
 };
 

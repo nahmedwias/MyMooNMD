@@ -4,6 +4,7 @@
 * @date      08.08.14
 * @History 
  ************************************************************************  */
+#ifdef __2D__
 #include <Database.h>
 #include <SystemMatScalar2D.h>
 #include <SquareStructure2D.h>
@@ -185,7 +186,7 @@ void TSystemMatScalar2D::Solve(double *sol, double *rhs)
 
 
 
-
+#endif // #ifdef __2D__
 
 
 

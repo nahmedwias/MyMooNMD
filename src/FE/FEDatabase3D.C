@@ -1292,6 +1292,10 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
        QuadFormula = VertexTetra;
        //OutPut("LayerCell Quadrature formula for tetrahedra is P8Tetra" << endl); 
       break;
+      default:
+	
+      break;	
+      
      } // endswitch 
    } //if(cell->IsLayerCell())
 // =================================================================
@@ -1747,6 +1751,10 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
             ((TTetraAffin *)rt)->SetCell(cell);
             F_K = TetraAffin;
           break;
+	  default:
+	    
+	  break;
+	  
         }
         TFEDatabase3D::GetOrigFromRef(F_K ,N_Points, xi, eta, zeta,
                                     X, Y, Z, AbsDetjk);

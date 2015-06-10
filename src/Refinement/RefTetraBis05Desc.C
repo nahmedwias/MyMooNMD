@@ -61,8 +61,8 @@ static const int DatEdgeFaceLen[] = {3,3,2,2,2,2,3,3,3,3,3,3,4};
 static const int DatNewVertexEqOldVertex[] = {0, 1, 2, 3};
 static const int DatNewVertexEqOldVertexIndex[] = {0, 1, 2, 3};
 
-static const int DatNewFaceEqOldFace[] = {NULL};
-static const int DatNewFaceEqOldFaceIndex[] = {NULL};
+static const int DatNewFaceEqOldFace[] = {0};
+static const int DatNewFaceEqOldFaceIndex[] = {0};
 
 static const int DatOldFaceNewVertex[][REFTETRABIS05MAXN_nVpoF] =
   { {0, 1, 2, 4}, {0, 3, 1, 4}, {2, 1, 3, 5}, {0, 2, 3, 5} };

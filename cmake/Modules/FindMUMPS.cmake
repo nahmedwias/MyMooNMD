@@ -14,11 +14,11 @@ endif(MUMPS_INCLUDES AND MUMPS_LIBRARIES)
 
 if(NOT MUMPS_FOUND)
  
-  find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS $ENV{MUMPSDIR}/include ${CMAKE_INCLUDE_PATH})
-  find_library(MUMPS_LIBRARY NAMES dmumps PATHS $ENV{MUMPSDIR}/lib ${CMAKE_LIBRARY_PATH})
-  get_filename_component(MUMPS_LIBDIR ${MUMPS_LIBRARY} PATH)
-  find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common PATHS ${MUMPS_LIBDIR})
-     
+#   find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS $ENV{MUMPSDIR}/include ${CMAKE_INCLUDE_PATH})
+#   find_library(MUMPS_LIBRARY NAMES dmumps PATHS $ENV{MUMPSDIR}/lib ${CMAKE_LIBRARY_PATH})
+#   get_filename_component(MUMPS_LIBDIR ${MUMPS_LIBRARY} PATH)
+#   find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common PATHS ${MUMPS_LIBDIR})
+#      
   if(NOT MUMPS_LIBRARY)
     message("MUMPS not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
     find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/include)

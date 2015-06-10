@@ -14,7 +14,14 @@
 #define __MGLEVEL3D__
 
 #include <SquareMatrix3D.h>
-#include <ParFECommunicator3D.h>
+#ifdef _MPI   
+   #ifdef __3D__
+    #include <ParFECommunicator3D.h>
+   #else
+    #include <ParFECommunicator2D.h>
+   #endif
+#endif 
+
 // #include <omp.h>
 class TMGLevel3D
 {

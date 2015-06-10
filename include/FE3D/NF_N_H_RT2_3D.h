@@ -86,8 +86,8 @@ static double *NF_N_H_RT2_3D_ZetaArray[6] = {
                         NF_N_H_RT2_3D_F4_Zeta,
                         NF_N_H_RT2_3D_F5_Zeta };
 
-static double NF_N_H_RT2_3D_T[] = {NULL};//???
-static double NF_N_H_RT2_3D_S[] = {NULL};//???
+static double NF_N_H_RT2_3D_T[] = {-100};//???
+static double NF_N_H_RT2_3D_S[] = {-100};//???
 
 
 

@@ -1483,7 +1483,7 @@ int TTetGenMeshLoader::Generate(int N_Points, double *Points, int N_Facets, int 
   
   plc = true;
   
-  mTetIn.load_poly("../My-MooNMD/data/smesh/sphere_in_cube");
+  mTetIn.load_poly(TDatabase::ParamDB->SMESHFILE);
   
   Tetgen();
   

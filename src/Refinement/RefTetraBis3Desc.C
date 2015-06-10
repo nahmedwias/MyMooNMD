@@ -78,7 +78,7 @@ static const double DatOldFaceNewVertexPos[][REFTETRABIS3MAXN_nVpoF][REFTETRABIS
     { {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0.5, 0, 0.5} } };
 
 static const int DatInteriorFaceOfCell[] = {6};
-static const int DatInteriorEdgeOfCell[] = {NULL};
+static const int DatInteriorEdgeOfCell[] = {-1};
 
 static const int DatInteriorVertexOfEdge[][REFTETRABIS3MAXN_iVpE] =
   { {}, {}, {}, {4}, {}, {} };

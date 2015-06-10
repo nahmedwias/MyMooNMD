@@ -1,4 +1,6 @@
 
+#ifdef __2D__
+
 #ifdef _MPI
 #  include "mpi.h"
 #endif
@@ -967,3 +969,6 @@ int TDomain::AdaptRefineAll()
      
 
 }
+
+
+#endif // #ifdef __2D__

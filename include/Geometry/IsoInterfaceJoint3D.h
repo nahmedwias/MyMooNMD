@@ -51,6 +51,9 @@ class TIsoInterfaceJoint3D : public TInterfaceJoint3D
     void SetVertices(int n_vertices, TVertex **vertices);
 
     void GenerateVertices(int n_vertices);
+    
+    // Destructor
+    virtual ~TIsoInterfaceJoint3D();    
 };
 
 #endif

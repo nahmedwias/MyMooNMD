@@ -64,11 +64,11 @@ static const int DatEdgeFaceLen[] = {2,2,2,2,2,2,2,2,2,3,3,3,4,4,4};
 static const int DatNewVertexEqOldVertex[] = {0, 1, 2, 3};
 static const int DatNewVertexEqOldVertexIndex[] = {0, 1, 2, 3};
 
-static const int DatNewFaceEqOldFace[] = {NULL};
-static const int DatNewFaceEqOldFaceIndex[] = {NULL};
+static const int DatNewFaceEqOldFace[] = {-1};
+static const int DatNewFaceEqOldFaceIndex[] = {-1};
 
 static const int DatInteriorFaceOfCell[] = {10,11,12};
-static const int DatInteriorEdgeOfCell[] = {NULL};
+static const int DatInteriorEdgeOfCell[] = {-1};
 
 static const int DatInteriorVertexOfEdge[][REFTETRAQUAD2MAXN_iVpE] =
   { {}, {4}, {}, {}, {5}, {6} };

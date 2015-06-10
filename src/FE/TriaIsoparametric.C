@@ -724,6 +724,8 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
             N_Vertices = ((TIsoJointEqN *)joint)->GetN_Vertices();
             Vertices = ((TIsoJointEqN *)joint)->GetVertices();
           break;
+	  default:
+	    break;
         } // endswitch
 
         // cout << "N_AuxVertices: " << N_Vertices << endl;

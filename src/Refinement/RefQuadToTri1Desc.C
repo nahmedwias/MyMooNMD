@@ -48,7 +48,7 @@ static const int DatNewVertexEqOldVertexIndex[] = { 0, 1, 2, 3};
 static const int DatNewEdgeEqOldEdge[] = { 0, 1, 2, 3};
 static const int DatNewEdgeEqOldEdgeIndex[] = { 0, 1, 2, 3};
 
-static const int DatInteriorEdgeOfCell[] = { 4};
+static const int DatInteriorEdgeOfCell[] = {4};
 
 static const int DatInteriorVertexOfEdgeLen[] = { 0,  0,  0,  0};
 

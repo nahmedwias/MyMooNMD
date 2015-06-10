@@ -28,11 +28,12 @@ void TSquareMatrix2D::SetStructure(TSquareStructure2D *squarestructure)
   this->TSquareMatrix::SetStructure((TSquareStructure*) squarestructure);
 }
 
-
-TSquareMatrix2D::TSquareMatrix2D(int n) 
- : structure(new TSquareStructure2D(n)), TSquareMatrix(structure)
-{
-}
+// not clear! what is the initial value of structure while calling contructor/
+// commented by Sashi 
+// TSquareMatrix2D::TSquareMatrix2D(int n) 
+//  : structure(new TSquareStructure2D(n)), TSquareMatrix(structure)
+// {
+// }
 
 TSquareMatrix2D::~TSquareMatrix2D()
 {

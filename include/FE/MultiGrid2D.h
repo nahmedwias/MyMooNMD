@@ -9,6 +9,7 @@
 // History:     02.11.1998 start of implementation
 //
 // =======================================================================
+#ifdef __2D__
 
 #ifndef __MULTIGRID2D__
 #define __MULTIGRID2D__
@@ -82,3 +83,5 @@ class TMultiGrid2D
 };
 
 #endif
+
+#endif // #ifdef __2D__

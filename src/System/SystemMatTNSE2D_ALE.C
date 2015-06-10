@@ -4,6 +4,8 @@
 * @date      23.02.15
 * @History 
  ************************************************************************  */
+#ifdef __2D__
+
 #include <Database.h>
 #include <SystemMatTNSE2D_ALE.h>
 // #include <SquareStructure2D.h>
@@ -1050,3 +1052,4 @@ void TSystemMatTNSE2D_ALE::GetTNSEResidual(double *sol, double *res)
 //      
 // }
  
+#endif //#ifdef __2D__

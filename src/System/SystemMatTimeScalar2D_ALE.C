@@ -4,6 +4,8 @@
 * @date      19.02.15
 * @History 
  ************************************************************************  */
+#ifdef __2D__
+
 #include <Database.h>
 #include <SystemMatTimeScalar2D_ALE.h>
 #include <SystemMatTimeScalar2D.h>
@@ -528,3 +530,5 @@ void TSystemMatTimeScalar2D_ALE::Solve(double *sol, double *rhs)
 // }
 // 
 // 
+
+#endif // #ifdef __2D__

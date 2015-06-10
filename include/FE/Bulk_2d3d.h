@@ -10,6 +10,7 @@
 #ifndef __BULK_2D3D__
 #define __BULK_2D3D__
 
+#ifdef __2D__
 void Bulk_FWE_FDM_Upwind_3D(TCollection *coll,
 TFEFunction2D *velocity1, TFEFunction2D *velocity2,
 TFEFunction2D *concent_C,
@@ -168,3 +169,4 @@ void PrepareAgglomerationBULK(TCollection *Coll, TFEFunction2D *velocity1,
 
 #endif /// __BULK_2D3D__
 
+#endif // __2D__

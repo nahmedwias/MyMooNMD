@@ -5009,7 +5009,7 @@ double *rhs)
     if (fabs(a_sub[(ii+2*N_nodes_u3)*N_all+N_vec_u+jj])>1e-12)
          OutPut("b2("<<ii<<", "<<jj<<")=  "<<a_sub[(ii+2*N_nodes_u3)*N_all+N_vec_u+jj]<<endl);
 
-    /*   OutPut(" mat " << sqrt(Ddot(N_all*N_all,a_sub,a_sub)));
+    //  OutPut(" mat " << sqrt(Ddot(N_all*N_all,a_sub,a_sub)));
 
         for(ii=0;ii<3*N_nodes_u3+N_nodes_p3;ii++)
         {
@@ -6708,7 +6708,7 @@ double *old_small_scales, double *rhs)
     if (fabs(a_sub[(ii+2*N_nodes_u3)*N_all+N_vec_u+jj])>1e-12)
          OutPut("b2("<<ii<<", "<<jj<<")=  "<<a_sub[(ii+2*N_nodes_u3)*N_all+N_vec_u+jj]<<endl);
 
-    /*   OutPut(" mat " << sqrt(Ddot(N_all*N_all,a_sub,a_sub)));
+    //   OutPut(" mat " << sqrt(Ddot(N_all*N_all,a_sub,a_sub)));
 
         for(ii=0;ii<3*N_nodes_u3+N_nodes_p3;ii++)
         {

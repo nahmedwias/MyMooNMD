@@ -274,6 +274,8 @@ int TOutput3D::Write(std::string basename, int i, double t)
     cout << " Output3D:: writing " << os.str() << endl;
     this->WriteVtk(os.str().c_str());
   }
+  
+  return 0;
   // put more here if needed
 }
 
@@ -757,6 +759,9 @@ int TOutput3D::WriteTecplot(const char *name)
     case Brick:
       dat << "ET=BRICK" << endl;
       break;
+    default:
+      
+    break;  
   }
 
   cout << N_Vertices << endl;
@@ -842,6 +847,9 @@ int TOutput3D::WriteTecplot(const char *name)
             eta = HexaCoords[3*j+1];
             zeta = HexaCoords[3*j+2];
           break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
@@ -904,6 +912,9 @@ int TOutput3D::WriteTecplot(const char *name)
             eta = HexaCoords[3*j+1];
             zeta = HexaCoords[3*j+2];
           break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
@@ -1208,6 +1219,9 @@ int TOutput3D::WriteGMV(const char *name)
               eta = HexaCoords[3*j+1];
               zeta = HexaCoords[3*j+2];
             break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
           }
           bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
           bf->ChangeBF(Coll, cell, BFValues);
@@ -1287,6 +1301,9 @@ int TOutput3D::WriteGMV(const char *name)
             eta = HexaCoords[3*j+1];
             zeta = HexaCoords[3*j+2];
           break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
@@ -1598,6 +1615,9 @@ int TOutput3D::WriteAmira(const char *name)
             eta = HexaCoords[3*j+1];
             zeta = HexaCoords[3*j+2];
           break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);
@@ -1667,6 +1687,9 @@ int TOutput3D::WriteAmira(const char *name)
             eta = HexaCoords[3*j+1];
             zeta = HexaCoords[3*j+2];
           break;
+	  default:
+	     cout<<"Handles only Tetra or Hexa " <<endl;
+	  break;  
         }
         bf->GetDerivatives(D000, xi, eta, zeta, BFValues);
         bf->ChangeBF(Coll, cell, BFValues);

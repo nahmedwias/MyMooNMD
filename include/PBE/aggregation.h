@@ -12,10 +12,7 @@
 typedef class Aggregation aggregation;
 typedef aggregation* paggregation;
 
-typedef enum GRID_TYPE {
-	UNIFORM, 
-	REFINED
-};
+enum GRID_TYPE {UNIFORM, REFINED};
 
 double u0_brown(double x);
 double v0_brown(double y);

@@ -12,8 +12,10 @@
 //
 // =======================================================================
 
+
 #ifndef __FEVECTFUNCT2D__
 #define __FEVECTFUNCT2D__
+
 
 #include <FEFunction2D.h>
 
@@ -90,3 +92,6 @@ class TFEVectFunct2D : public TFEFunction2D
 };
 
 #endif
+
+// #ifdef __2D__
+// # endif // #ifdef __2D__

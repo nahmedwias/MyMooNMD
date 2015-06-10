@@ -49,6 +49,18 @@ TIsoInterfaceJoint3D::TIsoInterfaceJoint3D(TBoundComp3D *bdcomp,
   Vertices = NULL;
 }
 
+
+// Destructor
+TIsoInterfaceJoint3D::~TIsoInterfaceJoint3D()
+   {
+    if(Neighb0)
+     { Neighb0 = NULL;}
+  
+    if(Neighb1)
+     { Neighb1 = NULL;}   
+   }
+   
+
 // Methods
 TJoint *TIsoInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *Me)
 {

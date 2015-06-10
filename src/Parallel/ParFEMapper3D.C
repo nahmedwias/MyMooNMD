@@ -1349,15 +1349,15 @@ if(TDatabase::ParamDB->Par_P4){
   }
 	
   
-  if(N_SendDof>0);        Send_Info   = new double[N_SendDof*N_Dim];
-  if(N_SendDofMS>0);      Send_InfoMS = Send_Info;
-  if(N_SendDofH1>0);      Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
-  if(N_SendDofH2>0);      Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
+  if(N_SendDof>0) Send_Info   = new double[N_SendDof*N_Dim];
+  if(N_SendDofMS>0) Send_InfoMS = Send_Info;
+  if(N_SendDofH1>0) Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
+  if(N_SendDofH2>0) Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
  
-  if(N_Slave>0);          Recv_Info   = new double[N_Slave*N_Dim];
-  if(N_InterfaceS>0);     Recv_InfoMS = Recv_Info;
-  if(N_Halo1>0);          Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
-  if(N_Halo2>0);          Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
+  if(N_Slave>0) Recv_Info   = new double[N_Slave*N_Dim];
+  if(N_InterfaceS>0) Recv_InfoMS = Recv_Info;
+  if(N_Halo1>0) Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
+  if(N_Halo2>0) Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
  
   end_time = MPI_Wtime();
   if(rank == 0)
@@ -1568,7 +1568,7 @@ void TParFEMapper3D::ConstructDofMap()
     for(i=1;i<size;i++)
     {
       sdispl[i] = N_DOFtobeverified[i-1] + sdispl[i-1];
-      if(rank == 0);
+//       if(rank == 0)
       //printf(" %d \n",sdispl[i]);
     }
 					
@@ -1786,7 +1786,7 @@ void TParFEMapper3D::Assign_GlobalDofNo()
 
   Local2Global = new int[N_Dof];
   for(i=0;i<N_Dof;i++)
-    Local2Global[i] == -1;
+    Local2Global[i] = -1;
   
   MPI_Allgather(&N_OwnDof, 1, MPI_INT, all_own_dofs_info, 1, MPI_INT, Comm);
   

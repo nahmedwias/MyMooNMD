@@ -12,6 +12,8 @@
 //
 //              WriteSol/ReadSol    08.09.09 (Sashikumaar Ganesan)
 // =======================================================================
+#ifdef __2D__
+
 #ifdef _MPI
 # include "mpi.h"
 #endif
@@ -1070,4 +1072,4 @@ TFEVectFunct2D & TFEVectFunct2D::operator=(const TFEVectFunct2D & rhs)
   return *this;
 }
 
-
+#endif // #ifdef __2D__

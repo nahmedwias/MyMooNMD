@@ -10,7 +10,7 @@
 /*            email : volker.john@mathematik.uni-magdeburg.de               */
 /*                                                                          */
 /* History:   1998/02/19 start using this library for MooN_MD               */
-/*                                                                          */
+/*                                                                         */
 /* Remarks:   1998/02/24 ILU                                                */
 /*              1998/02/27 step length control                              */
 /*              1998/03/02 GMRES                                            */
@@ -176,7 +176,7 @@ int prepare_scalar_system(AMG_SolverContext *sc, AMG_CoarsenContext *cc,
 
   switch(sc->system_type)
     {
-    case SCALAR :  
+    case SCALAR1 :  
       dmatmul = AMG_dmatmul;                     /* set matrix vector routines */
       dmatminus =  AMG_dmatminus;
       A_dmatmul =  AMG_dmatmul; 
@@ -322,7 +322,7 @@ int prepare_scalar_system(AMG_SolverContext *sc, AMG_CoarsenContext *cc,
           AMG_Print("MESSAGE : Solver changed to flexible GMRES (AMG_GMRES_FLEX)\n");     
           sc->solver = AMG_GMRES_FLEX;
         }
-      if (sc->system_type == SCALAR)
+      if (sc->system_type == SCALAR1)
       {
         restriction = pc_restrict;              /* set grid transfer operations */
         interpolation = pc_prolongate_auto;
@@ -676,7 +676,7 @@ static int solver_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc,
   A_in->level = 0;
   switch(sc->system_type)
     {
-    case SCALAR : 
+    case SCALAR1 : 
     case SCALAR2 : 
     case SCALAR3 : 
     case SCALAR6 : 
@@ -822,12 +822,9 @@ static int solver_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc,
       exit(4711);
     }
 
-  if ((!((sc->system_type==SCALAR)||(sc->system_type==SCALAR2)||(sc->system_type==SCALAR3)
-    ||(sc->system_type==SCALAR6)))&&
-      ((sc->preconditioner==AMG_SCHUR_COMPLEMENT)
-       || (sc->preconditioner==AMG_SCHUR_CG)
-       || (sc->preconditioner==AMG_SCHUR_GMRES))
-       || (sc->preconditioner==AMG_SCHUR_GMRES_BCGS))
+  if (  !((sc->system_type)==SCALAR1 || (sc->system_type)==SCALAR2 || (sc->system_type)==SCALAR3 || (sc->system_type)==SCALAR6 )       
+      && ( (sc->preconditioner)==AMG_SCHUR_COMPLEMENT || (sc->preconditioner)==AMG_SCHUR_CG || (sc->preconditioner)==AMG_SCHUR_GMRES 
+       || (sc->preconditioner)==AMG_SCHUR_GMRES_BCGS) )
     switch(sc->schur_inv_of_A)
       {
       case AMG_DJAC :
@@ -989,8 +986,8 @@ static int ReportSolverParameters(AMG_SolverContext *sc)
   AMG_Print("system type : ");
   switch(sc->system_type)
   {
-    case SCALAR : 
-      sprintf(buf,"SCALAR (= %d)\n",SCALAR);
+    case SCALAR1 : 
+      sprintf(buf,"SCALAR1 (= %d)\n",SCALAR1);
       AMG_Print(buf);
       break;
     case SCALAR2 : 
@@ -1456,7 +1453,7 @@ static int AMG_ClearSolverOverhead (AMG_SolverContext *sc, AMG_CoarsenContext *c
     {
     case AMG_MGC:
       
-      if ((sc->system_type==SCALAR)||(sc->system_type==SCALAR3)||(sc->system_type==SCALAR2)
+      if ((sc->system_type==SCALAR1)||(sc->system_type==SCALAR3)||(sc->system_type==SCALAR2)
           ||(sc->system_type==SCALAR6))
         clear_mgc(A,G,depth);
       else
@@ -1531,7 +1528,7 @@ static int AMG_ClearSolverOverhead (AMG_SolverContext *sc, AMG_CoarsenContext *c
       clear_schur_complement_gmres(sc,depth);
       break;
     }
-  if ((!((sc->system_type==SCALAR)||(sc->system_type==SCALAR2)||(sc->system_type==SCALAR3)
+  if ((!((sc->system_type==SCALAR1)||(sc->system_type==SCALAR2)||(sc->system_type==SCALAR3)
          ||(sc->system_type==SCALAR6)))&&
       ((sc->preconditioner==AMG_SCHUR_COMPLEMENT)
        || (sc->preconditioner==AMG_SCHUR_CG)

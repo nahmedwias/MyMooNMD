@@ -768,7 +768,7 @@ void TSystemMatNSE3D::Assemble()
       fefct[1] = Velocity[i]->GetComponent(1);
       fefct[2] = Velocity[i]->GetComponent(2);
       
-       if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE==3) )
+       if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE==3) )
         {
          switch(NSEType)
           {

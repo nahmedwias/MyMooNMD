@@ -19,10 +19,12 @@ TSquareMatrix3D::TSquareMatrix3D(TSquareStructure3D *squarestructure)
 {
 }
 
-TSquareMatrix3D::TSquareMatrix3D(int n) 
- : structure(new TSquareStructure3D(n)), TSquareMatrix(structure)
-{
-}
+// not clear! what is the initial value of structure while calling contructor/
+// commented by Sashi 
+// TSquareMatrix3D::TSquareMatrix3D(int n) 
+//  : structure(new TSquareStructure3D(n)), TSquareMatrix(structure)
+// {
+// }
 
 TSquareMatrix3D::~TSquareMatrix3D()
 {

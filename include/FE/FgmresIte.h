@@ -12,9 +12,16 @@
 #ifndef __FGMRESITE__
 #define __FGMRESITE__
 
+
+#ifdef _MPI   
+   #ifdef __3D__
+    #include <ParFECommunicator3D.h>
+   #else
+    #include <ParFECommunicator2D.h>
+   #endif
+#endif 
+      
 #include <ItMethod.h>
-// #include <ParFECommunicator2D.h>
-#include <ParFECommunicator3D.h>
 
 /** iteration method */
 class TFgmresIte : public TItMethod

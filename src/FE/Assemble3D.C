@@ -843,9 +843,14 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
                   } // endfor l
                 break;
               }
-              TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])
-                      ->ChangeBF(Coll, cell, N_Points, JointValues);
+              TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])->ChangeBF(Coll, cell, N_Points, JointValues);
             break;
+
+	    default:
+	   
+	     break;
+	    
+	    
           } // endswitch Cond0
           
 #ifdef _MPI         
@@ -865,7 +870,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
       } // endfor m
       
 #ifdef _MPI   
-    if(N_EdgeDOF = FEDesc_Obj->GetN_EdgeDOF() > 0) //conforming FE
+    if( (N_EdgeDOF = FEDesc_Obj->GetN_EdgeDOF()) > 0) //conforming FE
      {
       cell->GetShapeDesc()->GetEdgeVertex(EdgeVertex);   
       N_Edges=cell->GetN_Edges();
@@ -2184,6 +2189,11 @@ void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
                   
                 }// endfor ansatz functions (jj)
               }// enfor test functions (ii)
+              
+	    default:
+	   
+           break;              
+              
          } // end switch (Cond0)
         } // endif (boundary joint)
       }  // endfor m (N_Joints)
@@ -2294,10 +2304,10 @@ void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
 } // end of Assemble
 
 /*************************************+******************************/
-/*
-/* Modification of Matrices for slip with friction bc for 
-/* better condition
-/*
+// 
+// Modification of Matrices for slip with friction bc for 
+// better condition
+//
 /*******************************************************************/
 void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
     int N_U, double *rhs)
@@ -3129,7 +3139,12 @@ TAuxParam3D *Parameters)
               TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])
                 ->ChangeBF(Coll, cell, N_Points, JointValues);
               break;
+	      
+         default:
+	   
+	 break;  	      
           }                                       // endswitch Cond0
+ 
         }                                         // endif
       }                                           // endfor m
     }                                             // endfor j

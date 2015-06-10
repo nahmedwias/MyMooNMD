@@ -14,7 +14,13 @@
 #define __MULTIGRID3D__
 
 #include <MGLevel3D.h>
-
+#ifdef _MPI   
+   #ifdef __3D__
+    #include <ParFECommunicator3D.h>
+   #else
+    #include <ParFECommunicator2D.h>
+   #endif
+#endif 
 // #define MAXN_LEVELS 25
 
 class TMultiGrid3D

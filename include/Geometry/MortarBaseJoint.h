@@ -55,5 +55,8 @@ class TMortarBaseJoint : public TJointEqN
     /** return whether this is an interior joint */
     virtual bool InnerJoint() const
     { return false; }
+    
+    // Destructor
+    virtual ~TMortarBaseJoint();
 };
 #endif

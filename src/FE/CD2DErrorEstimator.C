@@ -11,6 +11,8 @@
 //
 // =======================================================================
 
+#ifdef __2D__
+
 #include <CD2DErrorEstimator.h>
 #include <FEFunction2D.h>
 #include <FEDatabase2D.h>
@@ -3237,3 +3239,5 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
   for (i=0;i<5;i++)
     estimated_local_error[i]=estimated_error[i];
 }
+
+#endif

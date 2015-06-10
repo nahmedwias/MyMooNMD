@@ -38,7 +38,7 @@ class TSquareMatrix : public TMatrix
     TSquareMatrix(TSquareStructure *structure);
     
     /** generate an empty n*n zero matrix */
-    explicit TSquareMatrix(int n);
+//     explicit TSquareMatrix(int n);
 
     /** destructor: free Entries array */
     ~TSquareMatrix();

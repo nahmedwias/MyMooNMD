@@ -27,8 +27,8 @@ class TSquareMatrix2D : public TSquareMatrix
     /** generate the matrix */
     TSquareMatrix2D(TSquareStructure2D *squarestructure);
 
-    /** generate an empty nxn matrix */
-    explicit TSquareMatrix2D(int n);
+//     /** generate an empty nxn matrix */
+//     explicit TSquareMatrix2D(int n);
     
     /** fill empty matrix, 
      you can either call the constructor TSquareMatrix2D(TSquareStructure2D*);

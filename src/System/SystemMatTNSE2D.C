@@ -4,6 +4,8 @@
 * @date      23.08.14
 * @History 
  ************************************************************************  */
+#ifdef __2D__
+
 #include <Database.h>
 #include <SystemMatNSE2D.h>
 #include <SystemMatTNSE2D.h>
@@ -985,3 +987,4 @@ void TSystemMatTNSE2D::MeasureTNSEErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *
      
 }
     
+#endif // #ifdef __2D__

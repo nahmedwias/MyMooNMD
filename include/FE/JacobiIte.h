@@ -13,7 +13,13 @@
  #define __JACOBIITE__
 
 #include <ItMethod.h>
-#include <ParFECommunicator3D.h>
+#ifdef _MPI   
+   #ifdef __3D__
+    #include <ParFECommunicator3D.h>
+   #else
+    #include <ParFECommunicator2D.h>
+   #endif
+#endif 
 
 /** iteration method */
 class TJacobiIte : public TItMethod

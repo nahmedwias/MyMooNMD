@@ -49,7 +49,9 @@ class TJointEqN : public TJoint
     /** return whether this is an interior joint */
     virtual bool InnerJoint() const
     { return true; }
-
+    
+    //Destructor
+    virtual ~TJointEqN();   
 };
 
 #endif

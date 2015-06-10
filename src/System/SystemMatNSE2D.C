@@ -4,6 +4,9 @@
 * @date      23.08.14
 * @History 
  ************************************************************************  */
+
+#ifdef __2D__
+
 #include <Database.h>
 #include <SystemMatNSE2D.h>
 #include <SquareStructure2D.h>
@@ -590,3 +593,5 @@ void TSystemMatNSE2D::MeasureErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *Exact
      p_error[1] = errors[1];        
 }
     
+    
+#endif // #ifdef __3D__
