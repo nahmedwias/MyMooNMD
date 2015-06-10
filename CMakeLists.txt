@@ -35,15 +35,33 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # search the blas in the system, if available it will be default
 message("==================Searching BLAS in the System - begin===================================================")
-find_package(BLAS REQUIRED)
+find_package(BLAS)
 include_directories(${BLAS_INCLUDE_DIRS})
 if(CMAKE_VERBOSE_MAKEFILE)
   if(BLAS_FOUND)
     message("Available system BLAS_LIB =${BLAS_LIBRARIES}")
   elseif(NOT BLAS_FOUND)
-      message(FATAL_ERROR "BLAS_NOT_FOUND in your system")
+    message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
   endif()
 endif()
+
+
+if(NOT BLAS_FOUND)
+    message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
+    find_package(ACMLBLAS REQUIRED)
+    include_directories(${ACMLBLAS_INCLUDE_DIRS})
+    if(CMAKE_VERBOSE_MAKEFILE)
+    if(ACMLBLAS_FOUND)
+      message("Available system ACMLBLAS_LIB =${ACMLBLAS_LIBRARIES}")
+    elseif(NOT ACMLBLAS_FOUND)
+      message("ACMLBLAS_NOT_FOUND in ParMooN")
+    endif()
+endif()     
+      
+      
+endif()
+
+
 message("==================Searching BLAS in the System - end=====================================================")
 
 # search the LAPACK in the system, if available it will be default
