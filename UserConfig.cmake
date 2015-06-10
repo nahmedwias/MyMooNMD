@@ -24,12 +24,16 @@ set(PARALLEL_TYPE "MPI" CACHE STRING "select the parallel type")
 set(MORTAR " ")
 
 # set the path to save the exe file
-set(DESTDIR "${CMAKE_SOURCE_DIR}/../ParMooN_Output/cd3d" CACHE STRING "select the model")
+set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/cd3d" CACHE STRING "select the model")
 
 # ========================================================================================================================
 # no need to change anyting after this line
 # used only when ccmake or cmake-gui is used
 # ========================================================================================================================
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH})
+
 set_property(CACHE GEO PROPERTY STRINGS 1D 2D 3D ) 
 
 # selection of all main programs
@@ -61,17 +65,16 @@ set_property(CACHE PARALLEL_TYPE PROPERTY STRINGS SEQUENTIAL MPI OMPONLY HYBRID)
  endif()
 
  if("${ARCH}" STREQUAL "LINUX64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  -DTRILIBRARY -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fopenmp")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -std=c++11 -fopenmp")
  elseif("${ARCH}" STREQUAL "MAC64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack -Wmacro-redefined -Wdangling-else
-                         -Wcomment -Wparentheses-equality -Wdelete-non-virtual-dtor -Wnull-conversion")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack -Wmacro-redefined -Wdangling-else -Wcomment -Wparentheses-equality -Wdelete-non-virtual-dtor -Wnull-conversion")
  elseif("${ARCH}" STREQUAL "INTEL64")
    set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF}  ")
  elseif("${ARCH}" STREQUAL "TYRONE64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DTRILIBRARY -DREDUCED -DNO_TIMER -DMPICH_IGNORE_CXX_SEEK")
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER -DMPICH_IGNORE_CXX_SEEK")
  elseif("${ARCH}" STREQUAL "CRAY64")
    set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} ")  
  endif()
  
  
-set(PARMOON_CXX_DEF "-D__${GEO}__ -D__${ARCH}__ -DTETLIBRARY -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")
+set(PARMOON_CXX_DEF "-D__${GEO}__ -D__${ARCH}__ ${PARMOON_CXX_DEF} -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")

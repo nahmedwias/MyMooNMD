@@ -139,14 +139,14 @@ message("==================Searching TECPLOT in the System - end================
 
 # select the compiler type,
 # CMAKE_BUILD_TYPE [DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL]
-
-set(CMAKE_BUILD_TYPE MINSIZEREL CACHE STRING "options")
+set(CMAKE_BUILD_TYPE DEBUG CACHE STRING "options")
 set(PARMOON_INCLUDE )
 
 include (CMakeForceCompiler)
   set(CMAKE_SYSTEM_NAME ${ARCH})
   
 if("${ARCH}" STREQUAL "MAC64")
+
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
     find_path(MPI_CPATH   mpicc-mpich-mp)
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc-mpich-mp)
@@ -158,35 +158,29 @@ if("${ARCH}" STREQUAL "MAC64")
     find_path(CXXPATH Clang)  
     set(CMAKE_CXX_COMPILER ${CXXPATH}/Clang)  
   endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
-  
-  set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
-  set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
-  set(CMAKE_C_FLAGS_RELEASE "O3 ${PARMOON_CXX_DEF}")
-  set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}" )
-  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 ${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}") 
+ 
 elseif("${ARCH}" STREQUAL "LINUX64")
+
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
-    CMAKE_FORCE_C_COMPILER   (mpicc)
-    CMAKE_FORCE_CXX_COMPILER (mpicxx)
-  elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
-    CMAKE_FORCE_C_COMPILER   (gcc)
-    CMAKE_FORCE_CXX_COMPILER (g++)
-  endif()  
-  
-  set(CMAKE_C_FLAGS "-D__$(GEO)__  -std=c++11 -fopenmp")
-  set(CMAKE_C_FLAGS_DEBUG "-g -D__$(GEO)__ $(INC) -std=c++11 -fopenmp")
-  set(CMAKE_C_FLAGS_RELEASE "-O3 -D__$(GEO)__ -s $(INC) -std=c++11 -fopenmp")
-  set(CMAKE_CXX_FLAGS "-D__$(GEO)__ -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -D__$(GEO)__ -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64  -fopenmp")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -D__$(GEO)__ -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp") 
-  
+    find_path(MPI_CPATH   mpicc)
+    set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc)
+    find_path(MPI_CXXPATH   mpicxx)  
+    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx)      
+  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+    find_path(CPATH  gcc)
+    set(CMAKE_C_COMPILER ${CPATH}/gcc)
+    find_path(CXXPATH g++)  
+    set(CMAKE_CXX_COMPILER ${CXXPATH}/g++)  
+  endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 endif()
 
-
-     
-
-         
+  set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
+  set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
+  set(CMAKE_C_FLAGS_RELEASE "O3 -s  ${PARMOON_CXX_DEF}")
+  set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}" )
+  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s ${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}") 
+ 
 include_directories("${CMAKE_SOURCE_DIR}/include/General")
 include_directories("${CMAKE_SOURCE_DIR}/include/FE")
 include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
@@ -211,20 +205,31 @@ add_subdirectory(src/FE)
 add_subdirectory(src/System) 
 # add_subdirectory(src/PBE) 
 
-
-add_executable(parmoon_${PARALLEL_TYPE}  ${MODEL})
-
 if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
    add_subdirectory(src/Parallel) 
-   target_link_libraries(parmoon_${PARALLEL_TYPE} PRIVATE "par" "geo"  "fe" "gen"  "sys"
+endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+
+add_executable(parmoon_${PARALLEL_TYPE}.exe  ${MODEL})
+
+if( "${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID" )
+   target_link_libraries(parmoon_${PARALLEL_TYPE}.exe PRIVATE "par" "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} ${MUMPS_LIBRARIES} "mpi" "mpifort" "mpicxx")  
-elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
-   target_link_libraries(parmoon_${PARALLEL_TYPE} PRIVATE  "geo"  "fe" "gen"  "sys"
+elseif( "${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
+   target_link_libraries(parmoon_${PARALLEL_TYPE}.exe PRIVATE  "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} )
 endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 
+message("============================================================================================================"  )  
+message("GEO=${GEO}")
+message("MODEL=${MODEL}")
+message("ARCH=${ARCH}")
+message("PARALLEL_TYPE=${PARALLEL_TYPE}")
+message("C_COMPILER=${CMAKE_C_COMPILER}")
+message("CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+message("PARMOON_CXX_DEF=${PARMOON_CXX_DEF}")
+message("EXE_FILE=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/parmoon_${PARALLEL_TYPE}.exe")
 message("============================================================================================================"  )        
 message("Configuration for the ParMooN Version 1.1")  
 message("Author: Sashikumaar Ganesan")
