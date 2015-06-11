@@ -140,7 +140,7 @@ else
 endif
 
 ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  -L$(ACML_PATH) -lacml  -lacml_mp  -lgfortran -lrt
+BLAS_TYRONE64 =  $(ACML_PATH)/libacml.so    $(ACML_PATH)/libacml_mp.so  -lgfortran -lrt
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
