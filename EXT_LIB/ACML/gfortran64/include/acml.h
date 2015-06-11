@@ -1,5 +1,5 @@
 /*
- * ACML version 5.3.1 Copyright AMD,NAG 2003-2011
+ * ACML version 6.1.0 Copyright AMD,NAG 2003-2011
  */
 
 /*
@@ -2616,7 +2616,6 @@ extern void cunmhr_(char *side, char *trans, int *m, int *n, int *ilo, int *ihi,
 extern void cunmlq_(char *side, char *trans, int *m, int *n, int *k, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void cunmql_(char *side, char *trans, int *m, int *n, int *k, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void cunmqr_(char *side, char *trans, int *m, int *n, int *k, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int trans_len);
-extern void cunmr3_(char *side, char *trans, int *m, int *n, int *k, int *l, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *info, int side_len, int trans_len);
 extern void cunmrq_(char *side, char *trans, int *m, int *n, int *k, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void cunmrz_(char *side, char *trans, int *m, int *n, int *k, int *l, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void cunmtr_(char *side, char *uplo, char *trans, int *m, int *n, complex *a, int *lda, complex *tau, complex *c, int *ldc, complex *work, int *lwork, int *info, int side_len, int uplo_len, int trans_len);
@@ -3441,7 +3440,6 @@ extern void zunmhr_(char *side, char *trans, int *m, int *n, int *ilo, int *ihi,
 extern void zunmlq_(char *side, char *trans, int *m, int *n, int *k, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void zunmql_(char *side, char *trans, int *m, int *n, int *k, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void zunmqr_(char *side, char *trans, int *m, int *n, int *k, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int trans_len);
-extern void zunmr3_(char *side, char *trans, int *m, int *n, int *k, int *l, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *info, int side_len, int trans_len);
 extern void zunmrq_(char *side, char *trans, int *m, int *n, int *k, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void zunmrz_(char *side, char *trans, int *m, int *n, int *k, int *l, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int trans_len);
 extern void zunmtr_(char *side, char *uplo, char *trans, int *m, int *n, doublecomplex *a, int *lda, doublecomplex *tau, doublecomplex *c, int *ldc, doublecomplex *work, int *lwork, int *info, int side_len, int uplo_len, int trans_len);

@@ -52,7 +52,7 @@ endif
 #BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
 
 ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
-BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -lpthread
+BLAS_LINUX64 =  -L$(ACML_PATH) -lacml_LINUX64 -lacml_mp_LINUX64 -lgfortran
  
 
 ifeq ($(PARALLEL_TYPE), MPI)
@@ -140,7 +140,7 @@ else
 endif
 
 ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
+BLAS_TYRONE64 =  -L$(ACML_PATH) -lacml_LINUX64 -lacml_mp_LINUX64 -lgfortran -lrt
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
@@ -154,8 +154,6 @@ ifeq ($(PARALLEL_TYPE), MPI)
  
  else
 
-ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 = $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
 PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
  OMP_COMPILE_FLAGS_TYRONE64 = -fopenmp
 
