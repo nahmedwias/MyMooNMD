@@ -54,4 +54,4 @@ $(OUT): $(IN).C $(LIB_GEO) $(LIB_PAR) $(LIB_FE) $(LIB_GENERAL) \
 	 $(LIB_GEO) $(LIB_FE) $(LIB_REFINEMENT) $(LIB_GENERAL)\
    $(LIB_GEO) $(LIB_PBE) \
 	 $(UMFPACK) $(MUMPS_LIB) $(BLAS) $(TECPLOT) $(LIB_EXAMPLES)\
-	 EXT_LIB/GridGen/gridgen_$(MACH).o  $(LDFLAG) $(LM)
+	 EXT_LIB/GridGen/libgridgen_$(MACH).so  $(LDFLAG) $(LM)
