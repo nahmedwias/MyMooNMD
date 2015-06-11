@@ -52,7 +52,7 @@ endif
 #BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
 
 ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
-BLAS_LINUX64 =  -L$(ACML_PATH) -lacml_LINUX64 -lacml_mp_LINUX64 -lgfortran
+BLAS_LINUX64 =  -L$(ACML_PATH) -lacml  -lacml_mp  -lgfortran
  
 
 ifeq ($(PARALLEL_TYPE), MPI)
@@ -140,7 +140,7 @@ else
 endif
 
 ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  -L$(ACML_PATH) -lacml_LINUX64 -lacml_mp_LINUX64 -lgfortran -lrt
+BLAS_TYRONE64 =  -L$(ACML_PATH) -lacml  -lacml_mp  -lgfortran -lrt
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
