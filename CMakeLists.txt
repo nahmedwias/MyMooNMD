@@ -35,52 +35,38 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # search the blas in the system, if available it will be default
 message("==================Searching BLAS in the System - begin===================================================")
-find_package(BLAS)
-include_directories(${BLAS_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
-  if(BLAS_FOUND)
-    message("Available system BLAS_LIB =${BLAS_LIBRARIES}")
-  elseif(NOT BLAS_FOUND)
-    message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
-  endif()
-endif()
 
+if(USE_SYSTEM_BLAS)
+  find_package(BLAS)
+  include_directories(${BLAS_INCLUDE_DIRS})
+  if(CMAKE_VERBOSE_MAKEFILE)
+    if(BLAS_FOUND)
+      message("Available system BLAS_LIB =${BLAS_LIBRARIES}")
+    elseif(NOT BLAS_FOUND)
+      message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
+    endif()
+  endif()
+endif(USE_SYSTEM_BLAS)
 
 if(NOT BLAS_FOUND)
     message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
     find_package(ACMLBLAS REQUIRED)
     include_directories(${ACMLBLAS_INCLUDE_DIRS})
     if(CMAKE_VERBOSE_MAKEFILE)
-    if(ACMLBLAS_FOUND)
-      message("Available system ACMLBLAS_LIB =${ACMLBLAS_LIBRARIES}")
-    elseif(NOT ACMLBLAS_FOUND)
-      message("ACMLBLAS_NOT_FOUND in ParMooN")
-    endif()
-endif()     
-      
-      
-endif()
-
+      if(ACMLBLAS_FOUND)
+        message("Available system ACMLBLAS_LIB =${ACMLBLAS_LIBRARIES}")
+      elseif(NOT ACMLBLAS_FOUND)
+        message("ACMLBLAS_NOT_FOUND in ParMooN")
+      endif(ACMLBLAS_FOUND)
+    endif(CMAKE_VERBOSE_MAKEFILE)        
+endif(NOT BLAS_FOUND)
 
 message("==================Searching BLAS in the System - end=====================================================")
-
-# search the LAPACK in the system, if available it will be default
-message("==================Searching LAPACK in the System - begin===================================================")
-find_package(LAPACK REQUIRED)
-include_directories(${LAPACK_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
-  if(LAPACK_FOUND)
-    message("Available system LAPACK_LIB =${LAPACK_LIBRARIES}")
-  elseif(NOT LAPACK_FOUND)
-      message(FATAL_ERROR "LAPACK_NOT_FOUND in your system")
-  endif()
-endif()
-message("==================Searching LAPACK in the System - end=====================================================")
 
 
 # search the UMFPACK in the system, if available it wil be default
 message("==================Searching UMFPACK in the System - begin===================================================")
-find_package(UMFPACK COMPONENTS SCALAPACK LAPACK)
+find_package(UMFPACK)
 include_directories(${UMFPACK_INCLUDE_DIRS})
 if(CMAKE_VERBOSE_MAKEFILE)
   if(UMFPACK_FOUND)
@@ -92,6 +78,34 @@ endif()
 message("==================Searching UMFPACK in the System - end=====================================================")
 
 if("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+# search the LAPACK in the system, if available it will be default
+  message("==================Searching LAPACK in the System - begin===================================================")
+ if(USE_SYSTEM_LAPACK)  
+  find_package(LAPACK)
+  include_directories(${LAPACK_INCLUDE_DIRS})
+  if(CMAKE_VERBOSE_MAKEFILE)
+    if(LAPACK_FOUND)
+      message("Available system LAPACK_LIB =${LAPACK_LIBRARIES}")
+    elseif(NOT LAPACK_FOUND)
+        message(FATAL_ERROR "LAPACK_NOT_FOUND in your system")
+    endif(LAPACK_FOUND)
+  endif(CMAKE_VERBOSE_MAKEFILE)
+ endif(USE_SYSTEM_LAPACK)
+  
+  if(NOT LAPACK_FOUND)
+    message("LAPACK_NOT_FOUND in your system, Searching in ParMooN")
+    find_package(LAPACKLIB REQUIRED)
+#     include_directories(${ACMLBLAS_INCLUDE_DIRS})
+    if(CMAKE_VERBOSE_MAKEFILE)
+    if(LAPACK_FOUND)
+      message("Available system ACMLBLAS_LIB =${ACMLBLAS_LIBRARIES}")
+    elseif(NOT LAPACK_FOUND)
+      message("LAPACK_NOT_FOUND in ParMooN")
+    endif(LAPACK_FOUND)
+   endif(CMAKE_VERBOSE_MAKEFILE)   
+  endif(NOT LAPACK_FOUND)  
+message("==================Searching LAPACK in the System - end=====================================================")  
+
  # search the MUMPS in the system, if available it wil be default
  message("==================Searching MUMPS in the System - begin=====================================================")
  find_package(MUMPS)
@@ -190,7 +204,18 @@ elseif("${ARCH}" STREQUAL "LINUX64")
     find_path(CXXPATH g++)  
     set(CMAKE_CXX_COMPILER ${CXXPATH}/g++)  
   endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+  
+elseif("${ARCH}" STREQUAL "CRAY64")
+
+    find_path(CPATH cc)
+    set(CMAKE_C_COMPILER ${CPATH}/cc)
+    find_path(CXXPATH CC)  
+    set(CMAKE_CXX_COMPILER ${CXXPATH}/CC)  
+
 endif()
+
+
+
 
   set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
   set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
@@ -250,12 +275,14 @@ message("PARMOON_CXX_DEF=${PARMOON_CXX_DEF}")
 message("EXE_FILE=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/parmoon_${PARALLEL_TYPE}.exe")
 message("============================================================================================================"  )        
 message("Configuration for the ParMooN Version 1.1")  
-message("Author: Sashikumaar Ganesan")
-message("        Numerical Mathematics and Scientific Computing")
-message("        Supercomputer Edu. and Research Centre")
-message("        Indian Institute of Science")
-message("        Bangalore, India")  
-message("web:    www.serc.iisc.ernet.in/~sashi/") 
+message("Author : Sashikumaar Ganesan")
+message("         Numerical Mathematics and Scientific Computing")
+message("         Supercomputer Edu. and Research Centre")
+message("         Indian Institute of Science")
+message("         Bangalore, India")  
+message("Question: www.serc.iisc.ernet.in/~sashi/") 
 message("============================================================================================================"  ) 
+
+
 
 

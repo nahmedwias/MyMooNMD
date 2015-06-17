@@ -13,13 +13,13 @@ if(UMFPACK_INCLUDES AND UMFPACK_LIBRARIES)
 endif(UMFPACK_INCLUDES AND UMFPACK_LIBRARIES)
 
 if(NOT UMFPACK_FOUND)
- 
+ if(USE_SYSTEM_UMFPACK)   
   find_path(UMFPACK_INCLUDE_DIR   umfpack.h PATHS $ENV{UMFPACKDIR}/include ${CMAKE_INCLUDE_PATH})
   find_library(UMFPACK_LIBRARY NAMES umfpack PATHS $ENV{UMFPACKDIR}/lib ${CMAKE_LIBRARY_PATH})
   get_filename_component(UMFPACK_LIBDIR ${UMFPACK_LIBRARY} PATH)
   find_library(UMFPACK_LIBRARY_SUITESE NAMES suitesparseconfig PATHS ${UMFPACK_LIBDIR})
   find_library(UMFPACK_LIBRARY_AMD NAMES amd PATHS ${UMFPACK_LIBDIR})
-       
+ endif(USE_SYSTEM_UMFPACK)      
   if(NOT UMFPACK_LIBRARY)
     message("UMFPACK not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
     find_path(UMFPACK_INCLUDE_DIR  umfpack.h PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Include)

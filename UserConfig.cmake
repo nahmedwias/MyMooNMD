@@ -26,6 +26,15 @@ set(MORTAR " ")
 # set the path to save the exe file
 set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/cd2d" CACHE STRING "select the model")
 
+# set FALSE, if you want to use libs provided in PARMOON 
+# if you set TRUE, it will search in all you lib paths and if not found, PARMOON libs will be used
+set(USE_SYSTEM_BLAS TRUE)
+set(USE_SYSTEM_UMFPACK TRUE)
+set(USE_SYSTEM_LAPACK TRUE)
+set(USE_SYSTEM_MUMPS TRUE)
+set(USE_SYSTEM_GRIDGEN TRUE)
+set(USE_SYSTEM_TETGEN TRUE)
+
 # ========================================================================================================================
 # no need to change anyting after this line
 # used only when ccmake or cmake-gui is used
@@ -73,7 +82,7 @@ set_property(CACHE PARALLEL_TYPE PROPERTY STRINGS SEQUENTIAL MPI OMPONLY HYBRID)
  elseif("${ARCH}" STREQUAL "TYRONE64")
    set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER -DMPICH_IGNORE_CXX_SEEK")
  elseif("${ARCH}" STREQUAL "CRAY64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} ")  
+   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DMPICH_IGNORE_CXX_SEEK ")  
  endif()
  
  
