@@ -171,7 +171,13 @@ unsigned int SystemMatDarcy2D::n_total_cols() const
        + this->SystemMat2D::rect_matrices[0]->GetN_Columns();
 }
 
-
+unsigned int SystemMatDarcy2D::n_total_entries() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Entries()
+      + this->SystemMat2D::sq_matrices[1]->GetN_Entries()
+      + this->SystemMat2D::rect_matrices[0]->GetN_Entries()
+      + this->SystemMat2D::rect_matrices[1]->GetN_Entries();
+}
 
 
 
