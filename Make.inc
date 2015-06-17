@@ -139,9 +139,10 @@ else
   CC_TYRONE64            = mpicc
 endif
 
-ACML_PATH = EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  $(ACML_PATH)/libacml.so    $(ACML_PATH)/libacml_mp.so  -lgfortran -lrt
-
+ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
+BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran  -lrt
+ 
+ 
 ifeq ($(PARALLEL_TYPE), MPI)
 
   BLACS_PATH = EXT_LIB/MPIBLACS

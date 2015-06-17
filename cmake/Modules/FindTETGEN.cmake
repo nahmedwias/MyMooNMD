@@ -13,10 +13,12 @@ if(TETGEN_INCLUDES AND TETGEN_LIBRARIES)
 endif(TETGEN_INCLUDES AND TETGEN_LIBRARIES)
 
 if(NOT TETGEN_FOUND)
+ if(USE_SYSTEM_TETGEN)  
   find_path(TETGEN_INCLUDE_DIR   tetgen.h PATHS $ENV{TETGENDIR}/include ${CMAKE_INCLUDE_PATH})
   find_library(TETGEN_LIBRARY NAMES tet PATHS $ENV{TETGENDIR}/lib ${CMAKE_LIBRARY_PATH})
   get_filename_component(TETGEN_LIBDIR ${TETGEN_LIBRARY} PATH)
-     
+ endif(USE_SYSTEM_TETGEN)   
+ 
   if(NOT TETGEN_LIBRARY)
     message("TETGEN not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
     find_path(TETGEN_INCLUDE_DIR  tetgen.h PATHS ${PARMOON_EXTLIB_PATH}/tetgen)

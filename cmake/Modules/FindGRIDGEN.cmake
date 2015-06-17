@@ -13,10 +13,11 @@ if(GRIDGEN_INCLUDES AND GRIDGEN_LIBRARIES)
 endif(GRIDGEN_INCLUDES AND GRIDGEN_LIBRARIES)
 
 if(NOT GRIDGEN_FOUND)
+ if(USE_SYSTEM_GRIDGEN) 
   find_path(GRIDGEN_INCLUDE_DIR   gridgen.h PATHS $ENV{GRIDGENDIR}/include ${CMAKE_INCLUDE_PATH})
   find_library(GRIDGEN_LIBRARY NAMES gridgen PATHS $ENV{GRIDGENDIR}/lib ${CMAKE_LIBRARY_PATH})
   get_filename_component(GRIDGEN_LIBDIR ${GRIDGEN_LIBRARY} PATH)
-     
+ endif(USE_SYSTEM_GRIDGEN)    
   if(NOT GRIDGEN_LIBRARY)
     message("GRIDGEN not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
     find_path(GRIDGEN_INCLUDE_DIR  gridgen.h PATHS ${PARMOON_EXTLIB_PATH}/GridGen)
