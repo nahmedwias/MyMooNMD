@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
     cd2d.solve();
     cd2d.output(curr_level);
     
+    if(TDatabase::ParamDB->ESTIMATE_ERRORS)
     {
       eta_K = new double[coll->GetN_Cells()];
       MultiIndex2D Derivatives_All[5] = { D10, D01, D00, D20, D02 };
