@@ -22,7 +22,7 @@
 class SystemMat2D
 {
   protected:
-
+    
     /** @brief vector of finite element spaces 
      * 
      * Each space appears exactly once in this vector. Typically this vector has
@@ -32,7 +32,7 @@ class SystemMat2D
     
     /** @brief vector of the square matrices */
     std::vector<TSquareMatrix2D*> sq_matrices;
-  
+    
     /** @brief vector of the rectangular matrices */
     std::vector<TMatrix2D*> rect_matrices;
     
@@ -40,20 +40,37 @@ class SystemMat2D
     DefectProc *defect;
     
   public:
-    /** @brief standard constructor
+    /** 
+     * @brief standard constructor
      * 
      * This initializes the vectors with nullptr. The vectors are filled within
      * the derived classes. 
      */
-    SystemMat2D(unsigned int n_spaces, unsigned int n_sq_matrices, 
+    SystemMat2D(unsigned int n_spaces, unsigned int n_sq_matrices,
                 unsigned int n_rect_matrices)
-     : fe_spaces(n_spaces, nullptr), sq_matrices(n_sq_matrices, nullptr),
-       rect_matrices(n_rect_matrices, nullptr), defect(nullptr)
+        : fe_spaces(n_spaces, nullptr), sq_matrices(n_sq_matrices, nullptr),
+          rect_matrices(n_rect_matrices, nullptr), defect(nullptr)
     {};
+    
+    /** 
+     * @brief copy constructor
+     * 
+     * The constructor copies the structure (number of matrices, spaces, etc.)
+     * of the input matrix as well as the structure of the individual sub 
+     * matrices. BUT the matrix entries are not copied!
+     * 
+     * Note that the pointers to the finite element spaces are copied, while new
+     * matrices are created using the same structures as in the given 
+     * SystemMat2D.
+     *
+     * @param mat input block matrix
+     */
+    SystemMat2D(const SystemMat2D & mat);
     
     virtual ~SystemMat2D();
     
-    /** @brief adding a scaled matrix to this matrix
+    /** 
+     * @brief adding a scaled matrix to this matrix
      * 
      * The summation is index-wise, i.e. M(i,j) += factor*A(i.j), where M is 
      * this matrix.
@@ -66,7 +83,8 @@ class SystemMat2D
      */
     void add_active(const SystemMat2D &A, double factor = 1.0);
     
-    /** @brief adding a scaled matrix to this matrix
+    /** 
+     * @brief adding a scaled matrix to this matrix
      * 
      * The summation is index-wise, i.e. M(i,j) += factor*A(i.j), where M is 
      * this matrix. 
@@ -75,21 +93,24 @@ class SystemMat2D
      * matrix and A.
      */
     void add(const SystemMat2D &A, double factor = 1.0);
-
-    /** @brief scale this matrix by a factor
+    
+    /** 
+     * @brief scale this matrix by a factor
      * 
      * Only rows corresponding to active degrees of freedom are scaled. Other 
      * rows remain unchanged.
      */
     void scale_active(double factor);
     
-    /** @brief scale this matrix
+    /** 
+     * @brief scale this matrix
      * 
      * That means for each submatrix all entries are scaled.
      */
     void scale(double factor);
     
-    /** @brief compute y = factor* A*x 
+    /** 
+     * @brief compute y = factor* A*x 
      *
      * write the matrix-vector product "Ax" scaled by a factor to y. 
      * "A" is this matrix. Both "A" and "x" remain unchanged. If the factor is
@@ -102,7 +123,8 @@ class SystemMat2D
      */
     virtual void apply(const double *x, double *y, double factor = 1.0) const;
     
-    /** @brief compute y = y + a * Ax 
+    /** 
+     * @brief compute y = y + a * Ax 
      *
      * add the matrix-vector product "Ax", scaled by "a", to y.
      * "A" is this matrix. Both "A" and "x" remain unchanged. If the factor is
@@ -118,12 +140,12 @@ class SystemMat2D
                                   double factor = 1.0) const;
     
     // some getters
-    const TFESpace2D* get_space(unsigned int i = 0) const 
+    const TFESpace2D* get_space(unsigned int i = 0) const
     { return fe_spaces.at(i); }
     
     const TSquareMatrix2D* get_square_matrix(unsigned int i = 0) const
     { return sq_matrices.at(i); }
-    TSquareMatrix2D* get_square_matrix(unsigned int i = 0) 
+    TSquareMatrix2D* get_square_matrix(unsigned int i = 0)
     { return sq_matrices.at(i); }
     
     const TMatrix2D* get_rectangular_matrix(unsigned int i = 0) const
@@ -136,7 +158,18 @@ class SystemMat2D
     virtual unsigned int n_cols() const; // number of block columns
     virtual unsigned int n_total_rows() const;//total number of rows(>n_rows)
     virtual unsigned int n_total_cols() const;//total number of columns(>n_cols)
-    unsigned int n_total_entries() const; // total number of entries
+    virtual unsigned int n_total_entries() const; // total number of entries
+    
+    /**
+     * @brief copy all entries of all submatrices from 'm' to this SystemMat2D
+     *
+     * This is only possible if the other SystemMat2D 'm' has the same
+     * structure, i.e. the same number of matrices and the matrices have the 
+     * same sparsity structure. Otherwise the program will throw or terminate.
+     *
+     * @param m other SystemMat2D to be copied
+     */
+    SystemMat2D & operator=(SystemMat2D const &m);
 };
 
 #endif // __SYSTEMMAT2D__
