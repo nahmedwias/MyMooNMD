@@ -285,16 +285,16 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   OutPut(" t (total time taken for FP) : " << setw(6) << tt <<endl);
   OutPut(" t/cyc (time taken per FP cycle) : " << setw(6) << (t2-t1)/i <<endl<<endl);
 
-  OutPut(" tSmoother: " << setw(6) << tSmoother <<endl);
-  OutPut(" tCyc (time taken for all MG cycles in FP) : " << setw(6) << tCyc <<endl<<endl);
+  //OutPut(" tSmoother: " << setw(6) << tSmoother <<endl);
+  //OutPut(" tCyc (time taken for all MG cycles in FP) : " << setw(6) << tCyc <<endl<<endl);
 
   OutPut(" res : "  << setw(8) << res <<endl);
   OutPut(" rate: " << pow(res/res0,1.0/i) << endl<<endl);
 
-  OutPut(" tSD (time taken for scalar defect computation): " << setw(6) << tS <<endl);
-  OutPut(" tDef (time taken for defect computation): " << setw(6) << tD <<endl <<endl);
-  OutPut(" tP (Prolongation): " << setw(6) << tP <<endl);
-  OutPut(" tR (Restriction) : " << setw(6) << tR<<endl);
+  //OutPut(" tSD (time taken for scalar defect computation): " << setw(6) << tS <<endl);
+  //OutPut(" tDef (time taken for defect computation): " << setw(6) << tD <<endl <<endl);
+  //OutPut(" tP (Prolongation): " << setw(6) << tP <<endl);
+  //OutPut(" tR (Restriction) : " << setw(6) << tR<<endl);
   OutPut("----------------------------------------------------------------------------------------"<<endl);
   }
   // iteration_cnt=i;

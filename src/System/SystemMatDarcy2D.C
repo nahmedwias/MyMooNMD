@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatDarcy2D
+* @brief     source file for SystemMatDarcy2D
 * @author    Ulrich Wilbrandt,
 * @date      15.03.15
  ************************************************************************  */
@@ -17,11 +17,13 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D **fespaces)
+SystemMatDarcy2D::SystemMatDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
+                                     BoundValueFunct2D **BoundValue)
+ : SystemMat2D(2,2,2)
 {
   //store the FEspace
-  fe_spaces[0] = fespaces[0]; // velocity
-  fe_spaces[1] = fespaces[1]; // pressure
+  this->SystemMat2D::fe_spaces[0] = velocity;
+  this->SystemMat2D::fe_spaces[1] = pressure;
   
   // build matrices
   // first build matrix structures
@@ -36,55 +38,50 @@ TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D **fespaces)
   TStructure2D *structureBT = new TStructure2D(fe_spaces[0], fe_spaces[1]);
   
   /** create the velocity-velocity coupling matrix */
-  sq_matrices[0] = new TSquareMatrix2D(sqstructureA);
+  this->SystemMat2D::sq_matrices[0] = new TSquareMatrix2D(sqstructureA);
   /** create the pressure-pressure coupling matrix */
-  sq_matrices[1] = new TSquareMatrix2D(sqstructureC);
+  this->SystemMat2D::sq_matrices[1] = new TSquareMatrix2D(sqstructureC);
   /** create velocity-pressure and pressure-velocity coupling matrices */
-  rect_matrices[0] = new TMatrix2D(structureBT);
-  rect_matrices[1] = new TMatrix2D(structureB);
+  this->SystemMat2D::rect_matrices[0] = new TMatrix2D(structureBT);
+  this->SystemMat2D::rect_matrices[1] = new TMatrix2D(structureB);
   
-  N_Matrices = 4;
+  // store the boundary conditions and boundary data
+  this->BoundaryConditions[1] = fe_spaces[1]->GetBoundCondition();
+  this->BoundaryConditions[0] = fe_spaces[0]->GetBoundCondition();
+  this->BoundaryValues[0] = BoundValue[0];
+  this->BoundaryValues[1] = BoundValue[1];
+  
+  this->SystemMat2D::defect = NULL; // to be implemented
 }
 
-TSystemMatDarcy2D::~TSystemMatDarcy2D()
+SystemMatDarcy2D::~SystemMatDarcy2D()
 {
-  delete sq_matrices[0]->GetStructure();
-  delete sq_matrices[1]->GetStructure();
-  delete rect_matrices[0]->GetStructure();
-  delete rect_matrices[1]->GetStructure();
-  delete sq_matrices[0];
-  delete sq_matrices[1];
-  delete rect_matrices[0];
-  delete rect_matrices[1];
+  delete this->SystemMat2D::sq_matrices[0]->GetStructure();
+  delete this->SystemMat2D::sq_matrices[1]->GetStructure();
+  delete this->SystemMat2D::rect_matrices[0]->GetStructure();
+  delete this->SystemMat2D::rect_matrices[1]->GetStructure();
+  delete this->SystemMat2D::sq_matrices[0];
+  delete this->SystemMat2D::sq_matrices[1];
+  delete this->SystemMat2D::rect_matrices[0];
+  delete this->SystemMat2D::rect_matrices[1];
 }
-  
-  
-void TSystemMatDarcy2D::Init(BoundCondFunct2D **BoundCond, 
-                             BoundValueFunct2D **BoundValue)
-{
-  BoundaryConditions[0] =  BoundCond[0];
-  BoundaryConditions[1] =  BoundCond[1];
-  BoundaryValues[0] = BoundValue[0];
-  BoundaryValues[1] = BoundValue[1];
-} // TSystemMatDarcy2D::Init
 
-
-void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
+void SystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
                                  double *rhs)
 {
-  int N_U = fe_spaces[0]->GetN_DegreesOfFreedom();
-  int N_U_Active = fe_spaces[0]->GetActiveBound();
-  int N_P = fe_spaces[1]->GetN_DegreesOfFreedom();
+  int N_U = this->SystemMat2D::fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_U_Active = this->SystemMat2D::fe_spaces[0]->GetActiveBound();
+  int N_P = this->SystemMat2D::fe_spaces[1]->GetN_DegreesOfFreedom();
   int N_DOF = N_U + N_P;
   
   memset(rhs, 0, N_DOF*SizeOfDouble);
   double *rhs_blocks[2] = { rhs, rhs+N_U };
  
   // initialize matrices
-  sq_matrices[0]->Reset();
-  sq_matrices[1]->Reset();
-  rect_matrices[0]->Reset();
-  rect_matrices[1]->Reset();
+  this->SystemMat2D::sq_matrices[0]->Reset();
+  this->SystemMat2D::sq_matrices[1]->Reset();
+  this->SystemMat2D::rect_matrices[0]->Reset();
+  this->SystemMat2D::rect_matrices[1]->Reset();
   
   MultiIndex2D derivatives[6] = { D00, D00, D10, D01, D10, D01 };
   int spacesNumbers[6] = { 0, 1, 0, 0, 1, 1};
@@ -97,19 +94,19 @@ void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
                                spacesNumbers, 4, 2, rowSpace, columnSpace,
                                rhsSpace, BilinearAssembleDarcyGalerkin,
                                la.GetCoeffFct(), NULL);
-  Assemble2D_VectFE(2, fe_spaces, 2, sq_matrices, 2, rect_matrices, 2, 
-                    rhs_blocks, fe_spaces, &discreteForm, BoundaryConditions,
-                    BoundaryValues);
+  Assemble2D_VectFE(2, &fe_spaces[0], 2, &sq_matrices[0], 2, &rect_matrices[0],
+                    2, rhs_blocks, &fe_spaces[0], &discreteForm, 
+                    BoundaryConditions, BoundaryValues);
   
-    
+  
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
   memcpy(sol+N_U_Active, rhs+N_U_Active, (N_U-N_U_Active)*SizeOfDouble);
-} // void TSystemMatDarcy2D::Assemble
+} // void SystemMatDarcy2D::Assemble
 
 
-void TSystemMatDarcy2D::Solve(double *sol, double *rhs)
-{ 
+void SystemMatDarcy2D::Solve(double *sol, double *rhs)
+{
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
    case AMG_SOLVE:
@@ -123,19 +120,64 @@ void TSystemMatDarcy2D::Solve(double *sol, double *rhs)
    case DIRECT:
      DirectSolver(sq_matrices[0], sq_matrices[1], rect_matrices[0], 
                   rect_matrices[1], rhs, sol);
-   break;      
+   break;
  
    default:
-     OutPut("Unknown Solver" << endl);
-     exit(4711);;
+     OutPut("Unknown Solver\n");
+     throw("Unknown Solver");
   }
 }
 
+void SystemMatDarcy2D::apply(const double *x, double *y, double factor) const
+{
+  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows * SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
+}
 
+void SystemMatDarcy2D::apply_scaled_add(const double *x, double *y,
+                                  double factor) const
+{
+  // number of velocity degrees of freedom
+  unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  
+  this->SystemMat2D::sq_matrices[0]->multiply(  x,     y,     factor);
+  this->SystemMat2D::rect_matrices[0]->multiply(x+n_v, y,     factor);
+  
+  this->SystemMat2D::rect_matrices[1]->multiply(x,     y+n_v, factor);
+  this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v, y+n_v, factor);
+}
 
+unsigned int SystemMatDarcy2D::n_rows() const
+{
+  return 2;
+}
 
+unsigned int SystemMatDarcy2D::n_cols() const
+{
+  return 2;
+}
 
+unsigned int SystemMatDarcy2D::n_total_rows() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Rows() 
+       + this->SystemMat2D::rect_matrices[1]->GetN_Rows();
+}
 
+unsigned int SystemMatDarcy2D::n_total_cols() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Columns() 
+       + this->SystemMat2D::rect_matrices[0]->GetN_Columns();
+}
+
+unsigned int SystemMatDarcy2D::n_total_entries() const
+{
+  return this->SystemMat2D::sq_matrices[0]->GetN_Entries()
+      + this->SystemMat2D::sq_matrices[1]->GetN_Entries()
+      + this->SystemMat2D::rect_matrices[0]->GetN_Entries()
+      + this->SystemMat2D::rect_matrices[1]->GetN_Entries();
+}
 
 
 

@@ -8,23 +8,23 @@
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
 
 # selection of dimension (2D 3D)
-set(GEO "3D" CACHE STRING "Change GEO, to select the Dimensio of the problem")
+set(GEO "2D" CACHE STRING "Change GEO, to select the Dimensio of the problem")
 
 # select this line accordingly to include your main program
 # set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
-set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
+set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
 
 # selection of architect type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
-set(ARCH "LINUX64" CACHE STRING "select the machine type")  
+set(ARCH "MAC64" CACHE STRING "select the machine type")  
 
 #  selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
-set(PARALLEL_TYPE "MPI" CACHE STRING "select the parallel type")
+set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
 
 #  set MORTAR, if needed
 set(MORTAR " ")
 
 # set the path to save the exe file
-set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/cd3d" CACHE STRING "select the model")
+set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/cd2d" CACHE STRING "select the model")
 
 # ========================================================================================================================
 # no need to change anyting after this line

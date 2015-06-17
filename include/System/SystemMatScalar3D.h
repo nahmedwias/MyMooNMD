@@ -11,8 +11,6 @@
 #ifndef __SYSTEMMATSCALAR3D__
 #define __SYSTEMMATSCALAR3D__
 
-#include <SquareMatrix3D.h>
-#include <ItMethod.h>
 #include <AssembleMat3D.h>
 
 #ifdef _MPI
@@ -22,98 +20,66 @@
 
 #include <ParDirectSolver.h>
 #endif
+#include <SystemMat3D.h>
+#include <ItMethod.h>
 
 #ifdef _OMPONLY
 #include <ParDirectSolver.h>
 #endif
 
 /** class for 3D scalar system matrix */
-class TSystemMatScalar3D
+class TSystemMatScalar3D : public SystemMat3D
 {
   protected:
-    /** own fespace and parallel FE Communicator */
-#ifdef _MPI
-    TParFEMapper3D **ParMapper;
-    TParFECommunicator3D **ParComm;
-    MPI_Comm Comm;
-    TParDirectSolver *DS;
-#endif
-    
-#ifdef _OMPONLY
-    TParDirectSolver *DS;
-#endif
-  
-    /** Number of multigrid levels */
-    int N_Levels;
-    
-    /** starting level for the solver, e.g. Start_Level = N_Levels-1 for direct solver */
-    int Start_Level;    
-    
-    /** fespace */
-    TFESpace3D **FeSpaces, *fesp[1], *ferhs[1];
+    /** Boundary condition and Boundary Value */
+    BoundCondFunct3D *BoundaryConditions[1];
     
     /** Boundary condition and Boundary Value */
-    BoundCondFunct3D *BoundaryConditions[1]; 
+    BoundValueFunct3D *BoundaryValues[1];
     
-    /** Boundary condition and Boundary Value */
-    BoundValueFunct3D *BoundaryValues[1];    
-    
-    /** N_DOF at fine level */
-    int N_DOF;
-    
-    /** Discretization type */
-    int Disctype;
-    
-    /** SOLVER type */
-    int SOLVER;
-       
-    /** number of matrices in the system matrix*/
-    int N_Matrices;
-
     /** instance of the Assemble class */
     TAssembleMat3D **AMatRhsAssemble;
     
-    /** sqstructure of the system matrix */
-    TSquareStructure3D **sqstructure;
-
-    /** A is the stiffness/system mat for stationary problem   */
-    TSquareMatrix3D **sqmatrixA, *SQMATRICES[1];
-    TSquareMatrix **sqmatrices;
-        
-    /** Discrete form for the equation */
-    TDiscreteForm3D *DiscreteFormARhs;
-    
-    /** rhs for assemble */
-    double **SolArray, **RhsArray, *RHSs[1];
-    
-   /** variables for multigrid */
-    double Parameters[2], N_aux, *Itmethod_sol, *Itmethod_rhs;
-    TMultiGrid3D *MG;
-    TMGLevel3D *MGLevel;
-    TItMethod *Itmethod, *prec;
-   
   public:
     /** Constructor*/
-  TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
+    TSystemMatScalar3D(TFESpace3D *fespace);
     
     /** destrcutor */
     ~TSystemMatScalar3D();
     
     /** Initilize the discrete forms and the matrices */
-    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
-              TAuxParam3D *aux);
- 
-    /** assemble the system matrix */
-    void Assemble();
-
-    /** solve the system matrix */
-    void  Solve(double *sol, double *rhs);
+    void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond,
+              BoundValueFunct3D *BoundValue);
     
-#ifdef _MPI
-    TParFECommunicator3D *Get_ParComm(int level){
-      return ParComm[level];
-    }
-#endif
+    /** assemble the system matrix */
+    void Assemble(CoeffFct3D *BilinearCoeffs, double *sol, double *rhs);
+    
+    /** @brief compute y = factor* A*x 
+     *
+     * write the matrix-vector product "Ax" scaled by a factor to y. 
+     * "A" is this matrix. Both "A" and "x" remain unchanged. If the factor is
+     * 0.0, the vector y is only reset without performing the actual 
+     * multiplication.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling factor, default to 1.0
+     */
+    void apply(const double *x, double *y, double factor = 1.0) const;
+
+    /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y.
+     * "A" is this matrix.
+     * 
+     * This function can be used to compute the residual r = b - Ax.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void apply_scaled_add(const double *x, double *y, double factor = 1.0)
+      const;
 };
 
 #endif

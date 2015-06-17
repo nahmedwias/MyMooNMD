@@ -52,7 +52,7 @@ class TIsoInterfaceJoint : public TInterfaceJoint
     void GeneratemidVert(int n_vertices, double*X, double*Y);
     
     // Destructor
-    virtual ~TIsoInterfaceJoint();
+    virtual ~TIsoInterfaceJoint(){};
        
 };
 

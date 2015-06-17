@@ -18,310 +18,222 @@
 #include <stdlib.h>
 #include <string.h>
 
-TSystemMatTimeScalar2D::TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype, int solver): TSystemMatScalar2D(fespace,  disctype, solver)
+TSystemMatTimeScalar2D::TSystemMatTimeScalar2D(TFESpace2D *fespace)
+ : TSystemMatScalar2D(fespace)
 {
-  /** need it for solver */
-  sqmatrices = (TSquareMatrix **)SQMATRICES;
-  
   /** M mass matrix */
-  sqmatrixM = new TSquareMatrix2D(sqstructure);  
-  N_Matrices++;
+  this->sqmatrixM = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
   
   /** working rhs, used in AssembleSystMat() */
-  int N_DOF = FeSpace->GetN_DegreesOfFreedom(); 
+  const int N_DOF = this->fe_spaces[0]->GetN_DegreesOfFreedom(); 
   B = new double[N_DOF];
   defect = new double[N_DOF];
   
   gamma =0.;
   
   /** time-consistent part of the SUPG matrix */
-  if(Disctype==SDFEM || Disctype==SUPG)
-   {
-    sqmatrixS = new TSquareMatrix2D(sqstructure); 
-    N_Matrices++;
+  if(TDatabase::ParamDB->DISCTYPE==SDFEM || TDatabase::ParamDB->DISCTYPE==SUPG)
+  {
+    this->sqmatrixS = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure());
     
-    sqmatrixK = new TSquareMatrix2D(sqstructure); 
-    N_Matrices++; 
-   }
-   
-  SystMatAssembled  = FALSE;
+    this->sqmatrixK = new TSquareMatrix2D(this->sq_matrices[0]->GetStructure()); 
+  }
+  
+  this->SystMatAssembled = false;
 } // constructor
 
 
 TSystemMatTimeScalar2D::~TSystemMatTimeScalar2D()
 {
-  delete sqstructure;
-  delete sqmatrixA; 
+  delete [] B;
+  delete [] defect;
   
   delete sqmatrixM;
-  if(Disctype==SDFEM || Disctype==SUPG)
-   {
-     delete sqmatrixS;
-     delete sqmatrixK;    
-   }
+  
+  if(TDatabase::ParamDB->DISCTYPE==SDFEM || TDatabase::ParamDB->DISCTYPE==SUPG)
+  {
+    delete sqmatrixS;
+    delete sqmatrixK;
+  }
 }
 
 
-void TSystemMatTimeScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
+void TSystemMatTimeScalar2D::Init(CoeffFct2D *BilinearCoeffs, 
+                                  BoundCondFunct2D *BoundCond,
+                                  BoundValueFunct2D *BoundValue)
 {
-  BoundaryConditions[0] =  BoundCond;
+  BoundaryConditions[0] = BoundCond;
   BoundaryValues[0] = BoundValue;
-    
-  TDiscreteForm2D *DiscreteFormMRhs_Galerkin;
-  TDiscreteForm2D *DiscreteFormARhs_Galerkin; 
-  TDiscreteForm2D *DiscreteFormMRhs_SUPG;
-  TDiscreteForm2D *DiscreteFormARhs_SUPG;
-
-  
-  InitializeDiscreteFormsScalar(DiscreteFormMRhs_Galerkin, DiscreteFormARhs_Galerkin, DiscreteFormMRhs_SUPG,
-                                  DiscreteFormARhs_SUPG, BilinearCoeffs);
-  
-    switch(Disctype)
-     {
-      case GALERKIN:
-      case LOCAL_PROJECTION:
-           DiscreteFormARhs = DiscreteFormARhs_Galerkin;
-           DiscreteFormMRhs = DiscreteFormMRhs_Galerkin;
-      break;
-      
-      case SUPG:
-           DiscreteFormARhs = DiscreteFormARhs_SUPG;
-           DiscreteFormMRhs = DiscreteFormMRhs_SUPG;
-      break;
-      
-      default:
-            OutPut("Unknown DISCTYPE" << endl);
-            exit(4711);;
-     }  
-       
-  
 } // Init
 
 
-void TSystemMatTimeScalar2D::AssembleMRhs(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemMatTimeScalar2D::AssembleMRhs(LocalAssembling2D& la, double *sol,
+                                          double *rhs)
 {
-  int N_DOF, N_Active, N_SquareMatrices;
-  double *RHSs[1];
- 
-
-  TFESpace2D *fesp[1], *ferhs[1];
-//   TSquareMatrix2D *SQMATRICES[2];
-
+  TFESpace2D* space = this->fe_spaces[0];
+  int N_DOF = space->GetN_DegreesOfFreedom();
+  int N_Active = space->GetActiveBound();
+  //int N_DirichletDof = N_DOF - N_Active;
     
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();
-//     N_DirichletDof = N_DOF - N_Active;
-    
-    RHSs[0] = rhs;
-    memset(rhs, 0, N_DOF*SizeOfDouble);
+  memset(rhs, 0, N_DOF*SizeOfDouble);
   
-    fesp[0] = FeSpace;
-    ferhs[0] = FeSpace;
+  // initialize matrices
+  sqmatrixM->Reset();
+  TSquareMatrix2D *SQMATRICES[2] = { sqmatrixM, NULL };
+  int N_SquareMatrices = 1;
+  
+  if(TDatabase::ParamDB->DISCTYPE == SDFEM)
+  {
+    sqmatrixS->Reset();
+    SQMATRICES[1] = sqmatrixS;
+    N_SquareMatrices = 2;  
+  }
     
-    // initialize matrices
-    SQMATRICES[0] = sqmatrixM;
-    SQMATRICES[0]->Reset();    
-    N_SquareMatrices =1;
-    
-   if(Disctype == SDFEM)
-    {
-     N_SquareMatrices = 2;  
-     SQMATRICES[1] = sqmatrixS;
-     SQMATRICES[1]->Reset();  
-    }      
-    
-    if(aux==NULL)
-     { aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
-    
-    // assemble
-    Assemble2D(1, fesp,
-               N_SquareMatrices, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormMRhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
+  // assemble
+  Assemble2D(1, &space, N_SquareMatrices, SQMATRICES, 0, NULL, 1, &rhs, 
+             &space, BoundaryConditions, BoundaryValues, la);
      
-      // copy Dirichlet values from rhs into sol
-      memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
-      
+  // copy Dirichlet values from rhs into sol
+  memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);
 } // TSystemMatScalar2D::AssembleMRhs 
 
 
 
-void TSystemMatTimeScalar2D::AssembleARhs(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemMatTimeScalar2D::AssembleARhs(LocalAssembling2D& la, double *sol,
+                                          double *rhs)
 {
-  int N_DOF, N_Active, N_SquareMatrices;
-  double *RHSs[1];
- 
-
-  TFESpace2D *fesp[1], *ferhs[1];
-//   TSquareMatrix2D *SQMATRICES[2];
-
-//     BoundCondFunct2D *BoundaryConditions[1] = { BoundaryCond };
-//     BoundValueFunct2D *BoundaryValues[1] = { BoundaryValue };
-    
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();
-    
-    RHSs[0] = rhs;
-    memset(rhs, 0, N_DOF*SizeOfDouble);
+  //BoundCondFunct2D *BoundaryConditions[1] = { BoundaryCond };
+  //BoundValueFunct2D *BoundaryValues[1] = { BoundaryValue };
+  TFESpace2D* space = this->fe_spaces[0];
   
-    fesp[0] = FeSpace;
-    ferhs[0] = FeSpace;
-    
-    // initialize matrices
-    SQMATRICES[0] = sqmatrixA;
-    SQMATRICES[0]->Reset();    
-    N_SquareMatrices =1;
-    
-   if(Disctype == SDFEM)
-    {
-     N_SquareMatrices = 2;  
-     SQMATRICES[1] = sqmatrixK;
-     SQMATRICES[1]->Reset();  
-    }      
-    
-    if(aux==NULL)
-     { aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
-    
-    // assemble
-    Assemble2D(1, fesp,
-               N_SquareMatrices, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormARhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
-     
-      // copy Dirichlet values from rhs into sol
-      memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
-      
+  int N_DOF = space->GetN_DegreesOfFreedom();
+  int N_Active =  space->GetActiveBound();
+  
+  memset(rhs, 0, N_DOF*SizeOfDouble);
+  
+  // initialize matrices
+  this->sq_matrices[0]->Reset();
+  TSquareMatrix2D *SQMATRICES[2] = { this->sq_matrices[0], NULL };
+  int N_SquareMatrices = 1;
+  
+  if(TDatabase::ParamDB->DISCTYPE == SDFEM)
+  {
+    sqmatrixK->Reset();
+    SQMATRICES[1] = sqmatrixK;
+    N_SquareMatrices = 2;
+  }
+  
+  // assemble
+  Assemble2D(1, &space, N_SquareMatrices, SQMATRICES, 0, NULL, 1, &rhs, 
+             &space, BoundaryConditions, BoundaryValues, la);
+   
+  // copy Dirichlet values from rhs into sol
+  memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);
 } // TSystemMatScalar2D::AssembleARhs 
 
 void TSystemMatTimeScalar2D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
 {
-    int N_DOF, N_Active, N_SquareMatrices;
-    double tau;
-    
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();   
-    
-    tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  TFESpace2D* space = this->fe_spaces[0];
+  int N_DOF = space->GetN_DegreesOfFreedom();
+  int N_Active =  space->GetActiveBound();   
   
-    memset(B, 0, N_DOF*SizeOfDouble);      
-    
-    // old rhs multiplied with current subtime step and theta3 on B
-    Daxpy(N_Active, tau*TDatabase::TimeDB->THETA3,  oldrhs, B);    
-    
-    // add rhs from current sub time step to rhs array B
-    Daxpy(N_Active, tau*TDatabase::TimeDB->THETA4,  rhs, B);    
-    
-//        cout << "AssembleSystMat  gamma " << gamma << endl; 
-    // M = M + (- tau*TDatabase::TimeDB->THETA2)
-    MatAdd(sqmatrixM, sqmatrixA, - tau*TDatabase::TimeDB->THETA2);
+  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+  
+  memset(B, 0, N_DOF*SizeOfDouble);
+  
+  // old rhs multiplied with current subtime step and theta3 on B
+  Daxpy(N_Active, tau*TDatabase::TimeDB->THETA3,  oldrhs, B);
+  
+  // add rhs from current sub time step to rhs array B
+  Daxpy(N_Active, tau*TDatabase::TimeDB->THETA4,  rhs, B);
+  
+  //cout << "AssembleSystMat  gamma " << gamma << endl; 
+  // M = M + (- tau*TDatabase::TimeDB->THETA2)
+  MatAdd(sqmatrixM, this->sq_matrices[0], - tau*TDatabase::TimeDB->THETA2);
 
-    if(Disctype==SUPG)
-     {     
-      MatAdd(sqmatrixM, sqmatrixS, 1.);
-     }
-     // set current factor of steady state matrix
-     gamma = -tau*TDatabase::TimeDB->THETA2;  
+  if(TDatabase::ParamDB->DISCTYPE==SUPG)
+  {
+    MatAdd(sqmatrixM, sqmatrixS, 1.);
+  }
+  
+  // set current factor of steady state matrix
+  this->gamma = -tau*TDatabase::TimeDB->THETA2;  
     
-     // defect = M * oldsol
-     memset(defect, 0, N_DOF*SizeOfDouble);  
-     MatVectActive(sqmatrixM, oldsol, defect); 
+  // defect = M * oldsol
+  memset(defect, 0, N_DOF*SizeOfDouble);  
+  MatVectActive(sqmatrixM, oldsol, defect); 
+  
+  // B:= B + defec    
+  Daxpy(N_Active, 1, defect, B);
+  
+  // set Dirichlet values
+  memcpy(B+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
+  memcpy(sol+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
      
-     // B:= B + defec    
-     Daxpy(N_Active, 1, defect, B);
-    
-     // set Dirichlet values
-     memcpy(B+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
-     memcpy(sol+N_Active, rhs+N_Active, (N_DOF-N_Active)*SizeOfDouble);
-     
-     //assemble the system matrix
-     MatAdd(sqmatrixM, sqmatrixA, -gamma + tau*TDatabase::TimeDB->THETA1);
-     gamma = tau*TDatabase::TimeDB->THETA1;    
+  //assemble the system matrix
+  MatAdd(sqmatrixM, this->sq_matrices[0], -gamma + tau*TDatabase::TimeDB->THETA1);
+  this->gamma = tau*TDatabase::TimeDB->THETA1;    
    
-     SystMatAssembled  = TRUE;     
-     
-//      cout << "AssembleSystMat  gamma " << gamma << endl;  
-     
+  SystMatAssembled = true;
+  //cout << "AssembleSystMat  gamma " << gamma << endl;   
 } // AssembleSystMat
 
 void TSystemMatTimeScalar2D::RestoreMassMat()
 {
-
-//   cout << "RestoreMassMat  gamma " << gamma << endl;
+  //cout << "RestoreMassMat  gamma " << gamma << endl;
   if(SystMatAssembled)
-   {
-     // restore the mass matrix
-     MatAdd(sqmatrixM, sqmatrixA, -gamma);
-     gamma = 0.;
-     
-     if(Disctype==SUPG)
-     {     
+  {
+    // restore the mass matrix
+    MatAdd(sqmatrixM, this->sq_matrices[0], -this->gamma);
+    this->gamma = 0.;
+    
+    if(TDatabase::ParamDB->DISCTYPE==SUPG)
+    {
       MatAdd(sqmatrixM, sqmatrixS, -1.);
-     }
+    }
   
-     SystMatAssembled  = FALSE;  
-   }
+    SystMatAssembled = false;  
+  }
   else
   {
     cout << "System is not assembled to restore " <<endl;
   }
-   
-//   cout << "RestoreMassMat" << endl;
-//   exit(0);
   
+  //cout << "RestoreMassMat" << endl;
+  //exit(0);
 }
 
 void TSystemMatTimeScalar2D::Solve(double *sol, double *rhs)
 {
-  
-    switch(SOLVER)
-     {
-      case AMG_SOLVE:
-        cout << "AMG_SOLVE not yet implemented " <<endl;
-      break;
+  switch(TDatabase::ParamDB->SOLVER_TYPE)
+  {
+    case AMG_SOLVE:
+      cout << "AMG_SOLVE not yet implemented " <<endl;
+    break;
 
-      case GMG:
-        cout << "GMG solver not yet implemented " <<endl;
-      break;
+    case GMG:
+      cout << "GMG solver not yet implemented " <<endl;
+    break;
 
-      case DIRECT:
-        DirectSolver(sqmatrixM, B, sol);
-      break;      
- 
-      default:
-            OutPut("Unknown Solver" << endl);
-            exit(4711);;
-     }    
-  
-  
+    case DIRECT:
+      DirectSolver(sqmatrixM, B, sol);
+    break;
+
+    default:
+      OutPut("Unknown Solver" << endl);
+      exit(4711);
+  }
 }
 
 
 double TSystemMatTimeScalar2D::GetResidual(double *sol)
 {
-  int N_DOF = FeSpace->GetN_DegreesOfFreedom(); 
+  int N_DOF = this->fe_spaces[0]->GetN_DegreesOfFreedom(); 
   double residual_scalar;
   
-//   if(SystMatAssembled)
-   {
-    memset(defect, 0, N_DOF*SizeOfDouble);         
-    ScalarDefect(sqmatrixM, sol, B, defect, residual_scalar);   
-   }
-//   else
-   {
-//     OutPut("Assemble the System Matrix before calculating the GetResidual" << endl);
-//     exit(4711);;   
-   }
-   
-   return residual_scalar;
-      
+  memset(defect, 0, N_DOF*SizeOfDouble);         
+  ScalarDefect(sqmatrixM, sol, B, defect, residual_scalar);
+  return residual_scalar;    
 }
 
 #endif // #ifdef __2D__

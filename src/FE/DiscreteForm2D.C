@@ -40,7 +40,7 @@
 #include <ConvDiff2D.h>
 #include <TimeConvDiff2D.h>
 
-#endif
+#endif // endif 2D
 
 
 /** constructor with vector initialization */

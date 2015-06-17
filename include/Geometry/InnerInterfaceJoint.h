@@ -78,7 +78,7 @@ class TInnerInterfaceJoint : public TJointEqN
   void SetIndexInNeighbor(TBaseCell *neigh, int index);
   
     // Destructor
-  virtual ~TInnerInterfaceJoint();
+  virtual ~TInnerInterfaceJoint(){};
   
 };
 

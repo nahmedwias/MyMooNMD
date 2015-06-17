@@ -5,7 +5,7 @@
 // fix point iteration
 //
 // ======================================================================
-#ifdef __3D__
+
 #include <Convolution.h>
 #include <Database.h>
 #include <TNSE2D_Routines.h>
@@ -4724,5 +4724,3 @@ void NSParamsPressSep(double *in, double *out)
   out[1] = in[3];                // P_sep to y
 }
 
-
-#endif // #ifdef __3D__

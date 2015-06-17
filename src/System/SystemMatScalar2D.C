@@ -8,7 +8,6 @@
 #include <Database.h>
 #include <SystemMatScalar2D.h>
 #include <SquareStructure2D.h>
-#include <DiscreteForm2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
 #include <LocalProjection.h>
@@ -18,173 +17,111 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int solver)
+TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace)
+ : SystemMat2D(1, 1, 0)
 {
   //store the FEspace
-  FeSpace = fespace;
-  
-  //set the discretization type
-  Disctype = disctype;
-  
-  //set the solver type
-  SOLVER = solver;
+  this->SystemMat2D::fe_spaces[0] = fespace;
   
   // build matrices
   // first build matrix structure
-  sqstructure = new TSquareStructure2D(fespace);
+  TSquareStructure2D* sqstructure = new TSquareStructure2D(fespace);
   sqstructure->Sort();  // sort column numbers: numbers are in increasing order
 
-  /** A is the stiffness/system mat for stationary problem   */
-  sqmatrixA = new TSquareMatrix2D(sqstructure);  
-  N_Matrices = 1;
-
+  /** A is the stiffness/system matrix for a stationary convection diffusion 
+   * problem */
+  this->SystemMat2D::sq_matrices[0] = new TSquareMatrix2D(sqstructure);  
+  this->SystemMat2D::defect = Defect_Scalar;
 }
 
 TSystemMatScalar2D::~TSystemMatScalar2D()
 {
-  delete sqstructure;
-  delete sqmatrixA;
+  delete this->SystemMat2D::sq_matrices[0]->GetStructure();
+  delete this->SystemMat2D::sq_matrices[0];
 }
   
   
-void TSystemMatScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
+void TSystemMatScalar2D::Init(BoundCondFunct2D *BoundCond,
+                              BoundValueFunct2D *BoundValue)
 {
-  BoundaryConditions[0] =  BoundCond;
-  BoundaryValues[0] = BoundValue;
-    
-  TDiscreteForm2D *DiscreteFormUpwind;  
-  TDiscreteForm2D *DiscreteFormGalerkin;
-  TDiscreteForm2D *DiscreteFormSDFEM;
-  TDiscreteForm2D *DiscreteFormGLS;  
-  TDiscreteForm2D *DiscreteFormHeatLine;
-  
-  if(Disctype==HEATLINE)
-   {
-    InitializeDiscreteForms_HeatLine(DiscreteFormHeatLine, BilinearCoeffs);  
-   }
-  else
-   {
-    InitializeDiscreteForms_Stationary(DiscreteFormUpwind, DiscreteFormGalerkin, DiscreteFormSDFEM, DiscreteFormGLS,
-                                     BilinearCoeffs);
-   }
-    switch(Disctype)
-     {
-      case GALERKIN:
-      case LOCAL_PROJECTION:
-           DiscreteFormARhs = DiscreteFormGalerkin;
-      break;
-
-      case SUPG:
-           DiscreteFormARhs = DiscreteFormSDFEM;
-      break;
-
-      case UPWIND:
-           DiscreteFormARhs = DiscreteFormUpwind;
-      break;      
-      
-      case GLS:
-           DiscreteFormARhs = DiscreteFormGLS;
-      break;
-      
-      case HEATLINE:
-           DiscreteFormARhs = DiscreteFormHeatLine;
-      break;
-
-      
-      default:
-            OutPut("Unknown DISCTYPE" << endl);
-            exit(4711);;
-     }  
-     
-     
+  //TDiscreteForm2D *DiscreteFormHeatLine;
+  this->BoundaryConditions[0] = BoundCond;//should be the same as in fe_space[0]
+  this->BoundaryValues[0] = BoundValue;
 } // TSystemMatScalar2D::Init
 
 
-void TSystemMatScalar2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol,
+                                  double *rhs)
 {
-  int N_DOF, N_Active, N_DirichletDof;
-  double *RHSs[1];
- 
-
-  TFESpace2D *fesp[1], *ferhs[1];
-   
-    N_DOF = FeSpace->GetN_DegreesOfFreedom();
-    N_Active =  FeSpace->GetActiveBound();
-    N_DirichletDof = N_DOF - N_Active;
-    
-    RHSs[0] = rhs;
-    memset(rhs, 0, N_DOF*SizeOfDouble);
+  int N_DOF = this->SystemMat2D::fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_Active = this->SystemMat2D::fe_spaces[0]->GetActiveBound();
+  int N_DirichletDof = N_DOF - N_Active;
   
-    fesp[0] = FeSpace;
-    ferhs[0] = FeSpace;
-    
-    // initialize matrices
-    SQMATRICES[0] = sqmatrixA;
-    SQMATRICES[0]->Reset(); 
-    
-    
-    if(aux==NULL)
-     { aux = new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }
-    
-    // assemble
-    Assemble2D(1, fesp,
-               N_Matrices, SQMATRICES,
-               0, NULL,
-               1, RHSs, ferhs,
-               DiscreteFormARhs,
-               BoundaryConditions,
-               BoundaryValues,
-               aux);
+  // reset right hand side and matrix to zero
+  memset(rhs, 0, N_DOF*SizeOfDouble);
+  this->SystemMat2D::sq_matrices[0]->Reset();
+  
+  int N_Matrices = 1;
+  // assemble
+  Assemble2D(1, &fe_spaces[0], N_Matrices, &sq_matrices[0], 0, NULL, 1, &rhs, 
+             &fe_spaces[0], BoundaryConditions, BoundaryValues, la);
  
-     delete aux;
-     
-     // apply local projection stabilization method
-     if(Disctype==LOCAL_PROJECTION && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
-      {
-       if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
-        { 
-         UltraLocalProjection((void *)SQMATRICES[0], FALSE);
-        }
-       else
-        {
-         OutPut("Check! LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION" << endl);
-         exit(4711);;
-        }
-      }
-      
-      
-    // set rhs for Dirichlet nodes
-    memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);     
-     
-} // void TSystemMatScalar2D::Assemble(T
+  // apply local projection stabilization method
+  if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION 
+     && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+  {
+    if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+    { 
+      UltraLocalProjection((void *)&sq_matrices[0], false);
+    }
+    else
+    {
+      OutPut("Check! LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION" << endl);
+      exit(4711);
+    }
+  }
+  
+  // copy Dirichlet values from rhs to solution vector (this is not really 
+  // necessary in case of a direct solver)
+  memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);
+} // void TSystemMatScalar2D::Assemble
 
 
 void TSystemMatScalar2D::Solve(double *sol, double *rhs)
 {
-  
-    switch(SOLVER)
-     {
-      case AMG_SOLVE:
-        cout << "AMG_SOLVE not yet implemented " <<endl;
-      break;
+  switch(TDatabase::ParamDB->SOLVER_TYPE)
+  {
+   case AMG_SOLVE:
+     cout << "AMG_SOLVE not yet implemented " <<endl;
+   break;
 
-      case GMG:
-        cout << "GMG solver not yet implemented " <<endl;
-      break;
+   case GMG:
+     cout << "GMG solver not yet implemented " <<endl;
+   break;
 
-      case DIRECT:
-        DirectSolver(sqmatrixA, rhs, sol);
-      break;      
+   case DIRECT:
+     DirectSolver(this->SystemMat2D::sq_matrices[0], rhs, sol);
+   break;
  
-      default:
-            OutPut("Unknown Solver" << endl);
-            exit(4711);;
-     }    
-  
-  
+   default:
+     OutPut("Unknown Solver" << endl);
+     exit(4711);;
+  }
 }
 
-
+void TSystemMatScalar2D::apply(const double *x, double *y, double factor) const
+{
+  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows*SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
+}
+    
+void TSystemMatScalar2D::apply_scaled_add(const double *x, double *y, 
+                                          double factor) const
+{
+  this->SystemMat2D::sq_matrices[0]->multiply(x, y, factor);
+}
 
 #endif // #ifdef __2D__
 

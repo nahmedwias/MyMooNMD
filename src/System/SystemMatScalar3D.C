@@ -32,365 +32,109 @@
 #define GMG 1
 #define DIRECT 2
 
-//#ifdef _MPI
-TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver)
+TSystemMatScalar3D::TSystemMatScalar3D(TFESpace3D *fespace)
+ : SystemMat3D(1, 1, 0)
 {
-  int i;
-  int profiling = TDatabase::ParamDB->timeprofiling;
-  /** need it for solver */
-  sqmatrices = (TSquareMatrix **)SQMATRICES;
-  
   //set number of multigrid levels
-  N_Levels = N_levels;
+  int N_Levels = TDatabase::ParamDB->LEVELS;
+  if(TDatabase::ParamDB->SC_MG_TYPE_SCALAR)
+    ++N_Levels;
   
   //store the FEspace
-  FeSpaces = fespaces;
-  
-  SolArray = sol;
-  RhsArray = rhs;
-  
-#ifdef _MPI
-  Comm = TDatabase::ParamDB->Comm;
-#endif
-  //set the discretization type
-  Disctype = disctype;
-  
-  //set the solver type
-  SOLVER = solver;
-
-  N_DOF = FeSpaces[N_Levels-1]->GetN_DegreesOfFreedom();  
+  this->SystemMat3D::fe_spaces[0] = fespace;
   
   // build matrices
   // first build matrix structure
-  sqstructure = new TSquareStructure3D*[N_Levels];
-  sqmatrixA = new TSquareMatrix3D*[N_Levels];
-  
+  TSquareStructure3D *sqstructure = new TSquareStructure3D(fespace);
+  if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT 
+      || TDatabase::ParamDB->SOLVER_TYPE == GMG)
   //instance of the Assemble class
   AMatRhsAssemble = new TAssembleMat3D *[N_Levels];
   
-  if(SOLVER==AMG_SOLVE || SOLVER==DIRECT)
-   {
-    Start_Level=N_Levels-1;
-   }
-  else 
-   {
-    Start_Level=0;
-   }
-  
-  for(i=Start_Level;i<N_Levels;i++)
+  if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT
+      || TDatabase::ParamDB->SOLVER_TYPE == GMG)
   {
-//    if(SOLVER==GMG)
-//     OutPut("MULTIGRID LEVEL : " << i<<endl;)
-    
-   sqstructure[i] = new TSquareStructure3D(FeSpaces[i]);
-   
-   if(SOLVER==DIRECT || SOLVER==GMG)
-   { 
-     sqstructure[i]->Sort(); 
-     
+    sqstructure->Sort();
   } // sort column numbers: numbers are in increasing order
-   else if(SOLVER==AMG_SOLVE)
-   { sqstructure[i]->SortDiagFirst(); }
-   
-   /** A is the stiffness/system mat for stationary problem   */
-   sqmatrixA[i] = new TSquareMatrix3D(sqstructure[i]);  
-   N_Matrices = 1;
-      
-   OutPut(endl);   
-  }// for(;i<N_Levels;i++)
-  
-  
-#ifdef _MPI
-  double t1,t2,tdiff;
-  
-  ParMapper = new TParFEMapper3D*[N_levels]; 
-  ParComm   = new TParFECommunicator3D*[N_levels];
-  
-  if(profiling)  t1 = MPI_Wtime();
-  for(i=Start_Level;i<N_levels;i++)
-   {   
-        ParMapper[i] = new TParFEMapper3D(1, FeSpaces[i], sqstructure[i]->GetRowPtr(), sqstructure[i]->GetKCol());
-        ParComm[i]   = new TParFECommunicator3D(ParMapper[i]);
-   }// for(i=0;i<N_levels;i++)
-
-   if(SOLVER == DIRECT)
-    {
-     SQMATRICES[0] = sqmatrixA[N_Levels-1];
-     DS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
-    }
-
-   int out_rank=TDatabase::ParamDB->Par_P0;
-   int rank;
-   MPI_Comm_rank(Comm, &rank);
-   
-   if(profiling)
-   {
-     t2 = MPI_Wtime();
-     tdiff = t2-t1;
-     MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
-     if(rank == out_rank)
-     {
-      printf("Time taken for FeSpace SubDomain dof mapping for all levels is %e\n", t1);
-     }
-   }
-   
-  TCollection *coll = fespaces[N_levels-1]->GetCollection();
-  int owncells = coll->GetN_OwnCells();
-  int problemSize=0;
-  MPI_Reduce(&owncells, &problemSize, 1, MPI_INT, MPI_SUM, out_rank, Comm);
-  if(rank==0)
-    OutPut( "total own cells over all sub domains : " << problemSize << endl);
-  
-  problemSize=0;
-  int n_master = ParComm[N_levels-1]->GetN_Master();
-  MPI_Reduce(&n_master, &problemSize, 1, MPI_INT, MPI_SUM, out_rank, Comm);
-  if(rank==0)
-    OutPut( "total own dofs over all sub domains : " << problemSize << endl);
-  
-#endif
-
-#ifdef _OMPONLY
-   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
-   {
-     DS = new TParDirectSolver(sqmatrixA[N_Levels-1]);
-   }
-#endif 
- 
-   //initialize multigrid solver
-   if(SOLVER==GMG)
-   {
-    Parameters[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-    Parameters[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-    MG = new TMultiGrid3D(1, 2, Parameters);
-    
-    // determine number of auxiliary arrays
-    if ( (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR)
-         || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR) )
-     {  N_aux= 4; }
-        else
-     {  N_aux= 2; }   
-   
-    // build preconditioner
-    switch (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
-     {
-      case 1:
-            prec = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, 1
-#ifdef _MPI   
-                                  ,ParComm[N_Levels-1]
-#endif    
-                                  );
-	    break;	    
-      case 5:
-            prec = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar, NULL, 0, N_DOF, MG, 1);
-            Itmethod_sol = new double[N_DOF];
-            Itmethod_rhs = new double[N_DOF];    
-            break;
-      default:
-            OutPut("Unknown preconditioner !!!" << endl);
-            exit(4711);
-     }     
-
-       switch (TDatabase::ParamDB->SC_SOLVER_SCALAR)
-        {
-          case 11:
-            Itmethod = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, prec, 0, N_DOF, 1
-#ifdef _MPI   
-                               , ParComm[N_Levels-1]
-#endif
-	);
-          break;
-          case 16:
-            Itmethod = new TFgmresIte(MatVect_Scalar, Defect_Scalar, prec, 0, N_DOF, 1
-#ifdef _MPI   
-                               , ParComm[N_Levels-1]
-#endif
-	);
-          break;
-          default:
-            OutPut("Unknown solver !!!" << endl);
-            exit(4711);
-        }     
-     
-   }// if(solver==GMG)  
-//   exit(0);
+  else if(TDatabase::ParamDB->SOLVER_TYPE == AMG_SOLVE)
+  {
+    sqstructure->SortDiagFirst();
+  }
+  this->SystemMat3D::sq_matrices[0] = new TSquareMatrix3D(sqstructure);
 } //TSystemMatScalar3D::TSystemMatScalar3D
-//#endif
 
 TSystemMatScalar3D::~TSystemMatScalar3D()
 {
-  int i;
-  
-  for(i=Start_Level;i<N_Levels;i++)
-   {
-    delete sqstructure[i];
-    delete sqmatrixA[i];   
-   }
-   
-    delete [] sqstructure;
-    delete [] sqmatrixA;
-  
-  if (SOLVER==GMG && TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-   {
-    delete [] Itmethod_sol;
-    delete [] Itmethod_rhs;
-   }
+  delete this->SystemMat3D::sq_matrices[0]->GetStructure();
+  delete this->SystemMat3D::sq_matrices[0];
 }
-  
-  
-void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
-                              TAuxParam3D *aux)
+
+
+void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs,
+                              BoundCondFunct3D *BoundCond,
+                              BoundValueFunct3D *BoundValue)
 {
- int i;
- 
   BoundaryConditions[0] = BoundCond;
   BoundaryValues[0] = BoundValue;
-  
-//   TDiscreteForm3D *DiscreteFormUpwind;  
-  TDiscreteForm3D *DiscreteFormGalerkin;
-//   TDiscreteForm3D *DiscreteFormSDFEM;
-//   TDiscreteForm3D *DiscreteFormGLS;  
-
-   InitializeDiscreteForms(DiscreteFormGalerkin, BilinearCoeffs);  
-
-    switch(Disctype)
-     {
-      case GALERKIN:
-//       case LOCAL_PROJECTION:
-           DiscreteFormARhs = DiscreteFormGalerkin;
-      break;
-
-//       case SUPG:
-//            DiscreteFormARhs = DiscreteFormSDFEM;
-//       break;
-// 
-//       case UPWIND:
-//            DiscreteFormARhs = DiscreteFormUpwind;
-//       break;      
-//       
-//       case GLS:
-//            DiscreteFormARhs = DiscreteFormGLS;
-//       break;
-      
-      default:
-            OutPut("Unknown DISCTYPE" << endl);
-            exit(4711);;
-     }  
-     
-   // initilize the assemble class  
-   if(aux==NULL)
-    { aux = new TAuxParam3D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL); }   
-   
-    for(i=Start_Level;i<N_Levels;i++)
-    { 
-     fesp[0] = FeSpaces[i];
-     ferhs[0] = FeSpaces[i];  
-     
-     RHSs[0] = RhsArray[i];  
-     SQMATRICES[0] = sqmatrixA[i];
-     
-     // array of assemble objects
-     AMatRhsAssemble[i] = new TAssembleMat3D(1, fesp, 1, SQMATRICES, 0, NULL, 1, RHSs, ferhs, 
-                              DiscreteFormARhs, BoundaryConditions, BoundaryValues, aux);
-     AMatRhsAssemble[i]->Init();
-  
-     
-     //setup the multigrid solver
-     if(SOLVER==GMG)
-      {
-#ifdef _MPI  
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], SolArray[i], ParComm[i], ParMapper[i], N_aux, NULL);
-#else
-       MGLevel = new TMGLevel3D(i, SQMATRICES[0], RHSs[0], SolArray[i], N_aux, NULL);
-#endif
-       MG->AddLevel(MGLevel);      
-      }       
-    } // for(i=Star
-    
 } // TSystemMatScalar3D::Init
 
 
-void TSystemMatScalar3D::Assemble()
+void TSystemMatScalar3D::Assemble(CoeffFct3D *BilinearCoeffs, double *sol,
+                                  double *rhs)
 {
-  int i, N_DOF_low, N_Active;
-
-   for(i=Start_Level;i<N_Levels;i++)
-    {    
-     N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
-     N_Active =  FeSpaces[i]->GetActiveBound();
-    
-     // initialize matrices and rhs
-     AMatRhsAssemble[i]->Reset(); 
-
-     // assemble
-     AMatRhsAssemble[i]->Assemble3D();
+  TDiscreteForm3D *DiscreteFormGalerkin;
+  InitializeDiscreteForms(DiscreteFormGalerkin, BilinearCoeffs);  
+  TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
   
-     // set rhs for Dirichlet nodes
-     memcpy(SolArray[i]+N_Active, RhsArray[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);   
-    } //  for(i=Start_Level;i<N_Levels;i++)    
-
-//have to shift this in pardirectsolver    
-#ifdef _OMPONLY     
-    if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
-      DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
-#endif
-    
-} // void TSystemMatScalar3D::Assemble(T
-
-
-void TSystemMatScalar3D::Solve(double *sol, double *rhs)
-{ 
-    switch(SOLVER)
-     {
-      case AMG_SOLVE:
-        Solver(sqmatrixA[N_Levels-1], rhs, sol);
-      break;
-
-      case GMG:
-        if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-         {
-          memcpy(Itmethod_sol, sol, N_DOF*SizeOfDouble);
-          memcpy(Itmethod_rhs, rhs, N_DOF*SizeOfDouble);
-         }
-        else
-         {
-          Itmethod_sol = sol;
-          Itmethod_rhs = rhs;
-         }
-         
-         // solve linear system
-        Itmethod->Iterate(sqmatrices, NULL, Itmethod_sol, Itmethod_rhs);
-
-        if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-         {
-          memcpy(sol, Itmethod_sol, N_DOF*SizeOfDouble);
-          memcpy(rhs, Itmethod_rhs, N_DOF*SizeOfDouble);
-         }
-      break;
-
-      case DIRECT:
-#ifdef _MPI
-	DS->Solve(sol, rhs, true);
-#endif
-	
-#ifdef _OMPONLY
-	if(TDatabase::ParamDB->DSType == 1)
-	  DS->Solve(sol, rhs, true);
-	else{
-	  OutPut("Select Proper Solver" << endl);
-	  exit(0);
-	}
-#endif
-
-#ifdef _SEQ
-	DirectSolver((TSquareMatrix*)sqmatrixA[N_Levels-1], rhs, sol);
-#endif
-      break;      
- 
-      default:
-            OutPut("Unknown Solver" << endl);
-            exit(4711);;
-     }    
+  Assemble3D(1, &this->fe_spaces[0], 1, &sq_matrices[0], 0, NULL, 1, &rhs,
+             &fe_spaces[0], DiscreteFormGalerkin, BoundaryConditions,
+             BoundaryValues, &aux);
   
+  int N_DOF = this->SystemMat3D::fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_Active = this->SystemMat3D::fe_spaces[0]->GetActiveBound();
+  int N_DirichletDof = N_DOF - N_Active;
+  // set rhs for Dirichlet nodes
+  memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);
 }
 
+// void TSystemMatScalar3D::Assemble()
+// {
+//   int i, N_DOF_low, N_Active;
+// 
+//    for(i=Start_Level;i<N_Levels;i++)
+//     {    
+//      N_DOF_low = FeSpaces[i]->GetN_DegreesOfFreedom();
+//      N_Active =  FeSpaces[i]->GetActiveBound();
+//     
+//      // initialize matrices and rhs
+//      AMatRhsAssemble[i]->Reset(); 
+// 
+//      // assemble
+//      AMatRhsAssemble[i]->Assemble3D();
+//   
+//      // set rhs for Dirichlet nodes
+//      memcpy(SolArray[i]+N_Active, RhsArray[i]+N_Active, (N_DOF_low - N_Active)*SizeOfDouble);   
+//     } //  for(i=Start_Level;i<N_Levels;i++)    
+// 
+// //have to shift this in pardirectsolver    
+// #ifdef _OMPONLY     
+//     if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+//       DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
+// #endif
+//     
+// } // void TSystemMatScalar3D::Assemble(T
 
+
+void TSystemMatScalar3D::apply(const double *x, double *y, double factor) const
+{
+  unsigned int n_total_rows = this->SystemMat3D::sq_matrices[0]->GetN_Rows();
+  // reset y
+  memset(y, 0.0, n_total_rows * SizeOfDouble);
+  this->apply_scaled_add(x, y, factor);
+}
+
+void TSystemMatScalar3D::apply_scaled_add(const double *x, double *y,
+                          double factor) const
+{
+  this->SystemMat3D::sq_matrices[0]->multiply(x, y, factor);
+}

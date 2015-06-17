@@ -84,7 +84,6 @@ int main(int argc, char* argv[])
   // both spaces are discontinuous
   v_space.SetAsDGSpace(); // this is used for output
   p_space.SetAsDGSpace(); // this is used for output
-  TFESpace2D *fespaces[2] = { &v_space, &p_space };
   
   // print out some information on the finite element space
   int N_U = v_space.GetN_DegreesOfFreedom();
@@ -118,10 +117,7 @@ int main(int argc, char* argv[])
   //====================================================================== 
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatDarcy2D SystemMatrix(fespaces);
-  
-  // initilize the system matrix with the functions defined in the example
-  SystemMatrix.Init(example.get_bc(), example.get_bd());
+  SystemMatDarcy2D SystemMatrix(&v_space, &p_space, example.get_bd());
   
   // create a local assembling object which is needed to assemble the matrix
   LocalAssembling2D la(Darcy2D_Galerkin, fe_functions, example.get_coeffs());
@@ -134,7 +130,7 @@ int main(int argc, char* argv[])
     double t1 = GetTime();
     SystemMatrix.Solve(sol, rhs);
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       // this sould be done in TSystemMatDarcy2D::Solve, but we don't have 
+       // this sould be done in SystemMatDarcy2D::Solve, but we don't have 
        // access to p there
        //p.project_into_L20();
        IntoL20Vector2D(sol+N_U, N_P, p_space_code);
@@ -176,8 +172,9 @@ int main(int argc, char* argv[])
     
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+    TFESpace2D * pointer_to_p_space = &p_space;
     p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
-                example.get_coeffs(), &aux, 1, fespaces+1, errors+3);
+                example.get_coeffs(), &aux, 1, &pointer_to_p_space, errors+3);
 
     OutPut(" L2(u):      " << errors[0] << endl);
     OutPut(" L2(div(u)): " << errors[1] << endl);

@@ -21,8 +21,9 @@ BNDFILE:        ../../ParMooN/data/Wuerfel.PRM
 
 
 LOGFILE:     logfile
-OUTFILE:      cd3d_Direct_local.out
+OUTFILE:      cd3d_local.out
 BASENAME: sph
+timeprofiling: 1
 OUTPUTDIR: VTK
 WRITE_PS: 0
 WRITE_GRAPE: 0

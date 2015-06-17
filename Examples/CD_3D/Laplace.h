@@ -31,23 +31,17 @@ void BoundValue(double x, double y, double z, double &value)
 }
 
 void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+                    double **parameters, double **coeffs)
 {
-  static double eps=1/TDatabase::ParamDB->RE_NR;
-  int i;
-  double *coeff, *param;
-
-  for(i=0;i<n_points;i++)
+  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  for(int i = 0; i < n_points; i++)
   {
-    coeff = coeffs[i];
-    param = parameters[i];
-
-    coeff[0] = eps;
-    coeff[1] = 0;
-    coeff[2] = 0;
-    coeff[3] = 0;
-    coeff[4] = 0;
-    coeff[5] = (3*Pi*Pi*eps)*sin(Pi*x[i])*sin(Pi*y[i])*sin(Pi*z[i]);
+    coeffs[i][0] = eps;
+    coeffs[i][1] = 0;
+    coeffs[i][2] = 0;
+    coeffs[i][3] = 0;
+    coeffs[i][4] = 0;
+    coeffs[i][5] = (3*Pi*Pi*eps)*sin(Pi*x[i])*sin(Pi*y[i])*sin(Pi*z[i]);
   }
 }
 

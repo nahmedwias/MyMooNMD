@@ -97,11 +97,11 @@ class TDiscreteForm2D
     ~TDiscreteForm2D();
 
     /** return name */
-    char *GetName()
+    char *GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription()
+    char *GetDescription() const
     { return Description; }
 
     /** return local stiffness matrix */
@@ -137,6 +137,33 @@ class TDiscreteForm2D
     /** return the index of the column space of the i-th matrix */
     int colSpaceOfMat(int i) const
     { return ColumnSpace[i]; }
+    
+    int Get_NTerms() const
+    { return N_Terms; }
+    
+    int Get_N_Spaces() const
+    { return N_Spaces; }
+    
+    MultiIndex2D get_derivative(int i) const // i should be smaller than N_Terms
+    { return this->Derivatives[i]; }
+    
+    int get_FESpaceNumber(int i) const
+    { return this->FESpaceNumber[i]; }
+    
+    int get_N_Matrices() const
+    { return N_Matrices; }
+    
+    int get_N_Rhs() const
+    { return N_Rhs; }
+    
+    int get_RhsSpace(int i) const
+    { return RhsSpace[i]; }
+    
+    AssembleFctParam2D * get_AssembleParam() const
+    { return AssembleParam; }
+    
+    ManipulateFct2D * get_Manipulate() const
+    { return Manipulate; }
 };
 
 /******************************************************************************/

@@ -94,17 +94,6 @@ class TAuxParam2D
      * TAuxParam2D(0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
      */
     TAuxParam2D();
-    /** @brief constructor used if finite element function values are needed 
-     *         during assembling
-     * 
-     * Depending on the given parameter 'name', this object will be initialized
-     * properly. Currently supported values for 'name' are:
-     *  - "velocity", this is used for Navier-Stokes problems
-     * 
-     * You can achieve the same behavior using the first constructor above, but 
-     * this constructor is easier.
-     */
-    TAuxParam2D(std::string name, TFEFunction2D **fefunctions2d);
 
     
     /** destructor */
@@ -127,7 +116,23 @@ class TAuxParam2D
     { return N_Parameters; }
     int GetN_ParamFct() const
     { return N_ParamFct; }
+    ParamFct * get_ParameterFct(int i) const
+    { return ParameterFct[i]; }
+    
+    int get_BeginParameter(int i) const
+    { return BeginParameter[i]; }
 
+    int get_N_FEValues() const
+    { return N_FEValues; }
+    
+    TFEFunction2D **get_FEFunctions2D() const
+    { return FEFunctions2D; }
+    
+    int get_FEValue_FctIndex(int i) const
+    { return FEValue_FctIndex[i]; }
+    
+    MultiIndex2D get_FEValue_MultiIndex(int i) const
+    { return FEValue_MultiIndex[i]; }
 };
 
 // standard function to use for Navier-Stokes

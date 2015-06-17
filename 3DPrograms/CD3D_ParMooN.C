@@ -494,7 +494,7 @@ int main(int argc, char* argv[])
       OutPut(endl);
       OutPut( "L2: " << errors[0] << endl);
       OutPut( "H1-semi: " << errors[1] << endl);
-      //OutPut( "SD: " << errors[2] << endl);
+      OutPut( "SD: " << errors[2] << endl);
 #endif
      } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 
