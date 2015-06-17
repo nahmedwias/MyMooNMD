@@ -8,7 +8,40 @@ SystemMat3D::~SystemMat3D()
 
 void SystemMat3D::add_active(const SystemMat3D &A, double factor)
 {
+  unsigned int n_square_mat = this->sq_matrices.size();
+  unsigned int n_rect_mat = this->rect_matrices.size();
+  // check if matrix A can be added to this matrix at all
+  if(this->fe_spaces.size() != A.fe_spaces.size())
+  {
+    ErrMsg("can't add matrices with different number of finite element spaces");
+    throw("can't add matrices with different number of finite element spaces");
+  }
+  if(A.sq_matrices.size() != n_square_mat)
+  {
+    ErrMsg("can't add matrices with different number of square submatrices");
+    throw("can't add matrices with different number of square submatrices");
+  }
+  if(A.rect_matrices.size() != n_rect_mat)
+  {
+    ErrMsg("can't add matrices with different number of rectangular matrices");
+    throw("can't add matrices with different number of rectangular matrices");
+  }
   
+  if(factor == 0.0)
+    // nothing needs to be done
+    return;
+  
+  if(factor != 1.0)
+  {
+    ErrMsg("SystemMat3D::add not yet implemented for a factor != 1.0");
+    throw("SystemMat3D::add not yet implemented for a factor != 1.0");
+  }
+  
+  // add each submatrix
+  for(unsigned int i = 0; i < n_square_mat; ++i)
+    this->sq_matrices[i]->add_active(*A.get_square_matrix(i), factor);
+  for(unsigned int i = 0; i < n_rect_mat; ++i)
+    this->rect_matrices[i]->add_active(*A.get_rectangular_matrix(i), factor);
 }
 
 void SystemMat3D::add(const SystemMat3D &A, double factor)
@@ -43,10 +76,10 @@ void SystemMat3D::add(const SystemMat3D &A, double factor)
   }
   
   // add each submatrix
-  for(TSquareMatrix3D* m : this->sq_matrices)
-    m->add(*(TMatrix*)m, factor);
-  for(TMatrix3D* m : this->rect_matrices)
-    m->add(*(TMatrix*)m, factor);
+  for(unsigned int i = 0; i < n_square_mat; ++i)
+    this->sq_matrices[i]->add(*(TMatrix*)A.get_square_matrix(i), factor);
+  for(unsigned int i = 0; i < n_rect_mat; ++i)
+    this->rect_matrices[i]->add(*(TMatrix*)A.get_rectangular_matrix(i), factor);
 }
 
 void SystemMat3D::scale_active(double factor)
