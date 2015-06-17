@@ -73,13 +73,13 @@ class TSystemMatNSE2D : public SystemMat2D
      * @param y result of matrix-vector-multiplication and scaling
      * @param factor optional scaling   factor, default to 1.0
      */
-    void apply_scaled_add(const double *x, double *y,
-                                  double factor = 1.0) const;
+    void apply_scaled_add(const double *x, double *y, double factor = 1.) const;
     
     unsigned int n_rows() const; // number of block rows
     unsigned int n_cols() const; // number of block columns
     unsigned int n_total_rows() const; // total number of rows (> nRows)
     unsigned int n_total_cols() const; // total number of columns (> nCols)
+    unsigned int n_total_entries() const; // total number of entries
 };
 
 #endif // __SYSTEMMATNSE2D__

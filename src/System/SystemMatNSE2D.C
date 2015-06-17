@@ -111,7 +111,7 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
        * ( A21 A22 B2^T )
        * ( B1  B2  C    )
        * 
-       * B1^T and B2^T are not explicitly stored.
+       * B1^T and B2^T are explicitly stored.
        */
       this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
                             new TSquareMatrix2D(sqstructureA),
@@ -555,3 +555,53 @@ unsigned int TSystemMatNSE2D::n_total_cols() const
   }
 }
 
+unsigned int TSystemMatNSE2D::n_total_entries() const
+{
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+      return 2 * this->sq_matrices[0]->GetN_Entries()
+          + 2 * this->rect_matrices[0]->GetN_Entries()
+          + 2 * this->rect_matrices[1]->GetN_Entries();
+      break;
+    case 2:
+      return 2 * this->sq_matrices[0]->GetN_Entries()
+          + this->rect_matrices[0]->GetN_Entries()
+          + this->rect_matrices[1]->GetN_Entries()
+          + this->rect_matrices[2]->GetN_Entries()
+          + this->rect_matrices[3]->GetN_Entries();
+      break;
+    case 3:
+      return this->sq_matrices[0]->GetN_Entries()
+          + this->sq_matrices[1]->GetN_Entries()
+          + this->sq_matrices[2]->GetN_Entries()
+          + this->sq_matrices[3]->GetN_Entries()
+          + 2 * this->rect_matrices[0]->GetN_Entries()
+          + 2 * this->rect_matrices[1]->GetN_Entries();
+      break;
+    case 4:
+      return this->sq_matrices[0]->GetN_Entries()
+          + this->sq_matrices[1]->GetN_Entries()
+          + this->sq_matrices[2]->GetN_Entries()
+          + this->sq_matrices[3]->GetN_Entries()
+          + this->rect_matrices[0]->GetN_Entries()
+          + this->rect_matrices[1]->GetN_Entries()
+          + this->rect_matrices[2]->GetN_Entries()
+          + this->rect_matrices[3]->GetN_Entries();
+      break;
+    case 14:
+      return this->sq_matrices[0]->GetN_Entries()
+          + this->sq_matrices[1]->GetN_Entries()
+          + this->sq_matrices[2]->GetN_Entries()
+          + this->sq_matrices[3]->GetN_Entries()
+          + this->sq_matrices[4]->GetN_Entries() // C
+          + this->rect_matrices[0]->GetN_Entries()
+          + this->rect_matrices[1]->GetN_Entries()
+          + this->rect_matrices[2]->GetN_Entries()
+          + this->rect_matrices[3]->GetN_Entries();
+      break;
+    default:
+      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
+      throw("unknown NSTYPE");
+  }
+}
