@@ -109,7 +109,10 @@ CD2D::~CD2D()
   for(auto r : this->rhs)
     delete[] r;
   for(auto f : this->function)
+  {
+    delete f->GetFESpace2D();
     delete f;
+  }
   delete multigrid;
 }
 
