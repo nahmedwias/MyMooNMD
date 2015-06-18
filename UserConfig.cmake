@@ -1,5 +1,5 @@
 # ===================================================================
-# This is a user configuration file for the ParMooN Version 1.1
+# This is a user configuration file for ParMooN, Version 1.1,
 # written by Sashikumaar Ganesan, SERC, IISc Bangalore, India
 # date: 05 June 2015
 # ===================================================================
@@ -8,26 +8,31 @@
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
 
 # selection of dimension (2D 3D)
-set(GEO "2D" CACHE STRING "Change GEO, to select the Dimensio of the problem")
+set(GEO "2D" CACHE STRING "Change GEO, to select the Dimension of the problem")
 
-# select this line accordingly to include your main program
-# set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
-set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
+# select your main program
+set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
+#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
+#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
+#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
 
-# selection of architect type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
-set(ARCH "MAC64" CACHE STRING "select the machine type")  
+# selection of architecture type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
+set(ARCH "LINUX64" CACHE STRING "select the machine type")
 
-#  selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
+# selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
 set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
 
-#  set MORTAR, if needed
+# set MORTAR, if needed
 set(MORTAR " ")
 
-# set the path to save the exe file
+# set the path to save the executable file
 set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/cd2d" CACHE STRING "select the model")
+#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/nse2d" CACHE STRING "select the model")
+#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/darcy2d" CACHE STRING "select the model")
+#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/tcd2d" CACHE STRING "select the model")
 
-# set FALSE, if you want to use libs provided in PARMOON 
-# if you set TRUE, it will search in all you lib paths and if not found, PARMOON libs will be used
+# set FALSE, if you want to use libraries provided in ParMooN 
+# if you set TRUE, it will search in all your library paths and if not found, ParMooN libraries will be used
 set(USE_SYSTEM_BLAS TRUE)
 set(USE_SYSTEM_UMFPACK TRUE)
 set(USE_SYSTEM_LAPACK TRUE)

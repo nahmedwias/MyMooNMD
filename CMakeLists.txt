@@ -1,11 +1,27 @@
-# ===================================================================
-# System configuration file for the ParMooN Version 1.1
-# written by Sashikumaar Ganesan, SERC, IISc Bangalore, India
-# date: 05 June 2015
+# ========================================================================
+#     This file is part of ParMooN.
+# 
+#     ParMooN is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     ParMooN is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with ParMooN.  If not, see <http://www.gnu.org/licenses/>.
+# =======================================================================
+# PURPOSE :  configuration file for the ParMooN Version 1.1
+# AUTHOR  : Sashikumaar Ganesan, SERC, IISc Bangalore, India
+# DATE    : 05 June 2015
+# ========================================================================
+
 # normally no need to alter any thing in this file
 # please DO NOT modify unless if it is necessary
 # beginners are advised NOT to alter anything the below contents
-# ========================================================================
 
 cmake_minimum_required (VERSION 2.8)
 
@@ -175,20 +191,20 @@ set(CMAKE_BUILD_TYPE DEBUG CACHE STRING "options")
 set(PARMOON_INCLUDE )
 
 include (CMakeForceCompiler)
-  set(CMAKE_SYSTEM_NAME ${ARCH})
-  
+set(CMAKE_SYSTEM_NAME ${ARCH})
+
 if("${ARCH}" STREQUAL "MAC64")
 
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
     find_path(MPI_CPATH   mpicc-mpich-mp)
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc-mpich-mp)
-    find_path(MPI_CXXPATH   mpicxx-mpich-mp)  
-    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx-mpich-mp)      
-  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+    find_path(MPI_CXXPATH   mpicxx-mpich-mp)
+    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx-mpich-mp)
+  elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
     find_path(CPATH  clang)
     set(CMAKE_C_COMPILER ${CPATH}/clang)
-    find_path(CXXPATH Clang)  
-    set(CMAKE_CXX_COMPILER ${CXXPATH}/Clang)  
+    find_path(CXXPATH Clang)
+    set(CMAKE_CXX_COMPILER ${CXXPATH}/Clang)
   endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
  
 elseif("${ARCH}" STREQUAL "LINUX64")
@@ -196,13 +212,13 @@ elseif("${ARCH}" STREQUAL "LINUX64")
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
     find_path(MPI_CPATH   mpicc)
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc)
-    find_path(MPI_CXXPATH   mpicxx)  
-    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx)      
-  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+    find_path(MPI_CXXPATH   mpicxx)
+    set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx)
+  elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
     find_path(CPATH  gcc)
     set(CMAKE_C_COMPILER ${CPATH}/gcc)
-    find_path(CXXPATH g++)  
-    set(CMAKE_CXX_COMPILER ${CXXPATH}/g++)  
+    find_path(CXXPATH g++)
+    set(CMAKE_CXX_COMPILER ${CXXPATH}/g++)
   endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
   
 elseif("${ARCH}" STREQUAL "CRAY64")
