@@ -1,11 +1,27 @@
-# ===================================================================
-# System configuration file for the ParMooN Version 1.1
-# written by Sashikumaar Ganesan, SERC, IISc Bangalore, India
-# date: 05 June 2015
+# ========================================================================
+#     This file is part of ParMooN.
+# 
+#     ParMooN is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     ParMooN is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with ParMooN.  If not, see <http://www.gnu.org/licenses/>.
+# =======================================================================
+# PURPOSE :  configuration file for the ParMooN Version 1.1
+# AUTHOR  : Sashikumaar Ganesan, SERC, IISc Bangalore, India
+# DATE    : 05 June 2015
+# ========================================================================
+
 # normally no need to alter any thing in this file
 # please DO NOT modify unless if it is necessary
 # beginners are advised NOT to alter anything the below contents
-# ========================================================================
 
 cmake_minimum_required (VERSION 2.8)
 
