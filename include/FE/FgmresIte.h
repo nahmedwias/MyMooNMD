@@ -12,7 +12,6 @@
 #ifndef __FGMRESITE__
 #define __FGMRESITE__
 
-
 #ifdef _MPI   
    #ifdef __3D__
     #include <ParFECommunicator3D.h>
