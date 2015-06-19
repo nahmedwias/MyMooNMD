@@ -22,7 +22,7 @@ set(ARCH "MAC64" CACHE STRING "select the machine type")
 set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
 
 # set the path to save the exe file
-set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/cd3d" CACHE STRING "select the model")
+set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/nse3d" CACHE STRING "select the model")
 
 # CMAKE_BUILD_TYPE [ DEBUG | RELEASE | RELWITHDEBINFO | MINSIZEREL ]
 set(EXE_BUILD_TYPE RELEASE)

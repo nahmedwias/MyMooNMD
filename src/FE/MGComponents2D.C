@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __2D__
+
 #include <SquareMatrixNSE2D.h>
 
 #define AT(i,j) (a[(j)*LDA+(i)])
@@ -4480,4 +4482,4 @@ void CoupledMatVectMortar(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
  return;
 }
 
-
+#endif
