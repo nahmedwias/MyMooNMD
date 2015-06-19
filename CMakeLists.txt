@@ -269,11 +269,11 @@ endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID"
 add_executable(parmoon_${GEO}_${PARALLEL_TYPE}.exe  ${MODEL})
 
 if( "${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID" )
-   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe PRIVATE "par" "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "par" "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} ${MUMPS_LIBRARIES} "mpi" "mpifort" "mpicxx")  
 elseif( "${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
-   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe PRIVATE  "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} )
 endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
