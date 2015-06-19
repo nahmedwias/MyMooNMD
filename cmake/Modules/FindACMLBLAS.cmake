@@ -1,60 +1,60 @@
 # ===================================================================
-# This is FindACMLBLAS.cmake file for the ParMooN Version 1.1
+# This is FindBLAS.cmake file for the ParMooN Version 1.1
 # written by Sashikumaar Ganesan, SERC, IISc Bangalore, India
 # date: 07 June 2015
-# searching for a ACMLBLAS lib in the system 
+# searching for a BLAS lib in the system 
 # if found, this will define
-#  ACMLBLAS_FOUND - System has ACMLBLAS
-#  ACMLBLAS_INCLUDE_DIRS - The ACMLBLAS include directories
-#  ACMLBLAS_LIBRARIES - The libraries needed to use ACMLBLAS
+#  BLAS_FOUND - System has BLAS
+#  BLAS_INCLUDE_DIRS - The BLAS include directories
+#  BLAS_LIBRARIES - The libraries needed to use BLAS
 # ===================================================================
-if(ACMLBLAS_INCLUDES AND ACMLBLAS_LIBRARIES)
-  set(ACMLBLAS_FIND_QUIETLY TRUE)
-endif(ACMLBLAS_INCLUDES AND ACMLBLAS_LIBRARIES)
+if(BLAS_INCLUDES AND BLAS_LIBRARIES)
+  set(BLAS_FIND_QUIETLY TRUE)
+endif(BLAS_INCLUDES AND BLAS_LIBRARIES)
 
-if(NOT ACMLBLAS_FOUND)
+if(NOT BLAS_FOUND)
  
-  find_path(ACMLBLAS_INCLUDE_DIR   acml.h PATHS $ENV{ACMLBLASDIR}/include ${CMAKE_INCLUDE_PATH})
-  find_library(ACMLBLAS_LIBRARY NAMES acml PATHS $ENV{ACMLBLASDIR}/lib ${CMAKE_LIBRARY_PATH})
-  get_filename_component(ACMLBLAS_LIBDIR ${ACMLBLAS_LIBRARY} PATH)
-  find_library(ACMLBLAS_LIBRARY_MP NAMES acml_mv PATHS ${ACMLBLAS_LIBDIR})
-   if(NOT ACMLBLAS_LIBRARY_MP)
-      find_library(ACMLBLAS_LIBRARY_MP NAMES acml_mp PATHS ${ACMLBLAS_LIBDIR})
-    endif(NOT ACMLBLAS_LIBRARY_MP)  
+  find_path(BLAS_INCLUDE_DIR   acml.h PATHS $ENV{ACMBLASDIR}/include ${CMAKE_INCLUDE_PATH})
+  find_library(BLAS_LIBRARY NAMES acml PATHS $ENV{BLASDIR}/lib ${CMAKE_LIBRARY_PATH})
+  get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARY} PATH)
+  find_library(BLAS_LIBRARY_MP NAMES acml_mv PATHS ${BLAS_LIBDIR})
+   if(NOT BLAS_LIBRARY_MP)
+      find_library(BLAS_LIBRARY_MP NAMES acml_mp PATHS ${BLAS_LIBDIR})
+    endif(NOT BLAS_LIBRARY_MP)  
       
-  if(NOT ACMLBLAS_LIBRARY)
-    message("ACMLBLAS not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
-    find_path(ACMLBLAS_INCLUDE_DIR  acml.h PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/include)
-    find_library(ACMLBLAS_LIBRARY NAMES acml PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/lib) 
-    get_filename_component(ACMLBLAS_LIBDIR ${ACMLBLAS_LIBRARY} PATH)
-    find_library(ACMLBLAS_LIBRARY_MP NAMES acml_mv PATHS ${ACMLBLAS_LIBDIR})
-    if(NOT ACMLBLAS_LIBRARY_MP)
-      find_library(ACMLBLAS_LIBRARY_MP NAMES acml_mp PATHS ${ACMLBLAS_LIBDIR})  
-    endif(NOT ACMLBLAS_LIBRARY_MP)       
-  endif(NOT ACMLBLAS_LIBRARY)
+  if(NOT BLAS_LIBRARY)
+    message("BLAS not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
+    find_path(BLAS_INCLUDE_DIR  acml.h PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/include)
+    find_library(BLAS_LIBRARY NAMES acml PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/lib) 
+    get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARY} PATH)
+    find_library(BLAS_LIBRARY_MP NAMES acml_mv PATHS ${BLAS_LIBDIR})
+    if(NOT BLAS_LIBRARY_MP)
+      find_library(BLAS_LIBRARY_MP NAMES acml_mp PATHS ${BLAS_LIBDIR})  
+    endif(NOT BLAS_LIBRARY_MP)       
+  endif(NOT BLAS_LIBRARY)
   
-  if(ACMLBLAS_LIBRARY)  
+  if(BLAS_LIBRARY)  
     # combine mumps and its deps    
-    if(ACMLBLAS_LIBRARY_MP)
-      set(ACMLBLAS_LIBRARY  ${ACMLBLAS_LIBRARY}  ${ACMLBLAS_LIBRARY_MP} ) 
-    else(ACMLBLAS_LIBRARY_MP)   
-      set(ACMLBLAS_LIBRARY FALSE)
-    endif(ACMLBLAS_LIBRARY_MP)
+    if(BLAS_LIBRARY_MP)
+      set(BLAS_LIBRARY  ${BLAS_LIBRARY}  ${BLAS_LIBRARY_MP} ) 
+    else(BLAS_LIBRARY_MP)   
+      set(BLAS_LIBRARY FALSE)
+    endif(BLAS_LIBRARY_MP)
     
-    # set ACMLBLAS
-    if(ACMLBLAS_LIBRARY)
+    # set BLAS
+    if(BLAS_LIBRARY)
       include(FindPackageHandleStandardArgs)
     
-      set(ACMLBLAS_LIBRARIES ${ACMLBLAS_LIBRARY})
-      set(ACMLBLAS_INCLUDE_DIRS ${ACMLBLAS_INCLUDE_DIR})
+      set(BLAS_LIBRARIES ${BLAS_LIBRARY})
+      set(BLAS_INCLUDE_DIRS ${BLAS_INCLUDE_DIR})
 
-      # handle the QUIETLY and REQUIRED arguments and set ACMLBLAS_FOUND to TRUE
+      # handle the QUIETLY and REQUIRED arguments and set BLAS_FOUND to TRUE
       # if all listed variables are TRUE
-      find_package_handle_standard_args(ACMLBLAS  DEFAULT_MSG
-                                        ACMLBLAS_LIBRARY ACMLBLAS_INCLUDE_DIR)
+      find_package_handle_standard_args(BLAS  DEFAULT_MSG
+                                        BLAS_LIBRARY BLAS_INCLUDE_DIR)
 
-      mark_as_advanced(ACMLBLAS_INCLUDE_DIR ACMLBLAS_LIBRARY)
-    endif(ACMLBLAS_LIBRARY)  
+      mark_as_advanced(BLAS_INCLUDE_DIR BLAS_LIBRARY)
+    endif(BLAS_LIBRARY)  
   endif()
 
 endif()

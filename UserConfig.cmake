@@ -25,7 +25,7 @@ set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
 set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/nse3d" CACHE STRING "select the model")
 
 # CMAKE_BUILD_TYPE [ DEBUG | RELEASE | RELWITHDEBINFO | MINSIZEREL ]
-set(EXE_BUILD_TYPE RELWITHDEBINFO)
+set(EXE_BUILD_TYPE RELEASE)
 
 # set FALSE, if you want to use libs provided in PARMOON 
 # if you set TRUE, it will search in all you lib paths and if not found, PARMOON libs will be used
