@@ -180,7 +180,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 	}
         break;
   #endif
-
+#ifdef _MPI
 	case 7: //SOR_Reorder
 	for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)
 	{
@@ -188,6 +188,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
                 N_Parameters, Parameters);
 	}
         break;
+#endif
 #endif	
       default:
         for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;j++)

@@ -45,12 +45,6 @@
 #ifdef _MPI
 #include "mpi.h"
 #include <MeshPartition.h>
-//#include <MeshPartition2D.h>
-// #include <ParFECommunicator3D.h>
-// #include <MumpsSolver.h>
-// #include <ParVector3D.h>
-// #include <ParVectorNSE3D.h>
-// #include <Scalar_ParSolver.h>
 #endif
 
 double bound = 0;
@@ -167,11 +161,11 @@ int main(int argc, char* argv[])
   Domain->Init(PRM, GEO);
 
   LEVELS = TDatabase::ParamDB->LEVELS;
-//   if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
-//   {
-//     TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
-//     LEVELS = 1;
-//   }
+  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+  {
+    TDatabase::ParamDB->UNIFORM_STEPS += (LEVELS-1);
+    LEVELS = 1;
+  }
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();
@@ -777,20 +771,20 @@ int main(int argc, char* argv[])
   if(profiling){
 #ifdef _MPI
     
-    int min_Ncells;
-    MPI_Allreduce(&N_Cells, &min_Ncells, 1, MPI_INT, MPI_MIN, Comm);
-    if(min_Ncells == N_Cells)
-    {
-      OutPut( "min NCells : " << N_Cells << endl);
-      OutPut( "corresponding min Ndof : " << N_DOF << endl);
-    }
-    int max_Ncells;
-    MPI_Allreduce(&N_Cells, &max_Ncells, 1, MPI_INT, MPI_MAX, Comm);
-    if(max_Ncells == N_Cells)
-    {
-      OutPut( "max NCells : " << N_Cells << endl);
-      OutPut( "corresponding max Ndof : " << N_DOF << endl);
-    }
+//     int min_Ncells;
+//     MPI_Allreduce(&N_Cells, &min_Ncells, 1, MPI_INT, MPI_MIN, Comm);
+//     if(min_Ncells == N_Cells)
+//     {
+//       OutPut( "min NCells : " << N_Cells << endl);
+//       OutPut( "corresponding min Ndof : " << N_DOF << endl);
+//     }
+//     int max_Ncells;
+//     MPI_Allreduce(&N_Cells, &max_Ncells, 1, MPI_INT, MPI_MAX, Comm);
+//     if(max_Ncells == N_Cells)
+//     {
+//       OutPut( "max NCells : " << N_Cells << endl);
+//       OutPut( "corresponding max Ndof : " << N_DOF << endl);
+//     }
 
     int Total_cells, Total_dof;
     MPI_Reduce(&N_Cells, &Total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
@@ -809,6 +803,8 @@ int main(int argc, char* argv[])
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(stop_time-start_time) <<"%)"<< endl);
     OutPut( "Total time taken throughout : " << (stop_time-start_time) << endl);
     OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
+    OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0));
+    OutPut(" MB" << endl);
 #ifdef _MPI
     }
 #endif

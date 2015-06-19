@@ -51,15 +51,7 @@ TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespac
 //    }
    
   SystMatAssembled  = FALSE;
-  
-#ifdef _MPI
-   if(SOLVER == DIRECT)
-   {
-     SQMATRICES[0] = sqmatrixM[N_Levels-1];
-     TDS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
-   }
-#endif
-  
+    
 } // constructor
 
 
@@ -97,6 +89,21 @@ TSystemMatTimeScalar3D::~TSystemMatTimeScalar3D()
 void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
                               TAuxParam3D *aux )
 {
+#ifdef _MPI
+   if(SOLVER == DIRECT)
+   {
+     SQMATRICES[0] = sqmatrixM[N_Levels-1];
+     TDS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
+   }
+#endif
+
+#ifdef _OMPONLY
+   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+   {
+     DS = new TParDirectSolver(sqmatrixM[N_Levels-1]);
+   }
+#endif 
+
  int i; 
   
   BoundaryConditions[0] = BoundCond;

@@ -113,12 +113,6 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, doub
         ParComm[i]   = new TParFECommunicator3D(ParMapper[i]);
    }// for(i=0;i<N_levels;i++)
 
-   if(SOLVER == DIRECT)
-    {
-     SQMATRICES[0] = sqmatrixA[N_Levels-1];
-     DS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
-    }
-
    int out_rank=TDatabase::ParamDB->Par_P0;
    int rank;
    MPI_Comm_rank(Comm, &rank);
@@ -148,13 +142,6 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, doub
     OutPut( "total own dofs over all sub domains : " << problemSize << endl);
   
 #endif
-
-#ifdef _OMPONLY
-   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
-   {
-     DS = new TParDirectSolver(sqmatrixA[N_Levels-1]);
-   }
-#endif 
  
    //initialize multigrid solver
    if(SOLVER==GMG)
@@ -240,6 +227,21 @@ TSystemMatScalar3D::~TSystemMatScalar3D()
 void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
                               TAuxParam3D *aux)
 {
+#ifdef _MPI
+     if(SOLVER == DIRECT)
+    {
+     SQMATRICES[0] = sqmatrixA[N_Levels-1];
+     DS = new TParDirectSolver(ParComm[N_Levels-1],NULL,SQMATRICES,NULL);
+    }
+#endif
+
+#ifdef _OMPONLY
+   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+   {
+     DS = new TParDirectSolver(sqmatrixA[N_Levels-1]);
+   }
+#endif 
+
  int i;
  
   BoundaryConditions[0] = BoundCond;

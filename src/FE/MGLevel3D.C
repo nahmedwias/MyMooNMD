@@ -156,6 +156,11 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
   ParMapper = parMapper;
   Temp_arr    = new double[N_DOF];
 
+  Reorder_M  = ParMapper->GetReorder_M();
+  Reorder_D1 = ParMapper->GetReorder_D1();
+  Reorder_D2 = ParMapper->GetReorder_D2();
+  Reorder_I  = ParMapper->GetReorder_I();
+
 }
 #endif
 
@@ -975,7 +980,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
 	// cout << "sol[i]: " << sol[i] << endl;
       } // endfor i
       
-      if(loop == 0)
+      if(loop == (repeat-1))
 	ParComm->CommUpdateMS(sol);
     //################################################################################################################//
 
@@ -1088,7 +1093,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
     //   } // endfor i
     // //################################################################################################################//
 
-    if(loop == 0)
+   if(loop == (repeat-1))
       ParComm->CommUpdateH1(sol);
 
     //############################################# Hanging NODES ####################################################//  
@@ -1122,7 +1127,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
 {
 //   SOR_Re(sol,f,aux,N_Parameters,Parameters);
 //   return;
-  
+  int *master = ParComm->GetMaster();
   int itr,ii, i,j,jj,k,l,index,rank,tid,nrows=0,numThreads,end,loop;
   double s, t, diag;
   double omega;
@@ -1136,6 +1141,8 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
   omp_set_num_threads(numThreads);
+  
+  
 
   if(smooth == -1)
     end = TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
@@ -1157,13 +1164,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
       //########################################## MASTERS DOFS ########################################################//
 	    if(itr == 0)
 	    {
-	      Reorder = ParMapper->GetReorder_M();
+// 	      Reorder = ParMapper->GetReorder_M();
 	      for(ii=0;ii<N_CMaster;ii++)
 	      {
 		#pragma omp for schedule(guided) 
 		for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
 		{
-		  i = Reorder[jj];
+		  i = Reorder_M[jj];
 		  if(i >= N_Active)     continue;
       
 		  s = f[i];
@@ -1187,21 +1194,23 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
 		} // endfor jj
 	      } //end for ii
 	    
-	    #pragma omp master
-	    {
 	      if(loop == (repeat-1))
-		ParComm->CommUpdateMS(sol);
-	    }
-#pragma omp barrier
-	  } //end firstTime
+	      {
+	        #pragma omp master
+	        {
+		  ParComm->CommUpdateMS(sol);
+	        }
+	        #pragma omp barrier
+	      }
+	    } //end firstTime
       //########################################## DEPENDENT1 DOFS #####################################################//
-	    Reorder = ParMapper->GetReorder_D1();
+// 	    Reorder = ParMapper->GetReorder_D1();
 	    for(ii=0;ii<N_CDept1;ii++)
 	    {
 	      #pragma omp for schedule(guided) 
 	      for(jj=ptrCDept1[ii];jj<ptrCDept1[ii+1];jj++)
 	      {
-		i = Reorder[jj];
+		i = Reorder_D1[jj];
 		if(i >= N_Active)     continue;
 		
 		s = f[i];
@@ -1230,13 +1239,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
 		ParComm->CommUpdateH1(sol);
 	    }    
       //########################################## DEPENDENT2 DOFS #####################################################//
-	    Reorder = ParMapper->GetReorder_D2();
+// 	    Reorder = ParMapper->GetReorder_D2();
 	    for(ii=0;ii<N_CDept2;ii++)
 	    {
 	    #pragma omp for schedule(guided) 
 	    for(jj=ptrCDept2[ii];jj<ptrCDept2[ii+1];jj++)
 	    {
-	      i = Reorder[jj];
+	      i = Reorder_D2[jj];
 	      if(i >= N_Active)     continue;
 	  
 	      s = f[i];
@@ -1263,13 +1272,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
       //########################################## MASTERS DOFS ########################################################//
 	    if(itr!=(end-1))
 	    {
-	    Reorder = ParMapper->GetReorder_M();
+// 	    Reorder = ParMapper->GetReorder_M();
 	    for(ii=0;ii<N_CMaster;ii++)
 	    {
 	      #pragma omp for schedule(guided) 
 	      for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
 	      {
-		i = Reorder[jj];
+		i = Reorder_M[jj];
 		if(i >= N_Active)     continue;
 	  
 		s = f[i];
@@ -1301,13 +1310,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
 		ParComm->CommUpdateMS(sol);
 	    }    
       //########################################## INDEPENDENT DOFS ####################################################//  
-	    Reorder = ParMapper->GetReorder_I();
+// 	    Reorder = ParMapper->GetReorder_I();
 	    for(ii=0;ii<N_CInt;ii++)
 	    {
 	    #pragma omp for schedule(guided) 
 	    for(jj=ptrCInt[ii];jj<ptrCInt[ii+1];jj++)
 	    {
-	      i = Reorder[jj];
+	      i = Reorder_I[jj];
 	      if(i >= N_Active)     continue;
 	    
 	      s = f[i];
@@ -1333,7 +1342,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux, int N_Paramet
 
       //############################################# Hanging NODES ####################################################//  
 	    // set hanging nodes
-	    int *master = ParComm->GetMaster();
+// 	    int *master = ParComm->GetMaster();
 
 	    #pragma omp for schedule(dynamic) nowait 
 
@@ -1373,7 +1382,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
   int ii, i,j,jj,k,l,index,rank,tid,nrows=0,numThreads;
   double s, t, diag;
   double omega;
-  
+  int *master = ParComm->GetMaster(); 
   omega = Parameters[0];
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
@@ -1388,13 +1397,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //########################################## MASTERS DOFS ########################################################//
     if(firstTime)
     {
-      Reorder = ParMapper->GetReorder_M();
+//       Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
 	for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
 	{
-	  i = Reorder[jj];
+	  i = Reorder_M[jj];
           if(i >= N_Active)     continue;
     
           s = f[i];
@@ -1427,13 +1436,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## DEPENDENT1 DOFS #####################################################//
-    Reorder = ParMapper->GetReorder_D1();
+//     Reorder = ParMapper->GetReorder_D1();
     for(ii=0;ii<N_CDept1;ii++)
       {
 	#pragma omp for schedule(guided) 
 	for(jj=ptrCDept1[ii];jj<ptrCDept1[ii+1];jj++)
 	{
-	  i = Reorder[jj];
+	  i = Reorder_D1[jj];
 	  if(i >= N_Active)     continue;
 	  
 	  s = f[i];
@@ -1462,13 +1471,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
     }
 //########################################## DEPENDENT2 DOFS #####################################################//
 //make a variable to control the fraction of d2 dofs
-    Reorder = ParMapper->GetReorder_D2();
+//     Reorder = ParMapper->GetReorder_D2();
     for(ii=0;ii<N_CDept2;ii++)
     {
       #pragma omp for schedule(guided) 
       for(jj=ptrCDept2[ii];jj<ptrCDept2[ii+1];jj++)
       {
-	i = Reorder[jj];
+	i = Reorder_D2[jj];
 	if(i >= N_Active)     continue;
     
 	s = f[i];
@@ -1496,13 +1505,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 //########################################## MASTERS DOFS ########################################################//
     if(!lastTime)
     {
-      Reorder = ParMapper->GetReorder_M();
+//       Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
 	for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
 	{
-	  i = Reorder[jj];
+	  i = Reorder_M[jj];
           if(i >= N_Active)     continue;
     
           s = f[i];
@@ -1534,13 +1543,13 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
     }
     
 //########################################## INDEPENDENT DOFS ####################################################//  
-    Reorder = ParMapper->GetReorder_I();
+//     Reorder = ParMapper->GetReorder_I();
     for(ii=0;ii<N_CInt;ii++)
     {
       #pragma omp for schedule(guided) 
       for(jj=ptrCInt[ii];jj<ptrCInt[ii+1];jj++)
       {
-        i = Reorder[jj];
+        i = Reorder_I[jj];
         if(i >= N_Active)     continue;
       
         s = f[i];
@@ -1566,7 +1575,7 @@ void TMGLevel3D::SOR_Re_Color(double *sol, double *f, double *aux,
 
 //############################################# Hanging NODES ####################################################//  
     // set hanging nodes
-    int *master = ParComm->GetMaster();
+//     int *master = ParComm->GetMaster();
 
     #pragma omp for schedule(dynamic) nowait 
 
@@ -1601,7 +1610,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
   int ii, i,j,jj,k,l,index,rank,tid,nrows=0,numThreads;
   double s, t, diag;
   double omega;
-  
+  int *master = ParComm->GetMaster();
   omega = Parameters[0];
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
@@ -1613,13 +1622,13 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 #pragma omp parallel default(shared) private(i,ii,s,k,j,jj,tid,index,diag,t)
   {
 //########################################## MASTERS DOFS ########################################################//
-      Reorder = ParMapper->GetReorder_M();
+//       Reorder = ParMapper->GetReorder_M();
       for(ii=0;ii<N_CMaster;ii++)
       {
 	#pragma omp for schedule(guided) 
 	for(jj=ptrCMaster[ii];jj<ptrCMaster[ii+1];jj++)
 	{
-	  i = Reorder[jj];
+	  i = Reorder_M[jj];
           if(i >= N_Active)     continue;
     
           s = f[i];
@@ -1651,13 +1660,13 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## DEPENDENT1 DOFS #####################################################//
-    Reorder = ParMapper->GetReorder_D1();
+//     Reorder = ParMapper->GetReorder_D1();
     for(ii=0;ii<N_CDept1;ii++)
       {
 	#pragma omp for schedule(guided) 
 	for(jj=ptrCDept1[ii];jj<ptrCDept1[ii+1];jj++)
 	{
-	  i = Reorder[jj];
+	  i = Reorder_D1[jj];
 	  if(i >= N_Active)     continue;
 	  
 	  s = f[i];
@@ -1685,13 +1694,13 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
       ParComm->CommUpdateH1(sol);
     }
 //########################################## DEPENDENT2 DOFS #####################################################//
-    Reorder = ParMapper->GetReorder_D2();
+//     Reorder = ParMapper->GetReorder_D2();
     for(ii=0;ii<N_CDept2;ii++)
     {
       #pragma omp for schedule(guided) 
       for(jj=ptrCDept2[ii];jj<ptrCDept2[ii+1];jj++)
       {
-	i = Reorder[jj];
+	i = Reorder_D2[jj];
 	if(i >= N_Active)     continue;
     
 	s = f[i];
@@ -1716,13 +1725,13 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 //################################################################################################################//
     
 //########################################## INDEPENDENT DOFS ####################################################//  
-    Reorder = ParMapper->GetReorder_I();
+//     Reorder = ParMapper->GetReorder_I();
     for(ii=0;ii<N_CInt;ii++)
     {
       #pragma omp for schedule(guided) 
       for(jj=ptrCInt[ii];jj<ptrCInt[ii+1];jj++)
       {
-        i = Reorder[jj];
+        i = Reorder_I[jj];
         if(i >= N_Active)     continue;
       
         s = f[i];
@@ -1748,7 +1757,7 @@ void TMGLevel3D::SOR_Re_Color_Coarse(double *sol, double *f, double *aux,
 
 //############################################# Hanging NODES ####################################################//  
     // set hanging nodes
-    int *master = ParComm->GetMaster();
+//     int *master = ParComm->GetMaster();
 
     #pragma omp for schedule(dynamic) nowait 
 

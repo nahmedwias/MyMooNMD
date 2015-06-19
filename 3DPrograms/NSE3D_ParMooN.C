@@ -162,11 +162,11 @@ int main(int argc, char* argv[])
    Domain->Init(PRM, GEO);
    
   LEVELS = TDatabase::ParamDB->LEVELS;
-//   if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
-//   {
-//     TDatabase::ParamDB->UNIFORM_STEPS += LEVELS;
-//     LEVELS = 1;
-//   } 
+  if(TDatabase::ParamDB->SOLVER_TYPE==DIRECT)
+  {
+    TDatabase::ParamDB->UNIFORM_STEPS += (LEVELS-1);
+    LEVELS = 1;
+  } 
   // refine grid up to the coarsest level
   for(i=0;i<TDatabase::ParamDB->UNIFORM_STEPS;i++)
     Domain->RegRefineAll();  

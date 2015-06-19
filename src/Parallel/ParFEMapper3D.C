@@ -44,7 +44,7 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
   MaxSubDomainPerDof = fespace->GetMaxSubDomainPerDof();
   if(MaxSubDomainPerDof<0)
   {
-    printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator2D \n");
+    printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator3D \n");
     MPI_Finalize();
     exit(0);
   }
@@ -841,6 +841,8 @@ if(TDatabase::ParamDB->Par_P4){
   }
 
 #ifdef _HYBRID
+if(TDatabase::ParamDB->Par_P5 == 1)
+{  
    N_InterfaceM = 0;
    N_Halo1 = 0;
    N_Dept2 = 0;
@@ -862,11 +864,24 @@ if(TDatabase::ParamDB->Par_P4){
       N_Dept1++;
   }
   
-  double reqd_ratio;
-  double ratio = TDatabase::ParamDB->Par_P10;
-  if(ratio <= 0)
-    ratio = (N_InterfaceM+N_InterfaceS)/(N_Dept1+N_Halo1);
+  double reqd_ratio = (N_InterfaceM+N_InterfaceS)/(N_Dept1+N_Halo1);;
+  double ratio;
   int ctr = 0;
+  
+  N_Dept2 = 0;
+  N_Int = 0;
+  for(i=0;i<N_Dof;i++)
+  {
+    if(DofMarker[i] == 'd')
+      N_Dept2++;
+    else if(DofMarker[i] == 'i')
+      N_Int++;
+  }
+  
+  if(N_Dept2!=0)
+    ratio = N_Int/N_Dept2;
+  else
+    ratio=0;
   
   while(ratio<reqd_ratio && ctr<4)
   {
@@ -914,9 +929,13 @@ if(TDatabase::ParamDB->Par_P4){
 	else if(DofMarker[i] == 'i')
 	  N_Int++;
       }
-      ratio = N_Int/N_Dept2;
+      if(N_Dept2!=0)
+	ratio = N_Int/N_Dept2;
+      else
+	ratio=0;
+//       ratio = N_Int/N_Dept2;
   }
-
+}
 #endif
   
    //mark halo type1(H)-->useful & type2(h)
@@ -1350,14 +1369,14 @@ if(TDatabase::ParamDB->Par_P4){
 	
   
   if(N_SendDof>0) Send_Info   = new double[N_SendDof*N_Dim];
-  if(N_SendDofMS>0) Send_InfoMS = Send_Info;
-  if(N_SendDofH1>0) Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
-  if(N_SendDofH2>0) Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
+  Send_InfoMS = Send_Info;
+  Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
+  Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
  
   if(N_Slave>0) Recv_Info   = new double[N_Slave*N_Dim];
-  if(N_InterfaceS>0) Recv_InfoMS = Recv_Info;
-  if(N_Halo1>0) Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
-  if(N_Halo2>0) Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
+  Recv_InfoMS = Recv_Info;
+  Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
+  Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
  
   end_time = MPI_Wtime();
   if(rank == 0)

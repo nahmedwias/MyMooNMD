@@ -26,15 +26,7 @@
 #ifdef _MPI
 #include "mpi.h"
 #include <MeshPartition.h>
-//#include <MeshPartition2D.h>
-// #include <ParFECommunicator3D.h>
-// #include <MumpsSolver.h>
-// #include <ParVector3D.h>
-// #include <ParVectorNSE3D.h>
-// #include <Scalar_ParSolver.h>
 #endif
-
-// #include <omp.h>
 
 #define AMG 0
 #define GMG 1
@@ -58,6 +50,7 @@ int main(int argc, char* argv[])
   // ======================================================================
   int i, N_Cells, ORDER, N_DOF,  img=1;
   int mg_type, mg_level, LEVELS;
+  double total_dof = 0;
   
   double *sol, *rhs, **Sol_array, **Rhs_array, t1, t2, errors[4];
   double start_time, end_time;
@@ -136,8 +129,6 @@ int main(int argc, char* argv[])
     ExampleFile();
    }
 
-     
-  
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh
   PRM = TDatabase::ParamDB->BNDFILE;
@@ -533,13 +524,19 @@ int main(int argc, char* argv[])
     OutPut( "Total time taken for communication : " << timeC << "(" <<100*timeC/(total) <<"%)"<< endl);
     OutPut( "Total time taken throughout : " << (total) << endl);
     OutPut("----------------------------------------------------------------------------------------------------------------------"<<endl);
-//     OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0));
-//     OutPut(" MB" << endl); 
+    OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0));
+    OutPut(" MB" << endl); 
 #ifdef _MPI
     }
 #endif
   }
-      
+  
+//   for(i=0;i<mg_level;i++)
+//    {
+//      total_dof += Scalar_FeSpaces[i]->GetN_DegreesOfFreedom();
+//    }
+//    printf("total dof over all levels :: %lf\n",total_dof);
+  
   CloseFiles();
 #ifdef _MPI
   MPI_Finalize(); 

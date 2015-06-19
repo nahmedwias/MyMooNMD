@@ -153,10 +153,17 @@ void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
  
   // define the local system matrix
   id.a_loc  = Mat_loc;
- 
+  
+  double t1 = MPI_Wtime();
+  if(rank==TDatabase::ParamDB->Par_P0)
+   OutPut("MUMPS Factorization : ");
+  
   id.job=JOB_FACTORIZ;
   dmumps_c(&id);
-   
+  
+  if(rank==TDatabase::ParamDB->Par_P0)
+   OutPut("Time taken for Factorization: "<< MPI_Wtime()- t1 << endl);
+  
   FactorFlag = TRUE;   
 
   if(id.INFOG(1)<0)

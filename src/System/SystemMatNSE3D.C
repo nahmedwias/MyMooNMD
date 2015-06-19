@@ -288,10 +288,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
     ParComm_P[i] = new TParFECommunicator3D(ParMapper_P[i]);
   }
 
-  if(SOLVER == DIRECT)
-  {
-     DS = new TParDirectSolver(ParComm_U[N_Levels-1],ParComm_P[N_Levels-1],SQMATRICES,MATRICES);
-  }
+
 
   if(profiling)
   {
@@ -405,7 +402,22 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
 
 void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *U1BoundValue, 
                            BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue)
-{  
+{ 
+#ifdef _MPI
+    if(SOLVER == DIRECT)
+  {
+     DS = new TParDirectSolver(ParComm_U[N_Levels-1],ParComm_P[N_Levels-1],SQMATRICES,MATRICES);
+  }
+#endif
+
+#ifdef _OMPONLY
+   if(SOLVER == DIRECT && TDatabase::ParamDB->DSType == 1)
+   {
+     cout<<"NOT YET IMPLEMENTED !!!"<<endl;
+     exit(0);
+   }
+#endif 
+
   int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
   int N_U_Current;
   int velocity_space_code, pressure_space_code;

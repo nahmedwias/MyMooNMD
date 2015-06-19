@@ -92,6 +92,8 @@ class TMGLevel3D
      /** Reorder of sol array */
      int *Reorder,N_Master,N_Int,N_Dept;
      
+     int *Reorder_M,*Reorder_D1,*Reorder_D2,*Reorder_I;
+     
      int N_InterfaceM, N_Dept1, N_Dept2;// N_Dept3;
      
 #endif

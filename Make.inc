@@ -52,28 +52,23 @@ endif
 #BLAS_LINUX64 = -L$(MKLROOT)/lib/intel64 -lmkl_rt -lgfortran   -lpthread 
 
 ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
-BLAS_LINUX64 =  -L$(ACML_PATH) -lacml  -lacml_mp  -lgfortran
- 
+#BLAS_LINUX64 =  -L$(ACML_PATH) -lacml  -lacml_mp  -lgfortran
+BLAS_LINUX64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran  -lpthread
 
 ifeq ($(PARALLEL_TYPE), MPI)
 
 BLACS_PATH = EXT_LIB/MPIBLACS
-MPI_PATH = /opt/mpich/lib64
-MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
+MPI_PATH = /opt/mpich2/lib64
+MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64 -lblacs_MPI_LINUX64-0 -lblacsF77init_MPI_LINUX64-0 -lblacs_MPI_LINUX64-0  \
                      -L$(MPI_PATH)  -lmpich -lmpichf90 -lmpichcxx
-                      
-MPIBLACS_LINUX64  =  -L$(BLACS_PATH)  -lscalapack_LINUX64  -lblacs_MPI_LINUX64-0 -lblacsF77init_MPI_LINUX64-0 \
-                      -lblacs_MPI_LINUX64-0    -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
 endif
 
 ifeq ($(PARALLEL_TYPE), HYBRID)
 
 BLACS_PATH = EXT_LIB/MPIBLACS
 MPI_PATH = /opt/mpich2/lib64
-MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64  $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                        $(BLACS_PATH)/blacsF77init_MPI_LINUX64-0.a $(BLACS_PATH)/blacs_MPI_LINUX64-0.a  \
-                      -L$(MPI_PATH)  -lmpi -lmpifort -lmpicxx
+MPIBLACS_LINUX64  = -L$(BLACS_PATH) -lscalapack_LINUX64 -lblacs_MPI_LINUX64-0 -lblacsF77init_MPI_LINUX64-0 -lblacs_MPI_LINUX64-0  \
+                     -L$(MPI_PATH)  -lmpich -lmpichf90 -lmpichcxx
 endif
 
 ifeq ($(PARALLEL_TYPE),OMPONLY)
@@ -139,10 +134,9 @@ else
   CC_TYRONE64            = mpicc
 endif
 
-ACML_PATH =  EXT_LIB/ACML/gfortran64/lib
-BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mv.a -lgfortran  -lrt
- 
- 
+ACML_PATH = EXT_LIB/ACML/gfortran64/lib
+BLAS_TYRONE64 =  $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
+
 ifeq ($(PARALLEL_TYPE), MPI)
 
   BLACS_PATH = EXT_LIB/MPIBLACS
@@ -155,6 +149,8 @@ ifeq ($(PARALLEL_TYPE), MPI)
  
  else
 
+ACML_PATH = EXT_LIB/ACML/gfortran64/lib
+BLAS_TYRONE64 = $(ACML_PATH)/libacml.a  $(ACML_PATH)/libacml_mp.a -lgfortran -lrt -lpthread
 PARADISO_TYRONE64 =  -LEXT_LIB/PARDISO/TYRONE64/OpenMP -lpardiso400_GNU430_IA64
  OMP_COMPILE_FLAGS_TYRONE64 = -fopenmp
 

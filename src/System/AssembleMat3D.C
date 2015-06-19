@@ -16,6 +16,7 @@
 #include <BaseCell.h>
 #include <HNDesc.h>
 #include <HangingNode.h>
+#include <string.h>
 
 TAssembleMat3D::TAssembleMat3D(int n_fespaces, TFESpace3D **fespaces,
                          int n_sqmatrices, TSquareMatrix3D **sqmatrices,
