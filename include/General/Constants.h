@@ -21,9 +21,7 @@
 
 #ifdef __2D__
 #define GEO_DIM 2
-#endif
-
-#ifdef __3D__
+#else
 #define GEO_DIM 3
 #endif
 

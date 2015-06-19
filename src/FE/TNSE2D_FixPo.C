@@ -3,7 +3,6 @@
 //
 // common declaration for all time dependent Navier-Stokes problems
 // ======================================================================
-#ifdef __2D__
 
 #include <Database.h>
 #include <Convolution.h>
@@ -6203,6 +6202,3 @@ void TimeNSParams4(double *in, double *out)
   out[2] = in[4];                // u1, previous time
   out[3] = in[5];                // u2, previous time
 }
-
-
-#endif //#ifdef __3D__

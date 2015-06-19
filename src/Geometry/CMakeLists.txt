@@ -54,10 +54,13 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Triangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Vertex.C")
 
 if("${GEO}" STREQUAL "2D")
-
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/InnerInterfaceJoint.C")
 elseif("${GEO}" STREQUAL "3D")
+
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdCylinder.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdPlane.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdSphere.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Edge.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/InnerEdge.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BDEdge3D.C")

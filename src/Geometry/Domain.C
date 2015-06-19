@@ -51,8 +51,6 @@
 
 #include <string.h>
 
-
-
 extern "C"
 {
   #include <gridgen.h>

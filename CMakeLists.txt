@@ -89,8 +89,8 @@ if(CMAKE_VERBOSE_MAKEFILE)
     message("Available system UMFPACK_LIB =${UMFPACK_LIBRARIES}")
   elseif(NOT UMFPACK_FOUND)
     message(FATAL_ERROR "UMFPACK_NOT_FOUND in your system or in the ParMooN")
-  endif()
-endif()
+  endif(UMFPACK_FOUND)
+endif(CMAKE_VERBOSE_MAKEFILE)
 message("==================Searching UMFPACK in the System - end=====================================================")
 
 if("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
@@ -200,9 +200,9 @@ if("${ARCH}" STREQUAL "MAC64")
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc-mpich-mp)
     find_path(MPI_CXXPATH   mpicxx-mpich-mp)  
     set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx-mpich-mp)      
-  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+  elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
     find_path(CPATH  clang)
-    set(CMAKE_C_COMPILER ${CPATH}/clang)
+    set(CMAKE_C_COMPILER ${CPATH}/clang  )
     find_path(CXXPATH Clang)  
     set(CMAKE_CXX_COMPILER ${CXXPATH}/Clang)  
   endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
@@ -214,7 +214,7 @@ elseif("${ARCH}" STREQUAL "LINUX64")
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc)
     find_path(MPI_CXXPATH   mpicxx)  
     set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx)      
-  elseif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
+  elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
     find_path(CPATH  gcc)
     set(CMAKE_C_COMPILER ${CPATH}/gcc)
     find_path(CXXPATH g++)  
@@ -232,9 +232,9 @@ endif()
 
 
 # set the define for compiler  options
-  set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
-  set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
-  set(CMAKE_C_FLAGS_RELEASE "O3 -s  ${PARMOON_CXX_DEF}")
+  set(CMAKE_C_FLAGS "${PARMOON_C_DEF}")
+  set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_C_DEF}")
+  set(CMAKE_C_FLAGS_RELEASE "O3 -s  ${PARMOON_C_DEF}")
   set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF}" )
   set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s ${PARMOON_CXX_DEF}") 
@@ -253,7 +253,6 @@ include_directories("${CMAKE_SOURCE_DIR}/include/System")
 include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
 include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
-
 add_subdirectory(src/AMG) 
 add_subdirectory(src/Refinement) 
 add_subdirectory(src/QuadFormulas)  
@@ -267,14 +266,14 @@ if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
    add_subdirectory(src/Parallel) 
 endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 
-add_executable(parmoon_${PARALLEL_TYPE}.exe  ${MODEL})
+add_executable(parmoon_${GEO}_${PARALLEL_TYPE}.exe  ${MODEL})
 
 if( "${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID" )
-   target_link_libraries(parmoon_${PARALLEL_TYPE}.exe PRIVATE "par" "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe PRIVATE "par" "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${ACMLBLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} ${MUMPS_LIBRARIES} "mpi" "mpifort" "mpicxx")  
 elseif( "${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
-   target_link_libraries(parmoon_${PARALLEL_TYPE}.exe PRIVATE  "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe PRIVATE  "geo"  "fe" "gen"  "sys"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${ACMLBLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} )
 endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
@@ -292,10 +291,9 @@ message("=======================================================================
 message("Configuration for the ParMooN Version 1.1")  
 message("Author : Sashikumaar Ganesan")
 message("         Numerical Mathematics and Scientific Computing")
-message("         Supercomputer Edu. and Research Centre")
-message("         Indian Institute of Science")
+message("         Supercomputer Edu. and Research Centre, Indian Institute of Science")
 message("         Bangalore, India")  
-message("Question: www.serc.iisc.ernet.in/~sashi/") 
+message("Contact: mailt0:sashi@serc.iisc.in") 
 message("============================================================================================================"  ) 
 
 
