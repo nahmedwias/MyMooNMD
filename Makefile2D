@@ -35,7 +35,6 @@ else
  LIB_EXAMPLES   = $(LIBPATH)lib_Examples.a
 endif
 
-
 include Make.inc
 
 ifeq ($(EFENCE),YES)
@@ -44,14 +43,16 @@ else
 LM = -lm
 endif
 
-$(OUT): $(IN).C $(LIB_GEO) $(LIB_PAR) $(LIB_FE) $(LIB_GENERAL) \
-	   $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) $(LIB_SYSTEM)  $(LIB_PBE) 
+$(OUT): $(IN).C $(LIB_PAR) $(LIB_GEO) $(LIB_SYSTEM) $(LIB_FE) $(LIB_GENERAL) \
+	   $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) $(LIB_PBE) 
 	@echo new main program 
 	@echo CPP is $(CPP), C is $(CC)
 	@$(CPP) $(CPPFLAG) $(GPROF) $(DEFINE) -o $(OUT) $(IN).C \
-	 $(LIB_PAR) $(LIB_SYSTEM) $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
+	 $(LIB_PAR)  $(LIB_SYSTEM) $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
+	 $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
 	 $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) \
-	 $(LIB_GEO) $(LIB_FE) $(LIB_REFINEMENT) $(LIB_GENERAL)\
-   $(LIB_GEO) $(LIB_PBE) \
-	 $(UMFPACK) $(MUMPS_LIB) $(BLAS) $(TECPLOT) $(LIB_EXAMPLES)\
-	 EXT_LIB/GridGen/libgridgen_$(MACH).so  $(LDFLAG) $(LM)
+	 $(LIB_GEO)  $(LIB_FE) $(LIB_QF) \
+	 $(LIB_GEO) $(LIB_PBE) $(LIB_PAR)  \
+	 $(UMFPACK) $(TECPLOT) $(PARSOLVER_LIB) $(BLAS)\
+	 $(LIB_TETGEN) EXT_LIB/GridGen/libgridgen_$(MACH).so  $(LM) 
+

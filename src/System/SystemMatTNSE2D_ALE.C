@@ -397,7 +397,7 @@ void TSystemMatTNSE2D_ALE::Assemble(double *sol, double *rhs)
         BoundaryValues,
         NSEaux);
         
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {
@@ -823,7 +823,7 @@ void TSystemMatTNSE2D_ALE::AssembleANonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {

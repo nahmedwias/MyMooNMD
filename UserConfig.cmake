@@ -8,14 +8,14 @@
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
 
 # selection of dimension (2D 3D)
-set(GEO "3D" CACHE STRING "Change GEO, to select the Dimensio of the problem")
+set(GEO "2D" CACHE STRING "Change GEO, to select the Dimensio of the problem")
 
 # select this line accordingly to include your main program
 # set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
-set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
+set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
 
 # selection of architect type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
-set(ARCH "LINUX64" CACHE STRING "select the machine type")  
+set(ARCH "MAC64" CACHE STRING "select the machine type")  
 
 #  selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
 set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
@@ -86,4 +86,4 @@ set_property(CACHE PARALLEL_TYPE PROPERTY STRINGS SEQUENTIAL MPI OMPONLY HYBRID)
  endif()
  
  
-set(PARMOON_CXX_DEF "-D__${GEO}__ -D__${ARCH}__ ${PARMOON_CXX_DEF} -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")
+set(PARMOON_CXX_DEF " -D__${GEO}__ -D__${ARCH}__ ${PARMOON_CXX_DEF} -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")

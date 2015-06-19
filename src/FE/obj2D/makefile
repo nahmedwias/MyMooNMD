@@ -138,10 +138,4 @@ clean:
 	@echo removing object files
 	@$(RM) $(MEMBERS) $(LIBRARY) ii_files SunWS_cache
 
-Assemble.o: ../Assemble.C $(DEFINEPARAMS)
-Assemble2D_edge_convdiv.o: ../Assemble2D_edge_convdiv.C $(DEFINEPARAMS)
-Assemble2D_edge_Oseen.o: ../Assemble2D_edge_Oseen.C $(DEFINEPARAMS)
-FESpace2D.o: ../FESpace2D.C $(DEFINEPARAMS)
-SquareStructure.o: ../SquareStructure.C $(DEFINEPARAMS)
-Structure.o: ../Structure.C $(DEFINEPARAMS)
 

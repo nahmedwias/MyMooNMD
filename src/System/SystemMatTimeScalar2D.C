@@ -50,14 +50,14 @@ TSystemMatTimeScalar2D::TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype
 
 TSystemMatTimeScalar2D::~TSystemMatTimeScalar2D()
 {
-  delete sqstructure;
-  delete sqmatrixA; 
+//   delete sqstructure;
+//   delete sqmatrixA; 
   
-  delete sqmatrixM;
+//   delete sqmatrixM;
   if(Disctype==SDFEM || Disctype==SUPG)
    {
-     delete sqmatrixS;
-     delete sqmatrixK;    
+//      delete sqmatrixS;
+//      delete sqmatrixK;    
    }
 }
 

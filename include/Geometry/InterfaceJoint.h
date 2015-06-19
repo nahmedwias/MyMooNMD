@@ -80,7 +80,7 @@ class TInterfaceJoint : public TJointEqN
     }
     
     // Destructor
-    virtual ~TInterfaceJoint();
+    virtual ~TInterfaceJoint(){};
    
 };
 

@@ -51,10 +51,11 @@
 
 #include <string.h>
 
-#include <gridgen.h>
+
 
 extern "C"
 {
+  #include <gridgen.h>
   void triangulate(char *, struct triangulateio *, struct triangulateio *,
                    struct triangulateio *);
 }
@@ -1874,7 +1875,7 @@ int TDomain::Gen1RegGrid()
   {
     TDatabase::IteratorDB[It_EQ]->Init(CurrLevel);
 
-    while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+    while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
       if (!CurrCell->ExistChildren())
         CurrCell->Gen1RegGrid();
   }
@@ -2664,7 +2665,7 @@ void TDomain::MakeBdParamsConsistent(TCollection *coll)
 //  {
 //    TDatabase::IteratorDB[It_EQ]->Init(CurrLevel);
 //
-//    while (CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+//    while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
 //      if (!CurrCell->ExistChildren())
 //        CurrCell->Gen1RegGrid();
 //  }

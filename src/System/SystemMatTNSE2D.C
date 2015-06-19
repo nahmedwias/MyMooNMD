@@ -385,7 +385,7 @@ void TSystemMatTNSE2D::Assemble(double *sol, double *rhs)
         NSEaux);
 
        
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
        {
         switch(NSEType)
          {
@@ -760,7 +760,7 @@ void TSystemMatTNSE2D::AssembleANonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == STOKES) )
        {
         switch(NSEType)
          {

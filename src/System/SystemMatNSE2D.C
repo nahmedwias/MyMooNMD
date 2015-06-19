@@ -342,7 +342,7 @@ void TSystemMatNSE2D::Assemble(double *sol, double *rhs)
         NSEaux);
  
      
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {
@@ -457,7 +457,7 @@ void TSystemMatNSE2D::AssembleNonLinear(double *sol, double *rhs)
                  NSEaux);    
 
        // apply upwind disc
-      if( (Disctype==UPWIND) && (!TDatabase::ParamDB->PROBLEM_TYPE == 3) )
+      if( (Disctype==UPWIND) && !(TDatabase::ParamDB->PROBLEM_TYPE == 3) )
        {
         switch(NSEType)
          {

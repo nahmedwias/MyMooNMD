@@ -231,14 +231,13 @@ elseif("${ARCH}" STREQUAL "CRAY64")
 endif()
 
 
-
-
+# set the define for compiler  options
   set(CMAKE_C_FLAGS "${PARMOON_CXX_DEF}")
   set(CMAKE_C_FLAGS_DEBUG "-g ${PARMOON_CXX_DEF}")
   set(CMAKE_C_FLAGS_RELEASE "O3 -s  ${PARMOON_CXX_DEF}")
-  set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}" )
-  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s ${PARMOON_CXX_DEF} ${PARMOON_CXX_DEF}") 
+  set(CMAKE_CXX_FLAGS "${PARMOON_CXX_DEF}" )
+  set(CMAKE_CXX_FLAGS_DEBUG "${PARMOON_CXX_DEF} ")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s ${PARMOON_CXX_DEF}") 
  
 include_directories("${CMAKE_SOURCE_DIR}/include/General")
 include_directories("${CMAKE_SOURCE_DIR}/include/FE")

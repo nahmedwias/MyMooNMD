@@ -8,7 +8,7 @@ OUT = main
 #MACH = LINUX
 #MACH = INTEL64 
 #MACH = TYRONE64  
-MACH = LINUX64
+#MACH = LINUX64
 MACH = MAC64
 #MACH = CRAY64
 
@@ -30,7 +30,7 @@ PARALLEL_TYPE = HYBRID
 PARALLEL_TYPE = MPI
 #PARALLEL_TYPE = OPENMP
 #PARALLEL_TYPE = OMPONLY
-
+PARALLEL_TYPE = SEQUENTIAL
 #hybrid  = takes all, mpi, hybrid, openmp
 #MPI     = takes both mpi & openmp
 #openmp  = takes only openmp

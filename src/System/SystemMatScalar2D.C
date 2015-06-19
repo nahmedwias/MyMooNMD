@@ -42,8 +42,8 @@ TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int so
 
 TSystemMatScalar2D::~TSystemMatScalar2D()
 {
-  delete sqstructure;
-  delete sqmatrixA;
+//   delete sqstructure;
+//   delete sqmatrixA;
 }
   
   
