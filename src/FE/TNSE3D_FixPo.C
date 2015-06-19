@@ -9,6 +9,7 @@
 #include <MooNMD_Io.h>
 #include <ConvDiff.h>
 #include <stdlib.h>
+#include <TNSE3D_Routines.h>
 
 // ======================================================================
 // compute turbulent viscosity for LES 
