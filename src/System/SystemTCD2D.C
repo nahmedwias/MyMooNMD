@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatTimeScalar2D
+* @brief     source file for TSystemTCD2D
 * @author    Sashikumaar Ganesan
 * @date      08.08.14
 * @History 
@@ -7,8 +7,8 @@
 #ifdef __2D__
 
 #include <Database.h>
-#include <SystemMatTimeScalar2D.h>
-#include <SystemMatScalar2D.h>
+#include <SystemTCD2D.h>
+#include <SystemCD2D.h>
 #include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-TSystemMatTimeScalar2D::TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype, int solver): TSystemMatScalar2D(fespace,  disctype, solver)
+TSystemTCD2D::TSystemTCD2D(TFESpace2D *fespace, int disctype, int solver): TSystemCD2D(fespace,  disctype, solver)
 {
   /** need it for solver */
   sqmatrices = (TSquareMatrix **)SQMATRICES;
@@ -48,7 +48,7 @@ TSystemMatTimeScalar2D::TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype
 } // constructor
 
 
-TSystemMatTimeScalar2D::~TSystemMatTimeScalar2D()
+TSystemTCD2D::~TSystemTCD2D()
 {
 //   delete sqstructure;
 //   delete sqmatrixA; 
@@ -62,7 +62,7 @@ TSystemMatTimeScalar2D::~TSystemMatTimeScalar2D()
 }
 
 
-void TSystemMatTimeScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
+void TSystemTCD2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
 {
   BoundaryConditions[0] =  BoundCond;
   BoundaryValues[0] = BoundValue;
@@ -98,7 +98,7 @@ void TSystemMatTimeScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *
 } // Init
 
 
-void TSystemMatTimeScalar2D::AssembleMRhs(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemTCD2D::AssembleMRhs(TAuxParam2D *aux, double *sol, double *rhs)
 {
   int N_DOF, N_Active, N_SquareMatrices;
   double *RHSs[1];
@@ -146,11 +146,11 @@ void TSystemMatTimeScalar2D::AssembleMRhs(TAuxParam2D *aux, double *sol, double 
       // copy Dirichlet values from rhs into sol
       memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
       
-} // TSystemMatScalar2D::AssembleMRhs 
+} // TSystemTCD2D::AssembleMRhs 
 
 
 
-void TSystemMatTimeScalar2D::AssembleARhs(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemTCD2D::AssembleARhs(TAuxParam2D *aux, double *sol, double *rhs)
 {
   int N_DOF, N_Active, N_SquareMatrices;
   double *RHSs[1];
@@ -199,9 +199,9 @@ void TSystemMatTimeScalar2D::AssembleARhs(TAuxParam2D *aux, double *sol, double 
       // copy Dirichlet values from rhs into sol
       memcpy(sol+N_Active, rhs+N_Active, (N_DOF - N_Active)*SizeOfDouble);  
       
-} // TSystemMatScalar2D::AssembleARhs 
+} // TSystemTCD2D::AssembleARhs 
 
-void TSystemMatTimeScalar2D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
+void TSystemTCD2D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
 {
     int N_DOF, N_Active, N_SquareMatrices;
     double tau;
@@ -251,7 +251,7 @@ void TSystemMatTimeScalar2D::AssembleSystMat(double *oldrhs, double *oldsol, dou
      
 } // AssembleSystMat
 
-void TSystemMatTimeScalar2D::RestoreMassMat()
+void TSystemTCD2D::RestoreMassMat()
 {
 
 //   cout << "RestoreMassMat  gamma " << gamma << endl;
@@ -278,7 +278,7 @@ void TSystemMatTimeScalar2D::RestoreMassMat()
   
 }
 
-void TSystemMatTimeScalar2D::Solve(double *sol, double *rhs)
+void TSystemTCD2D::Solve(double *sol, double *rhs)
 {
   
     switch(SOLVER)
@@ -304,7 +304,7 @@ void TSystemMatTimeScalar2D::Solve(double *sol, double *rhs)
 }
 
 
-double TSystemMatTimeScalar2D::GetResidual(double *sol)
+double TSystemTCD2D::GetResidual(double *sol)
 {
   int N_DOF = FeSpace->GetN_DegreesOfFreedom(); 
   double residual_scalar;

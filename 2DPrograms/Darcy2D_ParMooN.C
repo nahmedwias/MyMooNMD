@@ -9,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <SystemMatDarcy2D.h>
+#include <SystemDarcy2D.h>
 #include <Output2D.h>
 #include <MainUtilities.h>
 #include <LinAlg.h>
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   //====================================================================== 
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  TSystemMatDarcy2D SystemMatrix(fespaces);
+  TSystemDarcy2D SystemMatrix(fespaces);
   
   // initilize the system matrix with the functions defined in the example
   SystemMatrix.Init(example.get_bc(), example.get_bd());
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     double t1 = GetTime();
     SystemMatrix.Solve(sol, rhs);
      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       // this sould be done in TSystemMatDarcy2D::Solve, but we don't have 
+       // this sould be done in TSystemDarcy2D::Solve, but we don't have 
        // access to p there
        //p.project_into_L20();
        IntoL20Vector2D(sol+N_U, N_P, p_space_code);

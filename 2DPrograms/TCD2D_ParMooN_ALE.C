@@ -10,7 +10,7 @@
 
 #include <Domain.h>
 #include <Database.h>
-#include <SystemMatTimeScalar2D_ALE.h>
+#include <SystemTCD2D_ALE.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
 #include <SquareStructure2D.h>
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   TFESpace2D *Scalar_FeSpace, *fesp[1], *GridFESpace;
   TFEFunction2D *Scalar_FeFunction;
   TOutput2D *Output;
-  TSystemMatTimeScalar2D_ALE *SystemMatrix_ALE; 
+  TSystemTCD2D_ALE *SystemMatrix_ALE; 
   TAuxParam2D *aux;
   MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
   TFEVectFunct2D *MeshVelocity; 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 //======================================================================
 // SystemMatrix construction and solution
 //======================================================================  
-    SystemMatrix_ALE = new TSystemMatTimeScalar2D_ALE(Scalar_FeSpace, TDatabase::ParamDB->DISCTYPE, DIRECT, GridFESpace, MeshVelocity,
+    SystemMatrix_ALE = new TSystemTCD2D_ALE(Scalar_FeSpace, TDatabase::ParamDB->DISCTYPE, DIRECT, GridFESpace, MeshVelocity,
 #ifdef __CONSERVATIVEALE__       
                                                       TRUE
 #else         

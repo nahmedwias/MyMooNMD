@@ -11,7 +11,7 @@
 #include <FEDatabase3D.h>
 #include <LinAlg.h>
 #include <FESpace3D.h>
-#include <SystemMatScalar3D.h>
+#include <SystemCD3D.h>
 #include <Output3D.h>
 #include <MainUtilities.h>
 
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   TFESpace3D **Scalar_FeSpaces, *fesp[1];
   TFEFunction3D *Scalar_FeFunction, **Scalar_FeFunctions;
   TOutput3D *Output;
-  TSystemMatScalar3D *SystemMatrix;
+  TSystemCD3D *SystemMatrix;
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix = new TSystemMatScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+    SystemMatrix = new TSystemCD3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
                                           TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
 
     // initilize the system matrix with the functions defined in Example file

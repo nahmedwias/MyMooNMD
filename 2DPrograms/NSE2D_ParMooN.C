@@ -12,7 +12,7 @@
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
 #include <FESpace2D.h>
-#include <SystemMatNSE2D.h>
+#include <SystemNSE2D.h>
 #include <SquareStructure2D.h>
 #include <Structure2D.h>
 #include <Output2D.h>
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   TFEVectFunct2D *Velocity;
   TFEFunction2D *u1, *u2, *Pressure, *fefct[2];
   TOutput2D *Output;
-  TSystemMatNSE2D *SystemMatrix;
+  TSystemNSE2D *SystemMatrix;
   TAuxParam2D *aux;
   MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
    
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT
     NSEType = TDatabase::ParamDB->NSTYPE;
     
-    SystemMatrix = new TSystemMatNSE2D(Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, GALERKIN, NSEType, DIRECT);
+    SystemMatrix = new TSystemNSE2D(Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, GALERKIN, NSEType, DIRECT);
  
     // initilize the system matrix with the functions defined in Example file
     //last argument is aux that is used to pass additional fe functions (eg. mesh velocity)

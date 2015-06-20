@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatNSE2D
+* @brief     source file for TSystemNSE2D
 * @author    Sashikumaar Ganesan, 
 * @date      23.08.14
 * @History 
@@ -8,7 +8,7 @@
 #ifdef __2D__
 
 #include <Database.h>
-#include <SystemMatNSE2D.h>
+#include <SystemNSE2D.h>
 #include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
@@ -24,7 +24,7 @@
 #include <string.h>
 
 
-TSystemMatNSE2D::TSystemMatNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
+TSystemNSE2D::TSystemNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
                                  TFEFunction2D *p, int disctype, int nsetype, int solver)
 {
   //store the FEspaces and fefunct
@@ -116,7 +116,7 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *press
    NSEaux = NULL;
 }
 
-TSystemMatNSE2D::~TSystemMatNSE2D()
+TSystemNSE2D::~TSystemNSE2D()
 {
     delete NSEaux; 
        
@@ -126,7 +126,7 @@ TSystemMatNSE2D::~TSystemMatNSE2D()
 }
 
 
-void TSystemMatNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue, TAuxParam2D *aux)
+void TSystemNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue, TAuxParam2D *aux)
 {
   TDiscreteForm2D *DiscreteFormGalerkin, *DiscreteFormSDFEM, *DiscreteFormUpwind, *DiscreteFormSmagorinsky;
   TDiscreteForm2D *DiscreteFormVMSProjection, *DiscreteFormNLGalerkin, *DiscreteFormNLSDFEM, *DiscreteFormNLUpwind;
@@ -231,10 +231,10 @@ void TSystemMatNSE2D::Init(CoeffFct2D *lincoeffs, BoundCondFunct2D *BoundCond, B
         DiscreteFormARhs = DiscreteFormUpwind;     
         DiscreteFormNL = NULL;
        }
-} // TSystemMatNSE2D::Init
+} // TSystemNSE2D::Init
 
  
-void TSystemMatNSE2D::Assemble(double *sol, double *rhs)
+void TSystemNSE2D::Assemble(double *sol, double *rhs)
 {
   int N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
   
@@ -403,9 +403,9 @@ void TSystemMatNSE2D::Assemble(double *sol, double *rhs)
      memcpy(sol+N_U+N_Active, rhs+N_U+N_Active, N_DirichletDof*SizeOfDouble); 
       
 //     cout << "Test Assemble " << endl; 
-} // TSystemMatNSE2D::Assemble(T
+} // TSystemNSE2D::Assemble(T
 
-void TSystemMatNSE2D::AssembleNonLinear(double *sol, double *rhs)
+void TSystemNSE2D::AssembleNonLinear(double *sol, double *rhs)
 {
  int N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces, last_sq;
 
@@ -511,17 +511,17 @@ void TSystemMatNSE2D::AssembleNonLinear(double *sol, double *rhs)
       
       
       
-} //TSystemMatNSE2D::AssembleNonLinear(
+} //TSystemNSE2D::AssembleNonLinear(
 
 
-void TSystemMatNSE2D::GetResidual(double *sol, double *rhs, double *res)
+void TSystemNSE2D::GetResidual(double *sol, double *rhs, double *res)
 {
   
    Defect(sqmatrices, matrices, sol, rhs, res); 
    
-} // TSystemMatNSE2D::GetResidual
+} // TSystemNSE2D::GetResidual
 
-void TSystemMatNSE2D::Solve(double *sol, double *rhs)
+void TSystemNSE2D::Solve(double *sol, double *rhs)
 {
   
     switch(Solver)
@@ -566,7 +566,7 @@ void TSystemMatNSE2D::Solve(double *sol, double *rhs)
   
 }
 
-void TSystemMatNSE2D::MeasureErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2, DoubleFunct2D *ExactP,
+void TSystemNSE2D::MeasureErrors(DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2, DoubleFunct2D *ExactP,
                                     double *u_error, double *p_error)
 {
   double errors[4];

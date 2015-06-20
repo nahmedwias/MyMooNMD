@@ -1,19 +1,19 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatTNSE2D_ALE
+* @class     TSystemTNSE2D_ALE
 * @brief     stores the information of a 2D TNSE system matrix 
 * @author    Sashikumaar Ganesan,Birupaksha Pal 
 * @date      03.09.14
 * @History   Added methods (Sashi, 03.09.14)
  ************************************************************************  */
 
-#ifndef __SYSTEMMATTNSE2D_ALE__
-#define __SYSTEMMATTNSE2D_ALE__
+#ifndef __SYSTEMTNSE2D_ALE__
+#define __SYSTEMTNSE2D_ALE__
 
-#include <SystemMatTNSE2D.h>
+#include <SystemTNSE2D.h>
 
 /**class for 2D  TNSE system matrix */
-class TSystemMatTNSE2D_ALE : public TSystemMatTNSE2D
+class TSystemTNSE2D_ALE : public TSystemTNSE2D
 {
   protected:
     /** No. of Grid DOFs */
@@ -66,11 +66,11 @@ class TSystemMatTNSE2D_ALE : public TSystemMatTNSE2D
   public:
     
     /** constructor */
-     TSystemMatTNSE2D_ALE(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
+     TSystemTNSE2D_ALE(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
                                            TFEFunction2D *p,  int disctype, int nsetype, int solver,TFESpace2D *Projection_space, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, bool conservativeale);
 // 
 //     /** destrcutor */
-//     ~TSystemMatTNSE2D_ALE();
+//     ~TSystemTNSE2D_ALE();
 // 
     /** methods */
     /** Initilize the discrete forms and the matrices */    

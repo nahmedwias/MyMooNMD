@@ -1,11 +1,11 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatNSE3D
+* @brief     source file for TSystemNSE3D
 * @author    Sashikumaar Ganesan, 
 * @date      27.01.15
 * @History 
  ************************************************************************  */
 #include <Database.h>
-#include <SystemMatNSE3D.h>
+#include <SystemNSE3D.h>
 #include <SquareStructure3D.h>
 #include <DiscreteForm3D.h>
 #include <Assemble3D.h>
@@ -42,7 +42,7 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
+TSystemNSE3D::TSystemNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
                      TFEFunction3D **pressure, double **sol, double **rhs, int disctype, int nsetype, int solver)
 {
   int i, zerostart;
@@ -390,7 +390,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
     NSEaux = NULL;
 }
 
-// TSystemMatNSE3D::~TSystemMatNSE3D()
+// TSystemNSE3D::~TSystemNSE3D()
 // {
 //     delete NSEaux; 
 //        
@@ -400,7 +400,7 @@ TSystemMatNSE3D::TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TF
 // }
 
 
-void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *U1BoundValue, 
+void TSystemNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *U1BoundValue, 
                            BoundValueFunct3D *U2BoundValue, BoundValueFunct3D *U3BoundValue)
 { 
 #ifdef _MPI
@@ -750,12 +750,12 @@ void TSystemMatNSE3D::Init(CoeffFct3D *lincoeffs, BoundCondFunct3D *BoundCond, B
        }  // if(SOLVER==GMG)     
      } // for(i=Start_Level;i<N_Levels;i++)      
               
-//  cout << " TSystemMatNSE3D::Init done ! " << endl; 
+//  cout << " TSystemNSE3D::Init done ! " << endl; 
               
-} // TSystemMatNSE3D::Init
+} // TSystemNSE3D::Init
 
  
-void TSystemMatNSE3D::Assemble()
+void TSystemNSE3D::Assemble()
 {
   int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
   int N_U_Current, N_P_Current, N_Active_Current, N_DirichletDof;
@@ -859,9 +859,9 @@ void TSystemMatNSE3D::Assemble()
       
 
 //     cout << "Test Assemble " << endl; 
-} // TSystemMatNSE3D::Assemble(T
+} // TSystemNSE3D::Assemble(T
 
-void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
+void TSystemNSE3D::AssembleNonLinear(double **sol, double **rhs)
 {
  int i, N_SquareMatrices, N_RectMatrices, N_Rhs, N_FESpaces;
  int N_U_Current, N_Active_Current, N_DirichletDof;
@@ -944,10 +944,10 @@ void TSystemMatNSE3D::AssembleNonLinear(double **sol, double **rhs)
         
       } //
       
-} //TSystemMatNSE3D::AssembleNonLinear(
+} //TSystemNSE3D::AssembleNonLinear(
 
 
-void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res, double &impuls_residual, double &residual)
+void TSystemNSE3D::GetResidual(double *sol, double *rhs, double *res, double &impuls_residual, double &residual)
 {
 
      switch(NSEType)
@@ -1055,9 +1055,9 @@ void TSystemMatNSE3D::GetResidual(double *sol, double *rhs, double *res, double 
 
 #endif
    
-} // TSystemMatNSE3D::GetResidual
+} // TSystemNSE3D::GetResidual
 
-void TSystemMatNSE3D::Solve(double *sol, double *rhs)
+void TSystemNSE3D::Solve(double *sol, double *rhs)
 {
   int N_LinIter=0;
 	    double summ = 0;
@@ -1165,7 +1165,7 @@ void TSystemMatNSE3D::Solve(double *sol, double *rhs)
   
 }
 
-void TSystemMatNSE3D::MeasureErrors(DoubleFunct3D *ExactU1, DoubleFunct3D *ExactU2, DoubleFunct3D *ExactU3, DoubleFunct3D *ExactP,
+void TSystemNSE3D::MeasureErrors(DoubleFunct3D *ExactU1, DoubleFunct3D *ExactU2, DoubleFunct3D *ExactU3, DoubleFunct3D *ExactP,
                                     double *u_error, double *p_error)
 {
   double errors[4];

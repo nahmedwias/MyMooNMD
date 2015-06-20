@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatScalar2D
+* @class     TSystemCD2D
 * @brief     stores the information of a 2D scalar system matrix 
 * @author    Sashikumaar Ganesan, 
 * @date      08.08.14
@@ -8,13 +8,13 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATSCALAR2D__
-#define __SYSTEMMATSCALAR2D__
+#ifndef __SYSTEMCD2D__
+#define __SYSTEMCD2D__
 
 #include <SquareMatrix2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatScalar2D
+class TSystemCD2D
 {
   protected:
     
@@ -49,10 +49,10 @@ class TSystemMatScalar2D
     
   public:
     /** constructor */
-     TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int solver);
+     TSystemCD2D(TFESpace2D *fespace, int disctype, int solver);
 
     /** destrcutor */
-    ~TSystemMatScalar2D();
+    ~TSystemCD2D();
     
     /** Initilize the discrete forms and the matrices */
     void Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue);

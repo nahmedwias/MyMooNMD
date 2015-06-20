@@ -10,7 +10,7 @@
  
 #include <Domain.h>
 #include <Database.h>
-#include <SystemMatTimeScalar3D.h>
+#include <SystemTCD3D.h>
 #include <FEDatabase3D.h>
 #include <FESpace3D.h>
 #include <SquareStructure3D.h>
@@ -639,7 +639,7 @@ int main(int argc, char* argv[])
   TFEFunction3D *Scalar_FeFunction, *Scalar_V_FeFunction, *Scalar_W_FeFunction, 
                 **Scalar_FeFunctions, **Scalar_V_FeFunctions, **Scalar_W_FeFunctions;
   TOutput3D *Output;
-  TSystemMatTimeScalar3D *SystemMatrix, *V_SystemMatrix, *W_SystemMatrix;
+  TSystemTCD3D *SystemMatrix, *V_SystemMatrix, *W_SystemMatrix;
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = {D000, D100, D010, D001};
   TSquareMatrix3D  **V_A_Matrix;
@@ -974,19 +974,19 @@ int main(int argc, char* argv[])
     }
    
    //u sysytem
-   SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+   SystemMatrix = new TSystemTCD3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
                                               TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     
     /** initilize the system matrix with the functions defined in Example file */
     SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
 
     //v sysytem
-    V_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_V_FeSpaces, VSol_array, VRhs_array,
+    V_SystemMatrix = new TSystemTCD3D(mg_level, Scalar_V_FeSpaces, VSol_array, VRhs_array,
                                                 TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     V_SystemMatrix->Init(V_BilinearCoeffs, V_BoundCondition, V_BoundValue);
   
     //w sysytem
-    W_SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_W_FeSpaces, WSol_array, WRhs_array,
+    W_SystemMatrix = new TSystemTCD3D(mg_level, Scalar_W_FeSpaces, WSol_array, WRhs_array,
                                                 TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     W_SystemMatrix->Init(W_BilinearCoeffs, W_BoundCondition, W_BoundValue);
    

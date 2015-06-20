@@ -24,12 +24,12 @@ DEFINEPARAMS = ../../../include/General/DefineParams.h
 
 LIBRARY = $(LIBPATH)lib_System.a
    MEMBERS = \
-	$(SRCPATH)SystemMatNSE2D.o \
-	$(SRCPATH)SystemMatScalar2D.o \
-	$(SRCPATH)SystemMatTimeScalar2D.o \
-	$(SRCPATH)SystemMatTimeScalar2D_ALE.o \
-	$(SRCPATH)SystemMatTNSE2D.o \
-	$(SRCPATH)SystemMatTNSE2D_ALE.o 
+	$(SRCPATH)SystemNSE2D.o \
+	$(SRCPATH)SystemCD2D.o \
+	$(SRCPATH)SystemTCD2D.o \
+	$(SRCPATH)SystemTCD2D_ALE.o \
+	$(SRCPATH)SystemTNSE2D.o \
+	$(SRCPATH)SystemTNSE2D_ALE.o 
 ###############
 
 $(LIBRARY) : $(MEMBERS)

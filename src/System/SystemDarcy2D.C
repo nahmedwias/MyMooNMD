@@ -1,10 +1,10 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatDarcy2D
+* @brief     source file for TSystemDarcy2D
 * @author    Ulrich Wilbrandt,
 * @date      15.03.15
  ************************************************************************  */
 #include <Database.h>
-#include <SystemMatDarcy2D.h>
+#include <SystemDarcy2D.h>
 #include <Darcy2D.h>
 #include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
@@ -17,7 +17,7 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D **fespaces)
+TSystemDarcy2D::TSystemDarcy2D(TFESpace2D **fespaces)
 {
   //store the FEspace
   fe_spaces[0] = fespaces[0]; // velocity
@@ -46,7 +46,7 @@ TSystemMatDarcy2D::TSystemMatDarcy2D(TFESpace2D **fespaces)
   N_Matrices = 4;
 }
 
-TSystemMatDarcy2D::~TSystemMatDarcy2D()
+TSystemDarcy2D::~TSystemDarcy2D()
 {
   delete sq_matrices[0]->GetStructure();
   delete sq_matrices[1]->GetStructure();
@@ -59,17 +59,17 @@ TSystemMatDarcy2D::~TSystemMatDarcy2D()
 }
   
   
-void TSystemMatDarcy2D::Init(BoundCondFunct2D **BoundCond, 
+void TSystemDarcy2D::Init(BoundCondFunct2D **BoundCond, 
                              BoundValueFunct2D **BoundValue)
 {
   BoundaryConditions[0] =  BoundCond[0];
   BoundaryConditions[1] =  BoundCond[1];
   BoundaryValues[0] = BoundValue[0];
   BoundaryValues[1] = BoundValue[1];
-} // TSystemMatDarcy2D::Init
+} // TSystemDarcy2D::Init
 
 
-void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
+void TSystemDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
                                  double *rhs)
 {
   int N_U = fe_spaces[0]->GetN_DegreesOfFreedom();
@@ -105,10 +105,10 @@ void TSystemMatDarcy2D::Assemble(LocalAssembling2D& la, double *sol,
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
   memcpy(sol+N_U_Active, rhs+N_U_Active, (N_U-N_U_Active)*SizeOfDouble);
-} // void TSystemMatDarcy2D::Assemble
+} // void TSystemDarcy2D::Assemble
 
 
-void TSystemMatDarcy2D::Solve(double *sol, double *rhs)
+void TSystemDarcy2D::Solve(double *sol, double *rhs)
 { 
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {

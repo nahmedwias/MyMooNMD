@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatTimeScalar2D
+* @class     TSystemTCD2D
 * @brief     stores the information of a timedependent part of a 2D scalar system matrix 
 * @author    Sashikumaar Ganesan
 * @date      08.08.14
@@ -8,14 +8,14 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATTIMESCALAR2D__
-#define __SYSTEMMATTIMESCALAR2D__
+#ifndef __SYSTEMTCD2D__
+#define __SYSTEMTCD2D__
 
 #include <SquareMatrix2D.h>
-#include <SystemMatScalar2D.h>
+#include <SystemCD2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatTimeScalar2D : public TSystemMatScalar2D
+class TSystemTCD2D : public TSystemCD2D
 {
   protected:
         
@@ -45,10 +45,10 @@ class TSystemMatTimeScalar2D : public TSystemMatScalar2D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar2D(TFESpace2D *fespace, int disctype, int solver);
+     TSystemTCD2D(TFESpace2D *fespace, int disctype, int solver);
 
     /** destrcutor */
-    ~TSystemMatTimeScalar2D();
+    ~TSystemTCD2D();
 
     /** methods */
     void Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue);

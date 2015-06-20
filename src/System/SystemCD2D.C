@@ -1,12 +1,12 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatScalar2D
+* @brief     source file for TSystemCD2D
 * @author    Sashikumaar Ganesan, 
 * @date      08.08.14
 * @History 
  ************************************************************************  */
 #ifdef __2D__
 #include <Database.h>
-#include <SystemMatScalar2D.h>
+#include <SystemCD2D.h>
 #include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
@@ -18,7 +18,7 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int solver)
+TSystemCD2D::TSystemCD2D(TFESpace2D *fespace, int disctype, int solver)
 {
   //store the FEspace
   FeSpace = fespace;
@@ -40,14 +40,14 @@ TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace, int disctype, int so
 
 }
 
-TSystemMatScalar2D::~TSystemMatScalar2D()
+TSystemCD2D::~TSystemCD2D()
 {
 //   delete sqstructure;
 //   delete sqmatrixA;
 }
   
   
-void TSystemMatScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
+void TSystemCD2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue)
 {
   BoundaryConditions[0] =  BoundCond;
   BoundaryValues[0] = BoundValue;
@@ -97,10 +97,10 @@ void TSystemMatScalar2D::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *Boun
      }  
      
      
-} // TSystemMatScalar2D::Init
+} // TSystemCD2D::Init
 
 
-void TSystemMatScalar2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
+void TSystemCD2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
 {
   int N_DOF, N_Active, N_DirichletDof;
   double *RHSs[1];
@@ -156,10 +156,10 @@ void TSystemMatScalar2D::Assemble(TAuxParam2D *aux, double *sol, double *rhs)
     // set rhs for Dirichlet nodes
     memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);     
      
-} // void TSystemMatScalar2D::Assemble(T
+} // void TSystemCD2D::Assemble(T
 
 
-void TSystemMatScalar2D::Solve(double *sol, double *rhs)
+void TSystemCD2D::Solve(double *sol, double *rhs)
 {
   
     switch(SOLVER)

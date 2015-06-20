@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatNSE3D
+* @class     TSystemNSE3D
 * @brief     stores the information of a 3D NSE system matrix 
 * @author    Sashikumaar Ganesan, 
 * @date      27.01.15
@@ -8,8 +8,8 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATNSE3D__
-#define __SYSTEMMATNSE3D__
+#ifndef __SYSTEMNSE3D__
+#define __SYSTEMNSE3D__
 
 #include <SquareMatrix3D.h>
 #include <FEVectFunct3D.h>
@@ -29,7 +29,7 @@
 #endif
 
 /**class for 3D  NSE system matrix */
-class TSystemMatNSE3D
+class TSystemNSE3D
 {
   protected:
 
@@ -128,7 +128,7 @@ class TSystemMatNSE3D
     
   public:
     /** constructor */
-     TSystemMatNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
+     TSystemNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace3D **presssure_fespace, TFEVectFunct3D **velocity, 
                      TFEFunction3D **pressure, double **sol, double **rhs, int disctype, int nsetype, int solver);
 
     /** destrcutor */

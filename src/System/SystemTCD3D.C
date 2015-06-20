@@ -1,11 +1,11 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatTimeScalar3D
+* @brief     source file for TSystemTCD3D
 * @author    Sashikumaar Ganesan
 * @date      24.01.15
 * @History 
  ************************************************************************  */
 #include <Database.h>
-#include <SystemMatTimeScalar3D.h>
+#include <SystemTCD3D.h>
 #include <SquareStructure3D.h>
 #include <DiscreteForm3D.h>
 #include <Assemble3D.h>
@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver):TSystemMatScalar3D(N_levels, fespaces, sol, rhs, disctype, solver)
+TSystemTCD3D::TSystemTCD3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver):TSystemCD3D(N_levels, fespaces, sol, rhs, disctype, solver)
 {
   int i;
   
@@ -55,7 +55,7 @@ TSystemMatTimeScalar3D::TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespac
 } // constructor
 
 
-TSystemMatTimeScalar3D::~TSystemMatTimeScalar3D()
+TSystemTCD3D::~TSystemTCD3D()
 {
   int i;
   
@@ -86,7 +86,7 @@ TSystemMatTimeScalar3D::~TSystemMatTimeScalar3D()
 }
 
 
-void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
+void TSystemTCD3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
                               TAuxParam3D *aux )
 {
 #ifdef _MPI
@@ -173,7 +173,7 @@ void TSystemMatTimeScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *
 } // Init
 
 
-void TSystemMatTimeScalar3D::AssembleMRhs()
+void TSystemTCD3D::AssembleMRhs()
 {
   //this is set to true for direct solver factorization
   factorize = true;
@@ -201,7 +201,7 @@ void TSystemMatTimeScalar3D::AssembleMRhs()
 } // TSystemMatScalar3D::AssembleMRhs 
 
 
-void TSystemMatTimeScalar3D::AssembleARhs()
+void TSystemTCD3D::AssembleARhs()
 {
   //this is set to true for direct solver factorization
   factorize = true;
@@ -225,7 +225,7 @@ void TSystemMatTimeScalar3D::AssembleARhs()
     
 } // TSystemMatScalar3D::AssembleARhs 
 
-void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
+void TSystemTCD3D::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol
 #ifdef _MPI
                                              , double **Rhs_array
 #endif
@@ -293,7 +293,7 @@ void TSystemMatTimeScalar3D::AssembleSystMat(double *oldrhs, double *oldsol, dou
 
 } // AssembleSystMat
 
-void TSystemMatTimeScalar3D::RestoreMassMat()
+void TSystemTCD3D::RestoreMassMat()
 {
  int i;
 
@@ -314,7 +314,7 @@ void TSystemMatTimeScalar3D::RestoreMassMat()
 
 }
 
-void TSystemMatTimeScalar3D::Solve(double *sol)
+void TSystemTCD3D::Solve(double *sol)
 {  
     switch(SOLVER)
      {
@@ -375,7 +375,7 @@ void TSystemMatTimeScalar3D::Solve(double *sol)
      
 }
 
-double TSystemMatTimeScalar3D::GetResidual(double *sol)
+double TSystemTCD3D::GetResidual(double *sol)
 {
   double residual_scalar=0.0;
   

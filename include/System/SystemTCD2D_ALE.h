@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatTimeScalar2D_ALE
+* @class     TSystemTCD2D_ALE
 * @brief     stores the information of a timedependent part of a 2D scalar system matrix 
 * @author    Sashikumaar Ganesan
 * @date      08.08.14
@@ -8,14 +8,14 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATTIMESCALAR2D_ALE__
-#define __SYSTEMMATTIMESCALAR2D_ALE__
+#ifndef __SYSTEMCD2D_ALE__
+#define __SYSTEMCD2D_ALE__
 
 #include <SquareMatrix2D.h>
-#include <SystemMatTimeScalar2D.h>
+#include <SystemTCD2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatTimeScalar2D_ALE : public TSystemMatTimeScalar2D
+class TSystemTCD2D_ALE : public TSystemTCD2D
 {
   protected:
     /** No. of Grid DOFs */
@@ -66,7 +66,7 @@ class TSystemMatTimeScalar2D_ALE : public TSystemMatTimeScalar2D
     
   public:
     /** constructor */
-    TSystemMatTimeScalar2D_ALE(TFESpace2D *fespace, int disctype, int solver, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, 
+    TSystemTCD2D_ALE(TFESpace2D *fespace, int disctype, int solver, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, 
                                                        bool conservativeale);
 
 //     /** destrcutor */

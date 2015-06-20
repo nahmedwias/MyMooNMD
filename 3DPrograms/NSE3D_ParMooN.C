@@ -12,7 +12,7 @@
 #include <FEDatabase3D.h>
 #include <LinAlg.h>
 #include <FESpace3D.h>
-#include <SystemMatNSE3D.h>
+#include <SystemNSE3D.h>
 #include <SquareStructure3D.h>
 #include <Structure3D.h>
 #include <Output3D.h>
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
   TFEVectFunct3D **Velocity, *u;
   TFEFunction3D *p, *u1, *u2, *u3, **Pressure, *fefct[2];
   TOutput3D *Output;
-  TSystemMatNSE3D *SystemMatrix;
+  TSystemNSE3D *SystemMatrix;
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
    
@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix = new TSystemMatNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
+    SystemMatrix = new TSystemNSE3D(mg_level, Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, 
                                        Sol_array, Rhs_array, TDatabase::ParamDB->DISCTYPE, NSEType, TDatabase::ParamDB->SOLVER_TYPE);
     
     // initilize the system matrix with the functions defined in Example file

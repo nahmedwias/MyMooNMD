@@ -1,19 +1,19 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatTNSE2D
+* @class     TSystemTNSE2D
 * @brief     stores the information of a 2D TNSE system matrix 
 * @author    Sashikumaar Ganesan, 
 * @date      03.09.14
 * @History   Added methods (Sashi, 03.09.14)
  ************************************************************************  */
 
-#ifndef __SYSTEMMATTNSE2D__
-#define __SYSTEMMATTNSE2D__
+#ifndef __SYSTEMTNSE2D__
+#define __SYSTEMTNSE2D__
 
-#include <SystemMatNSE2D.h>
+#include <SystemNSE2D.h>
 
 /**class for 2D  TNSE system matrix */
-class TSystemMatTNSE2D : public TSystemMatNSE2D
+class TSystemTNSE2D : public TSystemNSE2D
 {
   protected:
     
@@ -60,7 +60,7 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
     
   public:
     /** constructor */
-     TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
+     TSystemTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
                       TFEFunction2D *p, int disctype, int nsetype, int solver
 #ifdef __PRIVATE__  
                                    ,TFESpace2D *Projection_space
@@ -68,7 +68,7 @@ class TSystemMatTNSE2D : public TSystemMatNSE2D
                       );
 
     /** destrcutor */
-    ~TSystemMatTNSE2D();
+    ~TSystemTNSE2D();
 
     /** methods */
     /** Initilize the discrete forms and the matrices */    

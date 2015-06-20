@@ -12,7 +12,7 @@
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
 #include <FESpace2D.h>
-#include <SystemMatTNSE2D_ALE.h>
+#include <SystemTNSE2D_ALE.h>
 #include <SquareStructure2D.h>
 #include <Structure2D.h>
 #include <Output2D.h>
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   TFEVectFunct2D *Velocity, *MeshVelocity;
   TFEFunction2D *u1, *u2, *Pressure, *fefct[4];
   TOutput2D *Output;
-  TSystemMatTNSE2D_ALE *SystemMatrix_ALE;
+  TSystemTNSE2D_ALE *SystemMatrix_ALE;
   TAuxParam2D *aux, *aux_error;
   MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
   TIsoBoundEdge **Free_Joint, *IsoJoint;
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 //======================================================================  
     // Disc type: GALERKIN 
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT
-    SystemMatrix_ALE = new TSystemMatTNSE2D_ALE(Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, Disctype, NSEType,
+    SystemMatrix_ALE = new TSystemTNSE2D_ALE(Velocity_FeSpace, Pressure_FeSpace, Velocity, Pressure, Disctype, NSEType,
                                                 DIRECT, Projection_space, GridFESpace, MeshVelocity, FALSE);
     
     

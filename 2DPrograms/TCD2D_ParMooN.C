@@ -10,8 +10,8 @@
 
 #include <Domain.h>
 #include <Database.h>
-#include <SystemMatTimeScalar2D.h>
-#include <SystemMatTimeScalar2D_ALE.h>
+#include <SystemTCD2D.h>
+#include <SystemTCD2D_ALE.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
 #include <SquareStructure2D.h>
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   TFESpace2D *Scalar_FeSpace, *fesp[1];
   TFEFunction2D *Scalar_FeFunction;
   TOutput2D *Output;
-  TSystemMatTimeScalar2D *SystemMatrix;  
+  TSystemTCD2D *SystemMatrix;  
   TAuxParam2D *aux;
   MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
 
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
   //======================================================================    
     // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) SUPG (or) LOCAL_PROJECTION
     // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-    SystemMatrix = new TSystemMatTimeScalar2D(Scalar_FeSpace, GALERKIN, DIRECT);
+    SystemMatrix = new TSystemTCD2D(Scalar_FeSpace, GALERKIN, DIRECT);
     
     // initilize the system matrix with the functions defined in Example file
     SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);

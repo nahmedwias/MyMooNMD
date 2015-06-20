@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatScalar3D
+* @class     TSystemCD3D
 * @brief     stores the information of a 3D scalar system matrix 
 * @author    Sashikumaar Ganesan 
 * @date      23.01.15
@@ -8,8 +8,8 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATSCALAR3D__
-#define __SYSTEMMATSCALAR3D__
+#ifndef __SYSTEMCD3D__
+#define __SYSTEMCD3D__
 
 #include <SquareMatrix3D.h>
 #include <ItMethod.h>
@@ -28,7 +28,7 @@
 #endif
 
 /** class for 3D scalar system matrix */
-class TSystemMatScalar3D
+class TSystemCD3D
 {
   protected:
     /** own fespace and parallel FE Communicator */
@@ -94,10 +94,10 @@ class TSystemMatScalar3D
    
   public:
     /** Constructor*/
-  TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
+  TSystemCD3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
     
     /** destrcutor */
-    ~TSystemMatScalar3D();
+    ~TSystemCD3D();
     
     /** Initilize the discrete forms and the matrices */
     void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,

@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatTimeScalar2D_ALE
+* @brief     source file for TSystemTCD2D_ALE
 * @author    Sashikumaar Ganesan
 * @date      19.02.15
 * @History 
@@ -7,8 +7,8 @@
 #ifdef __2D__
 
 #include <Database.h>
-#include <SystemMatTimeScalar2D_ALE.h>
-#include <SystemMatTimeScalar2D.h>
+#include <SystemTCD2D_ALE.h>
+#include <SystemTCD2D.h>
 #include <FEVectFunct2D.h>
 // #include <TimeConvDiff2D.h>
 #include <DiscreteForm2D.h>
@@ -19,8 +19,8 @@
 #include <LinAlg.h>
 #include <FreeSurface2D.h>
 
-TSystemMatTimeScalar2D_ALE::TSystemMatTimeScalar2D_ALE(TFESpace2D *fespace, int disctype, int solver, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, 
-                                                       bool conservativeale) : TSystemMatTimeScalar2D(fespace,  disctype, solver)
+TSystemTCD2D_ALE::TSystemTCD2D_ALE(TFESpace2D *fespace, int disctype, int solver, TFESpace2D *gridFESpace, TFEVectFunct2D *MeshVelocity, 
+                                                       bool conservativeale) : TSystemTCD2D(fespace,  disctype, solver)
 {
   char WString[] = "w";  
   TFESpace2D *fesp[1];
@@ -84,10 +84,10 @@ TSystemMatTimeScalar2D_ALE::TSystemMatTimeScalar2D_ALE(TFESpace2D *fespace, int 
    Aux_ALE = NULL;
    SolveLinearElastic = TRUE;
    CONSERVATIVEALE = conservativeale;
-} // TSystemMatTimeScalar2D_ALE
+} // TSystemTCD2D_ALE
 
 
-void TSystemMatTimeScalar2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue, 
+void TSystemTCD2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue, 
                                       CoeffFct2D *GridBilinearCoeffs, BoundCondFunct2D *GridBoundCond, BoundValueFunct2D *gridBoundValue,
                                       TAuxParam2D *aux      
                                       )
@@ -139,16 +139,16 @@ void TSystemMatTimeScalar2D_ALE::Init(CoeffFct2D *BilinearCoeffs, BoundCondFunct
 } // Init
 
 
-void TSystemMatTimeScalar2D_ALE::StoreMmat()
+void TSystemTCD2D_ALE::StoreMmat()
  { 
    
    sqmatrixM_old->Reset(); 
    MatAdd(sqmatrixM_old, sqmatrixM, 1.); 
    
- } // TSystemMatTimeScalar2D_ALE::StoreMmat()
+ } // TSystemTCD2D_ALE::StoreMmat()
 
  
-void TSystemMatTimeScalar2D_ALE::MoveMesh(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
+void TSystemTCD2D_ALE::MoveMesh(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
                                              double * Iso_refX, double Currtime)
 {
  int i, N_GridBDDOFs;
@@ -183,7 +183,7 @@ void TSystemMatTimeScalar2D_ALE::MoveMesh(int N_MovVert, TVertex **MovBoundVert,
 
 } // MoveMesh
  
-void TSystemMatTimeScalar2D_ALE::MoveMesh(double Currtime)
+void TSystemTCD2D_ALE::MoveMesh(double Currtime)
 {
  int i;
     
@@ -193,10 +193,10 @@ void TSystemMatTimeScalar2D_ALE::MoveMesh(double Currtime)
   
    // move the mesh
    GridPos->DataToGrid(); 
-} //TSystemMatTimeScalar2D_ALE::MoveMesh(
+} //TSystemTCD2D_ALE::MoveMesh(
 
 
-void TSystemMatTimeScalar2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
+void TSystemTCD2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVert, TIsoBoundEdge **Free_Joint, 
                                              double * Iso_refX,  double Currtime, double tau)
 {
  int i, N_GridBDDOFs;
@@ -241,10 +241,10 @@ void TSystemMatTimeScalar2D_ALE::GetMeshVelo(int N_MovVert, TVertex **MovBoundVe
 
    
    
-} // TSystemMatTimeScalar2D_ALE::GetMeshVelo
+} // TSystemTCD2D_ALE::GetMeshVelo
 
 
-void TSystemMatTimeScalar2D_ALE::GetMeshVelo(double Currtime, double tau)
+void TSystemTCD2D_ALE::GetMeshVelo(double Currtime, double tau)
 {
  int i;
   
@@ -260,11 +260,11 @@ void TSystemMatTimeScalar2D_ALE::GetMeshVelo(double Currtime, double tau)
    Daxpy(2*N_GridDOFs, -1., gridpos_old, MeshVelo);        
    Dscal(2*N_GridDOFs, 1./tau, MeshVelo); // - sign du*/ //e to -w\cdot\nabla C in the equation   
    memcpy(gridpos_old, gridpos, 2*N_GridDOFs*SizeOfDouble); 
-} //TSystemMatTimeScalar2D_ALE::GetMeshVelo(
+} //TSystemTCD2D_ALE::GetMeshVelo(
   
   
   
-void TSystemMatTimeScalar2D_ALE::AssembleMeshMat()
+void TSystemTCD2D_ALE::AssembleMeshMat()
 {
   
  TFESpace2D *fesp[1];
@@ -290,7 +290,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleMeshMat()
   
 }
 
-void TSystemMatTimeScalar2D_ALE::AssembleMRhs(double *sol, double *rhs)
+void TSystemTCD2D_ALE::AssembleMRhs(double *sol, double *rhs)
 {
   int N_DOF, N_Active, N_SquareMatrices;
   double *RHSs[1];
@@ -347,7 +347,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleMRhs(double *sol, double *rhs)
      
 } // TSystemMatScalar2D::AssembleMRhs 
 
-void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
+void TSystemTCD2D_ALE::AssembleMARhs(double *sol, double *rhs)
 {
   int N_DOF, N_Active, N_SquareMatrices;
   double *RHSs[1];
@@ -430,7 +430,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleMARhs(double *sol, double *rhs)
   
 } // TSystemMatScalar2D::AssembleMARhs 
 
-void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
+void TSystemTCD2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol, double *rhs, double *sol)
 {
     int N_DOF, N_Active, N_SquareMatrices;
     double tau;
@@ -485,7 +485,7 @@ void TSystemMatTimeScalar2D_ALE::AssembleSystMat(double *oldrhs, double *oldsol,
 //                OutPut("B  " << Ddot(N_DOF, B, B ) << endl);
 } // AssembleSystMat
  
-void TSystemMatTimeScalar2D_ALE::Solve(double *sol, double *rhs)
+void TSystemTCD2D_ALE::Solve(double *sol, double *rhs)
 {
   
     switch(SOLVER)
@@ -509,7 +509,7 @@ void TSystemMatTimeScalar2D_ALE::Solve(double *sol, double *rhs)
 }
 
 
-// double TSystemMatTimeScalar2D_ALE::GetResidual(double *sol)
+// double TSystemTCD2D_ALE::GetResidual(double *sol)
 // {
 //   int N_DOF = FeSpace->GetN_DegreesOfFreedom(); 
 //   double residual_scalar;

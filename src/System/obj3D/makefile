@@ -24,9 +24,9 @@ LIBRARY = $(LIBPATH)lib_System.a
    MEMBERS = \
         $(SRCPATH)Assemble.o \
         $(SRCPATH)AssembleMat3D.o \
-        $(SRCPATH)SystemMatScalar3D.o \
-        $(SRCPATH)SystemMatTimeScalar3D.o \
-        $(SRCPATH)SystemMatNSE3D.o 
+        $(SRCPATH)SystemCD3D.o \
+        $(SRCPATH)SystemTCD3D.o \
+        $(SRCPATH)SystemNSE3D.o 
 ###############
 
 $(LIBRARY) : $(MEMBERS)

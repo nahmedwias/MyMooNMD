@@ -1,11 +1,11 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatScalar3D
+* @brief     source file for TSystemCD3D
 * @author    Sashikumaar Ganesan
 * @date      23.01.15
 * @History 
  ************************************************************************  */
 #include <Database.h>
-#include <SystemMatScalar3D.h>
+#include <SystemCD3D.h>
 #include <SquareStructure3D.h>
 #include <DiscreteForm3D.h>
 #include <Assemble3D.h>
@@ -33,7 +33,7 @@
 #define DIRECT 2
 
 //#ifdef _MPI
-TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver)
+TSystemCD3D::TSystemCD3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver)
 {
   int i;
   int profiling = TDatabase::ParamDB->timeprofiling;
@@ -200,10 +200,10 @@ TSystemMatScalar3D::TSystemMatScalar3D(int N_levels, TFESpace3D **fespaces, doub
      
    }// if(solver==GMG)  
 //   exit(0);
-} //TSystemMatScalar3D::TSystemMatScalar3D
+} //TSystemCD3D::TSystemCD3D
 //#endif
 
-TSystemMatScalar3D::~TSystemMatScalar3D()
+TSystemCD3D::~TSystemCD3D()
 {
   int i;
   
@@ -224,7 +224,7 @@ TSystemMatScalar3D::~TSystemMatScalar3D()
 }
   
   
-void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
+void TSystemCD3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue,
                               TAuxParam3D *aux)
 {
 #ifdef _MPI
@@ -308,10 +308,10 @@ void TSystemMatScalar3D::Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *Boun
       }       
     } // for(i=Star
     
-} // TSystemMatScalar3D::Init
+} // TSystemCD3D::Init
 
 
-void TSystemMatScalar3D::Assemble()
+void TSystemCD3D::Assemble()
 {
   int i, N_DOF_low, N_Active;
 
@@ -336,10 +336,10 @@ void TSystemMatScalar3D::Assemble()
       DS->AssembleMatrix(sqmatrixA[N_Levels-1]);
 #endif
     
-} // void TSystemMatScalar3D::Assemble(T
+} // void TSystemCD3D::Assemble(T
 
 
-void TSystemMatScalar3D::Solve(double *sol, double *rhs)
+void TSystemCD3D::Solve(double *sol, double *rhs)
 { 
     switch(SOLVER)
      {

@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatNSE2D
+* @class     TSystemNSE2D
 * @brief     stores the information of a 2D NSE system matrix 
 * @author    Sashikumaar Ganesan, 
 * @date      23.08.14
@@ -8,13 +8,13 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATNSE2D__
-#define __SYSTEMMATNSE2D__
+#ifndef __SYSTEMNSE2D__
+#define __SYSTEMNSE2D__
 
 #include <SquareMatrix2D.h>
 
 /**class for 2D  NSE system matrix */
-class TSystemMatNSE2D
+class TSystemNSE2D
 {
   protected:
 
@@ -74,11 +74,11 @@ class TSystemMatNSE2D
     
   public:
     /** constructor */
-     TSystemMatNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
+     TSystemNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_fespace, TFEVectFunct2D *Velocity, 
                       TFEFunction2D *p, int disctype, int nsetype, int solver);
 
     /** destrcutor */
-    ~TSystemMatNSE2D();
+    ~TSystemNSE2D();
 
     /** methods */
     /** Initilize the discrete forms and the matrices */    

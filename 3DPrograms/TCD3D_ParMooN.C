@@ -10,7 +10,7 @@
  
 #include <Domain.h>
 #include <Database.h>
-#include <SystemMatTimeScalar3D.h>
+#include <SystemTCD3D.h>
 #include <FEDatabase3D.h>
 #include <FESpace3D.h>
 #include <SquareStructure3D.h>
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   TFESpace3D **Scalar_FeSpaces, *fesp[1];
   TFEFunction3D *Scalar_FeFunction, **Scalar_FeFunctions;
   TOutput3D *Output;
-  TSystemMatTimeScalar3D *SystemMatrix;
+  TSystemTCD3D *SystemMatrix;
   TAuxParam3D *aux;
   MultiIndex3D AllDerivatives[4] = {D000, D100, D010, D001};
 
@@ -379,7 +379,7 @@ int main(int argc, char* argv[])
 #endif
     }
     
-    SystemMatrix = new TSystemMatTimeScalar3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
+    SystemMatrix = new TSystemTCD3D(mg_level, Scalar_FeSpaces, Sol_array, Rhs_array,
                                               TDatabase::ParamDB->DISCTYPE, TDatabase::ParamDB->SOLVER_TYPE);
     
 #ifdef _MPI

@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatTimeScalar2D
+* @class     TSystemTCD3D
 * @brief     stores the information of a timedependent part of a 3D scalar system matrix 
 * @author    Sashikumaar Ganesan
 * @date      24.01.15
@@ -8,14 +8,14 @@
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATTIMESCALAR3D__
-#define __SYSTEMMATTIMESCALAR3D__
+#ifndef __SYSTEMTCD3D__
+#define __SYSTEMTCD3D__
 
 #include <SquareMatrix3D.h>
-#include <SystemMatScalar3D.h>
+#include <SystemCD3D.h>
 
 /**class for 3D scalar system matrix */
-class TSystemMatTimeScalar3D : public TSystemMatScalar3D
+class TSystemTCD3D : public TSystemCD3D
 {
   protected:
 #ifdef _MPI
@@ -53,10 +53,10 @@ class TSystemMatTimeScalar3D : public TSystemMatScalar3D
     
   public:
     /** constructor */
-     TSystemMatTimeScalar3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
+     TSystemTCD3D(int N_levels, TFESpace3D **fespaces, double **sol, double **rhs, int disctype, int solver);
 
     /** destrcutor */
-    ~TSystemMatTimeScalar3D();
+    ~TSystemTCD3D();
 
     /** methods */
     void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond, BoundValueFunct3D *BoundValue, TAuxParam3D *aux);

@@ -9,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <SystemMatScalar2D.h>
+#include <SystemCD2D.h>
 #include <Output2D.h>
 #include <MainUtilities.h>
 #include <TNSE2D_ParamRout.h>
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   TDomain *Domain;
   TFESpace2D *Scalar_FeSpace, *heatfunc_space, *fesp[2], *Velocity_FeSpace;
   TFEFunction2D *Scalar_FeFunction, *Heatfunc_FeFunction;
-  TSystemMatScalar2D *SystemMatrix, *SystemMatrix_HeatLine;
+  TSystemCD2D *SystemMatrix, *SystemMatrix_HeatLine;
   TOutput2D *Output;
   TAuxParam2D *aux;
   MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
   //====================================================================== 
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-  SystemMatrix = new TSystemMatScalar2D(Scalar_FeSpace, GALERKIN, DIRECT);
+  SystemMatrix = new TSystemCD2D(Scalar_FeSpace, GALERKIN, DIRECT);
 
   // initilize the system matrix with the functions defined in the example
   SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
     OutPut( "time for solving: " << t2-t1 << endl);
     
 #ifdef __HEATLINE__      
-  SystemMatrix_HeatLine = new TSystemMatScalar2D(heatfunc_space, HEATLINE, DIRECT);
+  SystemMatrix_HeatLine = new TSystemCD2D(heatfunc_space, HEATLINE, DIRECT);
   
   // initilize
   SystemMatrix_HeatLine->Init(HeatfuncCoeffs, HeatFuncBoundCondition, HeatFuncBoundValue);

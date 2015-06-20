@@ -1,20 +1,20 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatDarcy2D
+* @class     TSystemDarcy2D
 * @brief     stores the information of a 2D Darcy system matrix 
 * @author    Ulrich Wilbrandt
 * @date      15.03.15
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATDARCY2D__
-#define __SYSTEMMATDARCY2D__
+#ifndef __SYSTEMDARCY2D__
+#define __SYSTEMDARCY2D__
 
 #include <SquareMatrix2D.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatDarcy2D
+class TSystemDarcy2D
 {
   protected:
     
@@ -40,10 +40,10 @@ class TSystemMatDarcy2D
     
   public:
     /** constructor */
-     TSystemMatDarcy2D(TFESpace2D **fespaces);
+     TSystemDarcy2D(TFESpace2D **fespaces);
 
     /** destrcutor */
-    ~TSystemMatDarcy2D();
+    ~TSystemDarcy2D();
     
     /** Initilize the discrete forms and the matrices */
     void Init(BoundCondFunct2D **BoundCond, BoundValueFunct2D **BoundValue);
