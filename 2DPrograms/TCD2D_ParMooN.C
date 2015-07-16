@@ -10,8 +10,8 @@
 
 #include <Domain.h>
 #include <Database.h>
-#include <SystemTCD2D.h>
-#include <SystemTCD2D_ALE.h>
+#include <SystemMatTimeScalar2D.h>
+#include <SystemMatTimeScalar2D_ALE.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
 #include <SquareStructure2D.h>
@@ -24,7 +24,7 @@
 #include <CD2DErrorEstimator.h>
 #include <MainUtilities.h>
 #include <TimeDiscRout.h>
-// #include <LocalAssembling2D.h>
+#include <LocalAssembling2D.h>
 
 #include <string.h>
 #include <sstream>
@@ -46,89 +46,70 @@
 
 int main(int argc, char* argv[])
 {
-  int i, j, l, m, N_SubSteps, ORDER, N_Cells, N_DOF, img=1, N_G;
-  int N_Active;
-
-  double *sol, *rhs, *oldrhs, t1, t2, errors[5], Linfty;
-  double tau, end_time, *defect, olderror, olderror1, hmin, hmax;
-  
-  bool UpdateStiffnessMat, UpdateRhs,  ConvectionFirstTime;
-  char *VtkBaseName;
-  const char vtkdir[] = "VTK"; 
-  
-  TDomain *Domain;
-  TDatabase *Database = new TDatabase();
-  TFEDatabase2D *FEDatabase = new TFEDatabase2D(); 
-  TCollection *coll;
-  TFESpace2D *Scalar_FeSpace, *fesp[1];
-  TFEFunction2D *Scalar_FeFunction;
-  TOutput2D *Output;
-  TSystemTCD2D *SystemMatrix;  
-  TAuxParam2D *aux;
-  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
-
-  std::ostringstream os;
-  os << " ";   
+  TDatabase Database;
+  TFEDatabase2D FEDatabase;
   
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
-  // set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based 
-  Domain = new TDomain(argv[1]);  
+  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
+  TDomain Domain(argv[1]);  
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
- // OpenFiles();
+  OpenFiles();
 
-  Database->WriteParamDB(argv[0]);
-  Database->WriteTimeDB();
+  Database.WriteParamDB(argv[0]);
+  Database.WriteTimeDB();
   ExampleFile();
   
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh  
-  Domain->ReadGeo(TDatabase::ParamDB->GEOFILE);
+  Domain.ReadGeo(TDatabase::ParamDB->GEOFILE);
 
   // refine grid up to the coarsest level
-  for(i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain->RegRefineAll();  
+  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    Domain.RegRefineAll();  
   
   // write grid into an Postscript file
   if(TDatabase::ParamDB->WRITE_PS)
-    Domain->PS("Domain.ps", It_Finest, 0);
+    Domain.PS("Domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(vtkdir, 0777);
+    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
    
   //=========================================================================
   // construct all finite element spaces
   //=========================================================================
-  ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
+  int ORDER = TDatabase::ParamDB->ANSATZ_ORDER;
   
-  coll = Domain->GetCollection(It_Finest, 0);
-  N_Cells = coll->GetN_Cells();
+  TCollection *coll = Domain.GetCollection(It_Finest, 0);
+  int N_Cells = coll->GetN_Cells();
   OutPut("N_Cells (space) : " << N_Cells <<endl);
   
   // fespaces for scalar equation 
-  Scalar_FeSpace = new TFESpace2D(coll, (char*)"fe space", (char*)"solution space", 
-                                          BoundCondition, ORDER, NULL);
+  TFESpace2D *Scalar_FeSpace = new TFESpace2D(coll, (char*)"fe space", 
+                                              (char*)"solution space", 
+                                              BoundCondition, ORDER, NULL);
    
-  N_DOF = Scalar_FeSpace->GetN_DegreesOfFreedom();
-  N_Active =  Scalar_FeSpace->GetActiveBound();
+  int N_DOF = Scalar_FeSpace->GetN_DegreesOfFreedom();
+  int N_Active =  Scalar_FeSpace->GetActiveBound();
   OutPut("dof all      : "<< setw(10) << N_DOF  << endl);
   OutPut("dof active   : "<< setw(10) << N_Active << endl);
    
 //======================================================================
 // construct all finite element functions
 //======================================================================
-  sol = new double[N_DOF];
-  rhs = new double[N_DOF];
-  oldrhs = new double[N_DOF];
+  double *sol = new double[N_DOF];
+  double *rhs = new double[N_DOF];
+  double *oldrhs = new double[N_DOF];
     
   memset(sol, 0, N_DOF*SizeOfDouble);
   memset(rhs, 0, N_DOF*SizeOfDouble);
 
-  Scalar_FeFunction = new TFEFunction2D(Scalar_FeSpace, (char*)"sol", (char*)"sol", sol, N_DOF); 
+  TFEFunction2D *Scalar_FeFunction = new TFEFunction2D(
+    Scalar_FeSpace, (char*)"sol", (char*)"sol", sol, N_DOF); 
   
   //interpolate the initial value
   Scalar_FeFunction->Interpolate(InitialCondition);
@@ -136,88 +117,103 @@ int main(int argc, char* argv[])
   //======================================================================
   // SystemMatrix construction and solution
   //======================================================================    
-    // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) SUPG (or) LOCAL_PROJECTION
-    // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
-    SystemMatrix = new TSystemTCD2D(Scalar_FeSpace, GALERKIN, DIRECT);
-    
-    // initilize the system matrix with the functions defined in Example file
-    SystemMatrix->Init(BilinearCoeffs, BoundCondition, BoundValue);
-       
-    // assemble the system matrix with given aux, sol and rhs 
-    // aux is used to pass  addition fe functions (eg. mesh velocity) that is nedded for assembling,
-    // otherwise, just pass with NULL 
-    SystemMatrix->AssembleMRhs(NULL, sol, rhs);   
-
+  // as LocalAssembling2D_type choose either
+  // TCD2D_Mass_Rhs_Galerkin+TCD2D_Stiff_Rhs_Galerkin  or
+  // TCD2D_Mass_Rhs_SUPG+TCD2D_Stiff_Rhs_SUPG
+  LocalAssembling2D_type mass_type = TCD2D_Mass_Rhs_Galerkin;
+  LocalAssembling2D_type stiff_type = TCD2D_Stiff_Rhs_Galerkin;
+  if(0) // choose SUPG
+  {
+    mass_type = TCD2D_Mass_Rhs_SUPG;
+    stiff_type = TCD2D_Stiff_Rhs_SUPG;
+  }
+  LocalAssembling2D la_mass_rhs(mass_type, &Scalar_FeFunction,
+                                BilinearCoeffs);
+  LocalAssembling2D la_stiff_rhs(stiff_type, &Scalar_FeFunction,
+                                 BilinearCoeffs);
+  
+  // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) SUPG (or) LOCAL_PROJECTION
+  // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
+  TSystemMatTimeScalar2D SystemMatrix(Scalar_FeSpace);
+  
+  // initilize the system matrix with the functions defined in Example file
+  SystemMatrix.Init(BilinearCoeffs, BoundCondition, BoundValue);
+     
+  // assemble the system matrix with given aux, sol and rhs 
+  // aux is used to pass  addition fe functions (eg. mesh velocity) that is 
+  // nedded for assembling, otherwise, just pass with NULL 
+  SystemMatrix.AssembleMRhs(la_mass_rhs, sol, rhs);
   
   //======================================================================
   // produce outout at t=0
   //======================================================================
-    VtkBaseName = TDatabase::ParamDB->VTKBASENAME;    
-    Output = new TOutput2D(2, 2, 1, 1, Domain);
+  TOutput2D Output(2, 2, 1, 1, &Domain);
+  Output.AddFEFunction(Scalar_FeFunction);
 
-    Output->AddFEFunction(Scalar_FeFunction);
+  //Scalar_FeFunction->Interpolate(Exact);
+  int img = 1;
+  if(TDatabase::ParamDB->WRITE_VTK)
+  {
+    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    if(img<10) filename += ".0000";
+    else if(img<100) filename += ".000";
+    else if(img<1000) filename += ".00";
+    else if(img<10000) filename += ".0";
+    else filename += ".";
+    filename += std::to_string(img) + ".vtk";
+    Output.WriteVtk(filename.c_str());
+    img++;
+  }
 
-//     Scalar_FeFunction->Interpolate(Exact);   
-    if(TDatabase::ParamDB->WRITE_VTK)
-     {
-      os.seekp(std::ios::beg);
-       if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
-         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
-          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
-           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
-            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
-      Output->WriteVtk(os.str().c_str());
-      img++;
-     }   
-
-     
-    // measure errors to known solution
-    if(TDatabase::ParamDB->MEASURE_ERRORS)
-     {
-      fesp[0] = Scalar_FeSpace;       
-      aux =  new TAuxParam2D(1, 0, 0, 0, fesp, NULL, NULL, NULL, NULL, 0, NULL);
-      
-     for(j=0;j<5;j++)
-       errors[j] = 0;
-     
-      Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors, BilinearCoeffs, aux, 1, fesp, errors);
-     
-      olderror = errors[0];
-      olderror1 = errors[1]; 
-     
-      OutPut("time: " << TDatabase::TimeDB->CURRENTTIME);
-      OutPut(" L2: " << errors[0]);
-      OutPut(" H1-semi: " << errors[1] << endl);     
-     Linfty=errors[0];
-     } //  if(TDatabase::ParamDB->MEASURE_ERRORS)  
-       
-       
-  coll->GetHminHmax(&hmin,&hmax);
-  OutPut("h_min : " << hmin << " h_max : " << hmax << endl);
-
-   TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
-
+  double errors[5] = { 0., 0., 0., 0., 0. };
+  double Linfty; // L^infty in time of L2 in space
+  double olderror, olderror1;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+  // measure errors to known solution
+  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  {
+    TFESpace2D *fesp[1] = { Scalar_FeSpace }; 
+    TAuxParam2D aux;
+    
+    Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors, 
+                                 BilinearCoeffs, &aux, 1, fesp, errors);
+   
+    olderror = errors[0];
+    olderror1 = errors[1]; 
+   
+    OutPut("time: " << TDatabase::TimeDB->CURRENTTIME);
+    OutPut(" L2: " << errors[0]);
+    OutPut(" H1-semi: " << errors[1] << endl);     
+    Linfty = errors[0];
+  } //  if(TDatabase::ParamDB->MEASURE_ERRORS)  
+  
+  {
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
+    OutPut("h_min : " << hmin << " h_max : " << hmax << endl);
+  }
 
   // TDatabase::TimeDB->TIMESTEPLENGTH =  hmax;
   //======================================================================
   // time disc loop
   //======================================================================    
   // parameters for time stepping scheme
-   m = 0;
-   N_SubSteps = GetN_SubSteps();
-   end_time = TDatabase::TimeDB->ENDTIME; 
+  int m = 0;
+  int N_SubSteps = GetN_SubSteps();
+  double end_time = TDatabase::TimeDB->ENDTIME; 
 
-   UpdateStiffnessMat = FALSE; //check BilinearCoeffs in example file
-   UpdateRhs = TRUE; //check BilinearCoeffs in example file
-   ConvectionFirstTime=TRUE;
+  bool UpdateStiffnessMat = false; // check BilinearCoeffs in example file
+  bool UpdateRhs = true; // check BilinearCoeffs in example file
+  bool ConvectionFirstTime = true;
 
-   // time loop starts
-   while(TDatabase::TimeDB->CURRENTTIME < end_time)
-   {
+  // time loop starts
+  while(TDatabase::TimeDB->CURRENTTIME < end_time)
+  {
     m++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
 
-    for(l=0; l<N_SubSteps; l++) // sub steps of fractional step theta
+    for(int l=0; l<N_SubSteps; l++) // sub steps of fractional step theta
     {
       SetTimeDiscParameters(1);
 
@@ -229,12 +225,10 @@ int main(int argc, char* argv[])
         OutPut("Theta4: " << TDatabase::TimeDB->THETA4<< endl);
       }
 
-      tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
        
-      OutPut(endl << "CURRENT TIME: ");
-      OutPut(TDatabase::TimeDB->CURRENTTIME << endl);   
-
+      OutPut("\nCURRENT TIME: " << TDatabase::TimeDB->CURRENTTIME << endl);
       
       //copy rhs to oldrhs
       memcpy(oldrhs, rhs, N_DOF*SizeOfDouble); 
@@ -243,50 +237,55 @@ int main(int argc, char* argv[])
       // assemble only once at the begning
       if(UpdateStiffnessMat || UpdateRhs ||  ConvectionFirstTime)
       {
-        SystemMatrix->AssembleARhs(NULL, sol, rhs);
+        SystemMatrix.AssembleARhs(la_stiff_rhs, sol, rhs);
         
         // M:= M + (tau*THETA1)*A
         // rhs: =(tau*THETA4)*rhs +(tau*THETA3)*oldrhs +[M-(tau*THETA2)A]*oldsol
         // note! sol contains only the previous time step value, so just pass 
         // sol for oldsol
-        SystemMatrix->AssembleSystMat(oldrhs, sol, rhs, sol);
-        ConvectionFirstTime = FALSE;
+        SystemMatrix.AssembleSystMat(oldrhs, sol, rhs, sol);
+        ConvectionFirstTime = false;
       }
      
       // solve the system matrix 
-      SystemMatrix->Solve(sol, rhs);
+      SystemMatrix.Solve(sol, rhs);
     
       // restore the mass matrix for the next time step    
       // unless the stiffness matrix or rhs change in time, it is not necessary to assemble the system matrix in every time step
       if(UpdateStiffnessMat || UpdateRhs)
       {
-        SystemMatrix->RestoreMassMat();
+        SystemMatrix.RestoreMassMat();
       }   
-    } // for(l=0;l<N_SubSteps;l++) 
+    } // for(int l=0;l<N_SubSteps;l++) 
     //======================================================================
     // produce outout
     //======================================================================
     if(m==1 || m % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-     if(TDatabase::ParamDB->WRITE_VTK)
+    {
+      if(TDatabase::ParamDB->WRITE_VTK)
       {
-       os.seekp(std::ios::beg);
-        if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
-         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
-          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
-           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
-            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
-       Output->WriteVtk(os.str().c_str());
-       img++;
+        std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+        filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+        if(img<10) filename += ".0000";
+        else if(img<100) filename += ".000";
+        else if(img<1000) filename += ".00";
+        else if(img<10000) filename += ".0";
+        else filename += ".";
+        filename += std::to_string(img) + ".vtk";
+        Output.WriteVtk(filename.c_str());
+        img++;
       }
-
+    }
     
     //======================================================================
     // measure errors to known solution
     //======================================================================    
     if(TDatabase::ParamDB->MEASURE_ERRORS)
     {
-      Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors, BilinearCoeffs, aux, 1, fesp, errors);
-
+      TAuxParam2D aux;
+      Scalar_FeFunction->GetErrors(Exact, 3, AllDerivatives, 2, L2H1Errors,
+                                   BilinearCoeffs, &aux, 1, &Scalar_FeSpace,
+                                   errors);
 
       OutPut("time: " << TDatabase::TimeDB->CURRENTTIME);
       OutPut(" L2: " << errors[0]);
@@ -308,23 +307,6 @@ int main(int argc, char* argv[])
     } //  if(TDatabase::ParamDB->MEASURE_ERRORS)  
   } // while(TDatabase::TimeDB->CURRENTTIME< end_time)
 
-//======================================================================
-// produce final outout
-//======================================================================
-  
-     if(TDatabase::ParamDB->WRITE_VTK)
-      {
-       os.seekp(std::ios::beg);
-        if(img<10) os <<  "VTK/"<<VtkBaseName<<".0000"<<img<<".vtk" << ends;
-         else if(img<100) os <<  "VTK/"<<VtkBaseName<<".000"<<img<<".vtk" << ends;
-          else if(img<1000) os <<  "VTK/"<<VtkBaseName<<".00"<<img<<".vtk" << ends;
-           else if(img<10000) os <<  "VTK/"<<VtkBaseName<<".0"<<img<<".vtk" << ends;
-            else  os <<  "VTK/"<<VtkBaseName<<"."<<img<<".vtk" << ends;
-       Output->WriteVtk(os.str().c_str());
-       img++;
-      }
-      
-      
   CloseFiles();
   return 0;
 } // end main

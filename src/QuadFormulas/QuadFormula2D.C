@@ -126,13 +126,11 @@ void TQuadFormula2D::FindLocalQuadFormula2D
         (int N_LocalUsedElements, FE2D *LocalUsedElements,
          QuadFormula1D &qf1, QuadFormula2D &qf2)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree;
+  int i, MaxPolynomialDegree, PolynomialDegree;
   BF2DRefElements RefElement;
   int *PolynomialDegreeFromFE2D;
   RefTrans2D RefTrans, *RefTransArray, CurrentRefTrans;
-  TRefTrans2D *rt;
-  BaseFunct2D BaseFuncts[N_FEs2D];
-
+  
   // find adequate quadrature formula for all elements
   // and find needed reference transformation
   RefTransArray = TFEDatabase2D::GetRefTrans2D_IDFromFE2D();
@@ -144,8 +142,6 @@ void TQuadFormula2D::FindLocalQuadFormula2D
         TFEDatabase2D::GetRefElementFromFE2D(LocalUsedElements[0]);
   for(i=0;i<N_LocalUsedElements;i++)
   {
-    BaseFuncts[i] = 
-        TFEDatabase2D::GetBaseFunct2D_IDFromFE2D(LocalUsedElements[i]);
     PolynomialDegree = PolynomialDegreeFromFE2D[LocalUsedElements[i]];
     if(PolynomialDegree > MaxPolynomialDegree) 
       MaxPolynomialDegree = PolynomialDegree;

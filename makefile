@@ -13,8 +13,8 @@ MACH = LINUX64
 #MACH = CRAY64
 
 #FLAG = OPTI
-FLAG = FAST
-#FLAG = DEBUG
+#FLAG = FAST
+FLAG = DEBUG
 
 # profing options
 # HP-UX: -G, SUN: -xpg,
@@ -112,6 +112,7 @@ allclean: clean2D clean2D_PAR clean3D clean3D_PAR
 	@(cd $(SRC)/Geometry/obj3D; $(MAKE) GEO=3D $(ARGS) )
 	@(cd $(SRC)/General/obj3D; $(MAKE) GEO=3D $(ARGS) )
 	@(cd $(SRC)/FE/obj3D; $(MAKE) GEO=3D $(ARGS) )
+	@(cd Examples/obj3D; $(MAKE) GEO=3D $(ARGS) )
 	@(cd $(SRC)/System/obj3D; $(MAKE) GEO=3D $(ARGS) )
 	@(cd $(SRC)/PBE/obj3D; $(MAKE) GEO=3D $(ARGS) )
 	@$(MAKE) -f Makefile3D GEO=3D EFENCE=$(EFENCE) $(ARGS)
@@ -125,6 +126,7 @@ allclean: clean2D clean2D_PAR clean3D clean3D_PAR
 	@(cd $(SRC)/Geometry/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/General/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/FE/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
+	@(cd Examples/obj3D_par; $(MAKE) GEO=3D $(ARGS) )
 	@(cd $(SRC)/PBE/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/Parallel/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
 	@(cd $(SRC)/System/obj3D_par; $(MAKE) GEO=3D $(ARGS_PAR) )
@@ -138,6 +140,7 @@ clean2D:
 	@(cd $(SRC)/Geometry/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/General/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj2D; $(MAKE) clean )
+	@(cd Examples/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/PBE/obj2D; $(MAKE) clean )
 	@($(RM) ii_files lib2D/lib_repository lib2D/SunWS_cache )
@@ -151,6 +154,7 @@ clean2D_PAR:
 	@(cd $(SRC)/Geometry/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/General/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj2D_par; $(MAKE) clean )
+	@(cd Examples/obj2D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj2D_par; $(MAKE) clean )
 	@(cd $(SRC)/Parallel/obj2D_par; $(MAKE) clean )
 	@($(RM) ii_files lib2D/lib_repository lib2D/SunWS_cache )
@@ -163,6 +167,7 @@ clean3D:
 	@(cd $(SRC)/Geometry/obj3D; $(MAKE) clean )
 	@(cd $(SRC)/General/obj3D; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj3D; $(MAKE) clean )
+	@(cd Examples/obj3D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj3D; $(MAKE) clean )
 	@(cd $(SRC)/PBE/obj3D; $(MAKE) clean )
 	@($(RM) ii_files lib3D/lib_repository lib3D/SunWS_cache )
@@ -175,6 +180,7 @@ clean3D_PAR:
 	@(cd $(SRC)/Geometry/obj3D_par; $(MAKE) clean )
 	@(cd $(SRC)/General/obj3D_par; $(MAKE) clean )
 	@(cd $(SRC)/FE/obj3D_par; $(MAKE) clean )
+	@(cd Examples/obj3D; $(MAKE) clean )
 	@(cd $(SRC)/System/obj3D_par; $(MAKE) clean )
 	@(cd $(SRC)/PBE/obj3D_par; $(MAKE) clean )	
 	@(cd $(SRC)/Parallel/obj3D_par; $(MAKE) clean )

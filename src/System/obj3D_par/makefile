@@ -13,7 +13,7 @@ INC    = -I../../../include/General -I../../../include/FE \
          -I../../../include/FE2D -I../../../include/FE1D \
          -I../../../include/FE3D -I../../../include/AMG \
          -I../../../include/PBE -I../../../EXT_LIB/UMFPACK/Include \
-         -I../../../include/System \
+         -I../../../include/System -I../../../Examples \
          -I../../../include/Parallel  -I../../../EXT_LIB/MUMPS/include \
          -I../../../EXT_LIB/tecplot/include
 

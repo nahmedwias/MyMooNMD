@@ -12,7 +12,7 @@ INC     = -Iinclude/FE -Iinclude/Geometry -Iinclude/QuadFormulas \
           -Iinclude/General -Iinclude/Parallel -Iinclude/System -Iinclude/PBE\
           -IEXT_LIB/UMFPACK/Include -IEXT_LIB/tetgen \
           -IEXT_LIB/MUMPS/include -IEXT_LIB/SUPERLU/MPI/include \
-          -IEXT_LIB/Metis/Lib -IEXT_LIB/Hips/include  -I
+          -IEXT_LIB/Metis/Lib -IEXT_LIB/Hips/include  -IExamples -I
 
 ifeq ($(PRG_TYPE),PARALLEL)
  LIB_FE         = $(LIBPATH)lib_FE_par.a
@@ -24,6 +24,7 @@ ifeq ($(PRG_TYPE),PARALLEL)
  LIB_SYSTEM     = $(LIBPATH)lib_System_par.a
  LIB_PBE        = $(LIBPATH)lib_pbe_par.a
  LIB_PAR        = $(LIBPATH)lib_par.a
+ LIB_EXAMPLES3D   = $(LIBPATH)lib_Examples3D_par.a
 else
  LIB_FE         = $(LIBPATH)lib_FE.a
  LIB_QF         = $(LIBPATH)lib_QF.a
@@ -33,6 +34,7 @@ else
  LIB_REFINEMENT = $(LIBPATH)lib_refinement.a
  LIB_SYSTEM     = $(LIBPATH)lib_System.a
  LIB_PBE        = $(LIBPATH)lib_pbe.a
+ LIB_EXAMPLES3D   = $(LIBPATH)lib_Examples3D.a
 endif
 LIB_TETGEN     = EXT_LIB/tetgen/libtet_$(MACH).a
 
@@ -50,7 +52,7 @@ $(OUT): $(IN).C  $(LIB_PAR)  $(LIB_GEO)  $(LIB_SYSTEM)  $(LIB_FE) $(LIB_GENERAL)
 	@echo CPP is $(CPP), C is $(CC) IN is $(IN)
 	@$(CPP) $(CPPFLAG) $(GPROF) $(DEFINE) -o $(OUT) $(IN).C \
 	 $(LIB_PAR)  $(LIB_SYSTEM) $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
-	 $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) \
+	 $(LIB_GEO) $(LIB_FE) $(LIB_GENERAL) $(LIB_EXAMPLES3D)\
 	 $(LIB_AMG) $(LIB_QF) $(LIB_REFINEMENT) \
 	 $(LIB_GEO)  $(LIB_FE) $(LIB_QF) \
 	 $(LIB_GEO) $(LIB_PBE) $(LIB_PAR)  \

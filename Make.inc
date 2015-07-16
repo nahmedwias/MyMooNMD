@@ -33,7 +33,7 @@ endif
 # ======================================================================
 CPPFLAG_LINUX64_OPTI  = -O3 -s $(INC) -std=c++11 -fopenmp
 CPPFLAG_LINUX64_FAST  =  $(INC) -std=c++11 -fopenmp 
-CPPFLAG_LINUX64_DEBUG = -g $(INC) -std=c++11 -fopenmp
+CPPFLAG_LINUX64_DEBUG = -g $(INC) -Wall -std=c++11 -fopenmp
 DEFINE_LINUX64        = -D__$(GEO)__ -D__LINUX__ $(MORTAR) $(SPECIAL)   -D__$(FLAG)  
 CCFLAG_LINUX64_OPTI   = -O3 -s -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp
 CCFLAG_LINUX64_FAST   =  -DTRILIBRARY -DREDUCED -DNO_TIMER $(INC) -DMKL_ILP64 -m64 -fopenmp

@@ -44,6 +44,12 @@ class TSquareStructure3D : public TSquareStructure
     TFESpace3D *GetFESpace()
     { return FESpace; }
 
+    /** @brief find out if two TSquareStructure3Ds are the same */
+    friend bool operator==(const TSquareStructure3D &lhs,
+                           const TSquareStructure3D &rhs);
+    /** @brief find out if two TSquareStructure3Ds are different */
+    friend bool operator!=(const TSquareStructure3D &lhs,
+                           const TSquareStructure3D &rhs);
 };
 
 #endif

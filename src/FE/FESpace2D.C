@@ -72,6 +72,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 #ifdef __MORTAR__
   MortarColl = mortarcoll;
 #endif
+  
+  this->BoundCondition = BoundaryCondition;
 
   ElementForShape = new FE2D[N_SHAPES];
 
@@ -571,6 +573,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 #ifdef __MORTAR__
   MortarColl = mortarcoll;
 #endif
+  
+  this->BoundCondition = BoundaryCondition;
 
   ElementForShape = new FE2D[N_SHAPES];
 
@@ -1172,6 +1176,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 #ifdef __MORTAR__
   MortarColl = mortarcoll;
 #endif
+  
+  this->BoundCondition = BoundaryCondition;
 
   // find out all used elements
   FindUsedElements();

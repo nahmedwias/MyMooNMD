@@ -46,9 +46,39 @@ class TMatrix2D : public TMatrix
     /** @brief scale all active rows */
     TMatrix2D& operator*=(double alpha);
 
-    /** @brief set all Dirichlet rows to zero. That means all rows where the test 
-     *         space has nonactive degrees of freedom. */
-    void resetNonActive();
+    /** @brief set all Dirichlet rows to zero.
+     * 
+     *  That means all rows where the test space has nonactive degrees of 
+     *  freedom are set to zero.
+     */
+    void reset_non_active();
+    
+    /** @brief set all non-Dirichlet rows to zero.
+      * 
+      *  That means all rows where the test space has active degrees of 
+      *  freedom are set to zero.
+      */
+    void reset_active();
+    
+    /** @brief scale this matrix by a factor
+     * 
+     * Only rows corresponding to active d.o.f are scaled. Other rows remain
+     * unscaled.
+     */
+    void scale_active(double factor = 1.0);
+    
+    /** @brief adding a scaled matrix to this matrix
+     * 
+     * This is only done for those rows which correspond to active degrees of 
+     * freedom.
+     * 
+     * The summation is index-wise, i.e. A(i,j) += factor*m(i.j), where A is 
+     * this matrix. 
+     * 
+     * Note that this only works if the sparsity structure is the same for this
+     * matrix and m.
+     */
+    void add_active(const TMatrix2D& m, double factor = 1.0);
 
     /** @brief add two matrices A and B
      * 
@@ -83,6 +113,7 @@ class TMatrix2D : public TMatrix
     friend double* operator*(const TMatrix2D & A, const double* x);
 };
 
+// to be removed
 void AllocateMatricesNSE_2D(int mg_level,
 			    TFESpace2D *velocity_space, 
 			    TFESpace2D *pressure_space,

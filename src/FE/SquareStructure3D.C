@@ -24,7 +24,7 @@
 
 /** dummy constructor, needed only for derived classes */
 TSquareStructure3D::TSquareStructure3D()
-  : TSquareStructure()
+  : TSquareStructure(), FESpace(NULL)
 {
 }
 
@@ -45,7 +45,7 @@ TSquareStructure3D::TSquareStructure3D(TFESpace3D *Space)
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
-  int Offset, *DOF, end, begin;
+  int Offset, *DOF, end;
   THangingNode **HangingNodes;
   THangingNode *hn;
 
@@ -525,3 +525,22 @@ TSquareStructure3D::~TSquareStructure3D()
 {
 }
 
+/** check if SquareStructure lhs and rhs are equal*/
+bool operator==(const TSquareStructure3D &lhs, const TSquareStructure3D &rhs)
+{
+  if(&lhs == &rhs)
+    return true;
+  if(lhs.FESpace == rhs.FESpace)
+  {
+    const TSquareStructure* lhsTmp = &lhs;
+    const TSquareStructure* rhsTmp = &rhs;
+    return *lhsTmp==*rhsTmp;
+  }
+  return false;
+}
+
+/** check if SquareStructure lhs and rhs are not equal*/
+bool operator!=(const TSquareStructure3D &lhs, const TSquareStructure3D &rhs)
+{
+  return !(rhs == lhs);
+}

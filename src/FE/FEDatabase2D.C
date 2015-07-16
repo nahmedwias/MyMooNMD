@@ -140,8 +140,7 @@ void TFEDatabase2D::RegisterAllQuadFormulas()
   TQuadFormula1D *qf1d;
   TQuadFormulaTria *qftria;
   TQuadFormulaQuad *qfquad;
-  TQuadFormula3D *qf3d;
-
+  
   // =====================================================================
   // register 1d quadrature formulas
   // =====================================================================
@@ -1770,7 +1769,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
                           double* &weights, double* X, double* Y,
                           double* absdetjk)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Edges, N_terms;
+  int i, MaxPolynomialDegree, PolynomialDegree, N_Edges, N_terms;
   BF2DRefElements RefElement;
   QuadFormula2D QuadFormula;
   TQuadFormula2D *qf2;
@@ -1786,9 +1785,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
   BaseFunct2D BaseFunct;
   double **origvaluesD00, **origvaluesD10, **origvaluesD01;
   double **origvaluesD20, **origvaluesD11, **origvaluesD02;
-  int N_Functs;
-  int BaseVectDim = 1;
-
+  
 #ifdef _MPI
   int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -2116,7 +2113,6 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
   for(i=0;i<N_LocalUsedElements;i++)
   {
     BaseFunct=BaseFuncts[i];
-    N_Functs = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetDimension();
     origvaluesD00=TFEDatabase2D::GetOrigElementValues(BaseFunct, D00);
     origvaluesD10=TFEDatabase2D::GetOrigElementValues(BaseFunct, D10);
     origvaluesD01=TFEDatabase2D::GetOrigElementValues(BaseFunct, D01);
@@ -2331,8 +2327,8 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
     Refinements refine, FE2D child, int childnumber)
 { 
   double *ret, *ret2;
-  int i,j,k,l;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  int j,k,l;
+  int N_Coarse, N_Points, N_Children;
   double *xi, *eta;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
@@ -2371,7 +2367,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
 
       RefCell = BaseFunctions->GenerateRefElement();
       FineElement = TFEDatabase2D::GetFE2D(child);
-      N_Fine = FineElement->GetBaseFunct2D()->GetDimension();
+      //int N_Fine = FineElement->GetBaseFunct2D()->GetDimension();
 
       nf = FineElement->GetNodalFunctional2D();
       nf->GetPointsForAll(N_Points, xi, eta);
@@ -2434,7 +2430,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
         cell = (TGridCell *)RefCell->GetChild(j);
         FineElement = TFEDatabase2D::GetFE2D(child);
         Fine = FineElement->GetBaseFunct2D_ID();
-        N_Fine = FineElement->GetBaseFunct2D()->GetDimension();
+        //int N_Fine = FineElement->GetBaseFunct2D()->GetDimension();
   
         nf = FineElement->GetNodalFunctional2D();
         nf->GetPointsForAll(N_Points, xi, eta);
@@ -2494,17 +2490,15 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
 double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent, 
     Refinements refine, FE2D child, int childnumber)
 { 
-  double *ret, *ret2;
-  int i,j,k,l, l1, l2;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  double *ret;
+  int i,j,k,l1, l2;
+  int N_Coarse, N_Fine, N_Children;
   double AllPointValues[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
-  double PointValues[MaxN_PointsForNodal2D];
   TFE2D *CoarseElement, *FineElement;
   TRefDesc *RefDesc;
   TBaseFunct2D *BaseFunctions, *FineBF;
   BaseFunct2D Coarse, Fine;
-  TBaseCell *RefCell, *cell;
-  TNodalFunctional2D *nf;
+  TBaseCell *RefCell;
   RefTrans2D F_K;
   TRefTrans2D *rt;
 
@@ -2517,7 +2511,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *weights, sum, w;
+  double *xi, *eta, *weights, w;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   int LDA=MaxN_BaseFunctions2D;
@@ -2626,7 +2620,6 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
         memset(R, 0, MaxN_BaseFunctions2D*MaxN_BaseFunctions2D*
                      SizeOfDouble);
   
-        cell = RefCell->GetChild(j);
         FineElement = TFEDatabase2D::GetFE2D(child);
         Fine = FineElement->GetBaseFunct2D_ID();
         FineBF = FineElement->GetBaseFunct2D();
