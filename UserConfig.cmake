@@ -15,7 +15,7 @@ set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter 
 #set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
 #set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
 # set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
-#set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
+#set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
 #set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
 
 # selection of architecture type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
@@ -52,8 +52,8 @@ set(USE_SYSTEM_TETGEN TRUE)
 # no need to change anyting after this line
 # used only when ccmake or cmake-gui is used
 # ========================================================================================================================
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH})
 
 set_property(CACHE GEO PROPERTY STRINGS 1D 2D 3D ) 

@@ -253,13 +253,14 @@ include_directories("${CMAKE_SOURCE_DIR}/include/System")
 include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
 include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
-add_subdirectory(src/AMG) 
+add_subdirectory(src/AMG)
 add_subdirectory(src/Refinement) 
 add_subdirectory(src/QuadFormulas)  
 add_subdirectory(src/Geometry)          
 add_subdirectory(src/General) 
 add_subdirectory(src/FE) 
-add_subdirectory(src/System) 
+add_subdirectory(src/System)
+add_subdirectory(Examples)
 # add_subdirectory(src/PBE) 
 
 if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
@@ -269,11 +270,13 @@ endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID"
 add_executable(parmoon_${GEO}_${PARALLEL_TYPE}.exe  ${MODEL})
 
 if( "${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID" )
-   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "par" "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "par" "geo"  "fe" "gen"  "sys" "examples"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} ${MUMPS_LIBRARIES} "mpi" "mpifort" "mpicxx")  
 elseif( "${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
-   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "geo"  "fe" "gen"  "sys"
+   target_link_libraries(parmoon_${GEO}_${PARALLEL_TYPE}.exe "geo"  "fe" "gen" "geo"  "sys" "examples"
+                      "amg"  "quad" "ref" 
+                      "geo"  "fe" "gen" "geo"  "sys" "examples"
                       "amg"  "quad" "ref"  ${UMFPACK_LIBRARIES} ${TECPLOT_LIBRARIES}
                       ${BLAS_LIBRARIES} ${TETGEN_LIBRARIES} ${GRIDGEN_LIBRARIES} )
 endif("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
