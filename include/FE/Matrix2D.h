@@ -113,34 +113,5 @@ class TMatrix2D : public TMatrix
     friend double* operator*(const TMatrix2D & A, const double* x);
 };
 
-// to be removed
-void AllocateMatricesNSE_2D(int mg_level,
-			    TFESpace2D *velocity_space, 
-			    TFESpace2D *pressure_space,
-			    TSquareStructure2D *&sqstructureA, 
-			    TSquareStructure2D *&sqstructureC, 
-			    TStructure2D *&structureB, 
-			    TStructure2D *&structureBT,
-			    TSquareMatrix2D *&sqmatrixA,
-			    TSquareMatrix2D *&sqmatrixA11,
-			    TSquareMatrix2D *&sqmatrixA12,
-			    TSquareMatrix2D *&sqmatrixA21,
-			    TSquareMatrix2D *&sqmatrixA22,
-			    TSquareMatrix2D *&sqmatrixC,
-			    TMatrix2D *&matrixB1,
-			    TMatrix2D *&matrixB2,
-			    TMatrix2D *&matrixB1T,
-			    TMatrix2D *&matrixB2T,
-			    TSquareMatrix2D **MatricesA,
-			    TSquareMatrix2D **MatricesA11,
-			    TSquareMatrix2D **MatricesA12,
-			    TSquareMatrix2D **MatricesA21,
-			    TSquareMatrix2D **MatricesA22,
-			    TSquareMatrix2D **MatricesC,
-			    TMatrix2D **MatricesB1,			    
-			    TMatrix2D **MatricesB2,			    
-			    TMatrix2D **MatricesB1T,			    
-			    TMatrix2D **MatricesB2T);
-
 
 #endif // __MATRIX2D__
