@@ -9,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <SystemDarcy2D.h>
+#include <SystemMatDarcy2D.h>
 #include <Output2D.h>
 #include <MainUtilities.h>
 #include <LinAlg.h>
@@ -118,10 +118,6 @@ int main(int argc, char* argv[])
   // Disc type: GALERKIN (or) SDFEM  (or) UPWIND (or) GLS (or) SUPG (or) LOCAL_PROJECTION
   // Solver: AMG_SOLVE (or) GMG  (or) DIRECT 
   SystemMatDarcy2D SystemMatrix(&v_space, &p_space, example.get_bd());
-  TSystemDarcy2D SystemMatrix(fespaces);
-  
-  // initilize the system matrix with the functions defined in the example
-  SystemMatrix.Init(example.get_bc(), example.get_bd());
   
   // create a local assembling object which is needed to assemble the matrix
   LocalAssembling2D la(Darcy2D_Galerkin, fe_functions, example.get_coeffs());

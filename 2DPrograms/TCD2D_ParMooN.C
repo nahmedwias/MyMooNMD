@@ -11,7 +11,6 @@
 #include <Domain.h>
 #include <Database.h>
 #include <SystemMatTimeScalar2D.h>
-#include <SystemMatTimeScalar2D_ALE.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
 #include <SquareStructure2D.h>
