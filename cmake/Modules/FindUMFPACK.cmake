@@ -9,8 +9,8 @@
 #  UMFPACK_LIBRARIES - The libraries needed to use UMFPACK
 # History:
 # 2015/08/18 Clemens Bartsch: Replaced variable USE_SYSTEM_UMFPACK by
-#	FIND_USER_UMFPACK. Added NO_DEFAULT_PATH and REQUIRED option.
-#   Slightly altered output.
+#	FIND_USER_UMFPACK. Added NO_DEFAULT_PATH option.
+#	Slightly altered output. Removed searching for mumps dependencies.
 # ===================================================================
 if(UMFPACK_INCLUDES AND UMFPACK_LIBRARIES)
   set(UMFPACK_FIND_QUIETLY TRUE)
@@ -39,22 +39,8 @@ if(NOT UMFPACK_FOUND)
   endif(NOT UMFPACK_LIBRARY)
   
   if(UMFPACK_LIBRARY)  
-    # Find libraries mumps depends on. Start with default search.
-    find_library(SCALAPACK_LIB NAMES scalapack PATHS ${UMFPACK_LIBDIR} ${CMAKE_LIBRARY_PATH})
-    find_library(PARMETIS_LIB NAMES parmetis PATHS ${UMFPACK_LIBDIR} ${CMAKE_LIBRARY_PATH} ${PARMOON_EXTLIB_PATH}/Metis)
-    find_library(METIS_LIB NAMES metis PATHS ${UMFPACK_LIBDIR} ${CMAKE_LIBRARY_PATH}) 
-    # Search for the dependencies in ParMooN EXT_LIB exclusively.   
-    if(NOT SCALAPACK_LIB)
-      find_library(SCALAPACK_LIB NAMES scalapack_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS REQUIRED NO_DEFAULT_PATH)
-    endif()
-    if(NOT PARMETIS_LIB)
-      find_library(PARMETIS_LIB NAMES parmetis_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis REQUIRED NO_DEFAULT_PATH)
-    endif()
-    if(NOT METIS_LIB)
-      find_library(METIS_LIB NAMES metis_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis REQUIRED NO_DEFAULT_PATH)   
-    endif()      
-    
-    # combine mumps and its deps    
+ 
+    # combine umfpack and its deps    
     if(UMFPACK_LIBRARY_SUITESE AND UMFPACK_LIBRARY_AMD)
       set(UMFPACK_LIBRARY  ${UMFPACK_LIBRARY} ${UMFPACK_LIBRARY_AMD} ${UMFPACK_LIBRARY_SUITESE} ) 
     else(UMFPACK_LIBRARY_SUITESE AND UMFPACK_LIBRARY_AMD)   

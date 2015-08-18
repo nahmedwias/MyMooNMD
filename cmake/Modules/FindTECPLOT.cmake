@@ -7,41 +7,46 @@
 #  TECPLOT_FOUND - System has TECPLOT
 #  TECPLOT_INCLUDE_DIRS - The TECPLOT include directories
 #  TECPLOT_LIBRARIES - The libraries needed to use TECPLOT
+# 2015/08/18 Clemens Bartsch: Introduced variable FIND_USER_TECPLOT
+#	for activating non-ParMooN search. Added NO_DEFAULT_PATH
+#	keyword. Slightly changed the output. Added comments.
 # ===================================================================
 if(TECPLOT_INCLUDES AND TECPLOT_LIBRARIES)
   set(TECPLOT_FIND_QUIETLY TRUE)
 endif(TECPLOT_INCLUDES AND TECPLOT_LIBRARIES)
 
 if(NOT TECPLOT_FOUND)
-  find_path(TECPLOT_INCLUDE_DIR   TECIO.h PATHS $ENV{TECPLOTDIR}/include ${CMAKE_INCLUDE_PATH})
-  find_library(TECPLOT_LIBRARY NAMES tecio PATHS $ENV{TECPLOTDIR}/lib ${CMAKE_LIBRARY_PATH})
-  get_filename_component(TECPLOT_LIBDIR ${TECPLOT_LIBRARY} PATH)
+
+  # Search for the library in standard non-ParMooN paths and in those specified after PATHS.
+  if(FIND_USER_TECPLOT)
+    message("Searching in default and user paths.")
+    find_path(TECPLOT_INCLUDE_DIR   TECIO.h PATHS $ENV{TECPLOTDIR}/include ${CMAKE_INCLUDE_PATH})
+    find_library(TECPLOT_LIBRARY NAMES tecio PATHS $ENV{TECPLOTDIR}/lib ${CMAKE_LIBRARY_PATH})
+    get_filename_component(TECPLOT_LIBDIR ${TECPLOT_LIBRARY} PATH)
+  endif(FIND_USER_TECPLOT)
      
-     
-     
+  # Search for the library exclusively in the ParMooN EXT_LIB path.   
   if(NOT TECPLOT_LIBRARY)
-    message("TECPLOT not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
-    find_path(TECPLOT_INCLUDE_DIR  TECIO.h PATHS ${PARMOON_EXTLIB_PATH}/tecplot/include)
-    find_library(TECPLOT_LIBRARY NAMES tecio_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib)
+    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    find_path(TECPLOT_INCLUDE_DIR  TECIO.h PATHS ${PARMOON_EXTLIB_PATH}/tecplot/include NO_DEFAULT_PATH)
+    find_library(TECPLOT_LIBRARY NAMES tecio_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
   endif(NOT TECPLOT_LIBRARY)
   
   if(TECPLOT_LIBRARY)      
-    # set TECPLOT
-    if(TECPLOT_LIBRARY)
-      include(FindPackageHandleStandardArgs)
+    # Set TECPLOT library and directory variables
+    include(FindPackageHandleStandardArgs)
     
-      set(TECPLOT_LIBRARIES ${TECPLOT_LIBRARY})
-      set(TECPLOT_INCLUDE_DIRS ${TECPLOT_INCLUDE_DIR})
+    set(TECPLOT_LIBRARIES ${TECPLOT_LIBRARY})
+    set(TECPLOT_INCLUDE_DIRS ${TECPLOT_INCLUDE_DIR})
 
-      # handle the QUIETLY and REQUIRED arguments and set TECPLOT_FOUND to TRUE
-      # if all listed variables are TRUE
-      find_package_handle_standard_args(TECPLOT  DEFAULT_MSG
-                                        TECPLOT_LIBRARY TECPLOT_INCLUDE_DIR)
+    # handle the QUIETLY and REQUIRED arguments and set TECPLOT_FOUND to TRUE
+    # if all listed variables are TRUE
+    find_package_handle_standard_args(TECPLOT  DEFAULT_MSG
+                                      TECPLOT_LIBRARY TECPLOT_INCLUDE_DIR)
 
-      mark_as_advanced(TECPLOT_INCLUDE_DIR TECPLOT_LIBRARY)
-    endif(TECPLOT_LIBRARY)  
-  endif()
+    mark_as_advanced(TECPLOT_INCLUDE_DIR TECPLOT_LIBRARY)
+  endif(TECPLOT_LIBRARY)
 
-endif()
+endif(NOT TECPLOT_FOUND)
 
 

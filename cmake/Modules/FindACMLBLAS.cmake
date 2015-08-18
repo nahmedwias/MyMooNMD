@@ -10,8 +10,8 @@
 #
 # History:
 # 2015/08/18 Clemens Bartsch: Introduced variable FIND_USER_BLAS 
-#	for activating non-ParMooN search. Added MODULE and NO_DEFAULT_PATH
-#	keywords. Slightly changed the output.
+#	for activating non-ParMooN search. Added NO_DEFAULT_PATH
+#	keyword. Slightly changed the output.
 # ===================================================================
 if(BLAS_INCLUDES AND BLAS_LIBRARIES)
   set(BLAS_FIND_QUIETLY TRUE)

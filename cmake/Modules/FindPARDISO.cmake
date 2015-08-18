@@ -7,6 +7,8 @@
 # #  PARDISO_FOUND - System has PARDISO
 # #  PARDISO_INCLUDE_DIRS - The PARDISO include directories
 # #  PARDISO_LIBRARIES - The libraries needed to use PARDISO
+# #
+# #  TODO 2015/08/18 CB This is a stub and not used in the CMakeLists.txt yet. 
 # # ===================================================================
 # if(PARDISO_INCLUDES AND PARDISO_LIBRARIES)
 #   set(PARDISO_FIND_QUIETLY TRUE)

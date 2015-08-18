@@ -5,11 +5,22 @@
 # ===================================================================
 
 # CB Things which the user has to / can specify
+# Eine Erklaerung zum Thema Cache-variablen hinzufuegen!
 # ARCH
+# PARALLEL_TYPE
+# USE_SYSTEM_BLAS
+# USE_SYSTEM_LAPACK
 # FIND_USER_BLAS
 # FIND_USER_UMFPACK
+# FIND_USER_LAPACK
+# FIND_USER_MUMPS
+# FIND_USER_TETGEN
+# FIND_USER_TECPLOT
+# FIND_USER_GRIDGEN (sobald scharf: auch fuer TRIANGLE und PARDISO)
 # CMAKE_INCLUDE_PATH
 # CMAKE_LIBRARY_PATH
+# CMAKE_ECLIPSE_VERSION eventuell, wenn jemand plant Eclipse zu benutzen.
+# CMAKE_VERBOSE_MAKEFILE soll aber nicht benutzt werden, um output von cmake zu steuern!!
 
 # controlling the output messages
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
@@ -29,7 +40,7 @@ set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter 
 set(ARCH "LINUX64" CACHE STRING "select the machine type")
 
 # selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
-set(PARALLEL_TYPE "SEQUENTIAL" CACHE STRING "select the parallel type")
+set(PARALLEL_TYPE "MPI" CACHE STRING "select the parallel type")
 
 # set the path to save the executable file
 set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/cd2d" CACHE STRING "select the model")
@@ -44,9 +55,8 @@ set(EXE_BUILD_TYPE RELEASE)
 # set FALSE, if you want to use libraries provided in ParMooN 
 # if you set TRUE, it will search in all your library paths and if not found, ParMooN libraries will be used
 set(USE_SYSTEM_BLAS TRUE)
-
 set(USE_SYSTEM_LAPACK TRUE)
-set(USE_SYSTEM_MUMPS TRUE)
+
 set(USE_SYSTEM_GRIDGEN TRUE)
 set(USE_SYSTEM_TETGEN TRUE)
 

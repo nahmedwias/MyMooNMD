@@ -24,7 +24,11 @@
 # beginners are advised NOT to alter anything the below contents
 #
 # Change History 
-# 2015/08/18 Clemens Bartsch 
+# 2015/08/18 Clemens Bartsch: Introduced distinction between 
+# FIND_USER_{PACKAGENAME} and USE_SYSTEM_{PACKAGENAME}. Tidied up output
+# a bit. First rework of search modules in directory cmake.
+# Moved several variables between CMakeLists.txt and UserConfig.cmake.
+# ========================================================================
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -32,152 +36,122 @@ project(ParMooN)
 set(ParMooN_VERSION_MAJOR 1)
 set(ParMooN_VERSION_MINOR 1)
 
+# Include the user specific settings.
 include(${CMAKE_SOURCE_DIR}/UserConfig.cmake)
 
+# Set path to the external libraries which ship with ParMooN
 set(PARMOON_EXTLIB_PATH ${PROJECT_SOURCE_DIR}/EXT_LIB)
 
+# Set path to ParMooN package search modules.
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
 
 # Search and include BLAS library.
 message("==================Searching BLAS - begin===================================================")
 
-if(USE_SYSTEM_BLAS)
-message("Using default CMake module to find BLAS.")
-  find_package(BLAS MODULE)
-  if(BLAS_FOUND)
-    message("BLAS found with default CMake module.")
-    if(CMAKE_VERBOSE_MAKEFILE)
-  	  message("Available BLAS_LIB =${BLAS_LIBRARIES}")
-  	endif(CMAKE_VERBOSE_MAKEFILE)
-  	include_directories(${BLAS_INCLUDE_DIRS})
-  endif()
-endif(USE_SYSTEM_BLAS)
-
-if(NOT BLAS_FOUND)
-    message("Using ParMooN CMake module to find BLAS.")
-    find_package(ACMLBLAS REQUIRED MODULE)
-    if(BLAS_FOUND)
-      message("BLAS found with ParMooN CMake module.")
-      if(CMAKE_VERBOSE_MAKEFILE)
-  	    message("Available BLAS_LIB =${BLAS_LIBRARIES}")
-  	  endif(CMAKE_VERBOSE_MAKEFILE)
-      include_directories(${BLAS_INCLUDE_DIRS})
-    else()
-      # This case should never be reached, because of the REQUIRED option.
-      message("BLAS not found. Terminating.")
-    endif() 
-endif(NOT BLAS_FOUND)
+	if(USE_SYSTEM_BLAS)
+	  message("Using default CMake module to find BLAS.")
+	    find_package(BLAS MODULE)
+	    if(BLAS_FOUND)
+	      message("BLAS found with default CMake module.")
+		  message(STATUS "Available BLAS_LIB =${BLAS_LIBRARIES}")
+	  	  include_directories(${BLAS_INCLUDE_DIRS})
+	    endif(BLAS_FOUND)
+	endif(USE_SYSTEM_BLAS)
+	
+	if(NOT BLAS_FOUND)
+	  message("Using ParMooN CMake module to find BLAS.")
+	  find_package(ACMLBLAS REQUIRED MODULE)
+	  # Proceeding form here only when found - due to REQUIRED keyword.
+	  message("BLAS found with ParMooN CMake module.")
+	  message(STATUS "Available BLAS_LIB =${BLAS_LIBRARIES}")
+	  include_directories(${BLAS_INCLUDE_DIRS})
+	endif(NOT BLAS_FOUND)
 
 message("==================Searching BLAS - end=====================================================")
 
 
 # Search and include UMFPACK library.
 message("==================Searching UMFPACK - begin================================================")
-message("Using ParMooN CMake module to find UMFPACK.")
-find_package(UMFPACK MODULE REQUIRED)
-if(UMFPACK_FOUND)
-  message("UMFPACK found with ParMooN CMake module.")
-  include_directories(${UMFPACK_INCLUDE_DIRS})
-  if(CMAKE_VERBOSE_MAKEFILE)
-    message("Available UMFPACK_LIB =${UMFPACK_LIBRARIES}")
-  endif(CMAKE_VERBOSE_MAKEFILE)
-else()
-  # This case should never be reached, because of the REQUIRED option.
-  message("UMFPACK not found. Terminating.")
-endif() 
+	message("Using ParMooN CMake module to find UMFPACK.")
+	find_package(UMFPACK MODULE REQUIRED)
+	message("UMFPACK found with ParMooN CMake module.")
+	include_directories(${UMFPACK_INCLUDE_DIRS})
+	message(STATUS "Available UMFPACK_LIB =${UMFPACK_LIBRARIES}")
 message("==================Searching UMFPACK - end==================================================")
 
+# The parallel solvers MUMPS and LAPACK will only be searched for, when PARALLEL_TYPE is MPI or HYBRID.
 if("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
-# search the LAPACK in the system, if available it will be default
-  message("==================Searching LAPACK in the System - begin===================================================")
- if(USE_SYSTEM_LAPACK)  
-  find_package(LAPACK)
-  include_directories(${LAPACK_INCLUDE_DIRS})
-  if(CMAKE_VERBOSE_MAKEFILE)
-    if(LAPACK_FOUND)
-      message("Available system LAPACK_LIB =${LAPACK_LIBRARIES}")
-    elseif(NOT LAPACK_FOUND)
-        message(FATAL_ERROR "LAPACK_NOT_FOUND in your system")
-    endif(LAPACK_FOUND)
-  endif(CMAKE_VERBOSE_MAKEFILE)
- endif(USE_SYSTEM_LAPACK)
+  # Search and include LAPACK library.
+  message("==================Searching LAPACK - begin=================================================")
   
-  if(NOT LAPACK_FOUND)
-    message("LAPACK_NOT_FOUND in your system, Searching in ParMooN")
-    find_package(LAPACKLIB REQUIRED)
-#     include_directories(${BLAS_INCLUDE_DIRS})
-    if(CMAKE_VERBOSE_MAKEFILE)
-    if(LAPACK_FOUND)
-      message("Available system LAPACK_LIB =${LAPACK_LIBRARIES}")
-    elseif(NOT LAPACK_FOUND)
-      message("LAPACK_NOT_FOUND in ParMooN")
-    endif(LAPACK_FOUND)
-   endif(CMAKE_VERBOSE_MAKEFILE)   
-  endif(NOT LAPACK_FOUND)  
-message("==================Searching LAPACK in the System - end=====================================================")  
+	  if(USE_SYSTEM_LAPACK)
+	    message("Using default CMake module to find LAPACK.")
+	    find_package(LAPACK MODULE)
+	    if(LAPACK_FOUND)
+	      message("LAPACK found with default CMake module.")
+		  message(STATUS "Available LAPACK_LIB =${LAPACK_LIBRARIES}")
+	  	  include_directories(${LAPACK_INCLUDE_DIRS})
+	    endif(LAPACK_FOUND)  
+	  endif(USE_SYSTEM_LAPACK)
+	  
+	  if(NOT LAPACK_FOUND)
+	    message("Using ParMooN CMake module to find LAPACK.")
+	    find_package(LAPACKLIB REQUIRED MODULE)
+	    message("LAPACK found with ParMooN CMake module.")
+	    message(STATUS "Available LAPACK_LIB =${LAPACK_LIBRARIES}")
+	    include_directories(${LAPACK_INCLUDE_DIRS})
+	  endif(NOT LAPACK_FOUND)
+  
+  message("==================Searching LAPACK - end===================================================")  
 
- # search the MUMPS in the system, if available it wil be default
- message("==================Searching MUMPS in the System - begin=====================================================")
- find_package(MUMPS)
- include_directories(${MUMPS_INCLUDE_DIRS})
- if(CMAKE_VERBOSE_MAKEFILE)
-  if(MUMPS_FOUND)
-    message("Available system MUMPS_LIB =${MUMPS_LIBRARIES}")
-  elseif(NOT MUMPS_FOUND)
-    message(FATAL_ERROR "MUMPS_NOT_FOUND in your system or in the ParMooN")
-  endif()
- endif()
- message("==================Searching MUMPS in the System - end=======================================================")
+  # Search and include MUMPS library.
+  message("==================Searching MUMPS - begin==================================================")
+	  message("Using ParMooN CMake module to find MUMPS.")
+	  find_package(MUMPS REQUIRED MODULE)
+	  message("MUMPS found with ParMooN CMake module.")
+	  include_directories(${MUMPS_INCLUDE_DIRS})
+	  message(STATUS "Available MUMPS_LIB =${MUMPS_LIBRARIES}")
+  message("==================Searching MUMPS - end====================================================")
+  
 endif("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 
-# search the GRIDGEN in the system, if available it wil be default
-message("==================Searching GRIDGEN in the System - begin==================================================")
-find_package(GRIDGEN)
-include_directories(${GRIDGEN_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
-  if(GRIDGEN_FOUND)
-    message("Available system GRIDGEN_LIB =${GRIDGEN_LIBRARIES}")
-  elseif(NOT GRIDGEN_FOUND)
-    message(FATAL_ERROR "GRIDGEN_NOT_FOUND in your system or in the ParMooN")
-  endif()
-endif()
-message("==================Searching GRIDGEN in the System - end====================================================")
+# Search and include GRIDGEN library.
+message("==================Searching GRIDGEN - begin================================================")
+	message("Using ParMooN CMake module to find GRIDGEN.")
+	find_package(GRIDGEN REQUIRED MODULE)
+	message("GRIDGEN found with ParMooN CMake module.")
+	include_directories(${GRIDGEN_INCLUDE_DIRS})
+	message(STATUS "Available system GRIDGEN_LIB =${GRIDGEN_LIBRARIES}")
+message("==================Searching GRIDGEN - end==================================================")
 
-# search the TETGEN in the system, if available it wil be default
+# Search and include TETGEN library, only when GEO=3D.
 if("${GEO}" STREQUAL "3D")
-  message("==================Searching TETGEN in the System - begin==================================================")
-  find_package(TETGEN)
-  include_directories(${TETGEN_INCLUDE_DIRS})
-  if(CMAKE_VERBOSE_MAKEFILE)
-    if(TETGEN_FOUND)
-      message("Available system TETGEN_LIB =${TETGEN_LIBRARIES}")
-    elseif(NOT TETGEN_FOUND)
-      message(FATAL_ERROR "TETGEN_NOT_FOUND in your system or in the ParMooN")
-    endif()
-  endif()
-message("==================Searching TETGEN in the System - end======================================================")
+  message("==================Searching TETGEN - begin================================================")
+	  message("Using ParMooN CMake module to find TETGEN.")
+	  find_package(TETGEN REQUIRED MODULE)
+	  message("TETGEN found with ParMooN CMake module.")
+	  include_directories(${TETGEN_INCLUDE_DIRS}) 
+	  message(STATUS "Available system TETGEN_LIB =${TETGEN_LIBRARIES}")
+  message("==================Searching TETGEN - end==================================================")
 endif("${GEO}" STREQUAL "3D")
 
-if (NOT CONFIGURED_ONCE)
-    set(CMAKE_CXX_FLAGS "${warnings}"
-        CACHE STRING "Flags used by the compiler during all build types." FORCE)
-    set(CMAKE_C_FLAGS   "${warnings}"
-        CACHE STRING "Flags used by the compiler during all build types." FORCE)
-endif()
+# TODO CB 2015/08/18 Without setting CONFIGURED_ONCE an internal cache flag
+# or fill the variable warnings with compiler flags, this code is useless.
+#if (NOT CONFIGURED_ONCE)
+#    set(CMAKE_CXX_FLAGS "${warnings}"
+#        CACHE STRING "Flags used by the compiler during all build types." FORCE)
+#    set(CMAKE_C_FLAGS   "${warnings}"
+#        CACHE STRING "Flags used by the compiler during all build types." FORCE)
+#endif()
 
-# search the TECPLOT in the system, if available it wil be default
-message("==================Searching TECPLOT in the System - begin==================================================")
-find_package(TECPLOT)
-include_directories(${TECPLOT_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
-  if(TECPLOT_FOUND)
-    message("Available system TECPLOT_LIB =${TECPLOT_LIBRARIES}")
-  elseif(NOT TECPLOT_FOUND)
-    message(FATAL_ERROR "TECPLOT_NOT_FOUND in your system or in the ParMooN")
-  endif()
-endif()
-message("==================Searching TECPLOT in the System - end====================================================")
-
+# Search and include TECPLOT library.
+message("==================Searching TECPLOT - begin================================================")
+	message("Using ParMooN CMake module to find TECPLOT.")
+	find_package(TECPLOT REQUIRED MODULE)
+	message("TECPLOT found with ParMooN CMake module.")
+	include_directories(${TECPLOT_INCLUDE_DIRS})
+	message(STATUS "Available system TECPLOT_LIB =${TECPLOT_LIBRARIES}")
+message("==================Searching TECPLOT - end==================================================")
 
 # select the compiler type,
 # CMAKE_BUILD_TYPE [DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL]
@@ -185,9 +159,13 @@ set(CMAKE_BUILD_TYPE DEBUG CACHE STRING "options")
 set(PARMOON_INCLUDE )
 
 include (CMakeForceCompiler)
-message("cmake system name " ${CMAKE_SYSTEM_NAME})
-set(CMAKE_SYSTEM_NAME ${ARCH})
-message("cmake system name " ${CMAKE_SYSTEM_NAME})
+message("What is CMAKE_SYSTEM? " ${CMAKE_SYSTEM})
+message("What is CMAKE_SYSTEM_NAME? " ${CMAKE_SYSTEM_NAME})
+#TODO CB I don't think it's a good idea to change the system name (which we never use anyway) to fit our custom ARCH.
+#set(CMAKE_SYSTEM_NAME ${ARCH})
+message("What is CMAKE_SYSTEM? " ${CMAKE_SYSTEM})
+message("What is CMAKE_SYSTEM_NAME? " ${CMAKE_SYSTEM_NAME})
+
 
 if("${ARCH}" STREQUAL "MAC64")
 
@@ -207,8 +185,10 @@ elseif("${ARCH}" STREQUAL "LINUX64")
 
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
     find_path(MPI_CPATH   mpicc)
+    message("What is MPI_CPATH?" ${MPI_CPATCH})
     set(CMAKE_C_COMPILER ${MPI_CPATH}/mpicc)
-    find_path(MPI_CXXPATH   mpicxx)  
+    find_path(MPI_CXXPATH   mpicxx)
+    message("What is MPI_CXXPATH?" ${MPI_CXXPATCH}) 
     set(CMAKE_CXX_COMPILER ${MPI_CXXPATH}/mpicxx)      
   elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL"  OR "${PARALLEL_TYPE}" STREQUAL "OMPONLY")
     find_path(CPATH  gcc)
