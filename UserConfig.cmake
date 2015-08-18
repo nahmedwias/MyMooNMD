@@ -4,6 +4,12 @@
 # date: 05 June 2015
 # ===================================================================
 
+# CB Things which the user has to / can specify
+# ARCH
+# FIND_USER_BLAS
+# CMAKE_INCLUDE_PATH
+# CMAKE_LIBRARY_PATH
+
 # controlling the output messages
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
 
@@ -42,6 +48,10 @@ set(USE_SYSTEM_LAPACK TRUE)
 set(USE_SYSTEM_MUMPS TRUE)
 set(USE_SYSTEM_GRIDGEN TRUE)
 set(USE_SYSTEM_TETGEN TRUE)
+
+# If you have one or more non-standard filepaths that should be searched when looking for any of the above libraries,
+# add it here by modifying and uncommenting the next line.
+# set(CMAKE_LIBRARY_PATH my/creative/library/path)
 
 # set(USE_SYSTEM_BLAS CACHE  BOOL "set FALSE, if you want to use libs provided in PARMOON " FORCE) 
 

@@ -22,76 +22,70 @@
 # normally no need to alter any thing in this file
 # please DO NOT modify unless if it is necessary
 # beginners are advised NOT to alter anything the below contents
+#
+# Change History 
+# 2015/08/18 Clemens Bartsch 
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required(VERSION 2.8)
 
-project (ParMooN)
+project(ParMooN)
+set(ParMooN_VERSION_MAJOR 1)
+set(ParMooN_VERSION_MINOR 1)
 
 include(${CMAKE_SOURCE_DIR}/UserConfig.cmake)
 
-set (ParMooN_VERSION_MAJOR 1)
-set (ParMooN_VERSION_MINOR 0)
-
-# set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/lib)
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} $ENV{HOME}/lib)
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} $ENV{HOME}/software/lib)
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} $ENV{HOME}/Software/lib)
-
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} /opt/local/include)
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} /opt/include)
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} $ENV{HOME}/include)
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} $ENV{HOME}/software/include)
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} $ENV{HOME}/Software/include)
-
-# set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:/opt/local/lib/pkgconfig )
 set(PARMOON_EXTLIB_PATH ${PROJECT_SOURCE_DIR}/EXT_LIB)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
 
-# search the blas in the system, if available it will be default
-message("==================Searching BLAS in the System - begin===================================================")
+# Search and include BLAS library.
+message("==================Searching BLAS - begin===================================================")
 
 if(USE_SYSTEM_BLAS)
-  find_package(BLAS)
-  include_directories(${BLAS_INCLUDE_DIRS})
-  if(CMAKE_VERBOSE_MAKEFILE)
-    if(BLAS_FOUND)
-      message("Available system BLAS_LIB =${BLAS_LIBRARIES}")
-    elseif(NOT BLAS_FOUND)
-      message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
-    endif()
+message("Using default CMake module to find BLAS.")
+  find_package(BLAS MODULE)
+  if(BLAS_FOUND)
+    message("BLAS found with default CMake module.")
+    if(CMAKE_VERBOSE_MAKEFILE)
+  	  message("Available BLAS_LIB =${BLAS_LIBRARIES}")
+  	endif(CMAKE_VERBOSE_MAKEFILE)
+  	include_directories(${BLAS_INCLUDE_DIRS})
   endif()
 endif(USE_SYSTEM_BLAS)
 
 if(NOT BLAS_FOUND)
-    message("BLAS_NOT_FOUND in your system, Searching in ParMooN")
-    find_package(ACMLBLAS REQUIRED)
-    include_directories(${BLAS_INCLUDE_DIRS})
-    if(CMAKE_VERBOSE_MAKEFILE)
-      if(BLAS_FOUND)
-        message("Available system BLAS_LIB =${BLAS_LIBRARIES}")
-      elseif(NOT BLAS_FOUND)
-        message("BLAS_NOT_FOUND in ParMooN")
-      endif(BLAS_FOUND)
-    endif(CMAKE_VERBOSE_MAKEFILE)        
+    message("Using ParMooN CMake module to find BLAS.")
+    find_package(ACMLBLAS REQUIRED MODULE)
+    if(BLAS_FOUND)
+      message("BLAS found with ParMooN CMake module.")
+      if(CMAKE_VERBOSE_MAKEFILE)
+  	    message("Available BLAS_LIB =${BLAS_LIBRARIES}")
+  	  endif(CMAKE_VERBOSE_MAKEFILE)
+      include_directories(${BLAS_INCLUDE_DIRS})
+    else()
+      # This case should never be reached, because of the REQUIRED option.
+      message("BLAS not found. Terminating.")
+    endif() 
 endif(NOT BLAS_FOUND)
 
-message("==================Searching BLAS in the System - end=====================================================")
+message("==================Searching BLAS - end=====================================================")
 
 
-# search the UMFPACK in the system, if available it wil be default
-message("==================Searching UMFPACK in the System - begin===================================================")
-find_package(UMFPACK)
-include_directories(${UMFPACK_INCLUDE_DIRS})
-if(CMAKE_VERBOSE_MAKEFILE)
-  if(UMFPACK_FOUND)
-    message("Available system UMFPACK_LIB =${UMFPACK_LIBRARIES}")
-  elseif(NOT UMFPACK_FOUND)
-    message(FATAL_ERROR "UMFPACK_NOT_FOUND in your system or in the ParMooN")
-  endif(UMFPACK_FOUND)
-endif(CMAKE_VERBOSE_MAKEFILE)
-message("==================Searching UMFPACK in the System - end=====================================================")
+# Search and include UMFPACK library.
+message("==================Searching UMFPACK - begin================================================")
+message("Using ParMooN CMake module to find UMFPACK.")
+find_package(UMFPACK MODULE REQUIRED)
+if(UMFPACK_FOUND)
+  message("UMFPACK found with ParMooN CMake module.")
+  include_directories(${UMFPACK_INCLUDE_DIRS})
+  if(CMAKE_VERBOSE_MAKEFILE)
+    message("Available UMFPACK_LIB =${UMFPACK_LIBRARIES}")
+  endif(CMAKE_VERBOSE_MAKEFILE)
+else()
+  # This case should never be reached, because of the REQUIRED option.
+  message("UMFPACK not found. Terminating.")
+endif() 
+message("==================Searching UMFPACK - end==================================================")
 
 if("${PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
 # search the LAPACK in the system, if available it will be default
@@ -191,8 +185,10 @@ set(CMAKE_BUILD_TYPE DEBUG CACHE STRING "options")
 set(PARMOON_INCLUDE )
 
 include (CMakeForceCompiler)
-  set(CMAKE_SYSTEM_NAME ${ARCH})
-  
+message("cmake system name " ${CMAKE_SYSTEM_NAME})
+set(CMAKE_SYSTEM_NAME ${ARCH})
+message("cmake system name " ${CMAKE_SYSTEM_NAME})
+
 if("${ARCH}" STREQUAL "MAC64")
 
   if("${PARALLEL_TYPE}" STREQUAL "MPI"  OR "${PARALLEL_TYPE}" STREQUAL "HYBRID")
