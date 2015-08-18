@@ -34,7 +34,7 @@ if(NOT BLAS_FOUND)
   
   # Search for the library exclusively in the ParMooN EXT_LIB path.
   if(NOT BLAS_LIBRARY)
-    message("Searching in ParMooN.")
+    message("Searching in ParMooN EXT_LIB path.")
     find_path(BLAS_INCLUDE_DIR  acml.h PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/include NO_DEFAULT_PATH)
     find_library(BLAS_LIBRARY NAMES acml PATHS ${PARMOON_EXTLIB_PATH}/ACML/gfortran64/lib NO_DEFAULT_PATH) 
     get_filename_component(BLAS_LIBDIR ${BLAS_LIBRARY} PATH)

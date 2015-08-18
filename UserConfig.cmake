@@ -7,6 +7,7 @@
 # CB Things which the user has to / can specify
 # ARCH
 # FIND_USER_BLAS
+# FIND_USER_UMFPACK
 # CMAKE_INCLUDE_PATH
 # CMAKE_LIBRARY_PATH
 
@@ -43,7 +44,7 @@ set(EXE_BUILD_TYPE RELEASE)
 # set FALSE, if you want to use libraries provided in ParMooN 
 # if you set TRUE, it will search in all your library paths and if not found, ParMooN libraries will be used
 set(USE_SYSTEM_BLAS TRUE)
-set(USE_SYSTEM_UMFPACK TRUE)
+
 set(USE_SYSTEM_LAPACK TRUE)
 set(USE_SYSTEM_MUMPS TRUE)
 set(USE_SYSTEM_GRIDGEN TRUE)
