@@ -1,15 +1,36 @@
+# CMakeLists.txt for subdirectory Examples of ParMooN project. 
+# Use only as subproject of ParMooN.
+# 
+# Change history:
+# 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
+#
 
 
-include_directories("${CMAKE_SOURCE_DIR}/Examples")
+# Include header files from subdirectories.
+include_directories("${CMAKE_SOURCE_DIR}/Examples"
+                    "${CMAKE_SOURCE_DIR}/Examples/CD_2D"
+                    "${CMAKE_SOURCE_DIR}/Examples/CD_3D"
+                    "${CMAKE_SOURCE_DIR}/Examples/Darcy_2D"
+                    "${CMAKE_SOURCE_DIR}/Examples/NSE_2D"
+                    "${CMAKE_SOURCE_DIR}/Examples/NSE_3D"
+                    "${CMAKE_SOURCE_DIR}/Examples/TCD_2D"
+                    "${CMAKE_SOURCE_DIR}/Examples/TCD_3D"
+                    "${CMAKE_SOURCE_DIR}/Examples/TNSE_2D")
 
-# does this work?
-#file(GLOB_RECURSE EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/Examples/*${GEO}.C")
+# Source files to be added to the 2D library.
+list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_CD2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_Darcy2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_NSE2D.C")
 
-if("${GEO}" STREQUAL "2D")
-  file(GLOB_RECURSE EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/Examples/*2D.C")
-elseif("${GEO}" STREQUAL "3D")
-  file(GLOB_RECURSE EXAMPLE_SOURCES "${PROJECT_SOURCE_DIR}/Examples/*3D.C")
-endif("${GEO}" STREQUAL "2D")
+# Source files to be added to the 3D library.
+list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example3D.C")
+list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example_CD3D.C")
+list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example_NSE3D.C")
 
-add_library(examples STATIC ${EXAMPLE_SOURCES})
+# Define two static libraries. Each has its own precompiler flag (2D/3D). 
+add_library(examples_2d STATIC ${EXAMPLE_SOURCES_2D})
+target_compile_definitions(examples_2d PUBLIC -D__2D__)
 
+add_library(examples_3d STATIC ${EXAMPLE_SOURCES_3D})
+target_compile_definitions(examples_3d PUBLIC -D__3D__)
