@@ -1,16 +1,22 @@
+# CMakeLists.txt for subdirectory Geometry of ParMooN project. 
+# Use only as subproject of ParMooN.
+# 
+# Change history:
+# 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
+#
 
-
+# TODO This include might be superfluous - it is done in the main CMakeLists.
 include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
 
-# file(GLOB_RECURSE GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/*.C")
-
+# Source files used in 2D and 3D.
+#list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/AdaptiveRefine.C") #CB why not?
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BaseCell.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdCircle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdLine.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdPolygon.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdSpline.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdNonUniformSpline.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdNoPRM.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdPolygon.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdSpline.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BoundComp.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BoundComp2D.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BoundEdge.C")
@@ -45,42 +51,45 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Quadrangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/ReadGeo.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Rectangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/RefDesc.C")
-# list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/ShapeDesc.C")
-# list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainEdge3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainJoint.C")
+# list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/ShapeDesc.C") #CB why not?
+# list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainEdge3D.C") #CB why not?
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainHaloJoint.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainJoint.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Tests.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Triangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Vertex.C")
 
-if("${GEO}" STREQUAL "2D")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/InnerInterfaceJoint.C")
-elseif("${GEO}" STREQUAL "3D")
+# Source files only used in 2D
+list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/InnerInterfaceJoint.C")
+#list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/MeshGen.C") #CB why not?
+list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdCylinder.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdPlane.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdSphere.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Edge.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/InnerEdge.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BDEdge3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/IsoBoundFace.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdWall.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Brick.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BoundComp3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BoundFace.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Hexahedron.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/InterfaceJoint3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/IsoEdge3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/IsoInterfaceJoint3D.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
-endif("${GEO}" STREQUAL "2D")
+# Source files only used in 3D
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BdCylinder.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BDEdge3D.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BdPlane.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BdSphere.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BdWall.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BoundComp3D.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BoundFace.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Brick.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Edge.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Hexahedron.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/InnerEdge.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/InterfaceJoint3D.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoBoundFace.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoEdge3D.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoInterfaceJoint3D.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 
+# Define two static libraries. Each has its own precompiler flag (2D/3D). 
+add_library(geo_2d STATIC ${GEO_SOURCES} ${GEO_SOURCES_2D})
+target_compile_definitions(geo_2d PUBLIC -D__2D__)
 
-add_library(geo STATIC ${GEO_SOURCES})
-
+add_library(geo_3d STATIC ${GEO_SOURCES} ${GEO_SOURCES_3D})
+target_compile_definitions(geo_3d PUBLIC -D__3D__)
 
 
 	
