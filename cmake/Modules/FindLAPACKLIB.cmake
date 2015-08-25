@@ -10,9 +10,11 @@
 # History:
 # 2015/08/18 Clemens Bartsch: Added TODO. Added NO_DEFAULT_PATH
 #	keyword. Slightly changed the output.
+# 2015/08/20 Clemens Bartsch: Placed standard handling of arguments
+#         outside the if(..._library) block - that was a bug.
 #
 #	TODO The module needs a rework.	Which libraries/paths MUST be
-#	found, which are ptional? What should a default search find and set?
+#	found, which are optional? What should a default search find and set?
 #	Why is the include path set to equal the library path? 
 # ===================================================================
 if(LAPACK_INCLUDES AND LAPACK_LIBRARIES)
@@ -22,7 +24,7 @@ endif(LAPACK_INCLUDES AND LAPACK_LIBRARIES)
 # TODO CB 2015/08/18 Add code to search at user-defined places (see e.g. FindACMLBLAS.cmake)
 if(FIND_USER_LAPACK)
   message("Find user Lapack is not yet implemented.")
-endif()
+endif(FIND_USER_LAPACK)
 
 # Search for the needed libraries exclusively in the ParMooN EXT_LIB directory.
 if(NOT LAPACK_FOUND)
@@ -50,24 +52,28 @@ if(NOT LAPACK_FOUND)
   else(BLACS_F77LIBRARY)   
     set(LAPACK_LIBRARY FALSE)
   endif(BLACS_F77LIBRARY)   
-   
-  # Set LAPACK.
-    
-  if(LAPACK_LIBRARY)    
-    include(FindPackageHandleStandardArgs)
   
-    set(LAPACK_LIBRARIES ${LAPACK_LIBRARY})
-    set(LAPACK_INCLUDE_DIR ${LAPACK_LIBRARY}) 
-    set(LAPACK_INCLUDE_DIRS ${LAPACK_INCLUDE_DIR})
+  # This is a hack - include directory is set to the library path.
+  # To use LAPACK we don't need its include files (#extern blocks
+  # in ParMooN code...), but we want it to be set nevertheless,
+  # for standard handling.
+  #set(LAPACK_INCLUDE_DIR ${LAPACK_LIBRARY}) 
+  
+  # Handling of standard arguments.
+  include(FindPackageHandleStandardArgs)
+  # handle the QUIETLY and REQUIRED arguments and set LAPACK_FOUND to TRUE
+  # if all listed variables are TRUE
+  #find_package_handle_standard_args(LAPACK  DEFAULT_MSG
+  #                                  LAPACK_LIBRARY LAPACK_INCLUDE_DIR)
+  find_package_handle_standard_args(LAPACK  DEFAULT_MSG LAPACK_LIBRARY)
 
-    # handle the QUIETLY and REQUIRED arguments and set LAPACK_FOUND to TRUE
-    # if all listed variables are TRUE
-    find_package_handle_standard_args(LAPACK  DEFAULT_MSG
-                                      LAPACK_LIBRARY LAPACK_INCLUDE_DIR)
-
-    mark_as_advanced(LAPACK_INCLUDE_DIR LAPACK_LIBRARY)
-  endif(LAPACK_LIBRARY)  
-
+  #mark_as_advanced(LAPACK_INCLUDE_DIR LAPACK_LIBRARY)
+  mark_as_advanced(LAPACK_LIBRARY)
+  
+  # Set two non-cache variables to be use when including and linking against LAPACK.
+  set(LAPACK_LIBRARIES ${LAPACK_LIBRARY})
+  #set(LAPACK_INCLUDE_DIRS ${LAPACK_INCLUDE_DIR})
+  
 endif(NOT LAPACK_FOUND)
 
 

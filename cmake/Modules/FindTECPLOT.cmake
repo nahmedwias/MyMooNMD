@@ -20,9 +20,9 @@ if(NOT TECPLOT_FOUND)
   # Search for the library in standard non-ParMooN paths and in those specified after PATHS.
   if(FIND_USER_TECPLOT)
     message("Searching in default and user paths.")
-    find_path(TECPLOT_INCLUDE_DIR   TECIO.h PATHS $ENV{TECPLOTDIR}/include ${CMAKE_INCLUDE_PATH})
-    find_library(TECPLOT_LIBRARY NAMES tecio PATHS $ENV{TECPLOTDIR}/lib ${CMAKE_LIBRARY_PATH})
-    get_filename_component(TECPLOT_LIBDIR ${TECPLOT_LIBRARY} PATH)
+    find_path(TECPLOT_INCLUDE_DIR   TECIO.h PATHS $ENV{TECPLOTDIR}/include)
+    find_library(TECPLOT_LIBRARY NAMES tecio PATHS $ENV{TECPLOTDIR}/lib)
+    get_filename_component(_TECPLOT_LIBDIR ${TECPLOT_LIBRARY} PATH)
   endif(FIND_USER_TECPLOT)
      
   # Search for the library exclusively in the ParMooN EXT_LIB path.   
@@ -31,21 +31,18 @@ if(NOT TECPLOT_FOUND)
     find_path(TECPLOT_INCLUDE_DIR  TECIO.h PATHS ${PARMOON_EXTLIB_PATH}/tecplot/include NO_DEFAULT_PATH)
     find_library(TECPLOT_LIBRARY NAMES tecio_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
   endif(NOT TECPLOT_LIBRARY)
-  
-  if(TECPLOT_LIBRARY)      
-    # Set TECPLOT library and directory variables
-    include(FindPackageHandleStandardArgs)
-    
-    set(TECPLOT_LIBRARIES ${TECPLOT_LIBRARY})
-    set(TECPLOT_INCLUDE_DIRS ${TECPLOT_INCLUDE_DIR})
+   
+  # Handling of standard arguments.
+  include(FindPackageHandleStandardArgs)
+  # handle the QUIETLY and REQUIRED arguments and set TECPLOT_FOUND to TRUE
+  # if all listed variables are TRUE
+  find_package_handle_standard_args(TECPLOT  DEFAULT_MSG
+                                    TECPLOT_LIBRARY TECPLOT_INCLUDE_DIR)
+  mark_as_advanced(TECPLOT_INCLUDE_DIR TECPLOT_LIBRARY)
 
-    # handle the QUIETLY and REQUIRED arguments and set TECPLOT_FOUND to TRUE
-    # if all listed variables are TRUE
-    find_package_handle_standard_args(TECPLOT  DEFAULT_MSG
-                                      TECPLOT_LIBRARY TECPLOT_INCLUDE_DIR)
-
-    mark_as_advanced(TECPLOT_INCLUDE_DIR TECPLOT_LIBRARY)
-  endif(TECPLOT_LIBRARY)
+  # Set two non-cache variables to be use when including and linking against TECPLOT.
+  set(TECPLOT_LIBRARIES ${TECPLOT_LIBRARY})
+  set(TECPLOT_INCLUDE_DIRS ${TECPLOT_INCLUDE_DIR})
 
 endif(NOT TECPLOT_FOUND)
 
