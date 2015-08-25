@@ -2,130 +2,82 @@
 # This is a user configuration file for ParMooN, Version 1.1,
 # written by Sashikumaar Ganesan, SERC, IISc Bangalore, India
 # date: 05 June 2015
+#
+# Change History 
+# 2015/08/20 Clemens Bartsch Reworked the file with the directive:
+# the user should set all cached variables only once and never edit
+# anything in CMakeCache.txt. The only variables that may be edited
+# here are the local variables _OUTPUT_DIR_PATH and _PARALLEL_TYPE.
 # ===================================================================
 
 # CB Things which the user has to / can specify
-# Eine Erklaerung zum Thema Cache-variablen hinzufuegen!
-# ARCH
-# PARALLEL_TYPE
-# USE_SYSTEM_BLAS
-# USE_SYSTEM_LAPACK
-# FIND_USER_BLAS
-# FIND_USER_UMFPACK
-# FIND_USER_LAPACK
-# FIND_USER_MUMPS
-# FIND_USER_TETGEN
-# FIND_USER_TECPLOT
-# FIND_USER_GRIDGEN (sobald scharf: auch fuer TRIANGLE und PARDISO)
-# CMAKE_INCLUDE_PATH
-# CMAKE_LIBRARY_PATH
-# CMAKE_ECLIPSE_VERSION eventuell, wenn jemand plant Eclipse zu benutzen.
-# CMAKE_VERBOSE_MAKEFILE soll aber nicht benutzt werden, um output von cmake zu steuern!!
+# CMAKE_BUILD_TYPE - koennte hier gesetzt werden oder als definition (mit -D ) an das cmake-Kommando uebergeben werden.
+# USER_NAME - koennte benutzt werden, um den Spielwiesen-Ordner des jeweiligen Users anzusteuern.
 
-# controlling the output messages
-set(CMAKE_VERBOSE_MAKEFILE FALSE)
+################################################################################
+# Setting User Cache variables.
+#
+# These variables should be set only once, before running cmake the first time.
+# Changing them here later has no effect, and changing them in the cache might
+# lead to unwanted behavior. So if you really need to change any of them later,
+# delete CMakeCache.txt and directory CMakeFiles and rerun cmake.
+################################################################################
+# System architecture. Chose between LINUX64 MAC64 INTEL64 TYRONE64 CRAY64.
+# This takes effect as a ParMooN precompiler definition and when chosing
+# extern libraries in EXT_LIB folder. 
+set(ARCH "LINUX64" CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# selection of dimension (2D 3D)
-set(GEO "2D" CACHE STRING "Change GEO, to select the Dimension of the problem")
+# Enable verbose output from MakeFiles. Would be set by "project"
+# command, defaults to FALSE.
+set(CMAKE_VERBOSE_MAKEFILE TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# select your main program
-set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
-#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
-#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
-# set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model") 
-#set(MODEL "${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
-#set(MODEL "${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C" CACHE STRING "Enter to select the Main file of the model")
+###### Variables dealing with the finding of external libraries.
 
-# selection of architecture type (LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
-set(ARCH "LINUX64" CACHE STRING "select the machine type")
+# Additional non-standard search path for extern include folders.
+# Note: This path is among those searched by find_path by default!
+set(CMAKE_INCLUDE_PATH "/home/bartsch/code/ParMooN/ParMooN/EXT_LIB_clemens/Triangle" CACHE PATH "Do not edit in CMakeCache.txt!")
 
-# selection of program type (SEQUENTIAL MPI OMPONLY HYBRID)
-set(PARALLEL_TYPE "MPI" CACHE STRING "select the parallel type")
+# Additional non-standard search path for extern libraries.
+# Note: This path is among those searched by find_library by default!
+set(CMAKE_LIBRARY_PATH "/home/bartsch/code/ParMooN/ParMooN/EXT_LIB_clemens/Triangle" CACHE PATH "Do not edit in CMakeCache.txt!")
 
-# set the path to save the executable file
-set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/cd2d" CACHE STRING "select the model")
-#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/nse2d" CACHE STRING "select the model")
-#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/darcy2d" CACHE STRING "select the model")
-#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/OutPut/tcd2d" CACHE STRING "select the model")
-#set(OUTPUT_DIR_PATH "${CMAKE_SOURCE_DIR}/../ParMooN_Output/nse3d" CACHE STRING "select the model")
+# If true: use cmake default blas search module before using ParMooN's own. 
+set(DEFAULT_MODULE_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# CMAKE_BUILD_TYPE [ DEBUG | RELEASE | RELWITHDEBINFO | MINSIZEREL ]
-set(EXE_BUILD_TYPE RELEASE)
+# If true: use cmake default lapack search module before using ParMooN's own. 
+set(DEFAULT_MODULE_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# set FALSE, if you want to use libraries provided in ParMooN 
-# if you set TRUE, it will search in all your library paths and if not found, ParMooN libraries will be used
-set(USE_SYSTEM_BLAS TRUE)
-set(USE_SYSTEM_LAPACK TRUE)
+#The following variables take effect only when using ParMooN's search modules.
+# Try to find user blas library before using ParMooN's own.
+set(FIND_USER_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-set(USE_SYSTEM_GRIDGEN TRUE)
-set(USE_SYSTEM_TETGEN TRUE)
+# Try to find user lapack library before using ParMooN's own.
+set(FIND_USER_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# If you have one or more non-standard filepaths that should be searched when looking for any of the above libraries,
-# add it here by modifying and uncommenting the next line.
-# set(CMAKE_LIBRARY_PATH my/creative/library/path)
+# Try to find user umfpack library before using ParMooN's own.
+set(FIND_USER_UMFPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# set(USE_SYSTEM_BLAS CACHE  BOOL "set FALSE, if you want to use libs provided in PARMOON " FORCE) 
+# Try to find user mumps library before using ParMooN's own.
+set(FIND_USER_MUMPS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# set(USE_SYSTEM_BLAS TRUE)
+# Try to find user tetgen library before using ParMooN's own.
+set(FIND_USER_TETGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# SET(DAI_WITH_BP ON CACHE BOOL "Belief Propagation" FORCE)
-# ========================================================================================================================
-# no need to change anyting after this line
-# used only when ccmake or cmake-gui is used
-# ========================================================================================================================
-#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR_PATH})
+# Try to find user tecplot library before using ParMooN's own.
+set(FIND_USER_TECPLOT TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-set_property(CACHE GEO PROPERTY STRINGS 1D 2D 3D ) 
+# Try to find user gridgen library before using ParMooN's own.
+set(FIND_USER_GRIDGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# selection of all main programs
-if("${GEO}" STREQUAL "2D")
-  file(GLOB_RECURSE MAIN_SOURCES "${PROJECT_SOURCE_DIR}/2DPrograms/*.C")
-  set_property(CACHE MODEL PROPERTY STRINGS  ${MAIN_SOURCES})   
-elseif("${GEO}" STREQUAL "3D")
-  file(GLOB_RECURSE MAIN_SOURCES "${PROJECT_SOURCE_DIR}/3DPrograms/*.C")
-  set_property(CACHE MODEL PROPERTY STRINGS  ${MAIN_SOURCES})  
-endif()  
+################################################################################
+# Setting User non-Cache variables.
+#
+# These are non-cache variables which can be changed here deliberately. They
+# will take effect on every new run of cmake, without deleting anything before.
+################################################################################
+# Selection of the program type. Chose between SEQUENTIAL MPI OMPONLY HYBRID,
+# entering anything else will lead to undefined behaviour.
+set(_PARALLEL_TYPE "MPI")
 
-
-
-
-# selection of all architects
-set_property(CACHE ARCH PROPERTY STRINGS LINUX64 MAC64 INTEL64 TYRONE64 CRAY64)
-
-# selection of all program types
-set_property(CACHE PARALLEL_TYPE PROPERTY STRINGS SEQUENTIAL MPI OMPONLY HYBRID)
-
-# ======================================================================
-# general settings
-# ======================================================================
- if("${PARALLEL_TYPE}" STREQUAL "MPI")
-   set(PARMOON_PRG_DEFINE "-D_PAR -D_MPIONLY -D_MPI")
- elseif("${PARALLEL_TYPE}" STREQUAL "OMPONLY")
-   set(PARMOON_PRG_DEFINE "-D_PAR -D_OMPONLY -D_OMP")
- elseif("${PARALLEL_TYPE}" STREQUAL "HYBRID")
-   set(PARMOON_PRG_DEFINE "-D_PAR -D_MPI -D_HYBRID")
- elseif("${PARALLEL_TYPE}" STREQUAL "SEQUENTIAL")
-   set(PARMOON_PRG_DEFINE "-D_SEQ")
- endif()
-
- if("${ARCH}" STREQUAL "LINUX64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -std=c++11 -fopenmp")
-   set(PARMOON_C_DEF "  ${PARMOON_C_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64  ")
- elseif("${ARCH}" STREQUAL "MAC64")
-   set(PARMOON_CXX_DEF " -stdlib=libc++ ${PARMOON_CXX_DEF}  -fapple-pragma-pack -Wdeprecated-register  ")
-   set(PARMOON_C_DEF "  ${PARMOON_C_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64 -fapple-pragma-pack ")
- elseif("${ARCH}" STREQUAL "INTEL64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -openmp ")
-   set(PARMOON_C_DEF "  ${PARMOON_C_DEF}  -DREDUCED -DNO_TIMER -DMKL_ILP64 -m64  -fapple-pragma-pack ")
- elseif("${ARCH}" STREQUAL "TYRONE64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DREDUCED -DNO_TIMER")
-   set(PARMOON_C_DEF "  ${PARMOON_C_DEF}  -DREDUCED -DNO_TIMER  -DMPICH_IGNORE_CXX_SEEK ")  
- elseif("${ARCH}" STREQUAL "CRAY64")
-   set(PARMOON_CXX_DEF "${PARMOON_CXX_DEF} -DMPICH_IGNORE_CXX_SEEK ")  
-      set(PARMOON_C_DEF "  ${PARMOON_C_DEF}  -DREDUCED -DNO_TIMER -DMPICH_IGNORE_CXX_SEEK  ")
- endif()
- 
-set(PARMOON_C_DEF " ${PARMOON_C_DEF} -D__${GEO}__ -D__${ARCH}__  -DTRILIBRARY -DTETLIBRARY -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}") 
-set(PARMOON_CXX_DEF " ${PARMOON_CXX_DEF} -D__${GEO}__ -D__${ARCH}__  -DTRILIBRARY -DTETLIBRARY -D__PRIVATE__ ${MORTAR} ${PARMOON_PRG_DEFINE}")
+# Select the output directory for the binaries. Make sure the directory exists in your file system!
+set(_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/")
