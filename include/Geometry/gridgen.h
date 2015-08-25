@@ -17,6 +17,8 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#ifndef __GRIDGEN__
+#define __GRIDGEN__
 
 struct triangulateio{
   double *pointlist;                                             /* In / out */
@@ -48,3 +50,5 @@ struct triangulateio{
   double *normlist;              /* Used only with Voronoi diagram; out only */
   int numberofedges;                                             /* Out only */
 };
+
+#endif

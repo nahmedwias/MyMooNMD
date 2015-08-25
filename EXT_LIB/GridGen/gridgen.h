@@ -15,6 +15,9 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#ifndef __GRIDGEN__
+#define __GRIDGEN__
+
 /* some modification for ParMooN */
 #define ANSI_DECLARATORS
 
@@ -298,3 +301,5 @@ void trifree(VOID *memptr);
 void triangulate();
 void trifree();
 #endif /* not ANSI_DECLARATORS */
+
+#endif // #ifdef __GRIDGEN__
