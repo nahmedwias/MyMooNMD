@@ -25,7 +25,7 @@
 #include <BdLine.h>
 #include <BdCircle.h>
 #include <MacroCell.h>
-#include <gridgen.h>
+#include <triangle.h>
 #include <IsoInterfaceJoint.h>
 #include<IsoBoundEdge.h>
 

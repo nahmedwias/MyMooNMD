@@ -35,17 +35,17 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Additional non-standard search path for extern include folders.
 # Note: This path is among those searched by find_path by default!
-set(CMAKE_INCLUDE_PATH "/home/bartsch/code/ParMooN/ParMooN/EXT_LIB_clemens/Triangle" CACHE PATH "Do not edit in CMakeCache.txt!")
+set(CMAKE_INCLUDE_PATH "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
 
 # Additional non-standard search path for extern libraries.
 # Note: This path is among those searched by find_library by default!
-set(CMAKE_LIBRARY_PATH "/home/bartsch/code/ParMooN/ParMooN/EXT_LIB_clemens/Triangle" CACHE PATH "Do not edit in CMakeCache.txt!")
+set(CMAKE_LIBRARY_PATH "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
 
 # If true: use cmake default blas search module before using ParMooN's own. 
-set(DEFAULT_MODULE_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+#set(DEFAULT_MODULE_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # If true: use cmake default lapack search module before using ParMooN's own. 
-set(DEFAULT_MODULE_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+#set(DEFAULT_MODULE_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 #The following variables take effect only when using ParMooN's search modules.
 # Try to find user blas library before using ParMooN's own.
@@ -66,8 +66,8 @@ set(FIND_USER_TETGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 # Try to find user tecplot library before using ParMooN's own.
 set(FIND_USER_TECPLOT TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
-# Try to find user gridgen library before using ParMooN's own.
-set(FIND_USER_GRIDGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+# Try to find user triangle library before using ParMooN's own.
+set(FIND_USER_TRIANGLE TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 ################################################################################
 # Setting User non-Cache variables.
@@ -77,7 +77,7 @@ set(FIND_USER_GRIDGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 ################################################################################
 # Selection of the program type. Chose between SEQUENTIAL MPI OMPONLY HYBRID,
 # entering anything else will lead to undefined behaviour.
-set(_PARALLEL_TYPE "MPI")
+set(_PARALLEL_TYPE "SEQUENTIAL")
 
 # Select the output directory for the binaries. Make sure the directory exists in your file system!
 set(_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/")

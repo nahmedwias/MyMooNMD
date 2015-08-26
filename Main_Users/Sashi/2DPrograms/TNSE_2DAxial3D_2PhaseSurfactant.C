@@ -59,7 +59,7 @@
 #include <MacroCell.h>
 #include <BoundEdge.h>
 #include <IsoBoundEdge.h>
-#include <gridgen.h>
+#include <triangle.h>
 // #include <Remesh2D.h>
 #include <IsoInterfaceJoint.h>
 #include <BdLine.h>

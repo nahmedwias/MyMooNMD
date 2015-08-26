@@ -15,7 +15,8 @@
 #
 #	TODO The module needs a rework.	Which libraries/paths MUST be
 #	found, which are optional? What should a default search find and set?
-#	Why is the include path set to equal the library path? 
+#	Why is only lapack_MAC64 library available?
+#    
 # ===================================================================
 if(LAPACK_INCLUDES AND LAPACK_LIBRARIES)
   set(LAPACK_FIND_QUIETLY TRUE)
@@ -29,6 +30,7 @@ endif(FIND_USER_LAPACK)
 # Search for the needed libraries exclusively in the ParMooN EXT_LIB directory.
 if(NOT LAPACK_FOUND)
   message("Searching in ParMooN EXT_LIB path.")
+  find_library(LAPACK_LIBRARY NAMES lapack_MAC64 PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH) 
   find_library(SCALAPACK_LIBRARY NAMES scalapack_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH) 
   find_library(BLACS_LIBRARY NAMES blacs_MPI_${ARCH}-0 PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH)     
   find_library(BLACS_F77LIBRARY NAMES blacsF77init_MPI_${ARCH}-0 PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH) 

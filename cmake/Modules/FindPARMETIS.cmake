@@ -11,8 +11,8 @@
 #  TODO(?) PARMETIS_DEFINITIONS - Compiler switches required for using PARMETIS
 
 if (PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)
-    message("PARMETIS package already found. Not searching again.")
-else(PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)
+    set(PARMETIS_FIND_QUIETLY TRUE)
+endif (PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)
     
     #Check if an MPI implementation is there. If not so, find one with the default module. 
     find_package(MPI REQUIRED)
@@ -39,5 +39,3 @@ else(PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)
                                   PARMETIS_LIBRARY PARMETIS_INCLUDE_DIR)
 
     mark_as_advanced(PARMETIS_INCLUDE_DIR PARMETIS_LIBRARY )
-
-endif(PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)

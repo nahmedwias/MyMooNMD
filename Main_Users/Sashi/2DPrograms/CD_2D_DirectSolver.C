@@ -51,7 +51,7 @@ double bound = 0;
 #include <BdCircle.h>
 #include <GridCell.h>
 #include <LocalProjection.h>
-#include <gridgen.h>
+#include <triangle.h>
 
 #include <QuadAffin.h>
 #include <QuadBilinear.h>

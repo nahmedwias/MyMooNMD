@@ -53,7 +53,7 @@
 
 extern "C"
 {
-  #include <gridgen.h>
+  #include "triangle.h"
   void triangulate(char *, struct triangulateio *, struct triangulateio *,
                    struct triangulateio *);
 }

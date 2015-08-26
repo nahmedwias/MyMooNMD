@@ -24,15 +24,22 @@
 # beginners are advised NOT to alter anything the below contents
 #
 # Change History 
+#
 # 2015/08/18 Clemens Bartsch: Introduced distinction between 
 # FIND_USER_{PACKAGENAME} and DEFAULT_MODULE_{PACKAGENAME}. Tidied up output
 # a bit. First rework of search modules in directory cmake.
 # Moved several variables between CMakeLists.txt and UserConfig.cmake.
+#
 # 2015/08/25 Clemens Bartsch: Major rework, of find modules as well as the
-#(portable) adding of compiler and linker options. Also changed the executable
+# (portable) adding of compiler and linker options. Also changed the executable
 # target system. Now all default targets exist at the same time, but only
 # for the currently chosen PARALLEL_TYPE. To get other PARALLEL_TYPE
 # targets, change UserConfig.cmake accordingly and rerun cmake.
+#
+# 2015/08/25 Clemens Bartsch:
+#    - renamed gridgen to triangle in the whole project
+#    - temporarily disabled default find of lapack and blas library, which continuously made trouble
+#    - moved -DTRILIBRARY and -DREDUCED flag to triangle.c
 # ========================================================================
 
 cmake_minimum_required(VERSION 2.8.12)
@@ -63,6 +70,51 @@ set(PARMOON_EXTLIB_PATH ${PROJECT_SOURCE_DIR}/EXT_LIB CACHE PATH "Directory path
 
 # Set path to ParMooN package search modules.
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/ CACHE PATH "Directory path to ParMooN CMake modules.")
+
+# Search and include LAPACK library. 
+# Note: The default lapack search module searches for a BLAS library, too, and eventually sets BLAS_FOUND
+# to false, even if our module (below) already found a BLAS library, which leads to nasty linker errors.
+# Therefore LAPACK is searched before BLAS, which is basically a hack and should be changed someday TODO.
+message("==================Searching LAPACK - begin=================================================")
+  
+	  #if(DEFAULT_MODULE_LAPACK)
+	  #  message("Using default CMake module to find LAPACK.")
+	  #  find_package(LAPACK MODULE)
+	  #  if(LAPACK_FOUND)
+	  #    message("LAPACK found with default CMake module.")
+	  #	  include_directories(${LAPACK_INCLUDE_DIRS})
+	  #  endif(LAPACK_FOUND)  
+	  #endif(DEFAULT_MODULE_LAPACK)
+	  
+	  if(NOT LAPACK_FOUND)
+	    message("Using ParMooN CMake module to find LAPACK.")
+	    find_package(LAPACKLIB REQUIRED MODULE)
+	    message("LAPACK found with ParMooN CMake module.")
+	    #include_directories(${LAPACK_INCLUDE_DIRS}) #CB Our module does not find lapack headers!
+	  endif(NOT LAPACK_FOUND)
+  
+message("==================Searching LAPACK - end===================================================")  
+
+# Search and include LAPACK library.
+message("==================Searching BLAS - begin===================================================")
+
+	#if(DEFAULT_MODULE_BLAS)
+	#  message("Using default CMake module to find BLAS.")
+	#    find_package(BLAS MODULE)
+	#    if(BLAS_FOUND)
+	#      message("BLAS found with default CMake module.")
+	#  	  include_directories(${BLAS_INCLUDE_DIRS})
+	#    endif(BLAS_FOUND)
+	#endif(DEFAULT_MODULE_BLAS)
+	
+	if(NOT BLAS_FOUND)
+	  message("Using ParMooN CMake module to find BLAS.")
+	  find_package(ACMLBLAS REQUIRED MODULE)
+	  message("BLAS found with ParMooN CMake module.")
+	  include_directories(${BLAS_INCLUDE_DIRS})
+	endif(NOT BLAS_FOUND)
+
+message("==================Searching BLAS - end=====================================================")
 
 # When using MPI, find mpi
 if(_USING_MPI)  
@@ -99,7 +151,15 @@ if(_USING_MPI)
   message("==================Searching Parmetis - begin===============================================")
       find_package(PARMETIS MODULE REQUIRED)
       include_directories(${PARMETIS_INCLUDE_DIRS})
-   message("==================Searching Parmetis - end=================================================") 
+   message("==================Searching Parmetis - end=================================================")
+   
+  # When using MPI we're also using MUMPS solver.
+  message("==================Searching MUMPS - begin==================================================")
+    message("Using ParMooN CMake module to find MUMPS.")
+    find_package(MUMPS REQUIRED MODULE)
+	message("MUMPS found with ParMooN CMake module.")
+	include_directories(${MUMPS_INCLUDE_DIRS})
+  message("==================Searching MUMPS - end====================================================")
 endif(_USING_MPI)
 
 # When using OpenMP, find it and use the module's output.
@@ -115,72 +175,19 @@ if(_USING_OMP)
   message("==================Searching OPENMP - end===================================================")
 endif(_USING_OMP)
 
-# Search and include LAPACK library. 
-# Note: The default lapack search module searches for a BLAS library, too, and eventually sets BLAS_FOUND
-# to false, even if our module (below) already found a BLAS library, which leads to nasty linker errors.
-# Therefore LAPACK is searched before BLAS, which is basically a hack and should be changed someday TODO.
-message("==================Searching LAPACK - begin=================================================")
-  
-	  if(DEFAULT_MODULE_LAPACK)
-	    message("Using default CMake module to find LAPACK.")
-	    find_package(LAPACK MODULE)
-	    if(LAPACK_FOUND)
-	      message("LAPACK found with default CMake module.")
-	  	  include_directories(${LAPACK_INCLUDE_DIRS})
-	    endif(LAPACK_FOUND)  
-	  endif(DEFAULT_MODULE_LAPACK)
-	  
-	  if(NOT LAPACK_FOUND)
-	    message("Using ParMooN CMake module to find LAPACK.")
-	    find_package(LAPACKLIB REQUIRED MODULE)
-	    message("LAPACK found with ParMooN CMake module.")
-	    #include_directories(${LAPACK_INCLUDE_DIRS}) #CB Our module does not find lapack headers!
-	  endif(NOT LAPACK_FOUND)
-  
-message("==================Searching LAPACK - end===================================================")  
-
-# Search and include LAPACK library.
-message("==================Searching BLAS - begin===================================================")
-
-	if(DEFAULT_MODULE_BLAS)
-	  message("Using default CMake module to find BLAS.")
-	    find_package(BLAS MODULE)
-	    if(BLAS_FOUND)
-	      message("BLAS found with default CMake module.")
-	  	  include_directories(${BLAS_INCLUDE_DIRS})
-	    endif(BLAS_FOUND)
-	endif(DEFAULT_MODULE_BLAS)
-	
-	if(NOT BLAS_FOUND)
-	  message("Using ParMooN CMake module to find BLAS.")
-	  find_package(ACMLBLAS REQUIRED MODULE)
-	  message("BLAS found with ParMooN CMake module.")
-	  include_directories(${BLAS_INCLUDE_DIRS})
-	endif(NOT BLAS_FOUND)
-
-message("==================Searching BLAS - end=====================================================")
-
-# Search and include MUMPS library.
-message("==================Searching MUMPS - begin==================================================")
-    message("Using ParMooN CMake module to find MUMPS.")
-    find_package(MUMPS REQUIRED MODULE)
-	message("MUMPS found with ParMooN CMake module.")
-	include_directories(${MUMPS_INCLUDE_DIRS})
-message("==================Searching MUMPS - end====================================================")
-
 # Search and include Metis
 message("==================Searching METIS - begin==================================================")
     find_package(METIS MODULE REQUIRED)
     include_directories(${METIS_INCLUDE_DIRS})
  message("==================Searching METIS - end====================================================")
  
-# Search and include GRIDGEN library (which is actually Shewchuk's "Triangle").
-message("==================Searching GRIDGEN - begin================================================")
-	message("Using ParMooN CMake module to find GRIDGEN.")
-	find_package(GRIDGEN REQUIRED MODULE)
-	message("GRIDGEN found with ParMooN CMake module.")
-	include_directories(${GRIDGEN_INCLUDE_DIRS})
-message("==================Searching GRIDGEN - end==================================================")
+# Search and include TRIANGLE library (which is actually Shewchuk's "Triangle").
+message("==================Searching TRIANGLE - begin================================================")
+	message("Using ParMooN CMake module to find TRIANGLE.")
+	find_package(TRIANGLE REQUIRED MODULE)
+	message("TRIANGLE found with ParMooN CMake module.")
+	include_directories(${TRIANGLE_INCLUDE_DIRS})
+message("==================Searching TRIANGLE - end==================================================")
 
 # Search and include TETGEN library.
 message("==================Searching TETGEN - begin================================================")
@@ -241,7 +248,7 @@ add_definitions(${_PCD_PARALLEL_TYPE})
 # Determine compiler options depending on ARCH.
 # Those are simply added to global CMAKE_C_FLAGS and CMAKE_CXX_FLAGS 
 # could be cleaned up, when we fully understand what is set here.
-# note CB: THe flags TRILIBRARY and REDUCED are solely needed by Gridgen, TETLIBRARY by tetgen.
+# note CB: TETLIBRARY is solely used by tetgen.
 # Is there a way to better localize them?
 
 # Little snippet from the www - enable the right C++ 11 compiler flag!
@@ -271,11 +278,11 @@ elseif("${ARCH}" STREQUAL "CRAY64")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMPICH_IGNORE_CXX_SEEK")
 endif()
 # The following line is done for all ARCH
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DREDUCED -DNO_TIMER")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_TIMER")
 # Some more preprocessor directives - since I don't know which parts of the program
 # need them, we put them global for now.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${ARCH}__  -DTRILIBRARY -DTETLIBRARY -D__PRIVATE__")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${ARCH}__  -DTRILIBRARY -DTETLIBRARY -D__PRIVATE__")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${ARCH}__  -DTETLIBRARY -D__PRIVATE__")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${ARCH}__  -DTETLIBRARY -D__PRIVATE__")
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the add_subdirectory AFTER setting global flags.
@@ -292,7 +299,7 @@ add_subdirectory(src/System)
 
 # Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
 LIST(APPEND _EXTERN_LIBRARIES ${BLAS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${GRIDGEN_LIBRARIES})
+LIST(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${LAPACK_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})

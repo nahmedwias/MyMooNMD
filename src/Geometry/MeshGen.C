@@ -34,10 +34,10 @@
   #include <BdNoPRM.h>
 #endif
 
-#include <gridgen.h>
+#include <triangle.h>
 
 
-// gridgen.h
+// triangle.h
 extern "C"
 {
   void triangulate(char*, struct triangulateio*,
