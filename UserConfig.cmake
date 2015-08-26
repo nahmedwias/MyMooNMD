@@ -35,39 +35,39 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Additional non-standard search path for extern include folders.
 # Note: This path is among those searched by find_path by default!
-set(CMAKE_INCLUDE_PATH "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
+set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
 
 # Additional non-standard search path for extern libraries.
 # Note: This path is among those searched by find_library by default!
-set(CMAKE_LIBRARY_PATH "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
+set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "my/special/path" CACHE PATH "Do not edit in CMakeCache.txt!")
 
 # If true: use cmake default blas search module before using ParMooN's own. 
-#set(DEFAULT_MODULE_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+#set(DEFAULT_MODULE_BLAS FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # If true: use cmake default lapack search module before using ParMooN's own. 
-#set(DEFAULT_MODULE_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+#set(DEFAULT_MODULE_LAPACK FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 #The following variables take effect only when using ParMooN's search modules.
 # Try to find user blas library before using ParMooN's own.
-set(FIND_USER_BLAS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_BLAS FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user lapack library before using ParMooN's own.
-set(FIND_USER_LAPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_LAPACK FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user umfpack library before using ParMooN's own.
-set(FIND_USER_UMFPACK TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_UMFPACK FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user mumps library before using ParMooN's own.
-set(FIND_USER_MUMPS TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_MUMPS FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user tetgen library before using ParMooN's own.
-set(FIND_USER_TETGEN TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_TETGEN FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user tecplot library before using ParMooN's own.
-set(FIND_USER_TECPLOT TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_TECPLOT FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Try to find user triangle library before using ParMooN's own.
-set(FIND_USER_TRIANGLE TRUE CACHE STRING "Do not edit in CMakeCache.txt!")
+set(FIND_USER_TRIANGLE FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 
 ################################################################################
 # Setting User non-Cache variables.
