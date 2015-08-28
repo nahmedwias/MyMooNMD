@@ -40,6 +40,8 @@
 #    - renamed gridgen to triangle in the whole project
 #    - temporarily disabled default find of lapack and blas library, which continuously made trouble
 #    - moved -DTRILIBRARY and -DREDUCED flag to triangle.c
+# 2015/08/28 Clemens Bartsch:
+#    - stopped writing a history into the files, for that's what hg is for
 # ========================================================================
 
 cmake_minimum_required(VERSION 2.8.12)
@@ -61,6 +63,21 @@ endif()
 if("${_PARALLEL_TYPE}" STREQUAL "OMPONLY" OR "${_PARALLEL_TYPE}" STREQUAL "HYBRID")
   set(_USING_OMP TRUE)
 endif()
+
+# Determine ParMoon-internal architecture variable "_ARCH" from the used system.
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(_ARCH "LINUX64")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    set(_ARCH "MAC64")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set(_ARCH "INTEL64") #TODO Is this what should be used on windows?
+else()
+    #TODO Add the right handling for Tyrone and Clay cluster here.
+    message(FATAL_ERROR "Unknown CMAKE_SYSTEM_NAME: " ${CMAKE_SYSTEM_NAME} 
+        ". Rework CMakeLists.txt to fit your system.")
+endif()
+message(STATUS "Used system name is " ${CMAKE_SYSTEM_NAME} ", " 
+    "ParMooN internal architecture name is " ${_ARCH} "."  )
 
 # Set output path for binaries. Make sure the directory exists!
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${_OUTPUT_DIRECTORY})
@@ -245,13 +262,10 @@ endif()
 # libraries which are not in subdirectories, the won't be passed there this way!
 add_definitions(${_PCD_PARALLEL_TYPE})
 
-# Determine compiler options depending on ARCH.
-# Those are simply added to global CMAKE_C_FLAGS and CMAKE_CXX_FLAGS 
-# could be cleaned up, when we fully understand what is set here.
-# note CB: TETLIBRARY is solely used by tetgen.
+# Determine compiler options depending on _ARCH.
 # Is there a way to better localize them?
 
-# Little snippet from the www - enable the right C++ 11 compiler flag!
+# Enable the right C++ 11 compiler flag.
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" _COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" _COMPILER_SUPPORTS_CXX0X)
@@ -264,25 +278,24 @@ else()
     "-std=c++0x compiler flag. Are you sure C++11 is supported?")
 endif()
 
-if("${ARCH}" STREQUAL "LINUX64")
+# Compiler flags depending on system architecture.
+if("${_ARCH}" STREQUAL "LINUX64")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMKL_ILP64 ")
-elseif("${ARCH}" STREQUAL "MAC64")
+elseif("${_ARCH}" STREQUAL "MAC64")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMKL_ILP64 -m64 -fapple-pragma-pack ")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fapple-pragma-pack -Wdeprecated-register ")
-elseif("${ARCH}" STREQUAL "INTEL64")
-  #FIXME CB I'm not sure if this is correct, looks like Copy-Paste form MAC64 case.
+elseif("${_ARCH}" STREQUAL "INTEL64")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMKL_ILP64 -m64  -fapple-pragma-pack") 
-elseif("${ARCH}" STREQUAL "TYRONE64")
+elseif("${_ARCH}" STREQUAL "TYRONE64")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMPICH_IGNORE_CXX_SEEK")
-elseif("${ARCH}" STREQUAL "CRAY64")
+elseif("${_ARCH}" STREQUAL "CRAY64")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMPICH_IGNORE_CXX_SEEK")
 endif()
-# The following line is done for all ARCH
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_TIMER")
-# Some more preprocessor directives - since I don't know which parts of the program
-# need them, we put them global for now.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${ARCH}__  -DTETLIBRARY -D__PRIVATE__")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${ARCH}__  -DTETLIBRARY -D__PRIVATE__")
+
+# TODO The PRIVATE flag is used at very few places only - remove it from global
+# and e.g. attach to those targets, which make use of it (TNSE2D/SystemMatTNSE2D/SystemTNSE2D)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${_ARCH}__   -D__PRIVATE__") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the add_subdirectory AFTER setting global flags.
@@ -342,108 +355,116 @@ LIST(APPEND _PARMOON_LIBRARIES_3D ${_PARMOON_LIBRARIES_3D})
 
 ### CD2D ###
 # Standard executable target.
-add_executable(parMooN_cd2d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C)
+add_executable(cd2d ${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C)
+set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_cd2d_${_PARALLEL_TYPE} PUBLIC -D__2D__)
+target_compile_definitions(cd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_cd2d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(cd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
-    target_link_libraries(parMooN_cd2d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(cd2d ${_MPI_LIBRARIES})
 endif(_USING_MPI)
 
 ### Darcy2D ###
 # Standard executable target.
-add_executable(parMooN_darcy2d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C)
+add_executable(darcy2d ${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C)
+set_target_properties(darcy2d PROPERTIES OUTPUT_NAME parMooN_darcy2d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_darcy2d_${_PARALLEL_TYPE} PUBLIC -D__2D__)
+target_compile_definitions(darcy2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_darcy2d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(darcy2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
-    target_link_libraries(parMooN_darcy2d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(darcy2d ${_MPI_LIBRARIES})
 endif(_USING_MPI)
 
 ### NSE2D ###
 # Standard executable target.
-add_executable(parMooN_nse2d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C)
+add_executable(nse2d ${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C)
+set_target_properties(nse2d PROPERTIES OUTPUT_NAME parMooN_nse2d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_nse2d_${_PARALLEL_TYPE} PUBLIC -D__2D__)
+target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_nse2d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(nse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
-    target_link_libraries(parMooN_nse2d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(nse2d ${_MPI_LIBRARIES})
 endif(_USING_MPI)
 
 ### TCD2D ###
 # Standard executable target.
-add_executable(parMooN_tcd2d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C)
+add_executable(tcd2d ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C)
+set_target_properties(tcd2d PROPERTIES OUTPUT_NAME parMooN_tcd2d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_tcd2d_${_PARALLEL_TYPE} PUBLIC -D__2D__)
+target_compile_definitions(tcd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_tcd2d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tcd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
-    target_link_libraries(parMooN_tcd2d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(tcd2d ${_MPI_LIBRARIES})
 endif(_USING_MPI)
 
 ### TNSE2D ###
 # Standard executable target.
-add_executable(parMooN_tnse2d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/2DPrograms/TNSE2D_ParMooN.C)
+add_executable(tnse2d ${PROJECT_SOURCE_DIR}/2DPrograms/TNSE2D_ParMooN.C)
+set_target_properties(tnse2d PROPERTIES OUTPUT_NAME parMooN_tnse2d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_tnse2d_${_PARALLEL_TYPE} PUBLIC -D__2D__)
+target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_tnse2d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tnse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
-    target_link_libraries(parMooN_tnse2d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(tnse2d ${_MPI_LIBRARIES})
 endif(_USING_MPI)
 
 ### Standard 3D Programs ###
 
 ### CD3D ###
 # Standard executable target.
-add_executable(parMooN_cd3d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C)
+add_executable(cd3d ${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C)
+set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_cd3d_${_PARALLEL_TYPE} PUBLIC -D__3D__)
+target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_cd3d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(cd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
     # Link in MPI libraries.
-    target_link_libraries(parMooN_cd3d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(cd3d ${_MPI_LIBRARIES})
     # Link in thread libraries
-    target_link_libraries(parMooN_cd3d_${_PARALLEL_TYPE} ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(cd3d ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
-    # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-    set_target_properties(parMooN_cd3d_${_PARALLEL_TYPE} PROPERTIES LINK_FLAGS "-lgfortran")
+# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
+set_target_properties(cd3d PROPERTIES LINK_FLAGS "-lgfortran")
 
 ### NSE3D ###
 # Standard executable target.
-add_executable(parMooN_nse3d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C)
+add_executable(nse3d ${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C)
+set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_nse3d_${_PARALLEL_TYPE} PUBLIC -D__3D__)
+target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_nse3d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(nse3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
     # Link in MPI libraries.
-    target_link_libraries(parMooN_nse3d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(nse3d ${_MPI_LIBRARIES})
     # Link in thread libraries
-    target_link_libraries(parMooN_nse3d_${_PARALLEL_TYPE} ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(nse3d ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
-    # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-    set_target_properties(parMooN_nse3d_${_PARALLEL_TYPE} PROPERTIES LINK_FLAGS "-lgfortran")
+# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
+set_target_properties(nse3d PROPERTIES LINK_FLAGS "-lgfortran")
 
 ### TCD3D ###
 # Standard executable target.
-add_executable(parMooN_tcd3d_${_PARALLEL_TYPE} ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
+add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
+set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
-target_compile_definitions(parMooN_tcd3d_${_PARALLEL_TYPE} PUBLIC -D__3D__)
+target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(parMooN_tcd3d_${_PARALLEL_TYPE} ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tcd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
 if(_USING_MPI)
     # Link in MPI libraries.
-    target_link_libraries(parMooN_tcd3d_${_PARALLEL_TYPE} ${_MPI_LIBRARIES})
+    target_link_libraries(tcd3d ${_MPI_LIBRARIES})
     # Link in thread libraries
-    target_link_libraries(parMooN_tcd3d_${_PARALLEL_TYPE} ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(tcd3d ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
     # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-    set_target_properties(parMooN_tcd3d_${_PARALLEL_TYPE} PROPERTIES LINK_FLAGS "-lgfortran")
+    set_target_properties(tcd3d PROPERTIES LINK_FLAGS "-lgfortran")
 
 
 ############

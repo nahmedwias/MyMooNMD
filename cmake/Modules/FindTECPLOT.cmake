@@ -27,9 +27,9 @@ if(NOT TECPLOT_FOUND)
      
   # Search for the library exclusively in the ParMooN EXT_LIB path.   
   if(NOT TECPLOT_LIBRARY)
-    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
     find_path(TECPLOT_INCLUDE_DIR  TECIO.h PATHS ${PARMOON_EXTLIB_PATH}/tecplot/include NO_DEFAULT_PATH)
-    find_library(TECPLOT_LIBRARY NAMES tecio_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
+    find_library(TECPLOT_LIBRARY NAMES tecio_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tecplot/lib NO_DEFAULT_PATH)
   endif(NOT TECPLOT_LIBRARY)
    
   # Handling of standard arguments.

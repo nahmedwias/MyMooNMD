@@ -23,9 +23,9 @@ endif (PARMETIS_LIBRARIES AND PARMETIS_INCLUDE_DIRS)
       
     # Search for the library exclusively in the ParMooN EXT_LIB path.
     if(NOT PARMETIS_LIBRARY OR NOT PARMETIS_INCLUDE_DIR)
-        message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+        message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
         find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-        find_library(PARMETIS_LIBRARY NAMES parmetis_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
+        find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
         message("Found library: " ${PARMETIS_LIBRARY})
     endif(NOT PARMETIS_LIBRARY OR NOT PARMETIS_INCLUDE_DIR)
     

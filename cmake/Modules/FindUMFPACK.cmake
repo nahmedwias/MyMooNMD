@@ -32,12 +32,12 @@ if(NOT UMFPACK_FOUND)
   
   # Search for the library exclusively in the ParMooN EXT_LIB path.     
   if(NOT UMFPACK_LIBRARY)
-    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
     find_path(UMFPACK_INCLUDE_DIR  umfpack.h PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Include NO_DEFAULT_PATH)
-    find_library(UMFPACK_LIBRARY NAMES umfpack_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Lib NO_DEFAULT_PATH) 
+    find_library(UMFPACK_LIBRARY NAMES umfpack_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Lib NO_DEFAULT_PATH) 
     get_filename_component(_UMFPACK_LIBDIR ${UMFPACK_LIBRARY} PATH)
-    find_library(UMFPACK_LIBRARY_SUITESE NAMES suitesparseconfig_${ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
-    find_library(UMFPACK_LIBRARY_AMD NAMES amd_${ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
+    find_library(UMFPACK_LIBRARY_SUITESE NAMES suitesparseconfig_${_ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
+    find_library(UMFPACK_LIBRARY_AMD NAMES amd_${_ARCH} PATHS ${_UMFPACK_LIBDIR} NO_DEFAULT_PATH)
   endif(NOT UMFPACK_LIBRARY)
   
   if(UMFPACK_LIBRARY)  

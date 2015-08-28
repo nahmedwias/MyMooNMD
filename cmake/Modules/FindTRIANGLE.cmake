@@ -23,15 +23,15 @@ if(NOT TRIANGLE_FOUND)
   if(FIND_USER_TRIANGLE)
     message("Searching in default and user paths.")
     find_path(TRIANGLE_INCLUDE_DIR   triangle.h PATHS $ENV{TRIANGLEDIR}/include)
-    find_library(TRIANGLE_LIBRARY NAMES triangle_${ARCH} PATHS $ENV{TRIANGLEDIR}/lib)
+    find_library(TRIANGLE_LIBRARY NAMES triangle_${_ARCH} PATHS $ENV{TRIANGLEDIR}/lib)
     get_filename_component(_TRIANGLE_LIBDIR ${TRIANGLE_LIBRARY} PATH)
   endif(FIND_USER_TRIANGLE)
   
   # Search for the library exclusively in the ParMooN EXT_LIB path.
   if(NOT TRIANGLE_LIBRARY)
-    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
     find_path(TRIANGLE_INCLUDE_DIR  triangle.h PATHS ${PARMOON_EXTLIB_PATH}/Triangle NO_DEFAULT_PATH)
-    find_library(TRIANGLE_LIBRARY NAMES triangle_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Triangle NO_DEFAULT_PATH)
+    find_library(TRIANGLE_LIBRARY NAMES triangle_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Triangle NO_DEFAULT_PATH)
     message("Found library: " ${TRIANGLE_LIBRARY})
   endif(NOT TRIANGLE_LIBRARY)
 

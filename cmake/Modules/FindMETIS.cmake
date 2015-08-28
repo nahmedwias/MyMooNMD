@@ -20,9 +20,9 @@ else(METIS_LIBRARIES AND METIS_INCLUDE_DIRS)
     
       # Search for the library exclusively in the ParMooN EXT_LIB path.
     if(NOT METIS_LIBRARY OR NOT METIS_INCLUDE_DIR)
-        message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+        message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
         find_path(METIS_INCLUDE_DIR  metis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-        find_library(METIS_LIBRARY NAMES metis_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
+        find_library(METIS_LIBRARY NAMES metis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
         message("Found library: " ${METIS_LIBRARY})
     endif(NOT METIS_LIBRARY OR NOT METIS_INCLUDE_DIR)
     

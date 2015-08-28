@@ -18,7 +18,7 @@
 #            reasons for MPI compiling not working.
 #
 #            TODO The esmumps and scotcherr libraries are not supplied for
-#            all ${ARCH}-types.
+#            all ${_ARCH}-types.
 #
 #            TODO Handling of the variable MUMPS_LIBRARY and MUMPS_LIBRARIES
 #            - which should appear in the cache, and in which form?
@@ -49,19 +49,19 @@ if (NOT MUMPS_FOUND)
   endif(FIND_USER_MUMPS)
   
   # Search for the library exclusively in the ParMooN EXT_LIB path.
-    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
     find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/include NO_DEFAULT_PATH)
-    find_library(MUMPS_LIBRARY NAMES dmumps_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/lib NO_DEFAULT_PATH)
+    find_library(MUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/lib NO_DEFAULT_PATH)
     get_filename_component(_MUMPS_LIBDIR ${MUMPS_LIBRARY} PATH)
     # mumps_common library
-    find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common_${ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
+    find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common_${_ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
     # esmumps/dmumps/tesmumps
     find_library(ESMUMPS_LIBRARY NAMES esmumps_TYRONE64 PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
-    find_library(DMUMPS_LIBRARY NAMES dmumps_${ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
-    find_library(TESMUMPS_LIBRARY NAMES ptesmumps_${ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
+    find_library(DMUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
+    find_library(TESMUMPS_LIBRARY NAMES ptesmumps_${_ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
     # scotch and pord libraries
-    find_library(PORD_LIBRARY NAMES pord_${ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
-    find_library(SCOTCH_LIBRARY NAMES scotch_${ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
+    find_library(PORD_LIBRARY NAMES pord_${_ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
+    find_library(SCOTCH_LIBRARY NAMES scotch_${_ARCH} PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
     find_library(SCOTCHERR_LIBRARY NAMES scotcherr_TYRONE64 PATHS ${_MUMPS_LIBDIR} NO_DEFAULT_PATH)
     
     set(MUMPS_LIBRARY ${MUMPS_LIBRARY} ${ESMUMPS_LIBRARY} ${DMUMPS_LIBRARY} ${TESMUMPS_LIBRARY}

@@ -10,10 +10,6 @@
 # here are the local variables _OUTPUT_DIR_PATH and _PARALLEL_TYPE.
 # ===================================================================
 
-# CB Things which the user has to / can specify
-# CMAKE_BUILD_TYPE - koennte hier gesetzt werden oder als definition (mit -D ) an das cmake-Kommando uebergeben werden.
-# USER_NAME - koennte benutzt werden, um den Spielwiesen-Ordner des jeweiligen Users anzusteuern.
-
 ################################################################################
 # Setting User Cache variables.
 #
@@ -22,10 +18,6 @@
 # lead to unwanted behavior. So if you really need to change any of them later,
 # delete CMakeCache.txt and directory CMakeFiles and rerun cmake.
 ################################################################################
-# System architecture. Chose between LINUX64 MAC64 INTEL64 TYRONE64 CRAY64.
-# This takes effect as a ParMooN precompiler definition and when chosing
-# extern libraries in EXT_LIB folder. 
-set(ARCH "LINUX64" CACHE STRING "Do not edit in CMakeCache.txt!")
 
 # Enable verbose output from MakeFiles. Would be set by "project"
 # command, defaults to FALSE.
@@ -76,8 +68,8 @@ set(FIND_USER_TRIANGLE FALSE CACHE STRING "Do not edit in CMakeCache.txt!")
 # will take effect on every new run of cmake, without deleting anything before.
 ################################################################################
 # Selection of the program type. Chose between SEQUENTIAL MPI OMPONLY HYBRID,
-# entering anything else will lead to undefined behaviour.
-set(_PARALLEL_TYPE "SEQUENTIAL")
+# entering anything else will lead to undefined behaviour. TODO Catch that case!
+set(_PARALLEL_TYPE "MPI")
 
 # Select the output directory for the binaries. Make sure the directory exists in your file system!
 set(_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/")

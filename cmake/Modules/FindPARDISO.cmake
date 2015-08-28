@@ -22,9 +22,9 @@
 #  endif(USE_SYSTEM_PARDISO)   
 #  
 #   if(NOT PARDISO_LIBRARY)
-#     message("PARDISO not found in the system, so checking the availability in ParMooN for the selected ARCH=${ARCH}")
+#     message("PARDISO not found in the system, so checking the availability in ParMooN for the selected _ARCH=${_ARCH}")
 # #     find_path(PARDISO_INCLUDE_DIR  tetgen.h PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
-#     find_library(PARDISO_LIBRARY NAMES tet_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
+#     find_library(PARDISO_LIBRARY NAMES tet_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
 #   endif(NOT PARDISO_LIBRARY)
 #   
 #   if(PARDISO_LIBRARY)      

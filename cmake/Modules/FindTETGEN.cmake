@@ -28,9 +28,9 @@ if(NOT TETGEN_FOUND)
  
    # Search for the library exclusively in the ParMooN EXT_LIB path.
   if(NOT TETGEN_LIBRARY)
-    message("Searching in ParMooN EXT_LIB path. Selected architecture ARCH=${ARCH}")
+    message("Searching in ParMooN EXT_LIB path. Selected architecture _ARCH=${_ARCH}")
     find_path(TETGEN_INCLUDE_DIR  tetgen.h PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
-    find_library(TETGEN_LIBRARY NAMES tet_${ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
+    find_library(TETGEN_LIBRARY NAMES tet_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/tetgen)
   endif(NOT TETGEN_LIBRARY)
    
   # Handling of standard arguments.
