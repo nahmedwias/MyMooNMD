@@ -18,8 +18,7 @@
 #define __CD2D_H__
 
 #include <FEFunction2D.h>
-#include <Example_CD2D.h>
-#include <SystemMatScalar2D.h>
+#include <BlockMatrixCD2D.h>
 #include <Example_CD2D.h>
 #include <vector>
 
@@ -30,7 +29,7 @@ class CD2D
      * 
      * More entries in this vector only for multigrid.
      */
-    std::vector<TSystemMatScalar2D*> matrix;
+    std::vector<BlockMatrixCD2D*> matrix;
     
     /** @brief the right hand side vector 
      * 
@@ -100,7 +99,7 @@ class CD2D
     void output(int i = -1);
     
     // getters and setters
-    TSystemMatScalar2D* getMatrix() const
+    BlockMatrixCD2D* getMatrix() const
     { return matrix[0]; }
     double* getRhs() const
     { return rhs[0]; }
