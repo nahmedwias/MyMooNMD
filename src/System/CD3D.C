@@ -40,7 +40,7 @@ CD3D::CD3D(TDomain *domain, const Example_CD3D* e)
   this->function[0] = new TFEFunction3D(space, (char*) "solution",
                                         (char*) "solution", sol, n_dof);
   
-  this->matrix[0] = new TSystemMatScalar3D(space);
+  this->matrix[0] = new BlockMatrixCD3D(space);
   this->matrix[0]->Init(this->example->get_coeffs(), this->example->get_bc(0),
                         this->example->get_bd(0));
   
@@ -53,84 +53,96 @@ CD3D::CD3D(TDomain *domain, const Example_CD3D* e)
   OutPut("dof active : " << setw(12) << space->GetN_ActiveDegrees() << endl);
   
   // done with the conrtuctor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-    return;
-  // else multigrid
-  
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2]; // memory leak
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  this->multigrid = new TMultiGrid3D(1, 2, param);
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain->get_ref_level() + 1)
-    LEVELS = domain->get_ref_level() + 1;
-  
-  this->function.resize(LEVELS, nullptr);
-  this->matrix.resize(LEVELS, nullptr);
-  this->rhs.resize(LEVELS, nullptr);
-  
-  // some parameter used to construct the multigrid object
-  int n_aux = 2;
-  if(TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR
-     || TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR)
-    n_aux = 4;
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = 0; i < LEVELS - 1; i++)
+  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5
+    && TDatabase::ParamDB->SOLVER_TYPE == 1)
   {
-    unsigned int grid = i + domain->get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain->GetCollection(It_EQ, grid);
-    // index of the corresponding matrix, rhs, and solution in their respective
-    // vectors
-    unsigned int index = LEVELS - 1 - i;
+    // multigrid
     
-    space = new TFESpace3D(coll, (char*) "p", (char*) "p", example->get_bc(0),
-                           ORDER);
-    n_dof = space->GetN_DegreesOfFreedom();
-    this->matrix.at(index) = new TSystemMatScalar3D(space);
-    this->matrix.at(index)->Init(this->example->get_coeffs(),
-                                 this->example->get_bc(0),
-                                 this->example->get_bd(0));
+    // create spaces, functions, matrices on coarser levels
+    double *param = new double[2]; // memory leak
+    param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
+    param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
+    this->multigrid = new TMultiGrid3D(1, 2, param);
+    // number of refinement levels for the multigrid
+    int LEVELS = TDatabase::ParamDB->LEVELS;
+    if(LEVELS > domain->get_ref_level() + 1)
+      LEVELS = domain->get_ref_level() + 1;
     
-    this->rhs[index] = new double[n_dof];
-    sol = new double[n_dof]; // access to solution through 'function'
-    // set solution and right hand side vectors to zero
-    memset(sol, 0, n_dof * SizeOfDouble);
-    memset(this->rhs[index], 0, n_dof * SizeOfDouble);
+    this->function.resize(LEVELS, nullptr);
+    this->matrix.resize(LEVELS, nullptr);
+    this->rhs.resize(LEVELS, nullptr);
     
-    this->function[index] = new TFEFunction3D(space, (char*) "solution",
-                                              (char*) "solution", sol, n_dof);
+    // some parameter used to construct the multigrid object
+    int n_aux = 2;
+    if(TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR
+       || TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR)
+      n_aux = 4;
     
+    // the matrix and rhs side on the finest grid are already constructed 
+    // now construct all matrices, rhs, and solutions on coarser grids
+    for(int i = 0; i < LEVELS - 1; i++)
+    {
+      unsigned int grid = i + domain->get_ref_level() + 1 - LEVELS;
+      TCollection *coll = domain->GetCollection(It_EQ, grid);
+      // index of the corresponding matrix, rhs, and solution in their
+      // respective vectors
+      unsigned int index = LEVELS - 1 - i;
+      
+      space = new TFESpace3D(coll, (char*) "p", (char*) "p", example->get_bc(0),
+                             ORDER);
+      n_dof = space->GetN_DegreesOfFreedom();
+      this->matrix.at(index) = new BlockMatrixCD3D(space);
+      this->matrix.at(index)->Init(this->example->get_coeffs(),
+                                   this->example->get_bc(0),
+                                   this->example->get_bd(0));
+      
+      this->rhs[index] = new double[n_dof];
+      sol = new double[n_dof]; // access to solution through 'function'
+      // set solution and right hand side vectors to zero
+      memset(sol, 0, n_dof * SizeOfDouble);
+      memset(this->rhs[index], 0, n_dof * SizeOfDouble);
+      
+      this->function[index] = new TFEFunction3D(space, (char*) "solution",
+                                                (char*) "solution", sol, n_dof);
+      
+      TMGLevel3D *multigrid_level = new TMGLevel3D(
+          i, this->matrix[index]->get_square_matrix(), rhs[index], sol, n_aux,
+          NULL);
+      this->multigrid->AddLevel(multigrid_level);
+    }
+    // add last multigrid level (on finest mesh)
     TMGLevel3D *multigrid_level = new TMGLevel3D(
-     i, this->matrix[index]->get_square_matrix(), rhs[index], sol, n_aux, NULL);
+        LEVELS - 1, this->matrix[0]->get_square_matrix(), rhs[0], 
+        this->function[0]->GetValues(), n_aux, NULL);
     this->multigrid->AddLevel(multigrid_level);
   }
-  // add last multigrid level (on finest mesh)
-  TMGLevel3D *multigrid_level = new TMGLevel3D(
-      LEVELS - 1, this->matrix[0]->get_square_matrix(), rhs[0], 
-      this->function[0]->GetValues(), n_aux, NULL);
-  this->multigrid->AddLevel(multigrid_level);
-  
   
   #ifdef _MPI
   double t1,t2,tdiff;
+  Comm = MPI_COMM_WORLD;
+  unsigned int n_levels = this->matrix.size();
   
-  ParMapper = new TParFEMapper3D*[LEVELS]; 
-  ParComm   = new TParFECommunicator3D*[LEVELS];
+  ParMapper = new TParFEMapper3D*[n_levels]; 
+  ParComm   = new TParFECommunicator3D*[n_levels];
+  
+  
+  int MaxSubDomainPerDof = 4; //! todo this is known in main only
+  
+  int out_rank = TDatabase::ParamDB->Par_P0;
+  int rank;
+  MPI_Comm_rank(Comm, &rank);
   
   if(TDatabase::ParamDB->timeprofiling)  t1 = MPI_Wtime();
-  for(int i = 0; i < LEVELS; i++)
+  for(unsigned int i = 0; i < n_levels; i++)
   {
+    this->function[i]->GetFESpace3D()->SetMaxSubDomainPerDof(MaxSubDomainPerDof);
+    
     ParMapper[i] = new TParFEMapper3D(
         1, this->function[i]->GetFESpace3D(),
         this->matrix[i]->get_square_matrix()->GetRowPtr(),
         this->matrix[i]->get_square_matrix()->GetKCol());
     ParComm[i]   = new TParFECommunicator3D(ParMapper[i]);
-  }// for(i=0;i<N_levels;i++)
+  }
   
   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
   {
@@ -143,7 +155,7 @@ CD3D::CD3D(TDomain *domain, const Example_CD3D* e)
   {
     t2 = MPI_Wtime();
     tdiff = t2-t1;
-    int out_rank=TDatabase::ParamDB->Par_P0;
+    int out_rank = TDatabase::ParamDB->Par_P0;
     int rank;
     MPI_Comm_rank(Comm, &rank);
     MPI_Reduce(&tdiff, &t1, 1, MPI_DOUBLE, MPI_MIN, out_rank, Comm);
@@ -324,7 +336,6 @@ void CD3D::solve()
   }
 }
 
-
 void CD3D::output(int i)
 {
   if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
@@ -368,3 +379,23 @@ void CD3D::output(int i)
     //OutPut("L_inf  : " << errors[3] << endl);
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
+
+#ifdef _MPI
+unsigned int CD3D::get_total_dof() const
+{
+  int n_dof = this->getSize();
+  int n_total_dof = 0;
+  int out_rank = TDatabase::ParamDB->Par_P0;
+  MPI_Reduce(&n_dof, &n_total_dof, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+  return (unsigned int) n_total_dof;
+}
+
+unsigned int CD3D::get_n_total_cells() const
+{
+  int n_cells = this->getSpace()->GetN_Cells();
+  int n_total_cells = 0;
+  int out_rank = TDatabase::ParamDB->Par_P0;
+  MPI_Reduce(&n_cells, &n_total_cells, 1, MPI_INT, MPI_SUM, out_rank, Comm);
+  return (unsigned int) n_total_cells;
+}
+#endif
