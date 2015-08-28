@@ -3228,22 +3228,12 @@ void Assemble2D_VectFE(int n_fespaces, TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, TFESpace2D **ferhs,
-TDiscreteForm2D *DiscreteForm,
+ LocalAssembling2D& la,
 BoundCondFunct2D **BoundaryConditions,
-BoundValueFunct2D **BoundaryValues,
-TAuxParam2D *Parameters
+BoundValueFunct2D **BoundaryValues
 )
 {
 #ifdef __2D__
-  if(Parameters)
-  {
-    Error("Assemble2D_VectFE: input 'Parameters' of type 'TAuxParam2D*' is "<<
-          "not set to NULL. This is usually done if you want values of FE "<<
-          "functions during local assembling, for example in nonlinear "
-          "problems. This is not yet supported. Exiting.\n");
-    exit(1);
-  }
-  
   int N_AllMatrices = n_sqmatrices+n_matrices;
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -3258,10 +3248,10 @@ TAuxParam2D *Parameters
     if(fespaces[iSpace]->GetN_Hanging()!=0)
     {
       Error("Assemble2D_VectFE: hanging entries not supported. Exiting");
-      exit(1);
+      throw(std::runtime_error("hanging entries not supported"));
     }
   }
-  bool *SecondDer = DiscreteForm->GetNeeds2ndDerivatives();
+  bool *SecondDer = la.GetNeeds2ndDerivatives();
   
   // ########################################################################
   // loop over all cells
@@ -3344,13 +3334,13 @@ TAuxParam2D *Parameters
     // calculate values on original element
     // ########################################################################
     int N_Points; // number of quadrature points
-    TFEDatabase2D::GetOrig(N_LocalUsedElements, &LocalUsedElements[0],
-      Coll, cell, SecondDer,
-      N_Points, xi, eta, weights, X, Y, AbsDetjk);
+    TFEDatabase2D::GetOrig(N_LocalUsedElements, &LocalUsedElements[0], Coll,
+                           cell, SecondDer, N_Points, xi, eta, weights, X, Y,
+                           AbsDetjk);
     
     // this could provide values of FE functions during the local assemble
     // routine, not yet supported.
-    //Parameters->GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
+    //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
 
     // ########################################################################
     // assemble local matrices and right hand sides
@@ -3365,8 +3355,8 @@ TAuxParam2D *Parameters
       LocMatrices = new double**[N_AllMatrices];
       for(int i=0;i<N_AllMatrices;i++)
       {
-        int n_rows =LocN_BF[DiscreteForm->rowSpaceOfMat(i)];//number of rows
-        int n_cols =LocN_BF[DiscreteForm->colSpaceOfMat(i)];//number of columns
+        int n_rows =LocN_BF[la.rowSpaceOfMat(i)];//number of rows
+        int n_cols =LocN_BF[la.colSpaceOfMat(i)];//number of columns
         LocMatrices[i] = new double*[n_rows];
         for(int j=0; j<n_rows; j++)
         {
@@ -3376,9 +3366,8 @@ TAuxParam2D *Parameters
       }
     }                                               // endif N_AllMatrices
     
-    if(DiscreteForm)
-      DiscreteForm->GetLocalForms(N_Points, weights, AbsDetjk, hK, X, Y, 
-        &LocN_BF[0], &LocBF[0], cell, LocMatrices, LocRhs);
+    la.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
+                     cell, LocMatrices, LocRhs);
     
     
     // ########################################################################
@@ -3387,9 +3376,9 @@ TAuxParam2D *Parameters
     for(int iSqMat=0;iSqMat<n_sqmatrices;iSqMat++)
     {
       // fe space for this square matrix
-      TFESpace2D *fespace = fespaces[DiscreteForm->rowSpaceOfMat(iSqMat)];
+      TFESpace2D *fespace = fespaces[la.rowSpaceOfMat(iSqMat)];
       // the number of local basis functions (= size of local matrix)
-      int N_BaseFunctions = LocN_BF[DiscreteForm->rowSpaceOfMat(iSqMat)];
+      int N_BaseFunctions = LocN_BF[la.rowSpaceOfMat(iSqMat)];
       
       double **Matrix = LocMatrices[iSqMat];
       int ActiveBound = fespace->GetActiveBound();
@@ -3454,7 +3443,7 @@ TAuxParam2D *Parameters
     {
       for(int i=0;i<N_AllMatrices;i++)
       {
-        int n_rows =LocN_BF[DiscreteForm->rowSpaceOfMat(i)];//number of rows
+        int n_rows =LocN_BF[la.rowSpaceOfMat(i)];//number of rows
         for(int j=0; j<n_rows; j++)
         {
           delete [] LocMatrices[i][j];
