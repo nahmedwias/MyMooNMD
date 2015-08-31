@@ -46,6 +46,7 @@
 
 cmake_minimum_required(VERSION 2.8.12)
 
+
 project(ParMooN)
 set(ParMooN_VERSION_MAJOR 1)
 set(ParMooN_VERSION_MINOR 1)
@@ -409,7 +410,7 @@ LIST(APPEND _PARMOON_LIBRARIES_3D ${_PARMOON_LIBRARIES_3D})
 ### CD2D ###
 # Standard executable target.
 add_executable(cd2d ${PROJECT_SOURCE_DIR}/2DPrograms/CD2D_ParMooN.C)
-set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${_PARALLEL_TYPE})
+set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd2d PUBLIC -D__2D__)
 # Link in the required libraries.
@@ -418,7 +419,7 @@ target_link_libraries(cd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 ### Darcy2D ###
 # Standard executable target.
 add_executable(darcy2d ${PROJECT_SOURCE_DIR}/2DPrograms/Darcy2D_ParMooN.C)
-set_target_properties(darcy2d PROPERTIES OUTPUT_NAME parMooN_darcy2d_${_PARALLEL_TYPE})
+set_target_properties(darcy2d PROPERTIES OUTPUT_NAME parMooN_darcy2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(darcy2d PUBLIC -D__2D__)
 # Link in the required libraries.
@@ -427,7 +428,7 @@ target_link_libraries(darcy2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 ### NSE2D ###
 # Standard executable target.
 add_executable(nse2d ${PROJECT_SOURCE_DIR}/2DPrograms/NSE2D_ParMooN.C)
-set_target_properties(nse2d PROPERTIES OUTPUT_NAME parMooN_nse2d_${_PARALLEL_TYPE})
+set_target_properties(nse2d PROPERTIES OUTPUT_NAME parMooN_nse2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
@@ -436,7 +437,7 @@ target_link_libraries(nse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 ### TCD2D ###
 # Standard executable target.
 add_executable(tcd2d ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C)
-set_target_properties(tcd2d PROPERTIES OUTPUT_NAME parMooN_tcd2d_${_PARALLEL_TYPE})
+set_target_properties(tcd2d PROPERTIES OUTPUT_NAME parMooN_tcd2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(tcd2d PUBLIC -D__2D__)
 # Link in the required libraries.
@@ -445,7 +446,7 @@ target_link_libraries(tcd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 ### TNSE2D ###
 # Standard executable target.
 add_executable(tnse2d ${PROJECT_SOURCE_DIR}/2DPrograms/TNSE2D_ParMooN.C)
-set_target_properties(tnse2d PROPERTIES OUTPUT_NAME parMooN_tnse2d_${_PARALLEL_TYPE})
+set_target_properties(tnse2d PROPERTIES OUTPUT_NAME parMooN_tnse2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
@@ -456,7 +457,7 @@ target_link_libraries(tnse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
 ### CD3D ###
 # Standard executable target.
 add_executable(cd3d ${PROJECT_SOURCE_DIR}/3DPrograms/CD3D_ParMooN.C)
-set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${_PARALLEL_TYPE})
+set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
@@ -464,10 +465,11 @@ target_link_libraries(cd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
 # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
 set_target_properties(cd3d PROPERTIES LINK_FLAGS "-lgfortran")
 
+
 ### NSE3D ###
 # Standard executable target.
 add_executable(nse3d ${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN.C)
-set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${_PARALLEL_TYPE})
+set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
@@ -478,7 +480,7 @@ set_target_properties(nse3d PROPERTIES LINK_FLAGS "-lgfortran")
 ### TCD3D ###
 # Standard executable target.
 add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
-set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${_PARALLEL_TYPE})
+set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.

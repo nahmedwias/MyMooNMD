@@ -30,6 +30,8 @@ src/Refinement/libref_2d.a
 src/Refinement/libref_3d.a
 src/System/libsys_2d.a
 src/System/libsys_3d.a
+src/Matrix/libmatrix_2d.a
+src/Matrix/libmatrix_3d.a
 
 
 #3DPrograms/.*\.C$
