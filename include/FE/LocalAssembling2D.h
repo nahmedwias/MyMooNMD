@@ -152,6 +152,12 @@ class LocalAssembling2D
                        TBaseCell *Cell, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
                        double factor = 1.);
+    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+                       double *X, double *Y, int *N_BaseFuncts,
+                       BaseFunct2D *BaseFuncts, TBaseCell *Cell,
+                       double ***LocMatrix, double **LocRhs,
+                       double factor = 1.);
+    
     
     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TCollection *Coll,

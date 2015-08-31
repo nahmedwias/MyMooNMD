@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     SystemMat3D
+* @class     BlockMatrix3D
 * @brief     stores the information of a 3D system matrix
 * 
 * This is a base class. Derived classes for differnet problem types exist and 
@@ -10,14 +10,14 @@
 * @date      09.06.15
 * 
 * ************************************************************************  */
-#ifndef __SYSTEMMAT3D__
-#define __SYSTEMMAT3D__
+#ifndef __BLOCKMATRIX3D__
+#define __BLOCKMATRIX3D__
 
 #include <SquareMatrix3D.h>
 #include <Matrix3D.h>
 #include <vector>
 
-class SystemMat3D
+class BlockMatrix3D
 {
   protected:
 
@@ -43,13 +43,13 @@ class SystemMat3D
      * This initializes the vectors with nullptr. The vectors are filled within
      * the derived classes. 
      */
-    SystemMat3D(unsigned int n_spaces, unsigned int n_sq_matrices, 
+    BlockMatrix3D(unsigned int n_spaces, unsigned int n_sq_matrices, 
                 unsigned int n_rect_matrices)
      : fe_spaces(n_spaces, nullptr), sq_matrices(n_sq_matrices, nullptr),
        rect_matrices(n_rect_matrices, nullptr), defect(nullptr)
     {};
     
-    virtual ~SystemMat3D();
+    virtual ~BlockMatrix3D();
     
     /** @brief adding a scaled matrix to this matrix
      * 
@@ -62,7 +62,7 @@ class SystemMat3D
      * Note that this only works if the sparsity structure is the same for this
      * matrix and A.
      */
-    void add_active(const SystemMat3D &A, double factor = 1.0);
+    void add_active(const BlockMatrix3D &A, double factor = 1.0);
     
     /** @brief adding a scaled matrix to this matrix
      * 
@@ -72,7 +72,7 @@ class SystemMat3D
      * Note that this only works if the sparsity structure is the same for this
      * matrix and A.
      */
-    void add(const SystemMat3D &A, double factor = 1.0);
+    void add(const BlockMatrix3D &A, double factor = 1.0);
 
     /** @brief scale this matrix by a factor
      * 
@@ -137,4 +137,4 @@ class SystemMat3D
     unsigned int n_total_entries() const; // total number of entries
 };
 
-#endif // __SYSTEMMAT3D__
+#endif // __BLOCKMATRIX3D__

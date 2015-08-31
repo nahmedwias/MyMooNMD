@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatScalar3D
+* @class     BlockMatrixCD3D
 * @brief     stores the information of a 3D scalar system matrix 
 * @author    Sashikumaar Ganesan 
 * @date      23.01.15
@@ -20,7 +20,7 @@
 
 #include <ParDirectSolver.h>
 #endif
-#include <SystemMat3D.h>
+#include <BlockMatrix3D.h>
 #include <ItMethod.h>
 
 #ifdef _OMPONLY
@@ -28,7 +28,7 @@
 #endif
 
 /** class for 3D scalar system matrix */
-class TSystemMatScalar3D : public SystemMat3D
+class BlockMatrixCD3D : public BlockMatrix3D
 {
   protected:
     /** Boundary condition and Boundary Value */
@@ -42,10 +42,10 @@ class TSystemMatScalar3D : public SystemMat3D
     
   public:
     /** Constructor*/
-    TSystemMatScalar3D(TFESpace3D *fespace);
+    BlockMatrixCD3D(TFESpace3D *fespace);
     
     /** destrcutor */
-    ~TSystemMatScalar3D();
+    ~BlockMatrixCD3D();
     
     /** Initilize the discrete forms and the matrices */
     void Init(CoeffFct3D *BilinearCoeffs, BoundCondFunct3D *BoundCond,

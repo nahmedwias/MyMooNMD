@@ -46,8 +46,6 @@
 
 cmake_minimum_required(VERSION 2.8.12)
 
-include(${CMAKE_SOURCE_DIR}/UserConfig.cmake)
-
 project(ParMooN)
 set(ParMooN_VERSION_MAJOR 1)
 set(ParMooN_VERSION_MINOR 1)
@@ -149,7 +147,7 @@ if(_USING_MPI)
   message("==================Including Parmetis - begin===============================================")
       find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
       find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-      include_directories(${PARMETIS_INCLUDE_DIRS})
+      include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
       
       set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
       set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
@@ -207,7 +205,7 @@ message("==================Including METIS - begin==============================
     if(NOT (METIS_LIBRARIES AND  METIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
         message(FATAL_ERROR "Metis is missing from ParMooN.")
     else()
-        message(STATUS"Done.")
+        message(STATUS "Done.")
     endif()
     include_directories(${METIS_INCLUDE_DIRS})
 message("==================Indcluding METIS - end====================================================")
@@ -222,7 +220,7 @@ message("==================Including TRIANGLE - begin===========================
     if(NOT (TRIANGLE_LIBRARIES AND  TRIANGLE_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
         message(FATAL_ERROR "Triangle is mising from ParMooN.")
     else()
-        message(STATUS"Done.")
+        message(STATUS "Done.")
     endif()
 	include_directories(${TRIANGLE_INCLUDE_DIRS})
 message("==================Including TRIANGLE - end==================================================")
@@ -237,7 +235,7 @@ message("==================Including TETGEN - begin=============================
     if(NOT (TETGEN_LIBRARIES AND  TETGEN_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
         message(FATAL_ERROR "Tetgen is missing from ParMooN.")
     else()
-        message(STATUS"Done.")
+        message(STATUS "Done.")
     endif()
     include_directories(${TETGEN_INCLUDE_DIRS}) 
 message("==================Including TETGEN - end==================================================")
@@ -252,7 +250,7 @@ message("==================Including TECPLOT - begin============================
     if(NOT (TECPLOT_LIBRARIES AND  TECPLOT_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
         message(FATAL_ERROR "Tecplot is missing from ParMooN.")
     else()
-        message(STATUS"Done.")
+        message(STATUS "Done.")
     endif()
 	include_directories(${TECPLOT_INCLUDE_DIRS})
 message("==================Including TECPLOT - end==================================================")
@@ -270,10 +268,20 @@ message("==================Including UMFPACK - begin============================
     if(NOT (UMFPACK_LIBRARIES AND  UMFPACK_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
         message(FATAL_ERROR "Umfpack is missing from ParMooN.")
     else()
-        message(STATUS"Done.")
+        message(STATUS "Done.")
     endif()
     include_directories(${UMFPACK_INCLUDE_DIRS})
 message("==================Including UMFPACK - end==================================================")
+
+# turn on all warnings
+IF(CMAKE_BUILD_TOOL MATCHES "make")
+  IF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  ENDIF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
+  IF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+  ENDIF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
+ENDIF(CMAKE_BUILD_TOOL MATCHES "make")
 
 # Include directories which contain header files.
 include_directories("${CMAKE_SOURCE_DIR}/include/General")
@@ -287,6 +295,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/AMG")
 include_directories("${CMAKE_SOURCE_DIR}/include/PBE")
 include_directories("${CMAKE_SOURCE_DIR}/include/Refinement")
 include_directories("${CMAKE_SOURCE_DIR}/include/System")
+include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
 include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
@@ -345,6 +354,7 @@ add_subdirectory(src/Parallel)
 add_subdirectory(src/QuadFormulas)
 add_subdirectory(src/Refinement) 
 add_subdirectory(src/System)
+add_subdirectory(src/Matrix)
 # add_subdirectory(src/PBE)
 
 # Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
@@ -361,9 +371,10 @@ LIST(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
 if(_USING_MPI)
     LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
-message(${_EXTERN_LIBRARIES})
+
 # Set up lists of the 2D libraries ready for linking.
 LIST(APPEND _PARMOON_LIBRARIES_2D "examples_2d")
+LIST(APPEND _PARMOON_LIBRARIES_2D "matrix_2d")
 LIST(APPEND _PARMOON_LIBRARIES_2D "fe_2d")
 LIST(APPEND _PARMOON_LIBRARIES_2D "gen_2d")
 LIST(APPEND _PARMOON_LIBRARIES_2D "geo_2d")
@@ -377,6 +388,7 @@ LIST(APPEND _PARMOON_LIBRARIES_2D ${_PARMOON_LIBRARIES_2D})
 
 # Set up lists of the 3D libraries ready for linking.
 LIST(APPEND _PARMOON_LIBRARIES_3D "examples_3d")
+LIST(APPEND _PARMOON_LIBRARIES_3D "matrix_3d")
 LIST(APPEND _PARMOON_LIBRARIES_3D "fe_3d")
 LIST(APPEND _PARMOON_LIBRARIES_3D "gen_3d")
 LIST(APPEND _PARMOON_LIBRARIES_3D "geo_3d")
@@ -480,6 +492,7 @@ target_link_libraries(tcd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
 ############
 
 message("============================================================================================================"  )        
+message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 message("Configuration for the ParMooN Version 1.1")  
 message("Author : Sashikumaar Ganesan")
 message("         Numerical Mathematics and Scientific Computing")

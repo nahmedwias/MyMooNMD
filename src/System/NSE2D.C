@@ -53,7 +53,7 @@ NSE2D::NSE2D(TDomain *domain, const Example_NSE2D* e)
   this->u1[0] = this->u[0]->GetComponent(0);
   this->u2[0] = this->u[0]->GetComponent(1);
   
-  this->matrix[0] = new TSystemMatNSE2D(this->u[0], this->p[0]);
+  this->matrix[0] = new BlockMatrixNSE2D(this->u[0], this->p[0]);
   this->matrix[0]->Init(example->get_bd(0), example->get_bd(1));
   
   // print out some information
@@ -119,7 +119,7 @@ NSE2D::NSE2D(TDomain *domain, const Example_NSE2D* e)
     this->u1.at(index) = this->u[index]->GetComponent(0);
     this->u2.at(index) = this->u[index]->GetComponent(1);
     
-    this->matrix.at(index) = new TSystemMatNSE2D(this->u[index], this->p[index]);
+    this->matrix.at(index) = new BlockMatrixNSE2D(this->u[index], this->p[index]);
     this->matrix.at(index)->Init(example->get_bd(0), example->get_bd(1));
     
     this->multigrid->AddLevel(this->mg_levels(i, index));

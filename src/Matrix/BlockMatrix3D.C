@@ -1,12 +1,12 @@
-#include <SystemMat3D.h>
+#include <BlockMatrix3D.h>
 #include <string.h>
 
-SystemMat3D::~SystemMat3D()
+BlockMatrix3D::~BlockMatrix3D()
 {
   // to be implemented
 }
 
-void SystemMat3D::add_active(const SystemMat3D &A, double factor)
+void BlockMatrix3D::add_active(const BlockMatrix3D &A, double factor)
 {
   unsigned int n_square_mat = this->sq_matrices.size();
   unsigned int n_rect_mat = this->rect_matrices.size();
@@ -33,8 +33,8 @@ void SystemMat3D::add_active(const SystemMat3D &A, double factor)
   
   if(factor != 1.0)
   {
-    ErrMsg("SystemMat3D::add not yet implemented for a factor != 1.0");
-    throw("SystemMat3D::add not yet implemented for a factor != 1.0");
+    ErrMsg("BlockMatrix3D::add not yet implemented for a factor != 1.0");
+    throw("BlockMatrix3D::add not yet implemented for a factor != 1.0");
   }
   
   // add each submatrix
@@ -44,7 +44,7 @@ void SystemMat3D::add_active(const SystemMat3D &A, double factor)
     this->rect_matrices[i]->add_active(*A.get_rectangular_matrix(i), factor);
 }
 
-void SystemMat3D::add(const SystemMat3D &A, double factor)
+void BlockMatrix3D::add(const BlockMatrix3D &A, double factor)
 {
   unsigned int n_square_mat = this->sq_matrices.size();
   unsigned int n_rect_mat = this->rect_matrices.size();
@@ -71,8 +71,8 @@ void SystemMat3D::add(const SystemMat3D &A, double factor)
   
   if(factor != 1.0)
   {
-    ErrMsg("SystemMat3D::add not yet implemented for a factor != 1.0");
-    throw("SystemMat3D::add not yet implemented for a factor != 1.0");
+    ErrMsg("BlockMatrix3D::add not yet implemented for a factor != 1.0");
+    throw("BlockMatrix3D::add not yet implemented for a factor != 1.0");
   }
   
   // add each submatrix
@@ -82,7 +82,7 @@ void SystemMat3D::add(const SystemMat3D &A, double factor)
     this->rect_matrices[i]->add(*(TMatrix*)A.get_rectangular_matrix(i), factor);
 }
 
-void SystemMat3D::scale_active(double factor)
+void BlockMatrix3D::scale_active(double factor)
 {
   //  scale each subblock
   for(TSquareMatrix3D* m : this->sq_matrices)
@@ -91,7 +91,7 @@ void SystemMat3D::scale_active(double factor)
     m->scale_active(factor);
 }
 
-void SystemMat3D::scale(double factor)
+void BlockMatrix3D::scale(double factor)
 {
   //  scale each subblock
   for(TSquareMatrix3D* m : this->sq_matrices)
@@ -100,7 +100,7 @@ void SystemMat3D::scale(double factor)
     m->scale(factor);
 }
 
-void SystemMat3D::apply(const double *x, double *y, double factor) const
+void BlockMatrix3D::apply(const double *x, double *y, double factor) const
 {
   unsigned int n_total_rows = this->n_total_rows();
   if(factor == 0.0)
@@ -109,8 +109,8 @@ void SystemMat3D::apply(const double *x, double *y, double factor) const
     memset(y, 0.0, n_total_rows*SizeOfDouble);
     return;
   }
-  ErrMsg("no implementation of SystemMat3D::apply available");
-  throw("no implementation of SystemMat3D::apply available");
+  ErrMsg("no implementation of BlockMatrix3D::apply available");
+  throw("no implementation of BlockMatrix3D::apply available");
   /*
   unsigned int row_offset = 0;
   unsigned int n_rows = this->n_rows();
@@ -129,35 +129,35 @@ void SystemMat3D::apply(const double *x, double *y, double factor) const
   */
 }
 
-void SystemMat3D::apply_scaled_add(const double *x, double *y, double factor)
+void BlockMatrix3D::apply_scaled_add(const double *x, double *y, double factor)
   const
 {
   if(factor == 0.0)
     // nothing needs to be done
     return;
   
-  ErrMsg("no implementation of SystemMat3D::apply_scaled_add available");
-  throw("no implementation of SystemMat3D::apply_scaled_add available");
+  ErrMsg("no implementation of BlockMatrix3D::apply_scaled_add available");
+  throw("no implementation of BlockMatrix3D::apply_scaled_add available");
 }
 
-unsigned int SystemMat3D::n_blocks() const
+unsigned int BlockMatrix3D::n_blocks() const
 {
   return sq_matrices.size() + rect_matrices.size();
 }
 
-unsigned int SystemMat3D::n_rows() const
+unsigned int BlockMatrix3D::n_rows() const
 {
   // assuming a square block matrix, where every block is indeed stored
   return sqrt(sq_matrices.size() + rect_matrices.size());
 }
 
-unsigned int SystemMat3D::n_cols() const
+unsigned int BlockMatrix3D::n_cols() const
 {
   // assuming a square block matrix, where every block is indeed stored
   return sqrt(sq_matrices.size() + rect_matrices.size());
 }
 
-unsigned int SystemMat3D::n_total_rows() const
+unsigned int BlockMatrix3D::n_total_rows() const
 {
   if(this->n_blocks() == 1)
   {
@@ -166,11 +166,11 @@ unsigned int SystemMat3D::n_total_rows() const
     else if(this->rect_matrices.size() == 1) // one rectangular block
       return this->rect_matrices[0]->GetN_Rows();
   }
-  ErrMsg("unable to determine the total number of rows in this SystemMat3D");
-  throw("unable to determine the total number of rows in this SystemMat3D");
+  ErrMsg("unable to determine the total number of rows in this BlockMatrix3D");
+  throw("unable to determine the total number of rows in this BlockMatrix3D");
 }
 
-unsigned int SystemMat3D::n_total_cols() const
+unsigned int BlockMatrix3D::n_total_cols() const
 {
   if(this->n_blocks() == 1)
   {
@@ -179,10 +179,10 @@ unsigned int SystemMat3D::n_total_cols() const
     else if(this->rect_matrices.size() == 1) // one rectangular block
       return this->rect_matrices[0]->GetN_Columns();
   }
-  ErrMsg("unable to determine the total number of columns in this SystemMat3D");
-  throw("unable to determine the total number of columns in this SystemMat3D");
+  ErrMsg("unable to determine the total number of columns in this BlockMatrix3D");
+  throw("unable to determine the total number of columns in this BlockMatrix3D");
 }
-unsigned int SystemMat3D::n_total_entries() const
+unsigned int BlockMatrix3D::n_total_entries() const
 {
   unsigned int n_entries = 0;
   for(TSquareMatrix3D* m : this->sq_matrices)

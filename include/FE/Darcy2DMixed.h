@@ -1,11 +1,11 @@
 // ======================================================================
-// @(#)Darcy2D.h        15.03.2015
+// @(#)Darcy2DMixed.h        15.03.2015
 //
 // common declaration for all Darcy problems
 // ======================================================================
 
-#ifndef __DARCY_2D__ 
-#define __DARCY_2D__
+#ifndef __DARCY_MIXED_2D__ 
+#define __DARCY_MIXED_2D__
 
 /** the local assembling routines. Each of them corresponds to one 
  * LocalAssembling2D_type */
@@ -18,4 +18,4 @@ void BilinearAssembleDarcyGalerkin(double Mult, double *coeff, double *param,
                                    int *N_BaseFuncts, double ***LocMatrices,
                                    double **LocRhs);
 
-#endif // __DARCY_2D__
+#endif // __DARCY_MIXED_2D__

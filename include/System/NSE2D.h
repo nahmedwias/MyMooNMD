@@ -17,7 +17,7 @@
 
 #include <FEVectFunct2D.h>
 #include <Example_NSE2D.h>
-#include <SystemMatNSE2D.h>
+#include <BlockMatrixNSE2D.h>
 #include <Example_CD2D.h>
 #include <vector>
 #include <MultiGrid2D.h>
@@ -40,7 +40,7 @@ class NSE2D
      * 
      * More entries in this vector only for multigrid.
      */
-    std::vector<TSystemMatNSE2D*> matrix;
+    std::vector<BlockMatrixNSE2D*> matrix;
     
     /** @brief the right hand side vector 
      * 
@@ -48,8 +48,8 @@ class NSE2D
      */
     std::vector<double*> rhs;
     
-    /** Finite Element functions for velocity (vector) and pressure and the 
-     * velocity components (scalars)
+    /** @brief Finite Element functions for velocity (vector) and pressure and 
+     * the velocity components (scalars)
      * 
      * The finite element functions know their spaces and finite element vectors
      * so that those two are not explicitly stored in this class.
@@ -164,7 +164,7 @@ class NSE2D
     void mg_solver();
     
     // getters and setters
-    TSystemMatNSE2D* getMatrix() const
+    BlockMatrixNSE2D* getMatrix() const
     { return matrix[0]; }
     double* getRhs() const
     { return rhs[0]; }

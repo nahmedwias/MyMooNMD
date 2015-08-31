@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <TNSE2D_Routines.h>
 #include <stdlib.h>
-
+#include <Darcy2DMixed.h>
 
 /* ======================================================================
    depending on the global orientation of the normals at inner edges the sign 
@@ -166,7 +166,7 @@ void BilinearAssembleDarcyGalerkin(double Mult, double *coeff, double *param,
   for(int i=0;i<N_U;i++)
   {
     // here check whether signs should be inverted
-    newsign[i] = GetSignOfThisDOF(N_U,i); // in Darcy2D.C
+    newsign[i] = GetSignOfThisDOF(N_U,i); // in Darcy2DMixed.C
   }
   // A, B1, B2
   for(int i=0;i<N_U;i++)

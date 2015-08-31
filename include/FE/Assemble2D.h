@@ -118,10 +118,9 @@ void Assemble2D_VectFE(int n_fespaces, TFESpace2D **fespaces,
            int n_sqmatrices, TSquareMatrix2D **sqmatrices,
            int n_matrices, TMatrix2D **matrices,
            int n_rhs, double **rhs, TFESpace2D **ferhs,
-           TDiscreteForm2D *DiscreteForm,
+           LocalAssembling2D& la,
            BoundCondFunct2D **BoundaryConditions,
-           BoundValueFunct2D **BoundaryValues,
-           TAuxParam2D *Parameters=NULL
+           BoundValueFunct2D **BoundaryValues
            );
 
 #ifdef __MORTAR__

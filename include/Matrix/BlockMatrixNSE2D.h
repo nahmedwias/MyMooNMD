@@ -1,11 +1,11 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatNSE2D
+* @class     BlockMatrixNSE2D
 * @brief     stores the information of a 2D NSE system matrix 
 * @author    Sashikumaar Ganesan, 
 * @date      23.08.14
 * @History   Added methods (Sashi, 23.08.14)
-*            made this class a derived class fo SystemMat2D (Ulrich, 19.03.2015)
+*            made this class a derived class fo BlockMatrix2D (Ulrich, 19.03.2015)
 *            further simplifications (Ulrich, 25.03.2015)
 * ************************************************************************  */
 
@@ -13,11 +13,11 @@
 #ifndef __SYSTEMMATNSE2D__
 #define __SYSTEMMATNSE2D__
 
-#include <SystemMat2D.h>
+#include <BlockMatrix2D.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D  NSE system matrix */
-class TSystemMatNSE2D : public SystemMat2D
+class BlockMatrixNSE2D : public BlockMatrix2D
 {
   protected:
     /** Boundary conditon */
@@ -28,10 +28,10 @@ class TSystemMatNSE2D : public SystemMat2D
     
   public:
     /** constructor */
-     TSystemMatNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p);
+     BlockMatrixNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p);
      
     /** destrcutor */
-    ~TSystemMatNSE2D();
+    ~BlockMatrixNSE2D();
     
     /** methods */
     /** Initilize the discrete forms and the matrices */

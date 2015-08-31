@@ -5,7 +5,7 @@
 #include <LocalAssembling2D.h>
 #include <ConvDiff.h>
 #include <ConvDiff2D.h> // local assembling routines for 2D convection-diffusion
-#include <Darcy2D.h> // local assembling routines for 2D Darcy problems
+#include <Darcy2DMixed.h> // local assembling routines for 2D Darcy problems
 #include <NSE2D_FixPo.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
@@ -391,6 +391,48 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
     AssembleParam(Mult, Coeff, Param, hK, OrigValues, N_BaseFuncts, LocMatrix,
                   LocRhs);
   } // end loop over quadrature points 
+}
+
+void LocalAssembling2D::GetLocalForms(int N_Points, double *weights, 
+                                      double *AbsDetjk, double *X, double *Y,
+                                      int *N_BaseFuncts,
+                                      BaseFunct2D *BaseFuncts, TBaseCell *Cell,
+                                      double ***LocMatrix, double **LocRhs,
+                                      double factor)
+{
+  const double hK = Cell->Get_hK(TDatabase::ParamDB->CELL_MEASURE);
+  double *Coefficients[N_Points];
+  double *aux = new double [N_Points*20]; // do not change below 20
+  for(int j=0;j<N_Points;j++)
+    Coefficients[j] = aux + j*20;
+  
+  if(Coeffs)
+    Coeffs(N_Points, X, Y, NULL, Coefficients);
+
+  if(Manipulate)
+    Manipulate(N_Points, Coefficients, NULL, Cell);
+  for(int j=0;j<N_Terms;j++)
+  {
+    AllOrigValues[j] = 
+      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]], 
+                                        Derivatives[j]);
+  }
+  
+  for(int i=0;i<N_Points;i++)
+  {
+ 
+    double Mult = weights[i]*AbsDetjk[i];
+    Coefficients[i][19] = AbsDetjk[i];
+    
+    for(int j=0;j<N_Terms;j++) {
+       OrigValues[j] = AllOrigValues[j][i];
+    }
+
+ 
+    AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts, 
+                  LocMatrix, LocRhs);
+  } // endfor i
+  delete [] aux;
 }
 
 

@@ -33,7 +33,7 @@ CD2D::CD2D(TDomain *domain, const Example_CD2D* e)
   this->function[0] = new TFEFunction2D(space, (char*) "solution",
                                         (char*) "solution", sol, n_dof);
   
-  this->matrix[0] = new TSystemMatScalar2D(space);
+  this->matrix[0] = new BlockMatrixCD2D(space);
   this->matrix[0]->Init(this->example->get_bc(0), this->example->get_bd(0));
   
   // print out some information
@@ -77,7 +77,7 @@ CD2D::CD2D(TDomain *domain, const Example_CD2D* e)
     space = new TFESpace2D(coll, (char*) "p", (char*) "p", example->get_bc(0),
                            ORDER, NULL);
     n_dof = space->GetN_DegreesOfFreedom();
-    this->matrix.at(index) = new TSystemMatScalar2D(space);
+    this->matrix.at(index) = new BlockMatrixCD2D(space);
     this->matrix.at(index)->Init(this->example->get_bc(0),
                                  this->example->get_bd(0));
     

@@ -1,47 +1,43 @@
 /** ************************************************************************ 
 *
-* @class     TSystemMatScalar2D
-* @brief     stores the information of a 2D scalar system matrix 
-* @author    Sashikumaar Ganesan, 
-* @date      08.08.14
-* @History   Added methods (Sashi, 22.08.14)
+* @class     BlockMatrixDarcy2D
+* @brief     stores the information of a 2D Darcy system matrix 
+* @author    Ulrich Wilbrandt
+* @date      15.03.15
  ************************************************************************  */
 
 
-#ifndef __SYSTEMMATSCALAR2D__
-#define __SYSTEMMATSCALAR2D__
+#ifndef __SYSTEMMATDARCY2D__
+#define __SYSTEMMATDARCY2D__
 
-#include <SystemMat2D.h>
 #include <LocalAssembling2D.h>
+#include <BlockMatrix2D.h>
 
 /**class for 2D scalar system matrix */
-class TSystemMatScalar2D : public SystemMat2D
+class BlockMatrixDarcy2D : public BlockMatrix2D
 {
   protected:
     
-    /** Boundary conditon */
-    BoundCondFunct2D *BoundaryConditions[1];
-
-     /** Boundary value */   
-    BoundValueFunct2D *BoundaryValues[1];
+    /** Boundary conditon (one for u.n and one for pressure) */
+    BoundCondFunct2D *BoundaryConditions[2];
+    
+    /** Boundary value */ 
+    BoundValueFunct2D *BoundaryValues[2];
     
   public:
     /** constructor */
-     TSystemMatScalar2D(TFESpace2D *fespace);
-
-    /** destrcutor */
-    ~TSystemMatScalar2D();
+     BlockMatrixDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
+                       BoundValueFunct2D **BoundValue);
     
-    /** Initilize the discrete forms and the matrices */
-    void Init(BoundCondFunct2D *BoundCond, BoundValueFunct2D *BoundValue);
- 
- 
+    /** destrcutor */
+    ~BlockMatrixDarcy2D();
+    
     /** assemble the system matrix */
     void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
-
+    
     /** solve the system matrix */
     void Solve(double *sol, double *rhs);
-    
+
     /** @brief compute y = factor* A*x 
      *
      * write the matrix-vector product "Ax" scaled by a factor to y. 
@@ -54,7 +50,7 @@ class TSystemMatScalar2D : public SystemMat2D
      * @param factor optional scaling factor, default to 1.0
      */
     void apply(const double *x, double *y, double factor = 1.0) const;
-    
+
     /** @brief compute y = y + a * Ax 
      *
      * add the matrix-vector product "Ax", scaled by "a", to y.
@@ -66,8 +62,14 @@ class TSystemMatScalar2D : public SystemMat2D
      * @param y result of matrix-vector-multiplication and scaling
      * @param factor optional scaling   factor, default to 1.0
      */
-    void apply_scaled_add(const double *x, double *y, double factor =
-        1.0) const;
+    void apply_scaled_add(const double *x, double *y,
+                                  double factor = 1.0) const;
+    
+    unsigned int n_rows() const; // number of block rows
+    unsigned int n_cols() const; // number of block columns
+    unsigned int n_total_rows() const; // total number of rows (> nRows)
+    unsigned int n_total_cols() const; // total number of columns (> nCols)
+    unsigned int n_total_entries() const; // total number of entries
 };
 
-#endif // __SYSTEMMATSCALAR2D__
+#endif // __SYSTEMMATDARCY2D__

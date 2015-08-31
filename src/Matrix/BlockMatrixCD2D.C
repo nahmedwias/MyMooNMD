@@ -1,12 +1,12 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatScalar2D
+* @brief     source file for BlockMatrixCD2D
 * @author    Sashikumaar Ganesan, 
 * @date      08.08.14
 * @History 
  ************************************************************************  */
 #ifdef __2D__
 #include <Database.h>
-#include <SystemMatScalar2D.h>
+#include <BlockMatrixCD2D.h>
 #include <SquareStructure2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
@@ -17,11 +17,11 @@
 // #include <sstream>
 // #include <MooNMD_Io.h>
 
-TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace)
- : SystemMat2D(1, 1, 0)
+BlockMatrixCD2D::BlockMatrixCD2D(TFESpace2D *fespace)
+ : BlockMatrix2D(1, 1, 0)
 {
   //store the FEspace
-  this->SystemMat2D::fe_spaces[0] = fespace;
+  this->BlockMatrix2D::fe_spaces[0] = fespace;
   
   // build matrices
   // first build matrix structure
@@ -30,36 +30,36 @@ TSystemMatScalar2D::TSystemMatScalar2D(TFESpace2D *fespace)
 
   /** A is the stiffness/system matrix for a stationary convection diffusion 
    * problem */
-  this->SystemMat2D::sq_matrices[0] = new TSquareMatrix2D(sqstructure);  
-  this->SystemMat2D::defect = Defect_Scalar;
+  this->BlockMatrix2D::sq_matrices[0] = new TSquareMatrix2D(sqstructure);  
+  this->BlockMatrix2D::defect = Defect_Scalar;
 }
 
-TSystemMatScalar2D::~TSystemMatScalar2D()
+BlockMatrixCD2D::~BlockMatrixCD2D()
 {
-  delete this->SystemMat2D::sq_matrices[0]->GetStructure();
-  delete this->SystemMat2D::sq_matrices[0];
+  delete this->BlockMatrix2D::sq_matrices[0]->GetStructure();
+  delete this->BlockMatrix2D::sq_matrices[0];
 }
   
   
-void TSystemMatScalar2D::Init(BoundCondFunct2D *BoundCond,
+void BlockMatrixCD2D::Init(BoundCondFunct2D *BoundCond,
                               BoundValueFunct2D *BoundValue)
 {
   //TDiscreteForm2D *DiscreteFormHeatLine;
   this->BoundaryConditions[0] = BoundCond;//should be the same as in fe_space[0]
   this->BoundaryValues[0] = BoundValue;
-} // TSystemMatScalar2D::Init
+} // BlockMatrixCD2D::Init
 
 
-void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol,
+void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, double *sol,
                                   double *rhs)
 {
-  int N_DOF = this->SystemMat2D::fe_spaces[0]->GetN_DegreesOfFreedom();
-  int N_Active = this->SystemMat2D::fe_spaces[0]->GetActiveBound();
+  int N_DOF = this->BlockMatrix2D::fe_spaces[0]->GetN_DegreesOfFreedom();
+  int N_Active = this->BlockMatrix2D::fe_spaces[0]->GetActiveBound();
   int N_DirichletDof = N_DOF - N_Active;
   
   // reset right hand side and matrix to zero
   memset(rhs, 0, N_DOF*SizeOfDouble);
-  this->SystemMat2D::sq_matrices[0]->Reset();
+  this->BlockMatrix2D::sq_matrices[0]->Reset();
   
   int N_Matrices = 1;
   // assemble
@@ -84,10 +84,10 @@ void TSystemMatScalar2D::Assemble(LocalAssembling2D& la, double *sol,
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
   memcpy(sol+N_Active, rhs+N_Active, N_DirichletDof*SizeOfDouble);
-} // void TSystemMatScalar2D::Assemble
+} // void BlockMatrixCD2D::Assemble
 
 
-void TSystemMatScalar2D::Solve(double *sol, double *rhs)
+void BlockMatrixCD2D::Solve(double *sol, double *rhs)
 {
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
@@ -100,7 +100,7 @@ void TSystemMatScalar2D::Solve(double *sol, double *rhs)
    break;
 
    case DIRECT:
-     DirectSolver(this->SystemMat2D::sq_matrices[0], rhs, sol);
+     DirectSolver(this->BlockMatrix2D::sq_matrices[0], rhs, sol);
    break;
  
    default:
@@ -109,18 +109,18 @@ void TSystemMatScalar2D::Solve(double *sol, double *rhs)
   }
 }
 
-void TSystemMatScalar2D::apply(const double *x, double *y, double factor) const
+void BlockMatrixCD2D::apply(const double *x, double *y, double factor) const
 {
-  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  unsigned int n_total_rows = this->BlockMatrix2D::sq_matrices[0]->GetN_Rows();
   // reset y
   memset(y, 0.0, n_total_rows*SizeOfDouble);
   this->apply_scaled_add(x, y, factor);
 }
     
-void TSystemMatScalar2D::apply_scaled_add(const double *x, double *y, 
+void BlockMatrixCD2D::apply_scaled_add(const double *x, double *y, 
                                           double factor) const
 {
-  this->SystemMat2D::sq_matrices[0]->multiply(x, y, factor);
+  this->BlockMatrix2D::sq_matrices[0]->multiply(x, y, factor);
 }
 
 #endif // #ifdef __2D__

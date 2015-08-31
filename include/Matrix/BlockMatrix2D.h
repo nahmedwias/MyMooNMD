@@ -1,6 +1,6 @@
 /** ************************************************************************ 
 *
-* @class     SystemMat2D
+* @class     BlockMatrix2D
 * @brief     stores the information of a 2D system matrix
 * 
 * This is a base class. Derived classes for differnet problem types exist and 
@@ -12,14 +12,14 @@
 * @history Ulrich Wilbrandt, June 2015, added some linear algebra routines
 * 
 * ************************************************************************  */
-#ifndef __SYSTEMMAT2D__
-#define __SYSTEMMAT2D__
+#ifndef __BLOCKMATRIX2D__
+#define __BLOCKMATRIX2D__
 
 #include <SquareMatrix2D.h>
 #include <Matrix2D.h>
 #include <vector>
 
-class SystemMat2D
+class BlockMatrix2D
 {
   protected:
     
@@ -46,7 +46,7 @@ class SystemMat2D
      * This initializes the vectors with nullptr. The vectors are filled within
      * the derived classes. 
      */
-    SystemMat2D(unsigned int n_spaces, unsigned int n_sq_matrices,
+    BlockMatrix2D(unsigned int n_spaces, unsigned int n_sq_matrices,
                 unsigned int n_rect_matrices)
         : fe_spaces(n_spaces, nullptr), sq_matrices(n_sq_matrices, nullptr),
           rect_matrices(n_rect_matrices, nullptr), defect(nullptr)
@@ -61,13 +61,13 @@ class SystemMat2D
      * 
      * Note that the pointers to the finite element spaces are copied, while new
      * matrices are created using the same structures as in the given 
-     * SystemMat2D.
+     * BlockMatrix2D.
      *
      * @param mat input block matrix
      */
-    SystemMat2D(const SystemMat2D & mat);
+    BlockMatrix2D(const BlockMatrix2D & mat);
     
-    virtual ~SystemMat2D();
+    virtual ~BlockMatrix2D();
     
     /** 
      * @brief adding a scaled matrix to this matrix
@@ -81,7 +81,7 @@ class SystemMat2D
      * Note that this only works if the sparsity structure is the same for this
      * matrix and A.
      */
-    void add_active(const SystemMat2D &A, double factor = 1.0);
+    void add_active(const BlockMatrix2D &A, double factor = 1.0);
     
     /** 
      * @brief adding a scaled matrix to this matrix
@@ -92,7 +92,7 @@ class SystemMat2D
      * Note that this only works if the sparsity structure is the same for this
      * matrix and A.
      */
-    void add(const SystemMat2D &A, double factor = 1.0);
+    void add(const BlockMatrix2D &A, double factor = 1.0);
     
     /** 
      * @brief scale this matrix by a factor
@@ -161,15 +161,15 @@ class SystemMat2D
     virtual unsigned int n_total_entries() const; // total number of entries
     
     /**
-     * @brief copy all entries of all submatrices from 'm' to this SystemMat2D
+     * @brief copy all entries of all submatrices from 'm' to this BlockMatrix2D
      *
-     * This is only possible if the other SystemMat2D 'm' has the same
+     * This is only possible if the other BlockMatrix2D 'm' has the same
      * structure, i.e. the same number of matrices and the matrices have the 
      * same sparsity structure. Otherwise the program will throw or terminate.
      *
-     * @param m other SystemMat2D to be copied
+     * @param m other BlockMatrix2D to be copied
      */
-    SystemMat2D & operator=(SystemMat2D const &m);
+    BlockMatrix2D & operator=(BlockMatrix2D const &m);
 };
 
-#endif // __SYSTEMMAT2D__
+#endif // __BLOCKMATRIX2D__

@@ -19,12 +19,13 @@
 
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
-#include <SystemMatScalar3D.h>
+#include <BlockMatrixCD3D.h>
 #include <Example_CD3D.h>
 #include <vector>
 
 #ifdef _MPI
-//#include "mpi.h"
+#include "mpi.h"
+#include <MeshPartition.h>
 #include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
 
@@ -42,7 +43,7 @@ class CD3D
      * 
      * More entries in this vector only for multigrid.
      */
-    std::vector<TSystemMatScalar3D*> matrix;
+    std::vector<BlockMatrixCD3D*> matrix;
     
     /** @brief the right hand side vector 
      * 
@@ -124,7 +125,7 @@ class CD3D
     void output(int i = -1);
     
     // getters and setters
-    TSystemMatScalar3D* getMatrix() const
+    BlockMatrixCD3D* getMatrix() const
     { return matrix[0]; }
     double* getRhs() const
     { return rhs[0]; }
@@ -142,6 +143,8 @@ class CD3D
     #ifdef _MPI
     TParFECommunicator3D *Get_ParComm(int level)
     { return ParComm[level]; }
+    unsigned int get_total_dof() const;
+    unsigned int get_n_total_cells() const;
     #endif
 };
 

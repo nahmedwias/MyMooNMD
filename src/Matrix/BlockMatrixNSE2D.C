@@ -1,5 +1,5 @@
 /** ************************************************************************ 
-* @brief     source file for TSystemMatNSE2D
+* @brief     source file for BlockMatrixNSE2D
 * @author    Sashikumaar Ganesan, 
 * @date      23.08.14
 * @History 
@@ -8,7 +8,7 @@
 #ifdef __2D__
 
 #include <Database.h>
-#include <SystemMatNSE2D.h>
+#include <BlockMatrixNSE2D.h>
 #include <Assemble2D.h>
 #include <FEVectFunct2D.h>
 #include <AuxParam2D.h>
@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
+BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
                                  TFEFunction2D *pressure)
-    : SystemMat2D(2, 5, 4) // 2 spaces, 5 square, 4 rectangular matrices
+    : BlockMatrix2D(2, 5, 4) // 2 spaces, 5 square, 4 rectangular matrices
                            // the last two are overwritten depending on NSTYPE
 {
   //store the FEspaces and fefunct
@@ -137,7 +137,7 @@ TSystemMatNSE2D::TSystemMatNSE2D(TFEVectFunct2D *velocity,
     }
   }
 
-TSystemMatNSE2D::~TSystemMatNSE2D()
+BlockMatrixNSE2D::~BlockMatrixNSE2D()
 {
   delete sq_matrices[0]->GetStructure(); // delete structure of all A matrices
   if(TDatabase::ParamDB->NSTYPE == 14)
@@ -152,15 +152,15 @@ TSystemMatNSE2D::~TSystemMatNSE2D()
     delete mat;
 }
 
-void TSystemMatNSE2D::Init(BoundValueFunct2D *U1BoundValue,
+void BlockMatrixNSE2D::Init(BoundValueFunct2D *U1BoundValue,
                            BoundValueFunct2D *U2BoundValue)
 {
   // save the boundary values  
   this->BoundaryValues[0] = U1BoundValue;
   this->BoundaryValues[1] = U2BoundValue;
-} // TSystemMatNSE2D::Init
+} // BlockMatrixNSE2D::Init
 
-void TSystemMatNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
+void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
 {
   // reset the matrices to zero
   for(auto mat : sq_matrices)
@@ -250,9 +250,9 @@ void TSystemMatNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
   memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
   memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
          N_DirichletDof * SizeOfDouble);
-} // TSystemMatNSE2D::Assemble(...)
+} // BlockMatrixNSE2D::Assemble(...)
 
-void TSystemMatNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
+void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
                                         double *rhs)
 {
   int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
@@ -361,15 +361,15 @@ void TSystemMatNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
   memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
   memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
          N_DirichletDof * SizeOfDouble);
-} //TSystemMatNSE2D::AssembleNonLinear(
+} //BlockMatrixNSE2D::AssembleNonLinear(
 
-void TSystemMatNSE2D::GetResidual(double *sol, double *rhs, double *res)
+void BlockMatrixNSE2D::GetResidual(double *sol, double *rhs, double *res)
 {
   this->defect((TSquareMatrix**) &sq_matrices[0], (TMatrix**) &rect_matrices[0],
                sol, rhs, res);
-} // TSystemMatNSE2D::GetResidual
+} // BlockMatrixNSE2D::GetResidual
 
-void TSystemMatNSE2D::Solve(double *sol, double *rhs)
+void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
 {
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
@@ -418,15 +418,15 @@ void TSystemMatNSE2D::Solve(double *sol, double *rhs)
   }
 }
 
-void TSystemMatNSE2D::apply(const double *x, double *y, double factor) const
+void BlockMatrixNSE2D::apply(const double *x, double *y, double factor) const
 {
-  unsigned int n_total_rows = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  unsigned int n_total_rows = this->BlockMatrix2D::sq_matrices[0]->GetN_Rows();
   // reset y
   memset(y, 0.0, n_total_rows*SizeOfDouble);
   this->apply_scaled_add(x, y, factor);
 }
 
-void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y, 
+void BlockMatrixNSE2D::apply_scaled_add(const double *x, double *y, 
                                        double factor) const
 {
   if(factor == 0.0)
@@ -434,61 +434,61 @@ void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y,
     return;
   
   // number of velocity degrees of freedom
-  unsigned int n_v = this->SystemMat2D::sq_matrices[0]->GetN_Rows();
+  unsigned int n_v = this->BlockMatrix2D::sq_matrices[0]->GetN_Rows();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->SystemMat2D::rect_matrices[0]->transpose_multiply(
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->BlockMatrix2D::rect_matrices[0]->transpose_multiply(
                                                     x+2*n_v, y,       factor);
       
-      this->SystemMat2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
-      this->SystemMat2D::rect_matrices[1]->transpose_multiply(
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
+      this->BlockMatrix2D::rect_matrices[1]->transpose_multiply(
                                                     x+2*n_v, y+n_v,   factor);
       
-      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 2:
-      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->SystemMat2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->BlockMatrix2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
       
-      this->SystemMat2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
-      this->SystemMat2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
+      this->BlockMatrix2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
       
-      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 3:
-      ErrMsg("TSystemMatNSE2D::apply_scaled_add not yet implemented");
-      throw("TSystemMatNSE2D::apply_scaled_add not yet implemented");
-      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
-      this->SystemMat2D::rect_matrices[0]->transpose_multiply(
+      ErrMsg("BlockMatrixNSE2D::apply_scaled_add not yet implemented");
+      throw("BlockMatrixNSE2D::apply_scaled_add not yet implemented");
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->BlockMatrix2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
+      this->BlockMatrix2D::rect_matrices[0]->transpose_multiply(
                                                     x+2*n_v, y,       factor);
       
-      this->SystemMat2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
-      this->SystemMat2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
-      this->SystemMat2D::rect_matrices[1]->transpose_multiply(
+      this->BlockMatrix2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
+      this->BlockMatrix2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
+      this->BlockMatrix2D::rect_matrices[1]->transpose_multiply(
                                                     x+2*n_v, y+n_v,   factor);
       
-      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 4:
     case 14:
-      this->SystemMat2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->SystemMat2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
-      this->SystemMat2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
+      this->BlockMatrix2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
+      this->BlockMatrix2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
       
-      this->SystemMat2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
-      this->SystemMat2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
-      this->SystemMat2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
+      this->BlockMatrix2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
+      this->BlockMatrix2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
       
-      this->SystemMat2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->SystemMat2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
       if(TDatabase::ParamDB->NSTYPE == 14)
-      this->SystemMat2D::sq_matrices[4]->multiply(  x+2*n_v, y+2*n_v, factor);
+      this->BlockMatrix2D::sq_matrices[4]->multiply(  x+2*n_v, y+2*n_v, factor);
       break;
     default:
       ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
@@ -496,17 +496,17 @@ void TSystemMatNSE2D::apply_scaled_add(const double *x, double *y,
   }
 }
 
-unsigned int TSystemMatNSE2D::n_rows() const
+unsigned int BlockMatrixNSE2D::n_rows() const
 {
   return 3;
 }
 
-unsigned int TSystemMatNSE2D::n_cols() const
+unsigned int BlockMatrixNSE2D::n_cols() const
 {
   return 3;
 }
 
-unsigned int TSystemMatNSE2D::n_total_rows() const
+unsigned int BlockMatrixNSE2D::n_total_rows() const
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -535,7 +535,7 @@ unsigned int TSystemMatNSE2D::n_total_rows() const
   }
 }
 
-unsigned int TSystemMatNSE2D::n_total_cols() const
+unsigned int BlockMatrixNSE2D::n_total_cols() const
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -557,7 +557,7 @@ unsigned int TSystemMatNSE2D::n_total_cols() const
   }
 }
 
-unsigned int TSystemMatNSE2D::n_total_entries() const
+unsigned int BlockMatrixNSE2D::n_total_entries() const
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
