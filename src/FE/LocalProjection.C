@@ -383,7 +383,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -652,7 +652,7 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -869,7 +869,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -1122,7 +1122,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -1397,7 +1397,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -1975,7 +1975,7 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2194,7 +2194,7 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2422,7 +2422,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2674,7 +2674,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -3367,7 +3367,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
     0.57735026918962576450914878050195746
   };
   TCollection *Coll;
-  TFESpace2D *fespace_fine, *fespace_coarse;
+  const TFESpace2D *fespace_fine, *fespace_coarse;
   TBaseCell *cell, *parent_cell, *child_cell;
 
   OutPut("compute local projection to Q0 on coarse grid"<<endl);
@@ -3523,7 +3523,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
   };
   TCollection *coll_coarse, *coll;
   TBaseCell *cell, *child_cell;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
@@ -3745,7 +3745,7 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
 
   bool SecondDer[1] = { false };
 
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TCollection *coll;
   TFE2D *CurrentElement, *CoarseElement;
   TBaseFunct2D *BF, *CoarseBF;
@@ -3886,7 +3886,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   int CellOrder, CoarseOrder;
   int N_CoarseDOF, N_DOF, N_UDOF, N_WDOF;
   TCollection *Coll;
-  TFESpace2D *fespace, *U_fespace, *W_fespace;
+  const TFESpace2D *fespace, *U_fespace, *W_fespace;
   FE2D CurrEleID, U_CurrEleID, W_CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement, *U_CurrentElement, *W_CurrentElement;
