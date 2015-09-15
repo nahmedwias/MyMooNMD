@@ -19,40 +19,51 @@
 
 #include <FEFunction2D.h>
 #include <BlockMatrixCD2D.h>
+#include <BlockVector.h>
 #include <Example_CD2D.h>
 #include <vector>
+#include <deque>
 
 class CD2D
 {
   protected:
-    /** @brief the system matrix (here one block)
-     * 
-     * More entries in this vector only for multigrid.
-     */
-    std::vector<BlockMatrixCD2D*> matrix;
     
-    /** @brief the right hand side vector 
+    /** @brief store a complete system on a particular grid
      * 
-     * More entries in this vector only for multigrid.
+     * This combines a matrix, rhs, solution, space and function needed to 
+     * describe one convection-diffusion-reaction problem in 2D.
      */
-    std::vector<double*> rhs;
+    struct System_per_grid
+    {
+      /** @brief Finite Element space */
+      TFESpace2D fe_space;
+      /** @brief the system matrix */
+      BlockMatrixCD2D matrix;
+      /** @brief the right hand side vector */
+      BlockVector rhs;
+      /** @brief solution vector with one component. */
+      BlockVector solution;
+      /** @brief Finite Element function */
+      TFEFunction2D fe_function;
+      
+      /** @brief constructor */
+      System_per_grid( const Example_CD2D& example, TCollection& coll );
+    };
     
-    /** @brief Finite Element function 
+    /** @brief a complete system on each grid 
      * 
-     * The finite element function knows its space and finite element vector so
-     * that those two are not explicitly stored in this class.
-     * 
-     * More entries in this vector only for multigrid. 
+     * Note that the size of this deque is at least one and larger only in case
+     * of multigrid.
      */
-    std::vector<TFEFunction2D*> function;
+    std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D* example;
+    const Example_CD2D& example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    TMultiGrid2D * multigrid;
+    std::shared_ptr<TMultiGrid2D> multigrid;
     
     /** @brief set parameters in database
      * 
@@ -66,13 +77,24 @@ class CD2D
     void set_parameters();
     
   public:
+    
     /** @brief constructor 
      * 
-     * The domain must have been refined a couple of times already. On the finest
-     * level the finite element spaces and functions as well as matrices, 
-     * solution and right hand side vectors are initialized. 
+     * This constructor calls the other constructor creating an Example_CD2D
+     * object for you. See there for more documentation.
      */
-    CD2D(TDomain *domain, const Example_CD2D* _example = NULL);
+    CD2D(const TDomain& domain, int reference_id = -4711);
+    
+    /** @brief constructor 
+     * 
+     * The domain must have been refined a couple of times already. On the 
+     * finest level the finite element spaces and functions as well as 
+     * matrices, solution and right hand side vectors are initialized. 
+     * 
+     * The reference_id can be used if only the cells with the give reference_id
+     * should be used. The default implies all cells.
+     */
+    CD2D(const TDomain& domain, const Example_CD2D&, int reference_id = -4711);
     
     /** @brief standard destructor */
     ~CD2D();
@@ -99,19 +121,19 @@ class CD2D
     void output(int i = -1);
     
     // getters and setters
-    BlockMatrixCD2D* getMatrix() const
-    { return matrix[0]; }
-    double* getRhs() const
-    { return rhs[0]; }
-    TFEFunction2D *get_function() const
-    { return function[0]; }
-    TFESpace2D * getSpace() const
-    { return function[0]->GetFESpace2D(); }
-    double * getSolution() const
-    { return function[0]->GetValues(); }
-    unsigned int getSize() const
-    { return function[0]->GetLength(); }
-    const Example_CD2D* getExample() const
+    const BlockMatrixCD2D & get_matrix() const
+    { return this->systems.front().matrix; }
+    const BlockVector & get_rhs() const
+    { return this->systems.front().rhs; }
+    const TFEFunction2D & get_function() const
+    { return this->systems.front().fe_function; }
+    const TFESpace2D & get_space() const
+    { return this->systems.front().fe_space; }
+    const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
+    unsigned int get_size() const
+    { return this->systems.front().solution.length(); }
+    const Example_CD2D& get_example() const
     { return example; }
 };
 

@@ -18,8 +18,7 @@
 #include <FEVectFunct2D.h>
 #include <Example_NSE2D.h>
 #include <BlockMatrixNSE2D.h>
-#include <Example_CD2D.h>
-#include <vector>
+#include <BlockVector.h>
 #include <MultiGrid2D.h>
 
 
@@ -30,49 +29,63 @@
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
 
+#include <vector>
+#include <deque>
+
 class NSE2D
 {
   protected:
-    /** @brief the system matrix
-     * 
-     * This matrix consists of several blocks. What exactly these blocks mean
-     * and how many there are depends on TDatabase::ParamDB->NSTYPE.
-     * 
-     * More entries in this vector only for multigrid.
-     */
-    std::vector<BlockMatrixNSE2D*> matrix;
     
-    /** @brief the right hand side vector 
+    /** @brief store a complete system on a particular grid
      * 
-     * More entries in this vector only for multigrid.
+     * This combines a matrix, rhs, solution, spaces and functions needed to 
+     * describe one Darcy problem in 2D.
      */
-    std::vector<double*> rhs;
+    struct System_per_grid
+    {
+      /** @brief Finite Element space for the velocity */
+      TFESpace2D velocity_space;
+      /** @brief Finite Element space for the pressure */
+      TFESpace2D pressure_space;
+      /** @brief the system matrix (depends strongly on 
+       *         TDatabase::ParamDB->NSTYPE)
+       *  [ A11  A12  B1T ]
+       *  [ A21  A22  B2T ]
+       *  [ B1   B2   C   ]
+       */
+      BlockMatrixNSE2D matrix;
+      /** @brief the right hand side vector */
+      BlockVector rhs;
+      /** @brief solution vector with two components. */
+      BlockVector solution;
+      /** @brief Finite Element function for velocity */
+      TFEVectFunct2D u;
+      /** @brief Finite Element function for pressure */
+      TFEFunction2D p;
+      
+      /** @brief constructor */
+      System_per_grid(const Example_NSE2D& example, TCollection& coll);
+    };
     
-    /** @brief Finite Element functions for velocity (vector) and pressure and 
-     * the velocity components (scalars)
+    /** @brief a complete system on each grid 
      * 
-     * The finite element functions know their spaces and finite element vectors
-     * so that those two are not explicitly stored in this class.
-     * 
-     * More entries in these vectors only for multigrid. 
+     * Note that the size of this deque is at least one and larger only in case
+     * of multigrid.
      */
-    std::vector<TFEVectFunct2D *> u;
-    std::vector<TFEFunction2D *> p;
-    std::vector<TFEFunction2D *> u1;
-    std::vector<TFEFunction2D *> u2;
+    std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D* example;
+    const Example_NSE2D & example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    TNSE_MultiGrid * multigrid;
+    std::shared_ptr<TNSE_MultiGrid> multigrid;
     
     /** @brief an array to store defect, so that we don't have to reallocate
      *         so often
      */
-    std::vector<double> defect;
+    BlockVector defect;
 
     /** @brief stores the norms of the residuals of previous iterations.
      * The default length is 10
@@ -96,13 +109,26 @@ class NSE2D
     void set_parameters();
     
   public:
+    
     /** @brief constructor 
      * 
-     * The domain must have been refined a couple of times already. On the finest
-     * level the finite element spaces and functions as well as matrices, 
-     * solution and right hand side vectors are initialized. 
+     * This constructor calls the other constructor creating an Example_NSE2D
+     * object for you. See there for more documentation.
      */
-    NSE2D(TDomain *domain, const Example_NSE2D* _example = NULL);
+    NSE2D(const TDomain& domain, int reference_id = -4711);
+    
+    /** @brief constructor 
+     * 
+     * The domain must have been refined a couple of times already if you want
+     * to use multigrid. On the finest level the finite element spaces and 
+     * functions as well as matrices, solution and right hand side vectors are 
+     * initialized. 
+     * 
+     * The reference_id can be used if only the cells with the give reference_id
+     * should be used. The default implies all cells.
+     */
+    NSE2D(const TDomain & domain, const Example_NSE2D & _example,
+          unsigned int reference_id = -4711);
     
     /** @brief standard destructor */
     ~NSE2D();
@@ -157,32 +183,34 @@ class NSE2D
     /**
    * @brief initialize multigrid levels for different NSTYPE's
    */
-    TNSE_MGLevel* mg_levels(int i, int index);
+    TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
     /**
    * @brief multigrid solver
    */
     void mg_solver();
     
     // getters and setters
-    BlockMatrixNSE2D* getMatrix() const
-    { return matrix[0]; }
-    double* getRhs() const
-    { return rhs[0]; }
-    TFEVectFunct2D *get_velocity() const
-    { return u[0]; }
-    TFEFunction2D *get_velocity_component(int i) const
-    { return (i==0) ? u1[0] : u2[0]; }
-    TFEFunction2D *get_pressure() const
-    { return p[0]; }
-    TFESpace2D * get_velocity_space() const
-    { return u[0]->GetFESpace2D(); }
-    TFESpace2D * get_pressure_space() const
-    { return p[0]->GetFESpace2D(); }
-    double * get_solution() const
-    { return u[0]->GetValues(); }
+    const BlockMatrixNSE2D & get_matrix() const
+    { return this->systems.front().matrix; }
+    const BlockVector & get_rhs() const
+    { return this->systems.front().rhs; }
+    const TFEVectFunct2D & get_velocity() const
+    { return this->systems.front().u; }
+    // try not to use this as it is not const
+    TFEFunction2D *get_velocity_component(int i)
+    { return (i==0) ? this->systems.front().u.GetComponent(0)
+                    : this->systems.front().u.GetComponent(1); }
+    const TFEFunction2D & get_pressure() const
+    { return this->systems.front().p; }
+    const TFESpace2D & get_velocity_space() const
+    { return this->systems.front().velocity_space; }
+    const TFESpace2D & get_pressure_space() const
+    { return this->systems.front().pressure_space; }
+    const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
     unsigned int get_size() const
-    { return 2*u1[0]->GetLength() + p[0]->GetLength(); }
-    const Example_NSE2D* get_example() const
+    { return this->systems.front().solution.length(); }
+    const Example_NSE2D & get_example() const
     { return example; }
 };
 
