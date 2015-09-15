@@ -13,29 +13,26 @@
 #ifndef __SYSTEMMATNSE2D__
 #define __SYSTEMMATNSE2D__
 
-#include <BlockMatrix2D.h>
+#include <SquareMatrix2D.h>
+#include <Matrix2D.h>
+#include <BlockMatrix.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D  NSE system matrix */
-class BlockMatrixNSE2D : public BlockMatrix2D
+class BlockMatrixNSE2D : public BlockMatrix
 {
   protected:
-    /** Boundary conditon */
-    BoundCondFunct2D *BoundaryConditions[2];
     
-    /** Boundary values */
-    BoundValueFunct2D *BoundaryValues[2];
+    /** @brief Boundary value */ 
+    std::array<const BoundValueFunct2D*, 3> boundary_values;
     
   public:
     /** constructor */
-     BlockMatrixNSE2D(TFEVectFunct2D *Velocity, TFEFunction2D *p);
+     BlockMatrixNSE2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
+                      const BoundValueFunct2D*const*BoundValue);
      
     /** destrcutor */
     ~BlockMatrixNSE2D();
-    
-    /** methods */
-    /** Initilize the discrete forms and the matrices */
-    void Init(BoundValueFunct2D *U1BoundValue, BoundValueFunct2D *U2BoundValue);
     
     /** assemble the system matrix */
     void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
@@ -75,11 +72,75 @@ class BlockMatrixNSE2D : public BlockMatrix2D
      */
     void apply_scaled_add(const double *x, double *y, double factor = 1.) const;
     
-    unsigned int n_rows() const; // number of block rows
-    unsigned int n_cols() const; // number of block columns
-    unsigned int n_total_rows() const; // total number of rows (> nRows)
-    unsigned int n_total_cols() const; // total number of columns (> nCols)
-    unsigned int n_total_entries() const; // total number of entries
+    
+    /** @brief return the test or ansatz space for a given block
+     * 
+     * @param b the index of the block whose test/ansatz space is returned
+     * @param test true to return the test space, false to return the ansatz 
+     *             space
+     */
+    const TFESpace2D * get_space_of_block(unsigned int b, bool test) const;
+    
+    /** @brief return the velocity-velocity block
+     * 
+     * This is created as a TSquareMatrix2D in the constructor of this class. 
+     * Therefore the following cast works.
+     * 
+     * There are four A-blocks: A11 (i=0), A12 (i=1), A21 (i=2), A22 (i=3).
+     */
+    TSquareMatrix2D * get_A_block(unsigned int i = 0);
+    
+    /** @brief return the velocity-velocity block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TSquareMatrix2D * get_A_block(unsigned int i = 0) const;
+    
+    /** @brief return the pressure-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TSquareMatrix2D * get_C_block()
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get(); }
+    
+    /** @brief return the pressure-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TSquareMatrix2D * get_C_block() const
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get(); }
+    
+    /** @brief return the velocity-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TMatrix2D * get_BT_block(unsigned int i = 0);
+    
+    /** @brief return the velocity-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TMatrix2D * get_BT_block(unsigned int i = 0) const;
+    
+    /** @brief return the pressure-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TMatrix2D * get_B_block(unsigned int i = 0);
+    
+    /** @brief return the pressure-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TMatrix2D * get_B_block(unsigned int i = 0) const;
+    
+    /** @brief return the finite element space for the velocity */
+    const TFESpace2D * get_velocity_space() const
+    { return this->get_A_block()->GetFESpace(); }
+    
+    /** @brief return the finite element space for the pressure */
+    const TFESpace2D * get_pressure_space() const
+    { return this->get_B_block()->GetStructure()->GetTestSpace2D(); }
 };
 
 #endif // __SYSTEMMATNSE2D__

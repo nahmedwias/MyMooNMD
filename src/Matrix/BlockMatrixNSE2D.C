@@ -5,8 +5,6 @@
 * @History 
 * ************************************************************************  */
 
-#ifdef __2D__
-
 #include <Database.h>
 #include <BlockMatrixNSE2D.h>
 #include <Assemble2D.h>
@@ -20,29 +18,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
-                                 TFEFunction2D *pressure)
-    : BlockMatrix2D(2, 5, 4) // 2 spaces, 5 square, 4 rectangular matrices
-                           // the last two are overwritten depending on NSTYPE
+/** ************************************************************************ */
+BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
+                                   const TFESpace2D& pressure,
+                                   const BoundValueFunct2D*const*BoundValue)
+    : BlockMatrix(Problem_type::NavierStokes, 2),
+      boundary_values({BoundValue[0], BoundValue[1], BoundValue[2]})
 {
-  //store the FEspaces and fefunct
-  this->fe_spaces[0] = velocity->GetFESpace2D(); // velocity space
-  this->fe_spaces[1] = pressure->GetFESpace2D(); // pressure space
-  // save the boundary condition
-  this->BoundaryConditions[0] = fe_spaces[0]->GetBoundCondition();
-  this->BoundaryConditions[1] = fe_spaces[0]->GetBoundCondition();
-  
   // build matrices
   // first build matrix structure
-  TSquareStructure2D *sqstructureA = new TSquareStructure2D(fe_spaces[0]);
-  sqstructureA->Sort();  // sort column numbers: numbers are in increasing order
+  TSquareStructure2D *sqstructureA = new TSquareStructure2D(&velocity);
+  sqstructureA->Sort(); // sort column numbers: numbers are in increasing order
       
-  TStructure2D *structureB = new TStructure2D(fe_spaces[1], fe_spaces[0]);
-  TStructure2D *structureBT = new TStructure2D(fe_spaces[0], fe_spaces[1]);
+  TStructure2D *structureB = new TStructure2D(&pressure, &velocity);
+  
+  // number of pressure degrees of freedom
+  unsigned int n_p = pressure.GetN_DegreesOfFreedom();
   
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
+    {
       /*
        * ( A  0  B1^T )
        * ( 0  A  B2^T )
@@ -50,13 +46,21 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
        * 
        * B1^T and B2^T are not explicitly stored.
        */
-      this->sq_matrices = { new TSquareMatrix2D(sqstructureA) };
-      this->rect_matrices = { new TMatrix2D(structureB),
-                              new TMatrix2D(structureB) };
-      this->defect = Defect_NSE1;
-      break;
+      unsigned int n_v = velocity.GetN_DegreesOfFreedom();
       
+      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
+      //this->BlockMatrix::blocks[2] stays a nullptr
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
+      //this->BlockMatrix::blocks[5] stays a nullptr
+      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      break;
+    }
     case 2:
+    {
       /*
        * ( A  0  B1T )
        * ( 0  A  B2T )
@@ -64,15 +68,22 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
        * 
        * B1T and B2T are explicitly stored.
        */
-      this->sq_matrices = { new TSquareMatrix2D(sqstructureA)};
-      this->rect_matrices = { new TMatrix2D(structureB),
-                              new TMatrix2D(structureB),
-                              new TMatrix2D(structureBT),
-                              new TMatrix2D(structureBT) };
-      this->defect = Defect_NSE2;
-      break;
+      unsigned int n_v = velocity.GetN_DegreesOfFreedom();
+      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
       
+      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      break;
+    }
     case 3:
+    {
       /*
        * ( A11 A12 B1^T )
        * ( A21 A22 B2^T )
@@ -80,35 +91,41 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
        * 
        * B1^T and B2^T are not explicitly stored.
        */
-      this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA) };
-      this->rect_matrices = { new TMatrix2D(structureB),
-                              new TMatrix2D(structureB) };
-      this->defect = Defect_NSE3;
+      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
+      //this->BlockMatrix::blocks[2] stays a nullptr
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
+      //this->BlockMatrix::blocks[5] stays a nullptr
+      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
       break;
-      
+    }
     case 4:
+    {
       /*
        * ( A11 A12 B1T )
        * ( A21 A22 B2T )
-       * ( B1  B2  0    )
+       * ( B1  B2  0   )
        * 
        * B1T and B2T are explicitly stored.
        */
-      this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA) };
-      this->rect_matrices = { new TMatrix2D(structureB),
-                              new TMatrix2D(structureB),
-                              new TMatrix2D(structureBT),
-                              new TMatrix2D(structureBT)};
-      this->defect = Defect_NSE4;
-      break;
+      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
       
+      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      break;
+    }
     case 14:
+    {
       /*
        * ( A11 A12 B1^T )
        * ( A21 A22 B2^T )
@@ -116,74 +133,105 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(TFEVectFunct2D *velocity,
        * 
        * B1^T and B2^T are explicitly stored.
        */
-      this->sq_matrices = { new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(sqstructureA),
-                            new TSquareMatrix2D(new TSquareStructure2D(
-                                                fe_spaces[1])) };
-      this->rect_matrices = { new TMatrix2D(structureB),
-                              new TMatrix2D(structureB),
-                              new TMatrix2D(structureBT),
-                              new TMatrix2D(structureBT) };
-      // a method to compute the defect for NSTYPE 14 does not exist in 2D,
-      // therefore we take the one for NSTYPE 4, which excludes C
-      OutPut("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4\n");
-      this->defect = Defect_NSE4;
+      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
+      TSquareStructure2D *sqstructureC = new TSquareStructure2D(&pressure);
+      // sort column numbers: numbers are in increasing order
+      sqstructureC->Sort();
+  
+      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(sqstructureC));
       break;
-    default:
-      OutPut("Unknown NSETYPE, it must be 1 to 4" << endl);
-      exit(4711);
     }
+    default:
+      ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
+      break;
   }
-
-BlockMatrixNSE2D::~BlockMatrixNSE2D()
-{
-  delete sq_matrices[0]->GetStructure(); // delete structure of all A matrices
-  if(TDatabase::ParamDB->NSTYPE == 14)
-    delete sq_matrices.back()->GetStructure(); // delete structure of matrix C
-  delete rect_matrices[0]->GetStructure(); // delete structure of matrix B
-  if(TDatabase::ParamDB->NSTYPE != 1 && TDatabase::ParamDB->NSTYPE != 3)
-    delete rect_matrices.back()->GetStructure(); //delete structure of matrix BT
-  // delete matrices
-  for(auto mat : sq_matrices)
-    delete mat;
-  for(auto mat : rect_matrices)
-    delete mat;
 }
 
-void BlockMatrixNSE2D::Init(BoundValueFunct2D *U1BoundValue,
-                           BoundValueFunct2D *U2BoundValue)
+/** ************************************************************************ */
+BlockMatrixNSE2D::~BlockMatrixNSE2D()
 {
-  // save the boundary values  
-  this->BoundaryValues[0] = U1BoundValue;
-  this->BoundaryValues[1] = U2BoundValue;
-} // BlockMatrixNSE2D::Init
+  // delete structure of all A matrices
+  delete this->BlockMatrix::blocks[0]->GetStructure(); 
+  // delete structure of all BT matrices
+  delete this->BlockMatrix::blocks[2]->GetStructure();
+  // delete structure of all B matrices
+  delete this->BlockMatrix::blocks[6]->GetStructure();
+  // delete structure of matrix C
+  delete this->BlockMatrix::blocks[8]->GetStructure();
+}
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
 {
-  // reset the matrices to zero
-  for(auto mat : sq_matrices)
-    mat->Reset();
-  for(auto mat : rect_matrices)
-    mat->Reset();
-  
-  int N_Rhs = 2;
+  // this really needs to be rewritten, especially the Assemble2D function!
+  int N_Rhs = 3;
   int N_FESpaces = 2;
-  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
-  int N_P = this->fe_spaces[1]->GetN_DegreesOfFreedom();
-  int N_Active = this->fe_spaces[0]->GetN_ActiveDegrees();
+  const TFESpace2D * v_space = this->get_velocity_space();
+  const TFESpace2D * p_space = this->get_pressure_space();
+  int N_U = v_space->GetN_DegreesOfFreedom();
+  int N_P = p_space->GetN_DegreesOfFreedom();
+  int N_Active = v_space->GetN_ActiveDegrees();
   int N_DirichletDof = N_U - N_Active;
   
   double *RHSs[3] = {rhs, rhs + N_U, rhs + 2 * N_U};
   memset(rhs, 0, (2 * N_U + N_P) * SizeOfDouble);
   
-  TFESpace2D *fesprhs[3] = {fe_spaces[0], fe_spaces[0], fe_spaces[1]};
+  // what follows is done only to call Assemble2D correctly
+  const TFESpace2D *fespmat[2] = {v_space, p_space};
+  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+  
+  unsigned int n_sq_mat = 4;
+  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
+    n_sq_mat = 2;
+  if(TDatabase::ParamDB->NSTYPE == 14)
+    n_sq_mat = 5;
+  
+  TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
+                                      nullptr, nullptr};
+  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
+    sq_matrices[1] = this->get_A_block(3); // no more square blocks used
+  else
+  {
+    sq_matrices[1] = this->get_A_block(1);
+    sq_matrices[2] = this->get_A_block(2);
+    sq_matrices[3] = this->get_A_block(3);
+    if(TDatabase::ParamDB->NSTYPE == 14)
+      sq_matrices[3] = this->get_C_block();
+  }
+  
+  unsigned int n_rect_mat;
+  TMatrix2D * rect_matrices[4] = {nullptr, nullptr, nullptr, nullptr};
+  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 3)
+  {
+    n_rect_mat = 2;
+    rect_matrices[0] = this->get_B_block(0);
+    rect_matrices[1] = this->get_B_block(1);
+  }
+  else
+  {
+    n_rect_mat = 4;
+    rect_matrices[0] = this->get_B_block(0);
+    rect_matrices[1] = this->get_B_block(1);
+    rect_matrices[2] = this->get_BT_block(0);
+    rect_matrices[3] = this->get_BT_block(1);
+  }
+  
+  BoundCondFunct2D * boundary_conditions[3] = {
+    v_space->GetBoundCondition(), v_space->GetBoundCondition(), 
+    p_space->GetBoundCondition() };
   
   // assemble
-  Assemble2D(N_FESpaces, &fe_spaces[0], sq_matrices.size(), &sq_matrices[0],
-             rect_matrices.size(), &rect_matrices[0], N_Rhs, RHSs, fesprhs,
-             BoundaryConditions, BoundaryValues, la);
+  Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+             n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+             boundary_conditions, this->boundary_values.data(), la);
   
   if((TDatabase::ParamDB->DISCTYPE == UPWIND) 
      && (!TDatabase::ParamDB->PROBLEM_TYPE == 3))
@@ -246,67 +294,44 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
     */
   } // (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=      
   
+  // remove ones in non-active rows in non-diagonal blocks
+  this->get_A_block(1)->reset_non_active();
+  this->get_A_block(2)->reset_non_active();
+  this->get_BT_block(0)->reset_non_active();
+  this->get_BT_block(1)->reset_non_active();
+  
   // set rhs for Dirichlet nodes
   memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
   memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
          N_DirichletDof * SizeOfDouble);
 } // BlockMatrixNSE2D::Assemble(...)
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
                                         double *rhs)
 {
-  int N_U = this->fe_spaces[0]->GetN_DegreesOfFreedom();
-  int N_Active = this->fe_spaces[0]->GetN_ActiveDegrees();
-  int N_DirichletDof = N_U - N_Active;
+  const TFESpace2D * v_space = this->get_velocity_space();
+  unsigned int n_sq_mat;
+  TSquareMatrix2D *sq_mat[2] = {this->get_A_block(0), this->get_A_block(3)};
+  // reset the matrices, because all terms are assembled again (including the 
+  // linear ones)
+  sq_mat[0]->reset();
+  sq_mat[1]->reset();
   
-  int N_SquareMatrices, last_sq;
-  TSquareMatrix2D *SQMATRICES[2];
+  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
+    n_sq_mat = 1;
+  else
+    n_sq_mat = 2;
   
-  // set the nonliner matrices
-  // the matrix blocks to which the nonlinear term contributes are reset to zero
-  // and then completely reassembled, including the linear and nonlinear terms.
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-    case 2:
-      SQMATRICES[0] = sq_matrices[0];
-      SQMATRICES[0]->Reset();
-      
-      N_SquareMatrices = 1;
-      break;
-      
-    case 3:
-    case 4:
-    case 14:
-      if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0)
-      {
-        SQMATRICES[0] = sq_matrices[0];
-        SQMATRICES[1] = sq_matrices[3];
-        SQMATRICES[0]->Reset();
-        SQMATRICES[1]->Reset();
-        
-        N_SquareMatrices = 2;
-        last_sq = 1;
-      }
-      else
-      {
-        // Newton method
-        cout << "Newton method not tested " << endl;
-        exit(0);
-      }
-      if(TDatabase::ParamDB->NSTYPE == 14)
-        OutPut("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4\n");
-      break;
-  } // switch(TDatabase::ParamDB->NSTYPE)
-  
-  int N_RectMatrices = 0;
-  int N_Rhs = 0;
-  int N_FESpaces = 1;
+  unsigned int n_rect_mat = 0;
+  unsigned int n_rhs = 0;
+  unsigned int n_fe_spaces = 1;
+  BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
   
   // assemble the nonlinear part of NSE
-  Assemble2D(N_FESpaces, &fe_spaces[0], N_SquareMatrices, SQMATRICES,
-             N_RectMatrices, NULL, N_Rhs, NULL, NULL, BoundaryConditions,
-             BoundaryValues, la);
+  Assemble2D(n_fe_spaces, &v_space, n_sq_mat, sq_mat, n_rect_mat, nullptr,
+             n_rhs, nullptr, nullptr, boundary_conditions, 
+             this->boundary_values.data(), la);
   
   // apply upwind disc
   if((TDatabase::ParamDB->DISCTYPE == UPWIND) 
@@ -317,7 +342,7 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
       case 1:
       case 2:
         // do upwinding with one matrix
-        UpwindForNavierStokes(la.GetCoeffFct(), SQMATRICES[0],
+        UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[0],
                               la.get_fe_function(0), la.get_fe_function(1));
         cout << "UPWINDING DONE : level " << endl;
         break;
@@ -327,9 +352,9 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
       case 14:
         // do upwinding with two matrices
         cout << "UPWINDING DONE : level " << endl;
-        UpwindForNavierStokes(la.GetCoeffFct(), SQMATRICES[0],
+        UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[0],
                               la.get_fe_function(0), la.get_fe_function(1));
-        UpwindForNavierStokes(la.GetCoeffFct(), SQMATRICES[last_sq],
+        UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[1],
                               la.get_fe_function(0), la.get_fe_function(1));
         break;
     } // endswitch
@@ -338,37 +363,50 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
   // slip with boundary condition
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
-    N_FESpaces = 1;
-    N_SquareMatrices = 4;
-    N_RectMatrices = 0;
-    N_Rhs = 0;
-    
-    SQMATRICES[0] = sq_matrices[0];
-    SQMATRICES[1] = sq_matrices[1];
-    SQMATRICES[2] = sq_matrices[2];
-    SQMATRICES[3] = sq_matrices[3];
-    
-    ErrMsg("Assemble2DSlipBC does not work");
-    exit(1);
-    // TAuxParam2D NSEaux;
+    ErrThrow("Assemble2DSlipBC does not work");
+    //n_fe_spaces = 1;
+    //n_sq_mat = 4;
+    //n_rect_mat = 0;
+    //n_rhs = 0;
+    //TSquareMatrix2D *sq_mat[4];
+    //sq_mat[0] = this->get_A_block(0);
+    //sq_mat[1] = this->get_A_block(1);
+    //sq_mat[2] = this->get_A_block(2);
+    //sq_mat[3] = this->get_A_block(3);
+    //
+    //TAuxParam2D NSEaux;
     //Assemble2DSlipBC(N_FESpaces, FeSpaces, N_SquareMatrices, SQMATRICES,
     //                 N_RectMatrices, NULL, N_Rhs, NULL, NULL, NULL,
     //                 BoundaryConditions, BoundaryValues, &NSEaux, 
     //                 la.get_fe_function(0), la.get_fe_function(1));
   }    // (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1
   
+  unsigned int N_U = v_space->GetN_DegreesOfFreedom();
+  unsigned int N_Active = v_space->GetN_ActiveDegrees();
+  unsigned int N_DirichletDof = N_U - N_Active;
   // set rhs for Dirichlet nodes
   memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
   memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
          N_DirichletDof * SizeOfDouble);
+  
+  if(this->combined_matrix)
+  {
+    // remove possibly defined combined matrix, because it is no longer up to
+    // date, after nonlinear terms are assembled.
+    delete this->combined_matrix->GetStructure();
+    this->combined_matrix.reset();
+  }
 } //BlockMatrixNSE2D::AssembleNonLinear(
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::GetResidual(double *sol, double *rhs, double *res)
 {
-  this->defect((TSquareMatrix**) &sq_matrices[0], (TMatrix**) &rect_matrices[0],
-               sol, rhs, res);
+  
+  
+  ErrThrow("BlockMatrixNSE2D::GetResidual not yet implemented\n");
 } // BlockMatrixNSE2D::GetResidual
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
 {
   switch(TDatabase::ParamDB->SOLVER_TYPE)
@@ -385,47 +423,51 @@ void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
-          DirectSolver(sq_matrices[0], rect_matrices[0], rect_matrices[1], rhs,
-                       sol);
+          DirectSolver(this->get_A_block(0), this->get_B_block(0),
+                       this->get_B_block(1), rhs, sol);
           break;
           
         case 2:
-          DirectSolver(sq_matrices[0], rect_matrices[2], rect_matrices[3],
-                       rect_matrices[0], rect_matrices[1], rhs, sol);
+          DirectSolver(this->get_A_block(0), this->get_BT_block(0), 
+                       this->get_BT_block(1), this->get_B_block(0), 
+                       this->get_B_block(1), rhs, sol);
           break;
           
         case 3:
-          ErrMsg("Solver not included for NSTYPE 3 in this version. " 
-                 << "try NSTYPE 4");
-          exit(1);
+          ErrThrow("Solver not included for NSTYPE 3 in this version. "
+                   + "try NSTYPE 4");
           break;
           
         case 4:
-          DirectSolver(sq_matrices[0], sq_matrices[1], sq_matrices[2],
-                       sq_matrices[3], rect_matrices[2], rect_matrices[3],
-                       rect_matrices[0], rect_matrices[1], rhs, sol);
+          DirectSolver(this->get_A_block(0), this->get_A_block(1), 
+                       this->get_A_block(2), this->get_A_block(3),
+                       this->get_BT_block(0),  this->get_BT_block(1),
+                       this->get_B_block(0), this->get_B_block(1), rhs, sol);
           break;
         case 14:
           OutPut("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4\n");
-          DirectSolver(sq_matrices[0], sq_matrices[1], sq_matrices[2],
-                       sq_matrices[3], rect_matrices[2], rect_matrices[3],
-                       rect_matrices[0], rect_matrices[1], rhs, sol);
+          DirectSolver(this->get_A_block(0), this->get_A_block(1), 
+                       this->get_A_block(2), this->get_A_block(3),
+                       this->get_BT_block(0), this->get_BT_block(1),
+                       this->get_B_block(0), this->get_B_block(1), rhs, sol);
       } //  switch(TDatabase::ParamDB->NSTYPE)
       break;
     default:
-      OutPut("Unknown Solver\n");
-      exit(4711);
+      ErrThrow("Unknown Solver");
+      break;
   }
 }
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::apply(const double *x, double *y, double factor) const
 {
-  unsigned int n_total_rows = this->BlockMatrix2D::sq_matrices[0]->GetN_Rows();
+  unsigned int n_total_rows = this->BlockMatrix::n_total_rows();
   // reset y
   memset(y, 0.0, n_total_rows*SizeOfDouble);
   this->apply_scaled_add(x, y, factor);
 }
 
+/** ************************************************************************ */
 void BlockMatrixNSE2D::apply_scaled_add(const double *x, double *y, 
                                        double factor) const
 {
@@ -434,178 +476,147 @@ void BlockMatrixNSE2D::apply_scaled_add(const double *x, double *y,
     return;
   
   // number of velocity degrees of freedom
-  unsigned int n_v = this->BlockMatrix2D::sq_matrices[0]->GetN_Rows();
+  unsigned int n_v = this->get_velocity_space()->GetN_DegreesOfFreedom();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->BlockMatrix2D::rect_matrices[0]->transpose_multiply(
-                                                    x+2*n_v, y,       factor);
+      this->BlockMatrix::blocks[0]->multiply(x,       y,       factor);
+      this->BlockMatrix::blocks[6]->transpose_multiply(
+                                             x+2*n_v, y,       factor);
       
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
-      this->BlockMatrix2D::rect_matrices[1]->transpose_multiply(
-                                                    x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[0]->multiply(x+n_v,   y+n_v,   factor);
+      this->BlockMatrix::blocks[7]->transpose_multiply(
+                                             x+2*n_v, y+n_v,   factor);
       
-      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix::blocks[6]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix::blocks[7]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 2:
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->BlockMatrix2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      this->BlockMatrix::blocks[0]->multiply(  x,     y,       factor);
+      this->BlockMatrix::blocks[2]->multiply(x+2*n_v, y,       factor);
       
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x+n_v,   y+n_v,   factor);
-      this->BlockMatrix2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[0]->multiply(  x+n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[5]->multiply(x+2*n_v, y+n_v,   factor);
       
-      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix::blocks[6]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix::blocks[7]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 3:
-      ErrMsg("BlockMatrixNSE2D::apply_scaled_add not yet implemented");
-      throw("BlockMatrixNSE2D::apply_scaled_add not yet implemented");
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->BlockMatrix2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
-      this->BlockMatrix2D::rect_matrices[0]->transpose_multiply(
-                                                    x+2*n_v, y,       factor);
+      this->BlockMatrix::blocks[0]->multiply(x,       y,       factor);
+      this->BlockMatrix::blocks[1]->multiply(x+n_v,   y,       factor);
+      this->BlockMatrix::blocks[6]->transpose_multiply(
+                                             x+2*n_v, y,       factor);
       
-      this->BlockMatrix2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
-      this->BlockMatrix2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
-      this->BlockMatrix2D::rect_matrices[1]->transpose_multiply(
-                                                    x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[2]->multiply(x,       y+n_v,   factor);
+      this->BlockMatrix::blocks[3]->multiply(x+n_v,   y+n_v,   factor);
+      this->BlockMatrix::blocks[7]->transpose_multiply(
+                                             x+2*n_v, y+n_v,   factor);
       
-      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix::blocks[6]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix::blocks[7]->multiply(x+n_v,   y+2*n_v, factor);
       break;
     case 4:
     case 14:
-      this->BlockMatrix2D::sq_matrices[0]->multiply(  x,       y,       factor);
-      this->BlockMatrix2D::sq_matrices[1]->multiply(  x+n_v,   y,       factor);
-      this->BlockMatrix2D::rect_matrices[2]->multiply(x+2*n_v, y,       factor);
+      this->BlockMatrix::blocks[0]->multiply(  x,     y,       factor);
+      this->BlockMatrix::blocks[1]->multiply(  x+n_v, y,       factor);
+      this->BlockMatrix::blocks[2]->multiply(x+2*n_v, y,       factor);
       
-      this->BlockMatrix2D::sq_matrices[2]->multiply(  x,       y+n_v,   factor);
-      this->BlockMatrix2D::sq_matrices[3]->multiply(  x+n_v,   y+n_v,   factor);
-      this->BlockMatrix2D::rect_matrices[3]->multiply(x+2*n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[3]->multiply(  x,     y+n_v,   factor);
+      this->BlockMatrix::blocks[4]->multiply(  x+n_v, y+n_v,   factor);
+      this->BlockMatrix::blocks[5]->multiply(x+2*n_v, y+n_v,   factor);
       
-      this->BlockMatrix2D::rect_matrices[0]->multiply(x,       y+2*n_v, factor);
-      this->BlockMatrix2D::rect_matrices[1]->multiply(x+n_v,   y+2*n_v, factor);
+      this->BlockMatrix::blocks[6]->multiply(x,       y+2*n_v, factor);
+      this->BlockMatrix::blocks[7]->multiply(x+n_v,   y+2*n_v, factor);
       if(TDatabase::ParamDB->NSTYPE == 14)
-      this->BlockMatrix2D::sq_matrices[4]->multiply(  x+2*n_v, y+2*n_v, factor);
+      this->BlockMatrix::blocks[8]->multiply(x+2*n_v, y+2*n_v, factor);
       break;
     default:
-      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
-      throw("unknown NSTYPE");
+      ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
+      break;
   }
 }
 
-unsigned int BlockMatrixNSE2D::n_rows() const
+/** ************************************************************************ */
+const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
+                                                       bool test) const
 {
-  return 3;
-}
-
-unsigned int BlockMatrixNSE2D::n_cols() const
-{
-  return 3;
-}
-
-unsigned int BlockMatrixNSE2D::n_total_rows() const
-{
-  switch(TDatabase::ParamDB->NSTYPE)
+  unsigned int space_index = 0;
+  if(test)
+    space_index = this->block_pattern->test_space_index_of_block(b);
+  else
+    space_index = this->block_pattern->ansatz_space_index_of_block(b);
+  if(space_index == 0)
+    return this->get_velocity_space();
+  else if(space_index == 1)
+    return this->get_pressure_space();
+  else
   {
-    case 1:
-      return 2 * this->sq_matrices[0]->GetN_Rows()
-          + this->rect_matrices[0]->GetN_Columns();
-      break;
-    case 2:
-      return 2 * this->sq_matrices[0]->GetN_Rows()
-          + this->rect_matrices[2]->GetN_Rows();
-      break;
-    case 3:
-      return this->sq_matrices[0]->GetN_Rows()
-          + this->sq_matrices[2]->GetN_Rows()
-          + this->rect_matrices[0]->GetN_Columns();
-      break;
-    case 4:
-    case 14:
-      return this->sq_matrices[0]->GetN_Rows()
-          + this->sq_matrices[2]->GetN_Rows()
-          + this->rect_matrices[2]->GetN_Rows();
-      break;
-    default:
-      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
-      throw("unknown NSTYPE");
+    ErrThrow("could not find space for block " + std::to_string(b));
+    throw; // only to avoid compiler warnings
   }
 }
 
-unsigned int BlockMatrixNSE2D::n_total_cols() const
+/** ************************************************************************ */
+TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
 {
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-    case 2:
-      return 2 * this->sq_matrices[0]->GetN_Columns()
-          + this->rect_matrices[0]->GetN_Columns();
-      break;
-    case 3:
-    case 4:
-    case 14:
-      return this->sq_matrices[0]->GetN_Columns()
-          + this->sq_matrices[2]->GetN_Columns()
-          + this->rect_matrices[0]->GetN_Columns();
-      break;
-    default:
-      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
-      throw("unknown NSTYPE");
-  }
+  if(i < 2)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i].get();
+  else if(i < 4)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
+  else
+    ErrThrow("there are only four A-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
 }
 
-unsigned int BlockMatrixNSE2D::n_total_entries() const
+/** ************************************************************************ */
+const TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i) const 
 {
-  switch(TDatabase::ParamDB->NSTYPE)
-  {
-    case 1:
-      return 2 * this->sq_matrices[0]->GetN_Entries()
-          + 2 * this->rect_matrices[0]->GetN_Entries()
-          + 2 * this->rect_matrices[1]->GetN_Entries();
-      break;
-    case 2:
-      return 2 * this->sq_matrices[0]->GetN_Entries()
-          + this->rect_matrices[0]->GetN_Entries()
-          + this->rect_matrices[1]->GetN_Entries()
-          + this->rect_matrices[2]->GetN_Entries()
-          + this->rect_matrices[3]->GetN_Entries();
-      break;
-    case 3:
-      return this->sq_matrices[0]->GetN_Entries()
-          + this->sq_matrices[1]->GetN_Entries()
-          + this->sq_matrices[2]->GetN_Entries()
-          + this->sq_matrices[3]->GetN_Entries()
-          + 2 * this->rect_matrices[0]->GetN_Entries()
-          + 2 * this->rect_matrices[1]->GetN_Entries();
-      break;
-    case 4:
-      return this->sq_matrices[0]->GetN_Entries()
-          + this->sq_matrices[1]->GetN_Entries()
-          + this->sq_matrices[2]->GetN_Entries()
-          + this->sq_matrices[3]->GetN_Entries()
-          + this->rect_matrices[0]->GetN_Entries()
-          + this->rect_matrices[1]->GetN_Entries()
-          + this->rect_matrices[2]->GetN_Entries()
-          + this->rect_matrices[3]->GetN_Entries();
-      break;
-    case 14:
-      return this->sq_matrices[0]->GetN_Entries()
-          + this->sq_matrices[1]->GetN_Entries()
-          + this->sq_matrices[2]->GetN_Entries()
-          + this->sq_matrices[3]->GetN_Entries()
-          + this->sq_matrices[4]->GetN_Entries() // C
-          + this->rect_matrices[0]->GetN_Entries()
-          + this->rect_matrices[1]->GetN_Entries()
-          + this->rect_matrices[2]->GetN_Entries()
-          + this->rect_matrices[3]->GetN_Entries();
-      break;
-    default:
-      ErrMsg("Unknown NSTYPE, it must be 1 to 4, or 14");
-      throw("unknown NSTYPE");
-  }
+  if(i < 2)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i].get();
+  else if(i < 4)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
+  else
+    ErrThrow("there are only four A-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
 }
 
-#endif // #ifdef __2D__
+/** ************************************************************************ */
+TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i)
+{
+  if(i < 2)
+    return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
+  else
+    ErrThrow("There are only two BT-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
+}
+
+/** ************************************************************************ */
+const TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i) const 
+{
+  if(i < 2)
+    return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
+  else
+    ErrThrow("There are only two BT-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
+}
+
+/** ************************************************************************ */
+TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i)
+{
+  if(i < 2)
+    return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
+  else
+    ErrThrow("There are only two B-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
+}
+
+/** ************************************************************************ */
+const TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i) const 
+{
+  if(i < 2)
+    return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
+  else
+    ErrThrow("There are only two B-blocks! " + std::to_string(i));
+  throw; // only to avoid a compiler warning
+}
+

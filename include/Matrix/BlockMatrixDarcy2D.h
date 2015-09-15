@@ -1,9 +1,19 @@
 /** ************************************************************************ 
 *
-* @class     BlockMatrixDarcy2D
-* @brief     stores the information of a 2D Darcy system matrix 
-* @author    Ulrich Wilbrandt
-* @date      15.03.15
+* @class    BlockMatrixDarcy2D
+* @brief    stores the information of a 2D Darcy system matrix 
+*           
+*           During the contructor all objects are created. However the matrices
+*           are only stored in the base class BlockMatrix as TMatrix. They are
+*           created as TSquareMatrix2D and TMatrix2D, so that a cast is 
+*           possible, see e.g. the method get_A_block() of this class. This way
+*           it is possible to access the finite element spaces as well. 
+*           
+*           This class does not store pointers to the matrices and the finite
+*           element spaces.
+* 
+* @author   Ulrich Wilbrandt
+* @date     15.03.15
  ************************************************************************  */
 
 
@@ -11,32 +21,38 @@
 #define __SYSTEMMATDARCY2D__
 
 #include <LocalAssembling2D.h>
-#include <BlockMatrix2D.h>
+#include <SquareMatrix2D.h>
+#include <Matrix2D.h>
+#include <BlockVector.h>
+#include <array>
 
 /**class for 2D scalar system matrix */
-class BlockMatrixDarcy2D : public BlockMatrix2D
+class BlockMatrixDarcy2D : public BlockMatrix
 {
   protected:
     
-    /** Boundary conditon (one for u.n and one for pressure) */
-    BoundCondFunct2D *BoundaryConditions[2];
-    
-    /** Boundary value */ 
-    BoundValueFunct2D *BoundaryValues[2];
+    /** @brief Boundary value */ 
+    std::array<const BoundValueFunct2D*, 2> boundary_values;
     
   public:
     /** constructor */
-     BlockMatrixDarcy2D(TFESpace2D *velocity, TFESpace2D* pressure,
-                       BoundValueFunct2D **BoundValue);
+     BlockMatrixDarcy2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
+                        const BoundValueFunct2D*const* BoundValue);
     
     /** destrcutor */
     ~BlockMatrixDarcy2D();
     
+    /** @brief copy constructor */
+    BlockMatrixDarcy2D(BlockMatrixDarcy2D&) = delete;
+    
+    /** @brief move constructor */
+    BlockMatrixDarcy2D(BlockMatrixDarcy2D&&) = delete;
+    
     /** assemble the system matrix */
-    void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
+    void Assemble(LocalAssembling2D& la, BlockVector& rhs);
     
     /** solve the system matrix */
-    void Solve(double *sol, double *rhs);
+    void Solve(BlockVector& sol, BlockVector& rhs);
 
     /** @brief compute y = factor* A*x 
      *
@@ -62,14 +78,81 @@ class BlockMatrixDarcy2D : public BlockMatrix2D
      * @param y result of matrix-vector-multiplication and scaling
      * @param factor optional scaling   factor, default to 1.0
      */
-    void apply_scaled_add(const double *x, double *y,
-                                  double factor = 1.0) const;
+    void apply_scaled_add(const double *x, double *y, double factor = 1.0) 
+      const;
     
-    unsigned int n_rows() const; // number of block rows
-    unsigned int n_cols() const; // number of block columns
-    unsigned int n_total_rows() const; // total number of rows (> nRows)
-    unsigned int n_total_cols() const; // total number of columns (> nCols)
-    unsigned int n_total_entries() const; // total number of entries
+    /** @brief return the test or ansatz space for a given block
+     * 
+     * @param b the index of the block whose test/ansatz space is returned
+     * @param test true to return the test space, false to return the ansatz 
+     *             space
+     */
+    const TFESpace2D * get_space_of_block(unsigned int b, bool test) const;
+    
+    /** @brief return the velocity-velocity block
+     * 
+     * This is created as a TSquareMatrix2D in the constructor of this class. 
+     * Therefore the following cast works.
+     */
+    TSquareMatrix2D * get_A_block()
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks[0].get(); }
+    
+    /** @brief return the velocity-velocity block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TSquareMatrix2D * get_A_block() const
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks[0].get(); }
+    
+    /** @brief return the pressure-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TSquareMatrix2D * get_C_block()
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks[3].get(); }
+    
+    /** @brief return the pressure-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TSquareMatrix2D * get_C_block() const
+    { return (TSquareMatrix2D*)this->BlockMatrix::blocks[3].get(); }
+    
+    /** @brief return the velocity-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TMatrix2D * get_BT_block()
+    { return (TMatrix2D*)this->BlockMatrix::blocks[1].get(); }
+    
+    /** @brief return the velocity-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TMatrix2D * get_BT_block() const
+    { return (TMatrix2D*)this->BlockMatrix::blocks[1].get(); }
+    
+    /** @brief return the pressure-perssure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    TMatrix2D * get_B_block()
+    { return (TMatrix2D*)this->BlockMatrix::blocks[2].get(); }
+    
+    /** @brief return the pressure-pressure block
+     * 
+     * See also the description of TSquareMatrix2D * get_A_block().
+     */
+    const TMatrix2D * get_B_block() const
+    { return (TMatrix2D*)this->BlockMatrix::blocks[2].get(); }
+    
+    /** @brief return the finite element space for the velocity */
+    const TFESpace2D * get_velocity_space() const
+    { return this->get_A_block()->GetFESpace(); }
+    
+    /** @brief return the finite element space for the pressure */
+    const TFESpace2D * get_pressure_space() const
+    { return this->get_C_block()->GetFESpace(); }
 };
 
 #endif // __SYSTEMMATDARCY2D__
