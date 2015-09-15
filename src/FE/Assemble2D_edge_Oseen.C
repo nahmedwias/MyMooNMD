@@ -54,7 +54,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement, TestElementNeighbour, AnsatzElementNeighbour;
   QuadFormula1D LineQuadFormula;
