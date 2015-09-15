@@ -21,14 +21,14 @@ class TSquareStructure2D : public TSquareStructure
 {
   protected:
     /** FE space */
-    TFESpace2D *FESpace;
+    const TFESpace2D *FESpace;
 
   public:
     /** dummy constructor, needed only for derived classes */
     TSquareStructure2D();
 
     /** generate the matrix structure, only one space needed */
-    TSquareStructure2D(TFESpace2D *space);
+    TSquareStructure2D( const TFESpace2D* Space );
 
     /** generate the matrix structure, all arrays are already defined */
     TSquareStructure2D(int n, int N_entries, int *col_ptr,
@@ -41,7 +41,7 @@ class TSquareStructure2D : public TSquareStructure
     ~TSquareStructure2D();
 
     /** return FESpace */
-    TFESpace2D *GetFESpace()
+    const TFESpace2D *GetFESpace()
       { return FESpace; }
     
     /** @brief find out if two TSquareStructure2Ds are the same */

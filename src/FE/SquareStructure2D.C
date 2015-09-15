@@ -43,7 +43,7 @@ TSquareStructure2D::TSquareStructure2D()
 
 
 /** generate the matrix structure, both space are 2D */
-TSquareStructure2D::TSquareStructure2D(TFESpace2D *Space)
+TSquareStructure2D::TSquareStructure2D(const TFESpace2D* Space)
 : TSquareStructure()
 {
   int i,j,k,l,n,N_, n1,n2,m,p,q,r;
