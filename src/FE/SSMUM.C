@@ -1012,7 +1012,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   TBoundComp *BoundComp;
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
-  TFESpace2D *velo_space;
+  const TFESpace2D *velo_space;
   OutPut("rotate" << endl);
 
   phi_plus = 2*Pi * TDatabase::TimeDB->TIMESTEPLENGTH * TDatabase::ParamDB->SSMUM_ROT_PER_SECOND;
@@ -1288,7 +1288,7 @@ double *values)
   TBoundComp *BoundComp;
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
-  TFESpace2D *velo_space;
+  const TFESpace2D *velo_space;
 
   phi_plus = 2*Pi * TDatabase::TimeDB->TIMESTEPLENGTH * TDatabase::ParamDB->SSMUM_ROT_PER_SECOND;
 
@@ -1464,7 +1464,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   TBaseCell *cell, *cell_n;
   TVertex *vertex;
-  TFESpace2D *velo_space;
+  const TFESpace2D *velo_space;
 
   // number of cells
   N_Cells = coll->GetN_Cells();
@@ -2109,7 +2109,7 @@ void MakeBubblesDivFree(TCollection *coll,
     int *RowPtr, *KCol;
     double *sol, loc_rhs[2], loc_a[2][2], *Entries, det, bub1, bub2;
     TBaseCell *cell;
-    TFESpace2D *velo_space, *press_space;
+    const TFESpace2D *velo_space, *press_space;
 
     // number of cells
     N_Cells = coll->GetN_Cells();

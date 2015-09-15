@@ -35,7 +35,7 @@ int* &dof_conversion, double* &x_coord, double* &y_coord)
   int i, j, k, dof, N_Cells, N_U, N_V, N2;
   int *begin_index, *global_numbers, *globdof;
   double eps=1e-6, x[4], y[4];
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TBaseCell *cell;
   TVertex *vertex;
 
@@ -132,7 +132,7 @@ int* &dof_conversion, double* &x_coord, double* &y_coord)
   int i, j, k, dof, N_Cells, N_U, N_V, N2, N_1, N_2, found;
   int *begin_index, *global_numbers, *globdof, max_lines = 10000;
   double eps=1e-6, x[4], y[4], *x_tmp, *y_tmp, val;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TBaseCell *cell;
   TVertex *vertex;
 
