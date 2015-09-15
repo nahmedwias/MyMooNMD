@@ -120,7 +120,7 @@ TMatrix2D& operator*(const TMatrix2D & A, const double alpha)
   CEntries = C->GetEntries();
 
   //TFESpace2D *fespace = A.GetStructure()->GetAnsatzSpace2D();
-  TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
+  const TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
   int nDOFActive = fespace->GetN_ActiveDegrees();
   //int nDOF = fespace->GetN_DegreesOfFreedom();
 
@@ -145,7 +145,7 @@ double* operator*(const TMatrix2D & A,const double* x)
   ARowPtr = A.GetRowPtr();
   AColIndex = A.GetKCol();
 
-  TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
+  const TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
   int nDOFActive = fespace->GetN_ActiveDegrees();
   int nDOF = fespace->GetN_DegreesOfFreedom();
 
