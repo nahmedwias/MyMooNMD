@@ -43,7 +43,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE2D CurrentElement;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
@@ -556,7 +556,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE2D CurrentElement;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
@@ -1111,7 +1111,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE2D CurrentElement;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
