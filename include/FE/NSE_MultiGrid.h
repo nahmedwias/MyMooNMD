@@ -36,10 +36,10 @@ class TNSE_MultiGrid
 
 #ifdef __2D__
     /** array of FE spaces */
-    TFESpace2D *USpaces[MAXN_LEVELS];
+    const TFESpace2D *USpaces[MAXN_LEVELS];
 
     /** array of FE spaces */
-    TFESpace2D *PSpaces[MAXN_LEVELS];
+    const TFESpace2D *PSpaces[MAXN_LEVELS];
 #endif  
 #ifdef __3D__
     /** array of FE spaces */

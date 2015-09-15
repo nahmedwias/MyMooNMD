@@ -32,10 +32,10 @@ class TNSE_MGLevel
 
 #ifdef __2D__
     /** FE space for velocity u */
-    TFESpace2D *USpace;
+    const TFESpace2D *USpace;
 
    /** FE space for pressure p */
-    TFESpace2D *PSpace;
+    const TFESpace2D *PSpace;
 #endif  
 
 #ifdef __3D__
@@ -216,11 +216,11 @@ class TNSE_MGLevel
 
 #ifdef __2D__
     /** return FE space for velocity u*/
-    TFESpace2D *GetUSpace()
+    const TFESpace2D *GetUSpace()
     { return USpace; }
 
     /** return FE space for pressure p*/
-    TFESpace2D *GetPSpace()
+    const TFESpace2D *GetPSpace()
     { return PSpace; }
 #endif  
 

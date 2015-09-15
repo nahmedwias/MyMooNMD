@@ -37,7 +37,7 @@ class TMultiGrid2D
     TMGLevel2D *MultiGridLevels[MAXN_LEVELS];
 
     /** array of FE spaces */
-    TFESpace2D *FESpaces[MAXN_LEVELS];
+    const TFESpace2D *FESpaces[MAXN_LEVELS];
 
     /** array of function vectors on each level */
     double **FunctionVectors[MAXN_LEVELS];
