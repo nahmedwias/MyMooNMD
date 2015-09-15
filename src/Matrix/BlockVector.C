@@ -1,0 +1,474 @@
+#include <BlockVector.h>
+#include <stdlib.h>
+#include <Constants.h>
+#include <Database.h>
+#include <LinAlg.h>
+
+/** ************************************************************************ */
+BlockVector::BlockVector() : entries(), lengths(), actives()
+{
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Constructor of BlockVector with no arguments\n");
+}
+
+/** ************************************************************************ */
+BlockVector::BlockVector(unsigned int length)
+ : entries(length, 0.0), lengths(1, length), actives(1, length)
+{
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Constructor of BlockVector with length " << length << endl);
+}
+
+/** ************************************************************************ */
+BlockVector::BlockVector(const BlockMatrix& mat, bool image)
+ : entries(), lengths(), actives()
+{
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Constructor of BlockVector using other BlockMatrix\n");
+  this->copy_structure(mat, image);
+}
+
+/** ************************************************************************ */
+template <class BM>
+BlockVector::BlockVector(const BM& mat, bool image)
+{
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Constructor of BlockVector using other BlockMatrix (templated)\n");
+  this->copy_structure<BM>(mat, image);
+}
+
+/** ************************************************************************ */
+BlockVector::BlockVector(const BlockVector& r)
+ : entries(r.entries.size(), 0.0), lengths(r.lengths), actives(r.actives)
+{ 
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Constructor of BlockVector using structure of other BlockVector\n");
+}
+
+/** ************************************************************************ */
+BlockVector::~BlockVector()
+{
+  if(TDatabase::ParamDB->SC_VERBOSE > 2)
+    OutPut("Destructor of BlockVector with length " << length() << endl);
+}
+
+/** ************************************************************************ */
+void BlockVector::reset()
+{
+  std::fill(this->entries.begin(), this->entries.end(), 0.0);
+}
+
+/** ************************************************************************ */
+void BlockVector::ResetActive()
+{
+  unsigned int n_blocks = this->n_blocks();
+  // loop over all blocks
+  auto it = this->entries.begin();
+  for(unsigned int i = 0; i < n_blocks; i++)
+  {
+    std::fill(it, it + this->active(i), 0.0);
+    std::advance(it, this->length(i)); // it += this->length(i);
+  }
+}
+
+/** ************************************************************************ */
+void BlockVector::ResetNonActive()
+{
+  unsigned int n_blocks = this->n_blocks();
+  // loop over all blocks
+  auto it = this->entries.begin();
+  for(unsigned int i = 0; i < n_blocks; i++)
+  {
+    std::fill(it + this->active(i), it + this->length(i), 0.0);
+    std::advance(it, this->length(i)); // it += this->length(i);
+  }
+}
+
+/** ************************************************************************ */
+void BlockVector::scale(const double a, const int i)
+{
+  if(i < 0)
+    *this *= a; // scale entire vector
+  else if((unsigned int)i < lengths.size())
+    Dscal(lengths.at(i), a, this->block(i)); // scale i-th subvector
+  else
+    ErrThrow("trying to scale subvector " + std::to_string(i) 
+             + " which does not exist");
+}
+
+/** ************************************************************************ */
+void BlockVector::add_scaled(const BlockVector& r, double factor)
+{
+  const unsigned int l = this->length(); // length of this BlockVector
+  if(r.length() != l)
+  {
+    ErrThrow("unable to add two BlockVectors of different lengths\t" 
+             + std::to_string(l) + "\t" + std::to_string(r.length()));
+  }
+  else if(this->n_blocks() != r.n_blocks())
+  {
+    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
+           "the same length but different numbers of blocks\n");
+  }
+  Daxpy(l, factor, r.get_entries(), this->get_entries());
+}
+
+/** ************************************************************************ */
+void BlockVector::copy(const double * x, const int i)
+{
+  if(i < 0)
+    *this = x; // copy entire vector
+  else if((unsigned int)i < this->n_blocks())
+    memcpy(this->block(i), x, this->length(i)*sizeof(double));
+  else
+  {
+    ErrThrow("trying to copy to subvector " + std::to_string(i) 
+             + " which does not exist.");
+  }
+}
+
+/** ************************************************************************ */
+void BlockVector::copy_nonactive(const BlockVector& r)
+{
+  const unsigned int l = this->length(); // length of this BlockVector
+  if(r.length() != l)
+  {
+    ErrThrow("unable to copy from one BlockVector to another one of different "
+             + "length\t" + std::to_string(l) + "\t" 
+             + std::to_string(r.length()));
+  }
+  else if(this->n_blocks() != r.n_blocks())
+  {
+    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
+           "the same length but different numbers of blocks\n");
+  }
+  
+  for(unsigned int b = 0, n_b = this->n_blocks(); b < n_b; ++b)
+  {
+    if(this->lengths[b] > this->active(b))
+      memcpy(this->block(b) + this->active(b), r.block(b) + this->active(b),
+             (this->lengths[b] - this->active(b))*sizeof(double));
+  }
+}
+
+/** ************************************************************************ */
+void BlockVector::add(double * x, const int i, double a)
+{
+  if(i < 0) 
+  {
+    const unsigned int l = length(); // length of this BlockVector
+    Daxpy(l, a, x, this->get_entries());
+  }
+  else if((unsigned int)i < this->lengths.size()) 
+  {
+    double * b = this->block(i);
+    for(unsigned int j = 0; j < this->length(i); j++)
+    {
+      b[j] += a*x[j];
+    }
+  }
+  else 
+  {
+    ErrThrow("trying to add to subvector "  + std::to_string(i) 
+             + " which does not exist.");
+  }
+}
+
+
+/** ************************************************************************ */
+double BlockVector::norm() const
+{
+  return Dnorm(this->length(), this->get_entries());
+}
+
+/** ************************************************************************ */
+void BlockVector::print(const std::string name, const int iB) const
+{
+  if(iB < 0)
+  { // print full BlockVector
+    for (unsigned int i = 0, l = this->length(); i < l; i++) 
+      OutPut(name << "(" << i+1 << ")= " << this->at(i) << ";\n");
+  }
+  else if((unsigned int)iB < lengths.size())
+  {
+    const double *myBlock = this->block(iB);
+    for (unsigned int i = 0; i < this->lengths[iB]; i++) 
+      OutPut(name << "(" << i+1 << ")= " << myBlock[i] << ";\n");
+  }
+  else
+    ErrThrow("trying to print subvector " + std::to_string(iB) 
+             + " which does not exist");
+}
+
+/** ************************************************************************ */
+void BlockVector::info()
+{
+  OutPut(" | info to BlockVector : \n");
+  unsigned int nb = n_blocks();
+  OutPut(" | -- total length " << this->length() << "\tnumber of blocks " 
+         << nb << endl);
+  if(nb > 1)
+  {
+    for(unsigned int i = 0; i < nb; i++)
+    {
+      OutPut(" | ---- block " << i << " has length " << this->lengths[i]);
+      if(this->lengths[i] != this->actives[i])
+      {
+        OutPut(" (" << this->actives[i] << " active)\n");
+      }
+      else
+        OutPut(endl);
+    }
+  }
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator=(const BlockVector& r)
+{
+  if(this == &r) return *this; // both are the same, no copying necessary
+  const unsigned int l = r.length(); // length of BlockVector r
+  if(this->length() != l)
+  {
+    if( this->length() != 0)
+      OutPut("WARNING: BlockVector::operator=\n BlockVectors have different " <<
+             "lengths\t" << this->length() << "\t" << l << endl);
+    // copy the structure such that copying the values is then possible
+    copy_structure(r);
+  }
+  else if(this->n_blocks() != r.n_blocks() )//&& TDatabase::ParamDB->SC_VERBOSE)
+  {
+    // this doesn't have to be an error, but can be. 
+    OutPut("WARNING: BlockVector::operator=\n BlockVectors have different " << 
+           "numbers of blocks\n");
+  }
+  // copy values
+  const double *r_entries = r.get_entries();
+  Dcopy(l, r_entries, &this->entries[0]);
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator=(const double *r)
+{
+  if(this->get_entries() == r) 
+    // both are the same, no copying necessary
+    return *this;
+  memcpy(this->get_entries(), r, this->length()*sizeof(double));
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator=(const double a)
+{
+  std::fill(this->entries.begin(), this->entries.end(), a);
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator*=(const double a)
+{
+  if(a == 0.0)
+    this->reset();
+  else if(a != 1.0)
+    Dscal(this->length(), a, this->get_entries());
+  // else if a == 1.0 not action is taken
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator*=(const BlockMatrix& A)
+{
+  unsigned int l = this->length();
+  if(A.n_total_cols() != l)
+  {
+    ErrThrow("Matrix-vector multiplication not possible because the number of " 
+             +"columns in the matrix is not equal to the length of the vector");
+  }
+  if(A.n_total_rows() != l)
+  {
+    ErrThrow("Matrix-vector multiplication with non-square matrix would change "
+              + "the length of the vector. This is not intended here. If you " 
+              + "know what you are doing, change the implementation");
+  }
+  
+  // y is an intermediate vector to store the product A*this
+  double *y = new double[l];
+  
+  // number of blocks (in each block column)
+  unsigned int n_row_blocks = A.n_rows();
+  // number of blocks (in each block row)
+  unsigned int n_col_blocks = A.n_cols();
+  if(n_row_blocks * n_col_blocks != A.n_blocks())
+  {
+    ErrMsg("BlockMatrix must have n_row_blocks*n_col_blocks many blocks");
+    exit(0);
+  }
+  memset(y, 0.0, l*SizeOfDouble);
+  
+  int row_offset = 0;
+  for(unsigned int i = 0; i < n_row_blocks; i++)
+  {
+    int col_offset = 0;
+    for(unsigned int j = 0; j < n_col_blocks; j++)
+    {
+      auto current_block = A.block(i * n_row_blocks + j);
+      current_block->multiply(this->get_entries()+col_offset, y + row_offset, 
+                              1.0);
+      col_offset += current_block->GetN_Columns();
+    }
+    row_offset += A.block(i * n_row_blocks)->GetN_Rows();
+  }
+  
+  // write y to this
+  Dcopy(l, y, this->get_entries());
+  delete [] y;
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator+=(const BlockVector& r)
+{
+  this->add_scaled(r, 1.0);
+  return *this;
+}
+
+/** ************************************************************************ */
+BlockVector& BlockVector::operator-=(const BlockVector& r)
+{
+  this->add_scaled(r, -1.0);
+  return *this;
+}
+
+/** ************************************************************************ */
+double dot(const BlockVector& a, const BlockVector& b)
+{
+  unsigned int l = a.length();
+  if(b.length() != l)
+  {
+    ErrThrow("unable to compute dot product of two BlockVectors of different " 
+             + "lengths\t" + std::to_string(l) + "\t" 
+             + std::to_string(b.length()));
+  }
+  else if(a.n_blocks() != b.n_blocks())
+  {
+    OutPut("WARNING: dot(BlockVector a, BlockVector b)\n computing the dot " <<
+           "product of two vectors with the same length but different numbers "
+           << "of blocks\n");
+  }
+  return Ddot(l, a.get_entries(), b.get_entries());
+}
+
+/** ************************************************************************ */
+void BlockVector::copy_structure(const BlockVector& r)
+{
+  entries.resize(r.length(), 0.0);
+  lengths.resize(r.n_blocks());
+  actives.resize(r.n_blocks());
+  
+  for(unsigned int i = 0; i < r.n_blocks(); i++)
+  {
+    lengths[i] = r.length(i);
+    actives[i] = r.active(i);
+  }
+}
+
+/** ************************************************************************ */
+void BlockVector::copy_structure(const BlockMatrix& mat, bool image)
+{
+  // the total length of this vector
+  unsigned int total_length = image ? mat.n_total_rows() : mat.n_total_cols();
+  // number of blocks in this BlockVector
+  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
+  this->entries.resize(total_length, 0.0);
+  // set all entries to zero
+  std::fill(this->entries.begin(), this->entries.end(), 0.0);
+  this->lengths.resize(n_blocks, 0);
+  this->actives.resize(n_blocks, 0);
+  for(unsigned int b = 0; b < n_blocks; b++)
+  {
+    auto block = mat.block(image ? mat.n_cols() * b : b);
+    this->lengths[b] = image ? block->GetN_Rows() : block->GetN_Columns();
+    this->actives[b] = this->lengths[b];
+  }
+}
+
+/** ************************************************************************ */
+template <class BM>
+void BlockVector::copy_structure(const BM& mat, bool image)
+{
+  // call the regular copy_structure.
+  this->copy_structure((const BlockMatrix&)mat, image);
+  // set the active degrees of freedom
+  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
+  for(unsigned int b = 0; b < n_blocks; b++)
+  {
+    this->actives[b] = mat.get_space_of_block(b, image)->GetN_ActiveDegrees();
+  }
+}
+
+
+/** ************************************************************************ */
+void BlockVector::write_fo_file(std::string filename)
+{
+  std::ofstream dat(filename);
+  if(!dat)
+  {
+    ErrMsg("cannot open file '" << filename << "' to save data. return");
+    return;
+  }
+  dat << this->length() << endl;
+  dat.write((char *) this->get_entries(), sizeof(double) * this->length());
+  dat.close();
+}
+
+/** ************************************************************************ */
+void BlockVector::read_from_file(std::string filename)
+{
+  std::ifstream dat(filename);
+  if(!dat)
+  {
+    ErrMsg("cannot open file '" << filename << "' to read data");
+    throw(std::runtime_error("cannot open file " + filename));
+  }
+  
+  // check if the size of this vector and the number of doubles in the file
+  // coincide:
+  unsigned int length_read;
+  std::string line;
+  std::getline(dat, line);
+  std::istringstream parser( std::string( line.begin(), line.end() ) );
+  parser >> length_read >> std::ws;
+  if(!parser || parser.get() != EOF)
+  {
+    ErrMsg("formatting error, the first line in the file should contain only "
+           << "a number idicating the number of entries to be read");
+    throw(std::runtime_error("formatting error in file " + filename));
+  }
+  else if(this->length() == 0)
+  {
+    // the vector is not yet filled with any data, allocate the arrays:
+    this->entries.resize(length_read, 0.0);
+    lengths.resize(1, length_read);
+    actives.resize(1, length_read);
+  }
+  else if(this->length() != length_read)
+  {
+    ErrThrow("unexpected size to be read. Expected: " 
+             + std::to_string(this->length()) + "\tin file: " 
+             + std::to_string(length_read));
+  }
+  // now we are sure that (this->length == length_read) 
+  
+  dat.read((char *)this->get_entries(), sizeof(double) * length_read);
+  dat.close();
+}
+
+#include <BlockMatrixCD2D.h>
+#include <BlockMatrixDarcy2D.h>
+#include <BlockMatrixNSE2D.h>
+template BlockVector::BlockVector<BlockMatrixDarcy2D>(
+  const BlockMatrixDarcy2D& mat, bool image);
+template BlockVector::BlockVector<BlockMatrixCD2D>(
+  const BlockMatrixCD2D& mat, bool image);
+template BlockVector::BlockVector<BlockMatrixNSE2D>(
+  const BlockMatrixNSE2D& mat, bool image);
