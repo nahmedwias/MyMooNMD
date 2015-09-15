@@ -458,7 +458,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
     
     Values[j] = fefunction->GetValues();
     
-    TFESpace2D *fespace = fefunction->GetFESpace2D();
+    const TFESpace2D *fespace = fefunction->GetFESpace2D();
     FE2D FE_Id = fespace->GetFE2D(cellnum, cell);
     BaseFunct2D BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_Id)->GetBaseFunct2D_ID();
 
@@ -864,14 +864,15 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4Galerkin; 
                   this->Manipulate = NULL;
                   
@@ -889,14 +890,15 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinDD; 
                   this->Manipulate = NULL;
                   
