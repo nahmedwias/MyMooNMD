@@ -38,7 +38,7 @@ class TAuxParam2D
 //  array of pointers to stored objects
 // =======================================================================
     /** array of stored FESpace2D */
-    TFESpace2D **FESpaces2D;
+    const TFESpace2D **FESpaces2D;
 
     /** array of stored FEFunction2D */
     TFEFunction2D **FEFunctions2D;
@@ -82,7 +82,7 @@ class TAuxParam2D
     /** constructor */
     TAuxParam2D(int n_fespace2d, int n_fefunction2d, int n_paramfct,
                 int n_fevalues,
-                TFESpace2D **fespaces2d, TFEFunction2D **fefunctions2d,
+                const TFESpace2D **fespaces2d, TFEFunction2D **fefunctions2d,
                 ParamFct **parameterfct,
                 int *fevalue_fctindex, MultiIndex2D *fevalue_multiindex,
                 int n_parameters, int *beginparameter);

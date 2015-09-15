@@ -23,7 +23,7 @@
 TAuxParam2D::TAuxParam2D(
         int n_fespace2d, int n_fefunction2d, int n_paramfct,
         int n_fevalues,
-        TFESpace2D **fespaces2d, TFEFunction2D **fefunctions2d,
+        const TFESpace2D **fespaces2d, TFEFunction2D **fefunctions2d,
         ParamFct **parameterfct,
         int *fevalue_fctindex, MultiIndex2D *fevalue_multiindex,
         int n_parameters, int *beginparameter)
@@ -69,7 +69,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
   int i, j, k, l, n;
   double xi, *param, *currparam, s;
   double *locvalues;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   FE2D FE_Id;
   BaseFunct2D BaseFunct_Id;
@@ -138,7 +138,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll, TBaseCell *cell
   double s;
   double *param, *currparam, *CurrValues, *CurrOrigValues;
   int *CurrIndex;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   BaseFunct2D BaseFunct_Id;
   FE2D FE_ID;
