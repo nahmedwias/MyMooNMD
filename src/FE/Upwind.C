@@ -65,7 +65,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int n_mat, m_mat;
   double *u1vect, *u2vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   double FctValNQuad[4][4] =
   {
     {
