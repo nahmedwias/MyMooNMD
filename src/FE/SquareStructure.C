@@ -78,7 +78,6 @@ void TSquareStructure::Sort()
   // in this case umfpack needs an ordering before the call
   if (HangingN_Entries>0)
       ColOrder = -1;
-
 }
 
 /** sort column numbers: diag is first element, other numbers are

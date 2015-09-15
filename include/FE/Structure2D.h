@@ -24,12 +24,12 @@ class TStructure2D : public TStructure
 {
   protected:
     /** Ansatzspace */
-    TFESpace1D *AnsatzSpace1D;
-    TFESpace2D *AnsatzSpace2D;
+    const TFESpace1D *AnsatzSpace1D;
+    const TFESpace2D *AnsatzSpace2D;
 
     /** Testspace */
-    TFESpace1D *TestSpace1D;
-    TFESpace2D *TestSpace2D;
+    const TFESpace1D *TestSpace1D;
+    const TFESpace2D *TestSpace2D;
 
     int *AnsatzMortarSpaceGlobNo;
     int *TestMortarSpaceGlobNo;
@@ -39,7 +39,7 @@ class TStructure2D : public TStructure
 
   public:
     /** generate the matrix Structure2D, both space with 2D collection */
-    TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace);
+    TStructure2D(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
 
     /** destructor: free all used arrays */
     ~TStructure2D();
@@ -65,11 +65,11 @@ class TStructure2D : public TStructure
      TStructure2D(TFESpace2D *testspace, TFESpace1D *ansatzspace, TNonMortarData *NonMortarFEData);
 
     /** return AnsatzSpace */
-    TFESpace2D *GetAnsatzSpace2D() const
+    const TFESpace2D *GetAnsatzSpace2D() const
     { return AnsatzSpace2D; }
     
     /** return AnsatzSpace */
-    TFESpace *GetAnsatzSpace()
+    const TFESpace *GetAnsatzSpace() const 
     {
       if (AnsatzSpace1D)
         return AnsatzSpace1D;
@@ -78,11 +78,11 @@ class TStructure2D : public TStructure
     }
     
     /** return TestSpace */
-    TFESpace2D *GetTestSpace2D() const
+    const TFESpace2D *GetTestSpace2D() const
     { return TestSpace2D; }
     
     /** return TestSpace */
-    TFESpace *GetTestSpace()
+    const TFESpace *GetTestSpace() const
     {
       if (TestSpace1D)
         return TestSpace1D;
