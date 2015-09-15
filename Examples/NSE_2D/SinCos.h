@@ -101,39 +101,27 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs)
 {
-  double nu=1./TDatabase::ParamDB->RE_NR;
-  int i;
-  double *coeff, x, y;
-  double u1, u1x, u1y, u1lap, u2, u2x, u2y, u2lap, px, py;
-
-  for(i=0;i<n_points;i++)
+  const double nu=1./TDatabase::ParamDB->RE_NR;
+  double val1[4];
+  double val2[4];
+  double val3[4];
+  for(int i = 0; i < n_points; i++)
   {
-    coeff = coeffs[i];
+    coeffs[i][0] = nu;
     
-    x = X[i];
-    y = Y[i];
-
-    coeff[0] = nu;
-    // prescribed solution
-    u1 =  sin(Pi*x);
-    u1x = Pi*cos(Pi*x);
-    u1y = 0;
-    u1lap =  -Pi*Pi*sin(Pi*x);
-    u2 =  -Pi*y*cos(Pi*x);
-    u2x =  Pi*Pi*y*sin(Pi*x);
-    u2y = -Pi*cos(Pi*x);
-    u2lap = Pi*Pi*Pi*y*cos(Pi*x);
-    px =  Pi*cos(Pi*x)*cos(Pi*y);
-    py = -Pi*sin(Pi*x)*sin(Pi*y);
-
-    coeff[1] = -nu*u1lap+u1*u1x+u2*u1y+px;
-    coeff[2] = -nu*u2lap+u1*u2x+u2*u2y+py;
-
-    coeff[3] = u1;
-    coeff[4] = u2;
-    /*coeff[5] = px;
-    coeff[6] = py;
-    coeff[7] = u1y;
-    coeff[8] = u2y;*/
+    ExactU1(X[i], Y[i], val1);
+    ExactU2(X[i], Y[i], val2);
+    ExactP(X[i], Y[i], val3);
+    
+    coeffs[i][1] = -nu*val1[3] + val3[1]; // f1
+    coeffs[i][2] = -nu*val2[3] + val3[2]; // f2
+    
+    if(TDatabase::ParamDB->PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
+    {
+      coeffs[i][1] += val1[0]*val1[1] + val2[0]*val1[2]; // f1
+      coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
+    }
+    coeffs[i][3] = val1[1] + val2[2]; // g (divergence)
   }
+  
 }
