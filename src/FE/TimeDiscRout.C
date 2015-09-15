@@ -2392,8 +2392,9 @@ void AllocateAuxiliaryVectorsRB(int &rb_order, int &RB_s,
 }
 
 #ifdef __2D__
-void AssembleRHS_RB_DIRK(TFESpace2D **fesp, TFEFunction2D **fefct, TFESpace2D **ferhs,
-TFESpace2D **USpaces, TFEFunction2D **U1Array, TFEFunction2D **U2Array,
+void AssembleRHS_RB_DIRK(const TFESpace2D **fesp, TFEFunction2D **fefct, 
+const TFESpace2D **ferhs,
+const TFESpace2D **USpaces, TFEFunction2D **U1Array, TFEFunction2D **U2Array,
 TDiscreteForm2D *DiscreteForm, TDiscreteForm2D *DiscreteFormRHS,
 double **RHSs, double *rhs, TAuxParam2D *aux,
 BoundCondFunct2D **BoundaryConditions, BoundValueFunct2D **my_BoundValues,
