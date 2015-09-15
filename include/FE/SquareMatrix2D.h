@@ -40,7 +40,7 @@ class TSquareMatrix2D : public TSquareMatrix
     ~TSquareMatrix2D();
 
     /** return FESpace */
-    TFESpace2D *GetFESpace() const
+    const TFESpace2D *GetFESpace() const
     { return structure->GetFESpace(); }
 
     /** return used matrix structure */
