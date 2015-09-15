@@ -272,7 +272,7 @@ class TDomain
     { return RefLevel; }
 
     /** @brief produce a collection with all cells returned by iterator it */
-    TCollection *GetCollection(Iterators it, int level);
+    TCollection *GetCollection(Iterators it, int level) const;
     
     /** @brief produce a collection with all cells of a given Collection which
      *         have the given reference as ReferenceID 
@@ -280,6 +280,12 @@ class TDomain
      * This will give you a subcollection.
      */
     TCollection *GetCollection(TCollection *coll, int reference);
+    
+    /**
+     * @brief get collection of cells on a certain level and with certain 
+     *        reference id
+     */
+    TCollection *GetCollection(Iterators it, int level, int ID) const;
 
 #ifdef  _MPI 
     /** @brief produce a own collection with all cells returned by iterator it */

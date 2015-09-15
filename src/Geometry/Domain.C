@@ -1978,7 +1978,7 @@ TCollection *TDomain::GetCollection(TCollection *coll, int reference)
    - count how many cells it contain
    - add cells to collection
 */
-TCollection *TDomain::GetCollection(Iterators it, int level)
+TCollection *TDomain::GetCollection(Iterators it, int level) const
 {
   TCollection *coll;
   int i, n_cells, info;
@@ -2014,6 +2014,55 @@ TCollection *TDomain::GetCollection(Iterators it, int level)
 
   return coll;
 }
+
+TCollection *TDomain::GetCollection(Iterators it, int level, int ID) const
+{
+  if(ID == -4711) 
+    return this->GetCollection(it, level);
+  
+  int info;
+  // initialize the iterator
+  // note:
+  // enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
+  //            It_Between, It_OCAF, It_Mortar1, It_Mortar2};
+  TDatabase::IteratorDB[it]->Init(level);
+  
+  //cout << " count cells " << endl;
+  int n_cells = 0;
+  // loop over all cells, check their reference id
+  // info: set to the current level
+  while(TBaseCell *CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  {
+    //cout << " id: " << CurrCell->GetPhase_ID() << endl;
+    if (CurrCell->GetReference_ID() == ID)
+      n_cells++;
+  }
+  
+  //cout << " fill cells " << endl;
+  // fill array of cells
+  TBaseCell **cells = new TBaseCell*[n_cells];
+  int i=0;
+  TDatabase::IteratorDB[it]->Init(level);
+  while(TBaseCell *CurrCell = TDatabase::IteratorDB[it]->Next(info))
+  {
+    if (CurrCell->GetReference_ID() == ID)
+    {
+      cells[i] = CurrCell;
+      cells[i]->SetCellIndex(i);
+      i++;
+    }
+  }
+  
+  // create collection from an array of cells
+  TCollection *coll = new TCollection(n_cells, cells);
+  
+  #ifdef  _MPI 
+  coll->SetN_OwnCells(N_OwnCells);
+  #endif
+  
+  return coll;
+}
+
 
 #ifdef  _MPI 
 TCollection *TDomain::GetOwnCollection(Iterators it, int level, int ID)
