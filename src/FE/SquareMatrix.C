@@ -23,12 +23,11 @@ TSquareMatrix::TSquareMatrix(TSquareStructure *squarestructure)
 {
 }
 
-// not clear! what is the initial value of structure while calling contructor/
-// commented by Sashi 
-// TSquareMatrix::TSquareMatrix(int n)
-//  : structure(new TSquareStructure(n)), TMatrix(structure)
-// {
-// }
+TSquareMatrix::TSquareMatrix(int n)
+ : TMatrix(new TSquareStructure(n)), 
+   structure((TSquareStructure*)this->TMatrix::GetStructure())
+{
+}
 
 TSquareMatrix::~TSquareMatrix()
 {
