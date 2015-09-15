@@ -32,7 +32,7 @@ void TSquareMatrix2D::SetStructure(TSquareStructure2D *squarestructure)
 
 TSquareMatrix2D::TSquareMatrix2D(int n) 
  : TSquareMatrix(new TSquareStructure2D(n)), 
-   structure((TSquareStructure2D*)this->GetStructure())
+   structure((TSquareStructure2D*)this->TSquareMatrix::GetStructure())
 {
 }
 
