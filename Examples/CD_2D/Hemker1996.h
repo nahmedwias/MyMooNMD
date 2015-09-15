@@ -148,7 +148,7 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
 {
   TBaseCell *cell;
   TCollection *Coll;
-  TFESpace2D *FESpace2D;
+  const TFESpace2D *FESpace2D;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
   FE2D FE_ID;
