@@ -2700,7 +2700,7 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
   
   // allocate arrays for structure of combined matrix
   // total number of entries
-  N_Entries = 4*RowPtrA[N_U] + RowPtrC[N_P] + RowPtrB[N_P] + RowPtrBT[N_U];
+  N_Entries = RowPtrA[N_U] + RowPtrC[N_P] + RowPtrB[N_P] + RowPtrBT[N_U];
   Entries = new double[N_Entries];
   KCol = new int[N_Entries];
   RowPtr = new int[N_DOF+1];
