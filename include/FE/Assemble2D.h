@@ -22,10 +22,10 @@
 #endif
 
 /** a function from a finite element space */
-void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
                 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                 int n_matrices, TMatrix2D **matrices,
-                int n_rhs, double **rhs, TFESpace2D **ferhs,
+                int n_rhs, double **rhs, const TFESpace2D **ferhs,
                 BoundCondFunct2D **BoundaryConditions,
                 BoundValueFunct2D **BoundaryValues,
                 LocalAssembling2D& la
@@ -40,18 +40,11 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
 
 
 /** a function from a finite element space */
-void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
-                int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-                int n_matrices, TMatrix2D **matrices,
-                int n_rhs, double **rhs, TFESpace2D **ferhs,
-                TDiscreteForm2D *DiscreteForm,
-                BoundCondFunct2D **BoundaryConditions,
-                BoundValueFunct2D **BoundaryValues,
-                TAuxParam2D *parameters
-#ifdef __3D__
-                , TAux2D3D *Aux2D3D
-#endif
-, int AssemblePhaseID = -1 
+void Assemble2D( int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices, 
+TSquareMatrix2D** sqmatrices, int n_matrices, TMatrix2D** matrices, int n_rhs, 
+double** rhs, const TFESpace2D** ferhs, TDiscreteForm2D* DiscreteForm, 
+BoundCondFunct2D** BoundaryConditions, BoundValueFunct2D** BoundaryValues, 
+TAuxParam2D* Parameters, int AssemblePhaseID = -1 
                );
 
 /** assembling of matrices multiplied by a factor */
@@ -114,13 +107,13 @@ void Assemble2D_CIP(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespaces,
 
 /** assembling for vector finite elements (Raviart-Thomas (RT) and 
  * Brezzi-Douglas-Marini (BDM)) */
-void Assemble2D_VectFE(int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
            int n_sqmatrices, TSquareMatrix2D **sqmatrices,
            int n_matrices, TMatrix2D **matrices,
-           int n_rhs, double **rhs, TFESpace2D **ferhs,
+           int n_rhs, double **rhs, const TFESpace2D **ferhs,
            LocalAssembling2D& la,
            BoundCondFunct2D **BoundaryConditions,
-           BoundValueFunct2D **BoundaryValues
+           const BoundValueFunct2D * const *BoundaryValues
            );
 
 #ifdef __MORTAR__

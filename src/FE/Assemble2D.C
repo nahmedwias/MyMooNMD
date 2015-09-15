@@ -30,10 +30,10 @@
 #include <vector>
 
 
-void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
                 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                 int n_matrices, TMatrix2D **matrices,
-                int n_rhs, double **rhs, TFESpace2D **ferhs,
+                int n_rhs, double **rhs, const TFESpace2D **ferhs,
                 TDiscreteForm2D *DiscreteForm,
                 BoundCondFunct2D **BoundaryConditions,
                 BoundValueFunct2D **BoundaryValues,
@@ -65,7 +65,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -1244,7 +1244,7 @@ double factor
   int N_Test, N_Ansatz, N_Joints, N_Edges;
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -1709,7 +1709,7 @@ double factor
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      fespace = (TFESpace2D *)(matrices[j]->GetStructure()->GetTestSpace());
+      fespace =(const TFESpace2D*)(matrices[j]->GetStructure()->GetTestSpace());
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
 
@@ -2292,7 +2292,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -3224,14 +3224,13 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     implementation: Alfonso (07.09.2010)
 */
 
-void Assemble2D_VectFE(int n_fespaces, TFESpace2D **fespaces,
-int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-int n_matrices, TMatrix2D **matrices,
-int n_rhs, double **rhs, TFESpace2D **ferhs,
- LocalAssembling2D& la,
-BoundCondFunct2D **BoundaryConditions,
-BoundValueFunct2D **BoundaryValues
-)
+void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
+                       int n_sqmatrices, TSquareMatrix2D** sqmatrices,
+                       int n_matrices, TMatrix2D** matrices, int n_rhs,
+                       double** rhs, const TFESpace2D** ferhs,
+                       LocalAssembling2D& la,
+                       BoundCondFunct2D** BoundaryConditions, 
+                       const BoundValueFunct2D* const * BoundaryValues)
 {
 #ifdef __2D__
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -3376,7 +3375,7 @@ BoundValueFunct2D **BoundaryValues
     for(int iSqMat=0;iSqMat<n_sqmatrices;iSqMat++)
     {
       // fe space for this square matrix
-      TFESpace2D *fespace = fespaces[la.rowSpaceOfMat(iSqMat)];
+      const TFESpace2D *fespace = fespaces[la.rowSpaceOfMat(iSqMat)];
       // the number of local basis functions (= size of local matrix)
       int N_BaseFunctions = LocN_BF[la.rowSpaceOfMat(iSqMat)];
       
@@ -3408,10 +3407,13 @@ BoundValueFunct2D **BoundaryValues
     // ########################################################################
     for(int iMat=0;iMat<n_matrices;iMat++)
     {
-      TFESpace2D* testSpace = matrices[iMat]->GetStructure()->GetTestSpace2D();
-      TFESpace2D*ansatzSpace=matrices[iMat]->GetStructure()->GetAnsatzSpace2D();
-      TFE2D*test_fe = TFEDatabase2D::GetFE2D(testSpace->GetFE2D(icell, cell));
-      TFE2D*ansatz_fe=TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(icell,cell));
+      const TFESpace2D* testSpace = 
+        matrices[iMat]->GetStructure()->GetTestSpace2D();
+      
+      const TFESpace2D*ansatzSpace = 
+        matrices[iMat]->GetStructure()->GetAnsatzSpace2D();
+      TFE2D * test_fe = TFEDatabase2D::GetFE2D(testSpace->GetFE2D(icell, cell));
+      TFE2D *ansatz_fe=TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(icell,cell));
       
       // number of test and ansatz functions
       int N_Test = test_fe->GetSize();
@@ -3457,7 +3459,7 @@ BoundValueFunct2D **BoundaryValues
     // ########################################################################
     for(int irhs=0;irhs<n_rhs;irhs++)
     {
-      TFESpace2D *fespace = ferhs[irhs];
+      const TFESpace2D *fespace = ferhs[irhs];
       FE2D CurrentElement = fespace->GetFE2D(icell, cell);
       TFE2D *fe = TFEDatabase2D::GetFE2D(CurrentElement);
 
@@ -3483,7 +3485,7 @@ BoundValueFunct2D **BoundaryValues
       //////////////////////////////////////////////////////////////////////
       // take care of boundary conditions:      
       BoundCondFunct2D *BoundaryCondition = BoundaryConditions[irhs];
-      BoundValueFunct2D *BoundaryValue = BoundaryValues[irhs];
+      const BoundValueFunct2D *BoundaryValue = BoundaryValues[irhs];
       
       for(int ijoint=0; ijoint<N_Edges; ijoint++)
       {
@@ -4739,7 +4741,7 @@ int *CounterBoundaryParam
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -6168,7 +6170,7 @@ TAuxParam2D *Parameters)
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -7719,7 +7721,7 @@ TAuxParam2D *Parameters)
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
@@ -9406,18 +9408,12 @@ TAuxParam2D *Parameters)
 
 
 
-void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
-                int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-                int n_matrices, TMatrix2D **matrices,
-                int n_rhs, double **rhs, TFESpace2D **ferhs,
-                BoundCondFunct2D **BoundaryConditions,
-                BoundValueFunct2D **BoundaryValues,
-                LocalAssembling2D& la
-#ifdef __3D__
-                , TAux2D3D *Aux2D3D
-#endif
-                , int AssemblePhaseID
-)
+void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
+                TSquareMatrix2D** sqmatrices, int n_matrices,
+                TMatrix2D** matrices, int n_rhs, double** rhs,
+                const TFESpace2D** ferhs, BoundCondFunct2D** BoundaryConditions,
+                BoundValueFunct2D** BoundaryValues, LocalAssembling2D& la,
+                int AssemblePhaseID)
 {
   int N_AllMatrices = n_sqmatrices+n_matrices;
   int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ii,jj,ll,ij;
@@ -9426,7 +9422,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
