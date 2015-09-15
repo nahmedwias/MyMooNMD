@@ -37,7 +37,8 @@
 #include <Database.h>
 
 /** generate the matrix structure, both spaces are 2D */
-TStructure2D::TStructure2D(TFESpace2D *testspace, TFESpace2D *ansatzspace)
+TStructure2D::TStructure2D(const TFESpace2D* testspace,
+                           const TFESpace2D* ansatzspace)
 {
   TCollection *coll;
   TBaseCell *cell;
