@@ -22,7 +22,7 @@ class TMGLevel2D
     int Level;
 
     /** FE space */
-    TFESpace2D *FESpace;
+    const TFESpace2D *FESpace;
 
     /** permutation vector */
     int *Permutation;
@@ -150,7 +150,7 @@ class TMGLevel2D
     void Reset(double *vect);
 
     /** return FE space */
-    TFESpace2D *GetFESpace()
+    const TFESpace2D *GetFESpace()
     { return FESpace; }
 
     /** smoother */
