@@ -59,7 +59,7 @@ int maxn_parameters, TDomain *domain)
   MaxN_Parameters=maxn_parameters;
   N_Parameters=0;
 
-  FESpaceArray=new TFESpace2D*[MaxN_FESpaces];
+  FESpaceArray=new const TFESpace2D*[MaxN_FESpaces];
 
   FEFunctionArray=new TFEFunction2D*[MaxN_ScalarVar];
 
@@ -78,9 +78,9 @@ int maxn_parameters, TDomain *domain)
 
 
 /** add a FESpace into this output object (internal use) */
-int TOutput2D::AddFESpace(TFESpace2D *fespace)
+int TOutput2D::AddFESpace( const TFESpace2D* fespace )
 {
-  TFESpace2D **NewStorage;
+  const TFESpace2D **NewStorage;
   int i;
 
   if(N_FESpaces==0)
@@ -99,8 +99,8 @@ int TOutput2D::AddFESpace(TFESpace2D *fespace)
   if(MaxN_FESpaces<=N_FESpaces)
   {
     // enlarge storage
-    NewStorage=new TFESpace2D*[MaxN_FESpaces+5];
-    memcpy(NewStorage, FESpaceArray, sizeof(TFESpace2D *)*MaxN_FESpaces);
+    NewStorage=new const TFESpace2D*[MaxN_FESpaces+5];
+    memcpy(NewStorage, FESpaceArray, sizeof(const TFESpace2D *)*MaxN_FESpaces);
     MaxN_FESpaces +=5;
     delete FESpaceArray;
     FESpaceArray=NewStorage;
@@ -305,7 +305,7 @@ int TOutput2D::WriteGrape(const char *name)
   TVertex **Vertices, *Last, *Current;
   int *NumberVertex;
   double *ParamPtr;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   TFEVectFunct2D *fevectfunct;
   double *Coords;
@@ -675,7 +675,7 @@ int TOutput2D::WriteGnuplot(const char *name)
   double x[4], y[4];
   double *Data;
   int *FESpaceNumber;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   char *Comment;
   double xi[4], eta[4];
   TBaseFunct2D *bf;
@@ -915,7 +915,7 @@ int TOutput2D::WriteVtk(const char *name)
   
   TVertex **Vertices, *Last, *Current;
   TBaseCell *cell;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TBaseFunct2D *bf;
   FE2D FE_ID;
 
@@ -1700,7 +1700,7 @@ int TOutput2D::WriteMatlab(const char *name)
   double *Data_sorted;
   double max_x, max_y, min_x, min_y, maxdist_x, maxdist_y;
   int *FESpaceNumber;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   double val[5], *X, *Y, *Val;
   int cordx, cordy;
   TFEFunction2D *u;
@@ -1863,7 +1863,7 @@ int TOutput2D::WriteMatlabOld(const char *name)
   double x[4], y[4];
   double *Data;
   int *FESpaceNumber;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   char *Comment;
   double xi[4], eta[4];
   TBaseFunct2D *bf;
@@ -2089,7 +2089,7 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
   bool found = false;
   TBaseCell *CellX, *CellY;
   TJoint *JointX, *JointY;
-  TFESpace2D *FESpace;
+  const TFESpace2D *FESpace;
   double *FEValues, value, LocValues[4];
   double BFValues[4][MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *Index;
@@ -2351,7 +2351,7 @@ int TOutput2D::WriteGMV(const char *name)
   TVertex **Vertices, *Current, *Last;
   FE2D FE_ID;
   TBaseFunct2D *bf;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions2D], *Coeffs;
   double xi, eta, value;
@@ -2762,7 +2762,7 @@ int TOutput2D::Write_ParVTK(
 
   TVertex **Vertices, *Last, *Current;
   TBaseCell *cell;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TBaseFunct2D *bf;
   FE2D FE_ID;
 
@@ -3707,7 +3707,7 @@ void TOutput2D::ComputeOutputData()
 
 void TOutput2D::ComputeFEValues()
 {
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   TBaseFunct2D *BaseFunc;
   FE2D FeID;
   TBaseCell *Cell;
