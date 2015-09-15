@@ -29,7 +29,7 @@
 // =======================================================================
 
 /** return inner product (x,y) */
-double Ddot(int n, double *x, double *y);
+double Ddot(int n, const double *x, const double *y);
 
  #ifdef _MPI
 /** return inner product (x,y) */
@@ -44,19 +44,19 @@ double ParDdotNSE3D(double *x, double *y, int N_U, int N_P, TParFECommunicator2D
  #endif
 
 /** y := alpha*x + y */
-void Daxpy(int n, double alpha, double *x, double *y);
+void Daxpy(int n, double alpha, const double *x, double *y);
 
 /** z := alpha*x + beta*y */
 void Dsum(int n, double alpha, double beta, double *x, double *y, double *z);
 
 /** b := a */
-void Dcopy(int n, double *x, double *y);
+void Dcopy(int n, const double *x, double *y);
 
 /** x := alpha*x */
 void Dscal(int n, double alpha, double *x);
 
 /** return Euclidian norm of x */
-double Dnorm(int n, double *x);
+double Dnorm(int n, const double *x);
 
 // =======================================================================
 // BLAS 2 
@@ -273,30 +273,36 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z);
 
 #ifdef __2D__
 /** prolongate */
-void Prolongate(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
+void Prolongate(const TFESpace2D *CoarseSpace, const TFESpace2D *FineSpace,
         double *CoarseFunctions, double *FineFunctions, double *aux);
 
-void Prolongate(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
+void Prolongate(const TFESpace2D *CoarseSpace, const TFESpace2D *FineSpace,
         int N_Functions,
         double *CoarseFunctions, double *FineFunctions, double *aux);
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
-    double *CoarseFunctions, double *FineFunctions, double *aux);
+void DefectRestriction(const TFESpace2D *CoarseSpace, 
+                       const TFESpace2D *FineSpace,
+                       double *CoarseFunctions, double *FineFunctions,
+                       double *aux);
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
-    int N_Functions,
-    double *CoarseFunctions, double *FineFunctions, double *aux);
+void DefectRestriction(const TFESpace2D *CoarseSpace,
+                       const TFESpace2D *FineSpace,
+                       int N_Functions, double *CoarseFunctions,
+                       double *FineFunctions, double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
-    double *CoarseFunction, double *FineFunction, double *aux);
+void RestrictFunction(const TFESpace2D *CoarseSpace, 
+                      const TFESpace2D *FineSpace,
+                      double *CoarseFunction, double *FineFunction,
+                      double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
-    int N_Functions, 
-    double *CoarseFunction, double *FineFunction, double *aux);
+void RestrictFunction(const TFESpace2D *CoarseSpace, 
+                      const TFESpace2D *FineSpace, int N_Functions, 
+                      double *CoarseFunction, double *FineFunction,
+                      double *aux);
 
 /** project vector v into L20 */
 void IntoL20Vector2D(double *v, int Length, int order);
@@ -307,7 +313,7 @@ void IntoL20Vector2D(double *v, int Length, int order, TParFECommunicator2D *Par
 #endif
 
 /** project fe function v into L20 */
-void IntoL20FEFunction(double *v, int Length, TFESpace2D *FESpace,
+void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
                        int velocity_space, int pressure_space
                        #ifdef _MPI
                        , MPI_Comm comm

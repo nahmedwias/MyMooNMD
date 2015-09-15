@@ -11,11 +11,11 @@
 #include <math.h>
 
 /** return inner product (x,y) */
-double Ddot(int n, double *x, double *y)
+double Ddot(int n, const double *x, const double *y)
 {
   register double r;
   register int i;
-  register double *a, *b;
+  register const double *a, *b;
 
   r = 0.0;
   a = x;
@@ -31,10 +31,11 @@ double Ddot(int n, double *x, double *y)
 }
 
 /** y := alpha*x + y */
-void Daxpy(int n, double alpha, double *x, double *y)
+void Daxpy(int n, double alpha, const double *x, double *y)
 {
   register int i;
-  register double *a, *b;
+  register const double *a;
+  register double *b;
   register double scal;
 
   a = x;
@@ -72,7 +73,7 @@ void Dsum(int n, double alpha, double beta, double *x, double *y, double *z)
 }
 
 /** b := a */
-void Dcopy(int n, double *a, double *b)
+void Dcopy(int n, const double *a, double *b)
 {
   memcpy(b, a, n*sizeof(double));
 }
@@ -94,11 +95,11 @@ void Dscal(int n, double alpha, double *x)
 }
 
 /** return Euclidian norm of x */
-double Dnorm(int n, double *x)
+double Dnorm(int n, const double *x)
 {
   register double r;
   register int i;
-  register double *a;
+  register const double *a;
   register double z;
 
   a = x;

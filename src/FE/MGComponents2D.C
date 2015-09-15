@@ -115,8 +115,8 @@ void L1Int(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 /** prolongate */
-void Prolongate(TFESpace2D *CoarseSpace, 
-        TFESpace2D *FineSpace, double *CoarseFunction, 
+void Prolongate(const TFESpace2D *CoarseSpace, 
+        const TFESpace2D *FineSpace, double *CoarseFunction, 
         double *FineFunction, double *aux)
 
 {
@@ -323,7 +323,7 @@ void Prolongate(TFESpace2D *CoarseSpace,
   }
 }
 
-void Prolongate(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
+void Prolongate(const TFESpace2D *CoarseSpace, const TFESpace2D *FineSpace,
         int N_Functions,
         double *CoarseFunction, double *FineFunction, double *aux)
 
@@ -549,8 +549,8 @@ void Prolongate(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
 }
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace2D *CoarseSpace,
-        TFESpace2D *FineSpace, double *CoarseFunction,
+void DefectRestriction(const TFESpace2D *CoarseSpace,
+        const TFESpace2D *FineSpace, double *CoarseFunction,
         double *FineFunction, double *aux)
 {
   int i,j,k,l;
@@ -776,7 +776,8 @@ void DefectRestriction(TFESpace2D *CoarseSpace,
 }
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
+void DefectRestriction(const TFESpace2D *CoarseSpace, 
+                       const TFESpace2D *FineSpace,
         int N_Functions,
         double *CoarseFunction, double *FineFunction, double *aux)
 {
@@ -1020,8 +1021,8 @@ void DefectRestriction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
 }
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace2D *CoarseSpace, 
-    TFESpace2D *FineSpace,
+void RestrictFunction(const TFESpace2D *CoarseSpace, 
+    const TFESpace2D *FineSpace,
     double *CoarseFunction, double *FineFunction,
     double *aux)
 {
@@ -1245,7 +1246,8 @@ void RestrictFunction(TFESpace2D *CoarseSpace,
 } // RestrictFunction
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace2D *CoarseSpace, TFESpace2D *FineSpace,
+void RestrictFunction(const TFESpace2D *CoarseSpace, 
+                      const TFESpace2D *FineSpace,
     int N_Functions,
     double *CoarseFunction, double *FineFunction, double *aux)
 {
@@ -1795,7 +1797,7 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
 } // IntoL20Function
 
 /** project function v into L20 */
-void IntoL20FEFunction(double *v, int Length, TFESpace2D *FESpace,
+void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
                        int velocity_space, int pressure_space
 #ifdef _MPI
                         , MPI_Comm comm
@@ -3337,7 +3339,7 @@ void CoupledMatVect(TSquareMatrix *A, double *x, double *y)
   int *RowPtr, *KCol;
   double *Entries;
   int N_UDOF, N_PDOF, N_Active;
-  TFESpace2D *USpace;
+  const TFESpace2D *USpace;
   TCollection *coll;
   double *u1, *u2, *p, *v1, *v2, *q, *r1, *r2, *r3;
   double s, t, value1, value2;
@@ -3496,7 +3498,7 @@ void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r)
   int *RowPtr, *KCol;
   double *Entries;
   int N_UDOF, N_PDOF, N_Active;
-  TFESpace2D *USpace;
+  const TFESpace2D *USpace;
   TCollection *coll;
   double *u1, *u2, *p, *v1, *v2, *q, *r1, *r2, *r3;
   double s, t, value1, value2;
