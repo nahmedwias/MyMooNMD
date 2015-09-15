@@ -117,7 +117,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   TFE2D *ele;
   RefTrans2D RefTrans;
   TRefTrans2D *F_K;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   BF2DRefElements RefElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
@@ -329,7 +329,7 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   int N_Levels;
   TMGLevel2D *Level;
   int *DOF, *JointDOF;
-  TFESpace2D *VelocitySpace, *GridSpace;
+  const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll;
   TBaseCell *cell;
   FE2D FEId;
@@ -985,7 +985,7 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   int N_Levels;
   TMGLevel2D *Level;
   int *DOF, *JointDOF;
-  TFESpace2D *VelocitySpace, *GridSpace;
+  const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll;
   TBaseCell *cell;
   FE2D FEId;
@@ -1683,7 +1683,7 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
   int N_Levels;
   TMGLevel2D *Level;
   int *DOF, *JointDOF;
-  TFESpace2D *VelocitySpace, *GridSpace;
+  const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll, *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
@@ -2198,7 +2198,7 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
   int N_Levels;
   TMGLevel2D *Level;
   int *DOF, *JointDOF;
-  TFESpace2D *VelocitySpace, *GridSpace;
+  const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll, *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
@@ -2711,7 +2711,7 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   int *GridBeginIndex, *GridGlobalNumbers;
   int N_Cells, N_Vertices, N_Edges, N_LocalDOFs;
   int *DOF, *JointDOF;
-  TFESpace2D *VelocitySpace, *GridSpace;
+  const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll, *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
@@ -3776,7 +3776,7 @@ void IntUn(TFEVectFunct2D *u, double *Nx, double *Ny)
   int N_LinePoints;
   double *zeta, *LineWeights;
   double *u1, *u2;
-  TFESpace2D *USpace;
+  const TFESpace2D *USpace;
   TJoint *joint;
   FE2D FEId;
   TFE2D *Element;
