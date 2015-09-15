@@ -96,7 +96,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv;
   TJoint *joint;
-  TFESpace2D *fespace, *fespaceConv; 
+  const TFESpace2D *fespace, *fespaceConv; 
 
   // gives an array where the needed derivatives are described
   // defined in NavierStokes.h 
@@ -587,7 +587,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   TJoint *joint;
   TVertex *vertex0;
   double x_vertex, y_vertex;
-  TFESpace2D *fespace, *fespaceConv; 
+  const TFESpace2D *fespace, *fespaceConv; 
 
   // gives an array where the needed derivatives are described
   // defined in NavierStokes.h 
@@ -1110,7 +1110,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
-  TFESpace2D *fespace, *fespaceConv; 
+  const TFESpace2D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { FALSE };
   int N_Derivatives = 2;
@@ -1626,7 +1626,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
-  TFESpace2D *fespace, *fespaceConv; 
+  const TFESpace2D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { FALSE };
   int N_Derivatives = 2;
@@ -2138,7 +2138,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
-  TFESpace2D *fespace, *fespaceConv; 
+  const TFESpace2D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex;
 
