@@ -45,7 +45,7 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(TFESpace2D *fespace2D, char *name,
+TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
 char *description, double *values, int length)
 {
 
@@ -75,13 +75,13 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               int N_Errors, ErrorMethod2D *ErrorMeth, 
                               CoeffFct2D *Coeff, 
                               TAuxParam2D *Aux,
-                              int n_fespaces, TFESpace2D **fespaces,
+                              int n_fespaces, const TFESpace2D **fespaces,
                               double *errors)
 {
   int i,j,k,l,n,m, ij, N_UsedElements, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_BaseFuncts, N_, N_Edges;
   int Used[N_FEs2D], *N_BaseFunct;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
@@ -385,13 +385,13 @@ void TFEFunction2D::GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
 			      int N_Errors, ErrorMethod2D *ErrorMeth, 
 			      CoeffFct2D *Coeff, 
 			      TAuxParam2D *Aux,
-			      int n_fespaces, TFESpace2D **fespaces,
+			      int n_fespaces, const TFESpace2D **fespaces,
 			      double *errors)
 {
 	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs2D], *N_BaseFunct;
-	TFESpace2D *fespace;
+	const TFESpace2D *fespace;
 	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
 	BaseFunct2D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
@@ -418,7 +418,7 @@ void TFEFunction2D::GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
 	TBaseCell **LocalCell;
 	TCollection *LocalColl;
 	FE2D *LocalFEs;
-	TFESpace2D *RootSpace;
+	const TFESpace2D *RootSpace;
 	TFEFunction2D *RootFct;
 	double *RootVal;
 	int RootLen;
@@ -427,7 +427,7 @@ void TFEFunction2D::GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
 	int Lev;
 	TCollection *FineColls[MaxLev];
 	TFEFunction2D *FineFcts[MaxLev];
-	TFESpace2D *FineSpaces[MaxLev];
+	const TFESpace2D *FineSpaces[MaxLev];
 	TCollection *CurrColl;
 	TGridCell *CurrCell;
 	int N_FineCells, N_CoarseCells, CellId;
@@ -630,13 +630,13 @@ void TFEFunction2D::GetErrorsOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
 			      int N_Errors, ErrorMethod2D *ErrorMeth, 
 			      CoeffFct2D *Coeff, 
 			      TAuxParam2D *Aux,
-			      int n_fespaces, TFESpace2D **fespaces, int& kink,
+			      int n_fespaces, const TFESpace2D **fespaces, int& kink,
 			      double upper, double lower, double *errors)
 {
 	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs2D], *N_BaseFunct;
-	TFESpace2D *fespace;
+	const TFESpace2D *fespace;
 	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
 	BaseFunct2D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
@@ -815,13 +815,13 @@ void TFEFunction2D::GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives
 				   int N_Errors, ErrorMethod2D *ErrorMeth, 
 				   CoeffFct2D *Coeff, 
 				   TAuxParam2D *Aux,
-				   int n_fespaces, TFESpace2D **fespaces,
+				   int n_fespaces, const TFESpace2D **fespaces,
 				   double radius, double upper, double lower,double *errors)
 {
 	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs2D], *N_BaseFunct;
-	TFESpace2D *fespace;
+	const TFESpace2D *fespace;
 	FE2D LocalUsedElements[N_FEs2D], CurrentElement;
 	BaseFunct2D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
@@ -848,7 +848,7 @@ void TFEFunction2D::GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives
 	TBaseCell **LocalCell;
 	TCollection *LocalColl;
 	FE2D *LocalFEs;
-	TFESpace2D *RootSpace;
+	const TFESpace2D *RootSpace;
 	TFEFunction2D *RootFct;
 	double *RootVal, RootError;
 	int RootLen;
@@ -857,7 +857,7 @@ void TFEFunction2D::GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives
 	int Lev, LastLev;
 	TCollection *FineColls[MaxLev];
 	TFEFunction2D *FineFcts[MaxLev];
-	TFESpace2D *FineSpaces[MaxLev];
+	const TFESpace2D *FineSpaces[MaxLev];
 	TCollection *CurrColl;
 	TGridCell *CurrCell;
 	int N_FineCells, N_CoarseCells, CellId;
@@ -1576,18 +1576,18 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 }
 
 /** calculate parameters which are connected to a mesh cell */
-void TFEFunction2D::GetMeshCellParams(DoubleFunct2D *Exact, int N_Derivatives,
-                                      MultiIndex2D *NeededDerivatives,
-                                      int N_Errors, ErrorMethod2D *ErrorMeth,
-                                      CoeffFct2D *Coeff,
-                                      TAuxParam2D *Aux,
-                                      int n_fespaces, TFESpace2D **fespaces,
-                                      double *errors, double *cell_parameters)
+void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives, 
+                                      MultiIndex2D* NeededDerivatives,
+                                      int N_Errors, ErrorMethod2D* ErrorMeth,
+                                      CoeffFct2D* Coeff, TAuxParam2D* Aux,
+                                      int n_fespaces,
+                                      const TFESpace2D** fespaces,
+                                      double* errors, double* parameters)
 {
   int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_;
   int Used[N_FEs2D], *N_BaseFunct;
-  TFESpace2D *fespace;
+  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
@@ -1719,7 +1719,7 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D *Exact, int N_Derivatives,
     for(j=0;j<N_Errors;j++)
     {
       errors[j] += LocError[j];
-      cell_parameters[i + j *N_Cells] = LocError[j];
+            parameters[i + j *N_Cells] = LocError[j];
     }
 
   }                                               // endfor i

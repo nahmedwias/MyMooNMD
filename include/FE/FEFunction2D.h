@@ -31,7 +31,7 @@ class TFEFunction2D
     char *Description;
 
     /** space to which this function belongs to */
-    TFESpace2D *FESpace2D;
+    const TFESpace2D *FESpace2D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -41,7 +41,7 @@ class TFEFunction2D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction2D(TFESpace2D *fespace2D, char *name, char *description,
+    TFEFunction2D(const TFESpace2D *fespace2D, char *name, char *description,
                   double *values, int length);
 
     /** destructor */
@@ -56,7 +56,7 @@ class TFEFunction2D
     { return Description; }
 
     /** return fe space */
-    TFESpace2D *GetFESpace2D()
+    const TFESpace2D *GetFESpace2D()
     { return FESpace2D; }
 
     /** return length */
@@ -72,7 +72,7 @@ class TFEFunction2D
                    MultiIndex2D *NeededDerivatives,
                    int N_Errors, ErrorMethod2D *ErrorMeth, 
                    CoeffFct2D *Coeff, TAuxParam2D *Aux,
-                   int n_fespaces, TFESpace2D **fespaces,
+                   int n_fespaces, const TFESpace2D **fespaces,
                    double *errors);
 
     /** @brief use this for vector valued basis functions (Raviart-Thomas (RT)
@@ -86,21 +86,21 @@ class TFEFunction2D
 		   MultiIndex2D *NeededDerivatives,
 		   int N_Errors, ErrorMethod2D *ErrorMeth, 
 		   CoeffFct2D *Coeff, TAuxParam2D *Aux,
-		   int n_fespaces, TFESpace2D **fespaces,
+		   int n_fespaces, const TFESpace2D **fespaces,
 		   double *errors);
     
     void GetErrorsOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
 		   MultiIndex2D *NeededDerivatives,
 		   int N_Errors, ErrorMethod2D *ErrorMeth, 
 		   CoeffFct2D *Coeff, TAuxParam2D *Aux,
-		   int n_fespaces, TFESpace2D **fespaces,
+		   int n_fespaces, const TFESpace2D **fespaces,
 		   int& kink, double upper, double lower, double *errors);
     
     void GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
 			MultiIndex2D *NeededDerivatives,
 			int N_Errors, ErrorMethod2D *ErrorMeth, 
 			CoeffFct2D *Coeff, TAuxParam2D *Aux,
-			int n_fespaces, TFESpace2D **fespaces,
+			int n_fespaces, const TFESpace2D **fespaces,
 			double radius, double upper, double lower,double *errors);
 
     /** determine the value of function and its first derivatives at
@@ -158,7 +158,7 @@ class TFEFunction2D
                            int N_Errors, ErrorMethod2D *ErrorMeth, 
                            CoeffFct2D *Coeff, 
                            TAuxParam2D *Aux,
-                           int n_fespaces, TFESpace2D **fespaces,
+                           int n_fespaces, const TFESpace2D **fespaces,
                            double *errors, double *parameters);
 
     /** calculate the super-convergence interpolation of an exact function */
