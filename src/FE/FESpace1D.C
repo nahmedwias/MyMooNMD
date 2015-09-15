@@ -110,7 +110,7 @@ TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description,
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE1D TFESpace1D::GetFE1D(int i, TBaseCell *cell)
+FE1D TFESpace1D::GetFE1D( int i, TBaseCell* cell ) const
 {
   FE1D ret;
 

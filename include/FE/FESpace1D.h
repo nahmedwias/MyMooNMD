@@ -86,11 +86,11 @@ class TFESpace1D : public TFESpace
     void ConstructSpace();
 
     /** return identifiers of used elements */
-    FE1D *GetUsedElements()
+    FE1D *GetUsedElements() const
     { return UsedElements; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE1D GetFE1D(int i, TBaseCell *cell);
+    FE1D GetFE1D(int i, TBaseCell *cell) const;
 
     void SetIntlPtIndexOfPts(int *intlPtIndexOfPts)
      { IntlPtIndexOfPts = intlPtIndexOfPts; }
