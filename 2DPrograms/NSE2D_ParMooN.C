@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   Example_NSE2D example;
   
   // create an object of the Naviert-Stokes class
-  NSE2D ns(&Domain, &example);
+  NSE2D ns(Domain, example);
   ns.assemble();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
@@ -88,9 +88,6 @@ int main(int argc, char* argv[])
     if(ns.stopIt(k))
       break;
   } // end for k
-  
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    ns.get_pressure()->project_into_L20(0.0);
   
   ns.output();
   

@@ -21,12 +21,13 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  double t_start = GetTime();
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1]);  
+  TDomain domain(argv[1]);
 
   //set PROBLEM_TYPE to CD if not yet set
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
@@ -57,12 +58,13 @@ int main(int argc, char* argv[])
   Example_Darcy2D example;
   
   //=========================================================================
-  Darcy2D darcy2d(&domain, &example);
+  Darcy2D darcy2d(domain, example);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();
   //=========================================================================
   
   CloseFiles();
+  OutPut("used time: " << GetTime() - t_start << " seconds" << endl);
   return 0;
 } // end main

@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase;
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1]);  
+  TDomain domain(argv[1]);
 
   //set PROBLEM_TYPE to CD if not yet set
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
@@ -58,12 +58,11 @@ int main(int argc, char* argv[])
   Example_CD2D example;
    
   //=========================================================================
-  CD2D cd2d(&domain, &example);
+  CD2D cd2d(domain, example);
   cd2d.assemble();
   cd2d.solve();
   cd2d.output();
   //=========================================================================
-  
   CloseFiles();
   return 0;
 } // end main
