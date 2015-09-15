@@ -91,7 +91,7 @@ void TMatrix::PrintFull(std::string name, int fieldWidth) const
     int posKCol = rowPtr[curRow];
     for (int curCol = 0; curCol < structure->GetN_Columns(); curCol++) 
     {
-      if(curCol == KCol[posKCol] && posKCol < rowEnd) 
+      if(curCol == KCol[posKCol] && posKCol < rowEnd)
       {
         cout << setw(fieldWidth) << Entries[posKCol] << ", ";
         posKCol++;
@@ -460,15 +460,13 @@ void TMatrix::remove_zeros(double tol)
 }
 
 
-void TMatrix::add(const TMatrix& m, double factor)
+void TMatrix::add_scaled(const TMatrix& m, double factor)
 {
   if(this->structure != m.GetStructure() // compare pointers
      && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
   {
-    ErrMsg("TMatrix::add : the two matrices do not match.");
-    throw("TMatrix::add : the two matrices do not match.");
+    ErrThrow("TMatrix::add : the two matrices do not match.");
   }
-  
   Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->Entries);
 }
 
@@ -514,6 +512,36 @@ TMatrix & TMatrix::operator*=(const double a)
   return *this;
 }
 
+
+void TMatrix::reorderMatrix() 
+{
+  int l, begin, end;
+  double value;
+  
+  int* Row = structure->GetRowPtr();
+  int* KCol = structure->GetKCol();
+  
+  //OutPut("\tPARDISO: reordering of the columns will be performed"<<endl);
+  //OutPut("\tPARDISO:   no back ordering implemented !!!"<<endl);
+  
+  for(int i=0;i<structure->GetN_Rows();i++) 
+  {
+    begin=Row[i];
+    end=Row[i+1];
+    for(int j=begin;j<end;j++) 
+    {
+      for(int k=j+1;k<end;k++) 
+      {
+        if(KCol[j] > KCol[k]) 
+        {
+          l = KCol[j];       value = Entries[j];
+          KCol[j] = KCol[k]; Entries[j] = Entries[k];
+          KCol[k] = l;       Entries[k] = value;
+        }
+      }
+    }
+  }
+}
 
 void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
                          bool deleteOldArrays)
@@ -594,4 +622,15 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
     delete [] Entries; // maybe we should always delete this
   }
   Entries = new_entries;
+}
+
+/** ************************************************************************* */
+void TMatrix::info(size_t verbose) const
+{
+  OutPut(" TMatrix M with " << this->GetN_Rows() << " rows and "
+         << this->GetN_Columns() << " columns\n");
+  if(verbose > 2)
+  {
+    this->Print("M");
+  }
 }

@@ -130,6 +130,13 @@ class TMatrix
       this->Entries = entries;
     }
     
+    /**
+     * @brief reorders the Matrix to comply with direct solvers. 
+     * 
+     * @warning This changes the structure of the matrix
+     */
+    void reorderMatrix();
+    
     /** @brief return a new TMatrix which is the transposed of this matrix 
      * 
      * If this is an object of a derived class (e.g. TMatrix2D, TSquareMatrix),
@@ -236,7 +243,7 @@ class TMatrix
      * Note that this only works if the sparsity structure is the same for this
      * matrix and m.
      */
-    void add(const TMatrix& m, double factor = 1.0);
+    void add_scaled(const TMatrix& m, double factor = 1.0);
     
     /** @brief scale this matrix
      * 
@@ -288,6 +295,9 @@ class TMatrix
      * This will give an error if that entry is not in the sparsity structure
      */
     const double & operator()(const int i, const int j) const;
+    
+    /** @brief print some information on this TMatrix */
+    void info(size_t verbose) const;
 };
 
 #endif
