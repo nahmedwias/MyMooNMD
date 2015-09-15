@@ -125,7 +125,7 @@ class TFESpace2D : public TFESpace
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE2D GetFE2D(int i, TBaseCell *cell);
+    FE2D GetFE2D( int i, TBaseCell* cell ) const;
 
     /** return position of one given DOF */
     void GetDOFPosition(int dof, double &x, double &y);

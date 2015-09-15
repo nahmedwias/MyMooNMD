@@ -1187,7 +1187,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell)
+FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell) const
 {
   FE2D ret;
 
