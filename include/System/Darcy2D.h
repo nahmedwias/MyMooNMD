@@ -129,9 +129,13 @@ class Darcy2D
     void output(int i = -1);
     
     // getters and setters
-    const BlockMatrixDarcy2D & getMatrix() const
+    const BlockMatrixDarcy2D & get_matrix() const
     { return this->systems.front().matrix; }
-    const BlockVector & getRhs() const
+    BlockMatrixDarcy2D & get_matrix()
+    { return this->systems.front().matrix; }
+    const BlockVector & get_rhs() const
+    { return this->systems.front().rhs; }
+    BlockVector & get_rhs()
     { return this->systems.front().rhs; }
     const TFEFunction2D & get_velocity() const
     { return this->systems.front().u; }
@@ -143,9 +147,11 @@ class Darcy2D
     { return this->systems.front().pressure_space; }
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
+    BlockVector & get_solution()
+    { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_Darcy2D& getExample() const
+    const Example_Darcy2D& get_example() const
     { return example; }
 };
 
