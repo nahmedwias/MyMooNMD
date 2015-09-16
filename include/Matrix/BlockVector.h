@@ -310,6 +310,7 @@ class BlockVector
       }
       catch(...)
         ErrThrow("index out of bounds");
+      throw; // only to avoid a compiler warning
     }
     const double & at(const unsigned int i) const 
     {
