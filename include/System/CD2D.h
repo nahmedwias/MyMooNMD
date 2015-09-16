@@ -123,13 +123,19 @@ class CD2D
     // getters and setters
     const BlockMatrixCD2D & get_matrix() const
     { return this->systems.front().matrix; }
+    BlockMatrixCD2D & get_matrix()
+    { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
+    { return this->systems.front().rhs; }
+    BlockVector & get_rhs()
     { return this->systems.front().rhs; }
     const TFEFunction2D & get_function() const
     { return this->systems.front().fe_function; }
     const TFESpace2D & get_space() const
     { return this->systems.front().fe_space; }
     const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
+    BlockVector & get_solution()
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
