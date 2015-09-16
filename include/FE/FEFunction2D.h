@@ -56,7 +56,7 @@ class TFEFunction2D
     { return Description; }
 
     /** return fe space */
-    const TFESpace2D *GetFESpace2D()
+    const TFESpace2D *GetFESpace2D() const
     { return FESpace2D; }
 
     /** return length */
@@ -65,6 +65,9 @@ class TFEFunction2D
 
     /** return vector of data */
     double *GetValues()
+    { return Values; }
+    
+    const double * GetValues() const 
     { return Values; }
 
     /** calculate errors to given function */
@@ -105,15 +108,17 @@ class TFEFunction2D
 
     /** determine the value of function and its first derivatives at
         the given point */
-    void FindGradient(double x, double y, double *values);
+    void FindGradient(double x, double y, double *values) const;
 
     /** determine the value of function and its first derivatives at
         the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, double x, double y, double *values);
+    void FindGradientLocal(TBaseCell *cell, int cell_no, double x, double y,
+                           double *values) const ;
 
     /** determine the value of function at
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, double *values);
+    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, 
+                        double *values) const;
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct2D *Exact);
@@ -195,12 +200,12 @@ class TFEFunction2D
    TFEFunction2D & operator=(const TFEFunction2D & rhs);
    /** find the largest and smallest element in the vector of this FE function
    */
-   void MinMax(double & min, double & max);
+   void MinMax(double & min, double & max) const;
 
    /** print the largest and smallest element in the vector of this FE 
        function 
    */
-   void PrintMinMax();
+   void PrintMinMax() const;
 
 };
 #endif

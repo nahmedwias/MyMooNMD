@@ -1075,7 +1075,7 @@ void TFEFunction2D::GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives
 
 /** determine the value of function and its first derivatives at
     the given point */
-void TFEFunction2D::FindGradient(double x, double y, double *values)
+void TFEFunction2D::FindGradient(double x, double y, double *values) const
 {
   int i,j,k, N_Cells;
   double xv, yv, xi, eta;
@@ -1185,8 +1185,8 @@ void TFEFunction2D::FindGradient(double x, double y, double *values)
 /** determine the value of function and its first derivatives at
     the given point which lies within !! the cell *cell (not on the boundary
     of that cell !!) */
-void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no,
-double x, double y, double *values)
+void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no, double x,
+                                      double y, double *values) const
 {
   int j,k, N_Cells;
   double xv, yv, xi, eta, eps = 1e-20;
@@ -1304,8 +1304,8 @@ double x, double y, double *values)
     cell *cell. This also works for vector valued basis functions as are used 
     for Raviart-Thomas elements.
 */
-void TFEFunction2D::FindValueLocal(TBaseCell *cell, int cell_no,
-double x, double y, double *values)
+void TFEFunction2D::FindValueLocal(TBaseCell *cell, int cell_no, double x,
+                                   double y, double *values) const
 {
   int i, j, k;
   double xv, yv, xi, eta, eps = 1e-20;
@@ -2512,7 +2512,7 @@ TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)
   and maximum of the FE-function. However in other cases this might be wrong.
   (e.g. nonconforming or discontiuous elements)
 */
-void TFEFunction2D::MinMax(double & min, double & max)
+void TFEFunction2D::MinMax(double & min, double & max) const
 {
   double val;
   max = -1e100, min = 1e100;
@@ -2528,7 +2528,7 @@ void TFEFunction2D::MinMax(double & min, double & max)
   prints the values computed by TFEFunction2D::MinMax to console. See 
   TFEFunction2D::MinMax for a description of what is computed. 
 */
-void TFEFunction2D::PrintMinMax()
+void TFEFunction2D::PrintMinMax() const
 {
   double min,max;
   this->MinMax(min,max);
