@@ -61,9 +61,9 @@ int maxn_parameters, TDomain *domain)
 
   FESpaceArray=new const TFESpace2D*[MaxN_FESpaces];
 
-  FEFunctionArray=new TFEFunction2D*[MaxN_ScalarVar];
+  FEFunctionArray=new const TFEFunction2D*[MaxN_ScalarVar];
 
-  FEVectFunctArray=new TFEVectFunct2D*[MaxN_VectorVar];
+  FEVectFunctArray=new const TFEVectFunct2D*[MaxN_VectorVar];
 
   ParameterValues=new double[MaxN_Parameters];
 
@@ -78,7 +78,7 @@ int maxn_parameters, TDomain *domain)
 
 
 /** add a FESpace into this output object (internal use) */
-int TOutput2D::AddFESpace( const TFESpace2D* fespace )
+int TOutput2D::AddFESpace(const TFESpace2D* fespace)
 {
   const TFESpace2D **NewStorage;
   int i;
@@ -115,16 +115,16 @@ int TOutput2D::AddFESpace( const TFESpace2D* fespace )
 
 
 /** add a FEFunction into this output object */
-int TOutput2D::AddFEFunction(TFEFunction2D *fefunction)
+int TOutput2D::AddFEFunction(const TFEFunction2D* fefunction)
 {
-  TFEFunction2D **NewStorage;
+  const TFEFunction2D **NewStorage;
 
   if(!(AddFESpace(((TFEFunction2D *)fefunction)->GetFESpace2D()))) return 0;
 
   if(MaxN_ScalarVar<=N_ScalarVar)
   {
     // enlarge storage
-    NewStorage=new TFEFunction2D*[MaxN_ScalarVar+5];
+    NewStorage=new const TFEFunction2D*[MaxN_ScalarVar+5];
     memcpy(NewStorage, FEFunctionArray, MaxN_ScalarVar*sizeof(TFEFunction2D *));
     MaxN_ScalarVar +=5;
     delete FEFunctionArray;
@@ -140,16 +140,16 @@ int TOutput2D::AddFEFunction(TFEFunction2D *fefunction)
 
 
 /** add a FEVectFunct into this output object */
-int TOutput2D::AddFEVectFunct(TFEVectFunct2D *fevectfunct)
+int TOutput2D::AddFEVectFunct(const TFEVectFunct2D* fevectfunct)
 {
-  TFEVectFunct2D **NewStorage;
+  const TFEVectFunct2D **NewStorage;
 
   if(!(AddFESpace(fevectfunct->GetFESpace2D()))) return 0;
 
   if(MaxN_VectorVar<=N_VectorVar)
   {
     // enlarge storage
-    NewStorage=new TFEVectFunct2D*[MaxN_VectorVar+5];
+    NewStorage=new const TFEVectFunct2D*[MaxN_VectorVar+5];
     memcpy(NewStorage, FEVectFunctArray,
       MaxN_VectorVar*sizeof(TFEVectFunct2D *));
     MaxN_VectorVar +=5;
@@ -306,8 +306,8 @@ int TOutput2D::WriteGrape(const char *name)
   int *NumberVertex;
   double *ParamPtr;
   const TFESpace2D *fespace;
-  TFEFunction2D *fefunction;
-  TFEVectFunct2D *fevectfunct;
+  const TFEFunction2D *fefunction;
+  const TFEVectFunct2D *fevectfunct;
   double *Coords;
   int *VertexNumbers;
   int *BaseFuncts;
@@ -681,7 +681,7 @@ int TOutput2D::WriteGnuplot(const char *name)
   TBaseFunct2D *bf;
   FE2D FE_ID;
   double BFValues[4][MaxN_BaseFunctions2D];
-  double *FEValues;
+  const double *FEValues;
   int *GlobalNumbers, *BeginIndex, *Index;
   double LocValues[MaxN_BaseFunctions2D];
   double s;
@@ -885,7 +885,8 @@ int TOutput2D::WriteVtk(const char *name)
   int *GlobalNumbers, *BeginIndex, *DOF;
   int *VertexNumbers, *NumberVertex;
 
-  double xi, eta, value, *Coeffs, t;
+  double xi, eta, value, t;
+  const double *Coeffs;
   double BFValues[MaxN_BaseFunctions2D];
   double *Coords, *WArray, *DoubleArray;
   /** this is needed to handle vector valued basis functions such as 
@@ -1506,7 +1507,7 @@ int N_LocVertices, TVertex **Vertices)
   int N_Elements;            // number of all elements in this mesh
   int N_CellVertices;        // number of all vertices in this cell
   int i,j,k,l;               // loop variables
-  TFEFunction2D *fefunction; // this function, which is discontinuous
+  const TFEFunction2D *fefunction; // this function, which is discontinuous
   TBaseCell *current_cell;   
   double *function_value;    // value of function at a particular vertex
   double **allValues;        // in case of vector valued basis functions, store
@@ -1703,7 +1704,7 @@ int TOutput2D::WriteMatlab(const char *name)
   const TFESpace2D *fespace;
   double val[5], *X, *Y, *Val;
   int cordx, cordy;
-  TFEFunction2D *u;
+  const TFEFunction2D *u;
   #ifdef __3D__
   double z;
   #endif
@@ -1869,7 +1870,7 @@ int TOutput2D::WriteMatlabOld(const char *name)
   TBaseFunct2D *bf;
   FE2D FE_ID;
   double BFValues[4][MaxN_BaseFunctions2D];
-  double *FEValues;
+  const double *FEValues;
   int *GlobalNumbers, *BeginIndex, *Index;
   double LocValues[MaxN_BaseFunctions2D];
   double s;
@@ -2090,7 +2091,8 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
   TBaseCell *CellX, *CellY;
   TJoint *JointX, *JointY;
   const TFESpace2D *FESpace;
-  double *FEValues, value, LocValues[4];
+  const double *FEValues;
+  double value, LocValues[4];
   double BFValues[4][MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *Index;
   TBaseFunct2D *BaseFct;
@@ -2353,7 +2355,8 @@ int TOutput2D::WriteGMV(const char *name)
   TBaseFunct2D *bf;
   const TFESpace2D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  double BFValues[MaxN_BaseFunctions2D], *Coeffs;
+  double BFValues[MaxN_BaseFunctions2D];
+  const double *Coeffs;
   double xi, eta, value;
   int N_Comp, Length;
   int Number;
@@ -2748,7 +2751,8 @@ int TOutput2D::Write_ParVTK(
   int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
   int *VertexNumbers, *NumberVertex, begin, ID;
 
-  double xi, eta, value, *Coeffs, *WArray, *DoubleArray;
+  double xi, eta, value, *WArray, *DoubleArray;
+  const double *Coeffs;
 //   double *BubbleArray;
   double BFValues[MaxN_BaseFunctions2D];
   double *Coords;
@@ -3715,7 +3719,7 @@ void TOutput2D::ComputeFEValues()
   int N_VectorTotal, N_Comps, Length, index;
   int *GlobalNumbers, *BeginIndex, *DOF, N_Cells, N_, N_BF;
   int counter;
-  double *FECoeffs;
+  const double *FECoeffs;
   double BaseFuncValues[MaxN_BaseFunctions2D];
   
   double xi_tria[] = {0, 1, 0};

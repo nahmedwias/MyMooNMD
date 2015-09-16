@@ -43,7 +43,7 @@ class TOutput2D
     int MaxN_ScalarVar;
 
     /** array of stored scalar variables */
-    TFEFunction2D **FEFunctionArray;
+    const TFEFunction2D **FEFunctionArray;
 
     /** number of stored vector-valued variables = TFEFunction */
     int N_VectorVar;
@@ -52,7 +52,7 @@ class TOutput2D
     int MaxN_VectorVar;
 
     /** array of stored vector-valued variables */
-    TFEVectFunct2D **FEVectFunctArray;
+    const TFEVectFunct2D **FEVectFunctArray;
 
     /** number of stored paramters */
     int N_Parameters;
@@ -104,10 +104,10 @@ class TOutput2D
     ~TOutput2D();
 
     /** add a FEFunction into this output object */
-    int AddFEFunction(TFEFunction2D *fefunction);
+    int AddFEFunction(const TFEFunction2D *fefunction);
 
     /** add a FEVectFunct into this output object */
-    int AddFEVectFunct(TFEVectFunct2D *fevectfunct);
+    int AddFEVectFunct(const TFEVectFunct2D *fevectfunct);
 
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
