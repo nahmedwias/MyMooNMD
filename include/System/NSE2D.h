@@ -192,9 +192,15 @@ class NSE2D
     // getters and setters
     const BlockMatrixNSE2D & get_matrix() const
     { return this->systems.front().matrix; }
+    BlockMatrixNSE2D & get_matrix()
+    { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
+    BlockVector & get_rhs()
+    { return this->systems.front().rhs; }
     const TFEVectFunct2D & get_velocity() const
+    { return this->systems.front().u; }
+    TFEVectFunct2D & get_velocity()
     { return this->systems.front().u; }
     // try not to use this as it is not const
     TFEFunction2D *get_velocity_component(int i)
@@ -202,11 +208,15 @@ class NSE2D
                     : this->systems.front().u.GetComponent(1); }
     const TFEFunction2D & get_pressure() const
     { return this->systems.front().p; }
+    TFEFunction2D & get_pressure()
+    { return this->systems.front().p; }
     const TFESpace2D & get_velocity_space() const
     { return this->systems.front().velocity_space; }
     const TFESpace2D & get_pressure_space() const
     { return this->systems.front().pressure_space; }
     const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
+    BlockVector & get_solution()
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
