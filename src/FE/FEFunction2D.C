@@ -76,7 +76,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                               CoeffFct2D *Coeff, 
                               TAuxParam2D *Aux,
                               int n_fespaces, const TFESpace2D **fespaces,
-                              double *errors)
+                              double *errors) const
 {
   int i,j,k,l,n,m, ij, N_UsedElements, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_BaseFuncts, N_, N_Edges;
@@ -1919,7 +1919,7 @@ errors[2] -- H1-semi-Norm-Error of this function
 void TFEFunction2D::GetErrorsForVectorValuedFunction(
                     DoubleFunct2D * const * const Exact, 
                     ErrorMethod2D * const ErrorMeth, 
-                    double * const errors)
+                    double * const errors) const
 {
   // set all errors to zero at first
   memset(errors,0,3*SizeOfDouble);

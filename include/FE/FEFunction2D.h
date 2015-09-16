@@ -48,11 +48,11 @@ class TFEFunction2D
     ~TFEFunction2D();
 
     /** return name */
-    char *GetName()
+    char *GetName() const
     { return Name; }
 
     /** return description */
-    char *GetDescription()
+    char *GetDescription() const
     { return Description; }
 
     /** return fe space */
@@ -60,7 +60,7 @@ class TFEFunction2D
     { return FESpace2D; }
 
     /** return length */
-    int GetLength()
+    int GetLength() const
     { return Length; }
 
     /** return vector of data */
@@ -76,14 +76,14 @@ class TFEFunction2D
                    int N_Errors, ErrorMethod2D *ErrorMeth, 
                    CoeffFct2D *Coeff, TAuxParam2D *Aux,
                    int n_fespaces, const TFESpace2D **fespaces,
-                   double *errors);
+                   double *errors) const;
 
     /** @brief use this for vector valued basis functions (Raviart-Thomas (RT)
      *         or Brezzi-Douglas-Marini (BDM) elements) */
     void  GetErrorsForVectorValuedFunction(
                   DoubleFunct2D * const * const Exact, 
                   ErrorMethod2D * const ErrorMeth, 
-                  double * const errors);
+                  double * const errors) const;
     
     void GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
 		   MultiIndex2D *NeededDerivatives,
