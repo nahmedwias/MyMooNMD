@@ -152,7 +152,7 @@ void BlockVector::copy_nonactive(const BlockVector& r)
 }
 
 /** ************************************************************************ */
-void BlockVector::add(double * x, const int i, double a)
+void BlockVector::add(const double* x, const int i, double a)
 {
   if(i < 0) 
   {

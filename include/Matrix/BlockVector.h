@@ -194,7 +194,7 @@ class BlockVector
      * @param a factor by which x is multiplied
      *
      */
-    void add(double *x, const int i = -1, double a = 1.0);
+    void add(const double *x, const int i = -1, double a = 1.0);
 
     /**
      * @brief copy values into a subvector
