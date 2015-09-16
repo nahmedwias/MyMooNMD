@@ -32,11 +32,11 @@ class TFEVectFunct2D : public TFEFunction2D
                   double *values, int length, int n_components);
 
     /** return number of components */
-    int GetN_Components()
+    int GetN_Components() const
     { return N_Components; }
 
     /** return i-th component as FEFunction2D */
-    TFEFunction2D *GetComponent(int i)
+    TFEFunction2D *GetComponent(int i) 
     {
       // the name of the component will include the index i
       std::ostringstream os;
