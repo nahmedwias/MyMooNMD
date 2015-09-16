@@ -45,7 +45,7 @@
 #include <sys/types.h>
 
 /** constructor with vector initialization */
-TFEVectFunct2D::TFEVectFunct2D(TFESpace2D *fespace2D, char *name, 
+TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, char *name, 
                              char *description, double *values, 
                              int length, int n_components)
   : TFEFunction2D(fespace2D, name, description, values, length)
