@@ -33,7 +33,10 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
 /** ************************************************************************ */
 BlockMatrixCD2D::~BlockMatrixCD2D()
 {
-  delete this->get_matrix()->GetStructure();
+  // the combined matrix is this->get_matrix(), and will be deleted in 
+  // ~BlockMatrix
+  if(!this->combined_matrix)
+    delete this->get_matrix()->GetStructure();
 }
 
 /** ************************************************************************ */

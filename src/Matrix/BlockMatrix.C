@@ -19,8 +19,7 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols)
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols, 
-                                     std::vector<std::shared_ptr<TMatrix>> 
-                                     new_blocks)
+                         std::vector<std::shared_ptr<TMatrix>> new_blocks)
  : BlockMatrix(n_rows, n_cols)
 {
   if(new_blocks.size() < this->n_blocks())
@@ -110,7 +109,8 @@ BlockMatrix::BlockMatrix(BlockMatrix&& other)
 /* ************************************************************************* */
 BlockMatrix::~BlockMatrix() noexcept
 {
-  // delete all blocks
+  if(this->combined_matrix)
+    delete this->combined_matrix->GetStructure();
 }
 
 /* ************************************************************************* */
