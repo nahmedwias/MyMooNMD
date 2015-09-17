@@ -246,8 +246,8 @@ void NSE2D::solve()
   {
     this->mg_solver();
   }
-  //if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-  //  s.p.project_into_L20();
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    s.p.project_into_L20();
 }
 
 /** ************************************************************************ */
@@ -274,8 +274,6 @@ void NSE2D::output(int i)
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(2, 3, 1, 0, NULL);
-    Output.AddFEFunction(u1);
-    Output.AddFEFunction(u2);
     Output.AddFEFunction(&s.p);
     Output.AddFEVectFunct(&s.u);
     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
@@ -312,6 +310,8 @@ void NSE2D::output(int i)
     OutPut("L2(p)     : " << err[0] << endl);
     OutPut("H1-semi(p): " << err[1] << endl); 
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  delete u1;
+  delete u2;
 }
 
 /** ************************************************************************ */
