@@ -16,7 +16,7 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                                          TCollection& coll )
  : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
                   TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(1),
+   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
                   TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
@@ -124,6 +124,8 @@ void NSE2D::assemble()
     LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
                          this->example.get_coeffs());
     s.matrix.Assemble(la, s.solution.get_entries(), s.rhs.get_entries());
+    delete fe_functions[0];
+    delete fe_functions[1];
   }
 }
 
