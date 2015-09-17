@@ -192,8 +192,11 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
     n_sq_mat = 2;
   if(TDatabase::ParamDB->NSTYPE == 14)
-    n_sq_mat = 5;
-  
+  {
+    OutPut("WARNING: NSTYPE 14 needs a special local assembling, the C-block "
+         << "is now ignored\n");
+    //n_sq_mat = 5;
+  }
   TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
                                       nullptr, nullptr};
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
@@ -203,8 +206,7 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
     sq_matrices[1] = this->get_A_block(1);
     sq_matrices[2] = this->get_A_block(2);
     sq_matrices[3] = this->get_A_block(3);
-    if(TDatabase::ParamDB->NSTYPE == 14)
-      sq_matrices[3] = this->get_C_block();
+    sq_matrices[4] = this->get_C_block();
   }
   
   unsigned int n_rect_mat;
