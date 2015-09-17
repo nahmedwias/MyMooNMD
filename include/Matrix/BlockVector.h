@@ -275,11 +275,9 @@ class BlockVector
     unsigned int n_blocks() const 
     { return lengths.size(); }
     
-    const double* block(const unsigned int i) const 
-    { return this->get_entries() + (i > 0 ? lengths.at(i-1) : 0); }
+    const double* block(const unsigned int i) const;
     
-    double* block(const unsigned int i)
-    { return this->get_entries() + (i > 0 ? lengths.at(i-1) : 0); }
+    double* block(const unsigned int i);
     
     const double* get_entries() const
     { return &(this->entries.at(0)); }

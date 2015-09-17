@@ -463,6 +463,26 @@ void BlockVector::read_from_file(std::string filename)
   dat.close();
 }
 
+/** ************************************************************************ */
+double* BlockVector::block(const unsigned int i)
+{
+  unsigned int offset = 0;
+  for(unsigned int j = 0; j < i; ++j)
+    offset += this->length(j);
+  return this->get_entries() + offset;
+}
+
+/** ************************************************************************ */
+const double* BlockVector::block(const unsigned int i) const
+{
+  unsigned int offset = 0;
+  for(unsigned int j = 0; j < i; ++j)
+    offset += this->length(j);
+  return this->get_entries() + offset;
+}
+
+/** ************************************************************************ */
+
 #include <BlockMatrixCD2D.h>
 #include <BlockMatrixDarcy2D.h>
 #include <BlockMatrixNSE2D.h>
