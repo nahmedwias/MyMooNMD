@@ -409,4 +409,11 @@ void BlockMatrix::info(size_t verbose) const
 }
 
 /** ************************************************************************* */
+void BlockMatrix::scale(double factor)
+{
+  for(auto& m : this->blocks)
+    m->scale(factor);
+}
+
+/** ************************************************************************* */
 
