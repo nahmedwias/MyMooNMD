@@ -123,7 +123,9 @@ void NSE2D::assemble()
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
     LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
                          this->example.get_coeffs());
-    s.matrix.Assemble(la, s.solution.get_entries(), s.rhs.get_entries());
+    s.matrix.Assemble(la, s.rhs);
+    // set rhs for Dirichlet nodes
+    s.solution.copy_nonactive(s.rhs);
     delete fe_functions[0];
     delete fe_functions[1];
   }
@@ -140,8 +142,9 @@ void NSE2D::assemble_nonlinear_term()
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
     LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
                                    this->example.get_coeffs());
-    s.matrix.AssembleNonLinear(la_nonlinear, s.solution.get_entries(), 
-                               s.rhs.get_entries());
+    s.matrix.AssembleNonLinear(la_nonlinear);
+    // set rhs for Dirichlet nodes (is this necessary here?)
+    s.solution.copy_nonactive(s.rhs);
   }
 }
 
