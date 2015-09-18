@@ -29,6 +29,12 @@ TMatrix2D::~TMatrix2D()
 {
 }
 
+void TMatrix2D::SetStructure(TStructure2D *s)
+{
+  this->structure = s;
+  this->TMatrix::structure = (TStructure*)s;
+}
+
 
 void TMatrix2D::reset_non_active()
 {
