@@ -34,6 +34,9 @@ class TStructure3D : public TStructure
   public:
     /** generate the matrix Structure3D, both space with 3D collection */
     TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace);
+    
+    /** @brief copy constructor */
+    TStructure3D(const TStructure3D&);
 
     /** return AnsatzSpace */
     TFESpace *GetAnsatzSpace()

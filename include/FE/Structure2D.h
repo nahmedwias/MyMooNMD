@@ -64,6 +64,9 @@ class TStructure2D : public TStructure
      
      TStructure2D(TFESpace2D *testspace, TFESpace1D *ansatzspace, TNonMortarData *NonMortarFEData);
 
+     /** @brief copy constructor */
+     TStructure2D(const TStructure2D&);
+     
     /** return AnsatzSpace */
     const TFESpace2D *GetAnsatzSpace2D() const
     { return AnsatzSpace2D; }

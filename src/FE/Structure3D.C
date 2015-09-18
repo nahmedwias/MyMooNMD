@@ -528,3 +528,9 @@ TStructure3D::TStructure3D(TFESpace3D *testspace, TFESpace3D *ansatzspace)
  }
 }
 
+TStructure3D::TStructure3D(const TStructure3D& s)
+ : TStructure((const TStructure&)s),
+   AnsatzSpace2D(s.AnsatzSpace2D), AnsatzSpace3D(s.AnsatzSpace3D),
+   TestSpace2D(s.TestSpace2D), TestSpace3D(s.TestSpace3D)
+{
+}

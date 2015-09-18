@@ -2504,6 +2504,22 @@ exit(0);
 } // TStructure2D
 
 
+TStructure2D::TStructure2D(const TStructure2D& s)
+ : TStructure((const TStructure&)s),
+   AnsatzSpace1D(s.AnsatzSpace1D), AnsatzSpace2D(s.AnsatzSpace2D),
+   TestSpace1D(s.TestSpace1D), TestSpace2D(s.TestSpace2D),
+   AnsatzMortarSpaceGlobNo(new int[this->GetN_Rows()]),
+   TestMortarSpaceGlobNo(nullptr), 
+   AnsatzNonMortarSpaceGlobNo(new int[this->GetN_Columns()]),
+   TestNonMortarSpaceGlobNo(new int[this->GetN_Rows()])
+{
+  memcpy(this->AnsatzMortarSpaceGlobNo, s.AnsatzMortarSpaceGlobNo,
+         this->GetN_Rows()*sizeof(double));
+  memcpy(this->AnsatzNonMortarSpaceGlobNo, s.AnsatzNonMortarSpaceGlobNo,
+         this->GetN_Columns()*sizeof(double));
+  memcpy(this->TestNonMortarSpaceGlobNo, s.TestNonMortarSpaceGlobNo,
+         this->GetN_Rows()*sizeof(double));
+}
 
 
 /** destructor */
