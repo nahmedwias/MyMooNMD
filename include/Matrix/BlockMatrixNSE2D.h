@@ -15,7 +15,7 @@
 
 #include <SquareMatrix2D.h>
 #include <Matrix2D.h>
-#include <BlockMatrix.h>
+#include <BlockVector.h>
 #include <LocalAssembling2D.h>
 
 /**class for 2D  NSE system matrix */
@@ -35,13 +35,10 @@ class BlockMatrixNSE2D : public BlockMatrix
     ~BlockMatrixNSE2D();
     
     /** assemble the system matrix */
-    void Assemble(LocalAssembling2D& la, double *sol, double *rhs);
+    void Assemble(LocalAssembling2D& la, BlockVector& rhs);
     
     /** assemble the nonlinear part of the NSE system */
-    void AssembleNonLinear(LocalAssembling2D& la, double *sol, double *rhs);
-    
-    /** get the resudual of the NSE system */
-    void GetResidual(double *sol, double *rhs, double *res);
+    void AssembleNonLinear(LocalAssembling2D& la);
     
     /** solve the system matrix */
     void Solve(double *sol, double *rhs);

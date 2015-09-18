@@ -169,7 +169,7 @@ BlockMatrixNSE2D::~BlockMatrixNSE2D()
 }
 
 /** ************************************************************************ */
-void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
+void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
 {
   // this really needs to be rewritten, especially the Assemble2D function!
   int N_Rhs = 3;
@@ -181,8 +181,8 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
   int N_Active = v_space->GetN_ActiveDegrees();
   int N_DirichletDof = N_U - N_Active;
   
-  double *RHSs[3] = {rhs, rhs + N_U, rhs + 2 * N_U};
-  memset(rhs, 0, (2 * N_U + N_P) * SizeOfDouble);
+  rhs.reset();
+  double *RHSs[3] = {rhs.block(0), rhs.block(1), rhs.block(2)};
   
   // what follows is done only to call Assemble2D correctly
   const TFESpace2D *fespmat[2] = {v_space, p_space};
@@ -301,16 +301,10 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, double *sol, double *rhs)
   this->get_A_block(2)->reset_non_active();
   this->get_BT_block(0)->reset_non_active();
   this->get_BT_block(1)->reset_non_active();
-  
-  // set rhs for Dirichlet nodes
-  memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
-  memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
-         N_DirichletDof * SizeOfDouble);
 } // BlockMatrixNSE2D::Assemble(...)
 
 /** ************************************************************************ */
-void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
-                                        double *rhs)
+void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la)
 {
   const TFESpace2D * v_space = this->get_velocity_space();
   unsigned int n_sq_mat;
@@ -383,14 +377,6 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
     //                 la.get_fe_function(0), la.get_fe_function(1));
   }    // (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1
   
-  unsigned int N_U = v_space->GetN_DegreesOfFreedom();
-  unsigned int N_Active = v_space->GetN_ActiveDegrees();
-  unsigned int N_DirichletDof = N_U - N_Active;
-  // set rhs for Dirichlet nodes
-  memcpy(sol + N_Active, rhs + N_Active, N_DirichletDof * SizeOfDouble);
-  memcpy(sol + N_U + N_Active, rhs + N_U + N_Active,
-         N_DirichletDof * SizeOfDouble);
-  
   if(this->combined_matrix)
   {
     // remove possibly defined combined matrix, because it is no longer up to
@@ -399,14 +385,6 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la, double *sol,
     this->combined_matrix.reset();
   }
 } //BlockMatrixNSE2D::AssembleNonLinear(
-
-/** ************************************************************************ */
-void BlockMatrixNSE2D::GetResidual(double *sol, double *rhs, double *res)
-{
-  
-  
-  ErrThrow("BlockMatrixNSE2D::GetResidual not yet implemented\n");
-} // BlockMatrixNSE2D::GetResidual
 
 /** ************************************************************************ */
 void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
