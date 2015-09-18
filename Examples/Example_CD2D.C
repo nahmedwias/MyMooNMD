@@ -23,6 +23,26 @@ namespace hemker_1996
   #include "CD_2D/Hemker1996.h"
 }
 
+
+//===========================================================
+// examples for time dependent convection-diffusion-reaction
+// problems
+//===========================================================
+namespace exp_sin_cos
+{
+#include "TCD_2D/exp.h"
+}
+
+namespace sin_sin_sin
+{
+#include "TCD_2D/Sin3.h"
+}
+
+namespace sin_cos
+{
+#include "TCD_2D/SinCos1.h"
+}
+
 Example_CD2D::Example_CD2D() : Example2D()
 {
   switch( TDatabase::ParamDB->EXAMPLE ) 
@@ -73,6 +93,54 @@ Example_CD2D::Example_CD2D() : Example2D()
       hemker_1996::ExampleFile();
       break;    
     // starting from 101 the examples for time dependent problems
+    case 101:
+      /**Exact solution"**/
+       exact_solution.push_back(exp_sin_cos::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( exp_sin_cos::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( exp_sin_cos::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = exp_sin_cos::BilinearCoeffs;
+      
+      /** Initial condition*/
+      initial_conditions.push_back(exp_sin_cos::InitialCondition);
+      exp_sin_cos::ExampleFile();
+      break;
+    case 102:
+      /**Exact solution"**/
+       exact_solution.push_back(sin_sin_sin::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( sin_sin_sin::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( sin_sin_sin::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = sin_sin_sin::BilinearCoeffs;
+      
+      /** Initial condition*/
+      initial_conditions.push_back(sin_sin_sin::InitialCondition);
+      sin_sin_sin::ExampleFile();
+      break;
+    case 103:
+      /**Exact solution"**/
+       exact_solution.push_back(sin_cos::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( sin_cos::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( sin_cos::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = sin_cos::BilinearCoeffs;
+      
+      /** Initial condition*/
+      initial_conditions.push_back(sin_cos::InitialCondition);
+      sin_cos::ExampleFile();
+      break;
     default:
       ErrMsg("Unknown name of the convection-diffusion (CD2D) example!");
       exit(0);
