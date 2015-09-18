@@ -36,6 +36,12 @@ TSquareStructure::TSquareStructure(int n)
 {
 }
 
+TSquareStructure::TSquareStructure(const TSquareStructure& sq)
+ : TStructure((const TStructure&)sq), ActiveBound(sq.ActiveBound), 
+   ColOrder(sq.ColOrder)
+{
+}
+
 TSquareStructure::~TSquareStructure()
 {
 }

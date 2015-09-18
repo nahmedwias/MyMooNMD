@@ -521,6 +521,11 @@ TSquareStructure3D::TSquareStructure3D(int n)
 {
 }
 
+TSquareStructure3D::TSquareStructure3D(const TSquareStructure3D& sq)
+ : TSquareStructure((const TSquareStructure&)sq), FESpace(sq.FESpace)
+{
+}
+
 TSquareStructure3D::~TSquareStructure3D()
 {
 }

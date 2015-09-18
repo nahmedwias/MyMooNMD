@@ -36,6 +36,9 @@ class TSquareStructure2D : public TSquareStructure
     
     /** Generates an empty n*n Structure for a Zero-Matrix */
     explicit TSquareStructure2D(int n);
+    
+    /** @brief copy constructor */
+    TSquareStructure2D(const TSquareStructure2D&);
 
     /** destructor: free all used arrays */
     ~TSquareStructure2D();

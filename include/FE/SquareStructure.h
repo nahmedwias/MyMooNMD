@@ -45,6 +45,9 @@ class TSquareStructure : public TStructure
     /** Generates an empty n*n Structure for a Zero-Matrix */
     explicit TSquareStructure(int n);
 
+    /** @brief copy constructor */
+    TSquareStructure(const TSquareStructure&);
+    
     /** return ActiveBound */
     int GetActiveBound() const
     { return ActiveBound; }

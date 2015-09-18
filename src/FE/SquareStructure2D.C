@@ -919,6 +919,12 @@ TSquareStructure2D::TSquareStructure2D(int n)
 {
 }
 
+TSquareStructure2D::TSquareStructure2D(const TSquareStructure2D& sq)
+ : TSquareStructure((const TSquareStructure&)sq), FESpace(sq.FESpace)
+{
+  
+}
+
 TSquareStructure2D::~TSquareStructure2D()
 {
 }
