@@ -55,6 +55,9 @@ class TStructure
     
     /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
     TStructure(int nRows, int nCols);
+    
+    /** @brief copy constructor */
+    TStructure(const TStructure&);
 
     /** destructor: free all used arrays */
     ~TStructure();

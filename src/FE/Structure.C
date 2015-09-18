@@ -51,7 +51,18 @@ TStructure::TStructure(int nRows, int nCols)
   memset(RowPtr, 0, (N_Rows+1)*SizeOfInt);
 }
 
-
+TStructure::TStructure(const TStructure& s)
+ : N_Rows(s.N_Rows), N_Columns(s.N_Columns), N_Entries(s.N_Entries),
+   HangingN_Entries(s.HangingN_Entries), KCol(new int[this->N_Entries]),
+   HangingKCol(new int[this->HangingN_Entries]), 
+   RowPtr(new int[this->N_Rows + 1]), HangingRowPtr(nullptr)
+{
+  // copy the data
+  memcpy(this->KCol, s.GetKCol(), this->N_Entries*sizeof(double));
+  memcpy(this->RowPtr, s.GetRowPtr(), (this->N_Rows+1)*sizeof(double));
+  memcpy(this->HangingKCol, s.GetHangingKCol(), 
+         this->GetHangingN_Entries()*sizeof(double));
+}
 
 /** sort one row [BeginPtr, AfterEndPtr) */
 void TStructure::SortRow(int *BeginPtr, int *AfterEndPtr)
