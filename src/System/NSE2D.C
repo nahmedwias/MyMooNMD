@@ -54,17 +54,19 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   
   // print out some information  
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
   
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
-  OutPut("N_Cells     : " << setw(10) << coll->GetN_Cells() << endl);
-  OutPut("h (min,max) : " << setw(10) << h_min << " " << setw(12) << h_max
-         <<endl);
-  OutPut("dof Velocity: " << setw(10) << 2* n_u << endl);
-  OutPut("dof Pressure: " << setw(10) << n_p << endl);
-  OutPut("dof all     : " << setw(10) << n_dof << endl);
+  OutPut("N_Cells            : " << setw(10) << coll->GetN_Cells() << endl);
+  OutPut("h (min,max)        : " << setw(10) << h_min << " " << setw(12)
+         << h_max << endl);
+  OutPut("dof velocity       : " << setw(10) << 2* n_u << endl);
+  OutPut("dof velocity active: " << setw(10) << 2* n_u_active << endl);
+  OutPut("dof pressure       : " << setw(10) << n_p << endl);
+  OutPut("dof all            : " << setw(10) << n_dof << endl);
   
   // done with the conrtuctor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
