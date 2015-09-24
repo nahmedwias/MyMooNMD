@@ -579,14 +579,15 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
     if(it == entries.end())
     {
       // this row stays unchanged
+      // number of (old) entries in this row
+      unsigned int n_old_entries = oldRows[row+1] - oldRows[row];
       // copy pointer to columns in this row
-      memcpy(columns+rows[row],oldCols+oldRows[row],
-             (oldRows[row+1]-oldRows[row])*SizeOfInt);
+      memcpy(columns+rows[row], oldCols+oldRows[row], n_old_entries*SizeOfInt);
       // update row pointer
-      rows[row+1] = rows[row] + oldRows[row+1] - oldRows[row];
+      rows[row+1] = rows[row] + n_old_entries;
       // copy entries
-      memcpy(new_entries+rows[row],Entries+oldRows[row],
-             (oldRows[row+1]-oldRows[row])*SizeOfDouble);
+      memcpy(new_entries+rows[row], Entries+oldRows[row],
+             n_old_entries*SizeOfDouble);
     }
     else
     {
@@ -597,8 +598,8 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
       for(std::map<int,double>::iterator it2 = newRow.begin(); 
           it2 != newRow.end(); ++it2)
       {
-        int colInd = it2->first;
-        double entry = it2->second;
+        int colInd = it2->first; // column index of new entry
+        double entry = it2->second; // value of new entry
         columns[columnIndex+rows[row]] = colInd;
         new_entries[columnIndex+rows[row]] = entry;
         columnIndex++;
