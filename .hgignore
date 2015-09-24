@@ -2,6 +2,9 @@
 
 makefile
 
+build/
+documentation/html/
+
 src/.*\.o$
 .*\.*~$
 

@@ -300,6 +300,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
 include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
+
 # Determine precompiler definitions ("PCD") depending on the chosen _PARALLEL_TYPE
 if("${PARMOON_PARALLEL_TYPE}" STREQUAL "MPI")
     set(_PCD_PARALLEL_TYPE -D_PAR -D_MPIONLY -D_MPI)
@@ -485,9 +486,25 @@ set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARAL
 target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tcd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
-    # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-    set_target_properties(tcd3d PROPERTIES LINK_FLAGS "-lgfortran")
+# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
+set_target_properties(tcd3d PROPERTIES LINK_FLAGS "-lgfortran")
 
+
+###############################################################################
+# building the documentation using doxygen
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/documentation/Doxyfile.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+  add_custom_target(doc
+                    ${DOXYGEN_EXECUTABLE} 
+                    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    COMMENT "Generating documentation with Doxygen" VERBATIM)
+endif(DOXYGEN_FOUND)
+
+
+add_subdirectory(Main_Users)
 
 ############
 # End adding executable targets.

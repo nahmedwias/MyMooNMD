@@ -1,0 +1,16 @@
+/**
+ * \page page_rules Rules and guidelines
+ * 
+ * In order to keep MooN maintainable and understandable there are a list of
+ * rules and guidelines which every contribution to this code should follow:
+ * 
+ * - class names are all uppercase
+ * - uses spaces instead of tabs
+ * - don't use your own formatting style but try to stick to the one which you 
+ *   find close to your code
+ * - try to keep functions/methods small and understandable
+ * - write tests for every class and every method (except maybe very simple 
+ *   getters and setters)
+ * - document your code using doxygen comments
+ *
+ */

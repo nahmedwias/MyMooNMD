@@ -1,0 +1,41 @@
+/** 
+ * \mainpage ParMooN - Parallel Mathematics and object oriented Numerics
+ *
+ * \section intro_sec Introduction
+ *
+ * This is the introduction.
+ * 
+ * \subsection installing ParMooN
+ * write the follwing into a shell (the '-j' is always optional)
+ *  - mkdir ParMooN
+ *  - cd ParMooN
+ *  - hg clone 
+ssh://username@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN .
+ *  - mkdir build
+ *  - cd build/
+ *  - cmake ..
+ *  - make -j
+ * 
+ * If you want to specify a specific compiler you have to change the cmake call
+ * to be for example
+ *
+ * CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake .. 
+ * 
+ * or 
+ * 
+ * CC=/usr/bin/gcc CXX=/usr/bin/g++ cmake ..
+ * 
+ * If you want to enable compile time optimizations, run 
+ * 
+ * cmake CMAKE_BUILD_TYPE=Release .. 
+ * 
+ * in the build directory. (more on the build system should be on a special page)
+ *
+ *
+ * See \ref page_version_control "this page" for information and guidelines on 
+ * how the version control system ParMooN uses works.
+ * 
+ * If you plan to contribute to this code, please read and follow the rules and 
+ * guidelines described \ref page_rules "here".
+ * 
+ */
