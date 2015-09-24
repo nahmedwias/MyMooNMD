@@ -504,8 +504,6 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 
-add_subdirectory(Main_Users)
-
 ############
 # End adding executable targets.
 ############
