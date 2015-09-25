@@ -17,10 +17,8 @@
 
 class BlockMatrix; // forward declaration
 
-#include <vector>
 #include <numeric>
 #include <string>
-#include <string.h>
 #include <stdlib.h>
 #include <MooNMD_Io.h>
 #include <BlockMatrix.h>
@@ -42,6 +40,12 @@ class BlockVector
      * The size of this vector is the same as that of 'lengths'.
      */
     std::vector<unsigned int> actives;
+    
+    /** @brief return the accumulated length of all blocks i with i < b
+     * 
+     * This tells you the start index of a given block in the entries vector.
+     */
+    unsigned int offset(unsigned int b) const;
   public:
     
     /** standard constructor */
@@ -130,11 +134,16 @@ class BlockVector
      * The subvector with index i is scaled by a. If i is negative, the entire
      * BlockVector is scaled
      *
-     * @param a factor by which the subvector is scaled before addition
+     * @param a factor by which the subvector is scaled
      * @param i index of target subvector
      *
      */
-    void scale(const double a, const int i = -1);
+    void scale(const double a, const unsigned int i);
+    
+    /**
+     * @brief Scale the entire vector
+     */
+    void scale(const double a);
     
     /**
      * @brief add scaled vector to this
@@ -269,6 +278,7 @@ class BlockVector
     unsigned int length(const int i) const
     { return lengths.at(i); }
     
+    /** @brief return the number of active entries for a given block i */
     unsigned int active(const int i) const
     { return actives.at(i); }
     

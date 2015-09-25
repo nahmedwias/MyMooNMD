@@ -53,6 +53,16 @@ BlockVector::~BlockVector()
 }
 
 /** ************************************************************************ */
+unsigned int BlockVector::offset(unsigned int b) const
+{
+  if(b >= this->n_blocks())
+    ErrThrow("trying to access block " + std::to_string(b) 
+             + ", but there are only" + std::to_string(this->n_blocks()) 
+             + " blocks in this BlockVector");
+  return std::accumulate(lengths.cbegin(), lengths.cbegin() + b, 0);
+}
+
+/** ************************************************************************ */
 void BlockVector::reset()
 {
   std::fill(this->entries.begin(), this->entries.end(), 0.0);
@@ -85,16 +95,25 @@ void BlockVector::ResetNonActive()
 }
 
 /** ************************************************************************ */
-void BlockVector::scale(const double a, const int i)
+void BlockVector::scale(const double a, const unsigned int i)
 {
-  if(i < 0)
-    *this *= a; // scale entire vector
-  else if((unsigned int)i < lengths.size())
+  if((unsigned int)i < lengths.size())
     Dscal(lengths.at(i), a, this->block(i)); // scale i-th subvector
   else
     ErrThrow("trying to scale subvector " + std::to_string(i) 
              + " which does not exist");
 }
+
+/** ************************************************************************ */
+void BlockVector::scale(const double a)
+{
+  if(a == 0.0)
+    this->reset();
+  else if(a != 1.0)
+    Dscal(this->length(), a, this->get_entries());
+  // else if a == 1.0 not action is taken
+}
+
 
 /** ************************************************************************ */
 void BlockVector::add_scaled(const BlockVector& r, double factor)
@@ -119,7 +138,8 @@ void BlockVector::copy(const double * x, const int i)
   if(i < 0)
     *this = x; // copy entire vector
   else if((unsigned int)i < this->n_blocks())
-    memcpy(this->block(i), x, this->length(i)*sizeof(double));
+    std::copy(x, x + this->length(i), this->block(i));
+    //memcpy(this->block(i), x, this->length(i)*sizeof(double)); // in string.h
   else
   {
     ErrThrow("trying to copy to subvector " + std::to_string(i) 
@@ -146,8 +166,11 @@ void BlockVector::copy_nonactive(const BlockVector& r)
   for(unsigned int b = 0, n_b = this->n_blocks(); b < n_b; ++b)
   {
     if(this->lengths[b] > this->active(b))
-      memcpy(this->block(b) + this->active(b), r.block(b) + this->active(b),
-             (this->lengths[b] - this->active(b))*sizeof(double));
+      std::copy(r.block(b) + r.active(b), r.block(b) + r.length(b),
+                this->block(b) + this->active(b));
+      // in string.h
+      //memcpy(this->block(b) + this->active(b), r.block(b) + this->active(b),
+      //       (this->lengths[b] - this->active(b))*sizeof(double));
   }
 }
 
@@ -253,7 +276,8 @@ BlockVector& BlockVector::operator=(const double *r)
   if(this->get_entries() == r) 
     // both are the same, no copying necessary
     return *this;
-  memcpy(this->get_entries(), r, this->length()*sizeof(double));
+  std::copy(r, r + this->length(), this->entries.begin());
+  //memcpy(this->get_entries(), r, this->length()*sizeof(double));// in string.h
   return *this;
 }
 
@@ -267,11 +291,7 @@ BlockVector& BlockVector::operator=(const double a)
 /** ************************************************************************ */
 BlockVector& BlockVector::operator*=(const double a)
 {
-  if(a == 0.0)
-    this->reset();
-  else if(a != 1.0)
-    Dscal(this->length(), a, this->get_entries());
-  // else if a == 1.0 not action is taken
+  this->scale(a);
   return *this;
 }
 
@@ -303,7 +323,8 @@ BlockVector& BlockVector::operator*=(const BlockMatrix& A)
     ErrMsg("BlockMatrix must have n_row_blocks*n_col_blocks many blocks");
     exit(0);
   }
-  memset(y, 0.0, l*SizeOfDouble);
+  std::fill(y, y+l, 0.0);
+  //memset(y, 0.0, l*SizeOfDouble); // in string.h
   
   int row_offset = 0;
   for(unsigned int i = 0; i < n_row_blocks; i++)
@@ -395,7 +416,7 @@ void BlockVector::copy_structure(const BlockMatrix& mat, bool image)
 /** ************************************************************************ */
 template <class BM>
 void BlockVector::copy_structure(const BM& mat, bool image)
-{
+ {
   // call the regular copy_structure.
   this->copy_structure((const BlockMatrix&)mat, image);
   // set the active degrees of freedom
@@ -466,19 +487,13 @@ void BlockVector::read_from_file(std::string filename)
 /** ************************************************************************ */
 double* BlockVector::block(const unsigned int i)
 {
-  unsigned int offset = 0;
-  for(unsigned int j = 0; j < i; ++j)
-    offset += this->length(j);
-  return this->get_entries() + offset;
+  return this->get_entries() + this->offset(i);
 }
 
 /** ************************************************************************ */
 const double* BlockVector::block(const unsigned int i) const
 {
-  unsigned int offset = 0;
-  for(unsigned int j = 0; j < i; ++j)
-    offset += this->length(j);
-  return this->get_entries() + offset;
+  return this->get_entries() + this->offset(i);
 }
 
 /** ************************************************************************ */
