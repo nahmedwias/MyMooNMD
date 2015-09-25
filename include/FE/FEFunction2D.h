@@ -15,10 +15,8 @@
 #ifndef __FEFUNCTION2D__
 #define __FEFUNCTION2D__
 
-#include <AllClasses.h>
 #include <FESpace2D.h>
 #include <AuxParam2D.h>
-#include <Constants.h>
 
 /** a function from a finite element space */
 class TFEFunction2D

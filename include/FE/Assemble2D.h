@@ -12,7 +12,6 @@
 #ifndef __ASSEMBLE2D__
 #define __ASSEMBLE2D__
 
-#include <AllClasses.h>
 #include <Constants.h>
 #include <FEDatabase2D.h>
 #include <LocalAssembling2D.h>

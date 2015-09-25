@@ -1,6 +1,6 @@
 /** ***************************************************************************
  *
- * @name       CD2D
+ * @class       CD2D
  * @brief      store everything needed to solve a convection-diffusion-reaction
  *             (cdr) problem
  *
@@ -19,7 +19,6 @@
 
 #include <FEFunction2D.h>
 #include <BlockMatrixCD2D.h>
-#include <BlockVector.h>
 #include <Example_CD2D.h>
 #include <vector>
 #include <deque>

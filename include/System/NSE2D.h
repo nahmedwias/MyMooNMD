@@ -18,7 +18,6 @@
 #include <FEVectFunct2D.h>
 #include <Example_NSE2D.h>
 #include <BlockMatrixNSE2D.h>
-#include <BlockVector.h>
 #include <MultiGrid2D.h>
 
 
@@ -29,7 +28,6 @@
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
 
-#include <vector>
 #include <deque>
 
 class NSE2D

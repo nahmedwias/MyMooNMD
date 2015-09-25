@@ -11,7 +11,6 @@
 #define __SYSTEMDARCY2D__
 
 #include <BlockMatrixDarcy2D.h>
-#include <BlockVector.h>
 #include <Example_Darcy2D.h>
 #include <LocalAssembling2D.h>
 #include <FEFunction2D.h>
