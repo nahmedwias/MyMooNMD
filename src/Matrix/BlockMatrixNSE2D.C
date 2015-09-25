@@ -176,10 +176,6 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
   int N_FESpaces = 2;
   const TFESpace2D * v_space = this->get_velocity_space();
   const TFESpace2D * p_space = this->get_pressure_space();
-  int N_U = v_space->GetN_DegreesOfFreedom();
-  int N_P = p_space->GetN_DegreesOfFreedom();
-  int N_Active = v_space->GetN_ActiveDegrees();
-  int N_DirichletDof = N_U - N_Active;
   
   rhs.reset();
   double *RHSs[3] = {rhs.block(0), rhs.block(1), rhs.block(2)};
