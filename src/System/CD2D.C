@@ -1,8 +1,5 @@
 #include <CD2D.h>
-#include <LocalAssembling2D.h>
-#include <Domain.h>
 #include <Database.h>
-#include <MooNMD_Io.h>
 #include <Output2D.h>
 #include <LinAlg.h>
 #include <Solver.h>
