@@ -1279,7 +1279,7 @@ int TOutput2D::WriteVtk(const char *name)
     {
       // standard output writing
       dat << "SCALARS " << FEFunctionArray[k]->GetName();
-      dat << " float"<< endl;
+      dat << " double"<< endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
       for(j=0;j<N_Vertices;j++)
         dat << DoubleArray[j] << endl;
@@ -1292,7 +1292,7 @@ int TOutput2D::WriteVtk(const char *name)
       for(j=0;j<N_Comp;j++)
       {
         dat << "SCALARS " << FEFunctionArray[k]->GetName() << j;
-        dat << " float"<< endl;
+        dat << " double"<< endl;
         dat << "LOOKUP_TABLE " << "default" << endl;
         for(i=0;i<N_Vertices;i++)
         {
@@ -1303,7 +1303,7 @@ int TOutput2D::WriteVtk(const char *name)
 
       // absolute value
       dat << "SCALARS " << "|" << FEFunctionArray[k]->GetName() << "|";
-      dat << " float"<< endl;
+      dat << " double"<< endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
       l=0;
       for(i=0;i<N_Vertices;i++)
@@ -1319,7 +1319,7 @@ int TOutput2D::WriteVtk(const char *name)
       dat << endl << endl;
 
       dat << "VECTORS " << FEFunctionArray[k]->GetName();
-      dat << " float"<< endl;
+      dat << " double"<< endl;
 
       l=0;
       for(i=0;i<N_Vertices;i++)
@@ -1403,8 +1403,8 @@ int TOutput2D::WriteVtk(const char *name)
 
     for(j=0;j<N_Comp;j++)
     {
-      dat << "SCALARS " << FEVectFunctArray[k]->GetName() <<variable[j];
-      dat << " float"<< endl;
+      dat << "SCALARS " << FEVectFunctArray[k]->GetName() << j;
+      dat << " double"<< endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
       for(i=0;i<N_Vertices;i++)
       {
@@ -1414,7 +1414,7 @@ int TOutput2D::WriteVtk(const char *name)
     }
 
     dat << "SCALARS " << "|" << FEVectFunctArray[k]->GetName() << "|";
-    dat << " float"<< endl;
+    dat << " double"<< endl;
     dat << "LOOKUP_TABLE " << "default" << endl;
     l=0;
     for(i=0;i<N_Vertices;i++)
@@ -1430,7 +1430,7 @@ int TOutput2D::WriteVtk(const char *name)
     dat << endl << endl;
 
     dat << "VECTORS " << FEVectFunctArray[k]->GetName();
-    dat << " float"<< endl;
+    dat << " double"<< endl;
 
     l=0;
     for(i=0;i<N_Vertices;i++)
