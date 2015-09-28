@@ -1398,8 +1398,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
         neigh = joint->GetNeighbour(cell);
         if(neigh)
         {
+          int cell_reference = cell->GetReference_ID();
+          int neighbor_reference = neigh->GetReference_ID();
           if(neigh->GetClipBoard() == -1 &&
-             neigh->GetRefDesc()->GetType() == NoRef)
+             neigh->GetRefDesc()->GetType() == NoRef &&
+             cell_reference == neighbor_reference)
           {
             if(joint->GetType() == InterfaceJoint ||
                joint->GetType() == IsoInterfaceJoint)
@@ -1436,6 +1439,13 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
               DirichletUpperBound += l;
 #endif	    
           } // end == -1
+          else if(cell_reference != neighbor_reference)
+          {
+            // Joint is a "inner joint" but cells belongs to different physical
+            // domains
+            Cond0 = SUBDOMAIN_INTERFACE;
+            BoundaryUpperBound[Cond0 - 1] += l; //  SUBDOMAIN_INTERFACE == 7, see constants.h
+          }
         } // if(neigh)
       } // end no boundary
     } // endfor j
@@ -1721,8 +1731,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
               {
                 // neighbour is not refined
                 mapper=TFEDatabase2D::GetFE2DMapper(FEDesc0, FEDesc0);
-                mapper->MapBound(GlobalNumbers, I_K0, Indices0,
-                                 DirichletCounter);
+                mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter);
               }
             } // end no interfacejoint
 #endif                
