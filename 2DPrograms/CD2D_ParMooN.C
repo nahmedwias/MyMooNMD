@@ -43,7 +43,8 @@ int main(int argc, char* argv[])
   domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
    
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS+
+    TDatabase::ParamDB->LEVELS; i++)
     domain.RegRefineAll();
   
   // write grid into an Postscript file
