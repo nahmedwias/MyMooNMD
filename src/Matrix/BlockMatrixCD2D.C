@@ -30,9 +30,13 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
 
   // the stiffness/system matrix for a convection diffusion problem
   this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));
+  this->BlockMatrix::actives[0] = sqstructure->GetActiveBound();
   // create the mass matrix in case of the time dependent case
   if(TDatabase::ParamDB->PROBLEM_TYPE == 2)
+  {
     this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructure));
+    this->BlockMatrix::actives[1] = sqstructure->GetActiveBound();
+  }
 }
 
 /** ************************************************************************ */
