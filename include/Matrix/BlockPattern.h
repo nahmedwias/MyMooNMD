@@ -11,6 +11,8 @@
 *             This class describes the block structure of a BlockMatrix.
 *             One main purpose is to identify which blocks are formed by which
 *             Finite Element spaces.
+*
+*             
 * 
 * @todo extend this to handle NSTYPE 1,2,...
 * 
@@ -56,6 +58,15 @@ class BlockPattern
   /// @brief the number of block columns
   unsigned int n_block_columns;
   
+  /** @brief number of special blocks
+   * 
+   * Special blocks do not directly belong to this BlockPattern, but are somehow
+   * related. For example the mass matrix in the time dependent case. This is 
+   * stored as one (or possibly more) additional block, which has the same 
+   * structure of an existing block. This number is zero for stationary cases.
+   */
+  unsigned int n_special_blocks;
+  
   /// @brief index of the row space for each block (smaller than n_spaces)
   std::vector<unsigned int> row_spaces;
   /// @brief index of the column space for each block (smaller than n_spaces)
@@ -89,7 +100,8 @@ class BlockPattern
    * 
    * This is probably the constructor you want to use for standard problems. 
    */
-  BlockPattern(const Problem_type, unsigned int space_dimension);
+  BlockPattern(const Problem_type, unsigned int space_dimension, 
+               bool stationary = true);
   
   /** @brief construct a BlockPattern without Finite Element spaces
    * 
@@ -128,7 +140,7 @@ class BlockPattern
   unsigned int get_ansatz_space_of_pattern(unsigned int p) const;
   
   /** @brief get the index of the sparsity pattern of the b-th block */
-  unsigned int patterns_of_block(unsigned int b) const;
+  unsigned int pattern_of_block(unsigned int b) const;
   
   /** @brief return true if the b-th block is on the diagonal, otherwise false
    * 
@@ -140,6 +152,7 @@ class BlockPattern
   /* getter functions */
   unsigned int get_n_spaces() const { return this->n_spaces; }
   unsigned int n_blocks() const { return n_block_rows * n_block_columns; }
+  unsigned int get_n_special_blocks() const { return n_special_blocks; }
   unsigned int n_rows() const {return n_block_rows; } // number of block rows
   unsigned int n_cols() const {return n_block_columns;}//number of block columns
   /** @brief return the number of \em different sparsity patterns */
