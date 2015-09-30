@@ -81,6 +81,9 @@ class Time_CD2D
      */
     BlockVector old_rhs;
     
+    /** @brief store the errors to compute accumulated error norms */
+    std::vector<double> errors;
+    
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
@@ -126,7 +129,7 @@ class Time_CD2D
     /** @brief measure errors and write solution
      * 
      */
-    void output(int m, int& imgage, double *olderrors);
+    void output(int m, int& imgage);
 };
 
 #endif

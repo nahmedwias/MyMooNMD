@@ -31,7 +31,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
 
 /********************************************************************************/
 Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex, int reference_id)
- : systems(), example(ex), multigrid(nullptr)
+ : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
@@ -43,12 +43,15 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex, int referenc
   double hmin, hmax;
   coll->GetHminHmax(&hmin, &hmax);
   OutPut("N_Cells    : " << setw(12) << coll->GetN_Cells() << endl);
-  OutPut("h(min,max) : " << setw(12) << hmin << " " << hmax << endl);
+  OutPut("h(min,max) : " << setw(12) << hmin << " " << setw(12)<< hmax << endl);
   OutPut("dof        : " << setw(12) << space.GetN_DegreesOfFreedom()<<endl);
   OutPut("active dof : " << setw(12) << space.GetN_ActiveDegrees() << endl);
   
   // old right hand side
   old_rhs.copy_structure(this->systems[0].rhs);
+  
+  // interpolate the initial data
+  this->systems.front().fe_function.Interpolate(example.get_initial_cond(0));
   
   // done with the conrtuctor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
@@ -129,7 +132,9 @@ void Time_CD2D::assemble_initial_time()
     // assemble mass matrix, stiffness matrix and rhs
     s.Mass_Matrix.Assemble(la_m_rhs, s.solution, s.rhs);
     s.Stiff_matrix.Assemble(la_a_rhs, s.solution, s.rhs);
-  }  
+  } 
+  // copy the current right hand side vector to the old_rhs 
+  this->old_rhs = this->systems.front().rhs;
 }
 
 /********************************************************************************/
@@ -143,9 +148,10 @@ void Time_CD2D::assemble()
   {
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create a local assembling object
-    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function, this->example.get_coeffs());
+    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function, this->example.get_coeffs());    
     s.Stiff_matrix.Assemble(la_a_rhs,s.solution,s.rhs);
   }
+  
   
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // preparing rhs 
@@ -154,6 +160,7 @@ void Time_CD2D::assemble()
   {
     // scale by time step length and theta4 (only active dofs)
     s.rhs.scale(tau*TDatabase::TimeDB->THETA4, 0);
+    
     // add old right hand side scaled by time step length and theta3 (only 
     // active dofs)
     if(TDatabase::TimeDB->THETA3 != 0.)
@@ -186,12 +193,12 @@ void Time_CD2D::assemble()
     // preparing the left hand side, i.e., the system matrix
     // stiffness matrix is scaled by tau*THETA1, after solving 
     // the matrix needs to be descaled if the coeffs does not depends
-    // on time
-    s.Stiff_matrix.scale(tau*TDatabase::TimeDB->THETA1);
-    s.Stiff_matrix.add_scaled(s.Mass_Matrix, 1.0); 
+    // on time    
+    s.Stiff_matrix.scale_active(tau*TDatabase::TimeDB->THETA1);
+    s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, 1.0);
   }  
   
-  this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
+  this->systems[0].rhs.copy_nonactive(this->systems[0].solution);  
 }
 
 /********************************************************************************/
@@ -200,9 +207,11 @@ void Time_CD2D::solve()
   double t = GetTime();
   System_per_grid& s = this->systems.front();
   TSquareMatrix2D *sqMat[1] = {s.Stiff_matrix.get_matrix()};
+  
   Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
          s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
          this->multigrid.get(), s.solution.length(), 0);
+  
   if(TDatabase::ParamDB->SC_VERBOSE)
   {
     t=GetTime();
@@ -214,13 +223,13 @@ void Time_CD2D::solve()
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   for(auto &s : this->systems)
   {
-    s.Stiff_matrix.add_scaled(s.Mass_Matrix, -1.0);
-    s.Stiff_matrix.scale(1./(tau*TDatabase::TimeDB->THETA1));
+    s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, -1.0);
+    s.Stiff_matrix.scale_active(1./(tau*TDatabase::TimeDB->THETA1));
   }
 }
 
 /********************************************************************************/
-void Time_CD2D::output(int m, int& image, double *errors)
+void Time_CD2D::output(int m, int& image)
 {
   if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
     return;
@@ -236,20 +245,24 @@ void Time_CD2D::output(int m, int& image, double *errors)
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
-                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
+                          L2H1Errors, this->example.get_coeffs(), &aux, 1, 
                           &space, loc_e);
     
     OutPut("time: " << TDatabase::TimeDB->CURRENTTIME);
     OutPut(" L2: " << loc_e[0]);
     OutPut(" H1-semi: " << loc_e[1] << endl);
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
+        
+    errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;    
     errors[1] = loc_e[0]*loc_e[0];
-    OutPut(TDatabase::TimeDB->CURRENTTIME <<  " L2(0,T;L2) " << sqrt(errors[0]) << " ");
     errors[2] += (loc_e[1]*loc_e[1] + errors[3])*tau*0.5;
     errors[3] = loc_e[1]*loc_e[1];
-    OutPut(TDatabase::TimeDB->CURRENTTIME <<  " L2(0,T;H1) " << sqrt(errors[2]) << " \n");
     
+    if(m>0)
+    {
+      OutPut(TDatabase::TimeDB->CURRENTTIME <<  " L2(0,T;L2): " << sqrt(errors[0]) << " ");
+      OutPut( "L2(0,T;H1): " << sqrt(errors[2]) << " \n");
+    }
     if(m==0)
       errors[4]= loc_e[0];
     
