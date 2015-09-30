@@ -58,7 +58,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs)
- : name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
+ : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
@@ -243,7 +243,8 @@ switch(type)
 
 LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux, 
                                      const TDiscreteForm2D& df)
- : name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
+ : type(CD2D_Galerkin), // this might be wrong!!
+   name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
    ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),

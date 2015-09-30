@@ -44,6 +44,8 @@ enum LocalAssembling2D_type { CD2D_Galerkin,
 class LocalAssembling2D
 {
   protected:
+    LocalAssembling2D_type type;
+    
     /** name */
     std::string name;
 
@@ -137,6 +139,9 @@ class LocalAssembling2D
      * 
      * This uses the deprecated classes TAuxParam2D and TDiscreteForm2D to 
      * construct an object of this class.
+     * 
+     * The member variable 'type' is likely to be wrong using this constructor!
+     * Please do not use it, unless you know what you are doing.
      */
     LocalAssembling2D(const TAuxParam2D& aux, const TDiscreteForm2D& df);
 
@@ -202,6 +207,9 @@ class LocalAssembling2D
     
     TFEFunction2D* get_fe_function(int i) const
     { return FEFunctions2D[i]; }
+    
+    LocalAssembling2D_type get_type() const
+    { return type; }
 };
 
 
