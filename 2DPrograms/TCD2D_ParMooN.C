@@ -75,10 +75,8 @@ int main(int argc, char* argv[])
   int n_substeps = GetN_SubSteps();
     
   int image=0;
-  double errors[5];
-  for(int i=0; i<5; i++)
-    errors[i] = 0.;
-  tcd.output(0,image, errors);
+
+  tcd.output(0,image);
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -106,7 +104,7 @@ int main(int argc, char* argv[])
       
       tcd.solve();
       
-      tcd.output(step, image, errors);
+      tcd.output(step, image);
     }
     // OutPut("mem after: " << GetMemory()<<endl);
   }
@@ -117,12 +115,3 @@ int main(int argc, char* argv[])
   CloseFiles();
   return 0;
 } // end main
-
-
-
-
-
-
-
-
-
