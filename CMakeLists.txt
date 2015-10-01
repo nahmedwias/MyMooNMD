@@ -504,6 +504,8 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 
+add_subdirectory(user_projects)
+
 ############
 # End adding executable targets.
 ############
