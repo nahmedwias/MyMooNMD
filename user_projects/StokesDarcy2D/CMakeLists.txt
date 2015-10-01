@@ -1,5 +1,5 @@
 
-set(stoda_dir "${PROJECT_SOURCE_DIR}/Main_Users/StokesDarcy2D")
+set(stoda_dir "${PROJECT_SOURCE_DIR}/user_projects/StokesDarcy2D")
 
 include_directories(${stoda_dir})
 include_directories("${stoda_dir}/Examples" )
