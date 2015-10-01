@@ -1,5 +1,7 @@
 #include <BlockMatrix.h>
 #include <BlockVector.h>
+#include <LinAlg.h>
+#include <limits>
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix()
@@ -10,9 +12,7 @@ BlockMatrix::BlockMatrix()
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols)
- : block_pattern(new BlockPattern(n_rows, n_cols)),
-   blocks(std::vector<std::shared_ptr<TMatrix>>(n_rows*n_cols, nullptr)),
-   combined_matrix(std::shared_ptr<TMatrix>())
+ : BlockMatrix(std::make_shared<BlockPattern>(n_rows, n_cols))
 {
   
 }
@@ -30,6 +30,9 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
     throw("not enough blocks given to create BlockMatrix");
   }
   std::copy(new_blocks.begin(), new_blocks.end(), this->blocks.begin());
+  for(unsigned int b = 0; b < this->blocks.size(); ++b)
+    this->actives[b] = this->blocks[b]->GetN_Entries();
+  
   // check consistency
   // for each row check if all blocks have the same number of rows
   for(unsigned int row = 0; row < n_rows; ++row)
@@ -63,16 +66,19 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(const Problem_type type, 
-                         unsigned int space_dimension)
- : BlockMatrix(std::make_shared<BlockPattern>(type, space_dimension))
+                         unsigned int space_dimension, bool stationary)
+ : BlockMatrix(std::make_shared<BlockPattern>(type, space_dimension,
+                                              stationary))
 {
   // nothing more to do
 }
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(std::shared_ptr<BlockPattern> bp)
- : block_pattern(bp), 
-   blocks(std::vector<std::shared_ptr<TMatrix>>(bp->n_blocks(),nullptr)),
+ : block_pattern(bp), blocks(std::vector<std::shared_ptr<TMatrix>>(
+         bp->n_blocks()+bp->get_n_special_blocks(), nullptr)),
+   actives(bp->n_blocks()+bp->get_n_special_blocks(), 
+           std::numeric_limits<unsigned int>::max()),
    combined_matrix(std::shared_ptr<TMatrix>())
 {
   // matrices are not created here. You still have to do that
@@ -81,21 +87,19 @@ BlockMatrix::BlockMatrix(std::shared_ptr<BlockPattern> bp)
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(BlockMatrix& other)
  : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
-   combined_matrix(other.combined_matrix)
+   actives(other.actives.size(), 0), combined_matrix(other.combined_matrix)
 {
   for(unsigned int b = 0; b < this->blocks.size(); ++b)
   {
     this->blocks[b] = other.blocks[b]; // set pointer
-    // destructor on this sparse matrix is only called once from 'this', not 
-    // from 'other'
-    other.blocks[b] = nullptr; 
+    this->actives[b] = other.actives[b];
   }
 }
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(BlockMatrix&& other)
  : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
-   combined_matrix(other.combined_matrix)
+   actives(other.actives.size(), 0), combined_matrix(other.combined_matrix)
 {
   for(unsigned int b = 0; b < this->blocks.size(); ++b)
   {
@@ -103,6 +107,7 @@ BlockMatrix::BlockMatrix(BlockMatrix&& other)
     // destructor on this sparse matrix is only called once from 'this', not 
     // from 'other'
     other.blocks[b] = nullptr; 
+    this->actives[b] = other.actives[b];
   }
 }
 
@@ -116,8 +121,8 @@ BlockMatrix::~BlockMatrix() noexcept
 /* ************************************************************************* */
 void BlockMatrix::reset()
 {
-  for(auto& m : this->blocks)
-    m->reset();
+  for(unsigned int b = 0; b < this->n_blocks(); ++b)
+    this->blocks[b]->reset();
 }
 
 /* ************************************************************************* */
@@ -126,13 +131,60 @@ void BlockMatrix::add_scaled(const BlockMatrix& A, double factor)
   unsigned int n_blocks = A.n_blocks();
   if(this->n_blocks() != n_blocks)
   {
-    ErrThrow("BlockMatrix::operator+= : the two BlockMatrix objects do "
+    ErrThrow("BlockMatrix::add_scaled : the two BlockMatrix objects do "
              + "not have the same number of blocks.");
   }
   
   for(unsigned int i = 0; i < n_blocks; i++)
   {
     this->block(i)->add_scaled(*A.block(i), factor);
+  }
+}
+
+/** ************************************************************************* */
+void BlockMatrix::add_scaled_active(const BlockMatrix& A, double factor)
+{
+  unsigned int n_blocks = A.n_blocks();
+  if(this->n_blocks() != n_blocks)
+  {
+    ErrThrow("BlockMatrix::add_scaled_active : the two BlockMatrix objects do "
+             + "not have the same number of blocks.");
+  }
+  
+  for(unsigned int b = 0; b < n_blocks; b++)
+  {
+    if(this->actives[b] <= this->blocks[b]->GetN_Entries())
+    {
+      // note: this could be a method of TMatrix as well, if TMatrix knew its 
+      // actives
+      Daxpy(this->actives[b], factor, A.block(b)->GetEntries(), 
+            this->blocks[b]->GetEntries());
+    }
+    else
+      ErrThrow("adding actives where the number of actives has not been set");
+  }
+}
+
+/** ************************************************************************* */
+void BlockMatrix::scale(double factor)
+{
+  for(unsigned int b = 0; b < this->n_blocks(); ++b)
+    this->blocks[b]->scale(factor);
+}
+
+/* ************************************************************************* */
+void BlockMatrix::scale_active(double factor)
+{
+  for(unsigned int b = 0; b < this->n_blocks(); ++b)
+  {
+    if(this->actives[b] <= this->blocks[b]->GetN_Entries())
+    {
+      // note: this could be a method of TMatrix as well, if TMatrix knew its 
+      // actives
+      Dscal(this->actives[b], factor, this->blocks[b]->GetEntries());
+    }
+    else
+      ErrThrow("scaling actives where the number of actives has not been set");
   }
 }
 
@@ -268,9 +320,9 @@ std::shared_ptr<const TMatrix> BlockMatrix::block(const unsigned int i) const
 {
   if(i >= this->n_blocks())
   {
-    ErrMsg("There are only " << this->n_blocks() << " blocks in this " << 
-           "BlockMatrix. Cannot access block " << i);
-    throw("can not access block, index out of bounds");
+    ErrThrow("There are only " + std::to_string(this->n_blocks()) 
+             + " blocks in this BlockMatrix. Cannot access block " 
+             + std::to_string(i));
   }
   return this->blocks[i];
 }
@@ -280,9 +332,9 @@ std::shared_ptr<TMatrix> BlockMatrix::block(const unsigned int i)
 {
   if(i >= this->n_blocks())
   {
-    ErrMsg("There are only " << this->n_blocks() << " blocks in this " << 
-           "BlockMatrix. Cannot access block " << i);
-    throw("can not access block, index out of bounds");
+    ErrThrow("There are only " + std::to_string(this->n_blocks()) 
+             + " blocks in this BlockMatrix. Cannot access block " 
+             + std::to_string(i));
   }
   return this->blocks[i];
 }

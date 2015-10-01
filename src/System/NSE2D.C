@@ -1,10 +1,8 @@
 #include <NSE2D.h>
 #include <MainUtilities.h> // GetVelocityAndPressureSpace
-#include <Domain.h>
 #include <Database.h>
 #include <Output2D.h>
 #include <LinAlg.h> // DDot
-#include <ItMethod.h>
 #include <MultiGridIte.h>
 #include <FixedPointIte.h>
 #include <FgmresIte.h>

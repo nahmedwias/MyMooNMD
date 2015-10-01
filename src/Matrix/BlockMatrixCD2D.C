@@ -20,14 +20,28 @@
 /** ************************************************************************ */
 BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace, 
                                  const BoundValueFunct2D *BoundValue)
- : BlockMatrix(Problem_type::ConvDiffReac, 2), boundary_values(BoundValue)
+ : BlockMatrix(Problem_type::ConvDiffReac, 2, 
+               TDatabase::ParamDB->PROBLEM_TYPE != 2),
+   boundary_values(BoundValue)
 {
   // build matrices, first build matrix structure
   TSquareStructure2D* sqstructure = new TSquareStructure2D(&fespace);
   sqstructure->Sort();  // sort column numbers: numbers are in increasing order
 
-  // the stiffness/system matrix for a stationary convection diffusion problem
+  // the stiffness/system matrix for a convection diffusion problem
   this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));
+  // the number of active entries
+  unsigned int n_active = sqstructure->GetN_Entries();
+  // substract the number of non active entries (non active rows)
+  n_active -= sqstructure->GetN_Rows() - sqstructure->GetActiveBound();
+  this->BlockMatrix::actives[0] = n_active;
+  
+  // create the mass matrix in case of the time dependent case
+  if(TDatabase::ParamDB->PROBLEM_TYPE == 2)
+  {
+    this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructure));
+    this->BlockMatrix::actives[1] = n_active;
+  }
 }
 
 /** ************************************************************************ */

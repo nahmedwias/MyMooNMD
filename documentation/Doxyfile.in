@@ -756,7 +756,8 @@ WARN_LOGFILE           = @CMAKE_CURRENT_BINARY_DIR@/doxygen_warnings_and_log.txt
 
 INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/include \
                          @CMAKE_CURRENT_SOURCE_DIR@/src \
-                         @CMAKE_CURRENT_SOURCE_DIR@/documentation
+                         @CMAKE_CURRENT_SOURCE_DIR@/documentation \
+                         @CMAKE_CURRENT_SOURCE_DIR@/Examples 
 
 
 # This tag can be used to specify the character encoding of the source files

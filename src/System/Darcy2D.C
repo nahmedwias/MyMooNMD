@@ -4,22 +4,10 @@
 * @date      15.03.15
  ************************************************************************  */
 #include <Database.h>
-#include <Darcy2DMixed.h>
 #include <Darcy2D.h>
-#include <SquareStructure2D.h>
-#include <DiscreteForm2D.h>
 #include <Assemble2D.h>
-#include <AuxParam2D.h>
-#include <MultiGridIte.h>
-#include <MultiGrid2D.h>
-#include <LocalProjection.h>
-#include <DirectSolver.h>
 #include <Output2D.h>
 #include <MainUtilities.h>
-#include <stdlib.h>
-#include <string.h>
-// #include <sstream>
-// #include <MooNMD_Io.h>
 
 /** ************************************************************************ */
 Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
