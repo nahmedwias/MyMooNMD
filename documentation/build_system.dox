@@ -14,11 +14,12 @@
  motivation-and-further-reading-stuff for cmake.
 
  \section eclipseintegration Integrating ParMooN into Eclipse
- Integrating any cmake project into Eclipse has one severe drawback. It only works with in-source-builds.
+ Integrating any cmake project into Eclipse has one severe drawback. It works best with in-source-builds.
  So no nice "build" directory where you can dump all the build related stuff. In-source builds are a bit messy,
  but since Eclipse is a great tool it is worth the tradeoff, in my humble opinion. Here is a step-by-step
- introduction.
+ introduction. Update: So actually there is also a way to get an out-of-source build integration for eclipse.
  
+ \subsection eclipseinsource In-source build
  First of all we put our repo into the folder which is supposed to host our Eclipse workspace, too. I do it like this
  \code
  mkdir /home/bartsch/code/ParMooN_workspace
@@ -64,6 +65,60 @@ As root directory I take
 > /home/bartsch/code/ParMooN_workspace
 
 and check the only offered project (all other boxes stay unchecked).
+
+Then I click "Finish" and Eclipse takes over. Great, I can start working!
+
+ \subsection eclipseoutofsource Out-of-source build
+ For the issues eclipse has with out of source builds, see the remarks on  <a href="https://cmake.org/Wiki/Eclipse_CDT4_Generator#Out-Of-Source_Builds">this</a>  official CMake site.\n
+ When going for an out-of-source build it is recommended to put a build directory and the ParMooN code as sibling directories under the workspace. Then the only thing one has to waive is 
+ integrated version control.
+ 
+ Here's the step-by-step instruction:
+ 
+ First of all we put our repo into the folder which is supposed to host our Eclipse workspace, too. I do it like this
+ \code
+ mkdir /home/bartsch/code/ParMooN_workspace
+ cd /home/bartsch/code/ParMooN_workspace
+ hg clone ssh://bartsch@gate.wias-berlin.de//Home/darcy/ParMooN
+ \endcode
+ 
+ Now I've got a folder /home/bartsch/code/ParMooN_workspace/ParMooN
+ which contains the entire ParMoon code under hg version control. That's nice!\n
+
+ I build a folder named ParMooN_build and switch into that one
+ 
+ \code
+ mkdir ParMooN_build
+ cd ParMooN_build
+ \endcode
+ 
+ Now I'm inside the build folder and it's time for the out-of-source-build with Eclipse integration. 
+ I kick off cmake, including a call to the Eclipse CDT4 Generator, which produces Eclipse project files
+ (oh, and I chose build type Debug).
+ 
+ \code
+ cmake -G"Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../ParMooN
+ \endcode
+
+ Now open Eclipse and create a new workspace in the folder right above your code. \n
+ I choose
+
+> /home/bartsch/code/ParMooN_workspace
+ 
+as my workspace. Now let's import the cmake project into Eclipse. I am using Eclipse Mars for Linux,
+might be that with your Eclipse version the next steps are slightly different.
+
+> File -> Import
+
+A popup menue opens. I choose
+
+> General->Existing Projects into Workspace
+
+As root directory I take
+
+> /home/bartsch/code/ParMooN_workspace
+
+and check the only offered project (named ParMooN_build). All other boxes stay unchecked.
 
 Then I click "Finish" and Eclipse takes over. Great, I can start working!
  
