@@ -163,11 +163,11 @@ These things shold be moved somewhere else someday
      hg rollback
      \endcode
     and gone is the branch.
-    The same can be done if I commited ueberstuerzt, for example with a really embarassing spellign mistake in the commit message or some more substantial error.
+    The same can be done if I commited harum-scarum, for example with a really embarassing spellign mistake in the commit message or some more substantial error.
      \code
      hg rollback
      \endcode
-    Will undo the commit and all my changes are back in the workbench. Note that "hg rollback" will not do you any good, when you pushed the changeset soemwhere else. Then it "escaped into the wild" as (hyperlink)this side puts it.
+    Will undo the commit and all my changes are back in the workbench. Note that "hg rollback" will not do you any good, when you pushed the changeset soemwhere else. Then it "escaped into the wild" as <a href="http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html">this</a>  side puts it.
     \remarks The command is marked deprecated and dangerous, but I think there is situations when it comes in handy. Just don't rely on it.
 
    \subsection tidyup Oh my gosh, what does that repo look like?
