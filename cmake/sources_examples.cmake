@@ -18,15 +18,15 @@ include_directories("${CMAKE_SOURCE_DIR}/Examples"
                     "${CMAKE_SOURCE_DIR}/Examples/TNSE_2D")
 
 # Source files to be added to the 2D library.
-list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example2D.C")
-list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_CD2D.C")
-list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_Darcy2D.C")
-list(APPEND EXAMPLE_SOURCES_2D "${CMAKE_CURRENT_SOURCE_DIR}/Example_NSE2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/Examples/Example2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/Examples/Example_CD2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/Examples/Example_Darcy2D.C")
+list(APPEND EXAMPLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/Examples/Example_NSE2D.C")
 
 # Source files to be added to the 3D library.
-list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example3D.C")
-list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example_CD3D.C")
-list(APPEND EXAMPLE_SOURCES_3D "${CMAKE_CURRENT_SOURCE_DIR}/Example_NSE3D.C")
+list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example3D.C")
+list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example_CD3D.C")
+list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example_NSE3D.C")
 
 # Define two static libraries. Each has its own precompiler flag (2D/3D). 
 add_library(examples_2d STATIC ${EXAMPLE_SOURCES_2D})

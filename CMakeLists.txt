@@ -346,18 +346,18 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 
 # If we want global compile flags to reach the subdirectories, we have to 
-# run the add_subdirectory AFTER setting global flags.
-add_subdirectory(Examples)
-add_subdirectory(src/AMG)
-add_subdirectory(src/General)
-add_subdirectory(src/Geometry)          
-add_subdirectory(src/FE)
-add_subdirectory(src/Parallel)
-add_subdirectory(src/QuadFormulas)
-add_subdirectory(src/Refinement) 
-add_subdirectory(src/System)
-add_subdirectory(src/Matrix)
-# add_subdirectory(src/PBE)
+# run the following includes AFTER setting global flags.
+include(cmake/sources_amg.cmake)
+include(cmake/sources_examples.cmake)
+include(cmake/sources_fe.cmake)
+include(cmake/sources_general.cmake)
+include(cmake/sources_geometry.cmake)
+include(cmake/sources_parallel.cmake)
+include(cmake/sources_quadformulas.cmake)
+include(cmake/sources_refinement.cmake)
+include(cmake/sources_system.cmake)
+include(cmake/sources_matrix.cmake)
+# include(cmake/sources_pbe.cmake)
 
 # Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
 
