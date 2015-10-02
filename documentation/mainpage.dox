@@ -11,7 +11,7 @@
  * Write the follwing into a shell 
  *  > mkdir ParMooN \n
  *  > cd ParMooN \n
- *  > hg clone ssh://username@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN . \n
+ *  > hg clone ssh://username\@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN . \n
  *  > mkdir build \n
  *  > cd build/ \n 
  *  > cmake .. \n
@@ -26,5 +26,9 @@
    - \ref external_libraries , how to use external libraries with ParMooN \n
  And last but definitely not least:
    - \ref page_rules to stick to when coding in ParMooN
+  
+  \subsection forum The ParMooN Q & A Forum
+  We set up a wordpress forum, which is the right place for all questions, answers and discussions which are ParMooN related. \n
+  Follow the link to the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">ParMooN Forum</a>!
  
  */
