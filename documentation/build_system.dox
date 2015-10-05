@@ -56,7 +56,7 @@ might be that with your Eclipse version the next steps are slightly different.
 
 > File -> Import
 
-A popup menue opens. I choose
+A popup menu opens. I choose
 
 > General->Existing Projects into Workspace
 
@@ -110,7 +110,7 @@ might be that with your Eclipse version the next steps are slightly different.
 
 > File -> Import
 
-A popup menue opens. I choose
+A popup menu opens. I choose
 
 > General->Existing Projects into Workspace
 
@@ -122,9 +122,46 @@ and check the only offered project (named ParMooN_build). All other boxes stay u
 
 Then I click "Finish" and Eclipse takes over. Great, I can start working!
  
+ 
+ 
+ 
  \section kdevelopintegration Integrating ParMooN into KDevelop
- KDevelop theoretically allows for an out-of-source build cmake integration, which is very desirable. \n
- TODO Maybe Ulrich should write something about this, for on my machine KDevelop crashes when I try to start any project.
+ KDevelop allows for an out-of-source build cmake integration, which is very
+ desirable in order to separate the code from all the files created during the
+ build process. The following steps have been testes with KDevelop 4.7.1.
+ 
+ @note Currently I do not know of a nice way to resize the image to some more
+       meaningful size other than scaling each image by hand.
+ 
+ After starting KDevelop create a new project, in the menu bar go to 
+> Project->Open/Import Project
+ \image html KDevelop_create_project1.png
+ which should open a separate window. In there  choose the CMakeLists.txt in
+ your root ParMooN directory and click "Next".
+ \image html KDevelop_create_project2.png
+ Here you can leave everything as it is and click "Finish".
+ \image html KDevelop_create_project3.png
+ Another window will open. This is where you can 
+ choose where your build directory should be at. The build directory is where
+ all output of cmake and make go, this includes all compiled object files and
+ compiled and linked executables (however you can change the path for those if
+ you like).
+ 
+ In this setup it is a sibling directory of the root ParMoon directory. This 
+ way it does not interfere with the version control or the code. Additionaly it
+ is possible to change the build type here, leave as Debug, if you plan to use 
+ the debugger later. Then click "OK". 
+ \image html KDevelop_create_project4.png
+ This is it. Try to compile one of the targets. 
+ \image html KDevelop_create_project5.png
+ 
+ If this did not work out for you, contact one of the developers, for example 
+ Ulrich. The way this is set up here KDevelop creates a file called 
+ "ParMooN.kdev4" and a directory ".kdev4" in the root ParMooN directory which
+ is not desirable. Currently we can not avoid this. These files are added to 
+ the .hgignore file in order to not interfere too much with the version control.
+ 
+ 
  
  \section presetvariables Changing build variables
  
@@ -202,7 +239,7 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
   \code
   cmake -D CMAKE_BUILD_TYPE=Debug ..
   \endcode
-  and keep a seperate build directory for the Release build.
+  and keep a separate build directory for the Release build.
   \remarks
   If anybody gathers some experience on switching between build types by option (3), please share it.
 
