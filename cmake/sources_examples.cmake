@@ -28,9 +28,6 @@ list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example3D.C")
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example_CD3D.C")
 list(APPEND EXAMPLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/Examples/Example_NSE3D.C")
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(examples_2d STATIC ${EXAMPLE_SOURCES_2D})
-target_compile_definitions(examples_2d PUBLIC -D__2D__)
 
-add_library(examples_3d STATIC ${EXAMPLE_SOURCES_3D})
-target_compile_definitions(examples_3d PUBLIC -D__3D__)
+list(APPEND PARMOON_SOURCES_2D ${EXAMPLE_SOURCES_2D})
+list(APPEND PARMOON_SOURCES_3D ${EXAMPLE_SOURCES_3D})

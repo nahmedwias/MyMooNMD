@@ -24,9 +24,5 @@ list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector.C")
 #list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector3D.C")
 
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(matrix_2d STATIC ${MATRIX_SOURCES_2D})
-target_compile_definitions(matrix_2d PUBLIC -D__2D__)
-
-add_library(matrix_3d STATIC ${MATRIX_SOURCES_3D})
-target_compile_definitions(matrix_3d PUBLIC -D__3D__)
+list(APPEND PARMOON_SOURCES_2D ${MATRIX_SOURCES_2D})
+list(APPEND PARMOON_SOURCES_3D ${MATRIX_SOURCES_3D})

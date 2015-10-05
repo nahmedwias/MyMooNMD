@@ -16,9 +16,6 @@ list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/ReadParam.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/Utilities.C")
 list(APPEND GENERAL_SOURCES "${PROJECT_SOURCE_DIR}/src/General/Vector.C") 
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D)
-add_library(gen_2d STATIC ${GENERAL_SOURCES})
-target_compile_definitions(gen_2d PUBLIC -D__2D__)
 
-add_library(gen_3d STATIC ${GENERAL_SOURCES})
-target_compile_definitions(gen_3d PUBLIC -D__3D__)
+list(APPEND PARMOON_SOURCES_2D ${GENERAL_SOURCES})
+list(APPEND PARMOON_SOURCES_3D ${GENERAL_SOURCES})

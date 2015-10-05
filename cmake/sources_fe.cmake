@@ -6,7 +6,10 @@
 #
 
 # TODO This include might be superfluous - it is done in the main CMakeLists.
-include_directories("${CMAKE_SOURCE_DIR}/include/FE")
+include_directories("${CMAKE_SOURCE_DIR}/include/FE"
+                    "${CMAKE_SOURCE_DIR}/include/FE1D"
+                    "${CMAKE_SOURCE_DIR}/include/FE2D"
+                    "${CMAKE_SOURCE_DIR}/include/FE3D")
 
 # Source files used in 2D and 3D.
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/ADICell.C") 
@@ -165,10 +168,6 @@ list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/TetraIsoparametric.C")
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Upwind3D.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Urea_3d4d.C") 
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(fe_2d STATIC ${FE_SOURCES} ${FE_SOURCES_2D})
-target_compile_definitions(fe_2d PUBLIC -D__2D__)
 
-add_library(fe_3d STATIC ${FE_SOURCES} ${FE_SOURCES_3D})
-target_compile_definitions(fe_3d PUBLIC -D__3D__)
-
+list(APPEND PARMOON_SOURCES_2D ${FE_SOURCES} ${FE_SOURCES_2D})
+list(APPEND PARMOON_SOURCES_3D ${FE_SOURCES} ${FE_SOURCES_3D})

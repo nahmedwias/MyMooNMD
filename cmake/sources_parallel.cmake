@@ -15,9 +15,6 @@ list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParDiso.C")
 list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFEMapper3D.C")
 list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFECommunicator3D.C")
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D)
-add_library(par_2d STATIC ${PAR_SOURCES})
-target_compile_definitions(par_2d PUBLIC -D__2D__)
 
-add_library(par_3d STATIC ${PAR_SOURCES})
-target_compile_definitions(par_3d PUBLIC -D__3D__)
+list(APPEND PARMOON_SOURCES_2D ${PAR_SOURCES})
+list(APPEND PARMOON_SOURCES_3D ${PAR_SOURCES})

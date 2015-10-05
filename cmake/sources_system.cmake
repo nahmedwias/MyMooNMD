@@ -21,9 +21,6 @@ list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_CD2D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/AssembleMat3D.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/CD3D.C")
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(sys_2d STATIC ${SYST_SOURCES} ${SYST_SOURCES_2D})
-target_compile_definitions(sys_2d PUBLIC -D__2D__)
 
-add_library(sys_3d STATIC ${SYST_SOURCES} ${SYST_SOURCES_3D})
-target_compile_definitions(sys_3d PUBLIC -D__3D__)
+list(APPEND PARMOON_SOURCES_2D ${SYST_SOURCES} ${SYST_SOURCES_2D})
+list(APPEND PARMOON_SOURCES_3D ${SYST_SOURCES} ${SYST_SOURCES_3D})

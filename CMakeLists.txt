@@ -284,21 +284,6 @@ IF(CMAKE_BUILD_TOOL MATCHES "make")
   ENDIF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
 ENDIF(CMAKE_BUILD_TOOL MATCHES "make")
 
-# Include directories which contain header files.
-include_directories("${CMAKE_SOURCE_DIR}/include/General")
-include_directories("${CMAKE_SOURCE_DIR}/include/FE")
-include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
-include_directories("${CMAKE_SOURCE_DIR}/include/QuadFormulas")
-include_directories("${CMAKE_SOURCE_DIR}/include/FE1D")
-include_directories("${CMAKE_SOURCE_DIR}/include/FE2D")
-include_directories("${CMAKE_SOURCE_DIR}/include/FE3D")
-include_directories("${CMAKE_SOURCE_DIR}/include/AMG")
-include_directories("${CMAKE_SOURCE_DIR}/include/PBE")
-include_directories("${CMAKE_SOURCE_DIR}/include/Refinement")
-include_directories("${CMAKE_SOURCE_DIR}/include/System")
-include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
-include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
-include_directories("${CMAKE_SOURCE_DIR}/Examples")
 
 
 # Determine precompiler definitions ("PCD") depending on the chosen _PARALLEL_TYPE
@@ -345,6 +330,7 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__${_ARCH}__   -D__PRIVATE__") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__${_ARCH}__   -D__PRIVATE__")
 
+
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
 include(cmake/sources_amg.cmake)
@@ -358,6 +344,13 @@ include(cmake/sources_refinement.cmake)
 include(cmake/sources_system.cmake)
 include(cmake/sources_matrix.cmake)
 # include(cmake/sources_pbe.cmake)
+
+# Define two static libraries. Each has its own precompiler flag (2D/3D). 
+add_library(parmoon_2d STATIC ${PARMOON_SOURCES_2D})
+target_compile_definitions(parmoon_2d PUBLIC -D__2D__)
+
+add_library(parmoon_3d STATIC ${PARMOON_SOURCES_3D})
+target_compile_definitions(parmoon_3d PUBLIC -D__3D__)
 
 # Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
 
@@ -374,33 +367,6 @@ if(_USING_MPI)
     LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
 
-# Set up lists of the 2D libraries ready for linking.
-LIST(APPEND _PARMOON_LIBRARIES_2D "examples_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "matrix_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "fe_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "gen_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "geo_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "par_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "quad_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "ref_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "sys_2d")
-LIST(APPEND _PARMOON_LIBRARIES_2D "amg")
-# Double everything, for the libraries are heavily interdependent.
-LIST(APPEND _PARMOON_LIBRARIES_2D ${_PARMOON_LIBRARIES_2D})
-
-# Set up lists of the 3D libraries ready for linking.
-LIST(APPEND _PARMOON_LIBRARIES_3D "examples_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "matrix_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "fe_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "gen_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "geo_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "par_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "quad_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "ref_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "sys_3d")
-LIST(APPEND _PARMOON_LIBRARIES_3D "amg")
-# Double everything, for the libraries are heavily interdependent.
-LIST(APPEND _PARMOON_LIBRARIES_3D ${_PARMOON_LIBRARIES_3D})
 
 ##############################################################
 # Start adding executable targets.
@@ -415,7 +381,7 @@ set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${PARMOON_PARALLE
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(cd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(cd2d parmoon_2d ${_EXTERN_LIBRARIES})
 
 ### Darcy2D ###
 # Standard executable target.
@@ -424,7 +390,7 @@ set_target_properties(darcy2d PROPERTIES OUTPUT_NAME parMooN_darcy2d_${PARMOON_P
 # Add the correct geometry flag to the target.
 target_compile_definitions(darcy2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(darcy2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(darcy2d parmoon_2d ${_EXTERN_LIBRARIES})
 
 ### NSE2D ###
 # Standard executable target.
@@ -433,7 +399,7 @@ set_target_properties(nse2d PROPERTIES OUTPUT_NAME parMooN_nse2d_${PARMOON_PARAL
 # Add the correct geometry flag to the target.
 target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(nse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(nse2d parmoon_2d ${_EXTERN_LIBRARIES})
 
 ### TCD2D ###
 # Standard executable target.
@@ -442,7 +408,7 @@ set_target_properties(tcd2d PROPERTIES OUTPUT_NAME parMooN_tcd2d_${PARMOON_PARAL
 # Add the correct geometry flag to the target.
 target_compile_definitions(tcd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(tcd2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tcd2d parmoon_2d ${_EXTERN_LIBRARIES})
 
 ### TNSE2D ###
 # Standard executable target.
@@ -451,7 +417,7 @@ set_target_properties(tnse2d PROPERTIES OUTPUT_NAME parMooN_tnse2d_${PARMOON_PAR
 # Add the correct geometry flag to the target.
 target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(tnse2d ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tnse2d parmoon_2d ${_EXTERN_LIBRARIES})
 
 ### Standard 3D Programs ###
 
@@ -462,7 +428,7 @@ set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${PARMOON_PARALLE
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(cd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(cd3d parmoon_3d ${_EXTERN_LIBRARIES})
 # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
 set_target_properties(cd3d PROPERTIES LINK_FLAGS "-lgfortran")
 
@@ -474,7 +440,7 @@ set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${PARMOON_PARAL
 # Add the correct geometry flag to the target.
 target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(nse3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(nse3d parmoon_3d ${_EXTERN_LIBRARIES})
 # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
 set_target_properties(nse3d PROPERTIES LINK_FLAGS "-lgfortran")
 
@@ -485,7 +451,7 @@ set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARAL
 # Add the correct geometry flag to the target.
 target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(tcd3d ${_PARMOON_LIBRARIES_3D} ${_EXTERN_LIBRARIES})
+target_link_libraries(tcd3d parmoon_3d ${_EXTERN_LIBRARIES})
 # Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
 set_target_properties(tcd3d PROPERTIES LINK_FLAGS "-lgfortran")
 

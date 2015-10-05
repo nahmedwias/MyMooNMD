@@ -18,10 +18,6 @@ list(APPEND QUAD_SOURCES "${PROJECT_SOURCE_DIR}/src/QuadFormulas/QuadFormulaQuad
 list(APPEND QUAD_SOURCES "${PROJECT_SOURCE_DIR}/src/QuadFormulas/QuadFormulaTetra.C")
 list(APPEND QUAD_SOURCES "${PROJECT_SOURCE_DIR}/src/QuadFormulas/QuadFormulaTria.C")
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D)
-add_library(quad_2d STATIC ${QUAD_SOURCES})
-target_compile_definitions(quad_2d PUBLIC -D__2D__)
- 
-add_library(quad_3d STATIC ${QUAD_SOURCES})
-target_compile_definitions(quad_3d PUBLIC -D__3D__)
 
+list(APPEND PARMOON_SOURCES_2D ${QUAD_SOURCES})
+list(APPEND PARMOON_SOURCES_3D ${QUAD_SOURCES})

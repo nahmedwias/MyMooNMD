@@ -84,12 +84,6 @@ list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(geo_2d STATIC ${GEO_SOURCES} ${GEO_SOURCES_2D})
-target_compile_definitions(geo_2d PUBLIC -D__2D__)
 
-add_library(geo_3d STATIC ${GEO_SOURCES} ${GEO_SOURCES_3D})
-target_compile_definitions(geo_3d PUBLIC -D__3D__)
-
-
-	
+list(APPEND PARMOON_SOURCES_2D ${GEO_SOURCES} ${GEO_SOURCES_2D})
+list(APPEND PARMOON_SOURCES_3D ${GEO_SOURCES} ${GEO_SOURCES_3D})
