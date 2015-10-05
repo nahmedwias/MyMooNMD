@@ -58,15 +58,6 @@ class BlockPattern
   /// @brief the number of block columns
   unsigned int n_block_columns;
   
-  /** @brief number of special blocks
-   * 
-   * Special blocks do not directly belong to this BlockPattern, but are somehow
-   * related. For example the mass matrix in the time dependent case. This is 
-   * stored as one (or possibly more) additional block, which has the same 
-   * structure of an existing block. This number is zero for stationary cases.
-   */
-  unsigned int n_special_blocks;
-  
   /// @brief index of the row space for each block (smaller than n_spaces)
   std::vector<unsigned int> row_spaces;
   /// @brief index of the column space for each block (smaller than n_spaces)
@@ -101,7 +92,7 @@ class BlockPattern
    * This is probably the constructor you want to use for standard problems. 
    */
   BlockPattern(const Problem_type, unsigned int space_dimension, 
-               bool stationary = true);
+               bool mass_matrix = false);
   
   /** @brief construct a BlockPattern without Finite Element spaces
    * 
@@ -152,7 +143,6 @@ class BlockPattern
   /* getter functions */
   unsigned int get_n_spaces() const { return this->n_spaces; }
   unsigned int n_blocks() const { return n_block_rows * n_block_columns; }
-  unsigned int get_n_special_blocks() const { return n_special_blocks; }
   unsigned int n_rows() const {return n_block_rows; } // number of block rows
   unsigned int n_cols() const {return n_block_columns;}//number of block columns
   /** @brief return the number of \em different sparsity patterns */
