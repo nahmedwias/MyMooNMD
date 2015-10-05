@@ -8,29 +8,30 @@
 
 
 
-/********************************************************************************/
-Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example, 
-					    TCollection& coll)
+/**************************************************************************** */
+Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
+                                            TCollection& coll)
  : fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
             TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
    Stiff_matrix(this->fe_space, example.get_bd(0)),
-   Mass_Matrix(this->fe_space, example.get_bd(0)),
+   Mass_Matrix(this->fe_space, example.get_bd(0), true),
    rhs(this->Stiff_matrix, true),
    solution(this->Stiff_matrix, false),
    fe_function(&this->fe_space, (char*)"u", (char*)"u", 
-	       this->solution.get_entries(), this->solution.length())
+               this->solution.get_entries(), this->solution.length())
 {
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
  : Time_CD2D(domain, *(new Example_CD2D()), reference_id)
 {
   
 }
 
-/********************************************************************************/
-Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex, int reference_id)
+/**************************************************************************** */
+Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
+                     int reference_id)
  : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
 {
   this->set_parameters();
@@ -90,7 +91,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex, int referenc
   }
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 void Time_CD2D::set_parameters()
 {
   if(TDatabase::ParamDB->EXAMPLE < 101)
@@ -108,7 +109,7 @@ void Time_CD2D::set_parameters()
   }  
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 void Time_CD2D::assemble_initial_time()
 {
   LocalAssembling2D_type m_rhs = TCD2D_Mass_Rhs_Galerkin;
@@ -127,8 +128,10 @@ void Time_CD2D::assemble_initial_time()
   {
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling2D la_m_rhs(m_rhs, &pointer_to_function, this->example.get_coeffs());
-    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function, this->example.get_coeffs());
+    LocalAssembling2D la_m_rhs(m_rhs, &pointer_to_function,
+                               this->example.get_coeffs());
+    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
+                               this->example.get_coeffs());
     // assemble mass matrix, stiffness matrix and rhs
     s.Mass_Matrix.Assemble(la_m_rhs, s.solution, s.rhs);
     s.Stiff_matrix.Assemble(la_a_rhs, s.solution, s.rhs);
@@ -137,7 +140,7 @@ void Time_CD2D::assemble_initial_time()
   this->old_rhs = this->systems.front().rhs;
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 void Time_CD2D::assemble()
 {
   LocalAssembling2D_type stiff_rhs = TCD2D_Stiff_Rhs_Galerkin;
@@ -148,10 +151,10 @@ void Time_CD2D::assemble()
   {
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create a local assembling object
-    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function, this->example.get_coeffs());    
+    LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
+                               this->example.get_coeffs());
     s.Stiff_matrix.Assemble(la_a_rhs,s.solution,s.rhs);
   }
-  
   
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // preparing rhs 
@@ -160,7 +163,6 @@ void Time_CD2D::assemble()
   {
     // scale by time step length and theta4 (only active dofs)
     s.rhs.scale(tau*TDatabase::TimeDB->THETA4, 0);
-    
     // add old right hand side scaled by time step length and theta3 (only 
     // active dofs)
     if(TDatabase::TimeDB->THETA3 != 0.)
@@ -181,43 +183,44 @@ void Time_CD2D::assemble()
       throw("Bacward Euler method does not implemented");
     }
   }
-    
+  
   for(auto &s : this->systems)
   {
     // rhs += M*uold
-    s.Mass_Matrix.apply_scaled_add(s.solution.get_entries(),s.rhs.get_entries(),1.0);
+    s.Mass_Matrix.apply_scaled_add(s.solution.get_entries(),
+                                   s.rhs.get_entries(), 1.0);
     // rhs += tau*theta3*A*uold
-    s.Stiff_matrix.apply_scaled_add(s.solution.get_entries(),s.rhs.get_entries(),
+    s.Stiff_matrix.apply_scaled_add(s.solution.get_entries(),
+                                    s.rhs.get_entries(),
                                     -tau*TDatabase::TimeDB->THETA2);
     
     // preparing the left hand side, i.e., the system matrix
     // stiffness matrix is scaled by tau*THETA1, after solving 
     // the matrix needs to be descaled if the coeffs does not depends
-    // on time    
+    // on time
     s.Stiff_matrix.scale_active(tau*TDatabase::TimeDB->THETA1);
     s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, 1.0);
-  }  
+  }
   
   this->systems[0].rhs.copy_nonactive(this->systems[0].solution);  
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 void Time_CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
   TSquareMatrix2D *sqMat[1] = {s.Stiff_matrix.get_matrix()};
-  
   Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
          s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
          this->multigrid.get(), s.solution.length(), 0);
-  
   if(TDatabase::ParamDB->SC_VERBOSE)
   {
     t=GetTime();
     OutPut( "time for solving: " << t << endl);
-    OutPut("solution " << sqrt(Ddot(s.solution.length(),s.solution.get_entries(),
-				    s.solution.get_entries())) << endl);
+    OutPut("solution " << sqrt(Ddot(s.solution.length(),
+                                    s.solution.get_entries(),
+                                    s.solution.get_entries())) << endl);
   }
   // descale the stiffness matrix  
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
@@ -228,7 +231,7 @@ void Time_CD2D::solve()
   }
 }
 
-/********************************************************************************/
+/**************************************************************************** */
 void Time_CD2D::output(int m, int& image)
 {
   if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
@@ -245,30 +248,26 @@ void Time_CD2D::output(int m, int& image)
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
-                          L2H1Errors, this->example.get_coeffs(), &aux, 1, 
+                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, loc_e);
     
-    OutPut("time: " << TDatabase::TimeDB->CURRENTTIME);
-    OutPut(" L2: " << loc_e[0]);
-    OutPut(" H1-semi: " << loc_e[1] << endl);
+    OutPut("time: " << TDatabase::TimeDB->CURRENTTIME << endl);
+    OutPut("  L2: " << loc_e[0] << endl);
+    OutPut("  H1-semi: " << loc_e[1] << endl);
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-        
-    errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;    
+    errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
     errors[1] = loc_e[0]*loc_e[0];
+    OutPut("  L2(0,T;L2) " << sqrt(errors[0]) << endl);
     errors[2] += (loc_e[1]*loc_e[1] + errors[3])*tau*0.5;
     errors[3] = loc_e[1]*loc_e[1];
+    OutPut("  L2(0,T;H1) " << sqrt(errors[2])<< endl);
     
-    if(m>0)
-    {
-      OutPut(TDatabase::TimeDB->CURRENTTIME <<  " L2(0,T;L2): " << sqrt(errors[0]) << " ");
-      OutPut( "L2(0,T;H1): " << sqrt(errors[2]) << " \n");
-    }
     if(m==0)
       errors[4]= loc_e[0];
     
     if(errors[4] < loc_e[0])
       errors[4] = loc_e[0];
-    OutPut( "Linfty " << errors[4] << endl);  
+    OutPut("  Linfty(0,T;L2) " << errors[4] << endl);
   }
   
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
@@ -291,4 +290,4 @@ void Time_CD2D::output(int m, int& image)
   }
 }
 
-/********************************************************************************/
+/**************************************************************************** */

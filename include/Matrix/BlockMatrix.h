@@ -101,7 +101,7 @@ class BlockMatrix
      * BlockPattern.
      */
     BlockMatrix(const Problem_type, unsigned int space_dimension,
-                bool stationary = true);
+                bool mass_matrix = false);
     
     /** @brief construct a BlockMatrix using a given BlockPattern
      * 

@@ -66,19 +66,18 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(const Problem_type type, 
-                         unsigned int space_dimension, bool stationary)
+                         unsigned int space_dimension, bool mass_matrix)
  : BlockMatrix(std::make_shared<BlockPattern>(type, space_dimension,
-                                              stationary))
+                                              mass_matrix))
 {
   // nothing more to do
 }
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(std::shared_ptr<BlockPattern> bp)
- : block_pattern(bp), blocks(std::vector<std::shared_ptr<TMatrix>>(
-         bp->n_blocks()+bp->get_n_special_blocks(), nullptr)),
-   actives(bp->n_blocks()+bp->get_n_special_blocks(), 
-           std::numeric_limits<unsigned int>::max()),
+ : block_pattern(bp), 
+   blocks(std::vector<std::shared_ptr<TMatrix>>(bp->n_blocks(), nullptr)),
+   actives(bp->n_blocks(), std::numeric_limits<unsigned int>::max()),
    combined_matrix(std::shared_ptr<TMatrix>())
 {
   // matrices are not created here. You still have to do that

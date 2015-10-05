@@ -5,9 +5,9 @@
 
 /* ************************************************************************* */
 BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
-                           bool stationary)
+                           bool mass_matrix)
  : type(t), space_dim(space_dimension), n_spaces(0), n_block_rows(0), 
-   n_block_columns(0), n_special_blocks(0), row_spaces(0), column_spaces(0), 
+   n_block_columns(0), row_spaces(0), column_spaces(0), 
    patterns(0), pattern_of_blocks(0)
 {
   // some checks, to make sure the input makes sense
@@ -25,8 +25,6 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
       this->column_spaces = {0};
       this->patterns = {0}; // only one pattern
       this->pattern_of_blocks = {0};
-      if(!stationary) // time dependent case
-        this->n_special_blocks = 1; // store one additional (mass) matrix
       break;
     case Problem_type::NavierStokes:
     {
@@ -71,10 +69,9 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
         // the last three are the pressure-velocity blocks
         this->pattern_of_blocks = {0,0,0,1 ,0,0,0,1, 0,0,0,1, 2,2,2,3};
       }
-      if(!stationary) // time dependent case
+      if(mass_matrix) // time dependent case
       {
-        // store d additional (mass) matrices
-        this->n_special_blocks = space_dim; 
+        ErrThrow("time dependent case not yet implemented for Navier--Stokes");
       }
       break;
     }
@@ -99,7 +96,7 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
 BlockPattern::BlockPattern(unsigned int n_rows, unsigned int n_cols)
  : type(Problem_type::dummy), space_dim(0),
    n_spaces(std::max(n_rows, n_cols)), n_block_rows(n_rows),
-   n_special_blocks(0), n_block_columns(n_cols), row_spaces(n_rows*n_cols, 0), 
+   n_block_columns(n_cols), row_spaces(n_rows*n_cols, 0), 
    column_spaces(n_rows*n_cols, 0), patterns({0}), 
    pattern_of_blocks(n_rows*n_cols, 0)
 {

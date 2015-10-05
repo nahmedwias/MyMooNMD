@@ -1,9 +1,23 @@
 /**
  * \page page_version_control Version control
+ * \author Clemens Bartsch <bartsch@wias-berlin.de>
+   \date 2015/09/30
+ * \brief This is a collection of tips for hg mercurial, loosely ParMooN related
  *
- * Here we describe the basic workflow when using and extending MooN
- *
- * 
+  \tableofcontents
+  
+  \section introduction Introduction
+  ParMooN uses the version control system hg mercurial, which is highly portable and rather safe and efficient when used correctly.
+  Mercurial is a distributed version control system. A general introduction and links for further reading can be found on Juergen Fuhrmann's
+  homepage <a href="http://www.wias-berlin.de/people/fuhrmann/2014-10-30-mercurial.html">here</a>.\n
+  
+  This page is set up in order to give some additional information which we consider useful.
+  
+  \remarks
+  Distributed version control means espescially, that every contributor maintains his or her own copy (or copies) of the ParMooN repository,
+  which opens up nice perspectives of seperating "core code" from project specific "feature code". 
+  How we want to achieve this is described \ref page_branching "on a seperate documentation page". \n
+  
   \section extensions Mercurial extensions
 
   \subsection enabling Enabling extensions

@@ -35,7 +35,8 @@ class BlockMatrixCD2D : public BlockMatrix
   public:
     /** constructor */
      BlockMatrixCD2D(const TFESpace2D &fespace, 
-                     const BoundValueFunct2D *BoundValue);
+                     const BoundValueFunct2D *BoundValue,
+                     bool mass_matrix = false);
 
     /** destrcutor */
     ~BlockMatrixCD2D();

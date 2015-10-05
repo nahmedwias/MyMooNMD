@@ -5,37 +5,30 @@
  *
  * This is the introduction.
  * 
- * \subsection installing ParMooN
- * write the follwing into a shell (the '-j' is always optional)
- *  - mkdir ParMooN
- *  - cd ParMooN
- *  - hg clone 
-ssh://username@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN .
- *  - mkdir build
- *  - cd build/
- *  - cmake ..
- *  - make -j
- * 
- * If you want to specify a specific compiler you have to change the cmake call
- * to be for example
- *
- * CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake .. 
- * 
- * or 
- * 
- * CC=/usr/bin/gcc CXX=/usr/bin/g++ cmake ..
- * 
- * If you want to enable compile time optimizations, run 
- * 
- * cmake CMAKE_BUILD_TYPE=Release .. 
- * 
- * in the build directory. (more on the build system should be on a special page)
- *
- *
- * See \ref page_version_control "this page" for information and guidelines on 
- * how the version control system ParMooN uses works.
- * 
- * If you plan to contribute to this code, please read and follow the rules and 
- * guidelines described \ref page_rules "here".
- * 
+ * \subsection quickstart Quick start with ParMooN
+ You are eager to get started and have no no time to read any verbose documentation?\n
+ This is the minimal out-of-source build instruction.\n
+ * Write the follwing into a shell 
+ *  > mkdir ParMooN \n
+ *  > cd ParMooN \n
+ *  > hg clone ssh://username\@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN . \n
+ *  > mkdir build \n
+ *  > cd build/ \n 
+ *  > cmake .. \n
+ *  > make -j \n
+ The '-j' for using all available cores is optional.
+ 
+ * \subsection information More Information on ParMooN
+ There is some additional information on ParMooN available. If you plan to contribute to the project you should get familiar with those.
+   - \ref page_version_control , some information on hg mercurial, the used version control system
+   - \ref page_branching , a guide to the workflow when contributing to ParMooN
+   - \ref page_build_system , a guide to the CMake build system
+   - \ref external_libraries , how to use external libraries with ParMooN \n
+ And last but definitely not least:
+   - \ref page_rules to stick to when coding in ParMooN
+  
+  \subsection forum The ParMooN Q & A Forum
+  We set up a wordpress forum, which is the right place for all questions, answers and discussions which are ParMooN related. \n
+  Follow the link to the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">ParMooN Forum</a>!
+ 
  */

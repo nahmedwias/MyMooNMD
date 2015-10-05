@@ -31,17 +31,17 @@ class Time_CD2D
      */
     struct System_per_grid
     {
-      /** @brief Finite element space*/
+      /** @brief Finite element space */
       TFESpace2D fe_space;
-      /** @brief Stiffness Matrix*/
+      /** @brief Stiffness Matrix */
       BlockMatrixCD2D Stiff_matrix;
-      /** @brief Mass matrix*/
+      /** @brief Mass matrix */
       BlockMatrixCD2D Mass_Matrix;
       /** @brief right hand side vector */
       BlockVector rhs;
       /** @brief solution vector */
       BlockVector solution;
-      /** @brief Finite element function*/
+      /** @brief Finite element function */
       TFEFunction2D fe_function;
       
       /** @brief constructor*/
@@ -75,7 +75,7 @@ class Time_CD2D
     void set_parameters();
     
     /** @brief old right hand side vectior 
-     * thsi will be used to save the right hand side from the 
+     * this will be used to save the right hand side from the 
      * previous time step that will be used for different 
      * time stepping schemes
      */
@@ -100,7 +100,8 @@ class Time_CD2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Time_CD2D(const TDomain& domain, const Example_CD2D& ex, int reference_id = -4711);
+    Time_CD2D(const TDomain& domain, const Example_CD2D& ex, 
+              int reference_id = -4711);
     
     /** @brief Assemble all the matrices before the time iterations
      * 
@@ -125,7 +126,7 @@ class Time_CD2D
     /** @brief solve the system
      */
     void solve();
-        
+    
     /** @brief measure errors and write solution
      * 
      */
