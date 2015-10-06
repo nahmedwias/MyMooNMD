@@ -12,11 +12,7 @@
 
 #include <BlockMatrixDarcy2D.h>
 #include <Example_Darcy2D.h>
-#include <LocalAssembling2D.h>
-#include <FEFunction2D.h>
 
-#include <memory>
-#include <vector>
 #include <deque>
 
 /**class for 2D scalar system matrix */

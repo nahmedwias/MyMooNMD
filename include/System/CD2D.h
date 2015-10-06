@@ -17,7 +17,6 @@
 #ifndef __CD2D_H__
 #define __CD2D_H__
 
-#include <FEFunction2D.h>
 #include <BlockMatrixCD2D.h>
 #include <Example_CD2D.h>
 #include <deque>
