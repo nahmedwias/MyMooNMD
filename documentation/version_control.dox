@@ -88,6 +88,18 @@
 and I suppose a lot of things could go wrong there. When e.g. the shelved changes from branch A refer to
 a file which is not present in branch B it might be a bad idea to unshelve the branch A changes in branch B.
 
+\remarks 
+An alternative to using the shelve extension is storing the output of `hg diff`
+in a file, then revert the changes, import them again later.
+~~~~~~~~~~~~~~~
+hg diff > mylocal_changes.txt
+hg revert --all
+hg import --no-commit mylocalchanges_default.txt
+~~~~~~~~~~~~~~~
+You can change the branch or merge before importing, but similar to the shelve
+extension this is not always meaningful. It's up to you to know when it makes
+sense.
+
 Should you discover other situations where the shelve extension is useful or dangerous, please feel free to share them.
 
  
