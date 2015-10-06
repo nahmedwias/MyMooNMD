@@ -18,9 +18,6 @@
 class BlockMatrix; // forward declaration
 
 #include <numeric>
-#include <string>
-#include <stdlib.h>
-#include <MooNMD_Io.h>
 #include <BlockMatrix.h>
 
 class BlockVector
@@ -310,28 +307,8 @@ class BlockVector
      * (e.g. a[i]=5;). The other leaves this BlockVector constant 
      * (e.g. in cout << a[i]);
      */
-    double & at(const unsigned int i)
-    {
-      try
-      {
-        return entries.at(i);
-      }
-      catch(...)
-        ErrThrow("index out of bounds");
-      throw; // only to avoid a compiler warning
-    }
-    const double & at(const unsigned int i) const 
-    {
-      try
-      {
-        return entries.at(i);
-      }
-      catch(...)
-      {
-        ErrThrow("index out of bounds");
-        throw; // only to avoid a compiler warning
-      }
-    }
+    double & at(const unsigned int i);
+    const double & at(const unsigned int i) const;
     double& operator[](const unsigned int i)
     { return entries[i]; }
     const double& operator[](const unsigned int i) const
