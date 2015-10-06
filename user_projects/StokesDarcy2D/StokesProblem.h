@@ -17,6 +17,10 @@ class StokesProblem : public NSE2D
   private:
   // member variables:
   
+  // The type of boundary condition on the interface (bci) determines which 
+  // integrals over the interface should be assembled (normal direction).
+  InterfaceCondition typeOf_bci;
+    
   // right hand side which stores the Data of the problem, it is assembled only
   // once. Then this DrhsNSE is added to the right hand side for the solver in
   // every iteration step
@@ -36,12 +40,8 @@ class StokesProblem : public NSE2D
   TFEVectFunct2D *u_NSE_direct;
   TFEFunction2D* p_NSE_direct;
   
-  // The type of boundary condition on the interface (bci) determines which 
-  // integrals over the interface should be assembled (normal direction).
-  InterfaceCondition typeOf_bci;
-  
   // vector containing all interface edges
-  std::vector<TInnerInterfaceJoint *>& interface;
+  std::vector<const TInnerInterfaceJoint *>& interface;
   // describing which interface conditions are used for the tangential component
   //  0 : u.t + alpha t.T.n = 0    (Beavers-Joseph-Saffman)
   //  1 : u.t = 0                  (no slip)
@@ -164,9 +164,9 @@ class StokesProblem : public NSE2D
   public:
 
   /* constructor */
-  StokesProblem(const TDomain & domain, Example_NSE2D* ex,
-                InterfaceCondition t, std::vector<TInnerInterfaceJoint *>& in,
-                int c);
+  StokesProblem(const TDomain & domain, std::shared_ptr<Example_NSE2D> ex,
+                InterfaceCondition t,
+                std::vector<const TInnerInterfaceJoint *>& in, int c);
   
   /* destructor */
   ~StokesProblem();
@@ -308,7 +308,7 @@ class StokesProblem : public NSE2D
   bool kink(unsigned int dof) const
   { return normals[dof].size() >= 2; }
   
-  std::vector<TInnerInterfaceJoint*>& getInterface() const
+  std::vector<const TInnerInterfaceJoint*>& getInterface() const
   { return interface; }
   
   InterfaceCondition getTypeOf_bci() const

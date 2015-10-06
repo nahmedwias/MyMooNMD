@@ -23,8 +23,8 @@ class DarcyProblem
   // member variables for the two formulations
   CD2D* darcy_primal;
   Darcy2D* darcy_mixed;
-  Example_CD2D *example_primal;
-  Example_Darcy2D *example_mixed;
+  std::shared_ptr<Example_CD2D> example_primal;
+  std::shared_ptr<Example_Darcy2D> example_mixed;
   
   // The type of boundary condition on the interface (bci) determines which 
   // integrals over the interface should be assembled.

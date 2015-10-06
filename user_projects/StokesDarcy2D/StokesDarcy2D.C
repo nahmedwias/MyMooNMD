@@ -10,8 +10,8 @@
 
 /** ************************************************************************ */
 StokesDarcy2D::StokesDarcy2D(
-  std::map<InterfaceCondition, StokesProblem*> ns_problems,
-  std::map<InterfaceCondition, DarcyProblem*> d_problems)
+    std::map< InterfaceCondition, StokesProblem* > ns_problems,
+    std::map< InterfaceCondition, DarcyPrimal* > d_problems)
 {
   //OutPut("StokesDarcy2D constructor\n");
   int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
@@ -71,11 +71,8 @@ StokesDarcy2D::StokesDarcy2D(
         iteration_darcy = NULL;
       }
       else
-      {
-        ErrMsg("unkonwn solution strategy, set 'StoDa_solutionStrategy' to " <<
-               "either 0, 1, -1, 2  or -2.");
-        exit(0);
-      }
+        ErrThrow("unkonwn solution strategy, set 'StoDa_solutionStrategy' to "
+                 + "either 0, 1, -1, 2  or -2.");
       break;
     case 1: // Robin-Robin
       coupled_stokes = ns_problems.at(Robin);
@@ -91,22 +88,17 @@ StokesDarcy2D::StokesDarcy2D(
       break;
     case 4: // Dirichlet-Dirichlet
       if(solution_strategy != 0)
-      {
-        ErrMsg("Dirichlet-Dirichlet does not work iteratively");
-        exit(0);
-      }
+        ErrThrow("Dirichlet-Dirichlet does not work iteratively");
       coupled_stokes = ns_problems.at(Dirichlet);
       coupled_darcy = d_problems.at(Dirichlet);
       break;
     case 3:
     case 5:
     case 6:
-      ErrMsg("these problem Types are not yet implemented");
-      exit(0);
+      ErrThrow("these problem Types are not yet implemented");
       break;
     default:
-      ErrMsg("unknown problem type");
-      exit(0);
+      ErrThrow("unknown problem type");
       break;
   }
 }
@@ -124,7 +116,7 @@ StokesDarcy2D::~StokesDarcy2D()
     delete C->GetStructure();
   if(CT != NULL)
     delete CT->GetStructure();
-  // the StokesProblem and DarcyProblem are destroyed in main, which is where
+  // the StokesProblem and DarcyPrimal are destroyed in main, which is where
   // they were created
 }
 
@@ -217,27 +209,29 @@ void StokesDarcy2D::solve_fixed_point(InterfaceFunction& eta) const
     case 4: // fixed point iteration D-RR
       if(StokesFirst)
       {
-        stokes()->solve(eta); // Interface integrals & solving for the Stokes part
-        eta.update(*stokes(), *darcy());
-        darcy()->solve(eta); // Interface integrals & solving for the Darcy part
-        eta.update(*darcy(), *stokes()); // includes damping
+        // Interface integrals & solving for the Stokes part
+        stokes()->solve(eta); 
+        eta.update(*stokes());
+        // Interface integrals & solving for the Darcy part
+        darcy()->solve(eta); 
+        eta.update(*darcy()); // includes damping
       }
       else
       {
-        darcy()->solve(eta); // Interface integrals & solving for the Darcy part
-        eta.update(*darcy(), *stokes());
-        stokes()->solve(eta); // Interface integrals & solving for the Stokes part
-        eta.update(*stokes(), *darcy()); // includes damping
+        // Interface integrals & solving for the Darcy part
+        darcy()->solve(eta); 
+        eta.update(*darcy());
+        // Interface integrals & solving for the Stokes part
+        stokes()->solve(eta); 
+        eta.update(*stokes()); // includes damping
       }
       break;
     case 2: // Newton
-      ErrMsg("Newton method for the fixed point equation not yet implemented");
-      exit(1);
+      ErrThrow("Newton method for fixed point equation not yet implemented");
       break;
     default:
-      ErrMsg("solving fixed point equation. Set the value of " <<
-             "'StoDa_updatingStrategy' to either 1, 2, or 4");
-      exit(1);
+      ErrThrow("solving fixed point equation. Set the value of " 
+               + "'StoDa_updatingStrategy' to either 1, 2, or 4");
       break;
   }
   
@@ -279,8 +273,7 @@ void StokesDarcy2D::solve(const InterfaceFunction& eta_r,
   // 'StokesDarcy2D::solve_Stecklov_Poincare(eta)'
   if(eta_hom_prec == NULL)
   {
-    ErrMsg("homogeneous solution of preconditioner not available");
-    exit(1);
+    ErrThrow("homogeneous solution of preconditioner not available");
   }
   // substract homogeneous solution to make this preconditioner linear (not 
   // only affine)
@@ -301,17 +294,20 @@ void StokesDarcy2D::solve_coupled_system(InterfaceFunction& eta_f,
   {
     if(StokesFirst)
     {
-      stokes()->solve(eta_f); // Interface integrals & solving for the Stokes part
-      eta_p.update(*stokes(), *darcy(), &eta_f); // includes damping
+      // Interface integrals & solving for the Stokes part
+      stokes()->solve(eta_f); 
+      eta_p.update(*stokes(), &eta_f); // includes damping
     }
     {
-      darcy()->solve(eta_p); // Interface integrals & solving for the Darcy part
-      eta_f.update(*darcy(), *stokes(), &eta_p); // includes damping
+      // Interface integrals & solving for the Darcy part
+      darcy()->solve(eta_p); 
+      eta_f.update(*darcy(), &eta_p); // includes damping
     }
     if(!StokesFirst)
     {
-      stokes()->solve(eta_f); // Interface integrals & solving for the Stokes part
-      eta_p.update(*stokes(), *darcy(), &eta_f); // includes damping
+      // Interface integrals & solving for the Stokes part
+      stokes()->solve(eta_f); 
+      eta_p.update(*stokes(), &eta_f); // includes damping
     }
   }
   else
@@ -319,8 +315,8 @@ void StokesDarcy2D::solve_coupled_system(InterfaceFunction& eta_f,
     stokes()->solve(eta_f);
     darcy()->solve(eta_p);
     
-    eta_f.update(*darcy(), *stokes(), &eta_p); // includes damping
-    eta_p.update(*stokes(), *darcy(), &eta_f); // includes damping
+    eta_f.update(*darcy(), &eta_p); // includes damping
+    eta_p.update(*stokes(), &eta_f); // includes damping
   }
 }
 
@@ -342,9 +338,6 @@ bool StokesDarcy2D::stopIteration(int it)
     const double a2 = TDatabase::ParamDB->StoDa_relDiff_factor2; // StokesP
     const double a3 = TDatabase::ParamDB->StoDa_relDiff_factor3; // DarcyP
     n_DOF = darcy()->getP().GetFESpace2D()->GetN_DegreesOfFreedom();
-    n_DOF +=
-        (darcy()->getRT()) ?
-            (darcy()->getU().GetFESpace2D()->GetN_DegreesOfFreedom()) : (0);
     diffDarcyP = relabsDiff(n_DOF, darcy()->getSolOld(), darcy()->getSol());
     
     n_DOF = 2 * stokes()->get_velocity_space().GetN_DegreesOfFreedom();
@@ -425,7 +418,8 @@ bool StokesDarcy2D::stopIteration(int it)
     if(error < 1e-14) // (almost) never going to happen
     {
       OutPut(
-          "Converged after " << it+1 << " iterations with interface error " << error << endl);
+          "Converged after " << it+1 << " iterations with interface error " << 
+error << endl);
       stopIteration = true;
     }
   // check if error on interface increased
@@ -438,7 +432,8 @@ bool StokesDarcy2D::stopIteration(int it)
   if(it == TDatabase::ParamDB->StoDa_nIterations - 1)
   {
     OutPut(
-        "Reached maximum number of " << TDatabase::ParamDB->StoDa_nIterations << " iterations!!\n");
+        "Reached maximum number of " << TDatabase::ParamDB->StoDa_nIterations << 
+" iterations!!\n");
     stopIteration = true;
   }
   // check if convergence is slow
@@ -454,11 +449,15 @@ bool StokesDarcy2D::stopIteration(int it)
     if(TDatabase::ParamDB->StoDa_solutionStrategy >= 1)
     {
       // big system has been solved
-      OutPut(
-          "big residual changed from " << initialBigResidual << " to " << bigResidual << " quotient " << bigResidual/initialBigResidual << "\n  average reduction factor per iteration " << exp(log(bigResidual/initialBigResidual)/it) << endl);
+      OutPut("big residual changed from " << initialBigResidual << " to " 
+             << bigResidual << " quotient " << bigResidual/initialBigResidual
+             << "\n  average reduction factor per iteration "
+             << exp(log(bigResidual/initialBigResidual)/it) << endl);
     }
-    OutPut(
-        "interface error changed from " << initialError << " to " << error << " quotient " << error/initialError << "\n  average reduction factor per iteration " << exp(log(error/initialError)/it) << endl);
+    OutPut("interface error changed from " << initialError << " to " << error
+           << " quotient " << error/initialError 
+           << "\n  average reduction factor per iteration "
+           << exp(log(error/initialError)/it) << endl);
   }
   return stopIteration;
 }
@@ -534,19 +533,12 @@ void StokesDarcy2D::GetCouplingMatrix()
   //       However during assembling nothing is written in these rows. The 
   //       advantage of doing it this way is: we can simply call transpose.
   
-  const bool RT = c_darcy()->getRT(); // use Raviart-Thomas elements 
   // velocity and pressure spaces for Stokes and Darcy
   const TFESpace2D* vSpaceStokes = &c_stokes()->get_velocity_space();
   const TFESpace2D* pSpaceStokes = &c_stokes()->get_pressure_space();
   const TFESpace2D* pSpaceDarcy = c_darcy()->getP().GetFESpace2D();
-  const TFESpace2D* vSpaceDarcy = NULL;
-  if(RT)
-  {
-    vSpaceDarcy = c_darcy()->getU().GetFESpace2D();
-  }
   // number of Stokes velocity degrees of freedom for each component
   const int N_SveloDOF = vSpaceStokes->GetN_DegreesOfFreedom();
-  const int N_DveloDOF = (RT) ? vSpaceDarcy->GetN_DegreesOfFreedom() : 0;
   
   // everything needed to call the constructor of TStructure
   const int n_rows = c_darcy()->get_rhs().length();
@@ -566,9 +558,10 @@ void StokesDarcy2D::GetCouplingMatrix()
   const int S_id = vSpaceStokes->GetCollection()->GetCell(0)->GetReference_ID();
   
   // loop over the interface edges
-  for(unsigned int iEdge = 0; iEdge < c_stokes()->getInterface().size(); iEdge++)
+  for(unsigned int iEdge = 0; iEdge < c_stokes()->getInterface().size(); 
+      ++iEdge)
   {
-    TInnerInterfaceJoint * thisEdge = c_stokes()->getInterface()[iEdge];
+    const TInnerInterfaceJoint * thisEdge = c_stokes()->getInterface()[iEdge];
     TBaseCell *d_cell, *s_cell = thisEdge->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_id)
     {
@@ -583,12 +576,6 @@ void StokesDarcy2D::GetCouplingMatrix()
     int const* const pDarcyDOF = pSpaceDarcy->GetGlobalDOF(
         d_cell->GetCellIndex());
     
-    const FE2D uDarcyFEId =
-        (RT) ? (vSpaceDarcy->GetFE2D(0, d_cell)) : (C_P1_2D_T_A);
-    const int N_uDarcyBaseFunct = (RT) ? (N_BaseFunct[uDarcyFEId]) : (0);
-    int const* const uDarcyDOF =
-        (RT) ? (vSpaceDarcy->GetGlobalDOF(d_cell->GetCellIndex())) : (NULL);
-    
     const FE2D uStokesFEId = vSpaceStokes->GetFE2D(0, s_cell);
     const int N_uStokesBaseFunct = N_BaseFunct[uStokesFEId];
     int const* const uStokesDOF = vSpaceStokes->GetGlobalDOF(
@@ -599,29 +586,9 @@ void StokesDarcy2D::GetCouplingMatrix()
     int const* const pStokesDOF = pSpaceStokes->GetGlobalDOF(
         s_cell->GetCellIndex());
     
-    // loop over all degrees of freedom of this Darcy cell
-    for(int jD = 0; jD < N_uDarcyBaseFunct; jD++)
-    {
-      const int testDOF = uDarcyDOF[jD];
-      // loop over all degrees of freedom of this Sokes cell
-      for(int jS = 0; jS < N_uStokesBaseFunct; jS++)
-      {
-        const int ansatz_vDOF = uStokesDOF[jS];
-        // first Stokes velocity component
-        coupledDOF[testDOF].push_back(ansatz_vDOF);
-        // second Stokes velocity component
-        coupledDOF[testDOF].push_back(ansatz_vDOF + N_SveloDOF);
-      }
-      for(int jS = 0; jS < N_pStokesBaseFunct; jS++)
-      {
-        const int ansatz_pDOF = pStokesDOF[jS];
-        // Stokes pressure component
-        coupledDOF[testDOF].push_back(ansatz_pDOF + 2 * N_SveloDOF);
-      }
-    }
     for(int jD = 0; jD < N_pDarcyBaseFunct; jD++)
     {
-      const int testDOF = pDarcyDOF[jD] + N_DveloDOF;
+      const int testDOF = pDarcyDOF[jD];
       // loop over all degrees of freedom of this Sokes cell
       for(int jS = 0; jS < N_uStokesBaseFunct; jS++)
       {
@@ -688,34 +655,29 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
 {
   Out("Assemble interface integrals into coupling matrices\n",0);
   // velocity and pressure spaces for Stokes and Darcy
-  bool RT = c_darcy()->getRT();
-  const TFESpace2D* vSpaceStokes = &c_stokes()->get_velocity_space();
-  const TFESpace2D* pSpaceStokes = &c_stokes()->get_pressure_space();
-  const TFESpace2D* pSpaceDarcy = c_darcy()->getP().GetFESpace2D();
-  const TFESpace2D* vSpaceDarcy = nullptr;
-  if(RT)
-    vSpaceDarcy = c_darcy()->getU().GetFESpace2D();
+  const TFESpace2D & vSpaceStokes = c_stokes()->get_velocity_space();
+  const TFESpace2D & pSpaceStokes = c_stokes()->get_pressure_space();
+  const TFESpace2D & pSpaceDarcy = c_darcy()->get_space();
    
   
   // number of Stokes velocity degrees of freedom for each component
-  const int N_SveloDOF = vSpaceStokes->GetN_DegreesOfFreedom();
-  const int N_Sactive = vSpaceStokes->GetActiveBound();
+  const int N_SveloDOF = vSpaceStokes.GetN_DegreesOfFreedom();
+  const int N_Sactive = vSpaceStokes.GetActiveBound();
   
   // number of Darcy velocity degrees of freedom for each component
-  const int N_DveloDOF = (RT) ? vSpaceDarcy->GetN_DegreesOfFreedom() : 0;
-  const int N_Dactive =
-      (RT) ? vSpaceDarcy->GetActiveBound() : pSpaceDarcy->GetActiveBound();
+  const int N_Dactive =  pSpaceDarcy.GetActiveBound();
   
   // Id of the Stokes space
-  const int S_id = vSpaceStokes->GetCollection()->GetCell(0)->GetReference_ID();
+  const int S_id = vSpaceStokes.GetCollection()->GetCell(0)->GetReference_ID();
   
   // everything needed for the local assembling
   local_edge_assembling l;
   
   // loop over the interface edges
-  for(unsigned int iEdge = 0; iEdge < c_stokes()->getInterface().size(); iEdge++)
+  for(unsigned int iEdge = 0; iEdge < c_stokes()->getInterface().size(); 
+      ++iEdge)
   {
-    TInnerInterfaceJoint * thisEdge = c_stokes()->getInterface()[iEdge];
+    const TInnerInterfaceJoint * thisEdge = c_stokes()->getInterface()[iEdge];
     TBaseCell *d_cell = thisEdge->GetNeighbour(0);
     TBaseCell *s_cell = thisEdge->GetNeighbour(1);
     if(s_cell->GetReference_ID() != S_id)
@@ -725,44 +687,35 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
       s_cell = temp_cell;
     }
     
-    const FE2D pDarcyFEId = pSpaceDarcy->GetFE2D(0, d_cell);
+    const FE2D pDarcyFEId = pSpaceDarcy.GetFE2D(0, d_cell);
     TFE2D *pD = TFEDatabase2D::GetFE2D(pDarcyFEId);
     const int N_pDBf = pD->GetN_DOF(); // number of Darcy pressure basis functs
-    int const* const pDarcyDOF = pSpaceDarcy->GetGlobalDOF(
+    int const* const pDarcyDOF = pSpaceDarcy.GetGlobalDOF(
         d_cell->GetCellIndex());
     // Basis functions for Darcy pressure
     TBaseFunct2D * pBfD = pD->GetBaseFunct2D();
     RefTrans2D refTransD = pD->GetRefTransID();
     
-    FE2D uDarcyFEId;
-    if(RT)
-      uDarcyFEId = vSpaceDarcy->GetFE2D(0, d_cell);
-    TFE2D *uD = (RT) ? TFEDatabase2D::GetFE2D(uDarcyFEId) : NULL;
-    const int N_uDBf = (RT) ? uD->GetN_DOF() : 0; //number of Darcy vel basis functs
-    int const* const uDarcyDOF =
-        (RT) ? vSpaceDarcy->GetGlobalDOF(d_cell->GetCellIndex()) : NULL;
-    TBaseFunct2D *uBfD = (RT) ? uD->GetBaseFunct2D() : NULL;
-    const int BaseVectDim = (RT) ? (uBfD->GetBaseVectDim()) : (0);
-    
-    const FE2D uStokesFEId = vSpaceStokes->GetFE2D(0, s_cell);
+    const FE2D uStokesFEId = vSpaceStokes.GetFE2D(0, s_cell);
     TFE2D *uS = TFEDatabase2D::GetFE2D(uStokesFEId);
-    const int N_uSBf = uS->GetN_DOF(); // number of Stokes velocity basis functions
-    int *uStokesDOF = vSpaceStokes->GetGlobalDOF(s_cell->GetCellIndex());
+    // number of Stokes velocity basis functions
+    const int N_uSBf = uS->GetN_DOF(); 
+    int *uStokesDOF = vSpaceStokes.GetGlobalDOF(s_cell->GetCellIndex());
     // Basis functions for Stokes velocity
     TBaseFunct2D * uBfS = uS->GetBaseFunct2D();
     RefTrans2D refTransS = uS->GetRefTransID();
     
-    const FE2D pStokesFEId = pSpaceStokes->GetFE2D(0, s_cell);
+    const FE2D pStokesFEId = pSpaceStokes.GetFE2D(0, s_cell);
     TFE2D *pS = TFEDatabase2D::GetFE2D(pStokesFEId);
-    const int N_pSBf = pS->GetN_DOF(); // number of Stokes pressure basis functions
-    int *pStokesDOF = pSpaceStokes->GetGlobalDOF(s_cell->GetCellIndex());
+    // number of Stokes pressure basis functions
+    const int N_pSBf = pS->GetN_DOF(); 
+    int *pStokesDOF = pSpaceStokes.GetGlobalDOF(s_cell->GetCellIndex());
     // Basis functions for Stokes velocity
     TBaseFunct2D * pBfS = pS->GetBaseFunct2D();
     
     // polynomial degree of finite element, needed for choosing an 
     // appropriate quadrature formula
     int fe_degree = pBfD->GetPolynomialDegree();
-    fe_degree = MAX(fe_degree, (RT)?(uBfD->GetPolynomialDegree()):(0));
     fe_degree = MAX(fe_degree, uBfS->GetPolynomialDegree());
     // get the quadrature formula
     QuadFormula1D QFId; // quadrature formula id
@@ -779,8 +732,6 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
     pBfD->MakeRefElementData(QFId);
     uBfS->MakeRefElementData(QFId);
     pBfS->MakeRefElementData(QFId);
-    if(RT)
-      uBfD->MakeRefElementData(QFId);
     
     // compute length of the edge
     const double hE = thisEdge->GetLength();
@@ -798,17 +749,6 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
     l.nt.set(nx, ny, tx, ty);
     l.hE = hE;
     
-    // change sign according to global normals. This should not be necessary 
-    // here because v_n=0 for all dofs associated to inner edges.
-    int * signs = (RT) ? new int[N_uDBf] : NULL;
-    for(int iv = 0; iv < N_uDBf; iv++)
-    {
-      int edge = uD->GetFEDesc2D()->GetJointOfThisDOF(iv);
-      if(edge != -1) // edge==-1 means inner dof
-        signs[iv] = d_cell->GetNormalOrientation(edge);
-      else
-        signs[iv] = 1;
-    }
     
     // values of all functions and derivatives on reference element 
     double **pDref = TFEDatabase2D::GetJointValues2D(pBfD->GetID(), QFId, eID);
@@ -816,14 +756,7 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
                                                             eID, D10);
     double **pDetaref = TFEDatabase2D::GetJointDerivatives2D(pBfD->GetID(),
                                                              QFId, eID, D01);
-    double **uDref =
-        (RT) ? TFEDatabase2D::GetJointValues2D(uBfD->GetID(), QFId, eID) : NULL;
-    /*
-     double **uDxiref =(RT)?TFEDatabase2D::GetJointDerivatives2D(uBfD->GetID(),
-     QFId, eID,D10):NULL;
-     double **uDetaref=(RT)?TFEDatabase2D::GetJointDerivatives2D(uBfD->GetID(),
-     QFId, eID,D01):NULL;
-     */
+    
     double **uSref = TFEDatabase2D::GetJointValues2D(uBfS->GetID(), QFId, eIS);
     double **uSxiref = TFEDatabase2D::GetJointDerivatives2D(uBfS->GetID(), QFId,
                                                             eIS, D10);
@@ -835,9 +768,6 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
     double *pDorig = new double[N_pDBf];
     double *pDxorig = new double[N_pDBf];
     double *pDyorig = new double[N_pDBf];
-    double *uDorig = (RT) ? new double[N_uDBf * BaseVectDim] : NULL;
-    //double *uDxorig = (RT) ? new double[N_uDBf*BaseVectDim] : NULL;
-    //double *uDyorig = (RT) ? new double[N_uDBf*BaseVectDim] : NULL;
     double *uSorig = new double[N_uSBf];
     double *uSxorig = new double[N_uSBf];
     double *uSyorig = new double[N_uSBf];
@@ -864,11 +794,7 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
                                    pDxiref[N_LinePoints - k - 1],
                                    pDetaref[N_LinePoints - k - 1], pDorig,
                                    pDxorig, pDyorig);
-      if(RT)
-        TFEDatabase2D::GetOrigValues(refTransD, -zeta[k], uBfD, eID,
-                                     uDref[N_LinePoints - k - 1], NULL, //uDxiref[N_LinePoints-k-1], 
-                                     NULL, //uDetaref[N_LinePoints-k-1],
-                                     uDorig, NULL, NULL);
+      
       // quadrature weight and determinant of tranformation
       l.qw = LineWeights[k] * (hE / 2);
       
@@ -903,48 +829,7 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
           localAssemble_pressure_pressure(l);
         }
         
-        const int TestDOF = pDarcyDOF[row] + N_DveloDOF;
-        if(TestDOF >= N_Dactive && !RT)
-        {
-          l.m.m[0][TestDOF].clear();
-        }
-      }
-      // loop over all Darcy velocity basis functions
-      for(int row = 0; row < N_uDBf; row++) // only for mixed elements
-      {
-        const int TestDOF = uDarcyDOF[row];
-        const double vD_n = (uDorig[row] * nx + uDorig[N_uDBf + row] * ny)
-                            * signs[row];
-        
-        l.at.setTest(vD_n, 1e10, 1e10); // x- and y-derivatives not needed
-        l.testDOF = uDarcyDOF[row];
-        
-        // Stokes velocity ansatz functions
-        for(int col = 0; col < N_uSBf; col++)
-        {
-          l.at.setAnsatz(uSorig[col], uSxorig[col], uSyorig[col]);
-          l.ansatzDOF = uStokesDOF[col];
-          
-          localAssemble_velocity_velocity(l);
-          
-          const int AnsatzDOF = uStokesDOF[col];
-          if(AnsatzDOF >= N_Sactive)
-          {
-            l.m.m[1][AnsatzDOF].clear();
-            l.m.m[1][AnsatzDOF + N_SveloDOF].clear();
-          }
-          
-        }
-        // Stokes pressure ansatz functions
-        for(int col = 0; col < N_pSBf; col++)
-        {
-          // x- and y-derivatives not needed
-          l.at.setAnsatz(pSorig[col], 1e10, 1e10);
-          l.ansatzDOF = pStokesDOF[col];
-          
-          localAssemble_velocity_pressure(l);
-        }
-        
+        const int TestDOF = pDarcyDOF[row];
         if(TestDOF >= N_Dactive)
         {
           l.m.m[0][TestDOF].clear();
@@ -954,73 +839,14 @@ void StokesDarcy2D::AssembleCouplingMatrices() const
     delete[] pDorig;
     delete[] pDxorig;
     delete[] pDyorig;
-    delete[] uDorig;
-    //delete [] uDxorig;
-    //delete [] uDyorig;
     delete[] uSorig;
     delete[] uSxorig;
     delete[] uSyorig;
     delete[] pSorig;
-    delete[] signs;
   }
   
   C->add(l.m.m[0]);
   CT->add(l.m.m[1]);
-}
-
-/** ************************************************************************ */
-void StokesDarcy2D::localAssemble_velocity_velocity(
-    local_edge_assembling &l) const
-{
-  const double nu = 1.0 / TDatabase::ParamDB->RE_NR;
-  //const double K = TDatabase::ParamDB->SIGMA_PERM;
-  const int N_SveloDOF=c_stokes()->get_velocity_space().GetN_DegreesOfFreedom();
-  const bool RT = c_darcy()->getRT();
-  const int N_DveloDOF =
-      (RT) ? c_darcy()->getU().GetFESpace2D()->GetN_DegreesOfFreedom() : 0;
-  const double nx = l.nt.nx, ny = l.nt.ny;
-  const double vD_n = l.at.v; //, qx = l.at.vx, qy = l.at.vy;
-  const double u = l.at.u, ux = l.at.ux, uy = l.at.uy;
-  const int tDOF = l.testDOF + N_DveloDOF;
-  const int aDOF = l.ansatzDOF;
-  const double qw = l.qw; // quadrature weight
-  
-  switch(c_stokes()->getTypeOf_bci())
-  {
-    case Robin:
-    {
-      const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
-      const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
-      l.m.m[1][aDOF][tDOF] -= vD_n * u * nx * gamma_f * qw;
-      l.m.m[1][aDOF + N_SveloDOF][tDOF] -= vD_n * u * ny * gamma_f * qw;
-      // minus here due to other normal direction
-      const double val = vD_n * (-u * gamma_p + 2 * nu * (ux * nx + uy * ny))
-                         * qw;
-      l.m.m[0][tDOF][aDOF] += val * nx;
-      l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * ny;
-      break;
-    }
-    case Neumann:
-    {
-      const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
-      l.m.m[0][tDOF][aDOF] -= vD_n * u * nx * qw * gamma / (l.hE * l.hE);
-      l.m.m[0][tDOF][aDOF + N_SveloDOF] -= vD_n * u * ny * qw * gamma
-                                           / (l.hE * l.hE);
-      
-      break;
-    }
-    case Dirichlet:
-    {
-      ErrMsg("Dirichlet not supported");
-      exit(0);
-      break;
-    }
-    default:
-      ErrMsg(
-          "unsupported type of Problem. Choose either " << "Neumann_Dirichlet (5) or Dirichlet_Neumann(6)");
-      exit(0);
-      break;
-  }
 }
 
 /** ************************************************************************ */
@@ -1036,85 +862,57 @@ void StokesDarcy2D::localAssemble_pressure_velocity(
   const double nu = 1.0 / TDatabase::ParamDB->RE_NR;
   const double K = TDatabase::ParamDB->SIGMA_PERM;
   const int N_SveloDOF=c_stokes()->get_velocity_space().GetN_DegreesOfFreedom();
-  const bool RT = c_darcy()->getRT();
-  const int N_DveloDOF =
-      (RT) ? c_darcy()->getU().GetFESpace2D()->GetN_DegreesOfFreedom() : 0;
   const double nx = l.nt.nx, ny = l.nt.ny;
   const double q = l.at.v, qx = l.at.vx, qy = l.at.vy; // Darcy pressure
   const double u = l.at.u, ux = l.at.ux, uy = l.at.uy; // Stokes velocity
-  const int tDOF = l.testDOF + N_DveloDOF;
+  const int tDOF = l.testDOF;
   const int aDOF = l.ansatzDOF;
   const double qw = l.qw; // quadrature weight
   switch(c_stokes()->getTypeOf_bci())
   {
     case Neumann:
     {
-      if(!RT)
-      {
-        //OutPut("localAssemble_pressure_velocity " << tDOF << " " << aDOF
-        //       << "  ---  " << q << "  " << u << "  " << qw << "\t\t\t"
-        //       << l.m.m[0][3][5 + N_SveloDOF] << endl);
-        l.m.m[0][tDOF][aDOF] += -q * u * nx * qw; // first component
-        l.m.m[0][tDOF][aDOF + N_SveloDOF] += -q * u * ny * qw; // second component
-        l.m.m[1][aDOF][tDOF] += q * u * nx * qw; // first component
-        l.m.m[1][aDOF + N_SveloDOF][tDOF] += q * u * ny * qw; // second component
-      }
-      else
-      {
-        l.m.m[1][aDOF][tDOF] += q * u * nx * qw; // first component
-        l.m.m[1][aDOF + N_SveloDOF][tDOF] += q * u * ny * qw; // second component
-      }
+      //OutPut("localAssemble_pressure_velocity " << tDOF << " " << aDOF
+      //       << "  ---  " << q << "  " << u << "  " << qw << "\t\t\t"
+      //       << l.m.m[0][3][5 + N_SveloDOF] << endl);
+      l.m.m[0][tDOF][aDOF] += -q * u * nx * qw; // first component
+      l.m.m[0][tDOF][aDOF + N_SveloDOF] += -q * u * ny * qw; // second comp
+      l.m.m[1][aDOF][tDOF] += q * u * nx * qw; // first component
+      l.m.m[1][aDOF + N_SveloDOF][tDOF] += q * u * ny * qw; // second comp
       break;
     }
     case Robin:
     {
       const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
       const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
-      if(!RT)
-      {
-        // Darcy pressure test function, Stokes velocity ansatz function
-        double val = q * (-u + 2 * nu * (ux * nx + uy * ny) / gamma_p) * qw;
-        l.m.m[0][tDOF][aDOF] += val * nx;
-        l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * ny;
-        // Stokes velocity test function, Darcy pressure ansatz function
-        val = (q + K * (qx * nx + qy * ny) * gamma_f) * u * qw;
-        l.m.m[1][aDOF][tDOF] += val * nx;
-        l.m.m[1][aDOF + N_SveloDOF][tDOF] += val * ny;
-      }
-      else
-      {
-        l.m.m[1][aDOF][tDOF] += q * u * nx * qw;
-        l.m.m[1][aDOF + N_SveloDOF][tDOF] += q * u * ny * qw;
-      }
+      // Darcy pressure test function, Stokes velocity ansatz function
+      double val = q * (-u + 2 * nu * (ux * nx + uy * ny) / gamma_p) * qw;
+      l.m.m[0][tDOF][aDOF] += val * nx;
+      l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * ny;
+      // Stokes velocity test function, Darcy pressure ansatz function
+      val = (q + K * (qx * nx + qy * ny) * gamma_f) * u * qw;
+      l.m.m[1][aDOF][tDOF] += val * nx;
+      l.m.m[1][aDOF + N_SveloDOF][tDOF] += val * ny;
       break;
     }
     case weakRobin:
     {
-      if(!RT)
-      {
-        // could be a different gamma for Stokes and Darcy
-        const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
-        const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
-        const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
-        // Darcy pressure test function, Stokes velocity ansatz function
-        double val = (-gamma_p * u + 2 * nu * (ux * nx + uy * ny))
-                     * (q - gamma * l.hE * K * (qx * nx + qy * ny)) * qw;
-        val /= (gamma_p + gamma * l.hE);
-        l.m.m[0][tDOF][aDOF] += val * nx; // first component
-        l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * ny; // second component
-        // Stokes velocity test function, Darcy pressure ansatz function
-        val = (q + gamma_f * K * (qx * nx + qy * ny))
-              * (u - gamma * l.hE * 2 * nu * (ux * nx + uy * ny)) * qw;
-        val /= (gamma_f + gamma * l.hE);
-        l.m.m[1][aDOF][tDOF] += val * nx; // first component
-        l.m.m[1][aDOF + N_SveloDOF][tDOF] += val * ny; // second component
-      }
-      else
-      {
-        Error(
-            "weak Robin-Robin for Raviart-Thomas not yet implemented!\n" << "line " << __LINE__ << endl);
-        exit(0);
-      }
+      // could be a different gamma for Stokes and Darcy
+      const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
+      const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
+      const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
+      // Darcy pressure test function, Stokes velocity ansatz function
+      double val = (-gamma_p * u + 2 * nu * (ux * nx + uy * ny))
+                   * (q - gamma * l.hE * K * (qx * nx + qy * ny)) * qw;
+      val /= (gamma_p + gamma * l.hE);
+      l.m.m[0][tDOF][aDOF] += val * nx; // first component
+      l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * ny; // second component
+      // Stokes velocity test function, Darcy pressure ansatz function
+      val = (q + gamma_f * K * (qx * nx + qy * ny))
+            * (u - gamma * l.hE * 2 * nu * (ux * nx + uy * ny)) * qw;
+      val /= (gamma_f + gamma * l.hE);
+      l.m.m[1][aDOF][tDOF] += val * nx; // first component
+      l.m.m[1][aDOF + N_SveloDOF][tDOF] += val * ny; // second component
       break;
     }
     case DirichletSTAB:
@@ -1141,66 +939,32 @@ void StokesDarcy2D::localAssemble_pressure_velocity(
       const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
       double val = gamma * q * nu / l.hE;
       //        gamma ^    psi     2 nu n.DD(u).n / h
-      l.m.m[0][tDOF][aDOF] += val * (2 * ux * nx + uy * ny) * nx * qw; // first component
+      // first component
+      l.m.m[0][tDOF][aDOF] += val * (2 * ux * nx + uy * ny) * nx * qw; 
+      // second component
       l.m.m[0][tDOF][aDOF + N_SveloDOF] += val * (2 * uy * ny + ux * nx) * ny
-                                           * qw; // second component
+                                           * qw;
       val = -gamma * (-K * (qx * nx + qy * ny)) * u * qw / l.hE;
       l.m.m[1][aDOF][tDOF] += val * nx; // first component
       l.m.m[1][aDOF + N_SveloDOF][tDOF] += val * ny; // second component
       break;
     }
     default:
-      Error("unsupported type of Problem\n");
-      exit(0);
+      ErrThrow("unsupported type of Problem\n");
       break;
   }
 }
 
 /** ************************************************************************ */
-void StokesDarcy2D::localAssemble_velocity_pressure(
-    local_edge_assembling &l) const
-{
-  //const double nu = 1.0 / TDatabase::ParamDB->RE_NR;
-  //const double K = TDatabase::ParamDB->SIGMA_PERM;
-  const int N_SveloDOF=c_stokes()->get_velocity_space().GetN_DegreesOfFreedom();
-  const bool RT = c_darcy()->getRT();
-  //const double nx = l.nt.nx, ny = l.nt.ny;
-  const double vD_n = l.at.v; //, qx = l.at.vx, qy = l.at.vy;
-  const double p = l.at.u; //, px = l.at.ux, py = l.at.uy;
-  const int tDOF = l.testDOF;
-  const int aDOF = l.ansatzDOF + 2 * N_SveloDOF;
-  const double qw = l.qw; // quadrature weight
-  
-  switch(c_stokes()->getTypeOf_bci())
-  {
-    case Robin:
-    {
-      if(RT)
-      {
-        l.m.m[0][tDOF][aDOF] -= vD_n * p * qw;
-      }
-      break;
-    }
-    default:
-      ErrMsg("unsupported type of Problem");
-      exit(0);
-      break;
-  }
-}
-
-/** ************************************************************************ */
-void StokesDarcy2D::localAssemble_pressure_pressure(
-    local_edge_assembling &l) const
+void StokesDarcy2D::localAssemble_pressure_pressure(local_edge_assembling &l)
+ const
 {
   const double K = TDatabase::ParamDB->SIGMA_PERM;
   const int N_SveloDOF=c_stokes()->get_velocity_space().GetN_DegreesOfFreedom();
-  const bool RT = c_darcy()->getRT();
-  const int N_DveloDOF =
-      (RT) ? c_darcy()->getU().GetFESpace2D()->GetN_DegreesOfFreedom() : 0;
   const double nx = l.nt.nx, ny = l.nt.ny;
   const double q = l.at.v, qx = l.at.vx, qy = l.at.vy; // Darcy pressure
   const double p = l.at.u; //, px = l.at.ux, py = l.at.uy; // Stokes pressure
-  const int tDOF = l.testDOF + N_DveloDOF;
+  const int tDOF = l.testDOF;
   const int aDOF = l.ansatzDOF + 2 * N_SveloDOF;
   const double qw = l.qw; // quadrature weight
   
@@ -1212,36 +976,25 @@ void StokesDarcy2D::localAssemble_pressure_pressure(
     }
     case Robin:
     {
-      if(!RT)
-      {
-        const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
-        const double val = qw * q * (-p) / gamma_p;
-        l.m.m[0][tDOF][aDOF] += val;
-      }
+      const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
+      const double val = qw * q * (-p) / gamma_p;
+      l.m.m[0][tDOF][aDOF] += val;
       break;
     }
     case weakRobin:
     {
-      if(!RT)
-      {
-        // could be a different gamma for Stokes and Darcy
-        const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
-        const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
-        const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
-        // Darcy pressure test function, Stokes pressure ansatz function
-        double val = (q - gamma * l.hE * K * (qx * nx + qy * ny)) * (-p) * qw;
-        val /= (gamma_p + gamma * l.hE);
-        l.m.m[0][tDOF][aDOF] += val;
-        // Stokes pressure test function, Darcy pressure ansatz function
-        val = (q + gamma_f * K * (qx * nx + qy * ny)) * (gamma * l.hE * p) * qw;
-        val /= (gamma_f + gamma * l.hE);
-        l.m.m[1][aDOF][tDOF] += val;
-      }
-      else
-      {
-        ErrMsg("weak Robin-Robin for Raviart-Thomas not yet implemented!");
-        exit(0);
-      }
+      // could be a different gamma for Stokes and Darcy
+      const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
+      const double gamma_p = TDatabase::ParamDB->StoDa_gamma_p;
+      const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
+      // Darcy pressure test function, Stokes pressure ansatz function
+      double val = (q - gamma * l.hE * K * (qx * nx + qy * ny)) * (-p) * qw;
+      val /= (gamma_p + gamma * l.hE);
+      l.m.m[0][tDOF][aDOF] += val;
+      // Stokes pressure test function, Darcy pressure ansatz function
+      val = (q + gamma_f * K * (qx * nx + qy * ny)) * (gamma * l.hE * p) * qw;
+      val /= (gamma_f + gamma * l.hE);
+      l.m.m[1][aDOF][tDOF] += val;
       break;
     }
     case Dirichlet:
@@ -1259,8 +1012,7 @@ void StokesDarcy2D::localAssemble_pressure_pressure(
       break;
     }
     default:
-      ErrMsg("unsupported type of Problem");
-      exit(0);
+      ErrThrow("unsupported type of Problem");
       break;
   }
 }
@@ -1308,7 +1060,8 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   // eta is created
   eta.restrict(*this);
   
-  // compute solution with homogeneous input, so that we can easily compute the  
+  // compute solution with homogeneous input, so that we can easily compute the 
+ 
   // linear part of this operator (this operator is only affine linear)
   // eta_hom will be the right hand side of the equation
   {
@@ -1411,17 +1164,14 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
       s->set_type(fgmres);
       break;
     case 5: // bicg
-      ErrMsg("bicg solver for Stecklov-Poincare not yet implemented");
-      exit(0);
+      ErrThrow("bicg solver for Stecklov-Poincare not yet implemented");
       break;
     case 6: // newton
-      ErrMsg("Newton method for Stecklov-Poincare not yet implemented");
-      exit(0);
+      ErrThrow("Newton method for Stecklov-Poincare not yet implemented");
       break;
     default:
-      ErrMsg("unknown updating strategy. Choose a value between 1 and 6 for " 
-             << "'StoDa_updatingStrategy'.");
-      exit(0);
+      ErrThrow("unknown updating strategy. Choose a value between 1 and 6 for " 
+               + "'StoDa_updatingStrategy'.");
       break;
   }
   TDatabase::ParamDB->SOLVER_TYPE = st; // reset solver type
@@ -1456,10 +1206,7 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   //eta.reset();
   InterfaceFunction *& eta_hom_prec = p_prec->get_homogeneous_solution();
   if(eta_hom_prec == NULL)
-  {
-    ErrMsg("homogeneous solution of preconditioner not available");
-    exit(1);
-  }
+    ErrThrow("homogeneous solution of preconditioner not available");
   
   
   InterfaceFunction r(eta), z(eta);
@@ -1633,8 +1380,8 @@ void StokesDarcy2D::check_equalities() const
     *C2 += *C.get();
     if(C2->GetNorm() > 1e-10)
     {
-      ErrMsg("Error:  C is not d_etaToBd * s_sol2eta " << C2->GetNorm());
-      exit(1);
+      ErrThrow("Error:  C is not d_etaToBd * s_sol2eta " 
+               + std::to_string(C2->GetNorm()));
     }
     Out("coupling matrix C test succesfull\n", 0);
     
@@ -1661,9 +1408,10 @@ void StokesDarcy2D::check_equalities() const
     if(StokesFirst == 1)
     {
       eta.reset();
-      eta = 5 / ((eta.length() - 1.0) / 2.0); // set to something other than zero
-      DarcyProblem* d_D = darcy(); // Dirichlet Darcy problem
-      DarcyProblem* d_N = p_prec;  // Neumann Darcy problem
+      // set to something other than zero
+      eta = 5 / ((eta.length() - 1.0) / 2.0); 
+      DarcyPrimal* d_D = darcy(); // Dirichlet Darcy problem
+      DarcyPrimal* d_N = p_prec;  // Neumann Darcy problem
       StokesProblem * ns_N = stokes(); // Neumann Stokes problem
       
       d_D->solve(eta);
@@ -1702,10 +1450,11 @@ void StokesDarcy2D::check_equalities() const
       // we have to call restrict once before we call 'eta.set_integral' 
       eta.restrict(*this);
       
-      eta = 5.0 / ((eta.length() - 1.0) / 2.0); // set to something other than zero
+      // set to something other than zero
+      eta = 5.0 / ((eta.length() - 1.0) / 2.0); 
       StokesProblem * ns_D = stokes(); // Dirichlet Stokes problem
       StokesProblem * ns_N = f_prec;   // Neumann Stokes problem
-      DarcyProblem* d_N = darcy(); // Neumann Darcy problem
+      DarcyPrimal* d_N = darcy(); // Neumann Darcy problem
       
       // for Dirichlet boundary conditions on the entire outer Stokes boundary
       // we have to be sure the input (flow) is in the correct space
@@ -1752,15 +1501,16 @@ void StokesDarcy2D::check_equalities() const
 }
 
 /** ************************************************************************ */
-double ErrorOnInterface(StokesProblem &s, DarcyProblem &d, int it)
+double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
 {
   Out(" Compute error on interface\n", 1);
   
-  double nx, ny; // normal vector to interface (pointing out of Stokes subdomain)
+  // normal vector to interface (pointing out of Stokes subdomain)
+  double nx, ny; 
   double x0, y0, x1, y1; // coordinates of some vertices of a cell
       
-  double s_u1val[3], s_u2val[3], s_pval[3]; //velocity and pressure for Stokes
-  double d_uval[2], d_pval[3]; //velocity and pressure for Darcy
+  double s_u1val[3], s_u2val[3], s_pval[3]; // velocity and pressure for Stokes
+  double d_pval[3]; // pressure for Darcy
   double s_u_n, d_u_n; // normal component of velocity for Stokes and Darcy
   double nTn; // normal component of normal stress (Stokes)
   double val1; // just a number to store intermediate values
@@ -1770,11 +1520,7 @@ double ErrorOnInterface(StokesProblem &s, DarcyProblem &d, int it)
   const TFEFunction2D *s_u2 = ((it != -1) ? &s.get_velocity() : s.getUDirect()
                                )->GetComponent(1);
   const TFEFunction2D *s_p = (it != -1) ? &s.get_pressure() : s.getPDirect();
-  const TFEFunction2D *d_p = (it != -1) ? &d.getP() : d.getPDirect();
-  // Darcy velocity is nullptr if the primal formulation is used
-  const TFEFunction2D *d_u = nullptr;
-  if(d.getRT())
-    d_u = (it != -1) ? &d.getU() : d.getUDirect();
+  const TFEFunction2D &d_p = (it != -1) ? d.getP() : d.getPDirect();
   
   const double nu = 1 / TDatabase::ParamDB->RE_NR; // diffustion coefficient
   const double K = TDatabase::ParamDB->SIGMA_PERM; // Permeability
@@ -1807,9 +1553,10 @@ double ErrorOnInterface(StokesProblem &s, DarcyProblem &d, int it)
   for(unsigned int j = 0; j < s.getInterface().size(); j++)
   {
     // interface joints (segments)
-    TInnerInterfaceJoint *IJoint = s.getInterface()[j];
+    const TInnerInterfaceJoint *IJoint = s.getInterface()[j];
     
-    TBaseCell *s_cell, *d_cell; // neighboring cell in Stokes and Darcy subdomain
+    // neighboring cells in Stokes and Darcy subdomain
+    TBaseCell *s_cell, *d_cell; 
     s_cell = IJoint->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_ID)
     {
@@ -1842,17 +1589,12 @@ double ErrorOnInterface(StokesProblem &s, DarcyProblem &d, int it)
       s_u1->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_u1val);
       s_u2->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_u2val);
       s_p->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_pval);
-      if(d.getRT())
-        d_u->FindValueLocal(d_cell, d_cell->GetCellIndex(), x, y, d_uval);
-      d_p->FindGradientLocal(d_cell, d_cell->GetCellIndex(), x, y, d_pval);
+      d_p.FindGradientLocal(d_cell, d_cell->GetCellIndex(), x, y, d_pval);
       
       // normal component of Stokes velocity
       s_u_n = s_u1val[0] * nx + s_u2val[0] * ny;
       // normal component of Darcy velocity
-      if(d.getRT())
-        d_u_n = d_uval[0] * nx + d_uval[1] * ny;
-      else
-        d_u_n = -K * (d_pval[1] * nx + d_pval[2] * ny);
+      d_u_n = -K * (d_pval[1] * nx + d_pval[2] * ny);
       // difference in normal component of velocity
       val1 = s_u_n - d_u_n;
       error1 += LineWeights[k] * (hE / 2) * val1 * val1;
@@ -1888,7 +1630,7 @@ double ErrorOnInterface(StokesProblem &s, DarcyProblem &d, int it)
 }
 
 /** ************************************************************************ */
-void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
+void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
                                 TDomain *Domain, int it)
 {
   TFEVectFunct2D *u_NSE = it != -1 ? &s.get_velocity() : s.getUDirect();
@@ -1896,9 +1638,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
   u1_NSE = u_NSE->GetComponent(0);
   u2_NSE = u_NSE->GetComponent(1);
   const TFEFunction2D *p_NSE = it != -1 ? &s.get_pressure() : s.getPDirect();
-  const TFEFunction2D *p_Darcy = (it != -1) ? (&d.getP()) : (d.getPDirect());
-  const TFEFunction2D *u_Darcy =
-      (d.getRT()) ? ((it != -1) ? (&d.getU()) : (d.getUDirect())) : NULL;
+  const TFEFunction2D & p_Darcy = (it != -1) ? (d.getP()) : (d.getPDirect());
   /* ========================================================================
    * print minimal and maximal values of all FE - functions                
    * does not work for Raviart-Thomas elements (yet)                       */
@@ -1911,25 +1651,18 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
     OutPut(" Navier-Stokes ");
     u2_NSE->PrintMinMax();
     OutPut(" Darcy ");
-    p_Darcy->PrintMinMax();
-    // PrintMinMax for the Darcy velocity does not make sense here, because
-    // it only shows the maximum and minimum of the vector representing the 
-    // finite element function. For P_k or Q_k elements this is indeed the 
-    // correct maximum or minimum, but not for typical mixed elements (RT, BDM)
-    // if(d.getRT()) u_Darcy->PrintMinMax();
+    p_Darcy.PrintMinMax();
   }
   /* ==========================================================================
    *  write vtk-files, one for each subdomain                                */
   if(TDatabase::ParamDB->WRITE_VTK || TDatabase::ParamDB->WRITE_GNU)
   {
     // create one TOutput2D object for each subdomain
-    TOutput2D *Output_NSE = new TOutput2D(2, 1, 1, 0, Domain);
-    TOutput2D *Output_Darcy = new TOutput2D(1, 1, 0, 0, Domain);
-    Output_NSE->AddFEFunction(p_NSE);
-    Output_NSE->AddFEVectFunct(u_NSE);
-    Output_Darcy->AddFEFunction(p_Darcy);
-    if(d.getRT())
-      Output_Darcy->AddFEFunction(u_Darcy);
+    TOutput2D Output_NSE(2, 1, 1, 0, Domain);
+    TOutput2D Output_Darcy(1, 1, 0, 0, Domain);
+    Output_NSE.AddFEFunction(p_NSE);
+    Output_NSE.AddFEVectFunct(u_NSE);
+    Output_Darcy.AddFEFunction(&p_Darcy);
     // write one vtk - file for each subdomain
     std::ostringstream os(std::ios::trunc);
     if(it != -1)
@@ -1941,12 +1674,12 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
     if(TDatabase::ParamDB->WRITE_VTK)
     {
       Out(" ", 0); // just for formatting the output
-      Output_NSE->WriteVtk(os.str().c_str());
+      Output_NSE.WriteVtk(os.str().c_str());
     }
     os.seekp(int(os.tellp()) - 4);
     os << "gnu" << ends;
     if(TDatabase::ParamDB->WRITE_GNU)
-      Output_NSE->WriteGnuplot(os.str().c_str());
+      Output_NSE.WriteGnuplot(os.str().c_str());
     
     os.seekp(std::ios::beg);
     if(it != -1)
@@ -1958,35 +1691,33 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
     if(TDatabase::ParamDB->WRITE_VTK)
     {
       Out(" ", 0); // just for formatting the output
-      Output_Darcy->WriteVtk(os.str().c_str());
+      Output_Darcy.WriteVtk(os.str().c_str());
     }
     os.seekp(int(os.tellp()) - 4);
     os << "gnu" << ends;
     if(TDatabase::ParamDB->WRITE_GNU)
-      Output_Darcy->WriteGnuplot(os.str().c_str());
-    delete Output_NSE;
-    delete Output_Darcy;
+      Output_Darcy.WriteGnuplot(os.str().c_str());
   }
   /* ==========================================================================
    * measure errors                                                          */
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    TAuxParam2D *aux = new TAuxParam2D();
+    TAuxParam2D aux;
     ErrorMethod2D *ErrorMeth = L2H1Errors; // in MainUtilities.C
-    double * err = new double[6];
+    double err[6];
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D *p_space_NSE = p_NSE->GetFESpace2D();
     const TFESpace2D *v_space_NSE = u1_NSE->GetFESpace2D();
     const TFESpace2D *p_space_Darcy = d.getP().GetFESpace2D();
     
     u1_NSE->GetErrors(s.get_example().get_exact(0), 3, AllDerivatives, 2,
-                      ErrorMeth, s.get_example().get_coeffs(), aux, 1,
+                      ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                       &v_space_NSE, err);
     //OutPut("  L2(u1_S):      " <<  err[0] << endl);
     //OutPut("  H1-semi(u1_S): " <<  err[1] << endl);
     
     u2_NSE->GetErrors(s.get_example().get_exact(1), 3, AllDerivatives, 2,
-                      ErrorMeth, s.get_example().get_coeffs(), aux, 1,
+                      ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                       &v_space_NSE, err + 3);
     //OutPut("  L2(u2_S):      " <<  err[3] << endl);
     //OutPut("  H1-semi(u2_S): " <<  err[4] << endl);
@@ -1994,32 +1725,17 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
     OutPut(" H1-semi(u_S):  " << sqrt(err[1]*err[1]+err[4]*err[4]) << endl);
     
     p_NSE->GetErrors(s.get_example().get_exact(2), 3, AllDerivatives, 2,
-                     ErrorMeth, s.get_example().get_coeffs(), aux, 1,
+                     ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                      &p_space_NSE, err);
     OutPut(" L2(p_S):       " << err[0] << endl);
     OutPut(" H1-semi(p_S):  " << err[1] << endl);
     
     DoubleFunct2D * const *Exact_Darcy = d.get_exact();
-    if(d.getRT())
-    {
-      ErrorMeth = L2DivH1Errors; // in MainUtilities.C
-      u_Darcy->GetErrorsForVectorValuedFunction(Exact_Darcy, ErrorMeth, err);
-      OutPut(" L2(u_D):       " << err[0] << endl);
-      OutPut(" L2(div(u_D)):  " << err[1] << endl);
-      OutPut(" H1-semi(u_D):  " << err[2] << endl);
-      ErrorMeth = L2H1Errors; // reset for pressure
-      Exact_Darcy += 2; // reset for pressure
-    }
-    
-    p_Darcy->GetErrors(Exact_Darcy[0], 3, AllDerivatives, 2, ErrorMeth,
-                       d.get_example().get_coeffs(), aux, 1, &p_space_Darcy,
-                       err);
+    p_Darcy.GetErrors(Exact_Darcy[0], 3, AllDerivatives, 2, ErrorMeth,
+                      d.get_example().get_coeffs(), &aux, 1, &p_space_Darcy,
+                      err);
     OutPut(" L2(p_D):       " << err[0] << endl);
     OutPut(" H1-semi(p_D):  " << err[1] << endl);
-    
-    delete aux;
-    aux = NULL;
-    delete [] err;
   }
   
   /* ==========================================================================
@@ -2040,18 +1756,9 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
     OutPut(" discrete Stokes pressure Error " << relError << endl);
     tot_relError += relError*relError;
     
-    // Darcy velocity
-    if(d.getRT())
-    {
-      relError = relDiff(u_Darcy->GetLength(), d.getUDirect()->GetValues(),
-                         u_Darcy->GetValues());
-      OutPut(" discrete Darcy velocity Error  " << relError << endl);
-      tot_relError += relError*relError;
-    }
-    
     // Darcy pressure
-    relError = relDiff(p_Darcy->GetLength(), d.getPDirect()->GetValues(),
-                       p_Darcy->GetValues());
+    relError = relDiff(p_Darcy.GetLength(), d.getPDirect().GetValues(),
+                       p_Darcy.GetValues());
     OutPut(" discrete Darcy pressure Error  " << relError << endl);
     tot_relError += relError*relError;
     
@@ -2062,7 +1769,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyProblem &d,
 }
 
 /** ************************************************************************ */
-void ComputeResiduals(StokesProblem &s, DarcyProblem &d)
+void ComputeResiduals(StokesProblem &s, DarcyPrimal &d)
 {
   Out(" Computing defects\n", 1);
   
@@ -2088,13 +1795,6 @@ void ComputeResiduals(StokesProblem &s, DarcyProblem &d)
     r -= d.get_rhs();
     
     OutPut("  Norm of Darcy defect " << r.norm() << endl);
-    if(d.getRT())
-    {
-      OutPut("                 velocity component  " << 
-             Dnorm(r.length(0), r.block(0)) << endl);
-      OutPut("                 pressure component " << 
-             Dnorm(r.length(1), r.block(1)) << endl);
-    }
   }
 }
 

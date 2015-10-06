@@ -18,7 +18,6 @@ int main(int argc, char* argv[])
    * ========================================================================*/
   Domain.ReadParam(argv[1]);
   OpenFiles();
-  OutFile.setf(std::ios::scientific);
   
   // ==========================================================================
   // take example from database (input file), see TDatabase::ParamDB->EXAMPLE
@@ -58,7 +57,7 @@ int main(int argc, char* argv[])
   OutPut("Initialize domain\n");
   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
   // vector containing all interface edges (joints)
-  std::vector<TInnerInterfaceJoint *> interface;
+  std::vector<const TInnerInterfaceJoint *> interface;
   GetInnerInterfaceJoints(interface, Domain); // fill vector 'interface'
   // refine up to user defined coarsest level
   for(int i = 0; i < TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR; i++)
@@ -136,14 +135,14 @@ int main(int argc, char* argv[])
   //interface_conditions.push_back(DirichletSTAB);
   
   std::map<InterfaceCondition, StokesProblem*> ns_problems;
-  Example_NSE2D * ns_example = example.get_stokes_example();
+  std::shared_ptr<Example_NSE2D> ns_example = example.get_stokes_example();
   for(unsigned int i = 0; i < interface_conditions.size(); i++)
   {
     OutPut("intitializing a " << interface_conditions[i] << 
            " (Navier-) Stokes problem\n");
-    StokesProblem * ns;
-    ns = new StokesProblem(Domain, ns_example, interface_conditions[i],
-                           interface, icond);
+    StokesProblem * ns = new StokesProblem(Domain, ns_example, 
+                                           interface_conditions[i],
+                                           interface, icond);
     if(TDatabase::ParamDB->SC_VERBOSE > 0) ns->print_assemble_input_output();
     ns->assemble();
     ns->find_global_DOF_interface(eta);
@@ -181,15 +180,14 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->ANSATZ_ORDER = TDatabase::ParamDB->VELOCITY_SPACE;
   if(mixed)
     TDatabase::ParamDB->VELOCITY_SPACE = 1002;
-  
-  std::map<InterfaceCondition, DarcyProblem*> d_problems;
+  std::shared_ptr<Example_CD2D> d_example = example.get_primal_darcy_example();
+  std::map<InterfaceCondition, DarcyPrimal*> d_problems;
   for(unsigned int i = 0; i < interface_conditions.size(); i++)
   {
     OutPut("intitializing a " << (mixed ? "mixed " : "primal ")
            << interface_conditions[i] << " Darcy problem\n");
-    DarcyProblem * d;
-    d = new DarcyProblem(Domain, &example, interface_conditions[i],
-                         interface, mixed, 1);
+    DarcyPrimal * d = new DarcyPrimal(Domain, *d_example.get(), 
+                                      interface_conditions[i], interface, 1);
     if(TDatabase::ParamDB->SC_VERBOSE > 0) d->print_assemble_input_output();
     d->assemble(); // assemble linear terms
     d->find_global_DOF_interface(eta);
@@ -292,7 +290,6 @@ int main(int argc, char* argv[])
     delete ns_problems.at(interface_conditions[i]);
     delete d_problems.at(interface_conditions[i]);
   }
-  delete ns_example;
   }
   OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0) << " MB" << endl);
   OutPut("used time: " << GetTime() << endl);

@@ -183,8 +183,9 @@ void check_all_parameters();
   interface joint. This doubles the length of the vector, because every joint
   has two children.
 */
-void GetInnerInterfaceJoints(std::vector<TInnerInterfaceJoint *>& interface,
-                            const TDomain & Domain);
+void GetInnerInterfaceJoints(
+    std::vector< const TInnerInterfaceJoint* >& interface, const TDomain& 
+Domain);
 
 /** compute |x-y|/|x| in the discrete l^2 norm */
 double relDiff(int length, const double* x, const double* y);
@@ -203,7 +204,7 @@ void WriteVec(char* filename, double *v, int n);
  * to false. With this function you can get the tangent vector as 
  * (tx,ty)=(-ny,nx)
  */
-void getNormal(TBaseCell *cell, TInnerInterfaceJoint * iEdge, 
+void getNormal(TBaseCell *cell, const TInnerInterfaceJoint * iEdge, 
                double &nx, double &ny, bool outerNormal=true);
 /* for a given vertex, find all edges in a collection which share this vertex. 
  * The vector 'edges' must be of length 0. */

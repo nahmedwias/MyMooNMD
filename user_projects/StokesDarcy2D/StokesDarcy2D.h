@@ -14,11 +14,11 @@ class StokesDarcy2D
   
   // subproblems of the coupled problem
   StokesProblem* coupled_stokes;
-  DarcyProblem* coupled_darcy;
+  DarcyPrimal* coupled_darcy;
   
   // for iteration (if not C-RR this is equal to coupled_stokes, coupled_darcy)
   StokesProblem* iteration_stokes;
-  DarcyProblem* iteration_darcy;
+  DarcyPrimal* iteration_darcy;
   
   bool StokesFirst;
   // error on interface (from previous iteration step)
@@ -40,7 +40,7 @@ class StokesDarcy2D
   solver<StokesDarcy2D, InterfaceFunction, StokesDarcy2D> *s;
   StokesDarcy2D *prec;
   StokesProblem *f_prec; // serve as preconditioner in free flow subdomain
-  DarcyProblem *p_prec; // serve as preconditioner in porous medium subdomain
+  DarcyPrimal *p_prec; // serve as preconditioner in porous medium subdomain
   
   /** the system which we are actually trying to solve */
   BlockMatrix *big_matrix;
@@ -56,7 +56,7 @@ class StokesDarcy2D
   
   /** constructor */
   StokesDarcy2D(std::map<InterfaceCondition, StokesProblem*> ns_problems,
-                std::map<InterfaceCondition, DarcyProblem*> d_problems);  
+                std::map<InterfaceCondition, DarcyPrimal*> d_problems);  
   
   ~StokesDarcy2D();
   
@@ -111,14 +111,14 @@ class StokesDarcy2D
   // get individual problems for iteration
   StokesProblem* stokes() const {return iteration_stokes;};
   StokesProblem* stokes() {return iteration_stokes;};
-  DarcyProblem* darcy() const {return iteration_darcy;};
-  DarcyProblem* darcy() {return iteration_darcy;};
+  DarcyPrimal* darcy() const {return iteration_darcy;};
+  DarcyPrimal* darcy() {return iteration_darcy;};
   
   // get individual problems for coupled system
   StokesProblem* c_stokes() const {return coupled_stokes;};
   StokesProblem* c_stokes() {return coupled_stokes;};
-  DarcyProblem* c_darcy() const {return coupled_darcy;};
-  DarcyProblem* c_darcy() {return coupled_darcy;};
+  DarcyPrimal* c_darcy() const {return coupled_darcy;};
+  DarcyPrimal* c_darcy() {return coupled_darcy;};
   
   bool Stokes_first() const { return StokesFirst; }
   
@@ -182,7 +182,7 @@ class StokesDarcy2D
  * the identity matrix, and DD(u) = (grad u + (grad u)^T)/2 is the deformation
  * tensor.   
  */
-double ErrorOnInterface(StokesProblem &s,DarcyProblem &d, int iteration=0);
+double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int iteration=0);
 
 /** Description of the function WriteVtk_and_measureErrors:
  * to keep the main program short
@@ -192,15 +192,14 @@ double ErrorOnInterface(StokesProblem &s,DarcyProblem &d, int iteration=0);
  * The parameter 'it' should be set to -1 if only the direct solution has been
  * computed so far.
  */
-void WriteVtk_and_measureErrors(StokesProblem &s,DarcyProblem &d,
-                                TDomain *Domain,
-                                int it);
+void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
+                                TDomain *Domain, int it);
 
 /** Description of the function ComputeResiduals:
  * to keep the main program short
  * this computes residuals just for testing 
  */
-void ComputeResiduals(StokesProblem &s,DarcyProblem &d);
+void ComputeResiduals(StokesProblem &s, DarcyPrimal &d);
 
 
 #endif // STOKESDARCY2D_H

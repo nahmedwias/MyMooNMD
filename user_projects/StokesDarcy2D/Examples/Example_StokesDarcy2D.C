@@ -170,7 +170,7 @@ Example_StokesDarcy2D::Example_StokesDarcy2D() : Example2D()
 }
 
 /** ************************************************************************ */
-Example_NSE2D * Example_StokesDarcy2D::get_stokes_example() const
+std::shared_ptr<Example_NSE2D> Example_StokesDarcy2D::get_stokes_example() const
 {
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
     OutPut("extracting Stokes example from Stokes--Darcy example\n");
@@ -191,12 +191,13 @@ Example_NSE2D * Example_StokesDarcy2D::get_stokes_example() const
   bd_stokes.push_back(boundary_data[1]); // velocity second component
   bd_stokes.push_back(boundary_data[2]); // pressure
   
-  return new Example_NSE2D(exact_stokes, bc_stokes, bd_stokes, 
-                           problem_coefficients);
+  return std::make_shared<Example_NSE2D>(exact_stokes, bc_stokes, bd_stokes,
+                                         problem_coefficients);
 }
 
 /** ************************************************************************ */
-Example_Darcy2D * Example_StokesDarcy2D::get_mixed_darcy_example() const
+std::shared_ptr<Example_Darcy2D> 
+ Example_StokesDarcy2D::get_mixed_darcy_example() const
 {
   if(TDatabase::ParamDB->SC_VERBOSE > 1) 
     OutPut("extracting mixed Darcy example from Stokes--Darcy example\n");
@@ -215,12 +216,13 @@ Example_Darcy2D * Example_StokesDarcy2D::get_mixed_darcy_example() const
   bd_darcy.push_back(boundary_data[3]); // flux (Dirichlet) or pressure (Neumann)
   bd_darcy.push_back(boundary_data[4]); // boundary data for pressure (dummy)
   
-  return new Example_Darcy2D(exact_darcy, bc_darcy, bd_darcy, 
-                             mixed_darcy_coeffs);  
+  return std::make_shared<Example_Darcy2D>(exact_darcy, bc_darcy, bd_darcy,
+                                           mixed_darcy_coeffs);  
 }
 
 /** ************************************************************************ */
-Example_CD2D * Example_StokesDarcy2D::get_primal_darcy_example() const
+std::shared_ptr<Example_CD2D> Example_StokesDarcy2D::get_primal_darcy_example() 
+ const
 {
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
     OutPut("extracting primal Darcy example from Stokes--Darcy example\n");
@@ -233,8 +235,8 @@ Example_CD2D * Example_StokesDarcy2D::get_primal_darcy_example() const
   bc_darcy.push_back(boundary_conditions[5]);
   bd_darcy.push_back(boundary_data[5]);
   
-  return new Example_CD2D(exact_darcy, bc_darcy, bd_darcy, 
-                           primal_darcy_coeffs);  
+  return std::make_shared<Example_CD2D>(exact_darcy, bc_darcy, bd_darcy,
+                                        primal_darcy_coeffs);  
 }
 
       

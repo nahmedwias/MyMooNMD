@@ -3,9 +3,11 @@
 #include <FEDatabase2D.h>
 
 /** ************************************************************************ */
-StokesProblem::StokesProblem(const TDomain & domain, Example_NSE2D* ex, 
+StokesProblem::StokesProblem(const TDomain & domain, 
+                             std::shared_ptr<Example_NSE2D> ex, 
                              InterfaceCondition t, 
-                             std::vector<TInnerInterfaceJoint*>& in, int c)
+                             std::vector<const TInnerInterfaceJoint*>& in,
+                             int c)
                   : NSE2D(domain, *ex, 2),
                     typeOf_bci(t),
                     interface(in),
@@ -1056,7 +1058,7 @@ void StokesProblem::find_global_DOF_interface(const InterfaceFunction &eta)
   
   for(unsigned int iEdge = 0; iEdge < interface.size(); iEdge++)
   {
-    TInnerInterfaceJoint * thisEdge = interface[iEdge];
+    const TInnerInterfaceJoint * thisEdge = interface[iEdge];
     TBaseCell *s_cell = thisEdge->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_id)
       s_cell = thisEdge->GetNeighbour(1);
@@ -1351,7 +1353,7 @@ void StokesProblem::assemble_Dirichlet_map_to_interface(local_matrices & m,
   
   for(unsigned int iEdge = 0; iEdge < interface.size(); iEdge++)
   {
-    TInnerInterfaceJoint * thisEdge = interface[iEdge];
+    const TInnerInterfaceJoint * thisEdge = interface[iEdge];
     TBaseCell *s_cell = thisEdge->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_id)
       s_cell = thisEdge->GetNeighbour(1);
@@ -1510,7 +1512,7 @@ void StokesProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
   
   for(unsigned int iEdge = 0; iEdge < interface.size(); iEdge++)
   {
-    TInnerInterfaceJoint * thisEdge = interface[iEdge];
+    const TInnerInterfaceJoint * thisEdge = interface[iEdge];
     TBaseCell *s_cell = thisEdge->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_id)
       s_cell = thisEdge->GetNeighbour(1);
@@ -2016,7 +2018,7 @@ void StokesProblem::create_etaToBd(const InterfaceFunction &eta)
   // loop over the interface edges
   for(unsigned int iEdge = 0; iEdge < interface.size(); iEdge++)
   {
-    TInnerInterfaceJoint * thisEdge = interface[iEdge];
+    const TInnerInterfaceJoint * thisEdge = interface[iEdge];
     TBaseCell *s_cell = thisEdge->GetNeighbour(0);
     if(s_cell->GetReference_ID() != S_id)
       s_cell = thisEdge->GetNeighbour(1);
@@ -2182,7 +2184,7 @@ void StokesProblem::Assemble_etaToBd(const InterfaceFunction &eta)
     
     for(unsigned int iEdge = 0; iEdge < interface.size(); iEdge++)
     {
-      TInnerInterfaceJoint * thisEdge = interface[iEdge];
+      const TInnerInterfaceJoint * thisEdge = interface[iEdge];
       TBaseCell *s_cell = thisEdge->GetNeighbour(0);
       if(s_cell->GetReference_ID() != S_id)
         s_cell = thisEdge->GetNeighbour(1);

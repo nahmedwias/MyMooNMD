@@ -6,6 +6,7 @@
 #include<Example_Darcy2D.h>
 #include<Example_CD2D.h>
 
+#include <memory>
 
 /**
  * currently supported examples are
@@ -31,10 +32,11 @@ class Example_StokesDarcy2D : public Example2D
   ~Example_StokesDarcy2D(){};
 
   /** getters */
-  Example_NSE2D   * get_stokes_example() const;
-  Example_Darcy2D * get_mixed_darcy_example()  const;  // for mixed darcy
-  Example_CD2D    * get_primal_darcy_example()  const; // for primal darcy
-
+  std::shared_ptr<Example_NSE2D>   get_stokes_example() const;
+   // for mixed darcy
+  std::shared_ptr<Example_Darcy2D> get_mixed_darcy_example() const;
+  // for primal darcy
+  std::shared_ptr<Example_CD2D>    get_primal_darcy_example() const;
 };
 
 

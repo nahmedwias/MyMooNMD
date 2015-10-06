@@ -287,7 +287,7 @@ void check_all_parameters()
 }
 
 /** ************************************************************************ */
-void GetInnerInterfaceJoints(vector<TInnerInterfaceJoint *>& interface,
+void GetInnerInterfaceJoints(vector<const TInnerInterfaceJoint *>& interface,
                              const TDomain & Domain)
 {
   if(interface.empty())
@@ -334,7 +334,7 @@ void GetInnerInterfaceJoints(vector<TInnerInterfaceJoint *>& interface,
         TJoint *joint = cell->GetJoint(j);
         if(joint->GetType() == InnerInterfaceJoint)
         {
-          interface.push_back((TInnerInterfaceJoint*) joint);
+          interface.push_back((const TInnerInterfaceJoint*) joint);
         }
       }
     }
@@ -349,7 +349,7 @@ void GetInnerInterfaceJoints(vector<TInnerInterfaceJoint *>& interface,
     // loop over all (old) interfaces, fill vector 'interface'
     for(int i = 0; i < N_iJoints; i++)
     {
-      TInnerInterfaceJoint *iijoint = interface[i];
+      const TInnerInterfaceJoint *iijoint = interface[i];
       interface[i] = iijoint->GetChild(0);
       interface.push_back(iijoint->GetChild(1));
     }
@@ -358,7 +358,7 @@ void GetInnerInterfaceJoints(vector<TInnerInterfaceJoint *>& interface,
 }
 
 /** ************************************************************************ */
-void getNormal(TBaseCell * cell, TInnerInterfaceJoint * edge, double &nx,
+void getNormal(TBaseCell * cell, const TInnerInterfaceJoint * edge, double &nx,
                double &ny, bool outerNormal)
 {
   edge->GetNormal(nx, ny);

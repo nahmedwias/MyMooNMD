@@ -4,7 +4,7 @@
 
 /** ************************************************************************ */
 InterfaceFunction::InterfaceFunction(
-  const std::vector<TInnerInterfaceJoint *>& in, int s) :
+    const std::vector<const TInnerInterfaceJoint*>& in, int s) :
     BlockVector(), interface(in), spaceType(s)
 {
   if(spaceType != 2 && spaceType != -2)
@@ -867,8 +867,7 @@ void InterfaceFunction::set_integral(double a)
 }
 
 /** ************************************************************************ */
-void InterfaceFunction::update(StokesProblem& s, DarcyProblem &d,
-                               InterfaceFunction *eta_f)
+void InterfaceFunction::update(StokesProblem& s, InterfaceFunction *eta_f)
 {
   // update eta_p
   const int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
@@ -897,10 +896,8 @@ void InterfaceFunction::update(StokesProblem& s, DarcyProblem &d,
       case 3: // C-RR
       {
         if(eta_f == NULL)
-        {
-          ErrMsg("For the C-RR method, you have to specify eta_f");
-          exit(1);
-        }
+          ErrThrow("For the C-RR method, you have to specify eta_f");
+        
         double gamma_sum = TDatabase::ParamDB->StoDa_gamma_f
                            + TDatabase::ParamDB->StoDa_gamma_p;
         this->scale(1 - theta);
@@ -914,10 +911,8 @@ void InterfaceFunction::update(StokesProblem& s, DarcyProblem &d,
         this->scale(1 - theta);
         s.map_solution_to_interface(*this, theta);
         break;
-        break;
       default:
-        ErrMsg("unknown updating strategy");
-        exit(0);
+        ErrThrow("unknown updating strategy");
         break;
     }
   }
@@ -932,15 +927,13 @@ void InterfaceFunction::update(StokesProblem& s, DarcyProblem &d,
   {
     // solving a Stecklov-Poincare equation
     // this is done without this update function
-    ErrMsg("Stecklov-Poincare");
-    exit(1);
+    ErrThrow("Stecklov-Poincare");
     s.map_solution_to_interface(*this, 1.0);
   }
 }
 
 /** ************************************************************************ */
-void InterfaceFunction::update(DarcyProblem& d, StokesProblem &s,
-                               InterfaceFunction *eta_p)
+void InterfaceFunction::update(DarcyPrimal& d, InterfaceFunction *eta_p)
 {
   // update eta_f
   const int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
@@ -968,10 +961,8 @@ void InterfaceFunction::update(DarcyProblem& d, StokesProblem &s,
       case 3: // C-RR
       {
         if(eta_p == NULL)
-        {
-          ErrMsg("For the C-RR method, you have to specify eta_p");
-          exit(0);
-        }
+          ErrThrow("For the C-RR method, you have to specify eta_p");
+        
         double gamma_quotient = TDatabase::ParamDB->StoDa_gamma_f
                                 / TDatabase::ParamDB->StoDa_gamma_p;
         this->scale(1 - theta);
@@ -988,8 +979,8 @@ void InterfaceFunction::update(DarcyProblem& d, StokesProblem &s,
         break;
       }
       default:
-        ErrMsg("unknown updating strategy " << updatingProcedure);
-        exit(0);
+        ErrThrow("unknown updating strategy "
+                 + std::to_string(updatingProcedure));
         break;
     }
   }
@@ -1004,8 +995,7 @@ void InterfaceFunction::update(DarcyProblem& d, StokesProblem &s,
   {
     // solving a Stecklov-Poincare equation
     // this is done without this update function
-    ErrMsg("Stecklov-Poincare");
-    exit(1);
+    ErrThrow("Stecklov-Poincare");
     d.map_solution_to_interface(*this, 1.0);
   }
 }

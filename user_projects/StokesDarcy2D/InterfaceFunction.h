@@ -5,6 +5,7 @@ class InterfaceFunction;
 #include <auxiliaryFunctions.h>
 #include <StokesProblem.h>
 #include <DarcyProblem.h>
+#include <DarcyPrimal.h>
 #include <StokesDarcy2D.h>
 
 /** ************************************************************************* */
@@ -20,7 +21,7 @@ class InterfaceFunction;
 class InterfaceFunction : public BlockVector
 {
  private:
-  std::vector<TInnerInterfaceJoint *> interface;
+  std::vector<const TInnerInterfaceJoint *> interface;
   /* code for the used space on the interface
    * 2 : continuous and piecewise quadratic
    * 1 : continuous and piecewise linear   (not implemented, maybe never will)
@@ -60,7 +61,7 @@ class InterfaceFunction : public BlockVector
   unsigned int make_adjacency_and_DOF();
  public:
   /* constructor */
-  InterfaceFunction(const std::vector<TInnerInterfaceJoint *>& in, int s);
+  InterfaceFunction(const std::vector<const TInnerInterfaceJoint *>& in, int s);
   
   // empty constructor, used for iterative template solvers
   // The InterfaceFunction is not useful after this constructor alone!
@@ -125,7 +126,7 @@ class InterfaceFunction : public BlockVector
   // other restrict method (a template version) for what 'invert' does
   void restrict(const StokesDarcy2D& sd, bool invert = false);
   // restrict to the subspace which is a trace space of the 'subproblem' (either
-  // (StokesProblem or DarcyProblem). This replaces the dof values with zeros,
+  // (StokesProblem or DarcyPrimal). This replaces the dof values with zeros,
   // who touch a Dirichlet (outer) boundary in the respective subdomain.  
   // If the boolean 'invert' is true, then all values are set to zero, except
   // those dofs touching a Dirichlet boundary.
@@ -150,13 +151,13 @@ class InterfaceFunction : public BlockVector
    * update of the interface function is done. Then the interface function is
    * ready to be passed over to the Darcy part as boundary data.
    */
-  void update(StokesProblem &s, DarcyProblem &d,InterfaceFunction *eta_f=NULL);
+  void update(StokesProblem& s, InterfaceFunction* eta_f = nullptr);
   /* update  eta_f
    * Depending on the updating strategy (e.g. C-RR, D-RR, Neumann-Neumann) the 
    * update of the interface function is done. Then the interface function is
    * ready to be passed over to the Stokes part as boundary data.
    */
-  void update(DarcyProblem &d, StokesProblem &s,InterfaceFunction *eta_p=NULL);
+  void update(DarcyPrimal &d, InterfaceFunction *eta_p = nullptr);
   
   /* Print out all arrays, for testing */
   void PrintInfo(std::string name = "") const;

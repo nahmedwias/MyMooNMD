@@ -167,8 +167,6 @@ DarcyProblem::~DarcyProblem()
   delete eta_hom; // TODO why does this not work??
   delete darcy_primal;
   delete darcy_mixed;
-  delete example_primal;
-  delete example_mixed;
 }
 
 /** ************************************************************************ */
