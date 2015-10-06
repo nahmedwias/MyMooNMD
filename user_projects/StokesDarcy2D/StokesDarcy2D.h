@@ -3,15 +3,8 @@
 
 class StokesDarcy2D;
 
-#include <auxiliaryFunctions.h>
-#include <StokesProblem.h>
-#include <DarcyProblem.h>
 #include <InterfaceFunction.h>
 #include <Example_StokesDarcy2D.h>
-#include <BlockMatrix.h>
-
-#include <set>
-#include <map>
 
 #include <solver.h>
 

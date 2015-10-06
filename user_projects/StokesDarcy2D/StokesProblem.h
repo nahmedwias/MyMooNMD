@@ -4,9 +4,7 @@
 class StokesProblem;
 
 #include <NSE2D.h>
-#include <auxiliaryFunctions.h>
 #include <InterfaceFunction.h>
-#include <map>
 
 /** Description of the class StokesProblem
  * More or less everything related to the Stokes subproblem is done within

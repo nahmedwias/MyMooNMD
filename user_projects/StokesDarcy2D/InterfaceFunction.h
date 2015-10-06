@@ -2,12 +2,10 @@
 #define INTERFACEFUNCTION_H
 class InterfaceFunction;
 
-#include <BlockVector.h>
 #include <auxiliaryFunctions.h>
 #include <StokesProblem.h>
 #include <DarcyProblem.h>
 #include <StokesDarcy2D.h>
-#include <vector>
 
 /** ************************************************************************* */
 /** Description of the class InterfacFunction

@@ -5,8 +5,6 @@ class DarcyProblem;
 
 #include <Darcy2D.h>
 #include <CD2D.h>
-#include <BlockVector.h>
-#include <auxiliaryFunctions.h>
 #include <InterfaceFunction.h>
 #include <Example_StokesDarcy2D.h>
 

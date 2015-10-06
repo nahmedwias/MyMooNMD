@@ -1,9 +1,4 @@
-#include <auxiliaryFunctions.h>
-#include <StokesProblem.h>
-#include <DarcyProblem.h>
-#include <StokesDarcy2D.h>
 #include <InterfaceFunction.h>
-#include <Constants.h>
 #include <FEDatabase2D.h>
 
 #include <sys/stat.h>

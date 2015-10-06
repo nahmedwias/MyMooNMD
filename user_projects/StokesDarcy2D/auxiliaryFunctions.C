@@ -82,29 +82,20 @@ void check_all_parameters()
   
   const int stokes_first = TDatabase::ParamDB->StoDa_StokesFirst;
   if(stokes_first != 0 && stokes_first != 1)
-  {
-    ErrMsg("set 'StoDa_StokesFirst' to either 0 or 1");
-    exit(0);
-  }
+    ErrThrow("set 'StoDa_StokesFirst' to either 0 or 1");
   
   if(icond != 0 && icond != 1)
-  {
-    ErrMsg("Set 'StoDa_interfaceType' to either 0 (Beavers-Joseph-Saffman) or "
-           << "1 (zero tangential velocity) to control the tangential condition"
-           << " in the (Navier-) Stokes subdomain");
-    exit(0);
-  }
+    ErrThrow("Set 'StoDa_interfaceType' to either 0 (Beavers-Joseph-Saffman) "
+             + "or 1 (zero tangential velocity) to control the tangential "
+             + "condition in the (Navier-) Stokes subdomain");
   
   if(TDatabase::ParamDB->StoDa_weakGamma == 0.0)
-  {
-    ErrMsg("set 'StoDa_weakGamma' to some positive number for weak (Dirichlet) "
-           << "interface conditions (tangential and normal direction). Set it "
-           << "to a negative number to enforce the normal condition exactly. " 
-           << "For Dirichlet problems on the interface in that case also the "
-           << "tangential component will be set exactly if " << 
-           "'StoDa_interfaceType' is set to 1 (u.t = 0).");
-    exit(0);
-  }
+    ErrThrow("set 'StoDa_weakGamma' to some positive number for weak "
+           + "(Dirichlet) interface conditions (tangential and normal "
+           + "direction). Set it to a negative number to enforce the normal "
+           + "condition exactly. For Dirichlet problems on the interface in " 
+           + "that case also the tangential component will be set exactly if "
+           + "'StoDa_interfaceType' is set to 1 (u.t = 0).");
   
   OutPut("\n\n\nsolving a Stokes--Darcy problem in 2D\n");
   OutPut("The coupled problem is a ");

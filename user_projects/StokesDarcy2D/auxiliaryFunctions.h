@@ -2,9 +2,21 @@
 #define AUXILIARYFUNCTIONS_H
 
 #include <cmath>
-#include <MooNMD_Io.h>
-#include <vector>
-#include <map>
+
+#include <Domain.h>
+#include <InnerInterfaceJoint.h>
+#include <BlockVector.h>
+
+
+#include <solver.h>
+#include <preconditioner.h>
+
+typedef preconditioner <BlockMatrix, BlockVector> block_prec;
+typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
+
+// OutPut to OutFile and console, depending on verbosity level
+#define Out(x,v) { if(TDatabase::ParamDB->SC_VERBOSE > v) OutPut(x);}
+
 
 struct n_t_vector
 {
@@ -74,6 +86,12 @@ struct test_ansatz_function
 
 struct local_matrices
 {
+  /** @brief a vector of matrices
+   * 
+   * the number of matrices (size of this vector) is usually 9. Each entry is 
+   * a map from row-indices to a map. The second map maps column indices to 
+   * entries (doubles). 
+   */
   std::vector< std::map<int, std::map<int,double> > >m;
   local_matrices() : m(std::vector< std::map<int, std::map<int,double> > >(9))
   {
@@ -104,6 +122,11 @@ struct local_matrices
   void info(size_t verbose) const;
 };
 
+/** @brief store data to do the local assembling 
+ *  
+ * This is done for one edge, one quadrature point, one ansatz dof, one test 
+ * dof. 
+ */
 struct local_edge_assembling
 {
   n_t_vector nt;
@@ -127,24 +150,6 @@ enum InterfaceCondition{Neumann, Dirichlet, Robin, weakRobin, DirichletSTAB};
 // printing the enumerations with the correct name rather than a number
 std::ostream& operator<<(std::ostream& out, const ProblemType value);
 std::ostream& operator<<(std::ostream& out, const InterfaceCondition value);
-
-#include <Domain.h>
-#include <InnerInterfaceJoint.h>
-//#include <BlockMatrix.h>
-//#include <BlockVector.h>
-#include <InterfaceFunction.h>
-
-#include <set>
-#include <map>
-
-#include <solver.h>
-#include <preconditioner.h>
-
-typedef preconditioner <BlockMatrix, BlockVector> block_prec;
-typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
-
-// OutPut to OutFile and console, depending on verbosity level
-#define Out(x,v) { if(TDatabase::ParamDB->SC_VERBOSE > v) OutPut(x);}
 
 
 /**
