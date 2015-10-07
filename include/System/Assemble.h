@@ -11,7 +11,6 @@
 #ifndef __ASSEMBLE__
 #define __ASSEMBLE__
 
-#include <AllClasses.h>
 #include <Constants.h>
 
 #ifdef _MPI

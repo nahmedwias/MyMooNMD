@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Vector.h"
-
 /** Constructor */
 TFESpace1D::TFESpace1D(TCollection *coll, char *name, char *description) :
      TFESpace(coll, name, description)

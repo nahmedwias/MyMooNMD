@@ -18,8 +18,6 @@
 #include <MooNMD_Io.h>
 #include <string.h>
 
-#include "Vector.h"
-
 /** copying given parameters into inner storage places */
 int TFESpace::InitData(TCollection *coll, char *name, char *description)
 {

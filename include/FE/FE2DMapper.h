@@ -16,7 +16,7 @@
 #define FIRSTMARK -10
 
 #include <FEDesc2D.h>
-#include "Vector.h"
+#include <vector>
 #include <HangingNode.h>
 
 /** find out which of the given local degress of freedom,
@@ -154,8 +154,8 @@ class TFE2DMapper
              int LocEdge0, int LocEdge1,
              TFEDesc2D *Desc0, TFEDesc2D *Desc1,
              int &Counter,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers);
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers);
 
     /** "map" the given dof on a boundary joint */
     void MapBound(int *Global, int I_K, int *Indices, 

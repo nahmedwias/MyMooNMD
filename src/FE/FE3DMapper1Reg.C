@@ -58,8 +58,8 @@ void TFE3DMapper1Reg::Map(int *Global,
              int TwistIndexF3, int TwistIndexC,
              int DirichletBound,
              int &Counter,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers)
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers)
 {
   static int i, j, v, w, N_;
   static THangingNode *hn;
@@ -150,8 +150,8 @@ void TFE3DMapper1Reg::Map(int *Global,
 
     N_=TFEDatabase3D::GetHNDesc3D(HangingTypes[i])->GetN_Nodes();
     hn=new THangingNode(HangingTypes[i], N_, Aux, Coupling[i]);
-    vect->AddElement(hn);
-    numbers->AddElement(Aux[Hanging[i]]);
+    vect->push_back(hn);
+    numbers->push_back(Aux[Hanging[i]]);
     // cout << "HN: " << Aux[Hanging[i]] << endl;
   }
 

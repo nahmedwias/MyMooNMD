@@ -7,7 +7,6 @@
 #include <Domain.h>
 #include <JointEqN.h>
 #include <MacroCell.h>
-#include <Vector.h>
 #include <MooNMD_Io.h>
 #include <BdSphere.h>
 
@@ -130,9 +129,10 @@ int TDomain::GenMortarStructs()
   int i, j, k, N_1, N_2, ID1, ID2;
   TBaseCell *MeBase, *Me, *Neighb;
   TJoint *Joint;
-  TVector<int> *MortarAux;
+  //TVector<int> *MortarAux;
 
-  MortarAux = new TVector<int>(30,30);
+  //MortarAux = new TVector<int>(30,30);
+  std::vector<int> MortarAux;
 
   N_MortarFaces = 0;
 
@@ -158,12 +158,16 @@ int TDomain::GenMortarStructs()
             Neighb->SetClipBoard(Neighb->GetClipBoard() | 1 << k);
 
             if (ID1 < ID2)
-              MortarAux->AddElement(i);
+              //MortarAux->AddElement(i);
+              MortarAux.push_back(i);
             else
-              MortarAux->AddElement(-i-1);
+              //MortarAux->AddElement(-i-1);
+              MortarAux.push_back(-i-1);
 
-            MortarAux->AddElement(j);
-            MortarAux->AddElement(k);
+            //MortarAux->AddElement(j);
+            //MortarAux->AddElement(k);
+            MortarAux.push_back(j);
+            MortarAux.push_back(k);
           }
         }
   } 
@@ -172,17 +176,24 @@ int TDomain::GenMortarStructs()
 
   for (i=0;i<N_MortarFaces;i++)
   {
-    if (MortarAux->GetElement(3*i) >= 0)
+    //if (MortarAux->GetElement(3*i) >= 0)
+    if (MortarAux.at(3*i) >= 0)
     {
-      MortarFaces[i].Cell = CellTree[MortarAux->GetElement(3*i)];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 1);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 2);
+      //MortarFaces[i].Cell = CellTree[MortarAux->GetElement(3*i)];
+      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 1);
+      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 2);
+      MortarFaces[i].Cell = CellTree[MortarAux.at(3*i)];
+      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 1);
+      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 2);
     }
     else
     {
-      MeBase = CellTree[-MortarAux->GetElement(3*i) - 1];
-      MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 2);
-      MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 1);
+      //MeBase = CellTree[-MortarAux->GetElement(3*i) - 1];
+      //MortarFaces[i].LocFaceNumber[0] = MortarAux->GetElement(3*i + 2);
+      //MortarFaces[i].LocFaceNumber[1] = MortarAux->GetElement(3*i + 1);
+      MeBase = CellTree[-MortarAux.at(3*i) - 1];
+      MortarFaces[i].LocFaceNumber[0] = MortarAux.at(3*i + 2);
+      MortarFaces[i].LocFaceNumber[1] = MortarAux.at(3*i + 1);
       MortarFaces[i].Cell = MeBase->GetJoint(MortarFaces[i].LocFaceNumber[1])->
                             GetNeighbour(MeBase);
     }
@@ -202,7 +213,7 @@ int TDomain::GenMortarStructs()
     Neighb->SetJoint(MortarFaces[i].LocFaceNumber[1], Joint);
   }
   
-  delete MortarAux;
+  //delete MortarAux;
   
   return 0;
 }
