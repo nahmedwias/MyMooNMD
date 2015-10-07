@@ -14,7 +14,6 @@
 #ifndef __TRIAAFFIN__
 #define __TRIAAFFIN__
 
-#include <Enumerations.h>
 #include <RefTrans2D.h>
 
 /** reference transformations for triangle */

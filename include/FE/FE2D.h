@@ -11,7 +11,6 @@
 #ifndef __FE2D__
 #define __FE2D__
 
-#include <Enumerations.h>
 #include <BaseFunct2D.h>
 #include <NodalFunctional2D.h>
 #include <FEDesc2D.h>

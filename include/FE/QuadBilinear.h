@@ -14,7 +14,6 @@
 #ifndef __QUADBilinear__
 #define __QUADBilinear__
 
-#include <Enumerations.h>
 #include <RefTrans2D.h>
 
 /** reference transformations for triangle */
