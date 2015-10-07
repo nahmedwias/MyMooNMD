@@ -74,7 +74,7 @@ class TInnerInterfaceJoint : public TJointEqN
   void GetTangent(double &tx, double &ty) const;
   
   /** set/get the index of this joint in given neighbor */
-  int GetIndexInNeighbor(TBaseCell const * const neigh);
+  int GetIndexInNeighbor(TBaseCell const * const neigh) const;
   void SetIndexInNeighbor(TBaseCell *neigh, int index);
   
     // Destructor

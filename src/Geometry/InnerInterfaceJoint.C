@@ -150,7 +150,7 @@ void TInnerInterfaceJoint::GetTangent(double &tx, double &ty) const
 }
 
 /** get the index of this joint in given neighbor */
-int TInnerInterfaceJoint::GetIndexInNeighbor(TBaseCell const * const neigh)
+int TInnerInterfaceJoint::GetIndexInNeighbor(const TBaseCell*const neigh) const
 {
   if(neigh == Neighb0)
     return IndexInNeighbor[0];
