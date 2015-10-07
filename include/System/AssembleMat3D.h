@@ -11,7 +11,6 @@
 #ifndef __ASSEMBLEMAT3D__
 #define __ASSEMBLEMAT3D__
 
-#include <AllClasses.h>
 #include <Assemble.h>
 #include <Enumerations.h>
 

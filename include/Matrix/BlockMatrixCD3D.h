@@ -11,7 +11,7 @@
 #ifndef __SYSTEMMATSCALAR3D__
 #define __SYSTEMMATSCALAR3D__
 
-#include <AssembleMat3D.h>
+//#include <AssembleMat3D.h>
 
 #ifdef _MPI
 //#include "mpi.h"
@@ -38,7 +38,7 @@ class BlockMatrixCD3D : public BlockMatrix3D
     BoundValueFunct3D *BoundaryValues[1];
     
     /** instance of the Assemble class */
-    TAssembleMat3D **AMatRhsAssemble;
+    //TAssembleMat3D **AMatRhsAssemble;
     
   public:
     /** Constructor*/
