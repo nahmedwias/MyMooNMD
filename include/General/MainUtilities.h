@@ -4,6 +4,7 @@
   #include <QuadAffin.h>
   #include <NodalFunctional2D.h>
   #include <BoundEdge.h>
+  class TSquareMatrix2D;
 #endif
 #ifdef __3D__
   #include <FESpace3D.h>

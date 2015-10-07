@@ -13,10 +13,10 @@
 #ifndef __EDGE__
 #define __EDGE__
 
+class TEdge;
+
 #include <Vertex.h>
 #include <BaseCell.h>
-#include <MooNMD_Io.h>
-#include <Constants.h>
 
 /** an edge in a 3D grid */
 class TEdge

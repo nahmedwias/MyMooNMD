@@ -14,6 +14,7 @@
 
 #include <SquareMatrix.h>
 #include <Matrix.h>
+#include <MultiGrid2D.h>
 
 /** solve equation system */
 
@@ -66,11 +67,11 @@ void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12, TSquareMatrix *m
             double *rhs1, double *rhs2, double *rhs3,
             double *sol1, double *sol2, double *sol3);
 
+#ifdef __2D__
 void Solver(TSquareMatrix **sqmatrices, TMatrix **matrices, double *rhs,
             double *sol, MatVecProc *MatVect, DefectProc *Defect,
             TMultiGrid2D *MG, int N_Unknowns, int ns_type);
 
-#ifdef __2D__
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 1) */
 void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, double *rhs, double *sol);

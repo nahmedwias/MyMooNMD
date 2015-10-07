@@ -13,6 +13,8 @@
 #ifndef __AUXPARAM2D__
 #define __AUXPARAM2D__
 
+class TAuxParam2D;
+
 #include <Constants.h>
 #include <FESpace2D.h>
 #include <FEFunction2D.h>

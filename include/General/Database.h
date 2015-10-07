@@ -9,6 +9,9 @@
 // Author:      Volker Behns  24.07.97
 //
 // =======================================================================
+
+class TDatabase;
+
 #ifdef _MPI
 #  include "mpi.h"
 #endif

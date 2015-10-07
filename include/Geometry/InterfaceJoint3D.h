@@ -13,6 +13,7 @@
 #define __INTERFACEJOINT3D__
 
 #include <JointEqN.h>
+#include <BoundComp3D.h>
 
 /** connects two cells on an interface */
 class TInterfaceJoint3D : public TJointEqN

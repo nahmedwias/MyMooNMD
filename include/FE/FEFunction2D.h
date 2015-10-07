@@ -15,6 +15,8 @@
 #ifndef __FEFUNCTION2D__
 #define __FEFUNCTION2D__
 
+class TFEFunction2D;
+
 #include <FESpace2D.h>
 #include <AuxParam2D.h>
 

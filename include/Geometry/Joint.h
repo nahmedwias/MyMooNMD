@@ -14,7 +14,6 @@
 #ifndef __JOINT__
 #define __JOINT__
 
-#include <AllClasses.h>
 #include <Constants.h>
 #include <Mapper.h>
 
@@ -25,6 +24,8 @@
   #define MAXN_nVpoJ  9
   #define MAXN_nJpoJ  4
 #endif
+
+class TJoint;
 
 struct StoreGeom
 {

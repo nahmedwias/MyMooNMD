@@ -9,6 +9,9 @@
 #ifndef __TIMEDISCROUT__
 #define __TIMEDISCROUT__
 
+#include <DiscreteForm2D.h>
+#include <AuxParam2D.h>
+
 /******************************************************************************/
 /*                                                                            */
 /* GENERAL                                                                    */
