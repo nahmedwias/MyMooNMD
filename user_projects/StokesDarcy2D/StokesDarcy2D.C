@@ -4,9 +4,10 @@
 #include <MainUtilities.h>
 #include <FEDatabase2D.h>
 #include <preconditioner.h>
-#include <solver.h>
 #include <Output2D.h>
 #include <DirectSolver.h>
+
+
 
 /** ************************************************************************ */
 StokesDarcy2D::StokesDarcy2D(
@@ -211,19 +212,19 @@ void StokesDarcy2D::solve_fixed_point(InterfaceFunction& eta) const
       {
         // Interface integrals & solving for the Stokes part
         stokes()->solve(eta); 
-        eta.update(*stokes());
+        stokes()->update(eta);
         // Interface integrals & solving for the Darcy part
-        darcy()->solve(eta); 
-        eta.update(*darcy()); // includes damping
+        darcy()->solve(eta);
+        darcy()->update(eta); // includes damping
       }
       else
       {
         // Interface integrals & solving for the Darcy part
-        darcy()->solve(eta); 
-        eta.update(*darcy());
+        darcy()->solve(eta);
+        darcy()->update(eta);
         // Interface integrals & solving for the Stokes part
         stokes()->solve(eta); 
-        eta.update(*stokes()); // includes damping
+        stokes()->update(eta); // includes damping
       }
       break;
     case 2: // Newton
@@ -296,18 +297,18 @@ void StokesDarcy2D::solve_coupled_system(InterfaceFunction& eta_f,
     {
       // Interface integrals & solving for the Stokes part
       stokes()->solve(eta_f); 
-      eta_p.update(*stokes(), &eta_f); // includes damping
+      stokes()->update(eta_p, &eta_f); // includes damping
     }
     {
       // Interface integrals & solving for the Darcy part
-      darcy()->solve(eta_p); 
-      eta_f.update(*darcy(), &eta_p); // includes damping
+      darcy()->solve(eta_p);
+      darcy()->update(eta_f, &eta_p); // includes damping
     }
     if(!StokesFirst)
     {
       // Interface integrals & solving for the Stokes part
       stokes()->solve(eta_f); 
-      eta_p.update(*stokes(), &eta_f); // includes damping
+      stokes()->update(eta_p, &eta_f); // includes damping
     }
   }
   else
@@ -315,8 +316,8 @@ void StokesDarcy2D::solve_coupled_system(InterfaceFunction& eta_f,
     stokes()->solve(eta_f);
     darcy()->solve(eta_p);
     
-    eta_f.update(*darcy(), &eta_p); // includes damping
-    eta_p.update(*stokes(), &eta_f); // includes damping
+    darcy()->update(eta_f, &eta_p); // includes damping
+    stokes()->update(eta_p, &eta_f); // includes damping
   }
 }
 
@@ -341,11 +342,11 @@ bool StokesDarcy2D::stopIteration(int it)
     diffDarcyP = relabsDiff(n_DOF, darcy()->getSolOld(), darcy()->getSol());
     
     n_DOF = 2 * stokes()->get_velocity_space().GetN_DegreesOfFreedom();
-    diffStokesU = relabsDiff(n_DOF, stokes()->getUOld()->GetValues(),
+    diffStokesU = relabsDiff(n_DOF, stokes()->get_u_old().GetValues(),
                              stokes()->get_velocity().GetValues());
     
     n_DOF = stokes()->get_pressure_space().GetN_DegreesOfFreedom();
-    diffStokesP = relabsDiff(n_DOF, stokes()->getPOld()->GetValues(),
+    diffStokesP = relabsDiff(n_DOF, stokes()->get_p_old().GetValues(),
                              stokes()->get_pressure().GetValues());
     
     if(diffDarcyP + diffStokesU + diffStokesP < 1e-14)
@@ -417,9 +418,8 @@ bool StokesDarcy2D::stopIteration(int it)
   if(0)
     if(error < 1e-14) // (almost) never going to happen
     {
-      OutPut(
-          "Converged after " << it+1 << " iterations with interface error " << 
-error << endl);
+      OutPut("Converged after " << it+1 << " iterations with interface error "
+             << error << endl);
       stopIteration = true;
     }
   // check if error on interface increased
@@ -431,9 +431,8 @@ error << endl);
   // check if maximum number of iterations is reached
   if(it == TDatabase::ParamDB->StoDa_nIterations - 1)
   {
-    OutPut(
-        "Reached maximum number of " << TDatabase::ParamDB->StoDa_nIterations << 
-" iterations!!\n");
+    OutPut("Reached maximum number of "
+            << TDatabase::ParamDB->StoDa_nIterations << " iterations!!\n");
     stopIteration = true;
   }
   // check if convergence is slow
@@ -488,6 +487,9 @@ void StokesDarcy2D::SolveOneSystem()
   //this->CT->PrintFull("CT");
   //c_darcy()->getComposedMatForBigSystem()->PrintFull("D");
   //this->C->PrintFull("C");
+  
+  typedef preconditioner <BlockMatrix, BlockVector> block_prec;
+  typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
   
   /// create preconditioner and solver object for direct solution of big system.
   block_prec big_prec(big_matrix);
@@ -1515,12 +1517,12 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
   double nTn; // normal component of normal stress (Stokes)
   double val1; // just a number to store intermediate values
   // Stokes velocity (two components)
-  const TFEFunction2D *s_u1 = ((it != -1) ? &s.get_velocity() : s.getUDirect() 
-                               )->GetComponent(0);
-  const TFEFunction2D *s_u2 = ((it != -1) ? &s.get_velocity() : s.getUDirect()
-                               )->GetComponent(1);
-  const TFEFunction2D *s_p = (it != -1) ? &s.get_pressure() : s.getPDirect();
-  const TFEFunction2D &d_p = (it != -1) ? d.getP() : d.getPDirect();
+  const TFEFunction2D *s_u1 = ((it != -1) ? s.get_velocity() : s.get_u_Direct() 
+                               ).GetComponent(0);
+  const TFEFunction2D *s_u2 = ((it != -1) ? s.get_velocity() : s.get_u_Direct()
+                               ).GetComponent(1);
+  const TFEFunction2D & s_p = (it != -1) ? s.get_pressure() : s.get_p_direct();
+  const TFEFunction2D & d_p = (it != -1) ? d.getP() : d.get_p_direct();
   
   const double nu = 1 / TDatabase::ParamDB->RE_NR; // diffustion coefficient
   const double K = TDatabase::ParamDB->SIGMA_PERM; // Permeability
@@ -1588,7 +1590,7 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
       // get the function values
       s_u1->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_u1val);
       s_u2->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_u2val);
-      s_p->FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_pval);
+      s_p.FindGradientLocal(s_cell, s_cell->GetCellIndex(), x, y, s_pval);
       d_p.FindGradientLocal(d_cell, d_cell->GetCellIndex(), x, y, d_pval);
       
       // normal component of Stokes velocity
@@ -1633,19 +1635,19 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
 void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
                                 TDomain *Domain, int it)
 {
-  TFEVectFunct2D *u_NSE = it != -1 ? &s.get_velocity() : s.getUDirect();
+  TFEVectFunct2D & u_NSE = it != -1 ? s.get_velocity() : s.get_u_Direct();
   const TFEFunction2D *u1_NSE, *u2_NSE;
-  u1_NSE = u_NSE->GetComponent(0);
-  u2_NSE = u_NSE->GetComponent(1);
-  const TFEFunction2D *p_NSE = it != -1 ? &s.get_pressure() : s.getPDirect();
-  const TFEFunction2D & p_Darcy = (it != -1) ? (d.getP()) : (d.getPDirect());
+  u1_NSE = u_NSE.GetComponent(0);
+  u2_NSE = u_NSE.GetComponent(1);
+  const TFEFunction2D & p_NSE = it != -1 ? s.get_pressure() : s.get_p_direct();
+  const TFEFunction2D & p_Darcy = (it != -1) ? (d.getP()) : (d.get_p_direct());
   /* ========================================================================
    * print minimal and maximal values of all FE - functions                
    * does not work for Raviart-Thomas elements (yet)                       */
   if(TDatabase::ParamDB->SC_VERBOSE)
   {
     OutPut(" Navier-Stokes ");
-    p_NSE->PrintMinMax();
+    p_NSE.PrintMinMax();
     OutPut(" Navier-Stokes ");
     u1_NSE->PrintMinMax();
     OutPut(" Navier-Stokes ");
@@ -1660,8 +1662,8 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     // create one TOutput2D object for each subdomain
     TOutput2D Output_NSE(2, 1, 1, 0, Domain);
     TOutput2D Output_Darcy(1, 1, 0, 0, Domain);
-    Output_NSE.AddFEFunction(p_NSE);
-    Output_NSE.AddFEVectFunct(u_NSE);
+    Output_NSE.AddFEFunction(&p_NSE);
+    Output_NSE.AddFEVectFunct(&u_NSE);
     Output_Darcy.AddFEFunction(&p_Darcy);
     // write one vtk - file for each subdomain
     std::ostringstream os(std::ios::trunc);
@@ -1706,7 +1708,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     ErrorMethod2D *ErrorMeth = L2H1Errors; // in MainUtilities.C
     double err[6];
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
-    const TFESpace2D *p_space_NSE = p_NSE->GetFESpace2D();
+    const TFESpace2D *p_space_NSE = p_NSE.GetFESpace2D();
     const TFESpace2D *v_space_NSE = u1_NSE->GetFESpace2D();
     const TFESpace2D *p_space_Darcy = d.getP().GetFESpace2D();
     
@@ -1724,7 +1726,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     OutPut(" L2(u_S):       " << sqrt(err[0]*err[0]+err[3]*err[3]) << endl);
     OutPut(" H1-semi(u_S):  " << sqrt(err[1]*err[1]+err[4]*err[4]) << endl);
     
-    p_NSE->GetErrors(s.get_example().get_exact(2), 3, AllDerivatives, 2,
+    p_NSE.GetErrors(s.get_example().get_exact(2), 3, AllDerivatives, 2,
                      ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                      &p_space_NSE, err);
     OutPut(" L2(p_S):       " << err[0] << endl);
@@ -1745,19 +1747,19 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     double relError;
     double tot_relError = 0;
     // Stokes velocity
-    relError = relDiff(2 * u_NSE->GetLength(), s.getUDirect()->GetValues(),
-                       u_NSE->GetValues());
+    relError = relDiff(2 * u_NSE.GetLength(), s.get_u_Direct().GetValues(),
+                       u_NSE.GetValues());
     OutPut(" discrete Stokes velocity Error " << relError << endl);
     tot_relError += relError*relError;
     
     // Stokes Pressure
-    relError = relDiff(p_NSE->GetLength(), s.getPDirect()->GetValues(),
-                       p_NSE->GetValues());
+    relError = relDiff(p_NSE.GetLength(), s.get_p_direct().GetValues(),
+                       p_NSE.GetValues());
     OutPut(" discrete Stokes pressure Error " << relError << endl);
     tot_relError += relError*relError;
     
     // Darcy pressure
-    relError = relDiff(p_Darcy.GetLength(), d.getPDirect().GetValues(),
+    relError = relDiff(p_Darcy.GetLength(), d.get_p_direct().GetValues(),
                        p_Darcy.GetValues());
     OutPut(" discrete Darcy pressure Error  " << relError << endl);
     tot_relError += relError*relError;

@@ -1,8 +1,7 @@
 #include <algorithm>
-#include <stdlib.h>
 #include <auxiliaryFunctions.h>
 #include <LinAlg.h>
-#include <InterfaceFunction.h>
+#include <Database.h>
 
 using namespace std;
 

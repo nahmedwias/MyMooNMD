@@ -8,11 +8,8 @@ InterfaceFunction::InterfaceFunction(
     BlockVector(), interface(in), spaceType(s)
 {
   if(spaceType != 2 && spaceType != -2)
-  {
-    ErrMsg(
-        "Constructor for InterfaceFunction: only piecewise quadratic " << "functions (continuous or discontinuous) are suported so far!");
-    exit(1);
-  }
+    ErrThrow("Constructor for InterfaceFunction: only piecewise quadratic "
+             + "functions (continuous or discontinuous) are suported so far!");
   
   DOF.resize((abs(spaceType) + 1) * interface.size(), 0); // initialize to zero
   adjacency.resize(2 * interface.size(), 0); // initialize to zero
@@ -443,8 +440,7 @@ void InterfaceFunction::PrintGnuplotFile(char* a) const
     {
       if(t < 1.0 - t_incr/(2*n_sub_intervals))
       {
-        ErrMsg("no neighbor here " << t);
-        exit(1);
+        ErrThrow("no neighbor here " + std::to_string(t));
       }
       else
         break;
@@ -744,12 +740,9 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
           }
         }
         if(bound_edge == NULL)
-        {
           // this should not happen
-          ErrMsg("could not find boundary edge touching the interface edge, " <<
-                 "which\ndoes touch the boundary!");
-          exit(1);
-        }
+          ErrThrow("could not find boundary edge touching the interface edge, "
+                   + "which does touch the boundary!");
         
         double t0, t1;
         bound_edge->GetParameters(t0, t1);
@@ -780,11 +773,8 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
 void InterfaceFunction::restrict(bool invert)
 {
   if(dofs_to_be_restricted == NULL)
-  {
-    ErrMsg("you have to call restrict with an object of type StokesProblem "
-           << "DarcyProblem or StokesDarcy2D");
-    exit(1);
-  }
+    ErrThrow("you have to call restrict with an object of type StokesProblem "
+             + "DarcyProblem or StokesDarcy2D");
   
   if(invert == false)
   {
@@ -816,10 +806,7 @@ double InterfaceFunction::integral() const
 {
   double integral = 0.0;
   if(spaceType != 2 && spaceType != -2)
-  {
-    ErrMsg("only piecwise quadratic interface functions are supported");
-    exit(1);
-  }
+    ErrThrow("only piecwise quadratic interface functions are supported");
   
   for(unsigned int i = 0; i < interface.size(); i++)
   {
@@ -866,136 +853,3 @@ void InterfaceFunction::set_integral(double a)
   // now 'this' has integral 'a' (except for Dirichlet dofs)
 }
 
-/** ************************************************************************ */
-void InterfaceFunction::update(StokesProblem& s, InterfaceFunction *eta_f)
-{
-  // update eta_p
-  const int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
-  
-  if(solution_strategy == 1 || solution_strategy == -1)
-  {
-    const int updatingProcedure = TDatabase::ParamDB->StoDa_updatingStrategy;
-    const double theta = TDatabase::ParamDB->StoDa_theta_p; // damping
-    // regular Neumann-Neumann, Robin-Robin scheme, or C-RR or D-RR
-    switch(updatingProcedure)
-    {
-      case 1:
-      {
-        // damping with old interface function
-        this->scale(1 - theta);
-        s.map_solution_to_interface(*this, theta);
-        break;
-      }
-      case 2: // damping with old Stokes solution
-      {
-        this->reset();
-        s.map_solution_to_interface(*this, theta);
-        s.map_solution_to_interface(*this, 1.0 - theta, true);
-        break;
-      }
-      case 3: // C-RR
-      {
-        if(eta_f == NULL)
-          ErrThrow("For the C-RR method, you have to specify eta_f");
-        
-        double gamma_sum = TDatabase::ParamDB->StoDa_gamma_f
-                           + TDatabase::ParamDB->StoDa_gamma_p;
-        this->scale(1 - theta);
-        s.map_solution_to_interface(*this, theta * gamma_sum);
-        // substract eta_f
-        this->add(eta_f, -theta);
-        break;
-      }
-      case 4: // D-RR
-        // get Dirichlet data and normal component of normal stress
-        this->scale(1 - theta);
-        s.map_solution_to_interface(*this, theta);
-        break;
-      default:
-        ErrThrow("unknown updating strategy");
-        break;
-    }
-  }
-  else if(solution_strategy == 2 || solution_strategy == -2)
-  {
-    // solving fixed point equation on interface 
-    // turn off damping here, it is done in 'solve_fixed_point(eta)'
-    this->reset();
-    s.map_solution_to_interface(*this, 1.0);
-  }
-  else if(solution_strategy == 3 || solution_strategy == -3)
-  {
-    // solving a Stecklov-Poincare equation
-    // this is done without this update function
-    ErrThrow("Stecklov-Poincare");
-    s.map_solution_to_interface(*this, 1.0);
-  }
-}
-
-/** ************************************************************************ */
-void InterfaceFunction::update(DarcyPrimal& d, InterfaceFunction *eta_p)
-{
-  // update eta_f
-  const int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
-  
-  if(solution_strategy == 1 || solution_strategy == -1)
-  {
-    const int updatingProcedure = TDatabase::ParamDB->StoDa_updatingStrategy;
-    const double theta = TDatabase::ParamDB->StoDa_theta_f; // damping
-    
-    switch(updatingProcedure)
-    {
-      case 1: // damping with old interface function
-      {
-        this->scale(1 - theta);
-        d.map_solution_to_interface(*this, theta);
-        break;
-      }
-      case 2: // damping with old Darcy solution
-      {
-        this->reset();
-        d.map_solution_to_interface(*this, 1.0 - theta, true);
-        d.map_solution_to_interface(*this, theta);
-        break;
-      }
-      case 3: // C-RR
-      {
-        if(eta_p == NULL)
-          ErrThrow("For the C-RR method, you have to specify eta_p");
-        
-        double gamma_quotient = TDatabase::ParamDB->StoDa_gamma_f
-                                / TDatabase::ParamDB->StoDa_gamma_p;
-        this->scale(1 - theta);
-        // get Dirichlet data
-        d.map_solution_to_interface(*this, -theta * (1 + gamma_quotient));
-        this->add(eta_p, theta * gamma_quotient);
-        break;
-      }
-      case 4: // D-RR
-      {
-        this->scale(1 - theta);
-        // get Dirichlet data and normal derivatives 
-        d.map_solution_to_interface(*this, theta);
-        break;
-      }
-      default:
-        ErrThrow("unknown updating strategy "
-                 + std::to_string(updatingProcedure));
-        break;
-    }
-  }
-  else if(solution_strategy == 2 || solution_strategy == -2)
-  {
-    // solving fixed point equation on interface 
-    // turn off damping here, it is done in 'solve_fixed_point(eta)'
-    this->reset();
-    d.map_solution_to_interface(*this, 1.0);
-  }
-  else if(solution_strategy == 3 || solution_strategy == -3)
-  {
-    // solving a Stecklov-Poincare equation
-    // this is done without this update function
-    ErrThrow("Stecklov-Poincare");
-    d.map_solution_to_interface(*this, 1.0);
-  }
-}

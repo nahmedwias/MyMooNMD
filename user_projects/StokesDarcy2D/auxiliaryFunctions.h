@@ -2,17 +2,12 @@
 #define AUXILIARYFUNCTIONS_H
 
 #include <cmath>
+#include <map>
+#include <vector>
 
 #include <Domain.h>
 #include <InnerInterfaceJoint.h>
-#include <BlockVector.h>
 
-
-#include <solver.h>
-#include <preconditioner.h>
-
-typedef preconditioner <BlockMatrix, BlockVector> block_prec;
-typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
 
 // OutPut to OutFile and console, depending on verbosity level
 #define Out(x,v) { if(TDatabase::ParamDB->SC_VERBOSE > v) OutPut(x);}
@@ -184,8 +179,7 @@ void check_all_parameters();
   has two children.
 */
 void GetInnerInterfaceJoints(
-    std::vector< const TInnerInterfaceJoint* >& interface, const TDomain& 
-Domain);
+  std::vector< const TInnerInterfaceJoint* >& interface, const TDomain& Domain);
 
 /** compute |x-y|/|x| in the discrete l^2 norm */
 double relDiff(int length, const double* x, const double* y);

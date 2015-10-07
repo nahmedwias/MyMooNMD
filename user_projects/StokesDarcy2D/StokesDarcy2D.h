@@ -3,10 +3,12 @@
 
 class StokesDarcy2D;
 
-#include <InterfaceFunction.h>
+#include <StokesProblem.h>
+#include <DarcyPrimal.h>
 #include <Example_StokesDarcy2D.h>
 
 #include <solver.h>
+
 
 class StokesDarcy2D
 {

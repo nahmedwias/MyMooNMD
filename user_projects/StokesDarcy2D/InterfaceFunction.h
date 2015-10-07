@@ -3,9 +3,6 @@
 class InterfaceFunction;
 
 #include <auxiliaryFunctions.h>
-#include <StokesProblem.h>
-#include <DarcyProblem.h>
-#include <DarcyPrimal.h>
 #include <StokesDarcy2D.h>
 
 /** ************************************************************************* */
@@ -146,18 +143,6 @@ class InterfaceFunction : public BlockVector
   // violated.
   void set_integral(double a);
   
-  /* update eta_p
-   * Depending on the updating strategy (e.g. C-RR, D-RR, Neumann-Neumann) the 
-   * update of the interface function is done. Then the interface function is
-   * ready to be passed over to the Darcy part as boundary data.
-   */
-  void update(StokesProblem& s, InterfaceFunction* eta_f = nullptr);
-  /* update  eta_f
-   * Depending on the updating strategy (e.g. C-RR, D-RR, Neumann-Neumann) the 
-   * update of the interface function is done. Then the interface function is
-   * ready to be passed over to the Stokes part as boundary data.
-   */
-  void update(DarcyPrimal &d, InterfaceFunction *eta_p = nullptr);
   
   /* Print out all arrays, for testing */
   void PrintInfo(std::string name = "") const;

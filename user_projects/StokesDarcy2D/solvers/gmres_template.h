@@ -21,9 +21,7 @@
 //  
 //*****************************************************************
 
-#include <math.h> 
 #include <Matrix.h>
-#include <Constants.h>
 
 template<class Real> 
 void GeneratePlaneRotation(const Real &dx, const Real &dy, Real &cs, Real &sn)

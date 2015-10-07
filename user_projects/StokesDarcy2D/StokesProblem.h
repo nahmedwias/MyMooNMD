@@ -24,21 +24,21 @@ class StokesProblem : public NSE2D
   // right hand side which stores the Data of the problem, it is assembled only
   // once. Then this DrhsNSE is added to the right hand side for the solver in
   // every iteration step
-  BlockVector *DrhsNSE;
+  BlockVector DrhsNSE;
   
   // matrix which maps a darcy solution into the Stokes space, e.g. (phi,v.n)
   // it is assembled only if a direct solution is computed
   std::shared_ptr<TMatrix> darcyToStokes; 
   
   // solutions (previous iterate)
-  BlockVector* solution_old;
-  TFEVectFunct2D *u_NSE_old;
-  TFEFunction2D* p_NSE_old;
+  BlockVector solution_old;
+  TFEVectFunct2D fe_u_solution_old;
+  TFEFunction2D fe_p_solution_old;
   
   // solutions (from big coupled system)
-  BlockVector* solution_direct;
-  TFEVectFunct2D *u_NSE_direct;
-  TFEFunction2D* p_NSE_direct;
+  BlockVector solution_direct;
+  TFEVectFunct2D fe_u_solution_direct;
+  TFEFunction2D fe_p_solution_direct;
   
   // vector containing all interface edges
   std::vector<const TInnerInterfaceJoint *>& interface;
@@ -64,7 +64,7 @@ class StokesProblem : public NSE2D
   // not corresponsing to the interface. For a Robin problem, this could be a 
   // linear combination of both.
   std::shared_ptr<TMatrix> map_sol2eta;
-  BlockVector *map_sol2eta_rhs;
+  BlockVector map_sol2eta_rhs;
   
   // for the riverbed example with "nonhomogeneous periodic boundary conditions" 
   // this map contains all pairs of velocity dofs which have to be identified.
@@ -238,6 +238,13 @@ class StokesProblem : public NSE2D
   void map_solution_to_interface(InterfaceFunction &eta, double a = 1.0,
                                  bool old = false);
   
+  /** @brief update eta_p after solving in the Stokes subdomain
+   * Depending on the updating strategy (e.g. C-RR, D-RR, Neumann-Neumann) the 
+   * update of the interface function is done. Then the interface function is
+   * ready to be passed over to the Darcy part as boundary data.
+   */
+  void update(InterfaceFunction& eta_p, InterfaceFunction* eta_f = nullptr);
+  
   /** find periodic boundaries dofs. 
    * This fills the map<int,int> 'periodic_dofs' such that a call to 
    * 'getPeriodicDOF(int)' now makes sense
@@ -317,13 +324,13 @@ class StokesProblem : public NSE2D
   void setTypeOf_bci(InterfaceCondition type)
   { typeOf_bci = type; }
   
-  TFEFunction2D* getPOld() const
-  { return p_NSE_old; }
+  const TFEFunction2D& get_p_old() const
+  { return fe_p_solution_old; }
   
-  TFEVectFunct2D* getUOld() const 
-  { return u_NSE_old; }
+  const TFEVectFunct2D& get_u_old() const 
+  { return fe_u_solution_old; }
   
-  double * getSolOld() const { return solution_old->get_entries(); }
+  const double * getSolOld() const { return solution_old.get_entries(); }
   
   std::shared_ptr<TMatrix> getComposedMatForBigSystem()
   {
@@ -341,17 +348,20 @@ class StokesProblem : public NSE2D
   
   void setDirectSol(double *s)
   {
-    *solution_direct = s;
+    solution_direct = s;
   }
   
-  BlockVector * get_direct_sol() const
+  const BlockVector & get_direct_sol() const
   { return this->solution_direct; }
 
-  TFEVectFunct2D* getUDirect() const
-  { return u_NSE_direct; }
+  const TFEVectFunct2D & get_u_Direct() const
+  { return fe_u_solution_direct; }
   
-  TFEFunction2D* getPDirect() const
-  { return p_NSE_direct; }
+  TFEVectFunct2D & get_u_Direct()
+  { return fe_u_solution_direct; }
+  
+  const TFEFunction2D & get_p_direct() const
+  { return fe_p_solution_direct; }
   
   InterfaceFunction*& get_homogeneous_solution() {return eta_hom;}
   

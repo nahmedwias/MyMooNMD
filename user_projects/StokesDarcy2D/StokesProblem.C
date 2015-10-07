@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <StokesProblem.h>
+#include <solver.h>
+#include <preconditioner.h>
 #include <FEDatabase2D.h>
 
 /** ************************************************************************ */
@@ -8,11 +10,30 @@ StokesProblem::StokesProblem(const TDomain & domain,
                              InterfaceCondition t, 
                              std::vector<const TInnerInterfaceJoint*>& in,
                              int c)
-                  : NSE2D(domain, *ex, 2),
-                    typeOf_bci(t),
-                    interface(in),
-                    icond(c),
-                    periodic_dofs()
+ : NSE2D(domain, *ex, 2),
+   typeOf_bci(t), DrhsNSE(this->get_rhs()), darcyToStokes(nullptr),
+   // actually the old solution is only needed if 
+   // TDatabase::ParamDB->StoDa_solutionStrategy != 0, but we do this anyway
+   solution_old(this->get_solution()), 
+   fe_u_solution_old(&this->get_velocity_space(), (char*)"Stokes_u_old",
+                     (char*)"Stokes_u_old", solution_old.block(0), 
+                     solution_old.length(0), 2),
+   fe_p_solution_old(&this->get_pressure_space(), (char*)"Stokes_p_old", 
+                     (char*)"Stokes_p_old", solution_old.block(2), 
+                     solution_old.length(2)),
+   // actually the direct solution is only needed if 
+   // TDatabase::ParamDB->StoDa_solutionStrategy > 0, but we do this anyway
+   solution_direct(this->get_solution()),
+   fe_u_solution_direct(&this->get_velocity_space(), (char*)"Stokes_u_direct",
+                        (char*)"Stokes_u_direct", solution_direct.block(0), 
+                        solution_direct.length(0), 2),
+   fe_p_solution_direct(&this->get_pressure_space(), (char*)"Stokes_p_old", 
+                        (char*)"Stokes_p_old", solution_direct.block(2), 
+                        solution_direct.length(2)),
+   interface(in), icond(c), mat_aux(nullptr), etaToBd(nullptr), 
+   map_sol2eta(nullptr), map_sol2eta_rhs(), periodic_dofs(), eta_hom(nullptr),
+   global_DOF_interface(), normals(), assemble_on_input(false), 
+   assemble_on_return(true)
 {
   //OutPut("StokesProblem constructor\n");
   
@@ -29,53 +50,12 @@ StokesProblem::StokesProblem(const TDomain & domain,
   rs = this->get_matrix().get_B_block(0)->GetStructure();
   this->get_matrix().get_B_block(1)->SetStructure(new TStructure2D(*rs));
   
-  // a structural copy of rhs (no values copied)
-  DrhsNSE = new BlockVector(this->get_rhs());
   // copy values from right hand side. 
-  *DrhsNSE = this->get_rhs(); // From now on DrhsNSE is not changed any more
+  DrhsNSE = this->get_rhs(); // From now on DrhsNSE is not changed any more
   this->get_rhs().reset();
-  darcyToStokes = NULL;
-  eta_hom = NULL;
   
-  solution_old = NULL;
-  u_NSE_old = NULL;
-  p_NSE_old = NULL;
-  if(TDatabase::ParamDB->StoDa_solutionStrategy != 0)
-  {
-    solution_old = new BlockVector(this->get_matrix(), false);
-    u_NSE_old = new TFEVectFunct2D(&this->get_velocity_space(), 
-                                   (char*) ("Stokes_u_old"),
-                                   (char*) ("Stokes_u_old"),
-                                   solution_old->block(0),
-                                   solution_old->length(0), 2);
-    p_NSE_old = new TFEFunction2D(&this->get_pressure_space(),
-                                  (char*) ("Stokes_p_old"),
-                                  (char*) ("Stokes_p_old"),
-                                  solution_old->block(2),
-                                  solution_old->length(2));
-  }
-  
-  solution_direct = NULL;
-  u_NSE_direct = NULL;
-  p_NSE_direct = NULL;
-  if(TDatabase::ParamDB->StoDa_solutionStrategy >= 0)
-  {
-    solution_direct = new BlockVector(this->get_matrix());
-    u_NSE_direct = new TFEVectFunct2D(&this->get_velocity_space(),
-                                      (char*) ("Stokes_u_direct"),
-                                      (char*) ("Stokes_u_direct"),
-                                      solution_direct->block(0), 
-                                      solution_direct->length(0), 2);
-    p_NSE_direct = new TFEFunction2D(&this->get_pressure_space(),
-                                     (char*) ("Stokes_p_direct"),
-                                     (char*) ("Stokes_p_direct"),
-                                     solution_direct->block(2),
-                                     solution_direct->length(2));
-  }
   
   // values for coupled problem or fixed point formulation
-  assemble_on_input = false;
-  assemble_on_return = true;
   if(TDatabase::ParamDB->StoDa_problemType == 1
      && TDatabase::ParamDB->StoDa_updatingStrategy == 4)
   {
@@ -103,51 +83,32 @@ StokesProblem::StokesProblem(const TDomain & domain,
           TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
         break;
       case Robin:
-        ErrMsg("Robin interface conditions for Stecklov-Poincare not " << 
-               "possible yet");
-        exit(0);
+        ErrThrow("Robin interface conditions for Stecklov-Poincare not " 
+                 + "possible yet");
         break;
       case weakRobin:
-        ErrMsg("weak Robin interface conditions for Stecklov-Poincare not " <<
-               "possible yet");
-        exit(0);
+        ErrThrow("weak Robin interface conditions for Stecklov-Poincare not " 
+                 + "possible yet");
         break;
       case DirichletSTAB:
-        ErrMsg("DirichletSTAB interface conditions for Stecklov-Poincare " <<
-               "not possible yet");
-        exit(0);
+        ErrThrow("DirichletSTAB interface conditions for Stecklov-Poincare "
+                 + "not possible yet");
         break;
       default:
-        ErrMsg("unsupported boundary conditions on interface");
-        exit(0);
+        ErrThrow("unsupported boundary conditions on interface");
         break;
     }
   }
-  
-  // is initialized just before first solve
-  mat_aux = NULL;
-  etaToBd = NULL;
-  map_sol2eta = NULL;
-  map_sol2eta_rhs = NULL;
 }
 
 /** ************************************************************************ */
 StokesProblem::~StokesProblem()
 {
   //OutPut("StokesProblem destructor\n");
-  delete DrhsNSE;
-  delete solution_old;
-  delete u_NSE_old;
-  delete p_NSE_old;
-  delete solution_direct;
-  delete u_NSE_direct;
-  delete p_NSE_direct;
   if(etaToBd)
     delete etaToBd->GetStructure();
   if(map_sol2eta)
     delete map_sol2eta->GetStructure();
-  delete map_sol2eta_rhs;
-  delete eta_hom;
 }
 
 /** ************************************************************************ */
@@ -380,9 +341,8 @@ void StokesProblem::localAssembleMat_velocity_velocity(local_edge_assembling &l)
       break;
     }
     default:
-      ErrMsg("unsupported interface condition. Choose either the " << 
-             "Beavers-Joseph-Saffman condition (0) or u.t=0 (1)");
-      exit(0);
+      ErrThrow("unsupported interface condition. Choose either the " 
+               + "Beavers-Joseph-Saffman condition (0) or u.t=0 (1)");
       break;
   }
   
@@ -474,11 +434,9 @@ void StokesProblem::localAssembleMat_velocity_velocity(local_edge_assembling &l)
       break;
     }
     default:
-      ErrMsg("unsupported type of Problem. Choose either " << 
-             "Neumann_Neumann (0), Robin_Robin (1), " << 
-             "weak Robin_Robin(2), Dirichlet_DirichletSTAB(3) or " << 
-             "Dirichlet_Dirichlet(4)");
-      exit(0);
+      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
+               + " Robin_Robin (1), weak Robin_Robin(2), "
+               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
       break;
   }
 }
@@ -549,9 +507,9 @@ void StokesProblem::localAssembleMat_velocity_pressure(local_edge_assembling &l)
       break;
     }
     default:
-      ErrMsg(
-          "unsupported type of Problem. Choose either " << "Neumann_Neumann (0), Robin_Robin (1), " << "weak Robin_Robin(2), Dirichlet_DirichletSTAB(3) or " << "Dirichlet_Dirichlet(4)");
-      exit(0);
+      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
+               + " Robin_Robin (1), weak Robin_Robin(2), "
+               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
   }
 }
 
@@ -587,9 +545,9 @@ void StokesProblem::localAssembleMat_pressure_pressure(local_edge_assembling &l)
       break;
     }
     default:
-      ErrMsg(
-          "unsupported type of Problem. Choose either " << "Neumann_Neumann (0), Robin_Robin (1), " << "weak Robin_Robin(2), Dirichlet_DirichletSTAB(3) or " << "Dirichlet_Dirichlet(4)");
-      exit(0);
+      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
+               + " Robin_Robin (1), weak Robin_Robin(2), "
+               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
       break;
   }
 }
@@ -637,8 +595,7 @@ void StokesProblem::localAssembleEtaToBd_velocity(local_edge_assembling &l)
     }
     case weakRobin:
     {
-      ErrMsg("localAssembleEtaToBd_velocity: check with nt");
-      exit(1);
+      ErrThrow("localAssembleEtaToBd_velocity: check with nt");
       // (eta , v.n - gamma h_E n.T(v,q).n) *1/(gamma_f+gamma h_E)
       const double gamma_f = TDatabase::ParamDB->StoDa_gamma_f;
       const double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
@@ -651,14 +608,12 @@ void StokesProblem::localAssembleEtaToBd_velocity(local_edge_assembling &l)
     }
     case DirichletSTAB:
     {
-      Error("Dirichlet_DirichletSTAB does not work iteratively yet\n");
-      exit(0);
+      ErrThrow("Dirichlet_DirichletSTAB does not work iteratively yet\n");
       break;
     }
     case Dirichlet:
     {
-      ErrMsg("localAssembleEtaToBd_velocity: check with nt");
-      exit(1);
+      ErrThrow("localAssembleEtaToBd_velocity: check with nt");
       double gamma = abs(TDatabase::ParamDB->StoDa_weakGamma);
       // (eta,v.n) * (1/h)
       l.m.m[0][tDOF][aDOF] += xi * v * nx * gamma * l.qw / l.hE;
@@ -666,11 +621,9 @@ void StokesProblem::localAssembleEtaToBd_velocity(local_edge_assembling &l)
       break;
     }
     default:
-      ErrMsg("unsupported type of Problem. Choose either " << 
-             "Neumann_Neumann (0), Robin_Robin (1), " << 
-             "weak Robin_Robin(2), Dirichlet_DirichletSTAB(3) or " << 
-             "Dirichlet_Dirichlet(4)");
-      exit(0);
+      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
+               + " Robin_Robin (1), weak Robin_Robin(2), "
+               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
       break;
   }
 }
@@ -869,21 +822,16 @@ void StokesProblem::reorder_rows(std::shared_ptr<TMatrix> m, bool only_normal)
   
   int n_vdof = this->get_velocity_space().GetN_DegreesOfFreedom();
   if(this->get_rhs().length() - m->GetN_Rows() != 0)
-  {
-    ErrMsg("wrong matrix. Currently only the Stokes coupling matrix can be " <<
-           "reordered " << m->GetN_Rows() << " " << this->get_rhs().length());
-    exit(1);
-  }
+    ErrThrow("wrong matrix. Currently only the Stokes coupling matrix can be "
+             + "reordered " + std::to_string(m->GetN_Rows()) + " " 
+             + std::to_string(this->get_rhs().length()));
   
   const bool strong_normal = TDatabase::ParamDB->StoDa_weakGamma <= 0.0
                              && typeOf_bci == Dirichlet;
   only_normal = only_normal || strong_normal;
   
   if(strong_normal)
-  {
-    ErrMsg("Dirichlet problem with strong normal in big system");
-    exit(1);
-  }
+    ErrThrow("Dirichlet problem with strong normal in big system");
   
   for(unsigned int j = 0; j < interface.size(); j++)
   {
@@ -996,7 +944,7 @@ void StokesProblem::prepare_map_solution_to_interface(
   }
   else if(typeOf_bci == Dirichlet) // return Neumann data
   {
-    map_sol2eta_rhs = new BlockVector((const BlockVector&)eta);
+    map_sol2eta_rhs.copy_structure((const BlockVector&)eta);
     // assemble an integral in (parts of) the domain
     assemble_Neumann_map_to_interface(m);
     // assemble (u.n,v.n) on the interface
@@ -1004,7 +952,7 @@ void StokesProblem::prepare_map_solution_to_interface(
   }
   else if(typeOf_bci == Robin || typeOf_bci == weakRobin)
   {
-    map_sol2eta_rhs = new BlockVector((const BlockVector&)eta);
+    map_sol2eta_rhs.copy_structure((const BlockVector&)eta);
     // D_RR should be false here
     // return -gamma_p * flux + pressure
     assemble_Dirichlet_map_to_interface(m, D_RR,
@@ -1013,13 +961,11 @@ void StokesProblem::prepare_map_solution_to_interface(
   }
   else if(typeOf_bci == DirichletSTAB)
   {
-    ErrMsg("DirichletSTAB not yet supported");
-    exit(0);
+    ErrThrow("DirichletSTAB not yet supported");
   }
   else
   {
-    ErrMsg("unknown type of boundary condition on the interface");
-    exit(0);
+    ErrThrow("unknown type of boundary condition on the interface");
   }
   map_sol2eta->add(m.m[0]);
 }
@@ -1081,10 +1027,7 @@ void StokesProblem::find_global_DOF_interface(const InterfaceFunction &eta)
     // number of local degrees of freedom on the interface 
     const int N_iBaseFunct = abs(eta.getSpaceType())+1;
     if(N_iBaseFunct != 3)
-    {
-      ErrMsg("only quadratic interface functions supported so far");
-      exit(1);
-    }
+      ErrThrow("only quadratic interface functions supported so far");
     
     // index of this edge in the adjacent cell in Stokes subdomain
     const int eI = thisEdge->GetIndexInNeighbor(s_cell); // edge Index
@@ -1697,11 +1640,8 @@ void StokesProblem::assemble_Neumann_map_to_interface(local_matrices &m,
                                                       double a)
 {
   if(assemble_on_return == false)
-  {
     // when returning Neumann data we have to assemble integrals in the domain.
-    ErrMsg("Trying to return Neumann data without assembling integrals");
-    exit(0);
-  }
+    ErrThrow("Trying to return Neumann data without assembling integrals");
   
   const double nu = TDatabase::ParamDB->RE_NR;
   
@@ -1875,8 +1815,8 @@ void StokesProblem::assemble_Neumann_map_to_interface(local_matrices &m,
               fvx += (coeffs[i][1] * uref[i][row]) * nx * qWs[i] * det[i];
               fvy += (coeffs[i][2] * uref[i][row]) * ny * qWs[i] * det[i];
             }
-            (*map_sol2eta_rhs)(testDOF) += a *fvx;
-            (*map_sol2eta_rhs)(testDOF) += a *fvy;
+            map_sol2eta_rhs(testDOF) += a *fvx;
+            map_sol2eta_rhs(testDOF) += a *fvy;
             
             // delete created arrays
             for(int i = 0; i < N_qPoints; i++)
@@ -1890,11 +1830,11 @@ void StokesProblem::assemble_Neumann_map_to_interface(local_matrices &m,
           {
             // only do this once (not for every quadrature point)
             const bool nt = nx*nx - ny*ny > -1e-12; // nx*nx >= ny*ny;
-            //(*map_sol2eta_rhs)(testDOF) = a * this->get_rhs()[uDOF[row]] * nx;
-            //(*map_sol2eta_rhs)(testDOF) += 
+            //map_sol2eta_rhs(testDOF) = a * this->get_rhs()[uDOF[row]] * nx;
+            //map_sol2eta_rhs(testDOF) += 
             //                         a*this->get_rhs()[uDOF[row]+n_v_dof]*ny;
             double val = a * this->get_rhs()[uDOF[row] + (nt ? 0 : n_v_dof)];
-            (*map_sol2eta_rhs)(testDOF) = val;
+            map_sol2eta_rhs(testDOF) = val;
           }
         }
       }
@@ -1922,20 +1862,20 @@ void StokesProblem::assemble_Neumann_map_to_interface(local_matrices &m,
       {
         // reset value in normal component (eta will be added here later)
         this->get_rhs()[i + (nt ? 0 : n_v_dof)] = 0;
-        (*DrhsNSE)[i + (nt ? 0 : n_v_dof)] = 0;
+        DrhsNSE[i + (nt ? 0 : n_v_dof)] = 0;
       }
       if(getIcond() == 1)
       {
         // reset value in tangential component (u.t = 0)
         this->get_rhs()[i + (nt ? n_v_dof : 0)] = 0;
-        (*DrhsNSE)[i + (nt ? n_v_dof : 0)] = 0;
+        DrhsNSE[i + (nt ? n_v_dof : 0)] = 0;
       }
       /*
        { // kink
        this->get_rhs()[i] = 0;
-       (*DrhsNSE)[i] = 0;
+       DrhsNSE[i] = 0;
        this->get_rhs()[i + n_v_dof] = 0;
-       (*DrhsNSE)[i + n_v_dof] = 0;
+       [i + n_v_dof] = 0;
        }*/
     }
   }
@@ -1970,24 +1910,89 @@ void StokesProblem::map_solution_to_interface(InterfaceFunction &eta, double a,
   else if(typeOf_bci == Dirichlet)
   {
     // substract right hand side, -1 means full vector
-    eta.BlockVector::add(map_sol2eta_rhs->get_entries(), -1, -a);
+    eta.BlockVector::add(map_sol2eta_rhs.get_entries(), -1, -a);
   }
   else if(typeOf_bci == Robin || typeOf_bci == weakRobin)
   {
     // substract right hand side, -1 means full vector
-    eta.BlockVector::add(map_sol2eta_rhs->get_entries(), -1, -a);
+    eta.BlockVector::add(map_sol2eta_rhs.get_entries(), -1, -a);
   }
   else if(typeOf_bci == DirichletSTAB)
   {
-    ErrMsg("DirichletSTAB not yet supported");
-    exit(0);
+    ErrThrow("DirichletSTAB not yet supported");
   }
   else
   {
-    ErrMsg("unknown type of boundary condition on the interface");
-    exit(0);
+    ErrThrow("unknown type of boundary condition on the interface");
   }
 }
+
+/** ************************************************************************ */
+void StokesProblem::update(InterfaceFunction& eta_p, InterfaceFunction* eta_f)
+{
+  // update eta_p
+  const int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
+  
+  if(solution_strategy == 1 || solution_strategy == -1)
+  {
+    const int updatingProcedure = TDatabase::ParamDB->StoDa_updatingStrategy;
+    const double theta = TDatabase::ParamDB->StoDa_theta_p; // damping
+    // regular Neumann-Neumann, Robin-Robin scheme, or C-RR or D-RR
+    switch(updatingProcedure)
+    {
+      case 1:
+      {
+        // damping with old interface function
+        eta_p.scale(1 - theta);
+        this->map_solution_to_interface(eta_p, theta);
+        break;
+      }
+      case 2: // damping with old Stokes solution
+      {
+        eta_p.reset();
+        this->map_solution_to_interface(eta_p, theta);
+        this->map_solution_to_interface(eta_p, 1.0 - theta, true);
+        break;
+      }
+      case 3: // C-RR
+      {
+        if(eta_f == NULL)
+          ErrThrow("For the C-RR method, you have to specify eta_f");
+        
+        double gamma_sum = TDatabase::ParamDB->StoDa_gamma_f
+                           + TDatabase::ParamDB->StoDa_gamma_p;
+        eta_p.scale(1 - theta);
+        this->map_solution_to_interface(eta_p, theta * gamma_sum);
+        // substract eta_f
+        eta_p.add(eta_f, -theta);
+        break;
+      }
+      case 4: // D-RR
+        // get Dirichlet data and normal component of normal stress
+        eta_p.scale(1 - theta);
+        this->map_solution_to_interface(eta_p, theta);
+        break;
+      default:
+        ErrThrow("unknown updating strategy");
+        break;
+    }
+  }
+  else if(solution_strategy == 2 || solution_strategy == -2)
+  {
+    // solving fixed point equation on interface 
+    // turn off damping here, it is done in 'solve_fixed_point(eta)'
+    eta_p.reset();
+    this->map_solution_to_interface(eta_p, 1.0);
+  }
+  else if(solution_strategy == 3 || solution_strategy == -3)
+  {
+    // solving a Stecklov-Poincare equation
+    // this is done without this update function
+    ErrThrow("Stecklov-Poincare");
+    this->map_solution_to_interface(eta_p, 1.0);
+  }
+}
+
 
 /** ************************************************************************ */
 void StokesProblem::create_etaToBd(const InterfaceFunction &eta)
@@ -2290,11 +2295,8 @@ void StokesProblem::Assemble_etaToBd(const InterfaceFunction &eta)
               // discontinuous interface functions), take the correct one.
               l.ansatzDOF = global_DOF_interface[uDOF[col]].at(1).second;
               if(global_DOF_interface[uDOF[col]][1].first != s_cell)
-              {
-                ErrMsg("wrong stokes cell " << 
-                       global_DOF_interface[uDOF[col]].size());
-                exit(1);
-              }
+                ErrThrow("wrong stokes cell "
+                      + std::to_string(global_DOF_interface[uDOF[col]].size()));
             }
             // derivatives not needed
             l.at.setAnsatz(uorig[col], uxorig[col], uyorig[col]);
@@ -2362,16 +2364,16 @@ void StokesProblem::addEta(const InterfaceFunction& eta, double factor)
 /** ************************************************************************ */
 void StokesProblem::copy_rhs()
 {
-  *DrhsNSE = this->get_rhs();
+  DrhsNSE = this->get_rhs();
 }
 
 /** ************************************************************************ */
 void StokesProblem::solve(const InterfaceFunction &eta)
 {
   // copy right hand side without interface integrals
-  this->get_rhs() = *DrhsNSE;
+  this->get_rhs() = DrhsNSE;
   // copy old solution for damping later
-  *this->solution_old = this->get_solution();
+  this->solution_old = this->get_solution();
   
   //this->NSE2D::get_rhs().print("NSE_rhs_before");
   addEta(eta);
@@ -2477,6 +2479,9 @@ void StokesProblem::solve(const InterfaceFunction &eta)
           // && (k > 0))
           break;
         
+        typedef preconditioner <BlockMatrix, BlockVector> block_prec;
+        typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
+        
         // preconditioner object
         block_prec M(&itMat);
         // solver object
@@ -2501,10 +2506,7 @@ void StokesProblem::findPeriodicDOFs()
   const double x_left = 0.0;
   const double x_right = 2.0;
   if(TDatabase::ParamDB->EXAMPLE != 2)
-  {
-    ErrMsg("only the riverbed example is supported for periodic boundaries");
-    exit(0);
-  }
+    ErrThrow("only the riverbed example is supported for periodic boundaries");
   
   const TFESpace2D * fespace = &this->get_velocity_space();
   const TCollection* coll = fespace->GetCollection();
@@ -2638,11 +2640,8 @@ void StokesProblem::makePeriodicBoundary(std::shared_ptr<TMatrix> mat,
                                          bool stokesMat, bool p )
 {
   if(periodic_dofs.empty())
-  {
-    ErrMsg("called StokesProblem::makePeriodicBoundary with map 'periodic_dofs'"
-           << " not yet set");
-    exit(1);
-  }
+    ErrThrow("called StokesProblem::makePeriodicBoundary with map "
+             + "'periodic_dofs' not yet set");
   if(!mat)
   {
     makePeriodicBoundary(this->get_matrix().block(0), true, true);  // A11
@@ -2723,15 +2722,10 @@ void StokesProblem::checkPeriodicDOFs()
 n_t_vector& StokesProblem::normal(unsigned int dof, unsigned int i)
 {
   if(i != 0 && i != 1 && i != 10)
-  {
-    ErrMsg("'i' must be 0, 1, or 10 (which means let me choose)");
-    exit(1);
-  }
+    ErrThrow("'i' must be 0, 1, or 10 (which means let me choose)");
   if(dof >= normals.size())
-  {
-    ErrMsg("trying to get normal of dof " << dof << " which does not exist");
-    exit(1);
-  }
+    ErrThrow("trying to get normal of dof " + std::to_string(dof) 
+             + " which does not exist");
   // change to the correct i, in case i==10 (default)
   if(i == 10)
     i = kink(dof) ? 2 : 0;
@@ -2745,11 +2739,8 @@ n_t_vector& StokesProblem::normal(unsigned int dof, unsigned int i)
     normals[dof].push_back(n_t_vector(nx, ny));
   }
   if(i >= normals[dof].size())
-  {
-    ErrMsg("there are only " << normals[dof].size() << " normal to this dof "
-           << dof);
-    exit(1);
-  }
+    ErrThrow("there are only " +std::to_string(normals[dof].size())
+             + " normal to this dof " + std::to_string(dof));
   return normals[dof][i];
 }
 

@@ -1,7 +1,6 @@
 #ifndef _EXAMPLE_STOKESDARCY2D_
 #define _EXAMPLE_STOKESDARCY2D_
 
-#include<Example2D.h>
 #include<Example_NSE2D.h>
 #include<Example_Darcy2D.h>
 #include<Example_CD2D.h>
