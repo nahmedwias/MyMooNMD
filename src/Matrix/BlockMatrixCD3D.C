@@ -12,7 +12,7 @@
 #include <AuxParam3D.h>
 #include <LocalProjection.h>
 #include <DirectSolver.h>
-#include <AssembleMat3D.h>
+//#include <AssembleMat3D.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +49,7 @@ BlockMatrixCD3D::BlockMatrixCD3D(TFESpace3D *fespace)
   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT 
       || TDatabase::ParamDB->SOLVER_TYPE == GMG)
   //instance of the Assemble class
-  AMatRhsAssemble = new TAssembleMat3D *[N_Levels];
+  //AMatRhsAssemble = new TAssembleMat3D *[N_Levels];
   
   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT
       || TDatabase::ParamDB->SOLVER_TYPE == GMG)
