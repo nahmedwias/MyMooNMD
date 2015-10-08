@@ -110,20 +110,20 @@ void check_all_parameters()
       break;
     case 2:
       OutPut("weak Robin-Robin-method\n");
-      ErrMsg("This is not yet correctly implemented!");
-      exit(0);
+      ErrThrow("weak Robin-Robin-method is not yet correctly implemented!");
       break;
     case 3:
       OutPut("stabilized Dirichlet-Dirichlet-method\n");
-      ErrMsg("This is not yet correctly implemented!");
-      exit(0);
+      ErrThrow("stabilized Dirichlet-Dirichlet-method is not yet correctly "
+               + "implemented!");
       break;
     case 4:
       OutPut("Dirichlet-Dirichlet-method\n");
+      ErrThrow("Dirichlet-Dirichlet-method is not yet correctly implemented!");
       break;
     default:
-      ErrMsg("so far only Neumann-Neumann(0) and Robin-Robin(1) is supported");
-      exit(0);
+      ErrThrow("so far only Neumann-Neumann(0) and Robin-Robin(1) is "
+               + "supported");
       break;
   }
   OutPut("coupled problem with\n");

@@ -13,6 +13,7 @@
 StokesDarcy2D::StokesDarcy2D(
     std::map< InterfaceCondition, StokesProblem* > ns_problems,
     std::map< InterfaceCondition, DarcyPrimal* > d_problems)
+ : big_matrix(nullptr), big_rhs(nullptr), big_solution(nullptr)
 {
   //OutPut("StokesDarcy2D constructor\n");
   int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
@@ -23,13 +24,9 @@ StokesDarcy2D::StokesDarcy2D(
   if(solution_strategy <= 0)
     bigResidual = 0.0;
   initialBigResidual = 0; // needs to be set correctly
-  s = NULL; // solver object
-  prec = NULL; // preconditioner object
+  //s = NULL; // solver object
   f_prec = NULL; // preconditioner object
   p_prec = NULL; // preconditioner object
-  big_matrix = NULL;
-  big_rhs = NULL;
-  big_solution = NULL;
   StokesFirst = (TDatabase::ParamDB->StoDa_StokesFirst == 1) ? true : false;
   eta_hom = NULL;
   C = NULL;
@@ -108,10 +105,7 @@ StokesDarcy2D::StokesDarcy2D(
 StokesDarcy2D::~StokesDarcy2D()
 {
   if(TDatabase::ParamDB->SC_VERBOSE > 2) OutPut("StokesDarcy2D destructor\n");
-  delete s;
-  delete big_matrix;
-  delete big_rhs;
-  delete big_solution;
+  //delete s;
   delete eta_hom;
   if(C != NULL)
     delete C->GetStructure();
@@ -469,8 +463,8 @@ void StokesDarcy2D::SolveOneSystem()
   //             ( C  D  )
   // combine all matrices into one big matrix
   CombineBigMatrix(); // create 'big_matrix'
-  big_solution = new BlockVector(*big_matrix);
-  big_rhs = new BlockVector(*big_matrix);
+  big_solution.reset(new BlockVector(*big_matrix));
+  big_rhs.reset(new BlockVector(*big_matrix));
   big_rhs->copy(c_stokes()->get_rhs().get_entries(), 0);
   big_rhs->copy(c_darcy()->get_rhs().get_entries(), 1);
   
@@ -492,8 +486,9 @@ void StokesDarcy2D::SolveOneSystem()
   typedef solver <BlockMatrix, BlockVector, block_prec> block_solver;
   
   /// create preconditioner and solver object for direct solution of big system.
-  block_prec big_prec(big_matrix);
-  block_solver big_s(big_matrix, big_solution, big_rhs, &big_prec);
+  block_prec big_prec(big_matrix.get());
+  block_solver big_s(big_matrix.get(), big_solution.get(), big_rhs.get(),
+                     &big_prec);
   big_s.solve();
   
   c_stokes()->setDirectSol(big_solution->block(0));
@@ -1052,7 +1047,7 @@ void StokesDarcy2D::CombineBigMatrix()
          << endl);
   
   std::vector<std::shared_ptr<TMatrix>> blocks = {S, CT, C, D};
-  big_matrix = new BlockMatrix(2, 2, blocks);
+  big_matrix.reset(new BlockMatrix(2, 2, blocks));
 }
 
 /** ************************************************************************ */
@@ -1148,22 +1143,21 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   int st = TDatabase::ParamDB->SOLVER_TYPE; // remember whatever was set
   TDatabase::ParamDB->SOLVER_TYPE = 0; 
   
-  s = new solver<StokesDarcy2D, InterfaceFunction, StokesDarcy2D>(this, &eta,
-                                                                  eta_hom,
-                                                                  this);
+  solver<StokesDarcy2D, InterfaceFunction, StokesDarcy2D> s(this, &eta, eta_hom,
+                                                            this);
   switch(TDatabase::ParamDB->StoDa_updatingStrategy)
   {
     case 1: // richardson
-      s->set_type(richardson);
+      s.set_type(richardson);
       break;
     case 2: // cg
-      s->set_type(cg);
+      s.set_type(cg);
       break;
     case 3: // cgs
-      s->set_type(cgs);
+      s.set_type(cgs);
       break;
     case 4: // gmres
-      s->set_type(fgmres);
+      s.set_type(fgmres);
       break;
     case 5: // bicg
       ErrThrow("bicg solver for Stecklov-Poincare not yet implemented");
@@ -1250,8 +1244,8 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   
   eta.restrict(*(stokes()), true);*/
   
-  s->solve(TDatabase::ParamDB->StoDa_nIterations, 
-           TDatabase::ParamDB->StoDa_bigResidual);
+  s.solve(TDatabase::ParamDB->StoDa_nIterations, 
+          TDatabase::ParamDB->StoDa_bigResidual);
   
   Out("finished Stecklov-Poincare iteration\n\n", 0);
   

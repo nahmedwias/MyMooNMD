@@ -35,19 +35,17 @@ class StokesDarcy2D
   // operator can be computed by substracting this homogeneous solution.
   InterfaceFunction* eta_hom;
   
-  /** store a solver object and a preconditioner object. 
+  /** store a preconditioner object. 
    * The preconditioner is either a free flow solve, a porous medium solve, or
    * some linear combination of both. 
    */
-  solver<StokesDarcy2D, InterfaceFunction, StokesDarcy2D> *s;
-  StokesDarcy2D *prec;
   StokesProblem *f_prec; // serve as preconditioner in free flow subdomain
   DarcyPrimal *p_prec; // serve as preconditioner in porous medium subdomain
   
   /** the system which we are actually trying to solve */
-  BlockMatrix *big_matrix;
-  BlockVector *big_rhs;
-  BlockVector *big_solution;
+  std::shared_ptr<BlockMatrix> big_matrix;
+  std::shared_ptr<BlockVector> big_rhs;
+  std::shared_ptr<BlockVector> big_solution;
   
   // full system matrix is 
   // big_matrix = ( S  CT )
