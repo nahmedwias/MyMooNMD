@@ -11,7 +11,6 @@
 #ifndef __SHAPEDESC__
 #define __SHAPEDESC__
 
-#include <Constants.h>
 #include <Vertex.h>
 
 #define N_SHAPES  8

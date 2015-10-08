@@ -13,6 +13,7 @@
 #endif
 
 #include <Tetrahedron.h>
+#include <cmath>
 
 static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 0},
                                         {0, 3},  {1, 3},  {2, 3}};

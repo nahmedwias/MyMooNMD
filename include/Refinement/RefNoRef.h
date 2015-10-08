@@ -24,7 +24,7 @@ class TRefNoRef : public TRefDesc
     // Methods
     /** return TRUE because object is to refine */
     virtual int IsToRefine()
-    { return FALSE; }
+    { return false; }
 
 };
 

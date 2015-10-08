@@ -16,6 +16,7 @@
 class TEdge;
 
 #include <Vertex.h>
+#include <Constants.h>
 #include <BaseCell.h>
 
 /** an edge in a 3D grid */

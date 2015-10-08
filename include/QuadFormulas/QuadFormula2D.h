@@ -16,7 +16,6 @@
 
 #include <Enumerations.h>
 #include <QuadFormula.h>
-#include <MooNMD_Io.h>
 
 /** quadrature formula for a 2D integral */
 class TQuadFormula2D : public TQuadFormula

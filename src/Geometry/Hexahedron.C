@@ -13,6 +13,7 @@
 #endif
 
 #include <Hexahedron.h>
+#include <cmath>
 
 static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 3},  {3, 0},
                                         {0, 4},  {1, 5},  {2, 6},  {3, 7},

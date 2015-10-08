@@ -15,7 +15,6 @@
 #define __QUAD_FORMULA_1D__
 
 #include <QuadFormula.h>
-#include <MooNMD_Io.h>
 
 /** quadrature formula for a 1D integral */
 class TQuadFormula1D : public TQuadFormula

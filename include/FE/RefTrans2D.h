@@ -14,7 +14,6 @@
 #ifndef __REFTRANS2D__
 #define __REFTRANS2D__
 
-#include <Constants.h>
 #include <Enumerations.h>
 #include <BaseCell.h>
 

@@ -13,7 +13,7 @@
 #define __VERTEX__
 
 #include <MooNMD_Io.h>
-#include <Constants.h>
+class TBaseCell;
 
 /** a vertex in a grid */
 class TVertex
@@ -129,10 +129,10 @@ class TVertex
     { return ClipBoard; }
 
      void SetAsBoundVert()
-      { BoundVert=TRUE; }    
+      { BoundVert = true; }
       
      bool IsBoundVert() const
-     { return BoundVert; }     
+     { return BoundVert; }
     
 #ifdef _MPI
 
@@ -145,13 +145,13 @@ class TVertex
     void AddCrossNeib(int Neib_ID);
 
     void SetAsSubDomainVert()
-     { SubDomainVert = TRUE; }
+     { SubDomainVert = true; }
 
      bool IsSubDomainVert()
      { return SubDomainVert; }
 
      void SetAsCrossVert()
-     {  CrossVert = TRUE; }
+     {  CrossVert = true; }
      
      bool IsCrossVert()
      { return CrossVert; }
