@@ -16,10 +16,11 @@
 #ifndef __BASECELL__
 #define __BASECELL__
 
+class TBaseCell;
+
 #include <Edge.h>
 #include <Joint.h>
 #include <RefDesc.h>
-#include <fstream>
 
  /**  @brief information for finite element data structure */
 class TBaseCell

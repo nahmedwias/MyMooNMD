@@ -1270,8 +1270,8 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
   double eps=1e-6;
 
   THangingNode *hn;
-  TVector<THangingNode *> *VHN = new TVector<THangingNode *>(20,20);
-  TVector<int> *HNNumbers = new TVector<int>(20,20);
+  std::vector<THangingNode *> *VHN = new std::vector<THangingNode *>();
+  std::vector<int> *HNNumbers = new std::vector<int>();
 
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -1966,11 +1966,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
     l += BoundaryUpperBound[i];
 
   m = -SumLocDOF - DirichletUpperBound - l +FIRSTMARK;
-  n = VHN->GetN_Elements();
+  n = VHN->size();
   // OutPut("number of hanging nodes: " << n << endl);
   for(i=0;i<n;i++)
   {
-    j=HNNumbers->GetElement(i);
+    j=HNNumbers->at(i);
 
     while( (k=GlobalNumbers[j]) > -1 )
       j=k;
@@ -2194,7 +2194,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 
   for(i=0;i<N_Slave;i++)
   {
-    hn=VHN->GetElement(i);
+    hn=VHN->at(i);
     k=TFEDatabase2D::GetHNDesc2D(hn->GetType())->GetN_Nodes();
     v=hn->GetDOF();
     for(j=0;j<k;j++)

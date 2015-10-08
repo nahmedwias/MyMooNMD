@@ -497,6 +497,32 @@ const double* BlockVector::block(const unsigned int i) const
 }
 
 /** ************************************************************************ */
+double& BlockVector::at(const unsigned int i)
+{
+    try
+    {
+        return entries.at(i);
+    }
+    catch(...)
+        ErrThrow("index out of bounds");
+    throw; // only to avoid a compiler warning
+}
+
+/** ************************************************************************ */
+const double& BlockVector::at(const unsigned int i) const
+{
+    try
+    {
+        return entries.at(i);
+    }
+    catch(...)
+    {
+        ErrThrow("index out of bounds");
+        throw; // only to avoid a compiler warning
+    }
+}
+
+/** ************************************************************************ */
 
 #include <BlockMatrixCD2D.h>
 #include <BlockMatrixDarcy2D.h>

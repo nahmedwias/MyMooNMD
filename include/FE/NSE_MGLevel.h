@@ -16,9 +16,11 @@
 #include <Matrix.h>
 #ifdef __2D__
    #include <SquareMatrix2D.h>
+   #include <Matrix2D.h>
 #endif  
 #ifdef __3D__
    #include <SquareMatrix3D.h>
+   #include <Matrix3D.h>
 #endif  
 
 class TNSE_MGLevel

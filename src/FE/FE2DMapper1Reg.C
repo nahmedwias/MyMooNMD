@@ -49,8 +49,8 @@ void TFE2DMapper1Reg::MapCoarseFine(int *Global, int I_K0, int I_K1, int I_K2,
              int LocEdge0, int LocEdge1, int LocEdge2,
              TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
              int &Counter, int LowerFirstChild,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers)
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers)
 {
   static int i, v, w, N_;
   static THangingNode *hn;
@@ -96,8 +96,8 @@ void TFE2DMapper1Reg::MapCoarseFine(int *Global, int I_K0, int I_K1, int I_K2,
 
     N_=TFEDatabase2D::GetHNDesc2D(HangingTypes[i])->GetN_Nodes();
     hn=new THangingNode(HangingTypes[i], N_, Aux, Coupling[i]);
-    vect->AddElement(hn);
-    numbers->AddElement(Aux[Hanging[i]]);
+    vect->push_back(hn);
+    numbers->push_back(Aux[Hanging[i]]);
   }
 
   for(i=0;i<N_NoOpposite;i++)
@@ -124,8 +124,8 @@ void TFE2DMapper1Reg::MapFineCoarse(int *Global, int I_K0, int I_K1, int I_K2,
              int LocEdge0, int LocEdge1, int LocEdge2,
              TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
              int &Counter, int LowerFirstChild,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers)
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers)
 {
   static int i, v, w, N_;
   static THangingNode *hn;
@@ -165,8 +165,8 @@ void TFE2DMapper1Reg::MapFineCoarse(int *Global, int I_K0, int I_K1, int I_K2,
 
     N_=TFEDatabase2D::GetHNDesc2D(HangingTypes[i])->GetN_Nodes();
     hn=new THangingNode(HangingTypes[i], N_, Aux, Coupling[i]);
-    vect->AddElement(hn);
-    numbers->AddElement(Aux[Hanging[i]]);
+    vect->push_back(hn);
+    numbers->push_back(Aux[Hanging[i]]);
   }
 
   for(i=0;i<N_NoOpposite;i++)

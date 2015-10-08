@@ -13,13 +13,12 @@
 #ifndef __DOMAIN__
 #define __DOMAIN__
 
-#include <BaseCell.h>
+class TDomain;
+
 #include <BoundPart.h>
 #include <Collection.h>
+#include <Database.h>
 #include <Iterator.h>
-#include <Vertex.h>
-
-class TDatabase;
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct

@@ -12,6 +12,8 @@
 #ifndef __ITERATOR__
 #define __ITERATOR__
 
+class TIterator;
+
 #define MAX_ItLevel  50
 #define N_ITERATORS   9
 

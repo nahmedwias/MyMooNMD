@@ -14,7 +14,6 @@
 #ifndef __QUADISOPARAMETRIC__
 #define __QUADISOPARAMETRIC__
 
-#include <Enumerations.h>
 #include <RefTrans2D.h>
 
 /** reference transformations for Quadrangle */

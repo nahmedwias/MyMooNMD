@@ -17,10 +17,8 @@
 
 #include <QuadFormula1D.h>
 #include <QuadFormula2D.h>
-#include <Constants.h>
 #include <GridCell.h>
 
-#include <Enumerations.h>
 
 /** set of all base function on the reference element for a finite 
     element in two dimensions */

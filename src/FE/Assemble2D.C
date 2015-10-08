@@ -28,6 +28,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
+#ifdef __3D__
+  #include <Aux2D3D.h>
+#endif
 
 
 void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
@@ -9480,6 +9483,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   double x0, x1, y0, y1, hE, nx, ny, tx, ty, x, y, val, eps=1e-4;
 #ifdef __3D__
   double z0, z1;
+  ErrThrow("Assemble2D not working in 3D");
 #endif
   double penetration_penalty, friction_parameter;
   double **JointValues, *JointValue;
@@ -9670,10 +9674,6 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
 
-#ifdef __3D__
-    if(Aux2D3D)
-      Aux2D3D->GetGradient(i, N_Points, xi, eta, Param);
-#endif
     // use DiscreteForm to assemble a few matrices and
     // right-hand sides at once
 

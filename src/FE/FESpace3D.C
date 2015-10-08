@@ -511,8 +511,8 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   TInterfaceJoint3D *InterFace;
 
   THangingNode *hn;
-  TVector<THangingNode *> *VHN = new TVector<THangingNode *>(20,20);
-  TVector<int> *HNNumbers = new TVector<int>(20,20);
+  std::vector<THangingNode *> *VHN = new std::vector<THangingNode *>();
+  std::vector<int> *HNNumbers = new std::vector<int>();
 
 #ifdef _MPI
   int rank;
@@ -1731,12 +1731,12 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     l += BoundaryUpperBound[i];
 
   m = -SumLocDOF - DirichletUpperBound - l +FIRSTMARK;
-  n = VHN->GetN_Elements();
+  n = VHN->size();
   l = 0;
   //OutPut("HN" << endl);
   for(i=0;i<n;i++)
   {
-    j=HNNumbers->GetElement(i);
+    j=HNNumbers->at(i);
     // OutPut(j << endl);
     if(j<0) continue;
 
@@ -1969,12 +1969,12 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   // fill in information for hanging nodes
   HangingNodeArray = new THangingNode*[N_Slave];
 
-  m = VHN->GetN_Elements();
+  m = VHN->size();
   n = 0;
   for(i=0;i<m;i++)
   {
-    hn=VHN->GetElement(i);
-    l=HNNumbers->GetElement(i);
+    hn=VHN->at(i);
+    l=HNNumbers->at(i);
     if(l<0) continue;
     // OutPut("number: " << l << endl);
     k=TFEDatabase3D::GetHNDesc3D(hn->GetType())->GetN_Nodes();

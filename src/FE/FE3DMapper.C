@@ -45,8 +45,8 @@ void TFE3DMapper::Map(int Type,
                     int LocEdge0, int LocEdge1,
                     TFEDesc3D *Desc0, TFEDesc3D *Desc1,
                     int &Counter,
-                    TVector<THangingNode *> *vect,
-                    TVector<int> *numbers)
+                    std::vector<THangingNode *> *vect,
+                    std::vector<int> *numbers)
 {
   static int i, v, w;
   int *CurrentPairs;
@@ -74,8 +74,8 @@ void TFE3DMapper::Map(int Type,
 
 void TFE3DMapper::MapBound(int *Global, int I_K, int *Indices, 
                          int &BoundCounter,
-                         TVector<THangingNode *> *vect,
-                         TVector<int> *numbers)
+                         std::vector<THangingNode *> *vect,
+                         std::vector<int> *numbers)
 {
   static int i,j, dof, v, w;
   int N_;
@@ -112,14 +112,14 @@ void TFE3DMapper::MapBound(int *Global, int I_K, int *Indices,
         if(Global[w] == HANGINGNODE)
         {
           // remove hanging node, mark it as boundary node
-          N_ = numbers->GetN_Elements();
+          N_ = numbers->size();
           // cout << "make hanging node to boundary node: " << dof << " " << w << endl;
           for(j=0;j<N_;j++)
           {
-            // cout << j << ": " << numbers->GetElement(j) << endl;
-            if(dof == numbers->GetElement(j))
+            // cout << j << ": " << numbers->at(j) << endl;
+            if(dof == numbers->at(j))
             {
-              numbers->SetElement(j, -1);
+              numbers->at(j) = -1;
               BoundCounter--;
               Global[w]=BoundCounter;
               if(dof!=w) Global[dof]=w; // do not allow recursive linking
@@ -132,8 +132,8 @@ void TFE3DMapper::MapBound(int *Global, int I_K, int *Indices,
 }
 
 void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
-                         TVector<THangingNode *> *vect,
-                         TVector<int> *numbers)
+                         std::vector<THangingNode *> *vect,
+                         std::vector<int> *numbers)
 {
   int v0, v1, w0, w1;
   int w,e;
@@ -232,9 +232,9 @@ void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
               // cerr << w0 << "  --  " << w1 << endl;
               // cout << "dof's: " << dof0 << "         " << dof1 << endl;
               // cout << "Global[dof's]: " << Global[dof0] << "         " << Global[dof1] << endl;
-              // N_ = numbers->GetN_Elements();
+              // N_ = numbers->size();
               // for(i=0;i<N_;i++)
-              //   cout << "ele: " << i << " " << numbers->GetElement(i) << endl;
+              //   cout << "ele: " << i << " " << numbers->at(i) << endl;
             }
             else
             {
@@ -272,8 +272,8 @@ void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
 
 void TFE3DMapper::MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices, 
                                int &BoundCounter,
-                               TVector<THangingNode *> *vect,
-                               TVector<int> *numbers)
+                               std::vector<THangingNode *> *vect,
+                               std::vector<int> *numbers)
 {
   static int i,j, dof, v, w;
   int N_;
@@ -310,14 +310,14 @@ void TFE3DMapper::MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices
         if(Global[w] == HANGINGNODE)
         {
           // remove hanging node, mark it as boundary node
-          N_ = numbers->GetN_Elements();
+          N_ = numbers->size();
           // cout << "make hanging node to boundary node: " << dof << " " << w << endl;
           for(j=0;j<N_;j++)
           {
-            // cout << j << ": " << numbers->GetElement(j) << endl;
-            if(dof == numbers->GetElement(j))
+            // cout << j << ": " << numbers->at(j) << endl;
+            if(dof == numbers->at(j))
             {
-              numbers->SetElement(j, -1);
+              numbers->at(j) = -1;
               BoundCounter--;
               Global[w]=BoundCounter;
               if(dof!=w) Global[dof]=w; // do not allow recursive linking
@@ -334,8 +334,8 @@ void TFE3DMapper::MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices
 
 void TFE3DMapper::MapBoundVert(int *Global, int I_K, int Index, 
                                int &BoundCounter,
-                               TVector<THangingNode *> *vect,
-                               TVector<int> *numbers)
+                               std::vector<THangingNode *> *vect,
+                               std::vector<int> *numbers)
 {
   static int i,j, dof, v, w;
   int N_;
@@ -370,14 +370,14 @@ void TFE3DMapper::MapBoundVert(int *Global, int I_K, int Index,
         if(Global[w] == HANGINGNODE)
         {
           // remove hanging node, mark it as boundary node
-          N_ = numbers->GetN_Elements();
+          N_ = numbers->size();
           // cout << "make hanging node to boundary node: " << dof << " " << w << endl;
           for(j=0;j<N_;j++)
           {
-            // cout << j << ": " << numbers->GetElement(j) << endl;
-            if(dof == numbers->GetElement(j))
+            // cout << j << ": " << numbers->at(j) << endl;
+            if(dof == numbers->at(j))
             {
-              numbers->SetElement(j, -1);
+              numbers->at(j) = -1;
               BoundCounter--;
               Global[w]=BoundCounter;
               if(dof!=w) Global[dof]=w; // do not allow recursive linking

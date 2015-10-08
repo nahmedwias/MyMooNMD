@@ -344,7 +344,7 @@ class TRefDesc
 
     /** return a bool, whether to refine or not */
     virtual int IsToRefine()
-    { return TRUE; }
+    { return true; }
     
     /** return shape descriptor */
     TShapeDesc *GetShapeDesc()

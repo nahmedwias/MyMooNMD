@@ -9,6 +9,7 @@
 #include <ConvDiff.h>
 #include <math.h>
 #include <stdlib.h>
+#include <BoundEdge.h>
 
 /*
 double ComputeAlpha(double hK)

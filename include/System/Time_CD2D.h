@@ -17,6 +17,8 @@
 #include <BlockMatrixCD2D.h>
 #include <BlockVector.h>
 #include <Example_CD2D.h>
+#include <MultiGrid2D.h>
+#include <Domain.h>
 
 #include <vector>
 #include <deque>

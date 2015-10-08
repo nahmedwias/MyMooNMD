@@ -2,15 +2,13 @@
   #include <FESpace2D.h>
   #include <TriaAffin.h>
   #include <QuadAffin.h>
-  #include <NodalFunctional2D.h>
-  #include <BoundEdge.h>
+  class TSquareMatrix2D;
 #endif
 #ifdef __3D__
   #include <FESpace3D.h>
   #include <FEVectFunct3D.h>
 #endif
 
-#include <BaseCell.h>
 #include <JointEqN.h>
 
 #include <string.h>

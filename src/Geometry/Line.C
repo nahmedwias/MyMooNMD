@@ -9,6 +9,7 @@
 // =======================================================================
 
 #include <Line.h>
+#include <cmath>
 
 static const int DatEdgeVertex[][2] = { {0, 1}};
 static const int DatVertexEdge[][LINEMAXN_EpV] = { {0},  {0}};

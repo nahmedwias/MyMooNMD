@@ -69,8 +69,8 @@ class TFE2DMapper1Reg : public TFE2DMapper
              int LocEdge0, int LocEdge1, int LocEdge2,
              TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
              int &Counter, int LowerFirstChild,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers);
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers);
 
     /** map the given local degrees of freedom,
         coarse cell has bigger number,
@@ -80,8 +80,8 @@ class TFE2DMapper1Reg : public TFE2DMapper
              int LocEdge0, int LocEdge1, int LocEdge2,
              TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
              int &Counter, int LowerFirstChild,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers);
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers);
 
 };
 

@@ -17,7 +17,8 @@
 #define FIRSTMARK -10
 
 #include <FEDesc3D.h>
-#include "Vector.h"
+#include <HangingNode.h>
+#include <vector>
 
 /** find out which of the given local degress of freedom,
     are equivalent to the same global degree of freedom */
@@ -101,31 +102,31 @@ class TFE3DMapper
              int LocEdge0, int LocEdge1,
              TFEDesc3D *Desc0, TFEDesc3D *Desc1,
              int &Counter,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers);
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers);
 
     /** "map" the given dof on a boundary joint */
     void MapBound(int *Global, int I_K, int *Indices, 
                   int &BoundCounter,
-                  TVector<THangingNode *> *vect,
-                  TVector<int> *numbers);
+                  std::vector<THangingNode *> *vect,
+                  std::vector<int> *numbers);
 
     /** map the two given degrees of freedom */
     void MapDOF(int *Global, int dof0, int dof1, int &Counter,
-                TVector<THangingNode *> *vect,
-                TVector<int> *numbers);
+                std::vector<THangingNode *> *vect,
+                std::vector<int> *numbers);
 
     /** "map" the given dof on a boundary edge */
     void MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices, 
                       int &BoundCounter,
-                      TVector<THangingNode *> *vect,
-                      TVector<int> *numbers);   
+                      std::vector<THangingNode *> *vect,
+                      std::vector<int> *numbers);   
     
     /** "map" the given dof on a boundary vert */    
     void MapBoundVert(int *Global, int I_K, int Index, 
                      int &BoundCounter,
-                     TVector<THangingNode *> *vect,
-                     TVector<int> *numbers);  
+                     std::vector<THangingNode *> *vect,
+                     std::vector<int> *numbers);  
     
     
     /** destructor */

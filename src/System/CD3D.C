@@ -1,6 +1,5 @@
 #include <CD3D.h>
 //#include <LocalAssembling3D.h>
-#include <Domain.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Output3D.h>

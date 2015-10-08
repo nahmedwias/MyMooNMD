@@ -64,8 +64,8 @@ void TFE2DMapper::Map(int *Global, int I_K0, int I_K1,
                     int *Indices0, int *Indices1,
                     int LocEdge0, int LocEdge1,
                     TFEDesc2D *Desc0, TFEDesc2D *Desc1,
-                    int &Counter, TVector<THangingNode *> *vect,
-                    TVector<int> *numbers)
+                    int &Counter, std::vector<THangingNode *> *vect,
+                    std::vector<int> *numbers)
 {
   static int i, v, w, N_;
   static THangingNode *hn;
@@ -98,8 +98,8 @@ void TFE2DMapper::Map(int *Global, int I_K0, int I_K1,
 
     N_=TFEDatabase2D::GetHNDesc2D(HangingTypes[i])->GetN_Nodes();
     hn=new THangingNode(HangingTypes[i], N_, Aux, Coupling[i]);
-    vect->AddElement(hn);
-    numbers->AddElement(Aux[Hanging[i]]);
+    vect->push_back(hn);
+    numbers->push_back(Aux[Hanging[i]]);
   }
 
   for(i=0;i<N_NoOpposite;i++)

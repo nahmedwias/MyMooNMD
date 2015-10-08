@@ -72,8 +72,8 @@ class TFE3DMapper1Reg : public TFE3DMapper
              int TwistIndexF3, int TwistIndexC,
              int DirichletBound,
              int &Counter,
-             TVector<THangingNode *> *vect,
-             TVector<int> *numbers);
+             std::vector<THangingNode *> *vect,
+             std::vector<int> *numbers);
 
 };
 

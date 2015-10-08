@@ -14,7 +14,6 @@
 #ifndef __TRIAISOPARAMETRIC__
 #define __TRIAISOPARAMETRIC__
 
-#include <Enumerations.h>
 #include <RefTrans2D.h>
 
 /** reference transformations for triangle */

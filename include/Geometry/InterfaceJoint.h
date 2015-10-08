@@ -13,6 +13,7 @@
 
 #include <JointEqN.h>
 #include <Vertex.h>
+#include <BoundComp2D.h>
 
 /** connects two cells on an interface */
 class TInterfaceJoint : public TJointEqN

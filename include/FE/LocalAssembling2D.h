@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <AuxParam2D.h>
+#include <DiscreteForm2D.h>
 
 enum LocalAssembling2D_type { CD2D_Galerkin,
                               CD2D_SUPG,
