@@ -470,7 +470,16 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 
+###############################################################################
+# the CMakeLists.txt for the user_projects may define more targets, tests, ...
 add_subdirectory(user_projects)
+
+
+###############################################################################
+# tests 
+enable_testing()
+add_subdirectory(test EXCLUDE_FROM_ALL)
+
 
 ############
 # End adding executable targets.
