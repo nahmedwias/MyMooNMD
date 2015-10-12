@@ -227,17 +227,14 @@ double TMatrix::GetNorm(int p) const
       }
       break;
     case 1:
-      ErrMsg("spectral norm of a matrix not yet implemented!\n");
-      exit(0);
+      ErrThrow("maximum absolute column sum norm of a matrix not yet "
+               + "implemented!");
       break;
     case 2:
-      ErrMsg("maximum absolute column sum norm of a matrix not yet "
-            << "implemented!\n");
-      exit(0);
+      ErrThrow("spectral norm of a matrix not yet implemented!");
       break;
     default:
-      ErrMsg("undefined norm of a matrix!\n");
-      exit(0);
+      ErrThrow("undefined norm of a matrix!");
       break;
   }
   return result;
@@ -427,6 +424,41 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   return new TMatrix(struc_c, c_entries);
 }
 
+
+TMatrix* TMatrix::GetTransposed() const
+{
+  // get transposed structure
+  TStructure *structureT = structure->GetTransposed();
+  int * rowsT= structureT->GetRowPtr();
+  int * colsT= structureT->GetKCol();
+  int * rows = this->GetRowPtr();
+  int * cols = this->GetKCol();
+  
+  // transpose the entries:
+  double *entriesT = new double[this->GetN_Entries()];
+  // loop over all rows of the original matrix
+  for(int i=0; i<this->GetN_Rows(); i++)
+  {
+    // loop over all entries in this row of the original matrix
+    for(int j=rows[i]; j<rows[i+1]; j++)
+    {
+      // cols[j] is the column of this entry in the original matrix,
+      // it corresponds to a row of the transposed matrix
+      // look for the column index in that row in the transposed matrix 
+      // which equals this (non-transposed) row index
+      for(int k=rowsT[cols[j]]; k<rowsT[cols[j]+1] ;k++)
+      {
+        if(i==colsT[k])
+        {
+          entriesT[k] = Entries[j];
+          continue; // entry found
+        }
+      }
+    }
+  }
+  
+  return new TMatrix(structureT,entriesT);
+}
 
 void TMatrix::remove_zeros(double tol)
 {
