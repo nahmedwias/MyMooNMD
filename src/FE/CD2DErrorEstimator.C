@@ -14,19 +14,13 @@
 #ifdef __2D__
 
 #include <CD2DErrorEstimator.h>
-#include <FEFunction2D.h>
 #include <FEDatabase2D.h>
-#include <Joint.h>
 #include <BoundEdge.h>
-#include <BoundComp.h>
-#include <Enumerations.h>
-#include <BaseFunct2D.h>
 #include <Database.h>
 #include <ConvDiff.h>
 
-#include <math.h>
+#include <cmath>
 #include <string.h>
-#include <stdlib.h>
 #ifndef __MAC64__
 #include <malloc.h>
 #endif
@@ -104,15 +98,12 @@ double *estimated_global_error)
   double *Param[MaxN_QuadPoints_2D], *aux,*aux1,*aux2;
   double *Derivatives[MaxN_QuadPoints_2D];
   double *AuxArray[MaxN_QuadPoints_2D];
-  int *DOF, N_DOF;
+  int *DOF;
   double **OrigFEValues, *Orig, value;
   double *FEFunctValues;
   double *Values,max_loc_err;
   int *GlobalNumbers, *BeginIndex;
-  double xc, yc;
   double estimated_global_errors[N_estimators], estimated_local_errors[N_estimators];
-  int LocN_BF[N_BaseFuncts2D];
-  BaseFunct2D LocBF[N_BaseFuncts2D];
   bool *SecondDer;
 
   int ee_verbose=1;                               // verbosity
@@ -331,7 +322,7 @@ double *estimated_global_error)
   // Coll = FESpace2D->GetCollection();            // collection of mesh cells
   Coll = Collection;                              // collection of mesh cells
   N_Cells = Coll->GetN_Cells();                   // number of mesh cells
-  N_DOF = FEFunction2D->GetLength();              // number of global dof
+  //int N_DOF = FEFunction2D->GetLength();          // number of global dof
   Values = FEFunction2D->GetValues();             // values of fe function
 
   for(i=0;i<N_Cells;i++)                          // do for all mesh cells
@@ -377,8 +368,6 @@ double *estimated_global_error)
     {
       CurrentElement = fespaces[j]->GetFE2D(i,cell);
       LocalUsedElements[j] = CurrentElement;
-      LocN_BF[j] = N_BaseFunct[CurrentElement];   // local basis functions
-      LocBF[j] = BaseFuncts[CurrentElement];
       SecondDer[j] = TRUE;                        // with 2nd derivative
     }
     N_LocalUsedElements = n_fespaces;
@@ -605,7 +594,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 					     double *estimated_local_error)
 {
   int i,j,k,l,n,N_Edges,comp,parent_edge,MaxLen1,MaxLen2,MaxLen3,N_child,neigh_edge;
-  int chnum1,l_child,child_N_,edge1,neigh_N_,N_Neigh;
+  int chnum1,l_child,edge1,neigh_N_,N_Neigh;
   double *deriv, w,e1,e2,*coeff,strong_residual,alpha[N_estimators-1],beta[N_estimators-1],hK,hE,val[3],hE2;
   double estimated_error[N_estimators],t0,t1,nx,ny,x0,x1,y0,y1,neumann_data,jump,absdetjk1D, meas;
   double absdet1D[MaxN_QuadPoints_2D];
@@ -623,13 +612,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
-  QuadFormula2D QuadFormulaNeigh;
-  TQuadFormula2D *qfNeigh;
-  QuadFormula1D LineQuadFormulaNeigh;
-  TQuadFormula1D *qf1DNeigh;
   TBaseFunct2D *bfNeigh;
-  int N_Points1DNeigh,N_PointsNeigh;
-  double *weights1DNeigh,*zetaNeigh,*weightsNeigh,*xiNeigh,*etaNeigh;
   TFE2D *eleNeigh;
   RefTrans2D RefTransNeigh;
   BF2DRefElements bf2DrefelementsNeigh;
@@ -1314,7 +1297,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
               edge1=TmpoEnE[edge2neigh*MaxLen1+k];// edge child, not general !!!
               chnum1=TmpEC[edge1*MaxLen2];        // local number of child cell
               child =neigh->GetChild(chnum1);     // child cell
-              child_N_=child->GetClipBoard();     // id of child cell
+              //int child_N_=child->GetClipBoard();     // id of child cell
                                                   // get local indices of child edge
               refdesc->GetEdgeChildIndex(TmpECI,TmpLen3, MaxLen3);
               l_child = TmpECI[edge1*MaxLen3];    // local index of child edge
@@ -2053,7 +2036,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
                                            double *estimated_local_error)
 {
   int i,j,k,l,n,N_Edges,comp,parent_edge,MaxLen1,MaxLen2,MaxLen3,N_child,neigh_edge;
-  int chnum1,l_child,child_N_,edge1,neigh_N_,N_Neigh;
+  int chnum1,l_child,edge1,neigh_N_,N_Neigh;
   double *deriv, w,e1,e2,*coeff,strong_residual,alpha[N_estimators-1],beta[N_estimators-1],hK,hE,val[3],hE2;
   double estimated_error[4],t0,t1,nx,ny,x0,x1,y0,y1,neumann_data,jump,absdetjk1D;
   double absdet1D[MaxN_QuadPoints_2D];
@@ -2070,13 +2053,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
   TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
-  QuadFormula2D QuadFormulaNeigh;
-  TQuadFormula2D *qfNeigh;
-  QuadFormula1D LineQuadFormulaNeigh;
-  TQuadFormula1D *qf1DNeigh;
   TBaseFunct2D *bfNeigh;
-  int N_Points1DNeigh,N_PointsNeigh;
-  double *weights1DNeigh,*zetaNeigh,*weightsNeigh,*xiNeigh,*etaNeigh;
   TFE2D *eleNeigh;
   RefTrans2D RefTransNeigh;
   BF2DRefElements bf2DrefelementsNeigh;
@@ -2592,7 +2569,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
                           edge1=TmpoEnE[edge2neigh*MaxLen1+k];                 // edge child, not general !!!               
                           chnum1=TmpEC[edge1*MaxLen2];                // local number of child cell 
                           child =neigh->GetChild(chnum1);             // child cell   
-                          child_N_=child->GetClipBoard();             // id of child cell
+                          // int child_N_=child->GetClipBoard();             // id of child cell
                           refdesc->GetEdgeChildIndex(TmpECI,TmpLen3, MaxLen3); // get local indices of child edge
                           l_child = TmpECI[edge1*MaxLen3];                        // local index of child edge
 
