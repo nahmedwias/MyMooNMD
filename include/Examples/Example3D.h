@@ -17,7 +17,6 @@
 #ifndef __EXAMPLE3D__
 #define __EXAMPLE3D__
 
-#include <MooNMD_Io.h>
 #include <Constants.h>
 #include <vector>
 

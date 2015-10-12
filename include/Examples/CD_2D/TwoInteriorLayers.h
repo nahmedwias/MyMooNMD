@@ -4,9 +4,6 @@
 // ======================================================================
 #define __TWO_INTERIOR_LAYERS__
 
-#include <MooNMD_Io.h>
-#include <Constants.h>
-
 void ExampleFile()
 {
   OutPut("Example: TwoInteriorLayers.h" << endl) ;
