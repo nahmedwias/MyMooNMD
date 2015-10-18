@@ -20,7 +20,7 @@
 /** ************************************************************************ */
 BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity, 
                                        const TFESpace2D& pressure,
-                                       const BoundValueFunct2D*const*BoundValue)
+                                       BoundValueFunct2D*const*const BoundValue)
  : BlockMatrix(Problem_type::Darcy, 2), 
    boundary_values({BoundValue[0], BoundValue[1]})
 {

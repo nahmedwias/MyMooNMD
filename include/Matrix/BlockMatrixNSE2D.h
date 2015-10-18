@@ -23,13 +23,13 @@ class BlockMatrixNSE2D : public BlockMatrix
 {
   protected:
     
-    /** @brief Boundary value */ 
-    std::array<const BoundValueFunct2D*, 3> boundary_values;
+    /** @brief Boundary value */
+    std::array<BoundValueFunct2D * const, 3> boundary_values;
     
   public:
     /** constructor */
      BlockMatrixNSE2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                      const BoundValueFunct2D*const*BoundValue);
+                      BoundValueFunct2D * const * const BoundValue);
      
     /** destrcutor */
     ~BlockMatrixNSE2D();

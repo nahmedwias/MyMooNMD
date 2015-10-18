@@ -30,12 +30,12 @@ class BlockMatrixCD2D : public BlockMatrix
   protected:
     
     /** @brief Boundary value */
-    const BoundValueFunct2D *boundary_values;
+    BoundValueFunct2D * const boundary_values;
     
   public:
     /** constructor */
      BlockMatrixCD2D(const TFESpace2D &fespace, 
-                     const BoundValueFunct2D *BoundValue,
+                     BoundValueFunct2D * const BoundValue,
                      bool mass_matrix = false);
 
     /** destrcutor */

@@ -32,12 +32,12 @@ class BlockMatrixDarcy2D : public BlockMatrix
   protected:
     
     /** @brief Boundary value */ 
-    std::array<const BoundValueFunct2D*, 2> boundary_values;
+    std::array<BoundValueFunct2D * const, 2> boundary_values;
     
   public:
     /** constructor */
      BlockMatrixDarcy2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                        const BoundValueFunct2D*const* BoundValue);
+                        BoundValueFunct2D * const * const BoundValue);
     
     /** destrcutor */
     ~BlockMatrixDarcy2D();
