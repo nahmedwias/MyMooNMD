@@ -5,6 +5,7 @@
 # 2015/08/25 Ulrich Wilbrandt: Adjust to Clemens changes to the cmake system
 #
 
+# Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 
 # Source files to be added to the 2D library.
