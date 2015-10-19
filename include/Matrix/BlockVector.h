@@ -92,7 +92,10 @@ class BlockVector
      * BlockMatrix.
      */
     template<class BM>
-    BlockVector(const BM& mat, bool image = false);
+    BlockVector(const BM& mat, bool image = false)
+    {
+      this->copy_structure<BM>(mat, image);
+    }
     
     /** constructor, this BlockVector has the structure of 'r', and is filled
      * with zeros.
@@ -160,7 +163,7 @@ class BlockVector
      * 
      * @param r BlockVector from which the structure is copied to this one
      */
-    void copy_structure(const BlockVector& r);
+    void copy_structure(const BlockVector & r);
     
     /** @brief change the structure of a BlockVector so that it is suitable for
      *         a given BlockMatrix
@@ -171,7 +174,7 @@ class BlockVector
      * This deletes possibly existing data in this BlockVector. After this 
      * method is called, all values are set to zero. All entries are active.
      */
-    void copy_structure(const BlockMatrix& mat, bool image);
+    void copy_structure(const BlockMatrix & mat, bool image);
     
     /** @brief change the structure of a BlockVector so that it is suitable for
      *         a given BlockMatrix
@@ -184,9 +187,15 @@ class BlockVector
      * This deletes possibly existing data in this BlockVector. After this 
      * method is called, all values are set to zero. This sets active entries
      * appropriatly.
+     * 
+     * The class BM is supposed to be a derived class of BlockMatrix and it must
+     * implement a method
+     *  const TFESpace * get_space_of_block(unsigned int block, bool test) const
+     * which returns the test space (or ansatz space if 'test' is false) of the
+     * b-th block.
      */
     template<class BM>
-    void copy_structure(const BM& mat, bool image);
+    void copy_structure(const BM & mat, bool image);
     
     /**
      * @brief add (scaled) values into a subvector, "this += a*x"
@@ -200,7 +209,7 @@ class BlockVector
      * @param a factor by which x is multiplied
      *
      */
-    void add(const double *x, const int i = -1, double a = 1.0);
+    void add(const double * x, const int i = -1, double a = 1.0);
 
     /**
      * @brief copy values into a subvector
@@ -236,7 +245,7 @@ class BlockVector
      * @param iB index of subvector
      *
      */
-    void print(const std::string name="rhs", const int iB = -1) const;
+    void print(const std::string name = "rhs", const int iB = -1) const;
     
     /**
      * @brief Print some information without explicitly printing values
