@@ -105,24 +105,7 @@ void CD2D::set_parameters()
 /** ************************************************************************ */
 void CD2D::assemble()
 {
-  LocalAssembling2D_type t = CD2D_Galerkin;
-  switch(TDatabase::ParamDB->DISCTYPE)
-  {
-    case 1:
-      t = CD2D_Galerkin;
-      break;
-    case 2:
-      t = CD2D_SUPG;
-      break;
-    case 6:
-      t = CD2D_GLS;
-      break;
-    default:
-      ErrThrow("currently DISCTYPE " 
-               + std::to_string(TDatabase::ParamDB->DISCTYPE) +
-               " is not supported by the class CD2D");
-      throw; // only to avoid compiler warning
-  }
+  LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
   
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
