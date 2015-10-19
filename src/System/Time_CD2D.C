@@ -242,7 +242,7 @@ void Time_CD2D::output(int m, int& image)
   
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double loc_e[4];
+    double loc_e[5];
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
