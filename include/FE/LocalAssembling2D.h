@@ -28,7 +28,7 @@
 #include <AuxParam2D.h>
 #include <DiscreteForm2D.h>
 
-enum LocalAssembling2D_type { CD2D_Galerkin,
+enum LocalAssembling2D_type { ConvDiff,
                               CD2D_SUPG,
                               CD2D_GLS,
                               CD2D_Axiax3D_Galerkin,
