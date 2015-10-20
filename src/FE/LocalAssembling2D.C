@@ -23,14 +23,20 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
   {
     ///////////////////////////////////////////////////////////////////////////
     // CD2D: stationary convection diffusion problems
-    case CD2D_Galerkin:
-      return std::string("CD2D_Galerkin");
-    case CD2D_SUPG:
-      return std::string("CD2D_SUPG");
-    case CD2D_GLS:
-      return std::string("CD2D_GLS");
-    case CD2D_Axiax3D_Galerkin:
-      return std::string("CD2D_Axiax3D_Galerkin");
+    case LocalAssembling2D_type::ConvDiff:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  if(TDatabase::ParamDB->Axial3D)
+            return std::string("CD2D_Axiax3D_Galerkin");
+          else
+            return std::string("CD2D_Galerkin");
+	case SUPG:
+	  return std::string("CD2D_SUPG");
+	case GLS:
+	  return std::string("CD2D_GLS");
+      }
+      break;      
     ///////////////////////////////////////////////////////////////////////////
     // TCD2D: time dependent convection diffusion problems
     case TCD2D_Mass_Rhs_Galerkin:
@@ -50,9 +56,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     ///////////////////////////////////////////////////////////////////////////
     // Darcy2D: stationary Darcy problems
     case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");
-    default: return std::string();
+      return std::string("Darcy2D_Galerkin");    
   }
+  return std::string();
 }
 
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
@@ -80,67 +86,50 @@ switch(type)
 {
   ///////////////////////////////////////////////////////////////////////////
   // CD2D: stationary convection diffusion problems
-  case CD2D_Galerkin:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
+  case LocalAssembling2D_type::ConvDiff:
     this->N_Matrices = 1;
     this->RowSpace = { 0 };
     this->ColumnSpace = { 0 };
     this->N_Rhs = 1;
     this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssembleGalerkin; 
-    this->Manipulate = NULL;
-    break;
-  case CD2D_SUPG:
-    this->N_Terms = 5;
-    this->Derivatives = { D10, D01, D00, D20, D02 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = true;
-    this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_SD; 
-    if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-      this->Manipulate = linfb;
-    else
-      this->Manipulate = ave_l2b_quad_points;
-    break;
-  case CD2D_GLS:
-    this->N_Terms = 5;
-    this->Derivatives = { D10, D01, D00, D20, D02 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = true;
-    this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_GLS; 
-    if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-      this->Manipulate = linfb;
-    else
-      this->Manipulate = ave_l2b_quad_points;
-    break;
-  case CD2D_Axiax3D_Galerkin:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_Axial3D; 
-    this->Manipulate = NULL;
+    switch(TDatabase::ParamDB->DISCTYPE)
+    {
+      case GALERKIN:
+        this->N_Terms = 3;
+        this->Derivatives = { D10, D01, D00 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = false;
+        this->FESpaceNumber = { 0, 0, 0 };
+        
+        if(TDatabase::ParamDB->Axial3D)
+          this->AssembleParam = BilinearAssemble_Axial3D; 
+        else
+          this->AssembleParam = BilinearAssembleGalerkin; 
+        this->Manipulate = NULL;
+        break;
+      case SUPG:
+      case GLS:
+        this->N_Terms = 5;
+        this->Derivatives = { D10, D01, D00, D20, D02 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = true;
+        this->FESpaceNumber = { 0, 0, 0, 0, 0 };
+	if(TDatabase::ParamDB->DISCTYPE==SUPG)
+	  this->AssembleParam = BilinearAssemble_SD; 
+	else
+	  this->AssembleParam = BilinearAssemble_GLS;
+	
+        if(TDatabase::ParamDB->SDFEM_NORM_B==0)
+          this->Manipulate = linfb;
+        else
+          this->Manipulate = ave_l2b_quad_points;
+        
+	break;
+        default:
+          ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                 " is not supported by the class CD2D");
+          throw("unsupported DISCTYPE");
+    }
     break;
   ///////////////////////////////////////////////////////////////////////////
   // TCD2D: time dependent convection diffusion problems
@@ -243,7 +232,7 @@ switch(type)
 
 LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux, 
                                      const TDiscreteForm2D& df)
- : type(CD2D_Galerkin), // this might be wrong!!
+ :  
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),

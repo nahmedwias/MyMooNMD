@@ -28,10 +28,7 @@
 #include <AuxParam2D.h>
 #include <DiscreteForm2D.h>
 
-enum LocalAssembling2D_type { CD2D_Galerkin,
-                              CD2D_SUPG,
-                              CD2D_GLS,
-                              CD2D_Axiax3D_Galerkin,
+enum LocalAssembling2D_type { ConvDiff,                              
                               TCD2D_Mass_Rhs_Galerkin, // mass matrix and rhs
                               TCD2D_Stiff_Rhs_Galerkin,// stiffness matrix + rhs
                               TCD2D_Mass_Rhs_SUPG, // mass matrix and rhs
