@@ -56,9 +56,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     ///////////////////////////////////////////////////////////////////////////
     // Darcy2D: stationary Darcy problems
     case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");
-    default: return std::string();
+      return std::string("Darcy2D_Galerkin");    
   }
+  return std::string();
 }
 
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
@@ -87,6 +87,11 @@ switch(type)
   ///////////////////////////////////////////////////////////////////////////
   // CD2D: stationary convection diffusion problems
   case LocalAssembling2D_type::ConvDiff:
+    this->N_Matrices = 1;
+    this->RowSpace = { 0 };
+    this->ColumnSpace = { 0 };
+    this->N_Rhs = 1;
+    this->RhsSpace = { 0 };
     switch(TDatabase::ParamDB->DISCTYPE)
     {
       case GALERKIN:
@@ -95,11 +100,7 @@ switch(type)
         this->Needs2ndDerivatives = new bool[1];
         this->Needs2ndDerivatives[0] = false;
         this->FESpaceNumber = { 0, 0, 0 };
-        this->N_Matrices = 1;
-        this->RowSpace = { 0 };
-        this->ColumnSpace = { 0 };
-        this->N_Rhs = 1;
-        this->RhsSpace = { 0 };
+        
         if(TDatabase::ParamDB->Axial3D)
           this->AssembleParam = BilinearAssemble_Axial3D; 
         else
@@ -113,12 +114,6 @@ switch(type)
         this->Needs2ndDerivatives = new bool[1];
         this->Needs2ndDerivatives[0] = true;
         this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-        this->N_Matrices = 1;
-        this->RowSpace = { 0 };
-        this->ColumnSpace = { 0 };
-        this->N_Rhs = 1;
-        this->RhsSpace = { 0 };
-	
 	if(TDatabase::ParamDB->DISCTYPE==SUPG)
 	  this->AssembleParam = BilinearAssemble_SD; 
 	else
