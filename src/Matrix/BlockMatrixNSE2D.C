@@ -23,7 +23,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
                                    const TFESpace2D& pressure,
                                    BoundValueFunct2D * const * const BoundValue)
     : BlockMatrix(Problem_type::NavierStokes, 2),
-      boundary_values({BoundValue[0], BoundValue[1], BoundValue[2]})
+      boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
 {
   // build matrices
   // first build matrix structure
