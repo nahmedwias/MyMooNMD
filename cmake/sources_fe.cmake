@@ -1,4 +1,4 @@
-# CMakeLists.txt for subdirectory FE of ParMooN project. 
+﻿# CMakeLists.txt for subdirectory FE of ParMooN project. 
 # Use only as subproject of ParMooN.
 # 
 # Change history:
@@ -144,7 +144,7 @@ list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/FreeSurface3D.C")
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/HexaAffin.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/HexaIsoparametric.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/HexaTrilinear.C")
-list(APPEND FE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/FE/LocalAssembling3D.C") 
+list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/LocalAssembling3D.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/MGComponents3D.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/MGLevel3D.C") 
 list(APPEND FE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/FE/Matrix3D.C") 
