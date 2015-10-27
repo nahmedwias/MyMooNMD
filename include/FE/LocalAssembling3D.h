@@ -1,7 +1,7 @@
 /** =======================================================================
- * @(#)LocalAssembling2D.h        10.03.2015
+ * @(#)LocalAssembling3D.h        09.06.2015
  * 
- * @Class:    LocalAssembling2D
+ * @Class:    LocalAssembling3D
  * Purpose:   Assemble on one cell a couple of bilinear and linear forms. That
  *            means the loop over all quadrature points is done within this 
  *            class.
@@ -10,40 +10,29 @@
  *            at quadrature points, where the function is given by some finite
  *            element function. 
  * 
- * @note This class replaces former TDiscreteForm2D and TAuxParam2D
+ * @note This class replaces former TDiscreteForm3D and TAuxParam3D
  * 
- * @Author:      Ulrich Wilbrandt (10.03.2015)
+ * @Author:      Naveed, Ulrich (09.06.2015)
  * 
- * History:     start of implementation 10.03.2015 (Ulrich Wilbrandt)
+ * History:     start of implementation 09.06.2015 (Naveed, Ulrich)
  * 
  * =======================================================================
  */
-#ifndef __LOCAL_ASSEMBLING_2D__
-#define __LOCAL_ASSEMBLING_2D__
+#ifndef __LOCAL_ASSEMBLING_3D__
+#define __LOCAL_ASSEMBLING_3D__
 
 #include <Enumerations.h>
 #include <Constants.h>
 #include <string>
 #include <vector>
-#include <AuxParam2D.h>
-#include <DiscreteForm2D.h>
 
-enum LocalAssembling2D_type { ConvDiff,                              
-                              TCD2D_Mass_Rhs_Galerkin, // mass matrix and rhs
-                              TCD2D_Stiff_Rhs_Galerkin,// stiffness matrix + rhs
-                              TCD2D_Mass_Rhs_SUPG, // mass matrix and rhs
-                              TCD2D_Stiff_Rhs_SUPG, // stiffness matrix + rhs
-                              NSE2D_Galerkin,
-                              NSE2D_Galerkin_Nonlinear,
-                              Darcy2D_Galerkin
+enum class LocalAssembling3D_type { CD3D, NSE3D_Linear, NSE3D_NonLinear
 };
 
 /** a function from a finite element space */
-class LocalAssembling2D
+class LocalAssembling3D
 {
   protected:
-    LocalAssembling2D_type type;
-    
     /** name */
     std::string name;
 
@@ -61,9 +50,10 @@ class LocalAssembling2D
      * 
      * This is an array of size N_Terms.
      */
-    std::vector<MultiIndex2D> Derivatives;
+    std::vector<MultiIndex3D> Derivatives;
 
-    /** @brief for each term, there is one FESpace2D asociated with that term */
+    
+     /** @brief for each term, there is one FESpace3D asociated with that term */
     std::vector<int> FESpaceNumber;
 
     /** @brief which FE space corresponds to each row */
@@ -76,14 +66,14 @@ class LocalAssembling2D
     std::vector<int> RhsSpace;
 
     /** function for calculating the coefficients */
-    CoeffFct2D *Coeffs;
+    CoeffFct3D *Coeffs;
 
     /** @brief function doing the real assembling using parameters from 
      *         argument list */
-    AssembleFctParam2D *AssembleParam;
+    AssembleFctParam3D *AssembleParam;
 
     /** function for manipulating the coefficients */
-    ManipulateFct2D *Manipulate;
+    ManipulateFct3D *Manipulate;
 
     /** memory for storing the original value arrays */
     double ***AllOrigValues;
@@ -93,7 +83,6 @@ class LocalAssembling2D
     
     int N_Matrices;
     int N_Rhs;
-    
     
     /** number of stored parameter functions (ParamFct) */
     int N_ParamFct;
@@ -110,14 +99,14 @@ class LocalAssembling2D
     /** number of FE values */
     int N_FEValues;
     
-    /** array of stored FEFunction2D */
-    TFEFunction2D **FEFunctions2D;
+    /** array of stored FEFunction3D */
+    TFEFunction3D **FEFunctions3D;
         
-    /** index of FEFunction2D used for FE value i */
+    /** index of FEFunction3D used for FE value i */
     std::vector<int> FEValue_FctIndex;
     
-    /** which multiindex is used for FE value i */
-    std::vector<MultiIndex2D> FEValue_MultiIndex;
+     /** which multiindex is used for FE value i */
+    std::vector<MultiIndex3D> FEValue_MultiIndex;
 
     /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
      * set within this function. This function is called from the constructor 
@@ -127,55 +116,37 @@ class LocalAssembling2D
      * Basically this function implements four nested switches (discretization 
      * type, NSTYOE, Laplace type, nonlinear form type)
      */
-    void set_parameters_for_nse(LocalAssembling2D_type type);
+    void set_parameters_for_nse(LocalAssembling3D_type type);
+    
   public:
     /** constructor */
-    LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
-                      CoeffFct2D *coeffs);
+    LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions2d,
+                      CoeffFct3D *coeffs);
     
     /** @brief constructor for backward compatibility
      * 
-     * This uses the deprecated classes TAuxParam2D and TDiscreteForm2D to 
+     * This uses the deprecated classes TAuxParam3D and TDiscreteForm3D to 
      * construct an object of this class.
-     * 
-     * The member variable 'type' is likely to be wrong using this constructor!
-     * Please do not use it, unless you know what you are doing.
      */
-    LocalAssembling2D(const TAuxParam2D& aux, const TDiscreteForm2D& df);
+    LocalAssembling3D(TAuxParam3D& aux, TDiscreteForm3D& df);
 
     /** destructor */
-    ~LocalAssembling2D();
+    ~LocalAssembling3D();
     
-    
-
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
-                       double *X, double *Y,
-                       int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
+                       double *X, double *Y, double *Z,
+                       int *N_BaseFuncts, BaseFunct3D *BaseFuncts, 
                        double **Parameters, double **AuxArray,
                        TBaseCell *Cell, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
                        double factor = 1.);
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
-                       double *X, double *Y, int *N_BaseFuncts,
-                       BaseFunct2D *BaseFuncts, TBaseCell *Cell,
-                       double ***LocMatrix, double **LocRhs,
-                       double factor = 1.);
     
-    
-    /** return all parameters at all quadrature points */
+     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TCollection *Coll,
                        TBaseCell *cell, int cellnum,
-                       double *x, double *y,
+                       double *x, double *y, double *z,
                        double **Parameters);
-
-    /** return all parameters at boundary points */
-    void GetParameters(int N_Points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
-                       double *s, int joint,
-                       double **Parameters);
-    
-    
 
     /** return name */
     const std::string& get_name() const
@@ -186,7 +157,7 @@ class LocalAssembling2D
     { return Needs2ndDerivatives; }
 
     /** function for calculating the coefficients */
-    CoeffFct2D *GetCoeffFct() const
+    CoeffFct3D *GetCoeffFct() const
     { return Coeffs; }
     
     /** return the index of the row space of the i-th matrix */
@@ -203,12 +174,7 @@ class LocalAssembling2D
     int GetN_Parameters() const
     { return N_Parameters; }
     
-    TFEFunction2D* get_fe_function(int i) const
-    { return FEFunctions2D[i]; }
-    
-    LocalAssembling2D_type get_type() const
-    { return type; }
+    TFEFunction3D* get_fe_function(int i) const
+    { return FEFunctions3D[i]; }
 };
-
-
-#endif // __LOCAL_ASSEMBLING_2D__
+#endif

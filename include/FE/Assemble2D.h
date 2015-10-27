@@ -112,7 +112,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
            int n_rhs, double **rhs, const TFESpace2D **ferhs,
            LocalAssembling2D& la,
            BoundCondFunct2D **BoundaryConditions,
-           const BoundValueFunct2D * const *BoundaryValues
+           BoundValueFunct2D * const * const BoundaryValues
            );
 
 #ifdef __MORTAR__

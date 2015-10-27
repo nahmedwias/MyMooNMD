@@ -82,12 +82,20 @@ void TFE3D::CheckNFandBF()
     {
       if(fabs(FunctionalValues[i])<1e-10)
         FunctionalValues[i] = 0;
+	  #ifdef _MPI
+	  int rank;
+	  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	  if(rank==TDatabase::ParamDB->Par_P0)
+	  #endif
+	  if(TDatabase::ParamDB->SC_VERBOSE > 0){
       if( i == k )
         if( fabs(FunctionalValues[i]-1) > 1e-8 )
           cout << "BF: " << k << " NF: " << i << " " << FunctionalValues[i] << endl;
       if( i != k )
         if( fabs(FunctionalValues[i]-0) > 1e-8 )
           cout << "BF: " << k << " NF: " << i << " " << FunctionalValues[i] << endl;
+	  }
     }
   }
 

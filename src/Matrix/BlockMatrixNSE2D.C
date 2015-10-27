@@ -21,9 +21,9 @@
 /** ************************************************************************ */
 BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
                                    const TFESpace2D& pressure,
-                                   const BoundValueFunct2D*const*BoundValue)
+                                   BoundValueFunct2D * const * const BoundValue)
     : BlockMatrix(Problem_type::NavierStokes, 2),
-      boundary_values({BoundValue[0], BoundValue[1], BoundValue[2]})
+      boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
 {
   // build matrices
   // first build matrix structure
@@ -226,13 +226,18 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
     v_space->GetBoundCondition(), v_space->GetBoundCondition(), 
     p_space->GetBoundCondition() };
   
+  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+  non_const_bound_values[0] = this->boundary_values[0];
+  non_const_bound_values[1] = this->boundary_values[1];
+  non_const_bound_values[2] = this->boundary_values[2];
+    
   // assemble
   Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
              n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-             boundary_conditions, this->boundary_values.data(), la);
+             boundary_conditions, non_const_bound_values.data(), la);
   
   if((TDatabase::ParamDB->DISCTYPE == UPWIND) 
-     && (!TDatabase::ParamDB->PROBLEM_TYPE == 3))
+     && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
   {
     switch(TDatabase::ParamDB->NSTYPE)
     {
@@ -320,14 +325,19 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la)
   unsigned int n_fe_spaces = 1;
   BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
   
+  std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+  non_const_bound_values[0] = this->boundary_values[0];
+  non_const_bound_values[1] = this->boundary_values[1];
+  non_const_bound_values[2] = this->boundary_values[2];
+  
   // assemble the nonlinear part of NSE
   Assemble2D(n_fe_spaces, &v_space, n_sq_mat, sq_mat, n_rect_mat, nullptr,
              n_rhs, nullptr, nullptr, boundary_conditions, 
-             this->boundary_values.data(), la);
+             non_const_bound_values.data(), la);
   
   // apply upwind disc
   if((TDatabase::ParamDB->DISCTYPE == UPWIND) 
-    && (!TDatabase::ParamDB->PROBLEM_TYPE == 3))
+    && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
   {
     switch(TDatabase::ParamDB->NSTYPE)
     {

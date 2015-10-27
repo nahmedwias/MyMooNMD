@@ -5,7 +5,7 @@
 # 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
 #
 
-# TODO This include might be superfluous - it is done in the main CMakeLists.
+# Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/Refinement")
 
 # TODO Replace this by a call-every-file approach, which is the recommended approach.

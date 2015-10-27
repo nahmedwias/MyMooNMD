@@ -345,12 +345,13 @@ include(cmake/sources_system.cmake)
 include(cmake/sources_matrix.cmake)
 # include(cmake/sources_pbe.cmake)
 
-# Define two static libraries. Each has its own precompiler flag (2D/3D). 
-add_library(parmoon_2d STATIC ${PARMOON_SOURCES_2D})
-target_compile_definitions(parmoon_2d PUBLIC -D__2D__)
+# Define two static libraries. Each has its own precompiler flag (2D/3D).
+# Adding dummy.f to the libraries is a hack - no automatic fortran linking (lapack!) without fortran compiling.
+add_library(parmoon_2d_${PARMOON_PARALLEL_TYPE} STATIC ${PARMOON_SOURCES_2D} dummy.f)
+target_compile_definitions(parmoon_2d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__2D__)
 
-add_library(parmoon_3d STATIC ${PARMOON_SOURCES_3D})
-target_compile_definitions(parmoon_3d PUBLIC -D__3D__)
+add_library(parmoon_3d_${PARMOON_PARALLEL_TYPE} STATIC ${PARMOON_SOURCES_3D} dummy.f)
+target_compile_definitions(parmoon_3d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__3D__)
 
 # Set up list of extern libraries, alphabetically. Mutual dependencies are listed locally.
 
@@ -381,7 +382,7 @@ set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${PARMOON_PARALLE
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(cd2d parmoon_2d ${_EXTERN_LIBRARIES})
+target_link_libraries(cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
 ### Darcy2D ###
 # Standard executable target.
@@ -428,10 +429,7 @@ set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${PARMOON_PARALLE
 # Add the correct geometry flag to the target.
 target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
-target_link_libraries(cd3d parmoon_3d ${_EXTERN_LIBRARIES})
-# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-set_target_properties(cd3d PROPERTIES LINK_FLAGS "-lgfortran")
-
+target_link_libraries(cd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
 ### NSE3D ###
 # Standard executable target.
@@ -441,8 +439,6 @@ set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${PARMOON_PARAL
 target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d ${_EXTERN_LIBRARIES})
-# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-set_target_properties(nse3d PROPERTIES LINK_FLAGS "-lgfortran")
 
 ### TCD3D ###
 # Standard executable target.
@@ -452,9 +448,6 @@ set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARAL
 target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tcd3d parmoon_3d ${_EXTERN_LIBRARIES})
-# Set a fortran linker flag TODO This is architecture specific, find a portable workaround!
-set_target_properties(tcd3d PROPERTIES LINK_FLAGS "-lgfortran")
-
 
 ###############################################################################
 # building the documentation using doxygen

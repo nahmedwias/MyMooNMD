@@ -320,7 +320,7 @@ void NSE2D::output(int i)
 /** ************************************************************************ */
 TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
 {
-  TNSE_MGLevel *mg_l;
+  TNSE_MGLevel *mg_l = nullptr;
   int n_aux;
   double alpha[2];
 
@@ -367,6 +367,7 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
       break;
       
     case 4:
+    case 14:
        mg_l = new TNSE_MGLevel4(i, s.matrix.get_A_block(0), 
                                 s.matrix.get_A_block(1),
                                 s.matrix.get_A_block(2),
@@ -379,8 +380,7 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
                                 s.solution.get_entries(), 
                                 n_aux, alpha, v_space_code, p_space_code, 
                                 nullptr, nullptr);
-    break;
-    case 14:
+    if(TDatabase::ParamDB->NSTYPE == 14)
       OutPut("WARNING: NSTYPE 14 is not supported. C block is ignored\n");
     break;
   }

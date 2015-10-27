@@ -66,13 +66,13 @@ class Example2D
     DoubleFunct2D* get_exact(unsigned int i) const
     { return exact_solution.at(i); }
 
-    const BoundCondFunct2D* const* get_bc() const
+    BoundCondFunct2D * const * get_bc() const
     { return &boundary_conditions[0]; }
 
     BoundCondFunct2D* get_bc(unsigned int i) const
     { return boundary_conditions.at(i); }
 
-    const BoundValueFunct2D * const * get_bd() const
+    BoundValueFunct2D * const * get_bd() const
     { return &boundary_data[0]; }
 
     BoundValueFunct2D* get_bd(unsigned int i) const

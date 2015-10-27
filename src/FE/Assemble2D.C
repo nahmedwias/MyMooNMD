@@ -3233,7 +3233,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                        double** rhs, const TFESpace2D** ferhs,
                        LocalAssembling2D& la,
                        BoundCondFunct2D** BoundaryConditions, 
-                       const BoundValueFunct2D* const * BoundaryValues)
+                       BoundValueFunct2D * const * const BoundaryValues)
 {
 #ifdef __2D__
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -3488,7 +3488,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       //////////////////////////////////////////////////////////////////////
       // take care of boundary conditions:      
       BoundCondFunct2D *BoundaryCondition = BoundaryConditions[irhs];
-      const BoundValueFunct2D *BoundaryValue = BoundaryValues[irhs];
+      BoundValueFunct2D * const BoundaryValue = BoundaryValues[irhs];
       
       for(int ijoint=0; ijoint<N_Edges; ijoint++)
       {

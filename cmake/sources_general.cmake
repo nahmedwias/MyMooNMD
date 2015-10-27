@@ -5,7 +5,7 @@
 # 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
 #
 
-# TODO This include might be superfluous - it is done in the main CMakeLists.
+# Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/General")
 
 # Source files used in 2D and 3D.

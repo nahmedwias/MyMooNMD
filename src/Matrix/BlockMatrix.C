@@ -152,7 +152,7 @@ void BlockMatrix::add_scaled_active(const BlockMatrix& A, double factor)
   
   for(unsigned int b = 0; b < n_blocks; b++)
   {
-    if(this->actives[b] <= this->blocks[b]->GetN_Entries())
+    if(this->actives[b] <= (unsigned int) this->blocks[b]->GetN_Entries())
     {
       // note: this could be a method of TMatrix as well, if TMatrix knew its 
       // actives
@@ -176,7 +176,7 @@ void BlockMatrix::scale_active(double factor)
 {
   for(unsigned int b = 0; b < this->n_blocks(); ++b)
   {
-    if(this->actives[b] <= this->blocks[b]->GetN_Entries())
+    if(this->actives[b] <= (unsigned int) this->blocks[b]->GetN_Entries())
     {
       // note: this could be a method of TMatrix as well, if TMatrix knew its 
       // actives
