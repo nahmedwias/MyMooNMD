@@ -8,7 +8,7 @@
  * \subsection quickstart Quick start with ParMooN
  You are eager to get started and have no no time to read any verbose documentation?\n
  This is the minimal out-of-source build instruction.\n
- * Write the follwing into a shell 
+ * Write the following into a shell 
  *  > mkdir ParMooN \n
  *  > cd ParMooN \n
  *  > hg clone ssh://username\@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN . \n
@@ -29,6 +29,6 @@
   
   \subsection forum The ParMooN Q & A Forum
   We set up a wordpress forum, which is the right place for all questions, answers and discussions which are ParMooN related. \n
-  Follow the link to the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">ParMooN Forum</a>!
+  Follow the link to the <a href="https://blog.wias-berlin.de/wias-numath/qa/">ParMooN Forum</a>!
  
  */
