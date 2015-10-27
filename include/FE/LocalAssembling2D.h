@@ -143,6 +143,90 @@ class LocalAssembling2D
      */
     LocalAssembling2D(const TAuxParam2D& aux, const TDiscreteForm2D& df);
 
+    /*!
+     * @brief Customized constructor.
+     *
+     * Set the data members individually. This is to be used when assembling a very problem specific
+     * set of matrices and vectors, which is not (or not yet) covered by any of the types from LocalAssembling2D_type.
+     *
+     * //FROM HERE IT IS MEMBERS OF DEPRECATED TDiscreteForm2D.
+     *
+     * @param myN_Terms Number of terms to be assembled totally. Determines the size of AllOrigValues and OrigValues and should
+     * 					equal the size of "myDerivatives" and "myFESpaceNumber".
+     *
+     * @param myDerivatives Stores which derivative of the ansatz functions is to be used in which term.
+     * 						e.g. myDerivatives[0] = D10 - In the first term the first order x derivative
+     * 						 of the ansatz function is to be used
+     * 						Corresponds to the "Derivatives" of deprecated TDiscreteForm2D.
+     *
+     * @param myFESpaceNumber Determines which FE space from ? is to be used for the ansatz (?) function in which term.
+     * 						  e.g. myFESpaceNumber[0] = 1 - Use fe space "1" (from where?) for the ansatz function in the first term.
+     * 						  Corresponds to the "FESpaceNumber" of deprecated TDiscreteForm2D.
+     * 						  NOTE: myFESpaceNumber[0] = 1 means: for first term, use " BaseFuncts[1]" from  "BaseFunct2D *BaseFuncts",
+     * 						  which is handed as a parameter to LocalAssembling2D::GetLocalForms(...) by the assembling routine.
+     * 						  TO DETERMINE THIS CORRECTLY REQUIRES KNOWLEDGE ABOUT THE BASEFUNCTIONS KNOWN IN THE ASSEMBLING ROUTINE -
+     * 						  THOSE ARE TAKEN CELLWISE FROM THE SPACES GIVEN TO ASSEMBLE2D AS 2ND ARGUMENT!
+     *
+     * @param myRowSpace 	Stores which is the space used for the rows of matrix i.
+     * 						e.g. myRowSpace[0]=1 - matrix 0 uses the space "1" (see above) as row (ansatz?) space
+     *
+     * @param myColumnSpace Stores which is the space used for the columns of matrix i.
+     * 						e.g. myColumnSpace[0]=1 - matrix 0 uses the space "1" (see above) as column (test?) space
+     *
+     * @param myRhsSpace Stores which is the space used for the rhs.
+     * 					 e.g. myRhsSpace[1] = 0 - rhs 1 uses the space "0" (see above)
+     *
+     * @param myCoeffs Pointer to the coefficient function used in "GetLocalForms" to (determine) the coefficients.
+     *
+     * @param myAssembleParam  Pointer to the assembling function used in "GetLocalForms" to do the entire assembling at one quad point.
+     *
+     * @param myManipulate	Manipulate function. Do not use this, pass nullptr.
+     *
+     * @param myN_Matrices How many matrices are to be assembled at once.
+     * 					   NOTE: Actually this is never used, because the number of matrices (split into "square" and "rect")
+     * 					   		 is given as a parameter to Assemble2D(...) and that values is used.
+     * 					   		 This value could only be used to control if "myRowSpace" and "myColumnSpace" have the right length.
+     *
+     * @param myN_Rhs 	How many right hand sides are to be assembled at once.
+     *				 	NOTE: Actually this is never used, because the number of matrices (split into "square" and "rect")
+     * 					      is given as a parameter to Assemble2D(...) and that values is used.
+     * 					   	  This value could only be used to control if "myRowSpace" and "myColumnSpace" have the right length.
+     *
+     * //FROM HERE IT IS MEMBERS OF DEPRECATED TAuxParam2D.
+     * @param myN_ParamFct The number of Parameter functions working on the assembling.
+     *
+     * @param myParameterFct A list of pointers to parameter functions. Size should equal "myN_ParamFct".
+     *
+     * @param myBeginParameter Determine, where which parameter function starts working. Size should equal "myN_ParamFct".
+     *
+     * @param myN_Parameters	The number of parameters given out in the end. Could differ from myN_FEValues if
+     * 							additionally e.g. space coordinates are given out.
+     *
+     * @param myFEFunctions2D An array of the FE functions which have to be evaluated to get the FE_Values.
+     *
+     * @param myN_FEValues	The number of parameters to be evaluated directly from FE functions.
+     *
+     * @param myFEValue_FctIndex Stores which FE function in "myFEFunctions2D" has to be evaluated in order to get a FE_Value.
+     * 							 e.g. myFEValue_FctIndex[i]=j - evaluate "myFEFunctions2D[j]" for FE_Value i
+     *
+     * @param myFEValue_MultiIndex Stores which derivative of an FE function has to be evaluated in order to get a FE_Value.
+     * 								e.g. myFEValue_MultiIndex[i]=D01 - for FE_Value i evaluate y-derivative of corresp. FE function
+     *
+     * @note Some data members get an extra treatment - "name" is set to CUSTOMIZED,
+	 * The auxiliary arrays (All)OrigValues are dynamically allocated with size "N_Terms".
+	 * "N_Spaces" is determined by finding the max in "FESpaceNumber" (+1).
+	 * "Needs2ndDerivative" is dynamically allocated to the size "N_Spaces" and then filled
+	 * according to the appearance of "D20", "D11" or "D02" in "Derivatives".
+     */
+    LocalAssembling2D(int myN_Terms,
+    		 std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
+			 std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
+			 CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
+			 int myN_Matrices, int myN_Rhs,
+			 int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
+			 TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
+			 std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex);
+
     /** destructor */
     ~LocalAssembling2D();
     
