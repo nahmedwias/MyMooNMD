@@ -16,32 +16,13 @@
 # =======================================================================
 # PURPOSE :  configuration file for the ParMooN Version 1.1
 # AUTHOR  : Sashikumaar Ganesan, SERC, IISc Bangalore, India
+#			Clemens Bartsch, WIAS Berlin
 # DATE    : 05 June 2015
 # ========================================================================
 
 # normally no need to alter any thing in this file
 # please DO NOT modify unless if it is necessary
 # beginners are advised NOT to alter anything the below contents
-#
-# Change History 
-#
-# 2015/08/18 Clemens Bartsch: Introduced distinction between 
-# FIND_USER_{PACKAGENAME} and DEFAULT_MODULE_{PACKAGENAME}. Tidied up output
-# a bit. First rework of search modules in directory cmake.
-# Moved several variables between CMakeLists.txt and UserConfig.cmake.
-#
-# 2015/08/25 Clemens Bartsch: Major rework, of find modules as well as the
-# (portable) adding of compiler and linker options. Also changed the executable
-# target system. Now all default targets exist at the same time, but only
-# for the currently chosen PARALLEL_TYPE. To get other PARALLEL_TYPE
-# targets, change UserConfig.cmake accordingly and rerun cmake.
-#
-# 2015/08/25 Clemens Bartsch:
-#    - renamed gridgen to triangle in the whole project
-#    - temporarily disabled default find of lapack and blas library, which continuously made trouble
-#    - moved -DTRILIBRARY and -DREDUCED flag to triangle.c
-# 2015/08/28 Clemens Bartsch:
-#    - stopped writing a history into the files, for that's what hg is for
 # ========================================================================
 
 cmake_minimum_required(VERSION 2.8.12)
