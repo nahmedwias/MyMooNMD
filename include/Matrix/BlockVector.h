@@ -53,6 +53,14 @@ class BlockVector
      */
     BlockVector(unsigned int l);
     
+    /** constructor for a BlockVector consisting of a single block of length
+     * 'l' filled with zeros.
+     *
+     * @note This constructor is for backwards compatibility, to avoid
+     * explicit casts of integers to unsigned int. Use carefully.
+     */
+    BlockVector(int l);
+
     /** @brief constructor for a BlockVector suitable for a given BlockMatrix
      * 
      * If 'image' is set to true, the vector will be in the image space of the 

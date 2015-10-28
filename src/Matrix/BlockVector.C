@@ -20,6 +20,14 @@ BlockVector::BlockVector(unsigned int length)
 }
 
 /** ************************************************************************ */
+BlockVector::BlockVector(int length)
+ : BlockVector(length > 0 ? (unsigned int)length : 0)
+{
+  if(length < 0)
+    ErrThrow("cannot construct BlockVector with negative number of entries");
+}
+
+/** ************************************************************************ */
 BlockVector::BlockVector(const BlockMatrix& mat, bool image)
  : entries(), lengths(), actives()
 {
