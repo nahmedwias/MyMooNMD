@@ -104,13 +104,23 @@ class BlockVector
     {
       this->copy_structure<BM>(mat, image);
     }
-    
-    /** constructor, this BlockVector has the structure of 'r', and is filled
-     * with zeros.
-     */
-    BlockVector(const BlockVector& r);
-    
-    ~BlockVector();
+
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    BlockVector(const BlockVector&) = default;
+
+    //! Default move constructor.
+    BlockVector(BlockVector&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    BlockVector& operator=(const BlockVector&) = default;
+
+    //! Default move assignment operator
+    BlockVector& operator=(BlockVector&&) = default;
+
+    //! Default destructor.
+    ~BlockVector() = default;
     
     /**
      * @brief Set all entries to zero
@@ -336,7 +346,6 @@ class BlockVector
     { return entries[i]; }
     
     
-    BlockVector& operator=(const BlockVector& r); // copy
     // copy, r should be as long as entire BlockVector
     BlockVector& operator=(const double *r);
     BlockVector& operator=(const double a); // set all values to a

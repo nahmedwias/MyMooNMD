@@ -37,21 +37,6 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool image)
 }
 
 /** ************************************************************************ */
-BlockVector::BlockVector(const BlockVector& r)
- : entries(r.entries.size(), 0.0), lengths(r.lengths), actives(r.actives)
-{ 
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector using structure of other BlockVector\n");
-}
-
-/** ************************************************************************ */
-BlockVector::~BlockVector()
-{
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Destructor of BlockVector with length " << length() << endl);
-}
-
-/** ************************************************************************ */
 unsigned int BlockVector::offset(unsigned int b) const
 {
   if(b >= this->n_blocks())
@@ -242,31 +227,6 @@ void BlockVector::info()
         OutPut(endl);
     }
   }
-}
-
-/** ************************************************************************ */
-BlockVector& BlockVector::operator=(const BlockVector& r)
-{
-  if(this == &r) return *this; // both are the same, no copying necessary
-  const unsigned int l = r.length(); // length of BlockVector r
-  if(this->length() != l)
-  {
-    if( this->length() != 0)
-      OutPut("WARNING: BlockVector::operator=\n BlockVectors have different " <<
-             "lengths\t" << this->length() << "\t" << l << endl);
-    // copy the structure such that copying the values is then possible
-    copy_structure(r);
-  }
-  else if(this->n_blocks() != r.n_blocks() )//&& TDatabase::ParamDB->SC_VERBOSE)
-  {
-    // this doesn't have to be an error, but can be. 
-    OutPut("WARNING: BlockVector::operator=\n BlockVectors have different " << 
-           "numbers of blocks\n");
-  }
-  // copy values
-  const double *r_entries = r.get_entries();
-  Dcopy(l, r_entries, &this->entries[0]);
-  return *this;
 }
 
 /** ************************************************************************ */
