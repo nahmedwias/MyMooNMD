@@ -14,7 +14,3 @@ Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
    problem_coefficients(coeffs), initial_conditions(init_cond)
 { 
 }
-
-Example2D::~Example2D()
-{
-}

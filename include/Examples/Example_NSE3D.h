@@ -34,7 +34,22 @@ class Example_NSE3D : public Example3D
                   std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
       : Example3D(exact, bc, bd, coeffs) {};
   
-    ~Example_NSE3D(){};
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example_NSE3D(const Example_NSE3D&) = default;
+
+    //! Default move constructor.
+    Example_NSE3D(Example_NSE3D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example_NSE3D& operator=(const Example_NSE3D&) = default;
+
+    //! Default move assignment operator
+    Example_NSE3D& operator=(Example_NSE3D&&) = default;
+
+    //! Default destructor.
+    ~Example_NSE3D() = default;
 };
 
 
