@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  @name CoupledReaction.h
+ *  @name ReactionCoupling.h
  *	@brief Hold the reaction part of a single CDR equation in a coupled CDR system,
  *	the part where the actual coupling happens.
  *
@@ -16,8 +16,8 @@
  *  @author Clemens Bartsch
  *****************************************************************************/
 
-#ifndef COUPLEDREACTION_H_
-#define COUPLEDREACTION_H_
+#ifndef ReactionCoupling_H_
+#define ReactionCoupling_H_
 
 #include <Constants.h>
 #include <CDR_2D_System.h>
@@ -27,7 +27,7 @@
 //Forward declaration.
 class TFESpace2D;
 
-class CoupledReaction {
+class ReactionCoupling {
 public:
 
 public:
@@ -39,7 +39,7 @@ public:
 	 *	@param[in] nCoupled
 	 *	@param[in] rhsFESpace The FE space used for the right hand side.
 	 */
-	CoupledReaction(CDR_2D_System::SolvingStrategy strategy,
+	ReactionCoupling(CDR_2D_System::SolvingStrategy strategy,
 			AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
 			size_t nCoupled, const TFESpace2D&  rhsFESpace);
 
@@ -53,19 +53,19 @@ public:
 	//Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
-	CoupledReaction(const CoupledReaction&) = default;
+	ReactionCoupling(const ReactionCoupling&) = default;
 
     //! Default move constructor.
-	CoupledReaction(CoupledReaction&&) = default;
+	ReactionCoupling(ReactionCoupling&&) = default;
 
     //! Default copy assignment operator. Performs deep copy.
-	CoupledReaction& operator=(const CoupledReaction&) = default;
+	ReactionCoupling& operator=(const ReactionCoupling&) = default;
 
     //! Default move assignment operator
-	CoupledReaction& operator=(CoupledReaction&&) = default;
+	ReactionCoupling& operator=(ReactionCoupling&&) = default;
 
     //! Default destructor.
-    ~CoupledReaction() = default;
+    ~ReactionCoupling() = default;
 
 
 	//Getter methods.
@@ -130,4 +130,4 @@ private:
 
 
 
-#endif /* COUPLEDREACTION_H_ */
+#endif /* ReactionCoupling_H_ */

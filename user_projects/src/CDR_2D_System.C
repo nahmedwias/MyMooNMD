@@ -21,7 +21,7 @@
 
 #include <CDR_2D_System.h>
 #include <Example_CoupledCDR2D.h>
-#include <CoupledReaction.h>
+#include <ReactionCoupling.h>
 
 /*! @brief Standard constructor.*/
 CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& exam,
@@ -61,9 +61,9 @@ CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& 
 			// Get a pointer to the rhs space (all spaces the same, ansatz=test (=rhs) )
 			const TFESpace2D& currSpace = cdProblems_[index]->get_space();
 
-			//Construct a CoupledReaction from the current coupling function and attach it to the list.
-			std::shared_ptr<CoupledReaction> currCoupledPart(
-					new CoupledReaction(strategy_, currAssemblingFunction,
+			//Construct a ReactionCoupling from the current coupling function and attach it to the list.
+			std::shared_ptr<ReactionCoupling> currCoupledPart(
+					new ReactionCoupling(strategy_, currAssemblingFunction,
 							currParamFunction, nEquations_, currSpace));
 			coupledParts_.push_back(currCoupledPart);
 		}

@@ -1,14 +1,14 @@
 /*
- * CoupledReaction.C
+ * ReactionCoupling.C
  *
- * @brief Implements class CoupledReaction declared in CoupledReaction.h.
+ * @brief Implements class ReactionCoupling declared in ReactionCoupling.h.
  *
  * @date: May 15, 2015
  * @author: Clemens Bartsch
  */
 #include <cstring> //For prototype "memset"
 
-#include <CoupledReaction.h>
+#include <ReactionCoupling.h>
 #include <CDR_2D_System.h>
 
 #include <FESpace2D.h>
@@ -18,7 +18,7 @@
 #include <Assemble2D.h>
 
 //Constructor.
-CoupledReaction::CoupledReaction(CDR_2D_System::SolvingStrategy strategy, AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
+ReactionCoupling::ReactionCoupling(CDR_2D_System::SolvingStrategy strategy, AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
 		size_t nCoupled, const TFESpace2D& rhsFESpace) :
 		nCoupled_(nCoupled), rhsAssemblingFct_(rhsAssemblingFct),
 		paramFunction_(paramFunction), feSpace_(rhsFESpace), rightHandSide_(feSpace_.GetN_DegreesOfFreedom())
@@ -37,7 +37,7 @@ CoupledReaction::CoupledReaction(CDR_2D_System::SolvingStrategy strategy, Assemb
 		}
 
 // Assembling routine for the "linearized_decoupled" solution strategy.
-void CoupledReaction::assembleLinearDecoupled(TFEFunction2D** latestSolutions){
+void ReactionCoupling::assembleLinearDecoupled(TFEFunction2D** latestSolutions){
 
 	// ****** Start constructing the LocalAssembling2D object ******
 	int myN_Terms = 1; //only 1 term to assemble

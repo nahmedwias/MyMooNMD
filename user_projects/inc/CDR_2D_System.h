@@ -19,7 +19,7 @@
 #include <memory>
 
 //Forward declarations.
-class CoupledReaction;
+class ReactionCoupling;
 class CD2D;
 class TDomain;
 
@@ -79,7 +79,7 @@ public:
 	/**
 	 * Note that members cdProblems_ and coupledParts_ are only shared pointers
 	 * so far. So a copied/moved object of class CDR_2D_System will just
-	 * share ownership of the CD2D and CoupledReaction objects which
+	 * share ownership of the CD2D and ReactionCoupling objects which
 	 * the entries of cdProblems_ and coupledParts_ point to.
 	 */
     // Default copy constructor. Shallow copy!
@@ -106,7 +106,7 @@ protected:
 	std::vector<std::shared_ptr<CD2D>> cdProblems_;
 
 	/*! @brief The reaction parts which belong to the equation and involve the coupling.*/
-	std::vector<std::shared_ptr<CoupledReaction>> coupledParts_;
+	std::vector<std::shared_ptr<ReactionCoupling>> coupledParts_;
 
 	/*! @brief The used example. Which one is used is determined by the input file.*/
 	Example_CoupledCDR2D example_;
