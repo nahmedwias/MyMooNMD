@@ -13,14 +13,15 @@
 #ifndef CDR_2D_SYSTEM_H_
 #define CDR_2D_SYSTEM_H_
 
-//#include <FEFunction2D.h>
-#include <SystemMatScalar2D.h>
+#include <BlockMatrixCD2D.h>
+#include <Example_CoupledCDR2D.h>
 #include <vector>
+#include <memory>
 
 //Forward declarations.
 class CoupledReaction;
-class Example_CoupledCDR2D;
 class CD2D;
+class TDomain;
 
 
 
@@ -52,18 +53,11 @@ public:
 public:
 	/*! @brief Constructor; can be used for multigrid in non-multigrid case.
 	 *  @param[in] domain The geometry domain - must be refined.
-	 *  @param[in] exam The used example. Defaults to NULL.
+	 *  @param[in] exam The used example.
 	 *  @param[in] strat The desired solving strategy. Defaults to 'none'.
 	 */
-	CDR_2D_System(TDomain* domain, Example_CoupledCDR2D* exam = NULL,
+	CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& exam,
 			SolvingStrategy strat = SolvingStrategy::none);
-
-	/*! @brief Destructor. */
-	~CDR_2D_System();
-
-	/*! @brief Prohibit copy construction and copy assignment. */
-	CDR_2D_System(const CDR_2D_System &obj) = delete;
-	CDR_2D_System& operator=( const CDR_2D_System& obj ) = delete;
 
 	/*! @brief assemble matrix,
 	 *
@@ -80,19 +74,42 @@ public:
 	/*! @brief Measure errors and write pictures. */
 	void output();
 
-private:
+
+	//Declaration of special member functions - rule of zero.
+	/**
+	 * Note that members cdProblems_ and coupledParts_ are only shared pointers
+	 * so far. So a copied/moved object of class CDR_2D_System will just
+	 * share ownership of the CD2D and CoupledReaction objects which
+	 * the entries of cdProblems_ and coupledParts_ point to.
+	 */
+    // Default copy constructor. Shallow copy!
+	CDR_2D_System(const CDR_2D_System&) = default;
+
+    //! Default move constructor.
+	CDR_2D_System(CDR_2D_System&&) = default;
+
+    //! Default copy assignment operator. Shallow copy!
+	CDR_2D_System& operator=(const CDR_2D_System&) = default;
+
+    //! Default move assignment operator
+	CDR_2D_System& operator=(CDR_2D_System&&) = default;
+
+    //! Default destructor.
+    ~CDR_2D_System() = default;
+
+protected:
 
 	/*! @brief The number of CDR equations involved. Put it here for the moment.*/
 	size_t nEquations_;
 
 	/*! @brief The involved CD problems - make sure these are without coupling part! */
-	std::vector<CD2D*> cdProblems_;
+	std::vector<std::shared_ptr<CD2D>> cdProblems_;
 
 	/*! @brief The reaction parts which belong to the equation and involve the coupling.*/
-	std::vector<CoupledReaction*> coupledParts_;
+	std::vector<std::shared_ptr<CoupledReaction>> coupledParts_;
 
 	/*! @brief The used example. Which one is used is determined by the input file.*/
-	Example_CoupledCDR2D* example_;
+	Example_CoupledCDR2D example_;
 
 	/*! @brief The strategy for solving the coupled system. */
 	SolvingStrategy const strategy_;

@@ -23,8 +23,8 @@
 #include <Example_CoupledCDR2D.h>
 #include <CoupledReaction.h>
 
-/*! @brief Constructor to use normally.*/
-CDR_2D_System::CDR_2D_System(TDomain* domain, Example_CoupledCDR2D* exam,
+/*! @brief Standard constructor.*/
+CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& exam,
 		SolvingStrategy strat) :
 		example_(exam), strategy_(strat)
 {
@@ -37,46 +37,40 @@ CDR_2D_System::CDR_2D_System(TDomain* domain, Example_CoupledCDR2D* exam,
 	}
 
 	//Everything seems to be all right - start constructing.
-	nEquations_ = example_->getNEquations();
+	nEquations_ = example_.getNEquations();
 
-	/********** The list of CD problems.  ********************/
-	//Construct the list of underlying CD problems.
-	cdProblems_.reserve(nEquations_); //reserve space
-	//loop over all equations
-	for(size_t index = 0; index<nEquations_;++index){
-		// Get the CD part from current equation of the example
-		// FIXME This is hard coded for constant_function example. Does this work with other examples?
-		Example_CD2D* currExampleCD = example_->getDecoupledExample(index);
+	//Code for linearized decoupled solving strategy.
+	if(strategy_== SolvingStrategy::linear_decoupled){
+		/********** The list of CD problems.  ********************/
+		cdProblems_.reserve(nEquations_); //reserve space
+		//loop over all equations
+		for(size_t index = 0; index<nEquations_;++index){
+			//Construct a CD2D problem from the current CD part...
+			std::shared_ptr<CD2D> currProblemCD(new CD2D(domain,example_.getDecoupledExample(index)));
+			//...and attach it to the list.
+			cdProblems_.push_back(currProblemCD);
 
-		//Construct a CDR_2D problem from the current CD part and attach it to the list.
-		CD2D* currProblemCD = new CD2D(domain,currExampleCD);
-		cdProblems_.push_back(currProblemCD);
-	}
+		}
+		/********** The list of coupled parts. ********************/
+		//loop over all equations and construct the coupled parts objects
+		for(size_t index = 0; index<nEquations_;++index){
+			//Get a pointer to the assembling function.
+			AssembleFctParam2D* currAssemblingFunction = example_.getAssemblingFct(index);
+			//Get a pointer to the param (in-out) function.
+			ParamFct* currParamFunction = example_.getParamFct(index);
+			// Get a pointer to the rhs space (all spaces the same, ansatz=test (=rhs) )
+			const TFESpace2D& currSpace = cdProblems_[index]->get_space();
 
-	/********** The list of coupled parts. ********************/
-	//loop over all equations and construct the coupled parts objects
-	for(size_t index = 0; index<nEquations_;++index){
-		//Get a pointer to the assembling function.
-		AssembleFctParam2D* currAssemblingFunction = example_->getAssemblingFct(index);
-		//Get a pointer to the param (in-out) function.
-		ParamFct* currParamFunction = example_->getParamFct(index);
-		// Get a pointer to the rhs space (all spaces the same, ansatz=test (=rhs) )
-		TFESpace2D* currSpace = cdProblems_[index]->getSpace();
-
-		//Construct a CoupledReaction from the current coupling function and attach it to the list.
-		CoupledReaction* currCoupledPart = new CoupledReaction(currAssemblingFunction, currParamFunction ,nEquations_,currSpace);
-		coupledParts_.push_back(currCoupledPart);
+			//Construct a CoupledReaction from the current coupling function and attach it to the list.
+			std::shared_ptr<CoupledReaction> currCoupledPart(
+					new CoupledReaction(strategy_, currAssemblingFunction,
+							currParamFunction, nEquations_, currSpace));
+			coupledParts_.push_back(currCoupledPart);
+		}
+	} else {
+		ErrMsg("Unknown or unimplemented solving strategy chosen.");
 	}
 }
-
-/*! @brief Standard destructor. */
-CDR_2D_System::~CDR_2D_System(){
-	//delete matrix;
-	//delete rhs;
-	//delete solution;
-	for (auto cd : cdProblems_) delete cd;
-	for (auto cp : coupledParts_) delete cp;
-  }
 
 /*!
  * Assembles the CD part of the system, excluding the coupled part.
@@ -99,12 +93,10 @@ void CDR_2D_System::solve(){
 		TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
 
 		// Store the original right hand sides of the CDR Equations without coupling.
-		std::vector<double*> originalRightHandSides(nEquations_);
+		std::vector<BlockVector> originalRightHandSides;
 		for (size_t equation = 0; equation<nEquations_;++equation){
-			//Copy the entries from the rhs of the cdrProblems to the rhsList
-			int size = cdProblems_[equation]->getSize();
-			originalRightHandSides[equation] = new double[size];
-			Dcopy(size, cdProblems_[equation]->getRhs(), originalRightHandSides[equation]);
+			BlockVector vector(cdProblems_[equation]->get_rhs());
+			originalRightHandSides.push_back(vector);
 		}
 
 
@@ -112,28 +104,28 @@ void CDR_2D_System::solve(){
 		for (size_t steps = 0; steps<10;steps++){
 			//Fill pointers to available solutions into previousSolutions array
 			for(size_t i =0;i<nEquations_;++i){
-				previousSolutions[i]=cdProblems_[i]->get_function();
+				previousSolutions[i]=&cdProblems_[i]->get_function();
 			}
 			//loop over the equations
 			for (size_t equation = 0; equation<nEquations_;++equation){
-				//store size of the current problem (number of dofs)
-				int size = cdProblems_[equation]->getSize();
-				// assembliere den Kopplungsterme
+
+				// assemble the coupling term
 				coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
-				// add coupled rhs to rhs of the uncoupled equation (using BLAS 1 method Daxpy)
-				Daxpy(size,1,coupledParts_[equation]->getRightHandSide(),cdProblems_[equation]->getRhs());
-				// Loese die Gleichung mit der neuen rechten Seite
+
+
+				// add coupled rhs to rhs of the uncoupled equation
+				cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);
+
+				// solve equation with the new right hand side
 				cdProblems_[equation]->solve();
 
-				// Set back to original rhs. TODO This involves copying and takes long supposedly.
-				Dcopy(cdProblems_[equation]->getSize(), originalRightHandSides[equation],  cdProblems_[equation]->getRhs() );
-
+				// Set back to original rhs.
+				cdProblems_[equation]->get_rhs().copy(originalRightHandSides.at(equation).get_entries());
 
 			}//end loop over equations
 
 		}//endwhile bzw. endfor
 		delete[] previousSolutions; previousSolutions = nullptr; //just delete the pointers array
-		for(auto rhs : originalRightHandSides) delete[] rhs;
 		break;
 	}
 	case SolvingStrategy::newton_decoupled:

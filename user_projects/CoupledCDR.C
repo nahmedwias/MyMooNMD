@@ -8,8 +8,9 @@
  * @note This was first implemented in MooNMD and then imported to ParMooN. Start of "import":
  * May 26, 2015
  */
-
-
+////CB Debug
+//#include <CD2D.h>
+////END DEBUG
 
 #include <FEFunction2D.h>
 //#include <NSE2DMainRoutines.h>
@@ -26,11 +27,10 @@
 
 #include <CDR_2D_System.h>
 #include <Example_CoupledCDR2D.h>
-#include <CDRDatabase.h>
 
 int main(int argc, char* argv[])
 {
-	//take the time.
+	//take the starting time.
 	double t_start = GetTime();
 
 	// Put up domain and databases
@@ -41,9 +41,6 @@ int main(int argc, char* argv[])
 
 	/** set variables' value in TDatabase using argv[1] (*.dat file) */
 	TDomain Domain(argv[1]);
-
-	//Create a CDRDatabase, which is a hack needed for the assembling (see CDRDatabase.h).
-	CDRDatabase auxiliaryDataBaseForAssembling;
 
 	//===========================================================================
 	OpenFiles();
@@ -69,7 +66,7 @@ int main(int argc, char* argv[])
 	// 0 - constant_function example
 	// else - Error
 	Example_CoupledCDR2D example;
-	CDR_2D_System cdrsysObject(&Domain, &example, CDR_2D_System::SolvingStrategy::linear_decoupled);
+	CDR_2D_System cdrsysObject(Domain, example, CDR_2D_System::SolvingStrategy::linear_decoupled);
 	// Assemble whatever matrices and vectors are necessary.
 	cdrsysObject.assembleCDPart();
 	// Solve the system.

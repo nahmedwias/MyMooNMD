@@ -1,17 +1,18 @@
 /*****************************************************************************
  *  @name CoupledReaction.h
  *	@brief Hold the reaction part of a single CDR equation in a coupled CDR system,
- *	so the part where the actual coupling happens.
+ *	the part where the actual coupling happens.
  *
  *	The class is intended to know the reaction term and its derivative and
  *	be able to evaluate both with given input data, plus be able to assemble
  *	matrices and vectors which hold entries coming from either the derivative or
  *	the reaction function itself.
  *
- *	The classe does not know what it is used for. So clients have to be careful
- *	which assembling function they call, depending on the solving strategy they use.
+ *	So far the class is used for the linearized_decoupled solving strategy only.
+ *	Implementing other solving strategies (which is a to do) will require modifications
+ *	of the interface, too.
  *
- *  @date May 8, 2015
+ *  @date May 8, 2015; Oct 29, 2015
  *  @author Clemens Bartsch
  *****************************************************************************/
 
@@ -21,9 +22,9 @@
 #include <Constants.h>
 #include <CDR_2D_System.h>
 #include <stdexcept>
-#include <SystemMatScalar2D.h>
+#include <BlockMatrixCD2D.h>
 
-//Forward declarations.
+//Forward declaration.
 class TFESpace2D;
 
 class CoupledReaction {
@@ -31,72 +32,96 @@ public:
 
 public:
 
-	/*! Constructor, to be used for linearized_decoupled solving strategy.. */
-	CoupledReaction(AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
-			size_t nCoupled, TFESpace2D* const rhsFESpace);
+	/** @brief Constructor. So far the interface only supports linearized_decoupled strategy.
+	 *	@param[in] strategy The solving strategy, so far only linear_decoupled is supported.
+	 *	@param[in] rhsAssemblingFct An assembling function for the right hand side.
+	 *	@param[in] paramFunction A parameter function ("in-out function").
+	 *	@param[in] nCoupled
+	 *	@param[in] rhsFESpace The FE space used for the right hand side.
+	 */
+	CoupledReaction(CDR_2D_System::SolvingStrategy strategy,
+			AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
+			size_t nCoupled, const TFESpace2D&  rhsFESpace);
 
-	/*! Standard destructor. */
-	~CoupledReaction();
-
-	/*! @brief Prohibit copy construction and copy assignment. */
-	CoupledReaction(const CoupledReaction &obj) = delete;
-	CoupledReaction& operator=( const CoupledReaction& obj ) = delete;
-
-	/*! Assembles the right hand side for the linearized_decoupled strategy.
+	/** @brief Assembles the right hand side for the linearized_decoupled strategy.
 	 * @param latestSolutions The TFEFunctions pointer Array to be handed to the aux Object.
-	 * @param coupledTerm The Abbildungsvorschrift of the coupling.*/
+	 * @param coupledTerm The Abbildungsvorschrift of the coupling.
+	 * */
 	void assembleLinearDecoupled(TFEFunction2D** latestSolutions);
 
-	/*! Returns a pointer to the right hand side vector.
-	 * @return A pointer to the right hand side. */
-	double* getRightHandSide() const{
+
+	//Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+	CoupledReaction(const CoupledReaction&) = default;
+
+    //! Default move constructor.
+	CoupledReaction(CoupledReaction&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+	CoupledReaction& operator=(const CoupledReaction&) = default;
+
+    //! Default move assignment operator
+	CoupledReaction& operator=(CoupledReaction&&) = default;
+
+    //! Default destructor.
+    ~CoupledReaction() = default;
+
+
+	//Getter methods.
+
+	const TFESpace2D& getFeSpace() const {
+		return feSpace_;
+	}
+
+	size_t getCoupled() const {
+		return nCoupled_;
+	}
+
+	ParamFct* getParamFunction() const {
+		return paramFunction_;
+	}
+
+	AssembleFctParam2D* getRhsAssemblingFct() const {
+		return rhsAssemblingFct_;
+	}
+
+	const BlockVector& getRightHandSide() const {
 		return rightHandSide_;
 	}
 
-//	/*!
-//	 * This nested class contains a trinity of functions that are used in the process of assembling
-//	 * the rhs for the "linearized_decoupled" strategy.
-//	 * Because these have to be adjusted to each other, we decided to group them in a common namespace.
-//	 */
-//	struct Linearized_Decoupled{
-//		//! Handed to the aux object, responsible for the output order.
-//		static ParamFct* ParameterFunction;
-//		//! Handed to the discrete form, responsible for arranging the coefficients.
-//		static CoeffFct2D* CoefficientFunction;
-//		//! Handed to the discrete form, contains the actual assembling direction.
-//		static AssembleFctParam2D* AssemblingFunction;
-//	};
-
-private:
+protected:
 
 	/*! @brief The number of variables in the system this coupled term belongs to.
 	 * Example: If the system consists of 3 equations for c1, c2, c3
 	 * and this is a term F(c2,c3), the number is 3.*/
 	size_t nCoupled_;
 
+	/*! A function pointer to the assembling function for the right hand side,
+	 *  hard coded in the example file. */
 	AssembleFctParam2D* rhsAssemblingFct_;
 
+	/*! A function pointer to the param function (only for the right hand side,?)
+	 *  hard coded in the example file. */
 	ParamFct* paramFunction_;
 
-	/*! @brief The part of the right hand side vector which is due to coupling.*/
-	double* rightHandSide_;
+	/** The  FE space the right hand side and the matrix entries refer to.
+	 * 	@note The object is supposed to be managed by the CD class this belongs to,
+	 * 	so just hold a const reference.
+	 */
+	const TFESpace2D& feSpace_;
 
-//	/*!
-//	 * @brief A list storing Matrices which are due to coupling.
-//	 *
-//	 * If this list is filled and what with depends on the solving strategy.
-//	 */
-//	std::vector<TSystemMatScalar2D*> matrices_;
+	//! The part of the right hand side vector which is due to coupling.
+	BlockVector rightHandSide_;
 
-	//! The  FE space the right hand side and the matrix entries refer to.
-	TFESpace2D* feSpace_;
-
-	//! Boundary Condition Function and Values ensuring 0 bdry conditions.
-	static void BoundCondition(int BdComp, double t, BoundCond &cond)
+private:
+	//! @brief Boundary Condition Function and Values ensuring 0 dirichlet bdry conditions.
+	static void DirichletBoundCondition(int BdComp, double t, BoundCond &cond)
 	{
 		cond = DIRICHLET;
 	}
-	static void BoundValue(int BdComp, double Param, double &value)
+	//! @brief Boundary Condition Function and Values ensuring 0 dirichlet bdry conditions.
+	static void ZeroBoundValue(int BdComp, double Param, double &value)
 	{
 		value = 0.0;
 	}
