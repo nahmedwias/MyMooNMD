@@ -8,12 +8,8 @@
  * @note This was first implemented in MooNMD and then imported to ParMooN. Start of "import":
  * May 26, 2015
  */
-////CB Debug
-//#include <CD2D.h>
-////END DEBUG
 
 #include <FEFunction2D.h>
-//#include <NSE2DMainRoutines.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
 #include <Domain.h>
@@ -25,7 +21,7 @@
 #include <PardisoSolver.h>
 #include <ConvDiff2D.h>
 
-#include <CDR_2D_System.h>
+#include <CoupledCDR_2D.h>
 #include <Example_CoupledCDR2D.h>
 
 int main(int argc, char* argv[])
@@ -58,15 +54,15 @@ int main(int argc, char* argv[])
 	    Domain.RegRefineAll();
 
 	/**********************************
-	 * Here the calls to CDR_2D_Systems start.
+	 * Here the calls to CoupledCDR_2D start.
 	 **********************************/
 
-	// Construct the object CDR _2D_System object
+	// Construct the CoupledCDR_2D object
 	// Which example gets constructed is determined by the input file.
 	// 0 - constant_function example
 	// else - Error
 	Example_CoupledCDR2D example;
-	CDR_2D_System cdrsysObject(Domain, example, CDR_2D_System::SolvingStrategy::linear_decoupled);
+	CoupledCDR_2D cdrsysObject(Domain, example, CoupledCDR_2D::SolvingStrategy::linear_decoupled);
 	// Assemble whatever matrices and vectors are necessary.
 	cdrsysObject.assembleCDPart();
 	// Solve the system.

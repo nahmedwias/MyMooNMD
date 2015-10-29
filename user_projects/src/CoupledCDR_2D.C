@@ -1,6 +1,6 @@
 /*! ****************************************************************************
- *  @name CDR_2D_System.C
- *	@brief Implements functions of class CDR_2D_System declared in CDR_2D_System.h.
+ *  @name CoupledCDR_2D.C
+ *	@brief Implements functions of class CoupledCDR_2D declared in CoupledCDR_2D.h.
  *
  *  @date May 8, 2015; transferred to ParMooN May 28, 2015
  *  @author Clemens Bartsch
@@ -19,12 +19,12 @@
 
 #include <CD2D.h>
 
-#include <CDR_2D_System.h>
+#include <CoupledCDR_2D.h>
 #include <Example_CoupledCDR2D.h>
 #include <ReactionCoupling.h>
 
 /*! @brief Standard constructor.*/
-CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& exam,
+CoupledCDR_2D::CoupledCDR_2D(const TDomain& domain, const Example_CoupledCDR2D& exam,
 		SolvingStrategy strat) :
 		example_(exam), strategy_(strat)
 {
@@ -32,7 +32,7 @@ CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& 
 	// if strategy is "none" throw exception
 	if(strategy_==SolvingStrategy::none){
 	    std::stringstream errMsg;
-	    errMsg << "No solving strategy chosen for CDR_2D_System.";
+	    errMsg << "No solving strategy chosen for CoupledCDR_2D.";
 	    throw std::runtime_error(errMsg.str().c_str());
 	}
 
@@ -75,7 +75,7 @@ CDR_2D_System::CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& 
 /*!
  * Assembles the CD part of the system, excluding the coupled part.
  */
-void CDR_2D_System::assembleCDPart(){
+void CoupledCDR_2D::assembleCDPart(){
 
 	/**************** Setting up the CD problems. ***************/
 	for(size_t index = 0; index<nEquations_;++index){
@@ -84,7 +84,7 @@ void CDR_2D_System::assembleCDPart(){
 	}
 }
 
-void CDR_2D_System::solve(){
+void CoupledCDR_2D::solve(){
 	switch(strategy_) {
 
 	case SolvingStrategy::linear_decoupled:{
@@ -137,7 +137,7 @@ void CDR_2D_System::solve(){
 	}
 }
 
-void CDR_2D_System::output(){
+void CoupledCDR_2D::output(){
 	//Let the work be done by the CDR-Objects for now.
 	for (size_t equation = 0; equation<nEquations_;++equation){
 		cdProblems_[equation]->output(equation);

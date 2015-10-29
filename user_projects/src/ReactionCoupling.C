@@ -9,7 +9,6 @@
 #include <cstring> //For prototype "memset"
 
 #include <ReactionCoupling.h>
-#include <CDR_2D_System.h>
 
 #include <FESpace2D.h>
 #include <Enumerations.h>
@@ -18,14 +17,14 @@
 #include <Assemble2D.h>
 
 //Constructor.
-ReactionCoupling::ReactionCoupling(CDR_2D_System::SolvingStrategy strategy, AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
+ReactionCoupling::ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy, AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
 		size_t nCoupled, const TFESpace2D& rhsFESpace) :
 		nCoupled_(nCoupled), rhsAssemblingFct_(rhsAssemblingFct),
 		paramFunction_(paramFunction), feSpace_(rhsFESpace), rightHandSide_(feSpace_.GetN_DegreesOfFreedom())
 
 		{
 			switch (strategy) {
-			case CDR_2D_System::SolvingStrategy::linear_decoupled:{
+			case CoupledCDR_2D::SolvingStrategy::linear_decoupled:{
 			  break;
 			  }
 			default:

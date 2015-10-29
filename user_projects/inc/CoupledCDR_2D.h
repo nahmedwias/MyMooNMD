@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  @name CDR_2D_System.h
+ *  @name CoupledCDR_2D.h
  *	@brief The class holds a system of strongly coupled stationary
  *	Convection-Diffusion-Reaction equations in 2D and provides
  *	methods to assemble and solve the system.
@@ -10,8 +10,8 @@
  *  @author Clemens Bartsch
  *****************************************************************************/
 
-#ifndef CDR_2D_SYSTEM_H_
-#define CDR_2D_SYSTEM_H_
+#ifndef CoupledCDR_2D_H_
+#define CoupledCDR_2D_H_
 
 #include <BlockMatrixCD2D.h>
 #include <Example_CoupledCDR2D.h>
@@ -31,10 +31,10 @@ class TDomain;
  *
  * The idea is to provide a control structure, while the system itself is divided into
  * pure convection-diffusion equations and a structure which takes care of the coupled reaction part.
- * The class CDR_2D_System knows which strategy is used to calculate a solution of the system
+ * The class CoupledCDR_2D knows which strategy is used to calculate a solution of the system
  * and how to proceed in every case.
  */
-class CDR_2D_System {
+class CoupledCDR_2D {
 
 public:
 	/*!
@@ -56,7 +56,7 @@ public:
 	 *  @param[in] exam The used example.
 	 *  @param[in] strat The desired solving strategy. Defaults to 'none'.
 	 */
-	CDR_2D_System(const TDomain& domain, const Example_CoupledCDR2D& exam,
+	CoupledCDR_2D(const TDomain& domain, const Example_CoupledCDR2D& exam,
 			SolvingStrategy strat = SolvingStrategy::none);
 
 	/*! @brief assemble matrix,
@@ -78,24 +78,24 @@ public:
 	//Declaration of special member functions - rule of zero.
 	/**
 	 * Note that members cdProblems_ and coupledParts_ are only shared pointers
-	 * so far. So a copied/moved object of class CDR_2D_System will just
+	 * so far. So a copied/moved object of class CoupledCDR_2D will just
 	 * share ownership of the CD2D and ReactionCoupling objects which
 	 * the entries of cdProblems_ and coupledParts_ point to.
 	 */
     // Default copy constructor. Shallow copy!
-	CDR_2D_System(const CDR_2D_System&) = default;
+	CoupledCDR_2D(const CoupledCDR_2D&) = default;
 
     //! Default move constructor.
-	CDR_2D_System(CDR_2D_System&&) = default;
+	CoupledCDR_2D(CoupledCDR_2D&&) = default;
 
     //! Default copy assignment operator. Shallow copy!
-	CDR_2D_System& operator=(const CDR_2D_System&) = default;
+	CoupledCDR_2D& operator=(const CoupledCDR_2D&) = default;
 
     //! Default move assignment operator
-	CDR_2D_System& operator=(CDR_2D_System&&) = default;
+	CoupledCDR_2D& operator=(CoupledCDR_2D&&) = default;
 
     //! Default destructor.
-    ~CDR_2D_System() = default;
+    ~CoupledCDR_2D() = default;
 
 protected:
 
@@ -123,4 +123,4 @@ private:
 
 };
 
-#endif /*  CDR_2D_SYSTEM_H_ */
+#endif /*  CoupledCDR_2D_H_ */

@@ -20,7 +20,7 @@
 #define ReactionCoupling_H_
 
 #include <Constants.h>
-#include <CDR_2D_System.h>
+#include <CoupledCDR_2D.h>
 #include <stdexcept>
 #include <BlockMatrixCD2D.h>
 
@@ -39,7 +39,7 @@ public:
 	 *	@param[in] nCoupled
 	 *	@param[in] rhsFESpace The FE space used for the right hand side.
 	 */
-	ReactionCoupling(CDR_2D_System::SolvingStrategy strategy,
+	ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy,
 			AssembleFctParam2D* rhsAssemblingFct, ParamFct* paramFunction,
 			size_t nCoupled, const TFESpace2D&  rhsFESpace);
 
