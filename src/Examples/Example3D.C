@@ -13,7 +13,3 @@ Example3D::Example3D(std::vector <DoubleFunct3D*> exact,
    problem_coefficients(coeffs)
 { 
 }
-
-Example3D::~Example3D()
-{
-}

@@ -43,8 +43,6 @@ class Example2D
               CoeffFct2D *coeffs,
               std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
 
-    ~Example2D();
-
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;
     /* functions representing the boundary conditions */
@@ -59,7 +57,26 @@ class Example2D
     
     //void *example_info();
 
-    /** getters */
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example2D(const Example2D&) = default;
+
+    //! Default move constructor.
+    Example2D(Example2D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example2D& operator=(const Example2D&) = default;
+
+    //! Default move assignment operator
+    Example2D& operator=(Example2D&&) = default;
+
+    //! Default destructor.
+    ~Example2D() = default;
+
+
+    // Getter functions
+
     const std::vector <DoubleFunct2D*> & get_exact() const 
     { return exact_solution; }
 

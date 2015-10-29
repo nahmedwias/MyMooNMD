@@ -37,7 +37,22 @@ class Example_CD2D : public Example2D
                   std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
 
-    ~Example_CD2D(){};
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example_CD2D(const Example_CD2D&) = default;
+
+    //! Default move constructor.
+    Example_CD2D(Example_CD2D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example_CD2D& operator=(const Example_CD2D&) = default;
+
+    //! Default move assignment operator
+    Example_CD2D& operator=(Example_CD2D&&) = default;
+
+    //! Default destructor.
+    ~Example_CD2D() = default;
 };
 
 
