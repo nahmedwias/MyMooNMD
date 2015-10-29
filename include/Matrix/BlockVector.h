@@ -1,14 +1,16 @@
 /** ************************************************************************ 
 *
-* @name       BlockVector
+* @class       BlockVector
 * @brief      Store a block-vector 
 *
-*             Store block-vector which consists of several subvectors 
-*             (diffenrent length is possible). Some algebraic operations on the
-*             subvectors are implemented
+* Store block-vector which consists of several subvectors 
+* (diffenrent length is possible). Some algebraic operations on the
+* subvectors are implemented
 *
 * @author     Ulrich Wilbrandt
 * @date       01.11.2013
+* 
+* @ruleof0
 *
 ****************************************************************************/
 

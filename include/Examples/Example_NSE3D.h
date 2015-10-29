@@ -8,6 +8,9 @@
 * to the functions needed to fully describe a particular example.
 * 
 * @date      02.06.2015
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 #ifndef __EXAMPLE_NSE3D__
