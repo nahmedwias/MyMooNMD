@@ -16,8 +16,32 @@ public:
 	//! @brief Constructor. Refers to the input file to chose the correct example.
 	Example_CoupledCDR2D();
 
-	//! Destructor. Does nothing special.
-	~Example_CoupledCDR2D(){};
+	/**
+	 * @brief Get one of the underlying CD(R) examples without the coupling term.
+	 * @param[in] n The index of the equation whose example we request.
+	 * @return A constant reference to one particular decoupled example.
+	 */
+	const Example_CD2D& getDecoupledExample(size_t n) const;
+
+	//Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+	Example_CoupledCDR2D(const Example_CoupledCDR2D&) = default;
+
+    //! Default move constructor.
+	Example_CoupledCDR2D(Example_CoupledCDR2D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+	Example_CoupledCDR2D& operator=(const Example_CoupledCDR2D&) = default;
+
+    //! Default move assignment operator
+	Example_CoupledCDR2D& operator=(Example_CoupledCDR2D&&) = default;
+
+    //! Default destructor.
+    ~Example_CoupledCDR2D() = default;
+
+
+    //Getter functions.
 
 	//! Return function pointer to coefficient function of equation nr. equationIndex.
 	CoeffFct2D* getCoeffFct(size_t equationIndex) const;
@@ -34,16 +58,10 @@ public:
 		return nEquations_;
 	}
 
-	/**
-	 * @brief Get one of the underlying CD(R) examples without the coupling term.
-	 * TODO CB 27/05/2015 Adapt this to fit all future examples.
-	 * @param n 0 or 1 gives c1 or c2 respectively
-	 * @return example
-	 */
-	Example_CD2D* getDecoupledExample(size_t n) const;
 
 
-private:
+
+protected:
 	//! Number of contained equations.
 	size_t nEquations_;
 
@@ -54,6 +72,20 @@ private:
 	std::vector<AssembleFctParam2D*> rhsAssemblingFunctions_;
 	//!@brief List of the parameter function pointers used in the assembling of the rhs part (linear-decoupled strategy).
 	std::vector<ParamFct*> parameterFunctions_;
+
+	/** @brief A vector which stores the individual examples without the coupling part.
+	 *  @note It is important to note that although each of these decoupled examples is
+	 *  equipped with an "exact solution", this is of little relevance - depending on
+	 *  the implementation of the used hard-coded example, this exact solution is either the
+	 *  exact solution of the equation in a coupled system or, if unknown, just zero or some other
+	 *  reference function.
+	 */
+	std::vector<Example_CD2D> decoupledExamples_;
+
+
+private:
+	//! @brief Generates decoupled CD2D examples and fills the data member decoupledExamples_ with them.
+	void generateDecoupledExamples();
 
 
 };

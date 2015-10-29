@@ -1,3 +1,19 @@
+/*****************************************************************************
+ *  @name Constant_functions.h
+ *	@brief Example file for a simple system of two cdr equations coupled in the reaction part.
+ *
+ *	To be used as include example in class Example_CoupledCDR2D.
+ *
+ *	Note that in addition to the usual functions, which ParMooN examples have to supply,
+ *	this also provides a parameter- and assembling functions.
+ *	It is due to the MooNMD heritage, that these get passed around the program
+ *	as function pointers and thus have to be hardcoded somewhere outside of class scope.
+ *  Putting them into the example file seemed the best of the bad alternatives.
+ *
+ *  @date May 8, 2015; Oct 29, 2015
+ *  @author Felix Anker, Clemens Bartsch
+ *****************************************************************************/
+
 /**
  * @brief Prints information about the used example.
  */
@@ -183,8 +199,8 @@ void BilinearCoeffsC2(int n_points, double *X, double *Y, double **parameters,
 					 + coeffs[i][1]*valuesC2[1] + coeffs[i][2]*valuesC2[2]
 					 + coeffs[i][3]
 					 + couplingTerm2(couplingArray1);		// right hand side
-	}
 
+	}
 	delete [] valuesC1;
 	delete [] valuesC2;
 }

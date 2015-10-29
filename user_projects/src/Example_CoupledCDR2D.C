@@ -5,13 +5,13 @@
 #include <MainUtilities.h>
 
 
-/* examples */
-
+// Namespaces for the hard coded examples.
 namespace constant
 {
-#include "Coupled_CDR_2D/Constant_functions.h"
+#include "Constant_functions.h"
 }
 
+// Implementation of member methods
 Example_CoupledCDR2D::Example_CoupledCDR2D() : Example2D()
 {
 	switch( TDatabase::ParamDB->EXAMPLE )
@@ -23,7 +23,8 @@ Example_CoupledCDR2D::Example_CoupledCDR2D() : Example2D()
 		exact_solution.push_back( ExactC1 );
 		exact_solution.push_back( ExactC2 );
 
-		/** boundary condition */
+		/** boundary condition - here it's twice the same*/
+		boundary_conditions.push_back( BoundCondition );
 		boundary_conditions.push_back( BoundCondition );
 
 		/** boundary values */
@@ -48,51 +49,63 @@ Example_CoupledCDR2D::Example_CoupledCDR2D() : Example2D()
 		ExampleFile();
 		break;
 	default:
-		ErrMsg("Unknown name of the convection-diffusion-reaction (CDR) " <<
+		ErrMsg("Unknown index of the convection-diffusion-reaction (CDR) " <<
 				"example!");
 		exit(0);
 	}
+
+	// For all examples: fill list of decoupled examples.
+	generateDecoupledExamples();
+
 }
 
-/** ************************************************************************ */
-Example_CD2D* Example_CoupledCDR2D::getDecoupledExample(size_t n) const
+const Example_CD2D& Example_CoupledCDR2D::getDecoupledExample(size_t n) const
 {
-	if(n >= nEquations_){
-		throw std::runtime_error("There is no example with this index. ");
-	}
+	// return a const ref to the example n, using range checked vector method "at"
+	return decoupledExamples_.at(n);
+}
 
-	if(TDatabase::ParamDB->SC_VERBOSE > 1)
-		OutPut("extracting coupled CDR with constant functions\n");
+CoeffFct2D* Example_CoupledCDR2D::getCoeffFct(size_t equationIndex) const{
+	return bilinCoeffs_.at(equationIndex);
+}
 
-	std::vector <DoubleFunct2D*> exact_coupled;
+AssembleFctParam2D* Example_CoupledCDR2D::getAssemblingFct(size_t equationIndex) const{
+	return rhsAssemblingFunctions_.at(equationIndex);
+}
+
+ParamFct* Example_CoupledCDR2D::getParamFct(size_t equationIndex) const{
+	return parameterFunctions_.at(equationIndex);
+}
+
+void Example_CoupledCDR2D::generateDecoupledExamples() {
+
+  decoupledExamples_.reserve(nEquations_); //reserve space to avoid reallocations
+
+  for(size_t n = 0; n<nEquations_;++n){
+
+    std::vector <DoubleFunct2D*> exact_coupled;
 	std::vector <BoundCondFunct2D*> bc_coupled;
 	std::vector <BoundValueFunct2D*> bd_coupled;
 
 	//when using the parts, ignore the exact solution - it's the exact solution of the coupled
 	//system, not of any single equation.
-	exact_coupled.push_back(exact_solution.at(n)); // n = 0 : "concentration"
-	// n = 1 : "temperature"
+	exact_coupled.push_back(exact_solution.at(n));
 
-	bc_coupled.push_back(boundary_conditions.at(0)); // boundary is the same for both
+	// Boundary conditions and boundary data.
+	bc_coupled.push_back(boundary_conditions.at(n));
+	bd_coupled.push_back(boundary_data.at(n));
 
-	bd_coupled.push_back(boundary_data.at(n)); // n = 0 : "concentration"
-	// n = 1 : "temperature"
-	//Construct the example and return a pointer to it.
-	return new Example_CD2D(exact_coupled, bc_coupled, bd_coupled,
-			bilinCoeffs_.at(n));
+	//Construct the example and push back a copy of it.
+	decoupledExamples_.push_back(Example_CD2D(exact_coupled, bc_coupled, bd_coupled,
+			bilinCoeffs_.at(n)));
+	}
 }
 
-//! Return function pointer to coefficient function of equation nr. equationIndex.
-CoeffFct2D* Example_CoupledCDR2D::getCoeffFct(size_t equationIndex) const{
-	return bilinCoeffs_.at(equationIndex);
-}
 
-//! Return function pointer to assembling function of equation nr. equationIndex.
-AssembleFctParam2D* Example_CoupledCDR2D::getAssemblingFct(size_t equationIndex) const{
-	return rhsAssemblingFunctions_.at(equationIndex);
-}
 
-//! Return function pointer to parameter function of equation nr. equationIndex.
-ParamFct* Example_CoupledCDR2D::getParamFct(size_t equationIndex) const{
-	return parameterFunctions_.at(equationIndex);
-}
+
+
+
+
+
+
