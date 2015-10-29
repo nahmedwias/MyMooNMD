@@ -143,14 +143,13 @@ documentation, so there are some specific comment rules to follow.
     Header file:
          \code{.cpp}
           /**
-           * Integrates the right hand side MyClass::f between a and b with interval length dt.
+           * Integrates a function rhs between a and b.
          * *
            * @param a begin of integration interval
            * @param b end of integration interval
-           * @param dt length of integration interval
            * @return integral value
            */
-          double integrate( const std::vector<double> &a, const std::vector<double> &b, const double dt );
+          double integrate( const double a, const double b );
          \endcode
 
 -   no Doxygen comments within the implementation (source file)
@@ -163,9 +162,9 @@ documentation, so there are some specific comment rules to follow.
           /**
            * Here the trapezoidal rule is used to approximate the integral.
            */
-          double MyClass::integrate( const std::vector<double> &a, const std::vector<double> &b, const double dt )
+          double MyClass::integrate( const double a, const double b )
           {
-              return dt * ( f( a ) + f( b ) ) / 2.;
+              return ( b - a ) * ( rhs( a ) + rhs( b ) ) / 2.;
           }
          \endcode
 
@@ -343,16 +342,16 @@ avoids errors when incautiously extending those statements.
  for( int i = 0; i < numCells; ++i )
      std::cout << cells[i] << std::endl;
 
- if( m.hasFullRank() )
-     invM = m.inverse();
+ if( matrix.hasFullRank() )
+     invMatrix = matrix.inverse();
     
  // bad - braces not on new line
  for( int i = 0; i < numCells; ++i ) {
      std::cout << cells[i] << std::endl;
  }
  
- if( m.hasFullRank() ) {
-     invM = m.inverse();
+ if( matrix.hasFullRank() ) {
+     invMatrix = matrix.inverse();
  }
  
  // good
@@ -361,9 +360,9 @@ avoids errors when incautiously extending those statements.
      std::cout << cells[i] << std::endl;
  }
 
- if( m.hasFullRank() )
+ if( matrix.hasFullRank() )
  {
-     invM = m.inverse();
+     invMatrix = matrix.inverse();
  }
 \endcode
 
@@ -376,12 +375,12 @@ argument list.
 
 \code{.cpp}
  // bad
- m.hasFullRank ();
- m.pseudoInverse ();
+ matrix.hasFullRank ();
+ matrix.pseudoInverse ();
  
  // good
- m.hasFullRank();
- m.pseudoInverse();
+ matrix.hasFullRank();
+ matrix.pseudoInverse();
 \endcode
 
 Parentheses ( ) - optional
@@ -393,7 +392,7 @@ enclosed.
 
 -   `if` clause
         \code{.cpp}
-         if( m.hasFullRank() )
+         if( matrix.hasFullRank() )
         \endcode
 
 -   `for` loop
@@ -411,13 +410,13 @@ If - Else
 
 Each block of execution in an if-else statement should be in braces.
 \code{.cpp}
- if( m.hasFullRank() )
+ if( matrix.hasFullRank() )
  {
-     invM = m.inverse();
+     invMatrix = matrix.inverse();
  }
  else
  {
-     invM = m.pseudoInverse();
+     invMatrix = matrix.pseudoInverse();
  }
 \endcode
 
@@ -550,7 +549,7 @@ General Style Issues
           }
           
           // good
-          const bool isLegalBoard = Blah->BlahP->ChessBoard->Etc
+          const bool isLegalBoard = Blah->BlahP->ChessBoard->exists()
                                  && stuff;
           const bool isPlayerWithPawn = playerExists
                                      && gameStarted
