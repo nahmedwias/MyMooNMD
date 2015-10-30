@@ -103,6 +103,23 @@ class BlockPattern
    */
   BlockPattern(unsigned int n_rows, unsigned int n_cols);
   
+  //Declaration of special member functions - rule of zero
+
+  //! Default copy constructor. Performs deep copy.
+  BlockPattern(const BlockPattern&) = default;
+
+  //! Default move constructor.
+  BlockPattern(BlockPattern&&) = default;
+
+  //! Default copy assignment operator. Performs deep copy.
+  BlockPattern& operator=(const BlockPattern&) = default;
+
+  //! Default move assignment operator
+  BlockPattern& operator=(BlockPattern&&) = default;
+
+  //! Default destructor.
+  ~BlockPattern() = default;
+  
   /** @brief get the test (row) space index of the b-th block */
   unsigned int test_space_index_of_block(unsigned int b) const;
   
