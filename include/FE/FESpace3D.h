@@ -71,31 +71,31 @@ class TFESpace3D : public TFESpace
     void ConstructSpace(BoundCondFunct3D *BoundaryCondition);
 
     /** return number of active degrees of freedom */
-    int GetN_ActiveDegrees()
+    int GetN_ActiveDegrees() const
     { return N_ActiveDegrees; }
 
     /** return number of slave degrees of freedom */
-    int GetN_SlaveDegrees()
+    int GetN_SlaveDegrees() const
     { return N_SlaveDegrees; }
 
     /** return HangingBound */
-    int GetHangingBound()
+    int GetHangingBound() const
     { return HangingBound; }
 
     /** return N_Hanging=N_SlaveDegrees */
-    int GetN_Hanging()
+    int GetN_Hanging() const
     { return N_SlaveDegrees; }
 
     /** return identifiers of used elements */
-    FE3D *GetUsedElements()
+    FE3D *GetUsedElements() const
     { return UsedElements; }
 
     /** return array with all hanging nodes */
-    THangingNode **GetHangingNodes()
+    THangingNode **GetHangingNodes() const
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE3D GetFE3D(int i, TBaseCell *cell);
+    FE3D GetFE3D(int i, TBaseCell *cell) const;
 
     /** return position of one given DOF */
     void GetDOFPosition(int dof, double &x, double &y, double &z);
