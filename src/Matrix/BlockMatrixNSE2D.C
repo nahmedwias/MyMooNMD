@@ -538,7 +538,6 @@ const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
   else
   {
     ErrThrow("could not find space for block " + std::to_string(b));
-    throw; // only to avoid compiler warnings
   }
 }
 
@@ -551,7 +550,6 @@ TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
     return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
   else
     ErrThrow("there are only four A-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 
 /** ************************************************************************ */
@@ -563,7 +561,6 @@ const TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i) const
     return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
   else
     ErrThrow("there are only four A-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 
 /** ************************************************************************ */
@@ -573,7 +570,6 @@ TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i)
     return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
   else
     ErrThrow("There are only two BT-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 
 /** ************************************************************************ */
@@ -583,7 +579,6 @@ const TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i) const
     return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
   else
     ErrThrow("There are only two BT-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 
 /** ************************************************************************ */
@@ -593,7 +588,6 @@ TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i)
     return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
   else
     ErrThrow("There are only two B-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 
 /** ************************************************************************ */
@@ -603,6 +597,5 @@ const TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i) const
     return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
   else
     ErrThrow("There are only two B-blocks! " + std::to_string(i));
-  throw; // only to avoid a compiler warning
 }
 

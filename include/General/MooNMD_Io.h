@@ -30,7 +30,8 @@ void CloseFiles();
 #define OutPut(x) {OutFile << x; cout << x;}
 #define ErrMsg(x) { cerr <<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl; OutFile<<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl;}
 #define Error(x) {ErrMsg(x)}
-void throw_with_message(const std::string& x, std::string file, int line);
+[[ noreturn ]] void throw_with_message(const std::string& x, std::string file,
+                                       int line);
 #define ErrThrow(x) {throw_with_message(std::string() + x, __FILE__, __LINE__);}
 
 extern std::ofstream OutFile;
