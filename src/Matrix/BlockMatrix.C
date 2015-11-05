@@ -12,7 +12,7 @@ BlockMatrix::BlockMatrix()
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols)
- : BlockMatrix(std::make_shared<BlockPattern>(n_rows, n_cols))
+ : BlockMatrix(std::make_shared<const BlockPattern>(n_rows, n_cols))
 {
   
 }
@@ -67,14 +67,14 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(const Problem_type type, 
                          unsigned int space_dimension, bool mass_matrix)
- : BlockMatrix(std::make_shared<BlockPattern>(type, space_dimension,
-                                              mass_matrix))
+ : BlockMatrix(std::make_shared<const BlockPattern>(type, space_dimension,
+                                                    mass_matrix))
 {
   // nothing more to do
 }
 
 /* ************************************************************************* */
-BlockMatrix::BlockMatrix(std::shared_ptr<BlockPattern> bp)
+BlockMatrix::BlockMatrix(std::shared_ptr<const BlockPattern> bp)
  : block_pattern(bp), 
    blocks(std::vector<std::shared_ptr<TMatrix>>(bp->n_blocks(), nullptr)),
    actives(bp->n_blocks(), std::numeric_limits<unsigned int>::max()),

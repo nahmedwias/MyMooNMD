@@ -460,27 +460,25 @@ const double* BlockVector::block(const unsigned int i) const
 /** ************************************************************************ */
 double& BlockVector::at(const unsigned int i)
 {
-    try
-    {
-        return entries.at(i);
-    }
-    catch(...)
-        ErrThrow("index out of bounds");
-    throw; // only to avoid a compiler warning
+  try
+  {
+    return entries.at(i);
+  }
+  catch(...)
+    ErrThrow("index out of bounds");
 }
 
 /** ************************************************************************ */
 const double& BlockVector::at(const unsigned int i) const
 {
-    try
-    {
-        return entries.at(i);
-    }
-    catch(...)
-    {
-        ErrThrow("index out of bounds");
-        throw; // only to avoid a compiler warning
-    }
+  try
+  {
+    return entries.at(i);
+  }
+  catch(...)
+  {
+    ErrThrow("index out of bounds");
+  }
 }
 
 /** ************************************************************************ */

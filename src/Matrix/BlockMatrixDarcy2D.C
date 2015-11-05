@@ -144,7 +144,6 @@ const TFESpace2D* BlockMatrixDarcy2D::get_space_of_block(unsigned int b,
   else
   {
     ErrThrow("could not find space for block " + std::to_string(b));
-    throw; // only to avoid compiler warnings
   }
 }
 
