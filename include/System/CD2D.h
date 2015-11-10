@@ -47,6 +47,25 @@ class CD2D
       
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll );
+
+      // Special member functions. Disable copy/move, set destructor to default.
+      // Will be changed only when the underlying
+      // classes TFESpace2D and TFESpace2D follow rule of 0/5.
+
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
     };
     
     /** @brief a complete system on each grid 
@@ -94,10 +113,7 @@ class CD2D
      * should be used. The default implies all cells.
      */
     CD2D(const TDomain& domain, const Example_CD2D&, int reference_id = -4711);
-    
-    /** @brief standard destructor */
-    ~CD2D();
-    
+
     /** @brief assemble matrix, 
      * 
      * depending on 'TDatabase::ParamDB->DISCTYPE' different (local) assembling 
@@ -140,6 +156,24 @@ class CD2D
     { return this->systems.front().solution.length(); }
     const Example_CD2D& get_example() const
     { return example; }
+
+    // Special member functions. Disable copy/move, set destructor to default.
+    // Will be changed only when the underlying classes follow rule of 0/5.
+
+    //! Delete copy constructor.
+    CD2D(const CD2D&) = delete;
+
+    //! Delete move constructor.
+    CD2D(CD2D&&) = delete;
+
+    //! Delete copy assignment operator.
+    CD2D& operator=(const CD2D&) = delete;
+
+    //! Delete move assignment operator.
+    CD2D& operator=(CD2D&&) = delete;
+
+    //! Destructor. Still leaks memory.
+    ~CD2D();
 };
 
 #endif // __CD2D_H__
