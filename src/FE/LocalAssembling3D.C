@@ -2,10 +2,11 @@
 #include <MainUtilities.h> 
 #include <FEDatabase3D.h>
 #include <FEFunction3D.h>
+#include <LocalAssembling3D.h>
 #include <ConvDiff.h>
 #include <ConvDiff3D.h>
 
-#include <LocalAssembling3D.h>
+
 #include <MooNMD_Io.h>
 #include <string.h>
 
@@ -65,10 +66,12 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->ColumnSpace = { 0 };
           this->N_Rhs = 1;
           this->RhsSpace = { 0 };
-          this->AssembleParam = BilinearAssembleGalerkin; 
+          this->AssembleParam = BilinearAssembleGalerkin;
           this->Manipulate = NULL;
           break;
         case SUPG:
+        	ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+        	               " (SUPG) is not supported by the class CD3D");
           break;
         default:
         ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
@@ -100,17 +103,17 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
 //========================================================================
 LocalAssembling3D::LocalAssembling3D(TAuxParam3D& aux, 
                                      TDiscreteForm3D& df)
-  :name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
+  :name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D000), 
-   FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
-   ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),
-   Coeffs(df.GetCoeffFct()), AssembleParam(df.get_AssembleParam()),
-   Manipulate(df.get_Manipulate()), AllOrigValues(new double** [N_Terms]),
-   OrigValues(new double* [N_Terms]), N_Matrices(df.get_N_Matrices()),
-   N_Rhs(df.get_N_Rhs()), N_ParamFct(aux.GetN_ParamFct()), 
+   FESpaceNumber(this->N_Terms, 0), RowSpace(df.getNMatrices(), 0),
+   ColumnSpace(df.getNMatrices(), 0), RhsSpace(df.getNRhs(), 0),
+   Coeffs(df.getCoeffs()), AssembleParam(df.getAssembleParam()),
+   Manipulate(df.getManipulate()), AllOrigValues(new double** [N_Terms]),
+   OrigValues(new double* [N_Terms]), N_Matrices(df.getNMatrices()),
+   N_Rhs(df.getNRhs()), N_ParamFct(aux.getNParamFct()),
    ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
-   N_Parameters(aux.GetN_Parameters()), N_FEValues(aux.get_N_FEValues()), 
-   FEFunctions3D(aux.get_FEFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
+   N_Parameters(aux.getNParameters()), N_FEValues(aux.getNFeValues()),
+   FEFunctions3D(aux.getFeFunctions3D()), FEValue_FctIndex(this->N_FEValues,0),
    FEValue_MultiIndex(this->N_FEValues, D000)
 {
   this->Needs2ndDerivatives = new bool[this->N_Spaces];
@@ -119,8 +122,8 @@ LocalAssembling3D::LocalAssembling3D(TAuxParam3D& aux,
   
   for(int i = 0; i < this->N_Terms; ++i)
   {
-    this->Derivatives.at(i) = df.get_derivative(i);
-    this->FESpaceNumber.at(i) = df.get_FESpaceNumber(i);
+    this->Derivatives.at(i) = df.getDerivative(i);
+    this->FESpaceNumber.at(i) = df.getFeSpaceNumber(i);
   }
   
   for(int i = 0; i < this->N_Matrices; ++i)
@@ -130,18 +133,18 @@ LocalAssembling3D::LocalAssembling3D(TAuxParam3D& aux,
   }
   
   for(int i = 0; i < this->N_Rhs; ++i)
-    this->RhsSpace.at(i) = df.get_RhsSpace(i);
+    this->RhsSpace.at(i) = df.getRhsSpace(i);
   
   for(int i = 0; i < this->N_ParamFct; ++i)
   {
-    this->ParameterFct.at(i) = aux.get_ParameterFct(i);
-    this->BeginParameter.at(i) = aux.get_BeginParameter(i);
+    this->ParameterFct.at(i) = aux.getParameterFct(i);
+    this->BeginParameter.at(i) = aux.getBeginParameter(i);
   }
   
   for(int i = 0; i < this->N_FEValues; ++i)
   {
-    this->FEValue_FctIndex.at(i) = aux.get_FEValue_FctIndex(i);
-    this->FEValue_MultiIndex.at(i) = aux.get_FEValue_MultiIndex(i);
+    this->FEValue_FctIndex.at(i) = aux.getFeValueFctIndex(i);
+    this->FEValue_MultiIndex.at(i) = aux.getFeValueMultiIndex(i);
   }
   
   // some consistency checks
@@ -174,7 +177,7 @@ void LocalAssembling3D::GetLocalForms(int N_Points, double *weights,  double *Ab
                        TBaseCell *Cell, int N_Matrices,
                        int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
-                       double factor)
+                       double factor) const
 {
   int i,j, N_Rows, N_Columns;
   double **CurrentMatrix, *MatrixRow;
@@ -238,7 +241,7 @@ void LocalAssembling3D::GetLocalForms(int N_Points, double *weights,  double *Ab
 //========================================================================
 void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
                                       TBaseCell *cell, int cellnum,
-                                      double *x, double *y, double *z, double **Parameters)
+                                      double *x, double *y, double *z, double **Parameters) const
 {
   double *param, *currparam, s;
   TFESpace3D *fespace;

@@ -29,6 +29,11 @@
 enum class LocalAssembling3D_type { CD3D, NSE3D_Linear, NSE3D_NonLinear
 };
 
+//Forward declarations
+class TFEFunction3D;
+class TAuxParam3D;
+class TDiscreteForm3D;
+
 /** a function from a finite element space */
 class LocalAssembling3D
 {
@@ -120,7 +125,7 @@ class LocalAssembling3D
     
   public:
     /** constructor */
-    LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions2d,
+    LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
                       CoeffFct3D *coeffs);
     
     /** @brief constructor for backward compatibility
@@ -140,13 +145,13 @@ class LocalAssembling3D
                        double **Parameters, double **AuxArray,
                        TBaseCell *Cell, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
-                       double factor = 1.);
+                       double factor = 1.) const;
     
      /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TCollection *Coll,
                        TBaseCell *cell, int cellnum,
                        double *x, double *y, double *z,
-                       double **Parameters);
+                       double **Parameters) const;
 
     /** return name */
     const std::string& get_name() const

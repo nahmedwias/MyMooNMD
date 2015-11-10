@@ -14,9 +14,10 @@
 
 #include <AllClasses.h>
 #include <Constants.h>
+#include <LocalAssembling3D.h>
 
 /** a function from a finite element space */
-void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
+[[deprecated]] void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
                 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                 int n_matrices, TMatrix3D **matrices,
                 int n_rhs, double **rhs, TFESpace3D **ferhs,
@@ -24,6 +25,21 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
                 BoundCondFunct3D **BoundaryConditions,
                 BoundValueFunct3D **BoundaryValues,
                 TAuxParam3D *parameters);
+
+/**
+ * @brief Assembling method which takes a LocalAssembling3D object replacing the deprecated
+ * DiscreteForm3D and AuxParam3D.
+ *
+ * The method is adapted for use in MPI setting.
+ *
+ */
+void Assemble3D(int n_fespaces, TFESpace3D** fespaces,
+				int n_sqmatrices, TSquareMatrix3D** sqmatrices,
+				int n_matrices, TMatrix3D** matrices,
+				int n_rhs, double** rhs,  TFESpace3D** ferhs,
+				BoundCondFunct3D** BoundaryConditions,
+                BoundValueFunct3D** BoundaryValues,
+				const LocalAssembling3D& la);
 
 
 /** a function from a finite element space */

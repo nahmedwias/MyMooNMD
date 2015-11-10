@@ -287,8 +287,12 @@ class TDomain
     TCollection *GetCollection(Iterators it, int level, int ID) const;
 
 #ifdef  _MPI 
-    /** @brief produce a own collection with all cells returned by iterator it */
-    TCollection *GetOwnCollection(Iterators it, int level, int ID);
+    /** @brief produce a own collection with all cells returned by iterator it
+     *
+     * CB Produces TCollection of those cells whose flag "SubDomainNumber"
+     * equals ID, I think this is meant to be the rank of this process (TODO CB Change variable name ID to rank)
+     * */
+    TCollection *GetOwnCollection(Iterators it, int level, int ID) const;
 #endif
 
     /** @brief produce a collection with all cells in the finest grid, sort 
@@ -398,6 +402,10 @@ class TDomain
 //      int Tetgen(const char*);
 
      /** @brief generate edge info in 3D mesh **/
+     // TODO CB Add documentation. This method does mark certain Vertices as boundary vertices
+     // (TVertex::SetAsBoundVertex(...) ) and creates edge objects, pointers to which are then
+     // stored as members of certain mesh cells (TBaseCell::SetEdge(...)).
+     // Does work only on currently finest level.
      int GenerateEdgeInfo();
 
 #endif

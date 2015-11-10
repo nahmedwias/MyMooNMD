@@ -43,7 +43,10 @@ extern "C"
 }
 #endif
 
-
+/**@brief A quicksort implementation.
+ * @param[in, out] Array The integer array to be sorted.
+ * @param[in] length The length of the array to be sorted.
+ * */
 static void Sort(int *Array, int length)
 {
   int n=0, l=0, r=length-1, m;
@@ -395,7 +398,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
 
 // partition the mesh in the root and send info to all processors
- if(rank==0)
+ if(rank==0) //Code run by root
   {
   // cout <<  "Total Cells " << N_Cells<<endl;
 
@@ -529,7 +532,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
     }
 
   t2 = MPI_Wtime();
-  OutPut( "Time taken for METIS mesh partinioning "<< t2-t1<< " sec"<<endl); 
+  OutPut( "Time taken for METIS mesh partitioning "<< t2-t1<< " sec"<<endl);
 
 
   /** *********************************************/
@@ -581,7 +584,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    delete [] Vertices;
    
   }
- else
+ else //code run by worker processes - revieve information form root
   {
     MPI_Recv(&N_RootVertices, 1, MPI_INT, 0, 75, comm, &status);
     // printf("%d SubDomain_N_Cells in rank test 1, %d  \n", rank, N_RootVertices );
@@ -596,7 +599,8 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   } //else if(rank==0)
 
 
-    /**Metis partition done!! code for all processors */  
+    /**Metis partition done!! code for all processors */
+ 	// Send Metis output Cell_Rank and Vert_Rank to all processes.
     MPI_Bcast(Cell_Rank, N_Cells, MPI_INT, 0, comm);
     MPI_Bcast(Vert_Rank, N_RootVertices, MPI_INT, 0, comm);
   
@@ -1263,6 +1267,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    return 0;		//partinioning successful
 }
 #endif // 3D
+
 
 void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 {
