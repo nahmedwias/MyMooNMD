@@ -44,6 +44,14 @@ class TFESpace3D : public TFESpace
     /** array storing the fe for each element, if necessary */
     FE3D *AllElements;
 
+    /**
+     *  @brief Boundary condition used to create this space.
+     *
+     *  In order to reproduce the information, which boundary condition was used
+     *  in the creation of the space, store a function pointer to it.
+     */
+   BoundCondFunct3D* boundCondition_;
+
   public:
     /** constructor */
     TFESpace3D(TCollection *coll, char *name, char *description);
@@ -69,6 +77,10 @@ class TFESpace3D : public TFESpace
 
     /** construct space */
     void ConstructSpace(BoundCondFunct3D *BoundaryCondition);
+
+   /** @return The boundary condition function pointer. */
+   BoundCondFunct3D* getBoundCondition() const
+   { return boundCondition_; }
 
     /** return number of active degrees of freedom */
     int GetN_ActiveDegrees() const
@@ -102,6 +114,8 @@ class TFESpace3D : public TFESpace
 
     /** return position of all dofs */
     void GetDOFPosition(double *x, double *y, double *z);
+
+
 };
 
 #endif

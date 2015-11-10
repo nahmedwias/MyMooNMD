@@ -60,7 +60,9 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
- 
+
+  boundCondition_ = BoundaryCondition;
+
   ElementForShape = new FE3D[N_SHAPES];
 
   // build ElementForShape array
@@ -219,6 +221,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
   UsedElements = NULL;
+  boundCondition_ = BoundaryCondition;
   ElementForShape = NULL;
 
   AllElements = fes;
@@ -240,7 +243,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
- 
+  boundCondition_ = BoundaryCondition;
   ElementForShape = new FE3D[N_SHAPES];
 
   // build ElementForShape array
