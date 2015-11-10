@@ -2076,7 +2076,7 @@ TCollection *TDomain::GetCollection(Iterators it, int level, int ID) const
 
 
 #ifdef  _MPI 
-TCollection *TDomain::GetOwnCollection(Iterators it, int level, int ID)
+TCollection *TDomain::GetOwnCollection(Iterators it, int level, int ID) const
 {
   TCollection *coll;
   int i, n_cells, info;
