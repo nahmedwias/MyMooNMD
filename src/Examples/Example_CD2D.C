@@ -6,7 +6,10 @@
 #include <SquareMatrix2D.h>
 #include <string.h>
 
-/* examples */
+//===========================================================
+// examples for stationary convection-diffusion-reaction
+// problems
+//===========================================================
 
 namespace sine_laplace
 {
@@ -21,6 +24,11 @@ namespace two_interior_layers
 namespace hemker_1996
 {
   #include "CD_2D/Hemker1996.h"
+}
+
+namespace sharp_boundary_layer
+{
+  #include "CD_2D/SharpBoundaryLayer.h"
 }
 
 
@@ -91,7 +99,24 @@ Example_CD2D::Example_CD2D() : Example2D()
       problem_coefficients = hemker_1996::BilinearCoeffs;
       
       hemker_1996::ExampleFile();
-      break;    
+      break;
+
+    case 3:
+      /** exact_solution */
+      exact_solution.push_back( sharp_boundary_layer::Exact );
+
+      /** boundary condition */
+      boundary_conditions.push_back( sharp_boundary_layer::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( sharp_boundary_layer::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = sharp_boundary_layer::BilinearCoeffs;
+
+      sharp_boundary_layer::ExampleFile();
+      break;
+
     // starting from 101 the examples for time dependent problems
     case 101:
       /**Exact solution"**/

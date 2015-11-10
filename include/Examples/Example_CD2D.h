@@ -7,6 +7,19 @@
 * constructor of this class will fill the vectors (in Example2D) with pointers
 * to the functions needed to fully describe a particular example.
 * 
+* So far the following examples are implemented and enabled:
+* Stationary examples
+* 	0 - Simple Sine Laplace (analytical example)
+* 	1 - Two interior Layers  (Knopp, Lube, Rapin, CMAME 2002)
+* 	2 - Hemker Rotating Body (Hemker 1996)
+* 	3 - Sharp Boundary Layer (Kuzmin & Moeller 2005)
+*
+* Time dependent examples
+* 	101 - Exponential Function (analytical example)
+* 	102 - Sine Sine Sine (analytical example)
+* 	103 - Sine Cosine (analytical example)
+*
+*
 * @author    Ulrich Wilbrandt, 
 * @date      13.03.15
 * 
