@@ -372,21 +372,21 @@ void BlockVector::copy_structure(const BlockMatrix& mat, bool image)
   }
 }
 
-/** ************************************************************************ */
-template <class BM>
-void BlockVector::copy_structure(const BM& mat, bool image)
-{
-  // call the regular copy_structure.
-  this->copy_structure((const BlockMatrix&)mat, image);
-  // set the active degrees of freedom
-  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
-  for(unsigned int b = 0; b < n_blocks; ++b)
-  {
-    unsigned int block = b * (image ? mat.n_cols() : 1.);
-    this->actives[b] = mat.get_space_of_block(block, 
-                                              image)->GetN_ActiveDegrees();
-  }
-}
+///** ************************************************************************ */
+//template <class BM>
+//void BlockVector::copy_structure(const BM& mat, bool image)
+//{
+//  // call the regular copy_structure.
+//  this->copy_structure((const BlockMatrix&)mat, image);
+//  // set the active degrees of freedom
+//  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
+//  for(unsigned int b = 0; b < n_blocks; ++b)
+//  {
+//    unsigned int block = b * (image ? mat.n_cols() : 1.);
+//    this->actives[b] = mat.get_space_of_block(block,
+//                                              image)->GetN_ActiveDegrees();
+//  }
+//}
 
 
 /** ************************************************************************ */
@@ -483,14 +483,14 @@ const double& BlockVector::at(const unsigned int i) const
     }
 }
 
-/** ************************************************************************ */
-
-#include <BlockMatrixCD2D.h>
-#include <BlockMatrixDarcy2D.h>
-#include <BlockMatrixNSE2D.h>
-template void BlockVector::copy_structure<BlockMatrixCD2D>(
-  const BlockMatrixCD2D & mat, bool image);
-template void BlockVector::copy_structure<BlockMatrixDarcy2D>(
-  const BlockMatrixDarcy2D & mat, bool image);
-template void BlockVector::copy_structure<BlockMatrixNSE2D>(
-  const BlockMatrixNSE2D & mat, bool image);
+///** ************************************************************************ */
+//
+//#include <BlockMatrixCD2D.h>
+//#include <BlockMatrixDarcy2D.h>
+//#include <BlockMatrixNSE2D.h>
+//template void BlockVector::copy_structure<BlockMatrixCD2D>(
+//  const BlockMatrixCD2D & mat, bool image);
+//template void BlockVector::copy_structure<BlockMatrixDarcy2D>(
+//  const BlockMatrixDarcy2D & mat, bool image);
+//template void BlockVector::copy_structure<BlockMatrixNSE2D>(
+//  const BlockMatrixNSE2D & mat, bool image);

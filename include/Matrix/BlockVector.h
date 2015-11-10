@@ -102,8 +102,9 @@ class BlockVector
     template<class BM>
     BlockVector(const BM& mat, bool image = false)
     {
-      this->copy_structure<BM>(mat, image);
+      copy_structure<BM>(mat, image);
     }
+
 
     //Declaration of special member functions - rule of zero
 
@@ -212,8 +213,21 @@ class BlockVector
      * which returns the test space (or ansatz space if 'test' is false) of the
      * b-th block.
      */
-    template<class BM>
-    void copy_structure(const BM & mat, bool image);
+    /** ************************************************************************ */
+    template <class BM>
+    void copy_structure(const BM& mat, bool image)
+    {
+      // call the regular copy_structure.
+      this->copy_structure((const BlockMatrix&)mat, image);
+      // set the active degrees of freedom
+      unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
+      for(unsigned int b = 0; b < n_blocks; ++b)
+      {
+        unsigned int block = b * (image ? mat.n_cols() : 1.);
+        this->actives[b] = mat.get_space_of_block(block,
+                                                  image)->GetN_ActiveDegrees();
+      }
+    }
     
     /**
      * @brief add (scaled) values into a subvector, "this += a*x"
