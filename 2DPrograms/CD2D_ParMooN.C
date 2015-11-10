@@ -54,12 +54,9 @@ int main(int argc, char* argv[])
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
-  // choose example according to the value of TDatabase::ParamDB->EXAMPLE
-  Example_CD2D example;
    
   //=========================================================================
-  CD2D cd2d(domain, example);
+  CD2D cd2d(domain);
   cd2d.assemble();
   cd2d.solve();
   cd2d.output();

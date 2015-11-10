@@ -76,7 +76,7 @@ class CD2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D& example;
+    const Example_CD2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -100,20 +100,16 @@ class CD2D
      * 
      * This constructor calls the other constructor creating an Example_CD2D
      * object for you. See there for more documentation.
+     *
+     * @param[in] domain The readily treated (refined/partitioned...) domain object.
+     * 					 Must not go out of scope before CD2D does!
+     *
+     * @param[in] reference_id The cell reference id, of which cells to create
+     * 						   the TCollection.
+     *
      */
     CD2D(const TDomain& domain, int reference_id = -4711);
     
-    /** @brief constructor 
-     * 
-     * The domain must have been refined a couple of times already. On the 
-     * finest level the finite element spaces and functions as well as 
-     * matrices, solution and right hand side vectors are initialized. 
-     * 
-     * The reference_id can be used if only the cells with the give reference_id
-     * should be used. The default implies all cells.
-     */
-    CD2D(const TDomain& domain, const Example_CD2D&, int reference_id = -4711);
-
     /** @brief assemble matrix, 
      * 
      * depending on 'TDatabase::ParamDB->DISCTYPE' different (local) assembling 
@@ -172,7 +168,7 @@ class CD2D
     //! Delete move assignment operator.
     CD2D& operator=(CD2D&&) = delete;
 
-    //! Destructor. Still leaks memory.
+    //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
     ~CD2D();
 };
 

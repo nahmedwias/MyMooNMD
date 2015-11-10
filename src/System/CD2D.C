@@ -23,15 +23,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, int reference_id)
- : CD2D(domain, *(new Example_CD2D()), reference_id)
-{
-  // note that the way we construct the example above will produce a memory 
-  // leak, but that class is small.
-}
-
-/** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, const Example_CD2D& e, int reference_id)
-    : systems(), example(e), multigrid(nullptr)
+ : systems(), example(), multigrid(nullptr)
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
