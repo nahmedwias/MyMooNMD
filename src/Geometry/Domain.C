@@ -766,15 +766,23 @@ int TDomain::GenInitGrid()
   return 0;
 }
 
-/** initialize the grid, using the boundary parametrization in file PRM,
-    and initial grid from file GEO,
-    if GEO=="InitGrid" then the automatic mesh generator is used */
 void TDomain::Init(char *PRM, char *GEO)
 {
   int Flag;
 
   if(PRM)
-  { ReadBdParam(PRM, Flag); }
+  {
+	if (!strcmp(PRM, "Default_UnitSquare"))
+	{//catch the only implemented default case - boundary of the unit square
+	  initializeDefaultUnitSquareBdry();
+	}
+	else
+	{
+	  // non-default: read in from file
+	  ReadBdParam(PRM, Flag);
+	}
+
+  }
 
   if (!strcmp(GEO, "InitGrid"))
   {
