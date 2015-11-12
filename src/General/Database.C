@@ -564,6 +564,13 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SOLD_PARAMETER_SCALING = 0;
   ParamDB->SOLD_PARAMETER_SCALING_FACTOR = 1.0;
 
+  /** parameters for controlling algebraic flux correction (FEM-FCT schemes) */
+  ParamDB->ALGEBRAIC_FLUX_CORRECTION = 0;
+  ParamDB->FEM_FCT_LINEAR_TYPE = 1;
+  ParamDB->FEM_FCT_PRELIMITING = 0;
+  ParamDB->FEM_FCT_GROUP_FEM = 0;
+  ParamDB->GROUP_FEM = 0;
+
   /** parameters for controling the program */
   ParamDB->WRITE_PS = FALSE; 
   ParamDB->WRITE_GRAPE = FALSE; 
@@ -923,10 +930,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->VMS_ADAPT_COMP = 1;
 
   ParamDB->SUPERCONVERGENCE_ORDER = 0;
-  ParamDB->FEM_FCT_LINEAR_TYPE = 1;
-  ParamDB->FEM_FCT_PRELIMITING = 0;
-  ParamDB->FEM_FCT_GROUP_FEM = 0;
-  ParamDB->GROUP_FEM = 0;
   ParamDB->WENO_TYPE = 0;
 
   /* the following parameters are for membrane REACTOR */
@@ -1659,6 +1662,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   OutFile << "VMS_ADAPT_COMP: " << ParamDB->VMS_ADAPT_COMP << endl; 
 
   OutFile << "SUPERCONVERGENCE_ORDER: " << ParamDB->SUPERCONVERGENCE_ORDER << endl;
+  OutFile << "ALGEBRAIC_FLUX_CORRECTION: " << ParamDB->ALGEBRAIC_FLUX_CORRECTION << endl;
   OutFile << "FEM_FCT_LINEAR_TYPE: " << ParamDB->FEM_FCT_LINEAR_TYPE << endl;
   OutFile << "FEM_FCT_PRELIMITING: " << ParamDB->FEM_FCT_PRELIMITING << endl;
   OutFile << "FEM_FCT_GROUP_FEM: " << ParamDB->FEM_FCT_GROUP_FEM << endl;

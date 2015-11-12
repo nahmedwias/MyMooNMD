@@ -2720,6 +2720,11 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
+    if (!strcmp(line, "ALGEBRAIC_FLUX_CORRECTION:"))
+    {
+      dat >> TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION;
+      N_Param++;
+    }
     if (!strcmp(line, "FEM_FCT_LINEAR_TYPE:"))
     {
       dat >> TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE;
