@@ -412,7 +412,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell)
+FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
 {
   FE3D ret;
 
