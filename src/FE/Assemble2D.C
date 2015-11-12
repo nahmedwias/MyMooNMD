@@ -9696,9 +9696,18 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
             }                                     // endfor n
           }
           else
-          {
-            // Dirichlet node
-            sqmatrices[j]->set(l,l,1.0);
+          {// Dirichlet node
+        	  if(TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE) //this is needed e.g. when applying FEM-FCT
+        	  { // In that case, treat Dirichlet nodes like active dofs
+        		// and add the calculated values to the square matrix
+        		  for(k=0;k<N_;k++)
+        		  {
+        			  sqmatrices[j]->add(l, DOF[k], MatrixRow[k]);
+        		  }
+        	  } else {
+        		  //Dirichlet standard treatment
+        		  sqmatrices[j]->set(l,l,1.0);
+        	  }
           }
         }
       }                                           // endfor m
