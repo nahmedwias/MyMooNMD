@@ -11,10 +11,16 @@
 # target which calls ctest and depends on all the executables.
 # See also https://cmake.org/Wiki/CMakeEmulateMakeCheck
 
-
+#matrix test
 add_executable(ParMooN_test_matrix matrix_test.c++)
-target_link_libraries(ParMooN_test_matrix parmoon_2d)
+target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE})
 add_test(matrix ParMooN_test_matrix)
 list(APPEND parmoon_tests ParMooN_test_matrix)
+
+#cd2d test
+add_executable(ParMooN_test_cd2d cd2d_test.c++)
+target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+add_test(cd2d ParMooN_test_cd2d)
+list(APPEND parmoon_tests ParMooN_test_cd2d)
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})
