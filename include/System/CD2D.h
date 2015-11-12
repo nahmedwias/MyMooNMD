@@ -101,14 +101,35 @@ class CD2D
      * This constructor calls the other constructor creating an Example_CD2D
      * object for you. See there for more documentation.
      *
-     * @param[in] domain The readily treated (refined/partitioned...) domain object.
-     * 					 Must not go out of scope before CD2D does!
+     * @param[in] domain The readily treated (refined/partitioned...) domain 
+     *                   object. Must not go out of scope before CD2D does!
      *
      * @param[in] reference_id The cell reference id, of which cells to create
-     * 						   the TCollection.
+     *                         the TCollection.
      *
      */
     CD2D(const TDomain& domain, int reference_id = -4711);
+    
+    /** @brief constructor 
+     * 
+     * All members are initialized, including systems, which has only one entry
+     * usually. In case you want to use multigrid
+     * (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5 and 
+     * TDatabase::ParamDB->SOLVER_TYPE == 1), it has more entries and the 
+     * multigrid object is appropriatly build. The example is copied. If the
+     * reference_id is not set to its default value, then only cells with this
+     * reference id will be included to build the finite element space. 
+     *
+     * @param[in] domain The readily treated (refined/partitioned...) domain
+     *                   object. Must not go out of scope before CD2D does!
+     *
+     * @param[in] example a description of the example to be used, this is 
+     *                    copied into a local member.
+     *
+     * @param[in] reference_id The cell reference id, of which cells to create
+     *                         the TCollection.
+     */
+    CD2D(const TDomain& domain, Example_CD2D example, int reference_id = -4711);
     
     /** @brief assemble matrix, 
      * 
