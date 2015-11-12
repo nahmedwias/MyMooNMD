@@ -5,6 +5,10 @@
 //
 // Authors:     Volker John, 2008/02/07
 //
+// TODO CB The algorithms in this file currently undergo refactoring. Those
+// 			who are operating are collected in the files AlgebraicfluxCorrection.C
+//			When that is done: remove this file!
+//
 // =======================================================================
 
 #include <Database.h>
