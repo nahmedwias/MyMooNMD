@@ -13,7 +13,7 @@
 
 
 add_executable(ParMooN_test_matrix matrix_test.c++)
-target_link_libraries(ParMooN_test_matrix parmoon_2d)
+target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE})
 add_test(matrix ParMooN_test_matrix)
 list(APPEND parmoon_tests ParMooN_test_matrix)
 
