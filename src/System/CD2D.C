@@ -24,7 +24,13 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, int reference_id)
- : systems(), example(), multigrid(nullptr)
+ : CD2D(domain, Example_CD2D(), reference_id)
+{
+}
+
+/** ************************************************************************ */
+CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
+ : systems(), example(example), multigrid(nullptr)
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
@@ -33,7 +39,7 @@ CD2D::CD2D(const TDomain& domain, int reference_id)
   // when using afc, create system matrices as if all dofs were active
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 0)
   {
-	  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
 
   // create finite element space and function, a matrix, rhs, and solution
