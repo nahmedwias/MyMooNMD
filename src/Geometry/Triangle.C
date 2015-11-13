@@ -8,7 +8,8 @@
 //
 // =======================================================================
 
-#include <Triangle.h>
+/* fix such that the correct header file gets taken on case-insensitive platforms */
+#include <../Geometry/Triangle.h>
 #include <Constants.h>
 #include <math.h>
 

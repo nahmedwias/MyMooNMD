@@ -18,6 +18,9 @@
 #include <BlockVector.h>
 #include <LocalAssembling2D.h>
 
+/* clang (mac) fix: needs array include. */
+#include <array>
+
 /**class for 2D  NSE system matrix */
 class BlockMatrixNSE2D : public BlockMatrix
 {

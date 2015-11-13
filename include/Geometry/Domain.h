@@ -14,11 +14,13 @@
 #define __DOMAIN__
 
 class TDomain;
+class RefinementStrategy;
 
 #include <BoundPart.h>
 #include <Collection.h>
 #include <Database.h>
 #include <Iterator.h>
+#include <RefinementStrategy.h>
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
@@ -304,7 +306,8 @@ class TDomain
     /** @brief refine the finest grid if necessary in order to get a 
         grid with conforming closures */
     int MakeConfClosure();
-
+    /** @brief refine the finest grid according to the marked cells in refinement strategy */
+    int RefineByRefinementStrategy(RefinementStrategy* strategy, bool ConfClosure);
     /** @brief refine the finest grid according a given error estimate */
     int RefineByErrorEstimator(TCollection *Collection,double *eta_K,
                                double eta_max,double tolerance,

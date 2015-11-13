@@ -444,13 +444,14 @@ int TGridCell::MakeConfClosure()
     if ((Neighb = Joints[i]->GetNeighbour(this)))
 	// this neighbour cell is refined regularly or 
 	// it has children 
-	if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512)
-         {
-	  if (Neighb->ExistChildren() ) OutPut("1a");
-	  if (Neighb->GetClipBoard()>512) OutPut("2b");
-	  OutPut(endl);
-        clip += (1 << i) + 16;
+    if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512) {
+      if(TDatabase::ParamDB->SC_VERBOSE > 1) {
+        if (Neighb->ExistChildren()) OutPut("1a");
+        if (Neighb->GetClipBoard() > 512) OutPut("2b");
+        OutPut(endl);
       }
+      clip += (1 << i) + 16;
+    }
   // set regular refinement bit(9)
   if ((clip > 160 && clip < 256) || clip > 304)
     clip |= 512;

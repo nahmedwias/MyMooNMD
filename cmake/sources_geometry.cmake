@@ -10,6 +10,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Geometry")
 
 # Source files used in 2D and 3D.
 #list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/AdaptiveRefine.C") #CB why not?
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/RefinementStrategy.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BaseCell.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdCircle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/BdLine.C")

@@ -17,7 +17,8 @@
 #include <Constants.h>
 #include <Mapper.h>
 #include <Line.h>
-#include <Triangle.h>
+/* fix such that the correct header file gets taken on case-insensitive platforms */
+#include <../Geometry/Triangle.h>
 #include <Quadrangle.h>
 #include <Parallelogram.h>
 #include <Rectangle.h>

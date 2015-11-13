@@ -24,6 +24,7 @@
 #include <MooNMD_Io.h>
 
 #include <math.h>
+#include <array>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __MAC64__
@@ -53,13 +54,13 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
                                          MultiIndex2D *NeededDerivatives,
                                          int N_DerivativesP,
                                          MultiIndex2D *NeededDerivativesP,
-                                         CoeffFct2D *Coeff, 
-                                         BoundCondFunct2D **BoundaryConds,
-                                         BoundValueFunct2D **BoundaryValues,
+                                         CoeffFct2D *Coeff,
+                                         BoundCondFunct2D *const*BoundaryConds,
+                                         BoundValueFunct2D *const*BoundaryValues,
                                          TAuxParam2D *Aux,
                                          int n_fespaces,
                                          TFESpace2D **fespaces,
-                                         double *eta_K, 
+                                         double *eta_K,
                                          double *maximal_local_error,
                                          double *estimated_global_error)
 {
@@ -78,10 +79,49 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   TBaseCell *cell, *neigh;
   BF2DRefElements bf2Drefelements;
   double *weights, *xi, *eta,*weights1D, *zeta;
-  double xi1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D], eta1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D];
-  double xietaval_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
-  double xideriv_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
-  double etaderiv_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
+
+  /**
+   * The commented arrays below are now allocated on the heap rather than the stack.
+   */
+  //double xi1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D], eta1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D];
+  std::vector<std::array<double* , 4>> xi1D(N_BaseFuncts2D), eta1D(N_BaseFuncts2D);
+  std::shared_ptr<double> xi_eta_1D_data(new double[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * 2], std::default_delete<double[]>());
+  {
+    // back xi1D and eta1D by xi_eta_1D_data
+    double *ptr = xi_eta_1D_data.get();
+    xi1D[0][0] = &ptr[0];
+    eta1D[0][0] = &ptr[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D];
+    for (uint ii = 0; ii < N_BaseFuncts2D; ii++) {
+      for (uint jj = 0; jj < 4; jj++) {
+        xi1D[ii][jj] = xi1D[0][0] + (ii * 4 * MaxN_QuadPoints_1D + jj * MaxN_QuadPoints_1D);
+        eta1D[ii][jj] = eta1D[0][0] + (ii * 4 * MaxN_QuadPoints_1D + jj * MaxN_QuadPoints_1D);
+      }
+    }
+  }
+
+  //double xietaval_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
+  //double xideriv_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
+  //double etaderiv_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D];
+  std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D>, 4>> xietaval_ref1D(N_BaseFuncts2D);
+  std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D>, 4>> xideriv_ref1D(N_BaseFuncts2D);
+  std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D>, 4>> etaderiv_ref1D(N_BaseFuncts2D);
+  std::shared_ptr<double> xieta_ref1D_data(new double[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D * 3], std::default_delete<double[]>());
+  {
+    // back xietaval_ref1D, xideriv_ref1D, etaderiv_ref1D by xieta_ref1D_data
+    double *ptr = xieta_ref1D_data.get();
+    xietaval_ref1D[0][0][0] = &ptr[0];
+    xideriv_ref1D[0][0][0] = &ptr[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D];
+    etaderiv_ref1D[0][0][0] = &ptr[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D * 2];
+    for(uint ii = 0; ii < N_BaseFuncts2D; ii++) {
+      for(uint jj = 0; jj < 4; jj++) {
+        for(uint kk = 0; kk < MaxN_QuadPoints_1D; kk++) {
+          xietaval_ref1D[ii][jj][kk] = xietaval_ref1D[0][0][0] + (kk * MaxN_BaseFunctions2D + jj * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D + ii * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D);
+          xideriv_ref1D[ii][jj][kk] = xideriv_ref1D[0][0][0] + (kk * MaxN_BaseFunctions2D + jj * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D + ii * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D);
+          etaderiv_ref1D[ii][jj][kk] = etaderiv_ref1D[0][0][0] + (kk * MaxN_BaseFunctions2D + jj * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D + ii * 4 * MaxN_QuadPoints_1D * MaxN_BaseFunctions2D);
+        }
+      }
+    }
+  }
   double *xyval_ref1D[4][MaxN_QuadPoints_1D];
   double *xderiv_ref1D[4][MaxN_QuadPoints_1D];
   double *yderiv_ref1D[4][MaxN_QuadPoints_1D];
@@ -110,11 +150,11 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
 
   int memory[3],data_base_memory;
 #ifdef _MALLOC_MALLOC_H_
- struct mstats info;
- info = mstats();
- 
- memory[0]=memory[1]=memory[2]=0.;
-#else    
+  struct mstats info;
+  info = mstats();
+
+  memory[0]=memory[1]=memory[2]=0.;
+#else
   struct mallinfo MALLINFO;
   MALLINFO = mallinfo();
   memory[0]=MALLINFO.usmblks+MALLINFO.uordblks;
@@ -176,14 +216,14 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
     LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*l);
     qf1D = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
     qf1D->GetFormulaData(N_Points1D, weights1D, zeta);*/
-    BaseFunct = BaseFuncts[CurrentElement];     
+    BaseFunct = BaseFuncts[CurrentElement];
 
     bf = TFEDatabase2D::GetBaseFunct2D(BaseFunct); // get base functions
     bf2Drefelements = bf->GetRefElement();
-    
+
     switch(bf2Drefelements)                      // compute coordinates of line quadrature
     {                                            // points in reference cell
-                                                 // quadrilateral cell 
+                                                 // quadrilateral cell
     case BFUnitSquare :                          // edge 0
       for (j=0;j<N_Points1D;j++)                 // for all quadrature points
         {
@@ -194,7 +234,7 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
           bf->GetDerivatives(D01, zeta[j], -1, etaderiv_ref1D[BaseFunct][0][j]);
         }                                        // edge 1
       for (j=0;j<N_Points1D;j++)               // for all quadrature points
-        {       
+        {
           xi1D[BaseFunct][1][j] = 1;
           eta1D[BaseFunct][1][j] = zeta[j];
           bf->GetDerivatives(D00, 1, zeta[j], xietaval_ref1D[BaseFunct][1][j]);
@@ -218,8 +258,8 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
           bf->GetDerivatives(D01, -1, -zeta[j], etaderiv_ref1D[BaseFunct][3][j]);
         }
       break;
-      
-    case BFUnitTriangle :                        // triangular cell 
+
+    case BFUnitTriangle :                        // triangular cell
       for (j=0;j<N_Points1D;j++)                 // for all quadrature points
         {
           xi1D[BaseFunct][0][j] = (zeta[j]+1)/2;
@@ -248,18 +288,18 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
     }
   }                                               // endfor i
 
-  for (i=0;i<4;i++)                               // arrays for coordinates, values and  
+  for (i=0;i<4;i++)                               // arrays for coordinates, values and
     {                                             // determinant for 1D quadrature
-      X1D[i] = new double[N_Points1D];            // coordinates of edge i  
+      X1D[i] = new double[N_Points1D];            // coordinates of edge i
       Y1D[i] = new double[N_Points1D];
-      AbsDetjk1D[i] = new double[MaxN_QuadPoints_2D];     // determinant of affine mapping 
+      AbsDetjk1D[i] = new double[MaxN_QuadPoints_2D];     // determinant of affine mapping
       for (j=0;j<N_Points1D;j++)                  // arrays for values in reference cell
         {
           xyval_ref1D[i][j] = new double[MaxN_BaseFunctions2D];
           xderiv_ref1D[i][j] = new double[MaxN_BaseFunctions2D];
           yderiv_ref1D[i][j] = new double[MaxN_BaseFunctions2D];
         }
-      xyval_1D[i] = new double[3*N_Points1D];       // arrays for values in original cell 
+      xyval_1D[i] = new double[3*N_Points1D];       // arrays for values in original cell
       xderiv_1D[i] = new double[3*N_Points1D];
       yderiv_1D[i] = new double[3*N_Points1D];
     }
@@ -272,12 +312,12 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   aux = new double [3*MaxN_QuadPoints_2D*N_Derivatives]; // allocate memory for Derivatives arrays, hier kann man was sparen
   for(j=0;j<3*MaxN_QuadPoints_2D;j++)               // set pointers
     Derivatives[j] = aux + j*N_Derivatives;
- 
+
   // 20 <= number of term
   aux = new double [MaxN_QuadPoints_2D*20]; // allocate memory for AuxArray
   for(j=0;j<MaxN_QuadPoints_2D;j++)
     AuxArray[j] = aux + j*20;
- 
+
   GlobalNumbers = FESpace2D_U->GetGlobalNumbers();
   BeginIndex = FESpace2D_U->GetBeginIndex();
   GlobalNumbersP = FESpace2D_P->GetGlobalNumbers();
@@ -291,12 +331,12 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   Coll = FESpace2D_U->GetCollection();          // collection of mesh cells
   N_Cells = Coll->GetN_Cells();                 // number of mesh cells
   N_U = U->GetLength();
-  N_DOF = 2*U->GetLength()+P->GetLength();      // number of global dof 
+  N_DOF = 2*U->GetLength()+P->GetLength();      // number of global dof
   Values = U->GetValues();                      // values of fe function
   ValuesP = P->GetValues();
 
   for(i=0;i<N_Cells;i++)                        // do for all mesh cells
-  {                                           // on the finest level 
+  {                                           // on the finest level
     cell = Coll->GetCell(i);
     k=cell->GetN_Edges();                       // # edges
     for(j=0;j<k;j++)                            // for all edges
@@ -304,11 +344,11 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
       neigh=cell->GetJoint(j)->GetNeighbour(cell); // neighbour cell
       if(neigh) neigh->SetClipBoard(-1);        // set clipboard to -1
     }
-    cell->SetClipBoard(-1);          
+    cell->SetClipBoard(-1);
   }                                             // endfor i
-  // non finest neighbours of finest cells have clipboard -1 
+  // non finest neighbours of finest cells have clipboard -1
 
-  for(i=0;i<N_Cells;i++)                        // set clipboard of cells on finest  
+  for(i=0;i<N_Cells;i++)                        // set clipboard of cells on finest
   {
     cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
@@ -326,14 +366,14 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
 // ########################################################################
 #ifdef _MALLOC_MALLOC_H_
  info = mstats();
- 
-#else  
+
+#else
   MALLINFO = mallinfo();
   memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif  
+#endif
   for(i=0;i<N_Cells;i++)                      // for all cells on the finest level
   {
-     cell = Coll->GetCell(i);                        // next cell 
+     cell = Coll->GetCell(i);                        // next cell
     eta_K[i] = 0.0;                           // initialize local estimate
 
     // ####################################################################
@@ -355,22 +395,22 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
     // ####################################################################
     // calculate values on original element
     // ####################################################################
-    
+
                                       // get reference transformation
-    RefTrans = TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements, 
+    RefTrans = TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements,
                                     Coll, cell, SecondDer,
                                     N_Points, xi, eta, weights, X, Y, AbsDetjk);
     if(N_Parameters>0)                // get parameters of equ.
-        Aux->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param); 
-    
+        Aux->GetParameters(N_Points, Coll, cell, i, xi, eta, X, Y, Param);
+
 
     // velocity first
                                        // calculate all needed derivatives of this FE function
     CurrentElement = FESpace2D_U->GetFE2D(i,cell);  // finite element on cell
     BaseFunct = BaseFuncts[CurrentElement];       // basis functions
-    N_ = N_BaseFunct[CurrentElement];             // # basis functions    
+    N_ = N_BaseFunct[CurrentElement];             // # basis functions
     DOF = GlobalNumbers + BeginIndex[i];    // dof of current mesh cell
-    // cout << "cell no " << i << " begin " << *DOF << endl; 
+    // cout << "cell no " << i << " begin " << *DOF << endl;
     for(l=0;l<N_;l++)
       {
         FEFunctValues[l] = Values[DOF[l]];    // u fe values of dofs
@@ -378,17 +418,17 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
         //cout << FEFunctValues[l] << " " << FEFunctValues[l+MaxN_BaseFunctions2D] << endl;
       }
 
-                                         // compute values for all derivatives 
+                                         // compute values for all derivatives
                                             // in all quadrature points
-                                            // in original mesh cell 
-    for(k=0;k<N_Derivatives;k++)            // for all derivatives 
-    {                                       // get values in original cell   
+                                            // in original mesh cell
+    for(k=0;k<N_Derivatives;k++)            // for all derivatives
+    {                                       // get values in original cell
       OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct,NeededDerivatives[k]);
       for(j=0;j<N_Points;j++)               // for all quadrature points
       {
-        Orig = OrigFEValues[j];             // value in original cell 
+        Orig = OrigFEValues[j];             // value in original cell
         value[0] = value[1] = 0;
-        for(l=0;l<N_;l++)                   // for all basis functions 
+        for(l=0;l<N_;l++)                   // for all basis functions
           {
             value[0] += FEFunctValues[l] * Orig[l]; // accumulate u value of derivative in point j
             value[1] += FEFunctValues[l+MaxN_BaseFunctions2D] * Orig[l]; // accumulate v value of derivative in point j
@@ -397,31 +437,31 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
         Derivatives[j+MaxN_QuadPoints_2D][k] = value[1];// for k-th v derivative
       }                                     // endfor j
     }                                       // endfor k
-          
-    if(Coeff)                               // get coefficients of pde 
+
+    if(Coeff)                               // get coefficients of pde
       Coeff(N_Points, X, Y, Param, AuxArray); // 0 - eps, 1,2 - rhs
                                             // prepare 1D quadrature formula
     // pressure first
     CurrentElementP = FESpace2D_P->GetFE2D(i,cell);  // finite element on cell
     BaseFunctP = BaseFuncts[CurrentElementP];       // basis functions
-    N_P = N_BaseFunct[CurrentElementP];             // # basis functions    
+    N_P = N_BaseFunct[CurrentElementP];             // # basis functions
     DOFP = GlobalNumbersP + BeginIndexP[i];    // dof of current mesh cell
-    //cout << "cell no " << i << " begin " << *DOFP << 
-    // " " << *GlobalNumbersP << " " << BeginIndexP[i] << endl; 
+    //cout << "cell no " << i << " begin " << *DOFP <<
+    // " " << *GlobalNumbersP << " " << BeginIndexP[i] << endl;
     for(l=0;l<N_P;l++)
       {
         FEFunctValues[l+2*MaxN_BaseFunctions2D] = ValuesP[DOFP[l]];    // p fe values of dofs
         //cout <<  FEFunctValues[l+2*MaxN_BaseFunctions2D] << endl;
       }
-   
-    for(k=0;k<N_DerivativesP;k++)            // for all derivatives 
-    {                                       // get values in original cell   
+
+    for(k=0;k<N_DerivativesP;k++)            // for all derivatives
+    {                                       // get values in original cell
       OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunctP,NeededDerivativesP[k]);
       for(j=0;j<N_Points;j++)               // for all quadrature points
       {
-        Orig = OrigFEValues[j];             // value in original cell 
+        Orig = OrigFEValues[j];             // value in original cell
         value[0] = 0;
-        for(l=0;l<N_P;l++)                   // for all basis functions 
+        for(l=0;l<N_P;l++)                   // for all basis functions
           {
             value[0] += FEFunctValues[l+2*MaxN_BaseFunctions2D] * Orig[l]; // accumulate p value of derivative in point j
           }
@@ -437,13 +477,13 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
       ->MakeRefElementData(LineQuadFormula);
 
     N_Edges=cell->GetN_Edges();             // # edges
-     // pressure second 
-    
+     // pressure second
+
     for(j=0;j<N_Edges;j++)                  // loop over all edges of cell
       {                                     // get original coordinates of edge quad. points
-        TFEDatabase2D::GetOrigFromRef(RefTrans,N_Points1D, xi1D[BaseFunctP][j], 
-                                    eta1D[BaseFunctP][j], 
-                                    X1D[j], Y1D[j], AbsDetjk1D[j]);   
+        TFEDatabase2D::GetOrigFromRef(RefTrans,N_Points1D, xi1D[BaseFunctP][j],
+                                    eta1D[BaseFunctP][j],
+                                    X1D[j], Y1D[j], AbsDetjk1D[j]);
         for(k=0;k<N_Points1D;k++)  // get values and derivatives in original cell
           {
             TFEDatabase2D::GetOrigValues(RefTrans, xi1D[BaseFunctP][j][k],
@@ -457,25 +497,25 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
                                        xderiv_ref1D[j][k],
                                        yderiv_ref1D[j][k]);
           }
-        
+
         for(k=0;k<N_Points1D;k++)     // for all quadrature points
           {
             val[0]= 0;
-            for(l=0;l<N_P;l++)       // for all basis functions 
+            for(l=0;l<N_P;l++)       // for all basis functions
               {
                 m = l+2*MaxN_BaseFunctions2D;
-                val[0] += FEFunctValues[m] * xyval_ref1D[j][k][l]; // accumulate value of derivative 
+                val[0] += FEFunctValues[m] * xyval_ref1D[j][k][l]; // accumulate value of derivative
               } // endfor l
             m = k + 2*N_Points1D;
             xyval_1D[j][m]= val[0]; // for k-th
-          } // endfor k                                        
+          } // endfor k
       }     // endfor j
    // velocity second
     for(j=0;j<N_Edges;j++)                  // loop over all edges of cell
       {                                     // get original coordinates of edge quad. points
-        TFEDatabase2D::GetOrigFromRef(RefTrans,N_Points1D, xi1D[BaseFunct][j], 
-                                    eta1D[BaseFunct][j], 
-                                    X1D[j], Y1D[j], AbsDetjk1D[j]);   
+        TFEDatabase2D::GetOrigFromRef(RefTrans,N_Points1D, xi1D[BaseFunct][j],
+                                    eta1D[BaseFunct][j],
+                                    X1D[j], Y1D[j], AbsDetjk1D[j]);
         for(k=0;k<N_Points1D;k++)  // get values and derivatives in original cell
           {
             TFEDatabase2D::GetOrigValues(RefTrans, xi1D[BaseFunct][j][k],
@@ -489,127 +529,127 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
                                        xderiv_ref1D[j][k],
                                        yderiv_ref1D[j][k]);
           }
-        
+
         for(k=0;k<N_Points1D;k++)     // for all quadrature points
           {
             val[0]=val[1]=val[2] = val[3]=val[4]=val[5]= 0;
-            for(l=0;l<N_;l++)       // for all basis functions 
+            for(l=0;l<N_;l++)       // for all basis functions
               {
                 m = l+MaxN_BaseFunctions2D;
-                val[0] += FEFunctValues[l] * xyval_ref1D[j][k][l]; // accumulate value of derivative 
+                val[0] += FEFunctValues[l] * xyval_ref1D[j][k][l]; // accumulate value of derivative
                 val[1] += FEFunctValues[l] * xderiv_ref1D[j][k][l]; // accumulate value of derivative
                 val[2] += FEFunctValues[l] * yderiv_ref1D[j][k][l]; // accumulate value of derivative
-                val[3] += FEFunctValues[m] * xyval_ref1D[j][k][l]; // accumulate value of derivative 
+                val[3] += FEFunctValues[m] * xyval_ref1D[j][k][l]; // accumulate value of derivative
                 val[4] += FEFunctValues[m] * xderiv_ref1D[j][k][l]; // accumulate value of derivative
                 val[5] += FEFunctValues[m] * yderiv_ref1D[j][k][l]; // accumulate value of derivative
               } // endfor l
             m = k + N_Points1D;
             xyval_1D[j][k]= val[0]; // for k-th
-            xderiv_1D[j][k]= val[1]; // for k-th 
-            yderiv_1D[j][k]= val[2]; // for k-th 
+            xderiv_1D[j][k]= val[1]; // for k-th
+            yderiv_1D[j][k]= val[2]; // for k-th
             xyval_1D[j][m]= val[3]; // for k-th
-            xderiv_1D[j][m]= val[4]; // for k-th 
-            yderiv_1D[j][m]= val[5]; // for k-th 
-          } // endfor k                                        
+            xderiv_1D[j][m]= val[4]; // for k-th
+            yderiv_1D[j][m]= val[5]; // for k-th
+          } // endfor k
       }     // endfor j
 
 
-    // estimate local errors 
-    EstimateCellError(fespaces,cell,N_Points, X, Y, AbsDetjk, weights, Derivatives, 
+    // estimate local errors
+    EstimateCellError(fespaces,cell,N_Points, X, Y, AbsDetjk, weights, Derivatives,
                       AuxArray,BoundaryConds,BoundaryValues,
                       N_Points1D, zeta, X1D, Y1D, weights1D,
                       xyval_1D, xderiv_1D, yderiv_1D,
                       GlobalNumbers,BeginIndex,DOF,Values,
                       GlobalNumbersP,BeginIndexP,DOF,ValuesP,
                       estimated_local_errors);
-    
+
     for(k=0;k<4;k++) // update global error estimates
       estimated_global_errors[k]+=estimated_local_errors[k];
                      // update maximal local error estimate
     if (estimated_local_errors[current_estimator]>max_loc_err)
       max_loc_err = estimated_local_errors[current_estimator];
-    
+
     eta_K[i] = estimated_local_errors[current_estimator];
   }                 // endfor i (loop over cells)
 #ifdef _MALLOC_MALLOC_H_
  info = mstats();
- 
-#else    
-  MALLINFO = mallinfo();   
+
+#else
+  MALLINFO = mallinfo();
   memory[2]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif  
+#endif
   data_base_memory+= memory[2]-memory[1];
-  
+
   for(i=1;i<4;i++)  // compute global error estimates
     estimated_global_error[i]=sqrt(estimated_global_errors[i]);
   estimated_global_error[0]=estimated_global_errors[0];
                     // compute maximal local error estimate
   *maximal_local_error = sqrt(max_loc_err);
-                    // set memory free  
+                    // set memory free
 
   delete UsedElements;
   delete SecondDer;
- 
-  for (i=0;i<4;i++)                              
-    {                                            
+
+  for (i=0;i<4;i++)
+    {
       delete X1D[i];
-      delete Y1D[i]; 
+      delete Y1D[i];
       delete AbsDetjk1D[i];
-      for (j=0;j<N_Points1D;j++)                 
+      for (j=0;j<N_Points1D;j++)
         {
           delete xyval_ref1D[i][j];
           delete xderiv_ref1D[i][j];
           delete yderiv_ref1D[i][j];
         }
-      delete xyval_1D[i];     
-      delete xderiv_1D[i]; 
+      delete xyval_1D[i];
+      delete xderiv_1D[i];
       delete yderiv_1D[i];
     }
   delete Param[0];
   delete Derivatives[0];
    delete AuxArray[0];
-  
+
 #ifdef _MALLOC_MALLOC_H_
  info = mstats();
- 
-#else  
+
+#else
    MALLINFO = mallinfo();
    memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif   
+#endif
    if (memory[1]- memory[0]!=data_base_memory)
-     cout << "WARNING : Error Estimator did not set all memory free !!!" <<  memory[1]- memory[0] << 
+     cout << "WARNING : Error Estimator did not set all memory free !!!" <<  memory[1]- memory[0] <<
        "  " << data_base_memory << endl;
-  
+
 } // TCDErrorEstimator::GetErrorEstimate
 
 
 void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                            TBaseCell *cell,
-                                           int N_Points, 
-                                           double *X, 
-                                           double *Y, 
-                                           double *AbsDetjk, 
+                                           int N_Points,
+                                           double *X,
+                                           double *Y,
+                                           double *AbsDetjk,
                                            double *weights,
-                                           double **Derivatives, 
-                                           double **coeffs, 
-                                           BoundCondFunct2D **BoundaryConds,
-                                           BoundValueFunct2D **BoundaryValues,
-                                           int N_Points1D, 
+                                           double **Derivatives,
+                                           double **coeffs,
+                                           BoundCondFunct2D *const*BoundaryConds,
+                                           BoundValueFunct2D *const*BoundaryValues,
+                                           int N_Points1D,
                                            double *zeta,
-                                           double *X1D[4], 
-                                           double *Y1D[4], 
+                                           double *X1D[4],
+                                           double *Y1D[4],
                                            double *weights1D,
                                            double *xyval_1D[4],
                                            double *xderiv_1D[4],
                                            double *yderiv_1D[4],
-                                           int *GlobalNumbers, 
+                                           int *GlobalNumbers,
                                            int *BeginIndex,
                                            int *DOF,
-                                           double *Values,                                           
-                                           int *GlobalNumbersP, 
+                                           double *Values,
+                                           int *GlobalNumbersP,
                                            int *BeginIndexP,
                                            int *DOFP,
-                                           double *ValuesP,                                           
+                                           double *ValuesP,
                                            double *estimated_local_error)
 {
   int i,j,k,l,n,N_Edges,comp,parent_edge,MaxLen1,MaxLen2,MaxLen3,N_child,neigh_edge;
@@ -620,7 +660,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
   double absdet1D[MaxN_QuadPoints_2D];
   double cell_x0,cell_y0,cell_x1,cell_y1,*xi1DNeigh,*eta1DNeigh, *FEFunctValuesNeigh;
   double *X1DNeigh,*Y1DNeigh,*X1DCell,*Y1DCell;
-  const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3; 
+  const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3;
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
   TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
@@ -656,7 +696,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
   TCollection *Coll;
 
   Coll = fespaces[0]->GetCollection();
-  
+
   if (ee_verbose>1)
     {
       for (i=0;i<4;i++)
@@ -666,7 +706,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
             cout << " x " << X1D[i][k] << " y " << Y1D[i][k];
           cout << endl;
         }
- 
+
       for (j=0;j<4;j++)
         for (k=0;k<N_Points1D;k++)
           cout << "xx " << xyval_1D[j][k] <<  "dx " << xderiv_1D[j][k] << "dy " <<
@@ -687,16 +727,16 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
         {
           w = weights[i]*AbsDetjk[i];
 
-          deriv = Derivatives[i];            // all u derivatives in quadrature points 
+          deriv = Derivatives[i];            // all u derivatives in quadrature points
           e1 = deriv[0];                     // x derivative
           e2 = deriv[1];                     // y derivative
-          deriv = Derivatives[i+MaxN_QuadPoints_2D];// all v derivatives in quadrature points 
+          deriv = Derivatives[i+MaxN_QuadPoints_2D];// all v derivatives in quadrature points
           e3 = deriv[0];
           e4 = deriv[1];
           estimated_error[0] += w*(e1*e1+e2*e2+e3*e3+e4*e4);
         } // endfor i
     }
-  
+
 /*************************************************************************/
 /*                                                                       */
 /*   RESIDUAL BASED EXPLICIT ERROR ESTIMATORS                            */
@@ -737,8 +777,8 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
       check_cont_p = 1;
     else
       check_cont_p = 0;
-	
-      
+
+
 
 /*************************************************************************/
 /*  strong residual                                                      */
@@ -750,8 +790,8 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
       coeff = coeffs[i];
       w = weights[i]*AbsDetjk[i];
       //cout << " eps " << coeff[0] << " f0 " << coeff[1] << " f1 " << coeff[2] << endl;
-      
-      deriv = Derivatives[i];            // all u derivatives in quadrature points 
+
+      deriv = Derivatives[i];            // all u derivatives in quadrature points
       deriv1 = Derivatives[i+MaxN_QuadPoints_2D];
       deriv2 = Derivatives[i+2*MaxN_QuadPoints_2D];
       w = weights[i]*AbsDetjk[i];
@@ -777,7 +817,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
     if (TDatabase::ParamDB->P4==123456789)
       alpha[1]*=hK*hK/(delta*delta);
     if (hK*hK/coeff[0]<1)
-      alpha[2] =hK*hK/coeff[0];           // update weight for energy norm estimator  
+      alpha[2] =hK*hK/coeff[0];           // update weight for energy norm estimator
     for (i=1;i<4;i++)
        estimated_error[i] = alpha[i-1]*strong_residual;
     //estimated_error[i] = 0;
@@ -789,37 +829,37 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
         {
           joint=cell->GetJoint(j);
           if ((joint->GetType() == BoundaryEdge)||
-                (joint->GetType() == IsoBoundEdge)) // boundary edge 
+                (joint->GetType() == IsoBoundEdge)) // boundary edge
             {
-              boundedge=(TBoundEdge *)joint;  
+              boundedge=(TBoundEdge *)joint;
               BoundComp=boundedge->GetBoundComp();  // get boundary component
               boundedge->GetParameters(t0, t1);     // parameter interval
-              comp=BoundComp->GetID();              // boundary id 
+              comp=BoundComp->GetID();              // boundary id
               BoundaryConds[0](comp, (t0+t1)/2.0, Cond0); // type of boundary condition
-                                                    // at midpoint of boundary 
+                                                    // at midpoint of boundary
               switch(Cond0)
                 {
                 case DIRICHLET:                         // boundary is Dirichlet
                   break;                                // no error
-                case NEUMANN:                           // boundary is Neumann 
-                  boundedge->GetXYofT(t0,x0,y0);       // coordinates at begin of parameter interval 
+                case NEUMANN:                           // boundary is Neumann
+                  boundedge->GetXYofT(t0,x0,y0);       // coordinates at begin of parameter interval
                   boundedge->GetXYofT(t1,x1,y1);        // coordinates at end of parameter interval
                   nx = y1-y0;                           // outer normal vector
-                  ny = x0-x1;           
+                  ny = x0-x1;
                   hE = sqrt(nx*nx+ny*ny);               // length of edge
                   nx /= hE;                             // normalized normal vector
                   ny /= hE;
                   jump=0;
                   for (i=0;i<N_Points1D;i++)           // compute difference to Neumann condition
                     {
-                      m = i+N_Points1D;  
+                      m = i+N_Points1D;
                       x0 =  X1D[j][i];
-                      y0 =  Y1D[j][i];                      
-                      boundedge->GetXYofT(t0,x0,y0);   // coordinates at quadrature points 
+                      y0 =  Y1D[j][i];
+                      boundedge->GetXYofT(t0,x0,y0);   // coordinates at quadrature points
                       BoundaryValues[0](comp,t0,neumann_data);  // Neumann data
                       e1 = coeff[0] *(xderiv_1D[j][i]*nx+yderiv_1D[j][i]*ny) - neumann_data;
                       BoundaryValues[1](comp,t0,neumann_data);  // Neumann data
-                      e2 = coeff[0] *(xderiv_1D[j][m]*nx+yderiv_1D[j][m]*ny) - neumann_data;                       
+                      e2 = coeff[0] *(xderiv_1D[j][m]*nx+yderiv_1D[j][m]*ny) - neumann_data;
                       w = weights1D[i]*hE/2.0;
                       jump+= w*(e1*e1+e2*e2);          // integral on the edge
                     }
@@ -831,14 +871,14 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                   if (1.0/sqrt(coeff[0])< beta[2])
                     beta[2]=1.0/sqrt(coeff[0]);
                   for (i=1;i<4;i++)
-                    estimated_error[i] += beta[i-1]*jump;                  
+                    estimated_error[i] += beta[i-1]*jump;
                   break;
-                }                                   // endswitch 
+                }                                   // endswitch
              }                                       // end boundary edge
-          else                                      // begin inner edge 
+          else                                      // begin inner edge
             {
               refdesc=cell->GetRefDesc();           // get refinement descriptor
-              refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer); 
+              refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
               ver0=cell->GetVertex(TmpEdVer[2*j]);  // get vertices of face j
               ver1=cell->GetVertex(TmpEdVer[2*j+1]);
               cell_x0 = cell->GetVertex(TmpEdVer[2*j])->GetX();  // coordinates of face j
@@ -846,7 +886,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
               cell_x1 = cell->GetVertex(TmpEdVer[2*j+1])->GetX();
               cell_y1 = cell->GetVertex(TmpEdVer[2*j+1])->GetY();
               jump=0;
-              neigh=joint->GetNeighbour(cell);            
+              neigh=joint->GetNeighbour(cell);
               nx = cell_y1 - cell_y0;              // compute normal
               ny = cell_x0 - cell_x1;
               hE = sqrt(nx*nx+ny*ny);               // length of edge
@@ -868,21 +908,21 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                   //  => finer cell in 1 regularity
                   parent = cell->GetParent();                      // parent cell
                   refdesc= parent->GetRefDesc();
-                  refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerParent); 
+                  refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerParent);
                   refdesc->GetChildEdge(TmpCE,MaxLen1);
                   refdesc->GetNewEdgeOldEdge(TmpoEnlE);
                   l=0;
                   while(parent->GetChild(l)!=cell) l++;           // local child number
                   parent_edge = TmpCE[l*MaxLen1+j];               // number of father edge
                   parent_edge = TmpoEnlE[parent_edge];            // number of father edge
-                  
+
                   parent_joint= parent->GetJoint(parent_edge);
                   neigh=parent_joint->GetNeighbour(parent);        // neighbour to parent
                   if (!neigh)
                     {
                       cout << "Hier sollte man aber nicht hinkommen 2 !"<< endl;
-                    }                                             
- 
+                    }
+
                   neigh_edge=0;
                   while(neigh->GetJoint(neigh_edge)->GetNeighbour(neigh)!=parent) neigh_edge ++;
                   ver2 = neigh->GetVertex(TmpEdVerParent[2*neigh_edge]);          // vertices of edge
@@ -895,23 +935,23 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                     {
                       part = 1;
                     }
-                  else 
+                  else
                     {
                       cout << "Hier sollte man aber nicht hinkommen 4 !"<< endl;
-                    }                                             
+                    }
 
                   neigh_N_ = neigh->GetClipBoard();                  // number of neighbour in iterator
                   if(neigh_N_==-1)
                     {
                       cout << "Hier sollte man aber nicht hinkommen 3 !"<< endl;
-                    }    
+                    }
                   CurrEleNeigh = fespace->GetFE2D(neigh_N_,neigh);   // finite element on neighbour
-                  eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                  
-                  BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbour    
+                  eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                  BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbour
                   N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
-                  
-                  bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+
+                  bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                   bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                   if (conform_grid)
@@ -1012,7 +1052,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                               eta1DNeigh[i]= 1;
                             }
                         }
-                      
+
                       if (neigh_edge==3)
                         {                               // edge 3
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
@@ -1022,7 +1062,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                             }
                         }
                       break;
-                      
+
                     case BFUnitTriangle :
                       if (neigh_edge==0)
                         {
@@ -1039,15 +1079,15 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
                             {
                               if (part==1)
-                                part=0;                              
+                                part=0;
                               xi1DNeigh[i] = ((zeta[i]+1)/2-part)/2;
                               if (part==0)
-                                part=1;                              
+                                part=1;
                               if (part==-1)
                                 part=0;
                               eta1DNeigh[i] = ((-zeta[i]+1)/2+part)/2;
                               if (part==0)
-                                part=-1;                              
+                                part=-1;
                               //cout << "part " << part << endl;
                             }
                         }
@@ -1071,19 +1111,19 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
 
                                                           // compute gradients in reference cell of the neighbour
                   for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                    {                      
+                    {
                       bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                       bfNeigh->GetDerivatives(D10,xi1DNeigh[i],eta1DNeigh[i],xideriv_refNeigh1D[BaseFunctNeigh][i]);
                       bfNeigh->GetDerivatives(D01,xi1DNeigh[i],eta1DNeigh[i],etaderiv_refNeigh1D[BaseFunctNeigh][i]);
                     }
                   RefTransNeigh= eleNeigh->GetRefTransID();          // reftrafo of neighbour
                   TFEDatabase2D::SetCellForRefTrans(neigh,RefTransNeigh);
-                  
+
                   DOF = GlobalNumbers + BeginIndex[neigh_N_];
                   for(i=0;i<N_Neigh;i++)
                     {
                       FEFunctValuesNeigh[i] = Values[DOF[i]];
-                      FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values                          
+                      FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values
                       if (ee_verbose>1)
                         cout << " value " <<  FEFunctValuesNeigh[i] << endl;
                     }
@@ -1100,11 +1140,11 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                                  xderiv_refNeigh1D[i],
                                                  yderiv_refNeigh1D[i]);
                     }
-                  
+
                   for(i=0;i<N_Points1D;i++)     // for all quadrature points
                     {
                       val[0]=val[1]= val[2]= val[3]=val[4]= val[5] = 0;
-                       for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                       for(l=0;l<N_Neigh;l++)       // for all basis functions
                         {
                           m = l+MaxN_BaseFunctions2D;
                           val[0] += FEFunctValuesNeigh[l] * xderiv_refNeigh1D[i][l]; // accumulate value of derivative
@@ -1114,46 +1154,46 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                           val[4] += FEFunctValuesNeigh[m] * yderiv_refNeigh1D[i][l]; // accumulate value of derivative
                           val[5] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                           if (ee_verbose>1)
-                            cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " << 
+                            cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " <<
                               yderiv_refNeigh1D[i][l] <<  "  " << FEFunctValuesNeigh[l] << endl;
                         } // endfor l
-                      m = i+N_Points1D; 
-                      xderiv_Neigh1D[i]= val[0]; // for k-th 
-                      yderiv_Neigh1D[i]= val[1]; // for k-th 
-                      xyval_Neigh1D[i]= val[2]; // for k-th 
-                      xderiv_Neigh1D[m]= val[3]; // for k-th 
-                      yderiv_Neigh1D[m]= val[4]; // for k-th 
-                      xyval_Neigh1D[m]= val[5]; // for k-th 
-                    } // endfor i                                        
-                  
-                  
-                  TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh, 
-                                              eta1DNeigh, 
-                                              X1DNeigh, Y1DNeigh, absdet1D);   
-                  // pressure second                   
-                  // compute values at the quadrature points on the edge of 
+                      m = i+N_Points1D;
+                      xderiv_Neigh1D[i]= val[0]; // for k-th
+                      yderiv_Neigh1D[i]= val[1]; // for k-th
+                      xyval_Neigh1D[i]= val[2]; // for k-th
+                      xderiv_Neigh1D[m]= val[3]; // for k-th
+                      yderiv_Neigh1D[m]= val[4]; // for k-th
+                      xyval_Neigh1D[m]= val[5]; // for k-th
+                    } // endfor i
+
+
+                  TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh,
+                                              eta1DNeigh,
+                                              X1DNeigh, Y1DNeigh, absdet1D);
+                  // pressure second
+                  // compute values at the quadrature points on the edge of
                   // the neighbour element
-                  
+
                   CurrEleNeigh = fespaceP->GetFE2D(neigh_N_,neigh);   // finite element on neighbour
-                  eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                  
-                  BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                  eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                  BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                   N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
-                  
-                  bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+
+                  bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                   bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
-                  
+
                   // compute gradients in reference cell of the neighbour
                   for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                    {                      
+                    {
                       bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                     }
-                  
+
                   RefTransNeigh= eleNeigh->GetRefTransID();          // reftrafo of neighbour
                   TFEDatabase2D::SetCellForRefTrans(neigh,RefTransNeigh);
-                  
+
                   DOFP = GlobalNumbersP + BeginIndexP[neigh_N_];
-                  
+
                   for(i=0;i<N_Neigh;i++)
                     {
                       FEFunctValuesNeigh[i+2*MaxN_BaseFunctions2D] = ValuesP[DOFP[i]]; // p values
@@ -1173,28 +1213,28 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                                  xderiv_refNeigh1D[i],
                                                  yderiv_refNeigh1D[i]);
                     }
-                  
+
                   for(i=0;i<N_Points1D;i++)     // for all quadrature points on edge
                     {
                       val[0]= 0;
-                      for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                      for(l=0;l<N_Neigh;l++)       // for all basis functions
                         {
                           m = l+2*MaxN_BaseFunctions2D;
                           val[0] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                         } // endfor l
-                      m = i+2*N_Points1D; 
-                      xyval_Neigh1D[m]= val[0]; // for k-th 
+                      m = i+2*N_Points1D;
+                      xyval_Neigh1D[m]= val[0]; // for k-th
                       //cout << "p value " << xyval_Neigh1D[m] << " " << xyval_1D[j][m] << endl;
-                    } // endfor i                                        
-                      
+                    } // endfor i
+
                   jump=0.0;
                   absdetjk1D = hE/2;
                   for (i=0;i<N_Points1D;i++)           // compute jump
                     {
-                      m = i+N_Points1D; 
-                      l = m+N_Points1D; 
+                      m = i+N_Points1D;
+                      l = m+N_Points1D;
                       if ((fabs(X1D[j][i]-X1DNeigh[i])+fabs(Y1D[j][i]-Y1DNeigh[i]))>1e-8)
-                        cout << " wrong quad points_a " << X1D[j][i] << " , " << Y1D[j][i] 
+                        cout << " wrong quad points_a " << X1D[j][i] << " , " << Y1D[j][i]
                              << "   " << X1DNeigh[i] << " , " << Y1DNeigh[i]  << endl;
                       if (check_cont_u)
                         {
@@ -1221,7 +1261,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                     }
                   if (ee_verbose>1)
                     cout << "jump " << jump << endl;
-                  
+
                   beta[0]=hE;                          // weight for H^1 estimator
                   beta[1]=hE*hE*hE;                    // weight for L^2 estimator
                   if (TDatabase::ParamDB->P4==123456789)
@@ -1231,8 +1271,8 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                     beta[2]=1.0/sqrt(coeff[0]);
                   for (i=1;i<4;i++)
                     estimated_error[i] += beta[i-1]*jump/2.0;
-                                    
-                } // end no neighbour                                        
+
+                } // end no neighbour
 /*************************************************************************/
 /*  neighbour is not on the finest level, find children of neighbour     */
 /*************************************************************************/
@@ -1246,34 +1286,34 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                       // find the local edge of neigh on which cell is -> l
 
                       edge2neigh=0;
-                      while(neigh->GetJoint(edge2neigh)->GetNeighbour(neigh)!=cell) 
+                      while(neigh->GetJoint(edge2neigh)->GetNeighbour(neigh)!=cell)
                         edge2neigh++; // find connections between cells
 
                       refdesc=neigh->GetRefDesc();                          // ref desc of neighbour
-                      refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerNeigh);// get edges   
+                      refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerNeigh);// get edges
                       refdesc->GetOldEdgeNewEdge(TmpoEnE, TmpLen1, MaxLen1);// get connection to child edges
                       refdesc->GetEdgeChild(TmpEC, TmpLen2, MaxLen2);       // get cell belonging to child edge (TmpEC)
                       refdesc->GetOldEdgeNewLocEdge(TmpoEnlE);              // get local no.s of child edge
                       if (conform_grid)
                         N_child = 1;
                       else
-                        N_child = 2;                       // not general  !!! 
+                        N_child = 2;                       // not general  !!!
 
-                      for(k=0;k < N_child ; k++) // find children of neigh on face l -> child 
+                      for(k=0;k < N_child ; k++) // find children of neigh on face l -> child
                         {
-                          edge1=TmpoEnE[edge2neigh*MaxLen1+k];                 // edge child, not general !!!               
-                          chnum1=TmpEC[edge1*MaxLen2];                // local number of child cell 
-                          child =neigh->GetChild(chnum1);             // child cell   
+                          edge1=TmpoEnE[edge2neigh*MaxLen1+k];                 // edge child, not general !!!
+                          chnum1=TmpEC[edge1*MaxLen2];                // local number of child cell
+                          child =neigh->GetChild(chnum1);             // child cell
                           child_N_=child->GetClipBoard();             // id of child cell
 
                           refdesc->GetEdgeChildIndex(TmpECI,TmpLen3, MaxLen3); // get local indices of child edge
                           l_child = TmpECI[edge1*MaxLen3];                        // local index of child edge
 
-                          refdesc_child=child->GetRefDesc();          // ref desc of child 
+                          refdesc_child=child->GetRefDesc();          // ref desc of child
                           refdesc_child->GetShapeDesc()->GetEdgeVertex(TmpEdVer);// conn. edge -> vertices
                           ver2 = child->GetVertex(TmpEdVer[2*l_child]);          // vertices of edge
                           ver3 = child->GetVertex(TmpEdVer[2*l_child+1]);
-                          
+
                           if (ee_verbose>1)
                             {
                               cout << "ver 0 " << ver0->GetX() << "  " << ver0->GetY() << endl;
@@ -1281,7 +1321,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                               cout << "ver 2 " << ver2->GetX() << "  " << ver2->GetY() << endl;
                               cout << "ver 3 " << ver3->GetX() << "  " << ver3->GetY() << endl;
                             }
-                          
+
                           if (ver1==ver2)
                             {
                               part=1;
@@ -1290,9 +1330,9 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                             {
                               part=-1;
                             }
-                          else 
+                          else
                             cout << " something wrong 5 " <<  endl;
-                          
+
                           // now from point of view of child cell -> cell becomes the neighbour
                           // prepare intergration for the half part of edge j
 
@@ -1300,14 +1340,14 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                           if(neigh_N_==-1)
                             {
                               cout << "Hier sollte man aber nicht hinkommen 33 !"<< endl;
-                            }    
+                            }
                           CurrEleNeigh = fespace->GetFE2D(neigh_N_,cell);   // finite element on neighbour
-                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                  
-                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                           N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
-                  
-                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+
+                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                           bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                           neigh_edge = j;
@@ -1340,7 +1380,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                         eta1DNeigh[i]= 1;
                                       }
                                   }
-                                
+
                                 if (neigh_edge==3)
                                   {                               // edge 3
                                     for (i=0;i<N_Points1D;i++)         // for all quadrature points
@@ -1350,7 +1390,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                       }
                                   }
                                 break;
-                                
+
                               case BFUnitTriangle :
                                 if (neigh_edge==0)
                                   {
@@ -1409,7 +1449,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                       eta1DNeigh[i]= 1;
                                     }
                                 }
-                              
+
                               if (neigh_edge==3)
                                 {                               // edge 3
                                   for (i=0;i<N_Points1D;i++)         // for all quadrature points
@@ -1419,7 +1459,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                     }
                                 }
                               break;
-                      
+
                             case BFUnitTriangle :
                               if (neigh_edge==0)
                                 {
@@ -1436,15 +1476,15 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                   for (i=0;i<N_Points1D;i++)         // for all quadrature points
                                     {
                                       if (part==1)
-                                        part=0;                              
+                                        part=0;
                                       xi1DNeigh[i] = ((zeta[i]+1)/2-part)/2;
                                       if (part==0)
-                                        part=1;                              
+                                        part=1;
                                       if (part==-1)
                                         part=0;
                                       eta1DNeigh[i] = ((-zeta[i]+1)/2+part)/2;
                                       if (part==0)
-                                        part=-1;                              
+                                        part=-1;
                                     }
                                 }
                               if (neigh_edge==2)
@@ -1467,21 +1507,21 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
 
                           // compute gradients in reference cell of the neighbour
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                            {                      
+                            {
                               bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                               bfNeigh->GetDerivatives(D10,xi1DNeigh[i],eta1DNeigh[i],xideriv_refNeigh1D[BaseFunctNeigh][i]);
                               bfNeigh->GetDerivatives(D01,xi1DNeigh[i],eta1DNeigh[i],etaderiv_refNeigh1D[BaseFunctNeigh][i]);
                             }
                           RefTransNeigh= eleNeigh->GetRefTransID();          // reftrafo of neighbour
                           TFEDatabase2D::SetCellForRefTrans(cell,RefTransNeigh);
-                          
+
                           DOF = GlobalNumbers + BeginIndex[neigh_N_];
                           for(i=0;i<N_Neigh;i++)
                             {
                               FEFunctValuesNeigh[i] = Values[DOF[i]];
-                              FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values                          
+                              FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values
                               if (ee_verbose>1)
-                                cout << " value " <<  FEFunctValuesNeigh[i] << 
+                                cout << " value " <<  FEFunctValuesNeigh[i] <<
                                   " " <<  FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] << endl;
                             }
 
@@ -1498,11 +1538,11 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                                          xderiv_refNeigh1D[i],
                                                          yderiv_refNeigh1D[i]);
                             }
-                          
+
                           for(i=0;i<N_Points1D;i++)     // for all quadrature points
                             {
                               val[0]=val[1]= val[2]= val[3] =val[4] = val[5] = 0;
-                              for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                              for(l=0;l<N_Neigh;l++)       // for all basis functions
                                 {
                                   m = l+MaxN_BaseFunctions2D;
                                   val[0] += FEFunctValuesNeigh[l] * xderiv_refNeigh1D[i][l]; // accumulate value of derivative
@@ -1512,38 +1552,38 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                   val[4] += FEFunctValuesNeigh[m] * yderiv_refNeigh1D[i][l]; // accumulate value of derivative
                                   val[5] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                                   if (ee_verbose>1)
-                                    cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " << 
+                                    cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " <<
                                       yderiv_refNeigh1D[i][l] <<  "  " << FEFunctValuesNeigh[l] << endl;
                                 } // endfor l
-                              m = i+N_Points1D; 
-                              xderiv_Cell1D[i]= val[0]; // for k-th 
-                              yderiv_Cell1D[i]= val[1]; // for k-th 
-                              xyval_Cell1D[i]= val[2]; // for k-th 
-                              xderiv_Cell1D[m]= val[3]; // for k-th 
-                              yderiv_Cell1D[m]= val[4]; // for k-th 
-                              xyval_Cell1D[m]= val[5]; // for k-th 
-                            } // endfor i                                        
+                              m = i+N_Points1D;
+                              xderiv_Cell1D[i]= val[0]; // for k-th
+                              yderiv_Cell1D[i]= val[1]; // for k-th
+                              xyval_Cell1D[i]= val[2]; // for k-th
+                              xderiv_Cell1D[m]= val[3]; // for k-th
+                              yderiv_Cell1D[m]= val[4]; // for k-th
+                              xyval_Cell1D[m]= val[5]; // for k-th
+                            } // endfor i
 
-                          TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh, 
-                                                      eta1DNeigh, 
-                                                      X1DCell, Y1DCell, absdet1D);   
+                          TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh,
+                                                      eta1DNeigh,
+                                                      X1DCell, Y1DCell, absdet1D);
 
-                          // pressure second                   
-                          // compute values at the quadrature points on the edge of 
-                          // the cell 
-                      
+                          // pressure second
+                          // compute values at the quadrature points on the edge of
+                          // the cell
+
                           CurrEleNeigh = fespaceP->GetFE2D(neigh_N_,cell);   // pressure space
-                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                      
-                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                           N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
-                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                           bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                           // compute gradients in reference cell of the neighbour
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                            {                      
+                            {
                               bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                             }
 
@@ -1575,27 +1615,27 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                           for(i=0;i<N_Points1D;i++)     // for all quadrature points on edge
                             {
                               val[0]= 0;
-                              for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                              for(l=0;l<N_Neigh;l++)       // for all basis functions
                                 {
                                   m = l+2*MaxN_BaseFunctions2D;
                                   val[0] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                                 } // endfor l
-                              m = i+2*N_Points1D; 
-                              xyval_Cell1D[m]= val[0]; // for k-th 
+                              m = i+2*N_Points1D;
+                              xyval_Cell1D[m]= val[0]; // for k-th
                               //cout << "p value " << xyval_Cell1D[m] << endl;
-                            } // endfor i                                        
-                          
+                            } // endfor i
+
                           // prepare integration for the child of the neighbour belong to the half part
                           // of edge j
 
                           neigh_N_ = child->GetClipBoard();                  // number of neighbour in iterator
                           CurrEleNeigh = fespace->GetFE2D(neigh_N_,child);   // finite element on neighbour
-                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                          
-                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                           N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
-                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                           bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                           neigh_edge = l_child;
@@ -1626,7 +1666,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                       eta1DNeigh[i]= 1;
                                     }
                                 }
-                              
+
                               if (neigh_edge==3)
                                 {                               // edge 3
                                   for (i=0;i<N_Points1D;i++)         // for all quadrature points
@@ -1636,7 +1676,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                     }
                                 }
                               break;
-                              
+
                             case BFUnitTriangle :
                               if (neigh_edge==0)
                                 {
@@ -1664,28 +1704,28 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                 }
                               break;
                             }
-                          
+
                           if (ee_verbose>1)
                             for (i=0;i<N_Points1D;i++)         // for all quadrature points
                               cout << "xiN " << xi1DNeigh[i] << " etaN " << eta1DNeigh[i] << endl;
 
                           // compute gradients in reference cell of the neighbour
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                            {                      
+                            {
                               bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                               bfNeigh->GetDerivatives(D10,xi1DNeigh[i],eta1DNeigh[i],xideriv_refNeigh1D[BaseFunctNeigh][i]);
                               bfNeigh->GetDerivatives(D01,xi1DNeigh[i],eta1DNeigh[i],etaderiv_refNeigh1D[BaseFunctNeigh][i]);
                             }
                           RefTransNeigh= eleNeigh->GetRefTransID();          // reftrafo of neighbour
                           TFEDatabase2D::SetCellForRefTrans(child,RefTransNeigh);
-                          
+
                           DOF = GlobalNumbers + BeginIndex[neigh_N_];
                           for(i=0;i<N_Neigh;i++)
                             {
                               FEFunctValuesNeigh[i] = Values[DOF[i]];       // u values
-                              FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values                          
+                              FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values
                               if (ee_verbose>1)
-                                cout << " value " <<  FEFunctValuesNeigh[i] << 
+                                cout << " value " <<  FEFunctValuesNeigh[i] <<
                                   " " <<  FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] << endl;
                             }
 
@@ -1702,11 +1742,11 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                                          xderiv_refNeigh1D[i],
                                                          yderiv_refNeigh1D[i]);
                             }
-                          
+
                           for(i=0;i<N_Points1D;i++)     // for all quadrature points
                             {
                               val[0]=val[1]= val[2]=val[3]=val[4]=val[5]=0;
-                              for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                              for(l=0;l<N_Neigh;l++)       // for all basis functions
                                 {
                                   m = l+MaxN_BaseFunctions2D;
                                   val[0] += FEFunctValuesNeigh[l] * xderiv_refNeigh1D[i][l]; // accumulate value of derivative
@@ -1716,38 +1756,38 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                   val[4] += FEFunctValuesNeigh[m] * yderiv_refNeigh1D[i][l]; // accumulate value of derivative
                                   val[5] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                                   if (ee_verbose>1)
-                                    cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " << 
+                                    cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " <<
                                       yderiv_refNeigh1D[i][l] <<  "  " << FEFunctValuesNeigh[l] << endl;
                                 } // endfor l
-                              m = i+N_Points1D; 
-                              xderiv_Neigh1D[i]= val[0]; // for k-th 
-                              yderiv_Neigh1D[i]= val[1]; // for k-th 
-                              xyval_Neigh1D[i]= val[2]; // for k-th 
-                              xderiv_Neigh1D[m]= val[3]; // for k-th 
-                              yderiv_Neigh1D[m]= val[4]; // for k-th 
-                              xyval_Neigh1D[m]= val[5]; // for k-th 
-                            } // endfor i                                        
-                          
-                          TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh, 
-                                                      eta1DNeigh, 
-                                                      X1DNeigh, Y1DNeigh, absdet1D);   
-                          
-                          // pressure second                   
-                          // compute values at the quadrature points on the edge of 
+                              m = i+N_Points1D;
+                              xderiv_Neigh1D[i]= val[0]; // for k-th
+                              yderiv_Neigh1D[i]= val[1]; // for k-th
+                              xyval_Neigh1D[i]= val[2]; // for k-th
+                              xderiv_Neigh1D[m]= val[3]; // for k-th
+                              yderiv_Neigh1D[m]= val[4]; // for k-th
+                              xyval_Neigh1D[m]= val[5]; // for k-th
+                            } // endfor i
+
+                          TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh,
+                                                      eta1DNeigh,
+                                                      X1DNeigh, Y1DNeigh, absdet1D);
+
+                          // pressure second
+                          // compute values at the quadrature points on the edge of
                           // the neighbour element
-                          
+
                           CurrEleNeigh = fespaceP->GetFE2D(neigh_N_,child);   // finite element on neighbour
-                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                      
-                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                          eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                          BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                           N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
-                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+                          bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                           bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                           // compute gradients in reference cell of the neighbour
                           for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                            {                      
+                            {
                               bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                             }
 
@@ -1775,28 +1815,28 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                                                          xderiv_refNeigh1D[i],
                                                          yderiv_refNeigh1D[i]);
                             }
-                          
+
                           for(i=0;i<N_Points1D;i++)     // for all quadrature points on edge
                             {
                               val[0]= 0;
-                              for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                              for(l=0;l<N_Neigh;l++)       // for all basis functions
                                 {
                                   m = l+2*MaxN_BaseFunctions2D;
                                   val[0] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                                 } // endfor l
-                              m = i+2*N_Points1D; 
-                              xyval_Neigh1D[m]= val[0]; // for k-th 
+                              m = i+2*N_Points1D;
+                              xyval_Neigh1D[m]= val[0]; // for k-th
                               //cout << "p value " << xyval_Neigh1D[m] << " " << xyval_1D[j][m] << endl;
                             } // endfor i
-                                        
+
                           jump=0.0;
                           absdetjk1D = hE/(2.0*N_child);       // only half edge is considered
                           for (i=0;i<N_Points1D;i++)           // compute jump
-                            {                              
-                              m = i+N_Points1D; 
-                              l = m+N_Points1D; 
+                            {
+                              m = i+N_Points1D;
+                              l = m+N_Points1D;
                               if ((fabs(X1DCell[i]-X1DNeigh[i])+fabs(Y1DCell[i]-Y1DNeigh[i]))>1e-8)
-                                 cout << " wrong quad points_c " << X1D[j][i] << " , " << Y1D[j][i] 
+                                 cout << " wrong quad points_c " << X1D[j][i] << " , " << Y1D[j][i]
                                       << "   " << X1DNeigh[i] << " , " << Y1DNeigh[i]  << endl;
                               if (check_cont_u)
                                 {
@@ -1835,14 +1875,14 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
 /*************************************************************************/
 /*  neighbour is on the finest level                                     */
 /*************************************************************************/
-                    
+
                     {              // the neighbour is a member of the collection
                                    // find the finite element on the other side
                       // find the local edge of neigh on which cell is -> l
                       neigh_edge=0;
                       while(neigh->GetJoint(neigh_edge)->GetNeighbour(neigh)!=cell) neigh_edge ++;
                       refdesc=neigh->GetRefDesc();
-                      refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerNeigh); 
+                      refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerNeigh);
                       ver0=  cell->GetVertex(TmpEdVer[2*j]);
                       ver1=  cell->GetVertex(TmpEdVer[2*j+1]);
                       ver2 = neigh->GetVertex(TmpEdVerNeigh[2*neigh_edge]);          // vertices of edge
@@ -1851,20 +1891,20 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                         ;
                       else
                         {
-                          cout << "wrong edge " << endl;                          
+                          cout << "wrong edge " << endl;
                         }
-                      // velocity first                      
-                      // compute gradient at the quadrature points on the edge of 
+                      // velocity first
+                      // compute gradient at the quadrature points on the edge of
                       // the neighbour element
-                      
+
                       neigh_N_ = neigh->GetClipBoard();                  // number of neighbour in iterator
                       CurrEleNeigh = fespace->GetFE2D(neigh_N_,neigh);   // finite element on neighbour
-                      eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                      
-                      BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                      eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                      BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                       N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
-                      bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+                      bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                       bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                       switch(bf2DrefelementsNeigh)                // compute coordinates of line quadrature
@@ -1939,7 +1979,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
 
                       // compute gradients in reference cell of the neighbour
                       for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                        {                      
+                        {
                           bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                           bfNeigh->GetDerivatives(D10,xi1DNeigh[i],eta1DNeigh[i],xideriv_refNeigh1D[BaseFunctNeigh][i]);
                           bfNeigh->GetDerivatives(D01,xi1DNeigh[i],eta1DNeigh[i],etaderiv_refNeigh1D[BaseFunctNeigh][i]);
@@ -1951,9 +1991,9 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                       for(i=0;i<N_Neigh;i++)
                         {
                           FEFunctValuesNeigh[i] = Values[DOF[i]];       // u values
-                          FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values                          
+                          FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] = Values[DOF[i]+N_U]; // v values
                           if (ee_verbose>1)
-                            cout << " value " <<  FEFunctValuesNeigh[i] << 
+                            cout << " value " <<  FEFunctValuesNeigh[i] <<
                               " " <<  FEFunctValuesNeigh[i+MaxN_BaseFunctions2D] << endl;
                         }
                       for (i=0;i<N_Points1D;i++)  // get values and derivatives in original cell
@@ -1973,7 +2013,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                       for(i=0;i<N_Points1D;i++)     // for all quadrature points on edge
                         {
                           val[0]=val[1]= val[2]= val[3]=val[4]= val[5] = 0;
-                          for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                          for(l=0;l<N_Neigh;l++)       // for all basis functions
                             {
                               m = l+MaxN_BaseFunctions2D;
                               val[0] += FEFunctValuesNeigh[l] * xderiv_refNeigh1D[i][l]; // accumulate value of derivative
@@ -1983,38 +2023,38 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                               val[4] += FEFunctValuesNeigh[m] * yderiv_refNeigh1D[i][l]; // accumulate value of derivative
                               val[5] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                               if (ee_verbose>1)
-                                cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " << 
+                                cout << l << "  " << xderiv_refNeigh1D[i][l] << "  " <<
                                   yderiv_refNeigh1D[i][l] <<  "  " << FEFunctValuesNeigh[l] << endl;
                             } // endfor l
-                          m = i+N_Points1D; 
-                          xderiv_Neigh1D[i]= val[0]; // for k-th 
-                          yderiv_Neigh1D[i]= val[1]; // for k-th 
-                          xyval_Neigh1D[i]= val[2]; // for k-th 
-                          xderiv_Neigh1D[m]= val[3]; // for k-th 
-                          yderiv_Neigh1D[m]= val[4]; // for k-th 
-                          xyval_Neigh1D[m]= val[5]; // for k-th 
-                        } // endfor i                                        
-                      
+                          m = i+N_Points1D;
+                          xderiv_Neigh1D[i]= val[0]; // for k-th
+                          yderiv_Neigh1D[i]= val[1]; // for k-th
+                          xyval_Neigh1D[i]= val[2]; // for k-th
+                          xderiv_Neigh1D[m]= val[3]; // for k-th
+                          yderiv_Neigh1D[m]= val[4]; // for k-th
+                          xyval_Neigh1D[m]= val[5]; // for k-th
+                        } // endfor i
+
                       // just for testing quad points, may be deleted later
-                      TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh, 
-                                                  eta1DNeigh, 
+                      TFEDatabase2D::GetOrigFromRef(RefTransNeigh,N_Points1D, xi1DNeigh,
+                                                  eta1DNeigh,
                                                   X1DNeigh, Y1DNeigh, absdet1D);
-                      // pressure second                   
-                      // compute values at the quadrature points on the edge of 
+                      // pressure second
+                      // compute values at the quadrature points on the edge of
                       // the neighbour element
-                      
+
                       CurrEleNeigh = fespaceP->GetFE2D(neigh_N_,neigh);   // finite element on neighbour
-                      eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh); 
-                      
-                      BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout    
+                      eleNeigh =  TFEDatabase2D::GetFE2D(CurrEleNeigh);
+
+                      BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();    // basis functions on neighbout
                       N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
-                      bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);        
+                      bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                       bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                       // compute gradients in reference cell of the neighbour
                       for (i=0;i<N_Points1D;i++)         // for all quadrature points
-                        {                      
+                        {
                           bfNeigh->GetDerivatives(D00,xi1DNeigh[i],eta1DNeigh[i],xietaval_refNeigh1D[BaseFunctNeigh][i]);
                         }
 
@@ -2046,25 +2086,25 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                       for(i=0;i<N_Points1D;i++)     // for all quadrature points on edge
                         {
                           val[0]= 0;
-                          for(l=0;l<N_Neigh;l++)       // for all basis functions 
+                          for(l=0;l<N_Neigh;l++)       // for all basis functions
                             {
                               m = l+2*MaxN_BaseFunctions2D;
                               val[0] += FEFunctValuesNeigh[m] * xyval_refNeigh1D[i][l]; // accumulate value of derivative
                             } // endfor l
-                          m = i+2*N_Points1D; 
-                          xyval_Neigh1D[m]= val[0]; // for k-th 
+                          m = i+2*N_Points1D;
+                          xyval_Neigh1D[m]= val[0]; // for k-th
                           //cout << "p value " << xyval_Neigh1D[m] << " " << xyval_1D[j][m] << endl;
-                        } // endfor i                                        
-                      
+                        } // endfor i
+
                       jump=0.0;
                       absdetjk1D = hE/2;
                       for (i=0;i<N_Points1D;i++)           // compute jump
                         {
-                          m = i+N_Points1D; 
+                          m = i+N_Points1D;
                           l = m+N_Points1D;
-                          
+
                           if ((fabs(X1D[j][i]-X1DNeigh[i])+fabs(Y1D[j][i]-Y1DNeigh[i]))>1e-8)
-                            cout << " wrong quad points_b " << X1D[j][i] << " , " << Y1D[j][i] 
+                            cout << " wrong quad points_b " << X1D[j][i] << " , " << Y1D[j][i]
                                  << "   " << X1DNeigh[i] << " , " << Y1DNeigh[i]  << endl;
                           if (check_cont_u)
                             {
@@ -2100,17 +2140,17 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                         beta[2]=1.0/sqrt(coeff[0]);
                       for (i=1;i<4;i++)
                         estimated_error[i] += beta[i-1]*jump/2.0;
-                                          
-                      
+
+
                     }  // end neighbour is member of the collection
-                } // end neighbour on the finer level 
+                } // end neighbour on the finer level
             }     // end inner edge
         }         // end for j
-       delete xi1DNeigh; 
+       delete xi1DNeigh;
        delete eta1DNeigh;
-       delete X1DNeigh; 
+       delete X1DNeigh;
        delete Y1DNeigh;
-       delete X1DCell; 
+       delete X1DCell;
        delete Y1DCell;
        delete FEFunctValuesNeigh;
        for (i=0;i<N_Points1D;i++)
@@ -2126,7 +2166,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
        delete yderiv_Cell1D;
        delete xyval_Cell1D;
    }             // end residual based estimators
-  
+
 
   //for (i=0;i<4;i++)
   //  cout << i << " estimated error " << estimated_error[i] << endl;
