@@ -7,7 +7,6 @@
 
 #include <Database.h>
 #include <BlockMatrixCD2D.h>
-#include <SquareStructure2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
 #include <LocalProjection.h>

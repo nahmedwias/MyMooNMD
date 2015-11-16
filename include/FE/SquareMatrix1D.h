@@ -15,7 +15,6 @@
 #define __SQUAREMATRIX1D__
 
 #include <SquareMatrix.h>
-#include <SquareStructure1D.h>
 
 class TSquareMatrix1D : public TSquareMatrix
 {

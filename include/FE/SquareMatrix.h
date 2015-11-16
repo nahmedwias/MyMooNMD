@@ -15,7 +15,7 @@
 #define __SQUAREMATRIX__
 
 #include <Matrix.h>
-#include <SquareStructure.h>
+#include <Structure.h>
 
 class TSquareMatrix : public TMatrix
 {

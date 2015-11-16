@@ -14,7 +14,6 @@
 #include <Database.h>
 #include <Matrix2D.h>
 #include <SquareMatrix2D.h>
-#include <SquareStructure2D.h>
 #include <string.h>
 #include <LinAlg.h>
 

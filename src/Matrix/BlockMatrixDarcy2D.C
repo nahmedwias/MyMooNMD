@@ -6,7 +6,6 @@
 #include <Database.h>
 #include <BlockMatrixDarcy2D.h>
 #include <Darcy2DMixed.h>
-#include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>

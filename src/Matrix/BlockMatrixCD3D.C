@@ -1,6 +1,5 @@
 #include <Database.h>
 #include <BlockMatrixCD3D.h>
-#include <SquareStructure3D.h>
 #include <DiscreteForm3D.h>
 #include <Assemble3D.h>
 #include <AuxParam3D.h>
