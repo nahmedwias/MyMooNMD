@@ -14,7 +14,7 @@
 #ifndef __MATRIX2D__
 #define __MATRIX2D__
 
-#include <Structure2D.h>
+#include <Structure.h>
 #include <Matrix.h>
 
 class TMatrix2D : public TMatrix

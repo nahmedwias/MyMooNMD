@@ -14,7 +14,7 @@
 #ifndef __MATRIX3D__
 #define __MATRIX3D__
 
-#include <Structure3D.h>
+#include <Structure.h>
 #include <Matrix.h>
 
 class TMatrix3D : public TMatrix
