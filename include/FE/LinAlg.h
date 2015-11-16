@@ -188,19 +188,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B, double *x, double *y);
 void CoupledDefect(TSquareMatrix *A, TMatrix *B, 
                    double *x, double *b, double *r);
 
-// ========================================================================
-// (Navier-)Stokes system with almost divergence-free basis, NSTYP==5
-// ========================================================================
 
-/** matrix * vector for coupled Stokes / Navier-Stokes system NSTYPE==5*/
-void CoupledMatVect(TSquareMatrix *A, double *x, double *y);
-
-/** defect for coupled Stokes / Navier-Stokes system NSTYPE==5*/
-void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r);
-                   
-void MatVect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *y);
-
-void Defect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r);
 
 /** Convection-diffusion problem with VMM */
 void MatVectCD_VMM(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TSquareMatrix *D, 
