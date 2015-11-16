@@ -155,9 +155,18 @@ void CD3D::solve()
   double* solutionEntries = syst.solution_.get_entries();
   double* rhsEntries =syst.rhs_.get_entries();
 
+  #ifdef _SEQ
+  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // direct
+  {
+    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries, 
+                 solutionEntries);
+    return;
+  }
+  #endif // _SEQ (sequential)
+  
   #ifdef _MPI
   TParFECommunicator3D* parComm = &syst.parComm_;
-  #endif _MPI
+  #endif //_MPI
 
 //  if (TDatabase::ParamDB->SOLVER_TYPE == 2)
 //  { //Direct solver(s)
