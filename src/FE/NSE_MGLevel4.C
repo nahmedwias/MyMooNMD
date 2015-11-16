@@ -77,7 +77,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetMatrixStructure();
+  StructureA = A11->GetStructure();
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();
@@ -206,7 +206,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetMatrixStructure();
+  StructureA = A11->GetStructure();
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();

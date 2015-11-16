@@ -18,7 +18,6 @@
 TMatrix3D::TMatrix3D(TStructure *structure)
  : TMatrix(structure)
 {
-  this->structure = structure;
 }
 
 TMatrix3D::~TMatrix3D()

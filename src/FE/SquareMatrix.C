@@ -19,7 +19,7 @@
 
 
 TSquareMatrix::TSquareMatrix(TStructure *squarestructure)
- : TMatrix(squarestructure), structure(squarestructure)
+ : TMatrix(squarestructure)
 {
 }
 
@@ -30,12 +30,6 @@ TSquareMatrix::TSquareMatrix(int n)
 
 TSquareMatrix::~TSquareMatrix()
 {
-}
-
-void TSquareMatrix::SetStructure(TStructure *structure)
-{
-  this->structure = structure;
-  this->TMatrix::SetStructure((TStructure*)structure);
 }
 
 void TSquareMatrix::ResetActive()

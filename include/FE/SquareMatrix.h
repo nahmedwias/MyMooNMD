@@ -20,9 +20,6 @@
 class TSquareMatrix : public TMatrix
 {
   protected:
-    /** the sparsity structure of this matrix */
-    TStructure *structure;
-
     /** bound for hanging nodes 
      * @todo is this structure->HangingN_Entries ?? */
     int HangingBound;
@@ -63,11 +60,6 @@ class TSquareMatrix : public TMatrix
     int GetColOrder() const
     { return structure->GetColOrder(); }
     
-    void SetStructure(TStructure *structure);
-    
-    TStructure *GetStructure() const
-    { return structure; }
-
     /** write matrix into file */
     int Write(const char *filename);
     

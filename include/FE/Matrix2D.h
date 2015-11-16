@@ -19,10 +19,6 @@
 
 class TMatrix2D : public TMatrix
 {
-  protected:
-    /** matrix structure */
-    TStructure *structure;
-
   public:
     /** generate the matrix */
     TMatrix2D(TStructure *structure);
@@ -30,19 +26,9 @@ class TMatrix2D : public TMatrix
     /** @brief generate empty matrix */
     TMatrix2D();
     
-    /** @brief fill empty matrix, 
-     * 
-     * you can either call the constructor TMatrix2D(TStructure*);
-     * or use TMatrix2D(); and then  void SetStructure(TStructure*);
-     */
-    void SetStructure(TStructure *structure);
-
     /** destructor: free Entries array */
     ~TMatrix2D();
 
-    TStructure *GetStructure() const
-    { return structure; }
-    
     /** @brief scale all active rows */
     TMatrix2D& operator*=(double alpha);
 

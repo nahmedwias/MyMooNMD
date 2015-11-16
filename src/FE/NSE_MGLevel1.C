@@ -71,7 +71,7 @@
   double *aux;
 
   A = a;
-  StructureA = A->GetMatrixStructure();
+  StructureA = A->GetStructure();
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
   AEntries = A->GetEntries();

@@ -18,10 +18,6 @@
 
 class TSquareMatrix2D : public TSquareMatrix
 {
-  protected:
-    /** matrix strcuture */
-    TStructure *structure;
-
   public:
     /** generate the matrix */
     TSquareMatrix2D(TStructure *squarestructure);
@@ -29,24 +25,12 @@ class TSquareMatrix2D : public TSquareMatrix
     /** generate an empty nxn matrix */
     explicit TSquareMatrix2D(int n);
     
-    /** fill empty matrix, 
-     you can either call the constructor TSquareMatrix2D(TStructure*);
-     or use TSquareMatrix2D(); and then  void SetStructure(TStructure*);
-    */
-    void SetStructure(TStructure *squarestructure);
-    
     /** destructor: free Entries array */
     ~TSquareMatrix2D();
 
     /** return FESpace */
     const TFESpace2D *GetFESpace() const
     { return structure->GetFESpace2D(); }
-
-    /** return used matrix structure */
-    TStructure *GetMatrixStructure() const
-    { return structure; }
-    TStructure *GetStructure() const
-    { return structure; }
     
     /** @brief set all Dirichlet rows to zero.
      * 

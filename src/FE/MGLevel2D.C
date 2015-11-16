@@ -46,7 +46,7 @@ TMGLevel2D::TMGLevel2D(int level, TSquareMatrix2D *a,
 */
 
   A = a;
-  MatrixStructure = a->GetMatrixStructure();
+  MatrixStructure = a->GetStructure();
   RowPtr = a->GetRowPtr();
   KCol = a->GetKCol();
   Entries = a->GetEntries();
@@ -93,7 +93,7 @@ TMGLevel2D::TMGLevel2D(int level, TSquareMatrix2D *a, double *rhs, double *sol,
 
   A = a;
   C = c;
-  MatrixStructure = a->GetMatrixStructure();
+  MatrixStructure = a->GetStructure();
   RowPtr = a->GetRowPtr();
   KCol = a->GetKCol();
   Entries = a->GetEntries();

@@ -18,10 +18,6 @@
 
 class TSquareMatrix3D : public TSquareMatrix
 {
-  protected:
-    /** matrix strcuture */
-    TStructure *structure;
-
   public:
     /** generate the matrix */
     TSquareMatrix3D(TStructure *squarestructure);
@@ -35,10 +31,6 @@ class TSquareMatrix3D : public TSquareMatrix
     /** return FESpace */
     const TFESpace3D *GetFESpace() const
     { return structure->GetFESpace3D(); }
-
-    /** return used matrix structure */
-    TStructure *GetMatrixStructure() const
-    { return structure; }
 
     
     /** @brief set all Dirichlet rows to zero.

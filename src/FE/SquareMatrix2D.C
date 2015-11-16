@@ -17,22 +17,13 @@
 #include <stdlib.h>
 
 TSquareMatrix2D::TSquareMatrix2D(TStructure *squarestructure)
-  : TSquareMatrix(squarestructure), structure(squarestructure)
+  : TSquareMatrix(squarestructure)
 {
-}
-
-
-// set all class variables
-void TSquareMatrix2D::SetStructure(TStructure *squarestructure)
-{
-  structure = squarestructure;
-  this->TMatrix::SetStructure((TStructure*) squarestructure);
 }
 
 
 TSquareMatrix2D::TSquareMatrix2D(int n) 
- : TSquareMatrix(new TStructure(n)), 
-   structure((TStructure*)this->TSquareMatrix::GetStructure())
+ : TSquareMatrix(new TStructure(n))
 {
 }
 
@@ -133,10 +124,10 @@ TSquareMatrix2D& TSquareMatrix2D::operator+=(const TSquareMatrix2D & rhsMat)
 TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 {
   double *AEntries, *BEntries, *CEntries;
-  if (A.GetMatrixStructure() == B.GetMatrixStructure()) 
+  if (A.GetStructure() == B.GetStructure()) 
   {
     // create bew TSquareMatrix2D on heap (otherwise return did not work)
-    TSquareMatrix2D *C = new TSquareMatrix2D(A.GetMatrixStructure());
+    TSquareMatrix2D *C = new TSquareMatrix2D(A.GetStructure());
     AEntries = A.GetEntries();
     BEntries = B.GetEntries();
     CEntries = C->GetEntries();
@@ -158,7 +149,7 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 TSquareMatrix2D& operator*(const TSquareMatrix2D & A,const double alpha)
 {
   double *AEntries, *CEntries;
-  TSquareMatrix2D *C = new TSquareMatrix2D(A.GetMatrixStructure());
+  TSquareMatrix2D *C = new TSquareMatrix2D(A.GetStructure());
   AEntries = A.GetEntries();
   CEntries = C->GetEntries();
   // multiply each active entry by alpha and write it into matrix C

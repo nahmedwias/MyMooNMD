@@ -19,10 +19,6 @@
 
 class TMatrix3D : public TMatrix
 {
-  protected:
-    /** matrix structure */
-    TStructure *structure;
-
   public:
     /** generate the matrix */
     TMatrix3D(TStructure *structure);
@@ -30,9 +26,6 @@ class TMatrix3D : public TMatrix
     /** destructor: free Entries array */
     ~TMatrix3D();
 
-    TStructure *GetStructure() const
-    { return structure; }
-    
     /** @brief set all Dirichlet rows to zero. That means all rows where the 
      * test space has nonactive degrees of freedom. 
      */

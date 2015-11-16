@@ -16,7 +16,7 @@
 #include <LinAlg.h>
 
 TSquareMatrix3D::TSquareMatrix3D(TStructure *squarestructure)
-  : TSquareMatrix(squarestructure), structure(squarestructure)
+  : TSquareMatrix(squarestructure)
 {
 }
 

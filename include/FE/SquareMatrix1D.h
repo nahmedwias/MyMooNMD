@@ -18,10 +18,6 @@
 
 class TSquareMatrix1D : public TSquareMatrix
 {
-  protected:
-    /** matrix strcuture */
-    TStructure *structure;
-
   public:
     /** generate the matrix */
     TSquareMatrix1D(TStructure *squarestructure);
@@ -32,11 +28,6 @@ class TSquareMatrix1D : public TSquareMatrix
     /** return FESpace */
     const TFESpace1D *GetFESpace() const
     { return structure->GetFESpace1D(); }
-
-    /** return used matrix structure */
-    TStructure *GetMatrixStructure() const
-    { return structure; }
-
 };
 
 #endif
