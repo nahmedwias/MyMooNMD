@@ -20,7 +20,7 @@ class TSquareMatrix3D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix3D(TStructure *squarestructure);
+    TSquareMatrix3D(std::shared_ptr<TStructure> squarestructure);
 
 //     /** generate an empty nxn matrix */
 //     explicit TSquareMatrix3D(int n);

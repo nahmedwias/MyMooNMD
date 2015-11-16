@@ -173,11 +173,11 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetAnsatzSpace();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     } // endfor
@@ -484,9 +484,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace3D *) matrices[j]->GetStructure()->
+      TestElement = ((TFESpace3D *) matrices[j]->GetStructure().
                     GetTestSpace())->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure()->
+      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure().
                       GetAnsatzSpace())->GetFE3D(i, cell);
 
       // cout << "non square matrix: " << j << endl;
@@ -1315,11 +1315,11 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    AnsatzBeginIndex = new int* [n_matrices];
 	    for(i=0;i<n_matrices;i++)
 	    {
-	      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+	      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetTestSpace();
 	      TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
 	      TestBeginIndex[i] = fespace->GetBeginIndex();
 
-	      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+	      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetAnsatzSpace();
 	      AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
 	      AnsatzBeginIndex[i] = fespace->GetBeginIndex();
 	    } // endfor
@@ -1622,9 +1622,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    // ####################################################################
 	    for(j=0;j<n_matrices;j++)
 	    {
-	      TestElement = ((const TFESpace3D *) matrices[j]->GetStructure()->
+	      TestElement = ((const TFESpace3D *) matrices[j]->GetStructure().
 	                    GetTestSpace())->GetFE3D(i, cell);
-	      AnsatzElement = ((const TFESpace3D *) matrices[j]->GetStructure()->
+	      AnsatzElement = ((const TFESpace3D *) matrices[j]->GetStructure().
 	                      GetAnsatzSpace())->GetFE3D(i, cell);
 
 	      // cout << "non square matrix: " << j << endl;
@@ -2463,11 +2463,11 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetAnsatzSpace();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     } // endfor
@@ -3759,11 +3759,11 @@ TAuxParam3D *Parameters)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetAnsatzSpace();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -3988,9 +3988,9 @@ TAuxParam3D *Parameters)
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace3D *) matrices[j]->GetStructure()->
+      TestElement = ((TFESpace3D *) matrices[j]->GetStructure().
         GetTestSpace())->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure()->
+      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure().
         GetAnsatzSpace())->GetFE3D(i, cell);
 
       N_Test = N_BaseFunct[TestElement];
@@ -4005,7 +4005,7 @@ TAuxParam3D *Parameters)
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      int ActiveBound = ((TFESpace3D *) matrices[j]->GetStructure()->
+      int ActiveBound = ((TFESpace3D *) matrices[j]->GetStructure().
         GetTestSpace())->GetActiveBound();
       
       // add local matrix to global

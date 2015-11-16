@@ -15,7 +15,7 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TSquareMatrix3D::TSquareMatrix3D(TStructure *squarestructure)
+TSquareMatrix3D::TSquareMatrix3D(std::shared_ptr<TStructure> squarestructure)
   : TSquareMatrix(squarestructure)
 {
 }
@@ -66,8 +66,7 @@ void TSquareMatrix3D::scale_active(double factor)
 
 void TSquareMatrix3D::add_active(const TSquareMatrix3D& m, double factor)
 {
-  if(this->structure != m.GetStructure() // compare pointers
-     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  if(this->GetStructure() != m.GetStructure()) // compare objects
   {
     ErrMsg("TMatrix::add : the two matrices do not match.");
     throw("TMatrix::add : the two matrices do not match.");

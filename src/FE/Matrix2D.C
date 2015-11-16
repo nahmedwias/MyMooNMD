@@ -17,7 +17,7 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TMatrix2D::TMatrix2D(TStructure *structure)
+TMatrix2D::TMatrix2D(std::shared_ptr<TStructure> structure)
  : TMatrix(structure)
 {
 }
@@ -62,8 +62,7 @@ void TMatrix2D::scale_active(double factor)
 
 void TMatrix2D::add_active(const TMatrix2D& m, double factor)
 {
-  if(this->structure != m.GetStructure() // compare pointers
-     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  if(this->GetStructure() != m.GetStructure()) // compare objects
   {
     ErrMsg("TMatrix::add : the two matrices do not match.");
     throw("TMatrix::add : the two matrices do not match.");
@@ -92,7 +91,7 @@ TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
   double *AEntries, *BEntries, *CEntries;
   if (A.GetStructure() == B.GetStructure()) 
   {
-    TMatrix2D *C = new TMatrix2D(A.GetStructure());
+    TMatrix2D *C = new TMatrix2D(A.structure);
     AEntries = A.GetEntries();
     BEntries = B.GetEntries();
     CEntries = C->GetEntries();
@@ -112,12 +111,12 @@ TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
 TMatrix2D& operator*(const TMatrix2D & A, const double alpha)
 {
   double *AEntries, *CEntries;
-  TMatrix2D *C = new TMatrix2D(A.GetStructure());
+  TMatrix2D *C = new TMatrix2D(A.structure);
   AEntries = A.GetEntries();
   CEntries = C->GetEntries();
 
-  //TFESpace2D *fespace = A.GetStructure()->GetAnsatzSpace2D();
-  const TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
+  //TFESpace2D *fespace = A.GetStructure().GetAnsatzSpace2D();
+  const TFESpace2D *fespace = A.GetStructure().GetTestSpace2D();
   int nDOFActive = fespace->GetN_ActiveDegrees();
   //int nDOF = fespace->GetN_DegreesOfFreedom();
 
@@ -142,7 +141,7 @@ double* operator*(const TMatrix2D & A,const double* x)
   ARowPtr = A.GetRowPtr();
   AColIndex = A.GetKCol();
 
-  const TFESpace2D *fespace = A.GetStructure()->GetTestSpace2D();
+  const TFESpace2D *fespace = A.GetStructure().GetTestSpace2D();
   int nDOFActive = fespace->GetN_ActiveDegrees();
   int nDOF = fespace->GetN_DegreesOfFreedom();
 

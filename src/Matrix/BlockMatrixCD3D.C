@@ -31,21 +31,21 @@ BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
 : BlockMatrix(Problem_type::ConvDiffReac, 3, massMatrix),
   boundaryValues_(BoundValue)
 {
-	  // build matrices, first build matrix structure
-	  TStructure* sqStructure = new TStructure(&feSpace);
-	  sqStructure->Sort();  // sort column numbers: numbers are in increasing order
-	  	  	  	  	  	  	// this disable use of deprecated AMG (sqstructure->SortDiagFirst();)
+	// build matrices, first build matrix structure
+  std::shared_ptr<TStructure> sqStructure(new TStructure(&feSpace));
+	sqStructure->Sort();  // sort column numbers: numbers are in increasing order
+		  	  	  	  	  	// this disable use of deprecated AMG (sqstructure->SortDiagFirst();)
 
-	  // the stiffness/system matrix for a convection diffusion problem
-	  BlockMatrix::blocks[0].reset(new TSquareMatrix3D(sqStructure));
+	// the stiffness/system matrix for a convection diffusion problem
+	BlockMatrix::blocks[0].reset(new TSquareMatrix3D(sqStructure));
 
 
-	  // START The following code is to determine the number of active entries
-	  unsigned int n_active = sqStructure->GetN_Entries();
-	  // substract the number of non active entries (non active rows)
-	  n_active -= sqStructure->GetN_Rows() - sqStructure->GetActiveBound();
-	  BlockMatrix::actives[0] = n_active;
-	  // END FIXME CB Is this correct - I'd rather like this not to be stored by the class!
+	// START The following code is to determine the number of active entries
+	unsigned int n_active = sqStructure->GetN_Entries();
+	// substract the number of non active entries (non active rows)
+	n_active -= sqStructure->GetN_Rows() - sqStructure->GetActiveBound();
+	BlockMatrix::actives[0] = n_active;
+	// END FIXME CB Is this correct - I'd rather like this not to be stored by the class!
 }
 
 /** ************************************************************************ */

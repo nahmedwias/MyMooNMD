@@ -20,7 +20,7 @@ class TSquareMatrix1D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix1D(TStructure *squarestructure);
+    TSquareMatrix1D(std::shared_ptr<TStructure> squarestructure);
 
     /** destructor: free Entries array */
     ~TSquareMatrix1D();

@@ -27,10 +27,10 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
 {
   // build matrices
   // first build matrix structure
-  TStructure *sqstructureA = new TStructure(&velocity);
+  std::shared_ptr<TStructure> sqstructureA(new TStructure(&velocity));
   sqstructureA->Sort(); // sort column numbers: numbers are in increasing order
       
-  TStructure *structureB = new TStructure(&pressure, &velocity);
+  std::shared_ptr<TStructure> structureB(new TStructure(&pressure, &velocity));
   
   // number of pressure degrees of freedom
   unsigned int n_p = pressure.GetN_DegreesOfFreedom();
@@ -69,7 +69,8 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * B1T and B2T are explicitly stored.
        */
       unsigned int n_v = velocity.GetN_DegreesOfFreedom();
-      TStructure *structureBT = new TStructure(&velocity, &pressure);
+      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
+                                                             &pressure));
       
       this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
@@ -111,7 +112,8 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1T and B2T are explicitly stored.
        */
-      TStructure *structureBT = new TStructure(&velocity, &pressure);
+      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
+                                                             &pressure));
       
       this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
@@ -133,8 +135,9 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are explicitly stored.
        */
-      TStructure *structureBT = new TStructure(&velocity, &pressure);
-      TStructure *sqstructureC = new TStructure(&pressure);
+      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
+                                                             &pressure));
+      std::shared_ptr<TStructure> sqstructureC(new TStructure(&pressure));
       // sort column numbers: numbers are in increasing order
       sqstructureC->Sort();
   
@@ -158,14 +161,6 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
 /** ************************************************************************ */
 BlockMatrixNSE2D::~BlockMatrixNSE2D()
 {
-  // delete structure of all A matrices
-  delete this->BlockMatrix::blocks[0]->GetStructure(); 
-  // delete structure of all BT matrices
-  delete this->BlockMatrix::blocks[2]->GetStructure();
-  // delete structure of all B matrices
-  delete this->BlockMatrix::blocks[6]->GetStructure();
-  // delete structure of matrix C
-  delete this->BlockMatrix::blocks[8]->GetStructure();
 }
 
 /** ************************************************************************ */
@@ -387,7 +382,6 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la)
   {
     // remove possibly defined combined matrix, because it is no longer up to
     // date, after nonlinear terms are assembled.
-    delete this->combined_matrix->GetStructure();
     this->combined_matrix.reset();
   }
 } //BlockMatrixNSE2D::AssembleNonLinear(

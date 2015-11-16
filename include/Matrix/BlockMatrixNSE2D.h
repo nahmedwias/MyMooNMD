@@ -137,7 +137,7 @@ class BlockMatrixNSE2D : public BlockMatrix
     
     /** @brief return the finite element space for the pressure */
     const TFESpace2D * get_pressure_space() const
-    { return this->get_B_block()->GetStructure()->GetTestSpace2D(); }
+    { return this->get_B_block()->GetStructure().GetTestSpace2D(); }
 };
 
 #endif // __SYSTEMMATNSE2D__

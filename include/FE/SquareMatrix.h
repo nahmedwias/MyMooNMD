@@ -32,7 +32,7 @@ class TSquareMatrix : public TMatrix
   
   public:
     /** generate the matrix */
-    TSquareMatrix(TStructure *structure);
+    TSquareMatrix(std::shared_ptr<TStructure> structure);
     
     /** generate an empty n*n zero matrix */
     explicit TSquareMatrix(int n);

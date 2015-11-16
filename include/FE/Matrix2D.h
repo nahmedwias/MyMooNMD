@@ -21,7 +21,7 @@ class TMatrix2D : public TMatrix
 {
   public:
     /** generate the matrix */
-    TMatrix2D(TStructure *structure);
+    TMatrix2D(std::shared_ptr<TStructure> structure);
     
     /** @brief generate empty matrix */
     TMatrix2D();

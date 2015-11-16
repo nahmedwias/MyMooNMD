@@ -22,23 +22,26 @@ class TMatrix
 {
   protected:
     /** Sparse structure of the matrix */
-    TStructure *structure;
+    std::shared_ptr<TStructure> structure;
     
     /** matrix elements in an array */
     double *Entries;
     
   public:
     /** generate the matrix, intialize entries with zeros */
-    TMatrix(TStructure *structure);
+    TMatrix(std::shared_ptr<TStructure> structure);
     
     /** generate the matrix with given entries */
-    TMatrix(TStructure *structure, double* Entries);
+    [[deprecated("use the constructor taking only a TStructure")]]
+    TMatrix(std::shared_ptr<TStructure> structure, double* Entries);
     
     /** @brief reset the structure, this may mean that the entries need to be 
      *         reallocated */
-    void SetStructure(TStructure *structure);
+    [[deprecated("This should never be necessary")]]
+    void SetStructure(std::shared_ptr<TStructure> structure);
     
     /** create a nRows*nCols zero matrix */
+    [[deprecated("use the constructor taking only a TStructure")]]
     TMatrix(int nRows, int nCols);
 
     /** destructor: free Entries array */
@@ -81,8 +84,8 @@ class TMatrix
     { return structure->GetRowPtr(); }
 
     /** return structure */
-    TStructure* GetStructure() const
-    { return structure; }
+    const TStructure& GetStructure() const
+    { return *structure; }
     
     /** return matrix entries */
     double *GetEntries() const
@@ -195,6 +198,9 @@ class TMatrix
      * 
      * This is of course only possible if the corresponding structures are the
      * same. 
+     * 
+     * \todo this should be a separate method, not a copy asignment. There 
+     * should not be a copy asignment, because we don't want to asign structures
      */
     TMatrix & operator=(const TMatrix& A);
     

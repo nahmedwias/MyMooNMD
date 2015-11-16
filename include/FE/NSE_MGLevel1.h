@@ -25,7 +25,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TSquareMatrix2D *A;
 
     /** structure of matrix A */
-    TStructure *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -34,17 +34,17 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TMatrix2D *B2;
 
     /** structure of matrix B */
-    TStructure *StructureB;
+    const TStructure *StructureB;
 
     /** structure of matrix BT */
-    TStructure *StructureBT;
+    const TStructure *StructureBT;
 #endif  
 #ifdef __3D__
     /** matrix A */
     TSquareMatrix3D *A;
 
     /** structure of matrix A */
-    TStructure *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix3D *B1;
@@ -56,13 +56,13 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TMatrix3D *B3;
 
     /** structure of matrix B */
-    TStructure *StructureB;
+    const TStructure *StructureB;
 
      /** matrix entries of matrix B3 */
     double *B3Entries;
 
     /** structure of matrix BT */
-    TStructure *StructureBT;
+    const TStructure *StructureBT;
 #endif  
 
    /** row pointer for matrix A */

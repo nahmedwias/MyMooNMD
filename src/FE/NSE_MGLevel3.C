@@ -74,7 +74,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetStructure();
+  StructureA = &(A11->GetStructure());
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();
@@ -96,7 +96,7 @@
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();

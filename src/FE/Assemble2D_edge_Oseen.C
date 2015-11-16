@@ -280,11 +280,11 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetStructure().GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetStructure().GetAnsatzSpace();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor

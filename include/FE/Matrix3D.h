@@ -21,7 +21,7 @@ class TMatrix3D : public TMatrix
 {
   public:
     /** generate the matrix */
-    TMatrix3D(TStructure *structure);
+    TMatrix3D(std::shared_ptr<TStructure> structure);
 
     /** destructor: free Entries array */
     ~TMatrix3D();

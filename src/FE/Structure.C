@@ -4762,7 +4762,7 @@ int TStructure::index_of_entry(const int i, const int j) const
 
 
 /** return a new structure for a transposed matrix */
-TStructure* TStructure::GetTransposed() const
+std::shared_ptr<TStructure> TStructure::GetTransposed() const
 {
   if(HangingN_Entries!=0)
   {
@@ -4806,25 +4806,25 @@ TStructure* TStructure::GetTransposed() const
   }
   delete []ColB_count;
   
-  TStructure* structureT = new TStructure(nRowsT, nColsT, N_Entries, colsT, rowsT); 
+  std::shared_ptr<TStructure> structureT(new TStructure(nRowsT, nColsT, N_Entries, colsT, rowsT)); 
   return structureT;
 }
 
-TStructure* get_product_structure(TStructure const * const strucA,
-                                  TStructure const * const strucB)
+std::shared_ptr<TStructure> get_product_structure(
+    TStructure const & strucA, TStructure const & strucB)
 {
-  const int n_A_rows = strucA->GetN_Rows();   // = n_C_rows
-  const int n_A_cols = strucA->GetN_Columns();
-  const int n_B_rows = strucB->GetN_Rows();
-  const int n_B_cols = strucB->GetN_Columns();   // = n_C_cols
+  const int n_A_rows = strucA.GetN_Rows();   // = n_C_rows
+  const int n_A_cols = strucA.GetN_Columns();
+  const int n_B_rows = strucB.GetN_Rows();
+  const int n_B_cols = strucB.GetN_Columns();   // = n_C_cols
   
   if(n_A_cols != n_B_rows)
   {
     ErrMsg("dimension mismatch during matrix-matrix multiplication");
     exit(1);
   }
-  const int * const a_rows = strucA->GetRowPtr();
-  const int * const a_cols = strucA->GetKCol();
+  const int * const a_rows = strucA.GetRowPtr();
+  const int * const a_cols = strucA.GetKCol();
   
   // everything needed to call the constructor of TStructure later on:
   int n_c_entries = 0; // number of entries in product structure C
@@ -4844,7 +4844,7 @@ TStructure* get_product_structure(TStructure const * const strucA,
       // loop over all entries in this row in A
       for(int i = 0; i < n_a_entries_in_row; i++)
       {
-        if(strucB->index_of_entry(a_cols[i+a_rows[row]], col) != -1)
+        if(strucB.index_of_entry(a_cols[i+a_rows[row]], col) != -1)
         {
           dofs[row].push_back(col);
           break;
@@ -4867,7 +4867,8 @@ TStructure* get_product_structure(TStructure const * const strucA,
       c_cols[c_rows[row] + col] = dofs[row].at(col);
     }
   }  
-  return new TStructure(n_A_rows, n_B_cols, n_c_entries, c_cols, c_rows);
+  return std::make_shared<TStructure>(n_A_rows, n_B_cols, n_c_entries, c_cols,
+                                      c_rows);
 }
 
 

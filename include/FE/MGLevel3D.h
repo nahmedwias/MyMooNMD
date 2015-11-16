@@ -51,7 +51,7 @@ class TMGLevel3D
     TSquareMatrix3D *A;
 
     /** structure of used matrix */
-    TStructure *MatrixStructure;
+    const TStructure *MatrixStructure;
 
     /** row pointer for matrix */
     int *RowPtr;

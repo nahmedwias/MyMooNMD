@@ -438,7 +438,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
 
   if(ForPressure)
   {
-    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure().GetTestSpace());
     ActiveBound = -1;
     RowPtr = ((TMatrix2D *)A)->GetRowPtr();
     KCol = ((TMatrix2D *)A)->GetKCol();
@@ -4850,7 +4850,7 @@ void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D *Coeff)
   // get fespace and matrices
   if(ForPressure)
   {
-    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure().GetTestSpace());
     ActiveBound = -1;
     RowPtr = ((TMatrix2D *)A)->GetRowPtr();
     KCol = ((TMatrix2D *)A)->GetKCol();
@@ -5297,7 +5297,7 @@ void UltraLocalProjectionFunction(void* A, bool ForPressure)
 
   if(ForPressure)
   {
-    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetStructure().GetTestSpace());
     ActiveBound = -1;
     RowPtr = ((TMatrix2D *)A)->GetRowPtr();
     KCol = ((TMatrix2D *)A)->GetKCol();
@@ -5791,7 +5791,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
 
   if(ForPressure)
   {
-    fespace = (TFESpace3D*)(((TMatrix3D *)A)->GetStructure()->GetTestSpace());
+    fespace = (TFESpace3D*)(((TMatrix3D *)A)->GetStructure().GetTestSpace());
     ActiveBound = -1;
     RowPtr = ((TMatrix3D *)A)->GetRowPtr();
     KCol = ((TMatrix3D *)A)->GetKCol();

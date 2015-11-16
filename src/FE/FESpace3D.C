@@ -2056,7 +2056,7 @@ TFESpace3D::~TFESpace3D()
 }
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
+void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
   TBaseCell *cell;
@@ -2183,7 +2183,7 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
 } // end GetDOFPosition
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z)
+void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
   TBaseCell *cell;

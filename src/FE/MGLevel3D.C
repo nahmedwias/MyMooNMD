@@ -60,7 +60,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a,
 */
 
   A = a;
-  MatrixStructure = a->GetStructure();
+  MatrixStructure = &(a->GetStructure());
   RowPtr = a->GetRowPtr();
   KCol = a->GetKCol();
   Entries = a->GetEntries();
@@ -107,7 +107,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 */
 
   A = a;
-  MatrixStructure = a->GetStructure();
+  MatrixStructure = &(a->GetStructure());
   RowPtr = a->GetRowPtr();
   KCol = a->GetKCol();
   Entries = a->GetEntries();

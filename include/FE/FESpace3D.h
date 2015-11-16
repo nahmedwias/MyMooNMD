@@ -110,10 +110,10 @@ class TFESpace3D : public TFESpace
     FE3D GetFE3D(int i, TBaseCell *cell) const;
 
     /** return position of one given DOF */
-    void GetDOFPosition(int dof, double &x, double &y, double &z);
+    void GetDOFPosition(int dof, double &x, double &y, double &z) const;
 
     /** return position of all dofs */
-    void GetDOFPosition(double *x, double *y, double *z);
+    void GetDOFPosition(double *x, double *y, double *z) const;
 
 
 };

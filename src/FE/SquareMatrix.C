@@ -18,13 +18,13 @@
 #include <stdlib.h>
 
 
-TSquareMatrix::TSquareMatrix(TStructure *squarestructure)
+TSquareMatrix::TSquareMatrix(std::shared_ptr<TStructure> squarestructure)
  : TMatrix(squarestructure)
 {
 }
 
 TSquareMatrix::TSquareMatrix(int n)
- : TMatrix(new TStructure(n))
+ : TMatrix(std::make_shared<TStructure>(n))
 {
 }
 

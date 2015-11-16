@@ -19,26 +19,23 @@
 
 #include <MooNMD_Io.h>
 
-TMatrix::TMatrix(TStructure *structure)
+TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
+ : TMatrix(structure, new double[structure->GetN_Entries()])
 {
-  this->structure = structure;
-  Entries = new double[structure->GetN_Entries()];
   memset(Entries, 0, structure->GetN_Entries()*SizeOfDouble);
 }
 
-TMatrix::TMatrix(TStructure *structure, double* Entries)
+TMatrix::TMatrix(std::shared_ptr<TStructure> structure, double* Entries)
+ : structure(structure), Entries(Entries)
 {
-  this->structure = structure;
-  this->Entries = Entries;
 }
 
 TMatrix::TMatrix(int nRows, int nCols)
+ : TMatrix(std::make_shared<TStructure>(nRows, nCols), nullptr)
 {
-  structure = new TStructure(nRows,nCols);
-  Entries = NULL;
 }
 
-void TMatrix::SetStructure(TStructure *structure)
+void TMatrix::SetStructure(std::shared_ptr<TStructure> structure)
 {
   this->structure = structure;
 
@@ -270,11 +267,9 @@ double* operator*(const TMatrix & A,const double* x)
 
 TMatrix & TMatrix::operator+=(const TMatrix* A)
 {
-  if(this->structure != A->GetStructure() // compare pointers
-     && (*(this->structure)) != (*(A->GetStructure()))) // compare objects
+  if(this->GetStructure() != A->GetStructure()) // compare objects
   {
-    ErrMsg("TMatrix::operator+= : the two matrices do not match.");
-    exit(1);
+    ErrThrow("TMatrix::operator+= : the two matrices do not match.");
   }
   
   int n_entries = this->GetN_Entries();
@@ -290,8 +285,7 @@ TMatrix & TMatrix::operator+=(const TMatrix* A)
 
 TMatrix & TMatrix::operator-=(const TMatrix* A)
 {
-  if(this->structure != A->GetStructure() // compare pointers
-     && (*(this->structure)) != (*(A->GetStructure()))) // compare objects
+  if(this->GetStructure() != A->GetStructure()) // compare objects
   {
     ErrMsg("TMatrix::operator-= : the two matrices do not match.");
     exit(1);
@@ -310,14 +304,13 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 TMatrix & TMatrix::operator=(const TMatrix& A)
 {
   // compare structures (first pointers, then structures themselves)
-  if(this->structure != A.GetStructure() // compare pointers
-     && ((*(this->structure)) != (*(A.GetStructure())))) // compare objects
+  if(this->GetStructure() != A.GetStructure()) // compare objects
   {
     OutPut("WARNING: TMatrix& operator= Matrices have different structures.\n"
            << "         The structure in this matrix (on left hand side) is "
            << "         reset to use the same structure as the right hand "
            << "side\n         Are you sure this is what you want?\n");
-    this->SetStructure(A.GetStructure());
+    ErrThrow("cannot call operator= on TMatrix with different TStructure");
   }
   
   // copy matrix entries.
@@ -391,10 +384,10 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   const int * const a_rows = this->GetRowPtr();
   const int * const a_cols = this->GetKCol();
   
-  TStructure * strucB = B->GetStructure();
+  const TStructure & strucB = B->GetStructure();
   const double * const b_entries = B->GetEntries();
   
-  TStructure * struc_c = get_product_structure(this->GetStructure(), strucB);
+  std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
   int * c_rows = struc_c->GetRowPtr();
   int * c_cols = struc_c->GetKCol();
   double * c_entries = new double[struc_c->GetN_Entries()];
@@ -413,7 +406,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
       // loop over all entries in this row in A
       for(int i = a_rows[row]; i < a_rows[row+1]; i++)
       {
-        int ib = strucB->index_of_entry(a_cols[i], c_cols[col]);
+        int ib = strucB.index_of_entry(a_cols[i], c_cols[col]);
         if(ib != -1)
         {
           c_entries[col] += Entries[i] * b_entries[ib];
@@ -428,7 +421,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
 TMatrix* TMatrix::GetTransposed() const
 {
   // get transposed structure
-  TStructure *structureT = structure->GetTransposed();
+  std::shared_ptr<TStructure> structureT = structure->GetTransposed();
   int * rowsT= structureT->GetRowPtr();
   int * colsT= structureT->GetKCol();
   int * rows = this->GetRowPtr();
@@ -494,8 +487,7 @@ void TMatrix::remove_zeros(double tol)
 
 void TMatrix::add_scaled(const TMatrix& m, double factor)
 {
-  if(this->structure != m.GetStructure() // compare pointers
-     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  if(this->GetStructure() != m.GetStructure()) // compare objects
   {
     ErrThrow("TMatrix::add : the two matrices do not match.");
   }

@@ -16,14 +16,14 @@
 #include <LinAlg.h>
 #include <stdlib.h>
 
-TSquareMatrix2D::TSquareMatrix2D(TStructure *squarestructure)
+TSquareMatrix2D::TSquareMatrix2D(std::shared_ptr<TStructure> squarestructure)
   : TSquareMatrix(squarestructure)
 {
 }
 
 
 TSquareMatrix2D::TSquareMatrix2D(int n) 
- : TSquareMatrix(new TStructure(n))
+ : TSquareMatrix(std::make_shared<TStructure>(n))
 {
 }
 
@@ -67,8 +67,7 @@ void TSquareMatrix2D::scale_active(double factor)
 
 void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
 {
-  if(this->structure != m.GetStructure() // compare pointers
-     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  if(this->GetStructure() != m.GetStructure()) // compare objects
   {
     ErrMsg("TMatrix::add : the two matrices do not match.");
     throw("TMatrix::add : the two matrices do not match.");
@@ -127,7 +126,7 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
   if (A.GetStructure() == B.GetStructure()) 
   {
     // create bew TSquareMatrix2D on heap (otherwise return did not work)
-    TSquareMatrix2D *C = new TSquareMatrix2D(A.GetStructure());
+    TSquareMatrix2D *C = new TSquareMatrix2D(A.structure);
     AEntries = A.GetEntries();
     BEntries = B.GetEntries();
     CEntries = C->GetEntries();
@@ -149,7 +148,7 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 TSquareMatrix2D& operator*(const TSquareMatrix2D & A,const double alpha)
 {
   double *AEntries, *CEntries;
-  TSquareMatrix2D *C = new TSquareMatrix2D(A.GetStructure());
+  TSquareMatrix2D *C = new TSquareMatrix2D(A.structure);
   AEntries = A.GetEntries();
   CEntries = C->GetEntries();
   // multiply each active entry by alpha and write it into matrix C

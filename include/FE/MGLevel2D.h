@@ -43,7 +43,7 @@ class TMGLevel2D
     TSquareMatrix2D *A;
 
     /** structure of used matrix */
-    TStructure *MatrixStructure;
+    const TStructure *MatrixStructure;
 
     /** row pointer for matrix */
     int *RowPtr;

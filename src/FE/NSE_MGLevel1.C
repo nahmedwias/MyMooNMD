@@ -71,14 +71,14 @@
   double *aux;
 
   A = a;
-  StructureA = A->GetStructure();
+  StructureA = &(A->GetStructure());
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
   AEntries = A->GetEntries();
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();

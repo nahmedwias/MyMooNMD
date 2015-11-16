@@ -19,6 +19,7 @@
 #include <FESpace1D.h>
 #include <FESpace2D.h>
 #include <FESpace3D.h>
+#include <memory>
 
 class TStructure
 {
@@ -282,7 +283,7 @@ class TStructure
      * taken into account. The returned TMatrix is really the algebraic 
      * transposed matrix.
      * */
-    TStructure* GetTransposed() const;
+    std::shared_ptr<TStructure> GetTransposed() const;
     
     
     /** @brief copy constructor */
@@ -300,8 +301,8 @@ class TStructure
      * @param strucA structure of left factor
      * @param strucB structure of right factor
      */
-    friend TStructure* get_product_structure(TStructure const * const strucA,
-                                             TStructure const * const strucB);
+    friend std::shared_ptr<TStructure> get_product_structure(
+        TStructure const & strucA, TStructure const & strucB);
     
     /** @brief Comparision Operator 
      * 

@@ -30,8 +30,8 @@ int main(int argc, char **argv)
   ColA[0] = 0; ColA[1] = 1; ColA[2] =  2; ColA[3] = 3;
   RowA[0] = 0; RowA[1] = 1; RowA[2] = 2; RowA[3] = 3; RowA[4] = 4;
   EntriesA[0] = 0.5; EntriesA[1] = 0.75; EntriesA[2] = 1; EntriesA[3] = 1.5;
-  TStructure structureA(4, 4, ColA, RowA);
-  TMatrix matA(&structureA, EntriesA);
+  std::shared_ptr<TStructure> structureA(new TStructure(4, 4, ColA, RowA));
+  TMatrix matA(structureA, EntriesA);
 
   //Matrix B
   int * RowB = new int[4];
@@ -41,8 +41,8 @@ int main(int argc, char **argv)
   ColB[0] = 0; ColB[1] = 3; ColB[2] = 2; ColB[3] = 1; ColB[4] = 3;
   EntriesB[0] = 4; EntriesB[1] = 1; EntriesB[2] = 5; EntriesB[3] = 6; 
   EntriesB[4] = 1;
-  TStructure structureB(3, 4, 5, ColB, RowB);
-  TMatrix matB(&structureB, EntriesB);
+  std::shared_ptr<TStructure> structureB(new TStructure(3, 4, 5, ColB, RowB));
+  TMatrix matB(structureB, EntriesB);
 
   //Matrix C
   int * RowC = new int[5];
@@ -53,8 +53,8 @@ int main(int argc, char **argv)
   ColC[6] = 0; ColC[7] = 2;
   EntriesC[0] = 7; EntriesC[1] = 8; EntriesC[2] = 9; EntriesC[3] = 10;
   EntriesC[4] = 11; EntriesC[5] = 12; EntriesC[6] = 13; EntriesC[7] = 14;
-  TStructure structureC(4, 3, 8, ColC, RowC);
-  TMatrix matC(&structureC, EntriesC);
+  std::shared_ptr<TStructure> structureC(new TStructure(4, 3, 8, ColC, RowC));
+  TMatrix matC(structureC, EntriesC);
 
   TMatrix* matCT = matC.GetTransposed();
   
@@ -66,8 +66,8 @@ int main(int argc, char **argv)
   ColD[0] = 0; ColD[1] = 1; ColD[2] = 2; ColD[3] = 1; ColD[4] = 2;
   EntriesD[0] = 0.5; EntriesD[1] = 1; EntriesD[2] = 0.1; EntriesD[3] = 0.1; 
   EntriesD[4] = 1.5;
-  TStructure structureD(3, 3, 5, ColD, RowD);
-  TMatrix matD(&structureD, EntriesD);
+  std::shared_ptr<TStructure> structureD(new TStructure(3, 3, 5, ColD, RowD));
+  TMatrix matD(structureD, EntriesD);
 
   matA.PrintFull("matA", 4);
   matB.PrintFull("matB", 4);
@@ -150,13 +150,9 @@ int main(int argc, char **argv)
      || !equal(matB(2, 1), -36) || !equal(matB(2, 3), -12))
     ErrThrow("wrong resulst after scaling with vector, matrix B");
   
-  delete matCT->GetStructure();
   delete matCT;
-  delete matAC->GetStructure();
   delete matAC;
-  delete matBA->GetStructure();
   delete matBA;
-  delete matCB->GetStructure();
   delete matCB;
   
   std::cout << "test successful\n";
