@@ -22,7 +22,7 @@
 
 class TStructure
 {
-  protected:
+  private:
     /** number of rows */
     int N_Rows;
 
@@ -47,89 +47,6 @@ class TStructure
     /** index in HangingKCol where each row starts */
     int *HangingRowPtr;
     
-    
-    // Structure2D
-    /** Ansatzspace */
-    const TFESpace1D *AnsatzSpace1D;
-    const TFESpace2D *AnsatzSpace2D;
-
-    /** Testspace */
-    const TFESpace1D *TestSpace1D;
-    const TFESpace2D *TestSpace2D;
-
-    int *AnsatzMortarSpaceGlobNo;
-    int *TestMortarSpaceGlobNo;
-
-    int *AnsatzNonMortarSpaceGlobNo;
-    int *TestNonMortarSpaceGlobNo;
-    
-    
-    // Structure3D
-    /** Ansatzspace */
-    //TFESpace2D *AnsatzSpace2D;
-    const TFESpace3D *AnsatzSpace3D;
-
-    /** Testspace */
-    //TFESpace2D *TestSpace2D;
-    const TFESpace3D *TestSpace3D;
-
-  public:
-    /** generate the matrix structure, both space with 2D collection */
-    TStructure();
-    
-    /** generate a (square) matrix structure, all arrays are already defined */
-    TStructure(int n, int N_entries, int *col_ptr, int *row_ptr);
-
-    /** generate the matrix structure, all arrays are already defined */
-    TStructure(int nRows, int nCols, int N_entries, int *col_ptr, int *row_ptr);
-    
-    /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
-    TStructure(int nRows, int nCols);
-    
-    /** Generates an empty n*n Structure for a Zero-Matrix */
-    explicit TStructure(int n);
-    
-    /** generate the matrix Structure2D, both space with 2D collection */
-    TStructure(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
-    
-    /** generate the matrix structure, both spaces are 2D */
-    /** both spaces are defined on different grids */
-    TStructure(TFESpace2D *testspace, int test_level, TFESpace2D *ansatzspace,
-               int ansatz_level);
-#ifdef __MORTAR__
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace);
-#endif
-    
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-               int **ansatzcelljoints);
-
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-               TNonMortarData *NonMortarFEData);
-
-    TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
-               TNonMortarData *NonMortarFEData);
-    
-    /** generate the matrix Structure3D, both space with 3D collection */
-    TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace);
-    
-    // square structures
-    /** generate the matrix structure, only one space needed */
-    TStructure( const TFESpace1D *space );
-    
-    /** generate the matrix structure, only one space needed */
-    TStructure( const TFESpace2D* Space );
-    
-    /** generate the matrix structure, only one space needed */
-    TStructure( const TFESpace3D *space );
-    
-    
-    
     /** number of active rows */
     int ActiveBound;
 
@@ -139,40 +56,123 @@ class TStructure
     /** 2 - diagonal entry first, then increasing ordering */
     int ColOrder;
 
-    /** sort an integer array */
-    void IntSort(int *BeginPtr, int *AfterEndPtr)
-    {
-      SortRow(BeginPtr, AfterEndPtr);
-    }
-    /** return ActiveBound */
-    int GetActiveBound() const
-    {
-      return ActiveBound;
-    }
     
-    /** return ordering of columns */
-    int GetColOrder() const
-    {
-      return ColOrder;
-    }
+    
+    // Structure2D
+    /** Ansatzspace */
+    const TFESpace1D *AnsatzSpace1D;
+    const TFESpace2D *AnsatzSpace2D;
+    const TFESpace3D *AnsatzSpace3D;
+
+    /** Testspace */
+    const TFESpace1D *TestSpace1D;
+    const TFESpace2D *TestSpace2D;
+    const TFESpace3D *TestSpace3D;
+
+    
+    /** sort one row */
+    void SortRow(int *BeginPtr, int *AfterEndPtr);
 
     /** sort column numbers: diag is first element, other numbers are
-        increasing */
-        void SortDiagFirst();
+     increasing */
+    void SortDiagFirst();
+    
+  public:
+    /** @brief default constructor sets everything to 0/nullptr */
+    TStructure();
+    
+    // square structures
+    /** generate the matrix structure, only one space needed */
+    TStructure(const TFESpace1D *space);
+
+    /** generate the matrix structure, only one space needed */
+    TStructure(const TFESpace2D* Space);
+
+    /** generate the matrix structure, only one space needed */
+    TStructure(const TFESpace3D *space);
+    
+    // (possibly) rectangular matrixes
+    /** generate the matrix Structure2D, both space with 2D collection */
+    TStructure(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
+    
+    /** generate the matrix Structure3D, both space with 3D collection */
+    TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace);
+    
+    /** generate the matrix structure, both spaces are 2D */
+    /** both spaces are defined on different grids */
+    TStructure(TFESpace2D *testspace, int test_level, TFESpace2D *ansatzspace,
+               int ansatz_level);
+
+    /** generate a (square) matrix structure, all arrays are already defined */
+    TStructure(int n, int N_entries, int *col_ptr, int *row_ptr);
+
+    /** generate the matrix structure, all arrays are already defined */
+    TStructure(int nRows, int nCols, int N_entries, int *col_ptr, int *row_ptr);
+
+    /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
+    TStructure(int nRows, int nCols);
+
+    /** Generates an empty n*n Structure for a Zero-Matrix */
+    explicit TStructure(int n);
+
     
     
-        
-        
-        
     bool isSquare() const
     { return N_Rows == N_Columns; }
     
     
-    // structure2d
+    /** return TestSpace */
+    const TFESpace1D *GetTestSpace1D() const
+    {
+      return TestSpace1D;
+    }
+    
+    /** return AnsatzSpace */
+    const TFESpace1D *GetAnsatzSpace1D() const
+    {
+      return AnsatzSpace1D;
+    }
+        
+    /** return TestSpace */
+    const TFESpace2D *GetTestSpace2D() const
+    {
+      return TestSpace2D;
+    }
+
     /** return AnsatzSpace */
     const TFESpace2D *GetAnsatzSpace2D() const
     {
       return AnsatzSpace2D;
+    }
+    
+    /** return TestSpace */
+    const TFESpace3D *GetTestSpace3D() const
+    {
+      return TestSpace3D;
+    }
+    
+    /** return AnsatzSpace */
+    const TFESpace3D *GetAnsatzSpace3D() const
+    {
+      return AnsatzSpace3D;
+    }
+    
+    
+    /** return TestSpace */
+    const TFESpace *GetTestSpace() const
+    {
+      if(TestSpace1D)
+      {
+        return TestSpace1D;
+      }
+      else if(TestSpace2D)
+      {
+        return TestSpace2D;
+      }
+      else
+      {
+        return TestSpace3D;
+      }
     }
     
     const TFESpace *GetAnsatzSpace() const
@@ -191,51 +191,34 @@ class TStructure
       }
     }
     
-    /** return TestSpace */
-    const TFESpace2D *GetTestSpace2D() const
+    
+    /** return FESpace */
+    const TFESpace1D *GetFESpace1D() const
+    { if(this->isSquare()) return TestSpace1D;
+    else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
+    /** return FESpace */
+    const TFESpace2D *GetFESpace2D() const
+    { if(this->isSquare()) return TestSpace2D;
+        else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
+    /** return FESpace */
+    const TFESpace3D *GetFESpace3D() const
+    { if(this->isSquare()) return TestSpace3D;
+        else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
+    
+    
+    /** return ActiveBound */
+    int GetActiveBound() const
     {
-      return TestSpace2D;
+      return ActiveBound;
     }
     
-    /** return TestSpace */
-    const TFESpace *GetTestSpace() const
+    /** return ordering of columns */
+    int GetColOrder() const
     {
-      if(TestSpace1D)
-      {
-        return TestSpace1D;
-      }
-      else if(TestSpace2D)
-      {
-        return TestSpace2D;
-      }
-      else
-      {
-        return TestSpace3D;
-      }
+      return ColOrder;
     }
-
-    
-    /** return FESpace */
-    const TFESpace1D *GetFESpace1D()
-    { return TestSpace1D; }
-    /** return FESpace */
-    const TFESpace2D *GetFESpace2D()
-    { return TestSpace2D; }
-    /** return FESpace */
-    const TFESpace3D *GetFESpace3D()
-    { return TestSpace3D; }
-    
-    //structure 3d
     
     
-    
-    
-    /** @brief copy constructor */
-    TStructure(const TStructure&);
-
-    /** destructor: free all used arrays */
-    ~TStructure();
-
     /** return number of rows */
     int GetN_Rows() const
     { return N_Rows; }
@@ -275,12 +258,11 @@ class TStructure
     void setKCol(int * p) { KCol = p; }
     void setRowPtr(int * p) { RowPtr = p; }
 
-    /** sort one row */
-    void SortRow(int *BeginPtr, int *AfterEndPtr);
-    
-    /** sort rows */
+    /** sort rows
+     * 
+     * \todo this should be private and called during construction
+     */
     void Sort();
-    
     
     /**
      * @brief find the index of a given entry
@@ -300,7 +282,14 @@ class TStructure
      * taken into account. The returned TMatrix is really the algebraic 
      * transposed matrix.
      * */
-    TStructure* GetTransposed();
+    TStructure* GetTransposed() const;
+    
+    
+    /** @brief copy constructor */
+    TStructure(const TStructure&);
+
+    /** destructor: free all used arrays */
+    ~TStructure();
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B
@@ -321,6 +310,34 @@ class TStructure
      */
     friend bool operator==(const TStructure &lhs, const TStructure &rhs);
     friend bool operator!=(const TStructure &lhs, const TStructure &rhs);
+    
+    
+#ifdef __MORTAR__ // \todo can this be removed?
+  protected:
+    int *AnsatzMortarSpaceGlobNo;
+    int *TestMortarSpaceGlobNo;
+
+    int *AnsatzNonMortarSpaceGlobNo;
+    int *TestNonMortarSpaceGlobNo;
+  public:
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace);
+    
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
+        int **ansatzcelljoints);
+
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
+        TNonMortarData *NonMortarFEData);
+
+    TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
+        TNonMortarData *NonMortarFEData);
+#endif
+    
 };
 
 #endif
