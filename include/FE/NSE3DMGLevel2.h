@@ -24,7 +24,7 @@ class TNSE3DMGLevel2 : public TNSE3DMGLevel
     TSquareMatrix3D *A;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    TStructure *StructureA;
 
     /** row pointer for matrix A */
     int *ARowPtr;

@@ -21,7 +21,7 @@ class TSquareMatrix : public TMatrix
 {
   protected:
     /** the sparsity structure of this matrix */
-    TSquareStructure *structure;
+    TStructure *structure;
 
     /** bound for hanging nodes 
      * @todo is this structure->HangingN_Entries ?? */
@@ -35,7 +35,7 @@ class TSquareMatrix : public TMatrix
   
   public:
     /** generate the matrix */
-    TSquareMatrix(TSquareStructure *structure);
+    TSquareMatrix(TStructure *structure);
     
     /** generate an empty n*n zero matrix */
     explicit TSquareMatrix(int n);
@@ -63,9 +63,9 @@ class TSquareMatrix : public TMatrix
     int GetColOrder() const
     { return structure->GetColOrder(); }
     
-    void SetStructure(TSquareStructure *structure);
+    void SetStructure(TStructure *structure);
     
-    TSquareStructure *GetStructure() const
+    TStructure *GetStructure() const
     { return structure; }
 
     /** write matrix into file */

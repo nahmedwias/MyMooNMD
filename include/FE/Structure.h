@@ -86,6 +86,8 @@ class TStructure
     /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
     TStructure(int nRows, int nCols);
     
+    /** Generates an empty n*n Structure for a Zero-Matrix */
+    explicit TStructure(int n);
     
     /** generate the matrix Structure2D, both space with 2D collection */
     TStructure(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
@@ -116,10 +118,54 @@ class TStructure
     /** generate the matrix Structure3D, both space with 3D collection */
     TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace);
     
+    // square structures
+    /** generate the matrix structure, only one space needed */
+    TStructure( const TFESpace1D *space );
+    
+    /** generate the matrix structure, only one space needed */
+    TStructure( const TFESpace2D* Space );
+    
+    /** generate the matrix structure, only one space needed */
+    TStructure( const TFESpace3D *space );
     
     
     
+    /** number of active rows */
+    int ActiveBound;
+
+    /** ordering of the column entries */
+    /** 0 - no special ordering */
+    /** 1 - increasing ordering (like used for umfpack) */
+    /** 2 - diagonal entry first, then increasing ordering */
+    int ColOrder;
+
+    /** sort an integer array */
+    void IntSort(int *BeginPtr, int *AfterEndPtr)
+    {
+      SortRow(BeginPtr, AfterEndPtr);
+    }
+    /** return ActiveBound */
+    int GetActiveBound() const
+    {
+      return ActiveBound;
+    }
     
+    /** return ordering of columns */
+    int GetColOrder() const
+    {
+      return ColOrder;
+    }
+
+    /** sort column numbers: diag is first element, other numbers are
+        increasing */
+        void SortDiagFirst();
+    
+    
+        
+        
+        
+    bool isSquare() const
+    { return N_Rows == N_Columns; }
     
     
     // structure2d
@@ -169,7 +215,15 @@ class TStructure
     }
 
     
-    
+    /** return FESpace */
+    const TFESpace1D *GetFESpace1D()
+    { return TestSpace1D; }
+    /** return FESpace */
+    const TFESpace2D *GetFESpace2D()
+    { return TestSpace2D; }
+    /** return FESpace */
+    const TFESpace3D *GetFESpace3D()
+    { return TestSpace3D; }
     
     //structure 3d
     
@@ -242,7 +296,7 @@ class TStructure
     
     /** return a new structure for a transposed matrix 
      * If this is an object of a derived class (e.g. TStructure, 
-     * TSquareStructure), then the number of active degrees of freedom is not 
+     * TStructure), then the number of active degrees of freedom is not 
      * taken into account. The returned TMatrix is really the algebraic 
      * transposed matrix.
      * */

@@ -25,7 +25,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TSquareMatrix2D *A;
 
     /** structure of matrix A */
-    TSquareStructure2D *StructureA;
+    TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -44,7 +44,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TSquareMatrix3D *A;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix3D *B1;

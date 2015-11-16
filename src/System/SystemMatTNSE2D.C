@@ -89,7 +89,7 @@ TSystemMatTNSE2D::TSystemMatTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *pre
     fe_spaces.push_back(fe_spaces[0]);
     fe_spaces.push_back(Projection_space);
      
-    sqstructureL = new TSquareStructure2D(Projection_space);
+    sqstructureL = new TStructure(Projection_space);
     sqstructureL->Sort();
     structure_tilde_G = new TStructure(velocity_fespace, Projection_space);
     structure_G = new TStructure(Projection_space, velocity_fespace);    

@@ -95,7 +95,7 @@ class TSystemNSE3D
     int N_Matrices;
 
     /** sqstructureA of the system matrix */
-    TSquareStructure3D **sqstructureA;
+    TStructure **sqstructureA;
 
     /** structure of the system matrix */
     TStructure **structureB, **structureBT;

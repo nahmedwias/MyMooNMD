@@ -1827,7 +1827,7 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
 {
   /* build the Q2 space */  
  
-  TFESpace3D *q1_space, *q2_space;
+  const TFESpace3D *q1_space, *q2_space;
   double *q1_values, *q2_values;
   int q1_ndof, q2_ndof;
   TCollection *q1_coll, *q2_coll;
@@ -1843,7 +1843,7 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
   int l,n0,n1,n2,n3,n4,n5,n6,n7;
   int *dof;
   TAuxParam3D *aux3d;
-  TFESpace3D *fesp3d[1];
+  const TFESpace3D *fesp3d[1];
   int j,k;
   
   q1_space=q1_function->GetFESpace3D();
@@ -1951,8 +1951,8 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
 void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function, 
                             TFEFunction3D *q3_function) 
 {
-  TFESpace3D *q2_space;
-  TFESpace3D *q3_space;
+  const TFESpace3D *q2_space;
+  const TFESpace3D *q3_space;
 
   double *q2_values,*q3_values;
   int q2_ndof,q3_ndof;
@@ -1970,7 +1970,7 @@ void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function,
   int l,n0,n1,n2,n3,n4,n5,n6,n7;
   int *dof;
   TAuxParam3D *aux3d;
-  TFESpace3D *fesp3d[1];
+  const TFESpace3D *fesp3d[1];
   double s1,s2,s3;
   int j,k;
 
@@ -2098,8 +2098,8 @@ void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function,
 void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function, 
                             TFEFunction3D *q4_function) 
 {
-  TFESpace3D *q2_space;
-  TFESpace3D *q4_space;
+  const TFESpace3D *q2_space;
+  const TFESpace3D *q4_space;
 
   double *q2_values,*q4_values;
   int q2_ndof,q4_ndof;
@@ -2117,7 +2117,7 @@ void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function,
   int l,n0,n1,n2,n3,n4,n5,n6,n7;
   int *dof;
   TAuxParam3D *aux3d;
-  TFESpace3D *fesp3d[1];
+  const TFESpace3D *fesp3d[1];
   double s1,s2,s3;
   int j,k;
 
@@ -2250,7 +2250,7 @@ void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function,
 void Superconvergence_P1P2_3D(int version, TFEFunction3D *p1_function, 
                             TFEFunction3D *p2_function) 
 {
-  TFESpace3D *p1_space, *p2_space;
+  const TFESpace3D *p1_space, *p2_space;
   double *p1_values, *p2_values;
   int p1_ndof, p2_ndof;
   TCollection *p1_coll, *p2_coll;
@@ -2264,7 +2264,7 @@ void Superconvergence_P1P2_3D(int version, TFEFunction3D *p1_function,
   int l,n0,n1,n2,n3,n4,n5,n6,n7;
   int *dof;
   TAuxParam3D *aux3d;
-  TFESpace3D *fesp3d[1];
+  const TFESpace3D *fesp3d[1];
   int j,k;
   
   p1_space=p1_function->GetFESpace3D();

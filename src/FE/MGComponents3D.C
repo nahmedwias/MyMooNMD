@@ -177,8 +177,8 @@ void L1Int3D(int N_Points, double *X, double *Y, double *Z,
 
 double tP=0.0,tR=0.0;
 /** prolongate */
-void Prolongate(TFESpace3D *CoarseSpace, 
-        TFESpace3D *FineSpace, double *CoarseFunction, 
+void Prolongate(const TFESpace3D *CoarseSpace, 
+                const TFESpace3D *FineSpace, double *CoarseFunction, 
         double *FineFunction, double *aux)
 
 {
@@ -457,7 +457,7 @@ void Prolongate(TFESpace3D *CoarseSpace,
   tP += (t2-t1);
 }
 
-void Prolongate(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void Prolongate(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
         int N_Functions,
         double *CoarseFunction, double *FineFunction, double *aux)
 
@@ -682,8 +682,8 @@ void Prolongate(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
 }
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace3D *CoarseSpace,
-        TFESpace3D *FineSpace, double *CoarseFunction,
+void DefectRestriction(const TFESpace3D *CoarseSpace,
+                       const TFESpace3D *FineSpace, double *CoarseFunction,
         double *FineFunction, double *aux)
 {
   int i,j,k,l;
@@ -966,7 +966,7 @@ void DefectRestriction(TFESpace3D *CoarseSpace,
 }
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void DefectRestriction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
         int N_Functions,
         double *CoarseFunction, double *FineFunction, double *aux)
 {
@@ -1210,8 +1210,8 @@ void DefectRestriction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
 }
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace3D *CoarseSpace, 
-    TFESpace3D *FineSpace,
+void RestrictFunction(const TFESpace3D *CoarseSpace, 
+                      const TFESpace3D *FineSpace,
     double *CoarseFunction, double *FineFunction,
     double *aux)
 {
@@ -1478,7 +1478,7 @@ void RestrictFunction(TFESpace3D *CoarseSpace,
 } // RestrictFunction
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void RestrictFunction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
     int N_Functions,
     double *CoarseFunction, double *FineFunction, double *aux)
 {

@@ -55,6 +55,10 @@ TStructure::TStructure(int nRows, int nCols)
 }
 
 
+TStructure::TStructure(int n) : TStructure(n, n)
+{
+}
+
 
 /** generate the matrix structure, both spaces are 2D */
 TStructure::TStructure(const TFESpace2D* testspace,
@@ -3039,6 +3043,1611 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
 #endif
 
 
+/** generate the matrix structure, both space are 1D */
+TStructure::TStructure( const TFESpace1D *Space )
+: TStructure()
+{
+  int i,j,k,l,n,N_, n1,n2, m;
+  int *GlobalNumbers;
+  int *BeginIndex;
+  int *Numbers, *nieb_Numbers;
+  int N_Dirichlet, end, N_Hanging, Offset;
+  int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
+  int *AuxPtr, *AuxPtr_delete, *HangingAuxPtr;
+  int *KColAux, *HangingKColAux;
+  int index, oldindex, EdgeIntegrals=Space->IsDGSpace();
+
+  TCollection *Coll;
+
+  TBaseCell *cell, *neigh;
+  FE1D CurrentElement, CurrentNeighbour;
+
+  TestSpace1D = Space;
+  AnsatzSpace1D = Space;
+
+  // all dof are treated as unknowns !!!
+  // no boundary description is used so far!!!
+  N_Inner=Space->GetN_Inner();
+  ActiveBound = N_Inner;
+  N_Rows = N_Inner;
+  N_Columns = N_Rows;
+  N_Hanging = 0;
+  HangingN_Entries=0;
+  // AuxPtr[i] will contain an upper bound for the number of ...
+  // matrix entries in row i
+  l=N_Rows+1;
+  AuxPtr=new int[l];
+  memset(AuxPtr, 0, l*sizeof(int));
+
+  GlobalNumbers=Space->GetGlobalNumbers();
+  BeginIndex=Space->GetBeginIndex();
+
+  // loop over all elements
+  N_=Space->GetN_Cells();
+  Coll = TestSpace1D->GetCollection();
+  
+  // associate each cell with her number in the collection
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    cell->SetClipBoard(i);
+  }
+
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=GlobalNumbers+BeginIndex[i];
+
+    CurrentElement = Space->GetFE1D(i, cell);
+    n1 = TFEDatabase2D::GetFE1D(CurrentElement)->GetN_DOF();
+    for(j=0;j<n1;j++)
+    {
+      k=Numbers[j];
+      AuxPtr[k]+=n1;
+
+     //DG additional entries necessary if integrals over the edges(points in 1D)
+     // appear in the discretization
+     if(EdgeIntegrals)
+     {
+      l=cell->GetN_Edges();                   // # edges
+      for(m=0;m<l;m++)                        // for all edges
+      {
+       neigh = (cell->GetJoint(m))->GetNeighbour(cell);
+
+       if(neigh)
+       {
+        n = neigh->GetClipBoard();
+        CurrentNeighbour = Space->GetFE1D(n, neigh);
+        n2 = TFEDatabase2D::GetFE1D(CurrentNeighbour)->GetN_DOF();
+        AuxPtr[k]+=n2;
+       }//if(neigh)
+      }
+     }//if (TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS)
+
+    }                                             // for(j=0;j<n1;
+  }                                               //  for(i=0;i<N
+
+  N_Entries = 0;
+
+//   for(i=0;i<=N_;i++)
+//     cout << i << "   " << AuxPtr[i] << endl;
+//   cout << endl;
+// exit(0);
+  // sum up the array AuxPtr, AuxPtr[i] will now contain the index for
+  // KColAux array, the column numbers for row i are in the intervall
+  // [ AuxPtr[i],AuxPtr[i+1] )
+  N_=N_Rows;
+  l=AuxPtr[0];
+  AuxPtr[0]=0;
+  //   cout << l << "  " << AuxPtr[0] << endl;
+  for(i=0;i<N_;i++)
+  {
+    k=AuxPtr[i+1];
+    AuxPtr[i+1]=AuxPtr[i]+l;
+    l=k;
+    //     cout << AuxPtr[i+1] << endl;
+  }
+
+  /*
+  cout << endl;
+  cout << "AuxPtr array" << endl;
+  for(i=0;i<=N_;i++)
+    cout << i << "   " << AuxPtr[i] << endl;
+  cout << endl;
+  */
+// exit(0);
+
+  if(TDatabase::ParamDB->SC_VERBOSE)
+    cout << "Upper bound: " << AuxPtr[N_Rows] << endl;
+
+  // get memory for KColAux array, initialize it with -1
+  l=AuxPtr[N_Rows];                               // upper bound for number of matrix entries
+  KColAux=new int[l];
+  memset(KColAux, -1, sizeof(int)*l);
+
+  N_=Space->GetN_Cells();
+  Coll = TestSpace1D->GetCollection();
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=GlobalNumbers+BeginIndex[i];
+
+    CurrentElement = Space->GetFE1D(i, cell);
+    n1 = TFEDatabase2D::GetFE1D(CurrentElement)->GetN_DOF();
+
+    for(j=0;j<n1;j++)                             // test space
+    {
+      n=Numbers[j];
+      for(k=0;k<n1;k++)                           // ansatz space
+      {
+        m=Numbers[k];
+        // this  node is a real node (inner or Neumann)
+        index=AuxPtr[n];
+        l=KColAux[index];
+        // check whether this column is already in this row
+        while(l!=-1 && l!=m)
+        {
+          index++;
+          l=KColAux[index];
+        }
+        if(l==-1)
+        {
+          // this is a new column for this row
+          KColAux[index]=m;
+          N_Entries++;
+        }
+      }                                           // endfor k
+      
+     // DG part
+     if(EdgeIntegrals)
+     {
+      NE=cell->GetN_Edges();                   // # edges
+      for(nieb_e=0;nieb_e<NE;nieb_e++)                        // for all edges
+      {
+       neigh = (cell->GetJoint(nieb_e))->GetNeighbour(cell);
+
+       if(neigh)
+       {
+        nieb_i = neigh->GetClipBoard();
+        CurrentNeighbour = Space->GetFE1D(nieb_i, neigh);
+        nieb_Numbers=GlobalNumbers+BeginIndex[nieb_i];
+        nieb_n1 = TFEDatabase2D::GetFE1D(CurrentNeighbour)->GetN_DOF();
+ 
+        for(k=0;k<nieb_n1;k++)                           // ansatz space
+         {
+          m=nieb_Numbers[k];
+          // this  node is a real node (inner or Neumann)
+          index=AuxPtr[n];
+          l=KColAux[index];
+          // check whether this column is already in this row
+          while(l!=-1 && l!=m)
+          {
+           index++;
+           l=KColAux[index];
+          }
+         if(l==-1)
+          {
+           // this is a new column for this row
+           KColAux[index]=m;
+           N_Entries++;
+          }   
+         } // for(k=0;k<nieb_n1;k++)  
+       }  //if(neigh)
+       
+      } //  for(nieb_e=0;nieb_e<NE;nieb_e++)
+     }//if (TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS)
+
+      
+    }                                             // endfor j
+  }                                               // for(i=0;
+
+  
+  /*
+  // check
+  cout << endl;
+  cout << "check" << endl;
+  N_=ActiveBound;
+  N_=N_Rows;
+  for(i=0;i<N_;i++)
+  {
+    cout << "Row: " << setw(4) << i << ": ";
+    index=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<index;j++) //  && KColAux[j]!=-1
+  cout << setw(4) << KColAux[j];
+  cout << endl;
+  }
+  exit(0);
+  */
+
+  //   cout << "Number of matrix entries: ";
+  //   cout << N_Entries << endl;
+  //   cout << endl;
+
+  // compress KColAux array to KCol by deleting all -1's
+  // build the RowPtr array
+  N_=ActiveBound;
+  KCol=new int[N_Entries];
+  RowPtr=AuxPtr;
+
+  index=0;
+  for(i=0;i<N_;i++)
+  {
+    oldindex=index;
+    m=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<m && KColAux[j]!=-1;j++)
+    {
+      KCol[index]=KColAux[j];
+      index++;
+    }                                             // endfor j
+    RowPtr[i]=oldindex;
+    //     cout << setw(4) << i << " RowPtr[i]: " << RowPtr[i] << endl;
+  }                                               // endfor i
+
+  // cout << "index: " << index << endl;
+  // cout << "RowPtr[N_]: " << RowPtr[N_] << endl;
+  Offset=index-RowPtr[N_];
+  for(i=0,j=ActiveBound;i<=N_Hanging;i++,j++)
+  {
+    // cout << "HangingRowPtr[i]: " << HangingRowPtr[i] << endl;
+    RowPtr[j]+=Offset;
+    // cout << setw(4) << j << " RowPtr[j]: " << RowPtr[j] << endl;
+  }
+
+  /*
+    // print out the whole matrix structure
+    cout << endl;
+    N_=N_Rows;
+    for(i=0;i<N_;i++)
+    {
+      cout << RowPtr[i] << "---" << RowPtr[i+1]-1 << endl;
+      cout << "Rows: " << setw(4) << i << ": ";
+      end=RowPtr[i+1];
+      for(j=RowPtr[i];j<end;j++)
+        cout << setw(4) << KCol[j];
+  cout << endl;
+  }
+//   */
+
+  // free KColAux
+  delete [] KColAux;
+  if(TDatabase::ParamDB->SC_VERBOSE)
+  {
+    cout << "Information on the stored matrix structure" << endl;
+    cout << "Number of rows: " << N_Rows << endl;
+    cout << "Number of columns: " << N_Columns << endl;
+    cout << "Number of matrix entries: " << N_Entries << endl;
+  }
+}
+
+
+
+
+/** generate the matrix structure, both space are 2D */
+TStructure::TStructure( const TFESpace2D* Space )
+: TStructure()
+{
+  int i,j,k,l,n,N_, n1,n2,m,p,q,r;
+  int *GlobalNumbers;
+  int *BeginIndex;
+  int *Numbers, *NumbersNeighbour;
+
+  int N_Dirichlet;
+  int N_Inner;
+  int N_Hanging;
+  int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
+  int HangingBound;
+
+  int *AuxPtr, *HangingAuxPtr;
+  int *KColAux, *HangingKColAux;
+  int index, oldindex;
+
+  int Offset, *DOF, end, begin;
+  THangingNode **HangingNodes;
+  THangingNode *hn;
+
+  TCollection *Coll;
+
+  TBaseCell *cell, *neigh;
+  FE2D CurrentElement, CurrentNeighbour;
+
+  TestSpace2D = Space;
+  AnsatzSpace2D = Space;
+
+  ActiveBound=Space->GetN_ActiveDegrees();
+  HangingBound=Space->GetHangingBound();
+
+  N_BoundaryNodeTypes=Space->GetN_DiffBoundaryNodeTypes();
+  BoundNodeBounds=Space->GetN_BoundaryNodes();
+  N_NonDiri = 0;
+  for(i=0;i<N_BoundaryNodeTypes;i++)
+    N_NonDiri += BoundNodeBounds[i];
+
+  N_Dirichlet=Space->GetN_Dirichlet();
+  N_Inner=Space->GetN_Inner();
+  N_Hanging=Space->GetN_Hanging();
+
+  N_Rows = ActiveBound+N_Hanging+N_Dirichlet;
+  N_Columns = N_Rows;
+  // assembles matrices without shorter rows for non-active dof
+   if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+  {
+    N_NonDiri += N_Dirichlet;
+    N_Dirichlet = 0;
+    ActiveBound = N_Inner + N_NonDiri;
+  }
+  ColOrder = 0;
+  // AuxPtr[i] will contain an upper bound for the number of
+  // matrix entries in row i
+  l=N_Rows+1;
+  AuxPtr=new int[l];
+  memset(AuxPtr, 0, l*sizeof(int));
+
+  l=N_Hanging+1;
+  HangingAuxPtr=new int[l];
+  memset(HangingAuxPtr, 0, l*sizeof(int));
+
+  GlobalNumbers=Space->GetGlobalNumbers();
+
+  BeginIndex=Space->GetBeginIndex();
+
+  Offset=ActiveBound;
+
+  // loop over all elements
+  N_=Space->GetN_Cells();
+  Coll = TestSpace2D->GetCollection();
+
+  // associate each cell with her number in the collection
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    cell->SetClipBoard(i);                        // set clipboard to number of the cell in collection
+  }
+
+  // loop over the mesh cells
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=GlobalNumbers+BeginIndex[i];
+
+    CurrentElement = Space->GetFE2D(i, cell);
+    n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
+
+    // loop over the local degrees of freedom
+    for(j=0;j<n1;j++)
+    {
+      k=Numbers[j];
+      if(k<ActiveBound)
+      {
+        AuxPtr[k]+=n1;
+
+        // additional entries necessary if integrals over the edges
+        // appear in the discretization
+        if (TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS)
+        {
+          l=cell->GetN_Edges();                   // # edges
+          for(m=0;m<l;m++)                        // for all edges
+          {
+                                                  // neighbour cell
+            neigh = cell->GetJoint(m)->GetNeighbour(cell);
+            if(neigh)
+            {
+              n = neigh->GetClipBoard();
+              CurrentNeighbour = Space->GetFE2D(n, neigh);
+              n2 = TFEDatabase2D::GetFE2D(CurrentNeighbour)->GetN_DOF();
+              AuxPtr[k]+=n2;
+            }                                     //endif
+          }                                       //endfor m
+        }
+      }
+      else
+      {
+                                                  // not adjusted for edge stabilization because hanging nodes are no more used
+        if(k<HangingBound) HangingAuxPtr[k-Offset]+=n1;
+      }                                           // endif
+    }                                             // endfor j
+  }                                               // endfor i
+
+  // add rows for Dirichlet nodes in  space
+  N_Entries=N_Dirichlet;
+  Offset=ActiveBound+N_Hanging;
+  for(i=0,j=Offset;i<N_Dirichlet;i++,j++)
+  {
+    AuxPtr[j]=1;
+  }
+
+  // add couplings for hanging nodes of  space
+  HangingNodes=Space->GetHangingNodes();
+  Offset=ActiveBound;
+  for(i=0,j=Offset;i<N_Hanging;i++,j++)
+  {
+    // cout << "i: " << i << " j: " << j << endl;
+    hn=HangingNodes[i];
+    // cout << hn;
+    // there is the additional entry in diagonal
+    n=TFEDatabase2D::GetHNDesc2D(hn->GetType())->GetN_Nodes() + 1;
+    AuxPtr[j]=n;
+    N_Entries+=n;
+    // cout << "AuxPtr[j]: " << AuxPtr[j] << endl;
+  }
+
+  // additional space for storing the columns caused by the
+  // hanging nodes of  space => some new columns
+  Offset=ActiveBound;
+  HangingNodes=Space->GetHangingNodes();
+  // cout << "N_Hanging: " << N_Hanging << endl;
+  for(i=0;i<N_Hanging;i++)
+  {
+    hn=HangingNodes[i];
+    m=HangingAuxPtr[i];
+    // cout << "HangingAuxPtr[i]: " << m << endl;
+    DOF=hn->GetDOF();
+    n=TFEDatabase2D::GetHNDesc2D(hn->GetType())->GetN_Nodes();
+    for(j=0;j<n;j++)
+    {
+      k=DOF[j];
+      if(k<ActiveBound)
+        AuxPtr[k] += m;
+    }
+  }
+
+#ifdef __MORTAR__
+#ifdef __ADD_LINK__
+  // reserve space for additional link term
+  TIt_Mortar *It1 = (TIt_Mortar *) TDatabase::IteratorDB[It_Mortar1];
+  TIt_Mortar *It2 = (TIt_Mortar *) TDatabase::IteratorDB[It_Mortar2];
+  TBaseCell *CellM, *CellNM;
+  FE2D CurrElementID;
+  TFE2D *CurrElement;
+  TFEDesc2D *CurrDesc;
+  int lev, infoNM, infoM;
+  double lamM0, lamM1 = 0, lamNM0, lamNM1, startX, startY, endX, endY;
+  double delX, delY;
+  bool NewMortarSideEle;
+  int **J_DOF_NM, N_J_DOF_NM, **J_DOF_M, N_J_DOF_M;
+  int indexM = 0, indexNM;
+
+  // set ClipBoard to number in collection
+  N_ = Space2D->GetN_Cells();
+  Coll = Space2D->GetCollection();
+  for(i=0;i<N_;i++)
+    Coll->GetCell(i)->SetClipBoard(i);
+
+  // loop over all mortar edges
+  N_ = It1->GetN_MortarFace();
+  for (i=0;i<N_;i++)
+  {
+    NewMortarSideEle = true;
+    lev = MAX_ItLevel + (i << 8);
+    It1->Init(lev);
+    It2->Init(-lev);
+
+    It1->GetPoint(startX, startY);
+    It2->GetPoint(endX, endY);
+    delX = endX - startX;
+    delY = endY - startY;
+
+    while (CellNM = It1->Next(infoNM))
+    {
+      // get a new element on non-mortar side
+      lamNM0 = GetLambda(startX, startY, CellNM->GetVertex(infoNM),
+        delX, delY);
+      lamNM1 = GetLambda(startX, startY, CellNM->GetVertex((infoNM+1)
+        % CellNM->GetN_Vertices()), delX, delY);
+      if (CellNM->GetClipBoard() == -1)
+      {
+        cerr << "Error in SquareStructure2D: cell out of collection!!!"
+          << endl;
+        exit(-3);
+      }
+
+      indexNM = CellNM->GetClipBoard();
+      CurrElementID = Space2D->GetFE2D(indexNM, CellNM);
+      CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
+      CurrDesc = CurrElement->GetFEDesc2D();
+
+      J_DOF_NM = CurrDesc->GetJointDOF();
+      N_J_DOF_NM = CurrDesc->GetN_JointDOF();
+
+      if (!NewMortarSideEle)
+      {
+        // add space for DOFs if the next while clause wont be
+        // entered
+        Numbers = GlobalNumbers + BeginIndex[indexNM];
+        for (m=0;m<N_J_DOF_NM;m++)
+          AuxPtr[Numbers[J_DOF_NM[infoNM][m]]] += N_J_DOF_M;
+
+        Numbers = GlobalNumbers + BeginIndex[indexM];
+        for (m=0;m<N_J_DOF_M;m++)
+          AuxPtr[Numbers[J_DOF_M[infoM][m]]] += N_J_DOF_NM;
+      }
+
+      // check which side is next
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
+
+      while (NewMortarSideEle)
+      {
+        // get a new element on mortar side
+        if (!(CellM = It2->Next(infoM))) break;
+        lamM0 = GetLambda(startX, startY, CellM->GetVertex((infoM+1)
+          % CellM->GetN_Vertices()), delX, delY);
+        lamM1 = GetLambda(startX, startY, CellM->GetVertex(infoM),
+          delX, delY);
+        if (CellM->GetClipBoard() == -1)
+        {
+          cerr << "Error in MatrixStructure: cell out of collection!!!"
+            << endl;
+          exit(-3);
+        }
+
+        indexM = CellM->GetClipBoard();
+        CurrElementID = Space2D->GetFE2D(indexM, CellM);
+        CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
+        CurrDesc = CurrElement->GetFEDesc2D();
+
+        J_DOF_M = CurrDesc->GetJointDOF();
+        N_J_DOF_M = CurrDesc->GetN_JointDOF();
+
+        // add space for DOFs
+        Numbers = GlobalNumbers + BeginIndex[indexNM];
+        for (m=0;m<N_J_DOF_NM;m++)
+          AuxPtr[Numbers[J_DOF_NM[infoNM][m]]] += N_J_DOF_M;
+
+        Numbers = GlobalNumbers + BeginIndex[indexM];
+        for (m=0;m<N_J_DOF_M;m++)
+          AuxPtr[Numbers[J_DOF_M[infoM][m]]] += N_J_DOF_NM;
+
+        // check which side is next
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
+      }
+    }
+  }
+#endif                                          // __ADD_LINK__
+#endif                                          // __MORTAR__
+
+  // sum up the array AuxPtr, AuxPtr[i] will now contain the index for
+  // KColAux array, the column numbers for row i are in the intervall
+  // [ AuxPtr[i],AuxPtr[i+1] )
+  N_=N_Rows;
+  l=AuxPtr[0];
+  AuxPtr[0]=0;
+
+  for(i=0;i<N_;i++)
+  {
+    k=AuxPtr[i+1];
+    AuxPtr[i+1]=AuxPtr[i]+l;
+    l=k;
+  }
+
+  /*
+  cout << endl;
+  cout << "AuxPtr array" << endl;
+  for(i=0;i<=N_;i++)
+    cout << i << "   " << AuxPtr[i] << endl;
+  cout << endl;
+  */
+
+  // cout << "Upper bound: " << AuxPtr[N_Rows] << endl;
+
+  // get memory for KColAux array, initialize it with -1
+  l=AuxPtr[N_Rows];                               // upper bound for number of matrix entries
+  KColAux=new int[l];
+  memset(KColAux, -1, sizeof(int)*l);
+
+  // sum up the array HangingAuxPtr, HangingAuxPtr[i] will now contain
+  // the index for Hanging KColAux array, the column numbers for row i
+  // are in the intervall // [ HangingAuxPtr[i], HangingAuxPtr[i+1] )
+  N_=N_Hanging;
+  l=HangingAuxPtr[0];
+  HangingAuxPtr[0]=0;
+  // cout << HangingAuxPtr[0] << endl;
+  for(i=0;i<N_;i++)
+  {
+    k=HangingAuxPtr[i+1];
+    HangingAuxPtr[i+1]=HangingAuxPtr[i]+l;
+    l=k;
+    // cout << HangingAuxPtr[i+1] << endl;
+  }
+
+  /*
+  cout << endl;
+  cout << "HangingAuxPtr array" << endl;
+  for(i=0;i<=N_;i++)
+    cout << i << "   " << HangingAuxPtr[i] << endl;
+  cout << endl;
+  */
+
+  // cout << "Upper bound for hanging nodes: ";
+  // cout << HangingAuxPtr[N_Hanging] << endl;
+
+  // get memory for HangingKColAux array, initialize it with -1
+  l=HangingAuxPtr[N_Hanging];                     //upper bound for number of matrix entries
+  // cout << "l= " << l << endl;
+  HangingKColAux=new int[l];
+  memset(HangingKColAux, -1, sizeof(int)*l);
+  HangingN_Entries=0;
+
+  N_=Space->GetN_Cells();
+  Coll = TestSpace2D->GetCollection();
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=GlobalNumbers+BeginIndex[i];
+
+    CurrentElement = Space->GetFE2D(i, cell);
+    n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
+
+    for(j=0;j<n1;j++)
+    {
+      for(k=0;k<n1;k++)
+      {
+        m=Numbers[k];
+        n=Numbers[j];
+        if(n<ActiveBound)
+        {
+          // this  node is a real node (inner or Neumann)
+          index=AuxPtr[n];
+          l=KColAux[index];
+          // check whether this column is already in this row
+          while(l!=-1 && l!=m)
+          {
+            index++; l=KColAux[index];
+          }
+          if(l==-1)
+          {
+            // this is a new column for this row
+            KColAux[index]=m;
+            N_Entries++;
+          }
+        }
+        else
+        {
+          if(n<HangingBound)
+          {
+            // this node is a hanging node in  space
+            index=HangingAuxPtr[n-ActiveBound];
+            l=HangingKColAux[index];
+            // check whether this column is already in this row
+            while(l!=-1 && l!=m)
+            {
+              index++; l=HangingKColAux[index];
+            }
+            if(l==-1)
+            {
+              // this is a new column for this row
+              HangingKColAux[index]=m;
+              HangingN_Entries++;
+            }
+          }                                       // endif
+        }                                         // endif
+      }                                           // endfor k
+
+      // additional entries necessary if integrals over the edges
+      // appear in the discretization
+      if (TDatabase::ParamDB->INTERNAL_FACE_INTEGRALS)
+      {
+        r=cell->GetN_Edges();
+        for(p=0;p<r;p++)                          // for all edges
+        {
+                                                  // neighbour cell
+          neigh=cell->GetJoint(p)->GetNeighbour(cell);
+          if(neigh)
+          {
+            q = neigh->GetClipBoard();
+            NumbersNeighbour=GlobalNumbers+BeginIndex[q];
+
+            CurrentNeighbour = Space->GetFE2D(q, neigh);
+            n2 = TFEDatabase2D::GetFE2D(CurrentNeighbour)->GetN_DOF();
+
+            for(k=0;k<n2;k++)
+            {
+              m=NumbersNeighbour[k];
+              n=Numbers[j];
+              if(n<ActiveBound)
+              {
+                // this  node is a real node (inner or Neumann)
+                index=AuxPtr[n];
+                l=KColAux[index];
+                // check whether this column is already in this row
+                while(l!=-1 && l!=m)
+                {
+                  index++; l=KColAux[index];
+                }
+                if(l==-1)
+                {
+                  // this is a new column for this row
+                  KColAux[index]=m;
+                  N_Entries++;
+                }
+              }
+              else
+              {
+                if(n<HangingBound)
+                {
+                  // this node is a hanging node in  space
+                  index=HangingAuxPtr[n-ActiveBound];
+                  l=HangingKColAux[index];
+                  // check whether this column is already in this row
+                  while(l!=-1 && l!=m)
+                  {
+                    index++; l=HangingKColAux[index];
+                  }
+                  if(l==-1)
+                  {
+                    // this is a new column for this row
+                    HangingKColAux[index]=m;
+                    HangingN_Entries++;
+                  }
+                }                                 // endif
+              }                                   // endif
+            }                                     // endfor k
+          }                                       // endif
+        }                                         // endfor p
+      }
+    }                                             // endfor j
+  }                                               // endfor i
+
+  // for(i=0;i<AuxPtr[N_Rows]_;i++)
+  // {
+  // cout << "KColAux: " << KColAux[i] << endl;
+  // }
+
+#ifdef __MORTAR__
+#ifdef __ADD_LINK__
+  // put additional link DOFs into structure
+  // loop over all mortar edges
+  int an, tn, *Numbers1, *Numbers2;
+  int NeumannBound = N_Inner + BoundNodeBounds[0];
+
+  N_ = It1->GetN_MortarFace();
+  for (i=0;i<N_;i++)
+  {
+    NewMortarSideEle = true;
+    lev = MAX_ItLevel + (i << 8);
+    It1->Init(lev);
+    It2->Init(-lev);
+
+    It1->GetPoint(startX, startY);
+    It2->GetPoint(endX, endY);
+    delX = endX - startX;
+    delY = endY - startY;
+
+    while (CellNM = It1->Next(infoNM))
+    {
+      // get a new element on non-mortar side
+      lamNM0 = GetLambda(startX, startY, CellNM->GetVertex(infoNM),
+        delX, delY);
+      lamNM1 = GetLambda(startX, startY, CellNM->GetVertex((infoNM+1)
+        % CellNM->GetN_Vertices()), delX, delY);
+      if (CellNM->GetClipBoard() == -1)
+      {
+        cerr << "Error in MatrixStructure: cell out of collection!!!"
+          << endl;
+        exit(-3);
+      }
+
+      indexNM = CellNM->GetClipBoard();
+      CurrElementID = Space2D->GetFE2D(indexNM, CellNM);
+      CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
+      CurrDesc = CurrElement->GetFEDesc2D();
+
+      J_DOF_NM = CurrDesc->GetJointDOF();
+      N_J_DOF_NM = CurrDesc->GetN_JointDOF();
+
+      if (!NewMortarSideEle)
+      {
+        // add DOFs if the next while clause wont be entered
+        Numbers1 = GlobalNumbers + BeginIndex[indexNM];
+        Numbers2 = GlobalNumbers + BeginIndex[indexM];
+        for (n=0;n<N_J_DOF_NM;n++)
+        {
+          for (m=0;m<N_J_DOF_M;m++)
+          {
+            tn = Numbers1[J_DOF_NM[infoNM][n]];
+            an = Numbers2[J_DOF_M[infoM][m]];
+
+            if (tn < NeumannBound)
+            {
+              index = AuxPtr[tn];
+              l = KColAux[index];
+
+              // check whether this column is already in this row
+              while (l != -1 && l != an)
+                l = KColAux[++index];
+
+              if (l == -1)
+              {
+                // this is a new column for this row
+                KColAux[index] = an;
+                N_Entries++;
+              }
+            }
+
+            if (an < NeumannBound)
+            {
+              index = AuxPtr[an];
+              l = KColAux[index];
+
+              // check whether this column is already in this row
+              while (l != -1 && l != tn)
+                l = KColAux[++index];
+
+              if (l == -1)
+              {
+                // this is a new column for this row
+                KColAux[index] = tn;
+                N_Entries++;
+              }
+            }
+          }
+        }
+      }
+
+      // check which side is next
+      if (lamM1 < lamNM1) NewMortarSideEle = true;
+
+      while (NewMortarSideEle)
+      {
+        // get a new element on mortar side
+        if (!(CellM = It2->Next(infoM))) break;
+        lamM0 = GetLambda(startX, startY, CellM->GetVertex((infoM+1)
+          % CellM->GetN_Vertices()), delX, delY);
+        lamM1 = GetLambda(startX, startY, CellM->GetVertex(infoM),
+          delX, delY);
+        if (CellM->GetClipBoard() == -1)
+        {
+          cerr << "Error in MatrixStructure: cell out of collection!!!"
+            << endl;
+          exit(-3);
+        }
+
+        indexM = CellM->GetClipBoard();
+        CurrElementID = Space2D->GetFE2D(indexM, CellM);
+        CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
+        CurrDesc = CurrElement->GetFEDesc2D();
+
+        J_DOF_M = CurrDesc->GetJointDOF();
+        N_J_DOF_M = CurrDesc->GetN_JointDOF();
+
+        // add DOFs
+        Numbers1 = GlobalNumbers + BeginIndex[indexNM];
+        Numbers2 = GlobalNumbers + BeginIndex[indexM];
+        for (n=0;n<N_J_DOF_NM;n++)
+        {
+          for (m=0;m<N_J_DOF_M;m++)
+          {
+            tn = Numbers1[J_DOF_NM[infoNM][n]];
+            an = Numbers2[J_DOF_M[infoM][m]];
+
+            if (tn < NeumannBound)
+            {
+              index = AuxPtr[tn];
+              l = KColAux[index];
+
+              // check whether this column is already in this row
+              while (l != -1 && l != an)
+                l = KColAux[++index];
+
+              if (l == -1)
+              {
+                // this is a new column for this row
+                KColAux[index] = an;
+                N_Entries++;
+              }
+            }
+
+            if (an < NeumannBound)
+            {
+              index = AuxPtr[an];
+              l = KColAux[index];
+
+              // check whether this column is already in this row
+              while (l != -1 && l != tn)
+                l = KColAux[++index];
+
+              if (l == -1)
+              {
+                // this is a new column for this row
+                KColAux[index] = tn;
+                N_Entries++;
+              }
+            }
+          }
+        }
+
+        // check which side is next
+        if (lamM0 >= lamNM1 || lamM1 >= lamNM1) NewMortarSideEle = false;
+      }
+    }
+  }
+#endif                                          // __ADD_LINK__
+#endif                                          // __MORTAR__
+
+  /*
+  // check hanging node data
+  cout << endl;
+  cout << "check hanging node data" << endl;
+  N_=N_Hanging;
+  for(i=0;i<N_;i++)
+  {
+    cout << "Row: " << setw(4) << i << ": ";
+    index=HangingAuxPtr[i+1];
+    for(j=HangingAuxPtr[i];j<index && HangingKColAux[j]!=-1;j++)
+      cout << setw(4) << HangingKColAux[j];
+  cout << endl;
+  }
+  */
+
+  /*
+  cout << "Number of matrix entries (hanging nodes): ";
+  cout << HangingN_Entries << endl;
+  cout << endl;
+  */
+
+  // compress HangingKColAux array to HangingKCol by deleting all -1's
+  // build the HangingRowPtr array
+  N_=N_Hanging;
+  HangingKCol=new int[HangingN_Entries];
+  HangingRowPtr=HangingAuxPtr;
+
+  index=0;
+  for(i=0;i<N_;i++)
+  {
+    oldindex=index;
+    m=HangingAuxPtr[i+1];
+    for(j=HangingAuxPtr[i];j<m && HangingKColAux[j]!=-1;j++)
+    {
+      HangingKCol[index]=HangingKColAux[j];
+      index++;
+    }                                             // endfor j
+    HangingRowPtr[i]=oldindex;
+    // cout << HangingRowPtr[i] << endl;
+  }                                               // endfor i
+  HangingRowPtr[N_]=index;
+
+  // free HangingKColAux
+  delete [] HangingKColAux;
+
+  // add the additional columns from hanging nodes to other nodes
+  Offset=ActiveBound;
+  HangingNodes=Space->GetHangingNodes();
+  for(i=0;i<N_Hanging;i++)
+  {
+    // cout << "hanging node: " << i << endl;
+    hn=HangingNodes[i];
+    n=TFEDatabase2D::GetHNDesc2D(hn->GetType())->GetN_Nodes();
+    DOF=hn->GetDOF();
+
+    for(j=0;j<n;j++)                              // loop over all nodes in coupling
+    {
+      k=DOF[j];
+      // cout << "k= " << k << endl;
+      if(k<ActiveBound)
+      {
+        // node is either inner or Neumann node
+
+        end=HangingAuxPtr[i+1];
+        for(oldindex=HangingAuxPtr[i];oldindex<end;oldindex++)
+        {
+          m=HangingKCol[oldindex];
+          // cout << "m= " << m << endl;
+          index=AuxPtr[k];
+          l=KColAux[index];
+          // check whether this column is already in this row
+          while(l!=-1 && l!=m)
+          {
+            index++; l=KColAux[index];
+          }
+          if(l==-1)
+          {
+            // this is a new column for this row
+            KColAux[index]=m;
+            N_Entries++;
+          }
+        }                                         // endfor
+      }                                           // endif
+    }                                             // endfor j
+  }                                               // endfor i
+
+  /*
+  // check
+  cout << endl;
+  cout << "check" << endl;
+  N_=ActiveBound;
+  N_=N_Rows;
+  for(i=0;i<N_;i++)
+  {
+    cout << "Row: " << setw(4) << i << ": ";
+    index=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<index && KColAux[j]!=-1;j++)
+  cout << setw(4) << KColAux[j];
+  cout << endl;
+  }
+  */
+
+  /*
+  cout << "Number of matrix entries: ";
+  cout << N_Entries << endl;
+  cout << endl;
+  */
+
+  // compress KColAux array to KCol by deleting all -1's
+  // build the RowPtr array
+  N_=ActiveBound;
+  KCol=new int[N_Entries];
+  RowPtr=AuxPtr;
+
+  index=0;
+  for(i=0;i<N_;i++)
+  {
+    oldindex=index;
+    m=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<m && KColAux[j]!=-1;j++)
+    {
+      KCol[index]=KColAux[j];
+      index++;
+    }                                             // endfor j
+    RowPtr[i]=oldindex;
+    // cout << setw(4) << i << " RowPtr[i]: " << RowPtr[i] << endl;
+  }                                               // endfor i
+
+  // cout << "index: " << index << endl;
+  // cout << "RowPtr[N_]: " << RowPtr[N_] << endl;
+  Offset=index-RowPtr[N_];
+  for(i=0,j=ActiveBound;i<=N_Hanging;i++,j++)
+  {
+    // cout << "HangingRowPtr[i]: " << HangingRowPtr[i] << endl;
+    RowPtr[j]+=Offset;
+    // cout << setw(4) << j << " RowPtr[j]: " << RowPtr[j] << endl;
+  }
+
+  j=ActiveBound+N_Hanging;
+  Offset=RowPtr[j];
+  for(i=0;i<N_Dirichlet;i++,j++)
+  {
+    RowPtr[j+1]=RowPtr[j]+1;
+    // cout << setw(4) << j+1 << " RowPtr[j+1]: " << RowPtr[j+1] << endl;
+  }
+
+  // add information for hanging and Dirichlet nodes into matrix
+  HangingNodes=Space->GetHangingNodes();
+  Offset=ActiveBound;
+  m=ActiveBound;
+  for(i=0,j=Offset;i<N_Hanging;i++,j++)
+  {
+    // cout << "i: " << i << " j: " << j << endl;
+    hn=HangingNodes[i];
+    n=TFEDatabase2D::GetHNDesc2D(hn->GetType())->GetN_Nodes();
+    DOF=hn->GetDOF();
+    index=AuxPtr[j];
+    KCol[index]=m;
+    index++;
+    m++;
+    for(k=0;k<n;k++)
+    {
+      // cout << "index: " << index << " DOF[k]" << DOF[k] << endl;
+      KCol[index]=DOF[k];
+      index++;
+    }
+  }
+
+  // add Dirichlet rows
+  j=HangingBound;
+  index=RowPtr[ActiveBound+N_Hanging];
+  for(i=0;i<N_Dirichlet;i++)
+  {
+    // cout << "index: " << index << endl;
+    KCol[index]=j;
+    j++;
+    index++;
+  }
+
+  /*    // print out the whole matrix structure
+      cout << endl;
+      N_=N_Rows;
+      for(i=0;i<N_;i++)
+      {
+        cout << RowPtr[i] << "---" << RowPtr[i+1]-1 << endl;
+        cout << "Rows: " << setw(4) << i << ": ";
+        end=RowPtr[i+1];
+        for(j=RowPtr[i];j<end;j++)
+          cout << setw(4) << KCol[j];
+        cout << endl;
+  }
+  */
+
+  // free KColAux
+  delete [] KColAux;
+
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+#endif
+  if(TDatabase::ParamDB->SC_VERBOSE>1)
+  {
+    cout << endl;
+    cout << "Information on the stored matrix structure" << endl;
+    cout << "Number of rows: " << N_Rows << endl;
+    cout << "Number of columns: " << N_Columns << endl;
+    cout << "Number of matrix entries: " << N_Entries << endl;
+  }
+
+}
+
+#ifdef __3D__
+/** generate the matrix structure, both spaces are 3D */
+TStructure::TStructure( const TFESpace3D *Space )
+{
+  int i,j,k,l,n,N_, n1, m; 
+  int *Numbers;
+
+  int N_Dirichlet;
+  int N_Inner;
+  int N_Hanging;
+  int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
+  int HangingBound;
+
+  int *AuxPtr, *HangingAuxPtr;
+  int *KColAux, *HangingKColAux;
+  int index, oldindex;
+
+  int Offset, *DOF, end;
+  THangingNode **HangingNodes;
+  THangingNode *hn;
+
+  TCollection *Coll;
+
+  TBaseCell *cell;
+  FE3D CurrentElement;
+
+  TestSpace3D = Space;
+  AnsatzSpace3D = Space;
+
+  ActiveBound=Space->GetN_ActiveDegrees();
+  HangingBound=Space->GetHangingBound();
+
+  N_BoundaryNodeTypes=Space->GetN_DiffBoundaryNodeTypes();
+  BoundNodeBounds=Space->GetN_BoundaryNodes();
+  N_NonDiri = 0;
+  for(i=0;i<N_BoundaryNodeTypes;i++)
+    N_NonDiri += BoundNodeBounds[i];
+
+  N_Dirichlet=Space->GetN_Dirichlet();
+  N_Inner=Space->GetN_Inner();
+  N_Hanging=Space->GetN_Hanging();
+
+  N_Rows = ActiveBound+N_Hanging+N_Dirichlet;
+  N_Columns = N_Rows;
+  // assembles matrices without shorter rows for non-active dof
+  if (TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+  {
+    N_NonDiri += N_Dirichlet;
+    N_Dirichlet = 0;
+    ActiveBound = N_Inner + N_NonDiri;
+  }
+  ColOrder = 0;
+  // AuxPtr[i] will contain an upper bound for the number of 
+  // matrix entries in row i
+  l=N_Rows+1;
+  AuxPtr=new int[l];
+  memset(AuxPtr, 0, l*sizeof(int));
+
+  l=N_Hanging+1;
+  HangingAuxPtr=new int[l];
+  memset(HangingAuxPtr, 0, l*sizeof(int));
+
+  Offset=ActiveBound;
+
+  // loop over all elements 
+  N_=Space->GetN_Cells();
+  Coll = Space->GetCollection();
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=Space->GetGlobalDOF(i);
+
+    CurrentElement = Space->GetFE3D(i, cell);
+    n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
+
+    for(j=0;j<n1;j++)
+    {
+      k=Numbers[j];
+      if(k<ActiveBound) 
+      {
+        AuxPtr[k]+=n1;
+      }
+      else
+      {
+        if(k<HangingBound) HangingAuxPtr[k-Offset]+=n1;
+      } // endif
+    } // endfor j
+  } // endfor i
+
+  // add rows for Dirichlet nodes in  space
+  N_Entries=N_Dirichlet;
+  Offset=ActiveBound+N_Hanging;
+  for(i=0,j=Offset;i<N_Dirichlet;i++,j++)
+  {
+    AuxPtr[j]=1;
+  }
+
+// #ifdef __3D__
+  // add couplings for hanging nodes of  space
+  HangingNodes=Space->GetHangingNodes();
+  Offset=ActiveBound;
+  for(i=0,j=Offset;i<N_Hanging;i++,j++)
+  {
+    // cout << "i: " << i << " j: " << j << endl;
+    hn=HangingNodes[i];
+    // there is the additional entry in diagonal
+    n=TFEDatabase3D::GetHNDesc3D(hn->GetType())->GetN_Nodes() + 1;
+    AuxPtr[j]=n;
+    N_Entries+=n;
+    // cout << "AuxPtr[j]: " << AuxPtr[j] << endl;
+  }
+
+  // additional space for storing the columns caused by the 
+  // hanging nodes of  space => some new columns
+  Offset=ActiveBound;
+  HangingNodes=Space->GetHangingNodes();
+  // cout << "N_Hanging: " << N_Hanging << endl;
+  for(i=0;i<N_Hanging;i++)
+  {
+    hn=HangingNodes[i];
+    m=HangingAuxPtr[i];
+    // cout << "HangingAuxPtr[i]: " << m << endl;
+    DOF=hn->GetDOF();
+    n=TFEDatabase3D::GetHNDesc3D(hn->GetType())->GetN_Nodes();
+    for(j=0;j<n;j++)
+    {
+      k=DOF[j];
+      if(k<ActiveBound)
+        AuxPtr[k] += m;
+    }
+  }
+// #endif
+
+  // sum up the array AuxPtr, AuxPtr[i] will now contain the index for
+  // KColAux array, the column numbers for row i are in the intervall
+  // [ AuxPtr[i],AuxPtr[i+1] )
+  N_=N_Rows;
+  l=AuxPtr[0];
+  AuxPtr[0]=0;
+  // cout << AuxPtr[0] << endl;
+  for(i=0;i<N_;i++)
+  {
+    k=AuxPtr[i+1];
+    AuxPtr[i+1]=AuxPtr[i]+l;
+    l=k;
+    // cout << AuxPtr[i+1] << endl;
+  }
+
+  /*
+  cout << endl;
+  cout << "AuxPtr array" << endl;
+  for(i=0;i<=N_;i++)
+    cout << i << "   " << AuxPtr[i] << endl;
+  cout << endl;
+  */
+
+  // cout << "Upper bound: " << AuxPtr[N_Rows] << endl;
+
+  // get memory for KColAux array, initialize it with -1
+  l=AuxPtr[N_Rows]; // upper bound for number of matrix entries 
+  KColAux=new int[l];
+  memset(KColAux, -1, sizeof(int)*l);
+
+// #ifdef __3D__
+  // sum up the array HangingAuxPtr, HangingAuxPtr[i] will now contain 
+  // the index for Hanging KColAux array, the column numbers for row i 
+  // are in the intervall // [ HangingAuxPtr[i], HangingAuxPtr[i+1] )
+  N_=N_Hanging;
+  l=HangingAuxPtr[0];
+  HangingAuxPtr[0]=0;
+  // cout << HangingAuxPtr[0] << endl;
+  for(i=0;i<N_;i++)
+  {
+    k=HangingAuxPtr[i+1];
+    HangingAuxPtr[i+1]=HangingAuxPtr[i]+l;
+    l=k;
+    // cout << HangingAuxPtr[i+1] << endl;
+  }
+
+  /*
+  cout << endl;
+  cout << "HangingAuxPtr array" << endl;
+  for(i=0;i<=N_;i++)
+    cout << i << "   " << HangingAuxPtr[i] << endl;
+  cout << endl;
+  */
+
+  // cout << "Upper bound for hanging nodes: ";
+  // cout << HangingAuxPtr[N_Hanging] << endl;
+
+  // get memory for HangingKColAux array, initialize it with -1
+  l=HangingAuxPtr[N_Hanging]; //upper bound for number of matrix entries 
+  // cout << "l= " << l << endl;
+  HangingKColAux=new int[l];
+  memset(HangingKColAux, -1, sizeof(int)*l);
+// #endif
+  HangingN_Entries=0;
+
+  N_ = Space->GetN_Cells();
+  Coll = Space->GetCollection();
+  for(i=0;i<N_;i++)
+  {
+    cell = Coll->GetCell(i);
+    Numbers=Space->GetGlobalDOF(i);
+
+    CurrentElement = Space->GetFE3D(i, cell);
+    n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
+
+    for(j=0;j<n1;j++)
+    {
+      for(k=0;k<n1;k++)
+      {
+        m=Numbers[k];
+        n=Numbers[j];
+        if(n<ActiveBound)
+        {
+          // this  node is a real node (inner or Neumann)
+          index=AuxPtr[n];
+          l=KColAux[index];
+          // check whether this column is already in this row
+          while(l!=-1 && l!=m)
+          {
+            index++; l=KColAux[index];
+          }
+          if(l==-1)
+          {
+            // this is a new column for this row
+            KColAux[index]=m;
+            N_Entries++;
+          }
+        }
+        else
+        {
+// #ifdef __3D__
+          if(n<HangingBound)
+          {
+            // this node is a hanging node in  space
+            index=HangingAuxPtr[n-ActiveBound];
+            l=HangingKColAux[index];
+            // check whether this column is already in this row
+            while(l!=-1 && l!=m)
+            {
+              index++; l=HangingKColAux[index];
+            }
+            if(l==-1)
+            {
+              // this is a new column for this row
+              HangingKColAux[index]=m;
+              HangingN_Entries++;
+            }
+          } // endif
+// #endif
+        } // endif
+      } // endfor k
+    } // endfor j
+  } // endfor i
+
+// #ifdef __3D__
+  // check hanging node data
+/*
+  cout << endl;
+  cout << "check hanging node data" << endl;
+  N_=N_Hanging;
+  for(i=0;i<N_;i++)
+  {
+    cout << "Row: " << setw(4) << i << ": ";
+    index=HangingAuxPtr[i+1];
+    for(j=HangingAuxPtr[i];j<index && HangingKColAux[j]!=-1;j++) 
+      cout << setw(4) << HangingKColAux[j];
+    cout << endl;
+  }
+*/
+  
+  // cout << "Number of matrix entries (hanging nodes): ";
+  // cout << HangingN_Entries << endl;
+  // cout << endl;
+
+  // compress HangingKColAux array to HangingKCol by deleting all -1's
+  // build the HangingRowPtr array
+  N_=N_Hanging;
+  HangingKCol=new int[HangingN_Entries];
+  HangingRowPtr=HangingAuxPtr;
+
+  index=0;
+  for(i=0;i<N_;i++)
+  {
+    oldindex=index;
+    m=HangingAuxPtr[i+1];
+    for(j=HangingAuxPtr[i];j<m && HangingKColAux[j]!=-1;j++)
+    {
+      HangingKCol[index]=HangingKColAux[j];
+      index++;
+    } // endfor j
+    HangingRowPtr[i]=oldindex;
+    // cout << HangingRowPtr[i] << endl;
+  } // endfor i
+  HangingRowPtr[N_]=index;
+
+  // free HangingKColAux
+  delete HangingKColAux;
+
+  // add the additional columns from hanging nodes to other nodes
+  Offset=ActiveBound;
+  HangingNodes=Space->GetHangingNodes();
+  for(i=0;i<N_Hanging;i++)
+  {
+    // cout << "hanging node: " << i << endl;
+    hn=HangingNodes[i];
+    n=TFEDatabase3D::GetHNDesc3D(hn->GetType())->GetN_Nodes();
+    DOF=hn->GetDOF();
+
+    for(j=0;j<n;j++) // loop over all nodes in coupling
+    {
+      k=DOF[j];
+      // cout << "k= " << k << endl;
+      if(k<ActiveBound)
+      {
+        // node is either inner or Neumann node
+
+        end=HangingAuxPtr[i+1];
+        for(oldindex=HangingAuxPtr[i];oldindex<end;oldindex++)
+        {
+          m=HangingKCol[oldindex];
+          // cout << "m= " << m << endl;
+          index=AuxPtr[k];
+          l=KColAux[index];
+          // check whether this column is already in this row
+          while(l!=-1 && l!=m)
+          {
+            index++; l=KColAux[index];
+          }
+          if(l==-1)
+          {
+            // this is a new column for this row
+            KColAux[index]=m;
+            N_Entries++;
+          }
+        } // endfor
+      } // endif
+    } // endfor j
+  } // endfor i
+// #endif
+
+  /*
+  // check
+  cout << endl;
+  cout << "check" << endl;
+  N_=ActiveBound;
+  N_=N_Rows;
+  for(i=0;i<N_;i++)
+  {
+    cout << "Row: " << setw(4) << i << ": ";
+    index=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<index && KColAux[j]!=-1;j++) 
+      cout << setw(4) << KColAux[j];
+    cout << endl;
+  }
+  */
+  
+  // cout << "Number of matrix entries: ";
+  // cout << N_Entries << endl;
+  // cout << endl;
+
+  // compress KColAux array to KCol by deleting all -1's
+  // build the RowPtr array
+  N_=ActiveBound;
+  KCol=new int[N_Entries];
+  RowPtr=AuxPtr;
+
+  index=0;
+  for(i=0;i<N_;i++)
+  {
+    oldindex=index;
+    m=AuxPtr[i+1];
+    for(j=AuxPtr[i];j<m && KColAux[j]!=-1;j++)
+    {
+      KCol[index]=KColAux[j];
+      index++;
+    } // endfor j
+    RowPtr[i]=oldindex;
+    // cout << setw(4) << i << " RowPtr[i]: " << RowPtr[i] << endl;
+  } // endfor i
+
+  // cout << "index: " << index << endl;
+  // cout << "RowPtr[N_]: " << RowPtr[N_] << endl;
+  Offset=index-RowPtr[N_];
+  for(i=0,j=ActiveBound;i<=N_Hanging;i++,j++)
+  {
+    // cout << "HangingRowPtr[i]: " << HangingRowPtr[i] << endl;
+    RowPtr[j]+=Offset;
+    // cout << setw(4) << j << " RowPtr[j]: " << RowPtr[j] << endl;
+  }
+
+  j=ActiveBound+N_Hanging;
+  Offset=RowPtr[j];
+  for(i=0;i<N_Dirichlet;i++,j++)
+  {
+    RowPtr[j+1]=RowPtr[j]+1;
+    // cout << setw(4) << j+1 << " RowPtr[j+1]: " << RowPtr[j+1] << endl;
+  }
+
+// #ifdef __3D__
+  // add information for hanging and Dirichlet nodes into matrix
+  HangingNodes=Space->GetHangingNodes();
+  Offset=ActiveBound;
+  m=ActiveBound;
+  for(i=0,j=Offset;i<N_Hanging;i++,j++)
+  {
+    // cout << "i: " << i << " j: " << j << endl;
+    hn=HangingNodes[i];
+    n=TFEDatabase3D::GetHNDesc3D(hn->GetType())->GetN_Nodes();
+    DOF=hn->GetDOF();
+    index=AuxPtr[j];
+    KCol[index]=m;
+    index++;
+    m++;
+    for(k=0;k<n;k++)
+    {
+      // cout << "index: " << index << " DOF[k]" << DOF[k] << endl;
+      KCol[index]=DOF[k];
+      index++;
+    }
+  }
+// #endif
+
+  // add Dirichlet rows
+  j=HangingBound;
+  index=RowPtr[ActiveBound+N_Hanging];
+  for(i=0;i<N_Dirichlet;i++)
+  {
+    // cout << "index: " << index << endl;
+    KCol[index]=j;
+    j++;
+    index++;
+  }
+
+/*
+  // print out the whole matrix structure
+  cout << endl;
+  N_=N_Rows;
+  for(i=0;i<N_;i++)
+  {
+    cout << RowPtr[i] << "---" << RowPtr[i+1]-1 << endl;
+    cout << "Rows: " << setw(4) << i << ": ";
+    end=RowPtr[i+1];
+    for(j=RowPtr[i];j<end;j++)
+      cout << setw(4) << KCol[j];
+    cout << endl;
+  }
+*/
+
+  // free KColAux
+  delete KColAux;
+
+
+#ifdef _MPI
+  int rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+
+  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+#endif
+  {
+   if(TDatabase::ParamDB->SC_VERBOSE>1)
+   OutPut("Information on the stored matrix structure" << endl);
+   OutPut("Number of rows: " << N_Rows << endl);
+   OutPut("Number of columns: " << N_Columns << endl);
+   OutPut("Number of matrix entries: " << N_Entries << endl);
+  }
+
+} 
+
+#endif // 3D
+
 
 
 
@@ -3053,6 +4662,35 @@ TStructure::TStructure(const TStructure& s)
   memcpy(this->RowPtr, s.GetRowPtr(), (this->N_Rows+1)*sizeof(int));
   memcpy(this->HangingKCol, s.GetHangingKCol(), 
          this->GetHangingN_Entries()*sizeof(int));
+}
+
+/** sort column numbers: diag is first element, other numbers are
+    increasing */
+void TStructure::SortDiagFirst()
+{
+  int i,j,k;
+  int end, begin;
+
+  end = 0;
+  for(i=0;i<ActiveBound;i++)
+  {
+    begin = end;
+    end = RowPtr[i+1];
+    k = KCol[begin];
+    for(j=RowPtr[i];j<end;j++)
+    {
+      if(KCol[j] == i)
+      {
+        // diag entry
+        KCol[begin] = i;
+        KCol[j] = k;
+        break;
+      } // endif
+    } // endfor j
+    SortRow(KCol+begin+1, KCol+end);
+  } // endfor i
+  
+  ColOrder = 2;
 }
 
 /** sort one row [BeginPtr, AfterEndPtr) */

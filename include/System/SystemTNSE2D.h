@@ -44,7 +44,7 @@ class TSystemTNSE2D : public TSystemNSE2D
     /** these private routines are not available for public */
 #ifdef __PRIVATE__  
     /** sqstructureG of the  vms projection matrix */
-    TSquareStructure2D *sqstructureL;
+    TStructure *sqstructureL;
 
     /** structure of the vms projection  matrix */
     TStructure *structure_G, *structure_tilde_G;      

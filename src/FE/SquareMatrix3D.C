@@ -15,7 +15,7 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TSquareMatrix3D::TSquareMatrix3D(TSquareStructure3D *squarestructure)
+TSquareMatrix3D::TSquareMatrix3D(TStructure *squarestructure)
   : TSquareMatrix(squarestructure), structure(squarestructure)
 {
 }
@@ -23,7 +23,7 @@ TSquareMatrix3D::TSquareMatrix3D(TSquareStructure3D *squarestructure)
 // not clear! what is the initial value of structure while calling contructor/
 // commented by Sashi 
 // TSquareMatrix3D::TSquareMatrix3D(int n) 
-//  : structure(new TSquareStructure3D(n)), TSquareMatrix(structure)
+//  : structure(new TStructure(n)), TSquareMatrix(structure)
 // {
 // }
 
@@ -33,7 +33,7 @@ TSquareMatrix3D::~TSquareMatrix3D()
 
 void TSquareMatrix3D::reset_non_active()
 {
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace3D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
@@ -42,7 +42,7 @@ void TSquareMatrix3D::reset_non_active()
 
 void TSquareMatrix3D::reset_active()
 {
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace3D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
@@ -57,7 +57,7 @@ void TSquareMatrix3D::scale_active(double factor)
     this->reset_active();
   
   // number of active rows
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace3D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
@@ -74,7 +74,7 @@ void TSquareMatrix3D::add_active(const TSquareMatrix3D& m, double factor)
   }
   
   // number of active rows
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace3D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];

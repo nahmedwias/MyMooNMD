@@ -27,7 +27,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
 {
   // build matrices
   // first build matrix structure
-  TSquareStructure2D *sqstructureA = new TSquareStructure2D(&velocity);
+  TStructure *sqstructureA = new TStructure(&velocity);
   sqstructureA->Sort(); // sort column numbers: numbers are in increasing order
       
   TStructure *structureB = new TStructure(&pressure, &velocity);
@@ -134,7 +134,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * B1^T and B2^T are explicitly stored.
        */
       TStructure *structureBT = new TStructure(&velocity, &pressure);
-      TSquareStructure2D *sqstructureC = new TSquareStructure2D(&pressure);
+      TStructure *sqstructureC = new TStructure(&pressure);
       // sort column numbers: numbers are in increasing order
       sqstructureC->Sort();
   

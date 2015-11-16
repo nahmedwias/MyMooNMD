@@ -18,14 +18,13 @@
 #include <stdlib.h>
 
 
-TSquareMatrix::TSquareMatrix(TSquareStructure *squarestructure)
+TSquareMatrix::TSquareMatrix(TStructure *squarestructure)
  : TMatrix(squarestructure), structure(squarestructure)
 {
 }
 
 TSquareMatrix::TSquareMatrix(int n)
- : TMatrix(new TSquareStructure(n)), 
-   structure((TSquareStructure*)this->TMatrix::GetStructure())
+ : TMatrix(new TStructure(n))
 {
 }
 
@@ -33,7 +32,7 @@ TSquareMatrix::~TSquareMatrix()
 {
 }
 
-void TSquareMatrix::SetStructure(TSquareStructure *structure)
+void TSquareMatrix::SetStructure(TStructure *structure)
 {
   this->structure = structure;
   this->TMatrix::SetStructure((TStructure*)structure);

@@ -16,23 +16,23 @@
 #include <LinAlg.h>
 #include <stdlib.h>
 
-TSquareMatrix2D::TSquareMatrix2D(TSquareStructure2D *squarestructure)
+TSquareMatrix2D::TSquareMatrix2D(TStructure *squarestructure)
   : TSquareMatrix(squarestructure), structure(squarestructure)
 {
 }
 
 
 // set all class variables
-void TSquareMatrix2D::SetStructure(TSquareStructure2D *squarestructure)
+void TSquareMatrix2D::SetStructure(TStructure *squarestructure)
 {
   structure = squarestructure;
-  this->TSquareMatrix::SetStructure((TSquareStructure*) squarestructure);
+  this->TMatrix::SetStructure((TStructure*) squarestructure);
 }
 
 
 TSquareMatrix2D::TSquareMatrix2D(int n) 
- : TSquareMatrix(new TSquareStructure2D(n)), 
-   structure((TSquareStructure2D*)this->TSquareMatrix::GetStructure())
+ : TSquareMatrix(new TStructure(n)), 
+   structure((TStructure*)this->TSquareMatrix::GetStructure())
 {
 }
 
@@ -43,7 +43,7 @@ TSquareMatrix2D::~TSquareMatrix2D()
 
 void TSquareMatrix2D::reset_non_active()
 {
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
@@ -52,7 +52,7 @@ void TSquareMatrix2D::reset_non_active()
 
 void TSquareMatrix2D::reset_active()
 {
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
@@ -67,7 +67,7 @@ void TSquareMatrix2D::scale_active(double factor)
     this->reset_active();
   
   // number of active rows
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
@@ -84,7 +84,7 @@ void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
   }
   
   // number of active rows
-  int n_active_rows = this->structure->GetFESpace()->GetN_ActiveDegrees();
+  int n_active_rows = this->structure->GetFESpace2D()->GetN_ActiveDegrees();
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
@@ -101,8 +101,8 @@ TSquareMatrix2D& TSquareMatrix2D::operator=(const TSquareMatrix2D& rhs)
     structure = rhs.structure;
   }
   // no further tests, make sure you know these two matrices have the same 
-  // structure. We cannot compare the two TSquareStructure2D, because during 
-  // intitialization every matrix might get its own TSquareStructure2D.
+  // structure. We cannot compare the two TStructure, because during 
+  // intitialization every matrix might get its own TStructure.
   
   // copy matrix entries.
   for(int i=0; i<structure->GetN_Entries(); i++)

@@ -32,7 +32,7 @@ class TAux2D3D
     TFEFunction3D *FEFunct;
 
     /** 3d finite element space */
-    TFESpace3D *FESpace;
+    const TFESpace3D *FESpace;
 
     /** BeginIndex */
     int *BeginIndex;

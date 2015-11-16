@@ -264,7 +264,7 @@ void CD3D::output(int i)
 		double errors[4];
 		TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
 		MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
-		TFESpace3D* space = syst.feFunction_.GetFESpace3D();
+		const TFESpace3D* space = syst.feFunction_.GetFESpace3D();
 
 		syst.feFunction_.GetErrors(example_.get_exact(0), 4, AllDerivatives,
 								   2, L2H1Errors, example_.get_coeffs(),

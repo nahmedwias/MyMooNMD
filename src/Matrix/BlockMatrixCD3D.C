@@ -26,14 +26,14 @@
 #define GMG 1
 #define DIRECT 2
 
-BlockMatrixCD3D::BlockMatrixCD3D(TFESpace3D &feSpace,
+BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
         						BoundValueFunct3D *BoundValue,
 								bool massMatrix)
 : BlockMatrix(Problem_type::ConvDiffReac, 3, massMatrix),
   boundaryValues_(BoundValue)
 {
 	  // build matrices, first build matrix structure
-	  TSquareStructure3D* sqStructure = new TSquareStructure3D(&feSpace);
+	  TStructure* sqStructure = new TStructure(&feSpace);
 	  sqStructure->Sort();  // sort column numbers: numbers are in increasing order
 	  	  	  	  	  	  	// this disable use of deprecated AMG (sqstructure->SortDiagFirst();)
 
@@ -55,7 +55,7 @@ void BlockMatrixCD3D::assemble(const LocalAssembling3D& la, BlockVector& sol,
                                BlockVector& rhs)
 {
 
-  TFESpace3D * fe_space = this->get_fe_space();
+  const TFESpace3D * fe_space = this->get_fe_space();
   BoundCondFunct3D* boundary_conditions = fe_space->getBoundCondition();
   int N_Matrices = 1;
   double * rhs_entries = rhs.get_entries();

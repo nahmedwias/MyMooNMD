@@ -34,13 +34,13 @@ class TNSE_MGLevel14 : public TNSE_MGLevel
     TSquareMatrix2D *A22;
 
     /** structure of matrix A */
-    TSquareStructure2D *StructureA;
+    TStructure *StructureA;
 
     /** matrix C */
     TSquareMatrix2D *C;
 
     /** structure of matrix C */
-    TSquareStructure2D *StructureC;
+    TStructure *StructureC;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -90,13 +90,13 @@ class TNSE_MGLevel14 : public TNSE_MGLevel
     TSquareMatrix3D *A33;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    TStructure *StructureA;
 
     /** matrix C */
     TSquareMatrix3D *C;
 
     /** structure of matrix C */
-    TSquareStructure3D *StructureC;
+    TStructure *StructureC;
 
     /** matrix B1 */
     TMatrix3D *B1;

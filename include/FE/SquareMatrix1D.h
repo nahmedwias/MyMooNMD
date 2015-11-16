@@ -21,21 +21,21 @@ class TSquareMatrix1D : public TSquareMatrix
 {
   protected:
     /** matrix strcuture */
-    TSquareStructure1D *structure;
+    TStructure *structure;
 
   public:
     /** generate the matrix */
-    TSquareMatrix1D(TSquareStructure1D *squarestructure);
+    TSquareMatrix1D(TStructure *squarestructure);
 
     /** destructor: free Entries array */
     ~TSquareMatrix1D();
 
     /** return FESpace */
-    TFESpace1D *GetFESpace() const
-    { return structure->GetFESpace(); }
+    const TFESpace1D *GetFESpace() const
+    { return structure->GetFESpace1D(); }
 
     /** return used matrix structure */
-    TSquareStructure1D *GetMatrixStructure() const
+    TStructure *GetMatrixStructure() const
     { return structure; }
 
 };

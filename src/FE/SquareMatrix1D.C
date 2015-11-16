@@ -14,7 +14,7 @@
 #include <SquareMatrix1D.h>
 #include <string.h>
 
-TSquareMatrix1D::TSquareMatrix1D(TSquareStructure1D *squarestructure)
+TSquareMatrix1D::TSquareMatrix1D(TStructure *squarestructure)
   : TSquareMatrix(squarestructure), structure(squarestructure)
 {
 }

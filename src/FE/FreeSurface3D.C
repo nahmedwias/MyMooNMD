@@ -779,7 +779,7 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
 // ========================================================================
 // manipulate square matrices due to u.n=0 constraint
 // ========================================================================
-void ManipulateSquareMatrices(TSquareStructure3D *sqstructure,
+void ManipulateSquareMatrices(TStructure *sqstructure,
         double *a11, double *a12, double *a13,
         double *a21, double *a22, double *a23,
         double *a31, double *a32, double *a33,
@@ -1357,7 +1357,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   double InvWe;
   int N_BaseFunct, *N_BaseFuncts;
   BaseFunct3D *BaseFuncts;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   int *BeginIndex, *GlobalNumbers;
   int *RowPtr, *KCol;
   double *ValuesAii;
@@ -1385,7 +1385,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   TCollection *CollPot;
   int N_CellsPot, CellNrPot;
   int *BeginIndexPot, *GlobalNumbersPot;
-  TFESpace3D *fespacePot;
+  const TFESpace3D *fespacePot;
   FE3D FEIdPot;
   double *valuesPot, value;
   int *DOFPot;
@@ -1660,7 +1660,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   
   BaseFunct3D *BaseFuncts;
   TBaseCell *Cell;
-  TFESpace3D *fesp;
+  const TFESpace3D *fesp;
   BF3DRefElements RefElement;
   FE3D FeID;
   TFE3D *ele;
@@ -2009,7 +2009,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
   double values[MaxN_BaseFunctions3D];
   double x, y, z, *xi, *eta, *zeta;
   TBaseCell *Cell;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D FeID;
   TBaseFunct3D *bf;
   TTetraAffin *F_aff;

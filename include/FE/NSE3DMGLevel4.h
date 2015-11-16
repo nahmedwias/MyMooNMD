@@ -48,7 +48,7 @@ class TNSE3DMGLevel4 : public TNSE3DMGLevel
     TSquareMatrix3D *A33;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    TStructure *StructureA;
 
     /** row pointer for matrix A */
     int *ARowPtr;
