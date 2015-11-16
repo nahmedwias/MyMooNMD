@@ -49,13 +49,13 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TMatrix2D *B2T;
 
     /** structure of matrix B */
-    TStructure2D *StructureB;
+    TStructure *StructureB;
 
     /** structure of matrix BT */
-    TStructure2D *StructureBT;
+    TStructure *StructureBT;
 
     /** structure of matrix C */
-    TStructure2D *StructureC;
+    TStructure *StructureC;
 
     /** matrix C */
     TMatrix2D *C;
@@ -111,13 +111,13 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TMatrix3D *B3T;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    TStructure *StructureB;
  
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    TStructure *StructureBT;
 
     /** structure of matrix C */
-    TStructure3D *StructureC;
+    TStructure *StructureC;
 
     /** matrix C */
     TMatrix3D *C;

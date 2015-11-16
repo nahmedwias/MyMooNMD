@@ -44,7 +44,7 @@
 #ifdef __2D__
   TNSE_MGLevel1::TNSE_MGLevel1(int level, TSquareMatrix2D *a, 
                                TMatrix2D *b1, TMatrix2D *b2, 
-                               TStructure2D *structureBT,
+                               TStructure *structureBT,
                                double *f1, 
                                double *u1, 
                                int n_aux, double *al, 
@@ -56,7 +56,7 @@
   TNSE_MGLevel1::TNSE_MGLevel1(int level, TSquareMatrix3D *a, 
                                TMatrix3D *b1, TMatrix3D *b2, 
                                TMatrix3D *b3,
-                               TStructure3D *structureBT,
+                               TStructure *structureBT,
                                double *f1, 
                                double *u1, 
                                int n_aux, double *al, 

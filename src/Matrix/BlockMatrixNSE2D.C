@@ -30,7 +30,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
   TSquareStructure2D *sqstructureA = new TSquareStructure2D(&velocity);
   sqstructureA->Sort(); // sort column numbers: numbers are in increasing order
       
-  TStructure2D *structureB = new TStructure2D(&pressure, &velocity);
+  TStructure *structureB = new TStructure(&pressure, &velocity);
   
   // number of pressure degrees of freedom
   unsigned int n_p = pressure.GetN_DegreesOfFreedom();
@@ -69,7 +69,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * B1T and B2T are explicitly stored.
        */
       unsigned int n_v = velocity.GetN_DegreesOfFreedom();
-      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
+      TStructure *structureBT = new TStructure(&velocity, &pressure);
       
       this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
@@ -111,7 +111,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1T and B2T are explicitly stored.
        */
-      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
+      TStructure *structureBT = new TStructure(&velocity, &pressure);
       
       this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
@@ -133,7 +133,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are explicitly stored.
        */
-      TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
+      TStructure *structureBT = new TStructure(&velocity, &pressure);
       TSquareStructure2D *sqstructureC = new TSquareStructure2D(&pressure);
       // sort column numbers: numbers are in increasing order
       sqstructureC->Sort();

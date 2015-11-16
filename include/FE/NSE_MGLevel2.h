@@ -28,7 +28,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TSquareStructure2D *StructureA;
 
     /** structure of matrix B */
-    TStructure2D *StructureB;
+    TStructure *StructureB;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -37,7 +37,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TMatrix2D *B2;
 
     /** structure of matrix BT */
-    TStructure2D *StructureBT;
+    TStructure *StructureBT;
 
     /** matrix B1T */
     TMatrix2D *B1T;
@@ -46,7 +46,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TMatrix2D *B2T;
 
     /** structure of matrix C */
-    TStructure2D *StructureC;
+    TStructure *StructureC;
 
     /** matrix C */
     TMatrix2D *C;
@@ -60,7 +60,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TSquareStructure3D *StructureA;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    TStructure *StructureB;
 
     /** matrix B1 */
     TMatrix3D *B1;
@@ -72,7 +72,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TMatrix3D *B3;
 
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    TStructure *StructureBT;
 
     /** matrix B1T */
     TMatrix3D *B1T;
@@ -84,7 +84,7 @@ class TNSE_MGLevel2 : public TNSE_MGLevel
     TMatrix3D *B3T;
 
     /** structure of matrix C */
-    TStructure3D *StructureC;
+    TStructure *StructureC;
 
     /** matrix C */
     TMatrix3D *C;

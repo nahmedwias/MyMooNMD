@@ -15,7 +15,7 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TMatrix3D::TMatrix3D(TStructure3D *structure)
+TMatrix3D::TMatrix3D(TStructure *structure)
  : TMatrix(structure)
 {
   this->structure = structure;

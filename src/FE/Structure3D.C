@@ -1,7 +1,7 @@
 // =======================================================================
 // @(#)Structure3D.C        1.10 11/24/99
 // 
-// Class:       TStructure3D
+// Class:       TStructure
 //
 // Purpose:     build and store a matrix structure
 //

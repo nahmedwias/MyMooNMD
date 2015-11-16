@@ -19,7 +19,7 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TMatrix2D::TMatrix2D(TStructure2D *structure)
+TMatrix2D::TMatrix2D(TStructure *structure)
  : TMatrix(structure)
 {
   this->structure = structure;
@@ -29,7 +29,7 @@ TMatrix2D::~TMatrix2D()
 {
 }
 
-void TMatrix2D::SetStructure(TStructure2D *s)
+void TMatrix2D::SetStructure(TStructure *s)
 {
   this->structure = s;
   this->TMatrix::structure = (TStructure*)s;

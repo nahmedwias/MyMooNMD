@@ -2293,7 +2293,7 @@ exit(0);
   }
 
 
-} // TStructure2D
+} // TStructure
 
 
 TStructure::TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,  
@@ -2521,7 +2521,7 @@ exit(0);
   }
      
      
-} // TStructure2D
+} // TStructure
 
 
 

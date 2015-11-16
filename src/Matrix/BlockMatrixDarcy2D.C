@@ -32,8 +32,8 @@ BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity,
   TSquareStructure2D *sqstructureC = new TSquareStructure2D(&pressure);
   sqstructureC->Sort();  // sort column numbers: numbers are in increasing order
   // velocity-pressure and pressure-velocity coupling
-  TStructure2D *structureB = new TStructure2D(&pressure, &velocity);
-  TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
+  TStructure *structureB = new TStructure(&pressure, &velocity);
+  TStructure *structureBT = new TStructure(&velocity, &pressure);
   
   // ( A  B1' )   ( 0 2 )
   // ( B2 C   )   ( 3 1 )

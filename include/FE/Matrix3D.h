@@ -21,16 +21,16 @@ class TMatrix3D : public TMatrix
 {
   protected:
     /** matrix structure */
-    TStructure3D *structure;
+    TStructure *structure;
 
   public:
     /** generate the matrix */
-    TMatrix3D(TStructure3D *structure);
+    TMatrix3D(TStructure *structure);
 
     /** destructor: free Entries array */
     ~TMatrix3D();
 
-    TStructure3D *GetStructure() const
+    TStructure *GetStructure() const
     { return structure; }
     
     /** @brief set all Dirichlet rows to zero. That means all rows where the 

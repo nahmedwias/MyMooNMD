@@ -1,7 +1,7 @@
 // =======================================================================
 // @(#)Structure2D.C        1.10 11/24/99
 // 
-// Class:       TStructure2D
+// Class:       TStructure
 //
 // Purpose:     build and store a matrix structure
 //
@@ -22,7 +22,7 @@
 
 #include <FEDatabase2D.h>
 #include <MooNMD_Io.h>
-#include <Structure2D.h>
+#include <Structure.h>
 #include <string.h>
 #include <stdlib.h>
 

@@ -55,10 +55,10 @@ class TNSE_MGLevel14 : public TNSE_MGLevel
     TMatrix2D *B2T;
 
     /** structure of matrix B */
-    TStructure2D *StructureB;
+    TStructure *StructureB;
 
     /** structure of matrix BT */
-    TStructure2D *StructureBT;
+    TStructure *StructureBT;
 #endif  
 
 #ifdef __3D__
@@ -117,10 +117,10 @@ class TNSE_MGLevel14 : public TNSE_MGLevel
     TMatrix3D *B3T;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    TStructure *StructureB;
  
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    TStructure *StructureBT;
 #endif  
 
     /** row pointer for matrix A */

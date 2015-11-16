@@ -47,7 +47,7 @@ class TSystemTNSE2D : public TSystemNSE2D
     TSquareStructure2D *sqstructureL;
 
     /** structure of the vms projection  matrix */
-    TStructure2D *structure_G, *structure_tilde_G;      
+    TStructure *structure_G, *structure_tilde_G;      
     
     /** L -  mat for VMS   */
     TSquareMatrix2D *MatricesL;

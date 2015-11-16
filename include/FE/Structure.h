@@ -97,7 +97,7 @@ class TStructure
 #ifdef __MORTAR__
     /** generate the matrix Structure2D, one space with 1D and the other
      with 2D collection */
-    TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace);
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace);
 #endif
     
     /** generate the matrix Structure2D, one space with 1D and the other
@@ -241,7 +241,7 @@ class TStructure
     int index_of_entry(const int i, const int j) const;
     
     /** return a new structure for a transposed matrix 
-     * If this is an object of a derived class (e.g. TStructure2D, 
+     * If this is an object of a derived class (e.g. TStructure, 
      * TSquareStructure), then the number of active degrees of freedom is not 
      * taken into account. The returned TMatrix is really the algebraic 
      * transposed matrix.

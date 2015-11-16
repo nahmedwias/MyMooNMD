@@ -21,26 +21,26 @@ class TMatrix2D : public TMatrix
 {
   protected:
     /** matrix structure */
-    TStructure2D *structure;
+    TStructure *structure;
 
   public:
     /** generate the matrix */
-    TMatrix2D(TStructure2D *structure);
+    TMatrix2D(TStructure *structure);
     
     /** @brief generate empty matrix */
     TMatrix2D();
     
     /** @brief fill empty matrix, 
      * 
-     * you can either call the constructor TMatrix2D(TStructure2D*);
-     * or use TMatrix2D(); and then  void SetStructure(TStructure2D*);
+     * you can either call the constructor TMatrix2D(TStructure*);
+     * or use TMatrix2D(); and then  void SetStructure(TStructure*);
      */
-    void SetStructure(TStructure2D *structure);
+    void SetStructure(TStructure *structure);
 
     /** destructor: free Entries array */
     ~TMatrix2D();
 
-    TStructure2D *GetStructure() const
+    TStructure *GetStructure() const
     { return structure; }
     
     /** @brief scale all active rows */

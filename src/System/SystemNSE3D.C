@@ -99,8 +99,8 @@ TSystemNSE3D::TSystemNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace
   N_DirichletDof = N_U - N_Active;  
  
   sqstructureA = new TSquareStructure3D *[N_levels];
-  structureB = new TStructure3D *[N_levels];
-  structureBT = new TStructure3D *[N_levels];
+  structureB = new TStructure *[N_levels];
+  structureBT = new TStructure *[N_levels];
   
   SqmatrixA11 = new TSquareMatrix3D*[N_levels];
   SqmatrixA12 = new TSquareMatrix3D*[N_levels]; 
@@ -143,8 +143,8 @@ TSystemNSE3D::TSystemNSE3D(int N_levels, TFESpace3D **velocity_fespace, TFESpace
      sqstructureA[i] = new TSquareStructure3D(U_Space[i]);
      sqstructureA[i]->Sort();  // sort column numbers: numbers are in increasing order
   
-     structureB[i] = new TStructure3D(P_Space[i], U_Space[i]);
-     structureBT[i] = new TStructure3D(U_Space[i], P_Space[i]);   
+     structureB[i] = new TStructure(P_Space[i], U_Space[i]);
+     structureBT[i] = new TStructure(U_Space[i], P_Space[i]);   
 
     switch(NSEType)
      {
