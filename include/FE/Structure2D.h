@@ -23,75 +23,33 @@
 class TStructure2D : public TStructure
 {
   protected:
-    /** Ansatzspace */
-    const TFESpace1D *AnsatzSpace1D;
-    const TFESpace2D *AnsatzSpace2D;
-
-    /** Testspace */
-    const TFESpace1D *TestSpace1D;
-    const TFESpace2D *TestSpace2D;
-
-    int *AnsatzMortarSpaceGlobNo;
-    int *TestMortarSpaceGlobNo;
-
-    int *AnsatzNonMortarSpaceGlobNo;
-    int *TestNonMortarSpaceGlobNo;
 
   public:
     /** generate the matrix Structure2D, both space with 2D collection */
-    TStructure2D(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
+    TStructure2D(const TFESpace2D *testspace, const TFESpace2D *ansatzspace)
+     : TStructure(testspace, ansatzspace) {}
 
-    /** destructor: free all used arrays */
-    ~TStructure2D();
 
     /** generate the matrix structure, both spaces are 2D */
     /** both spaces are defined on different grids */
     TStructure2D(TFESpace2D *testspace, int test_level, 
-                 TFESpace2D *ansatzspace, int ansatz_level);
+                 TFESpace2D *ansatzspace, int ansatz_level)
+     : TStructure(testspace, test_level, ansatzspace, ansatz_level) {}
     #ifdef __MORTAR__
     /** generate the matrix Structure2D, one space with 1D and the other
         with 2D collection */
-    TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace);
+    TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace)
+     : TStructure(testspace, ansatzspace) {}
     #endif
 
     /** generate the matrix Structure2D, one space with 1D and the other
         with 2D collection */
-     TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ansatzcelljoints);
+     TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ansatzcelljoints)
+      : TStructure(testspace, ansatzspace, ansatzcelljoints) {}
      
-    /** generate the matrix Structure2D, one space with 1D and the other
-        with 2D collection */
-     TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace, TNonMortarData *NonMortarFEData);
      
-     TStructure2D(TFESpace2D *testspace, TFESpace1D *ansatzspace, TNonMortarData *NonMortarFEData);
-
-     /** @brief copy constructor */
-     TStructure2D(const TStructure2D&);
-     
-    /** return AnsatzSpace */
-    const TFESpace2D *GetAnsatzSpace2D() const
-    { return AnsatzSpace2D; }
-    
-    /** return AnsatzSpace */
-    const TFESpace *GetAnsatzSpace() const 
-    {
-      if (AnsatzSpace1D)
-        return AnsatzSpace1D;
-      else
-        return AnsatzSpace2D;
-    }
-    
-    /** return TestSpace */
-    const TFESpace2D *GetTestSpace2D() const
-    { return TestSpace2D; }
-    
-    /** return TestSpace */
-    const TFESpace *GetTestSpace() const
-    {
-      if (TestSpace1D)
-        return TestSpace1D;
-      else
-        return TestSpace2D;
-    }
+     TStructure2D(TFESpace2D *testspace, TFESpace1D *ansatzspace, TNonMortarData *NonMortarFEData)
+     : TStructure(testspace, ansatzspace, NonMortarFEData) {}
 
 };
 

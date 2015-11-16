@@ -16,6 +16,10 @@
 #ifndef __STRUCTURE__
 #define __STRUCTURE__
 
+#include <FESpace1D.h>
+#include <FESpace2D.h>
+#include <FESpace3D.h>
+
 class TStructure
 {
   protected:
@@ -42,6 +46,32 @@ class TStructure
 
     /** index in HangingKCol where each row starts */
     int *HangingRowPtr;
+    
+    
+    // Structure2D
+    /** Ansatzspace */
+    const TFESpace1D *AnsatzSpace1D;
+    const TFESpace2D *AnsatzSpace2D;
+
+    /** Testspace */
+    const TFESpace1D *TestSpace1D;
+    const TFESpace2D *TestSpace2D;
+
+    int *AnsatzMortarSpaceGlobNo;
+    int *TestMortarSpaceGlobNo;
+
+    int *AnsatzNonMortarSpaceGlobNo;
+    int *TestNonMortarSpaceGlobNo;
+    
+    
+    // Structure3D
+    /** Ansatzspace */
+    //TFESpace2D *AnsatzSpace2D;
+    const TFESpace3D *AnsatzSpace3D;
+
+    /** Testspace */
+    //TFESpace2D *TestSpace2D;
+    const TFESpace3D *TestSpace3D;
 
   public:
     /** generate the matrix structure, both space with 2D collection */
@@ -55,6 +85,96 @@ class TStructure
     
     /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
     TStructure(int nRows, int nCols);
+    
+    
+    /** generate the matrix Structure2D, both space with 2D collection */
+    TStructure(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
+    
+    /** generate the matrix structure, both spaces are 2D */
+    /** both spaces are defined on different grids */
+    TStructure(TFESpace2D *testspace, int test_level, TFESpace2D *ansatzspace,
+               int ansatz_level);
+#ifdef __MORTAR__
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure2D(TFESpace1D *testspace, TFESpace2D *ansatzspace);
+#endif
+    
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
+               int **ansatzcelljoints);
+
+    /** generate the matrix Structure2D, one space with 1D and the other
+     with 2D collection */
+    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
+               TNonMortarData *NonMortarFEData);
+
+    TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
+               TNonMortarData *NonMortarFEData);
+    
+    /** generate the matrix Structure3D, both space with 3D collection */
+    TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace);
+    
+    
+    
+    
+    
+    
+    
+    // structure2d
+    /** return AnsatzSpace */
+    const TFESpace2D *GetAnsatzSpace2D() const
+    {
+      return AnsatzSpace2D;
+    }
+    
+    const TFESpace *GetAnsatzSpace() const
+    {
+      if(AnsatzSpace1D)
+      {
+        return AnsatzSpace1D;
+      }
+      else if(AnsatzSpace2D)
+      {
+        return AnsatzSpace2D;
+      }
+      else
+      {
+        return AnsatzSpace3D;
+      }
+    }
+    
+    /** return TestSpace */
+    const TFESpace2D *GetTestSpace2D() const
+    {
+      return TestSpace2D;
+    }
+    
+    /** return TestSpace */
+    const TFESpace *GetTestSpace() const
+    {
+      if(TestSpace1D)
+      {
+        return TestSpace1D;
+      }
+      else if(TestSpace2D)
+      {
+        return TestSpace2D;
+      }
+      else
+      {
+        return TestSpace3D;
+      }
+    }
+
+    
+    
+    
+    //structure 3d
+    
+    
+    
     
     /** @brief copy constructor */
     TStructure(const TStructure&);
