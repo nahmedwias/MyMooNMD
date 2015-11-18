@@ -146,7 +146,7 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   BaseFunct2D LocBF[N_BaseFuncts2D];
   bool *SecondDer;
 
-  int ee_verbose=2;                             // verbosity
+  int ee_verbose=1;                             // verbosity
 
   int memory[3],data_base_memory;
 #ifdef _MALLOC_MALLOC_H_
@@ -691,7 +691,7 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
   double *xderiv_Neigh1D, *yderiv_Neigh1D, *xyval_Neigh1D;
   double *xderiv_Cell1D, *yderiv_Cell1D, *xyval_Cell1D;
   int part,edge2neigh;
-  int ee_verbose = 1,check_cont_u,check_cont_p,conform_grid=TDatabase::ParamDB->GRID_TYPE;
+  int ee_verbose = 0,check_cont_u,check_cont_p,conform_grid=TDatabase::ParamDB->GRID_TYPE;
   double delta= TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;
   TCollection *Coll;
 

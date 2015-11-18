@@ -37,13 +37,10 @@ protected:
     // estimation method
     void estimate(const std::vector<MultiIndex2D> &derivatives, const TFEFunction2D &fe_function2D) {};
 
-    void  calculateEtaK(TFESpace2D &fe_space_u, TFESpace2D &fe_space_p, TBaseCell *cell,
+    void calculateEtaK(const TFESpace2D &fe_space_u, const TFESpace2D &fe_space_p, TBaseCell *cell,
                             int N_Points, double *X, double *Y, double *AbsDetjk, double *weights, double **Derivatives, double **coeffs,
                             Example2D &example,
                             EdgeData &edgeData,
-                            int N_Points1D,
-                            double *zeta,
-                            double *weights1D,
                             int *global_numbers_u, int *begin_index_u, int *DOF_u, double *values_u,
                             int *global_numbers_p, int *begin_index_p, int *DOF_p, double *values_p,
                             double *estimated_local_error);
