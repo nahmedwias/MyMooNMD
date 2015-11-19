@@ -17,6 +17,7 @@
 #include <Structure.h>
 #include <string>
 #include <map>
+#include <vector>
 
 class TMatrix
 {
@@ -25,7 +26,7 @@ class TMatrix
     std::shared_ptr<TStructure> structure;
     
     /** matrix elements in an array */
-    double * entries;
+    std::vector<double> entries;
     
   public:
     /** generate the matrix, intialize entries with zeros */
@@ -45,7 +46,7 @@ class TMatrix
     TMatrix(int nRows, int nCols);
 
     /** destructor: free Entries array */
-    virtual ~TMatrix();
+    virtual ~TMatrix() = default;
 
     /** reset all matrix entries to zero */
     [[deprecated("use TMatrix::reset() insead of TMatrix::Reset()")]]
@@ -90,12 +91,12 @@ class TMatrix
     
     /** return matrix entries */
     const double *GetEntries() const
-    { return entries; }
+    { return &entries[0]; }
 
     /** return matrix entries */
     double *GetEntries()
     {
-      return entries;
+      return &entries[0];
     }
     
     /** return the norm of the matrix. p is 
@@ -137,6 +138,11 @@ class TMatrix
     
     // set the whole elements array
     void setEntries(double* entries)
+    {
+      std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
+    }
+    
+    void setEntries(std::vector<double> entries)
     {
       this->entries = entries;
     }

@@ -38,7 +38,8 @@ void TSquareMatrix2D::reset_non_active()
   int * rowPtr = this->structure->GetRowPtr();
   int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
-  memset(this->entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
+  memset(this->GetEntries() + index_nonactive, 0.0,
+         n_nonactive_entries * SizeOfDouble);
 }
 
 void TSquareMatrix2D::reset_active()
@@ -47,7 +48,7 @@ void TSquareMatrix2D::reset_active()
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  memset(this->entries, 0.0, n_active * SizeOfDouble);
+  memset(this->GetEntries(), 0.0, n_active * SizeOfDouble);
 }
 
 void TSquareMatrix2D::scale_active(double factor)
@@ -62,7 +63,7 @@ void TSquareMatrix2D::scale_active(double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Dscal(n_active, factor, this->entries);
+  Dscal(n_active, factor, this->GetEntries());
 }
 
 void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
@@ -78,7 +79,7 @@ void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Daxpy(n_active, factor, m.GetEntries(), this->entries);
+  Daxpy(n_active, factor, m.GetEntries(), this->GetEntries());
 }
 
 TSquareMatrix2D& TSquareMatrix2D::operator=(const TSquareMatrix2D& rhs)

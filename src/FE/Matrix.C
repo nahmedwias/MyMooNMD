@@ -20,18 +20,18 @@
 #include <MooNMD_Io.h>
 
 TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
- : TMatrix(structure, new double[structure->GetN_Entries()])
+ : structure(structure), entries(this->structure->GetN_Entries(), 0.)
 {
-  memset(entries, 0, structure->GetN_Entries()*SizeOfDouble);
 }
 
 TMatrix::TMatrix(std::shared_ptr<TStructure> structure, double* Entries)
- : structure(structure), entries(Entries)
+ : structure(structure), entries(this->structure->GetN_Entries(), 0.)
 {
+  this->setEntries(Entries);
 }
 
 TMatrix::TMatrix(int nRows, int nCols)
- : TMatrix(std::make_shared<TStructure>(nRows, nCols), nullptr)
+ : TMatrix(std::make_shared<TStructure>(nRows, nCols))
 {
 }
 
@@ -39,19 +39,12 @@ void TMatrix::SetStructure(std::shared_ptr<TStructure> structure)
 {
   this->structure = structure;
 
-  if (this->entries) delete this->entries;
-  this->entries = new double[this->structure->GetN_Entries()];
-  memset(this->entries, 0, this->structure->GetN_Entries()*SizeOfDouble);
+  memset(this->GetEntries(), 0, this->structure->GetN_Entries()*SizeOfDouble);
 }
 
 void TMatrix::reset()
 {
-  memset(this->entries, 0., this->structure->GetN_Entries()*SizeOfDouble);
-}
-
-TMatrix::~TMatrix()
-{
-  delete [] entries;
+  memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
 
@@ -195,7 +188,7 @@ double TMatrix::GetNorm(int p) const
   switch(p)
   {
     case -2:
-      result = Dnorm(this->GetN_Entries(), entries);
+      result = Dnorm(this->GetN_Entries(), this->GetEntries());
       break;
     case -1:
     {
@@ -489,12 +482,12 @@ void TMatrix::add_scaled(const TMatrix& m, double factor)
   {
     ErrThrow("TMatrix::add : the two matrices do not match.");
   }
-  Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->entries);
+  Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->GetEntries());
 }
 
 void TMatrix::scale(double factor)
 {
-  Dscal(this->GetN_Entries(), factor, this->entries);
+  Dscal(this->GetN_Entries(), factor, this->GetEntries());
 }
 
 void TMatrix::scale(const double * const factor, bool from_left)
@@ -593,7 +586,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   rows[0] = 0;
   
   // create new array to store the entries
-  double * new_entries = new double[n_entries];
+  std::vector<double> new_entries(n_entries);
   
   // fill the arrays 'rows', 'columns' and 'new_entries'
   for(int row=0; row<n_rows; row++)
@@ -609,7 +602,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
       // update row pointer
       rows[row+1] = rows[row] + n_old_entries;
       // copy entries
-      memcpy(new_entries+rows[row], this->entries+oldRows[row],
+      memcpy(&new_entries[0]+rows[row], this->GetEntries()+oldRows[row],
              n_old_entries*SizeOfDouble);
     }
     else
@@ -638,8 +631,6 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_entries, 
                                                  columns, rows);
   
- 
-  delete [] this->entries;
   this->entries = new_entries;
 }
 

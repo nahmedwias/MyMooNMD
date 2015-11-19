@@ -34,15 +34,17 @@ TSquareMatrix::~TSquareMatrix()
 
 void TSquareMatrix::ResetActive()
 {
-  memset(this->entries, 0, (structure->GetN_Entries() - structure->GetN_Rows()
-      + structure->GetActiveBound())*SizeOfDouble);
+  memset(this->GetEntries(), 0,
+      (structure->GetN_Entries() - structure->GetN_Rows() 
+          + structure->GetActiveBound()) * SizeOfDouble);
 }
 
 void TSquareMatrix::resetNonActive()
 {
   int n_nonactive_rows = structure->GetN_Rows()-structure->GetActiveBound();
   int index_nonactive = structure->GetN_Entries() - n_nonactive_rows;
-  memset(this->entries + index_nonactive, 0.0, n_nonactive_rows*SizeOfDouble);
+  memset(this->GetEntries() + index_nonactive, 0.0,
+         n_nonactive_rows * SizeOfDouble);
 }
 
 // find a renumbering of the DOFs from the matrix entries
@@ -163,7 +165,7 @@ int TSquareMatrix::Write(const char *filename)
   dat.write((char *)header, sizeof(int)*3);
   dat.write((char *)this->structure->GetRowPtr(), sizeof(int)*(this->structure->GetN_Rows()+1));
   dat.write((char *)this->structure->GetKCol(), sizeof(int)*this->structure->GetN_Entries());
-  dat.write((char *)this->entries, sizeof(double)*this->structure->GetN_Entries());
+  dat.write((char *)this->GetEntries(), sizeof(double)*this->structure->GetN_Entries());
 
   dat.close();
   
