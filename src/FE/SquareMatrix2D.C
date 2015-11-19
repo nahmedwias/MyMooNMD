@@ -38,7 +38,7 @@ void TSquareMatrix2D::reset_non_active()
   int * rowPtr = this->structure->GetRowPtr();
   int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
-  memset(Entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
+  memset(this->entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
 }
 
 void TSquareMatrix2D::reset_active()
@@ -47,7 +47,7 @@ void TSquareMatrix2D::reset_active()
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  memset(this->Entries, 0.0, n_active * SizeOfDouble);
+  memset(this->entries, 0.0, n_active * SizeOfDouble);
 }
 
 void TSquareMatrix2D::scale_active(double factor)
@@ -62,7 +62,7 @@ void TSquareMatrix2D::scale_active(double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Dscal(n_active, factor, this->Entries);
+  Dscal(n_active, factor, this->entries);
 }
 
 void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
@@ -78,7 +78,7 @@ void TSquareMatrix2D::add_active(const TSquareMatrix2D& m, double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // numer of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Daxpy(n_active, factor, m.GetEntries(), this->Entries);
+  Daxpy(n_active, factor, m.GetEntries(), this->entries);
 }
 
 TSquareMatrix2D& TSquareMatrix2D::operator=(const TSquareMatrix2D& rhs)
@@ -96,7 +96,7 @@ TSquareMatrix2D& TSquareMatrix2D::operator=(const TSquareMatrix2D& rhs)
   
   // copy matrix entries.
   for(int i=0; i<structure->GetN_Entries(); i++)
-    Entries[i] = rhs.Entries[i];
+    this->entries[i] = rhs.entries[i];
   
   return *this;
 }
@@ -122,7 +122,8 @@ TSquareMatrix2D& TSquareMatrix2D::operator+=(const TSquareMatrix2D & rhsMat)
 // note: only works for matrices with the same sparsity pattern
 TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 {
-  double *AEntries, *BEntries, *CEntries;
+  const double *AEntries, *BEntries;
+  double *CEntries;
   if (A.GetStructure() == B.GetStructure()) 
   {
     // create bew TSquareMatrix2D on heap (otherwise return did not work)
@@ -147,10 +148,9 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 // note: only active DOF are multiplied, others are just copied
 TSquareMatrix2D& operator*(const TSquareMatrix2D & A,const double alpha)
 {
-  double *AEntries, *CEntries;
   TSquareMatrix2D *C = new TSquareMatrix2D(A.structure);
-  AEntries = A.GetEntries();
-  CEntries = C->GetEntries();
+  const double *AEntries = A.GetEntries();
+  double * CEntries = C->GetEntries();
   // multiply each active entry by alpha and write it into matrix C
   for (int i=0; i<A.GetActiveBound(); i++) 
   {
@@ -172,9 +172,8 @@ TSquareMatrix2D& operator*(const double alpha,const TSquareMatrix2D & A)
 
 double* operator*(const TSquareMatrix2D & A,const double* x)
 {
-  double *AEntries;
   int *ARowPtr,*AColIndex;
-  AEntries = A.GetEntries();
+  const double *AEntries = A.GetEntries();
   ARowPtr = A.GetRowPtr();
   AColIndex = A.GetKCol();
 

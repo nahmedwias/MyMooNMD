@@ -25,7 +25,7 @@ class TMatrix
     std::shared_ptr<TStructure> structure;
     
     /** matrix elements in an array */
-    double *Entries;
+    double * entries;
     
   public:
     /** generate the matrix, intialize entries with zeros */
@@ -48,7 +48,8 @@ class TMatrix
     virtual ~TMatrix();
 
     /** reset all matrix entries to zero */
-    void Reset() { this->reset(); } // to be removed
+    [[deprecated("use TMatrix::reset() insead of TMatrix::Reset()")]]
+    void Reset() { this->reset(); }
     void reset();
 
     /** return number of rows */
@@ -88,9 +89,15 @@ class TMatrix
     { return *structure; }
     
     /** return matrix entries */
-    double *GetEntries() const
-    { return Entries; }
+    const double *GetEntries() const
+    { return entries; }
 
+    /** return matrix entries */
+    double *GetEntries()
+    {
+      return entries;
+    }
+    
     /** return the norm of the matrix. p is 
      * -2 for Frobenius norm
      * -1 for maximum absolute row sum
@@ -129,8 +136,9 @@ class TMatrix
     double& get(int i,int j);
     
     // set the whole elements array
-    void setEntries(double* entries) {
-      this->Entries = entries;
+    void setEntries(double* entries)
+    {
+      this->entries = entries;
     }
     
     /**

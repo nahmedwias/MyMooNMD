@@ -33,7 +33,8 @@ void TMatrix2D::reset_non_active()
   int * rowPtr = this->structure->GetRowPtr();
   int index_nonactive = rowPtr[n_active_rows];
   int n_nonactive_entries = rowPtr[structure->GetN_Rows()] - index_nonactive;
-  memset(Entries + index_nonactive, 0.0, n_nonactive_entries * SizeOfDouble);
+  memset(this->entries + index_nonactive, 0.0,
+         n_nonactive_entries * SizeOfDouble);
 }
 
 void TMatrix2D::reset_active()
@@ -42,7 +43,7 @@ void TMatrix2D::reset_active()
   int * rowPtr = this->structure->GetRowPtr();
   // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  memset(this->Entries, 0.0, n_active * SizeOfDouble);
+  memset(this->entries, 0.0, n_active * SizeOfDouble);
 }
 
 void TMatrix2D::scale_active(double factor)
@@ -57,7 +58,7 @@ void TMatrix2D::scale_active(double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Dscal(n_active, factor, this->Entries);
+  Dscal(n_active, factor, this->entries);
 }
 
 void TMatrix2D::add_active(const TMatrix2D& m, double factor)
@@ -73,7 +74,7 @@ void TMatrix2D::add_active(const TMatrix2D& m, double factor)
   int * rowPtr = this->structure->GetRowPtr();
   // number of entries in active rows
   int n_active = rowPtr[n_active_rows];
-  Daxpy(n_active, factor, m.GetEntries(), this->Entries);
+  Daxpy(n_active, factor, m.GetEntries(), this->entries);
 }
 
 TMatrix2D& TMatrix2D::operator*=(double alpha)
@@ -88,13 +89,12 @@ TMatrix2D& TMatrix2D::operator*=(double alpha)
 // note: only works for matrices with the same sparsity pattern
 TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
 {
-  double *AEntries, *BEntries, *CEntries;
   if (A.GetStructure() == B.GetStructure()) 
   {
     TMatrix2D *C = new TMatrix2D(A.structure);
-    AEntries = A.GetEntries();
-    BEntries = B.GetEntries();
-    CEntries = C->GetEntries();
+    const double *AEntries = A.GetEntries();
+    const double *BEntries = B.GetEntries();
+    double *CEntries = C->GetEntries();
     for (int i=0; i<A.GetN_Entries(); i++) 
     {
       CEntries[i] = AEntries[i] + BEntries[i];
@@ -110,10 +110,9 @@ TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
 
 TMatrix2D& operator*(const TMatrix2D & A, const double alpha)
 {
-  double *AEntries, *CEntries;
   TMatrix2D *C = new TMatrix2D(A.structure);
-  AEntries = A.GetEntries();
-  CEntries = C->GetEntries();
+  const double *AEntries = A.GetEntries();
+  double *CEntries = C->GetEntries();
 
   //TFESpace2D *fespace = A.GetStructure().GetAnsatzSpace2D();
   const TFESpace2D *fespace = A.GetStructure().GetTestSpace2D();
@@ -135,9 +134,8 @@ TMatrix2D& operator*(const double alpha, const TMatrix2D & A)
 
 double* operator*(const TMatrix2D & A,const double* x)
 {
-  double *AEntries;
   int *ARowPtr,*AColIndex;
-  AEntries = A.GetEntries();
+  const double *AEntries = A.GetEntries();
   ARowPtr = A.GetRowPtr();
   AColIndex = A.GetKCol();
 
