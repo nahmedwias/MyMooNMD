@@ -1,17 +1,33 @@
-// =======================================================================
-// @(#)Structure.h        1.3 09/14/99
-// 
-// Class:       TStructure
-//
-// Purpose:     build and store a matrix structure
-//
-// Author:      Gunar Matthies
-//
-// History:     24.11.97 start implementation
-//
-//              start of reimplementation 26.08.1998 (Gunar Matthies)
-//
-// =======================================================================
+/**
+ * @class TStructure
+ * @brief represent the sparsity structure of a matrix
+ * 
+ * Matrices in ParMooN are stored in the compressed row storage (CRS) format.
+ * The structure essentially stores the number of rows (TStructure::nRows), the 
+ * number of columns (TStructure::nColumns), the number of entries 
+ * (TStructure::nEntries) and two vectors (TStructure::rows and 
+ * TStructure::columns). 
+ * 
+ * The first vector TStructure::rows has length TStructure::nRows+1, indicating
+ * how many entries there are in all previous rows. It always is
+ *     TStructure::rows[0] = 0;
+ *     TStructure::rows[TStructure::nRows] = TStructure::nEntries;
+ * The number of entries in a given row `i` is given by the difference 
+ *     unsigned int nEntriesInRow = TStructure::rows[i+1] - TStructure::rows[i];
+ * 
+ * The second vector TStructure::columns has length TStructure::nEntries and 
+ * represents the column of each entry.  
+ * 
+ * To get the `j`-th entry in the `i`-th row (not the `j`-th entry overall) it
+ * is
+ *     unsigned int indexOfEntry = TStructure::rows[i] + j; 
+ *     unsigned int columnOfEntry = TStructure::columns[indexOfEntry];
+ * 
+ * Now the entry (`i`, `columnOfEntry`) in a matrix with this structure is the
+ * `indexOfEntry`-th entry in the list of entries. 
+ * 
+ * \todo How do we handle Hanging nodes? We need a test case!
+ */
 
 #ifndef __STRUCTURE__
 #define __STRUCTURE__
@@ -24,103 +40,161 @@
 class TStructure
 {
   private:
-    /** number of rows */
-    int N_Rows;
+    /** @brief number of rows */
+    int nRows;
 
-    /** number columns */
-    int N_Columns;
+    /** @brief number columns */
+    int nColumns;
 
-    /** number of matrix entries */
-    int N_Entries;
+    /** @brief number of matrix entries */
+    int nEntries;
 
-    /** number of matrix entries in hanging nodes part */
-    int HangingN_Entries;
-
-    /** in which column is the current entry */
-    int *KCol;
-
-    /** in which column is the current entry (hanging nodes part */
-    int *HangingKCol;
-
-    /** index in KCol where each row starts */
-    int *RowPtr;
-
-    /** index in HangingKCol where each row starts */
-    int *HangingRowPtr;
+    /** @brief vector of column information
+     * 
+     * This vector has length TStructure::nEntries and stores the column index
+     * for each entry.
+     */
+    int *columns;
     
-    /** number of active rows */
+    /** @brief vector storing the number of entries in all previous rows
+     * 
+     * This vector tells you the global indices of the entries for each row.
+     * The `j`-th entry in the `i`-th row is at the `TStructure[i]+j`-th 
+     * position in the global entries vector. So this also gives you the right 
+     * index if you are interested in the column of that entry, 
+     * `TStructure::columns[TStructure[i]+j]`.
+     */
+    int *rows;
+
+    /** @brief number of active rows
+     * 
+     * If this structure has been created using finite element spaces where the
+     * test space has a Dirichlet (non-active) boundary, then this number is
+     * smaller than TStructure::nRows. Otherwise it is the number of rows. In 
+     * ParMooN the non-active degrees of freedom (those which are on a 
+     * Dirichlet boundary) are always the last rows. These rows typically only
+     * have one entry (on the diagonal).  
+     */
     int ActiveBound;
 
-    /** ordering of the column entries */
-    /** 0 - no special ordering */
-    /** 1 - increasing ordering (like used for umfpack) */
-    /** 2 - diagonal entry first, then increasing ordering */
+    /** @brief ordering of the column entries
+     * 
+     * 0 - no special ordering 
+     * 1 - increasing ordering (like used for umfpack)
+     * 2 - diagonal entry first, then increasing ordering
+     */
     int ColOrder;
 
-    
-    
-    // Structure2D
-    /** Ansatzspace */
-    const TFESpace1D *AnsatzSpace1D;
-    const TFESpace2D *AnsatzSpace2D;
-    const TFESpace3D *AnsatzSpace3D;
+    // entries related to hanging nodes
+    /** @brief number of matrix entries in hanging nodes part */
+    int nHangingEntries;
 
-    /** Testspace */
-    const TFESpace1D *TestSpace1D;
-    const TFESpace2D *TestSpace2D;
-    const TFESpace3D *TestSpace3D;
+    /** @brief in which column is the current entry (hanging nodes part) */
+    int *hangingColums;
+
+    /** @brief index in hangingColums where each row starts */
+    int *HangingRows;
+    
+    
+    /// @name ansatz spaces
+    /// @brief the ansatz space (pre-image space)
+    /// @details Exactly one of these pointers is not a nullptr.
+    //@{
+    const TFESpace1D* AnsatzSpace1D;
+    const TFESpace2D* AnsatzSpace2D;
+    const TFESpace3D* AnsatzSpace3D;
+    //@}
+
+    /// @name test spaces
+    /// @brief the test space (image space)
+    /// @details Exactly one of these pointers is not a nullptr.
+    //@{
+    const TFESpace1D* TestSpace1D;
+    const TFESpace2D* TestSpace2D;
+    const TFESpace3D* TestSpace3D;
+    //@}
 
     
-    /** sort one row */
+    /** @brief sort one row to increasing order */
     void SortRow(int *BeginPtr, int *AfterEndPtr);
 
-    /** sort column numbers: diag is first element, other numbers are
-     increasing */
+    /** @brief sort column numbers
+     * 
+     * diag is first element, other numbers are increasing
+     */
     void SortDiagFirst();
     
   public:
     /** @brief default constructor sets everything to 0/nullptr */
     TStructure();
     
-    // square structures
-    /** generate the matrix structure, only one space needed */
-    TStructure(const TFESpace1D *space);
-
-    /** generate the matrix structure, only one space needed */
-    TStructure(const TFESpace2D* Space);
-
-    /** generate the matrix structure, only one space needed */
-    TStructure(const TFESpace3D *space);
+    /// @name construct square structures using one finite element space
+    /// @brief ansatz and test space is the same 
+    //@{
+    TStructure(const TFESpace1D * space);
+    TStructure(const TFESpace2D * Space);
+    TStructure(const TFESpace3D * space);
+    //@}
     
-    // (possibly) rectangular matrixes
-    /** generate the matrix Structure2D, both space with 2D collection */
-    TStructure(const TFESpace2D *testspace, const TFESpace2D *ansatzspace);
+    /// @name construct rectangular structures using two finite element spaces
+    /// @brief test and ansatz space are possibly different
+    /// 
+    /// A matrix using this structure represents a linear map from the ansatz 
+    /// to the test space.
+    //@{
+    TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace);
+    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    //@}
     
-    /** generate the matrix Structure3D, both space with 3D collection */
-    TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace);
+    /**
+     * @brief construct rectangular structures using two finite element spaces 
+     * defined on different grids
+     * 
+     * These grids must be part of the same hierarchy and the corresponding 
+     * levels must be given. 
+     */
+    TStructure(const TFESpace2D * testspace, int test_level, 
+               const TFESpace2D * ansatzspace, int ansatz_level);
     
-    /** generate the matrix structure, both spaces are 2D */
-    /** both spaces are defined on different grids */
-    TStructure(TFESpace2D *testspace, int test_level, TFESpace2D *ansatzspace,
-               int ansatz_level);
 
-    /** generate a (square) matrix structure, all arrays are already defined */
+    /**
+     * @brief generate a square structure, all arrays are already defined
+     * 
+     * Note that the pointers will be deleted from within this class. No deep 
+     * copy is done.
+     * 
+     * @param n number of rows/columns
+     * @param N_entries number of entries in this structure
+     * @param col_ptr the new TStructure::columns vector
+     * @param row_ptr the new TStructure::rows vector
+     */
     TStructure(int n, int N_entries, int *col_ptr, int *row_ptr);
 
-    /** generate the matrix structure, all arrays are already defined */
+    /**
+     * @brief generate a structure, all arrays are already defined
+     * 
+     * Note that the pointers will be deleted from within this class. No deep 
+     * copy is done.
+     * 
+     * @param nRows number of rows
+     * @param nCols number of columns
+     * @param N_entries number of entries in this structure
+     * @param col_ptr the new TStructure::columns vector
+     * @param row_ptr the new TStructure::rows vector
+     */
     TStructure(int nRows, int nCols, int N_entries, int *col_ptr, int *row_ptr);
 
-    /** Generates an empty nRows*nCols Structure for a Zero-Matrix */
+    /** @brief Generates an empty `n`*`n` Structure with no entries */
+    explicit TStructure(int n);
+    
+    /** @brief Generates an empty `nRows`*`nCols` Structure with no entries
+     */
     TStructure(int nRows, int nCols);
 
-    /** Generates an empty n*n Structure for a Zero-Matrix */
-    explicit TStructure(int n);
-
     
-    
+    /** @brief return if this structure is square */
     bool isSquare() const
-    { return N_Rows == N_Columns; }
-    
+    { return nRows == nColumns; }
     
     /** return TestSpace */
     const TFESpace1D *GetTestSpace1D() const
@@ -207,59 +281,56 @@ class TStructure
         else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
     
     
-    /** return ActiveBound */
+    /**
+     * @brief return number of active rows
+     * 
+     * @return between 0 and TStructure::nRows 
+     */
     int GetActiveBound() const
     {
       return ActiveBound;
     }
     
-    /** return ordering of columns */
+    /** @brief return ordering of columns, see also TStructure::colOrder */
     int GetColOrder() const
     {
       return ColOrder;
     }
     
     
-    /** return number of rows */
+    /** @brief return number of rows */
     int GetN_Rows() const
-    { return N_Rows; }
+    { return nRows; }
 
-    /** return number of columns */
+    /** @brief return number of columns */
     int GetN_Columns() const
-    { return N_Columns; }
+    { return nColumns; }
     
-    /** return number of matrix entries */
+    /** @brief return number of entries */
     int GetN_Entries() const
-    { return N_Entries; }
+    { return nEntries; }
 
-    /** return number of matrix entries (hanging nodes part) */
+    /** @brief return number of entries (hanging nodes part) */
     int GetHangingN_Entries() const
-    { return HangingN_Entries; }
+    { return nHangingEntries; }
 
-    /** return array KCol */
+    /** @brief return vector columns */
     int *GetKCol() const
-    { return KCol; }
+    { return columns; }
 
-    /** return array HangingKCol */
+    /** @brief return array hangingColums */
     int *GetHangingKCol() const
-    { return HangingKCol; }
+    { return hangingColums; }
 
     /** return array RowPtr */
     int *GetRowPtr() const
-    { return RowPtr; }
+    { return rows; }
 
     /** return array HangingRowPtr */
     int *GetHangingRowPtr() const
-    { return HangingRowPtr; }
+    { return HangingRows; }
     
-    /** @brief set member variables. Careful, this can produce inconsistencies! */
-    void setN_Rows(int n) { N_Rows = n; }
-    void setN_Columns(int n) { N_Columns = n; }
-    void setN_Entries(int n) { N_Entries = n; }
-    void setKCol(int * p) { KCol = p; }
-    void setRowPtr(int * p) { RowPtr = p; }
-
-    /** sort rows
+    /** @brief sort all rows in increasing order
      * 
      * \todo this should be private and called during construction
      */
@@ -277,19 +348,23 @@ class TStructure
      */ 
     int index_of_entry(const int i, const int j) const;
     
-    /** return a new structure for a transposed matrix 
-     * If this is an object of a derived class (e.g. TStructure, 
-     * TStructure), then the number of active degrees of freedom is not 
-     * taken into account. The returned TMatrix is really the algebraic 
-     * transposed matrix.
-     * */
+    /** 
+     * @brief return a new structure for a transposed matrix
+     * 
+     * If this structure has been created using finite element spaces, then 
+     * this might be different from directly constructing a structure with 
+     * test and anstz space exchanged. This can happen due to the non-active 
+     * degrees of freedom.
+     * 
+     * This function returns a true (algebraic) transposed structure.
+     */
     std::shared_ptr<TStructure> GetTransposed() const;
     
     
     /** @brief copy constructor */
     TStructure(const TStructure&);
 
-    /** destructor: free all used arrays */
+    /** @brief destructor: delete all used arrays */
     ~TStructure();
     
     /**
@@ -313,7 +388,7 @@ class TStructure
     friend bool operator!=(const TStructure &lhs, const TStructure &rhs);
     
     
-#ifdef __MORTAR__ // \todo can this be removed?
+#ifdef __MORTAR__ // \todo can this mortar stuff be removed?
   protected:
     int *AnsatzMortarSpaceGlobNo;
     int *TestMortarSpaceGlobNo;

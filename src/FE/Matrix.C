@@ -478,7 +478,7 @@ void TMatrix::remove_zeros(double tol)
   {
     OutPut("TMatrix::remove_zeros: tol " << tol << "\tn_removed " << n_removed
             << "\tratio " << (double)n_removed/(rows[n_rows]) << endl);
-    this->changeRows(new_entries, true);
+    this->changeRows(new_entries);
   }
   else
     OutPut("TMatrix::remove_zeros: no removable entries\n");
@@ -567,8 +567,7 @@ void TMatrix::reorderMatrix()
   }
 }
 
-void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
-                         bool deleteOldArrays)
+void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
 {
   if(entries.size() == 0)
     return; // nothing needs to be done
@@ -588,6 +587,8 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
   }
   
   int n_rows = structure->GetN_Rows();// new number of rows = old number of rows
+  // new number of columns = old number of columns
+  int n_cols = structure->GetN_Columns(); 
   int n_entries = structure->GetN_Entries() + offset; // new number of entries
   int *columns = new int[n_entries];  // new pointer to columns
   int *rows = new int[n_rows+1];      // new row pointer
@@ -636,16 +637,11 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
   }
   
   // change Structure of this matrix
-  structure->setN_Entries(n_entries);
-  structure->setKCol(columns);
-  structure->setRowPtr(rows);
+  this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_entries, 
+                                                 columns, rows);
   
-  if(deleteOldArrays)
-  {
-    delete [] oldRows;
-    delete [] oldCols;
-    delete [] Entries; // maybe we should always delete this
-  }
+ 
+  delete [] Entries;
   Entries = new_entries;
 }
 

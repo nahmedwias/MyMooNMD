@@ -151,10 +151,8 @@ class TMatrix
     /** 
      * @brief replace several rows in the matrix with new entries.
      * 
-     * Replace rows by new ones. This changes the sparsity pattern of the 
-     * matrix. Therefore reallocation is necessary. The old arrays are no 
-     * longer needed (for this matrix) and will be deleted if the flag 
-     * 'deleteOldArrays' is set to true.  
+     * Replace rows by new ones. This creates a new structure for the sparsity 
+     * pattern of the matrix. Therefore reallocation is necessary. 
      * 
      * If there are no rows to change, i.e. if entries.size()==0, nothing is 
      * done.
@@ -162,8 +160,7 @@ class TMatrix
      * @param entries for every row a map of columns-to-entries map
      * @param deleteOldArrays remove old arrays in matrix and structure
      */
-    void changeRows(std::map<int,std::map<int,double> > entries,
-                    bool deleteOldArrays=false);
+    void changeRows(std::map<int,std::map<int,double> > entries);
     
     
     /** @brief compute y = A*x   (Matrix-Vector-Multiplication)
