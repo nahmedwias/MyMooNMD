@@ -33,8 +33,6 @@ BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
 {
 	// build matrices, first build matrix structure
   std::shared_ptr<TStructure> sqStructure(new TStructure(&feSpace));
-	sqStructure->Sort();  // sort column numbers: numbers are in increasing order
-		  	  	  	  	  	// this disable use of deprecated AMG (sqstructure->SortDiagFirst();)
 
 	// the stiffness/system matrix for a convection diffusion problem
 	BlockMatrix::blocks[0].reset(new TSquareMatrix3D(sqStructure));

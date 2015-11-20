@@ -301,6 +301,7 @@ TStructure::TStructure( const TFESpace1D *Space )
     cout << "Number of columns: " << nColumns << endl;
     cout << "Number of matrix entries: " << nEntries << endl;
   }
+  this->Sort();
 }
 
 
@@ -1154,7 +1155,7 @@ TStructure::TStructure( const TFESpace2D* Space )
     cout << "Number of columns: " << nColumns << endl;
     cout << "Number of matrix entries: " << nEntries << endl;
   }
-
+  this->Sort();
 }
 
 #ifdef __3D__
@@ -1625,7 +1626,7 @@ TStructure::TStructure( const TFESpace3D *Space )
    OutPut("Number of columns: " << nColumns << endl);
    OutPut("Number of matrix entries: " << nEntries << endl);
   }
-
+  this->Sort();
 } 
 
 #endif // 3D
@@ -1672,6 +1673,8 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
   // get collection of mesh cells
   coll = testspace->GetCollection();
+  
+  ActiveBound = testspace->GetN_ActiveDegrees();
 
   // test space and ansatz space differ
   TestSpace2D = testspace;
@@ -2355,7 +2358,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   cout << "Number of columns: " << nColumns << endl;
   cout << "Number of matrix entries: " << nEntries << endl;
   }
-
+  this->Sort();
 }
 
 #ifdef __3D__
@@ -2383,6 +2386,8 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   }
 
   coll = testspace->GetCollection();
+  
+  ActiveBound = testspace->GetN_ActiveDegrees();
 
   // test space and ansatz space differ
   TestSpace3D = testspace;
@@ -2865,6 +2870,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   OutPut("Number of columns: " << nColumns << endl);
   OutPut("Number of matrix entries: " << nEntries << endl);
  }
+  this->Sort();
 }
 #endif
 
@@ -3541,6 +3547,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   cout << "Number of columns: " << nColumns << endl;
   cout << "Number of matrix entries: " << nEntries << endl;
   }
+  this->Sort();
 }
 
 
@@ -3551,8 +3558,7 @@ TStructure::TStructure()
 }
 
 TStructure::TStructure(int n, int nEntries, int *col_ptr, int *row_ptr)
- : nRows(n), nColumns(n), nEntries(nEntries), nHangingEntries(0), 
-   columns(col_ptr), hangingColums(NULL), rows(row_ptr), HangingRows(NULL)
+ : TStructure(n, n, nEntries, col_ptr, row_ptr)
 {
 }
 
@@ -3562,6 +3568,7 @@ TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr,
  : nRows(nRows), nColumns(nCols), nEntries(nEntries), nHangingEntries(0), 
    columns(col_ptr), hangingColums(NULL), rows(row_ptr), HangingRows(NULL)
 {
+  this->Sort();
 }
 
 TStructure::TStructure(int nRows, int nCols)

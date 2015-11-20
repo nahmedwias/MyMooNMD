@@ -25,7 +25,6 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
 {
   // build matrices, first build matrix structure
   std::shared_ptr<TStructure> sqstructure(new TStructure(&fespace));
-  sqstructure->Sort();  // sort column numbers: numbers are in increasing order
 
   // the stiffness/system matrix for a convection diffusion problem
   this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));

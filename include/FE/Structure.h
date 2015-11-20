@@ -81,7 +81,7 @@ class TStructure
      * 
      * 0 - no special ordering 
      * 1 - increasing ordering (like used for umfpack)
-     * 2 - diagonal entry first, then increasing ordering
+     * 2 - diagonal entry first, then increasing ordering (for AMG)
      */
     int ColOrder;
 
@@ -113,11 +113,14 @@ class TStructure
     const TFESpace2D* TestSpace2D;
     const TFESpace3D* TestSpace3D;
     //@}
-
+    
+    
+    /** @brief sort all rows in increasing order */
+    void Sort();
     
     /** @brief sort one row to increasing order */
     void SortRow(int *BeginPtr, int *AfterEndPtr);
-
+    
     /** @brief sort column numbers
      * 
      * diag is first element, other numbers are increasing
@@ -329,12 +332,6 @@ class TStructure
     /** return array HangingRowPtr */
     int *GetHangingRowPtr() const
     { return HangingRows; }
-    
-    /** @brief sort all rows in increasing order
-     * 
-     * \todo this should be private and called during construction
-     */
-    void Sort();
     
     /**
      * @brief find the index of a given entry

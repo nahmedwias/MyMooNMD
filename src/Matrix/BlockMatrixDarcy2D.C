@@ -26,10 +26,8 @@ BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity,
   // first build matrix structures
   // velocity-velocty coupling
   std::shared_ptr<TStructure> sqstructureA(new TStructure(&velocity));
-  sqstructureA->Sort();  // sort column numbers: numbers are in increasing order
   // pressure-pressure coupling
   std::shared_ptr<TStructure> sqstructureC(new TStructure(&pressure));
-  sqstructureC->Sort();  // sort column numbers: numbers are in increasing order
   // velocity-pressure and pressure-velocity coupling
   std::shared_ptr<TStructure> structureB(new TStructure(&pressure, &velocity));
   std::shared_ptr<TStructure> structureBT(new TStructure(&velocity, &pressure));

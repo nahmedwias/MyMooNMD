@@ -304,7 +304,6 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
       std::shared_ptr<TStructure> sp(
           new TStructure(n_comb_rows, n_comb_cols, n_comb_entries,
                          column_of_entry, entries_in_rows));
-      sp->Sort(); // this does nothing, but it does set the ColOrder to 1
       // create Matrix
       this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
     }

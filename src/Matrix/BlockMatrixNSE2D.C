@@ -28,7 +28,6 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
   // build matrices
   // first build matrix structure
   std::shared_ptr<TStructure> sqstructureA(new TStructure(&velocity));
-  sqstructureA->Sort(); // sort column numbers: numbers are in increasing order
       
   std::shared_ptr<TStructure> structureB(new TStructure(&pressure, &velocity));
   
@@ -138,8 +137,6 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
       std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
                                                              &pressure));
       std::shared_ptr<TStructure> sqstructureC(new TStructure(&pressure));
-      // sort column numbers: numbers are in increasing order
-      sqstructureC->Sort();
   
       this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
