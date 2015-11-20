@@ -23,11 +23,6 @@ TSquareMatrix2D::TSquareMatrix2D(const TFESpace2D * space)
   
 }
 
-TSquareMatrix2D::TSquareMatrix2D(int n) 
- : TSquareMatrix(std::make_shared<TStructure>(n))
-{
-}
-
 void TSquareMatrix2D::reset_non_active()
 {
   int n_active_rows = this->structure->GetFESpace2D()->GetN_ActiveDegrees();

@@ -24,9 +24,6 @@ class TSquareMatrix2D : public TSquareMatrix
     
     TSquareMatrix2D(const TSquareMatrix2D & m) = default;
 
-    /** generate an empty nxn matrix */
-    explicit TSquareMatrix2D(int n);
-    
     /** destructor: free Entries array */
     ~TSquareMatrix2D() = default;
 

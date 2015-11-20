@@ -39,7 +39,8 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
   
   // number of pressure degrees of freedom
   unsigned int n_p = pressure.GetN_DegreesOfFreedom();
-  
+  // number of velocity degrees of freedom
+  unsigned int n_v = velocity.GetN_DegreesOfFreedom();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
@@ -51,14 +52,15 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are not explicitly stored.
        */
-      unsigned int n_v = velocity.GetN_DegreesOfFreedom();
+      std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
+      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
       
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
       //this->BlockMatrix::blocks[2] stays a nullptr
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
       this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
       //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
       break;
     }
     case 2:
@@ -70,16 +72,17 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1T and B2T are explicitly stored.
        */
-      unsigned int n_v = velocity.GetN_DegreesOfFreedom();
+      std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
+      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
       
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
       this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
       // get that matrix B1T, which will be used to construct the other
       const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
+      this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
       this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
       this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
       break;
     }
     case 3:
@@ -91,12 +94,14 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are not explicitly stored.
        */
+      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
+      
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
       //this->BlockMatrix::blocks[2] stays a nullptr
       this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
       this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
       //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
       break;
     }
     case 4:
@@ -110,6 +115,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        */
       std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
                                                              &pressure));
+      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
       
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
       this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
@@ -118,7 +124,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
       this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
       this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
       this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
+      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
       break;
     }
     case 14:
@@ -186,7 +192,10 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
     sq_matrices[1] = this->get_A_block(1);
     sq_matrices[2] = this->get_A_block(2);
     sq_matrices[3] = this->get_A_block(3);
-    sq_matrices[4] = this->get_C_block();
+    if(TDatabase::ParamDB->NSTYPE == 14)
+    {
+      sq_matrices[4] = this->get_C_block();
+    }
   }
   
   unsigned int n_rect_mat;
@@ -527,10 +536,24 @@ const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
 /** ************************************************************************ */
 TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
 {
-  if(i < 2)
-    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i].get();
-  else if(i < 4)
-    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
+  if(i == 0)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[0].get();
+  else if(i == 1)
+  {
+    if(TDatabase::ParamDB->NSTYPE > 2)
+      return (TSquareMatrix2D*)this->BlockMatrix::blocks[1].get();
+    else
+      ErrThrow("block A12 does not exist for this NSTYPE");
+  }
+  else if(i == 2)
+  {
+    if(TDatabase::ParamDB->NSTYPE > 2)
+      return (TSquareMatrix2D*)this->BlockMatrix::blocks[3].get();
+    else
+      ErrThrow("block A21 does not exist for this NSTYPE");
+  }
+  else if(i == 3)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[4].get();
   else
     ErrThrow("there are only four A-blocks! " + std::to_string(i));
 }
@@ -538,12 +561,46 @@ TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
 /** ************************************************************************ */
 const TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i) const 
 {
-  if(i < 2)
-    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i].get();
-  else if(i < 4)
-    return (TSquareMatrix2D*)this->BlockMatrix::blocks[i+1].get();
+  if(i == 0)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[0].get();
+  else if(i == 1)
+  {
+    if(TDatabase::ParamDB->NSTYPE > 2)
+      return (TSquareMatrix2D*)this->BlockMatrix::blocks[1].get();
+    else
+      ErrThrow("block A12 does not exist for this NSTYPE");
+  }
+  else if(i == 2)
+  {
+    if(TDatabase::ParamDB->NSTYPE > 2)
+      return (TSquareMatrix2D*)this->BlockMatrix::blocks[3].get();
+    else
+      ErrThrow("block A21 does not exist for this NSTYPE");
+  }
+  else if(i == 3)
+    return (TSquareMatrix2D*)this->BlockMatrix::blocks[4].get();
   else
     ErrThrow("there are only four A-blocks! " + std::to_string(i));
+}
+
+/** ************************************************************************ */
+TSquareMatrix2D * BlockMatrixNSE2D::get_C_block()
+{
+  if(TDatabase::ParamDB->NSTYPE != 14)
+  {
+    ErrThrow("the C block only exists in case of NSTYPE 14");
+  }
+  return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get();
+}
+
+/** ************************************************************************ */
+const TSquareMatrix2D * BlockMatrixNSE2D::get_C_block() const
+{
+  if(TDatabase::ParamDB->NSTYPE != 14)
+  {
+    ErrThrow("the C block only exists in case of NSTYPE 14");
+  }
+  return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get();
 }
 
 /** ************************************************************************ */
@@ -558,6 +615,10 @@ TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i)
 /** ************************************************************************ */
 const TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i) const 
 {
+  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 3)
+  {
+    ErrThrow("For NSTYPE 1 and 3 the BT blocks are not explicitly stored");
+  }
   if(i < 2)
     return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
   else
