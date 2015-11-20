@@ -94,11 +94,11 @@
 
 #ifdef __2D__
   USpace = A->GetFESpace2D();
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  PSpace = B1->GetTestSpace2D();
 #endif  
 #ifdef __3D__
   USpace = A->GetFESpace3D();
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  PSpace = B1->GetTestSpace3D();
 #endif  
 
   N_Active = USpace->GetActiveBound();

@@ -16,42 +16,41 @@
 // =======================================================================
 
 #include <Structure.h>
-#include <Constants.h>
 #include <MooNMD_Io.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <FEDatabase3D.h>
+#include <FESpace1D.h>
+#include <FESpace2D.h>
+#include <FESpace3D.h>
+
 #include <cstring>
 #include <vector>
 #include <stdlib.h>
 
 
-
 /* generate the matrix structure, both space are 1D */
-TStructure::TStructure( const TFESpace1D *Space )
+TStructure::TStructure( const TFESpace1D * space )
 : TStructure()
 {
   int i,j,k,l,n,N_, n1,n2, m;
   int *GlobalNumbers;
   int *BeginIndex;
   int *Numbers, *nieb_Numbers;
-  int N_Dirichlet, end, N_Hanging, Offset;
+  int N_Hanging, Offset;
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
-  int *AuxPtr, *AuxPtr_delete, *HangingAuxPtr;
-  int *KColAux, *HangingKColAux;
-  int index, oldindex, EdgeIntegrals=Space->IsDGSpace();
+  int *AuxPtr;
+  int *KColAux;
+  int index, oldindex, EdgeIntegrals=space->IsDGSpace();
 
   TCollection *Coll;
 
   TBaseCell *cell, *neigh;
   FE1D CurrentElement, CurrentNeighbour;
 
-  TestSpace1D = Space;
-  AnsatzSpace1D = Space;
-
   // all dof are treated as unknowns !!!
   // no boundary description is used so far!!!
-  N_Inner=Space->GetN_Inner();
+  N_Inner=space->GetN_Inner();
   ActiveBound = N_Inner;
   nRows = N_Inner;
   nColumns = nRows;
@@ -63,12 +62,12 @@ TStructure::TStructure( const TFESpace1D *Space )
   AuxPtr=new int[l];
   memset(AuxPtr, 0, l*sizeof(int));
 
-  GlobalNumbers=Space->GetGlobalNumbers();
-  BeginIndex=Space->GetBeginIndex();
+  GlobalNumbers=space->GetGlobalNumbers();
+  BeginIndex=space->GetBeginIndex();
 
   // loop over all elements
-  N_=Space->GetN_Cells();
-  Coll = TestSpace1D->GetCollection();
+  N_= space->GetN_Cells();
+  Coll = space->GetCollection();
   
   // associate each cell with her number in the collection
   for(i=0;i<N_;i++)
@@ -82,7 +81,7 @@ TStructure::TStructure( const TFESpace1D *Space )
     cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
-    CurrentElement = Space->GetFE1D(i, cell);
+    CurrentElement = space->GetFE1D(i, cell);
     n1 = TFEDatabase2D::GetFE1D(CurrentElement)->GetN_DOF();
     for(j=0;j<n1;j++)
     {
@@ -101,7 +100,7 @@ TStructure::TStructure( const TFESpace1D *Space )
        if(neigh)
        {
         n = neigh->GetClipBoard();
-        CurrentNeighbour = Space->GetFE1D(n, neigh);
+        CurrentNeighbour = space->GetFE1D(n, neigh);
         n2 = TFEDatabase2D::GetFE1D(CurrentNeighbour)->GetN_DOF();
         AuxPtr[k]+=n2;
        }//if(neigh)
@@ -149,14 +148,14 @@ TStructure::TStructure( const TFESpace1D *Space )
   KColAux=new int[l];
   memset(KColAux, -1, sizeof(int)*l);
 
-  N_=Space->GetN_Cells();
-  Coll = TestSpace1D->GetCollection();
+  N_= space->GetN_Cells();
+  Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
-    CurrentElement = Space->GetFE1D(i, cell);
+    CurrentElement = space->GetFE1D(i, cell);
     n1 = TFEDatabase2D::GetFE1D(CurrentElement)->GetN_DOF();
 
     for(j=0;j<n1;j++)                             // test space
@@ -193,7 +192,7 @@ TStructure::TStructure( const TFESpace1D *Space )
        if(neigh)
        {
         nieb_i = neigh->GetClipBoard();
-        CurrentNeighbour = Space->GetFE1D(nieb_i, neigh);
+        CurrentNeighbour = space->GetFE1D(nieb_i, neigh);
         nieb_Numbers=GlobalNumbers+BeginIndex[nieb_i];
         nieb_n1 = TFEDatabase2D::GetFE1D(CurrentNeighbour)->GetN_DOF();
  
@@ -306,7 +305,7 @@ TStructure::TStructure( const TFESpace1D *Space )
 
 
 /* generate the matrix structure, both space are 2D */
-TStructure::TStructure( const TFESpace2D* Space )
+TStructure::TStructure( const TFESpace2D* space )
 : TStructure()
 {
   int i,j,k,l,n,N_, n1,n2,m,p,q,r;
@@ -324,7 +323,7 @@ TStructure::TStructure( const TFESpace2D* Space )
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
-  int Offset, *DOF, end, begin;
+  int Offset, *DOF, end;
   THangingNode **HangingNodes;
   THangingNode *hn;
 
@@ -333,21 +332,18 @@ TStructure::TStructure( const TFESpace2D* Space )
   TBaseCell *cell, *neigh;
   FE2D CurrentElement, CurrentNeighbour;
 
-  TestSpace2D = Space;
-  AnsatzSpace2D = Space;
+  ActiveBound = space->GetN_ActiveDegrees();
+  HangingBound = space->GetHangingBound();
 
-  ActiveBound=Space->GetN_ActiveDegrees();
-  HangingBound=Space->GetHangingBound();
-
-  N_BoundaryNodeTypes=Space->GetN_DiffBoundaryNodeTypes();
-  BoundNodeBounds=Space->GetN_BoundaryNodes();
+  N_BoundaryNodeTypes = space->GetN_DiffBoundaryNodeTypes();
+  BoundNodeBounds = space->GetN_BoundaryNodes();
   N_NonDiri = 0;
   for(i=0;i<N_BoundaryNodeTypes;i++)
     N_NonDiri += BoundNodeBounds[i];
 
-  N_Dirichlet=Space->GetN_Dirichlet();
-  N_Inner=Space->GetN_Inner();
-  N_Hanging=Space->GetN_Hanging();
+  N_Dirichlet = space->GetN_Dirichlet();
+  N_Inner = space->GetN_Inner();
+  N_Hanging = space->GetN_Hanging();
 
   nRows = ActiveBound+N_Hanging+N_Dirichlet;
   nColumns = nRows;
@@ -369,15 +365,15 @@ TStructure::TStructure( const TFESpace2D* Space )
   HangingAuxPtr=new int[l];
   memset(HangingAuxPtr, 0, l*sizeof(int));
 
-  GlobalNumbers=Space->GetGlobalNumbers();
+  GlobalNumbers = space->GetGlobalNumbers();
 
-  BeginIndex=Space->GetBeginIndex();
+  BeginIndex = space->GetBeginIndex();
 
   Offset=ActiveBound;
 
   // loop over all elements
-  N_=Space->GetN_Cells();
-  Coll = TestSpace2D->GetCollection();
+  N_ = space->GetN_Cells();
+  Coll = space->GetCollection();
 
   // associate each cell with her number in the collection
   for(i=0;i<N_;i++)
@@ -392,7 +388,7 @@ TStructure::TStructure( const TFESpace2D* Space )
     cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
-    CurrentElement = Space->GetFE2D(i, cell);
+    CurrentElement = space->GetFE2D(i, cell);
     n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
     // loop over the local degrees of freedom
@@ -415,7 +411,7 @@ TStructure::TStructure( const TFESpace2D* Space )
             if(neigh)
             {
               n = neigh->GetClipBoard();
-              CurrentNeighbour = Space->GetFE2D(n, neigh);
+              CurrentNeighbour = space->GetFE2D(n, neigh);
               n2 = TFEDatabase2D::GetFE2D(CurrentNeighbour)->GetN_DOF();
               AuxPtr[k]+=n2;
             }                                     //endif
@@ -439,7 +435,7 @@ TStructure::TStructure( const TFESpace2D* Space )
   }
 
   // add couplings for hanging nodes of  space
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   Offset=ActiveBound;
   for(i=0,j=Offset;i<N_Hanging;i++,j++)
   {
@@ -456,7 +452,7 @@ TStructure::TStructure( const TFESpace2D* Space )
   // additional space for storing the columns caused by the
   // hanging nodes of  space => some new columns
   Offset=ActiveBound;
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   // cout << "N_Hanging: " << N_Hanging << endl;
   for(i=0;i<N_Hanging;i++)
   {
@@ -490,8 +486,8 @@ TStructure::TStructure( const TFESpace2D* Space )
   int indexM = 0, indexNM;
 
   // set ClipBoard to number in collection
-  N_ = Space2D->GetN_Cells();
-  Coll = Space2D->GetCollection();
+  N_ = space->GetN_Cells();
+  Coll = space->GetCollection();
   for(i=0;i<N_;i++)
     Coll->GetCell(i)->SetClipBoard(i);
 
@@ -524,7 +520,7 @@ TStructure::TStructure( const TFESpace2D* Space )
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = Space2D->GetFE2D(indexNM, CellNM);
+      CurrElementID = space->GetFE2D(indexNM, CellNM);
       CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -563,7 +559,7 @@ TStructure::TStructure( const TFESpace2D* Space )
         }
 
         indexM = CellM->GetClipBoard();
-        CurrElementID = Space2D->GetFE2D(indexM, CellM);
+        CurrElementID = space->GetFE2D(indexM, CellM);
         CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
         CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -649,14 +645,14 @@ TStructure::TStructure( const TFESpace2D* Space )
   memset(HangingKColAux, -1, sizeof(int)*l);
   nHangingEntries=0;
 
-  N_=Space->GetN_Cells();
-  Coll = TestSpace2D->GetCollection();
+  N_ = space->GetN_Cells();
+  Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
-    CurrentElement = Space->GetFE2D(i, cell);
+    CurrentElement = space->GetFE2D(i, cell);
     n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
     for(j=0;j<n1;j++)
@@ -718,7 +714,7 @@ TStructure::TStructure( const TFESpace2D* Space )
             q = neigh->GetClipBoard();
             NumbersNeighbour=GlobalNumbers+BeginIndex[q];
 
-            CurrentNeighbour = Space->GetFE2D(q, neigh);
+            CurrentNeighbour = space->GetFE2D(q, neigh);
             n2 = TFEDatabase2D::GetFE2D(CurrentNeighbour)->GetN_DOF();
 
             for(k=0;k<n2;k++)
@@ -809,7 +805,7 @@ TStructure::TStructure( const TFESpace2D* Space )
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = Space2D->GetFE2D(indexNM, CellNM);
+      CurrElementID = space->GetFE2D(indexNM, CellNM);
       CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -884,7 +880,7 @@ TStructure::TStructure( const TFESpace2D* Space )
         }
 
         indexM = CellM->GetClipBoard();
-        CurrElementID = Space2D->GetFE2D(indexM, CellM);
+        CurrElementID = space->GetFE2D(indexM, CellM);
         CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
         CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -992,7 +988,7 @@ TStructure::TStructure( const TFESpace2D* Space )
 
   // add the additional columns from hanging nodes to other nodes
   Offset=ActiveBound;
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   for(i=0;i<N_Hanging;i++)
   {
     // cout << "hanging node: " << i << endl;
@@ -1092,7 +1088,7 @@ TStructure::TStructure( const TFESpace2D* Space )
   }
 
   // add information for hanging and Dirichlet nodes into matrix
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   Offset=ActiveBound;
   m=ActiveBound;
   for(i=0,j=Offset;i<N_Hanging;i++,j++)
@@ -1160,7 +1156,7 @@ TStructure::TStructure( const TFESpace2D* Space )
 
 #ifdef __3D__
 /* generate the matrix structure, both spaces are 3D */
-TStructure::TStructure( const TFESpace3D *Space )
+TStructure::TStructure( const TFESpace3D *space )
 {
   int i,j,k,l,n,N_, n1, m; 
   int *Numbers;
@@ -1184,21 +1180,18 @@ TStructure::TStructure( const TFESpace3D *Space )
   TBaseCell *cell;
   FE3D CurrentElement;
 
-  TestSpace3D = Space;
-  AnsatzSpace3D = Space;
+  ActiveBound = space->GetN_ActiveDegrees();
+  HangingBound = space->GetHangingBound();
 
-  ActiveBound=Space->GetN_ActiveDegrees();
-  HangingBound=Space->GetHangingBound();
-
-  N_BoundaryNodeTypes=Space->GetN_DiffBoundaryNodeTypes();
-  BoundNodeBounds=Space->GetN_BoundaryNodes();
+  N_BoundaryNodeTypes = space->GetN_DiffBoundaryNodeTypes();
+  BoundNodeBounds = space->GetN_BoundaryNodes();
   N_NonDiri = 0;
   for(i=0;i<N_BoundaryNodeTypes;i++)
     N_NonDiri += BoundNodeBounds[i];
 
-  N_Dirichlet=Space->GetN_Dirichlet();
-  N_Inner=Space->GetN_Inner();
-  N_Hanging=Space->GetN_Hanging();
+  N_Dirichlet = space->GetN_Dirichlet();
+  N_Inner = space->GetN_Inner();
+  N_Hanging = space->GetN_Hanging();
 
   nRows = ActiveBound+N_Hanging+N_Dirichlet;
   nColumns = nRows;
@@ -1223,14 +1216,14 @@ TStructure::TStructure( const TFESpace3D *Space )
   Offset=ActiveBound;
 
   // loop over all elements 
-  N_=Space->GetN_Cells();
-  Coll = Space->GetCollection();
+  N_ = space->GetN_Cells();
+  Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
-    Numbers=Space->GetGlobalDOF(i);
+    Numbers = space->GetGlobalDOF(i);
 
-    CurrentElement = Space->GetFE3D(i, cell);
+    CurrentElement = space->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
     for(j=0;j<n1;j++)
@@ -1257,7 +1250,7 @@ TStructure::TStructure( const TFESpace3D *Space )
 
 // #ifdef __3D__
   // add couplings for hanging nodes of  space
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   Offset=ActiveBound;
   for(i=0,j=Offset;i<N_Hanging;i++,j++)
   {
@@ -1273,7 +1266,7 @@ TStructure::TStructure( const TFESpace3D *Space )
   // additional space for storing the columns caused by the 
   // hanging nodes of  space => some new columns
   Offset=ActiveBound;
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   // cout << "N_Hanging: " << N_Hanging << endl;
   for(i=0;i<N_Hanging;i++)
   {
@@ -1356,14 +1349,14 @@ TStructure::TStructure( const TFESpace3D *Space )
 // #endif
   nHangingEntries=0;
 
-  N_ = Space->GetN_Cells();
-  Coll = Space->GetCollection();
+  N_ = space->GetN_Cells();
+  Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
     cell = Coll->GetCell(i);
-    Numbers=Space->GetGlobalDOF(i);
+    Numbers = space->GetGlobalDOF(i);
 
-    CurrentElement = Space->GetFE3D(i, cell);
+    CurrentElement = space->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
     for(j=0;j<n1;j++)
@@ -1461,7 +1454,7 @@ TStructure::TStructure( const TFESpace3D *Space )
 
   // add the additional columns from hanging nodes to other nodes
   Offset=ActiveBound;
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   for(i=0;i<N_Hanging;i++)
   {
     // cout << "hanging node: " << i << endl;
@@ -1561,7 +1554,7 @@ TStructure::TStructure( const TFESpace3D *Space )
 
 // #ifdef __3D__
   // add information for hanging and Dirichlet nodes into matrix
-  HangingNodes=Space->GetHangingNodes();
+  HangingNodes = space->GetHangingNodes();
   Offset=ActiveBound;
   m=ActiveBound;
   for(i=0,j=Offset;i<N_Hanging;i++,j++)
@@ -1636,6 +1629,7 @@ TStructure::TStructure( const TFESpace3D *Space )
 /* generate the matrix structure, both spaces are 2D */
 TStructure::TStructure(const TFESpace2D* testspace,
                        const TFESpace2D* ansatzspace)
+ : TStructure()
 {
   TCollection *coll;
   TBaseCell *cell;
@@ -1655,7 +1649,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   int *HangingAuxPtr;
   int TestActiveBound, TestHangingBound;
   int AnsatzActiveBound, AnsatzHangingBound;
-  int Offset, *DOF, begin;
+  int Offset, *DOF;
   THangingNode **TestHangingNodes;
   THangingNode **AnsatzHangingNodes;
   THangingNode *hn;
@@ -1677,11 +1671,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
   ActiveBound = testspace->GetN_ActiveDegrees();
 
   // test space and ansatz space differ
-  TestSpace2D = testspace;
-  AnsatzSpace2D = ansatzspace;
-  TestSpace1D = NULL;
-  AnsatzSpace1D = NULL;
-
   // get information from the spaces
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
@@ -1709,18 +1698,18 @@ TStructure::TStructure(const TFESpace2D* testspace,
   AnsatzBeginIndex = ansatzspace->GetBeginIndex();
   TestBeginIndex = testspace->GetBeginIndex();
 
-  nRows = TestSpace2D->GetN_DegreesOfFreedom();
-  nColumns = AnsatzSpace2D->GetN_DegreesOfFreedom();
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
-  TestN_Hanging = TestSpace2D->GetN_Hanging();
-  TestActiveBound = TestSpace2D->GetN_ActiveDegrees();
-  TestHangingBound= TestSpace2D->GetHangingBound();
-  TestHangingNodes = TestSpace2D->GetHangingNodes();
+  TestN_Hanging = testspace->GetN_Hanging();
+  TestActiveBound = testspace->GetN_ActiveDegrees();
+  TestHangingBound= testspace->GetHangingBound();
+  TestHangingNodes = testspace->GetHangingNodes();
 
-  AnsatzN_Hanging = AnsatzSpace2D->GetN_Hanging();
-  AnsatzActiveBound = AnsatzSpace2D->GetN_ActiveDegrees();
-  AnsatzHangingBound= AnsatzSpace2D->GetHangingBound();
-  AnsatzHangingNodes = AnsatzSpace2D->GetHangingNodes();
+  AnsatzN_Hanging = ansatzspace->GetN_Hanging();
+  AnsatzActiveBound = ansatzspace->GetN_ActiveDegrees();
+  AnsatzHangingBound= ansatzspace->GetHangingBound();
+  AnsatzHangingNodes = ansatzspace->GetHangingNodes();
 
   // AuxPtr[i] will contain an upper bound for the number of 
   // matrix entries in row i
@@ -1747,10 +1736,10 @@ TStructure::TStructure(const TFESpace2D* testspace,
     AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[i];
     
     // get fe spaces on the mesh cell
-    CurrentElement = TestSpace2D->GetFE2D(i, cell);
+    CurrentElement = testspace->GetFE2D(i, cell);
     n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
-    CurrentElement = AnsatzSpace2D->GetFE2D(i, cell);
+    CurrentElement = ansatzspace->GetFE2D(i, cell);
     n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
     // update vector which stores information on the length of the rows
     for(j=0;j<n1;j++)
@@ -1819,8 +1808,8 @@ TStructure::TStructure(const TFESpace2D* testspace,
   int indexM = 0, indexNM;
 
   // set ClipBoard to number in collection
-  N_ = TestSpace2D->GetN_Cells();
-  coll = TestSpace2D->GetCollection();
+  N_ = testspace->GetN_Cells();
+  coll = testspace->GetCollection();
   for(i=0;i<N_;i++)
     coll->GetCell(i)->SetClipBoard(i);
 
@@ -1853,7 +1842,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = AnsatzSpace2D->GetFE2D(indexNM, CellNM);
+      CurrElementID = ansatzspace->GetFE2D(indexNM, CellNM);
       CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -1970,10 +1959,10 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
     cell = coll->GetCell(i);
 
-    CurrentElement = TestSpace2D->GetFE2D(i, cell);
+    CurrentElement = testspace->GetFE2D(i, cell);
     n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
-    CurrentElement = AnsatzSpace2D->GetFE2D(i, cell);
+    CurrentElement = ansatzspace->GetFE2D(i, cell);
     n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
     // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;
@@ -2082,7 +2071,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = AnsatzSpace2D->GetFE2D(indexNM, CellNM);
+      CurrElementID = ansatzspace->GetFE2D(indexNM, CellNM);
       CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -2157,7 +2146,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
         }
 
         indexM = CellM->GetClipBoard();
-        CurrElementID = AnsatzSpace2D->GetFE2D(indexM, CellM);
+        CurrElementID = ansatzspace->GetFE2D(indexM, CellM);
         CurrElement = TFEDatabase2D::GetFE2D(CurrElementID);
         CurrDesc = CurrElement->GetFEDesc2D();
 
@@ -2377,7 +2366,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestNumbers, *AnsatzNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
-  int *AuxPtr, *KColAux, end;
+  int *AuxPtr, *KColAux;
   FE3D CurrentElement; 
 
   if(testspace->GetCollection() != ansatzspace->GetCollection())
@@ -2388,12 +2377,6 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   coll = testspace->GetCollection();
   
   ActiveBound = testspace->GetN_ActiveDegrees();
-
-  // test space and ansatz space differ
-  TestSpace3D = testspace;
-  AnsatzSpace3D = ansatzspace;
-  TestSpace2D = NULL;
-  AnsatzSpace2D = NULL;
 
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
@@ -2421,8 +2404,8 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   AnsatzBeginIndex = ansatzspace->GetBeginIndex();
   TestBeginIndex = testspace->GetBeginIndex();
 
-  nRows = TestSpace3D->GetN_DegreesOfFreedom();
-  nColumns = AnsatzSpace3D->GetN_DegreesOfFreedom();
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   l = nRows + 1;
   AuxPtr = new int[l];
@@ -2435,10 +2418,10 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
     TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
     AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[i];
 
-    CurrentElement = TestSpace3D->GetFE3D(i, cell);
+    CurrentElement = testspace->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
-    CurrentElement = AnsatzSpace3D->GetFE3D(i, cell);
+    CurrentElement = ansatzspace->GetFE3D(i, cell);
     n2 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
     for(j=0;j<n1;j++)
@@ -2465,8 +2448,8 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   int indexM = 0, indexNM;
 
   // set ClipBoard to number in collection
-  N_ = TestSpace3D->GetN_Cells();
-  coll = TestSpace3D->GetCollection();
+  N_ = testspace->GetN_Cells();
+  coll = testspace->GetCollection();
   for(i=0;i<N_;i++)
     coll->GetCell(i)->SetClipBoard(i);
 
@@ -2499,7 +2482,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = AnsatzSpace3D->GetFE3D(indexNM, CellNM);
+      CurrElementID = ansatzspace->GetFE3D(indexNM, CellNM);
       CurrElement = TFEDatabase3D::GetFE3D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc3D();
 
@@ -2538,7 +2521,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
         }
 
         indexM = CellM->GetClipBoard();
-        CurrElementID = AnsatzSpace3D->GetFE3D(indexM, CellM);
+        CurrElementID = ansatzspace->GetFE3D(indexM, CellM);
         CurrElement = TFEDatabase3D::GetFE3D(CurrElementID);
         CurrDesc = CurrElement->GetFEDesc3D();
 
@@ -2594,10 +2577,10 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
 
     cell = coll->GetCell(i);
 
-    CurrentElement = TestSpace3D->GetFE3D(i, cell);
+    CurrentElement = testspace->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
-    CurrentElement = AnsatzSpace3D->GetFE3D(i, cell);
+    CurrentElement = ansatzspace->GetFE3D(i, cell);
     n2 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
 
     // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;
@@ -2662,7 +2645,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
       }
 
       indexNM = CellNM->GetClipBoard();
-      CurrElementID = AnsatzSpace3D->GetFE3D(indexNM, CellNM);
+      CurrElementID = ansatzspace->GetFE3D(indexNM, CellNM);
       CurrElement = TFEDatabase3D::GetFE3D(CurrElementID);
       CurrDesc = CurrElement->GetFEDesc3D();
 
@@ -2737,7 +2720,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
         }
 
         indexM = CellM->GetClipBoard();
-        CurrElementID = AnsatzSpace3D->GetFE3D(indexM, CellM);
+        CurrElementID = ansatzspace->GetFE3D(indexM, CellM);
         CurrElement = TFEDatabase3D::GetFE3D(CurrElementID);
         CurrDesc = CurrElement->GetFEDesc3D();
 
@@ -2894,7 +2877,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestNumbers, *AnsatzNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
-  int *AuxPtr, *KColAux, end;
+  int *AuxPtr, *KColAux;
   int  N_child,N_child_1, N_child_2, N_child_3, N_child_4, N_child_5;
   int N_child_6;
   int ii, j1, j2, j3, j4, j5, j6, level_diff;
@@ -2920,13 +2903,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
     coll_coarse = ansatzspace->GetCollection();
   }
 
-  // test space and ansatz space differ
-  TestSpace2D = testspace;
-  AnsatzSpace2D = ansatzspace;
-  TestSpace1D = NULL;
-  AnsatzSpace1D = NULL;
-
-  // get information from the spaces
+ // get information from the spaces
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
 
@@ -2953,8 +2930,8 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   AnsatzBeginIndex = ansatzspace->GetBeginIndex();
   TestBeginIndex = testspace->GetBeginIndex();
 
-  nRows = TestSpace2D->GetN_DegreesOfFreedom();
-  nColumns = AnsatzSpace2D->GetN_DegreesOfFreedom();
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   l = nRows + 1;
   AuxPtr = new int[l];
@@ -2987,7 +2964,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
        // which live on this mesh cell
        TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
        // get fe spaces on the mesh cell
-       CurrentElement = TestSpace2D->GetFE2D(i, cell_coarse);
+       CurrentElement = testspace->GetFE2D(i, cell_coarse);
        n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
        
        // find all children of the coarse mesh cell 
@@ -3003,7 +2980,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
            ii = cell_child_1->GetClipBoard();
            AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-           CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_1);
+           CurrentElement = ansatzspace->GetFE2D(ii, cell_child_1);
            n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
            // update vector which stores information on the length of the rows
            for(j=0;j<n1;j++)
@@ -3025,7 +3002,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                 ii = cell_child_2->GetClipBoard();
                 AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-                CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_2);
+                CurrentElement = ansatzspace->GetFE2D(ii, cell_child_2);
                 n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                 // update vector which stores information on the length of the rows
                 for(j=0;j<n1;j++)
@@ -3047,7 +3024,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                    ii = cell_child_3->GetClipBoard();
                    AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-                   CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_3);
+                   CurrentElement = ansatzspace->GetFE2D(ii, cell_child_3);
                    n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                    // update vector which stores information on the length of the rows
                    for(j=0;j<n1;j++)
@@ -3069,7 +3046,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                        ii = cell_child_4->GetClipBoard();
                        AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-                       CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_4);
+                       CurrentElement = ansatzspace->GetFE2D(ii, cell_child_4);
                        n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                        // update vector which stores information on the length of the rows
                        for(j=0;j<n1;j++)
@@ -3091,7 +3068,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                              ii = cell_child_5->GetClipBoard();
                              AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-                             CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_5);
+                             CurrentElement = ansatzspace->GetFE2D(ii, cell_child_5);
                              n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                              // update vector which stores information on the length of the rows
                              for(j=0;j<n1;j++)
@@ -3113,7 +3090,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
             ii = cell_child_6->GetClipBoard();
             AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
             
-            CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_6);
+            CurrentElement = ansatzspace->GetFE2D(ii, cell_child_6);
             n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
             // update vector which stores information on the length of the rows
             for(j=0;j<n1;j++)
@@ -3153,7 +3130,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
       // which live on this mesh cell
       TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
       // get fe spaces on the mesh cell
-      CurrentElement = TestSpace2D->GetFE2D(i, cell_fine);
+      CurrentElement = testspace->GetFE2D(i, cell_fine);
       n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
       // find parent cell on coarse grid
       cell_parent = cell_fine;
@@ -3165,7 +3142,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
       ii = cell_parent->GetClipBoard();
       AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
 
-      CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_parent);
+      CurrentElement = ansatzspace->GetFE2D(ii, cell_parent);
       n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
       // update vector which stores information on the length of the rows
       for(j=0;j<n1;j++)
@@ -3209,7 +3186,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
     {
       cell_coarse = coll_coarse->GetCell(i);
       TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
-      CurrentElement = TestSpace2D->GetFE2D(i, cell_coarse);
+      CurrentElement = testspace->GetFE2D(i, cell_coarse);
       n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
 
       // find all children of the coarse mesh cell 
@@ -3224,7 +3201,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
         {
           ii = cell_child_1->GetClipBoard();
           AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-          CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_1);
+          CurrentElement = ansatzspace->GetFE2D(ii, cell_child_1);
           n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
           // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
           for(j=0;j<n1;j++)
@@ -3262,7 +3239,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
             {
               ii = cell_child_2->GetClipBoard();
               AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-              CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_2);
+              CurrentElement = ansatzspace->GetFE2D(ii, cell_child_2);
               n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
               // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
               for(j=0;j<n1;j++)
@@ -3300,7 +3277,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                 {
                   ii = cell_child_3->GetClipBoard();
                   AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-                  CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_3);
+                  CurrentElement = ansatzspace->GetFE2D(ii, cell_child_3);
                   n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                   // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
                   for(j=0;j<n1;j++)
@@ -3338,7 +3315,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                     {
                       ii = cell_child_4->GetClipBoard();
                       AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-                      CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_4);
+                      CurrentElement = ansatzspace->GetFE2D(ii, cell_child_4);
                       n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                       // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
                       for(j=0;j<n1;j++)
@@ -3376,7 +3353,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                         {
                           ii = cell_child_5->GetClipBoard();
                           AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-                          CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_child_5);
+                          CurrentElement = ansatzspace->GetFE2D(ii, cell_child_5);
                           n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
                           // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
                           for(j=0;j<n1;j++)
@@ -3431,7 +3408,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
       // which live on this mesh cell
       TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
       // get fe spaces on the mesh cell
-      CurrentElement = TestSpace2D->GetFE2D(i, cell_fine);
+      CurrentElement = testspace->GetFE2D(i, cell_fine);
       n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
       // find parent cell on coarse grid
       cell_parent = cell_fine;
@@ -3445,7 +3422,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
 
       ii = cell_parent->GetClipBoard();
       AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[ii];
-      CurrentElement = AnsatzSpace2D->GetFE2D(ii, cell_parent);
+      CurrentElement = ansatzspace->GetFE2D(ii, cell_parent);
       n2 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
       // cout << "i: " << i << " n1: " << n1 << " n2: " << n2 << endl;    
       for(j=0;j<n1;j++)
@@ -3552,8 +3529,9 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
 
 
 TStructure::TStructure() 
- : nRows(0), nColumns(0), nEntries(0), nHangingEntries(0), columns(NULL),
-   hangingColums(NULL), rows(NULL), HangingRows(NULL)
+ : nRows(0), nColumns(0), nEntries(0), columns(nullptr), rows(nullptr),
+   ActiveBound(0), ColOrder(0), nHangingEntries(0), hangingColums(nullptr),
+   HangingRows(nullptr)
 {
 }
 
@@ -3565,15 +3543,17 @@ TStructure::TStructure(int n, int nEntries, int *col_ptr, int *row_ptr)
 /* generate the matrix structure, all arrays are already defined */
 TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr, 
                        int *row_ptr)
- : nRows(nRows), nColumns(nCols), nEntries(nEntries), nHangingEntries(0), 
-   columns(col_ptr), hangingColums(NULL), rows(row_ptr), HangingRows(NULL)
+ : nRows(nRows), nColumns(nCols), nEntries(nEntries), columns(col_ptr), 
+   rows(row_ptr), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+   hangingColums(nullptr), HangingRows(nullptr)
 {
   this->Sort();
 }
 
 TStructure::TStructure(int nRows, int nCols)
- : nRows(nRows), nColumns(nCols), nEntries(0), nHangingEntries(0), 
-   columns(NULL), hangingColums(NULL), rows(new int[nRows+1]), HangingRows(NULL)
+ : nRows(nRows), nColumns(nCols), nEntries(0), columns(nullptr), 
+   rows(new int[nRows+1]), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+   hangingColums(nullptr), HangingRows(nullptr)
 {
   memset(rows, 0, (nRows+1)*SizeOfInt);
 }
@@ -3903,10 +3883,10 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
   FE2D FEId;
   TFEDesc2D *FeDesc;
 
-  TestSpace1D = testspace;
-  AnsatzSpace2D = ansatzspace;
-  TestSpace2D = NULL;
-  AnsatzSpace1D = NULL;
+  TFESpace1D* TestSpace1D = testspace;
+  TFESpace2D* AnsatzSpace2D = ansatzspace;
+  TFESpace2D* TestSpace2D = NULL;
+  TFESpace1D* AnsatzSpace1D = NULL;
   TestMortarSpaceGlobNo = NULL;
 
   ansatzcell  = ansatzcelljoints[0];
@@ -4659,9 +4639,9 @@ exit(0);
 
 TStructure::TStructure(const TStructure& s)
  : nRows(s.nRows), nColumns(s.nColumns), nEntries(s.nEntries),
-   nHangingEntries(s.nHangingEntries), columns(new int[s.nEntries]),
-   hangingColums(new int[s.nHangingEntries]), 
-   rows(new int[s.nRows + 1]), HangingRows(nullptr)
+   columns(new int[s.nEntries]), rows(new int[s.nRows + 1]),
+   nHangingEntries(s.nHangingEntries),
+   hangingColums(new int[s.nHangingEntries]), HangingRows(nullptr)
 {
   // copy the data
   memcpy(this->columns, s.GetKCol(), this->nEntries*sizeof(int));

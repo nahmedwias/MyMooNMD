@@ -32,10 +32,12 @@
 #ifndef __STRUCTURE__
 #define __STRUCTURE__
 
-#include <FESpace1D.h>
-#include <FESpace2D.h>
-#include <FESpace3D.h>
-#include <memory>
+// forward declarations
+class TFESpace1D;
+class TFESpace2D;
+class TFESpace3D;
+
+#include <memory> // std::shared_ptr
 
 class TStructure
 {
@@ -94,26 +96,6 @@ class TStructure
 
     /** @brief index in hangingColums where each row starts */
     int *HangingRows;
-    
-    
-    /// @name ansatz spaces
-    /// @brief the ansatz space (pre-image space)
-    /// @details Exactly one of these pointers is not a nullptr.
-    //@{
-    const TFESpace1D* AnsatzSpace1D;
-    const TFESpace2D* AnsatzSpace2D;
-    const TFESpace3D* AnsatzSpace3D;
-    //@}
-
-    /// @name test spaces
-    /// @brief the test space (image space)
-    /// @details Exactly one of these pointers is not a nullptr.
-    //@{
-    const TFESpace1D* TestSpace1D;
-    const TFESpace2D* TestSpace2D;
-    const TFESpace3D* TestSpace3D;
-    //@}
-    
     
     /** @brief sort all rows in increasing order */
     void Sort();
@@ -198,91 +180,6 @@ class TStructure
     /** @brief return if this structure is square */
     bool isSquare() const
     { return nRows == nColumns; }
-    
-    /** return TestSpace */
-    const TFESpace1D *GetTestSpace1D() const
-    {
-      return TestSpace1D;
-    }
-    
-    /** return AnsatzSpace */
-    const TFESpace1D *GetAnsatzSpace1D() const
-    {
-      return AnsatzSpace1D;
-    }
-        
-    /** return TestSpace */
-    const TFESpace2D *GetTestSpace2D() const
-    {
-      return TestSpace2D;
-    }
-
-    /** return AnsatzSpace */
-    const TFESpace2D *GetAnsatzSpace2D() const
-    {
-      return AnsatzSpace2D;
-    }
-    
-    /** return TestSpace */
-    const TFESpace3D *GetTestSpace3D() const
-    {
-      return TestSpace3D;
-    }
-    
-    /** return AnsatzSpace */
-    const TFESpace3D *GetAnsatzSpace3D() const
-    {
-      return AnsatzSpace3D;
-    }
-    
-    
-    /** return TestSpace */
-    const TFESpace *GetTestSpace() const
-    {
-      if(TestSpace1D)
-      {
-        return TestSpace1D;
-      }
-      else if(TestSpace2D)
-      {
-        return TestSpace2D;
-      }
-      else
-      {
-        return TestSpace3D;
-      }
-    }
-    
-    const TFESpace *GetAnsatzSpace() const
-    {
-      if(AnsatzSpace1D)
-      {
-        return AnsatzSpace1D;
-      }
-      else if(AnsatzSpace2D)
-      {
-        return AnsatzSpace2D;
-      }
-      else
-      {
-        return AnsatzSpace3D;
-      }
-    }
-    
-    
-    /** return FESpace */
-    const TFESpace1D *GetFESpace1D() const
-    { if(this->isSquare()) return TestSpace1D;
-    else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
-    /** return FESpace */
-    const TFESpace2D *GetFESpace2D() const
-    { if(this->isSquare()) return TestSpace2D;
-        else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
-    /** return FESpace */
-    const TFESpace3D *GetFESpace3D() const
-    { if(this->isSquare()) return TestSpace3D;
-        else ErrThrow("accessing FESpace for non-square matrix, but which one?");}
-    
     
     /**
      * @brief return number of active rows
