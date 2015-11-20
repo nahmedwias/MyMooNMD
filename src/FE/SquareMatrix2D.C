@@ -16,21 +16,17 @@
 #include <LinAlg.h>
 #include <stdlib.h>
 
-TSquareMatrix2D::TSquareMatrix2D(std::shared_ptr<TStructure> squarestructure)
-  : TSquareMatrix(squarestructure)
-{
-}
 
+TSquareMatrix2D::TSquareMatrix2D(const TFESpace2D * space)
+ : TSquareMatrix(std::make_shared<TStructure>(space))
+{
+  
+}
 
 TSquareMatrix2D::TSquareMatrix2D(int n) 
  : TSquareMatrix(std::make_shared<TStructure>(n))
 {
 }
-
-TSquareMatrix2D::~TSquareMatrix2D()
-{
-}
-
 
 void TSquareMatrix2D::reset_non_active()
 {
@@ -128,7 +124,7 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
   if (A.GetStructure() == B.GetStructure()) 
   {
     // create bew TSquareMatrix2D on heap (otherwise return did not work)
-    TSquareMatrix2D *C = new TSquareMatrix2D(A.structure);
+    TSquareMatrix2D *C = new TSquareMatrix2D(A);
     AEntries = A.GetEntries();
     BEntries = B.GetEntries();
     CEntries = C->GetEntries();
@@ -149,7 +145,7 @@ TSquareMatrix2D& operator+(const TSquareMatrix2D & A, const TSquareMatrix2D & B)
 // note: only active DOF are multiplied, others are just copied
 TSquareMatrix2D& operator*(const TSquareMatrix2D & A,const double alpha)
 {
-  TSquareMatrix2D *C = new TSquareMatrix2D(A.structure);
+  TSquareMatrix2D *C = new TSquareMatrix2D(A);
   const double *AEntries = A.GetEntries();
   double * CEntries = C->GetEntries();
   // multiply each active entry by alpha and write it into matrix C

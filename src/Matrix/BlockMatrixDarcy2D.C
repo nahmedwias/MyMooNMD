@@ -23,24 +23,15 @@ BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity,
  : BlockMatrix(Problem_type::Darcy, 2), 
    boundary_values({BoundValue[0], BoundValue[1]})
 {
-  // first build matrix structures
-  // velocity-velocty coupling
-  std::shared_ptr<TStructure> sqstructureA(new TStructure(&velocity));
-  // pressure-pressure coupling
-  std::shared_ptr<TStructure> sqstructureC(new TStructure(&pressure));
-  // velocity-pressure and pressure-velocity coupling
-  std::shared_ptr<TStructure> structureB(new TStructure(&pressure, &velocity));
-  std::shared_ptr<TStructure> structureBT(new TStructure(&velocity, &pressure));
-  
   // ( A  B1' )   ( 0 2 )
   // ( B2 C   )   ( 3 1 )
   // create the velocity-velocity coupling matrix 
-  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&velocity));
   // create the pressure-pressure coupling matrix
-  this->BlockMatrix::blocks[1].reset(new TMatrix2D(structureBT));
+  this->BlockMatrix::blocks[1].reset(new TMatrix2D(&velocity, &pressure));
   // create velocity-pressure and pressure-velocity coupling matrices
-  this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureB));
-  this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureC));
+  this->BlockMatrix::blocks[2].reset(new TMatrix2D(&pressure, &velocity));
+  this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(&pressure));
 }
 
 /** ************************************************************************ */

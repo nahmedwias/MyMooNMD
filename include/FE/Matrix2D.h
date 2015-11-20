@@ -21,13 +21,12 @@ class TMatrix2D : public TMatrix
 {
   public:
     /** generate the matrix */
-    TMatrix2D(std::shared_ptr<TStructure> structure);
+    TMatrix2D(const TFESpace2D * testspace, const TFESpace2D * ansatzspace);
     
-    /** @brief generate empty matrix */
-    TMatrix2D();
+    TMatrix2D(const TMatrix2D & m) = default;
     
     /** destructor: free Entries array */
-    ~TMatrix2D();
+    ~TMatrix2D() = default;
 
     /** @brief scale all active rows */
     TMatrix2D& operator*=(double alpha);

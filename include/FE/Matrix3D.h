@@ -21,10 +21,12 @@ class TMatrix3D : public TMatrix
 {
   public:
     /** generate the matrix */
-    TMatrix3D(std::shared_ptr<TStructure> structure);
+    TMatrix3D(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    
+    TMatrix3D(const TMatrix3D & m) = default;
 
     /** destructor: free Entries array */
-    ~TMatrix3D();
+    ~TMatrix3D() = default;
 
     /** @brief set all Dirichlet rows to zero. That means all rows where the 
      * test space has nonactive degrees of freedom. 

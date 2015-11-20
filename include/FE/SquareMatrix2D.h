@@ -20,13 +20,15 @@ class TSquareMatrix2D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix2D(std::shared_ptr<TStructure> squarestructure);
+    TSquareMatrix2D(const TFESpace2D * space);
+    
+    TSquareMatrix2D(const TSquareMatrix2D & m) = default;
 
     /** generate an empty nxn matrix */
     explicit TSquareMatrix2D(int n);
     
     /** destructor: free Entries array */
-    ~TSquareMatrix2D();
+    ~TSquareMatrix2D() = default;
 
     /** return FESpace */
     const TFESpace2D *GetFESpace() const

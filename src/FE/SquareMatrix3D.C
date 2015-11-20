@@ -15,21 +15,13 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TSquareMatrix3D::TSquareMatrix3D(std::shared_ptr<TStructure> squarestructure)
-  : TSquareMatrix(squarestructure)
+
+TSquareMatrix3D::TSquareMatrix3D(const TFESpace3D * space)
+ : TSquareMatrix(std::make_shared<TStructure>(space))
 {
+  
 }
 
-// not clear! what is the initial value of structure while calling contructor/
-// commented by Sashi 
-// TSquareMatrix3D::TSquareMatrix3D(int n) 
-//  : structure(new TStructure(n)), TSquareMatrix(structure)
-// {
-// }
-
-TSquareMatrix3D::~TSquareMatrix3D()
-{
-}
 
 void TSquareMatrix3D::reset_non_active()
 {

@@ -26,10 +26,16 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
       boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
 {
   // build matrices
-  // first build matrix structure
-  std::shared_ptr<TStructure> sqstructureA(new TStructure(&velocity));
-      
-  std::shared_ptr<TStructure> structureB(new TStructure(&pressure, &velocity));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&velocity));
+  // get that matrix A11, which will be used to construct the others if NSTYPE>2
+  const TSquareMatrix2D & A11 = 
+    (const TSquareMatrix2D &) *this->BlockMatrix::blocks[0];
+  
+  this->BlockMatrix::blocks[6].reset(new TMatrix2D(&pressure, &velocity));
+  // get that matrix B1, which will be used to construct the other
+  const TMatrix2D & B1 = (const TMatrix2D &) *this->BlockMatrix::blocks[6];
+  this->BlockMatrix::blocks[7].reset(new TMatrix2D(B1));
+  
   
   // number of pressure degrees of freedom
   unsigned int n_p = pressure.GetN_DegreesOfFreedom();
@@ -47,14 +53,11 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        */
       unsigned int n_v = velocity.GetN_DegreesOfFreedom();
       
-      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
       //this->BlockMatrix::blocks[2] stays a nullptr
       this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
       this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
       //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
       this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
       break;
     }
@@ -68,17 +71,14 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * B1T and B2T are explicitly stored.
        */
       unsigned int n_v = velocity.GetN_DegreesOfFreedom();
-      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
-                                                             &pressure));
       
-      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
       this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(n_v));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+      // get that matrix B1T, which will be used to construct the other
+      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
       this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(n_v));
       this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
-      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
       this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
       break;
     }
@@ -91,14 +91,11 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are not explicitly stored.
        */
-      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
       //this->BlockMatrix::blocks[2] stays a nullptr
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
       //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
       this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
       break;
     }
@@ -114,14 +111,13 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
       std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
                                                              &pressure));
       
-      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
-      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+      // get that matrix B1T, which will be used to construct the other
+      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
       this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(n_p));
       break;
     }
@@ -134,19 +130,15 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
        * 
        * B1^T and B2^T are explicitly stored.
        */
-      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
-                                                             &pressure));
-      std::shared_ptr<TStructure> sqstructureC(new TStructure(&pressure));
-  
-      this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureBT));
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(sqstructureA));
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(structureBT));
-      this->BlockMatrix::blocks[6].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[7].reset(new TMatrix2D(structureB));
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(sqstructureC));
+      
+      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+      // get that matrix B1T, which will be used to construct the other
+      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
+      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
+      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(&pressure));
       break;
     }
     default:

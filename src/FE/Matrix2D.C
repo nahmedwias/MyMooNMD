@@ -17,15 +17,12 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TMatrix2D::TMatrix2D(std::shared_ptr<TStructure> structure)
- : TMatrix(structure)
+TMatrix2D::TMatrix2D(const TFESpace2D * testspace,
+                     const TFESpace2D * ansatzspace)
+ : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace))
 {
+  
 }
-
-TMatrix2D::~TMatrix2D()
-{
-}
-
 
 void TMatrix2D::reset_non_active()
 {
@@ -91,7 +88,7 @@ TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
 {
   if (A.GetStructure() == B.GetStructure()) 
   {
-    TMatrix2D *C = new TMatrix2D(A.structure);
+    TMatrix2D *C = new TMatrix2D(A);
     const double *AEntries = A.GetEntries();
     const double *BEntries = B.GetEntries();
     double *CEntries = C->GetEntries();
@@ -110,7 +107,7 @@ TMatrix2D& operator+(const TMatrix2D & A, const TMatrix2D & B)
 
 TMatrix2D& operator*(const TMatrix2D & A, const double alpha)
 {
-  TMatrix2D *C = new TMatrix2D(A.structure);
+  TMatrix2D *C = new TMatrix2D(A);
   const double *AEntries = A.GetEntries();
   double *CEntries = C->GetEntries();
 

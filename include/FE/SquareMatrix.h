@@ -30,15 +30,14 @@ class TSquareMatrix : public TMatrix
     /** 2 - diagonal entry first, then increasing ordering */
     int ColOrder;
   
-  public:
-    /** generate the matrix */
+    /** generate the matrix, called from derived classes */
     TSquareMatrix(std::shared_ptr<TStructure> structure);
-    
-    /** generate an empty n*n zero matrix */
-    explicit TSquareMatrix(int n);
+  public:
 
     /** destructor: free Entries array */
-    ~TSquareMatrix();
+    ~TSquareMatrix() = default;
+    
+    TSquareMatrix(const TSquareMatrix & m) = default;
 
     /** reset all entries in active rows */
     void ResetActive();

@@ -23,15 +23,6 @@ TSquareMatrix::TSquareMatrix(std::shared_ptr<TStructure> squarestructure)
 {
 }
 
-TSquareMatrix::TSquareMatrix(int n)
- : TMatrix(std::make_shared<TStructure>(n))
-{
-}
-
-TSquareMatrix::~TSquareMatrix()
-{
-}
-
 void TSquareMatrix::ResetActive()
 {
   memset(this->GetEntries(), 0,

@@ -23,15 +23,13 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
  : BlockMatrix(Problem_type::ConvDiffReac, 2, mass_matrix),
    boundary_values(BoundValue)
 {
-  // build matrices, first build matrix structure
-  std::shared_ptr<TStructure> sqstructure(new TStructure(&fespace));
-
   // the stiffness/system matrix for a convection diffusion problem
-  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&fespace));
+  const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
   // the number of active entries
-  unsigned int n_active = sqstructure->GetN_Entries();
+  unsigned int n_active = sqStructure.GetN_Entries();
   // substract the number of non active entries (non active rows)
-  n_active -= sqstructure->GetN_Rows() - sqstructure->GetActiveBound();
+  n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
   this->BlockMatrix::actives[0] = n_active;
 }
 

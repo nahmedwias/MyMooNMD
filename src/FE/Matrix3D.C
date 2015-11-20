@@ -15,14 +15,12 @@
 #include <string.h>
 #include <LinAlg.h>
 
-TMatrix3D::TMatrix3D(std::shared_ptr<TStructure> structure)
- : TMatrix(structure)
+TMatrix3D::TMatrix3D(const TFESpace3D * testspace,
+                     const TFESpace3D * ansatzspace)
+ : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace))
 {
 }
 
-TMatrix3D::~TMatrix3D()
-{
-}
 
 
 void TMatrix3D::resetNonActive()
