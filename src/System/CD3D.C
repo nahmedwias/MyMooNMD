@@ -155,9 +155,18 @@ void CD3D::solve()
   double* solutionEntries = syst.solution_.get_entries();
   double* rhsEntries =syst.rhs_.get_entries();
 
+  #ifdef _SEQ
+  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // direct
+  {
+    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries, 
+                 solutionEntries);
+    return;
+  }
+  #endif // _SEQ (sequential)
+  
   #ifdef _MPI
   TParFECommunicator3D* parComm = &syst.parComm_;
-  #endif _MPI
+  #endif //_MPI
 
 //  if (TDatabase::ParamDB->SOLVER_TYPE == 2)
 //  { //Direct solver(s)
@@ -255,7 +264,7 @@ void CD3D::output(int i)
 		double errors[4];
 		TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
 		MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
-		TFESpace3D* space = syst.feFunction_.GetFESpace3D();
+		const TFESpace3D* space = syst.feFunction_.GetFESpace3D();
 
 		syst.feFunction_.GetErrors(example_.get_exact(0), 4, AllDerivatives,
 								   2, L2H1Errors, example_.get_coeffs(),

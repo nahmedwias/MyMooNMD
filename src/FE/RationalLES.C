@@ -107,7 +107,7 @@ void ComputeConvolutionForTurbVisType4(TNSE_MultiGrid *MG,
 {
     int ii, N_FESpaces, N_Rhs, N_SquareMatrices, N_RectMatrices;
     double *rhsGL00AuxProblem, *RHSs[3], t1, t2, *u_uConv;
-    TFESpace3D *fesp[1], *ferhs[3];
+    const TFESpace3D *fesp[1], *ferhs[3];
     TFEFunction3D *fefct[3];
     BoundCondFunct3D *BoundaryConditionsAuxProblem[3];
     BoundValueFunct3D *BoundValuesAuxProblem[3];
@@ -235,7 +235,7 @@ void PrepareRHSLES(TFESpace3D **USpaces,
 {
     int N_FESpaces, N_Rhs;
     double *rhsGL00AuxProblem, *RHSs[6], t1, t2;
-    TFESpace3D *fesp[4], *ferhs[6];
+    const TFESpace3D *fesp[4], *ferhs[6];
     TFEFunction3D *fefct[12];
     TAuxParam3D *aux;
     BoundCondFunct3D *BoundaryConditionsAuxProblem[6];
@@ -550,7 +550,7 @@ void ConvolveSolution(TNSE_MultiGrid *MG,
 {
     int N_FESpaces, N_Rhs;
     double *RHSs[3];
-    TFESpace3D *fesp[1], *ferhs[3];
+    const TFESpace3D *fesp[1], *ferhs[3];
     TFEFunction3D *fefct[3];
     TAuxParam3D *aux;
     BoundCondFunct3D *BoundaryConditionsAuxProblem[3];
@@ -625,7 +625,7 @@ void ApplyDifferentialFilterToVelocity(TFESpace3D **USpaces,TFEVectFunct3D **UAr
 {
   int N_U;
   double *rhsGL00AuxProblem, *RHSs[3], t1, t2;
-  TFESpace3D *fesp[1], *ferhs[3];
+  const TFESpace3D *fesp[1], *ferhs[3];
   TFEFunction3D *fefct[3];
   TAuxParam3D *aux;
     //BoundCondFunct3D *BoundaryConditionsAuxProblem[3];

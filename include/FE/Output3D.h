@@ -34,7 +34,7 @@ class TOutput3D
     int MaxN_FESpaces;
 
     /** array of stored FESpaces */
-    TFESpace3D **FESpaceArray;
+    const TFESpace3D **FESpaceArray;
 
     /** number of stored scalar variables = TFEFunction */
     int N_ScalarVar;
@@ -70,7 +70,7 @@ class TOutput3D
     TDomain *Domain;
 
     /** add a FESpace into this output object (internal use) */
-    int AddFESpace(TFESpace3D *fespace);
+    int AddFESpace(const TFESpace3D *fespace);
 
      /** internal data storage **/
     struct TOutputData

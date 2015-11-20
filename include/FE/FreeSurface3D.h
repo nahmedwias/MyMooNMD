@@ -40,7 +40,7 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
 // ========================================================================
 // manipulate square matrices due to u.n=0 constraint
 // ========================================================================
-void ManipulateSquareMatrices(TSquareStructure3D *sqstructure,
+void ManipulateSquareMatrices(TStructure *sqstructure,
         double *a11, double *a12, double *a13,
         double *a21, double *a22, double *a23,
         double *a31, double *a32, double *a33,
@@ -51,7 +51,7 @@ void ManipulateSquareMatrices(TSquareStructure3D *sqstructure,
 // ========================================================================
 // manipulate square matrices due to u.n=0 constraint
 // ========================================================================
-void ManipulateMatricesAndRhs(TStructure3D *structure,
+void ManipulateMatricesAndRhs(TStructure *structure,
         double *b1t, double *b2t, double *b3t,
         double *f1, double *f2, double *f3,
         int N_FaceDOF, int N_EdgeDOF,

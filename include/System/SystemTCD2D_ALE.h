@@ -46,7 +46,7 @@ class TSystemTCD2D_ALE : public TSystemTCD2D
     TSquareMatrix2D *SqmatrixG11, *SqmatrixG12, *SqmatrixG21, *SqmatrixG22, *SQMATRICES_GRID[4];
     
     /** structure for the moving grid **/
-    TSquareStructure2D *SquareStructureG;
+    TStructure *SquareStructureG;
     
     /** aux for mesh */
     TAuxParam2D *Aux_ALE, *Meshaux;

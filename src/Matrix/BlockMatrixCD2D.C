@@ -7,7 +7,6 @@
 
 #include <Database.h>
 #include <BlockMatrixCD2D.h>
-#include <SquareStructure2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
 #include <LocalProjection.h>
@@ -24,26 +23,19 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
  : BlockMatrix(Problem_type::ConvDiffReac, 2, mass_matrix),
    boundary_values(BoundValue)
 {
-  // build matrices, first build matrix structure
-  TSquareStructure2D* sqstructure = new TSquareStructure2D(&fespace);
-  sqstructure->Sort();  // sort column numbers: numbers are in increasing order
-
   // the stiffness/system matrix for a convection diffusion problem
-  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&fespace));
+  const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
   // the number of active entries
-  unsigned int n_active = sqstructure->GetN_Entries();
+  unsigned int n_active = sqStructure.GetN_Entries();
   // substract the number of non active entries (non active rows)
-  n_active -= sqstructure->GetN_Rows() - sqstructure->GetActiveBound();
+  n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
   this->BlockMatrix::actives[0] = n_active;
 }
 
 /** ************************************************************************ */
 BlockMatrixCD2D::~BlockMatrixCD2D()
 {
-  // the combined matrix is this->get_matrix(), and will be deleted in 
-  // ~BlockMatrix
-  if(!this->combined_matrix)
-    delete this->get_matrix()->GetStructure();
 }
 
 /** ************************************************************************ */

@@ -188,19 +188,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B, double *x, double *y);
 void CoupledDefect(TSquareMatrix *A, TMatrix *B, 
                    double *x, double *b, double *r);
 
-// ========================================================================
-// (Navier-)Stokes system with almost divergence-free basis, NSTYP==5
-// ========================================================================
 
-/** matrix * vector for coupled Stokes / Navier-Stokes system NSTYPE==5*/
-void CoupledMatVect(TSquareMatrix *A, double *x, double *y);
-
-/** defect for coupled Stokes / Navier-Stokes system NSTYPE==5*/
-void CoupledDefect(TSquareMatrix *A, double *x, double *b, double *r);
-                   
-void MatVect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *y);
-
-void Defect_NSE5(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r);
 
 /** Convection-diffusion problem with VMM */
 void MatVectCD_VMM(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TSquareMatrix *D, 
@@ -405,31 +393,31 @@ void MatVect_NSE14(TSquareMatrix **A, TMatrix **B, double *x, double *y);
 void Defect_NSE14(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r);
 
 /** prolongate */
-void Prolongate(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void Prolongate(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
         double *CoarseFunctions, double *FineFunctions,
         double *aux);
 
 /** prolongate */
-void Prolongate(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void Prolongate(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
         int N_Functions,
         double *CoarseFunctions, double *FineFunctions,
         double *aux);
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void DefectRestriction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
     double *CoarseFunctions, double *FineFunctions, double *aux);
 
 /** defect restriction from level+1 to level */
-void DefectRestriction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void DefectRestriction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
     int N_Functions,
     double *CoarseFunctions, double *FineFunctions, double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void RestrictFunction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
     double *CoarseFunction, double *FineFunction, double *aux);
 
 /** function restriction from level+1 to level */
-void RestrictFunction(TFESpace3D *CoarseSpace, TFESpace3D *FineSpace,
+void RestrictFunction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
     int N_Functions,
     double *CoarseFunction, double *FineFunction, double *aux);
 

@@ -6,7 +6,6 @@
 #include <Database.h>
 #include <BlockMatrixDarcy2D.h>
 #include <Darcy2DMixed.h>
-#include <SquareStructure2D.h>
 #include <DiscreteForm2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
@@ -24,26 +23,15 @@ BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity,
  : BlockMatrix(Problem_type::Darcy, 2), 
    boundary_values({BoundValue[0], BoundValue[1]})
 {
-  // first build matrix structures
-  // velocity-velocty coupling
-  TSquareStructure2D *sqstructureA = new TSquareStructure2D(&velocity);
-  sqstructureA->Sort();  // sort column numbers: numbers are in increasing order
-  // pressure-pressure coupling
-  TSquareStructure2D *sqstructureC = new TSquareStructure2D(&pressure);
-  sqstructureC->Sort();  // sort column numbers: numbers are in increasing order
-  // velocity-pressure and pressure-velocity coupling
-  TStructure2D *structureB = new TStructure2D(&pressure, &velocity);
-  TStructure2D *structureBT = new TStructure2D(&velocity, &pressure);
-  
   // ( A  B1' )   ( 0 2 )
   // ( B2 C   )   ( 3 1 )
   // create the velocity-velocity coupling matrix 
-  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructureA));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&velocity));
   // create the pressure-pressure coupling matrix
-  this->BlockMatrix::blocks[1].reset(new TMatrix2D(structureBT));
+  this->BlockMatrix::blocks[1].reset(new TMatrix2D(&velocity, &pressure));
   // create velocity-pressure and pressure-velocity coupling matrices
-  this->BlockMatrix::blocks[2].reset(new TMatrix2D(structureB));
-  this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(sqstructureC));
+  this->BlockMatrix::blocks[2].reset(new TMatrix2D(&pressure, &velocity));
+  this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(&pressure));
 }
 
 /** ************************************************************************ */

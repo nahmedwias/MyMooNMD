@@ -24,7 +24,7 @@ class TNSE3DMGLevel2 : public TNSE3DMGLevel
     TSquareMatrix3D *A;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    TStructure *StructureA;
 
     /** row pointer for matrix A */
     int *ARowPtr;
@@ -45,7 +45,7 @@ class TNSE3DMGLevel2 : public TNSE3DMGLevel
     TMatrix3D *B3;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    TStructure *StructureB;
 
     /** row pointer for matrix B */
     int *BRowPtr;
@@ -72,7 +72,7 @@ class TNSE3DMGLevel2 : public TNSE3DMGLevel
     TMatrix3D *B3T;
 
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    TStructure *StructureBT;
 
     /** row pointer for matrix BT */
     int *BTRowPtr;

@@ -32,7 +32,7 @@ class TFEFunction3D
     char *Description;
 
     /** space to which this function belongs to */
-    TFESpace3D *FESpace3D;
+    const TFESpace3D *FESpace3D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -42,7 +42,7 @@ class TFEFunction3D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction3D(TFESpace3D *fespace3D, char *name, char *description,
+    TFEFunction3D(const TFESpace3D *fespace3D, char *name, char *description,
                   double *values, int length);
 
     /** destructor */
@@ -57,7 +57,7 @@ class TFEFunction3D
     { return Description; }
 
     /** return fe space */
-    TFESpace3D *GetFESpace3D()
+    const TFESpace3D *GetFESpace3D()
     { return FESpace3D; }
 
     /** return length */
@@ -74,7 +74,7 @@ class TFEFunction3D
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
                    CoeffFct3D *Coeff, TAuxParam3D *Aux,
-                   int n_fespaces, TFESpace3D **fespaces,
+                   int n_fespaces, const TFESpace3D **fespaces,
                    double *errors);
     
     void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
@@ -86,7 +86,7 @@ class TFEFunction3D
 			int N_Errors, ErrorMethod3D *ErrorMeth, 
 			CoeffFct3D *Coeff, 
 			TAuxParam3D *Aux,
-			int n_fespaces, TFESpace3D **fespaces,
+			int n_fespaces, const TFESpace3D **fespaces,
 			double *errors);
     
     /** calculate errors to given function taylored to OPTPDE */
@@ -94,7 +94,7 @@ class TFEFunction3D
 		   MultiIndex3D *NeededDerivatives,
 		   int N_Errors, ErrorMethod3D *ErrorMeth, 
 		   CoeffFct3D *Coeff, TAuxParam3D *Aux,
-		   int n_fespaces, TFESpace3D **fespaces,
+		   int n_fespaces, const TFESpace3D **fespaces,
 		   double radius, double upper, double lower, double *errors);
     
 
@@ -103,7 +103,7 @@ class TFEFunction3D
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
                    CoeffFct3D *Coeff, TAuxParam3D *Aux,
-                   int n_fespaces, TFESpace3D **fespaces,
+                   int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
 
     /** determine the value of function and its first derivatives at

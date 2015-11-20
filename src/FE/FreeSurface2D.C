@@ -141,7 +141,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   N_BaseFuncts = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
-  fespace = A11->GetFESpace();
+  fespace = A11->GetFESpace2D();
   Coll = fespace->GetCollection();
   N_Cells = Coll->GetN_Cells();
 

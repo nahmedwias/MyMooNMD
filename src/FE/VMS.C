@@ -1472,7 +1472,7 @@ void ComputeSizeOfSmallScales(TMatrix3D *matG11,
   TFEFunction3D *vms_proj_22, *vms_proj_23,*vms_proj_33;
   MultiIndex3D VeloDerivatives[3] = { D100, D010, D001 };
   MultiIndex3D LargeScaleDerivatives[1] = { D000 };
-  TFESpace3D *fespaces[2];
+  const TFESpace3D *fespaces[2];
   FE3D LocalUsedElements_velo[N_FEs3D], CurrentElement_velo;
   FE3D LocalUsedElements_LS[N_FEs3D], CurrentElement_LS;
   BaseFunct3D BaseFunct_velo, BaseFunct_LS, *BaseFuncts;
@@ -1873,7 +1873,7 @@ void ComputeSizeOfSmallScales_ori(TMatrix3D *matG11,
   TFEFunction3D *vms_proj_22, *vms_proj_23,*vms_proj_33;
   MultiIndex3D VeloDerivatives[3] = { D100, D010, D001 };
   MultiIndex3D LargeScaleDerivatives[1] = { D000 };
-  TFESpace3D *fespaces[2];
+  const TFESpace3D *fespaces[2];
   FE3D LocalUsedElements_velo[N_FEs3D], CurrentElement_velo;
   FE3D LocalUsedElements_LS[N_FEs3D], CurrentElement_LS;
   BaseFunct3D BaseFunct_velo, BaseFunct_LS, *BaseFuncts;

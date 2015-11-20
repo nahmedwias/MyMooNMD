@@ -113,8 +113,6 @@ BlockMatrix::BlockMatrix(BlockMatrix&& other)
 /* ************************************************************************* */
 BlockMatrix::~BlockMatrix() noexcept
 {
-  if(this->combined_matrix)
-    delete this->combined_matrix->GetStructure();
 }
 
 /* ************************************************************************* */
@@ -287,7 +285,7 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
             const TMatrix& cm = this->block(block_row, block_col);
             int * row_ptr = cm.GetRowPtr();
             int * col_ptr = cm.GetKCol();
-            double * entries = cm.GetEntries();
+            const double * entries = cm.GetEntries();
             // loop over entire row in this block
             for(int e = row_ptr[row]; e < row_ptr[row+1]; ++e)
             {
@@ -303,9 +301,9 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
       }
       
       // create sparsity structure
-      TStructure * sp = new TStructure(n_comb_rows, n_comb_cols, n_comb_entries,
-                                       column_of_entry, entries_in_rows);
-      sp->Sort(); // this does nothing, but it does set the ColOrder to 1
+      std::shared_ptr<TStructure> sp(
+          new TStructure(n_comb_rows, n_comb_cols, n_comb_entries,
+                         column_of_entry, entries_in_rows));
       // create Matrix
       this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
     }

@@ -67,14 +67,14 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   double *aux;
   
   A = a;
-  StructureA = A->GetMatrixStructure();
+  StructureA = &(A->GetStructure());
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
   AEntries = A->GetEntries();
 
   B1T = b1t;
   B2T = b2t;
-  StructureBT = B1T->GetStructure();
+  StructureBT = &(B1T->GetStructure());
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
   B1TEntries = B1T->GetEntries();
@@ -86,7 +86,7 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();
@@ -102,12 +102,13 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   CKCol = NULL;
   CEntries = NULL;
 
-  USpace = A->GetFESpace();
 #ifdef __2D__
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  USpace = A->GetFESpace2D();
+  PSpace = B1->GetTestSpace2D();
 #endif  
 #ifdef __3D__
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  USpace = A->GetFESpace3D();
+  PSpace = B1->GetTestSpace3D();
 #endif  
 
   N_Active = USpace->GetActiveBound();
@@ -173,14 +174,14 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   double *aux;
   
   A = a;
-  StructureA = A->GetMatrixStructure();
+  StructureA = &(A->GetStructure());
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
   AEntries = A->GetEntries();
 
   B1T = b1t;
   B2T = b2t;
-  StructureBT = B1T->GetStructure();
+  StructureBT = &(B1T->GetStructure());
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
   B1TEntries = B1T->GetEntries();
@@ -192,7 +193,7 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();
@@ -203,17 +204,18 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
 #endif  
 
   C = c;
-  StructureC = C->GetStructure();
+  StructureC = &(C->GetStructure());
   CRowPtr = C->GetRowPtr();
   CKCol = C->GetKCol();
   CEntries = C->GetEntries();
 
-  USpace = A->GetFESpace();
 #ifdef __2D__
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  USpace = A->GetFESpace2D();
+  PSpace = B1->GetTestSpace2D();
 #endif  
 #ifdef __3D__
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  USpace = A->GetFESpace3D();
+  PSpace = B1->GetTestSpace3D();
 #endif  
 
   N_Active = USpace->GetActiveBound();

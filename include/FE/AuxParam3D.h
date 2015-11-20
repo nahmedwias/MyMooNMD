@@ -37,7 +37,7 @@ class TAuxParam3D
 //  array of pointers to stored objects
 // =======================================================================
     /** array of stored FESpace3D */
-    TFESpace3D **FESpaces3D;
+    const TFESpace3D **FESpaces3D;
 
     /** array of stored FEFunction3D */
     TFEFunction3D **FEFunctions3D;
@@ -81,7 +81,7 @@ class TAuxParam3D
     /** constructor */
     TAuxParam3D(int n_fespace3d, int n_fefunction3d, int n_paramfct,
               int n_fevalues,
-              TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
+              const TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
               ParamFct **parameterfct,
               int *fevalue_fctindex, MultiIndex3D *fevalue_multiindex,
               int n_parameters, int *beginparameter);

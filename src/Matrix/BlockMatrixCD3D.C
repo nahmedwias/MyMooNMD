@@ -1,6 +1,5 @@
 #include <Database.h>
 #include <BlockMatrixCD3D.h>
-#include <SquareStructure3D.h>
 #include <DiscreteForm3D.h>
 #include <Assemble3D.h>
 #include <AuxParam3D.h>
@@ -26,27 +25,23 @@
 #define GMG 1
 #define DIRECT 2
 
-BlockMatrixCD3D::BlockMatrixCD3D(TFESpace3D &feSpace,
+BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
         						BoundValueFunct3D *BoundValue,
 								bool massMatrix)
 : BlockMatrix(Problem_type::ConvDiffReac, 3, massMatrix),
   boundaryValues_(BoundValue)
 {
-	  // build matrices, first build matrix structure
-	  TSquareStructure3D* sqStructure = new TSquareStructure3D(&feSpace);
-	  sqStructure->Sort();  // sort column numbers: numbers are in increasing order
-	  	  	  	  	  	  	// this disable use of deprecated AMG (sqstructure->SortDiagFirst();)
+	// the stiffness/system matrix for a convection diffusion problem
+	BlockMatrix::blocks[0].reset(new TSquareMatrix3D(&feSpace));
 
-	  // the stiffness/system matrix for a convection diffusion problem
-	  BlockMatrix::blocks[0].reset(new TSquareMatrix3D(sqStructure));
+  const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
 
-
-	  // START The following code is to determine the number of active entries
-	  unsigned int n_active = sqStructure->GetN_Entries();
-	  // substract the number of non active entries (non active rows)
-	  n_active -= sqStructure->GetN_Rows() - sqStructure->GetActiveBound();
-	  BlockMatrix::actives[0] = n_active;
-	  // END FIXME CB Is this correct - I'd rather like this not to be stored by the class!
+	// START The following code is to determine the number of active entries
+	unsigned int n_active = sqStructure.GetN_Entries();
+	// substract the number of non active entries (non active rows)
+	n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+	BlockMatrix::actives[0] = n_active;
+	// END FIXME CB Is this correct - I'd rather like this not to be stored by the class!
 }
 
 /** ************************************************************************ */
@@ -55,7 +50,7 @@ void BlockMatrixCD3D::assemble(const LocalAssembling3D& la, BlockVector& sol,
                                BlockVector& rhs)
 {
 
-  TFESpace3D * fe_space = this->get_fe_space();
+  const TFESpace3D * fe_space = this->get_fe_space();
   BoundCondFunct3D* boundary_conditions = fe_space->getBoundCondition();
   int N_Matrices = 1;
   double * rhs_entries = rhs.get_entries();
