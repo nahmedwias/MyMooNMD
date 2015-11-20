@@ -64,6 +64,40 @@ class FEMatrix : public TMatrix
     ~FEMatrix() = default;
     
     
+    /** @brief reset all entries in active rows to zero */
+    void resetActive();
+
+    /** @brief set zeros in nonactive rows. 
+     * 
+     * This is e.g. for the off-diagonal blocks in a Stokes matrix 
+     */
+    void resetNonActive();
+
+    /** @brief scale this matrix by a factor
+     * 
+     * Only rows corresponding to active d.o.f are scaled. Other rows remain
+     * unscaled.
+     */
+    void scaleActive(double factor = 1.0);
+
+    /** @brief adding a scaled matrix to this matrix
+     * 
+     * This is only done for those rows which correspond to active degrees of 
+     * freedom.
+     * 
+     * The summation is index-wise, i.e. A(i,j) += factor*m(i.j), where A is 
+     * this matrix. 
+     * 
+     * Note that this only works if the sparsity structure is the same for this
+     * matrix and m.
+     */
+    void addActive(const FEMatrix& m, double factor = 1.0);
+    
+    
+    /** @brief return the number of active rows */
+    int GetActiveBound() const;
+    
+    
     /** @brief return 1D test space */
     const TFESpace1D *GetTestSpace1D() const;
     

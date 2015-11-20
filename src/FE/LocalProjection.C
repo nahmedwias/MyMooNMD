@@ -447,7 +447,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
   }
   else
   {
-    fespace = ((TSquareMatrix2D *)A)->GetFESpace();
+    fespace = ((TSquareMatrix2D *)A)->GetFESpace2D();
     ActiveBound = fespace->GetActiveBound();
     RowPtr = ((TSquareMatrix2D *)A)->GetRowPtr();
     KCol = ((TSquareMatrix2D *)A)->GetKCol();
@@ -904,7 +904,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -1157,7 +1157,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -1431,7 +1431,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   int *RowPtr, *KCol;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
 
-  fespace = A11->GetFESpace();
+  fespace = A11->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A11->GetRowPtr();
   KCol = A11->GetKCol();
@@ -2728,7 +2728,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   lpexponent_crosswind = TDatabase::ParamDB->LP_CROSSWIND_EXPONENT;
   
   // get fespace and matrices
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -3927,7 +3927,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   double *Values1, *Values2, *Values3, *Values4;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -4312,7 +4312,7 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   double *Values1, *Values2, *Values3;
   double BValue[MaxN_BaseFunctions3D];
 
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -4571,7 +4571,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   double *Entries;
   double BValue[MaxN_BaseFunctions3D];
 
-  fespace = A->GetFESpace();
+  fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -5800,7 +5800,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   }
   else
   {
-    fespace = ((TSquareMatrix3D *)A)->GetFESpace();
+    fespace = ((TSquareMatrix3D *)A)->GetFESpace3D();
     ActiveBound = fespace->GetActiveBound();
     RowPtr = ((TSquareMatrix3D *)A)->GetRowPtr();
     KCol = ((TSquareMatrix3D *)A)->GetKCol();

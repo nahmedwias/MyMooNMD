@@ -96,11 +96,11 @@ class BlockMatrixCD3D : public BlockMatrix
 
     /** @brief return the finite element space */
     const TFESpace3D * get_fe_space() const
-    { return this->get_matrix()->GetFESpace(); }
+    { return this->get_matrix()->GetFESpace3D(); }
 
     /** @brief return the finite element space, but non-const */
     const TFESpace3D * get_fe_space()
-    { return this->get_matrix()->GetFESpace(); }
+    { return this->get_matrix()->GetFESpace3D(); }
 
 
     /** @brief return the fe_space

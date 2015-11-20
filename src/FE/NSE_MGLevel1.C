@@ -92,11 +92,12 @@
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
 
-  USpace = A->GetFESpace();
 #ifdef __2D__
+  USpace = A->GetFESpace2D();
   PSpace = (TFESpace2D *)StructureB->GetTestSpace();
 #endif  
 #ifdef __3D__
+  USpace = A->GetFESpace3D();
   PSpace = (TFESpace3D *)StructureB->GetTestSpace();
 #endif  
 

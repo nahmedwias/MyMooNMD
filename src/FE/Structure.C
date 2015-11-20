@@ -4765,6 +4765,10 @@ int TStructure::index_of_entry(const int i, const int j) const
   return -1;
 }
 
+unsigned int TStructure::getNActiveEntries() const
+{
+  return this->rows[this->ActiveBound];
+}
 
 /* return a new structure for a transposed matrix */
 std::shared_ptr<TStructure> TStructure::GetTransposed() const

@@ -31,7 +31,7 @@ TMGLevel2D::TMGLevel2D(int level, TSquareMatrix2D *a,
 
   Level = level;
 
-  FESpace = a->GetFESpace();
+  FESpace = a->GetFESpace2D();
 
   N_Active = FESpace->GetN_ActiveDegrees();
   HangingNodeBound = FESpace->GetHangingBound();

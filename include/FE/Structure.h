@@ -294,6 +294,8 @@ class TStructure
       return ActiveBound;
     }
     
+    unsigned int getNActiveEntries() const;
+    
     /** @brief return ordering of columns, see also TStructure::colOrder */
     int GetColOrder() const
     {

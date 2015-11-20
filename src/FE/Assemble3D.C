@@ -154,7 +154,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -399,7 +399,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace3D();
       CurrentElement = fespace->GetFE3D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -940,7 +940,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace3D();
     N_ = fespace->GetN_Hanging();
     // there are no hanging nodes
     if (N_ == 0)
@@ -1030,7 +1030,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace3D();
     N_ = fespace->GetN_Hanging();
     // there are no hanging nodes
     if (N_ == 0)
@@ -1134,7 +1134,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
     ColInd = sqmatrices[k]->GetKCol();
     N_Rows = sqmatrices[k]->GetN_Rows();
     
-    fespace = sqmatrices[k]->GetFESpace();
+    fespace = sqmatrices[k]->GetFESpace3D();
     ActiveBound = fespace->GetActiveBound();
     for(i=ActiveBound;i<N_Rows;i++)
     {
@@ -1296,7 +1296,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    HangingEntries = new double* [n_sqmatrices];
 	    for(i=0;i<n_sqmatrices;i++)
 	    {
-	      fespace = sqmatrices[i]->GetFESpace();
+	      fespace = sqmatrices[i]->GetFESpace3D();
 	      GlobalNumbers[i] = fespace->GetGlobalNumbers();
 	      BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -1537,7 +1537,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    for(j=0;j<n_sqmatrices;j++)
 	    {
 	      // find space for this bilinear form
-	      fespace = sqmatrices[j]->GetFESpace();
+	      fespace = sqmatrices[j]->GetFESpace3D();
 	      CurrentElement = fespace->GetFE3D(i, cell);
 	      N_ = N_BaseFunct[CurrentElement];
 
@@ -2078,7 +2078,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  // ####################################################################
 	  for(j=0;j<n_sqmatrices;j++)
 	  {
-	    fespace = sqmatrices[j]->GetFESpace();
+	    fespace = sqmatrices[j]->GetFESpace3D();
 	    N_ = fespace->GetN_Hanging();
 	    // there are no hanging nodes
 	    if (N_ == 0)
@@ -2168,7 +2168,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  // ####################################################################
 	  for(j=0;j<n_sqmatrices;j++)
 	  {
-	    fespace = sqmatrices[j]->GetFESpace();
+	    fespace = sqmatrices[j]->GetFESpace3D();
 	    N_ = fespace->GetN_Hanging();
 	    // there are no hanging nodes
 	    if (N_ == 0)
@@ -2272,7 +2272,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	    ColInd = sqmatrices[k]->GetKCol();
 	    N_Rows = sqmatrices[k]->GetN_Rows();
 
-	    fespace = sqmatrices[k]->GetFESpace();
+	    fespace = sqmatrices[k]->GetFESpace3D();
 	    ActiveBound = fespace->GetActiveBound();
 	    for(i=ActiveBound;i<N_Rows;i++)
 	    {
@@ -2445,7 +2445,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -3745,7 +3745,7 @@ TAuxParam3D *Parameters)
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -3912,7 +3912,7 @@ TAuxParam3D *Parameters)
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace3D();
       CurrentElement = fespace->GetFE3D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
       Matrix = Matrices+j*MaxN_BaseFunctions3D;

@@ -1414,7 +1414,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   N_BaseFuncts = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
-  fespace = Aii->GetFESpace();
+  fespace = Aii->GetFESpace3D();
   BeginIndex = fespace->GetBeginIndex();
   GlobalNumbers = fespace->GetGlobalNumbers();
 
@@ -1676,7 +1676,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
     OutPut("with exact curvature ... ");
   }
   
-  fesp = Aii[0]->GetFESpace();
+  fesp = Aii[0]->GetFESpace3D();
   KColAii = Aii[0]->GetKCol();
   RowPtrAii = Aii[0]->GetRowPtr();
   
@@ -2025,7 +2025,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
   
 //   OutPut("Adding surface integral (new) ... ");
   
-  fespace = Aii[0]->GetFESpace();
+  fespace = Aii[0]->GetFESpace3D();
   
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex    = fespace->GetBeginIndex();

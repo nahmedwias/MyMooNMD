@@ -291,10 +291,10 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
   } // (TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=      
   
   // remove ones in non-active rows in non-diagonal blocks
-  this->get_A_block(1)->reset_non_active();
-  this->get_A_block(2)->reset_non_active();
-  this->get_BT_block(0)->reset_non_active();
-  this->get_BT_block(1)->reset_non_active();
+  this->get_A_block(1)->resetNonActive();
+  this->get_A_block(2)->resetNonActive();
+  this->get_BT_block(0)->resetNonActive();
+  this->get_BT_block(1)->resetNonActive();
 } // BlockMatrixNSE2D::Assemble(...)
 
 /** ************************************************************************ */

@@ -154,6 +154,10 @@ class TMatrix
      */
     void reorderMatrix();
     
+    /** return ordering of columns */
+    int GetColOrder() const
+    { return structure->GetColOrder(); }
+    
     /** @brief return a new TMatrix which is the transposed of this matrix 
      * 
      * If this is an object of a derived class (e.g. TMatrix2D, TSquareMatrix),

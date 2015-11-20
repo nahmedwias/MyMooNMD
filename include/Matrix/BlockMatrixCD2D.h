@@ -90,7 +90,7 @@ class BlockMatrixCD2D : public BlockMatrix
     
     /** @brief return the finite element space */
     const TFESpace2D * get_fe_space() const
-    { return this->get_matrix()->GetFESpace(); }
+    { return this->get_matrix()->GetFESpace2D(); }
     
     
     /** @brief return the fe_space

@@ -1478,8 +1478,8 @@ void AlgebraicFluxCorrection::correctDirichletRows(TSquareMatrix2D& MatrixA)
 	double* Entries_A  = MatrixA.GetEntries();
 
 	//determine first and one-after-last dirichlet rows
-	int diriHighBound = MatrixA.GetFESpace()->GetDirichletBound();
-	int diriLowBound = diriHighBound - MatrixA.GetFESpace()->GetN_Dirichlet();
+	int diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
+	int diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
 
 	// loop over rows and set them to unity-vectors
 	for (size_t rowIndex = diriLowBound;

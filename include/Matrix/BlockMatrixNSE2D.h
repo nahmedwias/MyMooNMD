@@ -147,11 +147,11 @@ class BlockMatrixNSE2D : public BlockMatrix
     
     /** @brief return the finite element space for the velocity */
     const TFESpace2D * get_velocity_space() const
-    { return this->get_A_block()->GetFESpace(); }
+    { return this->get_A_block()->GetFESpace2D(); }
     
     /** @brief return the finite element space for the pressure */
     const TFESpace2D * get_pressure_space() const
-    { return this->get_B_block()->GetStructure().GetTestSpace2D(); }
+    { return this->get_B_block()->GetTestSpace2D(); }
 };
 
 #endif // __SYSTEMMATNSE2D__

@@ -1,5 +1,6 @@
 #include <FEMatrix.h>
 #include <MooNMD_Io.h>
+#include <algorithm>
 
 
 FEMatrix::FEMatrix(const TFESpace1D * space)
@@ -45,6 +46,53 @@ FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace)
  
 }
 #endif // 3D
+
+void FEMatrix::resetActive()
+{
+  // numer of entries in active rows
+  int nActive = this->structure->getNActiveEntries();
+  std::fill(this->entries.begin(), this->entries.begin()+nActive, 0.0);
+}
+
+void FEMatrix::resetNonActive()
+{
+  // numer of entries in active rows
+  int nActive = this->structure->getNActiveEntries();
+  std::fill(this->entries.begin() + nActive, this->entries.end(), 0.0);
+}
+
+void FEMatrix::scaleActive(double factor)
+{
+  if(factor == 1.0)
+    return; // no scaling
+  if(factor == 0.0)
+    this->resetActive();
+  
+  // numer of entries in active rows
+  int nActive = this->structure->getNActiveEntries();
+  std::for_each(this->entries.begin(), this->entries.begin() + nActive,
+                 [factor](double & a){ return a*factor; } );
+}
+
+void FEMatrix::addActive(const FEMatrix& m, double factor)
+{
+  if(this->GetStructure() != m.GetStructure()) // compare objects
+  {
+    ErrThrow("FEMatrix::add : the two matrices do not match.");
+  }
+  
+  // numer of entries in active rows
+  int nActive = this->structure->getNActiveEntries();
+  std::transform(this->entries.begin(), this->entries.begin() + nActive,
+                 m.entries.begin(), this->entries.begin(), 
+                 [factor](const double & a, const double & b)
+                 { return a + factor * b; } );
+}
+
+int FEMatrix::GetActiveBound() const
+{
+  return structure->GetActiveBound();
+}
 
 const TFESpace1D *FEMatrix::GetTestSpace1D() const
 {

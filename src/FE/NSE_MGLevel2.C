@@ -102,11 +102,12 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   CKCol = NULL;
   CEntries = NULL;
 
-  USpace = A->GetFESpace();
 #ifdef __2D__
+  USpace = A->GetFESpace2D();
   PSpace = (TFESpace2D *)StructureB->GetTestSpace();
 #endif  
 #ifdef __3D__
+  USpace = A->GetFESpace3D();
   PSpace = (TFESpace3D *)StructureB->GetTestSpace();
 #endif  
 
@@ -208,11 +209,12 @@ TNSE_MGLevel2::TNSE_MGLevel2(int level, TSquareMatrix3D *a,
   CKCol = C->GetKCol();
   CEntries = C->GetEntries();
 
-  USpace = A->GetFESpace();
 #ifdef __2D__
+  USpace = A->GetFESpace2D();
   PSpace = (TFESpace2D *)StructureB->GetTestSpace();
 #endif  
 #ifdef __3D__
+  USpace = A->GetFESpace3D();
   PSpace = (TFESpace3D *)StructureB->GetTestSpace();
 #endif  
 
