@@ -18,7 +18,7 @@
 
 
 TSquareMatrix2D::TSquareMatrix2D(const TFESpace2D * space)
- : TSquareMatrix(std::make_shared<TStructure>(space))
+ : TSquareMatrix(space)
 {
   
 }

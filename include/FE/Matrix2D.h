@@ -15,9 +15,9 @@
 #define __MATRIX2D__
 
 #include <Structure.h>
-#include <Matrix.h>
+#include <FEMatrix.h>
 
-class TMatrix2D : public TMatrix
+class TMatrix2D : public FEMatrix
 {
   public:
     /** generate the matrix */

@@ -17,7 +17,7 @@
 
 
 TSquareMatrix3D::TSquareMatrix3D(const TFESpace3D * space)
- : TSquareMatrix(std::make_shared<TStructure>(space))
+ : TSquareMatrix(space)
 {
   
 }

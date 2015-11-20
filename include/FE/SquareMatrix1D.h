@@ -20,10 +20,10 @@ class TSquareMatrix1D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix1D(std::shared_ptr<TStructure> squarestructure);
+    TSquareMatrix1D(const TFESpace1D * space);
 
     /** destructor: free Entries array */
-    ~TSquareMatrix1D();
+    ~TSquareMatrix1D() = default;
 
     /** return FESpace */
     const TFESpace1D *GetFESpace() const

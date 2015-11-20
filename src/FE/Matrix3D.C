@@ -17,7 +17,7 @@
 
 TMatrix3D::TMatrix3D(const TFESpace3D * testspace,
                      const TFESpace3D * ansatzspace)
- : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace))
+ : FEMatrix(testspace, ansatzspace)
 {
 }
 

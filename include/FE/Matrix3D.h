@@ -15,9 +15,9 @@
 #define __MATRIX3D__
 
 #include <Structure.h>
-#include <Matrix.h>
+#include <FEMatrix.h>
 
-class TMatrix3D : public TMatrix
+class TMatrix3D : public FEMatrix
 {
   public:
     /** generate the matrix */

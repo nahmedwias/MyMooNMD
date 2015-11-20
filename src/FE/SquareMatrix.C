@@ -17,11 +17,23 @@
 #include <MooNMD_Io.h>
 #include <stdlib.h>
 
-
-TSquareMatrix::TSquareMatrix(std::shared_ptr<TStructure> squarestructure)
- : TMatrix(squarestructure)
+TSquareMatrix::TSquareMatrix(const TFESpace1D * space)
+ : FEMatrix(space)
 {
+  
 }
+TSquareMatrix::TSquareMatrix(const TFESpace2D * space)
+ : FEMatrix(space)
+{
+  
+}
+#ifdef __3D__
+TSquareMatrix::TSquareMatrix(const TFESpace3D * space)
+ : FEMatrix(space)
+{
+  
+}
+#endif // 3D
 
 void TSquareMatrix::ResetActive()
 {

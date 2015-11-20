@@ -14,24 +14,28 @@
 #ifndef __SQUAREMATRIX__
 #define __SQUAREMATRIX__
 
-#include <Matrix.h>
+#include <FEMatrix.h>
 #include <Structure.h>
 
-class TSquareMatrix : public TMatrix
+class TSquareMatrix : public FEMatrix
 {
   protected:
     /** bound for hanging nodes 
      * @todo is this structure->HangingN_Entries ?? */
-    int HangingBound;
+    //int HangingBound;
 
     /** ordering of the column entries */
     /** 0 - no special ordering */
     /** 1 - increasing ordering (like used for umfpack) */
     /** 2 - diagonal entry first, then increasing ordering */
-    int ColOrder;
+    //int ColOrder;
   
     /** generate the matrix, called from derived classes */
-    TSquareMatrix(std::shared_ptr<TStructure> structure);
+    TSquareMatrix(const TFESpace1D * space);
+    TSquareMatrix(const TFESpace2D * space);
+    #ifdef __3D__
+    TSquareMatrix(const TFESpace3D * space);
+    #endif // 3D
   public:
 
     /** destructor: free Entries array */
