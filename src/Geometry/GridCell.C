@@ -94,6 +94,10 @@ int TGridCell::GetChildNumber(TBaseCell *Me)
   return -1;
 }
 
+#ifdef foo
+static double r = 0, g = 64, b = 128;
+#endif
+
 // #define __GRIDCELL_WITH_NUMBERS__
 
 int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
@@ -145,6 +149,21 @@ text_y1 = (text_y1 + text_y2)/2;
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
          " L" << endl;
 dat<<"closepath"<<endl;
+#ifdef foo
+  double rr = r;
+  double gg = g;
+  double bb = b;
+  for(int g = 1; g < GetGeoLevel(); g++) {
+    double factor = 0.3*(1.0 - 1.0/((double)(g)));
+    rr += factor * (255.0 - rr);
+    gg += factor * (255.0 - gg);
+    bb += factor * (255.0 - bb);
+  }
+  rr /= 255;
+  gg /= 255;
+  bb /= 255;
+  dat<<"gsave"<<endl<< std::setprecision (15) << rr << " " << gg <<" " << bb <<" setrgbcolor" <<endl<<"fill"<<endl<<"grestore"<<endl;
+#endif
 #ifdef __GRIDCELL_WITH_NUMBERS__
   dat << (30 + (x - StartX) * scale + .5) << " " <<
          (30 + (y - StartY) * scale + .5);
