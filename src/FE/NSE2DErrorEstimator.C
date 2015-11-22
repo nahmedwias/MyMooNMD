@@ -129,15 +129,15 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   double *xderiv_1D[4];
   double *yderiv_1D[4];
   double *X1D[4], *Y1D[4], val[6];
-  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
-  double AbsDetjk[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
+  double *X = new double[MaxN_QuadPoints_2D], *Y = new double[MaxN_QuadPoints_2D];
+  double *AbsDetjk = new double[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   RefTrans2D RefTrans;
   double *Param[MaxN_QuadPoints_2D], *aux;
   double *Derivatives[3*MaxN_QuadPoints_2D];
   double *AuxArray[MaxN_QuadPoints_2D];
   int *DOF, N_DOF, *DOFP;
   double **OrigFEValues, *Orig, value[2];
-  double FEFunctValues[3*MaxN_BaseFunctions2D];
+  double *FEFunctValues = new double[3*MaxN_BaseFunctions2D];
   double *Values,*ValuesP,max_loc_err;
   int *GlobalNumbers, *GlobalNumbersP, *BeginIndex, *BeginIndexP;
   double LocError[4];
@@ -608,6 +608,10 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   delete Param[0];
   delete Derivatives[0];
    delete AuxArray[0];
+  delete[] X;
+  delete[] Y;
+  delete[] AbsDetjk;
+  delete[] FEFunctValues;
 
 #ifdef _MALLOC_MALLOC_H_
  info = mstats();
@@ -1239,9 +1243,9 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                       if (check_cont_u)
                         {
                           if (fabs(xyval_Neigh1D[i]-xyval_1D[j][i])>1e-8)
-                            cout << " i " << i << " uval_a " << xyval_1D[j][i]<< " uneigh_a " << xyval_Neigh1D[i]<< endl;
+                            cout << " i " << i << " uval_a orig " << xyval_1D[j][i]<< " uneigh_a " << xyval_Neigh1D[i]<< endl;
                           if (fabs(xyval_Neigh1D[m]-xyval_1D[j][m])>1e-8)
-                            cout << " i " << i << " vval_a " << xyval_1D[j][m]<< " vneigh_a " << xyval_Neigh1D[m]<< endl;
+                            cout << " i " << i << " vval_a orig " << xyval_1D[j][m]<< " vneigh_a " << xyval_Neigh1D[m]<< endl;
                         }
                       if (check_cont_p)
                         {
@@ -1841,9 +1845,9 @@ void  TNS2DErrorEstimator::EstimateCellError(TFESpace2D **fespaces,
                               if (check_cont_u)
                                 {
                                   if (fabs(xyval_Neigh1D[i]-xyval_Cell1D[i])>1e-8)
-                                    cout << " i " << i << " uval_c " << xyval_Cell1D[i]<< " uneigh_c " << xyval_Neigh1D[i]<< endl;
+                                    cout << " i " << i << " uval_c orig " << xyval_Cell1D[i]<< " uneigh_c " << xyval_Neigh1D[i]<< endl;
                                   if (fabs(xyval_Neigh1D[m]-xyval_Cell1D[m])>1e-8)
-                                    cout << " i " << i << " vval_c " << xyval_Cell1D[m]<< " vneigh_c " << xyval_Neigh1D[m]<< endl;
+                                    cout << " i " << i << " vval_c orig " << xyval_Cell1D[m]<< " vneigh_c " << xyval_Neigh1D[m]<< endl;
                                 }
                               if (check_cont_p)
                                 {
