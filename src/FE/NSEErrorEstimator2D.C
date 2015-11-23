@@ -336,8 +336,8 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
         EdgeData edgeData(max_n_base_functions);
         EdgeRefData edgeRefData(max_n_base_functions);
 
-        double *values_u = fe_function2D_u.GetValues();                      // values of fe function
-        double *values_p = fe_function2D_p.GetValues();
+        auto *values_u = fe_function2D_u.GetValues();                      // values of fe function
+        auto *values_p = fe_function2D_p.GetValues();
 
         {
             /**
