@@ -38,7 +38,7 @@ add_executable(cd2d_moritz ${PROJECT_SOURCE_DIR}/user_projects/CD2D_ParMooN.C)
 set_target_properties(cd2d_moritz PROPERTIES OUTPUT_NAME cd2d_moritz)
 target_compile_definitions(cd2d_moritz PUBLIC -D__2D__)
 set_target_properties(cd2d_moritz PROPERTIES LINK_FLAGS "-v")
-target_link_libraries(cd2d_moritz parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES} -stack_size 0x5000000)
+target_link_libraries(cd2d_moritz parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
 
 add_executable(nse2d_moritz ${PROJECT_SOURCE_DIR}/user_projects/NSE2D_ParMooN.C)

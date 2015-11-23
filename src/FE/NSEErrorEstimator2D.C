@@ -6,11 +6,9 @@
 #include <array>
 #include <FEDatabase2D.h>
 #include <BoundEdge.h>
+#include <memory>
 
 #define DEBUG_COMPARE_RESULTS_WITH_OLD_CODE 1
-
-// TODO: Remove.
-#include <NSE2DErrorEstimator.h>
 
 # if DEBUG_COMPARE_RESULTS_WITH_OLD_CODE != 0
 
@@ -1729,17 +1727,19 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             RefTransNeigh = eleNeigh->GetRefTransID();          // reftrafo of neighbour
                             TFEDatabase2D::SetCellForRefTrans(child, RefTransNeigh);
 
-                            DOF = global_numbers_u + begin_index_u[neigh_N_];
-                            for (size_t i = 0; i < N_Neigh; i++) {
-                                edgeRefData.FEFunctValuesNeigh[i] = values_u[DOF[i]];       // u values
-                                edgeRefData.FEFunctValuesNeigh[i + edgeRefData.max_n_base_functions_2d] = values_u[DOF[i] + N_U]; // v values
-                                if (ee_verbose > 1)
-                                    cout << " value " << edgeRefData.FEFunctValuesNeigh[i] <<
-                                    " " << edgeRefData.FEFunctValuesNeigh[i + edgeRefData.max_n_base_functions_2d] << endl;
+                            {
+                                DOF = global_numbers_u + begin_index_u[neigh_N_];
+                                for (size_t i = 0; i < N_Neigh; i++) {
+                                    edgeRefData.FEFunctValuesNeigh[i] = values_u[DOF[i]];       // u values
+                                    edgeRefData.FEFunctValuesNeigh[i + edgeRefData.max_n_base_functions_2d] = values_u[DOF[i] + N_U]; // v values
+                                    if (ee_verbose > 1)
+                                        cout << " value " << edgeRefData.FEFunctValuesNeigh[i] <<
+                                        " " << edgeRefData.FEFunctValuesNeigh[i + edgeRefData.max_n_base_functions_2d] << endl;
+                                }
                             }
 
-                            for (size_t i = 0; i < N_Points1D; i++)  // get values and derivatives in original cell
-                            {
+                            // get values and derivatives in original cell
+                            for (size_t i = 0; i < N_Points1D; i++) {
                                 TFEDatabase2D::GetOrigValues(RefTransNeigh, edgeRefData.xi1DNeigh[i],
                                                              edgeRefData.eta1DNeigh[i],
                                                              TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh),
@@ -1752,30 +1752,31 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                                                              edgeRefData.yderiv_refNeigh1D[i]);
                             }
 
-                            for (size_t i = 0; i < N_Points1D; i++)     // for all quadrature points
-                            {
+                            // for all quadrature points
+                            for (size_t i = 0; i < N_Points1D; i++) {
                                 val[0] = val[1] = val[2] = val[3] = val[4] = val[5] = 0;
-                                for (size_t l = 0; l < N_Neigh; l++)       // for all basis functions
-                                {
+                                // for all basis functions
+                                for (size_t l = 0; l < N_Neigh; l++) {
                                     size_t m = l + edgeRefData.max_n_base_functions_2d;
-                                    val[0] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.xderiv_refNeigh1D[i][l]; // accumulate value of derivative
-                                    val[1] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.yderiv_refNeigh1D[i][l]; // accumulate value of derivative
-                                    val[2] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.xyval_refNeigh1D[i][l]; // accumulate value of derivative
-                                    val[3] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.xderiv_refNeigh1D[i][l]; // accumulate value of derivative
-                                    val[4] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.yderiv_refNeigh1D[i][l]; // accumulate value of derivative
-                                    val[5] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.xyval_refNeigh1D[i][l]; // accumulate value of derivative
-                                    if (ee_verbose > 1)
+                                    val[0] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.xderiv_refNeigh1D[i][l];
+                                    val[1] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.yderiv_refNeigh1D[i][l];
+                                    val[2] += edgeRefData.FEFunctValuesNeigh[l] * edgeRefData.xyval_refNeigh1D[i][l];
+                                    val[3] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.xderiv_refNeigh1D[i][l];
+                                    val[4] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.yderiv_refNeigh1D[i][l];
+                                    val[5] += edgeRefData.FEFunctValuesNeigh[m] * edgeRefData.xyval_refNeigh1D[i][l];
+                                    if (ee_verbose > 1) {
                                         cout << l << "  " << edgeRefData.xderiv_refNeigh1D[i][l] << "  " <<
                                         edgeRefData.yderiv_refNeigh1D[i][l] << "  " << edgeRefData.FEFunctValuesNeigh[l] << endl;
-                                } // endfor l
+                                    }
+                                }
                                 auto m = i + N_Points1D;
-                                edgeRefData.xderiv_Neigh1D[i] = val[0]; // for k-th
-                                edgeRefData.yderiv_Neigh1D[i] = val[1]; // for k-th
-                                edgeRefData.xyval_Neigh1D[i] = val[2]; // for k-th
-                                edgeRefData.xderiv_Neigh1D[m] = val[3]; // for k-th
-                                edgeRefData.yderiv_Neigh1D[m] = val[4]; // for k-th
-                                edgeRefData.xyval_Neigh1D[m] = val[5]; // for k-th
-                            } // endfor i
+                                edgeRefData.xderiv_Neigh1D[i] = val[0];
+                                edgeRefData.yderiv_Neigh1D[i] = val[1];
+                                edgeRefData.xyval_Neigh1D[i] = val[2];
+                                edgeRefData.xderiv_Neigh1D[m] = val[3];
+                                edgeRefData.yderiv_Neigh1D[m] = val[4];
+                                edgeRefData.xyval_Neigh1D[m] = val[5];
+                            }
 
                             TFEDatabase2D::GetOrigFromRef(RefTransNeigh, N_Points1D, edgeRefData.xi1DNeigh,
                                                           edgeRefData.eta1DNeigh,
