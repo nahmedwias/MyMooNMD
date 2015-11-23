@@ -60,7 +60,7 @@ protected:
 
 public:
     // constructor
-    CDErrorEstimator2D(Example_CD2D &ex, TDomain &domain, int type);
+    CDErrorEstimator2D(Example_CD2D &ex, TCollection &collection, int type);
 
     void estimate(const TFEFunction2D &fe_function2D) {
         estimate(derivatives, fe_function2D);

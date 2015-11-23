@@ -59,12 +59,12 @@ int main(int argc, char *argv[]) {
     // create an example (depending on TDatabase::ParamDB->EXAMPLE)
     Example_NSE2D example;
 
-    // for adaptive grid refinement:
-    int current_estimator = TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION;
     // flag for either conforming closures or hanging nodes
     bool conforming = TDatabase::ParamDB->GRID_TYPE != 0;
 
-    NSEErrorEstimator2D estimator {example, Domain, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION, TDatabase::ParamDB->PROBLEM_TYPE != 3 };
+    NSEErrorEstimator2D estimator {example, Domain.GetCollection(It_Finest, 0)[0]};
+    // for adaptive grid refinement
+    auto current_estimator = int(estimator.GetEstimatorType());
     RefinementStrategy refinementStrategy;
     TAuxParam2D aux;
 

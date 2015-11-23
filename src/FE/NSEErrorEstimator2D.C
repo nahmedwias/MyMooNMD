@@ -2180,7 +2180,10 @@ std::vector<double> NSEErrorEstimator2D::getWeights(const double hK, const doubl
     return alpha;
 }
 
-NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, TDomain &domain, int type, bool is_nse) : ErrorEstimator2D(ex, domain), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
+NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, TCollection &collection)
+        : NSEErrorEstimator2D(ex, collection, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION, TDatabase::ParamDB->PROBLEM_TYPE != 3) { }
+
+NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, TCollection &collection, int type, bool is_nse) : ErrorEstimator2D(ex, collection), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
     estimated_global_error.resize(N_NSE2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
 }

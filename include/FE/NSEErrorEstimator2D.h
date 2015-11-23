@@ -46,10 +46,14 @@ protected:
     std::vector<double> getWeights(const double hK, const double delta, const double *coeff);
     unsigned int get_max_n_base_functions(const TFESpace2D &fe_space);
 public:
-    NSEErrorEstimator2D(Example2D &ex, TDomain &domain, int type, bool is_nse);
+    NSEErrorEstimator2D(Example2D &ex, TCollection &collection);
+    NSEErrorEstimator2D(Example2D &ex, TCollection &collection, int type, bool is_nse);
 
     void estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TAuxParam2D &Aux);
 
+    NSE2DErrorEstimatorType GetEstimatorType() const {
+        return estimatorType;
+    }
 };
 
 #endif //NSEERRORESTIMATOR2D_H

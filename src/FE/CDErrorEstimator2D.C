@@ -103,7 +103,7 @@ public:
     }
 
     void updateQuadPointData(unsigned int refDataQuadPoints1D) {
-        if(this->refDataQuadPoints1D != refDataQuadPoints1D) {
+        if (this->refDataQuadPoints1D != refDataQuadPoints1D) {
             this->refDataQuadPoints1D = refDataQuadPoints1D;
             xi1DNeigh.resize(refDataQuadPoints1D);
             eta1DNeigh.resize(refDataQuadPoints1D);
@@ -141,7 +141,7 @@ namespace {
     unsigned int getMaxN_BaseFunctions2D(const TFESpace2D &fe_space) {
         unsigned int MaxN_BaseFunctions2D_loc = 0;
         // # used finite elements
-        unsigned int n {(unsigned int) fe_space.GetN_UsedElements()};
+        unsigned int n{(unsigned int) fe_space.GetN_UsedElements()};
         // used finite elements
         FE2D *UsedElements = fe_space.GetUsedElements();
         // for all finite elements
@@ -208,16 +208,13 @@ namespace {
 
 }
 
-//
-// Todo: document this properly, structure the method such that one knows where's what
-//
 void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, const TFEFunction2D &fe_function2D) {
 
     // remove old eta_K
     if (eta_K && eta_K != nullptr) delete[] eta_K;
 
     // initialization
-    TCollection *coll = domain.GetCollection(It_Finest, 0);
+    TCollection *coll = fe_function2D.GetFESpace2D()->GetCollection();//domain.GetCollection(It_Finest, 0);
     eta_K = new double[coll->GetN_Cells()];
 
     // array of pointers holding quad point -> derivatives
@@ -248,7 +245,7 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
     // number of basis functions
     int *n_baseFunctions = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
-    if(DEBUG_COMPARE_RESULTS_WITH_OLD_CODE) {
+    if (DEBUG_COMPARE_RESULTS_WITH_OLD_CODE) {
         TAuxParam2D aux;
         int estimator = int(estimatorType);
         const TFESpace2D *fe_space = fe_function2D.GetFESpace2D();
@@ -473,7 +470,6 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
 
         // problem's coefficients
         if (example2D.get_coeffs()) {
-            //TODO 4th parameter should be aux, needed here at all?
             example2D.get_coeffs()(N_Points, X, Y, nullptr, &coefficientsPerQuadPoint[0]);
         }
 
@@ -788,7 +784,7 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                             part = 1;
                         } else {
                             std::cerr << "\"2nd vertex of cell edge\" != \"1st vertex of parent edge\" and \"1st vertex of cell edge\" != \"2nd vertex of parent edge\"" << std::endl
-                            << "this should not happen since the vertices are ordered" << std::endl; // TODO: does this make sense? why exactly cant it be the other way around?
+                            << "this should not happen since the vertices are ordered" << std::endl;
                         }
 
                         // number of neighbour in iterator
@@ -1086,22 +1082,24 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                             refdesc->GetEdgeChild(TmpEC, TmpLen2, MaxLen2);
                             // get local no.s of child edge
                             refdesc->GetOldEdgeNewLocEdge(TmpoEnlE);
-                            unsigned int N_child;
-                            if (conform_grid)
-                                N_child = 1;
-                            else
-                                N_child = 2;                        // not general  !!!
+                            // not general !!!
+                            const unsigned int N_child = conform_grid ? 1 : 2;
 
-                            for (unsigned int r = 0; r < N_child; r++)            // find children of neigh on face l -> child
-                            {
-                                int edge1 = TmpoEnE[edge2neigh * MaxLen1 + r];// edge child, not general !!!
-                                int chnum1 = TmpEC[edge1 * MaxLen2];        // local number of child cell
-                                TBaseCell *child = neigh->GetChild(chnum1);     // child cell
+                            // find children of neigh on face l -> child
+                            for (unsigned int r = 0; r < N_child; r++) {
+                                // edge child, not general !!!
+                                int edge1 = TmpoEnE[edge2neigh * MaxLen1 + r];
+                                // local number of child cell
+                                int chnum1 = TmpEC[edge1 * MaxLen2];
+                                // child cell
+                                TBaseCell *child = neigh->GetChild(chnum1);
                                 // get local indices of child edge
                                 refdesc->GetEdgeChildIndex(TmpECI, TmpLen3, MaxLen3);
-                                int l_child = TmpECI[edge1 * MaxLen3];    // local index of child edge
+                                // local index of child edge
+                                int l_child = TmpECI[edge1 * MaxLen3];
 
-                                TRefDesc *refdesc_child = child->GetRefDesc();  // ref desc of child
+                                // ref desc of child
+                                TRefDesc *refdesc_child = child->GetRefDesc();
                                 // conn. edge -> vertices
                                 refdesc_child->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
                                 // vertices of edge
@@ -1130,9 +1128,10 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                                 // now from point of view of child cell -> cell becomes the neighbour
                                 // prepare intergration for the half part of edge j
 
-                                int neigh_N_ = cell->GetClipBoard();    // number of original cell  in iterator
+                                // number of original cell  in iterator
+                                int neigh_N_ = cell->GetClipBoard();
                                 if (neigh_N_ == -1) {
-                                    cout << "Hier sollte man aber nicht hinkommen 33 !" << endl;
+                                    cout << "Clipboard was overwritten, cell's clipboard value was -1." << endl;
                                 }
                                 // finite element on neighbour
                                 FE2D CurrEleNeigh = fe_space->GetFE2D(neigh_N_, cell);
@@ -1334,60 +1333,59 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                                         if (ee_verbose > 1) {
                                             cout << l << "  " << edgeRefData.xderiv_refNeigh1D[i][l] << "  " << edgeRefData.yderiv_refNeigh1D[i][l] << "  " << edgeRefData.FEFunctValuesNeigh[l] << endl;
                                         }
-                                    }                                 // endfor l
+                                    }
                                     edgeRefData.xderiv_Cell1D[i] = val[0];         // for k-th
                                     edgeRefData.yderiv_Cell1D[i] = val[1];         // for k-th
                                     edgeRefData.xyval_Cell1D[i] = val[2];          // for k-th
-                                }                                   // endfor i
+                                }
 
                                 TFEDatabase2D::GetOrigFromRef(RefTransNeigh, N_QuadraturePoints1D, edgeRefData.xi1DNeigh.data(),
                                                               edgeRefData.eta1DNeigh.data(),
                                                               edgeRefData.X1DCell.data(), edgeRefData.Y1DCell.data(), absdet1D);
                                 // prepare integration for the child of the neighbour belong to the half part
-                                // of edge j
+                                // of edge edgeIdx
 
-                                neigh_N_ = child->GetClipBoard();   // number of neighbour in iterator
+                                // number of neighbour in iterator
+                                neigh_N_ = child->GetClipBoard();
                                 // finite element on neighbour
                                 CurrEleNeigh = fe_space->GetFE2D(neigh_N_, child);
                                 eleNeigh = TFEDatabase2D::GetFE2D(CurrEleNeigh);
 
                                 // basis functions on neighbout
                                 BaseFunctNeigh = eleNeigh->GetBaseFunct2D_ID();
-                                N_Neigh = eleNeigh->GetN_DOF();     // number of basis functions
+                                // number of basis functions
+                                N_Neigh = eleNeigh->GetN_DOF();
 
                                 bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                                 // referenz cell of neighbour
                                 bf2DrefelementsNeigh = bfNeigh->GetRefElement();
 
                                 neigh_edge = l_child;
-                                switch (bf2DrefelementsNeigh)        // compute coordinates of line quadrature
-                                {                                   // points in reference cell
-                                    case BFUnitSquare :               // edge 0
+                                // compute coordinates of line quadrature
+                                // points in reference cell
+                                switch (bf2DrefelementsNeigh) {
+                                    case BFUnitSquare :
                                         if (neigh_edge == 0) {
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = zeta[i];
                                                 edgeRefData.eta1DNeigh[i] = -1;
                                             }
                                         }
-                                        if (neigh_edge == 1) {                               // edge 1
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                        if (neigh_edge == 1) {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = 1;
                                                 edgeRefData.eta1DNeigh[i] = zeta[i];
                                             }
                                         }
-                                        if (neigh_edge == 2) {                               // edge 2
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                        if (neigh_edge == 2) {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = -zeta[i];
                                                 edgeRefData.eta1DNeigh[i] = 1;
                                             }
                                         }
 
-                                        if (neigh_edge == 3) {                               // edge 3
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                        if (neigh_edge == 3) {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = -1;
                                                 edgeRefData.eta1DNeigh[i] = -zeta[i];
                                             }
@@ -1396,22 +1394,19 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
 
                                     case BFUnitTriangle :
                                         if (neigh_edge == 0) {
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = (zeta[i] + 1) / 2;
                                                 edgeRefData.eta1DNeigh[i] = 0;
                                             }
                                         }
                                         if (neigh_edge == 1) {
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = (-zeta[i] + 1) / 2;
                                                 edgeRefData.eta1DNeigh[i] = (zeta[i] + 1) / 2;
                                             }
                                         }
                                         if (neigh_edge == 2) {
-                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++)    // for all quadrature points
-                                            {
+                                            for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = 0;
                                                 edgeRefData.eta1DNeigh[i] = (-zeta[i] + 1) / 2;
                                             }
@@ -1895,8 +1890,8 @@ std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType &type) {
     return os;
 }
 
-CDErrorEstimator2D::CDErrorEstimator2D(Example_CD2D &ex, TDomain &domain, int type) :
-        ErrorEstimator2D(ex, domain), estimatorType{CDErrorEstimatorType(type)} {
+CDErrorEstimator2D::CDErrorEstimator2D(Example_CD2D &ex, TCollection &collection, int type) :
+        ErrorEstimator2D(ex, collection), estimatorType{CDErrorEstimatorType(type)} {
     estimated_global_error.resize(N_CD2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
 }

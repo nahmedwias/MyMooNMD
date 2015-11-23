@@ -24,12 +24,10 @@ bool RefinementStrategy::shouldRefineCell(size_t cellIndex) {
 }
 
 void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
-    // obtain domain from the error estimator
-    TDomain domain = estimator2D.GetDomain();
     // get the collection of the finest available mesh
-    TCollection *collection = domain.GetCollection(It_Finest, 0);
+    auto collection = estimator2D.GetCollection();
     // number of cells in that finest mesh
-    size_t n_cells = (size_t) collection->GetN_Cells();
+    auto n_cells = collection.GetN_Cells();
     // resize indicator vector accordingly
     refinements.resize(n_cells);
     // initialize it with false, i.e., do not refine anything
@@ -66,7 +64,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
 #pragma omp parallel for
 #endif
                 for (size_t m = 0; m < n_cells; m++) {
-                    cell = collection->GetCell((int) m);
+                    cell = collection.GetCell((int) m);
                     // mark cell for refinement
                     if ((estimator2D.GetEta_K()[m] >= reftol) && (cell->GetGeoLevel() < max_cell_level)) {
                         refinements[m] = true;
@@ -108,7 +106,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
 #endif
                 for (size_t m = 0; m < n_cells; m++) {
                     // consider m-th cell
-                    cell = collection->GetCell((int) m);
+                    cell = collection.GetCell((int) m);
                     // mark cell for refinement
                     if ((estimator2D.GetEta_K()[m] >= reftol) && (cell->GetGeoLevel() < max_cell_level)) {
                         refinements[m] = true;
@@ -166,7 +164,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
 #else
                 {
                     for (size_t m = 0; m < n_cells; ++m) {
-                        if(!refinements[m] && estimator2D.GetEta_K()[m] > eta_max_value && (collection->GetCell((int) m)->GetGeoLevel() < max_cell_level)) {
+                        if(!refinements[m] && estimator2D.GetEta_K()[m] > eta_max_value && (collection.GetCell((int) m)->GetGeoLevel() < max_cell_level)) {
                             eta_max_value = estimator2D.GetEta_K()[m];
                         }
                     }
@@ -179,7 +177,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
 #pragma omp parallel for
 #endif
                 for (size_t m = 0; m < n_cells; ++m) {
-                    if(!refinements[m] && estimator2D.GetEta_K()[m] == eta_max_value && (collection->GetCell((int) m)->GetGeoLevel() < max_cell_level)) {
+                    if(!refinements[m] && estimator2D.GetEta_K()[m] == eta_max_value && (collection.GetCell((int) m)->GetGeoLevel() < max_cell_level)) {
 #ifdef _OMP
 #pragma omp atomic update
 #endif

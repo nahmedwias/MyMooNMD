@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     Example_CD2D example;
 
     // initialize the error estimator
-    CDErrorEstimator2D estimator {example, Domain, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
+    CDErrorEstimator2D estimator {example, Domain.GetCollection(It_Finest, 0)[0], TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
 
     // refinement
     RefinementStrategy refinementStrategy;
