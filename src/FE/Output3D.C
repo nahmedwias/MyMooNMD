@@ -2262,7 +2262,7 @@ int TOutput3D::WriteVtk(const char *name)
   delete [] Coords;
   delete [] FESpaceNumber;
 
-  OutPut("wrote output into vtk file: " << name << endl);
+  Output::print("wrote output into vtk file: ", name);
   return 0;
 }
 

@@ -2533,9 +2533,13 @@ void TFEFunction2D::PrintMinMax() const
   double min,max;
   this->MinMax(min,max);
   if( min<=max)
-    {  OutPut(Name << " min " << min << ", max " << max << endl); }
+  {
+    Output::print<1>(Name, " min ", min, ", max ", max);
+  }
   else
-    { OutPut("WARNING: TFEFunction2D::MinMax was not successful!\n"); }
+  {
+    Output::print<1>("WARNING: TFEFunction2D::MinMax was not successful!");
+  }
 }
 
 

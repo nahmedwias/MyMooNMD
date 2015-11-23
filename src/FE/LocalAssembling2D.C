@@ -67,8 +67,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
  : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-    OutPut("Constructor of LocalAssembling2D: using type " << name << endl);
+  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
   
   
 //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
@@ -313,30 +312,33 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   FEValue_FctIndex(myFEValue_FctIndex), FEValue_MultiIndex(myFEValue_MultiIndex)
 
 {
-	// Some data members get an extra treatment - "name" is set to CUSTOMIZED,
-	// The auxiliary arrays (All)OrigValues are dynamically allocated with size "N_Terms".
-	// "N_Spaces" is determined by finding the max in "FESpaceNumber" (+1).
-	// "Needs2ndDerivative" is dynamically allocated to the size "N_Spaces" and then filled
-	// according to the appearance of "D20", "D11" or "D02" in "Derivatives".
+  // Some data members get an extra treatment - "name" is set to CUSTOMIZED,
+  // The auxiliary arrays (All)OrigValues are dynamically allocated with size "N_Terms".
+  // "N_Spaces" is determined by finding the max in "FESpaceNumber" (+1).
+  // "Needs2ndDerivative" is dynamically allocated to the size "N_Spaces" and then filled
+  // according to the appearance of "D20", "D11" or "D02" in "Derivatives".
+  
+  //Catch some things which might cause trouble.
+  if(myDerivatives.size() != N_Terms)
+  {
+    Output::print("Error: myDerivatives.size() != N_Terms.");
+  }
+  if(myFESpaceNumber.size() != N_Terms)
+  {
+    Output::print("Error: myFESpaceNumber.size() != N_Terms.");
+  }
+  if(myParameterFct.size() != N_ParamFct)
+  {
+    Output::print("Error: myParameterFct.size() != myN_ParamFct.");
+  }
+  if(myBeginParameter.size() != N_ParamFct)
+  {
+    Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
+  }
 
-	//Catch some things which might cause trouble.
-	if(myDerivatives.size() != N_Terms){
-		OutPut("Error: myDerivatives.size() != N_Terms.");
-	}
-	if(myFESpaceNumber.size() != N_Terms){
-			OutPut("Error: myFESpaceNumber.size() != N_Terms.");
-	}
-	if(myParameterFct.size() != N_ParamFct){
-		OutPut("Error: myParameterFct.size() != myN_ParamFct.");
-	}
-	if(myBeginParameter.size() != N_ParamFct){
-			OutPut("Error: myBeginParameter.size() != myN_ParamFct.");
-	}
-
-	name =std::string("CUSTOMIZED");
-	//Inform the world of what's going on.
-	if(TDatabase::ParamDB->SC_VERBOSE > 1)
-		OutPut("Constructor of LocalAssembling2D: using type " << name << endl);
+  name = std::string("CUSTOMIZED");
+  //Inform the world of what's going on.
+  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
 
 	//Dynamically allocate space for auxiliary arrays
 	AllOrigValues = new double** [N_Terms];
