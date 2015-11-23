@@ -60,18 +60,15 @@ protected:
 
 public:
     // constructor
-    CDErrorEstimator2D(Example_CD2D &ex, TCollection &collection, int type);
+    CDErrorEstimator2D(Example_CD2D &ex, int type);
 
     void estimate(const TFEFunction2D &fe_function2D) {
         estimate(derivatives, fe_function2D);
     }
 
-
     int isConformGrid() const;
 
     void setConformGrid(int conform_grid);
-
-    ~CDErrorEstimator2D() {};
 
 };
 

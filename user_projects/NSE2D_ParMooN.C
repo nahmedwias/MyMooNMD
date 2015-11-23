@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     // flag for either conforming closures or hanging nodes
     bool conforming = TDatabase::ParamDB->GRID_TYPE != 0;
 
-    NSEErrorEstimator2D estimator {example, Domain.GetCollection(It_Finest, 0)[0]};
+    NSEErrorEstimator2D estimator {example};
     // for adaptive grid refinement
     auto current_estimator = int(estimator.GetEstimatorType());
     RefinementStrategy refinementStrategy;

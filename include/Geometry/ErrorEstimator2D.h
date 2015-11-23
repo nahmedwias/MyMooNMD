@@ -17,13 +17,13 @@ class TDatabase;
 
 class ErrorEstimator2D {
 protected:
-    TCollection& collection;
+    TCollection* currentCollection;
     Example2D& example2D;
     double *eta_K = nullptr, maximal_local_error;
     std::vector<double> estimated_global_error;
 
 public:
-    ErrorEstimator2D(Example2D &ex, TCollection &collection) : collection(collection), example2D(ex) {}
+    ErrorEstimator2D(Example2D &ex) : example2D(ex) {}
     ~ErrorEstimator2D() {
         if(eta_K && eta_K != nullptr) delete[] eta_K;
     }
@@ -43,8 +43,12 @@ public:
         return estimated_global_error;
     }
 
-    TCollection GetCollection() const {
-        return collection;
+    void setCollection(TCollection* coll) {
+        currentCollection = coll;
+    }
+
+    TCollection* GetCollection() const {
+        return currentCollection;
     }
 };
 

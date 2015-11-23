@@ -215,6 +215,10 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
 
     // initialization
     TCollection *coll = fe_function2D.GetFESpace2D()->GetCollection();//domain.GetCollection(It_Finest, 0);
+    // this call is obligatory,
+    // otherwise the collection is unknown to the refinement strategy
+    setCollection(coll);
+
     eta_K = new double[coll->GetN_Cells()];
 
     // array of pointers holding quad point -> derivatives
@@ -1890,16 +1894,16 @@ std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType &type) {
     return os;
 }
 
-CDErrorEstimator2D::CDErrorEstimator2D(Example_CD2D &ex, TCollection &collection, int type) :
-        ErrorEstimator2D(ex, collection), estimatorType{CDErrorEstimatorType(type)} {
+CDErrorEstimator2D::CDErrorEstimator2D(Example_CD2D &ex, int type) :
+        ErrorEstimator2D(ex), estimatorType{CDErrorEstimatorType(type)} {
     estimated_global_error.resize(N_CD2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
 }
 
-int  CDErrorEstimator2D::isConformGrid() const {
+int CDErrorEstimator2D::isConformGrid() const {
     return conform_grid;
 }
 
-void  CDErrorEstimator2D::setConformGrid(int conform_grid) {
+void CDErrorEstimator2D::setConformGrid(int conform_grid) {
     this->conform_grid = conform_grid;
 }

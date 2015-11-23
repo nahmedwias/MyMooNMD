@@ -239,6 +239,10 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 
     // initialization
     TCollection *coll = fe_function2D_u.GetFESpace2D()->GetCollection();
+    // this call is obligatory such that
+    // the refinement strategy knows the current collection
+    setCollection(coll);
+
     eta_K = new double[coll->GetN_Cells()];
 
     // spaces u and p
@@ -713,8 +717,8 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 
             {
                 // estimate local errors
-                calculateEtaK(fe_function2D_u, fe_function2D_p, cell, (unsigned int) N_Points, n_quadrature_points_1d, X, Y, AbsDetjk, weights, Derivatives, AuxArray, example2D, edgeData, edgeRefData, global_numbers_u, begin_index_u,
-                              values_u, global_numbers_p, begin_index_p, values_p, &estimated_local_errors[0]);
+                calculateEtaK(fe_function2D_u, fe_function2D_p, cell, (unsigned int) N_Points, n_quadrature_points_1d, AbsDetjk, weights, Derivatives, AuxArray, example2D, edgeData, edgeRefData, global_numbers_u, begin_index_u, values_u,
+                              global_numbers_p, begin_index_p, values_p, &estimated_local_errors[0]);
             }
 
 
@@ -763,9 +767,13 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 }
 
 
-void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TBaseCell *cell, unsigned int N_Points, unsigned int N_Points1D, double *X, double *Y, double *AbsDetjk, double *weights,
-                                        double **Derivatives, double **coeffs, Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData, int *global_numbers_u, int *begin_index_u, double *values_u, int *global_numbers_p,
-                                        int *begin_index_p, double *values_p, double *estimated_local_error) {
+void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TBaseCell *cell,
+                                        unsigned int N_Points, unsigned int N_Points1D, double *AbsDetjk,
+                                        double *weights, double **Derivatives, double **coeffs,
+                                        Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData,
+                                        int *global_numbers_u, int *begin_index_u, double *values_u,
+                                        int *global_numbers_p, int *begin_index_p, double *values_p,
+                                        double *estimated_local_error) {
 #if DEBUG_COMPARE_RESULTS_WITH_OLD_CODE != 0
 
     double estimated_error[N_NSE2D_ESTIMATOR_TYPES];
@@ -1786,7 +1794,6 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
                             bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
-                            // TODO removed bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                             // compute gradients in reference cell of the neighbour
                             for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
@@ -2180,10 +2187,10 @@ std::vector<double> NSEErrorEstimator2D::getWeights(const double hK, const doubl
     return alpha;
 }
 
-NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, TCollection &collection)
-        : NSEErrorEstimator2D(ex, collection, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION, TDatabase::ParamDB->PROBLEM_TYPE != 3) { }
+NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex)
+        : NSEErrorEstimator2D(ex, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION, TDatabase::ParamDB->PROBLEM_TYPE != 3) { }
 
-NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, TCollection &collection, int type, bool is_nse) : ErrorEstimator2D(ex, collection), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
+NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, int type, bool is_nse) : ErrorEstimator2D(ex), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
     estimated_global_error.resize(N_NSE2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
 }
