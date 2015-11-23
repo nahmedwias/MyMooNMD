@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 
   // Read in geometry and initialize the mesh. (See code of domain.Init
   // for usage of hard-coded example meshes)
-  domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
 
   // Do initial grid refinement. //CB FIXME Figure out a good usage of control parameters UNIFORM_STEPS and LEVELS
   for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)

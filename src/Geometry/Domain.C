@@ -73,9 +73,6 @@ TDomain::TDomain(char *ParamFile)
   
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
-  
-  PRM = TDatabase::ParamDB->BNDFILE;
-  this->ReadBdParam(PRM, Flag);
     
 }
 
