@@ -6,7 +6,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SineLaplace_hl.h" << endl) ;
+  Output::print<1>("Example: SineLaplace_hl.h");
 }
 
 void GetVelo(double xi, double yi, double*val)
