@@ -6,7 +6,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: AnsatzLinConst.h" << endl) ;
+  Output::print<1>("Example: AnsatzLinConst.h");
 }
 
 // ========================================================================
