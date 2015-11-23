@@ -24,8 +24,7 @@
 #include "mpi.h"
 
 #include <FESpace3D.h>
-#include <SquareStructure.h>
-#include <SquareStructure3D.h>
+#include <Structure.h>
 
 class TParFEMapper3D
 {

@@ -412,7 +412,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell)
+FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
 {
   FE3D ret;
 
@@ -2056,7 +2056,7 @@ TFESpace3D::~TFESpace3D()
 }
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
+void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
   TBaseCell *cell;
@@ -2183,7 +2183,7 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
 } // end GetDOFPosition
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z)
+void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
   TBaseCell *cell;

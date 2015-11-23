@@ -74,7 +74,7 @@ class TSystemCD3D
     TAssembleMat3D **AMatRhsAssemble;
     
     /** sqstructure of the system matrix */
-    TSquareStructure3D **sqstructure;
+    TStructure **sqstructure;
 
     /** A is the stiffness/system mat for stationary problem   */
     TSquareMatrix3D **sqmatrixA, *SQMATRICES[1];

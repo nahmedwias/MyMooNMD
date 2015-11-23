@@ -43,10 +43,10 @@ class TNSE_MultiGrid
 #endif  
 #ifdef __3D__
     /** array of FE spaces */
-    TFESpace3D *USpaces[MAXN_LEVELS];
+    const TFESpace3D *USpaces[MAXN_LEVELS];
 
     /** array of FE spaces */
-    TFESpace3D *PSpaces[MAXN_LEVELS];
+    const TFESpace3D *PSpaces[MAXN_LEVELS];
 #endif  
 
     /** array of u1 vectors on each level */

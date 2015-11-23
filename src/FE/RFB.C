@@ -1858,7 +1858,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
@@ -2428,7 +2428,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
@@ -3074,7 +3074,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
@@ -4152,7 +4152,7 @@ double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
@@ -5638,7 +5638,7 @@ double *old_small_scales, double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
@@ -7465,7 +7465,7 @@ double *old_small_scales, double *rhs)
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;

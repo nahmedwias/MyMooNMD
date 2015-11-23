@@ -34,7 +34,7 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TSquareMatrix2D *A22;
 
     /** structure of matrix A */
-    TSquareStructure2D *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -49,13 +49,13 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TMatrix2D *B2T;
 
     /** structure of matrix B */
-    TStructure2D *StructureB;
+    const TStructure *StructureB;
 
     /** structure of matrix BT */
-    TStructure2D *StructureBT;
+    const TStructure *StructureBT;
 
     /** structure of matrix C */
-    TStructure2D *StructureC;
+    const TStructure *StructureC;
 
     /** matrix C */
     TMatrix2D *C;
@@ -90,7 +90,7 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TSquareMatrix3D *A33;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix3D *B1;
@@ -111,13 +111,13 @@ class TNSE_MGLevel4 : public TNSE_MGLevel
     TMatrix3D *B3T;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    const TStructure *StructureB;
  
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    const TStructure *StructureBT;
 
     /** structure of matrix C */
-    TStructure3D *StructureC;
+    const TStructure *StructureC;
 
     /** matrix C */
     TMatrix3D *C;

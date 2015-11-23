@@ -95,10 +95,10 @@ class TSystemNSE3D
     int N_Matrices;
 
     /** sqstructureA of the system matrix */
-    TSquareStructure3D **sqstructureA;
+    TStructure **sqstructureA;
 
     /** structure of the system matrix */
-    TStructure3D **structureB, **structureBT;
+    TStructure **structureB, **structureBT;
     
     /** A is the stiffness/system mat for NSE velocity component   */
     TSquareMatrix3D **SqmatrixA11, **SqmatrixA12, **SqmatrixA13;

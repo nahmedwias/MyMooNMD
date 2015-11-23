@@ -34,7 +34,7 @@ TSystemTCD2D_ALE::TSystemTCD2D_ALE(TFESpace2D *fespace, int disctype, int solver
   N_GridActive = gridFESpace->GetActiveBound();
   
   // grid 
-  SquareStructureG= new TSquareStructure2D(GridFESpace); 
+  SquareStructureG= new TStructure(GridFESpace); 
   SquareStructureG->Sort();
    
   // for mesh

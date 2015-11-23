@@ -244,7 +244,7 @@ void LocalAssembling3D::GetParameters(int n_points, TCollection *Coll,
                                       double *x, double *y, double *z, double **Parameters) const
 {
   double *param, *currparam, s;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   FE3D FE_Id;
   BaseFunct3D BaseFunct_Id;

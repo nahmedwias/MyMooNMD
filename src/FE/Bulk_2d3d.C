@@ -8,7 +8,6 @@
  ***************************************************************************************/
 #ifdef __2D__
 
-#include <SquareStructure2D.h>
 #include <SquareMatrix2D.h>
 #include <FEFunction2D.h>
 #include <LinAlg.h>

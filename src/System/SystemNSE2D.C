@@ -52,11 +52,11 @@ TSystemNSE2D::TSystemNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure_f
   
   // build matrices
   // first build matrix structure
-  sqstructureA = new TSquareStructure2D(FeSpaces[0]);
+  sqstructureA = new TStructure(FeSpaces[0]);
   sqstructureA->Sort();  // sort column numbers: numbers are in increasing order
   
-  structureB = new TStructure2D(FeSpaces[1], FeSpaces[0]);
-  structureBT = new TStructure2D(FeSpaces[0], FeSpaces[1]);
+  structureB = new TStructure(FeSpaces[1], FeSpaces[0]);
+  structureBT = new TStructure(FeSpaces[0], FeSpaces[1]);
     
     switch(NSEType)
      {

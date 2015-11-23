@@ -1,78 +1,24 @@
-// =======================================================================
-// @(#)SquareMatrix.h        1.3 11/20/98
-// 
-// Class:       TSquareMatrix
-//
-// Purpose:     store a square matrix (ansatz = test space)
-//
-// Author:      Gunar Matthies
-//
-// History:     10.08.1998 start implementation
-//
-// =======================================================================
-
 #ifndef __SQUAREMATRIX__
 #define __SQUAREMATRIX__
 
-#include <Matrix.h>
-#include <SquareStructure.h>
+#include <FEMatrix.h>
 
-class TSquareMatrix : public TMatrix
+/** @brief deprecated, use the FEMatrix class instead */
+class TSquareMatrix : public FEMatrix
 {
   protected:
-    /** the sparsity structure of this matrix */
-    TSquareStructure *structure;
-
-    /** bound for hanging nodes 
-     * @todo is this structure->HangingN_Entries ?? */
-    int HangingBound;
-
-    /** ordering of the column entries */
-    /** 0 - no special ordering */
-    /** 1 - increasing ordering (like used for umfpack) */
-    /** 2 - diagonal entry first, then increasing ordering */
-    int ColOrder;
-  
+    /** generate the matrix, called from derived classes */
+    TSquareMatrix(const TFESpace1D * space);
+    TSquareMatrix(const TFESpace2D * space);
+    #ifdef __3D__
+    TSquareMatrix(const TFESpace3D * space);
+    #endif // 3D
   public:
-    /** generate the matrix */
-    TSquareMatrix(TSquareStructure *structure);
-    
-    /** generate an empty n*n zero matrix */
-    explicit TSquareMatrix(int n);
 
     /** destructor: free Entries array */
-    ~TSquareMatrix();
-
-    /** reset all entries in active rows */
-    void ResetActive();
+    ~TSquareMatrix() = default;
     
-    /** @brief set zeros in nonactive rows. 
-     * 
-     * This is e.g. for the off-diagonal blocks in a Stokes matrix 
-     */
-    void resetNonActive();
-
-    /** determine renumbering */
-    void ReNumbering(int* &Numbers) const;
-
-    /** return ActiveBound */
-    int GetActiveBound() const
-    { return structure->GetActiveBound(); }
-    
-    /** return ordering of columns */
-    int GetColOrder() const
-    { return structure->GetColOrder(); }
-    
-    void SetStructure(TSquareStructure *structure);
-    
-    TSquareStructure *GetStructure() const
-    { return structure; }
-
-    /** write matrix into file */
-    int Write(const char *filename);
-    
-    /** print matrix */
-    void Print();
+    TSquareMatrix(const TSquareMatrix & m) = default;
 };
 
-#endif
+#endif // __SQUAREMATRIX__

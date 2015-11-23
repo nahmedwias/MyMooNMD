@@ -236,7 +236,7 @@ void NSE2D::solve()
     s.matrix.Solve(s.solution.get_entries(), s.rhs.get_entries());
     /*
     std::shared_ptr<TMatrix> m = s.matrix.get_combined_matrix();
-    TSquareStructure*s = new TSquareStructure(m->GetN_Rows(), m->GetN_Entries(),
+    TStructure*s = new TStructure(m->GetN_Rows(), m->GetN_Entries(),
                                               m->GetKCol(), m->GetRowPtr());
     s->Sort();
     TSquareMatrix * sm = new TSquareMatrix(s);

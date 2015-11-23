@@ -6,7 +6,6 @@
  *                                                                                      *
  ***************************************************************************************/
 
-#include <SquareStructure3D.h>
 #include <SquareMatrix3D.h>
 #include <FEFunction3D.h>
 #include <LinAlg.h>

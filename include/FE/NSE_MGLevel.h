@@ -42,10 +42,10 @@ class TNSE_MGLevel
 
 #ifdef __3D__
     /** FE space for velocity u */
-    TFESpace3D *USpace;
+    const TFESpace3D *USpace;
 
    /** FE space for pressure p */
-    TFESpace3D *PSpace;
+    const TFESpace3D *PSpace;
 #endif  
 
     /** number of Dirichlet velocity degrees */
@@ -228,11 +228,11 @@ class TNSE_MGLevel
 
 #ifdef __3D__
     /** return FE space for velocity u*/
-    TFESpace3D *GetUSpace()
+    const TFESpace3D *GetUSpace()
     { return USpace; }
 
     /** return FE space for pressure p*/
-    TFESpace3D *GetPSpace()
+    const TFESpace3D *GetPSpace()
     { return PSpace; }
 #endif  
 

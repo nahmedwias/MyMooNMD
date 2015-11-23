@@ -73,11 +73,11 @@ TAssembleMat3D::TAssembleMat3D(int n_fespaces, TFESpace3D **fespaces,
     for(i=0;i<N_Matrices;i++)
      {
       RecMatrices[i] = matrices[i];
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetTestSpace();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetStructure().GetAnsatzSpace();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
      } // endfor
@@ -716,8 +716,8 @@ void TAssembleMat3D::AddLocalRecMatToGlobal(int i, TBaseCell *cell, int *N_BaseF
   
     for(j=0;j<N_Matrices;j++)
     {
-      TestElement = ((TFESpace3D *) RecMatrices[j]->GetStructure()->GetTestSpace())->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) RecMatrices[j]->GetStructure()->GetAnsatzSpace())->GetFE3D(i, cell);
+      TestElement = ((TFESpace3D *) RecMatrices[j]->GetStructure().GetTestSpace())->GetFE3D(i, cell);
+      AnsatzElement = ((TFESpace3D *) RecMatrices[j]->GetStructure().GetAnsatzSpace())->GetFE3D(i, cell);
 
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;

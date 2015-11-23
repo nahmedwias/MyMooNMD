@@ -237,7 +237,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
     SqRowPtr =  new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
       j = sqmatrices[i]->GetHangingN_Entries();
@@ -280,11 +280,11 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -629,7 +629,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
 	  exit(4711);
       }
       // calculate all needed derivatives of this FE function
-      fespace = sqmatrices[n]->GetFESpace();
+      fespace = sqmatrices[n]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
       BaseFunctCell = BaseFuncts[CurrentElement]; // basis functions
@@ -1036,7 +1036,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
               OutPut("Diameter of cell i:" << hk << endl);
             }
 
-            fespace = sqmatrices[n]->GetFESpace();
+            fespace = sqmatrices[n]->GetFESpace2D();
             ActiveBound = fespace->GetActiveBound();
             SqEntries[n] = sqmatrices[n]->GetEntries();
             SqRowPtr[n] = sqmatrices[n]->GetRowPtr();

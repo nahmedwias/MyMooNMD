@@ -40,7 +40,7 @@ class BlockMatrixCD3D : public BlockMatrix
      * @param[in] BoundValue A function pointer to the used boundary values.
      * @param[in] mass_matrix Whether this matrix will contain a mass matrix part
      */
-     BlockMatrixCD3D(TFESpace3D &feSpace,
+     BlockMatrixCD3D(const TFESpace3D &feSpace,
                      BoundValueFunct3D * const BoundValue,
                      bool containsMassMatrix = false);
     
@@ -96,11 +96,11 @@ class BlockMatrixCD3D : public BlockMatrix
 
     /** @brief return the finite element space */
     const TFESpace3D * get_fe_space() const
-    { return this->get_matrix()->GetFESpace(); }
+    { return this->get_matrix()->GetFESpace3D(); }
 
     /** @brief return the finite element space, but non-const */
-    TFESpace3D * get_fe_space()
-    { return this->get_matrix()->GetFESpace(); }
+    const TFESpace3D * get_fe_space()
+    { return this->get_matrix()->GetFESpace3D(); }
 
 
     /** @brief return the fe_space

@@ -30,7 +30,7 @@ class TMGLevel3D
     int Level;
 
     /** FE space */
-    TFESpace3D *FESpace;
+    const TFESpace3D *FESpace;
 
     /** permutation vector */
     int *Permutation;
@@ -51,7 +51,7 @@ class TMGLevel3D
     TSquareMatrix3D *A;
 
     /** structure of used matrix */
-    TSquareStructure3D *MatrixStructure;
+    const TStructure *MatrixStructure;
 
     /** row pointer for matrix */
     int *RowPtr;
@@ -172,7 +172,7 @@ class TMGLevel3D
     void Reset(double *vect);
 
     /** return FE space */
-    TFESpace3D *GetFESpace()
+    const TFESpace3D *GetFESpace()
     { return FESpace; }
 
     /** smoother */

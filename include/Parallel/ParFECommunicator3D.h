@@ -27,9 +27,6 @@
 #include "mpi.h"
 
 #include <ParFEMapper3D.h>
-#include <FESpace3D.h>
-#include <SquareStructure.h>
-#include <SquareStructure3D.h>
 
 class TParFECommunicator3D
 {
