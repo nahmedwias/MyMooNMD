@@ -31,6 +31,7 @@
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>
+#include <memory>
 #endif
 
 TNS2DErrorEstimator::TNS2DErrorEstimator( int fe_local_estimator,
