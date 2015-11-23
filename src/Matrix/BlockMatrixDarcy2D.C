@@ -70,11 +70,11 @@ void BlockMatrixDarcy2D::Solve(BlockVector& sol, BlockVector& rhs)
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
    case AMG_SOLVE:
-     cout << "AMG_SOLVE not yet implemented " <<endl;
+     Output::print("AMG_SOLVE not yet implemented");
    break;
 
    case GMG:
-     cout << "GMG solver not yet implemented " <<endl;
+     Output::print("GMG solver not yet implemented");
    break;
 
    case DIRECT:
@@ -88,8 +88,7 @@ void BlockMatrixDarcy2D::Solve(BlockVector& sol, BlockVector& rhs)
    break;
  
    default:
-     OutPut("Unknown Solver\n");
-     throw("Unknown Solver");
+     ErrThrow("Unknown Solver\n");
   }
 }
 

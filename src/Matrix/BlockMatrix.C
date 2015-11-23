@@ -24,10 +24,10 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
 {
   if(new_blocks.size() < this->n_blocks())
   {
-    ErrMsg("Creating a BlockMatrix with " << this->n_rows() <<" rows and "
-           << this->n_cols() << " columns, but only " << new_blocks.size() << 
-           " blocks given");
-    throw("not enough blocks given to create BlockMatrix");
+    ErrThrow("Creating a BlockMatrix with " + std::to_string(this->n_rows())
+             + " rows and " + std::to_string(this->n_cols()) 
+             + " columns, but only " + std::to_string(new_blocks.size())
+             + " blocks given");
   }
   std::copy(new_blocks.begin(), new_blocks.end(), this->blocks.begin());
   for(unsigned int b = 0; b < this->blocks.size(); ++b)
@@ -42,9 +42,8 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
       if(this->blocks[row*n_cols]->GetN_Rows() 
           != this->blocks[row*n_cols + col]->GetN_Rows())
       {
-        ErrMsg("The blocks in row " << row << " do not have the same number " <<
-               "of rows");
-        throw("The given blocks do not form a BlockMatrix");
+        ErrThrow("The blocks in row " + std::to_string(row) 
+                 + " do not have the same number of rows");
       }
     }
   }
@@ -56,9 +55,8 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
       if(this->blocks[col]->GetN_Columns() 
           != this->blocks[row*n_cols + col]->GetN_Columns())
       {
-        ErrMsg("The blocks in column " << col << " do not have the same number "
-               << "of columns");
-        throw("The given blocks do not form a BlockMatrix");
+        ErrThrow("The blocks in column " + std::to_string(col)
+                 + " do not have the same number of columns");
       }
     }
   }
@@ -448,8 +446,8 @@ void BlockMatrix::info(size_t verbose) const
       const TMatrix& m = *this->blocks[b];
       if(verbose < 2)
       {
-        OutPut(" block " << b << " has " << m.GetN_Rows() << " rows and " << 
-               m.GetN_Columns() << " columns\n");
+        Output::print<1>(" block ", b, " has ", m.GetN_Rows(), " rows and ",
+                         m.GetN_Columns(), " columns");
       }
       else
         m.info(verbose - 1);
