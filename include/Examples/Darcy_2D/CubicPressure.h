@@ -3,7 +3,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: CubicPressure.h" << endl) ;
+  Output::print<1>("Example: CubicPressure.h");
 }
 
 // ========================================================================
