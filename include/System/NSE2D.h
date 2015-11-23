@@ -19,6 +19,7 @@
 #include <Example_NSE2D.h>
 #include <BlockMatrixNSE2D.h>
 #include <MultiGrid2D.h>
+#include <MainUtilities.h> // FixedSizeQueue
 
 
 #include <NSE_MultiGrid.h>
@@ -27,8 +28,6 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
-
-#include <deque>
 
 class NSE2D
 {
@@ -89,6 +88,41 @@ class NSE2D
      * The default length is 10
      */
     std::vector<double> norms_of_residuals;
+    
+  public:
+    /**
+     * @brief a simple struct storing one set of residuals
+     * 
+     * The full residual is the \f$\ell^2\f$-norm of the vector \f$Ax-b\f$ 
+     * where \f$A\f$ is the current matrix and \f$b\f$ the right hand side. It
+     * is composed of two parts, the impuls and the residual.
+     * 
+     * If not default constructed it holds 
+     *     fullResidual*fullResidual = impulsResidual*impulsResidual
+     *                                 +massResidual*massResidual
+     */
+    struct Residuals
+    {
+      /// @brief the impuls residual
+      double impulsResidual;
+      /// @brief the mass residual
+      double massResidual;
+      /// @brief the fulf residual
+      double fullResidual;
+      ///@brief standard constructor, initialize with large numbers
+      Residuals();
+      /// @brief constructor given the \e square of the impuls and mass 
+      /// residuals
+      Residuals(double imR, double maR);
+      /// @brief write out the three numbers to a stream.
+      friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
+    };
+  protected:
+    
+    /**
+     * @brief store the norms of residuals from previous iterations 
+     */
+    FixedSizeQueue<10, Residuals> oldResiduals;
 
     /** @brief store the initial residual so that the nonlinear iteration can 
      *         be stopped as soon as a desired reduction is achieved
@@ -151,13 +185,13 @@ class NSE2D
     void solve();
     
     /** 
-     * @brief Compute the residual Ax-b 
+     * @brief Compute the defect Ax-b and store its norm in NSE2D::oldResiduals
      * 
      * where A is the current matrix, x is the current solution and b is the 
      * right hand side. Call this function after assembling the nonlinear
      * matrix with the current solution. 
      */
-    double normOfResidual();
+    void normOfResidual();
     
     /** @brief check if one of the stopping criteria is fulfilled
      * 
@@ -220,6 +254,14 @@ class NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
+    /// @brief get the current residuals  (updated in NSE2D::normOfResidual)
+    const Residuals& getResiduals() const;
+    /// @brief get the current impuls residual (updated in NSE2D::normOfResidual)
+    double getImpulsResidual() const;
+    /// @brief get the current mass residual (updated in NSE2D::normOfResidual)
+    double getMassResidual() const;
+    /// @brief get the current residual (updated in NSE2D::normOfResidual)
+    double getFullResidual() const;
 };
 
 
