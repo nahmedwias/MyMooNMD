@@ -287,8 +287,7 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
     int LocN_BF[N_BaseFuncts2D];
     BaseFunct2D LocBF[N_BaseFuncts2D];
 
-    int ee_verbose = 2;                             // verbosity
-
+    uint ee_verbose = 0;                             // verbosity
     {
         // ########################################################################
         // store information in local arrays
@@ -657,7 +656,6 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
                             for (size_t l = 0; l < N_P; l++) {
                                 m = (size_t) (l + 2 * max_n_base_functions);
                                 value += FEFunctValues[m] * edgeData.xyval_ref1D[edgeIndex][k][l]; // accumulate value of derivative
-                                // TODO std::cout << "actual xyval_ref1D[" << edgeIndex << "][" << k << "][" << l << "]=" << edgeData.xyval_ref1D[edgeIndex][k][l] << std::endl;
                             } // endfor l
                             m = k + 2 * n_quadrature_points_1d;
                             edgeData.xyval_1D[edgeIndex][m] = value; // for k-th
@@ -757,7 +755,7 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 
      for (int i = 0; i < coll->GetN_Cells(); i++) {
          if (fabs(debug_eta_K[i] - eta_K[i]) > 1e-15) {
-             // TODO std::cerr << "something wrong with the eta_k's" << std::endl;
+             std::cerr << "something wrong with the eta_k's" << std::endl;
          }
      }
      delete[] debug_eta_K;*/
@@ -857,8 +855,8 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
 /*************************************************************************/
         const unsigned int N_Edges = (unsigned int) cell->GetN_Edges();
         // loop over all edges of cell
-        for (size_t j = 0; j < N_Edges; j++) {
-            TJoint *joint = cell->GetJoint(int(j));
+        for (size_t edgeIdx = 0; edgeIdx < N_Edges; edgeIdx++) {
+            TJoint *joint = cell->GetJoint(int(edgeIdx));
             // boundary edge
             if ((joint->GetType() == BoundaryEdge) || (joint->GetType() == IsoBoundEdge)) {
                 double t0, t1;
@@ -895,17 +893,17 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                         // compute difference to Neumann condition
                         for (size_t i = 0; i < N_Points1D; i++) {
                             size_t m = i + N_Points1D;
-                            x0 = edgeData.XEdge1D[j][i];
-                            y0 = edgeData.YEdge1D[j][i];
+                            x0 = edgeData.XEdge1D[edgeIdx][i];
+                            y0 = edgeData.YEdge1D[edgeIdx][i];
                             // coordinates at quadrature points
                             bdryEdge->GetXYofT(t0, x0, y0);
                             double neumann_data;
                             // Neumann data
                             example2D.boundary_data[0](comp, t0, neumann_data);
-                            double e1 = coeff[0] * (edgeData.xderiv_1D[j][i] * nx + edgeData.yderiv_1D[j][i] * ny) - neumann_data;
+                            double e1 = coeff[0] * (edgeData.xderiv_1D[edgeIdx][i] * nx + edgeData.yderiv_1D[edgeIdx][i] * ny) - neumann_data;
                             // Neumann data
                             example2D.get_bd()[1](comp, t0, neumann_data);
-                            double e2 = coeff[0] * (edgeData.xderiv_1D[j][m] * nx + edgeData.yderiv_1D[j][m] * ny) - neumann_data;
+                            double e2 = coeff[0] * (edgeData.xderiv_1D[edgeIdx][m] * nx + edgeData.yderiv_1D[edgeIdx][m] * ny) - neumann_data;
                             double w = edgeData.weights1D[i] * hE / 2.0;
                             // integral on the edge
                             jump += w * (e1 * e1 + e2 * e2);
@@ -937,13 +935,13 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                 TRefDesc *refdesc = cell->GetRefDesc();
                 refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
                 // get vertices of face j
-                TVertex *ver0 = cell->GetVertex(TmpEdVer[2 * j]);
-                TVertex *ver1 = cell->GetVertex(TmpEdVer[2 * j + 1]);
+                TVertex *ver0 = cell->GetVertex(TmpEdVer[2 * edgeIdx]);
+                TVertex *ver1 = cell->GetVertex(TmpEdVer[2 * edgeIdx + 1]);
                 // coordinates of face j
-                auto cell_x0 = cell->GetVertex(TmpEdVer[2 * j])->GetX();
-                auto cell_y0 = cell->GetVertex(TmpEdVer[2 * j])->GetY();
-                auto cell_x1 = cell->GetVertex(TmpEdVer[2 * j + 1])->GetX();
-                auto cell_y1 = cell->GetVertex(TmpEdVer[2 * j + 1])->GetY();
+                auto cell_x0 = cell->GetVertex(TmpEdVer[2 * edgeIdx])->GetX();
+                auto cell_y0 = cell->GetVertex(TmpEdVer[2 * edgeIdx])->GetY();
+                auto cell_x1 = cell->GetVertex(TmpEdVer[2 * edgeIdx + 1])->GetX();
+                auto cell_y1 = cell->GetVertex(TmpEdVer[2 * edgeIdx + 1])->GetY();
                 double jump = 0;
                 TBaseCell *neigh = joint->GetNeighbour(cell);
                 auto nx = cell_y1 - cell_y0;              // compute normal
@@ -973,7 +971,7 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                     refdesc->GetNewEdgeOldEdge(TmpoEnlE);
                     size_t l = 0;
                     while (parent->GetChild((int) l) != cell) l++;           // local child number
-                    int parent_edge = TmpCE[l * MaxLen1 + j];               // number of father edge
+                    int parent_edge = TmpCE[l * MaxLen1 + edgeIdx];               // number of father edge
                     parent_edge = TmpoEnlE[parent_edge];            // number of father edge
 
                     TJoint *parent_joint = parent->GetJoint(parent_edge);
@@ -1218,7 +1216,6 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                     N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
                     bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
-                    //TODO removed :bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                     // compute gradients in reference cell of the neighbour
                     for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
@@ -1270,27 +1267,29 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                     {
                         m = i + N_Points1D;
                         l = m + N_Points1D;
-                        if ((fabs(edgeData.XEdge1D[j][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[j][i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
-                            cout << " wrong quad points_a " << edgeData.XEdge1D[j][i] << " , " << edgeData.YEdge1D[j][i]
+                        if ((fabs(edgeData.XEdge1D[edgeIdx][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[edgeIdx][i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
+                            cout << " wrong quad points_a " << edgeData.XEdge1D[edgeIdx][i] << " , " << edgeData.YEdge1D[edgeIdx][i]
                             << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
                         if (check_cont_u) {
-                            if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[j][i]) > 1e-8)
-                                cout << " i " << i << " uval_a " << edgeData.xyval_1D[j][i] << " uneigh_a " << edgeRefData.xyval_Neigh1D[i] << endl;
-                            if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeData.xyval_1D[j][m]) > 1e-8)
-                                cout << " i " << i << " vval_a " << edgeData.xyval_1D[j][m] << " vneigh_a " << edgeRefData.xyval_Neigh1D[m] << endl;
+                            if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[edgeIdx][i]) > 1e-8) {
+                                cout << " i " << i << " uval_a " << edgeData.xyval_1D[edgeIdx][i] << " uneigh_a " << edgeRefData.xyval_Neigh1D[i] << endl;
+                            }
+                            if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeData.xyval_1D[edgeIdx][m]) > 1e-8) {
+                                cout << " i " << i << " vval_a " << edgeData.xyval_1D[edgeIdx][m] << " vneigh_a " << edgeRefData.xyval_Neigh1D[m] << endl;
+                            }
                         }
                         if (check_cont_p) {
-                            if (fabs(edgeRefData.xyval_Neigh1D[l] - edgeData.xyval_1D[j][l]) > 1e-8)
-                                cout << " i " << i << " pval_a " << edgeData.xyval_1D[j][l] << " pneigh_a " << edgeRefData.xyval_Neigh1D[l] << endl;
+                            if (fabs(edgeRefData.xyval_Neigh1D[l] - edgeData.xyval_1D[edgeIdx][l]) > 1e-8)
+                                cout << " i " << i << " pval_a " << edgeData.xyval_1D[edgeIdx][l] << " pneigh_a " << edgeRefData.xyval_Neigh1D[l] << endl;
                         }
-                        auto e1 = coeff[0] * ((edgeData.xderiv_1D[j][i] - edgeRefData.xderiv_Neigh1D[i]) * nx
-                                              + (edgeData.yderiv_1D[j][i] - edgeRefData.yderiv_Neigh1D[i]) * ny)
-                                  - (edgeData.xyval_1D[j][l] - edgeRefData.xyval_Neigh1D[l]) * nx;
-                        auto e2 = coeff[0] * ((edgeData.xderiv_1D[j][m] - edgeRefData.xderiv_Neigh1D[m]) * nx
-                                              + (edgeData.yderiv_1D[j][m] - edgeRefData.yderiv_Neigh1D[m]) * ny)
-                                  - (edgeData.xyval_1D[j][l] - edgeRefData.xyval_Neigh1D[l]) * ny;
+                        auto e1 = coeff[0] * ((edgeData.xderiv_1D[edgeIdx][i] - edgeRefData.xderiv_Neigh1D[i]) * nx
+                                              + (edgeData.yderiv_1D[edgeIdx][i] - edgeRefData.yderiv_Neigh1D[i]) * ny)
+                                  - (edgeData.xyval_1D[edgeIdx][l] - edgeRefData.xyval_Neigh1D[l]) * nx;
+                        auto e2 = coeff[0] * ((edgeData.xderiv_1D[edgeIdx][m] - edgeRefData.xderiv_Neigh1D[m]) * nx
+                                              + (edgeData.yderiv_1D[edgeIdx][m] - edgeRefData.yderiv_Neigh1D[m]) * ny)
+                                  - (edgeData.xyval_1D[edgeIdx][l] - edgeRefData.xyval_Neigh1D[l]) * ny;
                         if (ee_verbose > 1)
-                            cout << i << " jumpx " << edgeData.xderiv_1D[j][i] << " " << edgeRefData.xderiv_Neigh1D[i] << endl;
+                            cout << i << " jumpx " << edgeData.xderiv_1D[edgeIdx][i] << " " << edgeRefData.xderiv_Neigh1D[i] << endl;
                         auto w = edgeData.weights1D[i] * absdetjk1D;
                         jump += w * (e1 * e1 + e2 * e2);                       // integral on the edge
                     }
@@ -1335,15 +1334,19 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
 
                         // find children of neigh on face l -> child
                         for (size_t k = 0; k < N_child; k++) {
-                            auto edge1 = TmpoEnE[edge2neigh * MaxLen1 + k];                 // edge child, not general !!!
-                            auto chnum1 = TmpEC[edge1 * MaxLen2];                // local number of child cell
-                            auto child = neigh->GetChild(chnum1);             // child cell
+                            // edge child, not general !!!
+                            auto edge1 = TmpoEnE[edge2neigh * MaxLen1 + k];
+                            // local number of child cell
+                            auto chnum1 = TmpEC[edge1 * MaxLen2];
+                            // child cell
+                            auto child = neigh->GetChild(chnum1);
 
-                            const int *TmpECI, *TmpLen3;
                             int MaxLen3;
-
-                            refdesc->GetEdgeChildIndex(TmpECI, TmpLen3, MaxLen3); // get local indices of child edge
-                            auto l_child = TmpECI[edge1 * MaxLen3];                        // local index of child edge
+                            // get local indices of child edge
+                            const int *TmpECI, *TmpLen3;
+                            refdesc->GetEdgeChildIndex(TmpECI, TmpLen3, MaxLen3);
+                            // local index of child edge
+                            auto l_child = TmpECI[edge1 * MaxLen3];
 
                             auto refdesc_child = child->GetRefDesc();          // ref desc of child
                             refdesc_child->GetShapeDesc()->GetEdgeVertex(TmpEdVer);// conn. edge -> vertices
@@ -1382,7 +1385,7 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             auto bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
                             auto bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
-                            size_t neigh_edge = j;
+                            size_t neigh_edge = edgeIdx;
                             if (conform_grid) {
                                 switch (bf2DrefelementsNeigh)                // compute coordinates of line quadrature
                                 {                                    // points in reference cell
@@ -1442,37 +1445,37 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                                         }
                                         break;
                                 }
-                            }
-                            else {
-                                switch (bf2DrefelementsNeigh)                // compute coordinates of line quadrature
-                                    // this is only for 1-regular triangulations
-                                {                                    // points in reference cell
-                                    case BFUnitSquare :                  // edge 0
+                            } else {
+                                // compute coordinates of line quadrature
+                                // this is only for 1-regular triangulations
+                                switch (bf2DrefelementsNeigh) {
+                                    // points in reference cell
+                                    case BFUnitSquare :
+                                        // edge 0
                                         if (neigh_edge == 0) {
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
+                                            for (size_t i = 0; i < N_Points1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = (-edgeData.zeta[i] + part) / 2;
                                                 edgeRefData.eta1DNeigh[i] = -1;
                                             }
                                         }
-                                        if (neigh_edge == 1) {                               // edge 1
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
+                                        // edge 1
+                                        if (neigh_edge == 1) {
+                                            // for all quadrature points
+                                            for (size_t i = 0; i < N_Points1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = 1;
                                                 edgeRefData.eta1DNeigh[i] = (-edgeData.zeta[i] + part) / 2;
                                             }
                                         }
-                                        if (neigh_edge == 2) {                               // edge 2
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
+                                        // edge 2
+                                        if (neigh_edge == 2) {
+                                            for (size_t i = 0; i < N_Points1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = (edgeData.zeta[i] - part) / 2;
                                                 edgeRefData.eta1DNeigh[i] = 1;
                                             }
                                         }
-
-                                        if (neigh_edge == 3) {                               // edge 3
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
+                                        // edge 3
+                                        if (neigh_edge == 3) {
+                                            for (size_t i = 0; i < N_Points1D; i++) {
                                                 edgeRefData.xi1DNeigh[i] = -1;
                                                 edgeRefData.eta1DNeigh[i] = (edgeData.zeta[i] - part) / 2;
                                             }
@@ -1481,34 +1484,25 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
 
                                     case BFUnitTriangle :
                                         if (neigh_edge == 0) {
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
-                                                if (part == -1)
-                                                    part = 0;
+                                            for (size_t i = 0; i < N_Points1D; i++) {
+                                                if (part == -1) part = 0;
                                                 edgeRefData.xi1DNeigh[i] = ((-edgeData.zeta[i] + 1) / 2 + part) / 2;
                                                 edgeRefData.eta1DNeigh[i] = 0;
                                             }
                                         }
                                         if (neigh_edge == 1) {
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
-                                                if (part == 1)
-                                                    part = 0;
+                                            for (size_t i = 0; i < N_Points1D; i++) {
+                                                if (part == 1) part = 0;
                                                 edgeRefData.xi1DNeigh[i] = ((edgeData.zeta[i] + 1) / 2 - part) / 2;
-                                                if (part == 0)
-                                                    part = 1;
-                                                if (part == -1)
-                                                    part = 0;
+                                                if (part == 0) part = 1;
+                                                if (part == -1) part = 0;
                                                 edgeRefData.eta1DNeigh[i] = ((-edgeData.zeta[i] + 1) / 2 + part) / 2;
-                                                if (part == 0)
-                                                    part = -1;
+                                                if (part == 0) part = -1;
                                             }
                                         }
                                         if (neigh_edge == 2) {
-                                            for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
-                                            {
-                                                if (part == 1)
-                                                    part = 0;
+                                            for (size_t i = 0; i < N_Points1D; i++) {
+                                                if (part == 1) part = 0;
                                                 edgeRefData.xi1DNeigh[i] = 0;
                                                 edgeRefData.eta1DNeigh[i] = ((edgeData.zeta[i] + 1) / 2 - part) / 2;
                                             }
@@ -1595,7 +1589,6 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
                             bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
-                            // TODO removed bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // reference cell of neighbour
 
                             // compute gradients in reference cell of the neighbour
                             for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
@@ -1651,7 +1644,7 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
                             bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
-                            bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
+                            bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // reference cell of neighbour
 
                             neigh_edge = (size_t) l_child;
                             switch (bf2DrefelementsNeigh)                // compute coordinates of line quadrature
@@ -1845,13 +1838,15 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                                 auto m = i + N_Points1D;
                                 auto l = m + N_Points1D;
                                 if ((fabs(edgeRefData.X1DCell[i] - edgeRefData.X1DNeigh[i]) + fabs(edgeRefData.Y1DCell[i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
-                                    cout << " wrong quad points_c " << edgeData.XEdge1D[j][i] << " , " << edgeData.YEdge1D[j][i]
+                                    cout << " wrong quad points_c " << edgeData.XEdge1D[edgeIdx][i] << " , " << edgeData.YEdge1D[edgeIdx][i]
                                     << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
                                 if (check_cont_u) {
-                                    if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeRefData.xyval_Cell1D[i]) > 1e-8)
+                                    if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeRefData.xyval_Cell1D[i]) > 1e-8) {
                                         cout << " i " << i << " uval_c " << edgeRefData.xyval_Cell1D[i] << " uneigh_c " << edgeRefData.xyval_Neigh1D[i] << endl;
-                                    if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeRefData.xyval_Cell1D[m]) > 1e-8)
+                                    }
+                                    if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeRefData.xyval_Cell1D[m]) > 1e-8) {
                                         cout << " i " << i << " vval_c " << edgeRefData.xyval_Cell1D[m] << " vneigh_c " << edgeRefData.xyval_Neigh1D[m] << endl;
+                                    }
                                 }
                                 if (check_cont_p) {
                                     if (fabs(edgeRefData.xyval_Neigh1D[l] - edgeRefData.xyval_Cell1D[l]) > 1e-8)
@@ -1869,6 +1864,7 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                                 auto w = edgeData.weights1D[i] * absdetjk1D;
                                 jump += w * (e1 * e1 + e2 * e2);                       // integral on the edge
                             }
+
                             if (ee_verbose > 1)
                                 cout << "jump_c " << jump << endl;
                             auto hE2 = hE / N_child;
@@ -1894,8 +1890,8 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                         while (neigh->GetJoint(neigh_edge)->GetNeighbour(neigh) != cell) neigh_edge++;
                         refdesc = neigh->GetRefDesc();
                         refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVerNeigh);
-                        ver0 = cell->GetVertex(TmpEdVer[2 * j]);
-                        ver1 = cell->GetVertex(TmpEdVer[2 * j + 1]);
+                        ver0 = cell->GetVertex(TmpEdVer[2 * edgeIdx]);
+                        ver1 = cell->GetVertex(TmpEdVer[2 * edgeIdx + 1]);
                         auto ver2 = neigh->GetVertex(TmpEdVerNeigh[2 * neigh_edge]);          // vertices of edge
                         auto ver3 = neigh->GetVertex(TmpEdVerNeigh[2 * neigh_edge + 1]);
                         if (((ver0 == ver2) && (ver1 == ver3)) || ((ver0 == ver3) && (ver1 == ver2)));
@@ -2052,7 +2048,6 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                         N_Neigh = eleNeigh->GetN_DOF();                    // number of basis functions
 
                         bfNeigh = TFEDatabase2D::GetBaseFunct2D(BaseFunctNeigh);
-                        // TODO removed bf2DrefelementsNeigh = bfNeigh->GetRefElement();   // referenz cell of neighbour
 
                         // compute gradients in reference cell of the neighbour
                         for (size_t i = 0; i < N_Points1D; i++)         // for all quadrature points
@@ -2104,27 +2099,27 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             auto m = i + N_Points1D;
                             auto l = m + N_Points1D;
 
-                            if ((fabs(edgeData.XEdge1D[j][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[j][i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
-                                cout << " wrong quad points_b " << edgeData.XEdge1D[j][i] << " , " << edgeData.YEdge1D[j][i]
+                            if ((fabs(edgeData.XEdge1D[edgeIdx][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[edgeIdx][i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
+                                cout << " wrong quad points_b " << edgeData.XEdge1D[edgeIdx][i] << " , " << edgeData.YEdge1D[edgeIdx][i]
                                 << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
                             if (check_cont_u) {
-                                if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[j][i]) > 1e-8)
-                                    cout << " i " << i << " uval_b " << edgeData.xyval_1D[j][i] << " uneigh_b " << edgeRefData.xyval_Neigh1D[i] << endl;
-                                if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeData.xyval_1D[j][m]) > 1e-8)
-                                    cout << " i " << i << " vval_b " << edgeData.xyval_1D[j][m] << " vneigh_b " << edgeRefData.xyval_Neigh1D[m] << endl;
+                                if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[edgeIdx][i]) > 1e-8)
+                                    cout << " i " << i << " uval_b " << edgeData.xyval_1D[edgeIdx][i] << " uneigh_b " << edgeRefData.xyval_Neigh1D[i] << endl;
+                                if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeData.xyval_1D[edgeIdx][m]) > 1e-8)
+                                    cout << " i " << i << " vval_b " << edgeData.xyval_1D[edgeIdx][m] << " vneigh_b " << edgeRefData.xyval_Neigh1D[m] << endl;
                             }
                             if (check_cont_p) {
-                                if (fabs(edgeRefData.xyval_Neigh1D[l] - edgeData.xyval_1D[j][l]) > 1e-8)
-                                    cout << " i " << i << " pval_b " << edgeData.xyval_1D[j][l] << " pneigh_b " << edgeRefData.xyval_Neigh1D[l] << endl;
+                                if (fabs(edgeRefData.xyval_Neigh1D[l] - edgeData.xyval_1D[edgeIdx][l]) > 1e-8)
+                                    cout << " i " << i << " pval_b " << edgeData.xyval_1D[edgeIdx][l] << " pneigh_b " << edgeRefData.xyval_Neigh1D[l] << endl;
                             }
-                            auto e1 = coeff[0] * ((edgeData.xderiv_1D[j][i] - edgeRefData.xderiv_Neigh1D[i]) * nx
-                                                  + (edgeData.yderiv_1D[j][i] - edgeRefData.yderiv_Neigh1D[i]) * ny)
-                                      - (edgeData.xyval_1D[j][l] - edgeRefData.xyval_Neigh1D[l]) * nx;
-                            auto e2 = coeff[0] * ((edgeData.xderiv_1D[j][m] - edgeRefData.xderiv_Neigh1D[m]) * nx
-                                                  + (edgeData.yderiv_1D[j][m] - edgeRefData.yderiv_Neigh1D[m]) * ny)
-                                      - (edgeData.xyval_1D[j][l] - edgeRefData.xyval_Neigh1D[l]) * ny;
+                            auto e1 = coeff[0] * ((edgeData.xderiv_1D[edgeIdx][i] - edgeRefData.xderiv_Neigh1D[i]) * nx
+                                                  + (edgeData.yderiv_1D[edgeIdx][i] - edgeRefData.yderiv_Neigh1D[i]) * ny)
+                                      - (edgeData.xyval_1D[edgeIdx][l] - edgeRefData.xyval_Neigh1D[l]) * nx;
+                            auto e2 = coeff[0] * ((edgeData.xderiv_1D[edgeIdx][m] - edgeRefData.xderiv_Neigh1D[m]) * nx
+                                                  + (edgeData.yderiv_1D[edgeIdx][m] - edgeRefData.yderiv_Neigh1D[m]) * ny)
+                                      - (edgeData.xyval_1D[edgeIdx][l] - edgeRefData.xyval_Neigh1D[l]) * ny;
                             if (ee_verbose > 1)
-                                cout << i << " jumpx " << edgeData.xderiv_1D[j][i] << " " << edgeRefData.xderiv_Neigh1D[i] << endl;
+                                cout << i << " jumpx " << edgeData.xderiv_1D[edgeIdx][i] << " " << edgeRefData.xderiv_Neigh1D[i] << endl;
                             auto w = edgeData.weights1D[i] * absdetjk1D;
                             jump += w * (e1 * e1 + e2 * e2);                       // integral on the edge
                         }
