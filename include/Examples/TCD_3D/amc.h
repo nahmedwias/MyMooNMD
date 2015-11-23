@@ -7,7 +7,8 @@
 void ExampleFile()
 {
   
-  OutPut("Example: amc.h" << endl); //OutPut("GRID_TYPE set to " << TDatabase::ParamDB->GRID_TYPE << endl);
+  Output::print<1>("Example: amc.h");
+  //Output::print<1>("GRID_TYPE set to ", TDatabase::ParamDB->GRID_TYPE);
 }
 
 // ========================================================================
