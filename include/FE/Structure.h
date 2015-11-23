@@ -256,6 +256,13 @@ class TStructure
      */
     std::shared_ptr<TStructure> GetTransposed() const;
     
+    /** 
+     * @brief print out some information on this object
+     * 
+     * This depends on the current verbosity level.
+     */
+    void info() const;
+    
     
     /** @brief copy constructor */
     TStructure(const TStructure&);
