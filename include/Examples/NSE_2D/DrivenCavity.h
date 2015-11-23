@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: DrivenCavity.h" << endl) ;
+  Output::print<1>("Example: DrivenCavity.h");
 }
 
 // ========================================================================
