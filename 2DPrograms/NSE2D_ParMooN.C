@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
     TDatabase::ParamDB->PROBLEM_TYPE = 5;
   //open OUTFILE, this is where all output is written to (addionally to console)
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
   
   // possibly change parameters in the database, if they are not meaningful now
   Database.CheckParameterConsistencyNSE();
@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
   
-  OutPut("Nonlinear iteration step   0\t");
   ns.stopIt(0);
+  Output::print<1>("Nonlinear iteration step   0\t", ns.getResiduals());
   
   //======================================================================
   // nonlinear loop
@@ -84,13 +84,14 @@ int main(int argc, char* argv[])
     
     ns.assemble_nonlinear_term();
     
-    OutPut("nonlinear iteration step " << setw(3) << k << "\t");
+    Output::print<1>("nonlinear iteration step ", setw(3), k, "\t", 
+                     ns.getResiduals());
     if(ns.stopIt(k))
       break;
   } // end for k
   
   ns.output();
   
-  CloseFiles();
+  Output::close_file();
   return 0;
 } // end main
