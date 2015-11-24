@@ -86,7 +86,7 @@ int TBdSphere::GetTSofXYZ(double X, double Y, double Z,
   return 0;
 }
 
-int TBdSphere::ReadIn(std::ifstream &dat)
+int TBdSphere::ReadIn(std::istream &dat)
 {
   char line[100];
   double a, b;

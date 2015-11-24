@@ -3593,7 +3593,7 @@ int TDomain::ReadParam(char *ParamFile)
   return 0;
 }
 
-int TDomain::ReadBdParam(char *ParamFile, int &Flag)
+int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 {
 #ifdef _MPI
   int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
@@ -3601,7 +3601,6 @@ int TDomain::ReadBdParam(char *ParamFile, int &Flag)
 #endif
   char line[100];
   int i, j, CurrentBdPart, N_BdComp, CompType, CompID = 0, N_Spls;
-  std::ifstream dat(ParamFile);
 #ifdef __2D__
   TBoundComp2D *BdComp;
 #else
@@ -3610,15 +3609,6 @@ int TDomain::ReadBdParam(char *ParamFile, int &Flag)
 #endif
 
   Flag = 0;
-
-  if (!dat)
-  {
-#ifdef _MPI
-  if(rank==0)
-#endif 
-    cerr << "cannot open '" << ParamFile << "' for input" << endl;
-    exit(-1);
-  }
 
   // determine dimensions for creating arrays
   
@@ -3799,7 +3789,6 @@ int TDomain::ReadBdParam(char *ParamFile, int &Flag)
   else
     PointInRegion = NULL;
 
-  dat.close();
   return 0;
 }
 

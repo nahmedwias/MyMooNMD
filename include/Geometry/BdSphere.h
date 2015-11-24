@@ -49,7 +49,7 @@ class TBdSphere : public TBoundComp3D
                             double &T, double &S);
 
     /** read parameter from input file */
-    virtual int ReadIn(std::ifstream &dat);
+    virtual int ReadIn(std::istream &dat);
 };
 
 #endif

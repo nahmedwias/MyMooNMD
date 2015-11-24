@@ -1560,4 +1560,50 @@ void TDomain::TestGrid3D()
          
 }
 
+int TDomain::initializeDefaultCubeBdry()
+{
+  //create an i/o string stream
+  std::stringstream bdryStream;
+
+  //...and fill it with input in .PRM-format
+  bdryStream << "NBCT \n";
+  bdryStream << "1 \n";
+  bdryStream << "IBCT \n";
+  bdryStream << "1 \n";
+  bdryStream << "NCOMP \n";
+  bdryStream << "6 \n";
+  bdryStream << "ITYP NSPLINE NPAR \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "10     0     3 \n";
+  bdryStream << "PARAMETERS \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000   -1.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "-1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000   -1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    1.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "-1.000000E+0000    0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    1.000000E+0000    0.000000E+0000 \n";
+
+  //call the readin method
+  int isSandwich; //this returns as 0, but the method wants it anyway
+  ReadBdParam( bdryStream, isSandwich );
+
+  return isSandwich;
+}
+
 #endif

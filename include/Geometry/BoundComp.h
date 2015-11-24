@@ -43,7 +43,7 @@ class TBoundComp
 
     // Methods
     /** read parameter from input file */
-    virtual int ReadIn(std::ifstream &dat) = 0;
+    virtual int ReadIn(std::istream &dat) = 0;
 
     /** return ID */
     int GetID() const

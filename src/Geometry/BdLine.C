@@ -63,7 +63,7 @@ int TBdLine::GetTofXY(double X, double Y, double &T)
     return 0;
 }
 
-int TBdLine::ReadIn(std::ifstream &dat)
+int TBdLine::ReadIn(std::istream &dat)
 {
   char line[100];
 

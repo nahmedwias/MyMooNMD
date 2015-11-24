@@ -41,8 +41,8 @@ class TBdLine : public TBoundComp2D
     /** return the parameter value T of coordinates (X, Y) */
     virtual int GetTofXY(double X, double Y, double &T);
 
-    /** read parameter from input file */
-    virtual int ReadIn(std::ifstream &dat);
+    /** read parameter from input stream */
+    virtual int ReadIn(std::istream &dat);
 
     /** get number of initial vertices on this component */
     virtual int GetN_InitVerts()

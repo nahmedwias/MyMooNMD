@@ -767,20 +767,34 @@ void TDomain::Init(char *PRM, char *GEO)
 {
   int Flag;
 
-  if(PRM)
+  if(PRM == nullptr || GEO == nullptr)
   {
-	if (!strcmp(PRM, "Default_UnitSquare"))
-	{//catch the only implemented default case - boundary of the unit square
-	  initializeDefaultUnitSquareBdry();
-	}
-	else
-	{
-	  // non-default: read in from file
-	  ReadBdParam(PRM, Flag);
-	}
-
+    ErrThrow("No boundary description or initial mesh specified");
   }
 
+  //start with treatment of the boundary description
+  if (!strcmp(PRM, "Default_UnitSquare"))
+  {//catch the only implemented default case - boundary of the unit square
+    initializeDefaultUnitSquareBdry();
+  }
+  else
+  {
+    // non-default: read in from file
+    //make an input file string from the file "PRM"
+    std::ifstream bdryStream(PRM);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open PRM file");
+    }
+
+    //do the actual read in
+    ReadBdParam(bdryStream, Flag);
+
+    //close the stream
+    bdryStream.close();
+  }
+
+  // continue with initial mesh
   if (!strcmp(GEO, "InitGrid"))
   {
     GenInitGrid();
@@ -834,8 +848,29 @@ void TDomain::Init(char *PRM, char *GEO)
 {
   int IsSandwich = 0;
 
-  if(PRM)
-  {  ReadBdParam(PRM, IsSandwich); }
+  if(PRM == nullptr || GEO == nullptr)
+  {
+    ErrThrow("No boundary description or initial mesh specified");
+  }
+
+  // start with read in of boundary description
+
+  if (!strcmp(PRM, "Default_UnitCube"))
+  {
+    // one implemented default case: unit cube
+    IsSandwich = initializeDefaultCubeBdry();
+  }
+  else
+  {
+    //make an input file string from the file "PRM"
+    std::ifstream bdryStream(PRM);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open PRM file");
+    }
+    // otherwise: try to read in given .PRM file
+    ReadBdParam(bdryStream, IsSandwich);
+  }
 
   if(!IsSandwich)
   {
@@ -844,7 +879,9 @@ void TDomain::Init(char *PRM, char *GEO)
       TestGrid3D();
     }
     else
+    {
       ReadGeo(GEO);
+    }
   }
   else
   {

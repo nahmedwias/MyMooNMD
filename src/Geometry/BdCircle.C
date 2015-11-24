@@ -29,7 +29,7 @@ void TBdCircle::SetParams (double xmid, double ymid, double radius_a,
   Phi2 = phi2;
 }
 
-int TBdCircle::ReadIn(std::ifstream &dat)
+int TBdCircle::ReadIn(std::istream &dat)
 {
   char line[100];
 

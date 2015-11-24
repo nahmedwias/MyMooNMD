@@ -231,7 +231,7 @@ void TBdNonUniformSpline::GenerateParams1(double *x, double *y,
   delete h; delete t; delete a; delete b; delete c; delete rhs; delete Mx; delete My;
 }
 
-int TBdNonUniformSpline::ReadIn(std::ifstream &dat)
+int TBdNonUniformSpline::ReadIn(std::istream &dat)
 {
   char line[100];
   int i, N_Params;

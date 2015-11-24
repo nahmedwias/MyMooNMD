@@ -156,17 +156,19 @@ class TDomain
 
     /** @brief read parameter file */
     int ReadParam(char *ParamFile);
-    /** @brief Reads in boundary parameterization (What's the name
-     * of the file format??)
+
+    /** @brief Reads in boundary parameterization in ".PRM" file format
      *
-     * @param[in] File path to the boundary description file to be read in.
+     * @param[in] dat Input stream containing the boundary information in
+     * ".PRM" style (the default MooNMD file format for domain description).
      *
      * @param[in,out] Flag Used in 3D only, set to 1 if a boundary component
      * of type TBdWall has to be constructed. Otherwise set to 0.
      *
      * @return Integer O on success, other numbers otherwise.
      */
-    int ReadBdParam(char *ParamFile, int &Flag);
+    int ReadBdParam(std::istream& dat, int &Flag);
+
     /** @brief read mapping and mortar information */
     int ReadMapFile(char *MapFile, TDatabase *database);
 
@@ -256,26 +258,32 @@ class TDomain
       *
       * @param[in] PRM The description of the domain boundaries. Possibilities are
       *
-      * "Default_UnitSquare" - Default domain boundary description.
+      * "Default_UnitSquare" - Default domain boundary description (2D only).
+      * "Default_UnitCube" - Default domain boundary description (3D only).
       *
-      * If not this and not NULL, PRM gets handed over to TDomain::ReadBdParam().
-      * See documentation there.
+      * If not this and not NULL, PRM is interpreted as a filepath to a .PRM file
+      * and gets handed over to TDomain::ReadBdParam() to be read in.
       *
-      *	@param[in] GEO The description of the initial mesh. Possibilities are
-      *	"InitGrid" - Grid Generator. Call TDomain::GenInitGrid() (creates initial grid with TRIANGLE)
-      * "TwoTriangles" - Default mesh. Call TDomain::TwoTriangles.
-      * "TwoTrianglesRef" - Default mesh. Call TDomain::TwoTrianglesRef.
-      * "UnitSquare" - Default mesh. ...
-      * "UnitSquareRef" - Default mesh. ...
-      * "SquareInSquare" - Default mesh. ...
-      * "SquareInSquareRef" - Default mesh. ...
-      * "PeriodicSquares" - Default mesh. ...
-      * "PeriodicSquaresLarge" - Default mesh. ...
-      * "PeriodicTrianglesLarge" - Default mesh. ...
-      * "PeriodicRectangle_2_4" - Default mesh. ...
+      *	@param[in] GEO The description of the initial mesh. Possibilities are:
+      *
+      *	"InitGrid" - Grid Generator. (2D only) Call TDomain::GenInitGrid() (creates initial grid with TRIANGLE)
+      * "TwoTriangles" - Default mesh. Call TDomain::TwoTriangles. (2D only)
+      * "TwoTrianglesRef" - Default mesh. Call TDomain::TwoTrianglesRef. (2D only)
+      * "UnitSquare" - Default mesh. ... (2D only)
+      * "UnitSquareRef" - Default mesh. ... (2D only)
+      * "SquareInSquare" - Default mesh. ... (2D only)
+      * "SquareInSquareRef" - Default mesh. ... (2D only)
+      * "PeriodicSquares" - Default mesh. ... (2D only)
+      * "PeriodicSquaresLarge" - Default mesh. ... (2D only)
+      * "PeriodicTrianglesLarge" - Default mesh. ... (2D only)
+      * "PeriodicRectangle_2_4" - Default mesh. ... (2D only)
+      * "TestGrid3D" - Default mesh. ... (3D only)
       *
       * If none of these, the string is considered to be the path to a .GEO
       * file and thus is handed over to TDomain::ReadGeo().
+      *
+      * @note: The combination of the default domain and mesh descriptions
+      * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
     void Init(char *PRM, char *GEO);
@@ -427,6 +435,17 @@ class TDomain
 
     #else
       void TestGrid3D();
+      /**
+       * @brief Initialize the domain boundary as if data/Wuerfel.PRM
+       * would have been read in as .PRM file.
+       *
+       * This method is useful for tests, which are supposed to be independent
+       * of whether an extern .PRM-file is available. To let the domain call this
+       * method when initializing, pass "Default_UnitCube" as first argument
+       * to the init method.
+       */
+      int initializeDefaultCubeBdry();
+
       void SetBoundBox(double boundx, double boundy, double boundz);
     #endif
 
