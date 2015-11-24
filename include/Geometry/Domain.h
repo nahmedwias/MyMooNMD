@@ -132,12 +132,30 @@ class TDomain
     TDomain(char *ParamFile);
     
     // Methods
-    /** @brief read geometry file */
-    int ReadGeo(char *GeoFile);
+    /** @brief Read in initial mesh from ".GEO" file.
+     *
+     * @param[in] dat Input stream which contains the initial mesh information
+     * in MooNMD-native ".GEO"-format (or .xGEO).
+     *
+     * @param[in] isXGeoFile Set true if the input is in extended GEO (.xGEO) format.
+     *
+     * @return Integer O on success, other numbers otherwise.
+     */
+    int ReadGeo(std::istream& dat, bool isXGeoFile);
 
 #ifdef __3D__
-    /** @brief read sandwich geometry */
-    int ReadSandwichGeo(char *GeoFile);
+    /** @brief Read in initial mesh from ".GEO" file as sandwich geometry.
+     *
+     * @param[in] dat Input stream which contains the initial mesh information
+     * in MooNMD-native ".GEO"-format.
+     *
+     * @note The implementation of this method contains some undocumented surprises
+     * ("else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)"). Handle
+     * with care.
+     *
+     * @return Integer O on success, other numbers otherwise.
+     */
+    int ReadSandwichGeo(std::istream& dat);
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
@@ -493,6 +511,18 @@ class TDomain
 
   /** @brief adaptive refine  */
   int AdaptRefineAll();   
+
+  /**
+   * @brief Checks from the file name whether a .GEO -file will be read in or
+   * a .xGEO (extended GEO) file.
+   *
+   * This code was moved here from the ReadGeo method.
+   *
+   * @param[in] GEO the filename of the .(x)GEO file.
+   *
+   * @note This has not been tested with an actual .xGEO-file yet.
+   */
+  static bool checkIfxGEO(char* GEO);
      
      
 };

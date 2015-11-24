@@ -841,7 +841,21 @@ void TDomain::Init(char *PRM, char *GEO)
     PeriodicRectangle_2_4();
   }
   else
-     ReadGeo(GEO);
+  {
+    // "GEO" interpreted as file path to GEO-file.
+    // check if it actually is an .xGEO-file
+    bool isxGEO = checkIfxGEO(GEO);
+
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open GEO file");
+    }
+
+    // and call the read-in method
+    ReadGeo(bdryStream,isxGEO);
+  }
 }
 #else // 3D
 void TDomain::Init(char *PRM, char *GEO)
@@ -862,7 +876,8 @@ void TDomain::Init(char *PRM, char *GEO)
   }
   else
   {
-    //make an input file string from the file "PRM"
+    // "PRM" interpreted as file path to PRM-file.
+    // make an input file string from the file "PRM"
     std::ifstream bdryStream(PRM);
     if (!bdryStream)
     {
@@ -880,12 +895,27 @@ void TDomain::Init(char *PRM, char *GEO)
     }
     else
     {
-      ReadGeo(GEO);
+      // "GEO" interpreted as file path to GEO-file.
+      // check if it actually is an .xGEO-file
+      bool isxGEO = checkIfxGEO(GEO);
+      // make an input file string from the file "GEO"
+      std::ifstream bdryStream(GEO);
+      if (!bdryStream)
+      {
+        ErrThrow("cannot open GEO file");
+      }
+      ReadGeo( bdryStream, isxGEO );
     }
   }
   else
   {
-    ReadSandwichGeo(GEO);
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open GEO file");
+    }
+    ReadSandwichGeo(bdryStream);
   }
 }
 #endif // __2D__
