@@ -9,7 +9,7 @@
 // exact solution for constant wall temperature for parallelepiped
 void ExampleFile()
 {
-  OutPut("Example: ConstT.h" << endl);
+  Output::print<1>("Example: ConstT.h");
 }
 
 // exact solution

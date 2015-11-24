@@ -97,10 +97,10 @@ CD3D::CD3D(const TDomain& domain, const Example_CD3D& example
     TFESpace3D & space = this->systems_.front().feSpace_;
     double hMin, hMax;
     cellCollection->GetHminHmax(&hMin, &hMax);
-    OutPut("N_Cells    : " << setw(12) << cellCollection->GetN_Cells() << endl);
-    OutPut("h (min,max): " << setw(12) << hMin << " " << setw(12) <<hMax<<endl);
-    OutPut("dof all    : " << setw(12) << space.GetN_DegreesOfFreedom() << endl);
-    OutPut("dof active : " << setw(12) << space.GetN_ActiveDegrees() << endl);
+    Output::print<1>("N_Cells    : ", setw(12), cellCollection->GetN_Cells());
+    Output::print<1>("h (min,max): ", setw(12), hMin, " ", setw(12), hMax);
+    Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
+    Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
 #endif
 
 
@@ -283,15 +283,16 @@ void CD3D::output(int i)
 		MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, globalComm);
 		for(i=0;i<2;i++)
 			errors[i] = sqrt(errorsReduced[i]);
-		if(iAmOutRank){
-			OutPut(endl);
-			OutPut( "L2: " << sqrt(errorsReduced[0]) << endl);
-			OutPut( "H1-semi: " << sqrt(errorsReduced[1]) << endl);
+		if(iAmOutRank)
+    {
+      Output::print("");
+			Output::print( "L2: ", sqrt(errorsReduced[0]));
+			Output::print( "H1-semi: ", sqrt(errorsReduced[1]));
 		}
 		#else
-		OutPut(endl);
-		OutPut( "L2: " << errors[0] << endl);
-		OutPut( "H1-semi: " << errors[1] << endl);
+		Output::print("");
+		Output::print( "L2: ", errors[0]);
+		Output::print( "H1-semi: ", errors[1]);
 		#endif
 	} // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }

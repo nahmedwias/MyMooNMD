@@ -20,7 +20,9 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
+
     //  declaration of database, you need this in every program
     TDatabase Database;
     TFEDatabase2D FEDatabase;
@@ -29,10 +31,10 @@ int main(int argc, char *argv[]) {
     TDomain Domain(argv[1]);
 
     //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-    if (TDatabase::ParamDB->PROBLEM_TYPE != 3 && TDatabase::ParamDB->PROBLEM_TYPE != 5)
+    if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
         TDatabase::ParamDB->PROBLEM_TYPE = 5;
     //open OUTFILE, this is where all output is written to (addionally to console)
-    OpenFiles();
+    Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
     // possibly change parameters in the database, if they are not meaningful now
     Database.CheckParameterConsistencyNSE();
@@ -44,19 +46,17 @@ int main(int argc, char *argv[]) {
     Domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
 
     // refine grid up to the coarsest level
-    for (int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
         Domain.RegRefineAll();
 
     // write grid into an Postscript file
-    if (TDatabase::ParamDB->WRITE_PS)
-        Domain.PS("Domain.ps", It_Finest, 0);
+    if(TDatabase::ParamDB->WRITE_PS)
+        Domain.PS("Domain.ps",It_Finest,0);
 
     // create output directory, if not already existing
-    if (TDatabase::ParamDB->WRITE_VTK)
+    if(TDatabase::ParamDB->WRITE_VTK)
         mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
 
-    //======================================================================
-    // create an example (depending on TDatabase::ParamDB->EXAMPLE)
     Example_NSE2D example;
 
     // flag for either conforming closures or hanging nodes
@@ -68,63 +68,71 @@ int main(int argc, char *argv[]) {
     RefinementStrategy refinementStrategy;
     TAuxParam2D aux;
 
-    int LEVELS = TDatabase::ParamDB->LEVELS;
-    for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
-        double t_start_level = GetTime(); // time for level
-        OutPut(endl << endl << "***********************************************************" << endl);
-        OutPut("GEOMETRY  LEVEL " << curr_level << endl);
+    {
+        int LEVELS = TDatabase::ParamDB->LEVELS;
+        for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
+            double t_start_level = GetTime(); // time for level
+            OutPut(endl << endl << "***********************************************************" << endl);
+            OutPut("GEOMETRY  LEVEL " << curr_level << endl);
 
 
-        // refine grid if level is greater than 0
-        if ((curr_level > 0)) {
-            // regular refinement if
-            // adaptive procedure should not yet start
-            // or no error estimation
-            if ((curr_level <= TDatabase::ParamDB->UNIFORM_STEPS) || (!TDatabase::ParamDB->ESTIMATE_ERRORS)) {
-                Domain.RegRefineAll();
-            } else {
-                Domain.RefineByRefinementStrategy(&refinementStrategy, conforming);
+            // refine grid if level is greater than 0
+            if ((curr_level > 0)) {
+                // regular refinement if
+                // adaptive procedure should not yet start
+                // or no error estimation
+                if ((curr_level <= TDatabase::ParamDB->UNIFORM_STEPS) || (!TDatabase::ParamDB->ESTIMATE_ERRORS)) {
+                    Domain.RegRefineAll();
+                } else {
+                    Domain.RefineByRefinementStrategy(&refinementStrategy, conforming);
+                }
             }
+
+            // create an object of the Naviert-Stokes class
+            NSE2D ns(Domain, example);
+            ns.assemble();
+            // if solution was not zero up to here, you should call
+            //ns.assemble_nonlinear_term();
+
+            ns.stopIt(0);
+            Output::print<1>("Nonlinear iteration step   0\t", ns.getResiduals());
+
+            //======================================================================
+            // nonlinear loop
+            // in function 'stopIt' termination condition is checked
+            for(unsigned int k = 1;; k++)
+            {
+                ns.solve();
+
+                //no nonlinear iteration for Stokes problem
+                if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
+                    break;
+
+                ns.assemble_nonlinear_term();
+
+                Output::print<1>("nonlinear iteration step ", setw(3), k, "\t",
+                                 ns.getResiduals());
+                if(ns.stopIt(k))
+                    break;
+            } // end for k
+
+            if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+                ns.get_pressure().project_into_L20(0.0);
+
+            ns.output(curr_level);
+
+            {
+                estimator.estimate(ns.get_velocity(), ns.get_pressure(), aux);
+                refinementStrategy.applyEstimator(estimator);
+                OutPut("estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator] << endl);
+            }
+            OutPut("Time for level " << curr_level << ": " << GetTime() - t_start_level << endl);
         }
-
-        NSE2D ns(Domain, example);
-        ns.assemble();
-        // if solution was not zero up to here, you should call
-        //ns.assemble_nonlinear_term();
-
-        OutPut("Nonlinear iteration step   0\t");
-        ns.stopIt(0);
-
-        //======================================================================
-        // nonlinear loop
-        // in function 'stopIt' termination condition is checked
-        for (unsigned int k = 1; ; k++) {
-            ns.solve();
-
-            //no nonlinear iteration for Stokes problem
-            if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
-                break;
-
-            ns.assemble_nonlinear_term();
-
-            OutPut("nonlinear iteration step " << setw(3) << k << "\t");
-            if (ns.stopIt(k))
-                break;
-        } // end for k
-
-        if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-            ns.get_pressure().project_into_L20(0.0);
-
-        ns.output(curr_level);
-
-        {
-            estimator.estimate(ns.get_velocity(), ns.get_pressure(), aux);
-            refinementStrategy.applyEstimator(estimator);
-            OutPut("estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator] << endl);
-        }
-        OutPut("Time for level " << curr_level << ": " << GetTime() - t_start_level << endl);
     }
 
-    CloseFiles();
+
+
+
+    Output::close_file();
     return 0;
 } // end main

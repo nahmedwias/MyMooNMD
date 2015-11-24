@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: HeatChanel.h" << endl) ;
+  Output::print<1>("Example: HeatChanel.h");
 }
 
 // exact solution

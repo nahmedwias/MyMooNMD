@@ -16,8 +16,8 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SharpBoundaryLayer.h. No exact solution known, put to 0. "
-		  "Interpret error values as norm of solution." << endl) ;
+  Output::print<1>("Example: SharpBoundaryLayer.h. No exact solution known, ",
+                   "put to 0. Interpret error values as norm of solution.");
 }
 
 // Unknown exact solution - put to zero.

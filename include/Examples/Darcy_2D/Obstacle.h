@@ -3,41 +3,41 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Obstacle.h.\nThe obstacle is 10 times less conductive " <<
-         "and has the shape of\n ");
+  Output::print<1>("Example: Obstacle.h.");
+  Output::print<1>("The obstacle is 10 times less conductive and has the ",
+                   "shape of");
   switch((int)TDatabase::ParamDB->P0)
   {
     case 0:
-      OutPut("a circle in the center\n");
+      Output::print<1>(" a circle in the center");
       break;
     case 1:
-      OutPut("a square in the center\n");
+      Output::print<1>(" a square in the center");
       break;
     case 2:
-      OutPut("a diamond in the center\n");
+      Output::print<1>(" a diamond in the center");
       break;
     case 3:
-      OutPut("two boxes on one vertical line, one at the top, the other "<<             
-             "at the bottom\n");
+      Output::print<1>(" two boxes on one vertical line, one at the top, ",
+                       "the other at the bottom\n");
       break;
     case 4:
-      OutPut("two half circles on one vertical line, one at the top, " <<
-             "one at the bottom\n");
+      Output::print<1>(" two half circles on one vertical line, one at the ",
+                       "top, one at the bottom");
       break;
     case 5:
-      OutPut("two boxes with a vertical offset, on at the top, one at " <<
-             "the bottom\n");
+      Output::print<1>(" two boxes with a vertical offset, on at the top, one ",
+                       "at the bottom");
       break;
     case 6:
-      OutPut("two half ellipsoids with a vertical offset, on at the top, " <<
-             "one at the bottom\n");
+      Output::print<1>("two half ellipsoids with a vertical offset, on at the ",
+                       "top, one at the bottom");
       break;
     case 7:
-      OutPut("hump in the center (continuous change in permeability)\n");
+      Output::print<1>("hump in the center (continuous change in permeability)");
       break;
     default:
-      ErrMsg("Unknown obstacle. Set P0 in the input file to 0,...,7\n");
-      exit(0);
+      ErrThrow("Unknown obstacle. Set P0 in the input file to 0,...,7");
       break;
   }
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;

@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 1;
   //open OUTFILE, this is where all output is written to (addionally to console)
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
  
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   darcy2d.output();
   //=========================================================================
   
-  CloseFiles();
-  OutPut("used time: " << GetTime() - t_start << " seconds" << endl);
+  Output::print<1>("used time: ", GetTime() - t_start, " seconds");
+  Output::close_file();
   return 0;
 } // end main

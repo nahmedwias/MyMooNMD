@@ -6,7 +6,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: TwoInteriorLayers.h" << endl) ;
+  Output::print<1>("Example: TwoInteriorLayers.h");
 }
 // exact solution
 void Exact(double x, double y, double *values)

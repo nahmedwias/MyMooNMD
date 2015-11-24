@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
@@ -83,22 +83,22 @@ int main(int argc, char* argv[])
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     step++;
-    // OutPut("mem before: " << GetMemory()<<endl);
+    // Output::print("mem before: ", GetMemory());
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
     {
       SetTimeDiscParameters(1);
       if(step==1)
       {
-        OutPut("Theta1: " << TDatabase::TimeDB->THETA1<< endl);
-        OutPut("Theta2: " << TDatabase::TimeDB->THETA2<< endl);
-        OutPut("Theta3: " << TDatabase::TimeDB->THETA3<< endl);
-        OutPut("Theta4: " << TDatabase::TimeDB->THETA4<< endl);
+        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
       }
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
       
-      OutPut("\nCURRENT TIME: " << TDatabase::TimeDB->CURRENTTIME << endl);
+      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
       
       tcd.assemble();
       
@@ -109,9 +109,9 @@ int main(int argc, char* argv[])
     // OutPut("mem after: " << GetMemory()<<endl);
   }
   // ======================================================================
-  OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0) << " MB" << endl);
-  OutPut("used time: " << GetTime() - t_start << "s" << endl);
+  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
+  Output::print("used time: ", GetTime() - t_start, "s");
   // ======================================================================
-  CloseFiles();
+  Output::close_file();
   return 0;
 } // end main

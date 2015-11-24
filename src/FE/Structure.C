@@ -293,13 +293,7 @@ TStructure::TStructure( const TFESpace1D * space )
 
   // free KColAux
   delete [] KColAux;
-  if(TDatabase::ParamDB->SC_VERBOSE)
-  {
-    cout << "Information on the stored matrix structure" << endl;
-    cout << "Number of rows: " << nRows << endl;
-    cout << "Number of columns: " << nColumns << endl;
-    cout << "Number of matrix entries: " << nEntries << endl;
-  }
+  this->info();
   this->Sort();
 }
 
@@ -1141,15 +1135,10 @@ TStructure::TStructure( const TFESpace2D* space )
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
 #endif
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
-    cout << endl;
-    cout << "Information on the stored matrix structure" << endl;
-    cout << "Number of rows: " << nRows << endl;
-    cout << "Number of columns: " << nColumns << endl;
-    cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
   this->Sort();
 }
@@ -1610,14 +1599,10 @@ TStructure::TStructure( const TFESpace3D *space )
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==TDatabase::ParamDB->Par_P0)
 #endif
   {
-   if(TDatabase::ParamDB->SC_VERBOSE>1)
-   OutPut("Information on the stored matrix structure" << endl);
-   OutPut("Number of rows: " << nRows << endl);
-   OutPut("Number of columns: " << nColumns << endl);
-   OutPut("Number of matrix entries: " << nEntries << endl);
+    this->info();
   }
   this->Sort();
 } 
@@ -2337,15 +2322,10 @@ TStructure::TStructure(const TFESpace2D* testspace,
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
   #endif
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
-  cout << endl;
-  cout << "Information on the stored matrix structure" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
   this->Sort();
 }
@@ -2845,14 +2825,11 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==TDatabase::ParamDB->Par_P0)
 #endif
   {
-  OutPut("Information on the stored matrix structure" << endl);
-  OutPut("Number of rows: " << nRows << endl);
-  OutPut("Number of columns: " << nColumns << endl);
-  OutPut("Number of matrix entries: " << nEntries << endl);
- }
+    this->info();
+  }
   this->Sort();
 }
 #endif
@@ -3515,14 +3492,10 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   delete [] KColAux;
   
 #ifdef _MPI
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
 #endif
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
-  cout << "Information on the stored matrix structure" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
   this->Sort();
 }
@@ -3846,14 +3819,10 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
   #endif
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
-  cout << "Information on the stored matrix structure of B" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
 }
 
@@ -4162,13 +4131,10 @@ exit(0);
   delete [] KColAux;
 
 #ifdef _MPI
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>1)
+  if(rank==0)
 #endif 
   {
-  cout << "Information on the stored matrix structure" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
 
 // exit(0);
@@ -4391,13 +4357,10 @@ exit(0);
   delete [] KColAux;
 
 #ifdef _MPI
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>1)
+  if(rank==0)
 #endif 
   {
-  cout << "Information on the stored matrix structure" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
 
 
@@ -4619,13 +4582,10 @@ exit(0);
   delete [] KColAux;
 
 #ifdef _MPI
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>1)
+  if(rank==0)
 #endif 
   {
-  cout << "Information on the stored matrix structure" << endl;
-  cout << "Number of rows: " << nRows << endl;
-  cout << "Number of columns: " << nColumns << endl;
-  cout << "Number of matrix entries: " << nEntries << endl;
+    this->info();
   }
      
      
@@ -4675,7 +4635,7 @@ void TStructure::SortDiagFirst()
     SortRow(columns+begin+1, columns+end);
   } // endfor i
   
-  ColOrder = 2;
+  this->ColOrder = 2;
 }
 
 /* sort one row [BeginPtr, AfterEndPtr) */
@@ -4695,6 +4655,8 @@ void TStructure::SortRow(int *BeginPtr, int *AfterEndPtr)
       }
     } // endfor JPtr
   } // endfor IPtr
+  
+  this->ColOrder = 1;
 }
 
 /* sort numbers within each row */
@@ -4860,6 +4822,13 @@ std::shared_ptr<TStructure> get_product_structure(
                                       c_rows);
 }
 
+void TStructure::info() const
+{
+  Output::print<2>("Information on the stored matrix structure");
+  Output::print<2>("Number of rows: ", nRows);
+  Output::print<2>("Number of columns: ", nColumns);
+  Output::print<2>("Number of matrix entries: ", nEntries);
+}
 
 bool operator==(const TStructure &lhs, const TStructure &rhs)
 {

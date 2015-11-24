@@ -59,10 +59,10 @@ Darcy2D::Darcy2D(const TDomain& domain, const Example_Darcy2D& ex,
   int n_p = p_space.GetN_DegreesOfFreedom();
   int n_dof = n_u + n_p;
   
-  OutPut(" dof velocity (vector-valued) : "<< setw(5) << n_u << endl);
-  OutPut(" active dof velocity          : "<< setw(5) << n_u_active << endl);
-  OutPut(" dof pressure                 : "<< setw(5) << n_p << endl);
-  OutPut(" dof all                      : "<< setw(5) << n_dof << endl);
+  Output::print<1>(" dof velocity (vector-valued) : ", setw(5), n_u);
+  Output::print<1>(" active dof velocity          : ", setw(5), n_u_active);
+  Output::print<1>(" dof pressure                 : ", setw(5), n_p);
+  Output::print<1>(" dof all                      : ", setw(5), n_dof);
 }
 
 /** ************************************************************************ */
@@ -183,11 +183,11 @@ void Darcy2D::output(int i)
                   example.get_coeffs(), &aux, 1, &pointer_to_p_space,
                   errors + 3);
 
-    OutPut(" L2(u):      " << errors[0] << endl);
-    OutPut(" L2(div(u)): " << errors[1] << endl);
-    OutPut(" H1-semi(u): " << errors[2] << endl);
-    OutPut(" L2(p):      " << errors[3] << endl);
-    OutPut(" H1-semi(p): " << errors[4] << endl);
+    Output::print<1>(" L2(u):      ", errors[0]);
+    Output::print<1>(" L2(div(u)): ", errors[1]);
+    Output::print<1>(" H1-semi(u): ", errors[2]);
+    Output::print<1>(" L2(p):      ", errors[3]);
+    Output::print<1>(" H1-semi(p): ", errors[4]);
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
 

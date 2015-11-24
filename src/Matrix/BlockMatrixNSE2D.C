@@ -179,8 +179,8 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
     n_sq_mat = 2;
   if(TDatabase::ParamDB->NSTYPE == 14)
   {
-    OutPut("WARNING: NSTYPE 14 needs a special local assembling, the C-block "
-         << "is now ignored\n");
+    Output::print("WARNING: NSTYPE 14 needs a special local assembling, the ",
+                  "C-block is now ignored");
     //n_sq_mat = 5;
   }
   TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
@@ -239,13 +239,13 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
         // do upwinding with one matrix
         UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
                               la.get_fe_function(0), la.get_fe_function(1));
-        cout << "UPWINDING DONE : level " << endl;
+        Output::print<3>("UPWINDING DONE : level ");
         break;
       case 3:
       case 4:
       case 14:
         // do upwinding with two matrices
-        cout << "UPWINDING DONE : level " << endl;
+        Output::print<3>("UPWINDING DONE : level ");
         UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
                               la.get_fe_function(0), la.get_fe_function(1));
         UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
@@ -259,12 +259,9 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
   {
     if(TDatabase::ParamDB->NSTYPE < 4)
     {
-      OutPut("For slip with friction bc NSTYPE 4 is ");
-      OutPut("necessary !!!!! " << endl);
-      exit(4711);
+      ErrThrow("For slip with friction bc NSTYPE 4 is necessary !!!!! ");
     }
-    ErrMsg("Assemble2DSlipBC does not work");
-    exit(1);
+    ErrThrow("Assemble2DSlipBC does not work");
     
     /*
     N_FESpaces = 1;
@@ -339,14 +336,14 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la)
         // do upwinding with one matrix
         UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[0],
                               la.get_fe_function(0), la.get_fe_function(1));
-        cout << "UPWINDING DONE : level " << endl;
+        Output::print<3>("UPWINDING DONE : level ");
         break;
         
       case 3:
       case 4:
       case 14:
         // do upwinding with two matrices
-        cout << "UPWINDING DONE : level " << endl;
+        Output::print<3>("UPWINDING DONE : level ");
         UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[0],
                               la.get_fe_function(0), la.get_fe_function(1));
         UpwindForNavierStokes(la.GetCoeffFct(), sq_mat[1],
@@ -390,11 +387,11 @@ void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
   switch(TDatabase::ParamDB->SOLVER_TYPE)
   {
     case AMG_SOLVE:
-      cout << "AMG_SOLVE not yet implemented " << endl;
+      Output::print("AMG_SOLVE not yet implemented");
       break;
       
     case GMG:
-      cout << "GMG solver not yet implemented " << endl;
+      Output::print("GMG solver not yet implemented");
       break;
       
     case DIRECT:
@@ -423,7 +420,8 @@ void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
                        this->get_B_block(0), this->get_B_block(1), rhs, sol);
           break;
         case 14:
-          OutPut("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4\n");
+          Output::print("WARNING: NSTYPE 14 is not fully supported, take ",
+                        "NSTYPE 4");
           DirectSolver(this->get_A_block(0), this->get_A_block(1), 
                        this->get_A_block(2), this->get_A_block(3),
                        this->get_BT_block(0), this->get_BT_block(1),

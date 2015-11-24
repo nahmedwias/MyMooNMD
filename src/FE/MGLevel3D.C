@@ -92,7 +92,7 @@ TMGLevel3D::TMGLevel3D(int level, TSquareMatrix3D *a, double *rhs, double *sol,
 
   Level = level;
 
-  FESpace = a->GetFESpace();
+  FESpace = a->GetFESpace3D();
 
   N_Active = FESpace->GetN_ActiveDegrees();
   HangingNodeBound = FESpace->GetHangingBound();

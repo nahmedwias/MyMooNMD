@@ -10,7 +10,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Sin3.h" << endl); 
+  Output::print<1>("Example: Sin3.h");
 }
 // exact solution
 void Exact(double x, double y, double *values)

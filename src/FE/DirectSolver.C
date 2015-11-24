@@ -111,8 +111,8 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   if (matrix->GetColOrder() != 1)
   {
     // sort matrix
-    OutPut("umfpack: reordering of the columns will be performed"<<endl);
-    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+    Output::print("umfpack: reordering of the columns will be performed", matrix->GetColOrder());
+    Output::print("umfpack: no back ordering implemented !!!");
 
     for(i=0;i<N_Eqn;i++)
     {
@@ -140,8 +140,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_symbolic " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
@@ -151,8 +150,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_numeric " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
   }
 
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
@@ -161,8 +159,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   t4 = GetTime();
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_solve " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
   }
 //  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
 }
@@ -189,8 +186,8 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   if (matrix->GetColOrder() != 1)
   {
     // sort matrix
-    OutPut("umfpack: reordering of the columns will be performed"<<endl);
-    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+    Output::print("umfpack: reordering of the columns will be performed");
+    Output::print("umfpack: no back ordering implemented !!!");
 
     for(i=0;i<N_Eqn;i++)
     {
@@ -218,8 +215,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_symbolic " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
@@ -229,8 +225,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_numeric " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
   }
 
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
@@ -241,10 +236,10 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   t4 = GetTime();
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_solve " << ret << endl);
+    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
     exit(4711);
   }
- OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+  Output::print("umfpack: ", ret, " ", t4-t1, " sec.");
 }
 
 
@@ -281,10 +276,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
     return;
   }  
   
-  if (TDatabase::ParamDB->SC_VERBOSE>=3)
-  {
-   OutPut("rb_flag: " << rb_flag << endl);
-  }
+  Output::print<3>("rb_flag: ", rb_flag);
   
   
  if (rb_flag==0 || rb_flag==3)
@@ -309,8 +301,8 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   if (matrix->GetColOrder() != 1)
   {
     // sort matrix
-    OutPut("umfpack: reordering of the columns will be performed"<<endl);
-    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+    Output::print("umfpack: reordering of the columns will be performed");
+    Output::print("umfpack: no back ordering implemented !!!");
 
     for(i=0;i<N_Eqn;i++)
     {
@@ -337,8 +329,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_symbolic " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -347,8 +338,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_numeric " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
   }
  } // if (rb_flag==0 || rb_flag==3)
  
@@ -358,8 +348,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   t4 = GetTime();
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_solve " << ret << endl);
-    exit(4711);
+    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
   }
   
   if (rb_flag==2 || rb_flag==3)
@@ -371,7 +360,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
     delete [] Row;
   }
   
-//  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+//  Output::print<1>("umfpack: ", ret, " ", t4-t1, " sec.");
 }
 
 
@@ -399,8 +388,8 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   if (matrix->GetColOrder() != 1)
   {
     // sort matrix
-    OutPut("umfpack: reordering of the columns will be performed"<<endl);
-    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+    Output::print("umfpack: reordering of the columns will be performed");
+    Output::print("umfpack: no back ordering implemented !!!");
 
     for(i=0;i<N_Eqn;i++)
     {
@@ -427,8 +416,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_symbolic " << ret << endl);
-    //exit(4711);
+    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -436,10 +424,9 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   //t3 = GetTime();
   // error occured
   if (ret!=0)
-   {
-    OutPut("error in umfpack_di_numeric " << ret << endl);
-    //exit(4711);
-   }
+  {
+    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+  }
 
  for(i=N_Rhs_Disp; i<N_Rhs; i++)
   {
@@ -451,15 +438,14 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
 
    //t4 = GetTime();
    if (ret!=0)
-    {
-     OutPut("error in umfpack_di_solve " << ret << endl);
-    //exit(4711);
-    }
+   {
+     ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+   }
   } // for(i=0; i<N_Rhs; i++)
 
   umfpack_di_free_numeric(&Numeric);
 
-//  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+//  Output::print<1>("umfpack: ", ret, " ", t4-t1, " sec.");
 }
 
 
@@ -494,10 +480,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   }    
  
  
-  if (TDatabase::ParamDB->SC_VERBOSE>=3)
-  {
-   OutPut("rb_flag: " << rb_flag << endl);
-  }
+  Output::print<3>("rb_flag: ", rb_flag);
   
   N_Eqn = matrix->GetN_Columns(); 
  if (rb_flag==0 || rb_flag==3)
@@ -519,8 +502,8 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   if (matrix->GetColOrder() != 1)
   {
     // sort matrix
-    OutPut("umfpack: reordering of the columns will be performed"<<endl);
-    OutPut("umfpack: no back ordering implemented !!!"<<endl);
+    Output::print("umfpack: reordering of the columns will be performed");
+    Output::print("umfpack: no back ordering implemented !!!");
 
     for(i=0;i<N_Eqn;i++)
     {
@@ -547,8 +530,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    OutPut("error in umfpack_di_symbolic " << ret << endl);
-    //exit(4711);
+    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -556,10 +538,9 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   //t3 = GetTime();
   // error occured
   if (ret!=0)
-   {
-    OutPut("error in umfpack_di_numeric " << ret << endl);
-    //exit(4711);
-   }
+  {
+    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+  }
  }//if (rb_flag==0 || rb_flag==3)
  
  
@@ -573,10 +554,9 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
 
    //t4 = GetTime();
    if (ret!=0)
-    {
-     OutPut("error in umfpack_di_solve " << ret << endl);
-    //exit(4711);
-    }
+   {
+     ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+   }
   } // for(i=0; i<N_Rhs; i++)
 
 //   umfpack_di_free_numeric(&Numeric);
@@ -590,7 +570,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
     delete [] Row;
   }
 
-//  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
+//  Output::print<1>("umfpack: ", ret, " ", t4-t1, " sec.");
 }
 
 
@@ -615,8 +595,8 @@ void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol)
   if (matrix->GetColOrder() != 1)
   {
       // sort matrix
-      OutPut("umfpack: reordering of the columns will be performed"<<endl);
-      OutPut("umfpack: no back ordering implemented !!!"<<endl);
+      Output::print("umfpack: reordering of the columns will be performed");
+      Output::print("umfpack: no back ordering implemented !!!");
 
       for(i=0;i<N_Eqn;i++)
       {
@@ -650,13 +630,11 @@ void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol)
   ret = umfpack_dl_symbolic(N_Eqn, N_Eqn, Row, KCol, Values,
                           &Symbolic, NULL, NULL);
   t2 = GetTime();
-//   OutPut("symbolic: " << ret << " " << t2-t1 << endl);
  
   ret = umfpack_dl_numeric(Row, KCol, Values, Symbolic,
                           &Numeric, NULL, NULL);
   umfpack_dl_free_symbolic(&Symbolic);
   t3 = GetTime();
-//   OutPut("numeric: " << ret << " "  << t3-t2 << endl);
  
   ret = umfpack_dl_solve(UMFPACK_At, Row, KCol, Values,
                        sol, rhs, Numeric, NULL, NULL);
@@ -709,7 +687,7 @@ double *rhs1, double *rhs2, double *sol1, double *sol2, int rb_flag)
     rhs[i] = rhs2[i-N_U];
   }
 
-  OutPut("rb_flag: " << rb_flag << endl);
+  Output::print<3>("rb_flag: ", rb_flag);
   if (rb_flag==0 || rb_flag==3)
   {
     t1 = GetTime();
@@ -879,11 +857,8 @@ double *rhs, double *sol, int rb_flag)
     return;
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>=3)
-  {
-      OutPut("rb_flag: " << rb_flag << endl);
-  }
-
+  Output::print<3>("rb_flag: ", rb_flag);
+  
   if (rb_flag==0 || rb_flag==3)
   {
     t1 = GetTime();
@@ -1040,14 +1015,14 @@ double *rhs, double *sol, int rb_flag)
     ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
     if (ret!=0)
     {
-        OutPut("WARNING: symbolic: " << ret << endl);
+       ErrThrow("WARNING: symbolic: " + std::to_string(ret));
     }
     t3 = GetTime();
 
     ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
     if (ret!=0)
     {
-        OutPut("WARNING: numeric: " << ret << endl);
+      ErrThrow("WARNING: numeric: " + std::to_string(ret));
     }
     t4 = GetTime();
     umfpack_di_free_symbolic(&Symbolic);
@@ -1058,7 +1033,7 @@ double *rhs, double *sol, int rb_flag)
     sol, rhs, Numeric, null, null);
   if (ret!=0)
   {
-      OutPut("WARNING: solve: " << ret << endl);
+    ErrThrow("WARNING: solve: " + std::to_string(ret));
   }
 
   t5 = GetTime();
@@ -1072,15 +1047,13 @@ double *rhs, double *sol, int rb_flag)
     delete [] RowPtr;
   }
 
-  if (verbose>1)
-  {
-     cout << "UMFPACK Time:";
-     cout << "  data prep: " << t2-t1 << "s ";
-     cout << "  symbolic: " << t3-t2 << "s ";
-     cout << "  numeric: " << t4-t3 << "s ";
-     cout << "  solve: " << t5-t4 << "s "<< endl;
-     cout << "UMFPACK total time: " << t5-t1 << "s "<< endl;
-  }
+  Output::print<3>("UMFPACK Time:");
+  Output::print<3>("  data prep: ", t2-t1, "s ");
+  Output::print<3>("  symbolic: ", t3-t2, "s ");
+  Output::print<3>("  numeric: ", t4-t3, "s ");
+  Output::print<3>("  solve: ", t5-t4, "s ");
+  Output::print<3>("UMFPACK total time: ", t5-t1, "s ");
+  
 
   /*
   for(i=0;i<N_;i++)
@@ -1570,15 +1543,12 @@ double *rhs, double *sol, int rb_flag)
     delete [] Entries;
     delete [] KCol;
     delete [] RowPtr;
-      OutPut("rb_flag: " << rb_flag << endl);
+      Output::print<3>("rb_flag: ", rb_flag);
     return;
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>=3)
-  {
-      OutPut("rb_flag: " << rb_flag << endl);
-  }
-
+  Output::print<3>("rb_flag: ", rb_flag);
+  
   if (rb_flag==0 || rb_flag==3)
   {
     t1 = GetTime();
@@ -1765,10 +1735,7 @@ double *rhs, double *sol, int rb_flag)
   t4 = GetTime();
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-  {
-      OutPut("solve: " << ret << endl);
-  }
+  Output::print<2>("solve: ", ret);
   t5 = GetTime();
 
   if (rb_flag==2 || rb_flag==3)
@@ -2003,10 +1970,7 @@ double *rhs, double *sol, int rb_flag)
   int N_Active;
   double t1, t2, t3, t4, t5;
 
-  if (TDatabase::ParamDB->SC_VERBOSE>=3)
-  {
-      OutPut("rb_flag: " << rb_flag << endl);
-  }
+  Output::print<3>("rb_flag: ", rb_flag);
   if (rb_flag==4)
   {
     umfpack_di_free_numeric(&Numeric);
@@ -2190,15 +2154,12 @@ double *rhs, double *sol, int rb_flag)
     delete [] RowPtr;
   }
   
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-  {
-    cout << "UMFPACK time:";
-    cout << "  data prep : " << t2-t1 << " ";
-    cout << "  symbolic: " << t3-t2 << " ";
-    cout << "  numeric: " << t4-t3 << " ";
-    cout << "  solve: " << t5-t4 << endl;
-    cout << "UMFPACK total time: " << t5-t1 << endl;
-  }
+  Output::print<2>("UMFPACK time:");
+  Output::print<2>("  data prep : ", t2-t1);
+  Output::print<2>("  symbolic: ", t3-t2);
+  Output::print<2>("  numeric: ", t4-t3);
+  Output::print<2>("  solve: ", t5-t4);
+  Output::print<2>("UMFPACK total time: ", t5-t1);
 }
 
 //****************************************************************************/
@@ -2384,17 +2345,17 @@ double *rhs, double *sol)
 
   ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
   if(ret!=0)
-  OutPut("symbolic: " << ret << endl);
+    Output::print("symbolic: ", ret);
   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
   if(ret!=0)  
-  OutPut("numeric: " << ret << endl);
+    Output::print("numeric: ", ret);
   t4 = GetTime();
   umfpack_di_free_symbolic(&Symbolic);
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
   if(ret!=0)    
-  OutPut("solve: " << ret << endl);
+    Output::print("solve: ", ret);
   umfpack_di_free_numeric(&Numeric);
   t5 = GetTime();
 // exit(0);
@@ -2402,15 +2363,12 @@ double *rhs, double *sol)
   delete [] KCol;
   delete [] RowPtr;
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-  {
-     cout << "UMFPACK Time:";
-     cout << "  data prep: " << t2-t1 << "s ";
-     cout << "  symbolic: " << t3-t2 << "s ";
-     cout << "  numeric: " << t4-t3 << "s ";
-     cout << "  solve: " << t5-t4 << "s "<< endl;
-     cout << "UMFPACK total time: " << t5-t1 << "s "<< endl;
-  }
+  Output::print<3>("UMFPACK Time:");
+  Output::print<3>("  data prep: ", t2-t1, "s ");
+  Output::print<3>("  symbolic: ", t3-t2, "s ");
+  Output::print<3>("  numeric: ", t4-t3, "s ");
+  Output::print<3>("  solve: ", t5-t4, "s ");
+  Output::print<3>("UMFPACK total time: ", t5-t1, "s ");
   /*
   for(i=0;i<N_;i++)
     cout << setw(6) << i << setw(30) << sol[i] << endl;
@@ -2622,15 +2580,15 @@ double *rhs, double *sol)
   t2 = GetTime();
 
   ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
-  OutPut("symbolic: " << ret << endl);
+  Output::print<1>("symbolic: ", ret);
   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
-  OutPut("numeric: " << ret << endl);
+  Output::print<1>("numeric: ", ret);
   t4 = GetTime();
   umfpack_di_free_symbolic(&Symbolic);
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
-  OutPut("solve: " << ret << endl);
+  Output::print<1>("solve: ", ret);
   umfpack_di_free_numeric(&Numeric);
   t5 = GetTime();
 
@@ -2638,15 +2596,12 @@ double *rhs, double *sol)
   delete [] KCol;
   delete  []RowPtr;
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-  {
-     cout << "UMFPACK Time:";
-     cout << "  data prep: " << t2-t1 << "s ";
-     cout << "  symbolic: " << t3-t2 << "s ";
-     cout << "  numeric: " << t4-t3 << "s ";
-     cout << "  solve: " << t5-t4 << "s "<< endl;
-     cout << "UMFPACK total time: " << t5-t1 << "s "<< endl;
-  }
+  Output::print<3>("UMFPACK Time:");
+  Output::print<3>("  data prep: ", t2-t1, "s ");
+  Output::print<3>("  symbolic: ", t3-t2, "s ");
+  Output::print<3>("  numeric: ", t4-t3, "s ");
+  Output::print<3>("  solve: ", t5-t4, "s ");
+  Output::print<3>("UMFPACK total time: ", t5-t1, "s ");
   /*
   for(i=0;i<N_;i++)
     cout << setw(6) << i << setw(30) << sol[i] << endl;
@@ -2795,18 +2750,18 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
   ret = umfpack_di_symbolic(N_DOF, N_DOF, RowPtr, KCol, Entries, &Symbolic, 
                             null, null);
   if(ret!=0)
-    OutPut("symbolic: " << ret << endl);
+    Output::print("symbolic: ", ret);
   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, 
                            null);
   if(ret!=0)
-    OutPut("numeric: " << ret << endl);
+    Output::print("numeric: ", ret);
   t4 = GetTime();
   umfpack_di_free_symbolic(&Symbolic);
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
   if(ret!=0)
-    OutPut("solve: " << ret << endl);
+    Output::print("solve: ", ret);
   umfpack_di_free_numeric(&Numeric);
   t5 = GetTime();
 
@@ -2814,15 +2769,12 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
   delete [] KCol;
   delete [] RowPtr;
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-  {
-     cout << "UMFPACK Time:";
-     cout << "  data prep: " << t2-t1 << "s ";
-     cout << "  symbolic: " << t3-t2 << "s ";
-     cout << "  numeric: " << t4-t3 << "s ";
-     cout << "  solve: " << t5-t4 << "s "<< endl;
-     cout << "UMFPACK total time: " << t5-t1 << "s "<< endl;
-  }
+  Output::print<3>("UMFPACK Time:");
+  Output::print<3>("  data prep: ", t2-t1, "s ");
+  Output::print<3>("  symbolic: ", t3-t2, "s ");
+  Output::print<3>("  numeric: ", t4-t3, "s ");
+  Output::print<3>("  solve: ", t5-t4, "s ");
+  Output::print<3>("UMFPACK total time: ", t5-t1, "s ");
 }
 
 
@@ -3050,17 +3002,17 @@ double len = 0;
 
   ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
   if(ret!=0)
-  OutPut("symbolic: " << ret << endl);
+    Output::print("symbolic: ", ret);
   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
   if(ret!=0)
-   OutPut("numeric: " << ret << endl);
+    Output::print("numeric: ", ret);
   t4 = GetTime();
   umfpack_di_free_symbolic(&Symbolic);
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
   if(ret!=0)
-   OutPut("solve: " << ret << endl);
+    Output::print("solve: ", ret);
   umfpack_di_free_numeric(&Numeric);
   t5 = GetTime();
 
@@ -3098,8 +3050,7 @@ TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T,
 TMatrix3D *matrixB1,  TMatrix3D *matrixB2, TMatrix3D *matrixB3,
 double *rhs, double *sol, int flag)
 {
-  if (TDatabase::ParamDB->SC_VERBOSE>3)  
-      OutPut("umf3d"<<endl);
+  Output::print<4>("umf3d");
   int *KColA, *RowPtrA;
   int *KColB, *RowPtrB;
   int *KColBT, *RowPtrBT;
@@ -3127,11 +3078,8 @@ double *rhs, double *sol, int flag)
     return;
   }
 
-  if (verbose>3)
-  {
-      OutPut("flag: " << flag << endl);
-  }
-
+  Output::print<4>("flag: ", flag);
+  
   t1 = GetTime();
   if (flag==0 || flag==3)
   {
@@ -3353,13 +3301,13 @@ double *rhs, double *sol, int flag)
   ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
   if (ret!=0)
   {
-      OutPut("WARNING: symbolic: " << ret << endl);
+    Output::print("WARNING: symbolic: ", ret);
   }
   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
   if (ret!=0)
   {
-      OutPut("WARNING: numeric: " << ret << endl);
+    Output::print("WARNING: numeric: ", ret);
   }
   t4 = GetTime();
   umfpack_di_free_symbolic(&Symbolic);
@@ -3369,7 +3317,7 @@ double *rhs, double *sol, int flag)
     sol, rhs, Numeric, null, null);
   if (ret!=0)
   {
-      OutPut("WARNING: solve: " << ret << endl);
+    Output::print("WARNING: solve: ", ret);
   }
   t5 = GetTime();
 
@@ -3381,18 +3329,15 @@ double *rhs, double *sol, int flag)
       delete [] RowPtr;
   }
 
-  if (verbose>3)
-  {
-  OutPut( "UMFPACK:");
+  Output::print<3>("UMFPACK Time:");
   if (flag==0 || flag==3)
   {
-      OutPut( "  data prep: " << t2-t1 << " ");
-      OutPut( "  symbolic: " << t3-t2 << " ");
-      OutPut( "  numeric: " << t4-t3 << " ");
+    Output::print<3>("  data prep: ", t2-t1, "s ");
+    Output::print<3>("  symbolic: ", t3-t2, "s ");
+    Output::print<3>("  numeric: ", t4-t3, "s ");
   }
-  OutPut( "  solve: " << t5-t4);
-  OutPut( "  total time: " << t5-t1 << endl);
-  }
+  Output::print<3>("  solve: ", t5-t4, "s ");
+  Output::print<3>("UMFPACK total time: ", t5-t1, "s ");
   /*
   for(i=0;i<N_;i++)
     cout << setw(6) << i << setw(30) << sol[i] << endl;
@@ -3475,15 +3420,13 @@ void DirectSolver(TSquareMatrix3D **sqmatrices, int n_row, int n_column,
   ret = umfpack_di_symbolic(N_Row, N_Row, RowPtr, KCol, Entries, &Symbolic, NULL, NULL);
   if ( ret != 0) 
   {
-    OutPut("symbolic: " << ret << endl);
-    exit(0);
+    ErrThrow("symbolic: " + std::to_string(ret));
   }
 //   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, NULL, NULL);
   if ( ret != 0 )
   {
-    OutPut("numeric: " << ret << endl);
-    exit(0);
+    ErrThrow("numeric: " + std::to_string(ret));
   }
 //   t4 = GetTime();
   
@@ -3491,8 +3434,7 @@ void DirectSolver(TSquareMatrix3D **sqmatrices, int n_row, int n_column,
     sol, rhs, Numeric, NULL, NULL);
   if ( ret != 0) 
   {
-    OutPut("solve: " << ret << endl);
-    exit(0);
+    ErrThrow("solve: " + std::to_string(ret));
   }
   umfpack_di_free_symbolic(&Symbolic);
   umfpack_di_free_numeric(&Numeric);

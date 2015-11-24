@@ -1373,6 +1373,7 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "SC_VERBOSE:"))
     {
       dat >> TDatabase::ParamDB->SC_VERBOSE;
+      Output::setVerbosity(TDatabase::ParamDB->SC_VERBOSE);
       N_Param++;
     }
     if (!strcmp(line, "SC_VERBOSE_AMG:"))

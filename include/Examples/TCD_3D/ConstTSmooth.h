@@ -8,7 +8,7 @@
 // exact solution in unit cube
 void ExampleFile()
 {
-  OutPut("Example: ConstTSmooth.h" << endl);
+  Output::print<1>("Example: ConstTSmooth.h");
 }
 
 // exact solution

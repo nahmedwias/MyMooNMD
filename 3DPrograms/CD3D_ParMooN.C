@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
 
   //FYI
-  OutPut("Hello there. I am process " << mpiRank << " of " << mpiSize << endl);
+  Output::print("Hello there. I am process ", mpiRank, " of ", mpiSize);
 #endif
 
   TFEDatabase3D feDatabase;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   //(and taking care for setting Problem_type to 1).
 
   //Write all Parameters to the OUTFILE for later reference
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
   #ifdef _MPI
 	if(iAmOutRank) //Only one process should do that.
   #endif
@@ -119,13 +119,16 @@ int main(int argc, char* argv[])
   if(iAmOutRank)
   {
 	  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
-	  printf("Time taken for Domain Decomposition is %e\n", (t2-t1));
-	  OutPut("MaxSubDomainPerDof: " << maxSubDomainPerDof << endl);
+	  Output::print("Time taken for Domain Decomposition is ", t2-t1);
+	  Output::print("MaxSubDomainPerDof: ", maxSubDomainPerDof);
   }
 
-  OutPut("Process " << mpiRank << ". N_Cells: " << domain.GetCollection(It_Finest, 0)->GetN_Cells() <<
-		". N_OwnCells: " << domain.GetCollection(It_Finest, 0)->GetN_OwnCells() <<
-		". N_HaloCells: " << domain.GetCollection(It_Finest, 0)->GetN_HaloCells() << endl);
+  Output::print("Process ", mpiRank, ". N_Cells: ",
+                domain.GetCollection(It_Finest, 0)->GetN_Cells(),
+                ". N_OwnCells: ",
+                domain.GetCollection(It_Finest, 0)->GetN_OwnCells(),
+                ". N_HaloCells: ",
+                domain.GetCollection(It_Finest, 0)->GetN_HaloCells());
 
   // FIXME CB Loop over levels and call to Domain_Crop similiar to below is only necessary when using multigrid.
   //  for(int i=TDatabase::ParamDB->UNIFORM_STEPS;i<TDatabase::ParamDB->LEVELS;i++)
@@ -162,7 +165,7 @@ int main(int argc, char* argv[])
   cd3d.output();
   //=========================================================================
 
-  CloseFiles();
+  Output::close_file();
 
 #ifdef _MPI
   MPI_Finalize();

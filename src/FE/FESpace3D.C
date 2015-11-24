@@ -856,8 +856,16 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
      {
       Vert = cell->GetVertex(j);
       
-      if(Vert->IsBoundVert() && Vert->GetClipBoard()!=-1 )
+      if(Vert->IsBoundVert())
        {
+
+        if( Vert->GetClipBoard()!=-1 )
+        {
+          // dofs connected to this vertex have already
+          // been treated elsewhere - Clemens Bartsch
+          continue;
+        }
+
         // BD vert is not yet set 
         Vert->SetClipBoard(i);
 

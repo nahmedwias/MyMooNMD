@@ -43,10 +43,10 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
   TFESpace2D& space = this->systems.front().fe_space;
   double hmin, hmax;
   coll->GetHminHmax(&hmin, &hmax);
-  OutPut("N_Cells    : " << setw(12) << coll->GetN_Cells() << endl);
-  OutPut("h(min,max) : " << setw(12) << hmin << " " << setw(12)<< hmax << endl);
-  OutPut("dof        : " << setw(12) << space.GetN_DegreesOfFreedom()<<endl);
-  OutPut("active dof : " << setw(12) << space.GetN_ActiveDegrees() << endl);
+  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+  Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
+  Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
+  Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
   
   // old right hand side
   old_rhs.copy_structure(this->systems[0].rhs);
@@ -97,7 +97,7 @@ void Time_CD2D::set_parameters()
   if(TDatabase::ParamDB->EXAMPLE < 101)
   {
     ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-    <<"does not supported for time dependent problem");
+           << "does not supported for time dependent problem");
     exit(1);
   }
   
@@ -214,14 +214,13 @@ void Time_CD2D::solve()
   Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
          s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
          this->multigrid.get(), s.solution.length(), 0);
-  if(TDatabase::ParamDB->SC_VERBOSE)
-  {
-    t=GetTime();
-    OutPut( "time for solving: " << t << endl);
-    OutPut("solution " << sqrt(Ddot(s.solution.length(),
-                                    s.solution.get_entries(),
-                                    s.solution.get_entries())) << endl);
-  }
+  
+  t = GetTime() - t;
+  Output::print<1>("time for solving: ",  t);
+  Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
+                                          s.solution.get_entries(),
+                                          s.solution.get_entries())) );
+
   // descale the stiffness matrix  
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   for(auto &s : this->systems)
@@ -251,23 +250,23 @@ void Time_CD2D::output(int m, int& image)
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, loc_e);
     
-    OutPut("time: " << TDatabase::TimeDB->CURRENTTIME << endl);
-    OutPut("  L2: " << loc_e[0] << endl);
-    OutPut("  H1-semi: " << loc_e[1] << endl);
+    Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("  L2: ", loc_e[0]);
+    Output::print<1>("  H1-semi: ", loc_e[1]);
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
     errors[1] = loc_e[0]*loc_e[0];
-    OutPut("  L2(0,T;L2) " << sqrt(errors[0]) << endl);
+    Output::print<1>("  L2(0,T;L2) ", sqrt(errors[0]));
     errors[2] += (loc_e[1]*loc_e[1] + errors[3])*tau*0.5;
     errors[3] = loc_e[1]*loc_e[1];
-    OutPut("  L2(0,T;H1) " << sqrt(errors[2])<< endl);
+    Output::print<1>("  L2(0,T;H1) ", sqrt(errors[2]));
     
     if(m==0)
       errors[4]= loc_e[0];
     
     if(errors[4] < loc_e[0])
       errors[4] = loc_e[0];
-    OutPut("  Linfty(0,T;L2) " << errors[4] << endl);
+    Output::print<1>("  Linfty(0,T;L2) ", errors[4]);
   }
   
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))

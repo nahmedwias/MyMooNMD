@@ -2458,10 +2458,12 @@ void TFEFunction3D::PrintMinMax()
   double min,max;
   this->MinMax(min,max);
   if( min<=max)
-    {  OutPut(Name << " min " << min << ", max " << max << endl); }
+  {
+    Output::print(Name, " min ", min, ", max ", max);
+  }
   else
-    OutPut("WARNING: TFEFunction3D::MinMax was not successful for "
-           << Name << "!\n"); 
+    Output::print("WARNING: TFEFunction3D::MinMax was not successful for ",
+                  Name); 
 }
 
 
