@@ -165,6 +165,24 @@ class CD3D
      */
     void output(int i = -1);
     
+    /**
+     * @brief Check whether the program will be working with the
+     * current input parameters.
+     *
+     * ParMooN is work in progress, and so is this class. This method
+     * checks the parameters stored in the database and stops execution
+     * of the program, if some of these do not much.
+     * the method is work in progress and the cases caught here are various.
+     * but basically it is intended to stop execution of cases which are not
+     * implemented for the very class CD3D or are currently known to
+     * be problematic.
+     *
+     * This is not yet a guarantee for a functioning program, but is
+     * intended to be, someday. Eventually this method and the like
+     * will be moved to TDatabase.
+     */
+    static void checkParameters();
+
     // getters and setters
     const BlockMatrixCD3D & getMatrix() const
     { return systems_.front().matrix_; }
