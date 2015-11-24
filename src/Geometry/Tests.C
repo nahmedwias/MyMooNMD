@@ -1470,66 +1470,36 @@ void TDomain::Rectangular(int n, int m)
 
 void TDomain::initializeDefaultUnitSquareBdry()
 {
-  // The implementation of this method was gained by observing
-  // how a call to TDomain::ReadBdParam(...) with UnitSquare.PRM as input
-  // file changes the state of the TDomain object.
   OutPut("Loading default domain description: Default_UnitSquare." << endl);
 
-  TBoundComp2D *BdComp;
+  //create an i/o string stream
+  std::stringstream bdryStream;
 
-  // determine dimensions for creating arrays
+  //...and fill it with input in .PRM-format
+  bdryStream << "NBCT \n";
+  bdryStream << "  1 \n";
+  bdryStream << "IBCT \n";
+  bdryStream << "1 \n";
+  bdryStream << "NCOMP \n";
+  bdryStream << "4 \n";
+  bdryStream << "ITYP NSPLINE NPAR \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "1     1     2 \n";
+  bdryStream << "PARAMETERS \n";
+  bdryStream << "0.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << " 0.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "1.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "-1.000000E+0000    0.000000E+0000 \n";
+  bdryStream << "0.000000E+0000    1.000000E+0000 \n";
+  bdryStream << "0.000000E+0000   -1.000000E+0000 \n";
 
-  // set the number of boundaries (inner and outer) of the domain
-  N_BoundParts = 1;
-
-  BdParts = new TBoundPart*[N_BoundParts];
-  Interfaces = new int[N_BoundParts];
-  N_BoundComps = 0;
-  // StartBdCompID: index in the bdpart list where the new BdPart starts
-  StartBdCompID = new int[N_BoundParts + 1];
-  StartBdCompID[0] = 0; // set the first to 0
-
-  size_t CurrentBdPart = 1;
-  Interfaces[0] = CurrentBdPart;
-  size_t N_BdComp = 4;
-
-  BdParts[0] = new TBoundPart(N_BdComp);
-  N_BoundComps += N_BdComp;
-
-  SetStartBdCompID(N_BoundComps, 1);
-
-  //boundary component creation loop
-  size_t CompID = 0;
-  // first
-  BdComp = new TBdLine(CompID++);
-  BdParts[0]->SetBdComp(0, BdComp);
-
-  //second
-  BdComp = new TBdLine(CompID++);
-  BdParts[0]->SetBdComp(1, BdComp);
-
-  //third
-  BdComp = new TBdLine(CompID++);
-  BdParts[0]->SetBdComp(2, BdComp);
-
-  //fourth
-  BdComp = new TBdLine(CompID++);
-  BdParts[0]->SetBdComp(3, BdComp);
-
-  //boundary component read in loop
-  //first
-  ((TBdLine*)BdParts[0]->GetBdComp(0))->SetParams(0,0,1,0);
-  //second
-  ((TBdLine*)BdParts[0]->GetBdComp(1))->SetParams(1,0,0,1);
-  //third
-  ((TBdLine*)BdParts[0]->GetBdComp(2))->SetParams(1,1,-1,0);
-  //fourth
-  ((TBdLine*)BdParts[0]->GetBdComp(3))->SetParams(0,1,0,-1);
-
-  N_Holes = 0;
-  PointInHole = NULL;
-  N_Regions = 0;
-  PointInRegion = NULL;
+  //call the readin method
+  int flag; //(used in 3D only, but expected in 2D, too)
+  ReadBdParam( bdryStream, flag );
 
 }
 
@@ -1562,6 +1532,8 @@ void TDomain::TestGrid3D()
 
 int TDomain::initializeDefaultCubeBdry()
 {
+  OutPut("Loading default domain description: Default_UnitCube." << endl);
+
   //create an i/o string stream
   std::stringstream bdryStream;
 
