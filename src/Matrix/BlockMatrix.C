@@ -304,6 +304,7 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
                          column_of_entry, entries_in_rows));
       // create Matrix
       this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
+      delete [] comb_entries;
     }
   }
   // else reuse the already computed combined matrix
