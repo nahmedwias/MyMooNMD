@@ -16,8 +16,8 @@
 
 void ExampleFile()
 {
-  OutPut("Example: 5SpotProblem.h\n");
-  OutPut(" This works so far only on one level with a regular grid\n");
+  Output::print<1>("Example: 5SpotProblem.h");
+  Output::print<1>(" This works so far only on one level with a regular grid");
 }
 
 // ========================================================================

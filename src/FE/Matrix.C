@@ -19,42 +19,32 @@
 
 #include <MooNMD_Io.h>
 
-TMatrix::TMatrix(TStructure *structure)
+TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
+ : structure(structure), entries(this->structure->GetN_Entries(), 0.)
 {
-  this->structure = structure;
-  Entries = new double[structure->GetN_Entries()];
-  memset(Entries, 0, structure->GetN_Entries()*SizeOfDouble);
 }
 
-TMatrix::TMatrix(TStructure *structure, double* Entries)
+TMatrix::TMatrix(std::shared_ptr<TStructure> structure, double* Entries)
+ : structure(structure), entries(this->structure->GetN_Entries(), 0.)
 {
-  this->structure = structure;
-  this->Entries = Entries;
+  this->setEntries(Entries);
 }
 
 TMatrix::TMatrix(int nRows, int nCols)
+ : TMatrix(std::make_shared<TStructure>(nRows, nCols))
 {
-  structure = new TStructure(nRows,nCols);
-  Entries = NULL;
 }
 
-void TMatrix::SetStructure(TStructure *structure)
+void TMatrix::SetStructure(std::shared_ptr<TStructure> structure)
 {
   this->structure = structure;
 
-  if (Entries) delete Entries;
-  Entries = new double[structure->GetN_Entries()];
-  memset(Entries, 0, structure->GetN_Entries()*SizeOfDouble);
+  memset(this->GetEntries(), 0, this->structure->GetN_Entries()*SizeOfDouble);
 }
 
 void TMatrix::reset()
 {
-  memset(this->Entries, 0., this->structure->GetN_Entries()*SizeOfDouble);
-}
-
-TMatrix::~TMatrix()
-{
-  delete [] Entries;
+  memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
 
@@ -71,7 +61,7 @@ void TMatrix::Print(const char *name) const
     
     for (int j=begin; j<end; ++j)
     {
-      OutPut(name<< "(" << i+1 << "," << KCol[pos]+1 << ") = " << Entries[pos] 
+      OutPut(name<< "(" << i+1 << "," << KCol[pos]+1 << ") = " << entries[pos] 
              << ";\n");
       ++pos;
     }
@@ -93,7 +83,7 @@ void TMatrix::PrintFull(std::string name, int fieldWidth) const
     {
       if(curCol == KCol[posKCol] && posKCol < rowEnd)
       {
-        cout << setw(fieldWidth) << Entries[posKCol] << ", ";
+        cout << setw(fieldWidth) << entries[posKCol] << ", ";
         posKCol++;
       }
       else 
@@ -118,10 +108,9 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
 {
   if(i < 0 || i > this->GetN_Rows())
   {
-    ErrMsg("This matrix does not have a row " << i << 
-          ".\nThe dimension of this matrix is " << this->GetN_Rows() <<
-          " x " << this->GetN_Columns());
-    exit(0);
+    ErrThrow("This matrix does not have a row ", i, 
+             ".\nThe dimension of this matrix is ", this->GetN_Rows(), " x ",
+             this->GetN_Columns());
   }
   int* RowPtr = structure->GetRowPtr();
   int* KCol = structure->GetKCol();
@@ -130,16 +119,15 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
   {
     if (KCol[m] == it->first) 
     {
-      Entries[m] += factor*it->second;
+      entries[m] += factor*it->second;
       ++it;
     }
   }
   if(it != vals.end())
   {
-    Error("Error in TMatrix::add. There are entries in 'vals' which are not "
-          << "in the sparse structure. row " << i << ", column " << it->first
-          << ".\nExit\n");
-    exit(0);
+    ErrThrow("Error in TMatrix::add. There are entries in 'vals' which are ",
+             "not in the sparse structure. row ", i, ", column ", it->first,
+             ".\nExit\n");
   }
 }
 
@@ -157,7 +145,7 @@ void TMatrix::add(std::map<int, std::map<int,double> > vals, double factor)
 // return an error if the entry is not in the sparse structure
 void TMatrix::set(int i,int j, double val)
 {
-  this->Entries[this->structure->index_of_entry(i, j)] = val;
+  this->entries[this->structure->index_of_entry(i, j)] = val;
 }
 
 // get val of a matrix element
@@ -167,10 +155,9 @@ const double& TMatrix::get(int i,int j) const
   // index of the entry (i,j) within the vector Entries
   int index = this->structure->index_of_entry(i, j);
   if(index >= 0 )
-    return this->Entries[index];
-  ErrMsg("could not find the entry (" << i << "," << j 
-         << ") in the sparsity structure");
-  exit(1);
+    return this->entries[index];
+  ErrThrow("could not find the entry (", i, ",", j,
+           ") in the sparsity structure");
 }
 
 double& TMatrix::get(int i,int j)
@@ -178,10 +165,9 @@ double& TMatrix::get(int i,int j)
   // index of the entry (i,j) within the vector Entries
   int index = this->structure->index_of_entry(i, j);
   if(index >= 0 )
-    return this->Entries[index];
-  ErrMsg("could not find the entry (" << i << "," << j 
-         << ") in the sparsity structure");
-  exit(1);
+    return this->entries[index];
+  ErrThrow("could not find the entry (", i, ",", j,
+           ") in the sparsity structure");
 }
 
 double & TMatrix::operator()(const int i, const int j)
@@ -200,7 +186,7 @@ double TMatrix::GetNorm(int p) const
   switch(p)
   {
     case -2:
-      result = Dnorm(this->GetN_Entries(), Entries);
+      result = Dnorm(this->GetN_Entries(), this->GetEntries());
       break;
     case -1:
     {
@@ -211,7 +197,7 @@ double TMatrix::GetNorm(int p) const
         //#pragma omp parallel for
         for(int i=rows[row]; i<rows[row+1]; i++)
         {
-          row_sum += fabs(Entries[i]);
+          row_sum += fabs(entries[i]);
         }
         if(row_sum>result && row_sum!=1.0)
           result = row_sum;
@@ -221,14 +207,14 @@ double TMatrix::GetNorm(int p) const
     case 0:
       for(int i=0; i<this->GetN_Entries(); i++)
       {
-        double a = fabs(Entries[i]);
+        double a = fabs(entries[i]);
         if(a > result)
           result = a;
       }
       break;
     case 1:
-      ErrThrow("maximum absolute column sum norm of a matrix not yet "
-               + "implemented!");
+      ErrThrow("maximum absolute column sum norm of a matrix not yet ",
+               "implemented!");
       break;
     case 2:
       ErrThrow("spectral norm of a matrix not yet implemented!");
@@ -243,7 +229,7 @@ double TMatrix::GetNorm(int p) const
 
 double* operator*(const TMatrix & A,const double* x)
 {
-  double *AEntries = A.GetEntries();
+  const double *AEntries = A.GetEntries();
   int *ARowPtr = A.GetRowPtr();
   int *AColIndex = A.GetKCol();
 
@@ -270,18 +256,16 @@ double* operator*(const TMatrix & A,const double* x)
 
 TMatrix & TMatrix::operator+=(const TMatrix* A)
 {
-  if(this->structure != A->GetStructure() // compare pointers
-     && (*(this->structure)) != (*(A->GetStructure()))) // compare objects
+  if(this->GetStructure() != A->GetStructure()) // compare objects
   {
-    ErrMsg("TMatrix::operator+= : the two matrices do not match.");
-    exit(1);
+    ErrThrow("TMatrix::operator+= : the two matrices do not match.");
   }
   
   int n_entries = this->GetN_Entries();
-  double *AEntries = A->GetEntries();
+  const double *AEntries = A->GetEntries();
   for(int i = 0; i < n_entries; ++i)
   {
-    this->Entries[i] += AEntries[i];
+    this->entries[i] += AEntries[i];
   }
   return *this;
 }
@@ -290,18 +274,16 @@ TMatrix & TMatrix::operator+=(const TMatrix* A)
 
 TMatrix & TMatrix::operator-=(const TMatrix* A)
 {
-  if(this->structure != A->GetStructure() // compare pointers
-     && (*(this->structure)) != (*(A->GetStructure()))) // compare objects
+  if(this->GetStructure() != A->GetStructure()) // compare objects
   {
-    ErrMsg("TMatrix::operator-= : the two matrices do not match.");
-    exit(1);
+    ErrThrow("TMatrix::operator-= : the two matrices do not match.");
   }
   
   int n_entries = this->GetN_Entries();
-  double *AEntries = A->GetEntries();
+  const double *AEntries = A->GetEntries();
   for(int i = 0; i < n_entries; ++i)
   {
-    this->Entries[i] -= AEntries[i];
+    this->entries[i] -= AEntries[i];
   }
   return *this;
 }
@@ -310,21 +292,20 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 TMatrix & TMatrix::operator=(const TMatrix& A)
 {
   // compare structures (first pointers, then structures themselves)
-  if(this->structure != A.GetStructure() // compare pointers
-     && ((*(this->structure)) != (*(A.GetStructure())))) // compare objects
+  if(this->GetStructure() != A.GetStructure()) // compare objects
   {
     OutPut("WARNING: TMatrix& operator= Matrices have different structures.\n"
            << "         The structure in this matrix (on left hand side) is "
            << "         reset to use the same structure as the right hand "
            << "side\n         Are you sure this is what you want?\n");
-    this->SetStructure(A.GetStructure());
+    ErrThrow("cannot call operator= on TMatrix with different TStructure");
   }
   
   // copy matrix entries.
   int n_entries = this->GetN_Entries();
-  double *AEntries = A.GetEntries();
+  const double *AEntries = A.GetEntries();
   for(int i = 0; i < n_entries; i++)
-    this->Entries[i] = AEntries[i];
+    this->entries[i] = AEntries[i];
   return *this;
 }
 
@@ -346,7 +327,7 @@ void TMatrix::multiply(const double * const x, double *y, double a) const
     end = rowPtr[i+1];
     for (j = rowPtr[i]; j < end; j++) 
     {
-      value += Entries[j] * x[colIndex[j]];
+      value += entries[j] * x[colIndex[j]];
     }
     y[i] += a * value;
   }
@@ -372,7 +353,7 @@ void TMatrix::transpose_multiply(const double * const x, double *y, double a)
     for(j = rowPtr[i]; j < end; j++)
     {
       // Entries[j] is the (i,colIndex[j])-th entry of this matrix
-      y[colIndex[j]] += Entries[j] * value;
+      y[colIndex[j]] += entries[j] * value;
     }
   }
 }
@@ -385,16 +366,15 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   
   if(n_A_cols != n_B_rows)
   {
-    ErrMsg("dimention mismatch during matrix-matrix multiplication");
-    exit(1);
+    ErrThrow("dimention mismatch during matrix-matrix multiplication");
   }
   const int * const a_rows = this->GetRowPtr();
   const int * const a_cols = this->GetKCol();
   
-  TStructure * strucB = B->GetStructure();
+  const TStructure & strucB = B->GetStructure();
   const double * const b_entries = B->GetEntries();
   
-  TStructure * struc_c = get_product_structure(this->GetStructure(), strucB);
+  std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
   int * c_rows = struc_c->GetRowPtr();
   int * c_cols = struc_c->GetKCol();
   double * c_entries = new double[struc_c->GetN_Entries()];
@@ -413,10 +393,10 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
       // loop over all entries in this row in A
       for(int i = a_rows[row]; i < a_rows[row+1]; i++)
       {
-        int ib = strucB->index_of_entry(a_cols[i], c_cols[col]);
+        int ib = strucB.index_of_entry(a_cols[i], c_cols[col]);
         if(ib != -1)
         {
-          c_entries[col] += Entries[i] * b_entries[ib];
+          c_entries[col] += entries[i] * b_entries[ib];
         }
       }
     }
@@ -428,7 +408,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
 TMatrix* TMatrix::GetTransposed() const
 {
   // get transposed structure
-  TStructure *structureT = structure->GetTransposed();
+  std::shared_ptr<TStructure> structureT = structure->GetTransposed();
   int * rowsT= structureT->GetRowPtr();
   int * colsT= structureT->GetKCol();
   int * rows = this->GetRowPtr();
@@ -450,7 +430,7 @@ TMatrix* TMatrix::GetTransposed() const
       {
         if(i==colsT[k])
         {
-          entriesT[k] = Entries[j];
+          entriesT[k] = entries[j];
           continue; // entry found
         }
       }
@@ -476,8 +456,8 @@ void TMatrix::remove_zeros(double tol)
     new_entries[row]; // empty row
     for(int col = rows[row]; col < rows[row + 1]; col++)
     {
-      if(fabs(Entries[col]) > tol)
-        (new_entries[row])[cols[col]] = Entries[col];
+      if(fabs(entries[col]) > tol)
+        (new_entries[row])[cols[col]] = entries[col];
     }
     n_removed += rows[row + 1] - rows[row] - new_entries[row].size();
   }
@@ -485,7 +465,7 @@ void TMatrix::remove_zeros(double tol)
   {
     OutPut("TMatrix::remove_zeros: tol " << tol << "\tn_removed " << n_removed
             << "\tratio " << (double)n_removed/(rows[n_rows]) << endl);
-    this->changeRows(new_entries, true);
+    this->changeRows(new_entries);
   }
   else
     OutPut("TMatrix::remove_zeros: no removable entries\n");
@@ -494,17 +474,16 @@ void TMatrix::remove_zeros(double tol)
 
 void TMatrix::add_scaled(const TMatrix& m, double factor)
 {
-  if(this->structure != m.GetStructure() // compare pointers
-     && (*(this->structure)) != (*(m.GetStructure()))) // compare objects
+  if(this->GetStructure() != m.GetStructure()) // compare objects
   {
     ErrThrow("TMatrix::add : the two matrices do not match.");
   }
-  Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->Entries);
+  Daxpy(this->GetN_Entries(), factor, m.GetEntries(), this->GetEntries());
 }
 
 void TMatrix::scale(double factor)
 {
-  Dscal(this->GetN_Entries(), factor, this->Entries);
+  Dscal(this->GetN_Entries(), factor, this->GetEntries());
 }
 
 void TMatrix::scale(const double * const factor, bool from_left)
@@ -520,7 +499,7 @@ void TMatrix::scale(const double * const factor, bool from_left)
       // scale entire row with the same factor
       for(int j = rowPtr[i]; j < end; j++) 
       {
-        Entries[j] *= factor[i];
+        entries[j] *= factor[i];
       }
     }
   }
@@ -532,7 +511,7 @@ void TMatrix::scale(const double * const factor, bool from_left)
       for(int j = rowPtr[i]; j < end; j++) 
       {
         // scale columnwise
-        Entries[j] *= factor[colIndex[j]];
+        entries[j] *= factor[colIndex[j]];
       }
     }
   }
@@ -566,17 +545,16 @@ void TMatrix::reorderMatrix()
       {
         if(KCol[j] > KCol[k]) 
         {
-          l = KCol[j];       value = Entries[j];
-          KCol[j] = KCol[k]; Entries[j] = Entries[k];
-          KCol[k] = l;       Entries[k] = value;
+          l = KCol[j];       value = entries[j];
+          KCol[j] = KCol[k]; entries[j] = entries[k];
+          KCol[k] = l;       entries[k] = value;
         }
       }
     }
   }
 }
 
-void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
-                         bool deleteOldArrays)
+void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
 {
   if(entries.size() == 0)
     return; // nothing needs to be done
@@ -596,13 +574,15 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
   }
   
   int n_rows = structure->GetN_Rows();// new number of rows = old number of rows
+  // new number of columns = old number of columns
+  int n_cols = structure->GetN_Columns(); 
   int n_entries = structure->GetN_Entries() + offset; // new number of entries
   int *columns = new int[n_entries];  // new pointer to columns
   int *rows = new int[n_rows+1];      // new row pointer
   rows[0] = 0;
   
   // create new array to store the entries
-  double * new_entries = new double[n_entries];
+  std::vector<double> new_entries(n_entries);
   
   // fill the arrays 'rows', 'columns' and 'new_entries'
   for(int row=0; row<n_rows; row++)
@@ -618,7 +598,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
       // update row pointer
       rows[row+1] = rows[row] + n_old_entries;
       // copy entries
-      memcpy(new_entries+rows[row], Entries+oldRows[row],
+      memcpy(&new_entries[0]+rows[row], this->GetEntries()+oldRows[row],
              n_old_entries*SizeOfDouble);
     }
     else
@@ -644,17 +624,10 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries,
   }
   
   // change Structure of this matrix
-  structure->setN_Entries(n_entries);
-  structure->setKCol(columns);
-  structure->setRowPtr(rows);
+  this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_entries, 
+                                                 columns, rows);
   
-  if(deleteOldArrays)
-  {
-    delete [] oldRows;
-    delete [] oldCols;
-    delete [] Entries; // maybe we should always delete this
-  }
-  Entries = new_entries;
+  this->entries = new_entries;
 }
 
 /** ************************************************************************* */

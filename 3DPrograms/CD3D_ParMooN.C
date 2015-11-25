@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   //do a makeshift parameter check
   CD3D::checkParameters();
 
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   #ifdef _MPI
   if(iAmOutRank) //Only one process should do that.
@@ -111,8 +111,11 @@ int main(int argc, char* argv[])
 
   if(iAmOutRank)
   {
-    OutPut("MaxSubDomainPerDof: " << maxSubDomainPerDof << endl);
+	  Output::print("MaxSubDomainPerDof: ", maxSubDomainPerDof);
   }
+                domain.GetCollection(It_Finest, 0)->GetN_OwnCells(),
+                ". N_HaloCells: ",
+                domain.GetCollection(It_Finest, 0)->GetN_HaloCells());
   #endif
 
   // create output directory, if not already existing
@@ -143,7 +146,7 @@ int main(int argc, char* argv[])
 
   //=========================================================================
 
-  CloseFiles();
+  Output::close_file();
 
 #ifdef _MPI
   MPI_Finalize();

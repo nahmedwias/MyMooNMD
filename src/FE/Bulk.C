@@ -11,13 +11,11 @@
 #include <string.h>
 
 #ifdef __2D__
-#include <SquareStructure2D.h>
 #include <SquareMatrix2D.h>
 #include <FEFunction2D.h>
 #endif    
 
 #ifdef __3D__
-#include <SquareStructure3D.h>
 #include <SquareMatrix3D.h>
 #include <FEFunction3D.h>
 #endif    

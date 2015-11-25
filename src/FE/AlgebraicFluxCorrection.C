@@ -1149,7 +1149,7 @@ void AlgebraicFluxCorrection::computeArtificialDiffusionMatrix(const TSquareMatr
 	  // get pointers to columns, rows and entries of matrix A
 	  int* ColInd = A.GetKCol();
 	  int* RowPtr = A.GetRowPtr();
-	  double* Entries = A.GetEntries();
+	  const double* Entries = A.GetEntries();
 	  int N_Entries = A.GetN_Entries();
 
 		memset(matrix_D_Entries , 0, N_Entries*SizeOfDouble);
@@ -1478,8 +1478,8 @@ void AlgebraicFluxCorrection::correctDirichletRows(TSquareMatrix2D& MatrixA)
 	double* Entries_A  = MatrixA.GetEntries();
 
 	//determine first and one-after-last dirichlet rows
-	int diriHighBound = MatrixA.GetFESpace()->GetDirichletBound();
-	int diriLowBound = diriHighBound - MatrixA.GetFESpace()->GetN_Dirichlet();
+	int diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
+	int diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
 
 	// loop over rows and set them to unity-vectors
 	for (size_t rowIndex = diriLowBound;

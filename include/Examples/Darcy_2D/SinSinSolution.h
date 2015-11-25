@@ -3,7 +3,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SinSinSolution.h" << endl) ;
+  Output::print<1>("Example: SinSinSolution.h");
 }
 
 // ========================================================================

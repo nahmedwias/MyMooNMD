@@ -9,7 +9,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Sin4.h" << endl);
+  Output::print<1>("Example: Sin4.h");
 }
 
 // exact solution

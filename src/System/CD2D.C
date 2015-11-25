@@ -50,10 +50,10 @@ CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
   TFESpace2D & space = this->systems.front().fe_space;
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
-  OutPut("N_Cells    : " << setw(12) << coll->GetN_Cells() << endl);
-  OutPut("h (min,max): " << setw(12) << h_min << " " << setw(12) <<h_max<<endl);
-  OutPut("dof all    : " << setw(12) << space.GetN_DegreesOfFreedom() << endl);
-  OutPut("dof active : " << setw(12) << space.GetN_ActiveDegrees() << endl);
+  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+  Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
+  Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
+  Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
   
   
   // done with the conrtuctor in case we're not using multigrid
@@ -104,17 +104,17 @@ CD2D::~CD2D()
 /** ************************************************************************ */
 void CD2D::set_parameters()
 {
-	//////////////// Algebraic flux correction ////////////
-	if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
-	{//some kind of afc enabled
-		//make sure that galerkin discretization is used
-		if (TDatabase::ParamDB->DISCTYPE !=	1)
-		{//some other disctype than galerkin
-			TDatabase::ParamDB->DISCTYPE = 1;
-			OutPut("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux "
-				   "Correction is enabled." << endl);
-		}
-	}
+  //////////////// Algebraic flux correction ////////////
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
+  {//some kind of afc enabled
+    //make sure that galerkin discretization is used
+    if (TDatabase::ParamDB->DISCTYPE !=	1)
+    {//some other disctype than galerkin
+      TDatabase::ParamDB->DISCTYPE = 1;
+      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+                    "Correction is enabled.");
+    }
+  }
 }
 
 /** ************************************************************************ */
@@ -150,11 +150,8 @@ void CD2D::solve()
          s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
          this->multigrid.get(), this->get_size(), 0);
   
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-  {
-    t = GetTime() - t;
-    OutPut(" solving of a CD2D problem done in " << t << " seconds\n");
-  }
+  t = GetTime() - t;
+  Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
 }
 
 /** ************************************************************************ */
@@ -196,10 +193,10 @@ void CD2D::output(int i)
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, errors);
     
-    OutPut("L2     : " << errors[0] << endl);
-    OutPut("H1-semi: " << errors[1] << endl);
-    OutPut("SD     : " << errors[2] << endl);
-    OutPut("L_inf  : " << errors[3] << endl);
+    Output::print<1>("L2     : ", errors[0]);
+    Output::print<1>("H1-semi: ", errors[1]);
+    Output::print<1>("SD     : ", errors[2]);
+    Output::print<1>("L_inf  : ", errors[3]);
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
 

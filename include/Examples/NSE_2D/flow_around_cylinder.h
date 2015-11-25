@@ -1,12 +1,14 @@
-// Navier-Stokes problem, Driven cavity
+// Navier-Stokes problem, Benchmark problem
 // 
 // u(x,y) = unknown
 // p(x,y) = unknown
 
 void ExampleFile()
 {
-  Output::print<1>("Example: DrivenCavity.h");
+  OutPut("Example: Benchmark_Neum.h" << endl) ;
 }
+
+#define __BENCH__
 
 // ========================================================================
 // exact solution
@@ -40,7 +42,13 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
+  if (i==1)
+  {
+    cond = NEUMANN;
+    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+  }
+  else
+    cond = DIRICHLET;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
@@ -49,23 +57,22 @@ void U1BoundValue(int BdComp, double Param, double &value)
   {
     case 0: value = 0;
             break;
-    case 1: value = 0;
+    case 1: value= 0;
             break;
-    case 2: if(Param<0.00001 || Param>0.99999) 
-              value = 0;
-            else
-              value = 1;
+    case 2: value = 0;
             break;
-    case 3: value = 0;
+    case 3: value=1.2*Param*(1-Param); // 4*0.3
             break;
-    default: cout << "wrong boundary part number" << endl;
-  }
+    case 4: value=0;
+            break;
+    default: cout << "wrong boundary part number: " << BdComp << endl;
+  }  
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
   value = 0;
-  if(BdComp>3) cout << "wrong boundary part number" << endl;
+  if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
 }
 
 // ========================================================================
@@ -74,7 +81,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 void LinCoeffs(int n_points, double *x, double *y,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  double eps = 1/TDatabase::ParamDB->RE_NR;
   int i;
   double *coeff;
 
@@ -85,6 +92,6 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
+    coeff[3] = 0; // g (divergence)
   }
 }
-

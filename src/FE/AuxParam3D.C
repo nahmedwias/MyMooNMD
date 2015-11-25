@@ -18,7 +18,7 @@
 TAuxParam3D::TAuxParam3D(
         int n_fespace3d, int n_fefunction3d, int n_paramfct,
         int n_fevalues,
-        TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
+        const TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
         ParamFct **parameterfct,
         int *fevalue_fctindex, MultiIndex3D *fevalue_multiindex,
         int n_parameters, int *beginparameter)
@@ -105,7 +105,7 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
   int i, j, k, l, n;
   double xi, *param, *currparam, s;
   double *locvalues;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   FE3D FE_Id;
   BaseFunct3D BaseFunct_Id;

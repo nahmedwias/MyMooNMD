@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
     const TFEFunction3D& function = cd3d.getFunction();
-    TFESpace3D* space = function.GetFESpace3D();
+    const TFESpace3D* space = function.GetFESpace3D();
 
     function.GetErrors(cd3d.getExample().get_exact(0), 4, AllDerivatives,
                    2, L2H1Errors, cd3d.getExample().get_coeffs(),

@@ -163,7 +163,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -177,11 +177,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -363,7 +363,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -531,10 +531,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetAnsatzSpace())->GetFE2D(i, cell);
+      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace2D())
+                     ->GetFE2D(i, cell);
+      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace2D())
+                     ->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
       // cout << "AnsatzElement: " << AnsatzElement << endl;
@@ -551,7 +551,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      fespace = (TFESpace2D *)(matrices[j]->GetStructure()->GetTestSpace());
+      fespace = (TFESpace2D *)(matrices[j]->GetTestSpace2D());
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
 
@@ -894,7 +894,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -944,7 +944,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   for(j=0;j<n_matrices;j++)
   {
     // hanging nodes in test space
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -992,7 +992,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
 
     // hanging nodes in ansatz space
     N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetAnsatzSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetAnsatzSpace2D());
 
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
@@ -1064,7 +1064,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -1334,7 +1334,7 @@ double factor
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -1348,11 +1348,11 @@ double factor
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -1522,7 +1522,7 @@ double factor
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -1682,10 +1682,10 @@ double factor
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetAnsatzSpace())->GetFE2D(i, cell);
+      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace2D())
+                    ->GetFE2D(i, cell);
+      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace2D())
+                    ->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
       // cout << "AnsatzElement: " << AnsatzElement << endl;
@@ -1702,7 +1702,7 @@ double factor
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      fespace =(const TFESpace2D*)(matrices[j]->GetStructure()->GetTestSpace());
+      fespace =(const TFESpace2D*)(matrices[j]->GetTestSpace2D());
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
 
@@ -2004,7 +2004,7 @@ double factor
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -2054,7 +2054,7 @@ double factor
   for(j=0;j<n_matrices;j++)
   {
     // hanging nodes in test space
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -2102,7 +2102,7 @@ double factor
 
     // hanging nodes in ansatz space
     N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetAnsatzSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetAnsatzSpace2D());
 
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
@@ -2174,7 +2174,7 @@ double factor
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -2351,7 +2351,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -2369,11 +2369,11 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -3368,11 +3368,9 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // ########################################################################
     for(int iMat=0;iMat<n_matrices;iMat++)
     {
-      const TFESpace2D* testSpace = 
-        matrices[iMat]->GetStructure()->GetTestSpace2D();
+      const TFESpace2D* testSpace = matrices[iMat]->GetTestSpace2D();
       
-      const TFESpace2D*ansatzSpace = 
-        matrices[iMat]->GetStructure()->GetAnsatzSpace2D();
+      const TFESpace2D* ansatzSpace = matrices[iMat]->GetAnsatzSpace2D();
       TFE2D * test_fe = TFEDatabase2D::GetFE2D(testSpace->GetFE2D(icell, cell));
       TFE2D *ansatz_fe=TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(icell,cell));
       
@@ -4776,7 +4774,7 @@ int *CounterBoundaryParam
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -4794,11 +4792,11 @@ int *CounterBoundaryParam
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -4920,7 +4918,7 @@ int *CounterBoundaryParam
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -5115,10 +5113,10 @@ int *CounterBoundaryParam
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetAnsatzSpace())->GetFE2D(i, cell);
+      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace2D())
+                     ->GetFE2D(i, cell);
+      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace2D())
+                     ->GetFE2D(i, cell);
 
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
@@ -5507,7 +5505,7 @@ int *CounterBoundaryParam
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -5590,7 +5588,7 @@ int *CounterBoundaryParam
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -6219,7 +6217,7 @@ TAuxParam2D *Parameters)
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -6237,11 +6235,11 @@ TAuxParam2D *Parameters)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -6576,7 +6574,7 @@ TAuxParam2D *Parameters)
     for(n=0;n<n_sqmatrices;n++)
     {
       // calculate all needed derivatives of this FE function
-      fespace = sqmatrices[n]->GetFESpace();
+      fespace = sqmatrices[n]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
       BaseFunctCell = BaseFuncts[CurrentElement]; // basis functions
@@ -6869,7 +6867,7 @@ TAuxParam2D *Parameters)
             Entries1 = sqmatrices[n]->GetEntries();
             RowPtr1 = sqmatrices[n]->GetRowPtr();
             ColInd1 = sqmatrices[n]->GetKCol();
-            fespace = sqmatrices[n]->GetFESpace();
+            fespace = sqmatrices[n]->GetFESpace2D();
             ActiveBound = fespace->GetActiveBound();
             if(out>2)
             {
@@ -7148,7 +7146,7 @@ TAuxParam2D *Parameters)
           Entries1 = sqmatrices[n]->GetEntries();
           RowPtr1 = sqmatrices[n]->GetRowPtr();
           ColInd1 = sqmatrices[n]->GetKCol();
-          fespace = sqmatrices[n]->GetFESpace();
+          fespace = sqmatrices[n]->GetFESpace2D();
           ActiveBound = fespace->GetActiveBound();
           if(out>2)
           {
@@ -7726,7 +7724,7 @@ TAuxParam2D *Parameters)
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -7740,11 +7738,11 @@ TAuxParam2D *Parameters)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -8079,7 +8077,7 @@ TAuxParam2D *Parameters)
     for(n=0;n<n_sqmatrices;n++)
     {
       // calculate all needed derivatives of this FE function
-      fespace = sqmatrices[n]->GetFESpace();
+      fespace = sqmatrices[n]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
       BaseFunctCell = BaseFuncts[CurrentElement]; // basis functions
@@ -8450,7 +8448,7 @@ TAuxParam2D *Parameters)
             Entries1 = sqmatrices[n]->GetEntries();
             RowPtr1 = sqmatrices[n]->GetRowPtr();
             ColInd1 = sqmatrices[n]->GetKCol();
-            fespace = sqmatrices[n]->GetFESpace();
+            fespace = sqmatrices[n]->GetFESpace2D();
             ActiveBound = fespace->GetActiveBound();
             if(out>2)
             {
@@ -8851,7 +8849,7 @@ TAuxParam2D *Parameters)
             Entries1 = sqmatrices[n]->GetEntries();
             RowPtr1 = sqmatrices[n]->GetRowPtr();
             ColInd1 = sqmatrices[n]->GetKCol();
-            fespace = sqmatrices[n]->GetFESpace();
+            fespace = sqmatrices[n]->GetFESpace2D();
             ActiveBound = fespace->GetActiveBound();
             if(out>2)
             {
@@ -9390,7 +9388,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -9404,11 +9402,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -9562,7 +9560,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -9718,10 +9716,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetStructure()->
-        GetAnsatzSpace())->GetFE2D(i, cell);
+      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace())
+                    ->GetFE2D(i, cell);
+      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace())
+                    ->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
       // cout << "AnsatzElement: " << AnsatzElement << endl;
@@ -9738,7 +9736,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      fespace = (TFESpace2D *)(matrices[j]->GetStructure()->GetTestSpace());
+      fespace = (TFESpace2D *)(matrices[j]->GetTestSpace2D());
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
 
@@ -10068,7 +10066,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -10118,7 +10116,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   for(j=0;j<n_matrices;j++)
   {
     // hanging nodes in test space
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetTestSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -10166,7 +10164,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     // hanging nodes in ansatz space
     N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (matrices[j]->GetStructure()->GetAnsatzSpace());
+    fespace = (TFESpace2D *) (matrices[j]->GetAnsatzSpace2D());
 
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
@@ -10238,7 +10236,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 

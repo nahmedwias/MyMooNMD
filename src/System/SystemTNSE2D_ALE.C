@@ -46,7 +46,7 @@ TSystemTNSE2D_ALE::TSystemTNSE2D_ALE(TFESpace2D *velocity_fespace, TFESpace2D *p
   N_GridActive = gridFESpace->GetActiveBound();
   
   // grid 
-  SquareStructureG= new TSquareStructure2D(GridFESpace); 
+  SquareStructureG= new TStructure(GridFESpace); 
   SquareStructureG->Sort();
    
   // for mesh

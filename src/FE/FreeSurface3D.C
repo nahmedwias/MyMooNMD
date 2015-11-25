@@ -779,7 +779,7 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
 // ========================================================================
 // manipulate square matrices due to u.n=0 constraint
 // ========================================================================
-void ManipulateSquareMatrices(TSquareStructure3D *sqstructure,
+void ManipulateSquareMatrices(TStructure *sqstructure,
         double *a11, double *a12, double *a13,
         double *a21, double *a22, double *a23,
         double *a31, double *a32, double *a33,
@@ -917,7 +917,7 @@ void ManipulateSquareMatrices(TSquareStructure3D *sqstructure,
 // ========================================================================
 // manipulate square matrices due to u.n=0 constraint
 // ========================================================================
-void ManipulateMatricesAndRhs(TStructure3D *structure,
+void ManipulateMatricesAndRhs(TStructure *structure,
         double *b1t, double *b2t, double *b3t,
         double *f1, double *f2, double *f3,
         int N_FaceDOF, int N_EdgeDOF,
@@ -1357,7 +1357,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   double InvWe;
   int N_BaseFunct, *N_BaseFuncts;
   BaseFunct3D *BaseFuncts;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   int *BeginIndex, *GlobalNumbers;
   int *RowPtr, *KCol;
   double *ValuesAii;
@@ -1385,7 +1385,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   TCollection *CollPot;
   int N_CellsPot, CellNrPot;
   int *BeginIndexPot, *GlobalNumbersPot;
-  TFESpace3D *fespacePot;
+  const TFESpace3D *fespacePot;
   FE3D FEIdPot;
   double *valuesPot, value;
   int *DOFPot;
@@ -1414,7 +1414,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   N_BaseFuncts = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
-  fespace = Aii->GetFESpace();
+  fespace = Aii->GetFESpace3D();
   BeginIndex = fespace->GetBeginIndex();
   GlobalNumbers = fespace->GetGlobalNumbers();
 
@@ -1660,7 +1660,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   
   BaseFunct3D *BaseFuncts;
   TBaseCell *Cell;
-  TFESpace3D *fesp;
+  const TFESpace3D *fesp;
   BF3DRefElements RefElement;
   FE3D FeID;
   TFE3D *ele;
@@ -1676,7 +1676,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
     OutPut("with exact curvature ... ");
   }
   
-  fesp = Aii[0]->GetFESpace();
+  fesp = Aii[0]->GetFESpace3D();
   KColAii = Aii[0]->GetKCol();
   RowPtrAii = Aii[0]->GetRowPtr();
   
@@ -2009,7 +2009,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
   double values[MaxN_BaseFunctions3D];
   double x, y, z, *xi, *eta, *zeta;
   TBaseCell *Cell;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D FeID;
   TBaseFunct3D *bf;
   TTetraAffin *F_aff;
@@ -2025,7 +2025,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
   
 //   OutPut("Adding surface integral (new) ... ");
   
-  fespace = Aii[0]->GetFESpace();
+  fespace = Aii[0]->GetFESpace3D();
   
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex    = fespace->GetBeginIndex();

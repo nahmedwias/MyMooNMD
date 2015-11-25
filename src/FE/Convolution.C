@@ -3235,7 +3235,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
-  TFESpace3D *fespace, *fespaceConv; 
+  const TFESpace3D *fespace, *fespaceConv; 
 
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
 
@@ -3733,7 +3733,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   TJoint *joint;
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
-  TFESpace3D *fespace, *fespaceConv; 
+  const TFESpace3D *fespace, *fespaceConv; 
 
   //  TDatabase::ParamDB->INTERNAL_QUAD_RULE=1; there is something wrong !!!!
   // gives an array where the needed derivatives are described
@@ -4246,7 +4246,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, *z_conv, delta, hK;
   TJoint *joint;
-  TFESpace3D *fespace, *fespaceConv; 
+  const TFESpace3D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { FALSE };
   int N_Derivatives = 3;
@@ -4849,7 +4849,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, *z_conv, delta, hK;
   TJoint *joint;
-  TFESpace3D *fespace, *fespaceConv; 
+  const TFESpace3D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
 
@@ -5387,7 +5387,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
-  TFESpace3D *fespace, *fespaceConv; 
+  const TFESpace3D *fespace, *fespaceConv; 
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
 
   // gives an array where the needed derivatives are described

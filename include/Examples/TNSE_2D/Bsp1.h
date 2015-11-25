@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Bsp1.h" << endl) ;
+  Output::print<1>("Example: Bsp1.h") ;
 }
 
 // ========================================================================

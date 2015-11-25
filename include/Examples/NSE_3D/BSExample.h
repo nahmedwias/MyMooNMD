@@ -4,7 +4,7 @@
 //
 void ExampleFile()
 {
-  OutPut("Example: BSExample.h" << endl) ;
+  Output::print<1>("Example: BSExample.h");
 }
 
 // ========================================================================

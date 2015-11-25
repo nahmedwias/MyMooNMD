@@ -15,7 +15,6 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <DirectSolver.h>
-#include <SquareStructure1D.h>
 #include <SquareMatrix1D.h>
 #include <FEFunction1D.h>
 #include <LineAffin.h>

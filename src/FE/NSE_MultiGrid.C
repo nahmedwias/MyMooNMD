@@ -17,8 +17,6 @@
 #include <MooNMD_Io.h>
 #include <Constants.h>
 
-#include <NSE_MGLevel5.h>
-
 #ifdef __2D__
   #include <FEDatabase2D.h>
 #endif  
@@ -506,8 +504,8 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
     // calculate u-defect from u*-defect
     if(CurrentLevel->GetType() == 5)
     {
-      memcpy(CurrentAux, CurrentDefectU, GEO_DIM*N_UDOF*SizeOfDouble);
-      ((TNSE_MGLevel5 *)CurrentLevel)->GetDFromDstar(CurrentAux, CurrentDefectU);
+      // if you want this to work, implement and document (!) it.
+      ErrThrow("unsupported NSTYPE 5");
     }
 
     // restrict defect
@@ -519,8 +517,8 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
     // calculate u*-representation from u-representation
     if(CoarserLevel->GetType() == 5)
     {
-      memcpy(CoarserU, CoarserRhsU, GEO_DIM*CoarserLevel->GetN_UDOF()*SizeOfDouble);
-      ((TNSE_MGLevel5 *)CoarserLevel)->GetDstarFromD(CoarserU, CoarserRhsU);
+      // if you want this to work, implement and document (!) it.
+      ErrThrow("unsupported NSTYPE 5");
     }
 
     CoarserLevel->CorrectDefect(CoarserRhsU);
@@ -538,8 +536,8 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
      // calculate u from u*
     if(CoarserLevel->GetType() == 5)
     {
-      memcpy(CoarserRhsU, CoarserU, GEO_DIM*CoarserLevel->GetN_UDOF()*SizeOfDouble);
-      ((TNSE_MGLevel5 *)CoarserLevel)->GetUFromUstar(CoarserRhsU, CoarserU);
+      // if you want this to work, implement and document (!) it.
+      ErrThrow("unsupported NSTYPE 5");
     }
 
     // prolongate correction
@@ -551,8 +549,8 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
     // calculate u*-representation from u-representation
     if(CurrentLevel->GetType() == 5)
     {
-      memcpy(CurrentAux, CurrentDefectU, GEO_DIM*N_UDOF*SizeOfDouble);
-      ((TNSE_MGLevel5 *)CurrentLevel)->GetUstarFromU(CurrentAux, CurrentDefectU);
+      // if you want this to work, implement and document (!) it.
+      ErrThrow("unsupported NSTYPE 5");
     }
 
     // update dofs

@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
     // the domain is initialised with default description and default
     // initial mesh
-    domain.Init("Default_UnitSquare", "UnitSquare");
+	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
     // refine grid up to the coarsest level
     for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)

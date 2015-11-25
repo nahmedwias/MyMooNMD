@@ -1274,557 +1274,561 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   time ( &rawtime );
   timeinfo = localtime ( &rawtime );
  
+  using namespace Output; // printToFile
+  
   gethostname(buf,80);
-  OutFile << "HOSTNAME: " << buf << " started on " << asctime (timeinfo)  << endl;
-  OutFile << "EXECUTED FILE: " <<  ExecutedFile << endl;
-  OutFile << "VERSION: " << ParamDB->VERSION << endl;
-  OutFile << "GEOFILE: " << ParamDB->GEOFILE << endl;
-  OutFile << "BNDFILE: " << ParamDB->BNDFILE << endl;
-  OutFile << "MAPFILE: " << ParamDB->MAPFILE << endl;
-  OutFile << "OUTFILE: " << ParamDB->OUTFILE << endl;
-  OutFile << "PROBLEM_TYPE: " << ParamDB->PROBLEM_TYPE << endl;
-  OutFile << "EXAMPLE: " << ParamDB->EXAMPLE << endl;
-  OutFile << "profiling: " << ParamDB->timeprofiling << endl;
-  OutFile << "MapperType: " << ParamDB->MapperType << endl;
-  OutFile << "DSType: " << ParamDB->DSType << endl;
+  printToFile("HOSTNAME: ", buf, " started on ", asctime (timeinfo));
+  printToFile("EXECUTED FILE: ", ExecutedFile);
+  printToFile("VERSION: ", ParamDB->VERSION);
+  printToFile("GEOFILE: ", ParamDB->GEOFILE);
+  printToFile("BNDFILE: ", ParamDB->BNDFILE);
+  printToFile("MAPFILE: ", ParamDB->MAPFILE);
+  printToFile("OUTFILE: ", ParamDB->OUTFILE);
+  printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
+  printToFile("EXAMPLE: ", ParamDB->EXAMPLE);
+  printToFile("profiling: ", ParamDB->timeprofiling);
+  printToFile("MapperType: ", ParamDB->MapperType);
+  printToFile("DSType: ", ParamDB->DSType);
   
-  OutFile << "MESHGEN_ALLOW_EDGE_REF: " << ParamDB->MESHGEN_ALLOW_EDGE_REF << endl;
-  OutFile << "MESHGEN_REF_QUALITY: " << ParamDB->MESHGEN_REF_QUALITY << endl;
+  printToFile("MESHGEN_ALLOW_EDGE_REF: ", ParamDB->MESHGEN_ALLOW_EDGE_REF);
+  printToFile("MESHGEN_REF_QUALITY: ", ParamDB->MESHGEN_REF_QUALITY);
 
-  OutFile << "ANSATZ_ORDER: " << ParamDB->ANSATZ_ORDER << endl;
-  OutFile << "TEST_ORDER: " << ParamDB->TEST_ORDER << endl;
+  printToFile("ANSATZ_ORDER: ", ParamDB->ANSATZ_ORDER);
+  printToFile("TEST_ORDER: ", ParamDB->TEST_ORDER);
   
-  OutFile << "VELOCITY_SPACE: " << ParamDB->VELOCITY_SPACE << endl;
-  OutFile << "PRESSURE_SPACE: " << ParamDB->PRESSURE_SPACE << endl;
-  OutFile << "PRESSURE_SEPARATION: " << ParamDB->PRESSURE_SEPARATION << endl;
+  printToFile("VELOCITY_SPACE: ", ParamDB->VELOCITY_SPACE);
+  printToFile("PRESSURE_SPACE: ", ParamDB->PRESSURE_SPACE);
+  printToFile("PRESSURE_SEPARATION: ", ParamDB->PRESSURE_SEPARATION);
 
-  OutFile << "OMPNUMTHREADS: " << ParamDB->OMPNUMTHREADS << endl;
+  printToFile("OMPNUMTHREADS: ", ParamDB->OMPNUMTHREADS);
 
-  OutFile << "LEVELS: " << ParamDB->LEVELS << endl;
-  OutFile << "N_CELL_LAYERS: " << ParamDB->N_CELL_LAYERS << endl;
-  OutFile << "UNIFORM_STEPS: " << ParamDB->UNIFORM_STEPS << endl;
-  OutFile << "DRIFT_X: " << ParamDB->DRIFT_X << endl;
-  OutFile << "DRIFT_Y: " << ParamDB->DRIFT_Y << endl;
-  OutFile << "DRIFT_Z: " << ParamDB->DRIFT_Z << endl;
-  OutFile << "REFINEMENT: " << ParamDB->REFINEMENT << endl;
-  OutFile << "GRID_TYPE: " << ParamDB->GRID_TYPE << endl;
-  OutFile << "GRID_TYPE_1: " << ParamDB->GRID_TYPE_1 << endl;
-  OutFile << "GRID_TYPE_2: " << ParamDB->GRID_TYPE_2 << endl;
-  OutFile << "CHANNEL_GRID_STRETCH: " << ParamDB->CHANNEL_GRID_STRETCH << endl;
+  printToFile("LEVELS: ", ParamDB->LEVELS);
+  printToFile("N_CELL_LAYERS: ", ParamDB->N_CELL_LAYERS);
+  printToFile("UNIFORM_STEPS: ", ParamDB->UNIFORM_STEPS);
+  printToFile("DRIFT_X: ", ParamDB->DRIFT_X);
+  printToFile("DRIFT_Y: ", ParamDB->DRIFT_Y);
+  printToFile("DRIFT_Z: ", ParamDB->DRIFT_Z);
+  printToFile("REFINEMENT: ", ParamDB->REFINEMENT);
+  printToFile("GRID_TYPE: ", ParamDB->GRID_TYPE);
+  printToFile("GRID_TYPE_1: ", ParamDB->GRID_TYPE_1);
+  printToFile("GRID_TYPE_2: ", ParamDB->GRID_TYPE_2);
+  printToFile("CHANNEL_GRID_STRETCH: ", ParamDB->CHANNEL_GRID_STRETCH);
 
-  OutFile << "ADAPTIVE_REFINEMENT_CRITERION: " << ParamDB->ADAPTIVE_REFINEMENT_CRITERION << endl;
-  OutFile << "ERROR_CONTROL: " << ParamDB->ERROR_CONTROL << endl;
-  OutFile << "REFINE_STRATEGY: " << ParamDB->REFINE_STRATEGY << endl;
-  OutFile << "MAX_CELL_LEVEL: " << ParamDB->MAX_CELL_LEVEL << endl;
-  OutFile << "REFTOL: " << ParamDB->REFTOL << endl;
-  OutFile << "COARSETOL: " << ParamDB->COARSETOL << endl;  
-  OutFile << "MIN_FRACTION_TO_CHANGE: " << ParamDB->MIN_FRACTION_TO_CHANGE << endl;
-  OutFile << "DECREASE_REFTOL_FACTOR: " << ParamDB->DECREASE_REFTOL_FACTOR << endl;
-  OutFile << "INCREASE_COARSETOL_FACTOR: " << ParamDB->INCREASE_COARSETOL_FACTOR << endl;
-  OutFile << "FRACTION_OF_ERROR: " << ParamDB->FRACTION_OF_ERROR << endl;
-  OutFile << "CONVERT_QUAD_TO_TRI: " << ParamDB->CONVERT_QUAD_TO_TRI << endl;
+  printToFile("ADAPTIVE_REFINEMENT_CRITERION: ", ParamDB->ADAPTIVE_REFINEMENT_CRITERION);
+  printToFile("ERROR_CONTROL: ", ParamDB->ERROR_CONTROL);
+  printToFile("REFINE_STRATEGY: ", ParamDB->REFINE_STRATEGY);
+  printToFile("MAX_CELL_LEVEL: ", ParamDB->MAX_CELL_LEVEL);
+  printToFile("REFTOL: ", ParamDB->REFTOL);
+  printToFile("COARSETOL: ", ParamDB->COARSETOL);  
+  printToFile("MIN_FRACTION_TO_CHANGE: ", ParamDB->MIN_FRACTION_TO_CHANGE);
+  printToFile("DECREASE_REFTOL_FACTOR: ", ParamDB->DECREASE_REFTOL_FACTOR);
+  printToFile("INCREASE_COARSETOL_FACTOR: ", ParamDB->INCREASE_COARSETOL_FACTOR);
+  printToFile("FRACTION_OF_ERROR: ", ParamDB->FRACTION_OF_ERROR);
+  printToFile("CONVERT_QUAD_TO_TRI: ", ParamDB->CONVERT_QUAD_TO_TRI);
   
-  OutFile << "DISCTYPE: " << ParamDB->DISCTYPE << endl;
-  OutFile << "INTL_DISCTYPE: " << ParamDB->INTL_DISCTYPE << endl;
-  OutFile << "UPWIND_ORDER: " << ParamDB->UPWIND_ORDER << endl;
-  OutFile << "UPWIND_FLUX_DAMP: " << ParamDB->UPWIND_FLUX_DAMP << endl;
-  OutFile << "UPWIND_APPLICATION: " << ParamDB->UPWIND_APPLICATION<< endl;
-  OutFile << "SHISHKIN_MESH: " << ParamDB->SHISHKIN_MESH << endl;
-  OutFile << "SHISHKIN_DIAM: " << ParamDB->SHISHKIN_DIAM << endl;
-  OutFile << "NSTYPE: " << ParamDB->NSTYPE << endl;
-  OutFile << "DARCYTYPE: " << ParamDB->DARCYTYPE << endl;
-  OutFile << "SIGMA_PERM: " << ParamDB->SIGMA_PERM << endl;
-  OutFile << "LAPLACETYPE: " << ParamDB->LAPLACETYPE << endl;
-  OutFile << "USE_ISOPARAMETRIC: " << ParamDB->USE_ISOPARAMETRIC << endl;
-  OutFile << "VMM_COARSE_LEVEL: " << ParamDB->VMM_COARSE_LEVEL << endl;
-  OutFile << "VMM_COARSE_SPACE_ORDER: " << ParamDB->VMM_COARSE_SPACE_ORDER << endl;
-  OutFile << "RFB_SUBMESH_LAYERS: " << ParamDB->RFB_SUBMESH_LAYERS << endl;
-  OutFile << "DEFECT_CORRECTION_TYPE: " << ParamDB->DEFECT_CORRECTION_TYPE<< endl;
-  OutFile << "CELL_MEASURE: " << ParamDB->CELL_MEASURE<< endl;
-  OutFile << "FACE_SIGMA: " << ParamDB->FACE_SIGMA << endl;
-  OutFile << "WEAK_BC_SIGMA: " << ParamDB->WEAK_BC_SIGMA << endl;
-  OutFile << "WEAK_BC: " << ParamDB->WEAK_BC << endl;
+  printToFile("DISCTYPE: ", ParamDB->DISCTYPE);
+  printToFile("INTL_DISCTYPE: ", ParamDB->INTL_DISCTYPE);
+  printToFile("UPWIND_ORDER: ", ParamDB->UPWIND_ORDER);
+  printToFile("UPWIND_FLUX_DAMP: ", ParamDB->UPWIND_FLUX_DAMP);
+  printToFile("UPWIND_APPLICATION: ", ParamDB->UPWIND_APPLICATION);
+  printToFile("SHISHKIN_MESH: ", ParamDB->SHISHKIN_MESH);
+  printToFile("SHISHKIN_DIAM: ", ParamDB->SHISHKIN_DIAM);
+  printToFile("NSTYPE: ", ParamDB->NSTYPE);
+  printToFile("DARCYTYPE: ", ParamDB->DARCYTYPE);
+  printToFile("SIGMA_PERM: ", ParamDB->SIGMA_PERM);
+  printToFile("LAPLACETYPE: ", ParamDB->LAPLACETYPE);
+  printToFile("USE_ISOPARAMETRIC: ", ParamDB->USE_ISOPARAMETRIC);
+  printToFile("VMM_COARSE_LEVEL: ", ParamDB->VMM_COARSE_LEVEL);
+  printToFile("VMM_COARSE_SPACE_ORDER: ", ParamDB->VMM_COARSE_SPACE_ORDER);
+  printToFile("RFB_SUBMESH_LAYERS: ", ParamDB->RFB_SUBMESH_LAYERS);
+  printToFile("DEFECT_CORRECTION_TYPE: ", ParamDB->DEFECT_CORRECTION_TYPE);
+  printToFile("CELL_MEASURE: ", ParamDB->CELL_MEASURE);
+  printToFile("FACE_SIGMA: ", ParamDB->FACE_SIGMA);
+  printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
+  printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
 
-  OutFile << "RE_NR: " << ParamDB->RE_NR << endl;
-  OutFile << "RA_NR: " << ParamDB->RA_NR << endl;
-  OutFile << "ROSSBY_NR: " << ParamDB->ROSSBY_NR << endl;
-  OutFile << "START_RE_NR: " << ParamDB->START_RE_NR << endl;
-  OutFile << "RE_NR_INCREMENT: " << ParamDB->RE_NR_INCREMENT << endl;
-  OutFile << "FLOW_PROBLEM_TYPE: " << ParamDB->FLOW_PROBLEM_TYPE << endl;
-  OutFile << "FR_NR: " << ParamDB->FR_NR << endl;
-  OutFile << "WB_NR: " << ParamDB->WB_NR << endl;
-  OutFile << "PR_NR: " << ParamDB->PR_NR << endl;
-  OutFile << "PE_NR: " << ParamDB->PE_NR << endl;  
-  OutFile << "BI_NR: " << ParamDB->BI_NR << endl;
-  OutFile << "Axial3D: " << ParamDB->Axial3D << endl;
-  OutFile << "Axial3DAxis: " << ParamDB->Axial3DAxis << endl;  
-  OutFile << "DELTA0: " << ParamDB->DELTA0 << endl;
-  OutFile << "SDFEM_POWER0: " << ParamDB->SDFEM_POWER0 << endl;
-  OutFile << "SDFEM_TYPE: " << ParamDB->SDFEM_TYPE << endl;
-  OutFile << "SDFEM_NORM_B: " << ParamDB->SDFEM_NORM_B << endl;
-  OutFile << "DELTA1: " << ParamDB->DELTA1 << endl;
-  OutFile << "CIP_TYPE: " << ParamDB->CIP_TYPE << endl;
-  OutFile << "ADJOINT_FACTOR_4_OMEGA_EQ_0: " << ParamDB->ADJOINT_FACTOR_4_OMEGA_EQ_0 << endl;
+  printToFile("RE_NR: ", ParamDB->RE_NR);
+  printToFile("RA_NR: ", ParamDB->RA_NR);
+  printToFile("ROSSBY_NR: ", ParamDB->ROSSBY_NR);
+  printToFile("START_RE_NR: ", ParamDB->START_RE_NR);
+  printToFile("RE_NR_INCREMENT: ", ParamDB->RE_NR_INCREMENT);
+  printToFile("FLOW_PROBLEM_TYPE: ", ParamDB->FLOW_PROBLEM_TYPE);
+  printToFile("FR_NR: ", ParamDB->FR_NR);
+  printToFile("WB_NR: ", ParamDB->WB_NR);
+  printToFile("PR_NR: ", ParamDB->PR_NR);
+  printToFile("PE_NR: ", ParamDB->PE_NR);  
+  printToFile("BI_NR: ", ParamDB->BI_NR);
+  printToFile("Axial3D: ", ParamDB->Axial3D);
+  printToFile("Axial3DAxis: ", ParamDB->Axial3DAxis);  
+  printToFile("DELTA0: ", ParamDB->DELTA0);
+  printToFile("SDFEM_POWER0: ", ParamDB->SDFEM_POWER0);
+  printToFile("SDFEM_TYPE: ", ParamDB->SDFEM_TYPE);
+  printToFile("SDFEM_NORM_B: ", ParamDB->SDFEM_NORM_B);
+  printToFile("DELTA1: ", ParamDB->DELTA1);
+  printToFile("CIP_TYPE: ", ParamDB->CIP_TYPE);
+  printToFile("ADJOINT_FACTOR_4_OMEGA_EQ_0: ", ParamDB->ADJOINT_FACTOR_4_OMEGA_EQ_0);
 
-  OutFile << "SOLD_TYPE: " << ParamDB->SOLD_TYPE << endl;
-  OutFile << "SOLD_PARAMETER_TYPE: " << ParamDB->SOLD_PARAMETER_TYPE << endl;
-  OutFile << "SOLD_CONST: " << ParamDB->SOLD_CONST << endl;
-  OutFile << "SOLD_POWER: " << ParamDB->SOLD_POWER << endl;
-  OutFile << "SOLD_S: " << ParamDB->SOLD_S << endl;
-  OutFile << "SOLD_U0: " << ParamDB->SOLD_U0 << endl;
-  OutFile << "SOLD_PARAMETER_SCALING: " << ParamDB->SOLD_PARAMETER_SCALING << endl;
-  OutFile << "SOLD_PARAMETER_SCALING_FACTOR: " << ParamDB->SOLD_PARAMETER_SCALING_FACTOR << endl;
+  printToFile("SOLD_TYPE: ", ParamDB->SOLD_TYPE);
+  printToFile("SOLD_PARAMETER_TYPE: ", ParamDB->SOLD_PARAMETER_TYPE);
+  printToFile("SOLD_CONST: ", ParamDB->SOLD_CONST);
+  printToFile("SOLD_POWER: ", ParamDB->SOLD_POWER);
+  printToFile("SOLD_S: ", ParamDB->SOLD_S);
+  printToFile("SOLD_U0: ", ParamDB->SOLD_U0);
+  printToFile("SOLD_PARAMETER_SCALING: ", ParamDB->SOLD_PARAMETER_SCALING);
+  printToFile("SOLD_PARAMETER_SCALING_FACTOR: ", ParamDB->SOLD_PARAMETER_SCALING_FACTOR);
   
 
-  OutFile << "FILTER_WIDTH_CONSTANT: " << ParamDB->FILTER_WIDTH_CONSTANT << endl;
-  OutFile << "FILTER_WIDTH_POWER: " << ParamDB->FILTER_WIDTH_POWER << endl;
-  OutFile << "GAUSSIAN_GAMMA: " << ParamDB->GAUSSIAN_GAMMA  << endl;
-  OutFile << "CONVOLUTE_SOLUTION: " << ParamDB->CONVOLUTE_SOLUTION << endl;
+  printToFile("FILTER_WIDTH_CONSTANT: ", ParamDB->FILTER_WIDTH_CONSTANT);
+  printToFile("FILTER_WIDTH_POWER: ", ParamDB->FILTER_WIDTH_POWER);
+  printToFile("GAUSSIAN_GAMMA: ", ParamDB->GAUSSIAN_GAMMA );
+  printToFile("CONVOLUTE_SOLUTION: ", ParamDB->CONVOLUTE_SOLUTION);
 
-  OutFile << "TURBULENT_VISCOSITY_TYPE: " << ParamDB->TURBULENT_VISCOSITY_TYPE << endl;
-  OutFile << "TURBULENT_VISCOSITY_TENSOR: " << ParamDB->TURBULENT_VISCOSITY_TENSOR << endl;
-  OutFile << "TURBULENT_VISCOSITY_CONSTANT: " << ParamDB->TURBULENT_VISCOSITY_CONSTANT << endl;
-  OutFile << "TURBULENT_VISCOSITY_POWER: " << ParamDB->TURBULENT_VISCOSITY_POWER << endl;
-  OutFile << "TURBULENT_VISCOSITY_SIGMA: " << ParamDB->TURBULENT_VISCOSITY_SIGMA << endl;
+  printToFile("TURBULENT_VISCOSITY_TYPE: ", ParamDB->TURBULENT_VISCOSITY_TYPE);
+  printToFile("TURBULENT_VISCOSITY_TENSOR: ", ParamDB->TURBULENT_VISCOSITY_TENSOR);
+  printToFile("TURBULENT_VISCOSITY_CONSTANT: ", ParamDB->TURBULENT_VISCOSITY_CONSTANT);
+  printToFile("TURBULENT_VISCOSITY_POWER: ", ParamDB->TURBULENT_VISCOSITY_POWER);
+  printToFile("TURBULENT_VISCOSITY_SIGMA: ", ParamDB->TURBULENT_VISCOSITY_SIGMA);
 
-  OutFile << "ARTIFICIAL_VISCOSITY_CONSTANT: " << ParamDB->ARTIFICIAL_VISCOSITY_CONSTANT << endl;
-  OutFile << "ARTIFICIAL_VISCOSITY_POWER: " << ParamDB->ARTIFICIAL_VISCOSITY_POWER << endl;
+  printToFile("ARTIFICIAL_VISCOSITY_CONSTANT: ", ParamDB->ARTIFICIAL_VISCOSITY_CONSTANT);
+  printToFile("ARTIFICIAL_VISCOSITY_POWER: ", ParamDB->ARTIFICIAL_VISCOSITY_POWER);
 
-  OutFile << "FRICTION_CONSTANT: " << ParamDB->FRICTION_CONSTANT << endl;
-  OutFile << "FRICTION_POWER: " << ParamDB->FRICTION_POWER << endl;
-  OutFile << "FRICTION_TYPE: " << ParamDB->FRICTION_TYPE << endl;
-  OutFile << "FRICTION_U0: " << ParamDB->FRICTION_U0 << endl;
-  OutFile << "PENETRATION_CONSTANT: " << ParamDB->PENETRATION_CONSTANT << endl;
-  OutFile << "PENETRATION_POWER: " << ParamDB->PENETRATION_POWER << endl;
-  OutFile << "DIV_DIV_STAB_TYPE: " << ParamDB->DIV_DIV_STAB_TYPE << endl; 
-  OutFile << "DIV_DIV_STAB_C1: " << ParamDB->DIV_DIV_STAB_C1 << endl; 
-  OutFile << "DIV_DIV_STAB_C2: " << ParamDB->DIV_DIV_STAB_C2 << endl; 
-  OutFile << "NSE_NONLINEAR_FORM: " << ParamDB->NSE_NONLINEAR_FORM << endl;
-  OutFile << "OSEEN_ZERO_ORDER_COEFF: " << ParamDB->OSEEN_ZERO_ORDER_COEFF << endl;
+  printToFile("FRICTION_CONSTANT: ", ParamDB->FRICTION_CONSTANT);
+  printToFile("FRICTION_POWER: ", ParamDB->FRICTION_POWER);
+  printToFile("FRICTION_TYPE: ", ParamDB->FRICTION_TYPE);
+  printToFile("FRICTION_U0: ", ParamDB->FRICTION_U0);
+  printToFile("PENETRATION_CONSTANT: ", ParamDB->PENETRATION_CONSTANT);
+  printToFile("PENETRATION_POWER: ", ParamDB->PENETRATION_POWER);
+  printToFile("DIV_DIV_STAB_TYPE: ", ParamDB->DIV_DIV_STAB_TYPE); 
+  printToFile("DIV_DIV_STAB_C1: ", ParamDB->DIV_DIV_STAB_C1); 
+  printToFile("DIV_DIV_STAB_C2: ", ParamDB->DIV_DIV_STAB_C2); 
+  printToFile("NSE_NONLINEAR_FORM: ", ParamDB->NSE_NONLINEAR_FORM);
+  printToFile("OSEEN_ZERO_ORDER_COEFF: ", ParamDB->OSEEN_ZERO_ORDER_COEFF);
 
-  OutFile << "LP_FULL_GRADIENT: " << ParamDB->LP_FULL_GRADIENT << endl;
-  OutFile << "LP_STREAMLINE: " << ParamDB->LP_STREAMLINE << endl;
-  OutFile << "LP_DIVERGENCE: " << ParamDB->LP_DIVERGENCE << endl;
-  OutFile << "LP_PRESSURE: " << ParamDB->LP_PRESSURE << endl;
-  OutFile << "LP_COEFF_TYPE: " << ParamDB->LP_COEFF_TYPE << endl;
-  OutFile << "LP_FULL_GRADIENT_COEFF: " << ParamDB->LP_FULL_GRADIENT_COEFF << endl;
-  OutFile << "LP_STREAMLINE_COEFF: " << ParamDB->LP_STREAMLINE_COEFF << endl;
-  OutFile << "LP_DIVERGENCE_COEFF: " << ParamDB->LP_DIVERGENCE_COEFF << endl;
-  OutFile << "LP_PRESSURE_COEFF: " << ParamDB->LP_PRESSURE_COEFF << endl;
-  OutFile << "LP_FULL_GRADIENT_EXPONENT: " << ParamDB->LP_FULL_GRADIENT_EXPONENT << endl;
-  OutFile << "LP_STREAMLINE_EXPONENT: " << ParamDB->LP_STREAMLINE_EXPONENT << endl;
-  OutFile << "LP_DIVERGENCE_EXPONENT: " << ParamDB->LP_DIVERGENCE_EXPONENT << endl;
-  OutFile << "LP_PRESSURE_EXPONENT: " << ParamDB->LP_PRESSURE_EXPONENT << endl;
-  OutFile << "LP_ORDER_DIFFERENCE: " << ParamDB->LP_ORDER_DIFFERENCE << endl;
-  OutFile << "LP_FULL_GRADIENT_ORDER_DIFFERENCE: " << ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE << endl;
-  OutFile << "LP_STREAMLINE_ORDER_DIFFERENCE: " << ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE << endl;
-  OutFile << "LP_DIVERGENCE_ORDER_DIFFERENCE: " << ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE << endl;
-  OutFile << "LP_PRESSURE_ORDER_DIFFERENCE: " << ParamDB->LP_PRESSURE_ORDER_DIFFERENCE << endl;
+  printToFile("LP_FULL_GRADIENT: ", ParamDB->LP_FULL_GRADIENT);
+  printToFile("LP_STREAMLINE: ", ParamDB->LP_STREAMLINE);
+  printToFile("LP_DIVERGENCE: ", ParamDB->LP_DIVERGENCE);
+  printToFile("LP_PRESSURE: ", ParamDB->LP_PRESSURE);
+  printToFile("LP_COEFF_TYPE: ", ParamDB->LP_COEFF_TYPE);
+  printToFile("LP_FULL_GRADIENT_COEFF: ", ParamDB->LP_FULL_GRADIENT_COEFF);
+  printToFile("LP_STREAMLINE_COEFF: ", ParamDB->LP_STREAMLINE_COEFF);
+  printToFile("LP_DIVERGENCE_COEFF: ", ParamDB->LP_DIVERGENCE_COEFF);
+  printToFile("LP_PRESSURE_COEFF: ", ParamDB->LP_PRESSURE_COEFF);
+  printToFile("LP_FULL_GRADIENT_EXPONENT: ", ParamDB->LP_FULL_GRADIENT_EXPONENT);
+  printToFile("LP_STREAMLINE_EXPONENT: ", ParamDB->LP_STREAMLINE_EXPONENT);
+  printToFile("LP_DIVERGENCE_EXPONENT: ", ParamDB->LP_DIVERGENCE_EXPONENT);
+  printToFile("LP_PRESSURE_EXPONENT: ", ParamDB->LP_PRESSURE_EXPONENT);
+  printToFile("LP_ORDER_DIFFERENCE: ", ParamDB->LP_ORDER_DIFFERENCE);
+  printToFile("LP_FULL_GRADIENT_ORDER_DIFFERENCE: ", ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE);
+  printToFile("LP_STREAMLINE_ORDER_DIFFERENCE: ", ParamDB->LP_STREAMLINE_ORDER_DIFFERENCE);
+  printToFile("LP_DIVERGENCE_ORDER_DIFFERENCE: ", ParamDB->LP_DIVERGENCE_ORDER_DIFFERENCE);
+  printToFile("LP_PRESSURE_ORDER_DIFFERENCE: ", ParamDB->LP_PRESSURE_ORDER_DIFFERENCE);
 
-  OutFile << "SOLVE_ADJOINT_PROBLEM: " << ParamDB->SOLVE_ADJOINT_PROBLEM << endl;
-  OutFile << "SOLD_ADJOINT: " << ParamDB->SOLD_ADJOINT << endl;
-  OutFile << "N_STAGES_ADJOINT: " << ParamDB->N_STAGES_ADJOINT << endl;
-  OutFile << "SC_NONLIN_ITE_ADJOINT: " << ParamDB->SC_NONLIN_ITE_ADJOINT << endl;
-  OutFile << "OPTIMIZATION_ITE_TYPE_ADJOINT: " << ParamDB->OPTIMIZATION_ITE_TYPE_ADJOINT << endl;
-  OutFile << "BFGS_VECTORS_ADJOINT: " << ParamDB->BFGS_VECTORS_ADJOINT << endl;
-  OutFile << "RELATIVE_DECREASE_ADJOINT: " << ParamDB->RELATIVE_DECREASE_ADJOINT << endl;
-  OutFile << "PENALTY_ADJOINT: " << ParamDB->PENALTY_ADJOINT << endl;
-  OutFile << "PENALTY_VALUE_AT_ZERO_ADJOINT: " << ParamDB->PENALTY_VALUE_AT_ZERO_ADJOINT << endl;
-  OutFile << "PENALTY_SMALLEST_PARAM_FAC_ADJOINT: " << ParamDB->PENALTY_SMALLEST_PARAM_FAC_ADJOINT << endl;
-  OutFile << "PENALTY_LARGEST_PARAM_FAC_ADJOINT: " << ParamDB->PENALTY_LARGEST_PARAM_FAC_ADJOINT << endl;
-  OutFile << "WEIGHT_RESIDUAL_L1_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_L1_ADJOINT << endl;
-  OutFile << "WEIGHT_RESIDUAL_L2_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_L2_ADJOINT << endl;
-  OutFile << "WEIGHT_GRADIENT_L1_ADJOINT: " << ParamDB->WEIGHT_GRADIENT_L1_ADJOINT << endl;
-  OutFile << "WEIGHT_GRADIENT_L2_ADJOINT: " << ParamDB->WEIGHT_GRADIENT_L2_ADJOINT << endl;
-  OutFile << "WEIGHT_STREAM_DER_L1_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_L1_ADJOINT << endl;
-  OutFile << "WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT << endl;
-  OutFile << "WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: " << ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT << endl;
-  OutFile << "REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: " << ParamDB->REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT << endl;
-  OutFile << "WEIGHT_RESIDUAL_LP_ADJONT: " << ParamDB->WEIGHT_RESIDUAL_LP_ADJOINT << endl;
-  OutFile << "WEIGHT_RESIDUAL_EXP_LP_ADJONT: " << ParamDB->WEIGHT_RESIDUAL_EXP_LP_ADJOINT << endl;
-  OutFile << "WEIGHT_RESIDUAL_CW_ADJOINT: " << ParamDB->WEIGHT_RESIDUAL_CW_ADJOINT << endl;
-  OutFile << "RESIDUAL_LP_ADJONT: " << ParamDB->RESIDUAL_LP_ADJOINT << endl;
-  OutFile << "MIN_VAL_ADJOINT: " <<ParamDB->MIN_VAL_ADJOINT <<endl;
-  OutFile << "MAX_VAL_ADJOINT: " <<ParamDB->MAX_VAL_ADJOINT << endl;
-  OutFile << "MIN_MAX_EXPONENT_ONE_ADJOINT: " <<ParamDB->MIN_MAX_EXPONENT_ONE_ADJOINT<< endl;
-  OutFile << "MIN_MAX_EXPONENT_TWO_ADJOINT: " <<ParamDB->MIN_MAX_EXPONENT_TWO_ADJOINT<< endl;
-  OutFile << "MIN_MAX_FACTOR_ONE_ADJOINT: " << ParamDB->MIN_MAX_FACTOR_ONE_ADJOINT<< endl;
-  OutFile << "MIN_MAX_FACTOR_TWO_ADJOINT: " << ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT<< endl;
-  OutFile << "MIN_MAX_ADJOINT: " << ParamDB->MIN_MAX_ADJOINT<< endl;
+  printToFile("SOLVE_ADJOINT_PROBLEM: ", ParamDB->SOLVE_ADJOINT_PROBLEM);
+  printToFile("SOLD_ADJOINT: ", ParamDB->SOLD_ADJOINT);
+  printToFile("N_STAGES_ADJOINT: ", ParamDB->N_STAGES_ADJOINT);
+  printToFile("SC_NONLIN_ITE_ADJOINT: ", ParamDB->SC_NONLIN_ITE_ADJOINT);
+  printToFile("OPTIMIZATION_ITE_TYPE_ADJOINT: ", ParamDB->OPTIMIZATION_ITE_TYPE_ADJOINT);
+  printToFile("BFGS_VECTORS_ADJOINT: ", ParamDB->BFGS_VECTORS_ADJOINT);
+  printToFile("RELATIVE_DECREASE_ADJOINT: ", ParamDB->RELATIVE_DECREASE_ADJOINT);
+  printToFile("PENALTY_ADJOINT: ", ParamDB->PENALTY_ADJOINT);
+  printToFile("PENALTY_VALUE_AT_ZERO_ADJOINT: ", ParamDB->PENALTY_VALUE_AT_ZERO_ADJOINT);
+  printToFile("PENALTY_SMALLEST_PARAM_FAC_ADJOINT: ", ParamDB->PENALTY_SMALLEST_PARAM_FAC_ADJOINT);
+  printToFile("PENALTY_LARGEST_PARAM_FAC_ADJOINT: ", ParamDB->PENALTY_LARGEST_PARAM_FAC_ADJOINT);
+  printToFile("WEIGHT_RESIDUAL_L1_ADJOINT: ", ParamDB->WEIGHT_RESIDUAL_L1_ADJOINT);
+  printToFile("WEIGHT_RESIDUAL_L2_ADJOINT: ", ParamDB->WEIGHT_RESIDUAL_L2_ADJOINT);
+  printToFile("WEIGHT_GRADIENT_L1_ADJOINT: ", ParamDB->WEIGHT_GRADIENT_L1_ADJOINT);
+  printToFile("WEIGHT_GRADIENT_L2_ADJOINT: ", ParamDB->WEIGHT_GRADIENT_L2_ADJOINT);
+  printToFile("WEIGHT_STREAM_DER_L1_ADJOINT: ", ParamDB->WEIGHT_STREAM_DER_L1_ADJOINT);
+  printToFile("WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT: ", ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT);
+  printToFile("WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: ", ParamDB->WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT);
+  printToFile("REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT: ", ParamDB->REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT);
+  printToFile("WEIGHT_RESIDUAL_LP_ADJONT: ", ParamDB->WEIGHT_RESIDUAL_LP_ADJOINT);
+  printToFile("WEIGHT_RESIDUAL_EXP_LP_ADJONT: ", ParamDB->WEIGHT_RESIDUAL_EXP_LP_ADJOINT);
+  printToFile("WEIGHT_RESIDUAL_CW_ADJOINT: ", ParamDB->WEIGHT_RESIDUAL_CW_ADJOINT);
+  printToFile("RESIDUAL_LP_ADJONT: ", ParamDB->RESIDUAL_LP_ADJOINT);
+  printToFile("MIN_VAL_ADJOINT: ", ParamDB->MIN_VAL_ADJOINT);
+  printToFile("MAX_VAL_ADJOINT: ", ParamDB->MAX_VAL_ADJOINT);
+  printToFile("MIN_MAX_EXPONENT_ONE_ADJOINT: ", ParamDB->MIN_MAX_EXPONENT_ONE_ADJOINT);
+  printToFile("MIN_MAX_EXPONENT_TWO_ADJOINT: ", ParamDB->MIN_MAX_EXPONENT_TWO_ADJOINT);
+  printToFile("MIN_MAX_FACTOR_ONE_ADJOINT: ", ParamDB->MIN_MAX_FACTOR_ONE_ADJOINT);
+  printToFile("MIN_MAX_FACTOR_TWO_ADJOINT: ", ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT);
+  printToFile("MIN_MAX_ADJOINT: ", ParamDB->MIN_MAX_ADJOINT);
   
-  OutFile << "BASENAME: " << ParamDB->BASENAME << endl;
-  OutFile << "VTKBASENAME: " << ParamDB->VTKBASENAME << endl;
-  OutFile << "SAVE_DATA_FILENAME: " << ParamDB->SAVE_DATA_FILENAME << endl;
-  OutFile << "READ_DATA_FILENAME: " << ParamDB->READ_DATA_FILENAME << endl;
-  OutFile << "POD_FILENAME: " << ParamDB->POD_FILENAME << endl;
-  OutFile << "SNAP_FILENAME: " << ParamDB->SNAP_FILENAME << endl;
+  printToFile("BASENAME: ", ParamDB->BASENAME);
+  printToFile("VTKBASENAME: ", ParamDB->VTKBASENAME);
+  printToFile("SAVE_DATA_FILENAME: ", ParamDB->SAVE_DATA_FILENAME);
+  printToFile("READ_DATA_FILENAME: ", ParamDB->READ_DATA_FILENAME);
+  printToFile("POD_FILENAME: ", ParamDB->POD_FILENAME);
+  printToFile("SNAP_FILENAME: ", ParamDB->SNAP_FILENAME);
 
-  OutFile << "SOLVER_TYPE: " << ParamDB->SOLVER_TYPE << endl;
-  OutFile << "WRITE_PS: " << ParamDB->WRITE_PS << endl;
-  OutFile << "WRITE_GRAPE: " << ParamDB->WRITE_GRAPE << endl;
-  OutFile << "WRITE_GMV: " << ParamDB->WRITE_GMV << endl;
-  OutFile << "WRITE_AMIRA: " << ParamDB->WRITE_AMIRA << endl;
-  OutFile << "WRITE_GNU: " << ParamDB->WRITE_GNU << endl;
-  OutFile << "WRITE_AMIRA: " << ParamDB->WRITE_AMIRA << endl;
-  OutFile << "WRITE_VTK: " << ParamDB->WRITE_VTK << endl;
-  OutFile << "WRITE_SNAPSHOTS: " << ParamDB->WRITE_SNAPSHOTS << endl;
-  OutFile << "WRITE_MATLAB_MATRIX: " << ParamDB->WRITE_MATLAB_MATRIX << endl; 
-  OutFile << "WRITE_MATLAB: " << ParamDB->WRITE_MATLAB << endl;
-  OutFile << "SAVE_DATA: " << ParamDB->SAVE_DATA << endl;
-  OutFile << "READ_DATA: " << ParamDB->READ_DATA << endl;
-  OutFile << "MEASURE_ERRORS: " << ParamDB->MEASURE_ERRORS << endl;
-  OutFile << "ESTIMATE_ERRORS: " << ParamDB->ESTIMATE_ERRORS << endl;
-  OutFile << "SOLVE_ADJOINT_PROBLEM: " << ParamDB->SOLVE_ADJOINT_PROBLEM << endl;
-  OutFile << "COMPUTE_VORTICITY_DIVERGENCE: " << ParamDB->COMPUTE_VORTICITY_DIVERGENCE << endl;
-  OutFile << "READ_GRAPE_FILE: " << ParamDB->READ_GRAPE_FILE  << endl;
-  OutFile << "BUILD_PODFILE:" << ParamDB->BUILD_PODFILE << endl;
-  OutFile << "POD_FLUCT_FIELD:" << ParamDB->POD_FLUCT_FIELD << endl;
-  OutFile << "POD_FLUCT_FIELD_P:" << ParamDB->POD_FLUCT_FIELD_P << endl;
-  OutFile << "PROJECTION_METHOD:" << ParamDB->PROJECTION_METHOD << endl;
+  printToFile("SOLVER_TYPE: ", ParamDB->SOLVER_TYPE);
+  printToFile("WRITE_PS: ", ParamDB->WRITE_PS);
+  printToFile("WRITE_GRAPE: ", ParamDB->WRITE_GRAPE);
+  printToFile("WRITE_GMV: ", ParamDB->WRITE_GMV);
+  printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
+  printToFile("WRITE_GNU: ", ParamDB->WRITE_GNU);
+  printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
+  printToFile("WRITE_VTK: ", ParamDB->WRITE_VTK);
+  printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
+  printToFile("WRITE_MATLAB_MATRIX: ", ParamDB->WRITE_MATLAB_MATRIX); 
+  printToFile("WRITE_MATLAB: ", ParamDB->WRITE_MATLAB);
+  printToFile("SAVE_DATA: ", ParamDB->SAVE_DATA);
+  printToFile("READ_DATA: ", ParamDB->READ_DATA);
+  printToFile("MEASURE_ERRORS: ", ParamDB->MEASURE_ERRORS);
+  printToFile("ESTIMATE_ERRORS: ", ParamDB->ESTIMATE_ERRORS);
+  printToFile("SOLVE_ADJOINT_PROBLEM: ", ParamDB->SOLVE_ADJOINT_PROBLEM);
+  printToFile("COMPUTE_VORTICITY_DIVERGENCE: ", ParamDB->COMPUTE_VORTICITY_DIVERGENCE);
+  printToFile("READ_GRAPE_FILE: ", ParamDB->READ_GRAPE_FILE );
+  printToFile("BUILD_PODFILE:", ParamDB->BUILD_PODFILE);
+  printToFile("POD_FLUCT_FIELD:", ParamDB->POD_FLUCT_FIELD);
+  printToFile("POD_FLUCT_FIELD_P:", ParamDB->POD_FLUCT_FIELD_P);
+  printToFile("PROJECTION_METHOD:", ParamDB->PROJECTION_METHOD);
 
-  OutFile << "P0: " << ParamDB->P0 << endl;
-  OutFile << "P1: " << ParamDB->P1 << endl;
-  OutFile << "P2: " << ParamDB->P2 << endl;
-  OutFile << "P3: " << ParamDB->P3 << endl;
-  OutFile << "P4: " << ParamDB->P4 << endl;
-  OutFile << "P5: " << ParamDB->P5 << endl;
-  OutFile << "P6: " << ParamDB->P6 << endl;
-  OutFile << "P7: " << ParamDB->P7 << endl;
-  OutFile << "P8: " << ParamDB->P8 << endl;
-  OutFile << "P9: " << ParamDB->P9 << endl;
-  OutFile << "P10: " << ParamDB->P10 << endl;
-  OutFile << "P11: " << ParamDB->P11 << endl;
-  OutFile << "P12: " << ParamDB->P12 << endl;
-  OutFile << "P13: " << ParamDB->P13 << endl;
-  OutFile << "P14: " << ParamDB->P14 << endl;
-  OutFile << "P15: " << ParamDB->P15 << endl;
+  printToFile("P0: ", ParamDB->P0);
+  printToFile("P1: ", ParamDB->P1);
+  printToFile("P2: ", ParamDB->P2);
+  printToFile("P3: ", ParamDB->P3);
+  printToFile("P4: ", ParamDB->P4);
+  printToFile("P5: ", ParamDB->P5);
+  printToFile("P6: ", ParamDB->P6);
+  printToFile("P7: ", ParamDB->P7);
+  printToFile("P8: ", ParamDB->P8);
+  printToFile("P9: ", ParamDB->P9);
+  printToFile("P10: ", ParamDB->P10);
+  printToFile("P11: ", ParamDB->P11);
+  printToFile("P12: ", ParamDB->P12);
+  printToFile("P13: ", ParamDB->P13);
+  printToFile("P14: ", ParamDB->P14);
+  printToFile("P15: ", ParamDB->P15);
 
-  OutFile << "PBE_P0: " << ParamDB->PBE_P0 << endl;
-  OutFile << "PBE_P1: " << ParamDB->PBE_P1 << endl;
-  OutFile << "PBE_P2: " << ParamDB->PBE_P2 << endl;
-  OutFile << "PBE_P3: " << ParamDB->PBE_P3 << endl;
-  OutFile << "PBE_P4: " << ParamDB->PBE_P4 << endl;
-  OutFile << "PBE_P5: " << ParamDB->PBE_P5 << endl;
-  OutFile << "PBE_P6: " << ParamDB->PBE_P6 << endl;
-  OutFile << "PBE_P7: " << ParamDB->PBE_P7 << endl;
-  OutFile << "PBE_P8: " << ParamDB->PBE_P8 << endl;
-  OutFile << "PBE_P9: " << ParamDB->PBE_P9 << endl;
+  printToFile("PBE_P0: ", ParamDB->PBE_P0);
+  printToFile("PBE_P1: ", ParamDB->PBE_P1);
+  printToFile("PBE_P2: ", ParamDB->PBE_P2);
+  printToFile("PBE_P3: ", ParamDB->PBE_P3);
+  printToFile("PBE_P4: ", ParamDB->PBE_P4);
+  printToFile("PBE_P5: ", ParamDB->PBE_P5);
+  printToFile("PBE_P6: ", ParamDB->PBE_P6);
+  printToFile("PBE_P7: ", ParamDB->PBE_P7);
+  printToFile("PBE_P8: ", ParamDB->PBE_P8);
+  printToFile("PBE_P9: ", ParamDB->PBE_P9);
 
-  OutFile << "DG_P0: " << ParamDB->DG_P0 << endl;
-  OutFile << "DG_P1: " << ParamDB->DG_P1 << endl;
-  OutFile << "DG_P2: " << ParamDB->DG_P2 << endl;
-  OutFile << "DG_P3: " << ParamDB->DG_P3 << endl;
-  OutFile << "DG_P4: " << ParamDB->DG_P4 << endl;
-  OutFile << "DG_P5: " << ParamDB->DG_P5 << endl;
-  OutFile << "DG_P6: " << ParamDB->DG_P6 << endl;
-  OutFile << "DG_P7: " << ParamDB->DG_P7 << endl;
-  OutFile << "DG_P8: " << ParamDB->DG_P8 << endl;
-  OutFile << "DG_P9: " << ParamDB->DG_P9 << endl;
+  printToFile("DG_P0: ", ParamDB->DG_P0);
+  printToFile("DG_P1: ", ParamDB->DG_P1);
+  printToFile("DG_P2: ", ParamDB->DG_P2);
+  printToFile("DG_P3: ", ParamDB->DG_P3);
+  printToFile("DG_P4: ", ParamDB->DG_P4);
+  printToFile("DG_P5: ", ParamDB->DG_P5);
+  printToFile("DG_P6: ", ParamDB->DG_P6);
+  printToFile("DG_P7: ", ParamDB->DG_P7);
+  printToFile("DG_P8: ", ParamDB->DG_P8);
+  printToFile("DG_P9: ", ParamDB->DG_P9);
 
   
-  OutFile << "VORTICITY THICKNESS FOR MIXING LAYER (P8): " << ParamDB->P8 << endl;
+  printToFile("VORTICITY THICKNESS FOR MIXING LAYER (P8): ", ParamDB->P8);
 
-  OutFile << "*********** PARAMETERS FOR SCALAR SOLVER ***********" << endl;
-  OutFile << "SC_NONLIN_ITE_TYPE_SCALAR: " << ParamDB->SC_NONLIN_ITE_TYPE_SCALAR << endl;
-  OutFile << "SC_NONLIN_MAXIT_SCALAR: " << ParamDB->SC_NONLIN_MAXIT_SCALAR << endl;
-  OutFile << "SC_NONLIN_RES_NORM_MIN_SCALAR: " << ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR << endl;
-  OutFile << "SC_NONLIN_DAMP_FACTOR_SCALAR: " << ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR << endl;
+  printToFile("*********** PARAMETERS FOR SCALAR SOLVER ***********");
+  printToFile("SC_NONLIN_ITE_TYPE_SCALAR: ", ParamDB->SC_NONLIN_ITE_TYPE_SCALAR);
+  printToFile("SC_NONLIN_MAXIT_SCALAR: ", ParamDB->SC_NONLIN_MAXIT_SCALAR);
+  printToFile("SC_NONLIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR);
+  printToFile("SC_NONLIN_DAMP_FACTOR_SCALAR: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR);
 
-  OutFile << "SC_SOLVER_SCALAR: " << ParamDB->SC_SOLVER_SCALAR << endl;
-  OutFile << "SC_PRECONDITIONER_SCALAR: " << ParamDB->SC_PRECONDITIONER_SCALAR << endl;
-  OutFile << "SC_LIN_RED_FACTOR_SCALAR: " << ParamDB->SC_LIN_RED_FACTOR_SCALAR << endl;
-  OutFile << "SC_LIN_RES_NORM_MIN_SCALAR: " << ParamDB->SC_LIN_RES_NORM_MIN_SCALAR << endl;
-  OutFile << "SC_LIN_MAXIT_SCALAR: " << ParamDB->SC_LIN_MAXIT_SCALAR << endl;
-  OutFile << "SC_LIN_RED_FACTOR_SCALAR_SOLD: " << ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD << endl;
-  OutFile << "SC_LIN_RES_NORM_MIN_SCALAR_SOLD: " << ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD << endl;
-  OutFile << "SC_LIN_MAXIT_SCALAR_SOLD: " << ParamDB->SC_LIN_MAXIT_SCALAR_SOLD << endl;
-  OutFile << "SC_FLEXIBLE_KRYLOV_SPACE_SOLVER: " << ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER << endl;
-  OutFile << "SC_NONLIN_ITE_ADJOINT: " << ParamDB->SC_NONLIN_ITE_ADJOINT << endl;
+  printToFile("SC_SOLVER_SCALAR: ", ParamDB->SC_SOLVER_SCALAR);
+  printToFile("SC_PRECONDITIONER_SCALAR: ", ParamDB->SC_PRECONDITIONER_SCALAR);
+  printToFile("SC_LIN_RED_FACTOR_SCALAR: ", ParamDB->SC_LIN_RED_FACTOR_SCALAR);
+  printToFile("SC_LIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_LIN_RES_NORM_MIN_SCALAR);
+  printToFile("SC_LIN_MAXIT_SCALAR: ", ParamDB->SC_LIN_MAXIT_SCALAR);
+  printToFile("SC_LIN_RED_FACTOR_SCALAR_SOLD: ", ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD);
+  printToFile("SC_LIN_RES_NORM_MIN_SCALAR_SOLD: ", ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD);
+  printToFile("SC_LIN_MAXIT_SCALAR_SOLD: ", ParamDB->SC_LIN_MAXIT_SCALAR_SOLD);
+  printToFile("SC_FLEXIBLE_KRYLOV_SPACE_SOLVER: ", ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER);
+  printToFile("SC_NONLIN_ITE_ADJOINT: ", ParamDB->SC_NONLIN_ITE_ADJOINT);
 
-  OutFile << "SC_MG_TYPE_SCALAR: " << ParamDB->SC_MG_TYPE_SCALAR << endl; 
-  OutFile << "SC_MG_CYCLE_SCALAR: " << ParamDB->SC_MG_CYCLE_SCALAR << endl; 
-  OutFile << "SC_SMOOTHER_SCALAR: " << ParamDB->SC_SMOOTHER_SCALAR << endl;
-  OutFile << "SC_PRE_SMOOTH_SCALAR: " << ParamDB->SC_PRE_SMOOTH_SCALAR << endl;
-  OutFile << "SC_POST_SMOOTH_SCALAR: " << ParamDB->SC_POST_SMOOTH_SCALAR << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_SCALAR: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR << endl;
-  OutFile << "SC_COARSE_SMOOTHER_SCALAR: " << ParamDB->SC_COARSE_SMOOTHER_SCALAR << endl;
-  OutFile << "SC_COARSE_MAXIT_SCALAR: " << ParamDB->SC_COARSE_MAXIT_SCALAR << endl;
-  OutFile << "SC_COARSE_RED_FACTOR_SCALAR: " << ParamDB->SC_COARSE_RED_FACTOR_SCALAR << endl;
+  printToFile("SC_MG_TYPE_SCALAR: ", ParamDB->SC_MG_TYPE_SCALAR); 
+  printToFile("SC_MG_CYCLE_SCALAR: ", ParamDB->SC_MG_CYCLE_SCALAR); 
+  printToFile("SC_SMOOTHER_SCALAR: ", ParamDB->SC_SMOOTHER_SCALAR);
+  printToFile("SC_PRE_SMOOTH_SCALAR: ", ParamDB->SC_PRE_SMOOTH_SCALAR);
+  printToFile("SC_POST_SMOOTH_SCALAR: ", ParamDB->SC_POST_SMOOTH_SCALAR);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR);
+  printToFile("SC_COARSE_SMOOTHER_SCALAR: ", ParamDB->SC_COARSE_SMOOTHER_SCALAR);
+  printToFile("SC_COARSE_MAXIT_SCALAR: ", ParamDB->SC_COARSE_MAXIT_SCALAR);
+  printToFile("SC_COARSE_RED_FACTOR_SCALAR: ", ParamDB->SC_COARSE_RED_FACTOR_SCALAR);
 
-  OutFile << "SC_GMG_DAMP_FACTOR_SCALAR: " << ParamDB->SC_GMG_DAMP_FACTOR_SCALAR << endl;
-  OutFile << "SC_GMG_DAMP_FACTOR_FINE_SCALAR: " << ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR << endl;
+  printToFile("SC_GMG_DAMP_FACTOR_SCALAR: ", ParamDB->SC_GMG_DAMP_FACTOR_SCALAR);
+  printToFile("SC_GMG_DAMP_FACTOR_FINE_SCALAR: ", ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR);
 
-  OutFile << "SC_COARSEST_LEVEL_SCALAR: " << ParamDB->SC_COARSEST_LEVEL_SCALAR << endl;
-  OutFile << "SC_FIRST_SOLUTION_LEVEL_SCALAR: " << ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR << endl;
+  printToFile("SC_COARSEST_LEVEL_SCALAR: ", ParamDB->SC_COARSEST_LEVEL_SCALAR);
+  printToFile("SC_FIRST_SOLUTION_LEVEL_SCALAR: ", ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR);
   
-  OutFile << "SC_STEP_LENGTH_CONTROL_FINE_SCALAR: " << ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR << endl;
-  OutFile << "SC_STEP_LENGTH_CONTROL_ALL_SCALAR: " << ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR << endl;
+  printToFile("SC_STEP_LENGTH_CONTROL_FINE_SCALAR: ", ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR);
+  printToFile("SC_STEP_LENGTH_CONTROL_ALL_SCALAR: ", ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR);
 
-  OutFile << "*********** PARAMETERS FOR SADDLE POINT SOLVER ***********" << endl;
-  OutFile << "SC_NONLIN_ITE_TYPE_SADDLE: " << ParamDB->SC_NONLIN_ITE_TYPE_SADDLE << endl;
-  OutFile << "SC_NONLIN_MAXIT_SADDLE: " << ParamDB->SC_NONLIN_MAXIT_SADDLE << endl;
-  OutFile << "SC_NONLIN_RES_NORM_MIN_SADDLE: " << ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE << endl;
-  OutFile << "SC_NONLIN_DAMP_FACTOR_SADDLE: " << ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE << endl;
-  OutFile << "SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE: " << ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE << endl;
+  printToFile("*********** PARAMETERS FOR SADDLE POINT SOLVER ***********");
+  printToFile("SC_NONLIN_ITE_TYPE_SADDLE: ", ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
+  printToFile("SC_NONLIN_MAXIT_SADDLE: ", ParamDB->SC_NONLIN_MAXIT_SADDLE);
+  printToFile("SC_NONLIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE);
+  printToFile("SC_NONLIN_DAMP_FACTOR_SADDLE: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE);
+  printToFile("SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE);
 
-  OutFile << "SC_SOLVER_SADDLE: " << ParamDB->SC_SOLVER_SADDLE << endl;
-  OutFile << "SC_PRECONDITIONER_SADDLE: " << ParamDB->SC_PRECONDITIONER_SADDLE << endl;
-  OutFile << "SC_LIN_RED_FACTOR_SADDLE: " << ParamDB->SC_LIN_RED_FACTOR_SADDLE << endl;
-  OutFile << "SC_LIN_RES_NORM_MIN_SADDLE: " << ParamDB->SC_LIN_RES_NORM_MIN_SADDLE << endl;
-  OutFile << "SC_LIN_MAXIT_SADDLE: " << ParamDB->SC_LIN_MAXIT_SADDLE << endl;
+  printToFile("SC_SOLVER_SADDLE: ", ParamDB->SC_SOLVER_SADDLE);
+  printToFile("SC_PRECONDITIONER_SADDLE: ", ParamDB->SC_PRECONDITIONER_SADDLE);
+  printToFile("SC_LIN_RED_FACTOR_SADDLE: ", ParamDB->SC_LIN_RED_FACTOR_SADDLE);
+  printToFile("SC_LIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_LIN_RES_NORM_MIN_SADDLE);
+  printToFile("SC_LIN_MAXIT_SADDLE: ", ParamDB->SC_LIN_MAXIT_SADDLE);
 
-  OutFile << "SC_MG_TYPE_SADDLE: " << ParamDB->SC_MG_TYPE_SADDLE << endl; 
-  OutFile << "SC_MG_CYCLE_SADDLE: " << ParamDB->SC_MG_CYCLE_SADDLE << endl; 
-  OutFile << "SC_SMOOTHER_SADDLE: " << ParamDB->SC_SMOOTHER_SADDLE << endl;
-  OutFile << "SC_PRE_SMOOTH_SADDLE: " << ParamDB->SC_PRE_SMOOTH_SADDLE << endl;
-  OutFile << "SC_POST_SMOOTH_SADDLE: " << ParamDB->SC_POST_SMOOTH_SADDLE << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_SADDLE: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE << endl;
-  OutFile << "SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE: " << ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE << endl;
-  OutFile << "SC_COARSE_SMOOTHER_SADDLE: " << ParamDB->SC_COARSE_SMOOTHER_SADDLE << endl;
-  OutFile << "SC_COARSE_MAXIT_SADDLE: " << ParamDB->SC_COARSE_MAXIT_SADDLE << endl;
-  OutFile << "SC_COARSE_RED_FACTOR_SADDLE: " << ParamDB->SC_COARSE_RED_FACTOR_SADDLE << endl;
-  OutFile << "SC_GMG_DAMP_FACTOR_SADDLE: " << ParamDB->SC_GMG_DAMP_FACTOR_SADDLE << endl;
-  OutFile << "SC_GMG_DAMP_FACTOR_FINE_SADDLE: " << ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE << endl;
+  printToFile("SC_MG_TYPE_SADDLE: ", ParamDB->SC_MG_TYPE_SADDLE); 
+  printToFile("SC_MG_CYCLE_SADDLE: ", ParamDB->SC_MG_CYCLE_SADDLE); 
+  printToFile("SC_SMOOTHER_SADDLE: ", ParamDB->SC_SMOOTHER_SADDLE);
+  printToFile("SC_PRE_SMOOTH_SADDLE: ", ParamDB->SC_PRE_SMOOTH_SADDLE);
+  printToFile("SC_POST_SMOOTH_SADDLE: ", ParamDB->SC_POST_SMOOTH_SADDLE);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE);
+  printToFile("SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE: ", ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE);
+  printToFile("SC_COARSE_SMOOTHER_SADDLE: ", ParamDB->SC_COARSE_SMOOTHER_SADDLE);
+  printToFile("SC_COARSE_MAXIT_SADDLE: ", ParamDB->SC_COARSE_MAXIT_SADDLE);
+  printToFile("SC_COARSE_RED_FACTOR_SADDLE: ", ParamDB->SC_COARSE_RED_FACTOR_SADDLE);
+  printToFile("SC_GMG_DAMP_FACTOR_SADDLE: ", ParamDB->SC_GMG_DAMP_FACTOR_SADDLE);
+  printToFile("SC_GMG_DAMP_FACTOR_FINE_SADDLE: ", ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE);
   
-  OutFile << "SC_COARSEST_LEVEL_SADDLE: " << ParamDB->SC_COARSEST_LEVEL_SADDLE << endl;
-  OutFile << "SC_FIRST_SOLUTION_LEVEL_SADDLE: " << ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE << endl;
+  printToFile("SC_COARSEST_LEVEL_SADDLE: ", ParamDB->SC_COARSEST_LEVEL_SADDLE);
+  printToFile("SC_FIRST_SOLUTION_LEVEL_SADDLE: ", ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE);
 
-  OutFile << "SC_STEP_LENGTH_CONTROL_FINE_SADDLE: " << ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE << endl;
-  OutFile << "SC_STEP_LENGTH_CONTROL_ALL_SADDLE: " << ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE << endl;
-  OutFile << "SC_LARGEST_DIRECT_SOLVE: " << ParamDB->SC_LARGEST_DIRECT_SOLVE << endl;
-  OutFile << "SC_DOWNWIND_TYPE: " << ParamDB->SC_DOWNWIND_TYPE << endl;
+  printToFile("SC_STEP_LENGTH_CONTROL_FINE_SADDLE: ", ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE);
+  printToFile("SC_STEP_LENGTH_CONTROL_ALL_SADDLE: ", ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE);
+  printToFile("SC_LARGEST_DIRECT_SOLVE: ", ParamDB->SC_LARGEST_DIRECT_SOLVE);
+  printToFile("SC_DOWNWIND_TYPE: ", ParamDB->SC_DOWNWIND_TYPE);
 
-  OutFile << "CC_ALPHA: " << ParamDB->CC_ALPHA << endl;
-  OutFile << "CC_BETA: " << ParamDB->CC_BETA << endl;
-  OutFile << "CC_MINCLUSTER: " << ParamDB->CC_MINCLUSTER << endl;
-  OutFile << "CC_MAXCLUSTER: " << ParamDB->CC_MAXCLUSTER << endl;
-  OutFile << "CC_MAXDISTANCE: " << ParamDB->CC_MAXDISTANCE << endl;
-  OutFile << "CC_MAXCONNECTIVITY: " << ParamDB->CC_MAXCONNECTIVITY << endl;
-  OutFile << "CC_DEPTHTARGET: " << ParamDB->CC_DEPTHTARGET << endl;
-  OutFile << "CC_COARSENTARGET: " << ParamDB->CC_COARSENTARGET << endl;
-  OutFile << "CC_COARSENRATE: " << ParamDB->CC_COARSENRATE << endl;
-  OutFile << "CC_MAJOR: " << ParamDB->CC_MAJOR << endl;
-  OutFile << "CC_DEPENDENCY: " << ParamDB->CC_DEPENDENCY << endl;
-  OutFile << "CC_RESCALE: " << ParamDB->CC_RESCALE << endl;
-  OutFile << "CC_VERBOSE: " << ParamDB->CC_VERBOSE << endl;
+  printToFile("CC_ALPHA: ", ParamDB->CC_ALPHA);
+  printToFile("CC_BETA: ", ParamDB->CC_BETA);
+  printToFile("CC_MINCLUSTER: ", ParamDB->CC_MINCLUSTER);
+  printToFile("CC_MAXCLUSTER: ", ParamDB->CC_MAXCLUSTER);
+  printToFile("CC_MAXDISTANCE: ", ParamDB->CC_MAXDISTANCE);
+  printToFile("CC_MAXCONNECTIVITY: ", ParamDB->CC_MAXCONNECTIVITY);
+  printToFile("CC_DEPTHTARGET: ", ParamDB->CC_DEPTHTARGET);
+  printToFile("CC_COARSENTARGET: ", ParamDB->CC_COARSENTARGET);
+  printToFile("CC_COARSENRATE: ", ParamDB->CC_COARSENRATE);
+  printToFile("CC_MAJOR: ", ParamDB->CC_MAJOR);
+  printToFile("CC_DEPENDENCY: ", ParamDB->CC_DEPENDENCY);
+  printToFile("CC_RESCALE: ", ParamDB->CC_RESCALE);
+  printToFile("CC_VERBOSE: ", ParamDB->CC_VERBOSE);
   
-  OutFile << "SC_SYSTEM_TYPE: " << ParamDB->SC_SYSTEM_TYPE << endl;
-  OutFile << "SC_AMG_PREC_IT: " << ParamDB->SC_AMG_PREC_IT << endl;
-  OutFile << "SC_AMG_PREC_RED_FACTOR: " << ParamDB->SC_AMG_PREC_RED_FACTOR << endl;
-  OutFile << "SC_SMOOTHER_RED_FACTOR: " << ParamDB->SC_SMOOTHER_RED_FACTOR << endl;
-  OutFile << "SC_EX_MAXIT: " << ParamDB->SC_EX_MAXIT << endl;
-  OutFile << "SC_GMRES_RESTART: " << ParamDB->SC_GMRES_RESTART << endl;
-  OutFile << "SC_LCD_START_VECTOR: " << ParamDB->SC_LCD_START_VECTOR << endl;
-  OutFile << "SC_ILU_BETA: " << ParamDB->SC_ILU_BETA << endl;
-  OutFile << "SC_SOR_OMEGA: " << ParamDB->SC_SOR_OMEGA << endl;
-  OutFile << "SC_OMEGA_COARSE_0: " << ParamDB->SC_OMEGA_COARSE_0 << endl;
-  OutFile << "SC_OMEGA_P_0: " << ParamDB->SC_OMEGA_P_0 << endl;
-  OutFile << "SC_ILUT_TOL: " << ParamDB->SC_ILUT_TOL << endl;
-  OutFile << "SC_ILUT_ABSOLUTE_FILLIN: " << ParamDB->SC_ILUT_ABSOLUTE_FILLIN << endl;
-  OutFile << "SC_ILUT_RELATIVE_FILLIN: " << ParamDB->SC_ILUT_RELATIVE_FILLIN << endl;
-  OutFile << "SC_ILUT_SORT: " << ParamDB->SC_ILUT_SORT << endl;
-  OutFile << "SC_SCHUR_INV_OF_A: " << ParamDB->SC_SCHUR_INV_OF_A << endl;
-  OutFile << "SC_SCHUR_INV_OF_A_MAXIT: " << ParamDB->SC_SCHUR_INV_OF_A_MAXIT << endl;
-  OutFile << "SC_SCHUR_ITERATION_DAMP: " << ParamDB->SC_SCHUR_ITERATION_DAMP << endl;
-  OutFile << "SC_SCHUR_ITERATION_MAXIT: " << ParamDB->SC_SCHUR_ITERATION_MAXIT << endl;
-  OutFile << "SC_SCHUR_STEP_LENGTH_CONTROL: " << ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL << endl;
-  OutFile << "SC_MIXED_BCGS_CGS_SWITCH_TOL: " << ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL << endl;
-  OutFile << "SC_DIV_FACTOR: " << ParamDB->SC_DIV_FACTOR << endl;
-  OutFile << "SC_NONLIN_DIV_FACTOR: " << ParamDB->SC_NONLIN_DIV_FACTOR << endl;
-  OutFile << "SC_SMOOTHING_STEPS: " << ParamDB->SC_SMOOTHING_STEPS << endl;
-  OutFile << "SC_N1_PARAM: " << ParamDB->SC_N1_PARAM << endl;
-  OutFile << "SC_N2_PARAM: " << ParamDB->SC_N2_PARAM << endl;
-  OutFile << "SC_MINIT: " << ParamDB->SC_MINIT << endl;
-  OutFile << "SC_VAS_LAZ_DELTA: " << ParamDB->SC_VAS_LAZ_DELTA << endl;
-  OutFile << "SC_ROW_EQUILIBRATION: " << ParamDB->SC_ROW_EQUILIBRATION << endl;
-  OutFile << "SC_BRAESS_SARAZIN_MATRIX: " << ParamDB->SC_BRAESS_SARAZIN_MATRIX << endl;
-  OutFile << "SC_BRAESS_SARAZIN_ALPHA: " << ParamDB->SC_BRAESS_SARAZIN_ALPHA << endl;
-  OutFile << "SC_VERBOSE: " << ParamDB->SC_VERBOSE << endl;
-  OutFile << "SC_VERBOSE_AMG: " << ParamDB->SC_VERBOSE_AMG << endl;
+  printToFile("SC_SYSTEM_TYPE: ", ParamDB->SC_SYSTEM_TYPE);
+  printToFile("SC_AMG_PREC_IT: ", ParamDB->SC_AMG_PREC_IT);
+  printToFile("SC_AMG_PREC_RED_FACTOR: ", ParamDB->SC_AMG_PREC_RED_FACTOR);
+  printToFile("SC_SMOOTHER_RED_FACTOR: ", ParamDB->SC_SMOOTHER_RED_FACTOR);
+  printToFile("SC_EX_MAXIT: ", ParamDB->SC_EX_MAXIT);
+  printToFile("SC_GMRES_RESTART: ", ParamDB->SC_GMRES_RESTART);
+  printToFile("SC_LCD_START_VECTOR: ", ParamDB->SC_LCD_START_VECTOR);
+  printToFile("SC_ILU_BETA: ", ParamDB->SC_ILU_BETA);
+  printToFile("SC_SOR_OMEGA: ", ParamDB->SC_SOR_OMEGA);
+  printToFile("SC_OMEGA_COARSE_0: ", ParamDB->SC_OMEGA_COARSE_0);
+  printToFile("SC_OMEGA_P_0: ", ParamDB->SC_OMEGA_P_0);
+  printToFile("SC_ILUT_TOL: ", ParamDB->SC_ILUT_TOL);
+  printToFile("SC_ILUT_ABSOLUTE_FILLIN: ", ParamDB->SC_ILUT_ABSOLUTE_FILLIN);
+  printToFile("SC_ILUT_RELATIVE_FILLIN: ", ParamDB->SC_ILUT_RELATIVE_FILLIN);
+  printToFile("SC_ILUT_SORT: ", ParamDB->SC_ILUT_SORT);
+  printToFile("SC_SCHUR_INV_OF_A: ", ParamDB->SC_SCHUR_INV_OF_A);
+  printToFile("SC_SCHUR_INV_OF_A_MAXIT: ", ParamDB->SC_SCHUR_INV_OF_A_MAXIT);
+  printToFile("SC_SCHUR_ITERATION_DAMP: ", ParamDB->SC_SCHUR_ITERATION_DAMP);
+  printToFile("SC_SCHUR_ITERATION_MAXIT: ", ParamDB->SC_SCHUR_ITERATION_MAXIT);
+  printToFile("SC_SCHUR_STEP_LENGTH_CONTROL: ", ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL);
+  printToFile("SC_MIXED_BCGS_CGS_SWITCH_TOL: ", ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL);
+  printToFile("SC_DIV_FACTOR: ", ParamDB->SC_DIV_FACTOR);
+  printToFile("SC_NONLIN_DIV_FACTOR: ", ParamDB->SC_NONLIN_DIV_FACTOR);
+  printToFile("SC_SMOOTHING_STEPS: ", ParamDB->SC_SMOOTHING_STEPS);
+  printToFile("SC_N1_PARAM: ", ParamDB->SC_N1_PARAM);
+  printToFile("SC_N2_PARAM: ", ParamDB->SC_N2_PARAM);
+  printToFile("SC_MINIT: ", ParamDB->SC_MINIT);
+  printToFile("SC_VAS_LAZ_DELTA: ", ParamDB->SC_VAS_LAZ_DELTA);
+  printToFile("SC_ROW_EQUILIBRATION: ", ParamDB->SC_ROW_EQUILIBRATION);
+  printToFile("SC_BRAESS_SARAZIN_MATRIX: ", ParamDB->SC_BRAESS_SARAZIN_MATRIX);
+  printToFile("SC_BRAESS_SARAZIN_ALPHA: ", ParamDB->SC_BRAESS_SARAZIN_ALPHA);
+  printToFile("SC_VERBOSE: ", ParamDB->SC_VERBOSE);
+  printToFile("SC_VERBOSE_AMG: ", ParamDB->SC_VERBOSE_AMG);
 
-  OutFile << "CHAR_L0: " << ParamDB->CHAR_L0 << endl;
-  OutFile << "D_VISCOSITY: " << ParamDB->D_VISCOSITY << endl;
-  OutFile << "SURF_TENSION: " << ParamDB->SURF_TENSION << endl;
-  OutFile << "IMPACT_ANGLE: " << ParamDB->IMPACT_ANGLE << endl;
-  OutFile << "Area: " << ParamDB->Area << endl;
+  printToFile("CHAR_L0: ", ParamDB->CHAR_L0);
+  printToFile("D_VISCOSITY: ", ParamDB->D_VISCOSITY);
+  printToFile("SURF_TENSION: ", ParamDB->SURF_TENSION);
+  printToFile("IMPACT_ANGLE: ", ParamDB->IMPACT_ANGLE);
+  printToFile("Area: ", ParamDB->Area);
 
   // ******** parameters for VMS *********//
-  OutFile << "VMS_LARGE_VELOCITY_SPACE: " <<  ParamDB->VMS_LARGE_VELOCITY_SPACE<< endl;
-  OutFile << "VMS_COARSE_MG_SMAGO: " <<  ParamDB->VMS_COARSE_MG_SMAGO<< endl;
+  printToFile("VMS_LARGE_VELOCITY_SPACE: ",  ParamDB->VMS_LARGE_VELOCITY_SPACE);
+  printToFile("VMS_COARSE_MG_SMAGO: ",  ParamDB->VMS_COARSE_MG_SMAGO);
   // constants in AdaptProjectionSpace 
-  OutFile << "VMS_ADAPT_LOWER: " << ParamDB->VMS_ADAPT_LOWER << endl; 
-  OutFile << "VMS_ADAPT_MIDDLE: " << ParamDB->VMS_ADAPT_MIDDLE << endl; 
-  OutFile << "VMS_ADAPT_UPPER: " << ParamDB->VMS_ADAPT_UPPER << endl; 
-  OutFile << "VMS_ADAPT_STEPS: " << ParamDB->VMS_ADAPT_STEPS << endl; 
-  OutFile << "VMS_ADAPT_COMP: " << ParamDB->VMS_ADAPT_COMP << endl; 
+  printToFile("VMS_ADAPT_LOWER: ", ParamDB->VMS_ADAPT_LOWER); 
+  printToFile("VMS_ADAPT_MIDDLE: ", ParamDB->VMS_ADAPT_MIDDLE); 
+  printToFile("VMS_ADAPT_UPPER: ", ParamDB->VMS_ADAPT_UPPER); 
+  printToFile("VMS_ADAPT_STEPS: ", ParamDB->VMS_ADAPT_STEPS); 
+  printToFile("VMS_ADAPT_COMP: ", ParamDB->VMS_ADAPT_COMP); 
 
-  OutFile << "SUPERCONVERGENCE_ORDER: " << ParamDB->SUPERCONVERGENCE_ORDER << endl;
-  OutFile << "ALGEBRAIC_FLUX_CORRECTION: " << ParamDB->ALGEBRAIC_FLUX_CORRECTION << endl;
-  OutFile << "FEM_FCT_LINEAR_TYPE: " << ParamDB->FEM_FCT_LINEAR_TYPE << endl;
-  OutFile << "FEM_FCT_PRELIMITING: " << ParamDB->FEM_FCT_PRELIMITING << endl;
-  OutFile << "FEM_FCT_GROUP_FEM: " << ParamDB->FEM_FCT_GROUP_FEM << endl;
-  OutFile << "GROUP_FEM: " << ParamDB->GROUP_FEM << endl;
-  OutFile << "WENO_TYPE: " << ParamDB->WENO_TYPE << endl;
+  printToFile("SUPERCONVERGENCE_ORDER: ", ParamDB->SUPERCONVERGENCE_ORDER);
+  printToFile("ALGEBRAIC_FLUX_CORRECTION: ", ParamDB->ALGEBRAIC_FLUX_CORRECTION);
+  printToFile("FEM_FCT_LINEAR_TYPE: ", ParamDB->FEM_FCT_LINEAR_TYPE);
+  printToFile("FEM_FCT_PRELIMITING: ", ParamDB->FEM_FCT_PRELIMITING);
+  printToFile("FEM_FCT_GROUP_FEM: ", ParamDB->FEM_FCT_GROUP_FEM);
+  printToFile("GROUP_FEM: ", ParamDB->GROUP_FEM);
+  printToFile("WENO_TYPE: ", ParamDB->WENO_TYPE);
   
-  OutFile << "WRITE_SNAPSHOTS: " << ParamDB->WRITE_SNAPSHOTS << endl;
-  OutFile << "DO_ROM: " << ParamDB->DO_ROM << endl;
-  OutFile << "DO_ROM_P: " << ParamDB->DO_ROM_P << endl;
-  OutFile << "RANK_OF_BASIS: " << ParamDB->RANK_OF_BASIS << endl;
-  OutFile << "RANK_OF_BASIS_P: " << ParamDB->RANK_OF_BASIS_P << endl;
-  OutFile << "POD_INNER_PRODUCT: " << ParamDB->POD_INNER_PRODUCT << endl;
-  OutFile << "POD_INNER_PRODUCT_P: " << ParamDB->POD_INNER_PRODUCT_P << endl;
-  OutFile << "BUILD_PODFILE: " << ParamDB->BUILD_PODFILE << endl;
-  OutFile << "POD_FILENAME: " << ParamDB->POD_FILENAME << endl;
-  OutFile << "SNAP_FILENAME: " << ParamDB->SNAP_FILENAME << endl;
-  OutFile << "POD_FLUCT_FIELD: " << ParamDB->POD_FLUCT_FIELD << endl;
-  OutFile << "POD_FLUCT_FIELD_P: " << ParamDB->POD_FLUCT_FIELD_P << endl;
-  OutFile << "P_ROM_METHOD: " << ParamDB->P_ROM_METHOD << endl;
-  OutFile << "PROJECTION_METHOD: " << ParamDB->PROJECTION_METHOD << endl;
+  printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
+  printToFile("DO_ROM: ", ParamDB->DO_ROM);
+  printToFile("DO_ROM_P: ", ParamDB->DO_ROM_P);
+  printToFile("RANK_OF_BASIS: ", ParamDB->RANK_OF_BASIS);
+  printToFile("RANK_OF_BASIS_P: ", ParamDB->RANK_OF_BASIS_P);
+  printToFile("POD_INNER_PRODUCT: ", ParamDB->POD_INNER_PRODUCT);
+  printToFile("POD_INNER_PRODUCT_P: ", ParamDB->POD_INNER_PRODUCT_P);
+  printToFile("BUILD_PODFILE: ", ParamDB->BUILD_PODFILE);
+  printToFile("POD_FILENAME: ", ParamDB->POD_FILENAME);
+  printToFile("SNAP_FILENAME: ", ParamDB->SNAP_FILENAME);
+  printToFile("POD_FLUCT_FIELD: ", ParamDB->POD_FLUCT_FIELD);
+  printToFile("POD_FLUCT_FIELD_P: ", ParamDB->POD_FLUCT_FIELD_P);
+  printToFile("P_ROM_METHOD: ", ParamDB->P_ROM_METHOD);
+  printToFile("PROJECTION_METHOD: ", ParamDB->PROJECTION_METHOD);
 
   /** write parameter for non-conforming elements */
-  OutFile << "NC_TYPE: " << ParamDB->NC_TYPE << endl;
+  printToFile("NC_TYPE: ", ParamDB->NC_TYPE);
 
-  OutFile << "CHANNEL_STATISTICS2_WITH_MODEL: " << ParamDB->CHANNEL_STATISTICS2_WITH_MODEL <<endl;
-  OutFile << "BULK_REACTION_DISC: " << ParamDB->BULK_REACTION_DISC <<endl;
-  OutFile << "BULK_PB_DISC: " << ParamDB->BULK_PB_DISC <<endl;
-  OutFile << "BULK_PB_DISC_STAB: " << ParamDB->BULK_PB_DISC_STAB <<endl;
-  OutFile << "BULK_COUPLING: " << ParamDB->BULK_COUPLING <<endl;
-  OutFile << "BULK_GROWTH_RATE: " << ParamDB->BULK_GROWTH_RATE <<endl;
-  OutFile << "BULK_REACTION_MASS_LUMPING: " << ParamDB->BULK_REACTION_MASS_LUMPING <<endl;
-  OutFile << "BULK_REACTION_C_CUT: " << ParamDB->BULK_REACTION_C_CUT <<endl;
-  OutFile << "BULK_METHODS_OF_MOMENTS: " << ParamDB->BULK_METHODS_OF_MOMENTS <<endl;
-  OutFile << "BULK_MOM_DISC: " << ParamDB->BULK_MOM_DISC <<endl;
-  OutFile << "BULK_SOLD_PARAMETER_TYPE: " << ParamDB->BULK_SOLD_PARAMETER_TYPE <<endl;
-  OutFile << "N_CELL_LAYERS_PSD: " << ParamDB->N_CELL_LAYERS_PSD <<endl;
-  OutFile << "N_CELL_LAYERS_PSD_2: " << ParamDB->N_CELL_LAYERS_PSD <<endl;
-  OutFile << "OUTPUT_NODE_LAYER_PSD: " << ParamDB->OUTPUT_NODE_LAYER_PSD <<endl;
-  OutFile << "BULK_l_infty: " << ParamDB->BULK_l_infty << endl;
-  OutFile << "BULK_u_infty: " << ParamDB->BULK_u_infty << endl;
-  OutFile << "BULK_c_infty: " << ParamDB->BULK_c_infty << endl;
-  OutFile << "BULK_c_C_infty_sat: " << ParamDB->BULK_c_C_infty_sat << endl;
-  OutFile << "BULK_C_g: " << ParamDB->BULK_C_g << endl;
-  OutFile << "BULK_C_nuc: " << ParamDB->BULK_C_nuc << endl;
-  OutFile << "BULK_C_sat: " << ParamDB->BULK_C_sat << endl;
-  OutFile << "BULK_C_2: " << ParamDB->BULK_C_2 << endl;
-  OutFile << "BULK_D_A: " << ParamDB->BULK_D_A << endl;
-  OutFile << "BULK_D_P_0: " << ParamDB->BULK_D_P_0 << endl;
-  OutFile << "BULK_D_P_MAX: " << ParamDB->BULK_D_P_MAX << endl;
-  OutFile << "BULK_k_g: " << ParamDB->BULK_k_g << endl;
-  OutFile << "BULK_k_r: " << ParamDB->BULK_k_r << endl;
-  OutFile << "BULK_k_nuc: " << ParamDB->BULK_k_nuc << endl;
-  OutFile << "SSMUM_MP_X: " << ParamDB->SSMUM_MP_X << endl;
-  OutFile << "SSMUM_MP_Y: " << ParamDB->SSMUM_MP_Y << endl;
-  OutFile << "SSMUM_INNER_RADIUS: " << ParamDB->SSMUM_INNER_RADIUS << endl;
-  OutFile << "SSMUM_OUTER_RADIUS: " << ParamDB->SSMUM_OUTER_RADIUS << endl;
-  OutFile << "SSMUM_ROT_PER_SECOND: " << ParamDB->SSMUM_ROT_PER_SECOND << endl;
-  OutFile << "SSMUM_MAX_CELLS_LAYERS: " << ParamDB->SSMUM_MAX_CELLS_LAYERS << endl;
-  OutFile << "SSMUM_INTERPOLATION: " << ParamDB->SSMUM_INTERPOLATION << endl;
+  printToFile("CHANNEL_STATISTICS2_WITH_MODEL: ", ParamDB->CHANNEL_STATISTICS2_WITH_MODEL);
+  printToFile("BULK_REACTION_DISC: ", ParamDB->BULK_REACTION_DISC);
+  printToFile("BULK_PB_DISC: ", ParamDB->BULK_PB_DISC);
+  printToFile("BULK_PB_DISC_STAB: ", ParamDB->BULK_PB_DISC_STAB);
+  printToFile("BULK_COUPLING: ", ParamDB->BULK_COUPLING);
+  printToFile("BULK_GROWTH_RATE: ", ParamDB->BULK_GROWTH_RATE);
+  printToFile("BULK_REACTION_MASS_LUMPING: ", ParamDB->BULK_REACTION_MASS_LUMPING);
+  printToFile("BULK_REACTION_C_CUT: ", ParamDB->BULK_REACTION_C_CUT);
+  printToFile("BULK_METHODS_OF_MOMENTS: ", ParamDB->BULK_METHODS_OF_MOMENTS);
+  printToFile("BULK_MOM_DISC: ", ParamDB->BULK_MOM_DISC);
+  printToFile("BULK_SOLD_PARAMETER_TYPE: ", ParamDB->BULK_SOLD_PARAMETER_TYPE);
+  printToFile("N_CELL_LAYERS_PSD: ", ParamDB->N_CELL_LAYERS_PSD);
+  printToFile("N_CELL_LAYERS_PSD_2: ", ParamDB->N_CELL_LAYERS_PSD);
+  printToFile("OUTPUT_NODE_LAYER_PSD: ", ParamDB->OUTPUT_NODE_LAYER_PSD);
+  printToFile("BULK_l_infty: ", ParamDB->BULK_l_infty);
+  printToFile("BULK_u_infty: ", ParamDB->BULK_u_infty);
+  printToFile("BULK_c_infty: ", ParamDB->BULK_c_infty);
+  printToFile("BULK_c_C_infty_sat: ", ParamDB->BULK_c_C_infty_sat);
+  printToFile("BULK_C_g: ", ParamDB->BULK_C_g);
+  printToFile("BULK_C_nuc: ", ParamDB->BULK_C_nuc);
+  printToFile("BULK_C_sat: ", ParamDB->BULK_C_sat);
+  printToFile("BULK_C_2: ", ParamDB->BULK_C_2);
+  printToFile("BULK_D_A: ", ParamDB->BULK_D_A);
+  printToFile("BULK_D_P_0: ", ParamDB->BULK_D_P_0);
+  printToFile("BULK_D_P_MAX: ", ParamDB->BULK_D_P_MAX);
+  printToFile("BULK_k_g: ", ParamDB->BULK_k_g);
+  printToFile("BULK_k_r: ", ParamDB->BULK_k_r);
+  printToFile("BULK_k_nuc: ", ParamDB->BULK_k_nuc);
+  printToFile("SSMUM_MP_X: ", ParamDB->SSMUM_MP_X);
+  printToFile("SSMUM_MP_Y: ", ParamDB->SSMUM_MP_Y);
+  printToFile("SSMUM_INNER_RADIUS: ", ParamDB->SSMUM_INNER_RADIUS);
+  printToFile("SSMUM_OUTER_RADIUS: ", ParamDB->SSMUM_OUTER_RADIUS);
+  printToFile("SSMUM_ROT_PER_SECOND: ", ParamDB->SSMUM_ROT_PER_SECOND);
+  printToFile("SSMUM_MAX_CELLS_LAYERS: ", ParamDB->SSMUM_MAX_CELLS_LAYERS);
+  printToFile("SSMUM_INTERPOLATION: ", ParamDB->SSMUM_INTERPOLATION);
   
-  OutFile << "INPUT_QUAD_RULE: " << ParamDB->INPUT_QUAD_RULE << endl;
+  printToFile("INPUT_QUAD_RULE: ", ParamDB->INPUT_QUAD_RULE);
   
   /** Parameters for Stokes--Darcy */
-  OutFile << "StoDa_interfaceType: " << ParamDB->StoDa_interfaceType << endl;
-  OutFile << "StoDa_alpha: " << ParamDB->StoDa_alpha << endl;
-  OutFile << "StoDa_problemType: " << ParamDB->StoDa_problemType << endl;
-  OutFile << "StoDa_updatingStrategy: " << ParamDB->StoDa_updatingStrategy << endl;
-  OutFile << "StoDa_theta_f: " << ParamDB->StoDa_theta_f << endl;
-  OutFile << "StoDa_theta_p: " << ParamDB->StoDa_theta_p << endl;
-  OutFile << "StoDa_gamma_f: " << ParamDB->StoDa_gamma_f << endl;
-  OutFile << "StoDa_gamma_p: " << ParamDB->StoDa_gamma_p << endl;
-  OutFile << "StoDa_weakGamma: " << ParamDB->StoDa_weakGamma << endl;
-  OutFile << "StoDa_solutionStrategy: " << ParamDB->StoDa_solutionStrategy << endl;
-  OutFile << "StoDa_StokesFirst: " << ParamDB->StoDa_StokesFirst << endl;
-  OutFile << "StoDa_algorithm: " << ParamDB->StoDa_algorithm << endl;
-  OutFile << "StoDa_relDiff_interfaceError: " << ParamDB->StoDa_relDiff_interfaceError << endl;
-  OutFile << "StoDa_relDiff_factor1: " << ParamDB->StoDa_relDiff_factor1 << endl;
-  OutFile << "StoDa_relDiff_factor2: " << ParamDB->StoDa_relDiff_factor2 << endl;
-  OutFile << "StoDa_relDiff_factor3: " << ParamDB->StoDa_relDiff_factor3 << endl;
-  OutFile << "StoDa_relDiff_solution: " << ParamDB->StoDa_relDiff_solution << endl;
-  OutFile << "StoDa_bigResidual: " << ParamDB->StoDa_bigResidual << endl;
-  OutFile << "StoDa_periodicBoundary: " << ParamDB->StoDa_periodicBoundary << endl;
-  OutFile << "StoDa_periodicBoundaryPressureDrop: " << ParamDB->StoDa_periodicBoundaryPressureDrop << endl;
-  OutFile << "StoDa_nIterations: " << ParamDB->StoDa_nIterations << endl;
+  printToFile("StoDa_interfaceType: ", ParamDB->StoDa_interfaceType);
+  printToFile("StoDa_alpha: ", ParamDB->StoDa_alpha);
+  printToFile("StoDa_problemType: ", ParamDB->StoDa_problemType);
+  printToFile("StoDa_updatingStrategy: ", ParamDB->StoDa_updatingStrategy);
+  printToFile("StoDa_theta_f: ", ParamDB->StoDa_theta_f);
+  printToFile("StoDa_theta_p: ", ParamDB->StoDa_theta_p);
+  printToFile("StoDa_gamma_f: ", ParamDB->StoDa_gamma_f);
+  printToFile("StoDa_gamma_p: ", ParamDB->StoDa_gamma_p);
+  printToFile("StoDa_weakGamma: ", ParamDB->StoDa_weakGamma);
+  printToFile("StoDa_solutionStrategy: ", ParamDB->StoDa_solutionStrategy);
+  printToFile("StoDa_StokesFirst: ", ParamDB->StoDa_StokesFirst);
+  printToFile("StoDa_algorithm: ", ParamDB->StoDa_algorithm);
+  printToFile("StoDa_relDiff_interfaceError: ", ParamDB->StoDa_relDiff_interfaceError);
+  printToFile("StoDa_relDiff_factor1: ", ParamDB->StoDa_relDiff_factor1);
+  printToFile("StoDa_relDiff_factor2: ", ParamDB->StoDa_relDiff_factor2);
+  printToFile("StoDa_relDiff_factor3: ", ParamDB->StoDa_relDiff_factor3);
+  printToFile("StoDa_relDiff_solution: ", ParamDB->StoDa_relDiff_solution);
+  printToFile("StoDa_bigResidual: ", ParamDB->StoDa_bigResidual);
+  printToFile("StoDa_periodicBoundary: ", ParamDB->StoDa_periodicBoundary);
+  printToFile("StoDa_periodicBoundaryPressureDrop: ", ParamDB->StoDa_periodicBoundaryPressureDrop);
+  printToFile("StoDa_nIterations: ", ParamDB->StoDa_nIterations);
 
  
-  OutFile << "HEAT_TANGENTIAL_STRESS_FACTOR: " << ParamDB->HEAT_TANGENTIAL_STRESS_FACTOR << endl;
-  OutFile << "HEAT_SOLID_SURFACE_FACTOR: " << ParamDB->HEAT_SOLID_SURFACE_FACTOR << endl;
-  OutFile << "EQ_CONTACT_ANGLE: " << ParamDB->EQ_CONTACT_ANGLE << endl;
-  OutFile << "AD_CONTACT_ANGLE: " << ParamDB->AD_CONTACT_ANGLE << endl;
-  OutFile << "RE_CONTACT_ANGLE: " << ParamDB->RE_CONTACT_ANGLE << endl;
-  OutFile << "DY_CONTACT_ANGLE: " << ParamDB->DY_CONTACT_ANGLE << endl;  
-  OutFile << "CONTACT_ANGLE_TYPE: " << ParamDB->CONTACT_ANGLE_TYPE << endl; 
+  printToFile("HEAT_TANGENTIAL_STRESS_FACTOR: ", ParamDB->HEAT_TANGENTIAL_STRESS_FACTOR);
+  printToFile("HEAT_SOLID_SURFACE_FACTOR: ", ParamDB->HEAT_SOLID_SURFACE_FACTOR);
+  printToFile("EQ_CONTACT_ANGLE: ", ParamDB->EQ_CONTACT_ANGLE);
+  printToFile("AD_CONTACT_ANGLE: ", ParamDB->AD_CONTACT_ANGLE);
+  printToFile("RE_CONTACT_ANGLE: ", ParamDB->RE_CONTACT_ANGLE);
+  printToFile("DY_CONTACT_ANGLE: ", ParamDB->DY_CONTACT_ANGLE);  
+  printToFile("CONTACT_ANGLE_TYPE: ", ParamDB->CONTACT_ANGLE_TYPE); 
   
 }
 
 void TDatabase::WriteTimeDB()
 {
-  OutFile << "CURRENTTIME: " << TimeDB->CURRENTTIME << endl;
-  OutFile << "CURRENTTIMESTEPLENGTH: " << TimeDB->CURRENTTIMESTEPLENGTH << endl;
-  OutFile << "TIMESTEPLENGTH: " << TimeDB->TIMESTEPLENGTH << endl;
-  OutFile << "MIN_TIMESTEPLENGTH: " << TimeDB->MIN_TIMESTEPLENGTH << endl;
-  OutFile << "MAX_TIMESTEPLENGTH: " << TimeDB->MAX_TIMESTEPLENGTH << endl;
-  OutFile << "TIMESTEPLENGTH_TOL: " << TimeDB->TIMESTEPLENGTH_TOL << endl;
-  OutFile << "TIMESTEPLENGTH_CONTROL: " << TimeDB->TIMESTEPLENGTH_CONTROL << endl;
-  OutFile << "TIMESTEPLENGTH_CONTROLLER: " <<  TimeDB->TIMESTEPLENGTH_CONTROLLER <<endl;    
-  OutFile << "TIMESTEPLENGTH_PARA_KK_I: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_I <<endl;
-  OutFile << "TIMESTEPLENGTH_PARA_KK_P: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_P << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_KK_E: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_E << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_KK_R: " <<  TimeDB->TIMESTEPLENGTH_PARA_KK_R << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_KK_D: " << TimeDB->TIMESTEPLENGTH_PARA_KK_D << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_FAC: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_FAC_MAX: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC_MAX<< endl;
-  OutFile << "TIMESTEPLENGTH_PARA_FAC_MIN: " <<  TimeDB->TIMESTEPLENGTH_PARA_FAC_MIN << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_TOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_TOL << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_ATOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_ATOL << endl;
-  OutFile << "TIMESTEPLENGTH_PARA_RTOL: " <<  TimeDB->TIMESTEPLENGTH_PARA_RTOL << endl;
-  OutFile << "RESET_CURRENTTIME: " << TimeDB->RESET_CURRENTTIME << endl;
-  OutFile << "RESET_CURRENTTIME_STARTTIME: " << TimeDB->RESET_CURRENTTIME_STARTTIME << endl;
-  OutFile << "STEADY_STATE_TOL: "<< TimeDB->STEADY_STATE_TOL << endl;
-  OutFile << "SCALE_DIVERGENCE_CONSTRAINT: "<< TimeDB->SCALE_DIVERGENCE_CONSTRAINT << endl;
-
-  OutFile << "CONTROL: "<< TimeDB->CONTROL << endl;
-  OutFile << "CONTROL_ALPHA: "<< TimeDB->CONTROL_ALPHA << endl;
-  OutFile << "CONTROL_BETA: "<< TimeDB->CONTROL_BETA << endl;
-  OutFile << "CONTROL_GAMMA: "<< TimeDB->CONTROL_GAMMA << endl;
-  OutFile << "CONTROL_SAFTY: "<< TimeDB->CONTROL_SAFTY << endl;
-  OutFile << "CONTROL_MAXSCALE: "<< TimeDB->CONTROL_MAXSCALE << endl;
-  OutFile << "CONTROL_MINSCALE: "<< TimeDB->CONTROL_MINSCALE << endl;
+  using namespace Output; // printToFile
   
-  OutFile << "THETA1: " << TimeDB->THETA1 << endl;
-  OutFile << "THETA2: " << TimeDB->THETA2 << endl;
-  OutFile << "THETA3: " << TimeDB->THETA3 << endl;
-  OutFile << "THETA4: " << TimeDB->THETA4 << endl;
+  printToFile("CURRENTTIME: ", TimeDB->CURRENTTIME);
+  printToFile("CURRENTTIMESTEPLENGTH: ", TimeDB->CURRENTTIMESTEPLENGTH);
+  printToFile("TIMESTEPLENGTH: ", TimeDB->TIMESTEPLENGTH);
+  printToFile("MIN_TIMESTEPLENGTH: ", TimeDB->MIN_TIMESTEPLENGTH);
+  printToFile("MAX_TIMESTEPLENGTH: ", TimeDB->MAX_TIMESTEPLENGTH);
+  printToFile("TIMESTEPLENGTH_TOL: ", TimeDB->TIMESTEPLENGTH_TOL);
+  printToFile("TIMESTEPLENGTH_CONTROL: ", TimeDB->TIMESTEPLENGTH_CONTROL);
+  printToFile("TIMESTEPLENGTH_CONTROLLER: ",  TimeDB->TIMESTEPLENGTH_CONTROLLER);    
+  printToFile("TIMESTEPLENGTH_PARA_KK_I: ",  TimeDB->TIMESTEPLENGTH_PARA_KK_I);
+  printToFile("TIMESTEPLENGTH_PARA_KK_P: ",  TimeDB->TIMESTEPLENGTH_PARA_KK_P);
+  printToFile("TIMESTEPLENGTH_PARA_KK_E: ",  TimeDB->TIMESTEPLENGTH_PARA_KK_E);
+  printToFile("TIMESTEPLENGTH_PARA_KK_R: ",  TimeDB->TIMESTEPLENGTH_PARA_KK_R);
+  printToFile("TIMESTEPLENGTH_PARA_KK_D: ", TimeDB->TIMESTEPLENGTH_PARA_KK_D);
+  printToFile("TIMESTEPLENGTH_PARA_FAC: ",  TimeDB->TIMESTEPLENGTH_PARA_FAC);
+  printToFile("TIMESTEPLENGTH_PARA_FAC_MAX: ",  TimeDB->TIMESTEPLENGTH_PARA_FAC_MAX);
+  printToFile("TIMESTEPLENGTH_PARA_FAC_MIN: ",  TimeDB->TIMESTEPLENGTH_PARA_FAC_MIN);
+  printToFile("TIMESTEPLENGTH_PARA_TOL: ",  TimeDB->TIMESTEPLENGTH_PARA_TOL);
+  printToFile("TIMESTEPLENGTH_PARA_ATOL: ",  TimeDB->TIMESTEPLENGTH_PARA_ATOL);
+  printToFile("TIMESTEPLENGTH_PARA_RTOL: ",  TimeDB->TIMESTEPLENGTH_PARA_RTOL);
+  printToFile("RESET_CURRENTTIME: ", TimeDB->RESET_CURRENTTIME);
+  printToFile("RESET_CURRENTTIME_STARTTIME: ", TimeDB->RESET_CURRENTTIME_STARTTIME);
+  printToFile("STEADY_STATE_TOL: ", TimeDB->STEADY_STATE_TOL);
+  printToFile("SCALE_DIVERGENCE_CONSTRAINT: ", TimeDB->SCALE_DIVERGENCE_CONSTRAINT);
 
-  OutFile << "TIME_DISC: " << TimeDB->TIME_DISC << endl;
-  OutFile << "TIME_DISC2: " << TimeDB->TIME_DISC2 << endl;
+  printToFile("CONTROL: ", TimeDB->CONTROL);
+  printToFile("CONTROL_ALPHA: ", TimeDB->CONTROL_ALPHA);
+  printToFile("CONTROL_BETA: ", TimeDB->CONTROL_BETA);
+  printToFile("CONTROL_GAMMA: ", TimeDB->CONTROL_GAMMA);
+  printToFile("CONTROL_SAFTY: ", TimeDB->CONTROL_SAFTY);
+  printToFile("CONTROL_MAXSCALE: ", TimeDB->CONTROL_MAXSCALE);
+  printToFile("CONTROL_MINSCALE: ", TimeDB->CONTROL_MINSCALE);
+  
+  printToFile("THETA1: ", TimeDB->THETA1);
+  printToFile("THETA2: ", TimeDB->THETA2);
+  printToFile("THETA3: ", TimeDB->THETA3);
+  printToFile("THETA4: ", TimeDB->THETA4);
 
-  OutFile << "STARTTIME: " << TimeDB->STARTTIME << endl;
-  OutFile << "ENDTIME: " << TimeDB->ENDTIME << endl;
+  printToFile("TIME_DISC: ", TimeDB->TIME_DISC);
+  printToFile("TIME_DISC2: ", TimeDB->TIME_DISC2);
 
-  OutFile << "T0: " << TimeDB->T0 << endl;
-  OutFile << "T1: " << TimeDB->T1 << endl;
-  OutFile << "T2: " << TimeDB->T2 << endl;
-  OutFile << "T3: " << TimeDB->T3 << endl;
-  OutFile << "T4: " << TimeDB->T4 << endl;
-  OutFile << "T5: " << TimeDB->T5 << endl;
-  OutFile << "T6: " << TimeDB->T6 << endl;
-  OutFile << "T7: " << TimeDB->T7 << endl;
-  OutFile << "T8: " << TimeDB->T8 << endl;
-  OutFile << "T9: " << TimeDB->T9 << endl;
+  printToFile("STARTTIME: ", TimeDB->STARTTIME);
+  printToFile("ENDTIME: ", TimeDB->ENDTIME);
 
-  OutFile << "STEPS_PER_IMAGE: " << TimeDB->STEPS_PER_IMAGE << endl;
-  OutFile << "STEPS_PER_SNAP: " << TimeDB->STEPS_PER_SNAP << endl;
+  printToFile("T0: ", TimeDB->T0);
+  printToFile("T1: ", TimeDB->T1);
+  printToFile("T2: ", TimeDB->T2);
+  printToFile("T3: ", TimeDB->T3);
+  printToFile("T4: ", TimeDB->T4);
+  printToFile("T5: ", TimeDB->T5);
+  printToFile("T6: ", TimeDB->T6);
+  printToFile("T7: ", TimeDB->T7);
+  printToFile("T8: ", TimeDB->T8);
+  printToFile("T9: ", TimeDB->T9);
 
-  OutFile << "RB_TYPE: " << TimeDB->RB_TYPE << endl;
-  OutFile << "RB_TYPE2: " << TimeDB->RB_TYPE2 << endl;
+  printToFile("STEPS_PER_IMAGE: ", TimeDB->STEPS_PER_IMAGE);
+  printToFile("STEPS_PER_SNAP: ", TimeDB->STEPS_PER_SNAP);
 
-  OutFile << "EXTRAPOLATE_VELOCITY: " << TimeDB->EXTRAPOLATE_VELOCITY << endl;
-  OutFile << "EXTRAPOLATE_PRESSURE: " << TimeDB->EXTRAPOLATE_PRESSURE << endl;
-  OutFile << "EXTRAPOLATE_STEPS: " << TimeDB->EXTRAPOLATE_STEPS << endl;
-  OutFile << "EXTRAPOLATE_WEIGHT: " << TimeDB->EXTRAPOLATE_WEIGHT << endl;
+  printToFile("RB_TYPE: ", TimeDB->RB_TYPE);
+  printToFile("RB_TYPE2: ", TimeDB->RB_TYPE2);
+
+  printToFile("EXTRAPOLATE_VELOCITY: ", TimeDB->EXTRAPOLATE_VELOCITY);
+  printToFile("EXTRAPOLATE_PRESSURE: ", TimeDB->EXTRAPOLATE_PRESSURE);
+  printToFile("EXTRAPOLATE_STEPS: ", TimeDB->EXTRAPOLATE_STEPS);
+  printToFile("EXTRAPOLATE_WEIGHT: ", TimeDB->EXTRAPOLATE_WEIGHT);
 } 
 
 void TDatabase::CheckParameterConsistencyNSE()
@@ -1833,29 +1837,32 @@ void TDatabase::CheckParameterConsistencyNSE()
   if ((ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(ParamDB->NSTYPE<=2))
   {
     ParamDB->NSTYPE+=2;
-    OutPut("NSTYPE changed to " << ParamDB->NSTYPE);
-    OutPut(" because of SC_NONLIN_ITE_TYPE_SADDLE  = " <<ParamDB->SC_NONLIN_ITE_TYPE_SADDLE << endl);
+    Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+                  " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
+                  ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
   }
 
   if(ParamDB->PRESSURE_SPACE == -4711 || ParamDB->PRESSURE_SPACE>0)
   {
     // continuous pressure and cell Vanka do not work
     if (((ParamDB->VELOCITY_SPACE==2) || (ParamDB->VELOCITY_SPACE==3)
-	 ||(ParamDB->VELOCITY_SPACE==101))
+        ||(ParamDB->VELOCITY_SPACE==101)) 
         &&(ParamDB->SC_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_SMOOTHER_SADDLE+=2;
-      OutPut("SC_SMOOTHER_SADDLE changed to " << ParamDB->SC_SMOOTHER_SADDLE);
-      OutPut(" because of continuous pressure"<< endl);
+      Output::print("SC_SMOOTHER_SADDLE changed to ",
+                    ParamDB->SC_SMOOTHER_SADDLE, 
+                    " because of continuous pressure");
     }
 
     if (((ParamDB->VELOCITY_SPACE==2) || (ParamDB->VELOCITY_SPACE==3)||
-	 (ParamDB->VELOCITY_SPACE==101))  
+         (ParamDB->VELOCITY_SPACE==101))
         &&(ParamDB->SC_COARSE_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-      OutPut("SC_COARSE_SMOOTHER_SADDLE changed to " << ParamDB->SC_COARSE_SMOOTHER_SADDLE);
-      OutPut(" because of continuous pressure"<< endl);
+      Output::print("SC_COARSE_SMOOTHER_SADDLE changed to ",
+                    ParamDB->SC_COARSE_SMOOTHER_SADDLE,
+                    " because of continuous pressure");
     }
   }
   if (ParamDB->GROUP_FEM)
@@ -1863,18 +1870,19 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (ParamDB->DISCTYPE != GALERKIN)
     {
       ParamDB->DISCTYPE = GALERKIN;
-      OutPut("GROUP_FEM: changed DISCTYPE to " << ParamDB->DISCTYPE << endl);
+      Output::print("GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
     }
     if (ParamDB->NSTYPE != 1)
     {
       //ParamDB->NSTYPE = 1;
-      //OutPut("GROUP_FEM: changed NSTYPE to " << ParamDB->NSTYPE << endl);
-      OutPut("WARNING: GROUP_FEM works properly only with NSTYPE = 1" << endl);
+      //Output::print("GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
+      Output::print("WARNING: GROUP_FEM works properly only with NSTYPE = 1");
     }
     if (ParamDB->SC_MG_TYPE_SADDLE != 0)
     {
       ParamDB->SC_MG_TYPE_SADDLE = 0;
-      OutPut("GROUP_FEM: changed SC_MG_TYPE_SADDLE to " << ParamDB->SC_MG_TYPE_SADDLE << endl);
+      Output::print("GROUP_FEM: changed SC_MG_TYPE_SADDLE to ",
+                    ParamDB->SC_MG_TYPE_SADDLE);
     }
   }
 
@@ -1882,36 +1890,36 @@ void TDatabase::CheckParameterConsistencyNSE()
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==1))
   {
       //ParamDB->NSTYPE = 2;
-      //OutPut("NSTYPE changed from 1 to 2 because of SDFEM discretization "<< endl);
-      OutPut("NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!" << endl);
+      //Output::print("NSTYPE changed from 1 to 2 because of SDFEM discretization ");
+      Output::print("NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
   }
 
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==3))
   {
     ParamDB->NSTYPE = 4;
-    OutPut("NSTYPE changed from 3 to 4 because of SDFEM discretization "<< endl);
+    Output::print("NSTYPE changed from 3 to 4 because of SDFEM discretization ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
   {
     ParamDB->NSTYPE = 3 ;
-    OutPut("NSTYPE changed from 1 to 3 because of LAPLACETYPE "<< endl);
+    Output::print("NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
   {
     ParamDB->NSTYPE = 4 ;
-    OutPut("NSTYPE changed from 2 to 4 because of LAPLACETYPE "<< endl);
+    Output::print("NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
   // equal order
   if (ParamDB->NSTYPE == 14)
   {
-      if (!(ParamDB->DISCTYPE == SDFEM))
-      {
-	  ParamDB->DISCTYPE = SDFEM;
-	  OutPut("DISCTYPE changed to SDFEM !!!"<<endl);
-      }
+    if (!(ParamDB->DISCTYPE == SDFEM))
+    {
+      ParamDB->DISCTYPE = SDFEM;
+      Output::print("DISCTYPE changed to SDFEM !!!");
+    }
 /*
       if (ParamDB->SC_SMOOTHER_SADDLE<3)
       {
@@ -1949,30 +1957,30 @@ void TDatabase::CheckParameterConsistencyNSE()
   // rotational form
   if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
   {
-      if (ParamDB->NSTYPE<=2)
-      {
-	  ParamDB->NSTYPE+=2;
-	  OutPut("NSTYPE changed to " << ParamDB->NSTYPE);
-	  OutPut(" because of NSE_NONLINEAR_FORM = " <<ParamDB->NSE_NONLINEAR_FORM << endl);
-      }
+    if (ParamDB->NSTYPE<=2)
+    {
+      ParamDB->NSTYPE+=2;
+      Output::print("NSTYPE changed to ", ParamDB->NSTYPE);
+      Output::print(" because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
+    }
       // change DISCTYPE for internal reasons
-      if (ParamDB->DISCTYPE == 1)
-      {
-	  ParamDB->DISCTYPE = 4;
-	  TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-	  OutPut("DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off."<< endl);
-      }	  
+    if (ParamDB->DISCTYPE == 1)
+    {
+      ParamDB->DISCTYPE = 4;
+      TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
+      Output::print("DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
+    }
   }
 
   if (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE==5)
   {
-      if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
-	    (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
-      {
-	  OutPut("TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods"<<endl);
-	  OutPut("Set different TURBULENT_VISCOSITY_TYPE !!!"<<endl);
-	  exit(4711);
-      }	  
+    if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
+          (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
+    {
+      Output::print("TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
+      Output::print("Set different TURBULENT_VISCOSITY_TYPE !!!");
+      exit(4711);
+    }
   }
 
   // LOCAL_PROJECTION
@@ -1983,15 +1991,15 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->LP_STREAMLINE)
       {
         ParamDB->LP_STREAMLINE = 0;
-        OutPut("LP_STREAMLINE changed to " << ParamDB->LP_STREAMLINE);
-        OutPut(" due to LP_FULL_GRADIENT = " << ParamDB->LP_FULL_GRADIENT << endl);
+        Output::print("LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
+                      " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
 
       if (ParamDB->LP_DIVERGENCE)
       {
         ParamDB->LP_DIVERGENCE = 0;
-        OutPut("LP_DIVERGENCE changed to " << ParamDB->LP_DIVERGENCE);
-        OutPut(" due to LP_FULL_GRADIENT = " << ParamDB->LP_FULL_GRADIENT << endl);
+        Output::print("LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
+                      " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
     } // end LP_FULL_GRADIENT
 
@@ -2000,8 +2008,8 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->NSTYPE<=2)
       {
         ParamDB->NSTYPE+=2;
-        OutPut("NSTYPE changed to " << ParamDB->NSTYPE);
-        OutPut("LP_DIVERGENCE = " << ParamDB->LP_DIVERGENCE << endl);
+        Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+                      " LP_DIVERGENCE = ", ParamDB->LP_DIVERGENCE);
       }
     }
 
@@ -2051,25 +2059,29 @@ void TDatabase::CheckParameterConsistencyNSE()
     TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = 1;
     switch (TDatabase::ParamDB->NSTYPE)
     {
-      case 1: OutPut("Galerkin discretization for Oseen because of NSTYPE "
-  << TDatabase::ParamDB->NSTYPE << endl);
-  TDatabase::ParamDB->DISCTYPE =  1;
-  break;
-      case 14:  OutPut("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE "
-  << TDatabase::ParamDB->NSTYPE << endl);
-  TDatabase::ParamDB->DISCTYPE =  2;
-  break;
+      case 1: 
+        Output::print("Galerkin discretization for Oseen because of NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        TDatabase::ParamDB->DISCTYPE =  1;
+        break;
+      case 14:
+        Output::print("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        TDatabase::ParamDB->DISCTYPE =  2;
+        break;
       default:
-  OutPut("No method for Oseen implemented for NSTYPE " << TDatabase::ParamDB->NSTYPE << endl);
-  exit(4711);
+        Output::print("No method for Oseen implemented for NSTYPE ",
+                      TDatabase::ParamDB->NSTYPE);
+        exit(4711);
     }
     if (ParamDB->SC_NONLIN_MAXIT_SADDLE > 1)
     {
       ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-      OutPut("Set SC_NONLIN_MAXIT_SADDLE " << ParamDB->SC_NONLIN_MAXIT_SADDLE <<
-      " for Oseen, further assembling not implemented"<<endl);
+      Output::print("Set SC_NONLIN_MAXIT_SADDLE ",
+                    ParamDB->SC_NONLIN_MAXIT_SADDLE,
+                    " for Oseen, further assembling not implemented");
       TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-      OutPut("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0" << endl);
+      Output::print("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0");
     }
   }
 

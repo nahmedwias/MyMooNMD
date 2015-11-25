@@ -81,10 +81,10 @@ TSystemTNSE2D::TSystemTNSE2D(TFESpace2D *velocity_fespace, TFESpace2D *presssure
     FeSpaces[2] = velocity_fespace; //  to be included the convolution space if needed
     FeSpaces[3] = Projection_space; 
      
-    sqstructureL = new TSquareStructure2D(Projection_space);
+    sqstructureL = new TStructure(Projection_space);
     sqstructureL->Sort();
-    structure_tilde_G = new TStructure2D(velocity_fespace, Projection_space);
-    structure_G = new TStructure2D(Projection_space, velocity_fespace);    
+    structure_tilde_G = new TStructure(velocity_fespace, Projection_space);
+    structure_G = new TStructure(Projection_space, velocity_fespace);    
 
     MatricesL = new TSquareMatrix2D(sqstructureL);
     Matrices_tilde_G11 = new TMatrix2D(structure_tilde_G);

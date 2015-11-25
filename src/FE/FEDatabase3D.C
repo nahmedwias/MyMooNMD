@@ -1195,23 +1195,23 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
           switch(N_terms*MaxPolynomialDegree)
           {
             case 0:
-              OutPut("Quadrature formula for hexahedra is Gauss2" << endl); 
+              Output::print<2>("Quadrature formula for hexahedra is Gauss2");
               break;
             case 3:
-              OutPut("Quadrature formula for hexahedra is Gauss3" << endl); 
+              Output::print<2>("Quadrature formula for hexahedra is Gauss3");
               break;
             case 6:
-               OutPut("Quadrature formula for hexahedra is Gauss4" << endl); 
-               //OutPut("Quadrature formula for hexahedra is Degree7_Points38" << endl); 
+               Output::print<2>("Quadrature formula for hexahedra is Gauss4");
+               //Output::print<2>("Quadrature formula for hexahedra is Degree7_Points38");
              break;
             case 9:
-              OutPut("Quadrature formula for hexahedra is Gauss5" << endl); 
+              Output::print<2>("Quadrature formula for hexahedra is Gauss5");
               break;
             case 12:
-              OutPut("Quadrature formula for hexahedra is Gauss7" << endl); 
+              Output::print<2>("Quadrature formula for hexahedra is Gauss7");
               break;
             case 15:
-              OutPut("Quadrature formula for hexahedra is Gauss8" << endl); 
+              Output::print<2>("Quadrature formula for hexahedra is Gauss8");
               break;
           }
          }
@@ -1251,16 +1251,16 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
         switch(N_terms*MaxPolynomialDegree)
         {
           case 0:
-            OutPut("Quadrature formula for tetrahedra is P2Tetra" << endl); 
+            Output::print<2>("Quadrature formula for tetrahedra is P2Tetra");
             break;
           case 3:
-            OutPut("Quadrature formula for tetrahedra is P4Tetra" << endl); 
+            Output::print<2>("Quadrature formula for tetrahedra is P4Tetra");
             break;
           case 6:
-            OutPut("Quadrature formula for tetrahedra is P5Tetra" << endl); 
+            Output::print<2>("Quadrature formula for tetrahedra is P5Tetra"); 
             break;
           case 9:
-            OutPut("Quadrature formula for tetrahedra is P8Tetra" << endl); 
+            Output::print<2>("Quadrature formula for tetrahedra is P8Tetra"); 
             break;
          }
        }

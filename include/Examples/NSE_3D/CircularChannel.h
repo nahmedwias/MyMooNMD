@@ -12,7 +12,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: CircularChannel.h" << endl) ;
+  Output::print<1>("Example: CircularChannel.h");
   
   #define __Cylinder__   
 }

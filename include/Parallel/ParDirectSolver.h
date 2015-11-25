@@ -11,7 +11,6 @@
 // =======================================================================
 #ifdef _MPI
 #include "mpi.h"
-#include <SquareStructure3D.h>
 #include <SquareMatrix3D.h>
 #include <ParFECommunicator3D.h>
 
@@ -119,7 +118,6 @@ public:
 
 //------------------------------------------------------------------------------------------------------//
 #ifdef _OMPONLY
-#include <SquareStructure3D.h>
 #include <SquareMatrix3D.h>
 #include <ParDiso.h>
 

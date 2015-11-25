@@ -38,8 +38,8 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
              unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), 
-      norms_of_residuals(10, 1e10), initial_residual(1e10)
+    : systems(), example(e), multigrid(), defect(), oldResiduals(),
+      initial_residual(1e10)
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
@@ -58,13 +58,13 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
-  OutPut("N_Cells            : " << setw(10) << coll->GetN_Cells() << endl);
-  OutPut("h (min,max)        : " << setw(10) << h_min << " " << setw(12)
-         << h_max << endl);
-  OutPut("dof velocity       : " << setw(10) << 2* n_u << endl);
-  OutPut("dof velocity active: " << setw(10) << 2* n_u_active << endl);
-  OutPut("dof pressure       : " << setw(10) << n_p << endl);
-  OutPut("dof all            : " << setw(10) << n_dof << endl);
+  Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
+  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12),
+                   h_max);
+  Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
+  Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
+  Output::print<1>("dof pressure       : ", setw(10), n_p);
+  Output::print<1>("dof all            : ", setw(10), n_dof);
   
   // done with the conrtuctor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
@@ -151,14 +151,15 @@ void NSE2D::assemble_nonlinear_term()
 /** ************************************************************************ */
 bool NSE2D::stopIt(unsigned int iteration_counter)
 {
-  // the array norms_of_residuals has length 10, At position 'last_digit_ite' 
-  // of this array is the norm of the residual from 10 iterations ago. It is
-  // compared to the current norm of the residual and then replaced by it.
-  const unsigned int last_digit_ite = iteration_counter%10;
-  const double normOfResidual = this->normOfResidual();
+  // compute the residuals with the current matrix and solution
+  this->normOfResidual();
+  // the current norm of the residual
+  const double normOfResidual = this->getFullResidual();
+  // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
     initial_residual = normOfResidual;
-  const double oldNormOfResidual = this->norms_of_residuals[last_digit_ite];
+  // the residual from 10 iterations ago
+  const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
   const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
   const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
@@ -167,13 +168,12 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
-  this->norms_of_residuals[last_digit_ite] = normOfResidual;
   
   double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
   if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
   {
     limit *= sqrt(this->get_size());
-    OutPut("stopping tolerance for nonlinear iteration " << limit << endl);
+    Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
   }
 
   // check if the iteration has converged, or reached the maximum number of
@@ -181,11 +181,11 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   if( (normOfResidual<=limit) || (iteration_counter==Max_It) || (slow_conv) )
   {
     if(slow_conv)
-      OutPut(" SLOW !!! " << normOfResidual/oldNormOfResidual << endl);
+      Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
-    OutPut(" ITE : " << setw(4) << iteration_counter <<
-           setprecision(8) << " RES : " << normOfResidual << 
-           " Reduction : " << normOfResidual/initial_residual << endl);
+    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
+                     " RES : ", normOfResidual, " Reduction : ",
+                     normOfResidual/initial_residual);
     return true;
   }
   else
@@ -193,7 +193,7 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
 }
 
 /** ************************************************************************ */
-double NSE2D::normOfResidual()
+void NSE2D::normOfResidual()
 {
   System_per_grid& s = this->systems.front();
   unsigned int n_u_dof = s.solution.length(0);
@@ -217,13 +217,9 @@ double NSE2D::normOfResidual()
   double impuls_Residual = Ddot(2*n_u_dof, &this->defect[0],&this->defect[0]);
   double mass_residual = Ddot(n_p_dof, &this->defect[2*n_u_dof],
                               &this->defect[2*n_u_dof]);
-  // the full residual
-  double full_residual = sqrt(impuls_Residual + mass_residual);
   
-  OutPut(setw(14) << sqrt(impuls_Residual) << "\t" << setw(14) 
-         << sqrt(mass_residual) << "\t" << setw(14) << full_residual << endl);
-  
-  return full_residual;
+  Residuals currentResiduals(impuls_Residual, mass_residual);
+  oldResiduals.add(currentResiduals);
 }
 
 /** ************************************************************************ */
@@ -236,7 +232,7 @@ void NSE2D::solve()
     s.matrix.Solve(s.solution.get_entries(), s.rhs.get_entries());
     /*
     std::shared_ptr<TMatrix> m = s.matrix.get_combined_matrix();
-    TSquareStructure*s = new TSquareStructure(m->GetN_Rows(), m->GetN_Entries(),
+    TStructure*s = new TStructure(m->GetN_Rows(), m->GetN_Entries(),
                                               m->GetKCol(), m->GetRowPtr());
     s->Sort();
     TSquareMatrix * sm = new TSquareMatrix(s);
@@ -304,14 +300,14 @@ void NSE2D::output(int i)
     // errors in second velocity component
     u2->GetErrors(example.get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &velocity_space, err + 2);
-    OutPut("L2(u)     : " << sqrt(err[0]*err[0] + err[2]*err[2]) << endl);
-    OutPut("H1-semi(u): " << sqrt(err[1]*err[1] + err[3]*err[3]) << endl);
+    Output::print<1>("L2(u)     : ", sqrt(err[0]*err[0] + err[2]*err[2]));
+    Output::print<1>("H1-semi(u): ", sqrt(err[1]*err[1] + err[3]*err[3]));
     
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
-    OutPut("L2(p)     : " << err[0] << endl);
-    OutPut("H1-semi(p): " << err[1] << endl); 
+    Output::print<1>("L2(p)     : ", err[0]);
+    Output::print<1>("H1-semi(p): ", err[1]); 
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
   delete u1;
   delete u2;
@@ -381,7 +377,7 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
                                 n_aux, alpha, v_space_code, p_space_code, 
                                 nullptr, nullptr);
     if(TDatabase::ParamDB->NSTYPE == 14)
-      OutPut("WARNING: NSTYPE 14 is not supported. C block is ignored\n");
+      Output::print<1>("WARNING: NSTYPE 14 is not supported. C block is ignored");
     break;
   }
   return mg_l;
@@ -446,7 +442,7 @@ void NSE2D :: mg_solver()
       Defect = Defect_NSE4;
       break;
     case 14:
-      OutPut("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4\n");
+      Output::print<1>("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4");
       exit(-4711);
       break;
   }
@@ -470,8 +466,7 @@ void NSE2D :: mg_solver()
                                  this->multigrid.get(), zero_start);
         break;
       default:
-        OutPut("Unknown preconditioner !!!" << endl);
-        exit(4711);
+        ErrThrow("Unknown preconditioner !!!");
     }
     
     if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
@@ -497,8 +492,7 @@ void NSE2D :: mg_solver()
         itmethod = new TFgmresIte(MatVect, Defect, prec, 0, n_dof, 0);
         break;
       default:
-        OutPut("Unknown solver !!!!! " << endl);
-        exit(4711);
+        ErrThrow("Unknown preconditioner !!!");
     }
   }
     
@@ -521,3 +515,47 @@ void NSE2D :: mg_solver()
     delete [] itmethod_sol;
   }
 }
+
+/** ************************************************************************ */
+const NSE2D::Residuals& NSE2D::getResiduals() const
+{
+  return this->oldResiduals.back();
+}
+
+/** ************************************************************************ */
+double NSE2D::getImpulsResidual() const
+{
+  return this->oldResiduals.back().impulsResidual;
+}
+
+/** ************************************************************************ */
+double NSE2D::getMassResidual() const
+{
+  return this->oldResiduals.back().massResidual;
+}
+
+/** ************************************************************************ */
+double NSE2D::getFullResidual() const
+{
+  return this->oldResiduals.back().fullResidual;
+}
+
+/** ************************************************************************ */
+NSE2D::Residuals::Residuals()
+ : impulsResidual(1e10), massResidual(1e10), fullResidual(1e10)
+{}
+
+/** ************************************************************************ */
+NSE2D::Residuals::Residuals(double imR, double maR)
+ : impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
+   fullResidual(sqrt(imR + maR))
+{}
+
+/** ************************************************************************ */
+std::ostream& operator<<(std::ostream& s, const NSE2D::Residuals& n)
+{
+  s << setw(14) << n.impulsResidual << "\t" << setw(14)
+    << n.massResidual << "\t" << setw(14) << n.fullResidual;
+  return s;
+}
+

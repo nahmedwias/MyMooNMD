@@ -12,7 +12,7 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
 {
   // some checks, to make sure the input makes sense
   if(space_dim != 2 && space_dim != 3)
-   ErrThrow("unsupported space dimension " + std::to_string(space_dim));
+   ErrThrow("unsupported space dimension ", space_dim);
   // check if all space were defined on the same Mesh
   
   switch(this->type)
@@ -87,7 +87,7 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
       this->pattern_of_blocks = {0, 1, 2, 3}; // each block is different
       break;
     default:
-      ErrThrow("unknown problem type " + to_string(t));
+      ErrThrow("unknown problem type ", t);
       break;
   }
 }
@@ -103,8 +103,7 @@ BlockPattern::BlockPattern(unsigned int n_rows, unsigned int n_cols)
   if(n_rows != n_cols)
   {
     // this is currently not supported.
-    ErrMsg("non-square BlockPattern");
-    throw("non-square BlockPattern");
+    ErrThrow("non-square BlockPattern");
   }
 }
 
@@ -113,9 +112,7 @@ unsigned int BlockPattern::test_space_index_of_block(unsigned int block) const
 {
   if(block >= this->n_blocks())
   {
-    ErrMsg("This BlockPattern only has " << this->n_blocks() << ", not " <<
-           block);
-    throw("can not acces a block, index out of bounds");
+    ErrThrow("This BlockPattern only has ", this->n_blocks(), ", not ", block);
   }
   return this->row_spaces[block];
 }
@@ -125,9 +122,7 @@ unsigned int BlockPattern::ansatz_space_index_of_block(unsigned int block) const
 {
   if(block >= this->n_blocks())
   {
-    ErrMsg("This BlockPattern only has " << this->n_blocks() << ", not " <<
-           block);
-    throw("can not acces a block, index out of bounds");
+    ErrThrow("This BlockPattern only has ", this->n_blocks(), ", not ", block);
   }
   return this->column_spaces[block];
 }
@@ -137,9 +132,8 @@ unsigned int BlockPattern::test_space_index_of_row(unsigned int r) const
 {
   if(r >= this->n_rows())
   {
-    ErrMsg("There are only " << this->n_rows() << " block rows, cannot get " <<
-           "the index of the test space of the " << r << "-th row");
-    throw("BlockPattern: can not get test space index of row");
+    ErrThrow("There are only ", this->n_rows(), " block rows, cannot get ",
+             "the index of the test space of the ", r, "-th row");
   }
   return this->row_spaces[r*this->n_cols()];
 }
@@ -149,9 +143,8 @@ unsigned int BlockPattern::ansatz_space_index_of_column(unsigned int c) const
 {
   if(c >= this->n_cols())
   {
-    ErrMsg("There are only " << this->n_cols() << " block columns, cannot get " 
-           << "the index of the ansatz space of the " << c << "-th column");
-    throw("BlockPattern: can not get ansatz space index of column");
+    ErrThrow("There are only ", this->n_cols(), " block columns, cannot get ", 
+             "the index of the ansatz space of the ", c, "-th column");
   }
   return this->column_spaces[c];
 }
@@ -166,9 +159,8 @@ unsigned int BlockPattern::get_space_dim() const
 unsigned int BlockPattern::get_test_space_of_pattern(unsigned int p) const
 {
   if(p >= this->n_patterns())
-    ErrThrow("There are only " + std::to_string(this->n_patterns()) 
-             + " different sparsity patterns in this BlockPattern,  "
-             + std::to_string(p));
+    ErrThrow("There are only ", this->n_patterns(), 
+             " different sparsity patterns in this BlockPattern, ", p);
   return this->row_spaces[this->patterns[p]];
 }
 
@@ -176,9 +168,8 @@ unsigned int BlockPattern::get_test_space_of_pattern(unsigned int p) const
 unsigned int BlockPattern::get_ansatz_space_of_pattern(unsigned int p) const
 {
   if(p >= this->n_patterns())
-    ErrThrow("There are only " + std::to_string(this->n_patterns()) 
-             + " different sparsity patterns in this BlockPattern,  "
-             + std::to_string(p));
+    ErrThrow("There are only ", this->n_patterns(), 
+             " different sparsity patterns in this BlockPattern, ", p);
   return this->column_spaces[this->patterns[p]];
 }
 
@@ -187,8 +178,8 @@ unsigned int BlockPattern::pattern_of_block(unsigned int b) const
 {
   if(b >= this->n_blocks())
   {
-    ErrThrow("This BlockPattern only has " +std::to_string(this->n_blocks())
-             + " blocks, not " + std::to_string(b));
+    ErrThrow("This BlockPattern only has ", this->n_blocks(), " blocks, not ",
+             b);
   }
   return this->pattern_of_blocks[b];
 }
@@ -199,8 +190,8 @@ bool BlockPattern::diagonal_block(unsigned int b) const
   if(b == 0) return true;
   if(b >= this->n_blocks())
   {
-    ErrMsg("unable to tell if given block is on diagonal, index out of range");
-    throw("unable to tell if given block is on diagonal, index out of range");
+    ErrThrow("unable to tell if given block is on diagonal, ",
+             "index out of range");
   }
   // the i-th diagonal entry is the i(m+1)-block where m is the number of 
   // columns.

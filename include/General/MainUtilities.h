@@ -1,3 +1,6 @@
+#ifndef __MAINUTILITIES__
+#define __MAINUTILITIES__
+
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <TriaAffin.h>
@@ -12,9 +15,50 @@
 #include <JointEqN.h>
 
 #include <string.h>
+#include <deque>
+#include <queue>
 
 double GetTime();
 int GetMemory();
+
+
+/** @brief fixed size queue
+ * 
+ * This implements a queue with a fixed size given by the first template
+ * parameter. The second parameter describes the type of objects in the 
+ * queue. It is only possible to call three methods (besides the 
+ * constructor). You can access the first and last entry in the queue and
+ * add a new one.
+ */
+template<unsigned int queueSize, class T>
+struct FixedSizeQueue : private std::queue<T>
+{
+  /// @brief construct a FixedSizeQueue with the given size
+  ///
+  /// this is done via a std::deque. However this is of no concern here.
+  FixedSizeQueue() : std::queue<T>( std::deque<T>(queueSize) )
+  {
+  }
+  /// @brief add an element to the queue
+  ///
+  /// This adds a new elements to the back and removes one from the front.
+  void add(T t)
+  {
+    this->push(t);
+    this->pop();
+  }
+  /// @brief get the first (oldest) element
+  const T& front() const
+  {
+    return this->std::queue<T>::front();
+  }
+  /// @brief get the last (newest) element
+  const T& back() const
+  {
+    return this->std::queue<T>::back();
+  }
+};
+
 
 void SwapDoubleArray(double *doublearray, int length);
 void SwapIntArray(int *intarray, int length);
@@ -317,7 +361,7 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix3D **SQMATRICES,
 
 
 
-
+#endif // __MAINUTILITIES__
 
 
 

@@ -1863,42 +1863,42 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
         switch(3*MaxPolynomialDegree)
         {
           case 0:
-            OutPut("Quadrature formula for quadrilateral is Gauss2" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss2"); 
             break;
           case 3:
-            OutPut("Quadrature formula for quadrilateral is Gauss3" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss3"); 
             break;
           case 6:
-            OutPut("Quadrature formula for quadrilateral is Gauss4" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss4"); 
             break;
           case 9:
-            OutPut("Quadrature formula for quadrilateral is Gauss5" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss5"); 
             break;
           case 12:
-            OutPut("Quadrature formula for quadrilateral is Gauss7" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss7"); 
             break;
           case 15:
-            OutPut("Quadrature formula for quadrilateral is Gauss8" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss8"); 
             break;
           case 18:
-            OutPut("Quadrature formula for quadrilateral is Gauss9" << endl); 
+            Output::print<2>("Quadrature formula for quadrilateral is Gauss9"); 
             break;
         }
         if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 95)
       {
-        OutPut("Quadrature formula for quadrilateral is Gauss3" << endl); 
+        Output::print<2>("Quadrature formula for quadrilateral is Gauss3"); 
       }
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
 	{
-	    OutPut("Quadrature formula for quadrilateral is set to Gauss9" << endl); 
+	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
 	}
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
 	{
-	    OutPut("Quadrature formula for quadrilateral is set to Gauss5" << endl); 
+	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss5"); 
 	}
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
 	{
-	    OutPut("Quadrature formula for quadrilateral is set to Gauss9" << endl); 
+	  Output::print<2>("Quadrature formula for quadrilateral is set to Gauss9"); 
 	}
         }
 
@@ -1946,22 +1946,22 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
         switch(N_terms*MaxPolynomialDegree)
         {
           case 3:
-            OutPut("Quadrature formula for triangles is MidPointTria" << endl); 
+            Output::print<2>("Quadrature formula for triangles is MidPointTria"); 
             break;
           case 6:
-            OutPut("Quadrature formula for triangles is Gauss3Tria" << endl); 
+            Output::print<2>("Quadrature formula for triangles is Gauss3Tria"); 
             break;
           case 9:
-            OutPut("Quadrature formula for triangles is  Degree9Tria"<< endl); 
+            Output::print<2>("Quadrature formula for triangles is  Degree9Tria"); 
             break;
           case 12:
-            OutPut("Quadrature formula for triangles is Degree19Tria" << endl); 
+            Output::print<2>("Quadrature formula for triangles is Degree19Tria"); 
             break;
           case 15:
-            OutPut("Quadrature formula for triangles is Degree19Tria" << endl); 
+            Output::print<2>("Quadrature formula for triangles is Degree19Tria"); 
             break;
           case 18:
-            OutPut("Quadrature formula for triangles is Degree19Tria" << endl); 
+            Output::print<2>("Quadrature formula for triangles is Degree19Tria"); 
             break;
          }
         }
@@ -1974,22 +1974,19 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
         {
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 97)
 	{
-	    OutPut("Quadrature formula for triangles is set to Degree19Tria" << endl); 
+	  Output::print<2>("Quadrature formula for triangles is set to Degree19Tria");
 	}
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 98)
 	{
-	    OutPut("Quadrature formula for triangles is set to Gauss3Tria" << endl); 
- 
+	  Output::print<2>("Quadrature formula for triangles is set to Gauss3Tria");
 	}
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 99)
 	{
-	    OutPut("Quadrature formula for triangles is set to Gauss_Degree8Tria" << endl); 
- 
+	  Output::print<2>("Quadrature formula for triangles is set to Gauss_Degree8Tria");
 	}
 	if (TDatabase::ParamDB->INTERNAL_QUAD_RULE == 96)
 	{
-	    OutPut("Quadrature formula for triangles is set to Gauss_Degree8Tria" << endl); 
- 
+	  Output::print<2>("Quadrature formula for triangles is set to Gauss_Degree8Tria");
 	}
        }
       }
