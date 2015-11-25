@@ -71,12 +71,12 @@ TDomain::TDomain()
 TDomain::TDomain(char *ParamFile)
 {
   RefLevel = 0;
-  
-  /** set variables' value in TDatabase using ParamFile */
-  this->ReadParam(ParamFile);
 
   //this should be done here for the moment, not in ReadParam!
   TDatabase::SetDefaultParameters();
+  
+  /** set variables' value in TDatabase using ParamFile */
+  this->ReadParam(ParamFile);
     
 }
 
