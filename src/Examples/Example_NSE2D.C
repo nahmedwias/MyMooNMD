@@ -24,9 +24,8 @@ namespace sine_cosine
 }
 namespace flow_around_cylinder
 {
-  #include "NSE_2D/FlowAroundCylinder.h"
+  #include "NSE_2D/flow_around_cylinder.h"
 }
-
 
 Example_NSE2D::Example_NSE2D() : Example2D()
 {

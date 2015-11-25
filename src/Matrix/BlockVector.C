@@ -40,9 +40,8 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool image)
 unsigned int BlockVector::offset(unsigned int b) const
 {
   if(b >= this->n_blocks())
-    ErrThrow("trying to access block " + std::to_string(b) 
-             + ", but there are only" + std::to_string(this->n_blocks()) 
-             + " blocks in this BlockVector");
+    ErrThrow("trying to access block ", b, ", but there are only ", 
+             this->n_blocks(), " blocks in this BlockVector");
   return std::accumulate(lengths.cbegin(), lengths.cbegin() + b, 0);
 }
 
@@ -84,8 +83,7 @@ void BlockVector::scale(const double a, const unsigned int i)
   if((unsigned int)i < lengths.size())
     Dscal(lengths.at(i), a, this->block(i)); // scale i-th subvector
   else
-    ErrThrow("trying to scale subvector " + std::to_string(i) 
-             + " which does not exist");
+    ErrThrow("trying to scale subvector ", i, " which does not exist");
 }
 
 /** ************************************************************************ */
@@ -105,8 +103,8 @@ void BlockVector::add_scaled(const BlockVector& r, double factor)
   const unsigned int l = this->length(); // length of this BlockVector
   if(r.length() != l)
   {
-    ErrThrow("unable to add two BlockVectors of different lengths\t" 
-             + std::to_string(l) + "\t" + std::to_string(r.length()));
+    ErrThrow("unable to add two BlockVectors of different lengths\t", 
+             l, "\t", r.length());
   }
   else if(this->n_blocks() != r.n_blocks())
   {
@@ -126,8 +124,7 @@ void BlockVector::copy(const double * x, const int i)
     //memcpy(this->block(i), x, this->length(i)*sizeof(double)); // in string.h
   else
   {
-    ErrThrow("trying to copy to subvector " + std::to_string(i) 
-             + " which does not exist.");
+    ErrThrow("trying to copy to subvector ", i, " which does not exist.");
   }
 }
 
@@ -137,9 +134,8 @@ void BlockVector::copy_nonactive(const BlockVector& r)
   const unsigned int l = this->length(); // length of this BlockVector
   if(r.length() != l)
   {
-    ErrThrow("unable to copy from one BlockVector to another one of different "
-             + "length\t" + std::to_string(l) + "\t" 
-             + std::to_string(r.length()));
+    ErrThrow("unable to copy from one BlockVector to another one of different ",
+             "length\t", l, "\t", r.length());
   }
   else if(this->n_blocks() != r.n_blocks())
   {
@@ -176,8 +172,7 @@ void BlockVector::add(const double* x, const int i, double a)
   }
   else 
   {
-    ErrThrow("trying to add to subvector "  + std::to_string(i) 
-             + " which does not exist.");
+    ErrThrow("trying to add to subvector ", i, " which does not exist.");
   }
 }
 
@@ -203,8 +198,7 @@ void BlockVector::print(const std::string name, const int iB) const
       OutPut(name << "(" << i+1 << ")= " << myBlock[i] << ";\n");
   }
   else
-    ErrThrow("trying to print subvector " + std::to_string(iB) 
-             + " which does not exist");
+    ErrThrow("trying to print subvector ", iB, " which does not exist");
 }
 
 /** ************************************************************************ */
@@ -260,14 +254,14 @@ BlockVector& BlockVector::operator*=(const BlockMatrix& A)
   unsigned int l = this->length();
   if(A.n_total_cols() != l)
   {
-    ErrThrow("Matrix-vector multiplication not possible because the number of " 
-             +"columns in the matrix is not equal to the length of the vector");
+    ErrThrow("Matrix-vector multiplication not possible because the number of ",
+             "columns in the matrix is not equal to the length of the vector");
   }
   if(A.n_total_rows() != l)
   {
-    ErrThrow("Matrix-vector multiplication with non-square matrix would change "
-              + "the length of the vector. This is not intended here. If you " 
-              + "know what you are doing, change the implementation");
+    ErrThrow("Matrix-vector multiplication with non-square matrix would ",
+              "change the length of the vector. This is not intended here. If ", 
+              "you know what you are doing, change the implementation");
   }
   
   // y is an intermediate vector to store the product A*this
@@ -279,8 +273,7 @@ BlockVector& BlockVector::operator*=(const BlockMatrix& A)
   unsigned int n_col_blocks = A.n_cols();
   if(n_row_blocks * n_col_blocks != A.n_blocks())
   {
-    ErrMsg("BlockMatrix must have n_row_blocks*n_col_blocks many blocks");
-    exit(0);
+    ErrThrow("BlockMatrix must have n_row_blocks*n_col_blocks many blocks");
   }
   std::fill(y, y+l, 0.0);
   //memset(y, 0.0, l*SizeOfDouble); // in string.h
@@ -325,9 +318,8 @@ double dot(const BlockVector& a, const BlockVector& b)
   unsigned int l = a.length();
   if(b.length() != l)
   {
-    ErrThrow("unable to compute dot product of two BlockVectors of different " 
-             + "lengths\t" + std::to_string(l) + "\t" 
-             + std::to_string(b.length()));
+    ErrThrow("unable to compute dot product of two BlockVectors of different ", 
+             "lengths\t", l, "\t", b.length());
   }
   else if(a.n_blocks() != b.n_blocks())
   {
@@ -372,23 +364,6 @@ void BlockVector::copy_structure(const BlockMatrix& mat, bool image)
   }
 }
 
-///** ************************************************************************ */
-//template <class BM>
-//void BlockVector::copy_structure(const BM& mat, bool image)
-//{
-//  // call the regular copy_structure.
-//  this->copy_structure((const BlockMatrix&)mat, image);
-//  // set the active degrees of freedom
-//  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
-//  for(unsigned int b = 0; b < n_blocks; ++b)
-//  {
-//    unsigned int block = b * (image ? mat.n_cols() : 1.);
-//    this->actives[b] = mat.get_space_of_block(block,
-//                                              image)->GetN_ActiveDegrees();
-//  }
-//}
-
-
 /** ************************************************************************ */
 void BlockVector::write_fo_file(std::string filename)
 {
@@ -409,8 +384,7 @@ void BlockVector::read_from_file(std::string filename)
   std::ifstream dat(filename);
   if(!dat)
   {
-    ErrMsg("cannot open file '" << filename << "' to read data");
-    throw(std::runtime_error("cannot open file " + filename));
+    ErrThrow("cannot open file '", filename, "' to read data");
   }
   
   // check if the size of this vector and the number of doubles in the file
@@ -422,9 +396,8 @@ void BlockVector::read_from_file(std::string filename)
   parser >> length_read >> std::ws;
   if(!parser || parser.get() != EOF)
   {
-    ErrMsg("formatting error, the first line in the file should contain only "
-           << "a number idicating the number of entries to be read");
-    throw(std::runtime_error("formatting error in file " + filename));
+    ErrThrow("formatting error, the first line in the file should contain ",
+             "only a number idicating the number of entries to be read");
   }
   else if(this->length() == 0)
   {
@@ -435,9 +408,8 @@ void BlockVector::read_from_file(std::string filename)
   }
   else if(this->length() != length_read)
   {
-    ErrThrow("unexpected size to be read. Expected: " 
-             + std::to_string(this->length()) + "\tin file: " 
-             + std::to_string(length_read));
+    ErrThrow("unexpected size to be read. Expected: ", this->length(),
+             "\tin file: ", length_read);
   }
   // now we are sure that (this->length == length_read) 
   
@@ -480,15 +452,3 @@ const double& BlockVector::at(const unsigned int i) const
     ErrThrow("index out of bounds");
   }
 }
-
-///** ************************************************************************ */
-//
-//#include <BlockMatrixCD2D.h>
-//#include <BlockMatrixDarcy2D.h>
-//#include <BlockMatrixNSE2D.h>
-//template void BlockVector::copy_structure<BlockMatrixCD2D>(
-//  const BlockMatrixCD2D & mat, bool image);
-//template void BlockVector::copy_structure<BlockMatrixDarcy2D>(
-//  const BlockMatrixDarcy2D & mat, bool image);
-//template void BlockVector::copy_structure<BlockMatrixNSE2D>(
-//  const BlockMatrixNSE2D & mat, bool image);

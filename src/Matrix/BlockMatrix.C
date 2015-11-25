@@ -24,10 +24,9 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
 {
   if(new_blocks.size() < this->n_blocks())
   {
-    ErrThrow("Creating a BlockMatrix with " + std::to_string(this->n_rows())
-             + " rows and " + std::to_string(this->n_cols()) 
-             + " columns, but only " + std::to_string(new_blocks.size())
-             + " blocks given");
+    ErrThrow("Creating a BlockMatrix with ", this->n_rows(), " rows and ",
+             this->n_cols(), " columns, but only ", new_blocks.size(),
+             " blocks given");
   }
   std::copy(new_blocks.begin(), new_blocks.end(), this->blocks.begin());
   for(unsigned int b = 0; b < this->blocks.size(); ++b)
@@ -42,8 +41,8 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
       if(this->blocks[row*n_cols]->GetN_Rows() 
           != this->blocks[row*n_cols + col]->GetN_Rows())
       {
-        ErrThrow("The blocks in row " + std::to_string(row) 
-                 + " do not have the same number of rows");
+        ErrThrow("The blocks in row ", row, 
+                 " do not have the same number of rows");
       }
     }
   }
@@ -55,8 +54,8 @@ BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
       if(this->blocks[col]->GetN_Columns() 
           != this->blocks[row*n_cols + col]->GetN_Columns())
       {
-        ErrThrow("The blocks in column " + std::to_string(col)
-                 + " do not have the same number of columns");
+        ErrThrow("The blocks in column ", col,
+                 " do not have the same number of columns");
       }
     }
   }
@@ -126,8 +125,8 @@ void BlockMatrix::add_scaled(const BlockMatrix& A, double factor)
   unsigned int n_blocks = A.n_blocks();
   if(this->n_blocks() != n_blocks)
   {
-    ErrThrow("BlockMatrix::add_scaled : the two BlockMatrix objects do "
-             + "not have the same number of blocks.");
+    ErrThrow("BlockMatrix::add_scaled : the two BlockMatrix objects do ",
+             "not have the same number of blocks.");
   }
   
   for(unsigned int i = 0; i < n_blocks; i++)
@@ -142,8 +141,8 @@ void BlockMatrix::add_scaled_active(const BlockMatrix& A, double factor)
   unsigned int n_blocks = A.n_blocks();
   if(this->n_blocks() != n_blocks)
   {
-    ErrThrow("BlockMatrix::add_scaled_active : the two BlockMatrix objects do "
-             + "not have the same number of blocks.");
+    ErrThrow("BlockMatrix::add_scaled_active : the two BlockMatrix objects do ",
+             "not have the same number of blocks.");
   }
   
   for(unsigned int b = 0; b < n_blocks; b++)
@@ -189,8 +188,7 @@ void BlockMatrix::apply(const BlockVector & x, BlockVector & y) const
   unsigned int l = y.length();
   if(l != this->n_total_cols() && l != 0)
   {
-    ErrMsg("cannot multiply with matrix, dimension mismatch");
-    throw("cannot multiply with matrix, dimension mismatch");
+    ErrThrow("cannot multiply with matrix, dimension mismatch");
   }
   if(l == 0)
   {
@@ -212,13 +210,11 @@ void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
 {
   if(y.length() != this->n_total_rows())
   {
-    ErrMsg("cannot multiply with matrix, dimension mismatch");
-    throw("cannot multiply with matrix, dimension mismatch");
+    ErrThrow("cannot multiply with matrix, dimension mismatch");
   }
   if(x.length() != this->n_total_cols())
   {
-    ErrMsg("cannot multiply with matrix, dimension mismatch");
-    throw("cannot multiply with matrix, dimension mismatch");
+    ErrThrow("cannot multiply with matrix, dimension mismatch");
   }
   
   const double * xv = x.get_entries(); // array of values in x
@@ -304,6 +300,7 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
                          column_of_entry, entries_in_rows));
       // create Matrix
       this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
+      delete [] comb_entries;
     }
   }
   // else reuse the already computed combined matrix
@@ -315,9 +312,8 @@ std::shared_ptr<const TMatrix> BlockMatrix::block(const unsigned int i) const
 {
   if(i >= this->n_blocks())
   {
-    ErrThrow("There are only " + std::to_string(this->n_blocks()) 
-             + " blocks in this BlockMatrix. Cannot access block " 
-             + std::to_string(i));
+    ErrThrow("There are only ", this->n_blocks(), 
+             " blocks in this BlockMatrix. Cannot access block ", i);
   }
   return this->blocks[i];
 }
@@ -327,9 +323,8 @@ std::shared_ptr<TMatrix> BlockMatrix::block(const unsigned int i)
 {
   if(i >= this->n_blocks())
   {
-    ErrThrow("There are only " + std::to_string(this->n_blocks()) 
-             + " blocks in this BlockMatrix. Cannot access block " 
-             + std::to_string(i));
+    ErrThrow("There are only ", this->n_blocks(), 
+             " blocks in this BlockMatrix. Cannot access block ", i);
   }
   return this->blocks[i];
 }
@@ -340,19 +335,16 @@ const TMatrix& BlockMatrix::block(const unsigned int r,
 {
   if(r >= this->n_rows())
   {
-    ErrThrow("There are only " + std::to_string(this->n_rows()) + 
-             + " block rows in this BlockMatrix. Can not access a block in row "
-             + std::to_string(r));
+    ErrThrow("There are only ", this->n_rows(), 
+             " block rows in this BlockMatrix. Can not access a block in row ",
+             r);
   }
   if(c >= this->n_cols())
   {
-    ErrThrow("There are only " + std::to_string(this->n_cols()) 
-             + " block columns in this BlockMatrix. Can not access a block in "
-             + "column " + std::to_string(c));
+    ErrThrow("There are only ", this->n_cols(), 
+             " block columns in this BlockMatrix. Can not access a block in ",
+             "column ", c);
   }
-//OutPut("block(" << r << "," << c << ") = block(" << r * this->n_cols() + c <<
-//         ")  " << this->blocks[r * this->n_cols() + c]->GetN_Rows() << "  " <<
-//         this->blocks[r * this->n_cols() + c]->GetN_Columns() << endl);
   return *(this->blocks[r * this->n_cols() + c].get());
 }
 
@@ -431,8 +423,7 @@ unsigned int BlockMatrix::block_of_index(unsigned int& i, unsigned int& j)
     i -= n_rows;
   }
   // until here only in case of an error
-  ErrMsg("could not find the given index in the BlockMatrix");
-  throw("could not find the given index in the BlockMatrix");
+  ErrThrow("could not find the given index in the BlockMatrix");
 }
 
 /** ************************************************************************* */

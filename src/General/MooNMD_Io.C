@@ -1,17 +1,6 @@
 #include <Database.h>
 #include <MooNMD_Io.h>
 
-void throw_with_message(const std::string& x, std::string file, int line)
-{
-  std::string err_string = std::string(60, '*') + "\nError in file " + file
-                           + ", line " + std::to_string(line) + ":\n\t" + x;
-  OutFile << err_string << endl;
-  throw std::runtime_error(err_string);
-}
-
-
-
-
 namespace Output
 {
   // the verbosity threshold is usually between 1 (low verbosity) and
