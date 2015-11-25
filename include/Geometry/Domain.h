@@ -295,7 +295,9 @@ class TDomain
       * "PeriodicSquaresLarge" - Default mesh. ... (2D only)
       * "PeriodicTrianglesLarge" - Default mesh. ... (2D only)
       * "PeriodicRectangle_2_4" - Default mesh. ... (2D only)
+      *
       * "TestGrid3D" - Default mesh. ... (3D only)
+      * "Default_UnitCube_Geo" - Default mesh. ... (3D only)
       *
       * If none of these, the string is considered to be the path to a .GEO
       * file and thus is handed over to TDomain::ReadGeo().
@@ -463,6 +465,17 @@ class TDomain
        * to the init method.
        */
       int initializeDefaultCubeBdry();
+
+      /**
+       * @brief Initialize the initial mesh as if data/Wuerfel.GEO
+       * would have been read in as .GEO file.
+       *
+       * This method is useful for tests, which are supposed to be independent
+       * of whether an extern .PRM-file is available. To let the domain call this
+       * method when initializing, pass "Default_UnitCube_Geo" as second argument
+       * to the init method.
+       */
+      void initializeDefaultCubeInitialMesh();
 
       void SetBoundBox(double boundx, double boundy, double boundz);
     #endif
