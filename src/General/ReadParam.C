@@ -50,8 +50,6 @@ int TDomain::ReadParam(char *ParamFile)
 
   memset(flag,0,7*SizeOfInt);
 
-  TDatabase::SetDefaultParameters();
-
   if (!dat)
   {
 #ifdef _MPI

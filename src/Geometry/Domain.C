@@ -62,17 +62,21 @@ extern "C"
 TDomain::TDomain()
 {
   RefLevel = 0;
+
+  //this should be done here for the moment, not in ReadParam!
+  TDatabase::SetDefaultParameters();
 }
 
 
 TDomain::TDomain(char *ParamFile)
 {
   RefLevel = 0;
-  char *PRM;
-  int Flag;
   
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
+
+  //this should be done here for the moment, not in ReadParam!
+  TDatabase::SetDefaultParameters();
     
 }
 
@@ -893,6 +897,10 @@ void TDomain::Init(char *PRM, char *GEO)
     {
       TestGrid3D();
     }
+    if (!strcmp(GEO, "Default_UnitCube_Geo"))
+    {
+      initializeDefaultCubeInitialMesh();
+    }
     else
     {
       // "GEO" interpreted as file path to GEO-file.
@@ -915,6 +923,7 @@ void TDomain::Init(char *PRM, char *GEO)
     {
       ErrThrow("cannot open GEO file");
     }
+    // then read in sandwich geo.
     ReadSandwichGeo(bdryStream);
   }
 }
