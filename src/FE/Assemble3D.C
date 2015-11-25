@@ -40,10 +40,10 @@ static int compare_int(const void *a, const void *b)
 }
 
 
-void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
+void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
                 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                 int n_matrices, TMatrix3D **matrices,
-                int n_rhs, double **rhs, TFESpace3D **ferhs,
+                int n_rhs, double **rhs, const TFESpace3D **ferhs,
                 TDiscreteForm3D *DiscreteForm3D,
                 BoundCondFunct3D **BoundaryConditions,
                 BoundValueFunct3D **BoundaryValues,
@@ -58,7 +58,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
   int *N_BaseFunct;
   int N_Rows;
   BaseFunct3D *BaseFuncts;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   FE3D TestElement, AnsatzElement;
   QuadFormula2D FaceQuadFormula;
@@ -154,7 +154,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -173,11 +173,11 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     } // endfor
@@ -399,7 +399,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace3D();
       CurrentElement = fespace->GetFE3D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -484,10 +484,10 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace3D *) matrices[j]->GetStructure()->
-                    GetTestSpace())->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure()->
-                      GetAnsatzSpace())->GetFE3D(i, cell);
+      TestElement = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
+                    ->GetFE3D(i, cell);
+      AnsatzElement = ((TFESpace3D *) matrices[j]->GetAnsatzSpace3D())
+                      ->GetFE3D(i, cell);
 
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
@@ -940,7 +940,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace3D();
     N_ = fespace->GetN_Hanging();
     // there are no hanging nodes
     if (N_ == 0)
@@ -1030,7 +1030,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace();
+    fespace = sqmatrices[j]->GetFESpace3D();
     N_ = fespace->GetN_Hanging();
     // there are no hanging nodes
     if (N_ == 0)
@@ -1134,7 +1134,7 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
     ColInd = sqmatrices[k]->GetKCol();
     N_Rows = sqmatrices[k]->GetN_Rows();
     
-    fespace = sqmatrices[k]->GetFESpace();
+    fespace = sqmatrices[k]->GetFESpace3D();
     ActiveBound = fespace->GetActiveBound();
     for(i=ActiveBound;i<N_Rows;i++)
     {
@@ -1184,6 +1184,1143 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
   //OutPut("LocalToGlobal: " << time_all << " " << time_total << " " << time_all/time_total << endl);
 } // end of Assemble
 
+
+void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
+                TSquareMatrix3D** sqmatrices, int n_matrices,
+                TMatrix3D** matrices, int n_rhs, double** rhs,
+                const TFESpace3D** ferhs, BoundCondFunct3D** BoundaryConditions,
+                BoundValueFunct3D** BoundaryValues, const LocalAssembling3D& la)
+{
+	  double hK;
+	  int N_AllMatrices = n_sqmatrices+n_matrices;
+	  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij,N_Vertex;
+	  int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
+	  int N_Test, N_Ansatz, N_Joints;
+	  int Used[N_FEs3D];
+	  int *N_BaseFunct;
+	  int N_Rows;
+	  BaseFunct3D *BaseFuncts;
+	  const TFESpace3D *fespace;
+	  FE3D LocalUsedElements[N_FEs3D], CurrentElement;
+	  FE3D TestElement, AnsatzElement;
+	  QuadFormula2D FaceQuadFormula;
+	  TQuadFormula2D *qf2;
+	  TCollection *Coll;
+	  TBaseCell *cell, *neigh;
+	  TJoint *joint;
+	  TBoundFace *boundface;
+	  //  TIsoBoundEdge *isoboundedge;
+	  int **GlobalNumbers, **BeginIndex;
+	  int **RhsGlobalNumbers, **RhsBeginIndex;
+	  int **TestGlobalNumbers, **TestBeginIndex;
+	  int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
+	  TFE3D *ele;
+	  TFEDesc3D *FEDesc_Obj;
+	  double *weights, *xi, *eta, *zeta;
+	  double *t, *s;
+	  double x, y, z;
+	  double xf, yf, zf;
+	  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
+	  double Z[MaxN_QuadPoints_3D];
+	  double AbsDetjk[MaxN_QuadPoints_3D];
+	  double *Param[MaxN_QuadPoints_3D];
+	  double *local_rhs;
+	  double *righthand;
+	  double **Matrices, *aux;
+	  double **Matrix;
+	  double ***LocMatrices, **LocRhs;
+	  int LocN_BF[N_BaseFuncts3D];
+	  BaseFunct3D LocBF[N_BaseFuncts3D];
+	  double *AuxArray[MaxN_QuadPoints_3D];
+	  int *DOF, ActiveBound, DirichletBound, begin, end, last, middle;
+	  int *TestDOF, *AnsatzDOF;
+	  double *Entries;
+	  int *ColInd, *RowPtr;
+	  double *RHS, *MatrixRow;
+	  double **HangingEntries, **HangingRhs;
+	  double *CurrentHangingEntries, *CurrentHangingRhs;
+	  int *HangingRowPtr, *HangingColInd;
+	  THangingNode *hn, **HangingNodes;
+	  HNDesc HNDescr;
+	  THNDesc *HNDescr_Obj;
+	  double *Coupling, v;
+	  TBoundComp3D *BoundComp;
+	  double t0, t1, t2;
+	  int comp;
+	  BoundCond Cond0, Cond1;
+	  BoundCondFunct3D *BoundaryCondition;
+	  BoundValueFunct3D *BoundaryValue;
+	  TNodalFunctional3D *nf;
+	  RefTrans3D reftrans;
+	  int N_EdgePoints;
+	  double *EdgePoints;
+	  double PointValues[MaxN_PointsForNodal3D];
+	  double FunctionalValues[MaxN_BaseFunctions3D];
+	  int *EdgeDOF, N_EdgeDOF;
+	  int N_LinePoints;
+	  double *FaceWeights, *theta;
+	  double x0, x1, y0, y1, z0, z1, hE;
+	  double **JointValues, *JointValue;
+	  // static bool *SecondDer = NULL;
+	  bool *SecondDer = NULL;
+	  double Param1[4], Param2[4];
+	  double LinComb[4];
+
+	  const int *TmpFV, *TmpLen, *EdgeVertex, *TmpFE, *ETmpLen;
+	  int MaxLen, EMaxLen, N_FaceEdges;
+	  double xc1, yc1, zc1, xc2, yc2, zc2, xc3, yc3, zc3;
+	  double nx, ny, nz;
+	  double t11,t22,time=0.0;
+
+	  double time1, time2, time_all, time_total;
+	  int *int_ptr, N_Edges, N_VertInCell, dof;
+
+	  TEdge *edge;
+	  TVertex *Vert;
+
+	  bool InnerBoundary, OuterBoundary;
+
+	  time_total = GetTime();
+	  time_all = 0;
+
+	// ########################################################################
+	// store information in local arrays
+	// ########################################################################
+	  BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+	  N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+
+	  if(n_sqmatrices)
+	  {
+	    GlobalNumbers = new int* [n_sqmatrices];
+	    BeginIndex = new int* [n_sqmatrices];
+	    HangingEntries = new double* [n_sqmatrices];
+	    for(i=0;i<n_sqmatrices;i++)
+	    {
+	      fespace = sqmatrices[i]->GetFESpace3D();
+	      GlobalNumbers[i] = fespace->GetGlobalNumbers();
+	      BeginIndex[i] = fespace->GetBeginIndex();
+
+	      j = sqmatrices[i]->GetHangingN_Entries();
+	//       cout << "N_Hanging: " << j << endl;
+	      HangingEntries[i] = new double [j];
+	      memset(HangingEntries[i], 0, SizeOfDouble*j);
+	    } // endfor
+	  } // endif n_sqmatrices
+
+	  if(n_matrices)
+	  {
+	    TestGlobalNumbers = new int* [n_matrices];
+	    AnsatzGlobalNumbers = new int* [n_matrices];
+	    TestBeginIndex = new int* [n_matrices];
+	    AnsatzBeginIndex = new int* [n_matrices];
+	    for(i=0;i<n_matrices;i++)
+	    {
+	      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
+	      TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
+	      TestBeginIndex[i] = fespace->GetBeginIndex();
+
+	      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
+	      AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
+	      AnsatzBeginIndex[i] = fespace->GetBeginIndex();
+	    } // endfor
+	  } // endif n_matrices
+
+	  if(n_rhs)
+	  {
+	    HangingRhs = new double* [n_rhs];
+	    RhsBeginIndex = new int* [n_rhs];
+	    RhsGlobalNumbers = new int* [n_rhs];
+	    for(i=0;i<n_rhs;i++)
+	    {
+	      fespace = ferhs[i];
+	      RhsBeginIndex[i] = fespace->GetBeginIndex();
+	      RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
+
+	      j = fespace->GetN_Hanging();
+	//       cout << "N_Hanging: " << j << endl;
+	      HangingRhs[i] = new double [j];
+	      memset(HangingRhs[i], 0, SizeOfDouble*j);
+	    } // endfor
+
+	    LocRhs = new double* [n_rhs];
+	    righthand = new double [n_rhs*MaxN_BaseFunctions3D];
+	    for(i=0;i<n_rhs;i++)
+	      LocRhs[i] = righthand+i*MaxN_BaseFunctions3D;
+
+	  } // endif n_rhs
+
+	  N_Parameters = la.GetN_Parameters(); //ask local assembling object for number of parameters
+
+	  if(N_Parameters)
+	  {
+	    aux = new double [MaxN_QuadPoints_3D*N_Parameters];
+	    for(j=0;j<MaxN_QuadPoints_3D;j++)
+	      Param[j] = aux + j*N_Parameters;
+	  }
+
+	  // 20 <= number of term in bilinear form
+	  // DUE NOTE CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
+	  aux = new double [MaxN_QuadPoints_3D*20];
+	  for(j=0;j<MaxN_QuadPoints_3D;j++)
+	    AuxArray[j] = aux + j*20;
+
+	  if(N_AllMatrices)
+	  {
+	    aux = new double
+	            [N_AllMatrices*MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+	    Matrices = new double* [N_AllMatrices*MaxN_BaseFunctions3D];
+	    for(j=0;j<N_AllMatrices*MaxN_BaseFunctions3D;j++)
+	      Matrices[j] = aux+j*MaxN_BaseFunctions3D;
+
+	    LocMatrices = new double** [N_AllMatrices];
+	    for(i=0;i<N_AllMatrices;i++)
+	      LocMatrices[i] = Matrices+i*MaxN_BaseFunctions3D;
+	  } // endif N_AllMatrices
+
+	  SecondDer = la.GetNeeds2ndDerivatives();
+
+	  if(SecondDer == NULL)
+	  {
+	    SecondDer = new bool[n_fespaces];
+	    for(i=0;i<n_fespaces;i++)
+	      SecondDer[i] = false;
+	  }
+
+
+	  // all spaces use same Coll
+	  Coll = fespaces[0]->GetCollection();
+	  N_Cells = Coll->GetN_Cells();
+	//   cout << "N_Cells: " << N_Cells << endl;
+
+	  // reset clipboards of all neighbours to -1
+	  for(i=0;i<N_Cells;i++)
+	  {
+	    cell = Coll->GetCell(i);
+	    k = cell->GetN_Joints();
+	    for(j=0;j<k;j++)
+	    {
+	      neigh=cell->GetJoint(j)->GetNeighbour(cell);
+	      if(neigh) neigh->SetClipBoard(-1);
+	    }
+	    cell->SetClipBoard(-1);
+
+	#ifdef _MPI
+	      N_Edges=cell->GetN_Edges();
+	      for(j=0;j<N_Edges;j++)
+	       (cell->GetEdge(j))->SetClipBoard(-1);
+
+	      N_VertInCell = cell->GetN_Vertices();
+	      for(j=0;j<N_VertInCell;j++)
+	       (cell->GetVertex(j))->SetClipBoard(-1);
+	#endif
+	  } // endfor i
+
+	  for(i=0;i<N_Cells;i++)
+	    Coll->GetCell(i)->SetClipBoard(i);
+
+	// ########################################################################
+	// loop over all cells
+	// ########################################################################
+	  for(i=0;i<N_Cells;i++)
+	  {
+	      //  OutPut(i<<endl);
+	    cell = Coll->GetCell(i);
+	//     cout << "Zellenr.: " << i << endl;
+	//     OutPut(TDatabase::ParamDB->CELL_MEASURE << endl);
+	    switch (TDatabase::ParamDB->CELL_MEASURE)
+	    {
+		case 0: // diameter
+		    hK = cell->GetDiameter();
+		    //OutPut("diameter " << hK <<endl);
+		    break;
+		    //case 1: // with reference map
+		    //hK = cell->GetLengthWithReferenceMap();
+		    //OutPut("reference map " << hK <<endl);
+		    //exit(1);
+		    //break;
+		case 2: // shortest edge
+	 	    hK = cell->GetShortestEdge();
+		    //OutPut("shortest edge " << hK <<endl);
+		    break;
+		case 1: // with reference map
+		case 3: // measure
+	 	    hK = cell->GetMeasure();
+		    hK = pow(hK,1.0/3.0);
+		    //OutPut("measure " << hK <<endl);
+		    //exit(1);
+		    break;
+		default: // diameter
+		    hK = cell->GetDiameter();
+		    break;
+	    }
+
+	    /* switch (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY)
+	      {
+	      case 180:
+	  	if (TDatabase::ParamDB->P0 != 123454321)
+		    hK = cell->GetShortestEdge();
+		else
+		    hK = pow(cell->GetMeasure(),1.0/3.0);
+	        break;
+	      case 22000:
+	      case 40000:
+		hK = pow(cell->GetMeasure(),1.0/3.0);
+		hK = cell->GetShortestEdge();
+		break;
+	      default:
+		hK = cell->GetDiameter();
+		break;
+	      }
+	    */
+	    // ####################################################################
+	    // find local used elements on this cell
+	    // ####################################################################
+	    for(j=0;j<n_fespaces;j++)
+	    {
+	      CurrentElement = fespaces[j]->GetFE3D(i, cell);
+	      LocalUsedElements[j] = CurrentElement;
+	      LocN_BF[j] = N_BaseFunct[CurrentElement];
+	      LocBF[j] = BaseFuncts[CurrentElement];
+	    }
+
+	    N_LocalUsedElements = n_fespaces;
+
+	    // ####################################################################
+	    // calculate values on original element
+	    // ####################################################################
+
+	    //OutPut("CELL " << i << endl);
+	    reftrans=TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements,
+	                                    Coll, cell, SecondDer,
+	                                    N_Points, xi, eta, zeta, weights,
+	                                    X, Y, Z, AbsDetjk);
+
+	//     cout << "AbsDetjk: " << AbsDetjk[0] << endl;
+
+	    //OutPut("params " << TDatabase::ParamDB->INTERNAL_LEVEL << endl);
+	    la.GetParameters(N_Points, Coll, cell, i,X, Y, Z, Param);
+
+	    if ((TDatabase::ParamDB->DISCTYPE == SDFEM)
+	        || (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM)
+	        || (TDatabase::ParamDB->CELL_MEASURE == 4)
+	        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 105)
+	        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 108)
+	        || (TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE == 109))
+	    {
+	      N_Vertex = cell->GetN_Vertices();
+	      for (ij=0;ij<N_Vertex;ij++)
+	      {
+	        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
+	        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
+	        TDatabase::ParamDB->INTERNAL_VERTEX_Z[ij] = cell->GetVertex(ij)->GetZ();
+	      }
+	      if (N_Vertex==4)
+	        TDatabase::ParamDB->INTERNAL_VERTEX_X[4] = -4711;
+	      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
+	    }
+
+	    // use local assembling object to assemble a few matrices and
+	    // right-hand sides at once
+	    la.GetLocalForms(N_Points, weights, AbsDetjk,
+						 X, Y, Z,
+						 LocN_BF, LocBF,
+						 Param, AuxArray,
+						 cell,
+						 N_AllMatrices, n_rhs,
+						 LocMatrices, LocRhs);
+
+	    //OutPut("local form done " << i << endl);
+	    time1 = GetTime();
+	    // ####################################################################
+	    // add local matrices to global matrices (ansatz == test)
+	    // ####################################################################
+	    for(j=0;j<n_sqmatrices;j++)
+	    {
+	      // find space for this bilinear form
+	      fespace = sqmatrices[j]->GetFESpace3D();
+	      CurrentElement = fespace->GetFE3D(i, cell);
+	      N_ = N_BaseFunct[CurrentElement];
+
+	      Matrix = Matrices+j*MaxN_BaseFunctions3D;
+	      Entries = sqmatrices[j]->GetEntries();
+	      RowPtr = sqmatrices[j]->GetRowPtr();
+	      ColInd = sqmatrices[j]->GetKCol();
+
+	      CurrentHangingEntries = HangingEntries[j];
+	      HangingRowPtr = sqmatrices[j]->GetHangingRowPtr();
+	      HangingColInd = sqmatrices[j]->GetHangingKCol();
+
+	      ActiveBound = fespace->GetActiveBound();
+	      DirichletBound = fespace->GetHangingBound();
+	      DOF = GlobalNumbers[j] + BeginIndex[j][i];
+
+	      // add local matrix to global
+	      for(m=0;m<N_;m++)
+	      {
+	        l=DOF[m];
+	        MatrixRow = Matrix[m];
+	        // cout << "DOF: " << l << endl;
+	        if(l<ActiveBound)
+	        {
+	          // node l is inner or Neumann node
+	          // for all dof
+	          for(k=0;k<N_;k++)
+	          {
+	            // for all columns
+	            l2 = 0;
+	            end=RowPtr[l+1];
+	            for(n=RowPtr[l];n<end;n++)
+	            {
+	              // if column of current dof found
+	              if(DOF[k] == ColInd[n])
+	              {
+	                // cout << m << "   " << k << endl << n << endl;
+	                Entries[n] += MatrixRow[k];
+	                l2 = 1;
+	                break;
+	              } // endif
+	            } // endfor n
+	            if(l2 == 0)
+	              cout << "not found it's me" << endl;
+	          } // endfor k
+	        } // endif l
+	        else
+	        {
+	          if(l<DirichletBound)
+	          {
+	            // hanging node
+	            l -= ActiveBound;
+	            end = HangingRowPtr[l+1];
+	            for(n=HangingRowPtr[l];n<end;n++)
+	            {
+	              for(k=0;k<N_;k++)
+	              {
+	                if(DOF[k] == HangingColInd[n])
+	                {
+	                  CurrentHangingEntries[n] += MatrixRow[k];
+	                  break;
+	                } // endif
+	              } // endfor k
+	            } // endfor n
+	          }
+	          else
+	          {
+	            // Dirichlet node
+	            n=RowPtr[l];
+	            if(ColInd[n]==l)
+	            {
+	              Entries[n]=1.0;
+	            }
+	          }
+	        }
+	      } // endfor m
+	    } // endfor j
+
+
+	    // ####################################################################
+	    // add local matrices to global matrices (ansatz != test)
+	    // ####################################################################
+	    for(j=0;j<n_matrices;j++)
+	    {
+	      TestElement = ((const TFESpace3D *) matrices[j]->GetTestSpace3D())
+                      ->GetFE3D(i, cell);
+	      AnsatzElement = ((const TFESpace3D *) matrices[j]->GetAnsatzSpace3D())
+                        ->GetFE3D(i, cell);
+
+	      // cout << "non square matrix: " << j << endl;
+	      // cout << "TestElement: " << TestElement << endl;
+	      // cout << "AnsatzElement: " << AnsatzElement << endl;
+
+	      N_Test = N_BaseFunct[TestElement];
+	      N_Ansatz = N_BaseFunct[AnsatzElement];
+
+	      Matrix = Matrices+(j+n_sqmatrices)*MaxN_BaseFunctions3D;
+
+	      Entries = matrices[j]->GetEntries();
+	      RowPtr = matrices[j]->GetRowPtr();
+	      ColInd = matrices[j]->GetKCol();
+
+	      TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
+	      AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
+
+	      // add local matrix to global
+	      for(m=0;m<N_Test;m++)
+	      {
+	        l=TestDOF[m];
+	        MatrixRow = Matrix[m];
+	        // cout << "DOF: " << l << endl;
+	        for(k=0;k<N_Ansatz;k++)
+	        {
+	          end = RowPtr[l+1];
+	          for(n=RowPtr[l];n<end;n++)
+	          {
+	            if(AnsatzDOF[k] == ColInd[n])
+	            {
+	              // cout << m << "   " << k << endl << n << endl;
+	              Entries[n] += MatrixRow[k];
+	              break;
+	            } // endif
+	          } // endfor n
+	        } // endfor k
+	      } // endfor m
+	    } // endfor j
+	    time2 = GetTime();
+	    time_all += time2-time1;
+
+	    // ####################################################################
+	    // add local right-hand sides to global right-hand side
+	    // ####################################################################
+	    for(j=0;j<n_rhs;j++)
+	    {
+	      fespace = ferhs[j];
+	      ActiveBound = fespace->GetActiveBound();
+	      CurrentElement = fespace->GetFE3D(i, cell);
+
+	      N_ = N_BaseFunct[CurrentElement];
+
+	      local_rhs = righthand+j*MaxN_BaseFunctions3D;
+	      RHS = rhs[j];
+	      CurrentHangingRhs = HangingRhs[j];
+	      // find space for this linear form
+
+	      ActiveBound = fespace->GetActiveBound();
+	      DirichletBound = fespace->GetHangingBound();
+	      DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
+
+	      // add local right-hand side to the global one
+	      for(m=0;m<N_;m++)
+	      {
+	        l=DOF[m];
+	        // cout << "DOF: " << l << endl;
+	        if(l<ActiveBound)
+	        {
+	          // node l is inner or Neumann node
+	          RHS[l] += local_rhs[m];
+	        } // endif l
+	        else
+	        {
+	          if(l<DirichletBound)
+	          {
+	            // hanging node
+	            l -= ActiveBound;
+	            CurrentHangingRhs[l] += local_rhs[m];
+	          }
+	        }
+	      } // endfor m
+
+	      BoundaryCondition = BoundaryConditions[j];
+	      BoundaryValue = BoundaryValues[j];
+	      ele = TFEDatabase3D::GetFE3D(CurrentElement);
+	      nf = ele->GetNodalFunctional3D();
+
+	      FEDesc_Obj = ele->GetFEDesc3D();
+	      N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
+
+	      // setting Dirichlet boundary condition
+	      N_Joints = cell->GetN_Faces();
+	      for(m=0;m<N_Joints;m++)
+	      {
+	        joint = cell->GetJoint(m);
+	        InnerBoundary = false;
+	        OuterBoundary = false;
+
+	        if(joint->GetType() == BoundaryFace ||
+	           joint->GetType() == IsoBoundFace)
+	          OuterBoundary = true;
+
+	        /*
+	        // check whether neighbour does not belong to Coll
+	        neigh = joint->GetNeighbour(cell);
+	        if(neigh)
+	        {
+	          // check for neighbour's clipboard
+	          if(neigh->GetClipBoard() == -1)
+	            InnerBoundary = true;
+	        }
+	        */
+
+	        if(InnerBoundary || OuterBoundary)
+	        {
+	          cell->GetShapeDesc()->GetFaceVertex(TmpFV, TmpLen, MaxLen);
+	          cell->GetShapeDesc()->GetFaceEdge(TmpFE, ETmpLen, EMaxLen);
+	          t0 = 1.0/TmpLen[m];
+
+	          xf = 0; yf = 0; zf = 0;
+	          for (l1=0;l1<TmpLen[m];l1++)
+	          {
+	            cell->GetVertex(TmpFV[m*MaxLen+l1])
+	                        ->GetCoords(X[l1], Y[l1], Z[l1]);
+	            //LinComb[l1] = t0;
+	            xf += t0*X[l1];
+	            yf += t0*Y[l1];
+	            zf += t0*Z[l1];
+	          }
+
+	          /*if(OuterBoundary)
+	          {
+	            boundface = (TBoundFace *)joint;
+	            BoundComp = boundface->GetBoundComp();
+
+	            boundface->GetParameters(Param1, Param2);
+	            comp=BoundComp->GetID();
+
+	            BoundComp->GetXYZandTS(TmpLen[m], LinComb,
+	                                   X, Y, Z, Param1, Param2,
+	                                   xf, yf, zf, t0, t1);
+					   }*/
+		  // the face gets the b.c. which is valid at its center
+	          BoundaryCondition(xf, yf, zf, Cond0);
+
+	          switch(Cond0)
+	          {
+	            case DIRICHLET:
+	              if(TDatabase::ParamDB->USE_ISOPARAMETRIC)
+	              {
+	                nf->GetPointsForFace(N_Points, t, s);
+
+	                for(l1=0;l1<N_Points;l1++)
+	                {
+	                  switch(TmpLen[m])
+	                  {
+	                    case 4:
+	                      LinComb[0] = (1-t[l1])*(1-s[l1]);
+	                      LinComb[1] = t[l1]*(1-s[l1]);
+	                      LinComb[2] = t[l1]*s[l1];
+	                      LinComb[3] = (1-t[l1])*s[l1];
+	                      xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+	                          +LinComb[2]*X[2] + LinComb[3]*X[3];
+	                      yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+	                          +LinComb[2]*Y[2] + LinComb[3]*Y[3];
+	                      zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+	                          +LinComb[2]*Z[2] + LinComb[3]*Z[3];
+	                    break;
+	                    case 3:
+	                      LinComb[0] = 1-t[l1]-s[l1];
+	                      LinComb[1] = t[l1];
+	                      LinComb[2] = s[l1];
+	                      xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+	                          +LinComb[2]*X[2];
+	                      yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+	                          +LinComb[2]*Y[2];
+	                      zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+	                          +LinComb[2]*Z[2];
+	                    break;
+	                  }
+	                  /*if(OuterBoundary)
+	                    BoundComp->GetXYZandTS(TmpLen[m], LinComb,
+	                                           X, Y, Z, Param1, Param2,
+	                                           xf, yf, zf, t0, t1);
+			  */
+	                  //cout << l1 << ": " << t0 << " " << t1 << " <> ";
+	                  //cout << xf << " " << yf << " " << zf << endl;
+
+	                  BoundaryValue(xf, yf, zf, PointValues[l1]);
+	                  // cout << " PV: " << PointValues[l1] << endl;
+	                }
+	              }
+	              else
+	              {
+	                // no isoparametric
+	                nf->GetPointsForFace(m, N_Points, xi, eta, zeta);
+
+	                TFEDatabase3D::GetOrigFromRef(reftrans, N_Points,
+	                                              xi, eta, zeta,
+	                                              X, Y, Z, AbsDetjk);
+
+	                for(l1=0;l1<N_Points;l1++)
+	                {
+	                  BoundaryValue(X[l1], Y[l1], Z[l1], PointValues[l1]);
+	                  // PointValues[l1] = 0;
+	                  // cout << " PV: " << PointValues[l1] << endl;
+	                }
+	              }
+
+	              nf->GetFaceFunctionals(Coll, cell, m, PointValues,
+	                                     FunctionalValues);
+	              EdgeDOF = FEDesc_Obj->GetJointDOF(m);
+	              N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
+	              for(l=0;l<N_EdgeDOF;l++)
+	              {
+	                RHS[DOF[EdgeDOF[l]]] = FunctionalValues[l];
+	                // cout << " DOF: " << DOF[EdgeDOF[l]];
+	                // cout << " FV: " << FunctionalValues[l] << endl;
+	              }
+	            break;
+
+	            case NEUMANN:
+	            case ROBIN:  // lhs of robin will be assembled in main program
+	              // cout << "Neumann condition in Assemble3D" << endl;
+	              l = TFEDatabase3D::GetPolynomialDegreeFromFE3D
+	                (CurrentElement);
+	              switch(TmpLen[m])
+	              {
+	                case 3:
+	                  // triangular face
+	                  FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*l);
+	                  FaceQuadFormula = Gauss3Tria;
+	                break;
+	                case 4:
+	                  // quadrilateral face
+			    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*l);
+	                break;
+	              }
+	              qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+	              qf2->GetFormulaData(N_Points, FaceWeights, t, s);
+	              // generate data on reference mesh cell for the 2d face of 3d cell
+	              TFEDatabase3D::GetBaseFunct3DFromFE3D(CurrentElement)
+	                ->MakeRefElementData(FaceQuadFormula);
+	              // values of base functions in all quadrature points on face
+	              JointValues = TFEDatabase3D::GetJointValues3D
+	                (BaseFuncts[CurrentElement], FaceQuadFormula, m);
+	              TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])
+	                      ->ChangeBF(Coll, cell, N_Points, JointValues);
+
+	              switch(TmpLen[m])
+	              {
+	                case 3:
+	                  xc1 = X[1] - X[0];
+	                  xc2 = X[2] - X[0];
+
+	                  yc1 = Y[1] - Y[0];
+	                  yc2 = Y[2] - Y[0];
+
+	                  zc1 = Z[1] - Z[0];
+	                  zc2 = Z[2] - Z[0];
+
+	                  // normal vector
+	                  nx = yc1*zc2 - zc1*yc2;
+	                  ny = zc1*xc2 - xc1*zc2;
+	                  nz = xc1*yc2 - yc1*xc2;
+	                  // determinant of reference trafo
+	                  t2 = sqrt(nx*nx + ny*ny + nz*nz);
+
+	                  for(l=0;l<N_Points;l++)
+	                  {
+	                    JointValue = JointValues[l];
+	                    t0 = t[l];
+	                    t1 = s[l];
+	                    // cout << "t: " << t0 << " " << t1 << endl;
+	                    LinComb[0] = 1-t0-t1;
+	                    LinComb[1] = t0;
+	                    LinComb[2] = t1;
+
+	                    xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+	                        +LinComb[2]*X[2];
+	                    yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+	                        +LinComb[2]*Y[2];
+	                    zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+	                        +LinComb[2]*Z[2];
+
+	                    /*if(OuterBoundary)
+	                      BoundComp->GetXYZandTS(TmpLen[m], LinComb,
+	                                             X, Y, Z, Param1, Param2,
+	                                             xf, yf, zf, t0, t1);
+			    */
+	                    // cout << xf << " " << yf << " " << zf << endl;
+	                    BoundaryValue(xf, yf, zf, t0);
+	                    // cout << "PV: " << t0 << endl;
+	                    // cout << t1 << endl;
+	                    t0 *= FaceWeights[l]*t2;
+	                    for(k=0;k<N_;k++)
+	                      if((l3 = DOF[k])<ActiveBound)
+	                        RHS[l3] += t0*JointValue[k];
+	                  } // endfor l
+	                break;
+
+	                case 4:
+	                  xc1=(-X[0] + X[1] + X[2] - X[3]) * 0.25;
+	                  xc2=(-X[0] - X[1] + X[2] + X[3]) * 0.25;
+	                  xc3=( X[0] - X[1] + X[2] - X[3]) * 0.25;
+
+	                  yc1=(-Y[0] + Y[1] + Y[2] - Y[3]) * 0.25;
+	                  yc2=(-Y[0] - Y[1] + Y[2] + Y[3]) * 0.25;
+	                  yc3=( Y[0] - Y[1] + Y[2] - Y[3]) * 0.25;
+
+	                  zc1=(-Z[0] + Z[1] + Z[2] - Z[3]) * 0.25;
+	                  zc2=(-Z[0] - Z[1] + Z[2] + Z[3]) * 0.25;
+	                  zc3=( Z[0] - Z[1] + Z[2] - Z[3]) * 0.25;
+
+	                  for(l=0;l<N_Points;l++)
+	                  {
+	                    JointValue = JointValues[l];
+	                    t0 = 0.5*(t[l]+1);
+	                    t1 = 0.5*(s[l]+1);
+	                    // cout << "t: " << t0 << " " << t1 << endl;
+	                    LinComb[0] = (1-t0)*(1-t1);
+	                    LinComb[1] = t0*(1-t1);
+	                    LinComb[2] = t0*t1;
+	                    LinComb[3] = (1-t0)*t1;
+
+	                    xf = LinComb[0]*X[0] + LinComb[1]*X[1]
+	                        +LinComb[2]*X[2] + LinComb[3]*X[3];
+	                    yf = LinComb[0]*Y[0] + LinComb[1]*Y[1]
+	                        +LinComb[2]*Y[2] + LinComb[3]*Y[3];
+	                    zf = LinComb[0]*Z[0] + LinComb[1]*Z[1]
+	                        +LinComb[2]*Z[2] + LinComb[3]*Z[3];
+
+	                    /*if(OuterBoundary)
+	                      BoundComp->GetXYZandTS(TmpLen[m], LinComb,
+	                                             X, Y, Z, Param1, Param2,
+	                                             xf, yf, zf, t0, t1);
+			    */
+	                    // cout << xf << " " << yf << " " << zf << endl;
+	                    BoundaryValue(xf, yf, zf, t0);
+	                    // cout << "PV: " << t0 << endl;
+	                    nx = (yc1+s[l]*yc3)*(zc2+t[l]*zc3)
+	                        -(zc1+s[l]*zc3)*(yc2+t[l]*yc3);
+	                    ny = (zc1+s[l]*zc3)*(xc2+t[l]*xc3)
+	                        -(xc1+s[l]*xc3)*(zc2+t[l]*zc3);
+	                    nz = (xc1+s[l]*xc3)*(yc2+t[l]*yc3)
+	                        -(yc1+s[l]*yc3)*(xc2+t[l]*xc3);
+	                    t1 = nx*nx+ny*ny+nz*nz;
+	                    // cout << t1 << endl;
+	                    t0 *= FaceWeights[l]*sqrt(t1);
+	                    for(k=0;k<N_;k++)
+	                      if((l3 = DOF[k])<ActiveBound)
+	                        RHS[l3] += t0*JointValue[k];
+	                  } // endfor l
+	                break;
+	              }
+	              TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])->ChangeBF(Coll, cell, N_Points, JointValues);
+	            break;
+
+		    default:
+
+		     break;
+
+
+	          } // endswitch Cond0
+
+	#ifdef _MPI
+	        /** edges on this face are already set, so no need of checking in BD edges on this face */
+	        N_FaceEdges = ETmpLen[m];
+	        for(l1=0;l1<N_FaceEdges;l1++)
+	         {
+	          edge = cell->GetEdge(TmpFE[m*EMaxLen+l1]);
+	          edge->SetClipBoard(i);
+	         } // fo
+
+	         /** vertices on this face are already set, so no need of checking in BD vert on this face, 30.06.12, sashi */
+	         for (l1=0;l1<TmpLen[m];l1++)
+	          cell->GetVertex(TmpFV[m*MaxLen+l1])->SetClipBoard(i);
+	#endif
+	        } // endif
+	      } // endfor m
+
+	#ifdef _MPI
+	    if( (N_EdgeDOF = FEDesc_Obj->GetN_EdgeDOF()) > 0) //conforming FE
+	     {
+	      cell->GetShapeDesc()->GetEdgeVertex(EdgeVertex);
+	      N_Edges=cell->GetN_Edges();
+
+	      for(m=0;m<N_Edges;m++)
+	       {
+	        edge = cell->GetEdge(m);
+
+	        if( (edge->GetType()==BDEdge3D || edge->GetType()==IsoEdge3D) && edge->GetClipBoard()==-1)
+	         {
+	          // BD edge is not yet set
+	          edge->SetClipBoard(i);
+	          EdgeDOF = FEDesc_Obj->GetEdgeDOF(m);
+
+	          for(l=0;l<N_EdgeDOF;l++)
+	           {
+	            dof = DOF[EdgeDOF[l]];
+	            fespace->GetDOFPosition(dof, xf, yf, zf);
+	            BoundaryCondition(xf, yf, zf, Cond0);
+
+	            if(Cond0==DIRICHLET) // nothing to do for nin-Dirichlet
+	             {
+	             BoundaryValue(xf, yf, zf, t0);
+	             RHS[dof] = t0;
+	             }
+	          }
+	          /** vertices on this edge are already set, so no need of checking in BD vert on this edge, 30.06.12, sashi */
+	          cell->GetVertex(EdgeVertex[2*m])->SetClipBoard(i);
+	          cell->GetVertex(EdgeVertex[2*m+1])->SetClipBoard(i);
+	         }
+	       }//   endfor m
+	     }
+	    /** correct the Vert Dirichlet   */
+	    if( FEDesc_Obj->GetN_VertDOF() > 0) //conforming FE
+	     {
+	      N_VertInCell = cell->GetN_Vertices();
+
+	      for(m=0;m<N_VertInCell;m++)
+	       {
+	        Vert = cell->GetVertex(m);
+
+	        if(Vert->IsBoundVert() && Vert->GetClipBoard()==-1 )
+	         {
+	          // BD vert is not yet set
+	          Vert->SetClipBoard(i);
+	          Vert->GetCoords(xf, yf, zf);
+	          BoundaryCondition(xf, yf, zf, Cond0);
+
+	          if(Cond0==DIRICHLET) // nothing to do for nin-Dirichlet
+	           {
+	            dof = DOF[FEDesc_Obj->GetVertDOF(m)];
+	            BoundaryValue(xf, yf, zf, t0);
+	            RHS[dof] = t0;
+	           }
+
+	         }
+	       }//   endfor m
+	      } //   if( FEDesc_Obj->GetN_VertDOF() > 0)
+	#endif
+
+	    } // endfor j
+	    // cout << "end i:" << i << endl;
+	  } // endfor i
+
+	  // ####################################################################
+	  // modify matrix according to coupling
+	  // ####################################################################
+	  for(j=0;j<n_sqmatrices;j++)
+	  {
+	    fespace = sqmatrices[j]->GetFESpace3D();
+	    N_ = fespace->GetN_Hanging();
+	    // there are no hanging nodes
+	    if (N_ == 0)
+	      continue;
+	    HangingNodes = fespace->GetHangingNodes();
+
+	    Entries = sqmatrices[j]->GetEntries();
+	    RowPtr = sqmatrices[j]->GetRowPtr();
+	    ColInd = sqmatrices[j]->GetKCol();
+
+	    CurrentHangingEntries = HangingEntries[j];
+	    HangingRowPtr = sqmatrices[j]->GetHangingRowPtr();
+	    HangingColInd = sqmatrices[j]->GetHangingKCol();
+
+	    ActiveBound = fespace->GetActiveBound();
+
+	    for(i=0;i<N_;i++)
+	    {
+	      hn = HangingNodes[i];
+	      HNDescr = hn->GetType();
+	      HNDescr_Obj = TFEDatabase3D::GetHNDesc3D(HNDescr);
+	      k = HNDescr_Obj->GetN_Nodes();
+	      Coupling = HNDescr_Obj->GetCoeff();
+	      DOF = hn->GetDOF();
+
+	      end = HangingRowPtr[i+1];
+	      for(n=HangingRowPtr[i];n<end;n++)
+	      {
+	        v = CurrentHangingEntries[n];
+	        m = HangingColInd[n];
+	        for(l=0;l<k;l++)
+	        {
+	          l1 = DOF[l];
+	          if(l1<ActiveBound)
+	          {
+	            last=RowPtr[l1+1];
+	            for(l2=RowPtr[l1];l2<last;l2++)
+	            {
+	              if(ColInd[l2] == m)
+	              {
+	                Entries[l2] += Coupling[l] * v;
+	              }
+	            } // endfor l2
+	          } // endif
+	        } // endfor l
+	      } // endfor n
+	    } // endfor i
+
+	  } // endfor j
+
+	  for(j=0;j<n_rhs;j++)
+	  {
+	    fespace = ferhs[j];
+	    N_Hanging = fespace->GetN_Hanging();
+	    // there are no hanging nodes
+	    if (N_Hanging == 0)
+	      continue;
+	    HangingNodes = fespace->GetHangingNodes();
+
+	    RHS = rhs[j];
+	    CurrentHangingRhs = HangingRhs[j];
+
+	    ActiveBound = fespace->GetActiveBound();
+
+	    for(i=0;i<N_Hanging;i++)
+	    {
+	      hn = HangingNodes[i];
+	      HNDescr = hn->GetType();
+	      HNDescr_Obj = TFEDatabase3D::GetHNDesc3D(HNDescr);
+	      N_ = HNDescr_Obj->GetN_Nodes();
+	      Coupling = HNDescr_Obj->GetCoeff();
+	      DOF = hn->GetDOF();
+
+	      for(k=0;k<N_;k++)
+	      {
+	        l = DOF[k];
+	        if(l<ActiveBound)
+	        {
+	          RHS[l] += Coupling[k] * CurrentHangingRhs[i];
+	        }
+	      } // endfor k
+	    } // endfor i
+	  } // endfor j
+
+	  // ####################################################################
+	  // write coupling into matrix
+	  // ####################################################################
+	  for(j=0;j<n_sqmatrices;j++)
+	  {
+	    fespace = sqmatrices[j]->GetFESpace3D();
+	    N_ = fespace->GetN_Hanging();
+	    // there are no hanging nodes
+	    if (N_ == 0)
+	      continue;
+	    HangingNodes = fespace->GetHangingNodes();
+
+	    Entries = sqmatrices[j]->GetEntries();
+	    RowPtr = sqmatrices[j]->GetRowPtr();
+	    ColInd = sqmatrices[j]->GetKCol();
+
+	    ActiveBound = fespace->GetActiveBound();
+
+	    n = RowPtr[ActiveBound];
+
+	    for(i=0;i<N_;i++)
+	    {
+	      hn = HangingNodes[i];
+	      HNDescr = hn->GetType();
+	      HNDescr_Obj = TFEDatabase3D::GetHNDesc3D(HNDescr);
+	      k = HNDescr_Obj->GetN_Nodes();
+	      Coupling = HNDescr_Obj->GetCoeff();
+	      DOF = hn->GetDOF();
+
+	      Entries[n] = 1.0;
+	      n++;
+
+	      for(l=0;l<k;l++)
+	      {
+	        Entries[n] = - Coupling[l];
+	        n++;
+	      } // endfor l
+
+	    } // endfor i
+	  } // endfor j
+
+	  if(n_sqmatrices)
+	  {
+	    delete [] GlobalNumbers;
+	    delete [] BeginIndex;
+
+	    for(i=0;i<n_sqmatrices;i++)
+	      delete [] HangingEntries[i];
+	    delete [] HangingEntries;
+	  }
+
+	  if(n_matrices)
+	  {
+	    delete [] AnsatzGlobalNumbers;
+	    delete [] AnsatzBeginIndex;
+	    delete [] TestGlobalNumbers;
+	    delete [] TestBeginIndex;
+	  }
+
+	  if(n_rhs)
+	  {
+	    for(i=0;i<n_rhs;i++)
+	      delete [] HangingRhs[i];
+	    delete [] HangingRhs;
+
+	    delete [] righthand;
+	    delete [] LocRhs;
+	    delete [] RhsBeginIndex;
+	    delete [] RhsGlobalNumbers;
+	  }
+
+	  if(N_Parameters)
+	  {
+	    delete [] Param[0];
+	  }
+
+	  if(N_AllMatrices)
+	  {
+	    delete [] LocMatrices;
+	    delete [] Matrices[0];
+	    delete [] Matrices;
+	  }
+
+	  delete [] AuxArray[0];
+
+
+	/*
+	#ifdef _MPI
+	  int rank;
+	  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+
+	  MPI_Barrier(TDatabase::ParamDB->Comm);
+
+	  if(rank==1)
+	#endif
+	  {
+
+	  // ####################################################################
+	  // print the whole matrix -- SECOND
+	  // ####################################################################
+	  for(k=0;k<n_sqmatrices;k++)
+	  {
+	    OutPut(endl);
+	    cout << "sqmatrix: " << k << endl;
+	    RowPtr = sqmatrices[k]->GetRowPtr();
+	    Entries = sqmatrices[k]->GetEntries();
+	    ColInd = sqmatrices[k]->GetKCol();
+	    N_Rows = sqmatrices[k]->GetN_Rows();
+
+	    fespace = sqmatrices[k]->GetFESpace3D();
+	    ActiveBound = fespace->GetActiveBound();
+	    for(i=ActiveBound;i<N_Rows;i++)
+	    {
+	      end=RowPtr[i+1];
+	      for(j=RowPtr[i];j<end;j++)
+	      {
+	        // cout << j << endl;
+	         OutPut("a"<<k<<"("<< i+1 << "," << ColInd[j]+1 << " )=  ");
+	         OutPut(Entries[j] << ";"<< endl);
+	      }
+	    }
+	    cout << endl;
+	  } // endfor k
+
+	  for(k=0;k<n_matrices;k++)
+	  {
+	    cout << endl;
+	    cout << "matrix: " << k << endl;
+	    RowPtr = matrices[k]->GetRowPtr();
+	    Entries = matrices[k]->GetEntries();
+	    ColInd = matrices[k]->GetKCol();
+	    N_Rows = matrices[k]->GetN_Rows();
+	    for(i=0;i<N_Rows;i++)
+	    {
+	      end=RowPtr[i+1];
+	      for(j=RowPtr[i];j<end;j++)
+	      {
+	        // cout << j << endl;
+	         OutPut("b"<<k<<"("<< i+1 << "," << ColInd[j]+1 << " )=  ");
+	         OutPut(Entries[j] << ";" << endl);
+	              }
+	    }
+	    cout << endl;
+	  } // endfor k
+
+	//   for(k=0;k<n_rhs;k++)
+	//   {
+	//     cout << "rhs: " << k << endl;
+	//     N_Rows = ferhs[k]->GetN_DegreesOfFreedom();
+	//     RHS=rhs[k];
+	//     for(i=0;i<N_Rows;i++)
+	//       cout << setw(5) << i << setw(20) << RHS[i] << endl;
+	//   }
+	}
+	 */
+	  time_total = GetTime() - time_total;
+	  //OutPut("LocalToGlobal: " << time_all << " " << time_total << " " << time_all/time_total << endl);
+}
 // =======================================================================
 //
 // Assemble3DSlipBC
@@ -1191,10 +2328,10 @@ void Assemble3D(int n_fespaces, TFESpace3D **fespaces,
 // some manipulations in matrices and the rhs are necessary
 //
 // =======================================================================
-void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
+void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                       int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                       int n_matrices, TMatrix3D **matrices,
-                      int n_rhs, double **rhs, TFESpace3D **ferhs,
+                      int n_rhs, double **rhs, const TFESpace3D **ferhs,
                       TDiscreteForm3D *DiscreteForm3D,
                       BoundCondFunct3D **BoundaryConditions,
                       BoundValueFunct3D **BoundaryValues,
@@ -1209,7 +2346,7 @@ void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
   int *N_BaseFunct;
   int N_Rows;
   BaseFunct3D *BaseFuncts;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   FE3D TestElement, AnsatzElement;
   QuadFormula2D FaceQuadFormula;
@@ -1308,7 +2445,7 @@ void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -1326,11 +2463,11 @@ void Assemble3DSlipBC(int n_fespaces, TFESpace3D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     } // endfor
@@ -2513,10 +3650,10 @@ void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
 
     implementation: Alfonso (07.09.2010)
 */
-void Assemble3D_mixed(int n_fespaces, TFESpace3D **fespaces,
+void Assemble3D_mixed(int n_fespaces, const TFESpace3D **fespaces,
 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
 int n_matrices, TMatrix3D **matrices,
-int n_rhs, double **rhs, TFESpace3D **ferhs,
+int n_rhs, double **rhs, const TFESpace3D **ferhs,
 TDiscreteForm3D *DiscreteForm3D,
 BoundCondFunct3D **BoundaryConditions,
 BoundValueFunct3D **BoundaryValues,
@@ -2536,7 +3673,7 @@ TAuxParam3D *Parameters)
   int i,j,k,l,l1,l3,n,m, N_LocalUsedElements;
   int N_Points, N_;
   int N_Test, N_Ansatz, N_Joints;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   FE3D TestElement, AnsatzElement;
   QuadFormula2D FaceQuadFormula;
@@ -2608,7 +3745,7 @@ TAuxParam3D *Parameters)
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace();
+      fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -2622,11 +3759,11 @@ TAuxParam3D *Parameters)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetTestSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace3D *) matrices[i]->GetStructure()->GetAnsatzSpace();
+      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -2775,7 +3912,7 @@ TAuxParam3D *Parameters)
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace();
+      fespace = sqmatrices[j]->GetFESpace3D();
       CurrentElement = fespace->GetFE3D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
       Matrix = Matrices+j*MaxN_BaseFunctions3D;
@@ -2851,10 +3988,10 @@ TAuxParam3D *Parameters)
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace3D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) matrices[j]->GetStructure()->
-        GetAnsatzSpace())->GetFE3D(i, cell);
+      TestElement = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
+                    ->GetFE3D(i, cell);
+      AnsatzElement = ((TFESpace3D *) matrices[j]->GetAnsatzSpace3D())
+                      ->GetFE3D(i, cell);
 
       N_Test = N_BaseFunct[TestElement];
       N_Ansatz = N_BaseFunct[AnsatzElement];
@@ -2868,8 +4005,8 @@ TAuxParam3D *Parameters)
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      int ActiveBound = ((TFESpace3D *) matrices[j]->GetStructure()->
-        GetTestSpace())->GetActiveBound();
+      int ActiveBound = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
+                        ->GetActiveBound();
       
       // add local matrix to global
       for(m=0;m<N_Test;m++)

@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Poiseuille.h" << endl) ;
+  Output::print<1>("Example: Poiseuille.h");
 }
 
 // ========================================================================

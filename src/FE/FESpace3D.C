@@ -60,7 +60,9 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
- 
+
+  boundCondition_ = BoundaryCondition;
+
   ElementForShape = new FE3D[N_SHAPES];
 
   // build ElementForShape array
@@ -219,6 +221,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
   UsedElements = NULL;
+  boundCondition_ = BoundaryCondition;
   ElementForShape = NULL;
 
   AllElements = fes;
@@ -240,7 +243,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
   N_SlaveDegrees = 0;
   UsedElements = NULL;
   AllElements = NULL;
- 
+  boundCondition_ = BoundaryCondition;
   ElementForShape = new FE3D[N_SHAPES];
 
   // build ElementForShape array
@@ -409,7 +412,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell)
+FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
 {
   FE3D ret;
 
@@ -853,8 +856,16 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
      {
       Vert = cell->GetVertex(j);
       
-      if(Vert->IsBoundVert() && Vert->GetClipBoard()!=-1 )
+      if(Vert->IsBoundVert())
        {
+
+        if( Vert->GetClipBoard()!=-1 )
+        {
+          // dofs connected to this vertex have already
+          // been treated elsewhere - Clemens Bartsch
+          continue;
+        }
+
         // BD vert is not yet set 
         Vert->SetClipBoard(i);
 
@@ -2053,7 +2064,7 @@ TFESpace3D::~TFESpace3D()
 }
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
+void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
   TBaseCell *cell;
@@ -2180,7 +2191,7 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z)
 } // end GetDOFPosition
 
 /** return position of all dofs */
-void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z)
+void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
   TBaseCell *cell;

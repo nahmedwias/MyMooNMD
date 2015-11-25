@@ -1,14 +1,16 @@
 /** ************************************************************************ 
 *
-* @name       BlockVector
+* @class       BlockVector
 * @brief      Store a block-vector 
 *
-*             Store block-vector which consists of several subvectors 
-*             (diffenrent length is possible). Some algebraic operations on the
-*             subvectors are implemented
+* Store block-vector which consists of several subvectors 
+* (diffenrent length is possible). Some algebraic operations on the
+* subvectors are implemented
 *
 * @author     Ulrich Wilbrandt
 * @date       01.11.2013
+* 
+* @ruleof0
 *
 ****************************************************************************/
 
@@ -53,6 +55,14 @@ class BlockVector
      */
     BlockVector(unsigned int l);
     
+    /** constructor for a BlockVector consisting of a single block of length
+     * 'l' filled with zeros.
+     *
+     * @note This constructor is for backwards compatibility, to avoid
+     * explicit casts of integers to unsigned int. Use carefully.
+     */
+    BlockVector(int l);
+
     /** @brief constructor for a BlockVector suitable for a given BlockMatrix
      * 
      * If 'image' is set to true, the vector will be in the image space of the 
@@ -92,14 +102,28 @@ class BlockVector
      * BlockMatrix.
      */
     template<class BM>
-    BlockVector(const BM& mat, bool image = false);
-    
-    /** constructor, this BlockVector has the structure of 'r', and is filled
-     * with zeros.
-     */
-    BlockVector(const BlockVector& r);
-    
-    ~BlockVector();
+    BlockVector(const BM& mat, bool image = false)
+    {
+      copy_structure<BM>(mat, image);
+    }
+
+
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    BlockVector(const BlockVector&) = default;
+
+    //! Default move constructor.
+    BlockVector(BlockVector&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    BlockVector& operator=(const BlockVector&) = default;
+
+    //! Default move assignment operator
+    BlockVector& operator=(BlockVector&&) = default;
+
+    //! Default destructor.
+    ~BlockVector() = default;
     
     /**
      * @brief Set all entries to zero
@@ -160,7 +184,7 @@ class BlockVector
      * 
      * @param r BlockVector from which the structure is copied to this one
      */
-    void copy_structure(const BlockVector& r);
+    void copy_structure(const BlockVector & r);
     
     /** @brief change the structure of a BlockVector so that it is suitable for
      *         a given BlockMatrix
@@ -171,7 +195,7 @@ class BlockVector
      * This deletes possibly existing data in this BlockVector. After this 
      * method is called, all values are set to zero. All entries are active.
      */
-    void copy_structure(const BlockMatrix& mat, bool image);
+    void copy_structure(const BlockMatrix & mat, bool image);
     
     /** @brief change the structure of a BlockVector so that it is suitable for
      *         a given BlockMatrix
@@ -184,9 +208,28 @@ class BlockVector
      * This deletes possibly existing data in this BlockVector. After this 
      * method is called, all values are set to zero. This sets active entries
      * appropriatly.
+     * 
+     * The class BM is supposed to be a derived class of BlockMatrix and it must
+     * implement a method
+     *  const TFESpace * get_space_of_block(unsigned int block, bool test) const
+     * which returns the test space (or ansatz space if 'test' is false) of the
+     * b-th block.
      */
-    template<class BM>
-    void copy_structure(const BM& mat, bool image);
+    /** ************************************************************************ */
+    template <class BM>
+    void copy_structure(const BM& mat, bool image)
+    {
+      // call the regular copy_structure.
+      this->copy_structure((const BlockMatrix&)mat, image);
+      // set the active degrees of freedom
+      unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
+      for(unsigned int b = 0; b < n_blocks; ++b)
+      {
+        unsigned int block = b * (image ? mat.n_cols() : 1.);
+        this->actives[b] = mat.get_space_of_block(block,
+                                                  image)->GetN_ActiveDegrees();
+      }
+    }
     
     /**
      * @brief add (scaled) values into a subvector, "this += a*x"
@@ -200,7 +243,7 @@ class BlockVector
      * @param a factor by which x is multiplied
      *
      */
-    void add(const double *x, const int i = -1, double a = 1.0);
+    void add(const double * x, const int i = -1, double a = 1.0);
 
     /**
      * @brief copy values into a subvector
@@ -236,7 +279,7 @@ class BlockVector
      * @param iB index of subvector
      *
      */
-    void print(const std::string name="rhs", const int iB = -1) const;
+    void print(const std::string name = "rhs", const int iB = -1) const;
     
     /**
      * @brief Print some information without explicitly printing values
@@ -319,7 +362,6 @@ class BlockVector
     { return entries[i]; }
     
     
-    BlockVector& operator=(const BlockVector& r); // copy
     // copy, r should be as long as entire BlockVector
     BlockVector& operator=(const double *r);
     BlockVector& operator=(const double a); // set all values to a

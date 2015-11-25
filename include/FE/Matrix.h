@@ -17,35 +17,40 @@
 #include <Structure.h>
 #include <string>
 #include <map>
+#include <vector>
 
 class TMatrix
 {
   protected:
     /** Sparse structure of the matrix */
-    TStructure *structure;
+    std::shared_ptr<TStructure> structure;
     
     /** matrix elements in an array */
-    double *Entries;
+    std::vector<double> entries;
     
   public:
     /** generate the matrix, intialize entries with zeros */
-    TMatrix(TStructure *structure);
+    TMatrix(std::shared_ptr<TStructure> structure);
     
     /** generate the matrix with given entries */
-    TMatrix(TStructure *structure, double* Entries);
+    [[deprecated("use the constructor taking only a TStructure")]]
+    TMatrix(std::shared_ptr<TStructure> structure, double* Entries);
     
     /** @brief reset the structure, this may mean that the entries need to be 
      *         reallocated */
-    void SetStructure(TStructure *structure);
+    [[deprecated("This should never be necessary")]]
+    void SetStructure(std::shared_ptr<TStructure> structure);
     
     /** create a nRows*nCols zero matrix */
+    [[deprecated("use the constructor taking only a TStructure")]]
     TMatrix(int nRows, int nCols);
 
     /** destructor: free Entries array */
-    virtual ~TMatrix();
+    virtual ~TMatrix() = default;
 
     /** reset all matrix entries to zero */
-    void Reset() { this->reset(); } // to be removed
+    [[deprecated("use TMatrix::reset() insead of TMatrix::Reset()")]]
+    void Reset() { this->reset(); }
     void reset();
 
     /** return number of rows */
@@ -81,13 +86,19 @@ class TMatrix
     { return structure->GetRowPtr(); }
 
     /** return structure */
-    TStructure* GetStructure() const
-    { return structure; }
+    const TStructure& GetStructure() const
+    { return *structure; }
     
     /** return matrix entries */
-    double *GetEntries() const
-    { return Entries; }
+    const double *GetEntries() const
+    { return &entries[0]; }
 
+    /** return matrix entries */
+    double *GetEntries()
+    {
+      return &entries[0];
+    }
+    
     /** return the norm of the matrix. p is 
      * -2 for Frobenius norm
      * -1 for maximum absolute row sum
@@ -126,8 +137,14 @@ class TMatrix
     double& get(int i,int j);
     
     // set the whole elements array
-    void setEntries(double* entries) {
-      this->Entries = entries;
+    void setEntries(double* entries)
+    {
+      std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
+    }
+    
+    void setEntries(std::vector<double> entries)
+    {
+      this->entries = entries;
     }
     
     /**
@@ -136,6 +153,10 @@ class TMatrix
      * @warning This changes the structure of the matrix
      */
     void reorderMatrix();
+    
+    /** return ordering of columns */
+    int GetColOrder() const
+    { return structure->GetColOrder(); }
     
     /** @brief return a new TMatrix which is the transposed of this matrix 
      * 
@@ -148,10 +169,8 @@ class TMatrix
     /** 
      * @brief replace several rows in the matrix with new entries.
      * 
-     * Replace rows by new ones. This changes the sparsity pattern of the 
-     * matrix. Therefore reallocation is necessary. The old arrays are no 
-     * longer needed (for this matrix) and will be deleted if the flag 
-     * 'deleteOldArrays' is set to true.  
+     * Replace rows by new ones. This creates a new structure for the sparsity 
+     * pattern of the matrix. Therefore reallocation is necessary. 
      * 
      * If there are no rows to change, i.e. if entries.size()==0, nothing is 
      * done.
@@ -159,8 +178,7 @@ class TMatrix
      * @param entries for every row a map of columns-to-entries map
      * @param deleteOldArrays remove old arrays in matrix and structure
      */
-    void changeRows(std::map<int,std::map<int,double> > entries,
-                    bool deleteOldArrays=false);
+    void changeRows(std::map<int,std::map<int,double> > entries);
     
     
     /** @brief compute y = A*x   (Matrix-Vector-Multiplication)
@@ -195,6 +213,9 @@ class TMatrix
      * 
      * This is of course only possible if the corresponding structures are the
      * same. 
+     * 
+     * \todo this should be a separate method, not a copy asignment. There 
+     * should not be a copy asignment, because we don't want to asign structures
      */
     TMatrix & operator=(const TMatrix& A);
     

@@ -37,7 +37,7 @@ class TAuxParam3D
 //  array of pointers to stored objects
 // =======================================================================
     /** array of stored FESpace3D */
-    TFESpace3D **FESpaces3D;
+    const TFESpace3D **FESpaces3D;
 
     /** array of stored FEFunction3D */
     TFEFunction3D **FEFunctions3D;
@@ -81,7 +81,7 @@ class TAuxParam3D
     /** constructor */
     TAuxParam3D(int n_fespace3d, int n_fefunction3d, int n_paramfct,
               int n_fevalues,
-              TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
+              const TFESpace3D **fespaces3d, TFEFunction3D **fefunctions3d,
               ParamFct **parameterfct,
               int *fevalue_fctindex, MultiIndex3D *fevalue_multiindex,
               int n_parameters, int *beginparameter);
@@ -104,8 +104,108 @@ class TAuxParam3D
                        double *x, double *y, double *z,
                        double **Parameters);
 
-    int GetN_Parameters()
+    //! Getter marked as deprecated, because it does not follow the new naming conventions.
+    [[deprecated]] int GetN_Parameters()
     { return N_Parameters; }
+
+    //Getter methods which follow new naming conventions.
+
+	int* getBeginParameter() const {
+		return BeginParameter;
+	}
+
+    int getBeginParameter(int i) const
+    {
+    	if (i >= N_ParamFct)
+    	{
+    		ErrMsg("Array out of bound: i >= N_ParamFct.");
+    	}
+    	return BeginParameter[i];
+    }
+
+	TFEFunction3D** getFeFunctions3D() const {
+		return FEFunctions3D;
+	}
+
+	int* getFeValueFctIndex() const {
+		return FEValue_FctIndex;
+	}
+
+    int getFeValueFctIndex(int i) const
+    {
+    	if (i >= N_FEValues)
+    	{
+    		ErrMsg("Array out of bound: i >= N_FEValues.");
+    	}
+    	return FEValue_FctIndex[i];
+    }
+
+	MultiIndex3D* getFeValueMultiIndex() const {
+		return FEValue_MultiIndex;
+	}
+
+    MultiIndex3D getFeValueMultiIndex(int i) const
+    {
+    	if (i >= N_FEValues)
+    	{
+    		ErrMsg("Array out of bound: i >= N_FEValues.");
+    	}
+    	return FEValue_MultiIndex[i];
+    }
+
+
+	int** getIndex() const {
+		return Index;
+	}
+
+	int* getNBaseFunct() const {
+		return N_BaseFunct;
+	}
+
+	int getNFeFunction3D() const {
+		return N_FEFunction3D;
+	}
+
+	int getNFeSpace3D() const {
+		return N_FESpace3D;
+	}
+
+	int getNFeValues() const {
+		return N_FEValues;
+	}
+
+	int getNParameters() const {
+		return N_Parameters;
+	}
+
+	int getNParamFct() const {
+		return N_ParamFct;
+	}
+
+	double*** getOrigValues() const {
+		return OrigValues;
+	}
+
+	ParamFct** getParameterFct() const {
+		return ParameterFct;
+	}
+
+    ParamFct* getParameterFct(int i) const
+    {
+    	if (i >= N_ParamFct)
+    	{
+    		ErrMsg("Array out of bound: i >= N_ParamFct.");
+    	}
+    	return ParameterFct[i];
+    }
+
+	double* getTemp() const {
+		return Temp;
+	}
+
+	double** getValues() const {
+		return Values;
+	}
 
 };
 

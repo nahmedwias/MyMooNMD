@@ -1,0 +1,26 @@
+# unfortunately we can not use 'make test' as we would like to as it does not 
+# set the dependencies correctly. That means entering 'make test' will not 
+# compile the tests, even if they have changed or never been compiled before. 
+# 
+# Here we create a custom target 'check' which first compiles all tests and its
+# dependencies if necessary and then runs the tests. All you need to do enter 
+# is then 'make check'.
+#
+# In order for this to work we collect each executable which is a test in a 
+# list of tests called 'parmoon_tests'. The check target is then a custom 
+# target which calls ctest and depends on all the executables.
+# See also https://cmake.org/Wiki/CMakeEmulateMakeCheck
+
+#matrix test
+add_executable(ParMooN_test_matrix matrix_test.c++)
+target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE}  ${_EXTERN_LIBRARIES})
+add_test(matrix ParMooN_test_matrix)
+list(APPEND parmoon_tests ParMooN_test_matrix)
+
+#cd2d test
+add_executable(ParMooN_test_cd2d cd2d_test.c++)
+target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+add_test(cd2d ParMooN_test_cd2d)
+list(APPEND parmoon_tests ParMooN_test_cd2d)
+
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})

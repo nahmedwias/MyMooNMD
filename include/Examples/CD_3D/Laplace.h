@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Laplace.h" << endl) ;
+  Output::print<1>("Example: Laplace.h");
 }
 
 // exact solution

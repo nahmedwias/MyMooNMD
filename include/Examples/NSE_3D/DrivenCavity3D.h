@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: DrivenCavity3D.h" << endl) ;
+  Output::print<1>("Example: DrivenCavity3D.h");
 }
 
 // ========================================================================
@@ -58,9 +58,9 @@ void U1BoundValue(double x, double y, double z, double &value)
 {
   double tol = 1e-5;
 
-  if (abs(1-z)<tol)
+  if (fabs(1-z)<tol)
   {
-    if ((abs(1+x) < tol) || (abs(1-x) < tol) || (abs(1+y) < tol) || (abs(1-y) < tol))
+    if ((fabs(1+x) < tol) || (fabs(1-x) < tol) || (fabs(1+y) < tol) || (fabs(1-y) < tol))
       value = 0.0;
     else
       value = 1.0;

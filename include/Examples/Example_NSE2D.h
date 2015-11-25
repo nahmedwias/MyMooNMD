@@ -9,6 +9,9 @@
 * 
 * @author    Ulrich Wilbrandt, 
 * @date      14.03.15
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 #ifndef __EXAMPLE_NSE2D__
@@ -35,7 +38,22 @@ class Example_NSE2D : public Example2D
                   std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
       : Example2D(exact, bc, bd, coeffs) {};
   
-    ~Example_NSE2D(){};
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example_NSE2D(const Example_NSE2D&) = default;
+
+    //! Default move constructor.
+    Example_NSE2D(Example_NSE2D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example_NSE2D& operator=(const Example_NSE2D&) = default;
+
+    //! Default move assignment operator
+    Example_NSE2D& operator=(Example_NSE2D&&) = default;
+
+    //! Default destructor.
+    ~Example_NSE2D() = default;
 };
 
 

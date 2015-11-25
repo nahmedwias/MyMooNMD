@@ -47,6 +47,25 @@ class CD2D
       
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll );
+
+      // Special member functions. Disable copy/move, set destructor to default.
+      // Will be changed only when the underlying
+      // classes TFESpace2D and TFESpace2D follow rule of 0/5.
+
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
     };
     
     /** @brief a complete system on each grid 
@@ -57,7 +76,7 @@ class CD2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D& example;
+    const Example_CD2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -81,22 +100,36 @@ class CD2D
      * 
      * This constructor calls the other constructor creating an Example_CD2D
      * object for you. See there for more documentation.
+     *
+     * @param[in] domain The readily treated (refined/partitioned...) domain 
+     *                   object. Must not go out of scope before CD2D does!
+     *
+     * @param[in] reference_id The cell reference id, of which cells to create
+     *                         the TCollection.
+     *
      */
     CD2D(const TDomain& domain, int reference_id = -4711);
     
     /** @brief constructor 
      * 
-     * The domain must have been refined a couple of times already. On the 
-     * finest level the finite element spaces and functions as well as 
-     * matrices, solution and right hand side vectors are initialized. 
-     * 
-     * The reference_id can be used if only the cells with the give reference_id
-     * should be used. The default implies all cells.
+     * All members are initialized, including systems, which has only one entry
+     * usually. In case you want to use multigrid
+     * (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5 and 
+     * TDatabase::ParamDB->SOLVER_TYPE == 1), it has more entries and the 
+     * multigrid object is appropriatly build. The example is copied. If the
+     * reference_id is not set to its default value, then only cells with this
+     * reference id will be included to build the finite element space. 
+     *
+     * @param[in] domain The readily treated (refined/partitioned...) domain
+     *                   object. Must not go out of scope before CD2D does!
+     *
+     * @param[in] example a description of the example to be used, this is 
+     *                    copied into a local member.
+     *
+     * @param[in] reference_id The cell reference id, of which cells to create
+     *                         the TCollection.
      */
-    CD2D(const TDomain& domain, const Example_CD2D&, int reference_id = -4711);
-    
-    /** @brief standard destructor */
-    ~CD2D();
+    CD2D(const TDomain& domain, Example_CD2D example, int reference_id = -4711);
     
     /** @brief assemble matrix, 
      * 
@@ -140,6 +173,35 @@ class CD2D
     { return this->systems.front().solution.length(); }
     const Example_CD2D& get_example() const
     { return example; }
+
+    // Special member functions. Disable copy/move, set destructor to default.
+    // Will be changed only when the underlying classes follow rule of 0/5.
+
+    //! Delete copy constructor.
+    CD2D(const CD2D&) = delete;
+
+    //! Delete move constructor.
+    CD2D(CD2D&&) = delete;
+
+    //! Delete copy assignment operator.
+    CD2D& operator=(const CD2D&) = delete;
+
+    //! Delete move assignment operator.
+    CD2D& operator=(CD2D&&) = delete;
+
+    //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
+    ~CD2D();
+
+  private:
+    /**
+     * Apply an algebraic flux correction scheme to the assembled matrix.
+     * Should be called within the assemble routine, after the actual assembling
+     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
+     *
+     * Which afc algorithm is performed is determined by switching over
+     * ALGEBRAIC_FLUX_CORRECTION.
+     */
+    void performAlgebraicFluxCorrection();
 };
 
 #endif // __CD2D_H__

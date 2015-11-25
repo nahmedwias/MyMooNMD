@@ -23,14 +23,20 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
   {
     ///////////////////////////////////////////////////////////////////////////
     // CD2D: stationary convection diffusion problems
-    case CD2D_Galerkin:
-      return std::string("CD2D_Galerkin");
-    case CD2D_SUPG:
-      return std::string("CD2D_SUPG");
-    case CD2D_GLS:
-      return std::string("CD2D_GLS");
-    case CD2D_Axiax3D_Galerkin:
-      return std::string("CD2D_Axiax3D_Galerkin");
+    case LocalAssembling2D_type::ConvDiff:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  if(TDatabase::ParamDB->Axial3D)
+            return std::string("CD2D_Axiax3D_Galerkin");
+          else
+            return std::string("CD2D_Galerkin");
+	case SUPG:
+	  return std::string("CD2D_SUPG");
+	case GLS:
+	  return std::string("CD2D_GLS");
+      }
+      break;      
     ///////////////////////////////////////////////////////////////////////////
     // TCD2D: time dependent convection diffusion problems
     case TCD2D_Mass_Rhs_Galerkin:
@@ -50,9 +56,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     ///////////////////////////////////////////////////////////////////////////
     // Darcy2D: stationary Darcy problems
     case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");
-    default: return std::string();
+      return std::string("Darcy2D_Galerkin");    
   }
+  return std::string();
 }
 
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
@@ -61,8 +67,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
  : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
    FEFunctions2D(fefunctions2d)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-    OutPut("Constructor of LocalAssembling2D: using type " << name << endl);
+  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
   
   
 //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
@@ -80,67 +85,50 @@ switch(type)
 {
   ///////////////////////////////////////////////////////////////////////////
   // CD2D: stationary convection diffusion problems
-  case CD2D_Galerkin:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
+  case LocalAssembling2D_type::ConvDiff:
     this->N_Matrices = 1;
     this->RowSpace = { 0 };
     this->ColumnSpace = { 0 };
     this->N_Rhs = 1;
     this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssembleGalerkin; 
-    this->Manipulate = NULL;
-    break;
-  case CD2D_SUPG:
-    this->N_Terms = 5;
-    this->Derivatives = { D10, D01, D00, D20, D02 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = true;
-    this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_SD; 
-    if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-      this->Manipulate = linfb;
-    else
-      this->Manipulate = ave_l2b_quad_points;
-    break;
-  case CD2D_GLS:
-    this->N_Terms = 5;
-    this->Derivatives = { D10, D01, D00, D20, D02 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = true;
-    this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_GLS; 
-    if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-      this->Manipulate = linfb;
-    else
-      this->Manipulate = ave_l2b_quad_points;
-    break;
-  case CD2D_Axiax3D_Galerkin:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = BilinearAssemble_Axial3D; 
-    this->Manipulate = NULL;
+    switch(TDatabase::ParamDB->DISCTYPE)
+    {
+      case GALERKIN:
+        this->N_Terms = 3;
+        this->Derivatives = { D10, D01, D00 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = false;
+        this->FESpaceNumber = { 0, 0, 0 };
+        
+        if(TDatabase::ParamDB->Axial3D)
+          this->AssembleParam = BilinearAssemble_Axial3D; 
+        else
+          this->AssembleParam = BilinearAssembleGalerkin; 
+        this->Manipulate = NULL;
+        break;
+      case SUPG:
+      case GLS:
+        this->N_Terms = 5;
+        this->Derivatives = { D10, D01, D00, D20, D02 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = true;
+        this->FESpaceNumber = { 0, 0, 0, 0, 0 };
+	if(TDatabase::ParamDB->DISCTYPE==SUPG)
+	  this->AssembleParam = BilinearAssemble_SD; 
+	else
+	  this->AssembleParam = BilinearAssemble_GLS;
+	
+        if(TDatabase::ParamDB->SDFEM_NORM_B==0)
+          this->Manipulate = linfb;
+        else
+          this->Manipulate = ave_l2b_quad_points;
+        
+	break;
+        default:
+          ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                 " is not supported by the class CD2D");
+          throw("unsupported DISCTYPE");
+    }
     break;
   ///////////////////////////////////////////////////////////////////////////
   // TCD2D: time dependent convection diffusion problems
@@ -243,7 +231,7 @@ switch(type)
 
 LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux, 
                                      const TDiscreteForm2D& df)
- : type(CD2D_Galerkin), // this might be wrong!!
+ :  
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
@@ -303,6 +291,82 @@ LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux,
     ErrMsg("can't create LocalAssembling2D object, missing AssembleFctParam2D");
     throw("can't create LocalAssembling2D object, missing AssembleFctParam2D");
   }
+}
+
+/*! @brief Customized constructor. */
+LocalAssembling2D::LocalAssembling2D(int myN_Terms,
+		std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
+		std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
+		CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
+		int myN_Matrices, int myN_Rhs,
+		int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
+		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
+		std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
+
+: N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
+  RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
+  Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
+  N_Matrices(myN_Matrices), N_Rhs(myN_Rhs),
+  N_ParamFct(myN_ParamFct), ParameterFct(myParameterFct), BeginParameter(myBeginParameter), N_Parameters(myN_Parameters),
+  FEFunctions2D(myFEFunctions2D), N_FEValues(myN_FEValues),
+  FEValue_FctIndex(myFEValue_FctIndex), FEValue_MultiIndex(myFEValue_MultiIndex)
+
+{
+  // Some data members get an extra treatment - "name" is set to CUSTOMIZED,
+  // The auxiliary arrays (All)OrigValues are dynamically allocated with size "N_Terms".
+  // "N_Spaces" is determined by finding the max in "FESpaceNumber" (+1).
+  // "Needs2ndDerivative" is dynamically allocated to the size "N_Spaces" and then filled
+  // according to the appearance of "D20", "D11" or "D02" in "Derivatives".
+  
+  //Catch some things which might cause trouble.
+  if(myDerivatives.size() != N_Terms)
+  {
+    Output::print("Error: myDerivatives.size() != N_Terms.");
+  }
+  if(myFESpaceNumber.size() != N_Terms)
+  {
+    Output::print("Error: myFESpaceNumber.size() != N_Terms.");
+  }
+  if(myParameterFct.size() != N_ParamFct)
+  {
+    Output::print("Error: myParameterFct.size() != myN_ParamFct.");
+  }
+  if(myBeginParameter.size() != N_ParamFct)
+  {
+    Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
+  }
+
+  name = std::string("CUSTOMIZED");
+  //Inform the world of what's going on.
+  Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
+
+	//Dynamically allocate space for auxiliary arrays
+	AllOrigValues = new double** [N_Terms];
+	OrigValues = new double* [N_Terms];
+
+	//CODE taken from TDiscretForm2D::TDiscreteForm2D(...)
+	// find number of spaces
+	int max = -1;
+	for(int i=0;i<N_Terms;i++)
+	{
+		int j = FESpaceNumber[i];
+		if(j > max) max = j;
+	}
+	N_Spaces = max+1;
+
+	//Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
+	Needs2ndDerivatives = new bool[N_Spaces];
+	for(int i=0;i<N_Spaces;i++){
+		Needs2ndDerivatives[i] = FALSE;
+	}
+	for(int i=0;i<N_Terms;i++)
+	{
+		MultiIndex2D alpha = Derivatives[i];
+		int j = FESpaceNumber[i];
+		if(alpha == D20 || alpha == D11 || alpha == D02)
+			Needs2ndDerivatives[j] = TRUE;
+	}
+	//END code taken from TDiscretForm2D::TDiscreteForm2D(...)
 }
 
 LocalAssembling2D::~LocalAssembling2D()

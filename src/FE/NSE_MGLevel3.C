@@ -44,7 +44,7 @@
                               TSquareMatrix2D *a11, TSquareMatrix2D *a12,
                               TSquareMatrix2D *a21, TSquareMatrix2D *a22,
                               TMatrix2D *b1, TMatrix2D *b2,  
-                              TStructure2D *structureBT,
+                              TStructure *structureBT,
                               double *f1, double *u1, 
                               int n_aux, double *al, int velocity_space, 
                               int pressure_space, TCollection *Coll,
@@ -58,7 +58,7 @@
                               TSquareMatrix3D *a31, TSquareMatrix3D *a32,
                               TSquareMatrix3D *a33,
                               TMatrix3D *b1, TMatrix3D *b2, TMatrix3D *b3,  
-                              TStructure3D *structureBT,
+                              TStructure *structureBT,
                               double *f1, double *u1, 
                               int n_aux, double *al, int velocity_space, 
                               int pressure_space, TCollection *Coll,
@@ -74,7 +74,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetMatrixStructure();
+  StructureA = &(A11->GetStructure());
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();
@@ -96,7 +96,7 @@
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();
@@ -110,12 +110,13 @@
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
 
-  USpace = A11->GetFESpace();
 #ifdef __2D__
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace2D();
+  PSpace = B1->GetTestSpace2D();
 #endif  
 #ifdef __3D__
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace3D();
+  PSpace = B1->GetTestSpace3D();
 #endif  
 
   N_Active = USpace->GetActiveBound();

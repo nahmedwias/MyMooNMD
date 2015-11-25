@@ -54,7 +54,7 @@ TOutput3D::TOutput3D(int maxn_fespaces, int maxn_scalar,
   MaxN_Parameters=maxn_parameters;
   N_Parameters=0;
 
-  FESpaceArray=new TFESpace3D*[MaxN_FESpaces];
+  FESpaceArray=new const TFESpace3D*[MaxN_FESpaces];
 
   FEFunctionArray=new TFEFunction3D*[MaxN_ScalarVar];
 
@@ -76,9 +76,9 @@ TOutput3D::TOutput3D(int maxn_fespaces, int maxn_scalar,
 }
 
 /** add a FESpace into this output object (internal use) */
-int TOutput3D::AddFESpace(TFESpace3D *fespace)
+int TOutput3D::AddFESpace(const TFESpace3D *fespace)
 {
-  TFESpace3D **NewStorage;
+  const TFESpace3D **NewStorage;
   int i;
 
   if(N_FESpaces==0)
@@ -97,8 +97,8 @@ int TOutput3D::AddFESpace(TFESpace3D *fespace)
   if(MaxN_FESpaces<=N_FESpaces)
   {
     // enlarge storage
-    NewStorage=new TFESpace3D*[MaxN_FESpaces+5];
-    memcpy(NewStorage, FESpaceArray, sizeof(TFESpace3D *)*MaxN_FESpaces);
+    NewStorage=new const TFESpace3D*[MaxN_FESpaces+5];
+    memcpy(NewStorage, FESpaceArray, sizeof(const TFESpace3D *)*MaxN_FESpaces);
     MaxN_FESpaces +=5;
     delete FESpaceArray;
     FESpaceArray=NewStorage;
@@ -294,7 +294,7 @@ int TOutput3D::WriteGrape(const char *name)
   TVertex **Vertices, *Last, *Current;
   int *NumberVertex;
   double *ParamPtr;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   TFEVectFunct3D *fevectfunct;
   double *Coords;
@@ -655,7 +655,7 @@ int TOutput3D::WriteTecplot(const char *name)
   TVertex **Vertices, *Current, *Last;
   FE3D FE_ID;
   TBaseFunct3D *bf;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions3D], *Coeffs;
   double xi, eta, zeta, value;
@@ -981,7 +981,7 @@ int TOutput3D::WriteGMV(const char *name)
   TVertex **Vertices, *Current, *Last;
   FE3D FE_ID;
   TBaseFunct3D *bf;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions3D], *Coeffs;
   double xi, eta, zeta, value;
@@ -1361,7 +1361,7 @@ int TOutput3D::WriteAmira(const char *name)
   TVertex **Vertices, *Current, *Last;
   FE3D FE_ID;
   TBaseFunct3D *bf;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions3D], *Coeffs;
   double xi, eta, zeta, value;
@@ -1758,7 +1758,7 @@ int TOutput3D::WriteVtk(const char *name)
   TBaseCell *cell;
   double x[4], y[4], z[4];
   int *FESpaceNumber;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   char *Comment;
   double xi, eta, zeta;
   double value;
@@ -2262,7 +2262,7 @@ int TOutput3D::WriteVtk(const char *name)
   delete [] Coords;
   delete [] FESpaceNumber;
 
-  OutPut("wrote output into vtk file: " << name << endl);
+  Output::print("wrote output into vtk file: ", name);
   return 0;
 }
 
@@ -2498,7 +2498,7 @@ int TOutput3D::Write_ParVTK(
   TFEVectFunct3D *fevectfunct;
   TVertex *vertex;
   TBaseCell *cell;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TBaseFunct3D *bf;
   BaseFunct3D BaseFunct;
   FE3D FE_ID;
@@ -3256,7 +3256,7 @@ void TOutput3D::ComputeOutputData()
 void TOutput3D::ComputeFEValues()
 {
   TBaseCell *Cell;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   TBaseFunct3D *BaseFunc;
   FE3D FeID;
   double x, y, z, *xi, *eta, *zeta;

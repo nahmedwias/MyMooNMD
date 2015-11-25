@@ -25,7 +25,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TSquareMatrix2D *A;
 
     /** structure of matrix A */
-    TSquareStructure2D *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix2D *B1;
@@ -34,17 +34,17 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TMatrix2D *B2;
 
     /** structure of matrix B */
-    TStructure2D *StructureB;
+    const TStructure *StructureB;
 
     /** structure of matrix BT */
-    TStructure2D *StructureBT;
+    const TStructure *StructureBT;
 #endif  
 #ifdef __3D__
     /** matrix A */
     TSquareMatrix3D *A;
 
     /** structure of matrix A */
-    TSquareStructure3D *StructureA;
+    const TStructure *StructureA;
 
     /** matrix B1 */
     TMatrix3D *B1;
@@ -56,13 +56,13 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
     TMatrix3D *B3;
 
     /** structure of matrix B */
-    TStructure3D *StructureB;
+    const TStructure *StructureB;
 
      /** matrix entries of matrix B3 */
     double *B3Entries;
 
     /** structure of matrix BT */
-    TStructure3D *StructureBT;
+    const TStructure *StructureBT;
 #endif  
 
    /** row pointer for matrix A */
@@ -98,7 +98,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
 #ifdef __2D__
     TNSE_MGLevel1(int level, TSquareMatrix2D *A, 
                   TMatrix2D *B1, TMatrix2D *B2,
-                  TStructure2D *structureBT,
+                  TStructure *structureBT,
                   double *f1, double *u1,
                   int n_aux, double *al,  int VelocitySpace, 
                   int PressureSpace, TCollection *coll,
@@ -107,7 +107,7 @@ class TNSE_MGLevel1 : public TNSE_MGLevel
 #ifdef __3D__
     TNSE_MGLevel1(int level, TSquareMatrix3D *A, 
                   TMatrix3D *B1, TMatrix3D *B2, TMatrix3D *B3, 
-                  TStructure3D *structureBT,
+                  TStructure *structureBT,
                   double *f1, double *u1,
                   int n_aux, double *al,  int VelocitySpace, 
                   int PressureSpace, TCollection *coll,

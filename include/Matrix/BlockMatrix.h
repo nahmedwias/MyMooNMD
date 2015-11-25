@@ -22,7 +22,7 @@ class BlockMatrix
 {
   protected:
     /// @brief the block pattern, determining e.g. the number of blocks
-    std::shared_ptr<BlockPattern> block_pattern;
+    std::shared_ptr<const BlockPattern> block_pattern;
     /** @brief the blocks, each is a sparse matrix (consider vector<vector<>>)
      * 
      * We store pointers to sparse matrices because we allow constructors 
@@ -107,7 +107,7 @@ class BlockMatrix
      * 
      * All blocks contain zeros only.
      */
-    BlockMatrix(std::shared_ptr<BlockPattern>);
+    BlockMatrix(std::shared_ptr<const BlockPattern>);
     
     /** @brief copy constructor */
     BlockMatrix(BlockMatrix&);

@@ -3,7 +3,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Simple example with sin and cos solution and p=0\n");
+  Output::print<1>("Example: Simple example with sin and cos solution and p=0");
 }
 
 // exact solution
@@ -44,8 +44,8 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   double tol = 1e-10;
-  if((abs(1+x) < tol) || (abs(1+y) < tol) || (abs(1+z) < tol)
-       || (abs(1-z) < tol))
+  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
+       || (fabs(1-z) < tol))
     cond = DIRICHLET;
   else
     cond = NEUMANN;
@@ -57,11 +57,11 @@ void U1BoundValue(double x, double y, double z, double &value)
 {
   const double eps = 1./TDatabase::ParamDB->RE_NR;
   double tol = 1e-10;
-  if((abs(1+x) < tol) || (abs(1+y) < tol) || (abs(1+z) < tol)
-       || (abs(1-z) < tol))
+  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
+       || (fabs(1-z) < tol))
     value = cos(Pi*x)*sin(Pi*y)*sin(Pi*z); //Dirichlet
   else{
-    if(abs(1-x) < tol)
+    if(fabs(1-x) < tol)
     {
       value = -eps*Pi*sin(Pi*x)*sin(Pi*y)*sin(Pi*z); //Neumann
       if(TDatabase::ParamDB->LAPLACETYPE == 1)
@@ -79,11 +79,11 @@ void U2BoundValue(double x, double y, double z, double &value)
 {
   const double eps = 1./TDatabase::ParamDB->RE_NR;
   double tol = 1e-10;
-  if((abs(1+x) < tol) || (abs(1+y) < tol) || (abs(1+z) < tol)
-       || (abs(1-z) < tol))
+  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
+       || (fabs(1-z) < tol))
     value = sin(Pi*x)*cos(Pi*y)*sin(Pi*z); //Dirichlet
   else{
-    if(abs(1-x) < tol)
+    if(fabs(1-x) < tol)
     {
       value = eps*Pi*cos(Pi*x)*cos(Pi*y)*sin(Pi*z); //Neumann
       if(TDatabase::ParamDB->LAPLACETYPE == 1)
@@ -101,11 +101,11 @@ void U3BoundValue(double x, double y, double z, double &value)
 {
   const double eps = 1./TDatabase::ParamDB->RE_NR;
   double tol = 1e-10;
-  if((abs(1+x) < tol) || (abs(1+y) < tol) || (abs(1+z) < tol)
-       || (abs(1-z) < tol))
+  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
+       || (fabs(1-z) < tol))
     value = -2*sin(Pi*x)*sin(Pi*y)*cos(Pi*z); //Dirichlet
   else{
-    if(abs(1-x) < tol)
+    if(fabs(1-x) < tol)
     {
       value = -eps*2*Pi*cos(Pi*x)*sin(Pi*y)*cos(Pi*z); //Neumann
       if(TDatabase::ParamDB->LAPLACETYPE == 1)

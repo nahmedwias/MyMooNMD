@@ -238,8 +238,7 @@ int N_Unknowns, int ns_type
       break;
   }
   t2 = GetTime();
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("time for solving: " << t2-t1 << endl);
+  Output::print<2>("time for solving: ", t2-t1);
 }
 
 

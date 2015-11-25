@@ -5,6 +5,7 @@
 #include <Solver.h>
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // L2H1Errors
+#include <AlgebraicFluxCorrection.h>
 
 
 /** ************************************************************************ */
@@ -23,20 +24,24 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, int reference_id)
- : CD2D(domain, *(new Example_CD2D()), reference_id)
+ : CD2D(domain, Example_CD2D(), reference_id)
 {
-  // note that the way we construct the example above will produce a memory 
-  // leak, but that class is small.
 }
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, const Example_CD2D& e, int reference_id)
-    : systems(), example(e), multigrid(nullptr)
+CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
+ : systems(), example(example), multigrid(nullptr)
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
+  // when using afc, create system matrices as if all dofs were active
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 0)
+  {
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+  }
+
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
   
@@ -45,10 +50,10 @@ CD2D::CD2D(const TDomain& domain, const Example_CD2D& e, int reference_id)
   TFESpace2D & space = this->systems.front().fe_space;
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
-  OutPut("N_Cells    : " << setw(12) << coll->GetN_Cells() << endl);
-  OutPut("h (min,max): " << setw(12) << h_min << " " << setw(12) <<h_max<<endl);
-  OutPut("dof all    : " << setw(12) << space.GetN_DegreesOfFreedom() << endl);
-  OutPut("dof active : " << setw(12) << space.GetN_ActiveDegrees() << endl);
+  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+  Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
+  Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
+  Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
   
   
   // done with the conrtuctor in case we're not using multigrid
@@ -99,31 +104,24 @@ CD2D::~CD2D()
 /** ************************************************************************ */
 void CD2D::set_parameters()
 {
-
+  //////////////// Algebraic flux correction ////////////
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
+  {//some kind of afc enabled
+    //make sure that galerkin discretization is used
+    if (TDatabase::ParamDB->DISCTYPE !=	1)
+    {//some other disctype than galerkin
+      TDatabase::ParamDB->DISCTYPE = 1;
+      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+                    "Correction is enabled.");
+    }
+  }
 }
 
 /** ************************************************************************ */
 void CD2D::assemble()
 {
-  LocalAssembling2D_type t = CD2D_Galerkin;
-  switch(TDatabase::ParamDB->DISCTYPE)
-  {
-    case 1:
-      t = CD2D_Galerkin;
-      break;
-    case 2:
-      t = CD2D_SUPG;
-      break;
-    case 6:
-      t = CD2D_GLS;
-      break;
-    default:
-      ErrThrow("currently DISCTYPE " 
-               + std::to_string(TDatabase::ParamDB->DISCTYPE) +
-               " is not supported by the class CD2D");
-      throw; // only to avoid compiler warning
-  }
-  
+  LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
   {
@@ -133,6 +131,13 @@ void CD2D::assemble()
     // assemble the system matrix with given local assembling, solution and rhs 
     s.matrix.Assemble(la, s.solution, s.rhs);
   }
+
+  // when using afc, do it now
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 0)
+  {
+	  performAlgebraicFluxCorrection();
+  }
+
 }
 
 /** ************************************************************************ */
@@ -145,11 +150,8 @@ void CD2D::solve()
          s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
          this->multigrid.get(), this->get_size(), 0);
   
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-  {
-    t = GetTime() - t;
-    OutPut(" solving of a CD2D problem done in " << t << " seconds\n");
-  }
+  t = GetTime() - t;
+  Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
 }
 
 /** ************************************************************************ */
@@ -191,9 +193,64 @@ void CD2D::output(int i)
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, errors);
     
-    OutPut("L2     : " << errors[0] << endl);
-    OutPut("H1-semi: " << errors[1] << endl);
-    OutPut("SD     : " << errors[2] << endl);
-    OutPut("L_inf  : " << errors[3] << endl);
+    Output::print<1>("L2     : ", errors[0]);
+    Output::print<1>("H1-semi: ", errors[1]);
+    Output::print<1>("SD     : ", errors[2]);
+    Output::print<1>("L_inf  : ", errors[3]);
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+}
+
+/** ************************************************************************ */
+void CD2D::performAlgebraicFluxCorrection()
+{
+  for(auto & s : this->systems) // do it on all levels
+    {
+		//determine which kind of afc to use
+		switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+		{
+		  case 1: //FEM-TVD
+		  {
+			//get pointers to the relevant objects
+			TFESpace2D& feSpace = s.fe_space;
+			TSquareMatrix2D * matrix = s.matrix.get_matrix();
+			double* solEntries = s.solution.get_entries();
+			double* rhsEntries = s.rhs.get_entries();
+
+			// fill an array "neumannToDirichlet" with those rows, that got internally treated as
+			// Neumann although they are Dirichlet
+			size_t nNeumannToDirichlet = feSpace.GetN_Dirichlet();
+			int* neumannToDirichlet = new int[nNeumannToDirichlet];
+			int dirichletDofStartIndex = feSpace.GetDirichletBound();
+			int* dirichletDofStartPtr = &feSpace.GetGlobalNumbers()[dirichletDofStartIndex];
+			for (size_t i = 0; i < nNeumannToDirichlet ;++i){
+				neumannToDirichlet[i]= dirichletDofStartPtr[i];
+			}
+
+			// Number of dofs.
+			int nDofs = feSpace.GetN_DegreesOfFreedom();
+
+			// array of entries for matrix D
+			double* entriesMatrixD = new double[matrix->GetN_Entries()]();
+
+			// apply FEM-TVD
+			AlgebraicFluxCorrection::FEM_TVD_ForConvDiff(
+					matrix, nDofs, nDofs,
+					entriesMatrixD,
+					solEntries,rhsEntries,
+					nNeumannToDirichlet, neumannToDirichlet, 1);
+
+			//...and finally correct the entries in the Dirchlet rows
+			AlgebraicFluxCorrection::correctDirichletRows(*matrix);
+
+			//clean up
+			delete[] entriesMatrixD;
+			delete[] neumannToDirichlet;
+			break;
+		  }
+		  default:
+		  {
+			ErrThrow("The chosen ALGEBRAIC_FLUX_CORRECTION scheme is unknown to class CD2D.");
+		  }
+		}
+    }
 }

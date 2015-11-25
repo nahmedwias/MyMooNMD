@@ -1,14 +1,23 @@
-// =======================================================================
-// @(#)ParFECommunicator3D.h
-//
-// Class:      TParFECommunicator3D
-// Purpose:    Class containing communication routines
-//
-// Author:     Sashikumaar Ganesan (24.04.15)
-//
-// History:    Start of implementation 24.04.15 (Sashikumaar Ganesan)
-//
-// ======================================================================= 
+/** ***************************************************************************
+ *
+ * @name       TParFEMapper3D
+ * @brief      Class containing communication routines between processes which all
+ * 			   administer their own subdomain and corresponding degrees of freedom of
+ * 			   an FE system.
+ *
+ *             Objects of this type are set up after the domain is split, so
+ *             there exists a particular one in each process. The data members
+ *             refer to the data of the processes' Domain and FESpace.
+ *
+ *			   All the information the class needs is known to an object of class
+ *			   TParFEMapper3D.
+ *
+ * @author     Sashikumaar Ganesan
+ * @date       2015/04/24
+ *
+ * @ruleof0
+ *
+ ******************************************************************************/
 
 #ifdef _MPI
 
@@ -18,9 +27,6 @@
 #include "mpi.h"
 
 #include <ParFEMapper3D.h>
-#include <FESpace3D.h>
-#include <SquareStructure.h>
-#include <SquareStructure3D.h>
 
 class TParFECommunicator3D
 {
@@ -56,42 +62,73 @@ class TParFECommunicator3D
     int *Master;
     
   public:
+    //TODO Comment the usage of this!
     TParFECommunicator3D(TParFEMapper3D *mapper);
     
+    //TODO Comment the usage of this!
     TParFECommunicator3D();
     
-    ~TParFECommunicator3D();
-    
+    //TODO Comment the usage of this!
     void CommUpdateMS(double *sol);
     
+    //TODO Comment the usage of this!
     void CommUpdateH1(double *sol);
     
+    //TODO Comment the usage of this!
     void CommUpdateH2(double *sol);
     
+    //TODO Comment the usage of this!
     void CommUpdate_M_H1(double *sol);
     
+    //TODO Comment the usage of this!
     void CommUpdate(double *sol);
     
+    //TODO Comment the usage of this!
     void CommUpdateReduce(double *rhs);
     
+    //TODO Comment the usage of this!
     void CommUpdate(double *sol, double *rhs);
     
+    //TODO Comment the usage of this!
     void GatherToRoot(double *&GlobalArray, int &GolabalSize, double *LocalArray, int LocalSize, int root);
     
+    //TODO Comment the usage of this!
     void ScatterFromRoot(double *GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root);
     
+    //TODO Comment the usage of this!
     int *GetMaster()
     {return Master;}
     
+    //TODO Comment the usage of this!
     int GetNDof()
     {return N_Dof;}
     
+    //TODO Comment the usage of this!
     int* Get_Local2Global()
     { return Mapper->Get_Local2Global();}
     
+    //TODO Comment the usage of this!
     int GetN_Master()
     { return Mapper->GetN_Master();}
     
+    //Special member functions. Rule of zero applied (class does not manage ressources).
+
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor.
+    TParFECommunicator3D(const TParFECommunicator3D&) = default;
+
+    //! Default move constructor.
+    TParFECommunicator3D(TParFECommunicator3D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    TParFECommunicator3D& operator=(const TParFECommunicator3D&) = default;
+
+    //! Default move assignment operator
+    TParFECommunicator3D& operator=(TParFECommunicator3D&&) = default;
+
+    //! Default destructor.
+    ~TParFECommunicator3D() = default;
 };
 
 #endif

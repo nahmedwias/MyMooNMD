@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SineLaplace.h" << endl) ;
+  Output::print<1>("Example: SineLaplace.h");
 }
 
 // exact solution

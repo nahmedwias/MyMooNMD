@@ -12,12 +12,14 @@
 * velocity components and pressure).
 * 
 * @date      01.06.2015
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 #ifndef __EXAMPLE3D__
 #define __EXAMPLE3D__
 
-#include <MooNMD_Io.h>
 #include <Constants.h>
 #include <vector>
 
@@ -41,8 +43,6 @@ class Example3D
               std::vector <BoundCondFunct3D*> bc,
               std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs);
 
-    ~Example3D();
-
     /* functions representing the exact solution */
     std::vector <DoubleFunct3D*> exact_solution;
     /* functions representing the boundary conditions */
@@ -52,9 +52,26 @@ class Example3D
     /* functions representing the coefficients of the pde */
     CoeffFct3D *problem_coefficients;
     
-    //void *example_info();
+    //Declaration of special member functions - rule of zero
 
-    /** getters */
+    //! Default copy constructor. Performs deep copy.
+    Example3D(const Example3D&) = default;
+
+    //! Default move constructor.
+    Example3D(Example3D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example3D& operator=(const Example3D&) = default;
+
+    //! Default move assignment operator
+    Example3D& operator=(Example3D&&) = default;
+
+    //! Default destructor.
+    ~Example3D() = default;
+
+
+    // Getter functions
+
     const std::vector <DoubleFunct3D*> & get_exact() const 
     { return exact_solution; }
 

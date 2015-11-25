@@ -5,6 +5,10 @@
 //
 // Authors:     Volker John, 2008/02/07
 //
+// TODO CB The algorithms in this file currently undergo refactoring. Those
+// 			who are operating are collected in the files AlgebraicFluxCorrection.h
+//			When that is done: remove this file!
+//
 // =======================================================================
 
 #ifndef __FEM_TVD_FCT__

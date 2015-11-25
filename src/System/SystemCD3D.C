@@ -62,7 +62,7 @@ TSystemCD3D::TSystemCD3D(int N_levels, TFESpace3D **fespaces, double **sol, doub
   
   // build matrices
   // first build matrix structure
-  sqstructure = new TSquareStructure3D*[N_Levels];
+  sqstructure = new TStructure*[N_Levels];
   sqmatrixA = new TSquareMatrix3D*[N_Levels];
   
   //instance of the Assemble class
@@ -82,7 +82,7 @@ TSystemCD3D::TSystemCD3D(int N_levels, TFESpace3D **fespaces, double **sol, doub
 //    if(SOLVER==GMG)
 //     OutPut("MULTIGRID LEVEL : " << i<<endl;)
     
-   sqstructure[i] = new TSquareStructure3D(FeSpaces[i]);
+   sqstructure[i] = new TStructure(FeSpaces[i]);
    
    if(SOLVER==DIRECT || SOLVER==GMG)
    { 

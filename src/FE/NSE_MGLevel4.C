@@ -77,7 +77,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetMatrixStructure();
+  StructureA = &(A11->GetStructure());
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();
@@ -99,7 +99,7 @@
 
   B1T = b1t;
   B2T = b2t;
-  StructureBT = B1T->GetStructure();
+  StructureBT = &(B1T->GetStructure());
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
   B1TEntries = B1T->GetEntries();
@@ -107,7 +107,7 @@
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();
@@ -126,12 +126,13 @@
   CKCol = NULL;
   CEntries = NULL;
 
-  USpace = A11->GetFESpace();
 #ifdef __2D__
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace2D();
+  PSpace = B1->GetTestSpace2D();
 #endif
 #ifdef __3D__
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace3D();
+  PSpace = B1->GetTestSpace3D();
 #endif
 
   N_Active = USpace->GetActiveBound();
@@ -206,7 +207,7 @@
   A12 = a12;
   A21 = a21;
   A22 = a22;
-  StructureA = A11->GetMatrixStructure();
+  StructureA = &(A11->GetStructure());
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
   A11Entries = A11->GetEntries();
@@ -228,7 +229,7 @@
 
   B1T = b1t;
   B2T = b2t;
-  StructureBT = B1T->GetStructure();
+  StructureBT = &(B1T->GetStructure());
   BTRowPtr = StructureBT->GetRowPtr();
   BTKCol = StructureBT->GetKCol();
   B1TEntries = B1T->GetEntries();
@@ -236,7 +237,7 @@
 
   B1 = b1;
   B2 = b2;
-  StructureB = B1->GetStructure();
+  StructureB = &(B1->GetStructure());
   BRowPtr = StructureB->GetRowPtr();
   BKCol = StructureB->GetKCol();
   B1Entries = B1->GetEntries();
@@ -250,17 +251,18 @@
 #endif
 
   C = c;
-  StructureC = C->GetStructure();
+  StructureC = &(C->GetStructure());
   CRowPtr = C->GetRowPtr();
   CKCol = C->GetKCol();
   CEntries = C->GetEntries();
 
-  USpace = A11->GetFESpace();
 #ifdef __2D__
-  PSpace = (TFESpace2D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace2D();
+  PSpace = B1->GetTestSpace2D();
 #endif
 #ifdef __3D__
-  PSpace = (TFESpace3D *)StructureB->GetTestSpace();
+  USpace = A11->GetFESpace3D();
+  PSpace = B1->GetTestSpace3D();
 #endif
 
   N_Active = USpace->GetActiveBound();

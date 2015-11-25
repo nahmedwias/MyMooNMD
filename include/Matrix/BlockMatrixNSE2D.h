@@ -23,13 +23,13 @@ class BlockMatrixNSE2D : public BlockMatrix
 {
   protected:
     
-    /** @brief Boundary value */ 
-    std::array<const BoundValueFunct2D*, 3> boundary_values;
+    /** @brief Boundary value */
+    std::array<BoundValueFunct2D * const, 3> boundary_values;
     
   public:
     /** constructor */
      BlockMatrixNSE2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                      const BoundValueFunct2D*const*BoundValue);
+                      BoundValueFunct2D * const * const BoundValue);
      
     /** destrcutor */
     ~BlockMatrixNSE2D();
@@ -80,10 +80,14 @@ class BlockMatrixNSE2D : public BlockMatrix
     
     /** @brief return the velocity-velocity block
      * 
-     * This is created as a TSquareMatrix2D in the constructor of this class. 
-     * Therefore the following cast works.
-     * 
      * There are four A-blocks: A11 (i=0), A12 (i=1), A21 (i=2), A22 (i=3).
+     * 
+     * They are created as a TSquareMatrix2D in the constructor of this class. 
+     * Therefore the following cast works. However in case of NSTYPE 1 or 2, 
+     * only the diagonal blocks are of type TSquareMatrix2D, the off diagonal
+     * ones are not. Therefore if `i` is 0 or 3 this method will always return
+     * what is expected. If `i` is 2 or 3 and the NSTYPE is 1 or 2 an exception
+     * will be thrown.
      */
     TSquareMatrix2D * get_A_block(unsigned int i = 0);
     
@@ -96,26 +100,36 @@ class BlockMatrixNSE2D : public BlockMatrix
     /** @brief return the pressure-perssure block
      * 
      * See also the description of TSquareMatrix2D * get_A_block().
+     * 
+     * Note that the C block is only defined for NSTYPE 14, otherwise an 
+     * exception is thrown.
      */
-    TSquareMatrix2D * get_C_block()
-    { return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get(); }
+    TSquareMatrix2D * get_C_block();
     
     /** @brief return the pressure-pressure block
      * 
      * See also the description of TSquareMatrix2D * get_A_block().
+     * 
+     * Note that the C block is only defined for NSTYPE 14, otherwise an 
+     * exception is thrown.
      */
-    const TSquareMatrix2D * get_C_block() const
-    { return (TSquareMatrix2D*)this->BlockMatrix::blocks.at(8).get(); }
+    const TSquareMatrix2D * get_C_block() const;
     
     /** @brief return the velocity-perssure block
      * 
      * See also the description of TSquareMatrix2D * get_A_block().
+     * 
+     * Note that in case of NSTYPE 1 or 3 these blocks are not explicitly stored
+     * and this method will throw an exception in that case.
      */
     TMatrix2D * get_BT_block(unsigned int i = 0);
     
     /** @brief return the velocity-pressure block
      * 
      * See also the description of TSquareMatrix2D * get_A_block().
+     * 
+     * Note that in case of NSTYPE 1 or 3 these blocks are not explicitly stored
+     * and this method will throw an exception in that case.
      */
     const TMatrix2D * get_BT_block(unsigned int i = 0) const;
     
@@ -133,11 +147,11 @@ class BlockMatrixNSE2D : public BlockMatrix
     
     /** @brief return the finite element space for the velocity */
     const TFESpace2D * get_velocity_space() const
-    { return this->get_A_block()->GetFESpace(); }
+    { return this->get_A_block()->GetFESpace2D(); }
     
     /** @brief return the finite element space for the pressure */
     const TFESpace2D * get_pressure_space() const
-    { return this->get_B_block()->GetStructure()->GetTestSpace2D(); }
+    { return this->get_B_block()->GetTestSpace2D(); }
 };
 
 #endif // __SYSTEMMATNSE2D__

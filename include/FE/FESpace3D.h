@@ -44,6 +44,14 @@ class TFESpace3D : public TFESpace
     /** array storing the fe for each element, if necessary */
     FE3D *AllElements;
 
+    /**
+     *  @brief Boundary condition used to create this space.
+     *
+     *  In order to reproduce the information, which boundary condition was used
+     *  in the creation of the space, store a function pointer to it.
+     */
+   BoundCondFunct3D* boundCondition_;
+
   public:
     /** constructor */
     TFESpace3D(TCollection *coll, char *name, char *description);
@@ -70,38 +78,44 @@ class TFESpace3D : public TFESpace
     /** construct space */
     void ConstructSpace(BoundCondFunct3D *BoundaryCondition);
 
+   /** @return The boundary condition function pointer. */
+   BoundCondFunct3D* getBoundCondition() const
+   { return boundCondition_; }
+
     /** return number of active degrees of freedom */
-    int GetN_ActiveDegrees()
+    int GetN_ActiveDegrees() const
     { return N_ActiveDegrees; }
 
     /** return number of slave degrees of freedom */
-    int GetN_SlaveDegrees()
+    int GetN_SlaveDegrees() const
     { return N_SlaveDegrees; }
 
     /** return HangingBound */
-    int GetHangingBound()
+    int GetHangingBound() const
     { return HangingBound; }
 
     /** return N_Hanging=N_SlaveDegrees */
-    int GetN_Hanging()
+    int GetN_Hanging() const
     { return N_SlaveDegrees; }
 
     /** return identifiers of used elements */
-    FE3D *GetUsedElements()
+    FE3D *GetUsedElements() const
     { return UsedElements; }
 
     /** return array with all hanging nodes */
-    THangingNode **GetHangingNodes()
+    THangingNode **GetHangingNodes() const
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE3D GetFE3D(int i, TBaseCell *cell);
+    FE3D GetFE3D(int i, TBaseCell *cell) const;
 
     /** return position of one given DOF */
-    void GetDOFPosition(int dof, double &x, double &y, double &z);
+    void GetDOFPosition(int dof, double &x, double &y, double &z) const;
 
     /** return position of all dofs */
-    void GetDOFPosition(double *x, double *y, double *z);
+    void GetDOFPosition(double *x, double *y, double *z) const;
+
+
 };
 
 #endif

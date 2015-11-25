@@ -5,7 +5,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: Hemker1996.h" << endl) ;
+  Output::print<1>("Example: Hemker1996.h");
 }
 
 // exact solution

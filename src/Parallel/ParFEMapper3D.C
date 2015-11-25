@@ -1,14 +1,3 @@
-// =======================================================================
-// @(#)ParFEMapper3D.C
-//
-// Class:      TParFEMapper3D
-// Purpose:    Class containing all info needed for communication between subdomains
-//
-// Author:     Sashikumaar Ganesan (24.04.15)
-//
-// History:    Start of implementation 24.04.15 (Sashikumaar Ganesan)
-//
-// ======================================================================= 
 #ifdef _MPI
 
 #include "mpi.h"
@@ -52,6 +41,14 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
   if(TDatabase::ParamDB->MapperType != 2)
   {
     ConstructDofMap_Master_Halo();
+
+    // CB Moved the following call here, because segfaults when calling
+    // Assign_GlobalDofNo without ConstructDofMap_Master_Halo.
+    // (ConstructDofMap does not allocate all the memory which
+    // Assign_GlobalDofNo watns to access)
+
+    //   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
+    Assign_GlobalDofNo();
 #ifdef _HYBRID
     Color(N_CInt,ptrCInt,'i');
     Color(N_CMaster,ptrCMaster,'m');
@@ -64,8 +61,139 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
     ConstructDofMap();
   }
   
-//   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
-    Assign_GlobalDofNo();
+}
+
+TParFEMapper3D::TParFEMapper3D()
+{
+		//Take the Database communicator
+		Comm = TDatabase::ParamDB->Comm;
+
+		FESpace = nullptr;
+		RowPtr = nullptr;
+		KCol = nullptr;
+
+		//assign non-array built-in type data members
+		N_Dim = 0;
+		N_Dof = 0;
+
+		MaxSubDomainPerDof = 0;
+
+		N_InterfaceM = 0;
+		N_InterfaceS = 0;
+		N_Halo1 = 0;
+		N_Halo2 = 0;
+		N_Dept1 = 0;
+		N_Dept2 = 0;
+
+		N_Slave = 0;
+		N_Halo = 0;
+		N_Master = 0;
+		N_Dept = 0;
+		N_Int = 0;
+		N_OwnDof = 0;
+
+		N_SendDof = 0;
+		N_SendDofMS = 0;
+		N_SendDofH1 = 0;
+		N_SendDofH2 = 0;
+
+		N_CMaster = 0;
+		N_CDept1 = 0;
+		N_CDept2 = 0;
+		N_CInt = 0;
+
+		//determine rank and size
+		int mpiRank, mpiSize;
+		MPI_Comm_rank(Comm, &mpiRank);
+		MPI_Comm_size(Comm, &mpiSize);
+
+		//switch over the two MapperTypes
+		if(TDatabase::ParamDB->MapperType != 2)
+		{ //master-slave-halo mapping
+			Master = new int[N_Dof];
+			DofMarker = new char[N_Dof];
+
+			sdispl = new int[mpiSize];
+			rdispl = new int[mpiSize];
+			sdisplMS = new int[mpiSize];
+			rdisplMS = new int[mpiSize];
+			sdisplH1 = new int[mpiSize];
+			rdisplH1 = new int[mpiSize];
+			sdisplH2 = new int[mpiSize];
+			rdisplH2 = new int[mpiSize];
+
+			N_DofSend = new int[mpiSize];
+			N_DofSendMS = new int[mpiSize];
+			N_DofSendH2 = new int[mpiSize];
+			N_DofSendH1 = new int[mpiSize];
+
+			N_DofRecv = new int[mpiSize];
+			N_DofRecvMS = new int[mpiSize];
+			N_DofRecvH2 = new int[mpiSize];
+			N_DofRecvH1 = new int[mpiSize];
+
+			OwnDofs = new int[N_OwnDof];
+
+			DofSend = new int[N_SendDof];
+			DofSendMS  = DofSend;
+			DofSendH1  = DofSend + N_SendDofMS;
+			DofSendH2  = DofSend + N_SendDofMS + N_SendDofH1; //pointer arithmetics!
+
+
+			DofRecv    = new int[N_InterfaceS+N_Halo1+N_Halo2];
+			DofRecvMS  = DofRecv;
+			DofRecvH1  = DofRecv + N_InterfaceS;
+			DofRecvH2  = DofRecv + N_InterfaceS + N_Halo1; //pointer arithmetics!
+
+			Reorder = new int[N_Dof];
+	        Reorder_M  = Reorder;
+			Reorder_I  = Reorder + N_InterfaceM;
+			Reorder_D1 = Reorder + N_InterfaceM + N_Int;
+			Reorder_D2 = Reorder + N_InterfaceM + N_Int + N_Dept1; //pointer arithmetics!
+			//Reorder_D3 = Reorder + N_InterfaceM + N_Int + N_Dept1 + N_Dept2;
+
+			NewGN = new int[N_Dof];
+
+			//TODO CB Maybe I do not like the following - conditional assignment mixed with deterministic.
+			if(N_SendDof>0)
+			{
+				Send_Info   = new double[N_SendDof*N_Dim];
+			}
+			Send_InfoMS = Send_Info;
+			Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
+			Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
+
+			if(N_Slave>0){
+				Recv_Info   = new double[N_Slave*N_Dim];
+			}
+			Recv_InfoMS = Recv_Info;
+			Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
+			Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
+
+			Local2Global = new int[N_Dof];
+
+		}
+		else
+		{ //master-slave mapping
+			Master = new int[N_Dof];
+			sdispl = new int[mpiSize];
+			rdispl = new int[mpiSize];
+
+			N_DofSend = new int[mpiSize];
+			N_DofRecv = new int[mpiSize];
+
+			OwnDofs = new int[N_OwnDof];
+
+			DofSend = new int[N_SendDof];
+			DofRecv    = new int[N_Slave];
+
+		    if(N_SendDof>0)
+		     Send_Info = new double[N_SendDof*N_Dim];
+		    if(N_Slave>0)
+		     Recv_Info = new double[N_Slave*N_Dim];
+		}
+
+
 
 }
 
@@ -141,7 +269,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   GlobalNumbers = FESpace->GetGlobalNumbers();          
 
   /** Array containing global number of all Local cells */
-  LocalIndex = new int[N_Cells]; 
+  LocalIndex = new int[N_Cells];
   
   int **MappingData;
   MappingData = new int*[2];
@@ -1004,7 +1132,7 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   N_DofRecvH2  = new int[size];
   N_DofRecvH1  = new int[size];
   
-  memset(N_DofRecvMS  ,0,size*SizeOfInt);
+  memset(N_DofRecvMS,0,size*SizeOfInt);
   memset(N_DofRecvH1,0,size*SizeOfInt);
   memset(N_DofRecvH2,0,size*SizeOfInt);
   
@@ -2046,6 +2174,333 @@ void TParFEMapper3D::Color(int &numColors, int *&ptrColors, char type)
 //   exit(0);
 }
 #endif
+
+
+TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
+{
+	//shallow copies
+	FESpace = other.FESpace;
+	RowPtr = other.RowPtr; //shallow copy
+	KCol = other.KCol; //shallow copy
+
+	//copy assign mpi communicator
+	Comm = other.Comm;
+
+	//assign non-array built-in type data members
+	N_Dim = other.N_Dim;
+	N_Dof = other.N_Dof;
+
+	MaxSubDomainPerDof = other.MaxSubDomainPerDof;
+
+	N_InterfaceM = other.N_InterfaceM;
+	N_InterfaceS = other.N_InterfaceS;
+	N_Halo1 = other.N_Halo1;
+	N_Halo2 = other.N_Halo2;
+	N_Dept1 = other.N_Dept1;
+	N_Dept2 = other.N_Dept2;
+
+	N_Slave = other.N_Slave;
+	N_Halo = other.N_Halo;
+	N_Master = other.N_Master;
+	N_Dept = other.N_Dept;
+	N_Int = other.N_Int;
+	N_OwnDof = other.N_OwnDof;
+
+	N_SendDof = other.N_SendDof;
+	N_SendDofMS = other.N_SendDofMS;
+	N_SendDofH1 = other.N_SendDofH1;
+	N_SendDofH2 = other.N_SendDofH2;
+
+	N_CMaster = other.N_CMaster;
+	N_CDept1 = other.N_CDept1;
+	N_CDept2 = other.N_CDept2;
+	N_CInt = other.N_CInt;
+
+	//determine rank an size
+	int mpiRank, mpiSize;
+	MPI_Comm_rank(Comm, &mpiRank);
+	MPI_Comm_size(Comm, &mpiSize);
+
+	//switch over the two MapperTypes
+	if(TDatabase::ParamDB->MapperType != 2)
+	{ //master-slave-halo mapping
+		Master = new int[N_Dof]; memcpy(Master,other.Master, N_Dof*SizeOfInt);
+		DofMarker = new char[N_Dof];
+		//this is copied in a loop, for we don't store a "SizeOfChar"
+		for(int i = 0; i < N_Dof; ++i)
+		{
+			DofMarker[i]=other.DofMarker[i];
+		}
+
+		sdispl = new int[mpiSize]; memcpy(sdispl,other.sdispl, mpiSize*SizeOfInt);
+		rdispl = new int[mpiSize]; memcpy(rdispl,other.rdispl, mpiSize*SizeOfInt);
+		sdisplMS = new int[mpiSize]; memcpy(sdisplMS,other.sdisplMS, mpiSize*SizeOfInt);
+		rdisplMS = new int[mpiSize]; memcpy(rdisplMS,other.rdisplMS, mpiSize*SizeOfInt);
+		sdisplH1 = new int[mpiSize]; memcpy(sdisplH1,other.sdisplH1, mpiSize*SizeOfInt);
+		rdisplH1 = new int[mpiSize]; memcpy(rdisplH1,other.rdisplH1, mpiSize*SizeOfInt);
+		sdisplH2 = new int[mpiSize]; memcpy(sdisplH2,other.sdisplH2, mpiSize*SizeOfInt);
+		rdisplH2 = new int[mpiSize]; memcpy(rdisplH2,other.rdisplH2, mpiSize*SizeOfInt);
+
+		N_DofSend = new int[mpiSize]; memcpy(N_DofSend,other.N_DofSend, mpiSize*SizeOfInt);
+		N_DofSendMS = new int[mpiSize]; memcpy(N_DofSendMS,other.N_DofSendMS, mpiSize*SizeOfInt);
+		N_DofSendH2 = new int[mpiSize]; memcpy(N_DofSendH2,other.N_DofSendH2, mpiSize*SizeOfInt);
+		N_DofSendH1 = new int[mpiSize]; memcpy(N_DofSendH1,other.N_DofSendH1, mpiSize*SizeOfInt);
+
+		N_DofRecv = new int[mpiSize]; memcpy(N_DofRecv,other.N_DofRecv, mpiSize*SizeOfInt);
+		N_DofRecvMS = new int[mpiSize]; memcpy(N_DofRecvMS,other.N_DofRecvMS, mpiSize*SizeOfInt);
+		N_DofRecvH2 = new int[mpiSize]; memcpy(N_DofRecvH2,other.N_DofRecvH2, mpiSize*SizeOfInt);
+		N_DofRecvH1 = new int[mpiSize]; memcpy(N_DofRecvH1,other.N_DofRecvH1, mpiSize*SizeOfInt);
+
+		OwnDofs = new int[N_OwnDof]; memcpy(OwnDofs,other.OwnDofs, N_OwnDof*SizeOfInt);
+
+		DofSend = new int[N_SendDof]; memcpy(DofSend,other.DofSend, N_SendDof*SizeOfInt);
+		DofSendMS  = DofSend;
+		DofSendH1  = DofSend + N_SendDofMS;
+		DofSendH2  = DofSend + N_SendDofMS + N_SendDofH1; //pointer arithmetics!
+
+
+		DofRecv    = new int[N_InterfaceS+N_Halo1+N_Halo2];
+		memcpy(DofRecv,other.DofRecv, (N_InterfaceS+N_Halo1+N_Halo2)*SizeOfInt);
+		DofRecvMS  = DofRecv;
+		DofRecvH1  = DofRecv + N_InterfaceS;
+		DofRecvH2  = DofRecv + N_InterfaceS + N_Halo1; //pointer arithmetics!
+
+		Reorder = new int[N_Dof]; memcpy(Reorder, other.Reorder, N_Dof*SizeOfInt);
+        Reorder_M  = Reorder;
+		Reorder_I  = Reorder + N_InterfaceM;
+		Reorder_D1 = Reorder + N_InterfaceM + N_Int;
+		Reorder_D2 = Reorder + N_InterfaceM + N_Int + N_Dept1; //pointer arithmetics!
+		//Reorder_D3 = Reorder + N_InterfaceM + N_Int + N_Dept1 + N_Dept2;
+
+		NewGN = new int[N_Dof]; memcpy(NewGN, other.NewGN, N_Dof*SizeOfInt);
+
+		//TODO CB Maybe I do not like the following - conditional assignment mixed with deterministic.
+		if(N_SendDof>0)
+		{
+			Send_Info   = new double[N_SendDof*N_Dim];
+			memcpy(Send_Info, other.Send_Info, N_SendDof*N_Dim*SizeOfInt);
+		}
+		Send_InfoMS = Send_Info;
+		Send_InfoH1 = Send_Info + N_SendDofMS*N_Dim;
+		Send_InfoH2 = Send_Info + N_SendDofMS*N_Dim + N_SendDofH1*N_Dim;
+
+		if(N_Slave>0)
+		{
+			Recv_Info   = new double[N_Slave*N_Dim];
+			memcpy(Recv_Info, other.Recv_Info, N_Slave*N_Dim*SizeOfInt);
+		}
+		Recv_InfoMS = Recv_Info;
+		Recv_InfoH1 = Recv_Info + N_InterfaceS*N_Dim;
+		Recv_InfoH2 = Recv_Info + N_InterfaceS*N_Dim + N_Halo1*N_Dim;
+
+		Local2Global = new int[N_Dof]; memcpy(Local2Global, other.Local2Global, N_Dof*SizeOfInt);
+
+	}
+	else
+	{ //master-slave mapping
+		Master = new int[N_Dof]; memcpy(Master,other.Master, N_Dof*SizeOfInt);
+
+		sdispl = new int[mpiSize]; memcpy(sdispl,other.sdispl, mpiSize*SizeOfInt);
+		rdispl = new int[mpiSize]; memcpy(rdispl,other.rdispl, mpiSize*SizeOfInt);
+
+		N_DofSend = new int[mpiSize]; memcpy(N_DofSend,other.N_DofSend, mpiSize*SizeOfInt);
+		N_DofRecv = new int[mpiSize]; memcpy(N_DofRecv,other.N_DofRecv, mpiSize*SizeOfInt);
+
+		OwnDofs = new int[N_OwnDof]; memcpy(OwnDofs,other.OwnDofs, N_OwnDof*SizeOfInt);
+
+		DofSend = new int[N_SendDof]; memcpy(DofSend,other.DofSend, N_SendDof*SizeOfInt);
+		DofRecv    = new int[N_Slave]; memcpy(DofRecv,other.DofRecv, N_Slave*SizeOfInt);
+
+	    if(N_SendDof>0)
+	    {
+	      Send_Info = new double[N_SendDof*N_Dim];
+	      memcpy(Send_Info,other.Send_Info, (N_SendDof*N_Dim)*SizeOfInt);
+	    }
+	    if(N_Slave>0)
+	    {
+	       Recv_Info = new double[N_Slave*N_Dim];
+	       memcpy(Recv_Info,other.Recv_Info, (N_Slave*N_Dim)*SizeOfInt);
+	    }
+	}
+
+}
+
+//Befriended swap function.
+void swap(TParFEMapper3D& first, TParFEMapper3D& second)
+{
+	//swap values or pointers
+	std::swap(first.Comm, second.Comm);
+	std::swap(first.N_Dim , second.N_Dim );
+	std::swap(first.N_Dof , second.N_Dof );
+	std::swap(first.RowPtr , second.RowPtr );
+	std::swap(first.KCol , second.KCol );
+	std::swap(first.FESpace , second.FESpace );
+	std::swap(first.MaxSubDomainPerDof , second.MaxSubDomainPerDof );
+	std::swap(first.Master , second.Master );
+	std::swap(first.OwnDofs , second.OwnDofs );
+	std::swap(first.DofMarker , second.DofMarker );
+
+	std::swap(first.Send_Info , second.Send_Info );
+	std::swap(first.Recv_Info , second.Recv_Info );
+
+	std::swap(first.Local2Global , second.Local2Global );
+
+	std::swap(first.sdispl , second.sdispl );
+	std::swap(first.rdispl , second.rdispl );
+
+	std::swap(first.N_InterfaceM , second.N_InterfaceM );
+	std::swap(first.N_InterfaceS , second.N_InterfaceS );
+	std::swap(first.N_Halo1 , second.N_Halo1 );
+	std::swap(first.N_Halo2 , second.N_Halo2 );
+	std::swap(first.N_Dept1 , second.N_Dept1 );
+	std::swap(first.N_Dept2 , second.N_Dept2 );
+
+	std::swap(first.N_Slave , second.N_Slave );
+	std::swap(first.N_Halo , second.N_Halo );
+	std::swap(first.N_Master , second.N_Master );
+	std::swap(first.N_Dept , second.N_Dept );
+	std::swap(first.N_Int , second.N_Int );
+	std::swap(first.N_OwnDof , second.N_OwnDof );
+
+	std::swap(first.N_DofSend , second.N_DofSend );
+	std::swap(first.N_DofRecv , second.N_DofRecv );
+	std::swap(first.N_DofSendMS , second.N_DofSendMS );
+	std::swap(first.N_DofSendH1 , second.N_DofSendH1 );
+	std::swap(first.N_DofSendH2 , second.N_DofSendH2 );
+	std::swap(first.N_DofRecvMS , second.N_DofRecvMS );
+	std::swap(first.N_DofRecvH1 , second.N_DofRecvH1 );
+	std::swap(first.N_DofRecvH2 , second.N_DofRecvH2 );
+
+	std::swap(first.sdisplMS , second.sdisplMS );
+	std::swap(first.sdisplH1 , second.sdisplH1 );
+	std::swap(first.sdisplH2 , second.sdisplH2 );
+	std::swap(first.rdisplMS , second.rdisplMS );
+	std::swap(first.rdisplH1 , second.rdisplH1 );
+	std::swap(first.rdisplH2 , second.rdisplH2 );
+
+	std::swap(first.N_SendDof , second.N_SendDof );
+	std::swap(first.N_SendDofMS , second.N_SendDofMS );
+	std::swap(first.N_SendDofH1 , second.N_SendDofH1 );
+	std::swap(first.N_SendDofH2 , second.N_SendDofH2 );
+
+	std::swap(first.DofSend , second.DofSend );
+	std::swap(first.DofSendMS , second.DofSendMS );
+	std::swap(first.DofSendH1 , second.DofSendH1 );
+	std::swap(first.DofSendH2 , second.DofSendH2 );
+	std::swap(first.DofRecv , second.DofRecv );
+	std::swap(first.DofRecvMS , second.DofRecvMS );
+	std::swap(first.DofRecvH1 , second.DofRecvH1 );
+	std::swap(first.DofRecvH2 , second.DofRecvH2 );
+
+	std::swap(first.Send_InfoMS , second.Send_InfoMS );
+	std::swap(first.Send_InfoH1 , second.Send_InfoH1 );
+	std::swap(first.Send_InfoH2 , second.Send_InfoH2 );
+	std::swap(first.Recv_InfoMS , second.Recv_InfoMS);
+	std::swap(first.Recv_InfoH1 , second.Recv_InfoH1 );
+	std::swap(first.Recv_InfoH2 , second.Recv_InfoH2 );
+
+	std::swap(first.NewGN , second.NewGN );
+	std::swap(first.Reorder , second.Reorder );
+	std::swap(first.Reorder_M , second.Reorder_M );
+	std::swap(first.Reorder_I , second.Reorder_I );
+	std::swap(first.Reorder_D1 , second.Reorder_D1 );
+	std::swap(first.Reorder_D2 , second.Reorder_D2 );
+	std::swap(first.Reorder_D3 , second.Reorder_D3 );
+
+	std::swap(first.N_CMaster , second.N_CMaster );
+	std::swap(first.N_CDept1 , second.N_CDept1 );
+	std::swap(first.N_CDept2 , second.N_CDept2 );
+	std::swap(first.N_CInt , second.N_CInt );
+	std::swap(first.ptrCMaster , second.ptrCMaster );
+	std::swap(first.ptrCDept1 , second.ptrCDept1 );
+	std::swap(first.ptrCDept2 , second.ptrCDept2 );
+	std::swap(first.ptrCInt , second.ptrCInt );
+
+}
+
+TParFEMapper3D& TParFEMapper3D::operator=(TParFEMapper3D other)
+{
+	//do a swap with the copy constructed object "other"
+	swap(*this, other);
+
+	return *this;
+}
+
+TParFEMapper3D::~TParFEMapper3D()
+{
+	//does NOT delete the objects pointed to by FESpace, KCol and RowPtr
+	//     - those belong to other objects
+	if(TDatabase::ParamDB->MapperType != 2)
+	{
+		//dofs were mapped with master/slave/halo concept
+		//clean away everything which was allocated in function ConstructDofMap_Master_Halo()
+		delete[] Master;
+		delete[] DofMarker;
+		delete[] sdispl;
+		delete[] rdispl;
+
+		delete[]  N_DofSend;
+		delete[]  N_DofSendMS;
+		delete[]  N_DofSendH2;
+		delete[]  N_DofSendH1;
+
+		delete[]  N_DofRecv;
+		delete[]  N_DofRecvMS;
+		delete[]  N_DofRecvH2;
+		delete[]  N_DofRecvH1;
+
+		delete[] sdisplMS;
+		delete[] rdisplMS;
+		delete[] sdisplH1;
+		delete[] rdisplH1;
+		delete[] sdisplH2;
+		delete[] rdisplH2;
+
+		delete[] OwnDofs;
+
+		delete[] DofSend;
+		delete[] DofRecv;
+
+		delete[] Reorder;
+		delete[] NewGN;
+
+		if(N_SendDof>0)
+		{
+			delete[] Send_Info;
+		}
+		if(N_Slave>0)
+		{
+			delete[] Recv_Info;
+		}
+		//clean away stuff allocated by Assign_GlobalDofNo() (just one array)
+		delete[] Local2Global;
+
+	}
+	else
+	{
+		//dofs were mapped with old master/slave concept
+		//clean away everything which was allocated in ConstructDofMap()
+		delete[] Master;
+		delete[] sdispl;
+		delete[] rdispl;
+		delete[] N_DofSend;
+		delete[] N_DofRecv;
+		delete[] OwnDofs;
+
+	    delete[] DofSend;
+	    delete[] DofRecv;
+
+	    if(N_SendDof>0)
+	    {
+	    	delete[] Send_Info;
+	    }
+	    if(N_Slave>0)
+	    {
+	    	delete[] Recv_Info;
+	    }
+	}
+
+}
 
 #endif
 

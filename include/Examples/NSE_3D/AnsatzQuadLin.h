@@ -6,7 +6,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: AnsatzQuadLin.h" << endl) ;
+  Output::print<1>("Example: AnsatzQuadLin.h");
 }
 
 // ========================================================================

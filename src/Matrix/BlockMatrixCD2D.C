@@ -7,7 +7,6 @@
 
 #include <Database.h>
 #include <BlockMatrixCD2D.h>
-#include <SquareStructure2D.h>
 #include <Assemble2D.h>
 #include <AuxParam2D.h>
 #include <LocalProjection.h>
@@ -19,31 +18,24 @@
 
 /** ************************************************************************ */
 BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace, 
-                                 const BoundValueFunct2D *BoundValue,
+                                 BoundValueFunct2D * const BoundValue,
                                  bool mass_matrix)
  : BlockMatrix(Problem_type::ConvDiffReac, 2, mass_matrix),
    boundary_values(BoundValue)
 {
-  // build matrices, first build matrix structure
-  TSquareStructure2D* sqstructure = new TSquareStructure2D(&fespace);
-  sqstructure->Sort();  // sort column numbers: numbers are in increasing order
-
   // the stiffness/system matrix for a convection diffusion problem
-  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(sqstructure));
+  this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&fespace));
+  const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
   // the number of active entries
-  unsigned int n_active = sqstructure->GetN_Entries();
+  unsigned int n_active = sqStructure.GetN_Entries();
   // substract the number of non active entries (non active rows)
-  n_active -= sqstructure->GetN_Rows() - sqstructure->GetActiveBound();
+  n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
   this->BlockMatrix::actives[0] = n_active;
 }
 
 /** ************************************************************************ */
 BlockMatrixCD2D::~BlockMatrixCD2D()
 {
-  // the combined matrix is this->get_matrix(), and will be deleted in 
-  // ~BlockMatrix
-  if(!this->combined_matrix)
-    delete this->get_matrix()->GetStructure();
 }
 
 /** ************************************************************************ */
@@ -56,6 +48,8 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
   double * rhs_entries = rhs.get_entries();
   TSquareMatrix2D * matrix = this->get_matrix();
   
+  BoundValueFunct2D * non_const_bound_value = this->boundary_values;
+  
   if(la.get_type() != TCD2D_Mass_Rhs_Galerkin)
   {
     // reset right hand side and matrix to zero
@@ -64,7 +58,7 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
     
     // assemble
     Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries, 
-               &fe_space, &boundary_conditions, &boundary_values, la);
+               &fe_space, &boundary_conditions, &non_const_bound_value, la);
     
     // apply local projection stabilization method
     if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION 
@@ -90,7 +84,7 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
     // reset the matrix
     matrix->Reset();
     Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries, 
-               &fe_space, &boundary_conditions, &boundary_values, la);
+               &fe_space, &boundary_conditions, &non_const_bound_value, la);
   }
 } // void BlockMatrixCD2D::Assemble
 

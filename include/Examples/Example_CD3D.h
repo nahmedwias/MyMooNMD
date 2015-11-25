@@ -9,6 +9,9 @@
 * 
 * @author    Ulrich Wilbrandt, 
 * @date      09.06.15
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 
@@ -37,7 +40,23 @@ class Example_CD3D : public Example3D
                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
 
-    ~Example_CD3D(){};
+
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example_CD3D(const Example_CD3D&) = default;
+
+    //! Default move constructor.
+    Example_CD3D(Example_CD3D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example_CD3D& operator=(const Example_CD3D&) = default;
+
+    //! Default move assignment operator
+    Example_CD3D& operator=(Example_CD3D&&) = default;
+
+    //! Default destructor.
+    ~Example_CD3D() = default;
 };
 
 

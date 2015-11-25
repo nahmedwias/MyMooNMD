@@ -449,12 +449,12 @@ void MatrixARhsAssemble(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
+  double **MatrixA, *Rhs, val, *MatrixRowA;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, Pe, h; 
+  double c0, c1, c2, c3, c4, h; 
 
   MatrixA = LocMatrices[0];
   Rhs = LocRhs[0];
@@ -515,7 +515,7 @@ void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   double val, val1, val2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe; 
+  double c0, c1, c2, c3, c4, c5; 
   double c00, c11, c22, c33;
   double tau, bgradv, bb, res, sigma, norm_b;
   double theta1 = TDatabase::TimeDB->THETA1;
@@ -663,7 +663,7 @@ void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, **MatrixS, *Rhs, val, *MatrixRow, *MatrixSRow;
+  double **Matrix, **MatrixS, *Rhs, *MatrixRow, *MatrixSRow;
   double ansatz00;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
@@ -760,7 +760,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j, N_;
   double c0, c1, c2, c3, c4, c5;
-  double delta, bgradv, sigma, norm_b;
+  double delta, bgradv, sigma;
 
   Matrix = LocMatrices[0];
 
@@ -1027,7 +1027,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
   double c0, c1, c2, c3, c4;
-  double lpcoeff, lpexponent, stab_coeff, norm_b, bgradv, uh_proj, uh_proj_cw;
+  double lpcoeff, stab_coeff, norm_b, bgradv, uh_proj, uh_proj_cw;
   double lpcoeff_crosswind, stab_coeff_cw, val1, ux, uy;
 
   Matrix = LocMatrices[0];
@@ -1047,7 +1047,6 @@ double ***LocMatrices, double **LocRhs)
   c4 = coeff[4];                                  // f
 
   lpcoeff = TDatabase::ParamDB->LP_STREAMLINE_COEFF;
-  lpexponent = TDatabase::ParamDB->LP_STREAMLINE_EXPONENT;
   lpcoeff_crosswind = TDatabase::ParamDB->LP_CROSSWIND_COEFF;
 
   // h^2/epsilon
@@ -1134,10 +1133,9 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j, N_;
+  int i,N_;
   double c0, c1, c2, c3, c4, c5;
   double delta, bgradv, u;
   double umin = 0, umax = 1, rho;
@@ -1185,10 +1183,9 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01, test20, test02;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
+  int i,N_;
   double c0, c1, c2, c3, c4;
   double test, ansatz, scal, u[5];
 
@@ -1254,12 +1251,10 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, test20, test02;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4;
-  double test, ansatz, scal, u[5];
+  double test10, test01;
+  double *Orig0, *Orig1;
+  int i, N_;
+  double u[5];
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -1295,12 +1290,11 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, test20, test02;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, norm_grad;
-  double test, ansatz, scal, u[5], eps=1e-12;
+  double test10, test01;
+  double *Orig0, *Orig1;
+  int i, N_;
+  double norm_grad;
+  double u[5];
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -1344,12 +1338,11 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, test20, test02;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, norm_b, b_gradu, sig_b_gradu, borth_gradu, sig_borth_gradu;
-  double test, ansatz, scal, u[5], eps=1e-12;
+  double test10, test01;
+  double *Orig0, *Orig1;
+  int i,N_;
+  double c1, c2, norm_b, b_gradu, sig_b_gradu, borth_gradu, sig_borth_gradu;
+  double u[5];
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -1396,13 +1389,12 @@ double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs, val;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double *Rhs, val;  
   double test00, test10, test01, test20, test02;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
+  int i,N_;
   double c0, c1, c2, c3, c4, res, sig_res, borth_gradu, sig_borth_gradu, norm_b;
-  double test, ansatz, scal, u[5], eps=1e-12;
+  double u[5];
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -1464,16 +1456,15 @@ double ***LocMatrices, double **LocRhs)
 {
   double *Rhs, val, aux_val;
   double alpha1, alpha2, beta1, beta2;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01, test20, test02;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   double residual, sig_residual, norm_grad, b_gradu, sig_b_gradu, borth_gradu;
   double norm_b, sig_borth_gradu, norm_borth_gradu_sqrt;
-  double normb, p = TDatabase::ParamDB->RESIDUAL_LP_ADJOINT;
+  double p = TDatabase::ParamDB->RESIDUAL_LP_ADJOINT;
   double valres, valdres, valcw, valdcw;
-  int i,j, N_;
+  int i, N_;
   double c0, c1, c2, c3, c4, weight, c1_norm, c2_norm;
-  double test, ansatz, scal, u[5];
+  double test, u[5];
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -1730,7 +1721,7 @@ double ***LocMatrices, double **LocRhs)
   double test10, test01;
   double ansatz_x, ansatz_y;
   double *Orig0, *Orig1;
-  int i,j, N_;
+  int i, N_;
   double scal, u[2];
 
   Rhs = LocRhs[0];
@@ -1778,11 +1769,11 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double **Matrix, val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
+  double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5;
+  double c0, c1, c2, c3;
 
   Matrix = LocMatrices[0];
 
@@ -1791,15 +1782,11 @@ double ***LocMatrices, double **LocRhs)
   Orig0 = OrigValues[0];
   Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
-
+    
   c0 = coeff[0];                                  // nu
   c1 = coeff[1];                                  // b_1
   c2 = coeff[2];                                  // b_2
-  c3 = coeff[3];                                  // c
-  c4 = coeff[4];                                  // f
-  c5 = coeff[5];                                  // \|b\|_infty
+  c3 = coeff[3];                                  // c  
 
   for(i=0;i<N_;i++)
   {
@@ -1813,9 +1800,7 @@ double ***LocMatrices, double **LocRhs)
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-
+      
       val = c0*(test10*ansatz10+test01*ansatz01);
       val += (c1*ansatz10+c2*ansatz01)*test00;
       val += c3*ansatz00*test00;

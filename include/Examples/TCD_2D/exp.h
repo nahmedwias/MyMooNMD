@@ -10,7 +10,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: exp.h" << endl); 
+  Output::print<1>("Example: exp.h");
 }
 
 // exact solution

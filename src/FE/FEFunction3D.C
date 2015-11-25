@@ -32,7 +32,7 @@ void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
 }
 
 /** constructor with vector initialization */
-TFEFunction3D::TFEFunction3D(TFESpace3D *fespace3D, char *name, 
+TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, char *name, 
                              char *description, double *values, int length)
 {
   FESpace3D=fespace3D;
@@ -59,7 +59,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                               int N_Errors, ErrorMethod3D *ErrorMeth, 
                               CoeffFct3D *Coeff, 
                               TAuxParam3D *Aux,
-                              int n_fespaces, TFESpace3D **fespaces,
+                              int n_fespaces, const TFESpace3D **fespaces,
                               double *errors)
 {
   int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
@@ -250,13 +250,13 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 				   int N_Errors, ErrorMethod3D *ErrorMeth, 
 				   CoeffFct3D *Coeff, 
 				   TAuxParam3D *Aux,
-				   int n_fespaces, TFESpace3D **fespaces,
+				   int n_fespaces, const TFESpace3D **fespaces,
 				   double *errors)
 {
 	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs3D], *N_BaseFunct;
-	TFESpace3D *fespace;
+	const TFESpace3D *fespace;
 	FE3D LocalUsedElements[N_FEs3D], CurrentElement;
 	BaseFunct3D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
@@ -292,7 +292,7 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 	int Lev;
 	TCollection *FineColls[MaxLev];
 	TFEFunction3D *FineFcts[MaxLev];
-	TFESpace3D *FineSpaces[MaxLev];
+	const TFESpace3D *FineSpaces[MaxLev];
 	TCollection *CurrColl;
 	TGridCell *CurrCell;
 	int N_FineCells, N_CoarseCells, CellId;
@@ -484,11 +484,11 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 			RootVal[NewDOF[l]] = Values[DOF[l]];
 		RootFct = new TFEFunction3D(RootSpace, Name, Description, 
 					    RootVal, RootLen);
-		FineAux = new TAuxParam3D(1, 0, 0, 0, &RootSpace, NULL, NULL, 
+		FineAux = new TAuxParam3D(1, 0, 0, 0, (const TFESpace3D**)&RootSpace, NULL, NULL, 
 					  NULL, NULL, 0, NULL);
 		RootFct->GetErrors(Exact, N_Derivatives, NeededDerivatives,
 				   N_Errors, ErrorMeth, 
-				   Coeff, FineAux, 1, &RootSpace, LocError);
+				   Coeff, FineAux, 1, (const TFESpace3D**)&RootSpace, LocError);
 		delete FineAux;
 
 		FineColls[0] = LocalColl;
@@ -579,13 +579,13 @@ void TFEFunction3D::GetErrorsOPTPDE(DoubleFunct3D *Exact, int N_Derivatives,
 			      int N_Errors, ErrorMethod3D *ErrorMeth, 
 			      CoeffFct3D *Coeff, 
 			      TAuxParam3D *Aux,
-			      int n_fespaces, TFESpace3D **fespaces,
+			      int n_fespaces, const TFESpace3D **fespaces,
 			      double radius, double upper, double lower, double *errors)
 {
 	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs3D], *N_BaseFunct;
-	TFESpace3D *fespace;
+	const TFESpace3D *fespace;
 	FE3D LocalUsedElements[N_FEs3D], CurrentElement;
 	BaseFunct3D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
@@ -968,13 +968,13 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                               int N_Errors, ErrorMethod3D *ErrorMeth, 
                               CoeffFct3D *Coeff, 
                               TAuxParam3D *Aux,
-                              int n_fespaces, TFESpace3D **fespaces,
+                              int n_fespaces, const TFESpace3D **fespaces,
                               double *errors, double *cell_parameters)
 {
   int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_;
   int Used[N_FEs3D], *N_BaseFunct;
-  TFESpace3D *fespace;
+  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
@@ -2458,10 +2458,12 @@ void TFEFunction3D::PrintMinMax()
   double min,max;
   this->MinMax(min,max);
   if( min<=max)
-    {  OutPut(Name << " min " << min << ", max " << max << endl); }
+  {
+    Output::print(Name, " min ", min, ", max ", max);
+  }
   else
-    OutPut("WARNING: TFEFunction3D::MinMax was not successful for "
-           << Name << "!\n"); 
+    Output::print("WARNING: TFEFunction3D::MinMax was not successful for ",
+                  Name); 
 }
 
 

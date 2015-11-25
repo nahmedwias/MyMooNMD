@@ -96,30 +96,156 @@ class TDiscreteForm3D
     /** destructor */
     ~TDiscreteForm3D();
 
-    /** return name */
-    char *GetName()
-    { return Name; }
-
-    /** return description */
-    char *GetDescription()
-    { return Description; }
-
     /** return local stiffness matrix */
     void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
                         double hK, double *X, double *Y, double *Z,
-                        int *N_BaseFuncts, BaseFunct3D *BaseFuncts, 
+                        int *N_BaseFuncts, BaseFunct3D *BaseFuncts,
                         double **Parameters, double **AuxArray,
                         TBaseCell *Cell,
                         int N_Matrices, int N_Rhs,
                         double ***LocMatrix, double **LocRhs);
 
+    //For backwards compatibility: getters which do not follow naming conventions.
+    /** return name */
+    [[deprecated]] char *GetName()
+    { return Name; }
+
+    /** return description */
+    [[deprecated]] char *GetDescription()
+    { return Description; }
+
     /** return array Needs2ndDerivatives */
-    bool *GetNeeds2ndDerivatives()
+    [[deprecated]] bool *GetNeeds2ndDerivatives()
     { return Needs2ndDerivatives; };
 
     /** function for calculating the coefficients */
-    CoeffFct3D *GetCoeffFct()
+    [[deprecated]] CoeffFct3D *GetCoeffFct()
     { return Coeffs; }
+
+    //Getter methods.
+
+	double*** getAllOrigValues() const {
+		return AllOrigValues;
+	}
+
+	AssembleFct3D* getAssemble() const {
+		return Assemble;
+	}
+
+	AssembleFctParam3D* getAssembleParam() const {
+		return AssembleParam;
+	}
+
+	CoeffFct3D* getCoeffs() const {
+		return Coeffs;
+	}
+
+	int* getColumnSpace() const {
+		return ColumnSpace;
+	}
+
+    /** return the index of the column space of the i-th matrix */
+    int colSpaceOfMat(int i) const
+    {
+    	if (i >= N_Matrices)
+    	{
+    		ErrMsg("Array out of bound: i >= N_Matrices.");
+    	}
+    	return ColumnSpace[i];
+    }
+
+	MultiIndex3D* getDerivatives() const {
+		return Derivatives;
+	}
+
+    MultiIndex3D getDerivative(int i) const
+    {
+    	if (i >= N_Terms)
+    	{
+    		ErrMsg("Array out of bound: i >= N_Terms.");
+    	}
+    	return Derivatives[i];
+    }
+
+
+
+	char* getDescription() const {
+		return Description;
+	}
+
+	int* getFeSpaceNumber() const {
+		return FESpaceNumber;
+	}
+
+    int getFeSpaceNumber(int i) const
+    {
+    	if (i >= N_Terms)
+    	{
+    		ErrMsg("Array out of bound: i >= N_Terms.");
+    	}
+    	return this->FESpaceNumber[i];
+    }
+
+	ManipulateFct3D* getManipulate() const {
+		return Manipulate;
+	}
+
+	int getNMatrices() const {
+		return N_Matrices;
+	}
+
+	int getNRhs() const {
+		return N_Rhs;
+	}
+
+	int getNSpaces() const {
+		return N_Spaces;
+	}
+
+	int getNTerms() const {
+		return N_Terms;
+	}
+
+	char* getName() const {
+		return Name;
+	}
+
+	bool* getNeeds2ndDerivatives() const {
+		return Needs2ndDerivatives;
+	}
+
+	double** getOrigValues() const {
+		return OrigValues;
+	}
+
+	int* getRhsSpace() const {
+		return RhsSpace;
+	}
+
+    int getRhsSpace(int i) const
+    {
+    	if (i >= N_Rhs)
+    	{
+    		ErrMsg("Array out of bound: i >= N_Rhs.");
+    	}
+    	return RhsSpace[i];
+    }
+
+	int* getRowSpace() const {
+		return RowSpace;
+	}
+
+    /** return the index of the row space of the i-th matrix */
+    int rowSpaceOfMat(int i) const
+    {
+    	if (i >= N_Matrices)
+    	{
+    		ErrMsg("Array out of bound: i >= N_Matrices.");
+    	}
+    	return RowSpace[i];
+    }
+
+
 };
 
 /******************************************************************************/

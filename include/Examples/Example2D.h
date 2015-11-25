@@ -13,12 +13,14 @@
 * 
 * @author    Ulrich Wilbrandt, 
 * @date      13.03.15
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 #ifndef __EXAMPLE2D__
 #define __EXAMPLE2D__
 
-#include <MooNMD_Io.h>
 #include <Constants.h>
 #include <vector>
 
@@ -44,8 +46,6 @@ class Example2D
               CoeffFct2D *coeffs,
               std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
 
-    ~Example2D();
-
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;
     /* functions representing the boundary conditions */
@@ -60,20 +60,39 @@ class Example2D
     
     //void *example_info();
 
-    /** getters */
+    //Declaration of special member functions - rule of zero
+
+    //! Default copy constructor. Performs deep copy.
+    Example2D(const Example2D&) = default;
+
+    //! Default move constructor.
+    Example2D(Example2D&&) = default;
+
+    //! Default copy assignment operator. Performs deep copy.
+    Example2D& operator=(const Example2D&) = default;
+
+    //! Default move assignment operator
+    Example2D& operator=(Example2D&&) = default;
+
+    //! Default destructor.
+    ~Example2D() = default;
+
+
+    // Getter functions
+
     const std::vector <DoubleFunct2D*> & get_exact() const 
     { return exact_solution; }
 
     DoubleFunct2D* get_exact(unsigned int i) const
     { return exact_solution.at(i); }
 
-    const BoundCondFunct2D* const* get_bc() const
+    BoundCondFunct2D * const * get_bc() const
     { return &boundary_conditions[0]; }
 
     BoundCondFunct2D* get_bc(unsigned int i) const
     { return boundary_conditions.at(i); }
 
-    const BoundValueFunct2D * const * get_bd() const
+    BoundValueFunct2D * const * get_bd() const
     { return &boundary_data[0]; }
 
     BoundValueFunct2D* get_bd(unsigned int i) const

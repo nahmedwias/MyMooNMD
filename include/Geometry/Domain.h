@@ -114,9 +114,21 @@ class TDomain
 #endif
 
   public:
-    // Constructors
+    /**
+     * @brief Default constructor.
+     * Does only set RefLevel (refinement level) to 0.
+     */
     TDomain();
 
+    /**
+     * @brief Constructor. Reads in some data.
+     * @param ParamFile Path to a ParMooN parameter input textfile.
+     *
+     * Invokes a read-in function for the parameter file and the domain
+     * description file afterwards.
+     *
+     * TODO This is messy in will be tidied up in the near future.
+     */
     TDomain(char *ParamFile);
     
     // Methods
@@ -144,7 +156,16 @@ class TDomain
 
     /** @brief read parameter file */
     int ReadParam(char *ParamFile);
-    /** @brief read boundary parameterization */
+    /** @brief Reads in boundary parameterization (What's the name
+     * of the file format??)
+     *
+     * @param[in] File path to the boundary description file to be read in.
+     *
+     * @param[in,out] Flag Used in 3D only, set to 1 if a boundary component
+     * of type TBdWall has to be constructed. Otherwise set to 0.
+     *
+     * @return Integer O on success, other numbers otherwise.
+     */
     int ReadBdParam(char *ParamFile, int &Flag);
     /** @brief read mapping and mortar information */
     int ReadMapFile(char *MapFile, TDatabase *database);
@@ -224,7 +245,39 @@ class TDomain
                            int N_Layers, double *Lambda);
     #endif
 
-    /** @brief Init process for current domain */
+    /**
+      * @brief Chooses in what way to construct the domain's geometry
+      * and calls the corresponding method.
+      *
+      * The strings (or rather: char arrays) handed over to this function
+      * determine how the domain description and the initial mesh are constructed.
+      * The method itself does non of the initializing work but invokes those
+      * functions which do.
+      *
+      * @param[in] PRM The description of the domain boundaries. Possibilities are
+      *
+      * "Default_UnitSquare" - Default domain boundary description.
+      *
+      * If not this and not NULL, PRM gets handed over to TDomain::ReadBdParam().
+      * See documentation there.
+      *
+      *	@param[in] GEO The description of the initial mesh. Possibilities are
+      *	"InitGrid" - Grid Generator. Call TDomain::GenInitGrid() (creates initial grid with TRIANGLE)
+      * "TwoTriangles" - Default mesh. Call TDomain::TwoTriangles.
+      * "TwoTrianglesRef" - Default mesh. Call TDomain::TwoTrianglesRef.
+      * "UnitSquare" - Default mesh. ...
+      * "UnitSquareRef" - Default mesh. ...
+      * "SquareInSquare" - Default mesh. ...
+      * "SquareInSquareRef" - Default mesh. ...
+      * "PeriodicSquares" - Default mesh. ...
+      * "PeriodicSquaresLarge" - Default mesh. ...
+      * "PeriodicTrianglesLarge" - Default mesh. ...
+      * "PeriodicRectangle_2_4" - Default mesh. ...
+      *
+      * If none of these, the string is considered to be the path to a .GEO
+      * file and thus is handed over to TDomain::ReadGeo().
+      *
+      */
     void Init(char *PRM, char *GEO);
 
     /** @brief write domain boundary  into a postscript file */
@@ -287,8 +340,12 @@ class TDomain
     TCollection *GetCollection(Iterators it, int level, int ID) const;
 
 #ifdef  _MPI 
-    /** @brief produce a own collection with all cells returned by iterator it */
-    TCollection *GetOwnCollection(Iterators it, int level, int ID);
+    /** @brief produce a own collection with all cells returned by iterator it
+     *
+     * CB Produces TCollection of those cells whose flag "SubDomainNumber"
+     * equals ID, I think this is meant to be the rank of this process (TODO CB Change variable name ID to rank)
+     * */
+    TCollection *GetOwnCollection(Iterators it, int level, int ID) const;
 #endif
 
     /** @brief produce a collection with all cells in the finest grid, sort 
@@ -359,6 +416,15 @@ class TDomain
       void TestTriaConf2();
       void CheckCells();
 
+      /**
+       * @brief Initialize the domain boundary as if data/UnitSquare.PRM
+       * would have been read in as .PRM file.
+       *
+       * This is useful for testing purposes, when the program must be
+       * independent of the path from working directory to "data" directory.
+       */
+      void initializeDefaultUnitSquareBdry();
+
     #else
       void TestGrid3D();
       void SetBoundBox(double boundx, double boundy, double boundz);
@@ -398,6 +464,10 @@ class TDomain
 //      int Tetgen(const char*);
 
      /** @brief generate edge info in 3D mesh **/
+     // TODO CB Add documentation. This method does mark certain Vertices as boundary vertices
+     // (TVertex::SetAsBoundVertex(...) ) and creates edge objects, pointers to which are then
+     // stored as members of certain mesh cells (TBaseCell::SetEdge(...)).
+     // Does work only on currently finest level.
      int GenerateEdgeInfo();
 
 #endif

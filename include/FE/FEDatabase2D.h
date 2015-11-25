@@ -11,22 +11,13 @@
 #ifndef __FEDATABASE2D__
 #define __FEDATABASE2D__
 
-#include <Constants.h>
-#include <Enumerations.h>
-
-#include <BaseFunct1D.h>
-#include <FEDesc1D.h>
 #include <FE1D.h>
 
-#include <BaseFunct2D.h>
-#include <FEDesc2D.h>
 #include <FE2D.h>
-#include <FE2DMapper.h>
 #include <FE2DMapper1Reg.h>
 #include <HNDesc.h>
 #include <RefTrans2D.h>
 
-#include <QuadFormula1D.h>
 #include <QuadFormulaQuad.h>
 #include <QuadFormulaTria.h>
 

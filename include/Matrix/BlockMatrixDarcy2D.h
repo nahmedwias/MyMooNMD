@@ -32,12 +32,12 @@ class BlockMatrixDarcy2D : public BlockMatrix
   protected:
     
     /** @brief Boundary value */ 
-    std::array<const BoundValueFunct2D*, 2> boundary_values;
+    std::array<BoundValueFunct2D * const, 2> boundary_values;
     
   public:
     /** constructor */
      BlockMatrixDarcy2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                        const BoundValueFunct2D*const* BoundValue);
+                        BoundValueFunct2D * const * const BoundValue);
     
     /** destrcutor */
     ~BlockMatrixDarcy2D();
@@ -148,11 +148,11 @@ class BlockMatrixDarcy2D : public BlockMatrix
     
     /** @brief return the finite element space for the velocity */
     const TFESpace2D * get_velocity_space() const
-    { return this->get_A_block()->GetFESpace(); }
+    { return this->get_A_block()->GetFESpace2D(); }
     
     /** @brief return the finite element space for the pressure */
     const TFESpace2D * get_pressure_space() const
-    { return this->get_C_block()->GetFESpace(); }
+    { return this->get_C_block()->GetFESpace2D(); }
 };
 
 #endif // __SYSTEMMATDARCY2D__

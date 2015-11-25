@@ -6,7 +6,7 @@
 #include <JointEqN.h>
 #include <PeriodicJoint.h>
 #include <MacroCell.h>
-
+#include <BdLine.h>
 #ifndef __3D__
   #include <BoundEdge.h>
 #else
@@ -1466,6 +1466,71 @@ void TDomain::Rectangular(int n, int m)
       else
         MCell->SetSubGridID(1);
     }
+}
+
+void TDomain::initializeDefaultUnitSquareBdry()
+{
+  // The implementation of this method was gained by observing
+  // how a call to TDomain::ReadBdParam(...) with UnitSquare.PRM as input
+  // file changes the state of the TDomain object.
+  OutPut("Loading default domain description: Default_UnitSquare." << endl);
+
+  TBoundComp2D *BdComp;
+
+  // determine dimensions for creating arrays
+
+  // set the number of boundaries (inner and outer) of the domain
+  N_BoundParts = 1;
+
+  BdParts = new TBoundPart*[N_BoundParts];
+  Interfaces = new int[N_BoundParts];
+  N_BoundComps = 0;
+  // StartBdCompID: index in the bdpart list where the new BdPart starts
+  StartBdCompID = new int[N_BoundParts + 1];
+  StartBdCompID[0] = 0; // set the first to 0
+
+  size_t CurrentBdPart = 1;
+  Interfaces[0] = CurrentBdPart;
+  size_t N_BdComp = 4;
+
+  BdParts[0] = new TBoundPart(N_BdComp);
+  N_BoundComps += N_BdComp;
+
+  SetStartBdCompID(N_BoundComps, 1);
+
+  //boundary component creation loop
+  size_t CompID = 0;
+  // first
+  BdComp = new TBdLine(CompID++);
+  BdParts[0]->SetBdComp(0, BdComp);
+
+  //second
+  BdComp = new TBdLine(CompID++);
+  BdParts[0]->SetBdComp(1, BdComp);
+
+  //third
+  BdComp = new TBdLine(CompID++);
+  BdParts[0]->SetBdComp(2, BdComp);
+
+  //fourth
+  BdComp = new TBdLine(CompID++);
+  BdParts[0]->SetBdComp(3, BdComp);
+
+  //boundary component read in loop
+  //first
+  ((TBdLine*)BdParts[0]->GetBdComp(0))->SetParams(0,0,1,0);
+  //second
+  ((TBdLine*)BdParts[0]->GetBdComp(1))->SetParams(1,0,0,1);
+  //third
+  ((TBdLine*)BdParts[0]->GetBdComp(2))->SetParams(1,1,-1,0);
+  //fourth
+  ((TBdLine*)BdParts[0]->GetBdComp(3))->SetParams(0,1,0,-1);
+
+  N_Holes = 0;
+  PointInHole = NULL;
+  N_Regions = 0;
+  PointInRegion = NULL;
+
 }
 
 #else

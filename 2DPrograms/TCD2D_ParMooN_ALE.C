@@ -13,8 +13,6 @@
 #include <SystemTCD2D_ALE.h>
 #include <FEDatabase2D.h>
 #include <FESpace2D.h>
-#include <SquareStructure2D.h>
-#include <Structure2D.h>
 #include <QuadAffin.h>
 #include <DirectSolver.h>
 #include <Assemble2D.h>

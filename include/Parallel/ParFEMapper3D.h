@@ -1,14 +1,20 @@
-// =======================================================================
-// @(#)ParFEMapper3D.h
-//
-// Class:      TParFEMapper3D
-// Purpose:    Class containing all info needed for communication between subdomains
-//
-// Author:     Sashikumaar Ganesan (24.04.15)
-//
-// History:    Start of implementation 24.04.15 (Sashikumaar Ganesan)
-//
-// ======================================================================= 
+/** ***************************************************************************
+ *
+ * @name       TParFEMapper3D
+ * @brief      Class containing all info needed for communication between subdomains.
+ *
+ *             Objects of this type are set up after the domain is split, so
+ *             there exists a particular one in each process. The data members
+ *             refer to the data of the processes' Domain and FESpace.
+ *             The class holds the information which was formerly stored in
+ *             TParVector3D.
+ *
+ * @author     Sashikumaar Ganesan
+ * @date       2015/04/24
+ *
+ * @ruleof0
+ *
+ ******************************************************************************/
 
 #ifdef _MPI
 
@@ -18,33 +24,43 @@
 #include "mpi.h"
 
 #include <FESpace3D.h>
-#include <SquareStructure.h>
-#include <SquareStructure3D.h>
+#include <Structure.h>
 
 class TParFEMapper3D
 {
   protected:
-    /** MPI_Comm for which the fespace communications are needed */
+    //! The used MPI communicator.
     MPI_Comm Comm;
      
-    /** Number of dimensions 2d/3d **/
+    /** Number of spatial dimensions. Put it to 3, since this is TParFEMapper3D.
+     * @note So far parallelism is only implemented for 3d.
+     */
     int N_Dim;
     
+    //! Number of degrees of freedom in the process.
     int N_Dof;
     
-    /** row ptr and col ptr of A aatrix**/
-    int *RowPtr, *KCol;
+    //! Row Pointer of the (TStructure of the) TMatrix the mapper belongs to.
+    int* RowPtr;
+
+    //! KCol Pointer of the (TStructure of the) TMatrix the mapper belongs to.
+    int* KCol;
     
-    /** fespace for which the communications are needed */
+    //! The underlying fe space for which the communications are needed.
     TFESpace3D *FESpace;
     
-    /**maximum number(possible) of subdomains among all dofs */
+    /** Global (over all processes) maximum possible number of subdomains per dof.
+     * @note The number should be made known to the FESpace before initializing the ParFEMapper.
+     */
     int MaxSubDomainPerDof;
     
     /** array containing the master of the dofs **/ 
-    int *Master, *OwnDofs;
+    int *Master;
+    int* OwnDofs;
     
-    /**array containing the dof type**/
+    /** An array which contains chars for the type of the dof. This is internally used
+     * when constructing the dof map, and the meaning of the stored chars changes between program parts.
+     **/
     char *DofMarker;
     
     /**array which carries info across procs**/
@@ -56,6 +72,10 @@ class TParFEMapper3D
     /** info of number of dofs to be send/recv from other procs**/
     int *sdispl, *rdispl;
     
+    /* The following data members have been added when implementing the master/slave/halo
+     * mapping strategy and are used in there.
+     */
+
     int N_InterfaceM, N_InterfaceS, N_Halo1, N_Halo2, N_Dept1, N_Dept2;
     
     int N_Slave, N_Halo, N_Master, N_Dept, N_Int, N_OwnDof;
@@ -75,16 +95,31 @@ class TParFEMapper3D
     int N_CMaster, N_CDept1, N_CDept2, N_CInt, *ptrCMaster, *ptrCDept1, *ptrCDept2, *ptrCInt;
      
   public:
+    /** Default constructor.
+     *
+     * This is intended to be used only when default initializing ParFEMapper
+     * as a class member. It sets a lot of zeroes and allocates zero/small arrays -
+     * in order for the Destructor not to throw when called upon a default constructed
+     * object.
+     *
+     * @note Try not to call any methods on a default constructed object,
+     * because it holds nullptrs to FESpace, RowPtr, KCol.
+     *
+     */
+    TParFEMapper3D();
+
+    /**
+     * The standard constructor. Idea: Add a constructor which takes a TStructure/TMatrix?
+     * @param[in]
+     * @param[in] fespace the FE space the dofs belong to.
+     * @param[in] rowptr The rowptr of the TMatrix/TStructure this belongs to.
+     * @param[in] kcol The kcol pointer of the TMatrix/TStructure this belongs to.
+     */
     TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol);
+
     
-    ~TParFEMapper3D();
-    
-    void ConstructDofMap_Master_Halo();		//MapperType 1
-    
-    void ConstructDofMap();			//MapperType 2
-    
-    int find_min(int *arr, int N, char *temp_arr);
-    
+    //! A getter method which gives all information needed by the ParFECommunicator.
+    //! All parameters are out-parameters.
     void GetCommInfo(int &n_Dim, int &n_Dof,
 		     int &n_SendDof, int &n_SendDofMS, int &n_SendDofH1, int &n_SendDofH2,
 		     double *&send_Info, double *&send_InfoMS, double *&send_InfoH1, double *&send_InfoH2,
@@ -95,7 +130,7 @@ class TParFEMapper3D
 		     int *&Rdispl, int *&RdisplMS, int *&RdisplH1, int *&RdisplH2,
 		     int *&dofSend, int *&dofSendMS, int *&dofSendH1, int *&dofSendH2,
 		     int *&dofRecv, int *&dofRecvMS, int *&dofRecvH1, int *&dofRecvH2,
-		     int &n_Slave, int &n_InterfaceS, int &n_Halo1, int &n_Halo2)
+		     int &n_Slave, int &n_InterfaceS, int &n_Halo1, int &n_Halo2) const
     {
       n_Dim        = N_Dim; 
       n_Dof        = N_Dof;
@@ -214,8 +249,65 @@ class TParFEMapper3D
     {return ptrCInt;}
     
 #endif
-  
+
+    //Special member functions. Rule of three (and a half: swap) applied.
+    /** All special member function rely on the switch TDatabase::ParamDB->MapperType
+     * to be the same at the time of a ParFEMapper object's creation/copying/moving/destruction.
+     * That switch decides, whether the map is constructed the old way (master-slave)
+     * or the new way (master-slave-halo).
+     * TODO This is a bit unsafe and could be changed.
+     * TODO Implement additional things for HYBRID case.
+     * TODO No move implemented, class will always copy instead. (Not performance critical)
+     * TODO These special member functions are untested and there is a chance that they fail.
+     */
+
+    //! Copy constructor. Performs deep copy of all owned members.
+    //! Does only shallow copy of: RowPtr, KCol, FESpace. Keep that in mind!
+    TParFEMapper3D(const TParFEMapper3D& other);
+
+    /** Swap function used for copy-and swap in copy assignment.
+     * @param[in,out] first The object to be swapped with second.
+     * @param[in,out] second The object to be swapped with first.
+     */
+    friend void swap(TParFEMapper3D& first, TParFEMapper3D& second);
+
+
+    /** Copy assignment operator. Uses copy and swap idiom.
+    * @note Note that the object to be copied is passed by value -
+    * so there is a call to the copy constructor, in the function
+    * body there happens a swap.
+    * Does only shallow copy of: RowPtr, KCol, FESpace. Keep that in mind!
+	*/
+    TParFEMapper3D& operator=(TParFEMapper3D other);
+
+    //! Destructor.
+    ~TParFEMapper3D();
+
+  protected:
+    /**
+     *  Allocates and fills the member Local2Global, which contains global identification
+     *	numbers for the dofs known to this process. Also fills (or determines) the already
+     *	allocated members
+     *		sdispl,	sdisplMS, sdisplH1, sdisplH2, rdispl, rdisplMS. rdisplH1, rdisplH2
+     *	and
+     *		N_DofSend, N_DofSendMS, N_DofSendH1, N_DofSendH2,
+     *		N_DofRecv, N_DofRecvMS, N_DofRecvH1, N_DofRecvH2.
+     *	The method is only called by the constructor.
+     *	@note The method deals with memory which is only allocated when the
+     *	master/slave/halo mapping concept is used.
+     */
     void Assign_GlobalDofNo();
+
+    //! Constructs the entire mapping between processes, using the master/slave/halo mapping concept.
+    //! Called in the constructor, if Database::ParamDB->MapperType is not 2.
+    void ConstructDofMap_Master_Halo();
+
+    //! Constructs the entire mapping between processes, using the master/slave mapping concept.
+    //! Called in the constructor, if Database::ParamDB->MapperType equals 2.
+    void ConstructDofMap();
+
+    int find_min(int *arr, int N, char *temp_arr);
+
 };
 
 #endif

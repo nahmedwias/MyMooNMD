@@ -42,7 +42,7 @@ class TMultiGrid3D
     TMGLevel3D *MultiGridLevels[MAXN_LEVELS];
 
     /** array of FE spaces */
-    TFESpace3D *FESpaces[MAXN_LEVELS];
+    const TFESpace3D *FESpaces[MAXN_LEVELS];
 
     /** array of function vectors on each level */
     double **FunctionVectors[MAXN_LEVELS];

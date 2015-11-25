@@ -10,7 +10,7 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SinCos1.h" << endl); 
+  Output::print<1>("Example: SinCos1.h");
   TDatabase::ParamDB->INTERNAL_STEADY_STATE_MATRICES_OR_RHS = 0;
 }
 // exact solution

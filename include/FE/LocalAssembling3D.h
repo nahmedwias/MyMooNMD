@@ -1,0 +1,185 @@
+/** =======================================================================
+ * @(#)LocalAssembling3D.h        09.06.2015
+ * 
+ * @Class:    LocalAssembling3D
+ * Purpose:   Assemble on one cell a couple of bilinear and linear forms. That
+ *            means the loop over all quadrature points is done within this 
+ *            class.
+ * 
+ *            Furthermore this class includes the computation of function values
+ *            at quadrature points, where the function is given by some finite
+ *            element function. 
+ * 
+ * @note This class replaces former TDiscreteForm3D and TAuxParam3D
+ * 
+ * @Author:      Naveed, Ulrich (09.06.2015)
+ * 
+ * History:     start of implementation 09.06.2015 (Naveed, Ulrich)
+ * 
+ * =======================================================================
+ */
+#ifndef __LOCAL_ASSEMBLING_3D__
+#define __LOCAL_ASSEMBLING_3D__
+
+#include <Enumerations.h>
+#include <Constants.h>
+#include <string>
+#include <vector>
+
+enum class LocalAssembling3D_type { CD3D, NSE3D_Linear, NSE3D_NonLinear
+};
+
+//Forward declarations
+class TFEFunction3D;
+class TAuxParam3D;
+class TDiscreteForm3D;
+
+/** a function from a finite element space */
+class LocalAssembling3D
+{
+  protected:
+    /** name */
+    std::string name;
+
+    /** @brief number of terms */
+    int N_Terms;
+
+    /** @brief number of involved spaces (typically one or two) */
+    int N_Spaces;
+
+    /** @brief for each space we store a bool indicatin if second derivatives 
+     *         are needed */
+    bool *Needs2ndDerivatives;
+
+    /** @brief multiindices for derivatives of ansatz and test functions 
+     * 
+     * This is an array of size N_Terms.
+     */
+    std::vector<MultiIndex3D> Derivatives;
+
+    
+     /** @brief for each term, there is one FESpace3D asociated with that term */
+    std::vector<int> FESpaceNumber;
+
+    /** @brief which FE space corresponds to each row */
+    std::vector<int> RowSpace;
+
+    /** @brief which FE space corresponds to each column */
+    std::vector<int> ColumnSpace;
+
+    /** @brief which FE space corresponds to each right-hand side */
+    std::vector<int> RhsSpace;
+
+    /** function for calculating the coefficients */
+    CoeffFct3D *Coeffs;
+
+    /** @brief function doing the real assembling using parameters from 
+     *         argument list */
+    AssembleFctParam3D *AssembleParam;
+
+    /** function for manipulating the coefficients */
+    ManipulateFct3D *Manipulate;
+
+    /** memory for storing the original value arrays */
+    double ***AllOrigValues;
+
+    /** memory for storing the original value arrays at one point */
+    double **OrigValues;
+    
+    int N_Matrices;
+    int N_Rhs;
+    
+    /** number of stored parameter functions (ParamFct) */
+    int N_ParamFct;
+    
+    /** array of stored parameter function */
+    std::vector<ParamFct*> ParameterFct;
+    
+    /** index of first parameter produced by parameter function i */
+    std::vector<int> BeginParameter;
+    
+    // number of parameters
+    int N_Parameters;
+    
+    /** number of FE values */
+    int N_FEValues;
+    
+    /** array of stored FEFunction3D */
+    TFEFunction3D **FEFunctions3D;
+        
+    /** index of FEFunction3D used for FE value i */
+    std::vector<int> FEValue_FctIndex;
+    
+     /** which multiindex is used for FE value i */
+    std::vector<MultiIndex3D> FEValue_MultiIndex;
+
+    /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
+     * set within this function. This function is called from the constructor 
+     * in case of Navier-Stokes problems. It only exists in order to not make 
+     * the constructor huge. 
+     * 
+     * Basically this function implements four nested switches (discretization 
+     * type, NSTYOE, Laplace type, nonlinear form type)
+     */
+    void set_parameters_for_nse(LocalAssembling3D_type type);
+    
+  public:
+    /** constructor */
+    LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
+                      CoeffFct3D *coeffs);
+    
+    /** @brief constructor for backward compatibility
+     * 
+     * This uses the deprecated classes TAuxParam3D and TDiscreteForm3D to 
+     * construct an object of this class.
+     */
+    LocalAssembling3D(TAuxParam3D& aux, TDiscreteForm3D& df);
+
+    /** destructor */
+    ~LocalAssembling3D();
+    
+    /** return local stiffness matrix */
+    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+                       double *X, double *Y, double *Z,
+                       int *N_BaseFuncts, BaseFunct3D *BaseFuncts, 
+                       double **Parameters, double **AuxArray,
+                       TBaseCell *Cell, int N_Matrices, int N_Rhs,
+                       double ***LocMatrix, double **LocRhs,
+                       double factor = 1.) const;
+    
+     /** return all parameters at all quadrature points */
+    void GetParameters(int n_points, TCollection *Coll,
+                       TBaseCell *cell, int cellnum,
+                       double *x, double *y, double *z,
+                       double **Parameters) const;
+
+    /** return name */
+    const std::string& get_name() const
+    { return name; }
+
+    /** return array Needs2ndDerivatives */
+    bool *GetNeeds2ndDerivatives() const
+    { return Needs2ndDerivatives; }
+
+    /** function for calculating the coefficients */
+    CoeffFct3D *GetCoeffFct() const
+    { return Coeffs; }
+    
+    /** return the index of the row space of the i-th matrix */
+    int rowSpaceOfMat(int i) const
+    { return RowSpace[i]; }
+    
+    /** return the index of the column space of the i-th matrix */
+    int colSpaceOfMat(int i) const
+    { return ColumnSpace[i]; }
+    
+    int GetN_ParamFct() const
+    { return N_ParamFct; }
+    
+    int GetN_Parameters() const
+    { return N_Parameters; }
+    
+    TFEFunction3D* get_fe_function(int i) const
+    { return FEFunctions3D[i]; }
+};
+#endif
