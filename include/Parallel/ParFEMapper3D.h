@@ -32,8 +32,10 @@ class TParFEMapper3D
     //! The used MPI communicator.
     MPI_Comm Comm;
      
-    /** Number of spatial dimensions. Put it to 3, since this is TParFEMapper3D.
-     * @note So far parallelism is only implemented for 3d.
+    /**
+     * Spatial dimension of the  range of the FE functions the Mapper belongs to.
+     *
+     * Put it to 1 for convection-diffusion, 3 for velocity in NSE, 1 for pressure in NSE.
      */
     int N_Dim;
     

@@ -10,17 +10,54 @@
 # list of tests called 'parmoon_tests'. The check target is then a custom 
 # target which calls ctest and depends on all the executables.
 # See also https://cmake.org/Wiki/CMakeEmulateMakeCheck
+#
+# Currently "make check" runs a different set of tests, depending
+# on the current parallel type. Make sure all do run.  
 
-#matrix test
-add_executable(ParMooN_test_matrix matrix_test.c++)
-target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE}  ${_EXTERN_LIBRARIES})
-add_test(matrix ParMooN_test_matrix)
-list(APPEND parmoon_tests ParMooN_test_matrix)
+if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 
-#cd2d test
-add_executable(ParMooN_test_cd2d cd2d_test.c++)
-target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-add_test(cd2d ParMooN_test_cd2d)
-list(APPEND parmoon_tests ParMooN_test_cd2d)
+	###################################################
+	####### Tests for parallel type: SEQUENTIAL #######
+	###################################################
+	
+	#matrix test
+	add_executable(ParMooN_test_matrix matrix_test.c++)
+	target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+	add_test(matrix ParMooN_test_matrix)
+	list(APPEND parmoon_tests ParMooN_test_matrix)
+	
+	#cd2d test
+	add_executable(ParMooN_test_cd2d cd2d_test.c++)
+	target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+	add_test(cd2d ParMooN_test_cd2d)
+	list(APPEND parmoon_tests ParMooN_test_cd2d)
+	
+	#cd3d test sequential
+	add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
+	target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+	add_test(cd3d_seq ParMooN_test_cd3d_seq)
+	list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
+	
+elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
 
+	###################################################
+	####### Tests for parallel type: MPI #######
+	###################################################
+	
+	#cd3d test mpi (run with 4 processes)
+	add_executable(ParMooN_test_cd3d_mpi cd3d_test.c++)
+	target_link_libraries(ParMooN_test_cd3d_mpi parmoon_3d_MPI ${_EXTERN_LIBRARIES})
+	add_test(NAME cd3d_mpi COMMAND mpirun -n 4 ParMooN_test_cd3d_mpi )
+	list(APPEND parmoon_tests ParMooN_test_cd3d_mpi)
+	
+endif(${PARMOON_PARALLEL_TYPE} EQUAL SEQUENTIAL)
+	
+####################################################
+#                THE CHECK TARGET                  #
+#   making this target results in building and     #
+#   running all tests corresponding to the current #
+#   parallel type. Use it excessively!             #
+####################################################
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})
+
+

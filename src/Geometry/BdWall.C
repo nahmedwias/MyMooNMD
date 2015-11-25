@@ -91,7 +91,7 @@ int TBdWall::GetTSofXYZ(double X, double Y, double Z,
   return 0;
 }
 
-int TBdWall::ReadIn(std::ifstream &dat)
+int TBdWall::ReadIn(std::istream &dat)
 {
   return BdComp2D->ReadIn(dat);
 }

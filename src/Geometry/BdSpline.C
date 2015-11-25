@@ -65,7 +65,7 @@ int TBdSpline::GetTofXY(double X, double Y, double &T)
   return -1;
 }
 
-int TBdSpline::ReadIn(std::ifstream &dat)
+int TBdSpline::ReadIn(std::istream &dat)
 {
   char line[100];
   int k, N_Params;

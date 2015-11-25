@@ -40,91 +40,91 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
-	/** Program 1
-	 *  This program tests direct solve with galerkin discretization and
-	 *  fem-tvd-type algebraic flux correction.
-	 */
-	{
+  /** Program 1
+   *  This program tests direct solve with galerkin discretization and
+   *  fem-tvd-type algebraic flux correction.
+   */
+  {
 
-	  //  declaration of databases
-	  TDatabase Database;
-	  TFEDatabase2D FEDatabase;
+    //  declaration of databases
+    TDatabase Database;
+    TFEDatabase2D FEDatabase;
 
-	  // default construct a domain object
-	  TDomain domain;
+    // default construct a domain object
+    TDomain domain;
 
-	  // Set Database values (this is what is usually done by the input-file)
-      TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
-      TDatabase::ParamDB->EXAMPLE = 3; //Sharp Boundary Layer Example
-      TDatabase::ParamDB->UNIFORM_STEPS = 1;
-      TDatabase::ParamDB->LEVELS = 2;
-      TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
-      TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
-      TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc
-      TDatabase::ParamDB->MEASURE_ERRORS = 1;
-	  TDatabase::ParamDB->DELTA0 = 0.3;
-	  TDatabase::ParamDB->DELTA1 = 0.;
-	  TDatabase::ParamDB->SDFEM_TYPE = 0;
-	  TDatabase::ParamDB->LP_FULL_GRADIENT = 1;
-	  TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
-	  TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
-	  TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
-	  TDatabase::ParamDB->SC_VERBOSE = 0; // supress solver output
-	  TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
+    // Set Database values (this is what is usually done by the input-file)
+    TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
+    TDatabase::ParamDB->EXAMPLE = 3; //Sharp Boundary Layer Example
+    TDatabase::ParamDB->UNIFORM_STEPS = 1;
+    TDatabase::ParamDB->LEVELS = 2;
+    TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
+    TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
+    TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc
+    TDatabase::ParamDB->MEASURE_ERRORS = 1;
+    TDatabase::ParamDB->DELTA0 = 0.3;
+    TDatabase::ParamDB->DELTA1 = 0.;
+    TDatabase::ParamDB->SDFEM_TYPE = 0;
+    TDatabase::ParamDB->LP_FULL_GRADIENT = 1;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
+    TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
+    TDatabase::ParamDB->SC_VERBOSE = 0; // supress solver output
+    TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
 
 
-	  // the domain is initialised with default description and default
-	  // initial mesh
+    // the domain is initialised with default description and default
+    // initial mesh
 	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
-	  // refine grid up to the coarsest level
-	  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
-	  {
-		domain.RegRefineAll();
-	  }
+    // refine grid up to the coarsest level
+    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+    {
+      domain.RegRefineAll();
+    }
 
-	  //Here the actual computations take place
-	  //=========================================================================
-	  CD2D cd2d(domain);
-	  cd2d.assemble();
-	  cd2d.solve();
-	   //=========================================================================
+    //Here the actual computations take place
+    //=========================================================================
+    CD2D cd2d(domain);
+    cd2d.assemble();
+    cd2d.solve();
+    //=========================================================================
 
-	  // instead of calling CD2D::output() - compare errors against reference errors
-	  // TODO (when there is more than one programming running, this will be encapsulated
-	  // and out-sourced)
+    // instead of calling CD2D::output() - compare errors against reference errors
+    // TODO (when there is more than one programming running, this will be encapsulated
+    // and out-sourced)
 
-	  double errors[4];
-	  TAuxParam2D aux;
-	  MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
-	  const TFEFunction2D& function = cd2d.get_function();
-	  const TFESpace2D* space = function.GetFESpace2D();
+    double errors[4];
+    TAuxParam2D aux;
+    MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
+    const TFEFunction2D& function = cd2d.get_function();
+    const TFESpace2D* space = function.GetFESpace2D();
 
-	  function.GetErrors(cd2d.get_example().get_exact(0), 3, AllDerivatives, 4,
-	                     SDFEMErrors, cd2d.get_example().get_coeffs(), &aux, 1,
-	                     &space, errors);
-	  // check L2 error
-	  if( errors[0] - 0.500273 > 1e-6 )
-	  {
-		ErrThrow("Program 1: L2 norm not correct.");
-	  }
-	  // check H1-semi error
-	  if( errors[1] - 1.90143 > 1e-5 )
-	  {
-		ErrThrow("Program 1: H1-semi norm not correct.");
-	  }
-	  // check SD error
-	  if( errors[2] - 0.275256 > 1e-6)
-	  {
-		ErrThrow("Program 1: SD norm not correct.");
-	  }
-	  // check L_inf error
-	  if( errors[3] - 0.999909 > 1e-6 )
-	  {
-		ErrThrow("Program 1: L_inf norm not correct.");
-	  }
+    function.GetErrors(cd2d.get_example().get_exact(0), 3, AllDerivatives, 4,
+                       SDFEMErrors, cd2d.get_example().get_coeffs(), &aux, 1,
+                       &space, errors);
+    // check L2 error
+    if( errors[0] - 0.500273 > 1e-6 )
+    {
+      ErrThrow("Program 1: L2 norm not correct.");
+    }
+    // check H1-semi error
+    if( errors[1] - 1.90143 > 1e-5 )
+    {
+      ErrThrow("Program 1: H1-semi norm not correct.");
+    }
+    // check SD error
+    if( errors[2] - 0.275256 > 1e-6)
+    {
+      ErrThrow("Program 1: SD norm not correct.");
+    }
+    // check L_inf error
+    if( errors[3] - 0.999909 > 1e-6 )
+    {
+      ErrThrow("Program 1: L_inf norm not correct.");
+    }
 
-  	} // end program 1
+  } // end program 1
 
-	return 0;
+  return 0;
 }

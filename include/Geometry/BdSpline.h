@@ -43,7 +43,7 @@ class TBdSpline : public TBoundComp2D
     virtual int GetTofXY(double X, double Y, double &T);
 
     /** read parameter from input file */
-    virtual int ReadIn(std::ifstream &dat);
+    virtual int ReadIn(std::istream &dat);
 
     /** get number of initial vertices on this component */
     virtual int GetN_InitVerts()

@@ -11,7 +11,6 @@
 #include <CD3D.h>
 #include <MeshPartition.h>
 
-
 #include <sys/stat.h>
 
 #ifdef _MPI
@@ -24,7 +23,8 @@ double timeC = 0;
 /**
  * @brief Get the current time, when profiling is activated.
  *
- * @return The current value of time as a float, when TDatabase::ParamDB->timeprofiling is true, 0 otherwise.
+ * @return The current value of time as a float, when
+ * TDatabase::ParamDB->timeprofiling is true, 0 otherwise.
  */
 double getTime()
 {
@@ -58,9 +58,6 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
   bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
-
-  //FYI
-  Output::print("Hello there. I am process ", mpiRank, " of ", mpiSize);
 #endif
 
   TFEDatabase3D feDatabase;
@@ -68,101 +65,85 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1]);
 
+  //do a makeshift parameter check
+  CD3D::checkParameters();
 
-  //set PROBLEM_TYPE to CD (corresponds to 1)
-  TDatabase::ParamDB->PROBLEM_TYPE = 1;
-
-  //TODO CB Write a method checking the parameter consistency
-  //(and taking care for setting Problem_type to 1).
-
-  //Write all Parameters to the OUTFILE for later reference
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+
   #ifdef _MPI
-	if(iAmOutRank) //Only one process should do that.
+  if(iAmOutRank) //Only one process should do that.
   #endif
-  Database.WriteParamDB(argv[0]);
+    Database.WriteParamDB(argv[0]);
 
   // Read in geometry and initialize the mesh. (See code of domain.Init
   // for usage of hard-coded example meshes)
-  domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
-  // Do initial grid refinement. //CB FIXME Figure out a good usage of control parameters UNIFORM_STEPS and LEVELS
+  // Do initial regular grid refinement.
   for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
   {
-	  domain.RegRefineAll(); //Regular refinement
+	  domain.RegRefineAll();
   }
 
   // Write grid into a postscript file
-  #ifdef _MPI
-  if(iAmOutRank && TDatabase::ParamDB->WRITE_PS) //Only one process should do that.
-  {
-    domain.PS("Domain.ps", It_Finest, 0);
-  }
-  #else
   if(TDatabase::ParamDB->WRITE_PS)
   {
-    domain.PS("Domain.ps", It_Finest, 0);
+#ifdef _MPI
+    if(iAmOutRank)
+#endif
+      domain.PS("Domain.ps", It_Finest, 0);
   }
-  #endif
+
 
   #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
-  domain.GenerateEdgeInfo(); //analyse interfaces and create edge objects
-  int maxCellsPerVertex;
-  int t1 = MPI_Wtime(); //measure time
-  Partition_Mesh3D(comm, &domain, maxCellsPerVertex); //do the actual partitioning
-  int t2 = MPI_Wtime(); //measure time
-  domain.GenerateEdgeInfo(); //domain has been reduced, thus generate edge info anew.
+  //analyse interfaces and create edge objects
+  domain.GenerateEdgeInfo();
+  int maxCellsPerVertex; //out parameter of mesh partitioning
 
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize); //largest possible number of processes which share one dof.
+  Partition_Mesh3D(comm, &domain, maxCellsPerVertex); //do the actual partitioning
+
+  //domain has been reduced, thus generate edge info anew.
+  domain.GenerateEdgeInfo();
+
+  //largest possible number of processes which share one dof
+  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
 
   if(iAmOutRank)
   {
-	  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
-	  Output::print("Time taken for Domain Decomposition is ", t2-t1);
 	  Output::print("MaxSubDomainPerDof: ", maxSubDomainPerDof);
   }
-
-  Output::print("Process ", mpiRank, ". N_Cells: ",
-                domain.GetCollection(It_Finest, 0)->GetN_Cells(),
-                ". N_OwnCells: ",
                 domain.GetCollection(It_Finest, 0)->GetN_OwnCells(),
                 ". N_HaloCells: ",
                 domain.GetCollection(It_Finest, 0)->GetN_HaloCells());
-
-  // FIXME CB Loop over levels and call to Domain_Crop similiar to below is only necessary when using multigrid.
-  //  for(int i=TDatabase::ParamDB->UNIFORM_STEPS;i<TDatabase::ParamDB->LEVELS;i++)
-  //  {
-  //    printf("************************************LEVEL %d****************************************\n",i);
-  //    domain.RegRefineAll();
-  //    domain.GenerateEdgeInfo();
-  //    Domain_Crop(Comm, &domain);
-  //  }
-  //    OutPut("Process " << rank << ". N_Cells: " << domain.GetCollection(It_Finest, 0)->GetN_Cells() <<
-  //    		". N_OwnCells: " << domain.GetCollection(It_Finest, 0)->GetN_OwnCells() <<
-  //			". N_HaloCells: " << domain.GetCollection(It_Finest, 0)->GetN_HaloCells() << endl);
   #endif
 
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
+  {
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  }
 
   // choose example according to the value of TDatabase::ParamDB->EXAMPLE and construct it
   Example_CD3D example;
 
-
+  // construct the cd3d problem object
 #ifdef _MPI
   CD3D cd3d(domain, example, maxSubDomainPerDof);
 #else
   CD3D cd3d(domain, example);
 #endif
+
+  //=========================================================================
   //Start the actual computations.
   //=========================================================================
 
+  cd3d.assemble(); // assemble matrix and rhs
 
-  cd3d.assemble();
-  cd3d.solve();
-  cd3d.output();
+  cd3d.solve();    // solve the system
+
+  cd3d.output();   // produce nice output
+
   //=========================================================================
 
   Output::close_file();
@@ -170,6 +151,7 @@ int main(int argc, char* argv[])
 #ifdef _MPI
   MPI_Finalize();
 #endif
+
   return 0;
 } // end main
 

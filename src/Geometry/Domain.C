@@ -62,20 +62,21 @@ extern "C"
 TDomain::TDomain()
 {
   RefLevel = 0;
+
+  //this should be done here for the moment, not in ReadParam!
+  TDatabase::SetDefaultParameters();
 }
 
 
 TDomain::TDomain(char *ParamFile)
 {
   RefLevel = 0;
-  char *PRM;
-  int Flag;
+
+  //this should be done here for the moment, not in ReadParam!
+  TDatabase::SetDefaultParameters();
   
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
-  
-  PRM = TDatabase::ParamDB->BNDFILE;
-  this->ReadBdParam(PRM, Flag);
     
 }
 
@@ -770,20 +771,34 @@ void TDomain::Init(char *PRM, char *GEO)
 {
   int Flag;
 
-  if(PRM)
+  if(PRM == nullptr || GEO == nullptr)
   {
-	if (!strcmp(PRM, "Default_UnitSquare"))
-	{//catch the only implemented default case - boundary of the unit square
-	  initializeDefaultUnitSquareBdry();
-	}
-	else
-	{
-	  // non-default: read in from file
-	  ReadBdParam(PRM, Flag);
-	}
-
+    ErrThrow("No boundary description or initial mesh specified");
   }
 
+  //start with treatment of the boundary description
+  if (!strcmp(PRM, "Default_UnitSquare"))
+  {//catch the only implemented default case - boundary of the unit square
+    initializeDefaultUnitSquareBdry();
+  }
+  else
+  {
+    // non-default: read in from file
+    //make an input file string from the file "PRM"
+    std::ifstream bdryStream(PRM);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open PRM file");
+    }
+
+    //do the actual read in
+    ReadBdParam(bdryStream, Flag);
+
+    //close the stream
+    bdryStream.close();
+  }
+
+  // continue with initial mesh
   if (!strcmp(GEO, "InitGrid"))
   {
     GenInitGrid();
@@ -830,15 +845,51 @@ void TDomain::Init(char *PRM, char *GEO)
     PeriodicRectangle_2_4();
   }
   else
-     ReadGeo(GEO);
+  {
+    // "GEO" interpreted as file path to GEO-file.
+    // check if it actually is an .xGEO-file
+    bool isxGEO = checkIfxGEO(GEO);
+
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open GEO file");
+    }
+
+    // and call the read-in method
+    ReadGeo(bdryStream,isxGEO);
+  }
 }
 #else // 3D
 void TDomain::Init(char *PRM, char *GEO)
 {
   int IsSandwich = 0;
 
-  if(PRM)
-  {  ReadBdParam(PRM, IsSandwich); }
+  if(PRM == nullptr || GEO == nullptr)
+  {
+    ErrThrow("No boundary description or initial mesh specified");
+  }
+
+  // start with read in of boundary description
+
+  if (!strcmp(PRM, "Default_UnitCube"))
+  {
+    // one implemented default case: unit cube
+    IsSandwich = initializeDefaultCubeBdry();
+  }
+  else
+  {
+    // "PRM" interpreted as file path to PRM-file.
+    // make an input file string from the file "PRM"
+    std::ifstream bdryStream(PRM);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open PRM file");
+    }
+    // otherwise: try to read in given .PRM file
+    ReadBdParam(bdryStream, IsSandwich);
+  }
 
   if(!IsSandwich)
   {
@@ -846,12 +897,34 @@ void TDomain::Init(char *PRM, char *GEO)
     {
       TestGrid3D();
     }
+    if (!strcmp(GEO, "Default_UnitCube_Geo"))
+    {
+      initializeDefaultCubeInitialMesh();
+    }
     else
-      ReadGeo(GEO);
+    {
+      // "GEO" interpreted as file path to GEO-file.
+      // check if it actually is an .xGEO-file
+      bool isxGEO = checkIfxGEO(GEO);
+      // make an input file string from the file "GEO"
+      std::ifstream bdryStream(GEO);
+      if (!bdryStream)
+      {
+        ErrThrow("cannot open GEO file");
+      }
+      ReadGeo( bdryStream, isxGEO );
+    }
   }
   else
   {
-    ReadSandwichGeo(GEO);
+    // make an input file string from the file "GEO"
+    std::ifstream bdryStream(GEO);
+    if (!bdryStream)
+    {
+      ErrThrow("cannot open GEO file");
+    }
+    // then read in sandwich geo.
+    ReadSandwichGeo(bdryStream);
   }
 }
 #endif // __2D__

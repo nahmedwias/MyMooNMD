@@ -60,6 +60,10 @@ class TFEFunction3D
     const TFESpace3D *GetFESpace3D()
     { return FESpace3D; }
 
+    /** return fe space */
+    const TFESpace3D *GetFESpace3D() const
+    { return FESpace3D; }
+
     /** return length */
     int GetLength()
     { return Length; }
@@ -75,7 +79,7 @@ class TFEFunction3D
                    int N_Errors, ErrorMethod3D *ErrorMeth, 
                    CoeffFct3D *Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
-                   double *errors);
+                   double *errors) const;
     
     void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
                                           ErrorMethod3D * const ErrMeth,

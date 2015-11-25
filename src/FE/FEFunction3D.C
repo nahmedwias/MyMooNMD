@@ -60,7 +60,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                               CoeffFct3D *Coeff, 
                               TAuxParam3D *Aux,
                               int n_fespaces, const TFESpace3D **fespaces,
-                              double *errors)
+                              double *errors) const
 {
   int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_;

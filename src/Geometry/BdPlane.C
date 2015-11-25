@@ -113,7 +113,7 @@ int TBdPlane::GetTSofXYZ(double X, double Y, double Z,
   return 0;
 }
 
-int TBdPlane::ReadIn(std::ifstream &dat)
+int TBdPlane::ReadIn(std::istream &dat)
 {
   char line[100];
 

@@ -19,7 +19,7 @@ TBdCylinder::TBdCylinder (int id) : TBoundComp3D(id)
 
 /** Methods **/
 
-int TBdCylinder::ReadIn(std::ifstream &dat)
+int TBdCylinder::ReadIn(std::istream &dat)
 {
   return 0;
 }

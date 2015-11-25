@@ -71,7 +71,7 @@ int TBdNoPRM::GetTSofXYZ(double X, double Y, double Z,
 }
 
 // no readin
-int TBdNoPRM::ReadIn(std::ifstream &dat)
+int TBdNoPRM::ReadIn(std::istream &dat)
 {
   return 0;
 }

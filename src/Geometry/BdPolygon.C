@@ -106,7 +106,7 @@ int TBdPolygon::GetTofXY(double X, double Y, double &T)
   return i;
 }
 
-int TBdPolygon::ReadIn(std::ifstream &dat)
+int TBdPolygon::ReadIn(std::istream &dat)
 {
   char line[100];
   int k;

@@ -34,7 +34,7 @@
   #include <BdNoPRM.h>
 #endif
 
-int TDomain::ReadGeo(char *GeoFile)
+int TDomain::ReadGeo(std::istream& dat, bool readXgeo)
 {
   char line[100];
   int i, j, N_Vertices, NVpF, NVE, NBCT;
@@ -47,27 +47,7 @@ int TDomain::ReadGeo(char *GeoFile)
 
   // physical references
   int *ELEMSREF;
-  int readXgeo = 0;
-  // check if input file is an extended geo file (.xGEO)
-  int nn=0;
-  while (GeoFile[nn] != 0) {++nn;}
   
-  if (GeoFile[nn-4]=='x')
-  {
-    if(TDatabase::ParamDB->SC_VERBOSE>1)
-      cout << " *** reading xGEO file (with physical references) ***" << endl;
-    readXgeo = 1;
-  }
-
-  
-  std::ifstream dat(GeoFile);
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << GeoFile << "' for input" << endl;
-    OutPut("cannot open '" << GeoFile << "' for input" << endl);
-    exit(-1);
-  }
   dat.getline (line, 99);
   dat.getline (line, 99);
   
@@ -171,8 +151,6 @@ int TDomain::ReadGeo(char *GeoFile)
       InterfaceParam = NULL;
 
   #endif
-
-  dat.close();
 
   #ifdef __2D__
     MakeGrid(DCORVG, KVERT, KNPR, ELEMSREF, N_Vertices, NVE);
@@ -1000,7 +978,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 }
 
 #else
-int TDomain::ReadSandwichGeo(char *GeoFile)
+int TDomain::ReadSandwichGeo(std::istream& dat)
 {
   char line[100];
   int i, j, N_Vertices, NVpF, NVE, NBCT;
@@ -1010,14 +988,6 @@ int TDomain::ReadSandwichGeo(char *GeoFile)
   int N_Layers, grid_type;
 
   grid_type = TDatabase::ParamDB->GRID_TYPE;
-
-  std::ifstream dat(GeoFile);
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << GeoFile << "' for input" << endl;
-    exit(-1);
-  }
 
   dat.getline (line, 99);
   dat.getline (line, 99);
@@ -1051,8 +1021,6 @@ int TDomain::ReadSandwichGeo(char *GeoFile)
 
   for (i=0;i<N_Vertices;i++)
     dat >> KNPR[i];
-
-  dat.close();
 
   DriftX = TDatabase::ParamDB->DRIFT_X;
   DriftY = TDatabase::ParamDB->DRIFT_Y;
@@ -2889,4 +2857,30 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 }
 
 #endif // __2D__
+
+bool TDomain::checkIfxGEO(char* GEO)
+  {
+      bool isXgeo{false};
+      // check if input file is an extended geo file (.xGEO)
+      int nn=0;
+      while (GEO[nn] != 0)
+      {
+        ++nn;
+      }
+
+      //check if we found the correct place in the char arary
+      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
+      {
+        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
+            "filename ends on '.GEO' or '.xGEO')" );
+      }
+
+      if (GEO[nn-4]=='x')
+      {
+        if(TDatabase::ParamDB->SC_VERBOSE>1)
+          cout << " *** reading xGEO file (with physical references) ***" << endl;
+        isXgeo = true;
+      }
+      return isXgeo;
+  }
 

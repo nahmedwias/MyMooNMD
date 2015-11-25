@@ -54,7 +54,7 @@ class TBdPlane : public TBoundComp3D
                             double &T, double &S);
 
     /** read parameter from input file */
-    virtual int ReadIn(std::ifstream &dat);
+    virtual int ReadIn(std::istream &dat);
     
     void GetParams (double &p_x, double &p_y, double &p_z,
                     double &a_x, double &a_y, double &a_z,

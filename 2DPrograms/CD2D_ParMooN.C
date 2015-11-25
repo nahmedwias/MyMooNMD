@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   
   /* include the mesh from a mesh generator, for a standard mesh use the 
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  domain.Init(NULL, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
    
   // refine grid up to the coarsest level
   for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS+
