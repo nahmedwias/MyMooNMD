@@ -108,10 +108,9 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
 {
   if(i < 0 || i > this->GetN_Rows())
   {
-    ErrMsg("This matrix does not have a row " << i << 
-          ".\nThe dimension of this matrix is " << this->GetN_Rows() <<
-          " x " << this->GetN_Columns());
-    exit(0);
+    ErrThrow("This matrix does not have a row ", i, 
+             ".\nThe dimension of this matrix is ", this->GetN_Rows(), " x ",
+             this->GetN_Columns());
   }
   int* RowPtr = structure->GetRowPtr();
   int* KCol = structure->GetKCol();
@@ -126,10 +125,9 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
   }
   if(it != vals.end())
   {
-    Error("Error in TMatrix::add. There are entries in 'vals' which are not "
-          << "in the sparse structure. row " << i << ", column " << it->first
-          << ".\nExit\n");
-    exit(0);
+    ErrThrow("Error in TMatrix::add. There are entries in 'vals' which are ",
+             "not in the sparse structure. row ", i, ", column ", it->first,
+             ".\nExit\n");
   }
 }
 
@@ -158,8 +156,8 @@ const double& TMatrix::get(int i,int j) const
   int index = this->structure->index_of_entry(i, j);
   if(index >= 0 )
     return this->entries[index];
-  ErrThrow("could not find the entry (" + std::to_string(i) + "," 
-           + std::to_string(j) + ") in the sparsity structure");
+  ErrThrow("could not find the entry (", i, ",", j,
+           ") in the sparsity structure");
 }
 
 double& TMatrix::get(int i,int j)
@@ -168,8 +166,8 @@ double& TMatrix::get(int i,int j)
   int index = this->structure->index_of_entry(i, j);
   if(index >= 0 )
     return this->entries[index];
-  ErrThrow("could not find the entry (" + std::to_string(i) + "," 
-           + std::to_string(j) + ") in the sparsity structure");
+  ErrThrow("could not find the entry (", i, ",", j,
+           ") in the sparsity structure");
 }
 
 double & TMatrix::operator()(const int i, const int j)
@@ -215,8 +213,8 @@ double TMatrix::GetNorm(int p) const
       }
       break;
     case 1:
-      ErrThrow("maximum absolute column sum norm of a matrix not yet "
-               + "implemented!");
+      ErrThrow("maximum absolute column sum norm of a matrix not yet ",
+               "implemented!");
       break;
     case 2:
       ErrThrow("spectral norm of a matrix not yet implemented!");
@@ -278,8 +276,7 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 {
   if(this->GetStructure() != A->GetStructure()) // compare objects
   {
-    ErrMsg("TMatrix::operator-= : the two matrices do not match.");
-    exit(1);
+    ErrThrow("TMatrix::operator-= : the two matrices do not match.");
   }
   
   int n_entries = this->GetN_Entries();
@@ -369,8 +366,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   
   if(n_A_cols != n_B_rows)
   {
-    ErrMsg("dimention mismatch during matrix-matrix multiplication");
-    exit(1);
+    ErrThrow("dimention mismatch during matrix-matrix multiplication");
   }
   const int * const a_rows = this->GetRowPtr();
   const int * const a_cols = this->GetKCol();

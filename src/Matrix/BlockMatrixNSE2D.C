@@ -409,8 +409,8 @@ void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
           break;
           
         case 3:
-          ErrThrow("Solver not included for NSTYPE 3 in this version. "
-                   + "try NSTYPE 4");
+          ErrThrow("Solver not included for NSTYPE 3 in this version. Try ",
+                   "NSTYPE 4");
           break;
           
         case 4:
@@ -527,7 +527,7 @@ const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
     return this->get_pressure_space();
   else
   {
-    ErrThrow("could not find space for block " + std::to_string(b));
+    ErrThrow("could not find space for block ", b);
   }
 }
 
@@ -553,7 +553,7 @@ TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
   else if(i == 3)
     return (TSquareMatrix2D*)this->BlockMatrix::blocks[4].get();
   else
-    ErrThrow("there are only four A-blocks! " + std::to_string(i));
+    ErrThrow("there are only four A-blocks! ", i);
 }
 
 /** ************************************************************************ */
@@ -578,7 +578,7 @@ const TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i) const
   else if(i == 3)
     return (TSquareMatrix2D*)this->BlockMatrix::blocks[4].get();
   else
-    ErrThrow("there are only four A-blocks! " + std::to_string(i));
+    ErrThrow("there are only four A-blocks! ", i);
 }
 
 /** ************************************************************************ */
@@ -607,7 +607,7 @@ TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i)
   if(i < 2)
     return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
   else
-    ErrThrow("There are only two BT-blocks! " + std::to_string(i));
+    ErrThrow("There are only two BT-blocks! ", i);
 }
 
 /** ************************************************************************ */
@@ -620,7 +620,7 @@ const TMatrix2D * BlockMatrixNSE2D::get_BT_block(unsigned int i) const
   if(i < 2)
     return (TMatrix2D*)this->BlockMatrix::blocks[2+3*i].get();
   else
-    ErrThrow("There are only two BT-blocks! " + std::to_string(i));
+    ErrThrow("There are only two BT-blocks! ", i);
 }
 
 /** ************************************************************************ */
@@ -629,7 +629,7 @@ TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i)
   if(i < 2)
     return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
   else
-    ErrThrow("There are only two B-blocks! " + std::to_string(i));
+    ErrThrow("There are only two B-blocks! ", i);
 }
 
 /** ************************************************************************ */
@@ -638,6 +638,6 @@ const TMatrix2D * BlockMatrixNSE2D::get_B_block(unsigned int i) const
   if(i < 2)
     return (TMatrix2D*)this->BlockMatrix::blocks[i+6].get();
   else
-    ErrThrow("There are only two B-blocks! " + std::to_string(i));
+    ErrThrow("There are only two B-blocks! ", i);
 }
 

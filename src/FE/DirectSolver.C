@@ -140,7 +140,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_symbolic ", ret);
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
@@ -150,7 +150,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_numeric ", ret);
   }
 
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
@@ -159,7 +159,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   t4 = GetTime();
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_solve ", ret);
   }
 //  OutPut("umfpack: " << ret << " " << t4-t1 << " sec." << endl);
 }
@@ -215,7 +215,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_symbolic ", ret);
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
@@ -225,7 +225,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_numeric ", ret);
   }
 
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
@@ -236,8 +236,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   t4 = GetTime();
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
-    exit(4711);
+    ErrThrow("error in umfpack_di_solve ", ret);
   }
   Output::print("umfpack: ", ret, " ", t4-t1, " sec.");
 }
@@ -329,7 +328,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_symbolic ", ret);
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -338,7 +337,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_numeric ", ret);
   }
  } // if (rb_flag==0 || rb_flag==3)
  
@@ -348,7 +347,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   t4 = GetTime();
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_solve ", ret);
   }
   
   if (rb_flag==2 || rb_flag==3)
@@ -416,7 +415,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_symbolic ", ret);
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -425,7 +424,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_numeric ", ret);
   }
 
  for(i=N_Rhs_Disp; i<N_Rhs; i++)
@@ -439,7 +438,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
    //t4 = GetTime();
    if (ret!=0)
    {
-     ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+     ErrThrow("error in umfpack_di_solve ", ret);
    }
   } // for(i=0; i<N_Rhs; i++)
 
@@ -530,7 +529,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_symbolic " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_symbolic ", ret);
   }
 
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic, &Numeric, NULL, NULL);
@@ -539,7 +538,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   // error occured
   if (ret!=0)
   {
-    ErrThrow("error in umfpack_di_numeric " + std::to_string(ret));
+    ErrThrow("error in umfpack_di_numeric ", ret);
   }
  }//if (rb_flag==0 || rb_flag==3)
  
@@ -555,7 +554,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
    //t4 = GetTime();
    if (ret!=0)
    {
-     ErrThrow("error in umfpack_di_solve " + std::to_string(ret));
+     ErrThrow("error in umfpack_di_solve ", ret);
    }
   } // for(i=0; i<N_Rhs; i++)
 
@@ -1015,14 +1014,14 @@ double *rhs, double *sol, int rb_flag)
     ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
     if (ret!=0)
     {
-       ErrThrow("WARNING: symbolic: " + std::to_string(ret));
+       ErrThrow("WARNING: symbolic: ", ret);
     }
     t3 = GetTime();
 
     ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, null, null);
     if (ret!=0)
     {
-      ErrThrow("WARNING: numeric: " + std::to_string(ret));
+      ErrThrow("WARNING: numeric: ", ret);
     }
     t4 = GetTime();
     umfpack_di_free_symbolic(&Symbolic);
@@ -1033,7 +1032,7 @@ double *rhs, double *sol, int rb_flag)
     sol, rhs, Numeric, null, null);
   if (ret!=0)
   {
-    ErrThrow("WARNING: solve: " + std::to_string(ret));
+    ErrThrow("WARNING: solve: ", ret);
   }
 
   t5 = GetTime();
@@ -3420,13 +3419,13 @@ void DirectSolver(TSquareMatrix3D **sqmatrices, int n_row, int n_column,
   ret = umfpack_di_symbolic(N_Row, N_Row, RowPtr, KCol, Entries, &Symbolic, NULL, NULL);
   if ( ret != 0) 
   {
-    ErrThrow("symbolic: " + std::to_string(ret));
+    ErrThrow("symbolic: ", ret);
   }
 //   t3 = GetTime();
   ret = umfpack_di_numeric(RowPtr, KCol, Entries, Symbolic, &Numeric, NULL, NULL);
   if ( ret != 0 )
   {
-    ErrThrow("numeric: " + std::to_string(ret));
+    ErrThrow("numeric: ", ret);
   }
 //   t4 = GetTime();
   
@@ -3434,7 +3433,7 @@ void DirectSolver(TSquareMatrix3D **sqmatrices, int n_row, int n_column,
     sol, rhs, Numeric, NULL, NULL);
   if ( ret != 0) 
   {
-    ErrThrow("solve: " + std::to_string(ret));
+    ErrThrow("solve: ", ret);
   }
   umfpack_di_free_symbolic(&Symbolic);
   umfpack_di_free_numeric(&Numeric);
