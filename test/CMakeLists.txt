@@ -11,6 +11,10 @@
 # target which calls ctest and depends on all the executables.
 # See also https://cmake.org/Wiki/CMakeEmulateMakeCheck
 
+###################################################
+####### Tests for parallel type: SEQUENTIAL #######
+###################################################
+
 #matrix test
 add_executable(ParMooN_test_matrix matrix_test.c++)
 target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE})
@@ -23,4 +27,18 @@ target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_E
 add_test(cd2d ParMooN_test_cd2d)
 list(APPEND parmoon_tests ParMooN_test_cd2d)
 
+#cd3d test sequential
+add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
+target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+add_test(cd3d_seq ParMooN_test_cd3d_seq)
+list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
+
+###################################################
+####### Tests for parallel type: MPI #######
+###################################################
+
+
+
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})
+
+
