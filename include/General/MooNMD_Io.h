@@ -27,9 +27,6 @@ using std::setprecision;
 
 #define ErrMsg(x) { cerr <<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl; OutFile<<"Error in file "<<__FILE__<<", line "<<__LINE__<<":\n"<<x<<endl;}
 #define Error(x) {ErrMsg(x)}
-[[ noreturn ]] void throw_with_message(const std::string& x, std::string file,
-                                       int line);
-#define ErrThrow(x) {throw_with_message(std::string() + x, __FILE__, __LINE__);}
 
 extern std::ofstream& OutFile;
 
@@ -168,6 +165,14 @@ namespace Output
   /// print.
   template<unsigned int verbosity = 1, typename ... Arguments>
   void printToFile(Arguments const& ... rest);
+  
+  /// @brief write an error message to the outfile and throw an exception
+  ///
+  /// This is the preferred way to terminate the program if necessary. The 
+  /// exception thrown is of type `std::runtime_error`.
+  template<typename ... Arguments>
+  [[ noreturn ]] void errThrow(std::string file, int line,
+                               Arguments const& ... args);
 };
 
 
@@ -215,11 +220,18 @@ namespace Output
     using List= int[];
     (void)List{0, ( (void)(stream << args), 0 ) ... };
     
-    if(!writeOnlyToFile() && verbose(verbosity))
+    if(!writeOnlyToFile())
     {
-      std::cout << stream.str() << std::endl; 
+      if(verbose(verbosity))
+      {
+        std::cout << stream.str() << std::endl;
+        get_outfile() << stream.str() << std::endl;
+      }
     }
-    get_outfile() << stream.str() << std::endl;
+    else
+    {
+      get_outfile() << stream.str() << std::endl;
+    }
   }
   
   // implementation of the printToFile method
@@ -239,13 +251,31 @@ namespace Output
       get_outfile() << std::endl;
     }
   }
+  
+  // implementationof the errThrow method
+  template<typename ... Arguments>
+  [[ noreturn ]] void errThrow(std::string file, int line,
+                               Arguments const& ... args)
+  {
+    // see the implementation of Output::print
+    std::ostringstream stream;
+    stream << std::string(60, '*') << "\nError in file " << file << ", line " 
+           << line << ":\n";
+    using List= int[];
+    (void)List{0, ( (void)(stream << args), 0 ) ... };
+    
+    get_outfile() << stream.str() << std::endl;
+    throw std::runtime_error(stream.str());
+  }
 };
 
 // old macro to print things into a file and t std::cout, deprecated, use 
 // instead the Output::print methods below.
 #define OutPut(x) {std::stringstream temporary; temporary << x; Output::print(temporary.str());}
 
-
+// macro to call Output::errThrow with the correct file and line. You have to 
+// provide a meaningful error message here.
+#define ErrThrow(...) {Output::errThrow(__FILE__, __LINE__, __VA_ARGS__);}
 
 
 #endif
