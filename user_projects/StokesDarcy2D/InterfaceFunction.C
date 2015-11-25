@@ -8,8 +8,8 @@ InterfaceFunction::InterfaceFunction(
     BlockVector(), interface(in), spaceType(s)
 {
   if(spaceType != 2 && spaceType != -2)
-    ErrThrow("Constructor for InterfaceFunction: only piecewise quadratic "
-             + "functions (continuous or discontinuous) are suported so far!");
+    ErrThrow("Constructor for InterfaceFunction: only piecewise quadratic ",
+             "functions (continuous or discontinuous) are suported so far!");
   
   DOF.resize((abs(spaceType) + 1) * interface.size(), 0); // initialize to zero
   adjacency.resize(2 * interface.size(), 0); // initialize to zero
@@ -136,8 +136,7 @@ double InterfaceFunction::GetValue(const double x, const double y) const
     }
     return a;
   }
-  throw "Value not on the interface!!!!";
-  exit(0);
+  ErrThrow("Value not on the interface!!!!");
 }
 
 /** ************************************************************************ */
@@ -145,9 +144,8 @@ unsigned int InterfaceFunction::make_adjacency_and_DOF()
 {
   if(spaceType != 2 && spaceType != -2)
   {
-    Error(
-        "Constructor for InterfaceFunction: only piecewise quadratic " << "functions (continuous or discontinuous) are suported so far!\n");
-    exit(0);
+    ErrThrow("Constructor for InterfaceFunction: only piecewise quadratic ",
+             "functions (continuous or discontinuous) are suported so far!");
   }
   const int n_dof_per_edge = abs(spaceType) + 1; // number of dofs per edge
   
@@ -267,9 +265,8 @@ unsigned int InterfaceFunction::make_adjacency_and_DOF()
   }
   else
   {
-    Error("InterfaceFunction::make_adjacency_and_DOF(): unsopported space " <<
-          "type!\n");
-    exit(0);
+    ErrThrow("InterfaceFunction::make_adjacency_and_DOF(): unsopported space ",
+             "type!");
   }
   return countDOF;
 }
@@ -280,37 +277,39 @@ void InterfaceFunction::PrintInfo(std::string name) const
   // number of degrees of freedom on each edge:
   unsigned int n = abs(spaceType) + 1; //3;
                    
-  OutPut("\n\n");
+  Output::print<1>("\n");
   if(name != "")
-    OutPut("Information on InterfaceFunction " << name << endl);
-  OutPut("Number of edges " << interface.size() << ", number of DOFs " <<
-         this->length() << endl);
-  OutPut("\nAdjacency:\n");
+    Output::print<1>("Information on InterfaceFunction ", name);
+  Output::print<1>("Number of edges ", interface.size(), ", number of DOFs ",
+                   this->length());
+  Output::print<1>("\nAdjacency:");
   for(unsigned int i = 0; i < interface.size(); i++)
   {
-    OutPut(i << ":\t" << adjacency[2*i] << "\t" << adjacency[2*i+1] << endl);
+    Output::print<1>(i, ":\t", adjacency[2*i], "\t", adjacency[2*i+1]);
   }
-  OutPut("\nDOFs\n");
+  Output::print<1>("\nDOFs");
+  std::ostringstream os;
   for(unsigned int i = 0; i < interface.size(); i++)
   {
-    OutPut(i << ":\t");
+    os << i << ":\t";
     for(unsigned int j = 0; j < n; j++)
-      OutPut(DOF[n*i+j] << "\t");
-    OutPut("\n");
+      os << DOF[n*i+j] << "\t";
+    os << "\n";
   }
-  OutPut("\nnormals\n");
+  Output::print<1>(os);
+  Output::print<1>("\nnormals");
   for(unsigned int i = 0; i < interface.size(); i++)
   {
     for(unsigned int j = 0; j < n; j++)
     {
-      OutPut("edge " << i << " loc_dof " << j << " :\t" << 
-             normal_tangential[n*i+j] << endl);
+      Output::print<1>("edge ", i, " loc_dof ", j, " :\t",
+                       normal_tangential[n*i+j]);
     }
   }
-  OutPut("\nValues\n");
+  Output::print<1>("\nValues");
   //for(unsigned int i = 0; i < values.size(); i++)
   for(unsigned int i = 0; i < this->length(); i++)
-    OutPut(i << "\t" << this->BlockVector::entries[i] << endl);
+    Output::print<1>(i, "\t", this->BlockVector::entries[i]);
 }
 
 /** ************************************************************************ */
@@ -320,11 +319,11 @@ void InterfaceFunction::PrintVals(std::string name) const
   unsigned int n = abs(spaceType) + 1; //3
   if(name == "")
   {
-    OutPut("\nValues\n");
+    Output::print<1>("\nValues");
   }
   else
   {
-    OutPut("\nValues of " << name << endl);
+    Output::print<1>("\nValues of ", name);
   }
   for(unsigned int i = 0; i < interface.size(); i++)
   {
@@ -333,15 +332,14 @@ void InterfaceFunction::PrintVals(std::string name) const
     // do not print values at the two edge point twice for continuous 
     // (spaceType>0) interface functions 
     if(adjacency[2 * i] >= i || spaceType < 0)
-      OutPut(x << "\t" << y << "\t" << this->BlockVector::entries[DOF[n*i]]
-             << endl);
-    OutPut(x + 0.5*vecx << "\t" << y + 0.5*vecy << "\t" 
-           << this->BlockVector::entries[DOF[n*i+1]] << endl);
+      Output::print<1>(x, "\t", y, "\t", this->BlockVector::entries[DOF[n*i]]);
+    Output::print<1>(x + 0.5*vecx, "\t", y + 0.5*vecy, "\t",
+                     this->BlockVector::entries[DOF[n*i+1]]);
     if(adjacency[2 * i + 1] >= i || spaceType < 0)
-      OutPut(x + vecx << "\t" << y + vecy << "\t" 
-             << this->BlockVector::entries[DOF[n*i+2]] << endl);
+      Output::print<1>(x + vecx, "\t", y + vecy, "\t",
+                       this->BlockVector::entries[DOF[n*i+2]]);
   }
-  OutPut("ValuesEnd\n");
+  Output::print<1>("ValuesEnd");
 }
 
 /** ************************************************************************ */
@@ -440,7 +438,7 @@ void InterfaceFunction::PrintGnuplotFile(char* a) const
     {
       if(t < 1.0 - t_incr/(2*n_sub_intervals))
       {
-        ErrThrow("no neighbor here " + std::to_string(t));
+        ErrThrow("no neighbor here ", +t);
       }
       else
         break;
@@ -535,8 +533,7 @@ void InterfaceFunction::add(TFEFunction2D *f, int comp, double factor)
             fval = vals[2];
             break;
           default:
-            Error("InterfaceFunction::add: unsupported component. Exiting\n");
-            exit(0);
+            ErrThrow("InterfaceFunction::add: unsupported component. Exiting");
             break;
         }
       }
@@ -635,10 +632,9 @@ void InterfaceFunction::add(TFEVectFunct2D* v, int comp, double factor)
                  + ny * ny * der2[2];
           break;
         default:
-          Error("InterfaceFunction::add(...): The parameter comp " << 
-                "should be either 1,2,3,4, or 5. You have chosen " << comp << 
-                ". Exiting\n");
-          exit(1);
+          ErrThrow("InterfaceFunction::add(...): The parameter comp ",
+                   "should be either 1,2,3,4, or 5. You have chosen ", comp,
+                   ". Exiting");
       }
       this->BlockVector::entries[DOF[n * i + j]] += locfactor * temp;
     }
@@ -652,9 +648,8 @@ void InterfaceFunction::add(const InterfaceFunction * const eta, double factor)
 {
   if(spaceType != eta->getSpaceType())
   {
-    Error(
-        "adding interface functions of different space types is not yet " << "supported\n");
-    exit(0);
+    ErrThrow("adding interface functions of different space types is not yet ",
+             "supported");
   }
   // add factor*eta to this interface function
   // '-1' to take full vector
@@ -741,8 +736,8 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
         }
         if(bound_edge == NULL)
           // this should not happen
-          ErrThrow("could not find boundary edge touching the interface edge, "
-                   + "which does touch the boundary!");
+          ErrThrow("could not find boundary edge touching the interface edge, ",
+                   "which does touch the boundary!");
         
         double t0, t1;
         bound_edge->GetParameters(t0, t1);
@@ -752,7 +747,7 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
         // boundary condition at midpoint of this boundary edge
         BoundCond cond;
         bc_func(comp, (t0 + t1) / 2.0, cond);
-        //OutPut("boundary edge " << comp << " " << cond << " " << vert << endl);
+        //Output::print<1>("boundary edge ", comp, " ", cond, " ", vert);
         if(cond == DIRICHLET)
         {
           dofs_to_be_restricted->push_back(iDOF);
@@ -762,8 +757,8 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
       // if invert==true
       std::sort(dofs_to_be_restricted->begin(), dofs_to_be_restricted->end());
     }
-    Out("number of dofs on the interface which are restricted: " << 
-        dofs_to_be_restricted->size() << endl, 1);
+    Output::print<1>("number of dofs on the interface which are restricted: ",
+                     dofs_to_be_restricted->size());
   }
   // restrict this interface function to the correct space
   this->restrict(invert);
@@ -773,8 +768,8 @@ void InterfaceFunction::restrict(const subproblem& sp, bool invert)
 void InterfaceFunction::restrict(bool invert)
 {
   if(dofs_to_be_restricted == NULL)
-    ErrThrow("you have to call restrict with an object of type StokesProblem "
-             + "DarcyProblem or StokesDarcy2D");
+    ErrThrow("you have to call restrict with an object of type StokesProblem ",
+             "DarcyProblem or StokesDarcy2D");
   
   if(invert == false)
   {

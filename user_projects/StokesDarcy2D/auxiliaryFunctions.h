@@ -9,10 +9,6 @@
 #include <InnerInterfaceJoint.h>
 
 
-// OutPut to OutFile and console, depending on verbosity level
-#define Out(x,v) { if(TDatabase::ParamDB->SC_VERBOSE > v) OutPut(x);}
-
-
 struct n_t_vector
 {
   double nx;
@@ -35,7 +31,7 @@ struct n_t_vector
   };
   n_t_vector(){ nx = 0; ny = 0; tx = 0; ty = 0;}
   n_t_vector(double NX, double NY){ nx = NX; ny = NY; tx = -NY; ty = NX;}
-  ~n_t_vector(){ /*OutPut("destructor of n_t_vector\n");*/ }
+  ~n_t_vector(){ /*Output::print<1>("destructor of n_t_vector");*/ }
   friend  bool operator== (n_t_vector &lhs,n_t_vector &rhs)
   {
     double diff = std::abs(lhs.nx - rhs.nx) + std::abs(lhs.ny - rhs.ny)

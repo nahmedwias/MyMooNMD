@@ -122,7 +122,7 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
                                                            double red, 
                                                            unsigned int restart)
 {
-  //OutPut("solve using template solver class\n");
+  //Output::print<1>("solve using template solver class");
   if (max_it == 0)
     max_it = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
   if(tol < 0.0)
@@ -145,11 +145,10 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       int ret = IR( *A, *x, *b, *M, max_it, tol);
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
-        OutPut(" richardson iterations " << max_it << "\ttolerance " << tol 
-               << endl);
+        Output::print<1>(" richardson iterations ", max_it, "\ttolerance ", tol);
       if(ret == 1)
-        OutPut(" richardson did not converge within " << max_it << 
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" richardson did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       break;
     }
     case cg:
@@ -158,12 +157,12 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
       {
-        OutPut(" cg iterations " << max_it << "\ttolerance " << tol << endl);
+        Output::print<1>(" cg iterations ", max_it, "\ttolerance ", tol);
       }
       if(ret == 1)
       {
-        OutPut(" cg did not converge within " << max_it << 
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" cg did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       }
       break;
     }
@@ -173,16 +172,16 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
       {
-        OutPut(" cgs iterations " << max_it << "\ttolerance " << tol << endl);
+        Output::print<1>(" cgs iterations ", max_it, "\ttolerance ", tol);
       }
       else if(ret == 1)
       {
-        OutPut(" cgs did not converge within " << max_it << 
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" cgs did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       }
       else
-        OutPut("WARNING! something wrong with cgs. " << max_it << "  " << tol 
-               << endl);
+        Output::print<1>("WARNING! something wrong with cgs. ", max_it, "  ",
+                         tol);
       break;
     }
     case gmres_left:
@@ -197,13 +196,12 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
       {
-        OutPut(" gmres_left iterations " << max_it << "\ttolerance " << tol 
-<<endl);
+        Output::print<1>(" gmres_left iterations ", max_it, "\ttolerance ", tol);
       }
       if(ret == 1)
       {
-        OutPut(" gmres_left did not converge within " << max_it <<
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" gmres_left did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       }
       break;
     }
@@ -219,13 +217,13 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
       {
-        OutPut(" gmres_right iterations " << max_it << "\ttolerance " << tol 
-               << endl);
+        Output::print<1>(" gmres_right iterations ", max_it, "\ttolerance ",
+                         tol);
       }
       if(ret == 1)
       {
-        OutPut(" gmres_right did not converge within " << max_it <<
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" gmres_right did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       }
       break;
     }
@@ -240,12 +238,12 @@ void solver<LinearOperator, Vector, Preconditioner>::solve(unsigned int max_it,
       this->n_iterations += max_it;
       if(TDatabase::ParamDB->SC_VERBOSE && ret == 0)
       {
-        OutPut(" fgmres iterations " << max_it << "\ttolerance " << tol <<endl);
+        Output::print<1>(" fgmres iterations ", max_it, "\ttolerance ", tol);
       }
       if(ret == 1)
       {
-        OutPut(" fgmres did not converge within " << max_it <<
-               " iterations, current residual " << tol << endl);
+        Output::print<1>(" fgmres did not converge within ", max_it,
+                         " iterations, current residual ", tol);
       }
       break;
     }

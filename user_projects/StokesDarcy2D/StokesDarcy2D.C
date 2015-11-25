@@ -15,7 +15,7 @@ StokesDarcy2D::StokesDarcy2D(
     std::map< InterfaceCondition, DarcyPrimal* > d_problems)
  : big_matrix(nullptr), big_rhs(nullptr), big_solution(nullptr)
 {
-  //OutPut("StokesDarcy2D constructor\n");
+  //Output::print<1>("StokesDarcy2D constructor");
   int solution_strategy = TDatabase::ParamDB->StoDa_solutionStrategy;
   error = 1e10; // set to large value at the beginning
   initialError = 0; // needs to be set correctly
@@ -69,8 +69,8 @@ StokesDarcy2D::StokesDarcy2D(
         iteration_darcy = NULL;
       }
       else
-        ErrThrow("unkonwn solution strategy, set 'StoDa_solutionStrategy' to "
-                 + "either 0, 1, -1, 2  or -2.");
+        ErrThrow("unkonwn solution strategy, set 'StoDa_solutionStrategy' to ",
+                 "either 0, 1, -1, 2  or -2.");
       break;
     case 1: // Robin-Robin
       coupled_stokes = ns_problems.at(Robin);
@@ -104,13 +104,9 @@ StokesDarcy2D::StokesDarcy2D(
 /** ************************************************************************ */
 StokesDarcy2D::~StokesDarcy2D()
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2) OutPut("StokesDarcy2D destructor\n");
+  Output::print<3>("StokesDarcy2D destructor");
   //delete s;
   delete eta_hom;
-  if(C != NULL)
-    delete C->GetStructure();
-  if(CT != NULL)
-    delete CT->GetStructure();
   // the StokesProblem and DarcyPrimal are destroyed in main, which is where
   // they were created
 }
@@ -175,7 +171,7 @@ void check_linearity(problem& p, InterfaceFunction& eta)
 /** ************************************************************************ */
 void StokesDarcy2D::solveDirect()
 {
-  Out("\nSolving the coupled system directly\n", 0);
+  Output::print<1>("\nSolving the coupled system directly");
   // full system matrix is 
   // bigMatrix = ( S  CT )
   //             ( C  D  )
@@ -225,8 +221,8 @@ void StokesDarcy2D::solve_fixed_point(InterfaceFunction& eta) const
       ErrThrow("Newton method for fixed point equation not yet implemented");
       break;
     default:
-      ErrThrow("solving fixed point equation. Set the value of " 
-               + "'StoDa_updatingStrategy' to either 1, 2, or 4");
+      ErrThrow("solving fixed point equation. Set the value of ", 
+               "'StoDa_updatingStrategy' to either 1, 2, or 4");
       break;
   }
   
@@ -242,7 +238,7 @@ void StokesDarcy2D::solve(const InterfaceFunction& eta_r,
                           InterfaceFunction& eta_z) const
 {
   // solve "M eta_z = eta_r" if "M" is this preconditioner 
-  Out("apply preconditioner\n", 1);
+  Output::print<1>("apply preconditioner");
   // no preconditioner would mean eta_z = eta_r
   if(eta_z.length() == 0)
     eta_z = eta_r; // this done here just in case eta_z is not yet initialized
@@ -349,10 +345,10 @@ bool StokesDarcy2D::stopIteration(int it)
     //          + a2*POW(diffStokesP,2)
     //          + a3*POW(diffDarcyP,2));
     diff = a1 * diffStokesU + a2 * diffStokesP + a3 * diffDarcyP;
-    OutPut(" DIFFERENCE in Stokes velocity vector " << diffStokesU << endl);
-    OutPut(" DIFFERENCE in Stokes pressure vector " << diffStokesP << endl);
-    OutPut(" DIFFERENCE in Darcy pressure vector " << diffDarcyP << endl);
-    OutPut(" DIFFERENCE in overall solution " << diff << endl);
+    Output::print<1>(" DIFFERENCE in Stokes velocity vector ", diffStokesU);
+    Output::print<1>(" DIFFERENCE in Stokes pressure vector ", diffStokesP);
+    Output::print<1>(" DIFFERENCE in Darcy pressure vector ", diffDarcyP);
+    Output::print<1>(" DIFFERENCE in overall solution ", diff);
   }
   
   //===========================================================================
@@ -360,9 +356,9 @@ bool StokesDarcy2D::stopIteration(int it)
   const double error_old = error;
   error = ErrorOnInterface(*stokes(), *darcy(), it);
   const double relError = 1 - error / error_old;
-  OutPut(" Error on interface " << error << endl);
+  Output::print<1>(" Error on interface ", error);
   if(it)
-    OutPut(" relative difference of error on interface " << relError << endl);
+    Output::print<1>(" relative difference of error on interface ", relError);
   if(it == 0)
     initialError = error;
   
@@ -381,7 +377,7 @@ bool StokesDarcy2D::stopIteration(int it)
     r *= *big_matrix;
     r -= *big_rhs;
     bigResidual = r.norm();
-    OutPut(" Norm of big system defect " << bigResidual << endl);
+    Output::print<1>(" Norm of big system defect ", bigResidual);
   }
   
   //===========================================================================
@@ -399,58 +395,59 @@ bool StokesDarcy2D::stopIteration(int it)
   diff < TDatabase::ParamDB->StoDa_relDiff_solution
   && bigResidual < TDatabase::ParamDB->StoDa_bigResidual)
   {
-    OutPut("Converged after " << it+1 << " iterations\n");
+    Output::print<1>("Converged after ", it+1, " iterations");
     stopIteration = true;
   }
   // check divergence criterion
   if(error > 1e10)
   {
-    OutPut("DIVERGED after " << it+1 << " iterations !!!!!\n");
+    Output::print<1>("DIVERGED after ", it+1, " iterations !!!!!");
     stopIteration = true;
   }
   // check if error on interface is zero up to machine precision or so
   if(0)
     if(error < 1e-14) // (almost) never going to happen
     {
-      OutPut("Converged after " << it+1 << " iterations with interface error "
-             << error << endl);
+      Output::print<1>("Converged after ", it+1,
+                       " iterations with interface error ", error);
       stopIteration = true;
     }
   // check if error on interface increased
   if(0)if(relError < -1e-1)
   {
-    OutPut("Error increased after " << it+1 << " iterations.\n");
+    Output::print<1>("Error increased after ", it+1, " iterations.");
     stopIteration = true;
   }
   // check if maximum number of iterations is reached
   if(it == TDatabase::ParamDB->StoDa_nIterations - 1)
   {
-    OutPut("Reached maximum number of "
-            << TDatabase::ParamDB->StoDa_nIterations << " iterations!!\n");
+    Output::print<1>("Reached maximum number of ",
+                     TDatabase::ParamDB->StoDa_nIterations, " iterations!!");
     stopIteration = true;
   }
   // check if convergence is slow
   if(slow && !stopIteration)
   {
-    OutPut("Iteration is stuck after " << it+1 <<" iterations!!\n");
+    Output::print<1>("Iteration is stuck after ", it+1, " iterations!!");
     stopIteration = true;
   }
   
   if(stopIteration)
   {
-    OutPut("\n");
+    Output::print<1>("\n");
     if(TDatabase::ParamDB->StoDa_solutionStrategy >= 1)
     {
       // big system has been solved
-      OutPut("big residual changed from " << initialBigResidual << " to " 
-             << bigResidual << " quotient " << bigResidual/initialBigResidual
-             << "\n  average reduction factor per iteration "
-             << exp(log(bigResidual/initialBigResidual)/it) << endl);
+      Output::print<1>("big residual changed from ", initialBigResidual, " to ",
+                       bigResidual, " quotient ",
+                       bigResidual/initialBigResidual, 
+                       "\n  average reduction factor per iteration ",
+                       exp(log(bigResidual/initialBigResidual)/it));
     }
-    OutPut("interface error changed from " << initialError << " to " << error
-           << " quotient " << error/initialError 
-           << "\n  average reduction factor per iteration "
-           << exp(log(error/initialError)/it) << endl);
+    Output::print<1>("interface error changed from ", initialError, " to ",
+                     error, " quotient ", error/initialError,
+                     "\n  average reduction factor per iteration ",
+                     exp(log(error/initialError)/it));
   }
   return stopIteration;
 }
@@ -469,9 +466,9 @@ void StokesDarcy2D::SolveOneSystem()
   big_rhs->copy(c_darcy()->get_rhs().get_entries(), 1);
   
   // write out some information on the big matrix system
-  OutPut(" Big system: Size: " << big_matrix->n_total_rows() << " x ");
-  OutPut(big_matrix->n_total_cols() << "\tnumber of entries: ");
-  OutPut(big_matrix->n_total_entries() << endl);
+  Output::print<1>(" Big system: Size: ", big_matrix->n_total_rows(), " x ",
+                   big_matrix->n_total_cols(), "\tnumber of entries: ",
+                   big_matrix->n_total_entries());
   
   
   //big_matrix->get_combined_matrix()->PrintFull("M");
@@ -508,7 +505,7 @@ void StokesDarcy2D::SolveOneSystem()
     r = *big_solution; // copy values
     r *= *big_matrix;
     r -= *big_rhs;
-    OutPut("  residual of big system: " << norm(r) << endl);
+    Output::print<1>("  residual of big system: ", norm(r));
   }
   // compute initial big residual
   {
@@ -629,8 +626,8 @@ void StokesDarcy2D::GetCouplingMatrix()
     }
   }
   // generate sparse matrix
-  TStructure* Cstructure = new TStructure(n_rows, n_cols, N_entries, cols,
-                                          rows);
+  std::shared_ptr<TStructure> Cstructure(new TStructure(n_rows, n_cols, 
+                                                        N_entries, cols, rows));
   C.reset(new TMatrix(Cstructure)); // empty matrix
   CT.reset(new TMatrix(Cstructure->GetTransposed())); // empty matrix
   // Assemble the coupling matrix
@@ -650,7 +647,7 @@ void StokesDarcy2D::GetCouplingMatrix()
 /** ************************************************************************ */
 void StokesDarcy2D::AssembleCouplingMatrices() const
 {
-  Out("Assemble interface integrals into coupling matrices\n",0);
+  Output::print<1>("Assemble interface integrals into coupling matrices");
   // velocity and pressure spaces for Stokes and Darcy
   const TFESpace2D & vSpaceStokes = c_stokes()->get_velocity_space();
   const TFESpace2D & pSpaceStokes = c_stokes()->get_pressure_space();
@@ -869,9 +866,9 @@ void StokesDarcy2D::localAssemble_pressure_velocity(
   {
     case Neumann:
     {
-      //OutPut("localAssemble_pressure_velocity " << tDOF << " " << aDOF
-      //       << "  ---  " << q << "  " << u << "  " << qw << "\t\t\t"
-      //       << l.m.m[0][3][5 + N_SveloDOF] << endl);
+      //Output::print<1>("localAssemble_pressure_velocity ", tDOF, " ", aDOF,
+      //                 "  ---  ", q, "  ", u, "  ", qw, "\t\t\t",
+      //                 l.m.m[0][3][5 + N_SveloDOF]);
       l.m.m[0][tDOF][aDOF] += -q * u * nx * qw; // first component
       l.m.m[0][tDOF][aDOF + N_SveloDOF] += -q * u * ny * qw; // second comp
       l.m.m[1][aDOF][tDOF] += q * u * nx * qw; // first component
@@ -1032,19 +1029,20 @@ void StokesDarcy2D::CombineBigMatrix()
   // S->remove_zeros();
   // D->remove_zeros();
   
-  OutPut("coupled System matrix: ( S CT )\n                       ( C  D )\n");
-  OutPut(" Matrix S : Size: " << S->GetN_Rows() << " x " << S->GetN_Columns()
-         << "\t#entries: " << S->GetN_Entries() << "\tnorm: " << S->GetNorm() 
-         << endl);
-  OutPut(" Matrix D : Size: " << D->GetN_Rows() << " x " << D->GetN_Columns()
-         << "\t#entries: " << D->GetN_Entries() << "\tnorm: " << D->GetNorm() 
-         << endl);
-  OutPut(" Matrix CT: Size: " << CT->GetN_Rows()<< " x " <<CT->GetN_Columns()
-         << "\t#entries: " << CT->GetN_Entries()<< "\tnorm: " <<CT->GetNorm()
-         << endl);
-  OutPut(" Matrix C : Size: " << C->GetN_Rows() << " x " << C->GetN_Columns()
-         << "\t#entries: " << C->GetN_Entries() << "\tnorm: " << C->GetNorm() 
-         << endl);
+  Output::print<1>(
+           "coupled System matrix: ( S CT )\n                       ( C  D )");
+  Output::print<1>(" Matrix S : Size: ", S->GetN_Rows(), " x ",
+                   S->GetN_Columns(), "\t#entries: ", S->GetN_Entries(),
+                   "\tnorm: ", S->GetNorm());
+  Output::print<1>(" Matrix D : Size: ", D->GetN_Rows(), " x ",
+                   D->GetN_Columns(), "\t#entries: ", D->GetN_Entries(),
+                   "\tnorm: ", D->GetNorm());
+  Output::print<1>(" Matrix CT: Size: ", CT->GetN_Rows(), " x ",
+                   CT->GetN_Columns(), "\t#entries: ", CT->GetN_Entries(),
+                   "\tnorm: ", CT->GetNorm());
+  Output::print<1>(" Matrix C : Size: ", C->GetN_Rows(), " x ",
+                   C->GetN_Columns(), "\t#entries: ", C->GetN_Entries(),
+                   "\tnorm: ", C->GetNorm());
   
   std::vector<std::shared_ptr<TMatrix>> blocks = {S, CT, C, D};
   big_matrix.reset(new BlockMatrix(2, 2, blocks));
@@ -1166,18 +1164,18 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
       ErrThrow("Newton method for Stecklov-Poincare not yet implemented");
       break;
     default:
-      ErrThrow("unknown updating strategy. Choose a value between 1 and 6 for " 
-               + "'StoDa_updatingStrategy'.");
+      ErrThrow("unknown updating strategy. Choose a value between 1 and 6 for ",
+               "'StoDa_updatingStrategy'.");
       break;
   }
   TDatabase::ParamDB->SOLVER_TYPE = st; // reset solver type
   
-  Out("start Stecklov-Poincare iteration\n", 0);
+  Output::print<1>("start Stecklov-Poincare iteration");
   /*
   int maxit = TDatabase::ParamDB->StoDa_nIterations;
   for(int it = 0; it < maxit; it++)
   {
-    OutPut("fixed point iteration " << it << endl);
+    Output::print<1>("fixed point iteration ", it);
     stokes()->solve(eta);
     eta.reset();
     stokes()->map_solution_to_interface(eta, 1.0);
@@ -1194,11 +1192,11 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   darcy()->map_solution_to_interface(eta2, 1.0);
   stokes()->map_solution_to_interface(eta2, 1.0);
   eta2.PrintVals("Stecklov-Poincare operator of correct eta");
-  OutPut("Norm of eta " << eta.norm() << endl);
+  Output::print<1>("Norm of eta ", eta.norm());
   WriteVtk_and_measureErrors(*(stokes()), *(darcy()), NULL, 0);
   
   
-  OutPut("\nimitate preconditioned richardson iteration\n");
+  Output::print<1>("\nimitate preconditioned richardson iteration");
   //eta.reset();
   InterfaceFunction *& eta_hom_prec = p_prec->get_homogeneous_solution();
   if(eta_hom_prec == NULL)
@@ -1213,7 +1211,7 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   stokes()->map_solution_to_interface(r, -1);
   for(int it = 0; it < 12; it++)
   {
-    OutPut("\n\niteration " << it << endl);
+    Output::print<1>("\n\niteration ", it);
     r.PrintVals("r");
     // this->solve(r, z);
     z.reset();
@@ -1247,7 +1245,7 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
   s.solve(TDatabase::ParamDB->StoDa_nIterations, 
           TDatabase::ParamDB->StoDa_bigResidual);
   
-  Out("finished Stecklov-Poincare iteration\n\n", 0);
+  Output::print<1>("finished Stecklov-Poincare iteration\n");
   
   eta.PrintGnuplotFile((char*)"hallo.gp");
   
@@ -1271,7 +1269,7 @@ void StokesDarcy2D::solve_Stecklov_Poincare(InterfaceFunction& eta)
     r *= *big_matrix;
     r -= *big_rhs;
     bigResidual = norm(r);
-    OutPut(" Norm of big system defect " << bigResidual << endl);
+    Output::print<1>(" Norm of big system defect ", bigResidual);
   }
 }
 
@@ -1301,7 +1299,7 @@ void StokesDarcy2D::apply_scaled_add(const InterfaceFunction & x,
                                      InterfaceFunction & y, double a) const
 {
   // y = y + a * Ax
-  Out("StokesDarcy2D::apply_scaled_add\n", 1);
+  Output::print<1>("StokesDarcy2D::apply_scaled_add");
   // substract homogenous solution such that this is a linear operator
   y.add(eta_hom, a);
   
@@ -1376,10 +1374,9 @@ void StokesDarcy2D::check_equalities() const
     *C2 += *C.get();
     if(C2->GetNorm() > 1e-10)
     {
-      ErrThrow("Error:  C is not d_etaToBd * s_sol2eta " 
-               + std::to_string(C2->GetNorm()));
+      ErrThrow("Error:  C is not d_etaToBd * s_sol2eta ", C2->GetNorm());
     }
-    Out("coupling matrix C test succesfull\n", 0);
+    Output::print<1>("coupling matrix C test succesfull");
     
     *CT2 += *CT;
     if(CT2->GetNorm() > 1e-10)
@@ -1387,9 +1384,9 @@ void StokesDarcy2D::check_equalities() const
       ErrMsg("Error: CT is not s_etaToBd * d_sol2eta " << CT2->GetNorm() );
       CT2->remove_zeros(1e-14);
       CT2->Print("CT-diff");
-      exit(1);
+      ErrThrow("check_equalities failed");
     }
-    Out("coupling matrix CT test succesfull\n", 0);
+    Output::print<1>("coupling matrix CT test succesfull");
     
     delete CT2;
     delete C2;
@@ -1400,7 +1397,7 @@ void StokesDarcy2D::check_equalities() const
     // solution yields the same solution. Same for Dirichlet. Depending on
     // 'StokesFirst' this is done for Stokes or Darcy
     InterfaceFunction eta(darcy()->getInterface(), 2);
-    Out("\n\nTesting identities\n", 0);
+    Output::print<1>("\n\nTesting identities");
     if(StokesFirst == 1)
     {
       eta.reset();
@@ -1490,16 +1487,16 @@ void StokesDarcy2D::check_equalities() const
       check_linearity(ns_D, eta);
       check_linearity(d_N, eta);
     }
-    Out("Testing identities finished\n\n", 1);
+    Output::print<1>("Testing identities finished\n");
   }
-  Out("checking equalities done within " << GetTime()-time << " seconds\n\n",
-      0);
+  Output::print<1>("checking equalities done within ", GetTime() - time,
+                   " seconds\n");
 }
 
 /** ************************************************************************ */
 double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
 {
-  Out(" Compute error on interface\n", 1);
+  Output::print<1>(" Compute error on interface");
   
   // normal vector to interface (pointing out of Stokes subdomain)
   double nx, ny; 
@@ -1604,8 +1601,8 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
       // difference to -p_D
       val1 = nTn + d_pval[0];
       error2 += LineWeights[k] * (hE / 2) * val1 * val1;
-      //OutPut("x " << x << " uS.n " << s_u_n << ", uD.n " << d_u_n 
-      //    << ", nTn " << nTn << ", phi " << d_pval[0] << endl)
+      //Output::print<1>("x ", x, " uS.n ", s_u_n, ", uD.n ", d_u_n,
+      //                 ", nTn ", nTn, ", phi ", d_pval[0])
       if(writeErrorFile)
         ErrorFile << x << "\t" << d_u_n << "\t" << s_u_n << "\t" << d_pval[0]
                   << "\t" << -nTn << "\t" << s_u_n - d_u_n << "\t"
@@ -1620,8 +1617,8 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
   delete s_u1;
   delete s_u2;
   
-  OutPut(" Flux-Error " << sqrt(error1) << ", normal-stress-error " << 
-         sqrt(error2) << ", quotient " << sqrt(error1)/sqrt(error2) << endl);
+  Output::print<1>(" Flux-Error ", sqrt(error1), ", normal-stress-error ",
+                   sqrt(error2), ", quotient ", sqrt(error1)/sqrt(error2));
   return sqrt(error1 + error2);
 }
 
@@ -1640,13 +1637,13 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
    * does not work for Raviart-Thomas elements (yet)                       */
   if(TDatabase::ParamDB->SC_VERBOSE)
   {
-    OutPut(" Navier-Stokes ");
+    Output::print<1>(" Navier-Stokes ");
     p_NSE.PrintMinMax();
-    OutPut(" Navier-Stokes ");
+    Output::print<1>(" Navier-Stokes ");
     u1_NSE->PrintMinMax();
-    OutPut(" Navier-Stokes ");
+    Output::print<1>(" Navier-Stokes ");
     u2_NSE->PrintMinMax();
-    OutPut(" Darcy ");
+    Output::print<1>(" Darcy ");
     p_Darcy.PrintMinMax();
   }
   /* ==========================================================================
@@ -1669,7 +1666,6 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
          << TDatabase::ParamDB->BASENAME << "NSE.direct.vtk" << ends;
     if(TDatabase::ParamDB->WRITE_VTK)
     {
-      Out(" ", 0); // just for formatting the output
       Output_NSE.WriteVtk(os.str().c_str());
     }
     os.seekp(int(os.tellp()) - 4);
@@ -1686,7 +1682,6 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
          << TDatabase::ParamDB->BASENAME << "Darcy.direct.vtk" << ends;
     if(TDatabase::ParamDB->WRITE_VTK)
     {
-      Out(" ", 0); // just for formatting the output
       Output_Darcy.WriteVtk(os.str().c_str());
     }
     os.seekp(int(os.tellp()) - 4);
@@ -1709,29 +1704,29 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     u1_NSE->GetErrors(s.get_example().get_exact(0), 3, AllDerivatives, 2,
                       ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                       &v_space_NSE, err);
-    //OutPut("  L2(u1_S):      " <<  err[0] << endl);
-    //OutPut("  H1-semi(u1_S): " <<  err[1] << endl);
+    //Output::print<1>("  L2(u1_S):      ",  err[0]);
+    //Output::print<1>("  H1-semi(u1_S): ",  err[1]);
     
     u2_NSE->GetErrors(s.get_example().get_exact(1), 3, AllDerivatives, 2,
                       ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                       &v_space_NSE, err + 3);
-    //OutPut("  L2(u2_S):      " <<  err[3] << endl);
-    //OutPut("  H1-semi(u2_S): " <<  err[4] << endl);
-    OutPut(" L2(u_S):       " << sqrt(err[0]*err[0]+err[3]*err[3]) << endl);
-    OutPut(" H1-semi(u_S):  " << sqrt(err[1]*err[1]+err[4]*err[4]) << endl);
+    //Output::print<1>("  L2(u2_S):      ", err[3]);
+    //Output::print<1>("  H1-semi(u2_S): ", err[4]);
+    Output::print<1>(" L2(u_S):       ", sqrt(err[0]*err[0]+err[3]*err[3]));
+    Output::print<1>(" H1-semi(u_S):  ", sqrt(err[1]*err[1]+err[4]*err[4]));
     
     p_NSE.GetErrors(s.get_example().get_exact(2), 3, AllDerivatives, 2,
                      ErrorMeth, s.get_example().get_coeffs(), &aux, 1,
                      &p_space_NSE, err);
-    OutPut(" L2(p_S):       " << err[0] << endl);
-    OutPut(" H1-semi(p_S):  " << err[1] << endl);
+    Output::print<1>(" L2(p_S):       ", err[0]);
+    Output::print<1>(" H1-semi(p_S):  ", err[1]);
     
     DoubleFunct2D * const *Exact_Darcy = d.get_exact();
     p_Darcy.GetErrors(Exact_Darcy[0], 3, AllDerivatives, 2, ErrorMeth,
                       d.get_example().get_coeffs(), &aux, 1, &p_space_Darcy,
                       err);
-    OutPut(" L2(p_D):       " << err[0] << endl);
-    OutPut(" H1-semi(p_D):  " << err[1] << endl);
+    Output::print<1>(" L2(p_D):       ", err[0]);
+    Output::print<1>(" H1-semi(p_D):  ", err[1]);
   }
   
   /* ==========================================================================
@@ -1743,22 +1738,22 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     // Stokes velocity
     relError = relDiff(2 * u_NSE.GetLength(), s.get_u_Direct().GetValues(),
                        u_NSE.GetValues());
-    OutPut(" discrete Stokes velocity Error " << relError << endl);
+    Output::print<1>(" discrete Stokes velocity Error ", relError);
     tot_relError += relError*relError;
     
     // Stokes Pressure
     relError = relDiff(p_NSE.GetLength(), s.get_p_direct().GetValues(),
                        p_NSE.GetValues());
-    OutPut(" discrete Stokes pressure Error " << relError << endl);
+    Output::print<1>(" discrete Stokes pressure Error ", relError);
     tot_relError += relError*relError;
     
     // Darcy pressure
     relError = relDiff(p_Darcy.GetLength(), d.get_p_direct().GetValues(),
                        p_Darcy.GetValues());
-    OutPut(" discrete Darcy pressure Error  " << relError << endl);
+    Output::print<1>(" discrete Darcy pressure Error  ", relError);
     tot_relError += relError*relError;
     
-    OutPut(" discrete total error           " << sqrt(tot_relError) << endl);
+    Output::print<1>(" discrete total error           ", sqrt(tot_relError));
   }
   delete u1_NSE;
   delete u2_NSE;
@@ -1767,7 +1762,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
 /** ************************************************************************ */
 void ComputeResiduals(StokesProblem &s, DarcyPrimal &d)
 {
-  Out(" Computing defects\n", 1);
+  Output::print<1>(" Computing defects");
   
   { // Stokes defects
     BlockVector r(s.get_matrix(), true);
@@ -1775,13 +1770,13 @@ void ComputeResiduals(StokesProblem &s, DarcyPrimal &d)
     r *= s.get_matrix(); // TODO: is matrix different??
     r -= s.get_rhs();
     
-    OutPut("  Norm of Stokes defect " << r.norm() << endl);
-    OutPut("                 velocity first component  " <<
-           Dnorm(r.length(0), r.block(0)) << endl);
-    OutPut("                 velocity second component " << 
-           Dnorm(r.length(1), r.block(1)) << endl);
-    OutPut("                 pressure component        " << 
-           Dnorm(r.length(2), r.block(2)) << endl);
+    Output::print<1>("  Norm of Stokes defect ", r.norm());
+    Output::print<1>("                 velocity first component  ",
+                     Dnorm(r.length(0), r.block(0)));
+    Output::print<1>("                 velocity second component ",
+                     Dnorm(r.length(1), r.block(1)));
+    Output::print<1>("                 pressure component        ",
+                     Dnorm(r.length(2), r.block(2)));
   }
   
   { // Darcy defects
@@ -1790,7 +1785,7 @@ void ComputeResiduals(StokesProblem &s, DarcyPrimal &d)
     r *= d.getMat();
     r -= d.get_rhs();
     
-    OutPut("  Norm of Darcy defect " << r.norm() << endl);
+    Output::print<1>("  Norm of Darcy defect ", r.norm());
   }
 }
 

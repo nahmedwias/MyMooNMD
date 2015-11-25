@@ -82,7 +82,7 @@ void UmfpackSolverWrapper::numFactorize() {
 	int error = umfpack_di_numeric(ia,ja,a,symbolic,&numeric,Control,Info);
 	handle_error(error,__LINE__);
 	if(TDatabase::ParamDB->SC_VERBOSE>1)
-	  OutPut("  estimated condition number " << 1/Info[UMFPACK_RCOND] << endl);
+	  Output::print<1>("  estimated condition number ", 1/Info[UMFPACK_RCOND]);
 }
 
 void UmfpackSolverWrapper::solve(double* rhs, double* solution) {

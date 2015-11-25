@@ -101,8 +101,8 @@ class StokesDarcy2D
    */
   std::shared_ptr<TMatrix> get_combined_matrix() const
   {
-    ErrThrow("The class StokesDarcy2D is not given as a matrix, therefore "
-             + "get_combined_matrix() makes no sense here");
+    ErrThrow("The class StokesDarcy2D is not given as a matrix, therefore ",
+             "get_combined_matrix() makes no sense here");
     throw; // only to avoid a compiler warning
   }
   

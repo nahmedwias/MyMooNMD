@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
    * read parameter file
    * ========================================================================*/
   Domain.ReadParam(argv[1]);
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
   
   // ==========================================================================
   // take example from database (input file), see TDatabase::ParamDB->EXAMPLE
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   /* ==========================================================================
    * read boundary parameterization, initialize coarse grid, Refine,
    * ========================================================================*/
-  OutPut("Initialize domain\n");
+  Output::print<1>("Initialize domain");
   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
   // vector containing all interface edges (joints)
   std::vector<const TInnerInterfaceJoint *> interface;
@@ -68,26 +68,26 @@ int main(int argc, char* argv[])
   /* ==========================================================================
    * get the collections of the two subdomains
    * ========================================================================*/
-  OutPut("\nSome info on the subdomains\n");
+  Output::print<1>("\nSome info on the subdomains");
   {
     // divide the collection
     TCollection *coll_Darcy = Domain.GetCollection(It_Finest, 0, 1);
     TCollection *coll_NSE = Domain.GetCollection(It_Finest, 0, 2);
     
     // write out some information on the grid.
-    OutPut(" number of all cells       " << coll_NSE->GetN_Cells() 
-                                          + coll_Darcy->GetN_Cells() << endl);
-    OutPut(" number of Stokes cells    " << coll_NSE->GetN_Cells() << endl);
-    OutPut(" number of Darcy cells     " << coll_Darcy->GetN_Cells() << endl);
-    OutPut(" number of interface edges " << interface.size() << endl);
+    Output::print<1>(" number of all cells       ",
+                     coll_NSE->GetN_Cells() + coll_Darcy->GetN_Cells());
+    Output::print<1>(" number of Stokes cells    ", coll_NSE->GetN_Cells());
+    Output::print<1>(" number of Darcy cells     ", coll_Darcy->GetN_Cells());
+    Output::print<1>(" number of interface edges ", interface.size());
     // hmin is really the minimum of the largest edge of each cell
     // hmin is __not__ the smallest edge, in a uniform grid it equals hmax  
     {
       double hmin, hmax;
       coll_Darcy->GetHminHmax(&hmin, &hmax);
-      OutPut(" Darcy  h_min " << hmin << ", hmax " << hmax << endl);
+      Output::print<1>(" Darcy  h_min ", hmin, ", hmax ", hmax);
       coll_NSE->GetHminHmax(&hmin, &hmax);
-      OutPut(" Stokes h_min " << hmin << ", hmax " << hmax << endl);
+      Output::print<1>(" Stokes h_min ", hmin, ", hmax ", hmax);
     }
     delete coll_Darcy;
     delete coll_NSE;
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     Domain.PS(os.str().c_str(), coll_tot);
     delete coll_tot;
   }
-  OutPut("\n");
+  Output::print<1>(""); // empty line
   /* =======================   inteface function   ========================= */
   // if D-RR, then -2 (discontinuous) otherwise 2 (continuous)
   int spaceType = D_RR ? -2 : 2;
@@ -114,10 +114,10 @@ int main(int argc, char* argv[])
   //int spaceType = -2;
   // 'eta' is needed for solution_strategy 2 and 3
   InterfaceFunction eta(interface, spaceType);
-  OutPut("number of dofs on the interface: " << eta.length() << endl);
-  Out("We use " << (spaceType > 0 ? "" : "dis") << 
-      "continuous interface functions\n", 1);
-  OutPut(endl);
+  Output::print<1>("number of dofs on the interface: ", eta.length());
+  Output::print<2>("We use ", (spaceType > 0 ? "" : "dis"),
+                   "continuous interface functions");
+  Output::print<1>("");
   
   /* ==========================================================================
    * build matrices , assemble all terms (except for the interface integrals)
@@ -138,8 +138,8 @@ int main(int argc, char* argv[])
   std::shared_ptr<Example_NSE2D> ns_example = example.get_stokes_example();
   for(unsigned int i = 0; i < interface_conditions.size(); i++)
   {
-    OutPut("intitializing a " << interface_conditions[i] << 
-           " (Navier-) Stokes problem\n");
+    Output::print<1>("intitializing a ", interface_conditions[i],
+                     " (Navier-) Stokes problem");
     StokesProblem * ns = new StokesProblem(Domain, ns_example, 
                                            interface_conditions[i],
                                            interface, icond);
@@ -158,8 +158,7 @@ int main(int argc, char* argv[])
         //comps.insert(pair<int, double>(3, -1.0));
         //comps.insert(pair<int, double>(5, -1.0));
         //ns->assemble_boundary_term("n nu graduT n v", comps);
-        ErrMsg("Stokes_2D::assemble_boundary_term not yet ported from MooNMD");
-        exit(1);
+        ErrThrow("Stokes_2D::assemble_boundary_term not yet ported from MooNMD");
       }
       ns->findPeriodicDOFs();
       ns->makePeriodicBoundary();
@@ -173,7 +172,7 @@ int main(int argc, char* argv[])
       ns->get_matrix().block(8)->add(0, 0, 1e30);
     ns_problems[interface_conditions[i]] = ns;
   }
-  OutPut(endl);
+  Output::print<1>("");
   
   /* ==========================     Darcy     ============================== */
   // needed for primal Darcy
@@ -184,8 +183,8 @@ int main(int argc, char* argv[])
   std::map<InterfaceCondition, DarcyPrimal*> d_problems;
   for(unsigned int i = 0; i < interface_conditions.size(); i++)
   {
-    OutPut("intitializing a " << (mixed ? "mixed " : "primal ")
-           << interface_conditions[i] << " Darcy problem\n");
+    Output::print<1>("intitializing a ", (mixed ? "mixed " : "primal "),
+                     interface_conditions[i], " Darcy problem");
     DarcyPrimal * d = new DarcyPrimal(Domain, *d_example.get(), 
                                       interface_conditions[i], interface, 1);
     if(TDatabase::ParamDB->SC_VERBOSE > 0) d->print_assemble_input_output();
@@ -206,9 +205,9 @@ int main(int argc, char* argv[])
   // system, we're trying to solve
   StokesDarcy2D sd(ns_problems, d_problems);
   
-  Out(std::setfill('*') << std::setw(79) << "*\n" << std::setfill(' '), 0);
-  Out("Everything has been set up (withing " << GetTime()-time << " seconds), "
-      << "ready to solve\n\n", 0);
+  Output::print<1>(std::setfill('*'), std::setw(79), "*\n", std::setfill(' '));
+  Output::print<1>("Everything has been set up (withing ", GetTime()-time,
+                   " seconds), ", "ready to solve\n\n");
   /* ===================   compute direct solution   ======================= */
   time = GetTime();
   if(solution_strategy >= 0)
@@ -216,18 +215,18 @@ int main(int argc, char* argv[])
     sd.solveDirect();
     
     double error = ErrorOnInterface(*(sd.c_stokes()), *(sd.c_darcy()), -1);
-    OutPut("  Error on interface " << error << endl)
+    Output::print<1>("  Error on interface ", error);
     WriteVtk_and_measureErrors(*(sd.c_stokes()), *(sd.c_darcy()), NULL, -1);
-    Out("Done with direct solution of the coupled system within " << 
-        GetTime()-time << " seconds\n", 0);
+    Output::print<1>("Done with direct solution of the coupled system within ",
+                     GetTime()-time, " seconds");
   }
   
   if(TDatabase::ParamDB->SC_VERBOSE) sd.check_equalities();
   
   if(solution_strategy != 0) // not only direct solve
   {
-    Out(std::setfill('*') << std::setw(79) << "*\n" << std::setfill(' '), 0);
-    Out("Starting to solve iteratively\n\n", 0);
+    Output::print<1>(std::setfill('*'), std::setw(79), "*\n", std::setfill(' '));
+    Output::print<1>("Starting to solve iteratively\n");
   }
   
   /* =======================   interface iteration   ======================= */
@@ -243,16 +242,16 @@ int main(int argc, char* argv[])
     int maxit = TDatabase::ParamDB->StoDa_nIterations;
     for(int it = 0; it < maxit; it++)
     {
-      OutPut("\nInterface Iteration: " << it << endl);
-      OutPut(" Memory: " << setw(8) << GetMemory()/(1048576.0) << " MB\n");
+      Output::print<1>("\nInterface Iteration: ", it);
+      Output::print<1>(" Memory: ", setw(8), GetMemory()/(1048576.0), " MB");
       sd.solve_coupled_system(eta_f, eta_p);
       
       // check stopping criterion, compute errors, make pictures
       if(sd.stopIteration(it))
         break;
     } // end loop for coupling
-    Out("Done with classical iterative method within " << GetTime()-time <<
-        " seconds\n", 0);
+    Output::print<1>("Done with classical iterative method within ",
+                     GetTime()-time, " seconds\n");
   }
   else if(solution_strategy == 2 || solution_strategy == -2)
   {
@@ -260,29 +259,29 @@ int main(int argc, char* argv[])
     int maxit = TDatabase::ParamDB->StoDa_nIterations;
     for(int it = 0; it < maxit; it++)
     {
-      OutPut("\nInterface Iteration: " << it << endl);
-      OutPut(" Memory: " << setw(8) << GetMemory()/(1048576.0) << " MB\n");
+      Output::print<1>("\nInterface Iteration: ", it);
+      Output::print<1>(" Memory: ", setw(8), GetMemory()/(1048576.0), " MB");
       sd.solve_fixed_point(eta);
       
       // check stopping criterion, compute errors, make pictures
       if(sd.stopIteration(it))
         break;
     } // end loop for coupling
-    OutPut("norm of final eta " << eta.norm() << endl);
-    Out("Done with fixed point iteration within " << GetTime()-time <<
-         " seconds\n", 0);
+    Output::print<1>("norm of final eta ", eta.norm());
+    Output::print<1>("Done with fixed point iteration within ", GetTime()-time,
+                     " seconds");
   }
   else if(solution_strategy == 3 || solution_strategy == -3)
   {
-    OutPut("\nSolving the Stecklov-Poincare equation\n");
+    Output::print<1>("\nSolving the Stecklov-Poincare equation");
     // solve a Stecklov-Poincare equation using template iterative solvers
     sd.solve_Stecklov_Poincare(eta);
     
     const double error = ErrorOnInterface(*(sd.stokes()), *(sd.darcy()), 0);
-    OutPut("  Error on interface " << error << endl)
+    Output::print<1>("  Error on interface ", error);
     WriteVtk_and_measureErrors(*(sd.stokes()), *(sd.darcy()), NULL, 0);
-    Out("Done with Steklov-Poincare iteration within " << GetTime()-time <<
-        " seconds\n", 0);
+    Output::print<1>("Done with Steklov-Poincare iteration within ",
+                     GetTime()-time, " seconds");
   }
   /* ============================   clean up   ============================= */
   for(unsigned int i = 0; i < interface_conditions.size(); i++)
@@ -291,9 +290,9 @@ int main(int argc, char* argv[])
     delete d_problems.at(interface_conditions[i]);
   }
   }
-  OutPut("MEMORY: " << setw(10) << GetMemory()/(1048576.0) << " MB" << endl);
-  OutPut("used time: " << GetTime() << endl);
-  OutPut("Program finished normally\n");
-  CloseFiles();
+  Output::print<1>("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
+  Output::print<1>("used time: ", GetTime());
+  Output::print<1>("Program finished normally");
+  Output::close_file();
   return 0;
 }

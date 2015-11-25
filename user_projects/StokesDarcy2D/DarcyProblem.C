@@ -151,7 +151,7 @@ DarcyProblem::DarcyProblem(const TDomain& domain, Example_StokesDarcy2D* ex,
 /** ************************************************************************ */
 DarcyProblem::~DarcyProblem()
 {
-  //OutPut("DarcyProblem destructor\n");
+  //Output::print<1>("DarcyProblem destructor");
   delete IrhsDARCY; 
   delete solution_old;
   delete p_Darcy_old; 
@@ -159,10 +159,6 @@ DarcyProblem::~DarcyProblem()
   delete solution_direct;
   delete p_Darcy_direct;
   delete u_Darcy_direct;
-  if(etaToBd)
-    delete etaToBd->GetStructure();
-  if(map_sol2eta)
-    delete map_sol2eta->GetStructure();
   delete map_sol2eta_rhs;
   delete eta_hom; // TODO why does this not work??
   delete darcy_primal;
@@ -181,7 +177,7 @@ void DarcyProblem::mat_DARCY_iIntegrals(BlockMatrix * m)
   if(m == NULL)
     m = (mixed) ? (BlockMatrix*) &darcy_mixed->get_matrix() 
                 : (BlockMatrix*) &darcy_primal->get_matrix();
-  Out(" Assemble interface integrals into matrix (Darcy)\n", 1);
+  Output::print<1>(" Assemble interface integrals into matrix (Darcy)");
   
   // velocity-velocity
   TSquareMatrix2D* Amat = (mixed) ? darcy_mixed->get_matrix().get_A_block()
@@ -218,7 +214,7 @@ void DarcyProblem::mat_DARCY_iIntegrals(BlockMatrix * m)
         continue; // not an interface dof
       new_rows[row][row] = 1.0; // set diagonal entry only, all others are zero
     }
-    Amat->changeRows(new_rows, true); // this is quite expensive
+    Amat->changeRows(new_rows); // this is quite expensive
     return; // no more assembling here
   }
   
@@ -829,7 +825,7 @@ void DarcyProblem::find_global_DOF_interface(const InterfaceFunction &eta)
           // the i-th interface dof corresponds to the j-th Darcy pressure dof
           global_DOF_interface[pDOF[j]].push_back(std::make_pair(d_cell, iDOF));
           
-          //OutPut("add " << pDOF[j] << " " << d_cell << " " << iDOF << endl);
+          //Output::print<1>("add ", pDOF[j], " ", d_cell, " ", iDOF);
           continue;
         }
       }
@@ -1003,7 +999,8 @@ void DarcyProblem::create_structure_of_map_solution_to_interface(unsigned int l)
     }
   }
   // generate sparse matrix
-  TStructure* structure = new TStructure(n_rows, n_cols, N_entries, cols, rows);
+  std::shared_ptr<TStructure> structure(new TStructure(n_rows, n_cols, 
+                                                       N_entries, cols, rows));
   map_sol2eta.reset(new TMatrix(structure)); // empty matrix
 }
 
@@ -1820,8 +1817,8 @@ void DarcyProblem::create_etaToBd(const InterfaceFunction &eta)
     }
   }
   // generate sparse matrix
-  TStructure* Cstructure = new TStructure(n_rows, n_cols, N_entries, cols,
-                                          rows);
+  std::shared_ptr<TStructure> Cstructure(new TStructure(n_rows, n_cols, 
+                                                        N_entries, cols, rows));
   etaToBd.reset(new TMatrix(Cstructure)); // empty matrix
   
   Assemble_etaToBd(eta);
@@ -2128,14 +2125,14 @@ void DarcyProblem::addEta(const InterfaceFunction& eta, double factor)
     for(int j = rows[i]; j < rows[i + 1]; j++)
       value += entries[j] * eta(cols[j]);
     this->getRhs()[i] += factor * value;
-    //OutPut("add " << i << " " << value*factor << endl);
+    //Output::print<1>("add ", i, " ", value*factor);
   }
 }
 
 /** ************************************************************************ */
 void DarcyProblem::solve(const InterfaceFunction &eta)
 {
-  Out("Solving a " << typeOf_bci << " Darcy problem\n", 1);
+  Output::print<1>("Solving a ", typeOf_bci, " Darcy problem");
   //print_assemble_input_output();
   
   // copy rhs without interface integrals
@@ -2170,14 +2167,12 @@ void DarcyProblem::findPeriodicDOFs()
   const double x_right = 2.0;
   if(TDatabase::ParamDB->EXAMPLE != 2)
   {
-    ErrMsg("only the riverbed example is supported for periodic boundaries");
-    exit(0);
+    ErrThrow("only the riverbed example is supported for periodic boundaries");
   }
   
   if(getRT())
   {
-    OutPut("periodic boundary for Raviart-Thomas not yet implemented\n");
-    exit(0);
+    ErrThrow("periodic boundary for Raviart-Thomas not yet implemented");
   }
   
   const TFESpace2D * fespace = getP().GetFESpace2D();
@@ -2261,20 +2256,17 @@ void DarcyProblem::findPeriodicDOFs()
           
           if(FEid1 != FEid2)
           {
-            OutPut(
-                "Error in making periodic boundary. " << "Two different finite elements\n");
-            exit(0);
+            ErrThrow("Error in making periodic boundary. ",
+                     "Two different finite elements");
           }
           if(N_localDOF1 != N_localDOF2)
           {
-            OutPut(
-                "Error in making periodic boundary. " << "Different numbers of dofs on the periodic boundary\n");
-            exit(0);
+            ErrThrow("Error in making periodic boundary. ",
+                     "Different numbers of dofs on the periodic boundary");
           }
           
-          if(TDatabase::ParamDB->SC_VERBOSE > 2)
-            OutPut(
-                " creating a vertical periodic boundary at y=(" << y21 << "," << y22 << ")\n");
+          Output::print<3>(" creating a vertical periodic boundary at y=(", y21,
+                           ",", y22, ")");
           for(int edge_dof = 0; edge_dof < N_localDOF1; edge_dof++)
           {
             // due to counterclockwise numbering in each cell we have to go 
@@ -2285,20 +2277,20 @@ void DarcyProblem::findPeriodicDOFs()
             if(left)
             {
               periodic_dofs[dof1] = dof2;
-              //OutPut(" dofs " << dof1 << "\t" << dof2 << endl);
+              //Output::print<1>(" dofs ", dof1, "\t", dof2);
             }
             else
             {
               periodic_dofs[dof2] = dof1;
-              //OutPut(" dofs " << dof2 << "\t" << dof1 << endl);
+              //Output::print<1>(" dofs ", dof2, "\t", dof1);
             }
           }
         }
       }
     }
   }
-  OutPut(
-      "There are " << periodic_dofs.size() << " periodic Darcy degrees of freedom\n");
+  Output::print<1>("There are ", periodic_dofs.size(),
+                   " periodic Darcy degrees of freedom");
 }
 
 /** ************************************************************************ */
@@ -2307,14 +2299,12 @@ void DarcyProblem::makePeriodicBoundary(std::shared_ptr<TMatrix> mat,
 {
   if(getRT())
   {
-    OutPut("periodic boundary for Raviart-Thomas not yet implemented\n");
-    exit(0);
+    ErrThrow("periodic boundary for Raviart-Thomas not yet implemented");
   }
   if(periodic_dofs.empty())
   {
-    ErrMsg("called DarcyProblem::makePeriodicBoundary with map 'periodic_dofs' "
-           << "not yet set");
-    exit(1);
+    ErrThrow("called DarcyProblem::makePeriodicBoundary with map ",
+             "'periodic_dofs' not yet set");
   }
   
   if(mat == NULL)
@@ -2361,7 +2351,7 @@ void DarcyProblem::makePeriodicBoundary(std::shared_ptr<TMatrix> mat,
       new_rows[row]; // empty row
       
   }
-  mat->changeRows(new_rows, true);
+  mat->changeRows(new_rows);
 }
 
 /** ************************************************************************ */

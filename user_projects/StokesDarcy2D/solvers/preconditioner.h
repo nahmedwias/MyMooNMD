@@ -67,7 +67,7 @@ preconditioner<LinearOperator, Vector>::preconditioner(LinearOperator * m): M(m)
   {
     type = no_preconditioner;
     if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not direct solver
-      OutPut("no preconditioner secified\n");
+      Output::print<1>("no preconditioner secified");
   }
 }
 

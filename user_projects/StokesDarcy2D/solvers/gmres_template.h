@@ -477,8 +477,8 @@ public:
     
     double * elements = new double[n_elements];
     std::fill(elements, elements+n_elements, 0.0);
-    TStructure * structure = new TStructure(size, size, n_elements, ColPtr, 
-                                            RowPtr);
+    std::shared_ptr<TStructure> structure(new TStructure(size, size, n_elements,
+                                                         ColPtr, RowPtr));
     M = new TMatrix(structure, elements);
   };
   
@@ -506,7 +506,6 @@ public:
   
   ~TriangularMatrix()
   {
-    delete M->GetStructure();
     delete M;
   }
   

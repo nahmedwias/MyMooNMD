@@ -25,4 +25,4 @@ parMooN_sd2d_${PARMOON_PARALLEL_TYPE})
 # Add the correct geometry flag to the target.
 target_compile_definitions(sd2d PUBLIC -D__2D__)
 # Link in the required libraries.
-target_link_libraries(sd2d STODA_LIB_2D parmoon_2d ${_EXTERN_LIBRARIES})
+target_link_libraries(sd2d STODA_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})

@@ -53,16 +53,16 @@ DarcyPrimal::DarcyPrimal(const TDomain& domain, const Example_CD2D& ex,
         // other case we don't need a Dirichlet Darcy problem
         break;
       case Robin:
-        ErrThrow("Robin interface conditions for Stecklov-Poincare not " 
-                 + "possible yet");
+        ErrThrow("Robin interface conditions for Stecklov-Poincare not ", 
+                 "possible yet");
         break;
       case weakRobin:
-        ErrThrow("weak Robin interface conditions for Stecklov-Poincare not "
-                 + "possible yet");
+        ErrThrow("weak Robin interface conditions for Stecklov-Poincare not ",
+                 "possible yet");
         break;
       case DirichletSTAB:
-        ErrThrow("DirichletSTAB interface conditions for Stecklov-Poincare "
-                 + "not possible yet");
+        ErrThrow("DirichletSTAB interface conditions for Stecklov-Poincare ",
+                 "not possible yet");
         break;
       default:
         ErrThrow("unsupported boundary conditions on interface");
@@ -74,12 +74,8 @@ DarcyPrimal::DarcyPrimal(const TDomain& domain, const Example_CD2D& ex,
 /** ************************************************************************ */
 DarcyPrimal::~DarcyPrimal()
 {
-  //OutPut("DarcyPrimal destructor\n");
-  if(etaToBd)
-    delete etaToBd->GetStructure();
-  if(map_sol2eta)
-    delete map_sol2eta->GetStructure();
-  delete eta_hom; // TODO why does this not work??
+  //Output::print<1>("DarcyPrimal destructor");
+  delete eta_hom;
 }
 
 /** ************************************************************************ */
@@ -93,7 +89,7 @@ void DarcyPrimal::mat_DARCY_iIntegrals(BlockMatrix * m)
 {
   if(m == NULL)
     m = &this->get_matrix();
-  Out(" Assemble interface integrals into matrix (Darcy)\n", 1);
+  Output::print<1>(" Assemble interface integrals into matrix (Darcy)");
   
   // velocity-velocity
   TSquareMatrix2D* Amat = this->get_matrix().get_matrix();
@@ -111,7 +107,7 @@ void DarcyPrimal::mat_DARCY_iIntegrals(BlockMatrix * m)
         continue; // not an interface dof
       new_rows[row][row] = 1.0; // set diagonal entry only, all others are zero
     }
-    Amat->changeRows(new_rows, true); // this is quite expensive
+    Amat->changeRows(new_rows); // this is quite expensive
     return; // no more assembling here
   }
   
@@ -262,9 +258,9 @@ void DarcyPrimal::localAssembleMat_pressure_pressure(local_edge_assembling &l)
       break;
     }
     default:
-      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
-               + "Robin_Robin (1), weak Robin_Robin(2), "
-               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
+      ErrThrow("unsupported type of Problem. Choose either ",
+               "Neumann_Neumann (0), Robin_Robin (1), weak Robin_Robin(2), ",
+               "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
       break;
   }
 }
@@ -318,9 +314,9 @@ void DarcyPrimal::localAssembleEtaToBd_pressure(local_edge_assembling &l)
       break;
     }
     default:
-      ErrThrow("unsupported type of Problem. Choose either Neumann_Neumann (0),"
-               + " Robin_Robin (1), weak Robin_Robin(2), "
-               + "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
+      ErrThrow("unsupported type of Problem. Choose either ",
+               "Neumann_Neumann (0), Robin_Robin (1), weak Robin_Robin(2), ",
+               "Dirichlet_DirichletSTAB(3) or Dirichlet_Dirichlet(4)");
       break;
   }
 }
@@ -473,7 +469,7 @@ void DarcyPrimal::find_global_DOF_interface(const InterfaceFunction &eta)
           this->global_DOF_interface[pDOF[j]].push_back(std::make_pair(d_cell,
                                                                        iDOF));
           
-          //OutPut("add " << pDOF[j] << " " << d_cell << " " << iDOF << endl);
+          //Output::print<1>("add ", pDOF[j], " ", d_cell, " ", iDOF);
           continue;
         }
       }
@@ -616,7 +612,8 @@ void DarcyPrimal::create_structure_of_map_solution_to_interface(unsigned int l)
     }
   }
   // generate sparse matrix
-  TStructure* structure = new TStructure(n_rows, n_cols, N_entries, cols, rows);
+  std::shared_ptr<TStructure> structure(new TStructure(n_rows, n_cols, 
+                                                       N_entries, cols, rows));
   map_sol2eta.reset(new TMatrix(structure)); // empty matrix
 }
 
@@ -946,8 +943,7 @@ void DarcyPrimal::assemble_Neumann_map_to_interface(local_matrices &m,
   if(assemble_on_return == false)
   {
     // when returning Neumann data we have to assemble integrals in the domain.
-    ErrMsg("Trying to return Neumann data without assembling integrals");
-    exit(1);
+    ErrThrow("Trying to return Neumann data without assembling integrals");
   }
   
   const double K = TDatabase::ParamDB->SIGMA_PERM;
@@ -1222,8 +1218,7 @@ void DarcyPrimal::update(InterfaceFunction& eta_f, InterfaceFunction* eta_p)
         break;
       }
       default:
-        ErrThrow("unknown updating strategy "
-                 + std::to_string(updatingProcedure));
+        ErrThrow("unknown updating strategy ", updatingProcedure);
         break;
     }
   }
@@ -1324,8 +1319,8 @@ void DarcyPrimal::create_etaToBd(const InterfaceFunction &eta)
     }
   }
   // generate sparse matrix
-  TStructure* Cstructure = new TStructure(n_rows, n_cols, N_entries, cols,
-                                          rows);
+  std::shared_ptr<TStructure> Cstructure(new TStructure(n_rows, n_cols, 
+                                                        N_entries, cols, rows));
   etaToBd.reset(new TMatrix(Cstructure)); // empty matrix
   
   Assemble_etaToBd(eta);
@@ -1518,14 +1513,14 @@ void DarcyPrimal::addEta(const InterfaceFunction& eta, double factor)
     for(int j = rows[i]; j < rows[i + 1]; j++)
       value += entries[j] * eta(cols[j]);
     this->getRhs()[i] += factor * value;
-    //OutPut("add " << i << " " << value*factor << endl);
+    //Output::print<1>("add ", i, " ", value*factor);
   }
 }
 
 /** ************************************************************************ */
 void DarcyPrimal::solve(const InterfaceFunction &eta)
 {
-  Out("Solving a " << typeOf_bci << " Darcy problem\n", 1);
+  Output::print<1>("Solving a ", typeOf_bci, " Darcy problem");
   //print_assemble_input_output();
   
   // copy rhs without interface integrals
@@ -1640,18 +1635,17 @@ void DarcyPrimal::findPeriodicDOFs()
           
           if(FEid1 != FEid2)
           {
-            ErrThrow("Error in making periodic boundary. Two different finite "
-                     + "elements");
+            ErrThrow("Error in making periodic boundary. Two different finite ",
+                     "elements");
           }
           if(N_localDOF1 != N_localDOF2)
           {
-            ErrThrow("Error in making periodic boundary. Different numbers of "
-                     + "of dofs on the periodic boundary");
+            ErrThrow("Error in making periodic boundary. Different numbers of ",
+                     "of dofs on the periodic boundary");
           }
           
-          if(TDatabase::ParamDB->SC_VERBOSE > 2)
-            OutPut(" creating a vertical periodic boundary at y=(" << y21 
-                   << "," << y22 << ")\n");
+          Output::print<3>(" creating a vertical periodic boundary at y=(", y21,
+                           ",", y22, ")");
           for(int edge_dof = 0; edge_dof < N_localDOF1; edge_dof++)
           {
             // due to counterclockwise numbering in each cell we have to go 
@@ -1662,20 +1656,20 @@ void DarcyPrimal::findPeriodicDOFs()
             if(left)
             {
               periodic_dofs[dof1] = dof2;
-              //OutPut(" dofs " << dof1 << "\t" << dof2 << endl);
+              //Output::print<1>(" dofs ", dof1, "\t", dof2);
             }
             else
             {
               periodic_dofs[dof2] = dof1;
-              //OutPut(" dofs " << dof2 << "\t" << dof1 << endl);
+              //Output::print<1>(" dofs ", dof2, "\t", dof1);
             }
           }
         }
       }
     }
   }
-  OutPut("There are " << periodic_dofs.size() 
-         << " periodic Darcy degrees of freedom\n");
+  Output::print<1>("There are ", periodic_dofs.size(), 
+                   " periodic Darcy degrees of freedom\n");
 }
 
 /** ************************************************************************ */
@@ -1684,8 +1678,8 @@ void DarcyPrimal::makePeriodicBoundary(std::shared_ptr<TMatrix> mat,
 {
   if(periodic_dofs.empty())
   {
-    ErrThrow("called DarcyPrimal::makePeriodicBoundary with map " 
-             + "'periodic_dofs' not yet set");
+    ErrThrow("called DarcyPrimal::makePeriodicBoundary with map ",
+             "'periodic_dofs' not yet set");
   }
   
   if(mat == NULL)
@@ -1732,7 +1726,7 @@ void DarcyPrimal::makePeriodicBoundary(std::shared_ptr<TMatrix> mat,
       new_rows[row]; // empty row
       
   }
-  mat->changeRows(new_rows, true);
+  mat->changeRows(new_rows);
 }
 
 /** ************************************************************************ */

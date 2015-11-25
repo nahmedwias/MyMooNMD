@@ -9,16 +9,16 @@ using namespace std;
 void local_matrices::info(size_t verbose) const
 {
   // the member 'm' has either 1 or nine matrices 
-  OutPut("local_matrices object with " << this->m.size() << " matrices\n");
+  Output::print<1>("local_matrices object with ", this->m.size(), " matrices");
   for(auto it = this->m.begin(), end = this->m.end();
       it != end && it->size() != 0; ++it)
   {
-    OutPut("local matrix " << std::distance(this->m.begin(), it) << endl);
+    Output::print<1>("local matrix ", std::distance(this->m.begin(), it));
     for(auto i = it->begin(), i_end = it->end(); i != i_end; ++i)
     {
       for(auto j = i->second.begin(), j_end = i->second.end(); j != j_end; ++j)
       {
-        OutPut(i->first << "  " << j->first << "\t" << j->second << endl);
+        Output::print<1>(i->first, "  ", j->first, "\t", j->second);
       }
     }
   }
@@ -84,205 +84,192 @@ void check_all_parameters()
     ErrThrow("set 'StoDa_StokesFirst' to either 0 or 1");
   
   if(icond != 0 && icond != 1)
-    ErrThrow("Set 'StoDa_interfaceType' to either 0 (Beavers-Joseph-Saffman) "
-             + "or 1 (zero tangential velocity) to control the tangential "
-             + "condition in the (Navier-) Stokes subdomain");
+    ErrThrow("Set 'StoDa_interfaceType' to either 0 (Beavers-Joseph-Saffman) ",
+             "or 1 (zero tangential velocity) to control the tangential ",
+             "condition in the (Navier-) Stokes subdomain");
   
   if(TDatabase::ParamDB->StoDa_weakGamma == 0.0)
-    ErrThrow("set 'StoDa_weakGamma' to some positive number for weak "
-           + "(Dirichlet) interface conditions (tangential and normal "
-           + "direction). Set it to a negative number to enforce the normal "
-           + "condition exactly. For Dirichlet problems on the interface in " 
-           + "that case also the tangential component will be set exactly if "
-           + "'StoDa_interfaceType' is set to 1 (u.t = 0).");
+    ErrThrow("set 'StoDa_weakGamma' to some positive number for weak ",
+             "(Dirichlet) interface conditions (tangential and normal ",
+             "direction). Set it to a negative number to enforce the normal ",
+             "condition exactly. For Dirichlet problems on the interface in ", 
+             "that case also the tangential component will be set exactly if ",
+             "'StoDa_interfaceType' is set to 1 (u.t = 0).");
   
-  OutPut("\n\n\nsolving a Stokes--Darcy problem in 2D\n");
-  OutPut("The coupled problem is a ");
+  Output::print<1>("\n\n\nsolving a Stokes--Darcy problem in 2D");
+  
+  std::string name_of_problem;
   switch(pt)
   {
     case 0:
-      OutPut("Neumann-Neumann-");
+      name_of_problem = "Neumann-Neumann-";
       TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
       break;
     case 1:
-      OutPut( "Robin-Robin-");
+      name_of_problem = "Robin-Robin-";
       TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
       break;
     case 2:
-      OutPut("weak Robin-Robin-method\n");
+      name_of_problem = "weak Robin-Robin-";
       ErrThrow("weak Robin-Robin-method is not yet correctly implemented!");
       break;
     case 3:
-      OutPut("stabilized Dirichlet-Dirichlet-method\n");
-      ErrThrow("stabilized Dirichlet-Dirichlet-method is not yet correctly "
-               + "implemented!");
+      name_of_problem = "stabilized Dirichlet-Dirichlet-";
+      ErrThrow("stabilized Dirichlet-Dirichlet-method is not yet correctly ",
+               "implemented!");
       break;
     case 4:
-      OutPut("Dirichlet-Dirichlet-method\n");
+      name_of_problem = "Dirichlet-Dirichlet-";
       ErrThrow("Dirichlet-Dirichlet-method is not yet correctly implemented!");
       break;
     default:
-      ErrThrow("so far only Neumann-Neumann(0) and Robin-Robin(1) is "
-               + "supported");
+      ErrThrow("so far only Neumann-Neumann(0) and Robin-Robin(1) is ",
+               "supported");
       break;
   }
-  OutPut("coupled problem with\n");
-  OutPut(
-      (icond == 0 ? "Beavers-Joseph-Saffmann condition" : "zero tangential component"));
-  OutPut(" on the interface\n");
+  Output::print<1>("The coupled problem is a ", name_of_problem, 
+                   "coupled problem with ",
+                   (icond == 0 ? "Beavers-Joseph-Saffmann condition"
+                               : "zero tangential component"),
+                   " on the interface");
   
   switch(solution_strategy)
   {
     case 0:
-      OutPut("No iteration, the coupled system is solved directly\n")
+      Output::print<1>("No iteration, the coupled system is solved directly");
       break;
     case 1: // solve coupled system iteratively using Jacobi or Gauss-Seidel
     case -1:
-      OutPut("The coupled system will be solved iteratively using a\n");
-      OutPut((TDatabase::ParamDB->StoDa_algorithm==1?"Gauss--Seidel":"Jacobi"));
-      OutPut(" type method");
+      Output::print<1>("The coupled system will be solved iteratively using a",
+                       (TDatabase::ParamDB->StoDa_algorithm==1?"Gauss--Seidel"
+                                                              :"Jacobi"),
+                       " type method");
       if(TDatabase::ParamDB->StoDa_algorithm == 1)
       {
-        OutPut(" solving ");
-        OutPut((stokes_first ? "Stokes" : "Darcy"));
-        OutPut(" first\n");
+        Output::print<1>(" solving ", (stokes_first ? "Stokes" : "Darcy"),
+                         " first\n");
       }
-      else
-        OutPut(endl);
       if(updating_strategy == 1)
       {
         if(solution_strategy == 1 && pt == 1)
         {
-          ErrMsg("trying to solve a regular Robin-Robin problem.\nThere is no " 
-                 << "(big) solution of the coupled system avaiable.\nPlease " 
-                 << "choose StoDa_solutionStrategy: -1.");
-          exit(0);
+          ErrThrow("trying to solve a regular Robin-Robin problem.\nThere is ",
+                   "no (big) solution of the coupled system avaiable.\nPlease ",
+                   "choose StoDa_solutionStrategy: -1.");
         }
       }
       if(updating_strategy == 3)
       {
         if(pt != 0) // Neumann-Neumann
         {
-          ErrMsg("For C-RR choose StoDa_problemType 0 (Neumann-Neumann)");
-          exit(0);
+          ErrThrow("For C-RR choose StoDa_problemType 0 (Neumann-Neumann)");
         }
         else 
-          OutPut("The C-RR method is employed\n");
+          Output::print<1>("The C-RR method is employed");
       }
       else if(updating_strategy == 4)
       {
         // D-RR
         if(pt != 1) // Robin-Robin
         {
-          ErrMsg("For D-RR choose StoDa_problemType 1 (Robin-Robin)");
-          exit(0);
+          ErrThrow("For D-RR choose StoDa_problemType 1 (Robin-Robin)");
         }
         else
-          OutPut("The D-RR method is employed\n");
+          Output::print<1>("The D-RR method is employed");
       }
       else if(updating_strategy != 1 && updating_strategy != 2)
       {
-        ErrMsg("unknown 'StoDa_updatingStrategy'");
-        exit(0);
+        ErrThrow("unknown 'StoDa_updatingStrategy'");
       }
       break;
     case 2: // solve fixed point formulation
     case -2:
-      OutPut("The fixed point equation will be solved iteratively");
+      Output::print<1>("The fixed point equation will be solved iteratively");
       
       if(updating_strategy == 1)
       {
-        OutPut(endl);
         if(solution_strategy == 2 && pt == 1)
         {
-          ErrMsg("trying to solve a regular Robin-Robin problem.\nThere is no "
-                 << "(big) solution of the coupled system avaiable.\nPlease " 
-                 << "choose StoDa_solutionStrategy: -2.");
-          exit(0);
+          ErrThrow("trying to solve a regular Robin-Robin problem.\nThere is ",
+                   "no (big) solution of the coupled system avaiable.\nPlease ",
+                   "choose StoDa_solutionStrategy: -2.");
         }
       }
       else if(updating_strategy == 2)
       {
-        OutPut(" using a Newton iteration\n");
-        ErrMsg("Newton for the fixed point equation not yet implemented");
-        exit(0);
+        Output::print<1>(" using a Newton iteration");
+        ErrThrow("Newton for the fixed point equation not yet implemented");
       }
       else if(updating_strategy == 4)
       {
-        OutPut(endl);
+        // no printing
       }
       else
       {
-        OutPut(endl);
-        ErrMsg("unknown 'StoDa_updatingStrategy'");
-        exit(0);
+        ErrThrow("unknown 'StoDa_updatingStrategy'");
       }
       break;
     case 3: // solve Stecklov-Poincare formulation
     case -3:
-      OutPut("The Stecklov-Poincare equation will be solved using a\n");
+      Output::print<1>("The Stecklov-Poincare equation will be solved using a");
       switch(updating_strategy)
       {
         case 1:
-          OutPut("preconditioned Richardson iteration\n");
+          Output::print<1>("preconditioned Richardson iteration");
           break;
         case 2:
-          OutPut("preconditioned conjugate gradient (cg) method\n");
+          Output::print<1>("preconditioned conjugate gradient (cg) method");
           break;
         case 3:
-          OutPut("preconditioned conjugate gradient square (cgs) method\n"); 
+          Output::print<1>("preconditioned conjugate gradient square (cgs) method"); 
           break;
         case 4:
-          OutPut("preconditioned generalized minimal residual (gmres) ");
-          OutPut("method\n");
+          Output::print<1>("preconditioned generalized minimal residual ",
+                           "(gmres) method\n");
           break;
         case 5:
-          OutPut("preconditioned bi-conjugate gradient (BiCg) method\n");
-          ErrMsg("Newton for the Stecklov-Poincare equation not implemented");
-          exit(0);
+          Output::print<1>("preconditioned bi-conjugate gradient (BiCg) method");
+          ErrThrow("Newton for the Stecklov-Poincare equation not implemented");
           break;
         case 6: // Newton
-          OutPut("Newton iteration\n");
-          ErrMsg("Newton for the Stecklov-Poincare equation not implemented");
-          exit(0);
+          Output::print<1>("Newton iteration");
+          ErrThrow("Newton for the Stecklov-Poincare equation not implemented");
           break;
         default:
-          ErrMsg("unknown 'StoDa_updatingStrategy'");
-          exit(0);
+          ErrThrow("unknown 'StoDa_updatingStrategy'");
           break;
       }
+      
       if(pt != 0)
       {
-        ErrMsg("only Neumann-Neumann problems are supported so far, set\n" <<
-               "'StoDa_problemType' to 0.");
-        exit(0);
+        ErrThrow("only Neumann-Neumann problems are supported so far, set\n",
+                 "'StoDa_problemType' to 0.");
       }
       if(TDatabase::ParamDB->StoDa_weakGamma > 0.0)
       {
-        ErrMsg("WARNING: weak gamma positive trying to solve a " << 
-               "Stecklov-Poincare equation. You probably want to set it " <<
-               "negative.");
+        ErrThrow("WARNING: weak gamma positive trying to solve a ",
+                 "Stecklov-Poincare equation. You probably want to set it ",
+                 "negative.");
       }
       if(TDatabase::ParamDB->StoDa_theta_f != 1.0 && stokes_first)
       {
-        ErrMsg("WARNING: damping activated for Stecklov-Poincare. Is this what"
-               << " you want?");
+        ErrThrow("WARNING: damping activated for Stecklov-Poincare. Is this ",
+                 "what you want?");
       }
       if(TDatabase::ParamDB->StoDa_theta_p != 1.0 && !stokes_first)
       {
-        ErrMsg("WARNING: damping activated for Stecklov-Poincare. Is this what"
-               << " you want?");
+        ErrThrow("WARNING: damping activated for Stecklov-Poincare. Is this ",
+                 "what you want?");
       }
       break;
     default:
-      ErrMsg("unsupported 'StoDa_solutionStrategy'");
-      exit(0);
+      ErrThrow("unsupported 'StoDa_solutionStrategy'");
       break;
   }
   if(solution_strategy < 0)
-    OutPut("The coupled system is not solved directly\n");
+    Output::print<1>("The coupled system is not solved directly");
   
-  OutPut("\n\n");
+  Output::print<1>("\n");
 }
 
 /** ************************************************************************ */
@@ -385,8 +372,7 @@ void get_edges_of_vertex(const TCollection * const coll,
 {
   if(edges.size() != 0)
   {
-    ErrMsg("please provide an empty vector 'edges'");
-    exit(1);
+    ErrThrow("please provide an empty vector 'edges'");
   }
   // loop over all cells
   int n_cells = coll->GetN_Cells();
@@ -418,13 +404,11 @@ TVertex* get_vertex_of_edge(const TJoint *const edge, int i)
 {
   if(!edge)
   {
-    ErrMsg("No valid TJoint");
-    exit(1);
+    ErrThrow("No valid TJoint");
   }
   if(i != 0 && i != 1)
   {
-    ErrMsg("the edge index must be either 0 or 1. You provided " << i);
-    exit(1);
+    ErrThrow("the edge index must be either 0 or 1. You provided ", i);
   }
   // find the first neighbor of this Joint 
   TBaseCell * neighbor = edge->GetNeighb(0);
@@ -433,8 +417,7 @@ TVertex* get_vertex_of_edge(const TJoint *const edge, int i)
     neighbor = edge->GetNeighb(1);
     if(!neighbor)
     {
-      ErrMsg("This joint has no neighbor");
-      exit(1);
+      ErrThrow("This joint has no neighbor");
     }
   }
   
@@ -451,8 +434,7 @@ TVertex* get_vertex_of_edge(const TJoint *const edge, int i)
   }
   if(loc_index == -1)
   {
-    ErrMsg("this edge could not be found in this cell");
-    exit(1);
+    ErrThrow("this edge could not be found in this cell");
   }
   
   // in 2D the vertex and the edge indices are the same. That means the i-th 
@@ -470,11 +452,10 @@ void copy_row(int i, const TMatrix* m,
     target_index = i;
   int * rowPtr = m->GetRowPtr();
   int * colPtr = m->GetKCol();
-  double * entries = m->GetEntries();
+  const double * entries = m->GetEntries();
   if(i < 0 || i >= m->GetN_Rows())
   {
-    ErrMsg("the specified row does not exist");
-    exit(1);
+    ErrThrow("the specified row does not exist");
   }
   if(a == 0.0)
     return; // nothing needs to be done
