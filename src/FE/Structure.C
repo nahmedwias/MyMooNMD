@@ -4599,7 +4599,8 @@ exit(0);
 
 TStructure::TStructure(const TStructure& s)
  : nRows(s.nRows), nColumns(s.nColumns), nEntries(s.nEntries),
-   columns(new int[s.nEntries]), rows(new int[s.nRows + 1]),
+   columns(new int[s.nEntries]), rows(new int[s.nRows + 1]), 
+   ActiveBound(s.ActiveBound), ColOrder(s.ColOrder),
    nHangingEntries(s.nHangingEntries),
    hangingColums(new int[s.nHangingEntries]), HangingRows(nullptr)
 {
