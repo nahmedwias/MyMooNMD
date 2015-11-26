@@ -198,14 +198,25 @@ class TFEFunction2D
    /** copy one TFEFunction2D to another one. Both have to be defined on the 
        same space */
    TFEFunction2D & operator=(const TFEFunction2D & rhs);
-   /** find the largest and smallest element in the vector of this FE function
-   */
+   /** 
+    * @brief find the smallest and largest value in the vector representing this 
+    * FE-function
+    * 
+    * If nodal finite elements are used, this is indeed the minimum and maximum
+    * of the FE-function. However in other cases this might be wrong (e.g.
+    * nonconforming or discontiuous elements).
+    */
    void MinMax(double & min, double & max) const;
 
-   /** print the largest and smallest element in the vector of this FE 
-       function 
-   */
-   void PrintMinMax() const;
+   /** 
+    * @brief print the largest and smallest element in the vector of this FE 
+    * function 
+    * 
+    * This function calls TFEFunction2D::MinMax and prints the given \p name
+    * together with the minimum and maximum value. If the string is empty 
+    * (default) the used name will be TFEFunction2D::Name.
+    */
+   void PrintMinMax(std::string name = "") const;
 
 };
 #endif
