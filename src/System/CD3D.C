@@ -294,11 +294,12 @@ void CD3D::checkParameters()
   }
 
   // the only solving strategy implemented is iterative
+#ifndef _SEQ
   if(TDatabase::ParamDB->SOLVER_TYPE != 1)
   {
     ErrThrow("Only SOLVER_TYPE: 1 (iterative solver) is implemented so far.");
   }
-
+#endif // not sequential
   // among the iterative solvers only 11 (fix point iteration
   // (Richardson) is working)
   if(TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
