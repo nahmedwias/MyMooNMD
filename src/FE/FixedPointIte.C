@@ -189,7 +189,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
         && rank==TDatabase::ParamDB->Par_P0
 #endif      
        )   
-     printf("Fixed Point Iteration 0: %e\n",  res);    
+     Output::print<3>("Fixed Point Iteration 0: ", res);
   
   // residual small enough before iteration
   if (res<=res_norm_min)
@@ -208,7 +208,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
 // #ifdef _MPI
 //     if(rank==0)
 // #endif
-//      printf("Fixed Point Iteration %d: %e\n", i, res); 
+//      Output::print<3>("Fixed Point Iteration ", i, ": ", res); 
     
     prec->Iterate(sqmat, mat, defect, defect); 
    
@@ -236,9 +236,9 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
         && rank==TDatabase::ParamDB->Par_P0
 #endif        
         ) 
-       printf("Fixed Point Iteration %d res %e rate: %e\n", i, res, res/reslast);    
-//       OutPut("Fixed Point Iteration " << i << " " << res << " " << 
-//             res/reslast << endl); 
+       //printf("Fixed Point Iteration %d res %e rate: %e\n", i, res, res/reslast);    
+       Output::print<3>("Fixed Point Iteration ", i, " res ", res, " rate ", 
+                        res/reslast); 
 
     reslast=res;
     //  if (i<sc->maxit)
@@ -254,8 +254,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
     // divergence of iteration  
     if (res>div_factor*res0)
     {
-      OutPut("Fixed Point iteration diverges !!!\n" << endl);
-      exit(4711);
+      ErrThrow("Fixed Point iteration diverges !!!\n");
     }
   }
 #ifdef _MPI
@@ -267,7 +266,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   // iteration stopped because of reaching maximal iteration number
  /* if (i>=maxite && res>res_norm_min && res>res0*red_factor )
     {
-      OutPut("Fixed Point Iteration not converged !!!" << endl);
+      Output::print<1>("Fixed Point Iteration not converged !!!");
       //    iteration_cnt=i;
       //    end_residual=res;                
     }
@@ -279,23 +278,23 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   if(rank==0)
 #endif
   {
-  OutPut("----------------------------------------------------------------------------------------"<<endl);  
-  OutPut(" FP ITE: " << setw(4) << i <<endl);
-  OutPut(" t (time taken for this FP) : " << setw(6) << t2-t1 <<endl);
-  OutPut(" t (total time taken for FP) : " << setw(6) << tt <<endl);
-  OutPut(" t/cyc (time taken per FP cycle) : " << setw(6) << (t2-t1)/i <<endl<<endl);
+  Output::print<2>("----------------------------------------------------------------------------------------");
+  Output::print<2>(" FP ITE: ", setw(4), i);
+  Output::print<2>(" t (time taken for this FP) : ", setw(6), t2 - t1);
+  Output::print<2>(" t (total time taken for FP) : ", setw(6), tt);
+  Output::print<2>(" t/cyc (time taken per FP cycle) : ", setw(6), (t2-t1)/i, "\n");
 
-  //OutPut(" tSmoother: " << setw(6) << tSmoother <<endl);
-  //OutPut(" tCyc (time taken for all MG cycles in FP) : " << setw(6) << tCyc <<endl<<endl);
+  //Output::print<2>(" tSmoother: ", setw(6), tSmoother);
+  //Output::print<2>(" tCyc (time taken for all MG cycles in FP) : ", setw(6), tCyc, endl);
 
-  OutPut(" res : "  << setw(8) << res <<endl);
-  OutPut(" rate: " << pow(res/res0,1.0/i) << endl<<endl);
+  Output::print<2>(" res : ", setw(8), res);
+  Output::print<2>(" rate: ", pow(res/res0,1.0/i), "\n");
 
-  //OutPut(" tSD (time taken for scalar defect computation): " << setw(6) << tS <<endl);
-  //OutPut(" tDef (time taken for defect computation): " << setw(6) << tD <<endl <<endl);
-  //OutPut(" tP (Prolongation): " << setw(6) << tP <<endl);
-  //OutPut(" tR (Restriction) : " << setw(6) << tR<<endl);
-  OutPut("----------------------------------------------------------------------------------------"<<endl);
+  //Output::print<2>(" tSD (time taken for scalar defect computation): ", setw(6), tS);
+  //Output::print<2>(" tDef (time taken for defect computation): ", setw(6), tD, endl);
+  //Output::print<2>(" tP (Prolongation): ", setw(6), tP);
+  //Output::print<2>(" tR (Restriction) : ", setw(6), tR);
+  Output::print<2>("----------------------------------------------------------------------------------------");
   }
   // iteration_cnt=i;
   // end_residual=res;                
