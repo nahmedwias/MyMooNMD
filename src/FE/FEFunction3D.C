@@ -2430,14 +2430,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   }///endfor i<N_Cells
 }
 
-
-/*
-  find the smallest and largest value in the vector representing this 
-  FE-function. If nodal finite elements are used, this is indeed the minimum 
-  and maximum of the FE-function. However in other cases this might be wrong.
-  (e.g. nonconforming or discontiuous elements)
-*/
-void TFEFunction3D::MinMax(double & min, double & max)
+void TFEFunction3D::MinMax(double & min, double & max) const
 {
   double val;
   max = -1e100, min = 1e100;
@@ -2449,21 +2442,22 @@ void TFEFunction3D::MinMax(double & min, double & max)
     if(val<min) min = val;
   }
 }
-/*
-  prints the values computed by TFEFunction2D::MinMax to console. See 
-  TFEFunction2D::MinMax for a description of what is computed. 
-*/
-void TFEFunction3D::PrintMinMax()
+
+void TFEFunction3D::PrintMinMax(std::string name) const
 {
-  double min,max;
-  this->MinMax(min,max);
-  if( min<=max)
+  double min, max;
+  this->MinMax(min, max);
+  if( min <= max )
   {
-    Output::print(Name, " min ", min, ", max ", max);
+    if(name.empty())
+      Output::print<1>(this->Name, " min ", min, ", max ", max);
+    else
+      Output::print<1>(name, " min ", min, ", max ", max);
   }
   else
-    Output::print("WARNING: TFEFunction3D::MinMax was not successful for ",
-                  Name); 
+  {
+    Output::print<1>("WARNING: TFEFunction3D::MinMax was not successful!");
+  }
 }
 
 
