@@ -55,42 +55,96 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
+  //cond = DIRICHLET;
+  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+  cond = (i == 3) ? NEUMANN : DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
+  // Neumann boundary means setting T.n where n is outer normal and T is either
+  // 2nu D(u) - p  (for LAPLACETYPE==1) or nu grad(u) - p   (for LAPLACETYPE==0)
+  const int lt = TDatabase::ParamDB->LAPLACETYPE;
+  const double nu = 1./TDatabase::ParamDB->RE_NR;
+  BoundCond cond;
+  BoundCondition(BdComp, Param, cond);
   switch(BdComp)
   {
-    case 0: value=sin(Pi*Param);
-            break;
-    case 1: value=sin(Pi);
-            break;
-    case 2: value=sin(Pi*(1-Param));
-            break;
-    case 3: value=0;
-            break;
-    default: cout << "wrong boundary part number" << endl;
-            break;
+    case 0:
+      if(cond == DIRICHLET)
+        value = sin(Pi*Param); // Dirichlet
+      else
+        value = lt == 0 ? 0. : -nu*Pi*Pi*sin(Pi*Param); // Neumann
+      break;
+    case 1:
+      if(cond == DIRICHLET)
+        value = 0.; // Dirichlet
+      else
+        value = lt == 0 ? -nu*Pi : -2*nu*Pi; // Neumann
+      break;
+    case 2:
+      if(cond == DIRICHLET)
+        value = sin(Pi*(1-Param)); // Dirichlet
+      else
+        value = lt == 0 ? 0. : nu*Pi*Pi*sin(Pi*(1-Param)); // Neumann
+      break;
+    case 3:
+      if(cond == DIRICHLET)
+        value = 0.; // Dirichlet
+      else
+        value = lt == 0 ? -nu*Pi : -2*nu*Pi; // Neumann
+      break;
+    default:
+      ErrThrow("wrong boundary part number", BdComp);
+      break;
   }
   return;
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
+  // Neumann boundary means setting T.n where n is outer normal and T is either
+  // 2nu D(u) - p  (for LAPLACETYPE==1) or nu grad(u) - p   (for LAPLACETYPE==0)
+  const int lt = TDatabase::ParamDB->LAPLACETYPE;
+  const double nu = 1./TDatabase::ParamDB->RE_NR;
+  BoundCond cond;
+  BoundCondition(BdComp, Param, cond);
   switch(BdComp)
   {
-    case 0: value=0;
-            break;
-    case 1: value=Pi*Param;
-            break;
-    case 2: value=-Pi*cos(Pi*(1-Param));
-            break;
-    case 3: value=-Pi*(1-Param);
-            break;
-    default: cout << "wrong boundary part number" << endl;
-            break;
+    case 0:
+      if(cond == DIRICHLET)
+        value = 0; // Dirichlet
+      else
+      {
+        value = nu*Pi*cos(Pi*Param) * (lt == 0 ? 1. : 2.); // Neumann
+        value += sin(Pi*Param);// Neumann (from pressure)
+      }
+      break;
+    case 1:
+      if(cond == DIRICHLET)
+        value = Pi*Param; // Dirichlet
+      else
+        value = 0.; // Neumann
+      break;
+    case 2:
+      if(cond == DIRICHLET)
+        value = -Pi*cos(Pi*(1-Param)); // Dirichlet
+      else
+      {
+        value = -nu*Pi*cos(Pi*(1-Param)) * (lt == 0 ? 1. : 2.); // Neumann
+        value += sin(Pi*(1-Param));// Neumann (from pressure)
+      }
+      break;
+    case 3:
+      if(cond == DIRICHLET)
+        value = -Pi*(1-Param); // Dirichlet
+      else
+        value = 0.; // Neumann
+      break;
+    default:
+      ErrThrow("wrong boundary part number", BdComp);
+      break;
   }
   return;
 }
