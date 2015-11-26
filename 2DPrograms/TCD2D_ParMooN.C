@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh  
-  Domain.ReadGeo(TDatabase::ParamDB->GEOFILE);
+  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
 
   // refine grid up to the coarsest level
   for(int i=0; i<TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR
