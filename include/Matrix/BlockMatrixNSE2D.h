@@ -17,6 +17,7 @@
 #include <Matrix2D.h>
 #include <BlockVector.h>
 #include <LocalAssembling2D.h>
+#include <array>
 
 /**class for 2D  NSE system matrix */
 class BlockMatrixNSE2D : public BlockMatrix

@@ -17,7 +17,8 @@
 #include <Constants.h>
 #include <Mapper.h>
 #include <Line.h>
-#include <Triangle.h>
+// more explicit path due to name conflict with the 'triangle' library on mac
+#include <../Geometry/Triangle.h> 
 #include <Quadrangle.h>
 #include <Parallelogram.h>
 #include <Rectangle.h>
