@@ -6,9 +6,26 @@
                        DoubleFunctVect *evalall,
                        DoubleFunctVect *evaledge);
 */
+// equidistant points on edges
+//static double NF_N_Q_RT1_2D_a = 1./3.;
+// Gauss points on edges
+//static double NF_N_Q_RT1_2D_a = 1./sqrt(3.);
+// Tschebyscheff points on edges
+static double NF_N_Q_RT1_2D_a = 1./sqrt(2.);
 
-static double NF_N_Q_RT1_2D_Xi[] =  {-1/3, 1/3,1   ,1  ,1/3,-1/3,-1  ,-1  ,-1/3,1/3,1/3,-1/3 };
-static double NF_N_Q_RT1_2D_Eta[] = {-1  ,-1  ,-1/3,1/3,1  , 1  , 1/3,-1/3, -1/3,-1/3,1/3,1/3 };
+
+static double NF_N_Q_RT1_2D_Xi[] 
+ = {-NF_N_Q_RT1_2D_a, NF_N_Q_RT1_2D_a,
+    1   ,1,
+    NF_N_Q_RT1_2D_a,-NF_N_Q_RT1_2D_a,
+    -1  ,-1,
+    0, NF_N_Q_RT1_2D_a, 0, -NF_N_Q_RT1_2D_a };
+static double NF_N_Q_RT1_2D_Eta[] 
+ = {-1  ,-1,
+   -NF_N_Q_RT1_2D_a,NF_N_Q_RT1_2D_a,
+   1  , 1,
+   NF_N_Q_RT1_2D_a,-NF_N_Q_RT1_2D_a,
+   -NF_N_Q_RT1_2D_a, 0, NF_N_Q_RT1_2D_a, 0 };
 // NOTE: If you want to use other evaluation points for degress of freedom on
 // the edges of a cell, you also have to change basis functions in 
 // BF_N_Q_RT1_2D.h
@@ -19,36 +36,27 @@ static double NF_N_Q_RT1_2D_T[] = {-0.707106781186547,0.707106781186547};//Tsche
 void NF_N_Q_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
 {
-//   static double weights[3] = { 0.5555555555555555555555555555555556,
-//                                0.88888888888888888888888888888888889,
-//                                0.5555555555555555555555555555555556 };
-//   Functionals[0] = ( weights[0]*PointValues[0]
-//                     +weights[1]*PointValues[1]
-//                     +weights[2]*PointValues[2]) * 0.5;
-//   Functionals[1] = ( weights[0]*PointValues[3]
-//                     +weights[1]*PointValues[4]
-//                     +weights[2]*PointValues[5]) * 0.5;
-//   Functionals[2] = ( weights[0]*PointValues[6]
-//                     +weights[1]*PointValues[7]
-//                     +weights[2]*PointValues[8]) * 0.5;
-//   Functionals[3] = ( weights[0]*PointValues[9]
-//                     +weights[1]*PointValues[10]
-//                     +weights[2]*PointValues[11]) * 0.5;
-cout << "Nodal functionals for first order Raviart-Thomas elements on " 
-     << "rectangles are not yet corrctly implemented!" << endl;
-  Functionals[0] = PointValues[0];
-  Functionals[1] = PointValues[1];
-  Functionals[2] = PointValues[2];
-  Functionals[3] = PointValues[3];
-  Functionals[4] = PointValues[4];
-  Functionals[5] = PointValues[5];
-  Functionals[6] = PointValues[6];
-  Functionals[7] = PointValues[7];
-  Functionals[8] = PointValues[8];
-  Functionals[9] = PointValues[9];
-  Functionals[10]= PointValues[10];
-  Functionals[11]= PointValues[11];
+  // on the reference cell [-1,1]^2
+  if(Cell == nullptr)
+  {
+    Functionals[0] = -2*PointValues[12];
+    Functionals[1] = -2*PointValues[13];
+    Functionals[2] = 2*PointValues[2];
+    Functionals[3] = 2*PointValues[3];
+    Functionals[4] = 2*PointValues[16];
+    Functionals[5] = 2*PointValues[17];
+    Functionals[6] = -2*PointValues[6];
+    Functionals[7] = -2*PointValues[7];
     
+    Functionals[8] = PointValues[8];
+    Functionals[9] = PointValues[21];
+    Functionals[10]= PointValues[10];
+    Functionals[11]= PointValues[23];
+  }
+  else // on a real cell
+  {
+    ErrThrow("NF_N_Q_RT1_2D_EvalAll not implemented on a real cell yet");
+  }
 }
 
 void NF_N_Q_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,double *Functionals)

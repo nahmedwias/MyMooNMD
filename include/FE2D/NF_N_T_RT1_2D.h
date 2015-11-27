@@ -9,8 +9,32 @@
   -> use the identifier as prefix
 */
 
-static double NF_N_T_RT1_2D_Xi[] =  { 1./3.,2./3.,2./3.,1./3.,0    , 0};
-static double NF_N_T_RT1_2D_Eta[] = { 0    ,0    ,1./3.,2./3.,2./3.,1./3.};
+// equidistant points on edges
+//static double NF_N_T_RT1_2D_Xi[] =  { 1./3.,2./3.,2./3.,1./3.,0    , 0};
+//static double NF_N_T_RT1_2D_Eta[] = { 0    ,0    ,1./3.,2./3.,2./3.,1./3.};
+// Gauss points on edges
+//static double NF_N_T_RT1_2D_Xi[] 
+// =  { 0.211324865405187117745, 0.788675134594812882254,
+//      0.788675134594812882254, 0.211324865405187117745,
+//      0    , 0,
+//      0.33333333333333333333};
+//static double NF_N_T_RT1_2D_Eta[]
+// = { 0    ,0,
+//     0.211324865405187117745, 0.788675134594812882254,
+//     0.788675134594812882254, 0.211324865405187117745,
+//     0.33333333333333333333};
+// Tschebyscheff points on edges
+static double NF_N_T_RT1_2D_Xi[]
+ =  { 0.14644660940672623779, 0.85355339059327376220,
+      0.85355339059327376220, 0.14644660940672623779,
+      0    , 0,
+      0.33333333333333333333};
+static double NF_N_T_RT1_2D_Eta[]
+ = { 0    ,0,
+     0.14644660940672623779, 0.85355339059327376220,
+     0.85355339059327376220, 0.14644660940672623779,
+     0.33333333333333333333};
+
 // NOTE: If you want to use other evaluation points for degress of freedom on
 // the edges of a cell, you also have to change basis functions in 
 // BF_N_T_RT1_2D.h
@@ -21,30 +45,22 @@ static double NF_N_T_RT1_2D_T[] = {-0.707106781186547,0.707106781186547};//Tsche
 void NF_N_T_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
 {
-//   static double weights[3] = { 0.5555555555555555555555555555555556,
-//                                0.88888888888888888888888888888888889,
-//                                0.5555555555555555555555555555555556 };
-//   Functionals[0] = ( weights[0]*PointValues[0]
-//                     +weights[1]*PointValues[1]
-//                     +weights[2]*PointValues[2]) * 0.5;
-//   Functionals[1] = ( weights[0]*PointValues[3]
-//                     +weights[1]*PointValues[4]
-//                     +weights[2]*PointValues[5]) * 0.5;
-//   Functionals[2] = ( weights[0]*PointValues[6]
-//                     +weights[1]*PointValues[7]
-//                     +weights[2]*PointValues[8]) * 0.5;
-//   Functionals[3] = ( weights[0]*PointValues[9]
-//                     +weights[1]*PointValues[10]
-//                     +weights[2]*PointValues[11]) * 0.5;
-
-  Functionals[0] = PointValues[0];
-  Functionals[1] = PointValues[1];
-  Functionals[2] = PointValues[2];
-  Functionals[3] = PointValues[3];
-  Functionals[4] = PointValues[4];
-  Functionals[5] = PointValues[5];
-  Functionals[6] = PointValues[6];
-  Functionals[7] = PointValues[7];
+  // on the reference triangle with points (0,0), (1,0), (0,1) 
+  if(Cell == nullptr)
+  {
+    Functionals[0] = -PointValues[7];
+    Functionals[1] = -PointValues[8];
+    Functionals[2] = PointValues[2] + PointValues[9];
+    Functionals[3] = PointValues[3] + PointValues[10];
+    Functionals[4] = -PointValues[4];
+    Functionals[5] = -PointValues[5];
+    Functionals[6] = PointValues[6];
+    Functionals[7] = PointValues[13];
+  }
+  else // on a real cell
+  {
+    ErrThrow("NF_N_Q_RT0_2D_EvalAll not implemented on a real cell yet");
+  }
 }
 
 void NF_N_T_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
@@ -76,5 +92,5 @@ void NF_N_T_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
 }
 
 TNodalFunctional2D *NF_N_T_RT1_2D_Obj = new TNodalFunctional2D
-        (NF_N_T_RT1_2D, 8, 2, 6, 2, NF_N_T_RT1_2D_Xi, NF_N_T_RT1_2D_Eta,
+        (NF_N_T_RT1_2D, 8, 2, 7, 2, NF_N_T_RT1_2D_Xi, NF_N_T_RT1_2D_Eta,
          NF_N_T_RT1_2D_T, NF_N_T_RT1_2D_EvalAll, NF_N_T_RT1_2D_EvalEdge);

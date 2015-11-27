@@ -14,25 +14,17 @@ static double NF_N_T_RT0_2D_T[] = {0};
 void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
 {
-//   static double weights[3] = { 0.5555555555555555555555555555555556,
-//                                0.88888888888888888888888888888888889,
-//                                0.5555555555555555555555555555555556 };
-//   Functionals[0] = ( weights[0]*PointValues[0]
-//                     +weights[1]*PointValues[1]
-//                     +weights[2]*PointValues[2]) * 0.5;
-//   Functionals[1] = ( weights[0]*PointValues[3]
-//                     +weights[1]*PointValues[4]
-//                     +weights[2]*PointValues[5]) * 0.5;
-//   Functionals[2] = ( weights[0]*PointValues[6]
-//                     +weights[1]*PointValues[7]
-//                     +weights[2]*PointValues[8]) * 0.5;
-//   Functionals[3] = ( weights[0]*PointValues[9]
-//                     +weights[1]*PointValues[10]
-//                     +weights[2]*PointValues[11]) * 0.5;
-
-  Functionals[0] = PointValues[0];
-  Functionals[1] = PointValues[1];
-  Functionals[2] = PointValues[2];
+  // on the reference triangle with points (0,0), (1,0), (0,1) 
+  if(Cell == nullptr)
+  {
+    Functionals[0] = -PointValues[3];
+    Functionals[1] = PointValues[1] + PointValues[4];
+    Functionals[2] = -PointValues[2];
+  }
+  else // on a real cell
+  {
+    ErrThrow("NF_N_Q_RT0_2D_EvalAll not implemented on a real cell yet");
+  }
 }
 
 void NF_N_T_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
