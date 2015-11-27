@@ -113,7 +113,7 @@ class TFE2D
       { return N_Info; };
 
     /** check N[i](b[j]) = delta[ij] */
-    void CheckNFandBF();
+    void CheckNFandBF() const;
 };
 
 #endif
