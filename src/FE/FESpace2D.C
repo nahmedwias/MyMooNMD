@@ -2503,6 +2503,27 @@ void TFESpace2D::GetDOFPosition(int dof, double &x, double &y)
 } // end GetDOFPosition
 
 
+void TFESpace2D::info() const
+{
+  using namespace Output;
+  print<2>("2D finite element space with ", this->GetN_DegreesOfFreedom(),
+           " degerees of freedom on ", this->GetN_Cells(), " cells");
+  for(unsigned int c = 0; c < this->GetN_Cells(); ++c)
+  {
+    int * localDofs = this->GetGlobalDOF(c);
+    int nLocalDof = 
+     TFEDatabase2D::GetFE2D(this->GetFE2D(c, this->Collection->GetCell(c)))
+       ->GetN_DOF();
+    std::stringstream dofsInCell;
+    for(unsigned int ld = 0; ld < nLocalDof; ++ld)
+    {
+      dofsInCell << "  " << localDofs[ld];
+    }
+    print<3>("cell ", c, " has dofs ", dofsInCell.str());
+  }
+}
+
+
 /** check if FE spaces lhs_space and rhs_space are equal*/
 bool operator==(const TFESpace2D &lhs_space, const TFESpace2D &rhs_space)
 {
