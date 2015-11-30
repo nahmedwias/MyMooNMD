@@ -89,6 +89,22 @@ void FEMatrix::addActive(const FEMatrix& m, double factor)
                  { return a + factor * b; } );
 }
 
+void FEMatrix::multiplyActive(const double* x, double* y, double factor) const
+{
+  int nActive= this->GetActiveBound();
+  int * rowPtr = this->GetRowPtr();
+  int * colIndex = this->GetKCol();
+  
+  for(int i=0; i<nActive; ++i)
+  {
+    double val=0.;
+    for(int j=rowPtr[i]; j<rowPtr[i+1]; ++j)
+      val += this->entries[j]*x[colIndex[j]];
+    y[i] += factor*val;
+  }  
+}
+
+
 int FEMatrix::GetActiveBound() const
 {
   return structure->GetActiveBound();

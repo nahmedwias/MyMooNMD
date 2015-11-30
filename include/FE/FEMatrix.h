@@ -93,6 +93,20 @@ class FEMatrix : public TMatrix
      */
     void addActive(const FEMatrix& m, double factor = 1.0);
     
+    /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y: only active
+     * "A" is this matrix.
+     * 
+     * This function can be used to compute the residual r = b - Ax.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void multiplyActive(const double *x, double *y, double factor = 1.0)
+      const;
+    
     
     /** @brief return the number of active rows */
     int GetActiveBound() const;
