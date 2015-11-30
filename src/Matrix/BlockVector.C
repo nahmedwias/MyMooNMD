@@ -87,6 +87,18 @@ void BlockVector::scale(const double a, const unsigned int i)
 }
 
 /** ************************************************************************ */
+void BlockVector::scaleActive(const double a)
+{
+  if(a==0)
+    this->reset();
+  else if(a != 1.0)
+    for(unsigned int i=0; i<this->n_blocks(); ++i)  
+    {
+      Dscal(actives.at(i), a, this->block(i));
+    }
+}
+
+/** ************************************************************************ */
 void BlockVector::scale(const double a)
 {
   if(a == 0.0)
@@ -112,6 +124,18 @@ void BlockVector::add_scaled(const BlockVector& r, double factor)
            "the same length but different numbers of blocks\n");
   }
   Daxpy(l, factor, r.get_entries(), this->get_entries());
+}
+
+/** ************************************************************************ */
+void BlockVector::addScaledActive(const BlockVector& r, double factor)
+{
+  if(this->n_blocks() != r.n_blocks())
+    ErrThrow("number of blocks in two vectors must be same");
+  
+  for(unsigned int i=0; i<this->n_blocks(); ++i)
+  {
+    Daxpy(this->actives.at(i), factor, r.block(i), this->block(i));
+  }
 }
 
 /** ************************************************************************ */

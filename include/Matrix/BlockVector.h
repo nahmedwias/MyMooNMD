@@ -160,6 +160,11 @@ class BlockVector
      *
      */
     void scale(const double a, const unsigned int i);
+    /**
+     * @brief scale a subvector
+     * This subvector with index i is scaled by a, only the actives.
+     */
+    void scaleActive(const double a);
     
     /**
      * @brief Scale the entire vector
@@ -175,7 +180,14 @@ class BlockVector
      */
     void add_scaled(const BlockVector& r, double factor);
     
-    
+    /**
+     * @brief add scaled vector to this, only actives
+     *
+     * @param r BlockVector which is added to this
+     * @param factor factor with which r is multiplied
+     *
+     */
+    void addScaledActive(const BlockVector& r, double factor);
     
     /** @brief copy the structure of another BlockVector, 
      * 

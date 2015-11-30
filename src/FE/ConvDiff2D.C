@@ -4,8 +4,6 @@
 // common declaration for all convection diffusion problems
 // ======================================================================
 
-#ifdef __2D__
-
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <FEFunction2D.h>
@@ -408,33 +406,27 @@ void BilinearAssemble_UPW2(double Mult, double *coeff, double *param, double hK,
 // TCD2D: time dependent convection diffusion problems
 
 // Galerkin
-void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
+void LocalMatrixM(double Mult, double *coeff, double *param,
                            double hK, 
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, *Rhs, *MatrixRow;
+  double **Matrix, *MatrixRow;
   double ansatz00;
   double test00;
   double *Orig0;
   int i,j, N_;
-  double c4; 
 
   Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
 
   Orig0 = OrigValues[0];
 
-  c4 = coeff[4]; // f
-
   for(i=0;i<N_;i++)
   {
     MatrixRow = Matrix[i];
     test00 = Orig0[i];
-
-    Rhs[i] += Mult*test00*c4;
 
     for(j=0;j<N_;j++)
     {
@@ -444,7 +436,7 @@ void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
     } // endfor j
   } // endfor i
 }
-void MatrixARhsAssemble(double Mult, double *coeff, double *param,
+void LocalMatrixARhs(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
@@ -504,32 +496,25 @@ void MatrixARhsAssemble(double Mult, double *coeff, double *param,
 
 
 // SUPG
-void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
+void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
-  double **MatrixS, *MatrixRowS, ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double **MatrixA, *Rhs, *MatrixRowA;
+  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  double val, val1, val2;
+  double val, val1;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5; 
+  double c0, c1, c2, c3, c4; 
   double c00, c11, c22, c33;
-  double tau, bgradv, bb, res, sigma, norm_b;
+  double tau, bgradv, bb;
   double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
 
   MatrixA = LocMatrices[0];
-  MatrixK= LocMatrices[1];
-  
-  if (TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)  
-   MatrixS= LocMatrices[2];
-  
+    
   Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
@@ -564,37 +549,6 @@ void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
     bb = fabs(c22);
   // this is tau
   tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
-
-  if(TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-  {
-    // rhs from previous time step 
-    c5 = coeff[5];   
-    // compute residual
-    res = param[0] + theta1*time_step*(-c0*(param[3]+param[4]) + c1*param[1]
-          +c2*param[2] + c3*param[0])
-          -param[5] +  theta2*time_step*(-c0*(param[8]+param[9]) + c1*param[6]
-          +c2*param[7] + c3*param[5])
-          -theta3*time_step*c5 - theta4*time_step*c4;
-    /*
-    c00 =  time_step * theta1 * c0;
-    c11 =  time_step * theta1 * c1;
-    c22 =  time_step * theta1 * c2;
-    c33 = 1.0 + time_step * theta1 *c3;
-    */
-    c5 = time_step * theta4 * c4;
-    // compute the parameter, c5 is just a dummy
-    sigma = Compute_SOLD_sigma(hK, c00, c11, c22, c33, c5, bb, tau, param, res, 1,1);
-    //OutPut( param[0] << " " << param[5] <<  " " << res << " " <<  sigma << endl);
-    val2 = Mult * sigma;
-    if (TDatabase::ParamDB->SOLD_TYPE==2)
-    {
-      norm_b = c1*c1 + c2*c2;
-      if (norm_b >1e-10)
-        val2 /= norm_b;
-      else
-        val2 = 0.0;
-    }
-  }
   // scale appropriately, after it is used for the SOLD scheme
   // do not apply for paper with J. Novo
   // this is \tilde tau
@@ -606,9 +560,6 @@ void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   for(i=0;i<N_;i++)
   {
     MatrixRowA = MatrixA[i];
-    MatrixRowK = MatrixK[i];
-    if(TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-      MatrixRowS = MatrixS[i];
 
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -640,44 +591,26 @@ void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
       // diffusion part of the SUPG stabilization
       val -= c0*(ansatz20 + ansatz02) * bgradv;
       
-      MatrixRowA[j] += Mult * val;
-      // time derivative part of the SUPG stabilization
-      MatrixRowK[j] += Mult * ansatz00*bgradv;
-      
-      // isotropic SOLD method
-      if((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE) 
-          && (TDatabase::ParamDB->SOLD_TYPE==1))
-      {
-        MatrixRowS[j] += val2 * (test10*ansatz10+test01*ansatz01);
-      }
-      if((TDatabase::ParamDB->INTERNAL_SOLD_ACTIVE)
-         && (TDatabase::ParamDB->SOLD_TYPE==2))
-      {
-        MatrixRowS[j] += val2 * (-c2*ansatz10+c1*ansatz01)*(-c2*test10+c1*test01);
-      }
+      MatrixRowA[j] += Mult * val;      
     } // endfor j
   } // endfor i
 }
-void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
+void LocalMatrixM_SUPG(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, **MatrixS, *Rhs, *MatrixRow, *MatrixSRow;
+  double **Matrix, *MatrixRow;
   double ansatz00;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c00, c11, c22, c33; 
+  double c0, c1, c2, c3, c00, c11, c22, c33; 
   double tau, bgradv, bb;
   double theta1 = TDatabase::TimeDB->THETA1;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
 
   Matrix = LocMatrices[0];
-  MatrixS = LocMatrices[0];
-    
-  Rhs = LocRhs[0];
-
   N_ = N_BaseFuncts[0];
 
   Orig0 = OrigValues[0];
@@ -688,8 +621,7 @@ void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   c1 = coeff[1]; // b_1
   c2 = coeff[2]; // b_2
   c3 = coeff[3]; // c
-  c4 = coeff[4]; // f
-  
+    
   c00 = theta1 * time_step * c0;
   c11 = theta1 * time_step * c1;
   c22 = theta1 * time_step * c2;
@@ -715,21 +647,17 @@ void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   for(i=0;i<N_;i++)
   {
     MatrixRow = Matrix[i];
-    MatrixSRow = MatrixS[i];   
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
 
     bgradv = c1*test10+c2*test01;
 
-    Rhs[i] += Mult*(test00+tau*bgradv)*c4;
-
     for(j=0;j<N_;j++)
     {
       ansatz00 = Orig2[j];
 
-      MatrixRow[j] += Mult * ansatz00*test00;
-      MatrixSRow[j] += Mult * ansatz00*bgradv;     
+      MatrixRow[j] += Mult * ansatz00*(test00 + tau*bgradv);
     } // endfor j
   } // endfor i
 }
@@ -1907,6 +1835,3 @@ void Params_Sol4(double *in, double *out)
 // NEEDED PARAM FUNCTIONS END
 // ========================================================================
 // ========================================================================
-
-#endif // #ifdef __2D__
-

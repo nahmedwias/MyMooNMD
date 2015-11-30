@@ -61,8 +61,8 @@ void TMatrix::Print(const char *name) const
     
     for (int j=begin; j<end; ++j)
     {
-      OutPut(name<< "(" << i+1 << "," << KCol[pos]+1 << ") = " << entries[pos] 
-             << ";\n");
+      Output::print<1>(name, "(", i, ",", KCol[pos], ") = ",
+		       entries[pos],";");
       ++pos;
     }
   }

@@ -106,34 +106,25 @@ void Time_CD2D::set_parameters()
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
           << " does not supported");
     throw("TIME_DISC: 0 does not supported");
-  }  
+  }
 }
 
 /**************************************************************************** */
 void Time_CD2D::assemble_initial_time()
 {
-  LocalAssembling2D_type m_rhs = TCD2D_Mass_Rhs_Galerkin;
-  LocalAssembling2D_type stiff_rhs = TCD2D_Stiff_Rhs_Galerkin;
-  
-  if(TDatabase::ParamDB->DISCTYPE==SUPG)
-  {
-    m_rhs = TCD2D_Mass_Rhs_SUPG;
-    stiff_rhs = TCD2D_Stiff_Rhs_SUPG;
-    ErrMsg("DISCTYPE " <<TDatabase::ParamDB->DISCTYPE << " does not supported yet"
-          << "One have to implement differently in the local assemble function");
-    exit(1);
-  }
-  
+  LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
+  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
+ 
   for(auto &s : this->systems)
   {
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling2D la_m_rhs(m_rhs, &pointer_to_function,
+    LocalAssembling2D la_mass(mass, &pointer_to_function,
                                this->example.get_coeffs());
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
     // assemble mass matrix, stiffness matrix and rhs
-    s.Mass_Matrix.Assemble(la_m_rhs, s.solution, s.rhs);
+    s.Mass_Matrix.Assemble(la_mass, s.solution, s.rhs);
     s.Stiff_matrix.Assemble(la_a_rhs, s.solution, s.rhs);
   } 
   // copy the current right hand side vector to the old_rhs 
@@ -143,9 +134,14 @@ void Time_CD2D::assemble_initial_time()
 /**************************************************************************** */
 void Time_CD2D::assemble()
 {
-  LocalAssembling2D_type stiff_rhs = TCD2D_Stiff_Rhs_Galerkin;
-  if(TDatabase::ParamDB->DISCTYPE==SUPG)
-    stiff_rhs = TCD2D_Stiff_Rhs_SUPG;
+  LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
+  // In the SUPG case: 
+  // M = (u,v) + \tau (u,b.grad v)  
+  LocalAssembling2D_type mass_supg;
+  if(TDatabase::ParamDB->DISCTYPE == SUPG)
+  {
+    mass_supg = LocalAssembling2D_type::TCD2D_Mass;
+  }
   
   for(auto &s : this->systems)
   {
@@ -154,26 +150,33 @@ void Time_CD2D::assemble()
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
     s.Stiff_matrix.Assemble(la_a_rhs,s.solution,s.rhs);
+    if(TDatabase::ParamDB->DISCTYPE == SUPG)
+    {
+      LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
+                               this->example.get_coeffs());
+      s.Mass_Matrix.Assemble(la_m_supg, s.solution, s.rhs);
+    }
   }
   
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // preparing rhs 
   System_per_grid& s = this->systems.front();
+  
   if(TDatabase::TimeDB->THETA4)
   {
     // scale by time step length and theta4 (only active dofs)
-    s.rhs.scale(tau*TDatabase::TimeDB->THETA4, 0);
+    s.rhs.scaleActive(tau*TDatabase::TimeDB->THETA4);    
     // add old right hand side scaled by time step length and theta3 (only 
     // active dofs)
     if(TDatabase::TimeDB->THETA3 != 0.)
-      s.rhs.add_scaled((this->old_rhs), tau*TDatabase::TimeDB->THETA3);	
+      s.rhs.addScaledActive((this->old_rhs), tau*TDatabase::TimeDB->THETA3);	
 
     // save old right hand side (only if THETA3 != 0)
     if(TDatabase::TimeDB->THETA3)
     {
-      this->old_rhs.add_scaled(s.rhs, -1./(tau*TDatabase::TimeDB->THETA3));
-      this->old_rhs.scale(-TDatabase::TimeDB->THETA3/TDatabase::TimeDB->THETA4);
-    }    
+      this->old_rhs.addScaledActive(s.rhs, -1./(tau*TDatabase::TimeDB->THETA3));
+      this->old_rhs.scaleActive(-TDatabase::TimeDB->THETA3/TDatabase::TimeDB->THETA4);
+    }
   }
   else
   {
@@ -187,10 +190,10 @@ void Time_CD2D::assemble()
   for(auto &s : this->systems)
   {
     // rhs += M*uold
-    s.Mass_Matrix.apply_scaled_add(s.solution.get_entries(),
+    s.Mass_Matrix.apply_scaled_add_active(s.solution.get_entries(),
                                    s.rhs.get_entries(), 1.0);
     // rhs += tau*theta3*A*uold
-    s.Stiff_matrix.apply_scaled_add(s.solution.get_entries(),
+    s.Stiff_matrix.apply_scaled_add_active(s.solution.get_entries(),
                                     s.rhs.get_entries(),
                                     -tau*TDatabase::TimeDB->THETA2);
     
@@ -200,8 +203,7 @@ void Time_CD2D::assemble()
     // on time
     s.Stiff_matrix.scale_active(tau*TDatabase::TimeDB->THETA1);
     s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, 1.0);
-  }
-  
+  }  
   this->systems[0].rhs.copy_nonactive(this->systems[0].solution);  
 }
 
@@ -268,7 +270,7 @@ void Time_CD2D::output(int m, int& image)
       errors[4] = loc_e[0];
     Output::print<1>("  Linfty(0,T;L2) ", errors[4]);
   }
-  
+
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
     if(TDatabase::ParamDB->WRITE_VTK)

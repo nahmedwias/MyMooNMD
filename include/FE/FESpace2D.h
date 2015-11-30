@@ -142,6 +142,12 @@ class TFESpace2D : public TFESpace
      FE2D *GetAllElements() const
      { return AllElements; }
      
+     /**
+      * @brief print some information on this fe space
+      * 
+      * Depending on the verbosity level more or less is printed.
+      */
+     void info() const;
      /** return boundary condition */
     BoundCondFunct2D *GetBoundCondition() const
     { return BoundCondition; }

@@ -9,6 +9,11 @@
 #include <NSE2D_FixPo.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
+
+#include <TNSE2D_FixPo.h> // local assembling routines for 2D Time dependent Navier-Stokes
+#include <TNSE2D_FixPoRot.h>
+#include <TNSE2D_ParamRout.h> 
+
 #include <MooNMD_Io.h>
 #include <string.h>
 
@@ -39,14 +44,16 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
       break;      
     ///////////////////////////////////////////////////////////////////////////
     // TCD2D: time dependent convection diffusion problems
-    case TCD2D_Mass_Rhs_Galerkin:
-      return std::string("TCD2D_Mass_Rhs_Galerkin");
-    case TCD2D_Stiff_Rhs_Galerkin:
-      return std::string("TCD2D_Stiff_Rhs_Galerkin");
-    case TCD2D_Mass_Rhs_SUPG:
-      return std::string("TCD2D_Mass_Rhs_SUPG");
-    case TCD2D_Stiff_Rhs_SUPG:
-      return std::string("TCD2D_Stiff_Rhs_SUPG");
+    case LocalAssembling2D_type::TCD2D:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  return std::string("TCD2D_Stiff_Rhs");
+	case SUPG:
+	  return std::string("TCD2D_Stiff_Rhs_SUPG");
+      }
+    case LocalAssembling2D_type::TCD2D_Mass:
+      return std::string("TCD2D_Mass");
     ///////////////////////////////////////////////////////////////////////////
     // NSE2D: stationary Navier-Stokes problems
     case NSE2D_Galerkin:
@@ -57,6 +64,35 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     // Darcy2D: stationary Darcy problems
     case Darcy2D_Galerkin:
       return std::string("Darcy2D_Galerkin");    
+    ///////////////////////////////////////////////////////////////////////////
+    // TNSE2D: nonstationary Navier-Stokes
+    case LocalAssembling2D_type::TNSE2D:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          return std::string("TNSE2D_Galerkin");
+        case SUPG:
+          return std::string("TNSE2D_SUPG");
+      }
+      break;
+    case LocalAssembling2D_type::TNSE2D_NL:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          return std::string("TNSE2D_NLGalerkin");
+        case SUPG:
+          return std::string("TNSE2D_NLSUPG");
+      }
+      break;
+    case LocalAssembling2D_type::TNSE2D_Rhs:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          return std::string("TNSE2D_Rhs");
+        case SUPG:
+          return std::string("TNSE2D_RhsSUPG");
+      }
+      break;
   }
   return std::string();
 }
@@ -132,62 +168,72 @@ switch(type)
     break;
   ///////////////////////////////////////////////////////////////////////////
   // TCD2D: time dependent convection diffusion problems
-  case TCD2D_Mass_Rhs_Galerkin:
-    this->N_Terms = 1;
-    this->Derivatives = { D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0 };
+  case LocalAssembling2D_type::TCD2D:
     this->N_Matrices = 1;
     this->RowSpace = { 0 };
     this->ColumnSpace = { 0 };
     this->N_Rhs = 1;
     this->RhsSpace = { 0 };
-    this->AssembleParam = MatrixMRhsAssemble; 
     this->Manipulate = NULL;
-    break;
-  case TCD2D_Stiff_Rhs_Galerkin:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
+    
+    switch(TDatabase::ParamDB->DISCTYPE)
+    {
+      case GALERKIN:
+	this->N_Terms = 3;
+	this->Derivatives = { D10, D01, D00 };
+	this->Needs2ndDerivatives = new bool[1];
+	this->Needs2ndDerivatives[0] = false;
+	this->FESpaceNumber = { 0, 0, 0 };
+	
+	this->AssembleParam = LocalMatrixARhs; 
+	break;
+      case SUPG:
+      case GLS:
+	this->N_Terms = 5;
+	this->Derivatives = { D10, D01, D00, D20, D02 };
+	this->Needs2ndDerivatives = new bool[1];
+	this->Needs2ndDerivatives[1] = true;
+	this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
+	
+	if(TDatabase::ParamDB->DISCTYPE==SUPG)
+	  this->AssembleParam = LocalMatrixARhs_SUPG; 
+	else
+	{
+	  ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                 " is not supported by the class CD2D");
+          throw("unsupported DISCTYPE");
+	}
+	break;
+    }
+    break;// case LocalAssembling2D_type::TCD2D:
+  case LocalAssembling2D_type::TCD2D_Mass:
     this->N_Matrices = 1;
     this->RowSpace = { 0 };
     this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
+    this->N_Rhs = 0;
     this->RhsSpace = { 0 };
-    this->AssembleParam = MatrixARhsAssemble; 
     this->Manipulate = NULL;
-    break;
-  case TCD2D_Mass_Rhs_SUPG:
-    this->N_Terms = 3;
-    this->Derivatives = { D10, D01, D00 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[0] = false;
-    this->FESpaceNumber = { 0, 0, 0 };
-    this->N_Matrices = 2;
-    this->RowSpace = { 0, 0 };
-    this->ColumnSpace = { 0, 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = MatrixMRhsAssemble_SUPG; 
     this->Manipulate = NULL;
-    break;
-  case TCD2D_Stiff_Rhs_SUPG:
-    this->N_Terms = 5;
-    this->Derivatives = { D10, D01, D00, D20, D02 };
-    this->Needs2ndDerivatives = new bool[1];
-    this->Needs2ndDerivatives[1] = true;
-    this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
-    this->N_Matrices = 2;
-    this->RowSpace = { 0, 0 };
-    this->ColumnSpace = { 0, 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->AssembleParam = MatricesAKRhsAssemble_SUPG; 
-    this->Manipulate = NULL;
-    break;
+    switch(TDatabase::ParamDB->DISCTYPE)
+    {
+      case GALERKIN:
+       this->N_Terms = 1;
+       this->Derivatives = { D00 };
+       this->Needs2ndDerivatives = new bool[1];
+       this->Needs2ndDerivatives[0] = false;
+       this->FESpaceNumber = { 0 };
+       this->AssembleParam = LocalMatrixM;
+       break;
+      case SUPG:
+       this->N_Terms = 3;
+       this->Derivatives = { D10, D01, D00 };
+       this->Needs2ndDerivatives = new bool[1];
+       this->Needs2ndDerivatives[0] = false;
+       this->FESpaceNumber = { 0, 0, 0 };
+       this->AssembleParam = LocalMatrixM_SUPG;
+       break;
+    }    
+  break;  //LocalAssembling2D_type::TCD2D_Mass
   ///////////////////////////////////////////////////////////////////////////
   // NSE2D: stationary Navier-Stokes problems
   case NSE2D_Galerkin:
@@ -208,6 +254,14 @@ switch(type)
     this->AssembleParam = BilinearAssembleDarcyGalerkin; 
     this->Manipulate = NULL;
     break;
+  ////////////////////////////////////////////////////////////////////////////
+    // TNSE2D: nonstationary Navier-Stokes problems
+  case LocalAssembling2D_type::TNSE2D:
+  case LocalAssembling2D_type::TNSE2D_NL:   
+  case LocalAssembling2D_type::TNSE2D_Rhs:
+    this->set_parameters_for_tnse(type);
+    break;
+    
   default:
     ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
     throw("unknown LocalAssembling2D_type");
@@ -1661,4 +1715,304 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
       ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
       exit(1);
   } // end switch LocalAssembling2D_type
+}
+
+void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  int disc_type = TDatabase::ParamDB->DISCTYPE;
+  // few checks
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrMsg("Newton method does not supported yet");
+    exit(1);
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE == 1)
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrMsg("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+      exit(1);
+    }
+  }
+  
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+  {
+    ErrMsg("Skew symmetric case is not implement for all NSTYPE");
+    exit(1);
+  }
+  
+  // common for all NSTYPE, Discrete forms, etc
+  if(type==TNSE2D)
+  {
+    this->N_Terms = 4;
+    this->Derivatives = { D10, D01, D00, D00 };  
+    this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure    
+    this->N_Rhs = 3; // NOTE: check why is this always three??
+    this->RhsSpace = { 0, 0, 0 };
+  }
+  else if(type==TNSE2D_NL)
+  {
+    this->N_Terms = 3;
+    this->Derivatives = { D10, D01, D00 };    
+    this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure        
+    this->N_Rhs = 0;
+    this->RhsSpace = {};
+  }
+  
+  this->Needs2ndDerivatives = new bool[1];
+  this->Needs2ndDerivatives[0] = false;   
+  this->Manipulate = NULL;
+  
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+  {
+    this->N_Parameters = 2;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParamsVelo_GradVelo};
+    this->BeginParameter = { 0 };
+    this->N_FEValues = 6;
+    this->FEValue_MultiIndex = { D00, D00, D10, D10, D01, D01 };
+    this->FEValue_FctIndex = { 0, 1, 0, 1, 0, 1 };
+  }
+  else
+  {
+    this->N_Parameters = 2;
+    this->N_ParamFct = 1;
+    this->ParameterFct = {TimeNSParams2};
+    this->N_FEValues = 2;
+    this->BeginParameter = { 0 };
+    this->FEValue_MultiIndex = { D00, D00 };
+    this->FEValue_FctIndex = { 0, 1 };    
+  }
+  
+  
+  switch(type)
+  {
+    case TNSE2D:
+      switch(disc_type) // discrete forms
+      {
+        case GALERKIN:
+          switch(nstype)
+          {
+            case 1:
+              this->N_Matrices    = 4;
+              this->RowSpace      = { 0, 0, 1, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0 };
+              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+              {                
+                case 0:
+                  this->AssembleParam = TimeNSType1Galerkin;
+                  break;
+                case 3:
+                  this->AssembleParam = TimeNSType1GalerkinDiv;
+                  break;
+              }
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+            case 2:
+              this->N_Matrices    = 6;
+              this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
+              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+              {
+                case 0:                  
+                  this->AssembleParam = TimeNSType2Galerkin;
+                  break;
+                case 3:
+                  this->AssembleParam = TimeNSType2GalerkinDiv;
+                  break;                  
+              }
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+            case 3:
+              this->N_Matrices    = 8;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
+              if(TDatabase::ParamDB->LAPLACETYPE == 0)
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:                  
+                    this->AssembleParam = TimeNSType3Galerkin;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType3GalerkinRot;
+                    break;                  
+                }
+              }
+              else
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:                  
+                    this->AssembleParam = TimeNSType3GalerkinDD;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType3GalerkinRotDD;
+                    break;                  
+                }
+              }
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+            case 4:
+              this->N_Matrices    = 10;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+              if(TDatabase::ParamDB->LAPLACETYPE == 0)
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:
+                    this->AssembleParam = TimeNSType4Galerkin;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType4GalerkinRot;
+                    break;                  
+                }
+              }
+              else
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:
+                    this->AssembleParam = TimeNSType4GalerkinDD;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType4GalerkinRotDD;
+                    break;                  
+                }
+              }
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+            case 14: 
+              this->N_Matrices    = 11;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+              {
+                case 0:                  
+                  // this->AssembleParam = 
+                  break;
+                case 2:
+                  // this->AssembleParam =
+                  break;                  
+              }
+              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
+          }
+          break; // break within type TNSE2D->DISCTYPE
+        case SUPG:
+          switch(nstype)
+          {
+            case 1:
+              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+              {
+                case 0:
+                  break;
+                case 3:
+                  break;                  
+              }
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+            case 2:
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+            case 3:
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+            case 4:
+              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+            case 14: 
+              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
+          }
+          break;
+      }
+      break;// break; for the TNSE2D type
+    case TNSE2D_NL:
+      switch(disc_type)
+      {
+        case GALERKIN:
+          switch(nstype)
+          {
+            case 1:
+            case 2:
+              this->N_Matrices    = 1;
+              this->RowSpace      = { 0 };
+              this->ColumnSpace   = { 0 };
+              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+              {
+                case 0:
+                  this->AssembleParam = TimeNSType1_2NLGalerkin;
+                  break;
+                case 3:
+                  this->AssembleParam = TimeNSType1_2NLGalerkinDiv;
+                  break;
+              }              
+              break;
+            case 3:
+            case 4:
+              this->N_Matrices    = 2;
+              this->RowSpace      = { 0, 0 };
+              this->ColumnSpace   = { 0, 0 };
+              if(TDatabase::ParamDB->LAPLACETYPE==0)
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:
+                   this->AssembleParam = TimeNSType3_4NLGalerkin;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType3_4NLGalerkinRot;
+                    break;
+                }
+              }
+              else
+              {
+                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                {
+                  case 0:
+                    this->AssembleParam = TimeNSType3_4NLGalerkinDD;
+                    break;
+                  case 2:
+                    this->AssembleParam = TimeNSType3_4NLGalerkinRotDD;
+                    break;
+                }
+              }
+              break;
+          }
+          break;// break; TNSE2D_NL->GALERKIN
+          
+        case SUPG:
+          switch(nstype)
+          {
+            case 1:
+            case 2:
+              break;
+            case 3:
+            case 4:
+              break;
+          }
+          break;// break; TNSE2D_NL->SUPG
+      }// case: TNSE2D_NL: endswitch(disc_type): 
+      break;
+    case TNSE2D_Rhs:
+      switch(disc_type)
+      {
+        case GALERKIN:
+          this->N_Terms = 1;
+          this->Derivatives = { D00 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = {};
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 0};
+          this->AssembleParam =TimeNSRHS; 
+          this->Manipulate = NULL;
+          break;
+        case SUPG:
+          ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
+          break;
+        default:
+          ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
+          exit(1);
+      }
+      break;
+  }
+  //=========================================================================
+  
 }

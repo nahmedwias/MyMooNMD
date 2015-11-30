@@ -50,7 +50,7 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
   
   BoundValueFunct2D * non_const_bound_value = this->boundary_values;
   
-  if(la.get_type() != TCD2D_Mass_Rhs_Galerkin)
+  if(la.get_type() != TCD2D_Mass)
   {
     // reset right hand side and matrix to zero
     rhs.reset();
@@ -83,8 +83,8 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
   {
     // reset the matrix
     matrix->Reset();
-    Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries, 
-               &fe_space, &boundary_conditions, &non_const_bound_value, la);
+    Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 0, NULL, 
+               NULL, &boundary_conditions, &non_const_bound_value, la);
   }
 } // void BlockMatrixCD2D::Assemble
 
@@ -104,6 +104,16 @@ void BlockMatrixCD2D::apply_scaled_add(const double *x, double *y,
   this->get_matrix()->multiply(x, y, factor);
 }
 
+/** ************************************************************************ */
+void BlockMatrixCD2D::apply_scaled_add_active(const double* x, double* y, 
+					      double factor) const
+{
+  if(factor ==0)
+    return;
+  
+  this->get_matrix()->multiplyActive(x,y,factor); 
+  
+}
 
 
 
