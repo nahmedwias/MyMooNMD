@@ -11,11 +11,12 @@
  * Write the following into a shell 
  *  > mkdir ParMooN \n
  *  > cd ParMooN \n
- *  > hg clone ssh://username\@gate.wias-berlin.de/Home/guests/wilbrand/software/ParMooN/ParMooN . \n
+ *  > hg clone ssh://username\@gate.wias-berlin.de//Home/guests/wilbrand/software/ParMooN/ParMooN . \n
+ *  > cd .. \n
  *  > mkdir build \n
  *  > cd build/ \n 
- *  > cmake .. \n
- *  > make -j \n
+ *  > cmake ../ParMooN \n
+ *  > make check doc -j \n
  The '-j' for using all available cores is optional.
  
  * \subsection information More Information on ParMooN
