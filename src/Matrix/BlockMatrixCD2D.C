@@ -104,6 +104,16 @@ void BlockMatrixCD2D::apply_scaled_add(const double *x, double *y,
   this->get_matrix()->multiply(x, y, factor);
 }
 
+/** ************************************************************************ */
+void BlockMatrixCD2D::apply_scaled_add_active(const double* x, double* y, 
+					      double factor) const
+{
+  if(factor ==0)
+    return;
+  
+  this->get_matrix()->multiplyActive(x,y,factor); 
+  
+}
 
 
 

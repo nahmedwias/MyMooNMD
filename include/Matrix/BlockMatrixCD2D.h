@@ -72,6 +72,20 @@ class BlockMatrixCD2D : public BlockMatrix
      */
     void apply_scaled_add(const double *x, double *y, double factor = 1.0)
       const;
+      
+   /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y: only active
+     * "A" is this matrix.
+     * 
+     * This function can be used to compute the residual r = b - Ax.
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void apply_scaled_add_active(const double *x, double *y, double factor = 1.0)
+      const;
     
     /** @brief return the matrix
      * 
