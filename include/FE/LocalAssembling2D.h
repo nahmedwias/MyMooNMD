@@ -29,12 +29,13 @@
 #include <DiscreteForm2D.h>
 
 enum LocalAssembling2D_type { ConvDiff,                              
-                              TCD2D_Mass_Rhs_Galerkin, // mass matrix and rhs
-                              TCD2D_Stiff_Rhs_Galerkin,// stiffness matrix + rhs
-                              TCD2D_Mass_Rhs_SUPG, // mass matrix and rhs
-                              TCD2D_Stiff_Rhs_SUPG, // stiffness matrix + rhs
+                              TCD2D, // stiffness matrix and rhs
+                              TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
                               NSE2D_Galerkin,
                               NSE2D_Galerkin_Nonlinear,
+                              TNSE2D,
+                              TNSE2D_NL,
+                              TNSE2D_Rhs,
                               Darcy2D_Galerkin
 };
 
@@ -128,6 +129,9 @@ class LocalAssembling2D
      * type, NSTYOE, Laplace type, nonlinear form type)
      */
     void set_parameters_for_nse(LocalAssembling2D_type type);
+    /** 
+     */
+    void set_parameters_for_tnse(LocalAssembling2D_type type);
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,

@@ -133,6 +133,13 @@ class Time_CD2D
      * 
      */
     void output(int m, int& imgage);
+     // getters and setters
+    const TFEFunction2D & get_function() const
+    { return this->systems.front().fe_function; }
+    const TFESpace2D & get_space() const
+    { return this->systems.front().fe_space; }
+    const Example_CD2D& get_example() const
+    { return example; }
 };
 
 #endif

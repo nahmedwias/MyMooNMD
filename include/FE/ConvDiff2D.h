@@ -7,7 +7,6 @@
 #ifndef __CONVDIFF2D__
 #define __CONVDIFF2D__
 
-#ifdef __2D__
 /** the local assembling routines. Each of them corresponds to one 
  * LocalAssembling2D_type */
 
@@ -37,24 +36,25 @@ void BilinearAssemble_Axial3D(double Mult, double *coeff, double* param,
 /** ========================================================================= */
 /** ========================================================================= */
 // TCD2D: time dependent convection diffusion problems
-
-// Galerkin
-void MatrixARhsAssemble(double Mult, double *coeff, double *param, double hK, 
+// Galerkin: local assembling routine for mass matrix 
+void LocalMatrixM(double Mult, double *coeff, double *param, double hK, 
                         double **OrigValues, int *N_BaseFuncts, 
                         double ***LocMatrices, double **LocRhs);
-void MatrixMRhsAssemble(double Mult, double *coeff, double *param, double hK, 
+//Galerkin: local assembling routine for stiffness matrix and right hand side
+void LocalMatrixARhs(double Mult, double *coeff, double *param, double hK, 
                         double **OrigValues, int *N_BaseFuncts,
                         double ***LocMatrices, double **LocRhs);
 
-// SUPG
-void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
+// SUPG: local assembling routine for stiffness matrix and right hand side
+void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *param,
                                 double hK, double **OrigValues,
                                 int *N_BaseFuncts,double ***LocMatrices,
                                 double **LocRhs);
-void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
+// SUPG: local routine which assembles the mass matrix and a 
+// matrix which comes from the SUPG part of the time derivative
+void LocalMatrixM_SUPG(double Mult, double *coeff, double *param,
                              double hK, double **OrigValues,int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs);
-
 
 /** ========================================================================= */
 /** ========================================================================= */
@@ -150,5 +150,3 @@ void RhsAssemble_RhsAdjointH1Error(double Mult, double *coeff, double *param,
 
 
 #endif // __CONVDIFF2D__
-
-#endif // #ifdef __2D__
