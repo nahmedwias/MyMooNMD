@@ -32,6 +32,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	add_test(cd2d ParMooN_test_cd2d)
 	list(APPEND parmoon_tests ParMooN_test_cd2d)
 	
+	#matrix test
+  add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
+  target_link_libraries(ParMooN_test_hdiv parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(hdiv ParMooN_test_hdiv)
+  list(APPEND parmoon_tests ParMooN_test_hdiv)
+	
 	#cd3d test sequential
 	add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
 	target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
