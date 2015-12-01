@@ -23,7 +23,34 @@ void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
   }
   else // on a real cell
   {
-    ErrThrow("NF_N_Q_RT0_2D_EvalAll not implemented on a real cell yet");
+    double x0, x1, x2, y0, y1, y2;
+    #ifdef __2D__
+    Cell->GetVertex(0)->GetCoords(x0, y0);
+    Cell->GetVertex(1)->GetCoords(x1, y1);
+    Cell->GetVertex(2)->GetCoords(x2, y2);
+    #else
+    ErrThrow("NF_N_T_RT0_2D_EvalAll not implemented in 3D");
+    #endif
+    // length of edge, and outer normal
+    double l, nx, ny;
+    
+    // first edge:
+    l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
+    nx = y1 - y0;
+    ny = x0 - x1;
+    Functionals[0] = PointValues[0]*nx + PointValues[3]*ny;
+    
+    // second edge:
+    l = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    nx = y2 - y1;
+    ny = x1 - x2;
+    Functionals[1] = PointValues[1]*nx + PointValues[4]*ny;
+    
+    // third edge:
+    l = sqrt((x2-x0)*(x2-x0) + (y2-y0)*(y2-y0));
+    nx = y0 - y2;
+    ny = x2 - x0;
+    Functionals[2] = PointValues[2]*nx + PointValues[5]*ny;
   }
 }
 
