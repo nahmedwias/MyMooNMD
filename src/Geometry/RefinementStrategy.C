@@ -50,7 +50,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
     // current cell
     TBaseCell *cell;
 
-    OutPut("Refine strategy: " << refine_strategy << ", min cells to change: " << ((int) min_changed)  << endl);
+    OutPut("Refine strategy: " << refine_strategy << ", min cells to change: " << ((int) min_changed));
     switch (refine_strategy) {
         case RefinementStrategyType::MaximalEstimatedLocalError: {
             // loop while the number of changed cells is below the minimal number and we have not reached max_it
@@ -194,7 +194,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
             break;
         }
     }
-    OutPut("Changed: " << changed << endl);
+    OutPut("Cells marked for refinement: " << changed);
 }
 
 bool shouldRefineCell(RefinementStrategy *strategy, size_t cell) {

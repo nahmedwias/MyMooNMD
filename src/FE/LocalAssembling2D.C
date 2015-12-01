@@ -424,6 +424,10 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
   if(Manipulate)
     Manipulate(N_Points, AuxArray, Parameters, Cell);
 
+  if(ManipulateAssembling) {
+    ManipulateAssembling[0](N_Points, X, Y, AuxArray, Parameters, Cell);
+  }
+
   for(i=0; i<N_Terms; ++i)
   {
     AllOrigValues[i] = 
@@ -476,6 +480,9 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
 
   if(Manipulate)
     Manipulate(N_Points, Coefficients, NULL, Cell);
+  if(ManipulateAssembling) {
+    ManipulateAssembling[0](N_Points, X, Y, Coefficients, NULL, Cell);
+  }
   for(int j=0;j<N_Terms;j++)
   {
     AllOrigValues[j] = 

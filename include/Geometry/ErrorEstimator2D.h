@@ -15,9 +15,6 @@
 
 class TDatabase;
 
-// dwr function mapping (fe_function2d, cell) -> value
-typedef double (*LinearDWRFunction)(TFEFunction2D&, int);
-
 class ErrorEstimator2D {
 protected:
     TCollection* currentCollection;

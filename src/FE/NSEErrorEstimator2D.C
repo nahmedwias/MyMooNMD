@@ -71,7 +71,6 @@ struct NSEErrorEstimator2D::EdgeData {
         this->max_n_base_funct_2d = max_n_base_functions_2d;
 
         // initialize structures holding function values and derivatives on reference edge
-        //xyval_xyderiv_ref_1D_data.reset(new double[3 * 4 * MaxN_QuadPoints_1D * max_n_base_funct_2d], std::default_delete<double[]>());
         xyval_xyderiv_ref_1D_data.resize(3 * 4 * MaxN_QuadPoints_1D * max_n_base_funct_2d);
         {
             //double *ptr = xyval_xyderiv_ref_1D_data.get();
@@ -89,7 +88,6 @@ struct NSEErrorEstimator2D::EdgeData {
         }
 
         // initialize structures holding (xi, eta) values on edge
-        //xi_eta_1D_data.reset<double>(new double[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * 2], std::default_delete<double[]>());
         xi_eta_1D_data.resize(N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * 2);
         {
             // back xi1D and eta1D by xi_eta_1D_data
@@ -105,7 +103,6 @@ struct NSEErrorEstimator2D::EdgeData {
             }
         }
         // initialize structures holding values and derivatives on reference edge
-        //xieta_ref1D_data.reset(new double[N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * max_n_base_funct_2d * 3], std::default_delete<double[]>());
         xieta_ref1D_data.resize(N_BaseFuncts2D * 4 * MaxN_QuadPoints_1D * max_n_base_funct_2d * 3);
         {
             // back xietaval_ref1D, xideriv_ref1D, etaderiv_ref1D by xieta_ref1D_data

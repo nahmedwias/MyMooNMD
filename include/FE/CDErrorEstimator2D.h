@@ -8,6 +8,7 @@
 
 #include <ErrorEstimator2D.h>
 #include <Example_CD2D.h>
+#include <Joint.h>
 
 enum class CDErrorEstimatorType {
     // 0 - gradient indicator
@@ -60,9 +61,9 @@ protected:
 
 public:
     // constructor
-    CDErrorEstimator2D(Example_CD2D &ex, int type);
+    CDErrorEstimator2D(Example2D &ex, int type);
 
-    void estimate(const TFEFunction2D &fe_function2D) {
+    virtual void estimate(const TFEFunction2D &fe_function2D) {
         estimate(derivatives, fe_function2D);
     }
 

@@ -28,19 +28,22 @@
  */
 struct CDErrorEstimator2D::EdgeData {
 
+protected:
+    std::vector<double> xieta_ref1D_data;
+public:
     // constants
-    constexpr static int MaxN_QuadPoints_1D_loc = 5;
-    constexpr static int N_BaseFuncts2D_loc = 5;
+    constexpr static int MaxN_QuadPoints_1D_loc = 30;
+    constexpr static int N_BaseFuncts2D_loc = 30;
 
     // coordinates of the edges
     std::array<std::vector<double>, 4> XEdge1D{}, YEdge1D{};
     // arrays holding the line quadrature points on reference cell
     double xi1D[N_BaseFuncts2D_loc][4][MaxN_QuadPoints_1D_loc]{};
     double eta1D[N_BaseFuncts2D_loc][4][MaxN_QuadPoints_1D_loc]{};
-    // vector holding arrays of the form arr[baseFunction][theConsideredEdge][quadraturePoint]
-    std::vector<std::array<std::array<std::array<double, MaxN_QuadPoints_1D_loc>, 4>, N_BaseFuncts2D_loc>> xietaval_ref1D{};
-    std::vector<std::array<std::array<std::array<double, MaxN_QuadPoints_1D_loc>, 4>, N_BaseFuncts2D_loc>> xideriv_ref1D{};
-    std::vector<std::array<std::array<std::array<double, MaxN_QuadPoints_1D_loc>, 4>, N_BaseFuncts2D_loc>> etaderiv_ref1D{};
+    // mapping (base_function2D, edge, quadPoint, BaseFunction) -> value
+    std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, 4>> xietaval_ref1D{N_BaseFuncts2D_loc};
+    std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, 4>> xideriv_ref1D{N_BaseFuncts2D_loc};
+    std::vector<std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, 4>> etaderiv_ref1D{N_BaseFuncts2D_loc};
     // determinant of the affine mapping for each edge
     std::array<std::array<double, MaxN_QuadPoints_2D>, 4> AbsDetjk1D{};
     // values and derivative values in reference cell
@@ -51,6 +54,27 @@ struct CDErrorEstimator2D::EdgeData {
     std::array<std::vector<double>, 4> xyval_1D{};
     std::array<std::vector<double>, 4> xderiv_1D{};
     std::array<std::vector<double>, 4> yderiv_1D{};
+
+    EdgeData() {
+        // initialize structures holding values and derivatives on reference edge
+        xieta_ref1D_data.resize(N_BaseFuncts2D_loc * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc * 3);
+        {
+            // back xietaval_ref1D, xideriv_ref1D, etaderiv_ref1D by xieta_ref1D_data
+            auto *ptr = xieta_ref1D_data.data();
+            xietaval_ref1D[0][0][0] = &ptr[0];
+            xideriv_ref1D[0][0][0] = &ptr[N_BaseFuncts2D_loc * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc];
+            etaderiv_ref1D[0][0][0] = &ptr[N_BaseFuncts2D_loc * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc * 2];
+            for (size_t ii = 0; ii < N_BaseFuncts2D_loc; ii++) {
+                for (size_t jj = 0; jj < 4; jj++) {
+                    for (size_t kk = 0; kk < MaxN_QuadPoints_1D_loc; kk++) {
+                        xietaval_ref1D[ii][jj][kk] = xietaval_ref1D[0][0][0] + (kk * N_BaseFuncts2D_loc + jj * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc + ii * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc);
+                        xideriv_ref1D[ii][jj][kk] = xideriv_ref1D[0][0][0] + (kk * N_BaseFuncts2D_loc + jj * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc + ii * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc);
+                        etaderiv_ref1D[ii][jj][kk] = etaderiv_ref1D[0][0][0] + (kk * N_BaseFuncts2D_loc + jj * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc + ii * 4 * MaxN_QuadPoints_1D_loc * N_BaseFuncts2D_loc);
+                    }
+                }
+            }
+        }
+    }
 };
 
 /**
@@ -214,7 +238,7 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
     if (eta_K && eta_K != nullptr) delete[] eta_K;
 
     // initialization
-    TCollection *coll = fe_function2D.GetFESpace2D()->GetCollection();//domain.GetCollection(It_Finest, 0);
+    TCollection *coll = fe_function2D.GetFESpace2D()->GetCollection();
     // this call is obligatory,
     // otherwise the collection is unknown to the refinement strategy
     setCollection(coll);
@@ -250,6 +274,7 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
     int *n_baseFunctions = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
     if (DEBUG_COMPARE_RESULTS_WITH_OLD_CODE) {
+        std::cout << " ---running old code--- " << std::endl;
         TAuxParam2D aux;
         int estimator = int(estimatorType);
         const TFESpace2D *fe_space = fe_function2D.GetFESpace2D();
@@ -259,6 +284,7 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
                                           const_cast<BoundValueFunct2D **>(example2D.get_bd()), &aux,
                                           1, const_cast<TFESpace2D **>(&fe_space), eta_K, &maximal_local_error,
                                           &estimated_global_error[0]);
+        std::cout << " ---done running old code--- " << std::endl;
     }
 
     // the fe space
@@ -317,6 +343,146 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
     // we do need second derivatives on the reference cell
     bool secondDerivatives[] = {true};
 
+    // ########################################################################
+    // calculate values of base functions and derivatives on ref element
+    // ########################################################################
+
+    auto n_used_elements = fe_space->GetN_UsedElements();
+
+    // store used finite elements
+    std::unique_ptr<FE2D> UsedElements{new FE2D[n_used_elements]};
+    {
+        std::vector<int> Used = std::vector<int>(N_FEs2D);
+        auto n = fe_space->GetN_UsedElements();
+        auto use = fe_space->GetUsedElements();
+        for (auto j = 0; j < n; j++) {
+            FE2D CurrentElement = use[j];
+            Used[CurrentElement] = 1;
+        }
+        int N_UsedElements = 0;
+        for (auto i = 0; i < N_FEs2D; i++)
+            if (Used[i]) N_UsedElements++;
+
+        auto ptr = UsedElements.get();
+        size_t j = 0;
+        for (auto i = 0; i < N_FEs2D; i++) {
+            if (Used[i]) {
+                ptr[j] = (FE2D) i;
+                j++;
+            }
+        }
+        if (n_used_elements != N_UsedElements) {
+            std::cerr << "neineineineineineineinein" << std::endl;
+        }
+    }
+
+    int N_Points1D;
+    for (auto i = 0; i < n_used_elements; i++) {
+        FE2D usedElement = UsedElements.get()[i];//fe_space->GetUsedElements()[i];
+        QuadFormula1D qf = TFEDatabase2D::GetQFLineFromDegree(2 * TFEDatabase2D::GetPolynomialDegreeFromFE2D(usedElement));
+        TQuadFormula1D *quadFormula = TFEDatabase2D::GetQuadFormula1D(qf);
+        double *weights1D, *zeta;
+        quadFormula->GetFormulaData(N_Points1D, weights1D, zeta);
+        if (N_Points1D > edgeData.MaxN_QuadPoints_1D_loc) {
+            Output::print<1>("CD2DErrorEstimator: too many 1D quadrature points ", N_Points1D);
+            Output::print<1>("Increase  MaxN_QuadPoints_1D_loc !!!");
+            exit(4711);
+        }
+
+        {
+            for (auto edge = 0; edge < 4; edge++) {
+                edgeData.xyval_1D[edge].resize((unsigned long) N_Points1D);
+                edgeData.xderiv_1D[edge].resize((unsigned long) N_Points1D);
+                edgeData.yderiv_1D[edge].resize((unsigned long) N_Points1D);
+            }
+        }
+
+        BaseFunct2D baseFunct2D = baseFunctions[usedElement];
+        TBaseFunct2D *bf = TFEDatabase2D::GetBaseFunct2D(baseFunct2D);// get base functions
+        BF2DRefElements bf2Drefelements = bf->GetRefElement();
+        auto used_ptr = UsedElements.get();
+        int baseFunct_loc = 0;
+        {
+            unsigned int j;
+            for (j = 0; j < n_used_elements; j++) {
+                if ((int) baseFunct2D == (int) used_ptr[j]) {
+                    break;
+                }
+            }
+            baseFunct_loc = j;
+        }
+
+        // compute coordinates of line quadrature points in reference cell
+        switch (bf2Drefelements) {
+            // quadrilateral cell
+            case BFUnitSquare : {
+                // edge 0
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][0][j] = zeta[j];
+                    edgeData.eta1D[baseFunct_loc][0][j] = -1;
+                    bf->GetDerivatives(D00, zeta[j], -1, edgeData.xietaval_ref1D[baseFunct_loc][0][j]);
+                    bf->GetDerivatives(D10, zeta[j], -1, edgeData.xideriv_ref1D[baseFunct_loc][0][j]);
+                    bf->GetDerivatives(D01, zeta[j], -1, edgeData.etaderiv_ref1D[baseFunct_loc][0][j]);
+                }
+                // edge 1
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][1][j] = 1;
+                    edgeData.eta1D[baseFunct_loc][1][j] = zeta[j];
+                    bf->GetDerivatives(D00, 1, zeta[j], edgeData.xietaval_ref1D[baseFunct_loc][1][j]);
+                    bf->GetDerivatives(D10, 1, zeta[j], edgeData.xideriv_ref1D[baseFunct_loc][1][j]);
+                    bf->GetDerivatives(D01, 1, zeta[j], edgeData.etaderiv_ref1D[baseFunct_loc][1][j]);
+                }
+                // edge 2
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][2][j] = -zeta[j];
+                    edgeData.eta1D[baseFunct_loc][2][j] = 1;
+                    bf->GetDerivatives(D00, -zeta[j], 1, edgeData.xietaval_ref1D[baseFunct_loc][2][j]);
+                    bf->GetDerivatives(D10, -zeta[j], 1, edgeData.xideriv_ref1D[baseFunct_loc][2][j]);
+                    bf->GetDerivatives(D01, -zeta[j], 1, edgeData.etaderiv_ref1D[baseFunct_loc][2][j]);
+                }
+                // edge 3
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][3][j] = -1;
+                    edgeData.eta1D[baseFunct_loc][3][j] = -zeta[j];
+                    bf->GetDerivatives(D00, -1, -zeta[j], edgeData.xietaval_ref1D[baseFunct_loc][3][j]);
+                    bf->GetDerivatives(D10, -1, -zeta[j], edgeData.xideriv_ref1D[baseFunct_loc][3][j]);
+                    bf->GetDerivatives(D01, -1, -zeta[j], edgeData.etaderiv_ref1D[baseFunct_loc][3][j]);
+                }
+                break;
+            }
+
+                // triangular cell
+            case BFUnitTriangle : {
+                // edge 0
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][0][j] = (zeta[j] + 1) / 2;
+                    edgeData.eta1D[baseFunct_loc][0][j] = 0;
+                    bf->GetDerivatives(D00, (zeta[j] + 1) / 2, 0, edgeData.xietaval_ref1D[baseFunct_loc][0][j]);
+                    bf->GetDerivatives(D10, (zeta[j] + 1) / 2, 0, edgeData.xideriv_ref1D[baseFunct_loc][0][j]);
+                    bf->GetDerivatives(D01, (zeta[j] + 1) / 2, 0, edgeData.etaderiv_ref1D[baseFunct_loc][0][j]);
+                }
+                // edge 1
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][1][j] = (-zeta[j] + 1) / 2;
+                    edgeData.eta1D[baseFunct_loc][1][j] = (zeta[j] + 1) / 2;
+                    bf->GetDerivatives(D00, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.xietaval_ref1D[baseFunct_loc][1][j]);
+                    bf->GetDerivatives(D10, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.xideriv_ref1D[baseFunct_loc][1][j]);
+                    bf->GetDerivatives(D01, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.etaderiv_ref1D[baseFunct_loc][1][j]);
+                }
+                // edge 2
+                for (auto j = 0; j < N_Points1D; j++) {
+                    edgeData.xi1D[baseFunct_loc][2][j] = 0;
+                    edgeData.eta1D[baseFunct_loc][2][j] = (-zeta[j] + 1) / 2;
+                    bf->GetDerivatives(D00, 0, (-zeta[j] + 1) / 2, edgeData.xietaval_ref1D[baseFunct_loc][2][j]);
+                    bf->GetDerivatives(D10, 0, (-zeta[j] + 1) / 2, edgeData.xideriv_ref1D[baseFunct_loc][2][j]);
+                    bf->GetDerivatives(D01, 0, (-zeta[j] + 1) / 2, edgeData.etaderiv_ref1D[baseFunct_loc][2][j]);
+                }
+                break;
+            }
+        }
+    }
+
+
     // for each cell
     for (unsigned int cellIdx = 0; cellIdx < coll->GetN_Cells(); cellIdx++) {
         // the cell
@@ -356,127 +522,12 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
             }
         }
 
-        // ########################################################################
-        // calculate values of base functions and derivatives on ref element
-        // ########################################################################
-
-        int n_used_elements = fe_space->GetN_UsedElements();
-        {
-            FE2D usedElement = element;//fe_space->GetUsedElements()[i];
-            QuadFormula1D qf = TFEDatabase2D::GetQFLineFromDegree(2 * TFEDatabase2D::GetPolynomialDegreeFromFE2D(usedElement));
-            TQuadFormula1D *quadFormula = TFEDatabase2D::GetQuadFormula1D(qf);
-            int N_Points1D;
-            double *weights1D, *zeta;
-            quadFormula->GetFormulaData(N_Points1D, weights1D, zeta);
-            if (N_Points1D > edgeData.MaxN_QuadPoints_1D_loc) {
-                OutPut("CD2DErrorEstimator: too many 1D quadrature points " << N_Points1D << endl);
-                OutPut("Increase  MaxN_QuadPoints_1D_loc !!!" << endl);
-                exit(4711);
-            }
-
-            {
-                for (unsigned int x = 0; x < 4; x++) {
-                    edgeData.xyval_1D[x].resize((unsigned long) N_Points1D);
-                    edgeData.xderiv_1D[x].resize((unsigned long) N_Points1D);
-                    edgeData.yderiv_1D[x].resize((unsigned long) N_Points1D);
-                }
-            }
-
-            BaseFunct2D baseFunct2D = baseFunctions[usedElement];
-            TBaseFunct2D *bf = TFEDatabase2D::GetBaseFunct2D(baseFunct2D);// get base functions
-            BF2DRefElements bf2Drefelements = bf->GetRefElement();
-            int baseFunct_loc = 0;
-            for (unsigned int j = 0; j < n_used_elements; j++) {
-                if ((int) baseFunct2D == (int) fe_space->GetUsedElements()[j]) {
-                    baseFunct_loc = j;
-                    break;
-                }
-            }
-
-            // compute coordinates of line quadrature points in reference cell
-            switch (bf2Drefelements) {
-                // quadrilateral cell
-                case BFUnitSquare : {
-                    // edge 0
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][0][j] = zeta[j];
-                        edgeData.eta1D[baseFunct_loc][0][j] = -1;
-                        bf->GetDerivatives(D00, zeta[j], -1, edgeData.xietaval_ref1D[baseFunct_loc][0][j].data());
-                        bf->GetDerivatives(D10, zeta[j], -1, edgeData.xideriv_ref1D[baseFunct_loc][0][j].data());
-                        bf->GetDerivatives(D01, zeta[j], -1, edgeData.etaderiv_ref1D[baseFunct_loc][0][j].data());
-                    }
-                    // edge 1
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][1][j] = 1;
-                        edgeData.eta1D[baseFunct_loc][1][j] = zeta[j];
-                        bf->GetDerivatives(D00, 1, zeta[j], edgeData.xietaval_ref1D[baseFunct_loc][1][j].data());
-                        bf->GetDerivatives(D10, 1, zeta[j], edgeData.xideriv_ref1D[baseFunct_loc][1][j].data());
-                        bf->GetDerivatives(D01, 1, zeta[j], edgeData.etaderiv_ref1D[baseFunct_loc][1][j].data());
-                    }
-                    // edge 2
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][2][j] = -zeta[j];
-                        edgeData.eta1D[baseFunct_loc][2][j] = 1;
-                        bf->GetDerivatives(D00, -zeta[j], 1, edgeData.xietaval_ref1D[baseFunct_loc][2][j].data());
-                        bf->GetDerivatives(D10, -zeta[j], 1, edgeData.xideriv_ref1D[baseFunct_loc][2][j].data());
-                        bf->GetDerivatives(D01, -zeta[j], 1, edgeData.etaderiv_ref1D[baseFunct_loc][2][j].data());
-                    }
-                    // edge 3
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][3][j] = -1;
-                        edgeData.eta1D[baseFunct_loc][3][j] = -zeta[j];
-                        bf->GetDerivatives(D00, -1, -zeta[j], edgeData.xietaval_ref1D[baseFunct_loc][3][j].data());
-                        bf->GetDerivatives(D10, -1, -zeta[j], edgeData.xideriv_ref1D[baseFunct_loc][3][j].data());
-                        bf->GetDerivatives(D01, -1, -zeta[j], edgeData.etaderiv_ref1D[baseFunct_loc][3][j].data());
-                    }
-                    break;
-                }
-
-                    // triangular cell
-                case BFUnitTriangle : {
-                    // edge 0
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][0][j] = (zeta[j] + 1) / 2;
-                        edgeData.eta1D[baseFunct_loc][0][j] = 0;
-                        bf->GetDerivatives(D00, (zeta[j] + 1) / 2, 0, edgeData.xietaval_ref1D[baseFunct_loc][0][j].data());
-                        bf->GetDerivatives(D10, (zeta[j] + 1) / 2, 0, edgeData.xideriv_ref1D[baseFunct_loc][0][j].data());
-                        bf->GetDerivatives(D01, (zeta[j] + 1) / 2, 0, edgeData.etaderiv_ref1D[baseFunct_loc][0][j].data());
-                    }
-                    // edge 1
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][1][j] = (-zeta[j] + 1) / 2;
-                        edgeData.eta1D[baseFunct_loc][1][j] = (zeta[j] + 1) / 2;
-                        bf->GetDerivatives(D00, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.xietaval_ref1D[baseFunct_loc][1][j].data());
-                        bf->GetDerivatives(D10, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.xideriv_ref1D[baseFunct_loc][1][j].data());
-                        bf->GetDerivatives(D01, (-zeta[j] + 1) / 2, (zeta[j] + 1) / 2, edgeData.etaderiv_ref1D[baseFunct_loc][1][j].data());
-                    }
-                    // edge 2
-                    for (unsigned int j = 0; j < N_Points1D; j++) {
-                        // for all quadrature points
-                        edgeData.xi1D[baseFunct_loc][2][j] = 0;
-                        edgeData.eta1D[baseFunct_loc][2][j] = (-zeta[j] + 1) / 2;
-                        bf->GetDerivatives(D00, 0, (-zeta[j] + 1) / 2, edgeData.xietaval_ref1D[baseFunct_loc][2][j].data());
-                        bf->GetDerivatives(D10, 0, (-zeta[j] + 1) / 2, edgeData.xideriv_ref1D[baseFunct_loc][2][j].data());
-                        bf->GetDerivatives(D01, 0, (-zeta[j] + 1) / 2, edgeData.etaderiv_ref1D[baseFunct_loc][2][j].data());
-                    }
-                    break;
-                }
-            }
-        }
-
-
-
         // problem's coefficients
         if (example2D.get_coeffs()) {
             example2D.get_coeffs()(N_Points, X, Y, nullptr, &coefficientsPerQuadPoint[0]);
         }
 
+        // 1D quadrature formula
         QuadFormula1D qf = TFEDatabase2D::GetQFLineFromDegree(2 * TFEDatabase2D::GetPolynomialDegreeFromFE2D(element));
         TQuadFormula1D *quadFormula = TFEDatabase2D::GetQuadFormula1D(qf);
         int N_QuadraturePoints1D;
@@ -489,46 +540,58 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
 
 
         unsigned int BaseFunct_loc = 0;
-        for (unsigned int j = 0; j < n_used_elements; j++) {
-            if ((int) baseFunctions[element] == (int) fe_space->GetUsedElements()[j]) {
-                BaseFunct_loc = j;
-                break;
+        {
+            unsigned int j = 0;
+            for (j = 0; j < n_used_elements; j++) {
+                if ((int) baseFunctions[element] == (int) fe_space->GetUsedElements()[j]) {
+                    break;
+                }
             }
+            BaseFunct_loc = j;
         }
 
         // loop over all edges of cell
-        for (unsigned int j = 0; j < cell->GetN_Edges(); j++) {
+        for (auto edgeIdx = 0; edgeIdx < cell->GetN_Edges(); edgeIdx++) {
             // get original coordinates of edge quad. points
-            TFEDatabase2D::GetOrigFromRef(refTrans2D, N_QuadraturePoints1D, edgeData.xi1D[BaseFunct_loc][j], edgeData.eta1D[BaseFunct_loc][j], edgeData.XEdge1D[j].data(), edgeData.YEdge1D[j].data(), edgeData.AbsDetjk1D[j].data());
+            TFEDatabase2D::GetOrigFromRef(refTrans2D, N_QuadraturePoints1D,
+                                          edgeData.xi1D[BaseFunct_loc][edgeIdx],
+                                          edgeData.eta1D[BaseFunct_loc][edgeIdx],
+                                          edgeData.XEdge1D[edgeIdx].data(),
+                                          edgeData.YEdge1D[edgeIdx].data(),
+                                          edgeData.AbsDetjk1D[edgeIdx].data());
             // get values and derivatives in original cell
             for (unsigned int k = 0; k < N_QuadraturePoints1D; k++) {
-                TFEDatabase2D::GetOrigValues(refTrans2D, edgeData.xi1D[BaseFunct_loc][j][k],
-                                             edgeData.eta1D[BaseFunct_loc][j][k],
+                TFEDatabase2D::GetOrigValues(refTrans2D, edgeData.xi1D[BaseFunct_loc][edgeIdx][k],
+                                             edgeData.eta1D[BaseFunct_loc][edgeIdx][k],
                                              TFEDatabase2D::GetBaseFunct2D(baseFunctions[element]),
                                              coll, (TGridCell *) cell,
-                                             edgeData.xietaval_ref1D[BaseFunct_loc][j][k].data(),
-                                             edgeData.xideriv_ref1D[BaseFunct_loc][j][k].data(),
-                                             edgeData.etaderiv_ref1D[BaseFunct_loc][j][k].data(),
-                                             edgeData.xyval_ref1D[j][k].data(),
-                                             edgeData.xderiv_ref1D[j][k].data(),
-                                             edgeData.yderiv_ref1D[j][k].data());
+                                             edgeData.xietaval_ref1D[BaseFunct_loc][edgeIdx][k],
+                                             edgeData.xideriv_ref1D[BaseFunct_loc][edgeIdx][k],
+                                             edgeData.etaderiv_ref1D[BaseFunct_loc][edgeIdx][k],
+                                             &edgeData.xyval_ref1D[edgeIdx][k][0],
+                                             &edgeData.xderiv_ref1D[edgeIdx][k][0],
+                                             &edgeData.yderiv_ref1D[edgeIdx][k][0]);
             }
             double val[3];
             // for all quadrature points
-            for (unsigned int k = 0; k < N_QuadraturePoints1D; k++) {
+            for (auto k = 0; k < N_QuadraturePoints1D; k++) {
                 val[0] = val[1] = val[2] = 0;
                 // for all basis functions
-                for (unsigned int l = 0; l < n_baseFunctions[element]; l++) {
+                for (auto l = 0; l < n_baseFunctions[element]; l++) {
                     // accumulate value of derivative
-                    val[0] += FEFunctValues[l] * edgeData.xyval_ref1D[j][k][l];
+                    val[0] += FEFunctValues[l] * edgeData.xyval_ref1D[edgeIdx][k][l];
                     // accumulate value of derivative
-                    val[1] += FEFunctValues[l] * edgeData.xderiv_ref1D[j][k][l];
+                    val[1] += FEFunctValues[l] * edgeData.xderiv_ref1D[edgeIdx][k][l];
                     // accumulate value of derivative
-                    val[2] += FEFunctValues[l] * edgeData.yderiv_ref1D[j][k][l];
+                    val[2] += FEFunctValues[l] * edgeData.yderiv_ref1D[edgeIdx][k][l];
                 }
-                edgeData.xyval_1D[j][k] = val[0];
-                edgeData.xderiv_1D[j][k] = val[1];
-                edgeData.yderiv_1D[j][k] = val[2];
+                /*std::cout << "cell=" << cellIdx << ", " << "xyval_1d[" << edgeIdx << "][" << k << "]=" << val[0] << std::endl;
+                for(auto l = 0; l < n_baseFunctions[element]; l++) {
+                    std::cout << "\tl="<<l<<", Fe_val="<<FEFunctValues[l] <<", " << "xyval="<<edgeData.xyval_ref1D[edgeIdx][k][l]<<std::endl;
+                }*/
+                edgeData.xyval_1D[edgeIdx][k] = val[0];
+                edgeData.xderiv_1D[edgeIdx][k] = val[1];
+                edgeData.yderiv_1D[edgeIdx][k] = val[2];
             }
         }
 
@@ -590,7 +653,7 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
             // parameter
             w -= comp;
             // get boundary condition
-            //OutPut(comp << " " << w << endl);
+            //Output::print<1>(comp << " " << w);
             example2D.get_bc()[0](comp, w, Cond0);
             // Dirichlet
             if (Cond0 == DIRICHLET) return 0;
@@ -1556,8 +1619,7 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                             // vertices of edge
                             TVertex *ver2 = neigh->GetVertex(TmpEdVerNeigh[2 * neigh_edge]);
                             TVertex *ver3 = neigh->GetVertex(TmpEdVerNeigh[2 * neigh_edge + 1]);
-                            if (((ver0 == ver2) && (ver1 == ver3)) || ((ver0 == ver3) && (ver1 == ver2)));
-                            else {
+                            if (!(((ver0 == ver2) && (ver1 == ver3)) || ((ver0 == ver3) && (ver1 == ver2)))) {
                                 cout << "wrong edge " << endl;
                             }
 
@@ -1768,8 +1830,8 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
 
 bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &example2D, const int estimatorType, const int N_QuadraturePoints1D, double *const &weights1D, const CDErrorEstimator2D::EdgeData &edgeData, BoundCond &Cond0,
                                                  const double meas, const double *coeff, double linfb, const std::vector<double> &alpha, int edgeIdx, const TJoint *joint) const {
-    // array holding the weights corresponding to the estimators
-    double beta[N_CD2D_ESTIMATOR_TYPES - 1];
+    // vector holding the weights corresponding to the estimators, initialized with 0
+    std::vector<double> beta(N_CD2D_ESTIMATOR_TYPES - 1, 0);
     // the edge
     TBoundEdge *bdryEdge = (TBoundEdge *) joint;
     // get boundary component
@@ -1781,6 +1843,7 @@ bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &exam
     int bdryId = boundComp->GetID();
     // type of boundary condition
     example2D.get_bc()[0](bdryId, (t0 + t1) / 2.0, Cond0);
+    double jump = 0;
     // at midpoint of boundary
     switch (Cond0) {
         case DIRICHLET: {
@@ -1804,7 +1867,6 @@ bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &exam
             // normalized normal vector
             nx /= hE;
             ny /= hE;
-            double jump = 0;
 
             // compute difference to Neumann condition
             for (unsigned int i = 0; i < N_QuadraturePoints1D; i++) {
@@ -1841,10 +1903,11 @@ bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &exam
             beta[5] = 1.0;
             beta[5] = alpha[5] * hE / (4.0 * meas);
 
-            *result += beta[estimatorType - 1] * jump;
-            break;
+            // fall through
         }
         case ROBIN:
+            // TODO: Robin jump!
+            break;
         case SLIP:
         case FREESURF:
         case SLIP_FRICTION_PENETRATION_RESISTANCE:
@@ -1856,6 +1919,7 @@ bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &exam
             exit(-1);
         }
     }
+    *result += beta[estimatorType - 1] * jump;
     return true;
 }
 
@@ -1894,7 +1958,7 @@ std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType &type) {
     return os;
 }
 
-CDErrorEstimator2D::CDErrorEstimator2D(Example_CD2D &ex, int type) :
+CDErrorEstimator2D::CDErrorEstimator2D(Example2D &ex, int type) :
         ErrorEstimator2D(ex), estimatorType{CDErrorEstimatorType(type)} {
     estimated_global_error.resize(N_CD2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;

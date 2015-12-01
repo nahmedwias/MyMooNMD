@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
         int LEVELS = TDatabase::ParamDB->LEVELS;
         for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
             double t_start_level = GetTime(); // time for level
-            OutPut(endl << endl << "***********************************************************" << endl);
-            OutPut("GEOMETRY  LEVEL " << curr_level << endl);
+            Output::print<1>(endl << endl << "***********************************************************" << endl);
+            Output::print<1>("GEOMETRY  LEVEL " << curr_level << endl);
 
 
             // refine grid if level is greater than 0
@@ -124,9 +124,9 @@ int main(int argc, char* argv[])
             {
                 estimator.estimate(ns.get_velocity(), ns.get_pressure(), aux);
                 refinementStrategy.applyEstimator(estimator);
-                OutPut("estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator] << endl);
+                Output::print<1>("estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator] << endl);
             }
-            OutPut("Time for level " << curr_level << ": " << GetTime() - t_start_level << endl);
+            Output::print<1>("Time for level " << curr_level << ": " << GetTime() - t_start_level << endl);
         }
     }
 

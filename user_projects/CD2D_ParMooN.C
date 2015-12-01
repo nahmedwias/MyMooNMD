@@ -9,11 +9,15 @@
 // =============================================================================
 #include <Domain.h>
 #include <FEDatabase2D.h>
+#include <MooNMD_Io.h>
 
 #include <sys/stat.h>
 
+#include <Output2D.h>
 #include <CD2D.h>
 #include <CDErrorEstimator2D.h>
+#include <CDErrorEstimator2DDWR.h>
+#include <functional>
 
 // =============================================================================
 // main program
@@ -30,7 +34,7 @@ int main(int argc, char *argv[]) {
     if (TDatabase::ParamDB->PROBLEM_TYPE == 0)
         TDatabase::ParamDB->PROBLEM_TYPE = 1;
     //open OUTFILE, where all output is written to (in addition to console)
-    OpenFiles(); // call CloseFiles() at the end of the program
+    Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
     // write all Parameters to the OUTFILE (not to console) for later reference
     Database.WriteParamDB(argv[0]);
@@ -60,7 +64,51 @@ int main(int argc, char *argv[]) {
     Example_CD2D example;
 
     // initialize the error estimator
-    CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
+    //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
+    // this functional evaluates the integral of the solution in the lower left corner
+    std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional = [](const TFEFunction2D* sol, double x, double y, TBaseCell& cell) {
+        if(x*x + y*y <= 0.2) {
+            double integral = 0;
+            FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
+
+            // calculate values on original element (i.e. prepare reference
+            // transformation)
+            bool SecondDer = false; // defined in include/General/Constants.h
+            double *weights, *xi, *eta;//quadrature weights and points in reference cell
+            // ugly, we need to change GetOrig!!
+            double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D]; // quadrature points
+            double AbsDetjk[MaxN_QuadPoints_2D]; // determinant of transformation
+            int n_points = 0;
+            TFEDatabase2D::GetOrig(1, &feID, sol->GetFESpace2D()->GetCollection(), &cell, &SecondDer,
+                                   n_points, xi, eta, weights, X, Y, AbsDetjk);
+
+            // finite element on the current cell
+            TFE2D *fe = TFEDatabase2D::GetFE2D(feID);
+            const int n_loc_dof = fe->GetN_DOF(); // number of local dofs
+            int *DOF = sol->GetFESpace2D()->GetGlobalDOF(cell.GetCellIndex());
+
+            // id of the local basis functions
+            BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
+            // transformed values of basis functions
+            double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
+            // local integration (loop over all quadrature points)
+            for (auto j = 0; j < n_points; j++) {
+                // local transformed values on this quadrature point
+                double *orig = orig_values[j];
+                double value = 0; // value of this TFEFunction2D at this quadrature point
+                for (int l = 0; l < n_loc_dof; l++) {
+                    // entry in the vector of this TFEFunction2D times basis function
+                    value += sol->GetValues()[DOF[l]] * orig[l];
+                }
+
+                const double w = weights[j] * AbsDetjk[j];
+                integral += w * value;
+            }
+            return integral;
+        }
+        return 0.0;
+    };
+    CDErrorEstimator2DDWR estimator {example, dwrFunctional, Domain};
 
     // refinement
     RefinementStrategy refinementStrategy;
@@ -68,8 +116,12 @@ int main(int argc, char *argv[]) {
     int LEVELS = TDatabase::ParamDB->LEVELS;
     for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
         double t_start_level = GetTime(); // time for level
-        OutPut(endl << endl << "***********************************************************" << endl);
-        OutPut("GEOMETRY  LEVEL " << curr_level << endl);
+        {
+            std::stringstream out;
+            out << std::endl << "***********************************************************"<<std::endl;
+            out << "GEOMETRY  LEVEL " << curr_level;
+            Output::print<1>(out.str());
+        }
 
 
         // refine grid if level is greater than 0
@@ -93,11 +145,17 @@ int main(int argc, char *argv[]) {
         {
             estimator.estimate(cd2d.get_function());
             refinementStrategy.applyEstimator(estimator);
-            OutPut("estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator] << endl);
+            std::stringstream out;
+            out << "estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator];
+            Output::print<1>(out.str());
         }
-        OutPut("Time for level " << curr_level << ": " << GetTime() - t_start_level << endl);
+        {
+            std::stringstream out;
+            out << "Time for level " << curr_level << ": " << GetTime() - t_start_level;
+            Output::print<1>(out.str());
+        }
     }
 
-    CloseFiles();
+    Output::close_file();
     return 0;
 } // end main

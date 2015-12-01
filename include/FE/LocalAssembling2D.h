@@ -85,6 +85,10 @@ class LocalAssembling2D
     /** function for manipulating the coefficients */
     ManipulateFct2D *Manipulate;
 
+    /** @brief function for manipulating the coefficients which can be added externally
+     * and serves as a second stage after Manipulate. */
+    ManipulateAssemblingFct2D *ManipulateAssembling = nullptr;
+
     /** memory for storing the original value arrays */
     double ***AllOrigValues;
 
@@ -258,9 +262,12 @@ class LocalAssembling2D
                        TBaseCell *cell, int cellnum,
                        double *s, int joint,
                        double **Parameters);
-    
-    
 
+    /** set second stage manipulate function */
+    void SetManipulateAssembling(ManipulateAssemblingFct2D *fct) {
+        this->ManipulateAssembling = fct;
+    }
+    
     /** return name */
     const std::string& get_name() const
     { return name; }
