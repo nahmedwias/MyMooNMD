@@ -59,7 +59,6 @@ int main(int argc, char* argv[])
   int mpiRank, mpiSize;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-  bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
 #endif
 
   TFEDatabase3D feDatabase;
