@@ -17,14 +17,16 @@
 class CDErrorEstimator2DDWR : public CDErrorEstimator2D {
 protected:
     // the functional of interest
+    typedef std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> CD2DDwrFunctional;
     //J(solution, x, y, cell) = value
-    std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional;
+    CD2DDwrFunctional dwrFunctional;
     // the domain
     TDomain domain;
 
     void estimate(const std::vector<MultiIndex2D> &derivatives, const TFEFunction2D &fe_function2D);
 public:
-    CDErrorEstimator2DDWR(Example2D &ex, std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> &functional, TDomain &domain);
+
+    CDErrorEstimator2DDWR(Example2D &ex, CD2DDwrFunctional &functional, TDomain &domain);
 
     void estimate(const TFEFunction2D &tfeFunction2D) {
         CDErrorEstimator2D::estimate(tfeFunction2D);

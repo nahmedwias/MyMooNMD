@@ -29,7 +29,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
     // number of cells in that finest mesh
     auto n_cells = collection->GetN_Cells();
     // resize indicator vector accordingly
-    refinements.resize(n_cells);
+    refinements.resize((unsigned long) n_cells);
     // initialize it with false, i.e., do not refine anything
     std::fill(refinements.begin(), refinements.end(), false);
 
@@ -194,7 +194,10 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
             break;
         }
     }
-    OutPut("Cells marked for refinement: " << changed);
+    Output::print<1>("Cells marked for refinement: ", changed);
+    if(it >= max_it && changed < min_changed) {
+        Output::print<1>("Failed to mark ", int(min_changed), " cells, since parameters were relaxed it=", it," >= max_it times. Consider decreasing DECREASE_REFTOL_FACTOR.");
+    }
 }
 
 bool shouldRefineCell(RefinementStrategy *strategy, size_t cell) {

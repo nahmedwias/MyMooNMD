@@ -32,8 +32,8 @@ protected:
     std::vector<double> xieta_ref1D_data;
 public:
     // constants
-    constexpr static int MaxN_QuadPoints_1D_loc = 30;
-    constexpr static int N_BaseFuncts2D_loc = 30;
+    constexpr static int MaxN_QuadPoints_1D_loc = MaxN_QuadPoints_1D;
+    constexpr static int N_BaseFuncts2D_loc = N_BaseFuncts2D;
 
     // coordinates of the edges
     std::array<std::vector<double>, 4> XEdge1D{}, YEdge1D{};

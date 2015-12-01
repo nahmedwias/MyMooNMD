@@ -1355,7 +1355,7 @@ int TDomain::MakeConfClosure()
   TDatabase::IteratorDB[It_Finest]->Init(0);
   MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
   PS(("before_closure_" + std::to_string(++before_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
-  OutPut("MaxLevel " << MaxLevel << endl);
+  Output::print<1>("MaxLevel ", MaxLevel);
   
   for (i=MaxLevel;i>=0;i--)
   {

@@ -131,14 +131,20 @@ void CDErrorEstimator2DDWR::estimate(const std::vector<MultiIndex2D> &derivative
     CDErrorEstimator2D::estimate(derivatives, fe_function2D);
     // post processing with weights
     {
-        estimated_global_error[int(estimatorType)] = 0.0;
+        for(auto x = 0; x < N_CD2D_ESTIMATOR_TYPES; x++) {
+            estimated_global_error[x] = 0.0;
+        }
         maximal_local_error = 0;
         for (auto cellIdx = 0; cellIdx < coll->GetN_Cells(); cellIdx++) {
             eta_K[cellIdx] *= dual_weights_ptr[cellIdx];
-            estimated_global_error[int(estimatorType)] += eta_K[cellIdx];
+            for(auto x = 0; x < N_CD2D_ESTIMATOR_TYPES; x++) {
+                estimated_global_error[x] += eta_K[cellIdx];
+            }
             maximal_local_error = maximal_local_error < eta_K[cellIdx] ? eta_K[cellIdx] : maximal_local_error;
         }
-        estimated_global_error[int(estimatorType)] = sqrt(estimated_global_error[int(estimatorType)]);
+        for(auto x = 0; x < N_CD2D_ESTIMATOR_TYPES; x++) {
+            estimated_global_error[x] = sqrt(estimated_global_error[int(estimatorType)]);
+        }
         maximal_local_error = sqrt(maximal_local_error);
     }
 }
@@ -192,6 +198,7 @@ void CD2DDual::solve_transposed() {
            this->multigrid.get(), this->get_size(), 0);
 
     t = GetTime() - t;
+    delete SqMat[0];
     Output::print<2>(" solving of a dual CD2D problem done in ", t, " seconds");
 }
 
@@ -223,7 +230,7 @@ void CD2DDual::output_dual(size_t level) {
     }
 }
 
-CDErrorEstimator2DDWR::CDErrorEstimator2DDWR(Example2D &ex, std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> &functional, TDomain &domain)
+CDErrorEstimator2DDWR::CDErrorEstimator2DDWR(Example2D &ex, CD2DDwrFunctional &functional, TDomain &domain)
         : CDErrorEstimator2D(ex, int(CDErrorEstimatorType::Energy_ResidualEstimatorQuasiRobust)) {
     this->dwrFunctional = functional;
     this->domain = domain;

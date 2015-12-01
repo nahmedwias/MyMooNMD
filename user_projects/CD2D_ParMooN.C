@@ -67,26 +67,21 @@ int main(int argc, char *argv[]) {
     //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
     // this functional evaluates the integral of the solution in the lower left corner
     std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional = [](const TFEFunction2D* sol, double x, double y, TBaseCell& cell) {
-        if(x*x + y*y <= 0.2) {
+        if((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.2) {
             double integral = 0;
             FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
-
-            // calculate values on original element (i.e. prepare reference
-            // transformation)
+            // calculate values on original element (i.e. prepare reference transformation)
             bool SecondDer = false; // defined in include/General/Constants.h
             double *weights, *xi, *eta;//quadrature weights and points in reference cell
-            // ugly, we need to change GetOrig!!
             double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D]; // quadrature points
             double AbsDetjk[MaxN_QuadPoints_2D]; // determinant of transformation
             int n_points = 0;
             TFEDatabase2D::GetOrig(1, &feID, sol->GetFESpace2D()->GetCollection(), &cell, &SecondDer,
                                    n_points, xi, eta, weights, X, Y, AbsDetjk);
-
             // finite element on the current cell
             TFE2D *fe = TFEDatabase2D::GetFE2D(feID);
             const int n_loc_dof = fe->GetN_DOF(); // number of local dofs
             int *DOF = sol->GetFESpace2D()->GetGlobalDOF(cell.GetCellIndex());
-
             // id of the local basis functions
             BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
             // transformed values of basis functions
@@ -104,7 +99,7 @@ int main(int argc, char *argv[]) {
                 const double w = weights[j] * AbsDetjk[j];
                 integral += w * value;
             }
-            return integral;
+            return integral * pow(10, 8);
         }
         return 0.0;
     };
