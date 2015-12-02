@@ -78,7 +78,7 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     Cell->GetVertex(1)->GetCoords(x1, y1);
     Cell->GetVertex(2)->GetCoords(x2, y2);
     #else
-    ErrThrow("NF_N_T_RT1_2D_EvalAll not implemented in 3D");
+    ErrThrow("NF_N_T_RT3_2D_EvalAll not implemented in 3D");
     #endif
     // length of edge, and outer normal
     double nx, ny;
@@ -121,8 +121,8 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     for(unsigned int i = 0; i < 6; ++i)
     {
       double uref = 0., uxiref = 1., uetaref = 0., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_RT2_2D_Xi[12+i], 
-                                       NF_N_Q_RT2_2D_Eta[12+i], 1, &uref, 
+      referenceTransform.GetOrigValues(NF_N_T_RT3_2D_Xi[12+i], 
+                                       NF_N_T_RT3_2D_Eta[12+i], 1, &uref, 
                                        &uxiref, &uetaref, &uorig, &uxorig, 
                                        &uyorig);
       Functionals[12+2*i] = ( PointValues[12+i]*uxorig 
@@ -133,8 +133,8 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     for(unsigned int i = 0; i < 6; ++i)
     {
       double uref = 0., uxiref = 0., uetaref = 1., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_RT2_2D_Xi[12+i], 
-                                       NF_N_Q_RT2_2D_Eta[12+i], 1, &uref, 
+      referenceTransform.GetOrigValues(NF_N_T_RT3_2D_Xi[12+i], 
+                                       NF_N_T_RT3_2D_Eta[12+i], 1, &uref, 
                                        &uxiref, &uetaref, &uorig, &uxorig, 
                                        &uyorig);
       Functionals[12+2*i+1] = ( PointValues[12+i]*uxorig 

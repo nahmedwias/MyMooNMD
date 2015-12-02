@@ -7,8 +7,14 @@
                        DoubleFunctVect *evaledge);
 */
 
-static double NF_N_Q_BDM1_2D_Xi[] =  {-1/3, 1/3,  1 ,1  ,1/3,-1/3,-1  ,-1  };
-static double NF_N_Q_BDM1_2D_Eta[] = {-1  ,-1  ,-1/3,1/3,1  , 1  , 1/3,-1/3};
+static double NF_N_Q_BDM1_2D_a = 1./sqrt(2.);
+
+static double NF_N_Q_BDM1_2D_Xi[] =  
+{ -NF_N_Q_BDM1_2D_a,  NF_N_Q_BDM1_2D_a,  1, 1,
+   NF_N_Q_BDM1_2D_a, -NF_N_Q_BDM1_2D_a, -1, -1 };
+static double NF_N_Q_BDM1_2D_Eta[] = 
+{ -1, -1, -NF_N_Q_BDM1_2D_a, NF_N_Q_BDM1_2D_a,
+   1,  1,  NF_N_Q_BDM1_2D_a, -NF_N_Q_BDM1_2D_a };
 
 // NOTE: If you want to use other evaluation points for degress of freedom on
 // the edges of a cell, you also have to change basis functions in 
@@ -20,32 +26,65 @@ static double NF_N_Q_BDM1_2D_T[] = {-0.707106781186547,0.707106781186547};//Tsch
 void NF_N_Q_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
 {
-//   static double weights[3] = { 0.5555555555555555555555555555555556,
-//                                0.88888888888888888888888888888888889,
-//                                0.5555555555555555555555555555555556 };
-//   Functionals[0] = ( weights[0]*PointValues[0]
-//                     +weights[1]*PointValues[1]
-//                     +weights[2]*PointValues[2]) * 0.5;
-//   Functionals[1] = ( weights[0]*PointValues[3]
-//                     +weights[1]*PointValues[4]
-//                     +weights[2]*PointValues[5]) * 0.5;
-//   Functionals[2] = ( weights[0]*PointValues[6]
-//                     +weights[1]*PointValues[7]
-//                     +weights[2]*PointValues[8]) * 0.5;
-//   Functionals[3] = ( weights[0]*PointValues[9]
-//                     +weights[1]*PointValues[10]
-//                     +weights[2]*PointValues[11]) * 0.5;
-cout << "Nodal functionals for first order BDM elements on "
-     << "rectangles are not yet corrctly implemented!" << endl;
-  Functionals[0] = PointValues[0];
-  Functionals[1] = PointValues[1];
-  Functionals[2] = PointValues[2];
-  Functionals[3] = PointValues[3];
-  Functionals[4] = PointValues[4];
-  Functionals[5] = PointValues[5];
-  Functionals[6] = PointValues[6];
-  Functionals[7] = PointValues[7];
+  // on the reference cell [-1,1]^2
+  if(Cell == nullptr)
+  {
+    Functionals[0] = -2*PointValues[8];
+    Functionals[1] = -2*PointValues[9];
     
+    Functionals[2] = 2*PointValues[2];
+    Functionals[3] = 2*PointValues[3];
+    
+    Functionals[4] = 2*PointValues[12];
+    Functionals[5] = 2*PointValues[13];
+    
+    Functionals[6] = -2*PointValues[6];
+    Functionals[7] = -2*PointValues[7];
+  }
+  else
+  {
+    if(Cell->GetShapeDesc()->GetType() == Quadrangle) 
+    {
+      // not affine reference transform
+      ErrThrow("NF_N_Q_BDM1_2D_EvalAll not tested for non affine ",
+               "reference transformations");
+    }
+    double x0, x1, x2, x3, y0, y1, y2, y3;
+    #ifdef __2D__
+    Cell->GetVertex(0)->GetCoords(x0, y0);
+    Cell->GetVertex(1)->GetCoords(x1, y1);
+    Cell->GetVertex(2)->GetCoords(x2, y2);
+    Cell->GetVertex(3)->GetCoords(x3, y3);
+    #else
+    ErrThrow("NF_N_Q_BDM1_2D_EvalAll not implemented in 3D");
+    #endif
+    
+    // outer normal
+    double nx, ny;
+    
+    // first edge:
+    nx = y1 - y0;
+    ny = x0 - x1;
+    Functionals[0] = PointValues[0]*nx + PointValues[8]*ny;
+    Functionals[1] = PointValues[1]*nx + PointValues[9]*ny;
+    
+    // second edge:
+    nx = y2 - y1;
+    ny = x1 - x2;
+    Functionals[2] = PointValues[2]*nx + PointValues[10]*ny;
+    Functionals[3] = PointValues[3]*nx + PointValues[11]*ny;
+    
+    // third edge:
+    nx = y3 - y2;
+    ny = x2 - x3;
+    Functionals[4] = PointValues[4]*nx + PointValues[12]*ny;
+    Functionals[5] = PointValues[5]*nx + PointValues[13]*ny;
+    
+    nx = y0 - y3;
+    ny = x3 - x0;
+    Functionals[6]= PointValues[6]*nx+ PointValues[14]*ny;
+    Functionals[7]= PointValues[7]*nx+ PointValues[15]*ny;
+  }
 }
 
 void NF_N_Q_BDM1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,double *Functionals)

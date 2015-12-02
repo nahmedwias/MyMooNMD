@@ -165,8 +165,9 @@ int main(int argc, char* argv[])
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     
-    std::list<FE2D> elements = { N_RT0_2D_Q_A, N_RT1_2D_Q_A, N_RT2_2D_Q_A, 
-                                 N_RT3_2D_Q_A };
+    std::list<FE2D> elements = { N_RT0_2D_Q_M, N_RT1_2D_Q_M, N_RT2_2D_Q_M, 
+                                 N_RT3_2D_Q_M, N_BDM1_2D_Q_M, N_BDM2_2D_Q_M,
+                                 N_BDM3_2D_Q_M };
     
     if(!check(domain, elements))
       return 1;
@@ -181,7 +182,8 @@ int main(int argc, char* argv[])
     domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
     
     std::list<FE2D> elements = { N_RT0_2D_T_A, N_RT1_2D_T_A, N_RT2_2D_T_A,
-                                 N_RT3_2D_T_A };
+                                 N_RT3_2D_T_A, N_BDM1_2D_T_A, N_BDM2_2D_T_A,
+                                 N_BDM3_2D_T_A };
     
     if(!check(domain, elements))
       return 1;

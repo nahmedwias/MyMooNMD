@@ -106,7 +106,7 @@ void NF_N_Q_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     if(Cell->GetShapeDesc()->GetType() == Quadrangle) 
     {
       // not affine reference transform
-      ErrThrow("NF_N_Q_RT1_2D_EvalAll not tested for non affine ",
+      ErrThrow("NF_N_Q_RT3_2D_EvalAll not tested for non affine ",
                "reference transformations");
     }
     double x0, x1, x2, x3, y0, y1, y2, y3;
@@ -116,7 +116,7 @@ void NF_N_Q_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     Cell->GetVertex(2)->GetCoords(x2, y2);
     Cell->GetVertex(3)->GetCoords(x3, y3);
     #else
-    ErrThrow("NF_N_Q_RT1_2D_EvalAll not implemented in 3D");
+    ErrThrow("NF_N_Q_RT3_2D_EvalAll not implemented in 3D");
     #endif
     
     // outer normal
@@ -170,8 +170,8 @@ void NF_N_Q_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     for(unsigned int i = 0; i < 12; ++i)
     {
       double uref = 0., uxiref = 0., uetaref = 1., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_RT2_2D_Xi[16+i], 
-                                       NF_N_Q_RT2_2D_Eta[16+i], 1, &uref, 
+      referenceTransform.GetOrigValues(NF_N_Q_RT3_2D_Xi[16+i], 
+                                       NF_N_Q_RT3_2D_Eta[16+i], 1, &uref, 
                                        &uxiref, &uetaref, &uorig, &uxorig, 
                                        &uyorig);
       Functionals[16+i] = (PointValues[16+i]*uxorig + PointValues[56+i]*uyorig) 
@@ -181,8 +181,8 @@ void NF_N_Q_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     for(unsigned int i = 0; i < 12; ++i)
     {
       double uref = 0., uxiref = 1., uetaref = 0., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_RT2_2D_Xi[28+i], 
-                                       NF_N_Q_RT2_2D_Eta[28+i], 1, &uref, 
+      referenceTransform.GetOrigValues(NF_N_Q_RT3_2D_Xi[28+i], 
+                                       NF_N_Q_RT3_2D_Eta[28+i], 1, &uref, 
                                        &uxiref, &uetaref, &uorig, &uxorig, 
                                        &uyorig);
       Functionals[28+i] = (PointValues[28+i]*uxorig + PointValues[68+i]*uyorig) 
