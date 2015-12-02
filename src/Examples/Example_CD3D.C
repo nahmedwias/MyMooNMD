@@ -33,8 +33,7 @@ Example_CD3D::Example_CD3D() : Example3D()
       sine_laplace_3D::ExampleFile();
       break;
     default:
-      ErrMsg("Unknown name of the convection-diffusion (CD3D) example!");
-      throw("Unknown name of the convection-diffusion (CD3D) example!");
+      ErrThrow("Unknown name of the convection-diffusion (CD3D) example!");
   }
 }
 

@@ -130,7 +130,7 @@ Example_Darcy2D::Example_Darcy2D() : Example2D()
       five_spot::ExampleFile();
       break;
     default:
-      ErrMsg("Unknown name of the mixed Darcy example!");
+      ErrThrow("Unknown name of the mixed Darcy example!");
       exit(0);
   }
 }
