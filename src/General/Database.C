@@ -291,7 +291,9 @@ TDatabase::TDatabase()
   #ifdef __MORTAR__
     IteratorDB[It_Mortar1] = new TIt_Mortar();
     IteratorDB[It_Mortar2] = new TIt_Mortar();
-  #endif
+  #endif  
+  // Initialization of the default parameters
+  SetDefaultParameters();
 }
 
 TShapeDesc **TDatabase::ShapeDB = NULL;

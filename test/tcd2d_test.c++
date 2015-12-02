@@ -113,20 +113,21 @@ void time_integration(int td, Time_CD2D& tcd)
 
 int main(int argc, char* argv[])
 {
-  TDatabase Database;
-  TFEDatabase2D FEDatabase;
   
-  TDatabase::ParamDB->MEASURE_ERRORS=1;
-  TDatabase::ParamDB->EXAMPLE =101;
-  TDatabase::ParamDB->DISCTYPE=1;
-  TDatabase::ParamDB->RE_NR = 1;
-  TDatabase::ParamDB->ANSATZ_ORDER=1;
-  
-  TDatabase::TimeDB->STARTTIME=0;
-  TDatabase::TimeDB->ENDTIME=1;
-  TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
   // test with Crank Nicolson euler 
   {
+    TDatabase Database;
+    TFEDatabase2D FEDatabase;
+    
+    TDatabase::ParamDB->MEASURE_ERRORS=1;
+    TDatabase::ParamDB->EXAMPLE =101;
+    TDatabase::ParamDB->DISCTYPE=1;
+    TDatabase::ParamDB->RE_NR = 1;
+    TDatabase::ParamDB->ANSATZ_ORDER=1;
+    
+    TDatabase::TimeDB->STARTTIME=0;
+    TDatabase::TimeDB->ENDTIME=1;
+    TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
     TDomain domain;
     SetTimeDiscParameters(0);
@@ -145,6 +146,18 @@ int main(int argc, char* argv[])
   }
   
   { 
+    TDatabase Database;
+    TFEDatabase2D FEDatabase;
+    
+    TDatabase::ParamDB->MEASURE_ERRORS=1;
+    TDatabase::ParamDB->EXAMPLE =101;
+    TDatabase::ParamDB->DISCTYPE=1;
+    TDatabase::ParamDB->RE_NR = 1;
+    TDatabase::ParamDB->ANSATZ_ORDER=1;
+    
+    TDatabase::TimeDB->STARTTIME=0;
+    TDatabase::TimeDB->ENDTIME=1;
+    TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     TDomain domain;
     SetTimeDiscParameters(0);
     // some parameters
