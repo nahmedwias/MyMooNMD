@@ -112,29 +112,29 @@ void NF_N_Q_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     // first inner point
     double uref = 0., uxiref = 1., uetaref = 0., uorig, uxorig, uyorig;
     referenceTransform.GetOrigValues(NF_N_Q_RT1_2D_Xi[8], 
-                                      NF_N_Q_RT1_2D_Eta[8], 1, &uref, &uxiref,
-                                      &uetaref, &uorig, &uxorig, &uyorig);
+                                     NF_N_Q_RT1_2D_Eta[8], 1, &uref, &uxiref,
+                                     &uetaref, &uorig, &uxorig, &uyorig);
     
     Functionals[8] = (PointValues[8]*uxorig + PointValues[20]*uyorig) * measure;
     
     // third inner point
     referenceTransform.GetOrigValues(NF_N_Q_RT1_2D_Xi[10], 
-                                      NF_N_Q_RT1_2D_Eta[10], 1, &uref, &uxiref,
-                                      &uetaref, &uorig, &uxorig, &uyorig);
+                                     NF_N_Q_RT1_2D_Eta[10], 1, &uref, &uxiref,
+                                     &uetaref, &uorig, &uxorig, &uyorig);
     Functionals[10] = (PointValues[10]*uxorig + PointValues[22]*uyorig)*measure;
     
     // second inner point
     uxiref = 0.;
     uetaref = 1.;
     referenceTransform.GetOrigValues(NF_N_Q_RT1_2D_Xi[9], 
-                                      NF_N_Q_RT1_2D_Eta[9], 1, &uref, &uxiref,
-                                      &uetaref, &uorig, &uxorig, &uyorig);
+                                     NF_N_Q_RT1_2D_Eta[9], 1, &uref, &uxiref,
+                                     &uetaref, &uorig, &uxorig, &uyorig);
     Functionals[9] = (PointValues[9]*uxorig + PointValues[21]*uyorig) * measure;
     
     // fourth inner point
     referenceTransform.GetOrigValues(NF_N_Q_RT1_2D_Xi[11], 
-                                      NF_N_Q_RT1_2D_Eta[11], 1, &uref, &uxiref,
-                                      &uetaref, &uorig, &uxorig, &uyorig);
+                                     NF_N_Q_RT1_2D_Eta[11], 1, &uref, &uxiref,
+                                     &uetaref, &uorig, &uxorig, &uyorig);
     Functionals[11] = (PointValues[11]*uxorig + PointValues[23]*uyorig)*measure;
   }
 }

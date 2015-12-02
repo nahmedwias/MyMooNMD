@@ -68,7 +68,7 @@ void NF_N_T_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     ErrThrow("NF_N_T_RT1_2D_EvalAll not implemented in 3D");
     #endif
     // length of edge, and outer normal
-    double l, nx, ny;
+    double nx, ny;
     
     // first edge:
     nx = y1 - y0;
