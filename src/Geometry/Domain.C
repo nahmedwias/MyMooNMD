@@ -62,9 +62,6 @@ extern "C"
 TDomain::TDomain()
 {
   RefLevel = 0;
-
-  //this should be done here for the moment, not in ReadParam!
-  TDatabase::SetDefaultParameters();
 }
 
 
@@ -72,8 +69,6 @@ TDomain::TDomain(char *ParamFile)
 {
   RefLevel = 0;
 
-  //this should be done here for the moment, not in ReadParam!
-  TDatabase::SetDefaultParameters();
   
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
