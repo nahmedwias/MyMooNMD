@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
     // this functional evaluates the integral of the solution in the lower left corner
     std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional = [](const TFEFunction2D* sol, double x, double y, TBaseCell& cell) {
-        if((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.2) {
+        if((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.05) {
             double integral = 0;
             FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
             // calculate values on original element (i.e. prepare reference transformation)

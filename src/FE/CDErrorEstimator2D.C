@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <BoundEdge.h>
+#include <memory>
 
 #define DEBUG_COMPARE_RESULTS_WITH_OLD_CODE 0
 

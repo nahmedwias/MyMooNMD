@@ -2103,9 +2103,10 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                             auto m = i + N_Points1D;
                             auto l = m + N_Points1D;
 
-                            if ((fabs(edgeData.XEdge1D[edgeIdx][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[edgeIdx][i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
-                                cout << " wrong quad points_b " << edgeData.XEdge1D[edgeIdx][i] << " , " << edgeData.YEdge1D[edgeIdx][i]
-                                << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
+                            if ((fabs(edgeData.XEdge1D[edgeIdx][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[edgeIdx][i] - edgeRefData.Y1DNeigh[i])) > 2e-8) {
+                                cout << " wrong quad points_b " << edgeData.XEdge1D[edgeIdx][i] << " , " << edgeData.YEdge1D[edgeIdx][i] << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
+                                cout << "\tby : " << (fabs(edgeData.XEdge1D[edgeIdx][i] - edgeRefData.X1DNeigh[i]) + fabs(edgeData.YEdge1D[edgeIdx][i] - edgeRefData.Y1DNeigh[i])) << endl;
+                            }
                             if (check_cont_u) {
                                 if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[edgeIdx][i]) > 1e-8)
                                     cout << " i " << i << " uval_b " << edgeData.xyval_1D[edgeIdx][i] << " uneigh_b " << edgeRefData.xyval_Neigh1D[i] << endl;
