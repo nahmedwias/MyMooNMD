@@ -167,8 +167,8 @@ Example_CD2D::Example_CD2D() : Example2D()
       sin_cos::ExampleFile();
       break;
     default:
-      ErrMsg("Unknown name of the convection-diffusion (CD2D) example!");
-      exit(0);
+      ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
+               TDatabase::ParamDB->EXAMPLE);
   }
 }
 
