@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
                 const double w = weights[j] * AbsDetjk[j];
                 integral += w * value;
             }
-            return integral * pow(10, 8);
+            return integral; //* pow(10, 8)
         }
         return 0.0;
     };
