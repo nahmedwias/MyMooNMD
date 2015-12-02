@@ -116,8 +116,7 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       flow_around_cylinder::ExampleFile();
       break;
     default:
-      ErrMsg("Unknown Navier-Stokes example!");
-      exit(0);
+      ErrThrow("Unknown Navier-Stokes example!");
   }
 }
 
