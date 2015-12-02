@@ -92,6 +92,7 @@ the rest of it:
 - Output::suppressAll
 - Output::redirect
 - Output::resetOutfile
+- #ErrThrow
  */
 namespace Output
 {
@@ -169,10 +170,17 @@ namespace Output
   /// @brief write an error message to the outfile and throw an exception
   ///
   /// This is the preferred way to terminate the program if necessary. The 
-  /// exception thrown is of type `std::runtime_error`.
+  /// exception thrown is of type `std::runtime_error`. For convenience there 
+  /// is a macro #ErrThrow defined which calls this method with the correct 
+  /// \p file and \p line.
   template<typename ... Arguments>
   [[ noreturn ]] void errThrow(std::string file, int line,
                                Arguments const& ... args);
+  
+  /// @brief macro to call Output::errThrow with the correct file and line
+  ///
+  /// You have to provide a meaningful error message here.
+  #define ErrThrow(...) {Output::errThrow(__FILE__, __LINE__, __VA_ARGS__);}
 };
 
 
@@ -269,13 +277,11 @@ namespace Output
   }
 };
 
-// old macro to print things into a file and t std::cout, deprecated, use 
-// instead the Output::print methods below.
+/// @brief old macro to print things into a file and t std::cout, deprecated
+///
+/// use instead the Output::print methods.
 #define OutPut(x) {std::stringstream temporary; temporary << x; Output::print(temporary.str());}
 
-// macro to call Output::errThrow with the correct file and line. You have to 
-// provide a meaningful error message here.
-#define ErrThrow(...) {Output::errThrow(__FILE__, __LINE__, __VA_ARGS__);}
 
 
 #endif
