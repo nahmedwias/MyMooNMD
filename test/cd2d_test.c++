@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     // TODO (when there is more than one programming running, this will be encapsulated
     // and out-sourced)
 
-    double errors[4];
+    double errors[5];
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFEFunction2D& function = cd2d.get_function();

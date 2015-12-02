@@ -70,7 +70,10 @@ class TFEFunction2D
     const double * GetValues() const 
     { return Values; }
 
-    /** calculate errors to given function */
+    /** @brief calculate errors to given function 
+     * 
+     * @warning The array \p errors has to be of length at least `N_Errors+1` !!
+     */
     void GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
                    MultiIndex2D *NeededDerivatives,
                    int N_Errors, ErrorMethod2D *ErrorMeth, 

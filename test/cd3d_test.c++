@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
   // TODO (when there is more than one programming running, this will be encapsulated
   // and out-sourced)
 
-    double errors[4];
+    double errors[5];
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
     const TFEFunction3D& function = cd3d.getFunction();

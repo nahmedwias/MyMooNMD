@@ -72,8 +72,10 @@ class TFEFunction3D
     double *GetValues()
     { return Values; }
 
-    /** calculate errors to given function 
-     * NOTE: errors must be of length N_Errors+1 !!!! */
+    /** @brief calculate errors to given function 
+     * 
+     * @warning The array \p errors has to be of length at least `N_Errors+1` !!
+     */
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
                    int N_Errors, ErrorMethod3D *ErrorMeth, 

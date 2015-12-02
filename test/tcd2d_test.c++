@@ -17,7 +17,7 @@ void testBE()
 
 void testCN(Time_CD2D &tcd, int m)
 {
-  double errors[4];
+  double errors[5];
   errors[0]=errors[1]=errors[2]=errors[3]=0.;
   TAuxParam2D aux;
   MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
