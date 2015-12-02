@@ -128,8 +128,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       driven_cavity3d::ExampleFile();
       break;
     default:
-      ErrMsg("Unknown Navier-Stokes example!");
-      exit(0);
+      ErrThrow("Unknown Navier-Stokes example!");
   }
 }
 

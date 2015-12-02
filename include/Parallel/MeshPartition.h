@@ -40,6 +40,14 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
  * @brief Removes unneeded halo cells which get introduced by refining a process' subdomain
  * (so after the initial mesh has been partitioned).
  *
+ * This method changes the Cell Tree of the Domain it works on in such a way,
+ * that all remaining cells are set as root cells. This makes the GetCollection method
+ * relatively useless, for after the call only one cell level (0) is known to the Domains tree.
+ * \todo Rework Domain_Crop as to modify the Domain's cell tree less brutally!
+ *
+ * @note The method does not physicallly delete any cells, edges or nodes at the moment.
+ * That code was commented out for some reason.
+ *
  *  @param[in] comm The MPI Communicator. In ParMooN this is almost always MPI_COMM_WORLD.
  *  @param[in,out] Domain The domain on whose finest level superfluous halo cells have to be removed.
  */
