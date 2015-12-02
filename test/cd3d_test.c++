@@ -102,6 +102,10 @@ int main(int argc, char* argv[])
     domain.RegRefineAll();
   }
 
+  //CB DEBUG
+  Output::setVerbosity(2);
+  //END DEBUG
+
   #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
   //analyse interfaces and create edge objects
@@ -119,6 +123,18 @@ int main(int argc, char* argv[])
 
   // choose example according to the value of TDatabase::ParamDB->EXAMPLE and construct it
   Example_CD3D example;
+
+// CB Hold this back for next commit
+//  // extract the finest level collection from the domain
+//  std::list<TCollection * > cellCollections;
+//  cellCollections.push_front(domain.GetCollection(It_Finest, 0));
+//
+//  // construct the cd3d problem object
+//#ifdef _MPI
+//  CD3D cd3d(cellCollections, example, maxSubDomainPerDof);
+//#else
+//  CD3D cd3d(cellCollections, example);
+//#endif
 
   // construct the cd3d problem object
 #ifdef _MPI
@@ -141,50 +157,61 @@ int main(int argc, char* argv[])
   // TODO (when there is more than one programming running, this will be encapsulated
   // and out-sourced)
 
-    double errors[4];
-    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
-    MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
-    const TFEFunction3D& function = cd3d.getFunction();
-    const TFESpace3D* space = function.GetFESpace3D();
+  double errors[4];
+  TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+  MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
+  const TFEFunction3D& function = cd3d.getFunction();
+  const TFESpace3D* space = function.GetFESpace3D();
 
-    function.GetErrors(cd3d.getExample().get_exact(0), 4, AllDerivatives,
-                   2, L2H1Errors, cd3d.getExample().get_coeffs(),
-                   &aux, 1, &space, errors);
-    #ifdef _MPI
-//    // usual code block to gather information about this
-//    // processes role in the mpi communicator
-//    MPI_Comm globalComm = TDatabase::ParamDB->Comm;
-//    int mpiRank, mpiSize;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-//    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-//    bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
-//
-//    double errorsReduced[4]; //memory for global (across all processes) error
-//
-//    MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, globalComm);
-//    for(i=0;i<2;i++)
-//      errors[i] = sqrt(errorsReduced[i]);
-//    if(iAmOutRank){
-//      OutPut(endl);
-//      OutPut( "L2: " << sqrt(errorsReduced[0]) << endl);
-//      OutPut( "H1-semi: " << sqrt(errorsReduced[1]) << endl);
-//    }
-    #else
-      // check L2 error
-      if( errors[0] - 0.00166608 > 1e-8 )
-      {
-        ErrThrow("Program 1: L2 norm not correct.");
-      }
-      // check H1-semi error
-      if( errors[1] - 0.0444529 > 1e-7 )
-      {
-        ErrThrow("Program 1: H1-semi norm not correct.");
-      }
-    #endif
-
+  function.GetErrors(cd3d.getExample().get_exact(0), 4, AllDerivatives,
+                     2, L2H1Errors, cd3d.getExample().get_coeffs(),
+                     &aux, 1, &space, errors);
 #ifdef _MPI
+
+  // The hard-coded errors here are for an mpirun with 4 processes
+  // and are validated by comparison with Sashis program.
+  // For some reason (?) iterative and mpi solve do not produce the same
+  // output (also there are differences between different numbers of processes)
+
+  double errorsReduced[4]; //memory for global (across all processes) error
+
+  // calculate global error
+  MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, comm);
+  for(int i=0;i<2;i++)
+  {
+    errors[i] = sqrt(errorsReduced[i]);
+  }
+
+  // check L2 error
+  if( errors[0] -0.00410749 > 1e-8 )
+  {
+     ErrThrow("Program 1: L2 norm not correct.");
+  }
+  // check H1-semi error
+  if( errors[1] - 0.0875751 > 1e-7 )
+  {
+    ErrThrow("Program 1: H1-semi norm not correct.");
+  }
   MPI_Finalize();
+
+#else
+  // Hard-coded error values for a sequential run, validated
+  // by comparison with Sashis program
+
+  // check L2 error
+  if( errors[0] - 0.00166608 > 1e-8 )
+  {
+    Output::print(errors[0]);
+    ErrThrow("Program 1: L2 norm not correct.");
+  }
+  // check H1-semi error
+  if( errors[1] - 0.0444529 > 1e-7 )
+  {
+    ErrThrow("Program 1: H1-semi norm not correct.");
+  }
+
 #endif
+
   } //end program 1
 
   return 0;
