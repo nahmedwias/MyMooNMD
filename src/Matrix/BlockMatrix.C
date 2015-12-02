@@ -299,7 +299,8 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
           new TStructure(n_comb_rows, n_comb_cols, n_comb_entries,
                          column_of_entry, entries_in_rows));
       // create Matrix
-      this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
+      this->combined_matrix = std::make_shared<TMatrix>(sp);
+      this->combined_matrix->setEntries(comb_entries);
       delete [] comb_entries;
     }
   }
