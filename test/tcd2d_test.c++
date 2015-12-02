@@ -30,51 +30,51 @@ void testCN(Time_CD2D &tcd, int m)
   double eps = 1E-6;
   if(m==0)
   {
-    if(errors[0] - 3.360188e-03 > eps)
+    if( fabs(errors[0] - 3.360188e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct. ", errors[0]);
-    if(errors[1] - 2.521492e-01 > eps)
+    if( fabs(errors[1] - 2.521492e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==1)
   {
-    if(errors[0] - 1.541462e-03 > eps)
+    if( fabs(errors[0] - 1.541462e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 2.647214e-01 > eps)
+    if( fabs(errors[1] - 2.647214e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==2)
   {
-    if(errors[0] - 2.207736e-03 > eps)
+    if( fabs(errors[0] - 2.207736e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 2.782276e-01 > eps)
+    if( fabs(errors[1] - 2.782276e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==3)
   {
-    if(errors[0] - 2.116156e-03 > eps)
+    if( fabs(errors[0] - 2.116156e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 2.924973e-01 > eps)
+    if( fabs(errors[1] - 2.924973e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   } 
   else if(m==18)
   {
-    if(errors[0] - 4.577653e-03 > eps)
+    if( fabs(errors[0] - 4.577653e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 6.192082e-01 > eps)
+    if( fabs(errors[1] - 6.192082e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==19)
   {
-    if(errors[0] - 4.812381e-03 > eps)
+    if( fabs(errors[0] - 4.812381e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 6.509557e-01 > eps)
+    if( fabs(errors[1] - 6.509557e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==20)
   {
-    if(errors[0] - 5.059094e-03 > eps)
+    if( fabs(errors[0] - 5.059094e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
-    if(errors[1] - 6.843309e-01 > eps)
+    if( fabs(errors[1] - 6.843309e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
 }

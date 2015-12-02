@@ -172,12 +172,12 @@ int main(int argc, char* argv[])
 //    }
     #else
       // check L2 error
-      if( errors[0] - 0.00166608 > 1e-8 )
+      if( fabs(errors[0] - 0.00166608) > 1e-8 )
       {
         ErrThrow("Program 1: L2 norm not correct.");
       }
       // check H1-semi error
-      if( errors[1] - 0.0444529 > 1e-7 )
+      if( fabs(errors[1] - 0.0444529) > 1e-7 )
       {
         ErrThrow("Program 1: H1-semi norm not correct.");
       }

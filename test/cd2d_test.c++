@@ -104,22 +104,22 @@ int main(int argc, char* argv[])
                        SDFEMErrors, cd2d.get_example().get_coeffs(), &aux, 1,
                        &space, errors);
     // check L2 error
-    if( errors[0] - 0.500273 > 1e-6 )
+    if( fabs(errors[0] - 0.500273) > 1e-6 )
     {
       ErrThrow("Program 1: L2 norm not correct.");
     }
     // check H1-semi error
-    if( errors[1] - 1.90143 > 1e-5 )
+    if( fabs(errors[1] - 1.90143) > 1e-5 )
     {
       ErrThrow("Program 1: H1-semi norm not correct.");
     }
     // check SD error
-    if( errors[2] - 0.275256 > 1e-6)
+    if( fabs(errors[2] - 0.275256) > 1e-6)
     {
       ErrThrow("Program 1: SD norm not correct.");
     }
     // check L_inf error
-    if( errors[3] - 0.999909 > 1e-6 )
+    if(fabs( errors[3] - 0.999909) > 1e-6 )
     {
       ErrThrow("Program 1: L_inf norm not correct.");
     }
