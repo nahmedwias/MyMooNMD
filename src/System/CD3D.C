@@ -247,7 +247,7 @@ void CD3D::output(int i)
   // in such a case here only integrals of the solution are computed.
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double errors[4];
+    double errors[5];
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 		const TFESpace3D* space = syst.feFunction_.GetFESpace3D();

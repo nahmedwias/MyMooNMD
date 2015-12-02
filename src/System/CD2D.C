@@ -184,7 +184,7 @@ void CD2D::output(int i)
   // in such a case here only integrals of the solution are computed.
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double errors[4];
+    double errors[5];
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
