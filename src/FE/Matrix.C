@@ -24,29 +24,25 @@ TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
 {
 }
 
-TMatrix::TMatrix(std::shared_ptr<TStructure> structure, double* Entries)
- : structure(structure), entries(this->structure->GetN_Entries(), 0.)
-{
-  this->setEntries(Entries);
-}
-
-TMatrix::TMatrix(int nRows, int nCols)
- : TMatrix(std::make_shared<TStructure>(nRows, nCols))
-{
-}
-
-void TMatrix::SetStructure(std::shared_ptr<TStructure> structure)
-{
-  this->structure = structure;
-
-  memset(this->GetEntries(), 0, this->structure->GetN_Entries()*SizeOfDouble);
-}
-
 void TMatrix::reset()
 {
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
+void TMatrix::setEntries(double* entries)
+{
+  std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
+}
+
+void TMatrix::setEntries(std::vector<double> entries)
+{
+  if(this->entries.size() != entries.size())
+  {
+    ErrThrow("resetting the entries of a matrix with the wrong number of ",
+             "entries ", this->entries.size(), " != ", entries.size());
+  }
+  this->entries = entries;
+}
 
 void TMatrix::Print(const char *name) const
 {
@@ -67,7 +63,6 @@ void TMatrix::Print(const char *name) const
     }
   }
 }
-
 
 void TMatrix::PrintFull(std::string name, int fieldWidth) const
 {
@@ -174,7 +169,7 @@ double & TMatrix::operator()(const int i, const int j)
 {
   return this->get(i, j);
 }
-//was ist der unterschied ausser const?
+
 const double & TMatrix::operator()(const int i, const int j) const
 {
   return this->get(i, j);
@@ -289,26 +284,6 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 }
 
 
-TMatrix & TMatrix::operator=(const TMatrix& A)
-{
-  // compare structures (first pointers, then structures themselves)
-  if(this->GetStructure() != A.GetStructure()) // compare objects
-  {
-    OutPut("WARNING: TMatrix& operator= Matrices have different structures.\n"
-           << "         The structure in this matrix (on left hand side) is "
-           << "         reset to use the same structure as the right hand "
-           << "side\n         Are you sure this is what you want?\n");
-    ErrThrow("cannot call operator= on TMatrix with different TStructure");
-  }
-  
-  // copy matrix entries.
-  int n_entries = this->GetN_Entries();
-  const double *AEntries = A.GetEntries();
-  for(int i = 0; i < n_entries; i++)
-    this->entries[i] = AEntries[i];
-  return *this;
-}
-
 void TMatrix::multiply(const double * const x, double *y, double a) const
 {
   if(a == 0.0)
@@ -377,8 +352,8 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
   int * c_rows = struc_c->GetRowPtr();
   int * c_cols = struc_c->GetKCol();
-  double * c_entries = new double[struc_c->GetN_Entries()];
-  memset(c_entries, 0.0, struc_c->GetN_Entries() * SizeOfDouble);
+  TMatrix * c = new TMatrix(struc_c);
+  double * c_entries = c->GetEntries();
   
   // fill the entries
   // loop over all rows in C
@@ -401,7 +376,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
       }
     }
   }
-  return new TMatrix(struc_c, c_entries);
+  return c;
 }
 
 
@@ -415,7 +390,8 @@ TMatrix* TMatrix::GetTransposed() const
   int * cols = this->GetKCol();
   
   // transpose the entries:
-  double *entriesT = new double[this->GetN_Entries()];
+  TMatrix * mT = new TMatrix(structureT);
+  double *entriesT = mT->GetEntries();
   // loop over all rows of the original matrix
   for(int i=0; i<this->GetN_Rows(); i++)
   {
@@ -437,7 +413,7 @@ TMatrix* TMatrix::GetTransposed() const
     }
   }
   
-  return new TMatrix(structureT,entriesT);
+  return mT;
 }
 
 void TMatrix::remove_zeros(double tol)
