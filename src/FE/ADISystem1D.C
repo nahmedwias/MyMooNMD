@@ -281,12 +281,12 @@ void TADISystem1D::SolveAllLevels(double *MatValues_orig, double *SolFromX,  dou
 
   for(l=0; l<N_NonLinearSteps; l++)
    {
-    A_Intl->Reset();
+    A_Intl->reset();
 
     if(TDatabase::ParamDB->INTL_DISCTYPE==SUPG)
      {
-      S_Intl->Reset();
-      K_Intl->Reset();
+      S_Intl->reset();
+      K_Intl->reset();
      }
 
     /**growth rate based on concentration defined in Example file*/

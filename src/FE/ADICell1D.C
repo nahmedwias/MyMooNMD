@@ -120,7 +120,7 @@ void TADICell1D::SolveAllQdPts(double *G, double *QuadPtsRhsT, CoeffFct2D *Bilin
     memcpy(Sol_Qpt, OldSol, N_V*SizeOfDouble);
 
     // if G is constant then it is enough to assemble A once for all QuadPts
-    A_Internal->Reset();
+    A_Internal->reset();
 
     //working rhs array
     memset(B, 0, N_V*SizeOfDouble);

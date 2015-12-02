@@ -2479,7 +2479,7 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
   //t2 = GetTime();
   //OutPut("time bulkfct (3) " << t2-t1 << endl);
   // build matrix for FEM-FCT
-  matM->Reset();
+  matM->reset();
   FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
   OutPut("entries " << Ddot(matM->GetN_Entries(),matM->GetEntries(),matM->GetEntries()) << 
 	 " lump " << Ddot(Nodes,lump_mass_PSD,lump_mass_PSD) << endl);
@@ -3028,7 +3028,7 @@ double *neum_to_diri_z)
   //t2 = GetTime();
   //OutPut("time bulkfct (3) " << t2-t1 << endl);
   // build matrix for FEM-FCT
-  matM->Reset();
+  matM->reset();
   FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
   OutPut("entries " << Ddot(matM->GetN_Entries(),matM->GetEntries(),matM->GetEntries()) << 
    " lump " << Ddot(Nodes,lump_mass_PSD,lump_mass_PSD) << endl);

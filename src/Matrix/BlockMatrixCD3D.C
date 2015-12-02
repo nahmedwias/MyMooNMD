@@ -62,7 +62,7 @@ void BlockMatrixCD3D::assemble(const LocalAssembling3D& la, BlockVector& sol,
 //  {
     // reset right hand side and matrix to zero
     rhs.reset();
-    matrix->Reset();
+    matrix->reset();
 
     // assemble
     Assemble3D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
@@ -79,7 +79,7 @@ void BlockMatrixCD3D::assemble(const LocalAssembling3D& la, BlockVector& sol,
 //  //if(la.get_type() == TCD2D_Mass_Rhs_Galerkin)
 //  {
 //    // reset the matrix
-//    matrix->Reset();
+//    matrix->reset();
 //    Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
 //               &fe_space, &boundary_conditions, &non_const_bound_value, la);
 //  }
