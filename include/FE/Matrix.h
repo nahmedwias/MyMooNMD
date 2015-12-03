@@ -10,8 +10,8 @@
 * To create a TMatrix either copy or move an existing one or use a TStructure 
 * to construct a new one.
 * 
-* Objects ob type TMatrix are not supposed to be copied. You can copy the 
-* entries from one TMatrix to another or copy/move construct a new TMatrix.
+* Objects ob type TMatrix are not supposed to be copied. If you want that 
+* copy/move construct a new TMatrix.
 * 
 * \todo apply naming convention to all methods
 * 
@@ -171,10 +171,6 @@ class TMatrix
     const double& get(int i,int j) const;
     /// @brief  get a value at selected entry (you may change that value)
     double& get(int i,int j);
-    
-    /// @brief set the whole elements array, discouraged, use the other 
-    /// setEntries
-    void setEntries(double* entries);
     
     /// @brief reset the entries, the given vector must be of the same size
     void setEntries(std::vector<double> entries);

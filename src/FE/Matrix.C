@@ -29,11 +29,6 @@ void TMatrix::reset()
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
-void TMatrix::setEntries(double* entries)
-{
-  std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
-}
-
 void TMatrix::setEntries(std::vector<double> entries)
 {
   if(this->entries.size() != entries.size())
