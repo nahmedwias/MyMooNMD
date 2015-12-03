@@ -86,12 +86,12 @@ int TJacobiIte::Iterate (TSquareMatrix **sqmat,
                          TMatrix **mat, double *sol, 
                          double *rhs)
 {
-  int i, j, k, l, *ARowPtr, *AKCol;
+  int i, j, k, l;
   double *AEntries;
 
 
-  ARowPtr = sqmat[0]->GetRowPtr();
-  AKCol = sqmat[0]->GetKCol();
+  const int * ARowPtr = sqmat[0]->GetRowPtr();
+  const int * AKCol = sqmat[0]->GetKCol();
   AEntries = sqmat[0]->GetEntries();
   double om = TDatabase::ParamDB->SC_SOR_OMEGA;
 
@@ -116,12 +116,12 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 #endif
                                                               )
 {
-  int i, j, k, l,Diagonal, *ARowPtr, *AKCol,iter=0,rank;
+  int i, j, k, l,Diagonal,iter=0,rank;
   double *AEntries,*d,sum,res=1.0,error=1.e-3;
   double tstrt=0,tend=0,tcomp=0,tcomm=0,comp,comm;
   
-  ARowPtr = sqmat[0]->GetRowPtr();
-  AKCol = sqmat[0]->GetKCol();
+  const int * ARowPtr = sqmat[0]->GetRowPtr();
+  const int * AKCol = sqmat[0]->GetKCol();
   AEntries = sqmat[0]->GetEntries();
   d = new double[N_DOF];
   memcpy(oldSol, sol, N_DOF*SizeOfDouble);

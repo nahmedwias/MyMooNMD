@@ -1951,7 +1951,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *B1Entries, *B2Entries;
   int N_Active;
 
@@ -2034,7 +2034,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *B1Entries, *B2Entries;
   int N_Active;
 
@@ -2129,8 +2129,8 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *AEntries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   int N_Active;
@@ -2234,8 +2234,8 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *AEntries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   int N_Active;
@@ -2355,7 +2355,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *A12Entries, *A21Entries, *A22Entries;
   int N_Active;
@@ -2465,7 +2465,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *A12Entries, *A21Entries, *A22Entries;
   int N_Active;
@@ -2585,8 +2585,8 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries;
@@ -2716,8 +2716,8 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries;
@@ -2857,8 +2857,8 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol, *CRowPtr, *CKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol, *CRowPtr, *CKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries, *CEntries;
@@ -3007,8 +3007,8 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol, *CRowPtr, *CKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol, *CRowPtr, *CKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries, *CEntries;
@@ -3178,7 +3178,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B, double *x, double *y)
   double s, t, value;
   double *u, *p;
   double *v, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *BEntries;
   int N_Active;
 
@@ -3247,7 +3247,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B,
   double *u, *p;
   double *v, *q;
   double *r1, *r2;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *BEntries;
   int N_Active;
   
@@ -3336,8 +3336,8 @@ void MatVectCD_VMM(TSquareMatrix *A, TMatrix *B, TMatrix *C, TSquareMatrix *D,
   double s, t, value, value1, value2;
   double *u1, *p;
   double *v1, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *CRowPtr, *DRowPtr, *CKCol, *DKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *CRowPtr, *DRowPtr, *CKCol, *DKCol;
   double *AEntries, *BEntries, *CEntries, *DEntries;
   int N_Active;
 
@@ -3444,8 +3444,8 @@ void DefectCD_VMM(TSquareMatrix *A, TMatrix *B, TMatrix *C, TSquareMatrix *D,
   double s, t, value, value1, value2;
   double *u1, *p;
   double *v1, *q, *r1, *r2;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *CRowPtr, *DRowPtr, *CKCol, *DKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *CRowPtr, *DRowPtr, *CKCol, *DKCol;
   double *AEntries, *BEntries, *CEntries, *DEntries;
   int N_Active;
 
@@ -3557,8 +3557,8 @@ void MatVectCD_VMM_KL02(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *p1, *p2;
   double *v1, *q1, *q2;
-  int *ARowPtr, *B1RowPtr, *AKCol, *B1KCol;
-  int *C1RowPtr, *DRowPtr, *C1KCol, *DKCol;
+  const int *ARowPtr, *B1RowPtr, *AKCol, *B1KCol;
+  const int *C1RowPtr, *DRowPtr, *C1KCol, *DKCol;
   double *AEntries, *B1Entries, *C1Entries, *DEntries, *B2Entries, *C2Entries;
   int N_Active;
 
@@ -3680,8 +3680,8 @@ void DefectCD_VMM_KL02(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *p1, *p2;
   double *v1, *q1, *q2, *r1, *r2, *r3;
-  int *ARowPtr, *B1RowPtr, *AKCol, *B1KCol;
-  int *C1RowPtr, *DRowPtr, *C1KCol, *DKCol;
+  const int *ARowPtr, *B1RowPtr, *AKCol, *B1KCol;
+  const int *C1RowPtr, *DRowPtr, *C1KCol, *DKCol;
   double *AEntries, *B1Entries, *C1Entries, *DEntries, *B2Entries, *C2Entries;
   int N_Active;
 
@@ -3807,7 +3807,7 @@ void CoupledMatVectLV96(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *B1Entries, *B2Entries;
   int N_Active;
 
@@ -3905,7 +3905,7 @@ void CoupledDefectLV96(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double *u1, *u2, *p;
   double *v1, *v2, *q, *help;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
   double *AEntries, *B1Entries, *B2Entries;
   int N_Active;
 
@@ -4023,8 +4023,8 @@ void CoupledMatVectMortar(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *u2, *p, *m1, *m2;
   double *v1, *v2, *q, *n1, *n2;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol, *MortarRowPtr, *MortarKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol, *MortarRowPtr, *MortarKCol;
   double *AEntries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries, *MortarEntries;
   int N_Active;

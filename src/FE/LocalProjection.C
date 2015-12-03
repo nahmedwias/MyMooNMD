@@ -130,13 +130,13 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *AEntries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   int N_Active;
   double *CEntries;
-  int *CRowPtr, *CKCol;
+  const int *CRowPtr, *CKCol;
 
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
@@ -261,13 +261,13 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *AEntries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   int N_Active;
   double *CEntries;
-  int *CRowPtr, *CKCol;
+  const int *CRowPtr, *CKCol;
 
   ARowPtr = A->GetRowPtr();
   AKCol = A->GetKCol();
@@ -412,7 +412,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   int OrderDiff;
   double lpcoeff, lpexponent;
@@ -899,7 +899,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
@@ -1152,7 +1152,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
@@ -1428,7 +1428,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
 
   fespace = A11->GetFESpace2D();
@@ -1668,13 +1668,13 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries;
   double *CEntries;
-  int *CRowPtr, *CKCol;
+  const int *CRowPtr, *CKCol;
   int N_Active;
 
   ARowPtr = A11->GetRowPtr();
@@ -1819,14 +1819,14 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
   double *u1, *u2, *p;
   double *v1, *v2, *q;
   double *r1, *r2, *r3;
-  int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
-  int *BTRowPtr, *BTKCol;
+  const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
+  const int *BTRowPtr, *BTKCol;
   double *A11Entries, *B1Entries, *B2Entries;
   double *B1TEntries, *B2TEntries;
   double *A12Entries, *A21Entries, *A22Entries;
   int N_Active;
   double *CEntries;
-  int *CRowPtr, *CKCol;
+  const int *CRowPtr, *CKCol;
 
   ARowPtr = A11->GetRowPtr();
   AKCol = A11->GetKCol();
@@ -2705,7 +2705,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   double hK;
   int ActiveBound, dof;
   int p, end, ij, N_Edges;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   double *Values, Values1, Values2;
   double *coeffs, *params, sx, sy, crosswind_uh[MaxN_QuadPoints_2D], loc_proj;
@@ -3922,7 +3922,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   double *Values1, *Values2, *Values3, *Values4;
   double BValue[MaxN_BaseFunctions2D];
