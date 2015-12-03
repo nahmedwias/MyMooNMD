@@ -39,7 +39,6 @@ TStructure::TStructure( const TFESpace1D * space )
   int *Numbers, *nieb_Numbers;
   int N_Hanging, Offset;
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
-  int *AuxPtr;
   int *KColAux;
   int index, oldindex, EdgeIntegrals=space->IsDGSpace();
 
@@ -59,8 +58,7 @@ TStructure::TStructure( const TFESpace1D * space )
   // AuxPtr[i] will contain an upper bound for the number of ...
   // matrix entries in row i
   l=nRows+1;
-  AuxPtr=new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   GlobalNumbers=space->GetGlobalNumbers();
   BeginIndex=space->GetBeginIndex();
@@ -249,7 +247,7 @@ TStructure::TStructure( const TFESpace1D * space )
   // compress KColAux array to KCol by deleting all -1's
   // build the RowPtr array
   N_=ActiveBound;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -313,7 +311,7 @@ TStructure::TStructure( const TFESpace2D* space )
   int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
   int HangingBound;
 
-  int *AuxPtr, *HangingAuxPtr;
+  int *HangingAuxPtr;
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
@@ -352,8 +350,7 @@ TStructure::TStructure( const TFESpace2D* space )
   // AuxPtr[i] will contain an upper bound for the number of
   // matrix entries in row i
   l=nRows+1;
-  AuxPtr=new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   l=N_Hanging+1;
   HangingAuxPtr=new int[l];
@@ -1046,7 +1043,7 @@ TStructure::TStructure( const TFESpace2D* space )
   // compress KColAux array to KCol by deleting all -1's
   // build the rows array
   N_=ActiveBound;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -1156,7 +1153,7 @@ TStructure::TStructure( const TFESpace3D *space )
   int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
   int HangingBound;
 
-  int *AuxPtr, *HangingAuxPtr;
+  int *HangingAuxPtr;
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
@@ -1195,8 +1192,7 @@ TStructure::TStructure( const TFESpace3D *space )
   // AuxPtr[i] will contain an upper bound for the number of 
   // matrix entries in row i
   l=nRows+1;
-  AuxPtr=new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   l=N_Hanging+1;
   HangingAuxPtr=new int[l];
@@ -1506,7 +1502,7 @@ TStructure::TStructure( const TFESpace3D *space )
   // compress KColAux array to KCol by deleting all -1's
   // build the rows array
   N_=ActiveBound;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -1627,7 +1623,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestNumbers, *AnsatzNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
-  int *AuxPtr, *KColAux, end;
+  int *KColAux, end;
   FE2D CurrentElement; 
 
   int TestN_Hanging, AnsatzN_Hanging;
@@ -1699,8 +1695,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // AuxPtr[i] will contain an upper bound for the number of 
   // matrix entries in row i
   l = nRows + 1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*SizeOfInt);
+  std::vector<int> AuxPtr(l);
 
   l=TestN_Hanging+1;
   HangingAuxPtr=new int[l];
@@ -2280,7 +2275,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // compress KColAux array to KCol by deleting all -1's
   // build the rows array
   N_=nRows;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -2346,7 +2341,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestNumbers, *AnsatzNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
-  int *AuxPtr, *KColAux;
+  int *KColAux;
   FE3D CurrentElement; 
 
   if(testspace->GetCollection() != ansatzspace->GetCollection())
@@ -2388,8 +2383,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   l = nRows + 1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*SizeOfInt);
+  std::vector<int> AuxPtr(l, 0);
 
   N_ = coll->GetN_Cells();
   for(i=0;i<N_;i++)
@@ -2783,7 +2777,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   // compress KColAux array to KCol by deleting all -1's
   // build the rows array
   N_=nRows;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -2854,7 +2848,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestNumbers, *AnsatzNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
-  int *AuxPtr, *KColAux;
+  int *KColAux;
   int  N_child,N_child_1, N_child_2, N_child_3, N_child_4, N_child_5;
   int N_child_6;
   int ii, j1, j2, j3, j4, j5, j6, level_diff;
@@ -2911,8 +2905,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   l = nRows + 1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*SizeOfInt);
+  std::vector<int> AuxPtr(l, 0);
 
   // set numeration of the cells
   N_ = coll_coarse->GetN_Cells();
@@ -3455,7 +3448,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   // compress KColAux array to KCol by deleting all -1's
   // build the rows array
   N_=nRows;
-  columns=new int[nEntries];
+  columns.resize(nEntries);
   rows=AuxPtr;
 
   index=0;
@@ -3502,7 +3495,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
 
 
 TStructure::TStructure() 
- : nRows(0), nColumns(0), nEntries(0), columns(nullptr), rows(nullptr),
+ : nRows(0), nColumns(0), nEntries(0), columns(), rows(),
    ActiveBound(0), ColOrder(0), nHangingEntries(0), hangingColums(nullptr),
    HangingRows(nullptr)
 {
@@ -3516,19 +3509,20 @@ TStructure::TStructure(int n, int nEntries, int *col_ptr, int *row_ptr)
 /* generate the matrix structure, all arrays are already defined */
 TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr, 
                        int *row_ptr)
- : nRows(nRows), nColumns(nCols), nEntries(nEntries), columns(col_ptr), 
-   rows(row_ptr), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+ : nRows(nRows), nColumns(nCols), nEntries(nEntries), columns(nEntries, 0), 
+   rows(nRows+1), ActiveBound(0), ColOrder(0), nHangingEntries(0),
    hangingColums(nullptr), HangingRows(nullptr)
 {
+  std::copy(col_ptr, col_ptr + this->GetN_Entries(), this->columns.begin());
+  std::copy(row_ptr, row_ptr + this->GetN_Rows() + 1, this->rows.begin());
   this->Sort();
 }
 
 TStructure::TStructure(int nRows, int nCols)
- : nRows(nRows), nColumns(nCols), nEntries(0), columns(nullptr), 
-   rows(new int[nRows+1]), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+ : nRows(nRows), nColumns(nCols), nEntries(0), columns(), 
+   rows(nRows+1, 0), ActiveBound(0), ColOrder(0), nHangingEntries(0),
    hangingColums(nullptr), HangingRows(nullptr)
 {
-  memset(rows, 0, (nRows+1)*SizeOfInt);
 }
 
 
@@ -3559,7 +3553,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace)
   int N_, i, j, k, l, m, n, n2, index, oldindex, end, AN, TN, entry, l0, l1;
   int TestN_Inner, TestN_Dirichlet, TestN_Neumann;
   int AnsatzN_Inner, AnsatzN_Dirichlet, AnsatzN_Neumann, AnsatzN_Hanging;
-  int *AuxPtr, *KColAux;
+  int *KColAux;
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
   int *TestBeginIndex, *AnsatzBeginIndex;
   int *TestNumbers, *AnsatzNumbers;
@@ -3584,8 +3578,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace)
 
   // AuxPtr[i] will contain an upper bound for the number of
   // matrix entries in row i
-  AuxPtr = new int[nRows+1];
-  memset(AuxPtr, 0, (nRows+1)*SizeOfInt);
+  std::vector<int> AuxPtr(nRows+1, 0);
 
   TestGlobalNumbers = TestSpace1D->GetGlobalNumbers();
   AnsatzGlobalNumbers = AnsatzSpace2D->GetGlobalNumbers();
@@ -3836,7 +3829,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
   int *Numbers, *nieb_Numbers;
   int N_Dirichlet, end, N_Hanging, Offset;
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
-  int *AuxPtr, *AuxPtr_delete, *HangingAuxPtr;
+  int *AuxPtr_delete, *HangingAuxPtr;
   int *KColAux, *HangingKColAux, *ansatzcell, *ansatzjoint;
   int index, oldindex, EdgeIntegrals=testspace->IsDGSpace();
 
@@ -3873,8 +3866,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
 
   // AuxPtr[i] will contain an upper bound for the number of matrix entries in row i
   l=nRows+1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   GlobalNumbers=TestSpace1D->GetGlobalNumbers();
   BeginIndex=TestSpace1D->GetBeginIndex();
@@ -4150,7 +4142,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
   int *Numbers, *nieb_Numbers, N_NonMotEdges;
   int N_Dirichlet, end, N_Hanging, Offset;
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
-  int *AuxPtr, *AuxPtr_delete, *HangingAuxPtr;
+  int *AuxPtr_delete, *HangingAuxPtr;
   int *KColAux, *HangingKColAux, N_ColAnsatzs, dof, ColIndex;
   int index, oldindex, EdgeIntegrals=testspace->IsDGSpace();
   int *N_DofPerEdge;
@@ -4183,8 +4175,7 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
 
   // AuxPtr[i] will contain an upper bound for the number of matrix entries in row i
   l=nRows+1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   GlobalNumbers=TestSpace1D->GetGlobalNumbers();
   BeginIndex=TestSpace1D->GetBeginIndex();
@@ -4376,7 +4367,7 @@ TStructure::TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
   int *Numbers, *nieb_Numbers, N_NonMotEdges;
   int N_Dirichlet, end, N_Hanging, Offset;
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
-  int *AuxPtr, *AuxPtr_delete, *HangingAuxPtr;
+  int *AuxPtr_delete, *HangingAuxPtr;
   int *KColAux, *HangingKColAux, N_ColAnsatzs, dof, ColIndex;
   int index, oldindex, EdgeIntegrals=testspace->IsDGSpace();
   int *N_DofPerEdge;
@@ -4411,8 +4402,7 @@ TStructure::TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
   
   // AuxPtr[i] will contain an upper bound for the number of matrix entries in row i
   l=nRows+1;
-  AuxPtr = new int[l];
-  memset(AuxPtr, 0, l*sizeof(int));
+  std::vector<int> AuxPtr(l, 0);
 
   GlobalNumbers=AnsatzSpace1D->GetGlobalNumbers();
   BeginIndex=AnsatzSpace1D->GetBeginIndex();
@@ -4599,14 +4589,12 @@ exit(0);
 
 TStructure::TStructure(const TStructure& s)
  : nRows(s.nRows), nColumns(s.nColumns), nEntries(s.nEntries),
-   columns(new int[s.nEntries]), rows(new int[s.nRows + 1]), 
+   columns(s.columns), rows(s.rows), 
    ActiveBound(s.ActiveBound), ColOrder(s.ColOrder),
    nHangingEntries(s.nHangingEntries),
    hangingColums(new int[s.nHangingEntries]), HangingRows(nullptr)
 {
   // copy the data
-  memcpy(this->columns, s.GetKCol(), this->nEntries*sizeof(int));
-  memcpy(this->rows, s.GetRowPtr(), (this->nRows+1)*sizeof(int));
   memcpy(this->hangingColums, s.GetHangingKCol(), 
          this->GetHangingN_Entries()*sizeof(int));
 }
@@ -4633,7 +4621,7 @@ void TStructure::SortDiagFirst()
         break;
       } // endif
     } // endfor j
-    SortRow(columns+begin+1, columns+end);
+    SortRow(&columns[0]+begin+1, &columns[0]+end);
   } // endfor i
   
   this->ColOrder = 2;
@@ -4670,16 +4658,14 @@ void TStructure::Sort()
   {
     begin = end;
     end = rows[i+1];
-    SortRow(columns+begin, columns+end);
+    SortRow(&columns[0]+begin, &columns[0]+end);
   } // endfor i
 }
 
 /* destructor */
 TStructure::~TStructure()
 {
-  delete [] columns;
   delete [] hangingColums;
-  delete [] rows;
   delete [] HangingRows;
 }
 
