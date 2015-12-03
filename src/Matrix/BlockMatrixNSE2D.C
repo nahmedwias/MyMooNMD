@@ -537,6 +537,56 @@ void BlockMatrixNSE2D::apply_scaled_add(const double *x, double *y,
 }
 
 /** ************************************************************************ */
+void BlockMatrixNSE2D::scaleActive(const double factor)
+{
+  if(factor == 1.)
+    return;
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      this->get_A_block(0)->scaleActive(factor);
+      break;
+    case 3:
+    case 4:
+    case 14:
+      this->get_A_block(0)->scaleActive(factor);
+      this->get_A_block(1)->scaleActive(factor);
+      this->get_A_block(2)->scaleActive(factor);
+      this->get_A_block(3)->scaleActive(factor);      
+      break;
+  }
+
+}
+
+/** ************************************************************************ */
+void BlockMatrixNSE2D::applyScaledAddActive(const double* x, double* y, double factor) const
+{
+  if(factor = 0.)
+    return;
+  unsigned int n_v = this->get_velocity_space()->GetN_DegreesOfFreedom();
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      this->get_A_block(0)->multiplyActive(x,     y, factor);
+      this->get_A_block(0)->multiplyActive(x+n_v, y+n_v, factor);
+      break;    
+    case 3:
+    case 4:
+    case 14:
+      this->get_A_block(0)->multiplyActive(x,     y,     factor);
+      this->get_A_block(1)->multiplyActive(x+n_v, y,     factor);
+      this->get_A_block(2)->multiplyActive(x,     y+n_v,  factor);
+      this->get_A_block(3)->multiplyActive(x+n_v, y+n_v, factor);
+      break;
+    default:
+      ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
+      break;
+  }
+}
+
+/** ************************************************************************ */
 const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
                                                        bool test) const
 {

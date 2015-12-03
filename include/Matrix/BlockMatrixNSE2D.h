@@ -73,6 +73,28 @@ class BlockMatrixNSE2D : public BlockMatrix
     void apply_scaled_add(const double *x, double *y, double factor = 1.) const;
     
     
+    /** @brief 
+     * scaleActive
+     * This function can scale the A blocks, 
+     * only the actives
+     */
+    void scaleActive(const double factor);
+
+    /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y 
+     * only for the active dofs.
+     * "A" is this matrix.
+     *
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void applyScaledAddActive(const double *x, double *y, 
+         double factor = 1.) const;
+
+    
     /** @brief return the test or ansatz space for a given block
      * 
      * @param b the index of the block whose test/ansatz space is returned
