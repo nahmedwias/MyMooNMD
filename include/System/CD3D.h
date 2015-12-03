@@ -9,6 +9,11 @@
  *             wraps up everything which is necessary to solve a convection 
  *             diffusion problem in 3D.
  *
+ *             Here are some tasks for class CD3D
+ *             \todo enable different discretizations/stabilizations
+ *             \todo enable direct solver in MPI
+ *             \todo test multigrid with all smoothers (so far: only SSOR)
+ *
  * @author     Ulrich Wilbrandt, Clemens Bartsch
  * @date       09.06.15, 2015/10/20
  *
