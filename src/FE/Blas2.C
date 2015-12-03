@@ -13,7 +13,7 @@ void ScalarDefect(TSquareMatrix *A, double *sol, double *f, double *d,
 {
   int i,j,k,l,index,numThreads;
   double s;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   int N_DOF; 
 
@@ -62,7 +62,7 @@ void MatVect(TSquareMatrix *A, double *x, double *y)
   int N_UDOF;
   int i,j,k,l,index;
   double s, value;
-  int *ARowPtr, *AKCol;
+  const int *ARowPtr, *AKCol;
   double *AEntries;
 
   ARowPtr = A->GetRowPtr();
@@ -104,7 +104,7 @@ void MatVectActive(TSquareMatrix *A, double *x, double *y)
   int N_Active;
   int i,j,k,l,index;
   double s, value;
-  int *ARowPtr, *AKCol;
+  const int *ARowPtr, *AKCol;
   double *AEntries;
 
   ARowPtr = A->GetRowPtr();
@@ -134,7 +134,7 @@ void MatAdd(TSquareMatrix *C, TSquareMatrix *D, double alpha)
   int N_UDOF;
   int i,j,k,l,index;
   double s, value;
-  int *CRowPtr;
+  const int * CRowPtr;
   double *CEntries;
   double *DEntries;
 
@@ -153,7 +153,8 @@ void MatAdd(TSquareMatrix *C, TSquareMatrix *D, double alpha)
 void MatAdd2(TSquareMatrix *C, TSquareMatrix *D, double alpha)
 {
   double *CEntries, *DEntries;
-  int *RowPtr, N_, N_Active;
+  const int * RowPtr;
+  int N_, N_Active;
   
   RowPtr = C->GetRowPtr();
   CEntries = C->GetEntries();
@@ -172,7 +173,7 @@ void MatAdd(TMatrix *C, TMatrix *D, double alpha)
   int N_UDOF;
   int i,j,k,l,index;
   double s, value;
-  int *CRowPtr;
+  const int * CRowPtr;
   double *CEntries;
   double *DEntries;
 
@@ -193,7 +194,7 @@ void MatVect1(TMatrix *B, double *x, double *y)
   int N_UDOF;
   int i,j,k,l,index;
   double s, value;
-  int *BRowPtr, *BKCol;
+  const int *BRowPtr, *BKCol;
   double *BEntries;
 
   BRowPtr = B->GetRowPtr();
@@ -222,7 +223,7 @@ void TransMatVect(TMatrix *B, double *x, double *y)
   int N_UDOF;
   int i,j,k,l,index;
   double s, value;
-  int *BRowPtr, *BKCol;
+  const int *BRowPtr, *BKCol;
   double *BEntries;
 
   BRowPtr = B->GetRowPtr();
