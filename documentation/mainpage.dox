@@ -21,12 +21,13 @@
  
  * \subsection information More Information on ParMooN
  There is some additional information on ParMooN available. If you plan to contribute to the project you should get familiar with those.
-   - \ref page_version_control , some information on hg mercurial, the used version control system
    - \ref page_branching , a guide to the workflow when contributing to ParMooN
    - \ref page_build_system , a guide to the CMake build system
-   - \ref external_libraries , how to use external libraries with ParMooN \n
- And last but definitely not least:
+   - \ref external_libraries , how to use external libraries with ParMooN
    - \ref page_rules to stick to when coding in ParMooN
+   - \ref page_unit_testing, a guide on unit testing in ParMooN 
+   - \ref page_version_control , some information on hg mercurial, the used version control system
+
   
   \subsection forum The ParMooN Q & A Forum
   We set up a wordpress forum, which is the right place for all questions, answers and discussions which are ParMooN related. \n

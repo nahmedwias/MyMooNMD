@@ -189,7 +189,7 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
         && rank==TDatabase::ParamDB->Par_P0
 #endif      
        )   
-     Output::print<3>("Fixed Point Iteration 0: ", res);
+     Output::print<2>("Fixed Point Iteration 0: ", res);
   
   // residual small enough before iteration
   if (res<=res_norm_min)
@@ -237,8 +237,8 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
 #endif        
         ) 
        //printf("Fixed Point Iteration %d res %e rate: %e\n", i, res, res/reslast);    
-       Output::print<3>("Fixed Point Iteration ", i, " res ", res, " rate ", 
-                        res/reslast); 
+       Output::print<2>("Fixed Point Iteration ", i, " res ", res, " rate ",
+                        res/reslast);
 
     reslast=res;
     //  if (i<sc->maxit)

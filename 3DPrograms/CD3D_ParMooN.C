@@ -65,9 +65,11 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1]);
 
-  //do a makeshift parameter check
+  // Do a makeshift parameter check
   CD3D::checkParameters();
 
+  // Output control
+  Output::setVerbosity(TDatabase::ParamDB->SC_VERBOSE);
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   #ifdef _MPI
@@ -75,8 +77,7 @@ int main(int argc, char* argv[])
   #endif
     Database.WriteParamDB(argv[0]);
 
-  // Read in geometry and initialize the mesh. (See code of domain.Init
-  // for usage of hard-coded example meshes)
+  // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
   // Do initial regular grid refinement.
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
 	  domain.RegRefineAll();
   }
 
-  // Write grid into a postscript file
+  // Write grid into a postscript file (before partitioning)
   if(TDatabase::ParamDB->WRITE_PS)
   {
 #ifdef _MPI
@@ -94,44 +95,77 @@ int main(int argc, char* argv[])
       domain.PS("Domain.ps", It_Finest, 0);
   }
 
-
-  #ifdef _MPI
+#ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
-  //analyse interfaces and create edge objects
-  domain.GenerateEdgeInfo();
-  int maxCellsPerVertex; //out parameter of mesh partitioning
 
+  // 1st step: Analyse interfaces and create edge objects,.
+  domain.GenerateEdgeInfo();
+
+  // 2nd step: Call the mesh partitioning.
+  /** /todo Depending on the metis type the grid might need
+   * further initial refinement, so that each participating process
+   * gets some dofs. See code from india!*/
+  int maxCellsPerVertex;
   Partition_Mesh3D(comm, &domain, maxCellsPerVertex); //do the actual partitioning
 
-  //domain has been reduced, thus generate edge info anew.
+  // 3rd step: Generate edge info anew
+  //(since distributing changed the domain).
   domain.GenerateEdgeInfo();
 
-  //largest possible number of processes which share one dof
+  // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
 
-  if(iAmOutRank)
-  {
-	  Output::print("MaxSubDomainPerDof: ", maxSubDomainPerDof);
-  }
-                domain.GetCollection(It_Finest, 0)->GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetCollection(It_Finest, 0)->GetN_HaloCells());
-  #endif
+#endif
 
-  // create output directory, if not already existing
+  // Collect those Collections which will be used in multigrid.
+  // ("Collection" in ParMooN means a set of grid cells which form a
+  // specific computational domain).
+  // This must be done here instead of deep inside CD3D, because the Domain_Crop
+  // method disables the use of sensible Collection Iterators. The only possibility
+  // to get a certain level of cells is to grab it the moment when it's the finest...
+  std::list<TCollection* > gridCollections;
+  gridCollections.push_front(domain.GetCollection(It_Finest, 0));
+
+  // Further mesh refinement and grabbing of collections,
+  // which is only performed when a multgrid solver is used.
+  // (If no multigrid is used, CD3D::checkParameters() took care of setting
+  // LEVELS to 1.)
+  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
+  {
+    domain.RegRefineAll();
+#ifdef _MPI
+    domain.GenerateEdgeInfo();  // has to be called anew after every refinement step
+    Domain_Crop(comm, &domain); // remove unwanted cells in the halo after refinement
+#endif
+    // Grab collection.
+    gridCollections.push_front(domain.GetCollection(It_Finest, 0));
+  }
+
+#ifdef _MPI
+  //print information on the mesh partition on the finest grid
+  Output::print("Process ", mpiRank, ". N_Cells: ",
+                gridCollections.front()->GetN_Cells(),
+                ". N_OwnCells: ",
+                gridCollections.front()->GetN_OwnCells(),
+                ". N_HaloCells: ",
+                gridCollections.front()->GetN_HaloCells());
+#endif
+
+  // Create output directory, if not already existing.
   if(TDatabase::ParamDB->WRITE_VTK)
   {
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   }
 
-  // choose example according to the value of TDatabase::ParamDB->EXAMPLE and construct it
+  // Choose example according to the value of
+  // TDatabase::ParamDB->EXAMPLE and construct it.
   Example_CD3D example;
 
-  // construct the cd3d problem object
+  // Construct the cd3d problem object.
 #ifdef _MPI
-  CD3D cd3d(domain, example, maxSubDomainPerDof);
+  CD3D cd3d(gridCollections, example, maxSubDomainPerDof);
 #else
-  CD3D cd3d(domain, example);
+  CD3D cd3d(gridCollections, example);
 #endif
 
   //=========================================================================

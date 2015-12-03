@@ -213,7 +213,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 #endif  
      )
      {
-      OutPut("residual before on coarse "<<res << endl);
+      Output::print<3>("residual before on coarse ", res);
      }
      
     double reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
@@ -305,7 +305,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
         && rank==TDatabase::ParamDB->Par_P0
 #endif
         )
-         OutPut("itr no. :: "<<it-1<<"        res on coarse: " << res << endl);   
+         Output::print<3>("itr no. :: ", it-1, "        res on coarse: ", res);
     }//endwhile
     oldres = res;
   }
@@ -529,8 +529,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 #endif   
       )
       {
-       OutPut("level " << i << " ");
-       OutPut("res before presmoothing: " << oldres << endl);
+        Output::print<3>("level ", i, " res before presmoothing: ", oldres);
       }
 
     if (slc)
@@ -558,10 +557,9 @@ void TMultiGrid3D::Cycle(int i, double &res)
 #endif 
        )
       {
-         OutPut("normsol: " << normsol << " oldres: " << oldres << endl);
-        OutPut("level " << i << " ");
-        OutPut("res after presmoothing: " << oldres << endl);
-         OutPut("Smoothing (" << i << "): " << oldres/normsol << endl);
+         Output::print<3>("normsol: ", normsol, " oldres: ", oldres);
+         Output::print<3>("level ", i, " res after presmoothing: ", oldres);
+         Output::print<3>("Smoothing (", i, "): ", oldres/normsol);
       }
     // restrict defect
 //     exit(0);
@@ -626,8 +624,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 #endif  
        )
       {
-        OutPut("level " << i << " ");
-        OutPut("res before postsmoothing: " << oldres << endl);
+        Output::print<3>("level ", i, " res before postsmoothing: ", oldres);
       }
 //        exit(0);
     // smoothing
@@ -660,9 +657,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 #endif  
     )
       {
-        OutPut("level " << i << " ");
-        OutPut("res after postsmoothing: " << res);
-        OutPut(" rate: " << res/firstres << endl);
+      Output::print<3>("level ", i, " res after postsmoothing: ", res, " rate: ", res/firstres);
         // OutPut("Smoothing2 (" << i << "): " << initres/normsol << endl);
       }
   }
