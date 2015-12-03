@@ -277,8 +277,8 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
           {
             // current matrix block
             const TMatrix& cm = this->block(block_row, block_col);
-            int * row_ptr = cm.GetRowPtr();
-            int * col_ptr = cm.GetKCol();
+            const int * row_ptr = cm.GetRowPtr();
+            const int * col_ptr = cm.GetKCol();
             const double * entries = cm.GetEntries();
             // loop over entire row in this block
             for(int e = row_ptr[row]; e < row_ptr[row+1]; ++e)
