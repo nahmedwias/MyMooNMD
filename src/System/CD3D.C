@@ -1,16 +1,13 @@
 #include <CD3D.h>
-//#include <LocalAssembling3D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Output3D.h>
 #include <LinAlg.h>
 
-//#include <Solver.h>
-#include <DirectSolver.h>
 #include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <JacobiIte.h>
 #include <MultiGridScaIte.h>
+#include <DirectSolver.h>
 
 #include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
@@ -33,7 +30,7 @@
     feSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
 
     //Must be reset here, because feSpace needs special treatment
-    //This includes copy assignment - all because there is no good
+    // This includes copy assignment - all because there is no good
     // way to communicate Maximum number of subdomains per dof to FESpace...
     parMapper_ = TParFEMapper3D(1, &feSpace_, matrix_.get_matrix()->GetRowPtr(),
                matrix_.get_matrix()->GetKCol());
@@ -54,68 +51,127 @@
   }
 #endif
 
-/** ************************************************************************ */
-CD3D::CD3D(const TDomain& domain, const Example_CD3D& example
+  /** ************************************************************************ */
+  CD3D::CD3D(std::list<TCollection* > collections, const Example_CD3D& example
 #ifdef _MPI
-,int maxSubDomainPerDof
+             ,int maxSubDomainPerDof
 #endif
-)
-    : systems_(), example_(example), multigrid_(nullptr)
-{
-
-  // Create the collection of cells from the finest grid of the domain
-#ifdef _MPI
-  int mpiRank;
-  int mpiSize;
-  MPI_Comm& comm = TDatabase::ParamDB->Comm ;
-  MPI_Comm_rank(comm, &mpiRank);   //find out which rank I am
-  MPI_Comm_rank(comm, &mpiSize);  //find out how many processes are in the game
-
-  // create collection of mesh cells
-  TCollection* cellCollection;
-
-  //collection consisting of own and halo cells
-  cellCollection = domain.GetCollection(It_Finest, 0);
-
-  // create finite element space and function, a matrix, rhs, and solution
-  systems_.emplace_back(example_, *cellCollection, maxSubDomainPerDof);
-
-#else
-  TCollection *cellCollection = domain.GetCollection(It_Finest, 0);
-  // create finite element space and function, a matrix, rhs, and solution
-  systems_.emplace_back(example_, *cellCollection);
-
-    // print out some information
-    TFESpace3D & space = this->systems_.front().feSpace_;
-    double hMin, hMax;
-    cellCollection->GetHminHmax(&hMin, &hMax);
-    Output::print<1>("N_Cells    : ", setw(12), cellCollection->GetN_Cells());
-    Output::print<1>("h (min,max): ", setw(12), hMin, " ", setw(12), hMax);
-    Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
-    Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
-#endif
-
-  // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+  )
+  : systems_(), example_(example), multigrid_(nullptr)
   {
-    ErrThrow("Multigrid preconditioning not yet implemented, do not use "
-        "SC_PRECONDITIONER_SCALAR: 5 .");
+    // The construction of the members differ, depending on whether
+    // a multigrid solver will be used or not.
+    bool usingMultigrid =
+        ( TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5 &&
+          TDatabase::ParamDB->SOLVER_TYPE == 1
+        );
+
+    if (!usingMultigrid)
+    {
+      //Check at least if the collections list contains exactly one Collection.
+      if(collections.size() != 1 )
+      {
+        ErrThrow("Non-multigrid: Expected exactly one collection!");
+      }
+
+      // Get the one given collection.
+      TCollection& cellCollection = *collections.front();
+
+#ifdef _MPI
+      // create finite element space and function, a matrix, rhs, and solution
+      systems_.emplace_back(example_, cellCollection, maxSubDomainPerDof);
+#else
+      // create finite element space and function, a matrix, rhs, and solution
+      systems_.emplace_back(example_, cellCollection);
+
+      // print out some information
+      TFESpace3D & space = this->systems_.front().feSpace_;
+      double hMin, hMax;
+      cellCollection.GetHminHmax(&hMin, &hMax);
+      Output::print<1>("N_Cells    : ", setw(12), cellCollection.GetN_Cells());
+      Output::print<1>("h (min,max): ", setw(12), hMin, " ", setw(12), hMax);
+      Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
+      Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+#endif
+    }
+    else
+    {// we are using multigrid
+
+      // number of refinement levels for the multigrid
+      size_t nMgLevels = TDatabase::ParamDB->LEVELS;
+
+      // check if we have as many collections as expected multigrid levels
+      if(collections.size() != nMgLevels )
+      {
+        ErrThrow("Multigrid: Expected ", nMgLevels, " collections, "
+                 , collections.size(), " provided.");
+      }
+
+      // Create multigrid object.
+      double *param = new double[2]; // memory leak
+      param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
+      param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
+      multigrid_.reset(new TMultiGrid3D(1, 2, param));
+
+      // Construct all System(s)PerGrid and store them.
+      for(auto it : collections)
+      {
+#ifdef _MPI
+        systems_.emplace_back(example_, *it, maxSubDomainPerDof);
+#else
+        systems_.emplace_back(example_, *it);
+#endif
+      }
+
+      // Create multigrid-level-objects and add them to the multgrid object.
+      // Must be coarsest level first, therefore reverse order iteration.
+      size_t level = 0;
+      for(auto system = systems_.rbegin(); system != systems_.rend(); ++system)
+      {
+        // determine number of auxiliary arrays (cryptic thing needed by Multigrid constructor)
+        // (code taken from old ParMooN)
+        size_t nAuxArrays = 2;
+        if ( (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR)
+            || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR) )
+        { // seems this must be 4 when step length control happens
+          nAuxArrays= 4;
+        }
+
+#ifdef _MPI
+        TMGLevel3D* multigridLevel = new TMGLevel3D
+            (
+                level, system->matrix_.get_matrix(), system->rhs_.get_entries(),
+                system->solution_.get_entries(),
+                &system->parComm_, &system->parMapper_,
+                nAuxArrays, NULL
+            );
+#else
+        TMGLevel3D* multigridLevel = new TMGLevel3D
+            (
+                level, system->matrix_.get_matrix(), system->rhs_.get_entries(),
+                system->solution_.get_entries(),
+                nAuxArrays, NULL
+            );
+#endif
+        multigrid_->AddLevel(multigridLevel);
+        level++;
+      } //end constructing and adding multigrid levels
+    }//end multigrid case
   }
-
-  return;
-
-}
 
 /** ************************************************************************ */
 void CD3D::assemble()
 {
+  //determine the local assembling type to be CD3D
   LocalAssembling3D_type laType = LocalAssembling3D_type::CD3D;
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : systems_)
   {
     TFEFunction3D * feFunctionPtr = &s.feFunction_;
+
     // create a local assembling object which is needed to assemble the matrix
     LocalAssembling3D laObject(laType, &feFunctionPtr, example_.get_coeffs());
+
     // assemble the system matrix with given local assembling, solution and rhs
     s.matrix_.assemble(laObject, s.solution_, s.rhs_);
   }
@@ -125,35 +181,27 @@ void CD3D::assemble()
 /** ************************************************************************ */
 void CD3D::solve()
 {
+  // Hold a reference to the system on the finest grid.
+  SystemPerGrid& syst = systems_.front();
 
-  //hold a reference to last grid system (should be the finest -)
-  SystemPerGrid& syst = systems_.back();
-
-  //Hold some variable which will be needed in building preconditioner and solver.
-  int nDof = syst.feSpace_.GetN_DegreesOfFreedom();
-  TItMethod* preconditioner;
-  TItMethod* iterativeSolver;
-
+  // Hold some variable which will be needed in
+  // all solver variants.
   TSquareMatrix3D *sqMat[1] = { syst.matrix_.get_matrix() };
   double* solutionEntries = syst.solution_.get_entries();
   double* rhsEntries =syst.rhs_.get_entries();
-
-  #ifdef _SEQ
-  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // direct
-  {
-    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries, 
-                 solutionEntries);
-    return;
-  }
-  #endif // _SEQ (sequential)
-  
   #ifdef _MPI
   TParFECommunicator3D* parComm = &syst.parComm_;
   #endif
 
 
   if (TDatabase::ParamDB->SOLVER_TYPE == 1)
-  {   // iterative solver(s)
+  { // Iterative solver chosen.
+
+    // Hold/declare some variables which will be needed for all
+    // iterative solvers.
+    int nDof = syst.feSpace_.GetN_DegreesOfFreedom();
+    TItMethod* preconditioner;
+    TItMethod* iterativeSolver;
 
     // Determine and build preconditioner.
     switch (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
@@ -167,9 +215,11 @@ void CD3D::solve()
 #endif
         break;
       }
-      case 5: //TMultiGridScaIte
-        ErrMsg("SC_PRECONDITIONER_SCALAR: " << TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR << " has to be implemented." << endl);
+      case 5: //TMultiGridScaIte (multgrid iteration)
+        preconditioner = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar,
+                                              NULL, 0, nDof, multigrid_.get() , 1);
         break;
+
       default:
         ErrMsg("Unknown SC_PRECONDITIONER_SCALAR: " << TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR);
     } //end building preconditioner
@@ -193,16 +243,43 @@ void CD3D::solve()
         ErrMsg("Unknown solver !!!" << endl);
     }
     //call the solver
-    iterativeSolver->Iterate((TSquareMatrix**) sqMat, nullptr, solutionEntries, rhsEntries);
+    if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+    { //using multgrid
+      // \todo The multgrid object and the iterative solver work on different copies of the solution and rhs. Is this necessary?
 
+      //make copies on which the iterative solver may work
+      double* iterativeSol = new double[nDof];
+      double* iterativeRhs = new double[nDof];
+      memcpy(iterativeSol, solutionEntries, nDof*SizeOfDouble);
+      memcpy(iterativeRhs, rhsEntries, nDof*SizeOfDouble);
+
+      //call the solver
+      iterativeSolver->Iterate((TSquareMatrix**) sqMat, nullptr, iterativeSol, iterativeRhs);
+
+      //copy back & tidy up
+      memcpy(solutionEntries, iterativeSol, nDof*SizeOfDouble);
+      memcpy(rhsEntries, iterativeRhs, nDof*SizeOfDouble);
+      delete[] iterativeSol;
+      delete[] iterativeRhs;
+    }
+    else
+    {
+      iterativeSolver->Iterate((TSquareMatrix**) sqMat, nullptr, solutionEntries, rhsEntries);
+    }
     delete preconditioner;
     delete iterativeSolver;
 
   }
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
-  { //direct solver
-    ErrThrow("Direct solver not yet implemented. Chose "
+  { // Direct solver chosen.
+#ifdef _SEQ
+    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries,
+                 solutionEntries);
+    return;
+#else
+    ErrThrow("Direct solver not yet implemented in parallel. Chose "
         "SOLVER_TYPE: 1 (iterative solver).");
+#endif
   }
   else
   {
@@ -218,7 +295,7 @@ void CD3D::output(int i)
   }
 
   //hold a reference to the finest grid system
-    SystemPerGrid& syst = systems_.back() ;
+    SystemPerGrid& syst = systems_.front() ;
 
   // print the value of the largest and smallest entry in the FE vector
     syst.feFunction_.PrintMinMax();
@@ -289,8 +366,8 @@ void CD3D::checkParameters()
   if (TDatabase::ParamDB->PROBLEM_TYPE != 1)
   {
     TDatabase::ParamDB->PROBLEM_TYPE = 1; //set correct problem type
-    OutPut("PROBLEM_TYPE set to 1 (convection-diffusion-reaction), "
-        "for this is class CD3D." << endl);
+    Output::print("PROBLEM_TYPE set to 1 (convection-diffusion-reaction), "
+        "for this is class CD3D.");
   }
 
   // the only solving strategy implemented is iterative
@@ -300,34 +377,54 @@ void CD3D::checkParameters()
     ErrThrow("Only SOLVER_TYPE: 1 (iterative solver) is implemented so far.");
   }
 #endif // not sequential
-  // among the iterative solvers only 11 (fix point iteration
-  // (Richardson) is working)
+  // among the iterative solvers only 11 (fixed point iteration/
+  // Richardson) is working
   if(TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
   {
       ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
   }
 
-
-  // the only preconditioner implemented is Jacobi
-  // among the iterative solvers only 11 (fix point iteration
-  // (Richardson) is working)
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1)
-  {
-      ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) is implemented so far.")
+  // this has to do with the relation of UNIFORM_STEPS and LEVELS
+  // so far this strategy to treat them is only followed here, it should be unified
+  // helper variable
+  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5
+                        && TDatabase::ParamDB->SOLVER_TYPE == 1;
+  if (!usingMultigrid)
+  { //case of direct solve or non-multigrid iterative solve
+    if (TDatabase::ParamDB->LEVELS < 1)
+    {
+      ErrThrow("Parameter LEVELS must be greater or equal 1.");
+    }
+    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
+    TDatabase::ParamDB->LEVELS = 1;
+    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added"
+        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
+        TDatabase::ParamDB->UNIFORM_STEPS, ".");
+  }
+  else if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+  {  // iterative solve with multigrid prec
+    if (TDatabase::ParamDB->LEVELS < 2)
+    {
+      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
+    }
   }
 
-#ifdef _MPI // problems only knwon in MPI case
+  // the only preconditioners implemented are Jacobi and multigrid
+  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1 &&
+     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5)
+  {
+    ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
+        " are implemented so far.");
+  }
+
+#ifdef _MPI // problems only known in MPI case
   // the case of ANSATZ_ORDER: 1 is known to not converge
   // (this is currently under investigation)
+  // TODO might be this works with a mg predonditioner!
   if (TDatabase::ParamDB->ANSATZ_ORDER == 1)
   {
     ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI. Choose 2.");
   }
 #endif
 }
-
-
-
-
-
 
