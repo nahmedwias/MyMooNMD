@@ -98,7 +98,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;;
+  const int *ColInd, *RowPtr;;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -1268,7 +1268,7 @@ double factor
   int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -2308,8 +2308,8 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double *AuxArray[MaxN_QuadPoints_2D];
   int *DOF, ActiveBound;
   double *Entries1,*Entries2,*Entries3, *Entries4, *Entries5;
-  int *ColInd1, *RowPtr1,*ColInd2, *RowPtr2, *ColInd3, *RowPtr3;
-  int *RowPtr4, *RowPtr5;
+  const int *ColInd1, *RowPtr1,*ColInd2, *RowPtr2, *ColInd3, *RowPtr3;
+  const int * RowPtr4, *RowPtr5;
   double *RHS;
   double **HangingEntries, **HangingRhs;
   TBoundComp *BoundComp;
@@ -4730,7 +4730,7 @@ int *CounterBoundaryParam
   int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -5729,11 +5729,11 @@ int *CounterBoundaryParam
 void ModifyDivergenceMatrices(int N_Active, int N_Dirichlet,
 TMatrix2D *B1, TMatrix2D *B2)
 {
-  int i, entries, *columns;
+  int i, entries;
   double *B1Entries, *B2Entries;
 
   entries = B1->GetN_Entries();
-  columns =   B1->GetKCol();
+  const int * columns =   B1->GetKCol();
   B1Entries = B1->GetEntries();
   B2Entries = B2->GetEntries();
 
@@ -5764,8 +5764,8 @@ double density_other)
 {
   int i,j, N_DOF;
   int start,end,indexColumn,indexRow;
-  int *RowPtrA11, *KColA11, *RowPtrA12, *RowPtrA21, *RowPtrA22;
-  int *KColA22, *RowPtrB1T, *RowPtrB2T;
+  const int *RowPtrA11, *KColA11, *RowPtrA12, *RowPtrA21, *RowPtrA22;
+  const int *KColA22, *RowPtrB1T, *RowPtrB2T;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22, *EntriesB1T, *EntriesB2T;
   TSquareMatrix *A11, *A12, *A21, *A22;
   TMatrix2D *B1T, *B2T;
@@ -5927,8 +5927,8 @@ double *rhs_for_stress_other)
 {
   int i,j, N_DOF, N_DOF_other;
   int start,end,indexColumn,indexRow;
-  int *RowPtrA11, *RowPtrA21, *KColA21;
-  int *RowPtrA22, *KColA22, *RowPtrB1T;
+  const int *RowPtrA11, *RowPtrA21, *KColA21;
+  const int *RowPtrA22, *KColA22, *RowPtrB1T;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22, *EntriesB1T, *EntriesB2T;
   double entrieA11,entrieA21,entrieA22,entrieA12,entrieB1T,entrieB2T;
   TSquareMatrix *A11, *A12, *A21, *A22;
@@ -6145,8 +6145,8 @@ TAuxParam2D *Parameters)
   double *Coeffs[MaxN_QuadPoints_2D];
   int *DOF, ActiveBound, end;
   double *Entries,*Entries1;
-  int *ColInd, *RowPtr;
-  int *ColInd1, *RowPtr1;
+  const int *ColInd, *RowPtr;
+  const int *ColInd1, *RowPtr1;
   double *RHS;
   double **HangingEntries, **HangingRhs;
   TBoundComp *BoundComp;
@@ -7641,8 +7641,8 @@ TAuxParam2D *Parameters)
   double *Coeffs[MaxN_QuadPoints_2D];
   int *DOF, ActiveBound, end;
   double *Entries,*Entries1;
-  int *ColInd, *RowPtr;
-  int *ColInd1, *RowPtr1;
+  const int *ColInd, *RowPtr;
+  const int *ColInd1, *RowPtr1;
   double *RHS;
   TBoundComp *BoundComp;
   double t0, t1, t, s,integral;
@@ -9322,11 +9322,11 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
+  const int *HangingRowPtr, *HangingColInd;
   THangingNode *hn, **HangingNodes;
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;

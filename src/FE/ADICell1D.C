@@ -200,7 +200,7 @@ void TADICell1D::AssembleARhs(double x, double Conv, CoeffFct2D *Bilinear, Bound
 {
  int i, j, k, l, N_Cells_Internal, N_BaseFunct;
  int N_Points, N_Sets=1, *GlobalNumbers, *BeginIndex, *DOF;
- int TestDOF, begin, end, *RowPtr, *KCol;
+ int TestDOF, begin, end;
 
  double *Weights, *zeta, X[MaxN_QuadPoints_1D], AbsDetjk[MaxN_QuadPoints_1D];
  double **aux, **coeff, *Coeff;
@@ -225,8 +225,8 @@ void TADICell1D::AssembleARhs(double x, double Conv, CoeffFct2D *Bilinear, Bound
   GlobalNumbers = FESpace1D_Internal->GetGlobalNumbers();
   BeginIndex = FESpace1D_Internal->GetBeginIndex();
 
-  RowPtr = A_Internal->GetRowPtr();
-  KCol = A_Internal->GetKCol();
+  const int * RowPtr = A_Internal->GetRowPtr();
+  const int * KCol = A_Internal->GetKCol();
   ValuesA = A_Internal->GetEntries(); 
 
   N_Cells_Internal = Collection_Internal->GetN_Cells();
