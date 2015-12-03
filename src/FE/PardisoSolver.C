@@ -160,8 +160,8 @@ TPardisoSolver::~TPardisoSolver()
 void TPardisoSolver::SetMatrix(TSquareMatrix2D *Matrix)
 {
   double *entries = Matrix->GetEntries();
-  int *kcol = Matrix->GetKCol();
-  int *rowptr = Matrix->GetRowPtr();
+  const int *kcol = Matrix->GetKCol();
+  const int *rowptr = Matrix->GetRowPtr();
 
   N_Eq = Matrix->GetN_Rows();
   N_Entries = Matrix->GetN_Entries();
@@ -185,13 +185,13 @@ void TPardisoSolver::SetMatrix(TSquareMatrix2D *Matrix)
 // nstype 1
 void TPardisoSolver::SetMatrix(TSquareMatrix2D *A, TMatrix *B1, TMatrix *B2)
 {
-  int i, j, k, l, begin, end, pos, len;
-  int N_U, N_P, N_, N_Active;
+  int i, j, k, l, begin, end, pos;
+  int N_U, N_P, N_Active;
 
-  int *KColA = A->GetKCol();
-  int *RowPtrA = A->GetRowPtr();
-  int *KColB = B1->GetKCol();
-  int *RowPtrB = B1->GetRowPtr();
+  const int *KColA = A->GetKCol();
+  const int *RowPtrA = A->GetRowPtr();
+  const int *KColB = B1->GetKCol();
+  const int *RowPtrB = B1->GetRowPtr();
 
   double *EntriesA = A->GetEntries();
   double *EntriesB1 = B1->GetEntries();
@@ -329,14 +329,14 @@ void TPardisoSolver::SetMatrix(TSquareMatrix2D *A, TMatrix *B1, TMatrix *B2)
 
 void TPardisoSolver::SetMatrixPar(TSquareMatrix2D *A, TMatrix *B1, TMatrix *B2)
 {
-  int i, j, k, l, begin, end, pos1, pos2;
-  int N_U, N_P, N_, N_Active;
+  int i, j, l, begin, end, pos1, pos2;
+  int N_U, N_P, N_Active;
 
   int *ColPtrB, *KRowB, *MapBT;
-  int *KColA = A->GetKCol();
-  int *RowPtrA = A->GetRowPtr();
-  int *KColB = B1->GetKCol();
-  int *RowPtrB = B1->GetRowPtr();
+  const int *KColA = A->GetKCol();
+  const int *RowPtrA = A->GetRowPtr();
+  const int *KColB = B1->GetKCol();
+  const int *RowPtrB = B1->GetRowPtr();
 
   double *EntriesA = A->GetEntries();
   double *EntriesB1 = B1->GetEntries();
@@ -458,7 +458,7 @@ void TPardisoSolver::SetMatrix(TSquareMatrix2D *sqmatrixA,
 				 TMatrix2D *matrixB1,  TMatrix2D *matrixB2)
 {
   int i, j, pos, begin, end, N_U, N_P, N_Active;
-  int *KColA, *KColB, *KColBT, *RowPtrA, *RowPtrB, *RowPtrBT;
+  const int *KColA, *KColB, *KColBT, *RowPtrA, *RowPtrB, *RowPtrBT;
   double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
 
   N_U = sqmatrixA->GetN_Rows();
@@ -568,7 +568,7 @@ void TPardisoSolver::SetMatrix(TSquareMatrix2D *sqmatrixA11,
       TMatrix2D *matrixB2T, TMatrix2D *matrixB1,  TMatrix2D *matrixB2)
 {
   int i, j, pos, begin, end, N_U, N_P, N_Active;
-  int *KColA, *KColB, *KColBT, *RowPtrA, *RowPtrB, *RowPtrBT;
+  const int *KColA, *KColB, *KColBT, *RowPtrA, *RowPtrB, *RowPtrBT;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
   double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   
@@ -695,8 +695,8 @@ void TPardisoSolver::SetMatrix(TSquareMatrix3D *sqmatrixA,
 		      TMatrix3D *matrixB1, TMatrix3D *matrixB2, TMatrix3D *matrixB3)
 {
   int N_U, N_P, N_Active, pos;
-  int *KColA, *KColB, *KColBT;
-  int *RowPtrA, *RowPtrB, *RowPtrBT;
+  const int *KColA, *KColB, *KColBT;
+  const int *RowPtrA, *RowPtrB, *RowPtrBT;
   int i, j, begin, end;
   
   double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB3;
@@ -865,7 +865,7 @@ void TPardisoSolver::SetMatrix(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sq
   double *EntriesA11, *EntriesA12, *EntriesA13, *EntriesA21, *EntriesA22, *EntriesA23;
   double *EntriesA31, *EntriesA32, *EntriesA33, *EntriesB1, *EntriesB2, *EntriesB3;
   double *EntriesB1T, *EntriesB2T, *EntriesB3T;
-  int *KColA, *RowPtrA, *KColB, *RowPtrB, *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA, *KColB, *RowPtrB, *KColBT, *RowPtrBT;
   int N_U, N_P, N_, N_Active;
   int i, j, begin, end, pos;
   
@@ -1309,7 +1309,8 @@ void TPardisoSolver::FreeMemory()
 #ifdef __2D__
 // nstype 1
 void TPardisoSolver::FillRowPtr(int N_U, int N_P, int N_Active,
-				  int *RowPtrA, int *RowPtrB, int *ColPtrB)
+                                const int *RowPtrA, const int *RowPtrB,
+                                const int *ColPtrB)
 {
   int N_EntriesA, N_EntriesB, N_;
 
@@ -1353,8 +1354,8 @@ void TPardisoSolver::FillRowPtr(int N_U, int N_P, int N_Active,
 void TPardisoSolver::GetTransposedArrays(TMatrix *B, int *&KRowB,
 					   int *&ColPtrB, int *&MapB)
 {
-  int N_C, N_R, N_EntriesB, begin, end, len, index;
-  int *KColB , *RowPtrB;
+  int N_C, N_R, N_EntriesB, begin, end, index;
+  const int *KColB , *RowPtrB;
 
 // cout << "Enter GetTransposedArrays()" << endl;
 

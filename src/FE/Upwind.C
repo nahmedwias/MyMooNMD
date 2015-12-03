@@ -135,7 +135,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double x,y;
   double u1old, u2old;
   double *coeffs, *params;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *Entries;
   int ActiveBound, DirichletBound, end;
   FE2D CurrentElement;
@@ -347,7 +347,7 @@ int ConvIsVelo)
   double sx, sy, t, phi, s;
   double nx, ny, x, y;
   double nxs[4], nys[4];
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *Entries;
   int ActiveBound, DirichletBound, end;
   double *coeff = new double[6], *param = new double[9];
@@ -1198,7 +1198,8 @@ BoundCondFunct2D *BoundaryCondition)
   double sx, sy, t, phi, s;
   double nx, ny, x, y;
   double nxs[4], nys[4];
-  int *ColInd, *RowPtr, jj, ii;
+  const int *ColInd, *RowPtr;
+  int jj, ii;
   double *Entries;
   int ActiveBound, DirichletBound, end;
   double *coeff = new double[6], *param = new double[1];
