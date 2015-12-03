@@ -46,10 +46,10 @@ class TMGLevel2D
     const TStructure *MatrixStructure;
 
     /** row pointer for matrix */
-    int *RowPtr;
+    const int *RowPtr;
 
     /** column number vector */
-    int *KCol;
+    const int *KCol;
 
     /** matrix entries */
     double *Entries;
