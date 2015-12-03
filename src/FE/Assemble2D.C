@@ -102,7 +102,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
+  const int *HangingRowPtr, *HangingColInd;
   THangingNode *hn, **HangingNodes;
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
@@ -1272,7 +1272,7 @@ double factor
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
+  const int *HangingRowPtr, *HangingColInd;
   THangingNode *hn, **HangingNodes;
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
@@ -4734,7 +4734,7 @@ int *CounterBoundaryParam
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
+  const int *HangingRowPtr, *HangingColInd;
   THangingNode *hn, **HangingNodes;
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;

@@ -97,7 +97,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
+  const int *HangingRowPtr, *HangingColInd;
   THangingNode *hn, **HangingNodes;
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
@@ -1239,7 +1239,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  double *RHS, *MatrixRow;
 	  double **HangingEntries, **HangingRhs;
 	  double *CurrentHangingEntries, *CurrentHangingRhs;
-	  int *HangingRowPtr, *HangingColInd;
+	  const int *HangingRowPtr, *HangingColInd;
 	  THangingNode *hn, **HangingNodes;
 	  HNDesc HNDescr;
 	  THNDesc *HNDescr_Obj;
