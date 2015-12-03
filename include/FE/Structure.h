@@ -95,10 +95,10 @@ class TStructure
     int nHangingEntries;
 
     /** @brief in which column is the current entry (hanging nodes part) */
-    int *hangingColums;
+    std::vector<int> hangingColums;
 
     /** @brief index in hangingColums where each row starts */
-    int *HangingRows;
+    std::vector<int> HangingRows;
     
     /** @brief sort all rows in increasing order */
     void Sort();
@@ -193,7 +193,7 @@ class TStructure
     TStructure& operator=(TStructure&&) = delete;
 
     /// @brief Default destructor.
-    ~TStructure();
+    ~TStructure() = default;
     
     
     /// @brief return if this structure is square
@@ -248,7 +248,7 @@ class TStructure
 
     /** @brief return array hangingColums */
     const int *GetHangingKCol() const
-    { return hangingColums; }
+    { return &hangingColums[0]; }
 
     /** @brief return array row pointer */
     const int *GetRowPtr() const
@@ -264,7 +264,7 @@ class TStructure
 
     /** return array HangingRowPtr */
     const int *GetHangingRowPtr() const
-    { return HangingRows; }
+    { return &HangingRows[0]; }
     
     /**
      * @brief find the index of a given entry

@@ -311,7 +311,6 @@ TStructure::TStructure( const TFESpace2D* space )
   int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
   int HangingBound;
 
-  int *HangingAuxPtr;
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
@@ -353,8 +352,7 @@ TStructure::TStructure( const TFESpace2D* space )
   std::vector<int> AuxPtr(l, 0);
 
   l=N_Hanging+1;
-  HangingAuxPtr=new int[l];
-  memset(HangingAuxPtr, 0, l*sizeof(int));
+  std::vector<int> HangingAuxPtr(l, 0);
 
   GlobalNumbers = space->GetGlobalNumbers();
 
@@ -956,7 +954,7 @@ TStructure::TStructure( const TFESpace2D* space )
   // compress HangingKColAux array to hangingColums by deleting all -1's
   // build the HangingRows array
   N_=N_Hanging;
-  hangingColums=new int[nHangingEntries];
+  hangingColums.resize(nHangingEntries, 0);
   HangingRows=HangingAuxPtr;
 
   index=0;
@@ -1153,7 +1151,6 @@ TStructure::TStructure( const TFESpace3D *space )
   int *BoundNodeBounds, N_NonDiri, N_BoundaryNodeTypes;
   int HangingBound;
 
-  int *HangingAuxPtr;
   int *KColAux, *HangingKColAux;
   int index, oldindex;
 
@@ -1195,8 +1192,7 @@ TStructure::TStructure( const TFESpace3D *space )
   std::vector<int> AuxPtr(l, 0);
 
   l=N_Hanging+1;
-  HangingAuxPtr=new int[l];
-  memset(HangingAuxPtr, 0, l*sizeof(int));
+  std::vector<int> HangingAuxPtr(l, 0);
 
   Offset=ActiveBound;
 
@@ -1416,7 +1412,7 @@ TStructure::TStructure( const TFESpace3D *space )
   // compress HangingKColAux array to hangingColums by deleting all -1's
   // build the HangingRows array
   N_=N_Hanging;
-  hangingColums=new int[nHangingEntries];
+  hangingColums.resize(nHangingEntries, 0);
   HangingRows=HangingAuxPtr;
 
   index=0;
@@ -1627,7 +1623,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
   FE2D CurrentElement; 
 
   int TestN_Hanging, AnsatzN_Hanging;
-  int *HangingAuxPtr;
   int TestActiveBound, TestHangingBound;
   int AnsatzActiveBound, AnsatzHangingBound;
   int Offset, *DOF;
@@ -1698,8 +1693,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   std::vector<int> AuxPtr(l);
 
   l=TestN_Hanging+1;
-  HangingAuxPtr=new int[l];
-  memset(HangingAuxPtr, 0, l*sizeof(int));
+  std::vector<int> HangingAuxPtr(l, 0);
 
   Offset = TestActiveBound;
 
@@ -2211,7 +2205,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // compress HangingKColAux array to hangingColums by deleting all -1's
   // build the HangingRows array
   N_=TestN_Hanging;
-  hangingColums=new int[nHangingEntries];
+  hangingColums.resize(nHangingEntries);
   HangingRows=HangingAuxPtr;
 
   index=0;
@@ -3496,8 +3490,8 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
 
 TStructure::TStructure() 
  : nRows(0), nColumns(0), nEntries(0), columns(), rows(),
-   ActiveBound(0), ColOrder(0), nHangingEntries(0), hangingColums(nullptr),
-   HangingRows(nullptr)
+   ActiveBound(0), ColOrder(0), nHangingEntries(0), hangingColums(),
+   HangingRows()
 {
 }
 
@@ -3511,7 +3505,7 @@ TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr,
                        int *row_ptr)
  : nRows(nRows), nColumns(nCols), nEntries(nEntries), columns(nEntries, 0), 
    rows(nRows+1), ActiveBound(0), ColOrder(0), nHangingEntries(0),
-   hangingColums(nullptr), HangingRows(nullptr)
+   hangingColums(), HangingRows()
 {
   std::copy(col_ptr, col_ptr + this->GetN_Entries(), this->columns.begin());
   std::copy(row_ptr, row_ptr + this->GetN_Rows() + 1, this->rows.begin());
@@ -3521,7 +3515,7 @@ TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr,
 TStructure::TStructure(int nRows, int nCols)
  : nRows(nRows), nColumns(nCols), nEntries(0), columns(), 
    rows(nRows+1, 0), ActiveBound(0), ColOrder(0), nHangingEntries(0),
-   hangingColums(nullptr), HangingRows(nullptr)
+   hangingColums(), HangingRows()
 {
 }
 
@@ -4592,11 +4586,8 @@ TStructure::TStructure(const TStructure& s)
    columns(s.columns), rows(s.rows), 
    ActiveBound(s.ActiveBound), ColOrder(s.ColOrder),
    nHangingEntries(s.nHangingEntries),
-   hangingColums(new int[s.nHangingEntries]), HangingRows(nullptr)
+   hangingColums(s.hangingColums), HangingRows(s.HangingRows)
 {
-  // copy the data
-  memcpy(this->hangingColums, s.GetHangingKCol(), 
-         this->GetHangingN_Entries()*sizeof(int));
 }
 
 /* sort column numbers: diag is first element, other numbers are increasing */
@@ -4660,13 +4651,6 @@ void TStructure::Sort()
     end = rows[i+1];
     SortRow(&columns[0]+begin, &columns[0]+end);
   } // endfor i
-}
-
-/* destructor */
-TStructure::~TStructure()
-{
-  delete [] hangingColums;
-  delete [] HangingRows;
 }
 
 int TStructure::index_of_entry(const int i, const int j) const
