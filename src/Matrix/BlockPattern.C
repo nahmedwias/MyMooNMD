@@ -69,10 +69,10 @@ BlockPattern::BlockPattern(const Problem_type t, unsigned int space_dimension,
         // the last three are the pressure-velocity blocks
         this->pattern_of_blocks = {0,0,0,1 ,0,0,0,1, 0,0,0,1, 2,2,2,3};
       }
-      if(mass_matrix) // time dependent case
+      /*if(mass_matrix) // time dependent case
       {
         ErrThrow("time dependent case not yet implemented for Navier--Stokes");
-      }
+      }*/
       break;
     }
     case Problem_type::Darcy:
