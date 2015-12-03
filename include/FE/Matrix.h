@@ -111,11 +111,11 @@ class TMatrix
     { return structure->GetHangingN_Entries(); }
     
     /// @brief return the column pointer corresponding to hanging nodes
-    int *GetHangingKCol() const
+    const int *GetHangingKCol() const
     { return structure->GetHangingKCol(); }
     
     /// @brief return the row pointer corresponding to hanging nodes
-    int *GetHangingRowPtr() const
+    const int *GetHangingRowPtr() const
     { return structure->GetHangingRowPtr(); }
     
     /// @brief return structure

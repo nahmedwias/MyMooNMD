@@ -247,7 +247,7 @@ class TStructure
     { return &columns[0]; }
 
     /** @brief return array hangingColums */
-    int *GetHangingKCol() const
+    const int *GetHangingKCol() const
     { return hangingColums; }
 
     /** @brief return array row pointer */
@@ -263,7 +263,7 @@ class TStructure
     { return &rows[0]; }
 
     /** return array HangingRowPtr */
-    int *GetHangingRowPtr() const
+    const int *GetHangingRowPtr() const
     { return HangingRows; }
     
     /**
