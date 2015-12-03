@@ -30,13 +30,15 @@ class BlockMatrixNSE2D : public BlockMatrix
   public:
     /** constructor */
      BlockMatrixNSE2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                      BoundValueFunct2D * const * const BoundValue);
+                      BoundValueFunct2D * const * const BoundValue, 
+                      bool mass_matrix= false);
      
     /** destrcutor */
     ~BlockMatrixNSE2D();
     
     /** assemble the system matrix */
-    void Assemble(LocalAssembling2D& la, BlockVector& rhs);
+    void Assemble(LocalAssembling2D& la, BlockVector& rhs, 
+                  BlockMatrixNSE2D* mass = nullptr);
     
     /** assemble the nonlinear part of the NSE system */
     void AssembleNonLinear(LocalAssembling2D& la);
