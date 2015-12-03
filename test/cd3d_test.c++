@@ -58,6 +58,10 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
   TDatabase::ParamDB->Comm = comm;
+  // Hold mpi rank and size ready.
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 #endif
 
   TFEDatabase3D feDatabase;
@@ -219,6 +223,10 @@ int main(int argc, char* argv[])
     // it was initialized during run of first program.
     // (...and got reset to MPI_COMM_WORLD by SetDefaultParameters())
     MPI_Comm comm = TDatabase::ParamDB->Comm;
+    // Hold mpi rank and size ready.
+    int mpiRank, mpiSize;
+    MPI_Comm_rank(comm, &mpiRank);
+    MPI_Comm_size(comm, &mpiSize);
 #endif
 
     // Construct domain.
