@@ -23,6 +23,10 @@ namespace  ana_sol_Stokes_Darcy3
 {
   #include "Examples/ana_sol_Stokes_Darcy.h"
 }
+namespace porousObstacle
+{
+#include "Examples/porousObstacle.h"
+}
 
 Example_StokesDarcy2D::Example_StokesDarcy2D() : Example2D()
 {
@@ -162,6 +166,40 @@ Example_StokesDarcy2D::Example_StokesDarcy2D() : Example2D()
       primal_darcy_coeffs  = ana_sol_Stokes_Darcy3::LinCoeffs_Darcy;
       
       ana_sol_Stokes_Darcy3::ExampleFile();
+      break;
+    case 4:
+      /** exact_solution */
+      exact_solution.push_back( porousObstacle::ExactU1_NSE );
+      exact_solution.push_back( porousObstacle::ExactU2_NSE );
+      exact_solution.push_back( porousObstacle::ExactP_NSE );
+      exact_solution.push_back( porousObstacle::ExactU1_Darcy ); // mixed
+      exact_solution.push_back( porousObstacle::ExactU2_Darcy ); // mixed
+      exact_solution.push_back( porousObstacle::ExactP_Darcy );
+  
+      /** boundary condition */
+      boundary_conditions.push_back( porousObstacle::BoundCondition_NSE);
+      boundary_conditions.push_back( porousObstacle::BoundCondition_NSE);
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      boundary_conditions.push_back( porousObstacle::BC_Velocity_Darcy);//mixed
+      boundary_conditions.push_back( BoundConditionNoBoundCondition ); // mixed
+      boundary_conditions.push_back( porousObstacle::BC_Darcy );// primal
+  
+      /** boundary values */
+      boundary_data.push_back( porousObstacle::U1BoundValue_NSE );
+      boundary_data.push_back( porousObstacle::U2BoundValue_NSE );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      //mixed
+      boundary_data.push_back(porousObstacle::BoundValueVelocity_Darcy);
+      boundary_data.push_back( BoundaryValueHomogenous ); // mixed
+      // primal
+      boundary_data.push_back( porousObstacle::BoundValue_Darcy ); 
+      
+      /** coefficients */
+      problem_coefficients = porousObstacle::LinCoeffs_NSE;
+      mixed_darcy_coeffs   = porousObstacle::LinCoeffs_DarcyMixed;
+      primal_darcy_coeffs  = porousObstacle::LinCoeffs_Darcy;
+      
+      porousObstacle::ExampleFile();
       break;
     default:
       ErrMsg("Unknown name of the Stokes--Darcy' example!");
