@@ -12,8 +12,20 @@ class BlockVector;
 * @class      BlockMatrix
 * @brief      represent a matrix consisting of blocks which are sparse matrices
 *
-*             This is a purely algebraic object.
+*             This is a purely algebraic object. And one which does frequently
+*             appear in FEM. Identifying and exploiting a certain block structure
+*             of matrices is a fundamental concept of solvers in CFD.
 *             
+*             \todo The blockmatrix does not follow the rule of 0/5 yet.
+*             The unresolved problem is that it does own a vector of pointers
+*             to its blocks, but these are only shallow copied in the copy
+*             and move constructor. If we implement a copy constructor that
+*             makes deep copies of the objects as TMatrix, we must make sure
+*             in the derived classes, that their copy constructors do not call
+*             the base class copy constructor (high overhead!) but instead perform
+*             their own copy or move actions along with their knowledge about the actual
+*             type ("FEMatrix") of the matrices.
+*
 * @author     Ulrich Wilbrandt
 * @date       08.09.2015
 *
@@ -21,8 +33,13 @@ class BlockVector;
 class BlockMatrix
 {
   protected:
-    /// @brief the block pattern, determining e.g. the number of blocks
+    /** @brief the block pattern, determining e.g. the number of blocks
+     *
+     *  A matrix with a fixed block pattern does not change it again,
+     *  this is why we can store a shared_ptr to a const object here.
+     */
     std::shared_ptr<const BlockPattern> block_pattern;
+
     /** @brief the blocks, each is a sparse matrix (consider vector<vector<>>)
      * 
      * We store pointers to sparse matrices because we allow constructors 
@@ -108,7 +125,7 @@ class BlockMatrix
      * All blocks contain zeros only.
      */
     BlockMatrix(std::shared_ptr<const BlockPattern>);
-    
+
     /** @brief copy constructor */
     BlockMatrix(BlockMatrix&);
     
