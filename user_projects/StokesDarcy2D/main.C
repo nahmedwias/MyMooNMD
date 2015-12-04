@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
    * the matrix does not change during the interface iteration !!
    * ========================       NSE        ============================= */
   std::vector<InterfaceCondition> interface_conditions;
-  if(!D_RR && !pt == Robin_Robin)
+  if(!D_RR && pt != Robin_Robin)
     interface_conditions.push_back(Neumann);
   if(solution_strategy == 3 || solution_strategy == -3) // Stecklov-Poincare
     interface_conditions.push_back(Dirichlet);

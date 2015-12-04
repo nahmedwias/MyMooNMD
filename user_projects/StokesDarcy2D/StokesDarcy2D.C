@@ -1637,14 +1637,10 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
    * does not work for Raviart-Thomas elements (yet)                       */
   if(TDatabase::ParamDB->SC_VERBOSE)
   {
-    Output::print<1>(" Navier-Stokes ");
-    p_NSE.PrintMinMax();
-    Output::print<1>(" Navier-Stokes ");
-    u1_NSE->PrintMinMax();
-    Output::print<1>(" Navier-Stokes ");
-    u2_NSE->PrintMinMax();
-    Output::print<1>(" Darcy ");
-    p_Darcy.PrintMinMax();
+    p_NSE.PrintMinMax(" Navier-Stokes pressure");
+    u1_NSE->PrintMinMax(" Navier-Stokes u1");
+    u2_NSE->PrintMinMax(" Navier-Stokes u2");
+    p_Darcy.PrintMinMax(" Darcy");
   }
   /* ==========================================================================
    *  write vtk-files, one for each subdomain                                */

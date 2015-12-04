@@ -37,19 +37,6 @@ StokesProblem::StokesProblem(const TDomain & domain,
 {
   //OutPut("StokesProblem constructor\n");
   
-  // the matrix blocks in this->NSE2D::matrix all have the same structure (where
-  // possible), since we want to change those structures individually, we copy
-  // the structure often enough so that each matrix block has its own structure
-  const TStructure & sq = 
-    this->get_matrix().get_A_block(0)->GetStructure();
-  this->get_matrix().get_A_block(1)->SetStructure(std::make_shared<TStructure>(sq));
-  this->get_matrix().get_A_block(2)->SetStructure(std::make_shared<TStructure>(sq));
-  this->get_matrix().get_A_block(3)->SetStructure(std::make_shared<TStructure>(sq));
-  const TStructure & rs1 = this->get_matrix().get_BT_block(0)->GetStructure();
-  this->get_matrix().get_BT_block(1)->SetStructure(std::make_shared<TStructure>(rs1));
-  const TStructure & rs2 = this->get_matrix().get_B_block(0)->GetStructure();
-  this->get_matrix().get_B_block(1)->SetStructure(std::make_shared<TStructure>(rs2));
-  
   // copy values from right hand side. 
   DrhsNSE = this->get_rhs(); // From now on DrhsNSE is not changed any more
   this->get_rhs().reset();
@@ -1489,6 +1476,9 @@ void StokesProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       QFId = TFEDatabase2D::GetQFLineFromDegree(fe_degree);
       TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(QFId);
       qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+      // make sure all functions & derivatives are available for this quadrature
+      uBf->MakeRefElementData(QFId);
+      pBf->MakeRefElementData(QFId);
       // qf1 no longer needed, only local scope
     }
     else
@@ -1502,10 +1492,6 @@ void StokesProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       zeta[1] = 0.;
       zeta[2] = 1.;
     }
-    
-    // make sure all functions & derivatives are available for this quadrature
-    uBf->MakeRefElementData(QFId);
-    pBf->MakeRefElementData(QFId);
     
     // compute length of the edge
     const double hE = thisEdge->GetLength();

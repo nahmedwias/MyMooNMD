@@ -21,14 +21,14 @@
 
 void ExampleFile()
 {
-  OutPut("Example: SinCosPolynomial_BJS.h\n");
+  Output::print<1>("\nExample: SinCosPolynomial_BJS.h");
   
   // set the boundary condition u.t + alpha t.T.n = 0 on the interface (BJS)
   TDatabase::ParamDB->StoDa_interfaceType = 0;
   if(TDatabase::ParamDB->SIGMA_PERM!=1.0 || TDatabase::ParamDB->RE_NR!=1.0)
   {
-    OutPut("\n\nWARNING: This example requires reynolds number = 1 and "
-         << "Permeability = 1.\n\n\n");
+    Output::print<1>("\nWARNING: This example requires reynolds number = 1 and ",
+                     "Permeability = 1.\n\n");
   }
   TDatabase::ParamDB->SIGMA_PERM = 1;
   TDatabase::ParamDB->RE_NR = 1;
@@ -110,7 +110,8 @@ void BC_Darcy(int bdComp, double t, BoundCond &cond)
       //cond = NEUMANN;
       cond = DIRICHLET;  
       break;
-    default: cout << "BoundCondition_Darcy: wrong boundary part number" << endl;
+    default:
+      ErrThrow("BoundCondition_Darcy: wrong boundary part number");
       break;
   }
 }
@@ -127,7 +128,8 @@ void BC_Velocity_Darcy(int bdComp, double t, BoundCond &cond)
       case 2: 
         cond = DIRICHLET;  
         break;
-      default: cout << "BC_Velocity_Darcy: wrong boundary part number" << endl;
+      default:
+        ErrThrow("BC_Velocity_Darcy: wrong boundary part number");
         break;
     }
 }
@@ -137,13 +139,13 @@ void BoundCondition_NSE(int bdComp, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
   if(bdComp==0 || bdComp==1 || bdComp==2)
-    cout << "BoundCondition_NSE: wrong boundary part number";
+    ErrThrow("BoundCondition_NSE: wrong boundary part number");
 }
 void BoundConditionPressure_NSE(int bdComp, double t, BoundCond &cond)  
 {
   cond = NEUMANN;
   if(bdComp==0 || bdComp==1 || bdComp==2)
-    cout << "BoundConditionPressure_NSE: wrong boundary part number";
+    ErrThrow("BoundConditionPressure_NSE: wrong boundary part number");
 }
 
 // ============================================================================
@@ -165,7 +167,8 @@ void BoundValue_Darcy(int bdComp, double t, double &value)
       //value = -exp(-1+t); // NEUMANN
       value = 0; //DIRICHLET 
       break;
-    default: cout << "BoundValue_Darcy: wrong boundary part number" << endl;
+    default:
+      ErrThrow("BoundValue_Darcy: wrong boundary part number");
       break;
   }
 }
@@ -183,7 +186,8 @@ void BoundValueVelocity_Darcy(int bdComp, double t, double &value)
     case 2: // DIRICHLET
       value = K*exp(-1+t);
       break;
-    default: cout << "BoundValue_Darcy: wrong boundary part number" << endl;
+    default:
+      ErrThrow("BoundValue_Darcy: wrong boundary part number");
       break;
   }
 }
@@ -208,7 +212,8 @@ void U1BoundValue_NSE(int bdComp, double t, double &value)
     case 5: //Dirichlet
       x=0; y=1-t; // x==0, y==1-t 
       break;
-    default: cout << "U1BoundValue_NSE: wrong boundary part number" << endl;
+    default: 
+      ErrThrow("U1BoundValue_NSE: wrong boundary part number");
       break;
   }
   value = (-(1/(2*nu)) + 2*(K/2 - alpha/(4*nu*nu))*y)*cos(x);
@@ -230,7 +235,8 @@ void U2BoundValue_NSE(int bdComp, double t, double &value)
   case 5: //Dirichlet
     x=0; y=1-t; // x==0, y==1-t 
     break;
-  default: cout << "U1BoundValue_NSE: wrong boundary part number" << endl;
+  default:
+    ErrThrow("U1BoundValue_NSE: wrong boundary part number");
     break;
   }
   value = (-K - y/(2*nu) + (K/2 - alpha/(4*nu*nu))*y*y)*sin(x);
@@ -238,7 +244,7 @@ void U2BoundValue_NSE(int bdComp, double t, double &value)
 void PressureBoundValue_NSE(int bdComp, double t, double &value)
 {
   value = 0;
-  //cout << "PressureBoundValue_NSE: bdComp " << bdComp << ", t " << t << endl;
+  //Output::print("PressureBoundValue_NSE: bdComp ", bdComp, ", t ", t);
 }
 
 // ============================================================================
@@ -309,6 +315,6 @@ void InitialP_Darcy(double x, double y, double *values)
 
 double prescribedDirichletOutflow()
 {
-  OutPut("\n\n\n WARNING\n\n Function call to prescribedDirichletOutflow()\n");
+  Output::print("\n\n\n WARNING\n\n Function call to prescribedDirichletOutflow()");
   return 0.0;
 }

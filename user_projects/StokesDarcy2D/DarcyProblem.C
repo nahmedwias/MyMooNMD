@@ -771,8 +771,8 @@ void DarcyProblem::find_global_DOF_interface(const InterfaceFunction &eta)
     FE2D uFEId;
     if(mixed)
       uFEId = vSpace->GetFE2D(0, d_cell);
-    TFE2D *uFE = (mixed) ? TFEDatabase2D::GetFE2D(uFEId) : NULL;
-    const int N_uBf = (mixed) ? uFE->GetN_DOF() : 0;
+    //TFE2D *uFE = (mixed) ? TFEDatabase2D::GetFE2D(uFEId) : NULL;
+    //const int N_uBf = (mixed) ? uFE->GetN_DOF() : 0;
     //int *uDOF = (mixed) ? vSpace->GetGlobalDOF(d_cell->GetCellIndex()) : NULL;
     // Basis functions for Darcy velocity
     //TBaseFunct2D * uBf = (mixed) ? uFE->GetBaseFunct2D() : NULL;
@@ -1063,7 +1063,7 @@ void DarcyProblem::assemble_Dirichlet_map_to_interface(local_matrices & m,
       uFEId = vSpace->GetFE2D(0, d_cell);
     TFE2D *uFE = (mixed) ? TFEDatabase2D::GetFE2D(uFEId) : NULL;
     const int N_uBf = (mixed) ? uFE->GetN_DOF() : 0;
-    int *uDOF = (mixed) ? vSpace->GetGlobalDOF(d_cell->GetCellIndex()) : NULL;
+    //int *uDOF = (mixed) ? vSpace->GetGlobalDOF(d_cell->GetCellIndex()) : NULL;
     // Basis functions for Darcy velocity
     TBaseFunct2D * uBf = (mixed) ? uFE->GetBaseFunct2D() : NULL;
     const int BaseVectDim = (mixed) ? (uBf->GetBaseVectDim()) : (0);
@@ -1243,7 +1243,7 @@ void DarcyProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
     if(d_cell->GetReference_ID() != D_id)
       d_cell = thisEdge->GetNeighbour(1);
     
-    FE2D uFEId;
+    //FE2D uFEId;
     //if(mixed)
     //  uFEId = vSpace->GetFE2D(0, d_cell);
     //TFE2D *uFE = (mixed) ? TFEDatabase2D::GetFE2D(uFEId) : NULL;
@@ -1282,6 +1282,11 @@ void DarcyProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       QFId = TFEDatabase2D::GetQFLineFromDegree(fe_degree);
       TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(QFId);
       qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+      
+      // make sure all functions & derivatives are available for this quadrature
+      //if(mixed)
+      //  uBf->MakeRefElementData(QFId);
+      pBf->MakeRefElementData(QFId);
       // qf1 no longer needed, only local scope
     }
     else
@@ -1295,11 +1300,6 @@ void DarcyProblem::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       zeta[1] = 0.;
       zeta[2] = 1.;
     }
-    
-    // make sure all functions & derivatives are available for this quadrature
-    //if(mixed)
-    //  uBf->MakeRefElementData(QFId);
-    pBf->MakeRefElementData(QFId);
     
     // compute length of the edge
     const double hE = thisEdge->GetLength();
@@ -1895,7 +1895,7 @@ void DarcyProblem::Assemble_etaToBd(const InterfaceFunction &eta)
     
     // assemble (eta,psi)_Gamma here
     // number of Darcy velocity and pressure degrees of freedom
-    const int N_veloDOF = (mixed) ? vSpace->GetN_DegreesOfFreedom() : 0;
+    //const int N_veloDOF = (mixed) ? vSpace->GetN_DegreesOfFreedom() : 0;
     //int N_presDOF = pSpace->GetN_DegreesOfFreedom();
     const int N_active = ((mixed) ? vSpace : pSpace)->GetActiveBound();
     

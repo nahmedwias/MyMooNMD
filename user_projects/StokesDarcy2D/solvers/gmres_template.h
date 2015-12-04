@@ -31,7 +31,7 @@ void GeneratePlaneRotation(const Real &dx, const Real &dy, Real &cs, Real &sn)
     cs = 1.0;
     sn = 0.0;
   }
-  else if (abs(dy) > abs(dx)) 
+  else if (fabs(dy) > fabs(dx)) 
   {
     Real temp = dx / dy;
     sn = 1.0 / sqrt( 1.0 + temp*temp );

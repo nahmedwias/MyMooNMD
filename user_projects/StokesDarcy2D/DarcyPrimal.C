@@ -818,6 +818,9 @@ void DarcyPrimal::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       QFId = TFEDatabase2D::GetQFLineFromDegree(fe_degree);
       TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(QFId);
       qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+      // make sure all functions & derivatives are available for this quadrature
+      pBf->MakeRefElementData(QFId);
+      
       // qf1 no longer needed, only local scope
     }
     else
@@ -831,9 +834,6 @@ void DarcyPrimal::assemble_Dirichlet_map_to_interface_D_RR(local_matrices & m,
       zeta[1] = 0.;
       zeta[2] = 1.;
     }
-    
-    // make sure all functions & derivatives are available for this quadrature
-    pBf->MakeRefElementData(QFId);
     
     // compute length of the edge
     const double hE = thisEdge->GetLength();
