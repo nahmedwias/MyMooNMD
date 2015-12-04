@@ -21,13 +21,6 @@
  * main. This has to do with the static nature of the Database and FEDatabase
  * classes and is described in the forum.
  *
- * @note There is a known issue with the second test program (multigrid) in mpi.
- *       It seems, as if the metis mesh partitioning does not operate deter-
- *       ministically. It so happens, that a process goes entirely without
- *       getting any cells to work on, especially on the coarse grid we
- *       are using here. Would the program go on in that case, it would throw.
- *       Instead we exit as if the test had succeeded - I know this is a bad
- *       solution, but right know the only one at hand..
  *
  * @date 2015/20/11
  * @author Clemens Bartsch
@@ -245,8 +238,8 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
     TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
-    TDatabase::ParamDB->UNIFORM_STEPS = 1; // 1 uniform refinement step
-    TDatabase::ParamDB->LEVELS = 3;        // 3 multigrid levels
+    TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement step  - setting this to 1 reproduces a known issue (see 3DPrograms/CD3D_ParMooN)
+    TDatabase::ParamDB->LEVELS = 2;        // 2 multigrid levels
     TDatabase::ParamDB->DRIFT_Z = 1;
     TDatabase::ParamDB->ANSATZ_ORDER = 2;
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -301,12 +294,7 @@ int main(int argc, char* argv[])
 
   // 2nd step: Call the mesh partitioning.
   int maxCellsPerVertex;
-  if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
-    {
-      Output::print("Partitioning did not succeed. This is a known issue!");
-      MPI_Finalize();
-      exit(0);
-    }
+  Partition_Mesh3D(comm, &domain, maxCellsPerVertex);
 
   // 3rd step: Generate edge info anew
   domain.GenerateEdgeInfo();
