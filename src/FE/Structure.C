@@ -4580,16 +4580,6 @@ exit(0);
 
 
 
-
-TStructure::TStructure(const TStructure& s)
- : nRows(s.nRows), nColumns(s.nColumns), nEntries(s.nEntries),
-   columns(s.columns), rows(s.rows), 
-   ActiveBound(s.ActiveBound), ColOrder(s.ColOrder),
-   nHangingEntries(s.nHangingEntries),
-   hangingColums(s.hangingColums), HangingRows(s.HangingRows)
-{
-}
-
 /* sort column numbers: diag is first element, other numbers are increasing */
 void TStructure::SortDiagFirst()
 {
