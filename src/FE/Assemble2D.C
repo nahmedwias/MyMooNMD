@@ -49,7 +49,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D **fespaces,
 {
   ErrMsg("This function is deprecated/outdated. Use the one with the "
          << "LocalAssembling2D object!");
-  LocalAssembling2D la(*Parameters, *DiscreteForm);
+  LocalAssembling2D la(LocalAssembling2D_type::Custom, *Parameters, *DiscreteForm);
   Assemble2D(n_fespaces, fespaces, n_sqmatrices, sqmatrices, n_matrices,
              matrices, n_rhs, rhs, ferhs, BoundaryConditions, BoundaryValues,
              la, 
