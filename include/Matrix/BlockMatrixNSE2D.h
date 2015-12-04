@@ -71,8 +71,7 @@ class BlockMatrixNSE2D : public BlockMatrix
      * @param factor optional scaling   factor, default to 1.0
      */
     void apply_scaled_add(const double *x, double *y, double factor = 1.) const;
-    
-    
+        
     /** @brief 
      * scaleActive
      * This function can scale the A blocks, 
@@ -93,7 +92,13 @@ class BlockMatrixNSE2D : public BlockMatrix
      */
     void applyScaledAddActive(const double *x, double *y, 
          double factor = 1.) const;
-
+    
+     /** 
+     * @brief adding a scaled matrix to this matrix, but only the active entries
+     * 
+     * This function only cscales and adds the corresponding A' Blocks 
+     */
+    void addScaledActive(const BlockMatrixNSE2D& A, double factor = 1.0);
     
     /** @brief return the test or ansatz space for a given block
      * 

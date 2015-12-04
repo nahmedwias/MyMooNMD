@@ -25,7 +25,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
                                    bool massMatrix)
     : BlockMatrix(Problem_type::NavierStokes, 2, massMatrix),
       boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
-{ 
+{
   // build matrices
   this->BlockMatrix::blocks[0].reset(new TSquareMatrix2D(&velocity));
   // get that matrix A11, which will be used to construct the others if NSTYPE>2
@@ -64,6 +64,15 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
         this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
         //this->BlockMatrix::blocks[5] stays a nullptr
         this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = nactive;
         break;
       }
       case 2:
@@ -86,6 +95,16 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
         this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
         this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
         this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = nactive;
+        
         break;
       }
       case 3:
@@ -105,6 +124,17 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
         this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
         //this->BlockMatrix::blocks[5] stays a nullptr
         this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = this->actives[1] = nactive;
+        this->actives[3] = this->actives[4] = nactive;        
+                
         break;
       }
       case 4:
@@ -128,6 +158,19 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
         this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
         this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
         this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        this->actives[0] = this->actives[1] = nactive;
+        this->actives[3] = this->actives[4] = nactive;
+        this->actives[2] = this->actives[5] = nactive;
+                
+        // this->actives[6] = this->actives[7] = this->blocks[6]->GetN_Rows();
+        // this->actives[8] = this->blocks[8]->GetN_Rows();
         break;
       }
       case 14:
@@ -560,9 +603,10 @@ void BlockMatrixNSE2D::scaleActive(const double factor)
 }
 
 /** ************************************************************************ */
-void BlockMatrixNSE2D::applyScaledAddActive(const double* x, double* y, double factor) const
+void BlockMatrixNSE2D::applyScaledAddActive(const double* x, double* y, 
+                                            double factor) const
 {
-  if(factor = 0.)
+  if(factor == 0.)
     return;
   unsigned int n_v = this->get_velocity_space()->GetN_DegreesOfFreedom();
   switch(TDatabase::ParamDB->NSTYPE)
@@ -583,6 +627,35 @@ void BlockMatrixNSE2D::applyScaledAddActive(const double* x, double* y, double f
     default:
       ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
       break;
+  }
+}
+
+/** ************************************************************************ */
+void BlockMatrixNSE2D::addScaledActive(const BlockMatrixNSE2D& A, double factor)
+{ 
+  unsigned int nActves = this->actives[0];
+  
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      Daxpy(nActves, factor, A.get_A_block(0)->GetEntries(),
+            this->get_A_block(0)->GetEntries());
+      break;
+    case 3:
+    case 4:
+    case 14:
+      Daxpy(nActves, factor, A.get_A_block(0)->GetEntries(),
+            this->get_A_block(0)->GetEntries()); // 
+      Daxpy(nActves, factor, A.get_A_block(1)->GetEntries(),
+            this->get_A_block(1)->GetEntries()); // 
+      Daxpy(nActves, factor, A.get_A_block(2)->GetEntries(),
+            this->get_A_block(2)->GetEntries());// 
+      Daxpy(nActves, factor, A.get_A_block(3)->GetEntries(),
+            this->get_A_block(3)->GetEntries());
+      break;
+    default:
+      ErrThrow("NSETYPE must be either 1, 2, 3, or 4! ");
   }
 }
 
