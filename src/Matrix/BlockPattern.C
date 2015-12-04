@@ -100,11 +100,7 @@ BlockPattern::BlockPattern(unsigned int n_rows, unsigned int n_cols)
    column_spaces(n_rows*n_cols, 0), patterns({0}), 
    pattern_of_blocks(n_rows*n_cols, 0)
 {
-  if(n_rows != n_cols)
-  {
-    // this is currently not supported.
-    ErrThrow("non-square BlockPattern");
-  }
+  
 }
 
 /* ************************************************************************* */
