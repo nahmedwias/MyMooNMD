@@ -139,14 +139,14 @@ void TADISystem1D::Interpolate(double *Sol, DoubleFunctND *Exact)
 // ====================================================================
 void Defect_Scalar(TSquareMatrix *A, double *x, double *b, double *r)
 {
- int i, j, k, l, N_DOF, *RowPtr, *KCol;
+ int i, j, k, l, N_DOF;
  int begin, end, index;
 
  double rhs_i, *Entries;
 
   N_DOF = A->GetN_Rows();
-  RowPtr = A->GetRowPtr();
-  KCol = A->GetKCol();
+  const int * RowPtr = A->GetRowPtr();
+  const int * KCol = A->GetKCol();
   Entries = A->GetEntries();
 
   for(i=0;i<N_DOF;i++)
@@ -193,11 +193,11 @@ void Defect_Scalar(TSquareMatrix *A, double *x, double *b, double *r)
 void TADISystem1D::SetDirichletBc(BoundCond cond_Lmin, BoundCond cond_Lmax, double BDValue_Lmin, double BDValue_Lmax)
 {
  int k;
- int *RowPtr, *KCol, begin, end;
+ int begin, end;
  double *MatValues;
 
- RowPtr = M_Intl->GetRowPtr();
- KCol = M_Intl->GetKCol();
+ const int * RowPtr = M_Intl->GetRowPtr();
+ const int * KCol = M_Intl->GetKCol();
  MatValues = M_Intl->GetEntries(); 
 
 
@@ -733,7 +733,7 @@ void TADISystem1D::AssembleInitRhs(double C, double T, CoeffFctND *BilinearCoeff
 void TADISystem1D::AssembleARhs_FD(double Conv, CoeffFctND *Bilinear)
 {
   int i, j, N;
-  int begin, end, *RowPtr, *KCol; 
+  int begin, end;
   double *ValuesA, a, b, c, h, eps, sigma, q, val1, val2;
   
   if(TDatabase::ParamDB->REACTOR_P3)
@@ -748,8 +748,8 @@ void TADISystem1D::AssembleARhs_FD(double Conv, CoeffFctND *Bilinear)
   
   
   
-  RowPtr = A_Intl->GetRowPtr();
-  KCol = A_Intl->GetKCol();
+  const int * RowPtr = A_Intl->GetRowPtr();
+  const int * KCol = A_Intl->GetKCol();
   ValuesA = A_Intl->GetEntries(); 
   N = A_Intl->GetN_Columns();
   
@@ -813,7 +813,7 @@ void TADISystem1D::AssembleARhs(double Conv, CoeffFctND *Bilinear)
 {
  int i, j, k, l, N_Cells_Internal, N_BaseFunct, N_Coord=2;
  int N_Points, N_Sets=1, *GlobalNumbers, *BeginIndex, *DOF;
- int TestDOF, begin, end, *RowPtr, *KCol;
+ int TestDOF, begin, end;
 
  double *Weights, *zeta, *Intl_L, AbsDetjk[MaxN_QuadPoints_1D];
  double LocMatrixA[MaxN_BaseFunctions1D*MaxN_BaseFunctions1D];
@@ -845,8 +845,8 @@ void TADISystem1D::AssembleARhs(double Conv, CoeffFctND *Bilinear)
   GlobalNumbers = FESpace1D_Intl->GetGlobalNumbers();
   BeginIndex = FESpace1D_Intl->GetBeginIndex();
 
-  RowPtr = A_Intl->GetRowPtr();
-  KCol = A_Intl->GetKCol();
+  const int * RowPtr = A_Intl->GetRowPtr();
+  const int * KCol = A_Intl->GetKCol();
   ValuesA = A_Intl->GetEntries(); 
 
   N_Cells_Internal = Coll->GetN_Cells();
@@ -1015,7 +1015,7 @@ void TADISystem1D::AssembleARhs_SUPG(double Conv, CoeffFctND *Bilinear)
 {
  int i, j, k, l, N_Cells_Internal, N_BaseFunct, N_Coord=2;
  int N_Points, N_Sets=1, *GlobalNumbers, *BeginIndex, *DOF;
- int TestDOF, begin, end, *RowPtr, *KCol;
+ int TestDOF, begin, end;
 
  double *Weights, *zeta, *Intl_L, AbsDetjk[MaxN_QuadPoints_1D];
  double LocMatrixA[MaxN_BaseFunctions1D*MaxN_BaseFunctions1D];
@@ -1050,8 +1050,8 @@ void TADISystem1D::AssembleARhs_SUPG(double Conv, CoeffFctND *Bilinear)
   GlobalNumbers = FESpace1D_Intl->GetGlobalNumbers();
   BeginIndex = FESpace1D_Intl->GetBeginIndex();
 
-  RowPtr = A_Intl->GetRowPtr();
-  KCol = A_Intl->GetKCol();
+  const int * RowPtr = A_Intl->GetRowPtr();
+  const int * KCol = A_Intl->GetKCol();
   ValuesA = A_Intl->GetEntries(); 
   ValuesS = S_Intl->GetEntries();
   ValuesK = K_Intl->GetEntries();
@@ -1265,7 +1265,7 @@ void TADISystem1D::AssembleARhs_DG(double Conv, double Bnuc, CoeffFctND *Bilinea
 {
  int i, j, k, l, N_Cells_Internal, N_BaseFunct, N_Coord=2;
  int N_Points, N_Sets=1, *GlobalNumbers, *BeginIndex, *DOF, *NeibDOF;
- int TestDOF, begin, end, *RowPtr, *KCol; 
+ int TestDOF, begin, end;
  int m, N_Joints, Neigh_i;
  
  double rec_detjk, Neigh_rec_detjk, Neigh_N_BaseFunct; 
@@ -1304,8 +1304,8 @@ void TADISystem1D::AssembleARhs_DG(double Conv, double Bnuc, CoeffFctND *Bilinea
   GlobalNumbers = FESpace1D_Intl->GetGlobalNumbers();
   BeginIndex = FESpace1D_Intl->GetBeginIndex();
 
-  RowPtr = A_Intl->GetRowPtr();
-  KCol = A_Intl->GetKCol();
+  const int * RowPtr = A_Intl->GetRowPtr();
+  const int * KCol = A_Intl->GetKCol();
   ValuesA = A_Intl->GetEntries(); 
 
   N_Cells_Internal = Coll->GetN_Cells();

@@ -82,11 +82,28 @@ class TMatrix
     { return structure->GetN_Entries(); }
     
     /// @brief return the column pointer in the TStructure of this matrix
-    int *GetKCol() const
+    const int *GetKCol() const
+    { return structure->GetKCol(); }
+    /** @brief return the column pointer in the TStructure of this matrix
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetKCol()
     { return structure->GetKCol(); }
     
     /// @brief return the row pointer in the TStructure of this matrix
-    int *GetRowPtr() const
+    const int *GetRowPtr() const
+    { return structure->GetRowPtr(); }
+    
+    /** @brief return the row pointer in the TStructure of this matrix
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetRowPtr()
     { return structure->GetRowPtr(); }
     
     /// @brief return number of matrix entries for hanging node data
@@ -94,11 +111,11 @@ class TMatrix
     { return structure->GetHangingN_Entries(); }
     
     /// @brief return the column pointer corresponding to hanging nodes
-    int *GetHangingKCol() const
+    const int *GetHangingKCol() const
     { return structure->GetHangingKCol(); }
     
     /// @brief return the row pointer corresponding to hanging nodes
-    int *GetHangingRowPtr() const
+    const int *GetHangingRowPtr() const
     { return structure->GetHangingRowPtr(); }
     
     /// @brief return structure

@@ -97,10 +97,10 @@ class TNSE_MGLevel3 : public TNSE_MGLevel
 #endif  
 
     /** row pointer for matrix A */
-    int *ARowPtr;
+    const int *ARowPtr;
 
     /** column number vector for matrix A */
-    int *AKCol;
+    const int *AKCol;
 
     /** matrix entries of matrix A */
     double *A11Entries;
@@ -141,16 +141,16 @@ class TNSE_MGLevel3 : public TNSE_MGLevel
 #endif  
 
     /** row pointer for matrix B */
-    int *BRowPtr;
+    const int *BRowPtr;
 
     /** column number vector for matrix B */
-    int *BKCol;
+    const int *BKCol;
 
     /** row pointer for matrix BT */
-    int *BTRowPtr;
+    const int *BTRowPtr;
 
     /** column number vector for matrix BT */
-    int *BTKCol;
+    const int *BTKCol;
     
   public:
     /** constructor */

@@ -2106,7 +2106,7 @@ void MakeBubblesDivFree(TCollection *coll,
     int i, ii, j, N_Cells, N_U, N_P, index, index1, row;
     int *GlobalNumbers_velo, *BeginIndex_velo, *DOF_velo;
     int *GlobalNumbers_press, *BeginIndex_press, *DOF_press;
-    int *RowPtr, *KCol;
+    const int *RowPtr, *KCol;
     double *sol, loc_rhs[2], loc_a[2][2], *Entries, det, bub1, bub2;
     TBaseCell *cell;
     const TFESpace2D *velo_space, *press_space;

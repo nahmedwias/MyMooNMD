@@ -130,7 +130,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   double uyorig[MaxN_BaseFunctions2D];
   BaseFunct2D *BaseFuncts;
   double r2, r;
-  int *KCol, *RowPtr;
+  const int *KCol, *RowPtr;
   double *ValuesA11, *ValuesA12, *ValuesA21, *ValuesA22;
   int *BeginIndex, *GlobalNumbers, *DOF, TestDOF, AnsatzDOF;
   int index1, index2;

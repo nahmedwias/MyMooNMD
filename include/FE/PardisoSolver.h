@@ -95,7 +95,7 @@ class TPardisoSolver : public TDirectSolver
 #ifdef __2D__
     // nstype 1
     void FillRowPtr(int N_U, int N_P, int N_Active,
-		    int *RowPtrA, int *RowPtrB, int *ColPtrB);
+                    const int *RowPtrA, const int *RowPtrB, const int *ColPtrB);
 
     void GetTransposedArrays(TMatrix *B, int *&KRowB,
 			     int *&ColPtrB, int *&MapB);

@@ -920,7 +920,8 @@ double *sol1, double *sol2)
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[2];
   AMG_VECTOR *x,*b;
-  int n,m,i,j, *RowPtr, *ColPtr, n1, n2, *ARowPtr, *AKCol, *BRowPtr, *BKCol;
+  int n,m,i,j, *RowPtr, *ColPtr, n1, n2;
+  const int *ARowPtr, *AKCol, *BRowPtr, *BKCol;
   double tmp, *Entries, *sol, *rhs, *AEntries, *BEntries;
   int memory[4], ja, ja1, ja2, jb, jb1, jb2, k;
 #ifdef _MALLOC_MALLOC_H_
@@ -1178,7 +1179,8 @@ double *sol1, double *sol2)
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[2];
   AMG_VECTOR *x,*b;
-  int n,m,i,j, *RowPtr, *ColPtr, n2, *ARowPtr, *AKCol, *BRowPtr, *BKCol;
+  int n,m,i,j, *RowPtr, *ColPtr, n2;
+  const int *ARowPtr, *AKCol, *BRowPtr, *BKCol;
   double tmp, *Entries, *sol, *rhs, *AEntries, *BEntries;
   int memory[4], ja, ja1, ja2, jb, jb1, jb2, k;
 
@@ -1431,7 +1433,10 @@ double *sol1, double *sol2, double *sol3)
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[2];
   AMG_VECTOR *x,*b;
-  int n,m,i,j, *RowPtr, *ColPtr, n2, n22, *ARowPtr, *AKCol, *BRowPtr, *BKCol;
+  int n,m,i,j;
+  int * RowPtr, *ColPtr;
+  const int *ARowPtr, *AKCol, *BRowPtr, *BKCol;
+  int n2, n22;
   double tmp, *Entries, *sol, *rhs, *AEntries, *BEntries;
   int memory[4], ja, ja1, ja2, jb, jb1, jb2, k;
 #ifdef _MALLOC_MALLOC_H_
@@ -1730,8 +1735,11 @@ double *sol1, double *sol2, double *sol3)
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[4];
   AMG_VECTOR *x,*b;
-  int n,m,i,j, *RowPtr, *ColPtr, n1, n2, *ARowPtr, *AKCol, *BRowPtr, *BKCol;
-  int  *CRowPtr, *CKCol;
+  int n,m,i,j;
+  const int *ARowPtr, *AKCol, *BRowPtr, *BKCol;
+  int n1, n2;
+  int *RowPtr, *ColPtr;
+  const int  *CRowPtr, *CKCol;
   double tmp, *Entries, *sol, *rhs, *AEntries, *BEntries, *CEntries;
   int memory[4], ja, ja1, ja2, jb, jb1, jb2, jc, jc1, jc2, k;
 #ifdef _MALLOC_MALLOC_H_

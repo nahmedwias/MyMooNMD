@@ -644,7 +644,7 @@ BoundValueFunct2D *PressureBoundValueLaplace,
 int N_x, int N_y, double *x_coord, double *y_coord)
 {
   int i, j, N_Unknowns, N_Entries, N2, N_x1, begin, end, bdr_number;
-  int *Row, *KCol;
+  const int *Row, *KCol;
   double h_i, h_i1, *values;
   
   // get data of the sparse matrix

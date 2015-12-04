@@ -3267,7 +3267,7 @@ void CheckMaximumPrinciple(TSquareMatrix *A, double *sol, int N_Active,
 {
   int i,j,k,index,ii,jj,kk,found;
   double tol=1e-8, minimum, maximum, val, maxerror;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   int N_DOF, maxprinciple = 0; 
 
   RowPtr = A->GetRowPtr();
@@ -3474,15 +3474,15 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix3D **SQMATRICES,
     TSquareMatrix3D *MatrixA;
 #endif    
     double *Entries_A;
-    int i, l, l0, l1, index, *RowPtr_A, *KCol_A;
+    int i, l, l0, l1, index;
     
     //OutPut(N_neum_to_diri << endl);
     if (N_neum_to_diri == 0)
 	return;
 
     MatrixA = SQMATRICES[0];
-    RowPtr_A      = MatrixA->GetRowPtr();
-    KCol_A        = MatrixA->GetKCol();
+    const int * RowPtr_A      = MatrixA->GetRowPtr();
+    const int * KCol_A        = MatrixA->GetKCol();
     Entries_A     = MatrixA->GetEntries();
     // loop over dof to change
     for (i=0;i<N_neum_to_diri;i++)

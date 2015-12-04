@@ -98,7 +98,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
   int ret, i, j, k, l, begin, end;
   double value;
   int N_Eqn;
-  int *Row, *KCol;
+  const int *Row, *KCol;
   double *Values;
   void *Symbolic, *Numeric;
 
@@ -113,24 +113,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
     // sort matrix
     Output::print("umfpack: reordering of the columns will be performed", matrix->GetColOrder());
     Output::print("umfpack: no back ordering implemented !!!");
-
-    for(i=0;i<N_Eqn;i++)
-    {
-      begin=Row[i];
-      end=Row[i+1];
-      for(j=begin;j<end;j++)
-      {
-        for(k=j+1;k<end;k++)
-        {
-          if(KCol[j] > KCol[k])
-          {
-            l = KCol[j];     value = Values[j];
-            KCol[j] = KCol[k]; Values[j] = Values[k];
-            KCol[k] = l;       Values[k] = value;
-          }                      // endif
-        }                        // endfor k
-      }                          // endfor j
-    }                            // endfor i
+    matrix->reorderMatrix();
   }
  
   t1 = GetTime();
@@ -173,7 +156,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
   int ret, i, j, k, l, begin, end;
   double value;
   int N_Eqn;
-  int *Row, *KCol;
+  const int *Row, *KCol;
   double *Values;
   void *Symbolic, *Numeric;
 
@@ -188,24 +171,7 @@ void DirectSolver(TSquareMatrix2D *matrix, double *rhs, double *sol)
     // sort matrix
     Output::print("umfpack: reordering of the columns will be performed");
     Output::print("umfpack: no back ordering implemented !!!");
-
-    for(i=0;i<N_Eqn;i++)
-    {
-      begin=Row[i];
-      end=Row[i+1];
-      for(j=begin;j<end;j++)
-      {
-        for(k=j+1;k<end;k++)
-        {
-          if(KCol[j] > KCol[k])
-          {
-            l = KCol[j];     value = Values[j];
-            KCol[j] = KCol[k]; Values[j] = Values[k];
-            KCol[k] = l;       Values[k] = value;
-          }                      // endif
-        }                        // endfor k
-      }                          // endfor j
-    }                            // endfor i
+    matrix->reorderMatrix();
   }
 
   t1 = GetTime();
@@ -254,7 +220,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, double *&Valu
   int ret, i, j, k, l, begin, end;
   double value;
   int N_Eqn, N_Entries;
-  int *Row_orig, *KCol_orig;
+  const int *Row_orig, *KCol_orig;
   double *Values_orig;
 //   void *Symbolic, *Numeric;
 
@@ -374,7 +340,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   int ret, i, j, k, l, begin, end;
   double value;
   int N_Eqn;
-  int *Row, *KCol;
+  const int *Row, *KCol;
   double *Values, *Sol, *Rhs;
   void *Symbolic, *Numeric;
 
@@ -389,24 +355,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
     // sort matrix
     Output::print("umfpack: reordering of the columns will be performed");
     Output::print("umfpack: no back ordering implemented !!!");
-
-    for(i=0;i<N_Eqn;i++)
-    {
-      begin=Row[i];
-      end=Row[i+1];
-      for(j=begin;j<end;j++)
-      {
-        for(k=j+1;k<end;k++)
-        {
-          if(KCol[j] > KCol[k])
-          {
-            l = KCol[j];     value = Values[j];
-            KCol[j] = KCol[k]; Values[j] = Values[k];
-            KCol[k] = l;       Values[k] = value;
-          }                      // endif
-        }                        // endfor k
-      }                          // endfor j
-    }                            // endfor i
+    matrix->reorderMatrix();
   }
 
   //t1 = GetTime();
@@ -464,7 +413,7 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
   int ret, i, j, k, l, begin, end;
   double value;
   int N_Eqn, N_Entries;
-  int *Row_orig, *KCol_orig;
+  const int *Row_orig, *KCol_orig;
   double *Values_orig, *Sol, *Rhs;
 //   void *Symbolic, *Numeric;
  
@@ -581,7 +530,7 @@ void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol)
   double value;
   long N_Eqn;
   long *Row, *KCol;
-  int *row, *kcol;
+  const int *row, *kcol;
   double *Values;
   void *Symbolic, *Numeric;
 
@@ -597,23 +546,7 @@ void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol)
       Output::print("umfpack: reordering of the columns will be performed");
       Output::print("umfpack: no back ordering implemented !!!");
 
-      for(i=0;i<N_Eqn;i++)
-      {
-          begin=Row[i];
-          end=Row[i+1];
-          for(j=begin;j<end;j++)
-          {
-              for(k=j+1;k<end;k++)
-              {
-                  if(KCol[j] > KCol[k])
-                  {
-                      l = KCol[j];     value = Values[j];
-                      KCol[j] = KCol[k]; Values[j] = Values[k];
-                      KCol[k] = l;       Values[k] = value;
-                  } // endif
-              } // endfor k
-          } // endfor j
-      } // endfor i
+      matrix->reorderMatrix();
   }
 
   Row = new long[N_Eqn+1];
@@ -656,7 +589,7 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
 TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
 double *rhs1, double *rhs2, double *sol1, double *sol2, int rb_flag)
 {
-  int *KColA, *RowPtrA;
+  const int *KColA, *RowPtrA;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
   double *sol, *rhs;
   int N_, N_U, N_Entries;
@@ -829,9 +762,9 @@ TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol, int rb_flag)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
   double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
@@ -1066,10 +999,10 @@ TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 TMatrix2D *matrixC,
 double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
-  int *KColC, *RowPtrC;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
+  const int *KColC, *RowPtrC;
   double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T, *EntriesC;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
@@ -1304,8 +1237,8 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
   double *EntriesA, *EntriesB1, *EntriesB2;
   int N_, N_U, N_P, N_B, N_Entries;
   double *Entries;
@@ -1522,8 +1455,8 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol, int rb_flag)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
   double *EntriesA, *EntriesB1, *EntriesB2;
   int N_, N_U, N_P, N_B, N_Entries;
   static double *Entries;
@@ -1770,9 +1703,9 @@ TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
@@ -1955,9 +1888,9 @@ TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol, int rb_flag)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   static double *Entries;
@@ -2173,9 +2106,9 @@ TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
   double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
@@ -2388,9 +2321,9 @@ TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
 TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA, *KColC, *RowPtrC;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA, *KColC, *RowPtrC;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22, *EntriesC;
   double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
@@ -2611,9 +2544,9 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
                   TMatrix2D *matrixBT, TMatrix2D *matrixB,
                   double *rhs, double *sol)
 {
-  int *KColA, *RowPtrA, *KColC, *RowPtrC;
-  int *KColB, *RowPtrB;
-  int *KColBT, *RowPtrBT;
+  const int *KColA, *RowPtrA, *KColC, *RowPtrC;
+  const int *KColB, *RowPtrB;
+  const int *KColBT, *RowPtrBT;
   double *EntriesA, *EntriesC, *EntriesB, *EntriesBT;
   int N_DOF, N_U, N_P, N_Entries;
   double *Entries;

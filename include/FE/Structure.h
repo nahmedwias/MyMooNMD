@@ -27,6 +27,8 @@
  * `indexOfEntry`-th entry in the list of entries. 
  * 
  * \todo How do we handle Hanging nodes? We need a test case!
+ * 
+ * \todo apply naming convention to all methods
  */
 
 #ifndef __STRUCTURE__
@@ -38,6 +40,7 @@ class TFESpace2D;
 class TFESpace3D;
 
 #include <memory> // std::shared_ptr
+#include <vector>
 
 class TStructure
 {
@@ -56,7 +59,7 @@ class TStructure
      * This vector has length TStructure::nEntries and stores the column index
      * for each entry.
      */
-    int *columns;
+    std::vector<int> columns;
     
     /** @brief vector storing the number of entries in all previous rows
      * 
@@ -66,7 +69,7 @@ class TStructure
      * index if you are interested in the column of that entry, 
      * `TStructure::columns[TStructure[i]+j]`.
      */
-    int *rows;
+    std::vector<int> rows;
 
     /** @brief number of active rows
      * 
@@ -92,10 +95,10 @@ class TStructure
     int nHangingEntries;
 
     /** @brief in which column is the current entry (hanging nodes part) */
-    int *hangingColums;
+    std::vector<int> hangingColums;
 
     /** @brief index in hangingColums where each row starts */
-    int *HangingRows;
+    std::vector<int> HangingRows;
     
     /** @brief sort all rows in increasing order */
     void Sort();
@@ -145,8 +148,8 @@ class TStructure
     /**
      * @brief generate a square structure, all arrays are already defined
      * 
-     * Note that the pointers will be deleted from within this class. No deep 
-     * copy is done.
+     * A deep copy of the arrays pointed to by \p col_ptr and \p row_ptr is 
+     * done.
      * 
      * @param n number of rows/columns
      * @param N_entries number of entries in this structure
@@ -177,12 +180,27 @@ class TStructure
     TStructure(int nRows, int nCols);
 
     
-    /** @brief return if this structure is square */
+    /** @brief Default copy constructor */
+    TStructure(const TStructure&);
+
+    /// @brief Default move constructor.
+    TStructure(TStructure&&) = default;
+
+    /// @brief no copy assignment operator to avoid accidental copies
+    TStructure & operator=(const TStructure& A) = delete;
+    
+    /// @brief no move assignment operator to avoid accidental moves
+    TStructure& operator=(TStructure&&) = delete;
+
+    /// @brief Default destructor.
+    ~TStructure() = default;
+    
+    
+    /// @brief return if this structure is square
     bool isSquare() const
     { return nRows == nColumns; }
     
-    /**
-     * @brief return number of active rows
+    /** @brief return number of active rows
      * 
      * @return between 0 and TStructure::nRows 
      */
@@ -217,20 +235,36 @@ class TStructure
     { return nHangingEntries; }
 
     /** @brief return vector columns */
-    int *GetKCol() const
-    { return columns; }
+    const int *GetKCol() const
+    { return &columns[0]; }
+    /** @brief return vector columns
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetKCol()
+    { return &columns[0]; }
 
     /** @brief return array hangingColums */
-    int *GetHangingKCol() const
-    { return hangingColums; }
+    const int *GetHangingKCol() const
+    { return &hangingColums[0]; }
 
-    /** return array RowPtr */
-    int *GetRowPtr() const
-    { return rows; }
+    /** @brief return array row pointer */
+    const int *GetRowPtr() const
+    { return &rows[0]; }
+    /** @brief return array row pointer
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetRowPtr()
+    { return &rows[0]; }
 
     /** return array HangingRowPtr */
-    int *GetHangingRowPtr() const
-    { return HangingRows; }
+    const int *GetHangingRowPtr() const
+    { return &HangingRows[0]; }
     
     /**
      * @brief find the index of a given entry
@@ -262,13 +296,6 @@ class TStructure
      * This depends on the current verbosity level.
      */
     void info() const;
-    
-    
-    /** @brief copy constructor */
-    TStructure(const TStructure&);
-
-    /** @brief destructor: delete all used arrays */
-    ~TStructure();
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B

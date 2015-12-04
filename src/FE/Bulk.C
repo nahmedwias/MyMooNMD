@@ -33,10 +33,10 @@ void LumpMassMatrixToDiag_Bulk(TSquareMatrix3D *M)
 #endif    
 {
   double *Entries, off_diag;
-  int *RowPtr, *KCol, i, j, rows, j0, j1, diag;
+  int i, j, rows, j0, j1, diag;
 
-  RowPtr        = M->GetRowPtr();
-  KCol          = M->GetKCol();
+  const int * RowPtr        = M->GetRowPtr();
+  const int * KCol          = M->GetKCol();
   Entries       = M->GetEntries();
   rows          = M->GetN_Rows();
 

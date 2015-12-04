@@ -87,7 +87,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
   int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF, *TestDOF_neigh, *AnsatzDOF_neigh;
   double **SqEntries,**Entries;
-  int **SqColInd, **ColInd, **SqRowPtr, **RowPtr;
+  const int **SqColInd, **ColInd, **SqRowPtr, **RowPtr;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -233,8 +233,8 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
     HangingEntries = new double* [n_sqmatrices];
 
     SqEntries = new double* [n_sqmatrices];
-    SqColInd = new int* [n_sqmatrices];
-    SqRowPtr =  new int* [n_sqmatrices];
+    SqColInd = new const int* [n_sqmatrices];
+    SqRowPtr =  new const int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
       fespace = sqmatrices[i]->GetFESpace2D();

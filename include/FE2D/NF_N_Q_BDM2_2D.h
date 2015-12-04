@@ -119,7 +119,7 @@ void NF_N_Q_BDM2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
     
     double uref = 0., uxiref = 1., uetaref = 0., uorig, uxorig, uyorig;
     referenceTransform.GetOrigValues(NF_N_Q_BDM2_2D_Xi[12], 
-                                     NF_N_Q_BDM2_2D_Eta[26], 1, &uref,  &uxiref,
+                                     NF_N_Q_BDM2_2D_Eta[12], 1, &uref,  &uxiref,
                                      &uetaref, &uorig, &uxorig, &uyorig);
     Functionals[12] = (PointValues[12]*uxorig + PointValues[26]*uyorig) 
                          * measure;
@@ -127,7 +127,7 @@ void NF_N_Q_BDM2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
     uxiref = 0.;
     uetaref = 1.;
     referenceTransform.GetOrigValues(NF_N_Q_BDM2_2D_Xi[13], 
-                                     NF_N_Q_BDM2_2D_Eta[27], 1, &uref,  &uxiref,
+                                     NF_N_Q_BDM2_2D_Eta[13], 1, &uref,  &uxiref,
                                      &uetaref, &uorig, &uxorig, &uyorig);
     Functionals[13] = (PointValues[13]*uxorig + PointValues[27]*uyorig) 
                          * measure;

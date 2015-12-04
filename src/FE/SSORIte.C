@@ -80,7 +80,8 @@ int TSSORIte::Iterate (TSquareMatrix **sqmat,
 TMatrix **mat, double *sol,
 double *rhs)
 {
-  int i, j, k, l, m, *ARowPtr, *AKCol;
+  int i, j, k, l, m;
+  const int *ARowPtr, *AKCol;
   double *AEntries, om, s, diag;
 
   ARowPtr = sqmat[0]->GetRowPtr();

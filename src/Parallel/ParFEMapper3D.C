@@ -217,7 +217,7 @@ int TParFEMapper3D::find_min(int *arr, int N, char *temp_arr){
     }
   }
   if(min == 1000000){
-    printf("\n................this shudnt happen...................\n");
+    printf("\n................this shudnt happen l.220...................\n");
     MPI_Finalize();
     exit(0);
   }
@@ -251,15 +251,24 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   N_Active   = FESpace->GetN_ActiveDegrees();
   N_OwnCells = Coll->GetN_OwnCells();
 
+  // Make a check, whether the Collection is in proper order: own cells first, then halo cells.
   for(i=0;i<N_OwnCells;i++)
   {
     cell = Coll->GetCell(i);
-    if(cell->IsHaloCell()) printf("This shudnt happen---------------------------------------------\n");
+    if(cell->IsHaloCell())
+    {
+      Output::print("Halo cell at position ", i, " although position 0 to ",
+                    N_OwnCells-1, " are reserved for own cells.");
+    }
   }
   for(i=N_OwnCells;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
-    if(!cell->IsHaloCell()) printf("This shudnt happen---------------------------------------------\n");
+    if(!cell->IsHaloCell())
+    {
+      Output::print("Non-halo cell at position ", i, " although position ", N_OwnCells, " to ",
+                    N_Cells-1, " are reserved for halo cells.");
+    }
   }
 
   /** *************************************************************************************/
@@ -299,7 +308,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   {
      cell          = Coll->GetCell(i);
      LocalIndex[i] = cell->GetGlobalCellNo();
-     
+
      if(cell->IsDependentCell() && !cell->IsHaloCell())
      {
       DOF      = GlobalNumbers   + BeginIndex[i];
@@ -676,7 +685,7 @@ if(TDatabase::ParamDB->Par_P4){
     
     if(Master[i]==rank){
       if(GlobalDofNo[i] == -1){
-	printf("......................This shudnt happen.................\n");
+	printf("......................This shudnt happen l.679.................\n");
 	MPI_Finalize();
 	exit(0);
       }
@@ -684,7 +693,7 @@ if(TDatabase::ParamDB->Par_P4){
     
     if(DofMarker[i]=='z'){
       if(GlobalDofNo[i]>=total_interface_dofs){
-	printf("......................This shudnt happen.................\n");
+	printf("......................This shudnt happen l.687.................\n");
 	MPI_Finalize();
 	exit(0);
       }
@@ -780,7 +789,7 @@ if(TDatabase::ParamDB->Par_P4){
   for(j=0;j<total_interface_dofs;j++){
   //a interface dof should have at least one neighbour from other rank
     if(N_ranks_per_interface_dofs[j] == 1){
-	printf("......................This shudnt happen.....j=%d............\n",j);
+	printf("......................This shudnt happen l.783.....j=%d............\n",j);
 	MPI_Finalize();
 	exit(0);
     }
@@ -843,7 +852,7 @@ if(TDatabase::ParamDB->Par_P4){
       N_allocated_masters[Master[i]]++;
       
       if(GlobalDofNo[i] == -1){
-	printf("......................This shudnt happen.................\n");
+	printf("......................This shudnt happen l.846.................\n");
 	MPI_Finalize();
 	exit(0);
       }
@@ -1524,7 +1533,7 @@ if(TDatabase::ParamDB->Par_P5 == 1)
 	  {
 	    if(Master[i]!=rank){
 	      if(!(DofMarker[i]=='s' || DofMarker[i]=='h' || DofMarker[i]=='H')){
-		printf("\n................1.This shudnt happen...................\n");
+		printf("\n................1.This shudnt happen l.1527...................\n");
 		MPI_Finalize();
 		exit(0);
 	      }
@@ -1532,13 +1541,13 @@ if(TDatabase::ParamDB->Par_P5 == 1)
 	    else if(Master[i]==rank){
 	      Total_Own++;
 	      if(!(DofMarker[i]=='m' || DofMarker[i]=='d' || DofMarker[i]=='D' || DofMarker[i]=='i' || DofMarker[i]=='x')){
-		printf("\n................2.This shudnt happen...........DofMarker[%d]=%c........\n",i,DofMarker[i]);
+		printf("\n................2.This shudnt happen l.1535...........DofMarker[%d]=%c........\n",i,DofMarker[i]);
 		MPI_Finalize();
 		exit(0);
 	      }
 	    }
 	    else{
-		printf("\n................3.This shudnt happen...................\n");
+		printf("\n................3.This shudnt happen l.1541...................\n");
 		MPI_Finalize();
 		exit(0);
 	    } 
@@ -1584,12 +1593,12 @@ void TParFEMapper3D::ConstructDofMap()
   for(i=0;i<N_OwnCells;i++)
   {
     cell = Coll->GetCell(i);
-    if(cell->IsHaloCell()) printf("This shudnt happen---------------------------------------------\n");
+    if(cell->IsHaloCell()) printf("This shudnt happen l.1587---------------------------------------------\n");
   }
   for(i=N_OwnCells;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
-    if(!cell->IsHaloCell()) printf("This shudnt happen---------------------------------------------\n");
+    if(!cell->IsHaloCell()) printf("This shudnt happen l.1592---------------------------------------------\n");
   }
 
   /** *************************************************************************************/
