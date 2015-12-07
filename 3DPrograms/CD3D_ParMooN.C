@@ -102,11 +102,28 @@ int main(int argc, char* argv[])
   domain.GenerateEdgeInfo();
 
   // 2nd step: Call the mesh partitioning.
-  /** /todo Depending on the metis type the grid might need
-   * further initial refinement, so that each participating process
-   * gets some dofs. See code from india!*/
+
   int maxCellsPerVertex;
-  Partition_Mesh3D(comm, &domain, maxCellsPerVertex); //do the actual partitioning
+  //do the actual partitioning, and examine the return value
+  if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
+  {
+    /** \todo It is a knwon issue, that Metis does not operate entirely
+     * deterministic here. On a coarse grid (as if doing the partitioning on
+     * the coarsest grid of a multgrid hierarchy) it can happen, that
+     * one process goes entirely without own cells to work on.
+     * The workarounds which were used so far (setting another metis type,
+     * doing more uniform steps than the user requested ) are unsatisfactoy
+     * imo. So this is a FIXME
+     *
+     * One can reproduce the problem when using the cd3d multigrid test program
+     * in MPI and setting LEVELS to 3 and UNIFORM_STEPS to 1.
+     *
+     * Of course the same issue occurs if one calls this upon too small
+     * a grid with too many processes.
+     *
+     */
+    ErrThrow("Partitioning did not succeed.");
+  }
 
   // 3rd step: Generate edge info anew
   //(since distributing changed the domain).
