@@ -93,6 +93,16 @@ class CD2D
      * throws an exception.
      */
     void set_parameters();
+
+    /**
+     * Apply an algebraic flux correction scheme to the assembled matrix.
+     * Should be called within the assemble routine, after the actual assembling
+     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
+     *
+     * Which afc algorithm is performed is determined by switching over
+     * ALGEBRAIC_FLUX_CORRECTION.
+     */
+    void performAlgebraicFluxCorrection();
     
   public:
     
@@ -191,17 +201,6 @@ class CD2D
 
     //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
     ~CD2D();
-
-  private:
-    /**
-     * Apply an algebraic flux correction scheme to the assembled matrix.
-     * Should be called within the assemble routine, after the actual assembling
-     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
-     *
-     * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION.
-     */
-    void performAlgebraicFluxCorrection();
 };
 
 #endif // __CD2D_H__

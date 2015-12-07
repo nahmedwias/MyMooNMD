@@ -1002,8 +1002,10 @@ int TGridCell::Derefine()
   {
     N_1 = RefDesc->GetN_InnerVertices();
     for(i=0;i<N_1;i++)
-      delete Children[TmpVC[TmpIV[i]*MaxLen1]]->
-               GetVertex(TmpVCI[TmpIV[i]*MaxLen1]);
+      if(Children) {
+        delete Children[TmpVC[TmpIV[i] * MaxLen1]]->
+                GetVertex(TmpVCI[TmpIV[i] * MaxLen1]);
+      }
   }
 
   RefDesc->GetEdgeChild(TmpEC, TmpLen, MaxLen2);

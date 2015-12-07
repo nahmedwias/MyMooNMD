@@ -99,20 +99,20 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       exact_solution.push_back( flow_around_cylinder::ExactU1 );
       exact_solution.push_back( flow_around_cylinder::ExactU2 );
       exact_solution.push_back( flow_around_cylinder::ExactP );
-      
+
       /** boundary condition */
       boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
       boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
+
       /** boundary values */
       boundary_data.push_back( flow_around_cylinder::U1BoundValue );
       boundary_data.push_back( flow_around_cylinder::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
-      
+
       /** coefficients */
       problem_coefficients = flow_around_cylinder::LinCoeffs;
-      
+
       flow_around_cylinder::ExampleFile();
       break;
     default:

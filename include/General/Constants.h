@@ -18,6 +18,7 @@
 #define NULL 0
 
 #include <math.h>
+#include <functional>
 
 #ifdef __2D__
 #define GEO_DIM 2
@@ -129,6 +130,8 @@ typedef void AssembleFctParam3D(double, double *, double *,
 
 class TBaseCell;
 typedef void ManipulateFct2D(int, double **, double **, TBaseCell *);
+// void(n_points, x, y, coeffs, params, cell)
+typedef std::function<void(int, double*, double*, double**, double**, TBaseCell*)> ManipulateAssemblingFct2D;
 
 typedef void ManipulateFct3D(int, double **, double **, TBaseCell *);
 
