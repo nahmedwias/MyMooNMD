@@ -237,7 +237,7 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs,
   const TFESpace2D *fespmat[2] = {v_space, p_space};
   const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
   
-  unsigned int n_sq_mat = 6;
+  unsigned int n_sq_mat = 4;
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
     n_sq_mat = 2;
   if(TDatabase::ParamDB->NSTYPE == 14)
@@ -249,19 +249,31 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs,
   TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
                                       nullptr, nullptr};
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
-    sq_matrices[1] = mass->get_A_block(0); // mass matrix
+  {
+    if(mass != nullptr)
+    {
+      sq_matrices[1] = mass->get_A_block(0); // mass matrix
+    }
+  }
   else
   {
     sq_matrices[1] = this->get_A_block(1);
     sq_matrices[2] = this->get_A_block(2);
     sq_matrices[3] = this->get_A_block(3);
-    // mass matrices 
-    sq_matrices[4] = mass->get_A_block(0);
-    sq_matrices[5] = mass->get_A_block(3);
-    if(TDatabase::ParamDB->NSTYPE == 14)
+    if(mass != nullptr)
     {
-      n_sq_mat += 1;
-      sq_matrices[6] = this->get_C_block();
+      // mass matrices 
+      sq_matrices[4] = mass->get_A_block(0);
+      sq_matrices[5] = mass->get_A_block(3);
+      n_sq_mat = 6;
+    }
+    else
+    {
+      if(TDatabase::ParamDB->NSTYPE == 14)
+      {
+        n_sq_mat += 1;
+        sq_matrices[6] = this->get_C_block();
+      }
     }
   }
   
