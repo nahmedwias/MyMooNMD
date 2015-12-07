@@ -24,6 +24,7 @@
 include_directories("${PROJECT_SOURCE_DIR}/user_projects")
 
 list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/BlockFEMatrix.C")
+list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/PrRobustNSE2D.C")
 
 add_library(PROJECT_LIB_2D STATIC ${PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
