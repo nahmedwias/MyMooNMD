@@ -54,7 +54,7 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
   {
     // reset right hand side and matrix to zero
     rhs.reset();
-    matrix->Reset();
+    matrix->reset();
     
     // assemble
     Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries, 
@@ -82,7 +82,7 @@ void BlockMatrixCD2D::Assemble(LocalAssembling2D& la, BlockVector& sol,
   //if(la.get_type() == TCD2D_Mass_Rhs_Galerkin)
   {
     // reset the matrix
-    matrix->Reset();
+    matrix->reset();
     Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 0, NULL, 
                NULL, &boundary_conditions, &non_const_bound_value, la);
   }

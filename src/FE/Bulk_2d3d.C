@@ -855,7 +855,8 @@ void Bulk_BWE_FDM_Upwind_3D(TCollection *coll,
   int i, ii, N2, N3, maxind, index, index1, index2;
   int very_first = 0, jj, iq, k;
   int alpha, beta, no_of_2dcell, N_Entries, range, diag_index;
-  int *col_ptr, *row_ptr, indices[9];
+  const int *col_ptr, *row_ptr;
+  int indices[9];
   int SC_LDS =  TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   double B_c_C, velocity1_array_val, velocity2_array_val, concent_C_array_val, maxsol, G_c_C_val;
   double values[3], *velo1, * velo2, *concent_C_array, yq, t1, t2, val, z_min, t3;
@@ -1835,7 +1836,8 @@ void Build_3D_FEM_FCT_MassMatrix_Q1(TCollection *coll,
 				    TSquareMatrix2D *matM,
 				    double *lump_mass_PSD)
 {
-  int locdof[8], *col_ptr, *row_ptr;
+  int locdof[8];
+  const int * col_ptr, *row_ptr;
   int i, j, k, iq, ii, jj, z, z1, N_Entries, Nodes, ii8;
   int test_index, ansatz_index, index, z_local, z_iq, z_ii;
   int quad_points = 8, diag_index, found, N_cells, range, index1;
@@ -2062,7 +2064,8 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
 				double *neum_to_diri_y,
 				double *neum_to_diri_z)
 {
-  int locdof[8], *col_ptr, *row_ptr;
+  int locdof[8];
+  const int * col_ptr, *row_ptr;
   int i, j, k, iq, ii, jj, z, z1, N_Entries, Nodes, N2, ii8;
   int test_index, ansatz_index, index, alpha, beta, no_of_2dcell;
   int count = 0, topdiri = 0, count_local, count_iq, count_ii;
@@ -2479,7 +2482,7 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
   //t2 = GetTime();
   //OutPut("time bulkfct (3) " << t2-t1 << endl);
   // build matrix for FEM-FCT
-  matM->Reset();
+  matM->reset();
   FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
   OutPut("entries " << Ddot(matM->GetN_Entries(),matM->GetEntries(),matM->GetEntries()) << 
 	 " lump " << Ddot(Nodes,lump_mass_PSD,lump_mass_PSD) << endl);
@@ -2592,7 +2595,8 @@ void Build_3D_FEM_FCT_Matrices_Q1_GroupFEM_Bulk(TCollection *coll,
                   TSquareMatrix2D *matU2, TSquareMatrix2D *matG,
             double *lump_mass_PSD)
 {
-  int locdof[8], *col_ptr, *row_ptr;
+  int locdof[8];
+  const int * col_ptr, *row_ptr;
   int i, j, k, iq, ii, jj, z, z1, N_Entries, Nodes, ii8;
   int test_index, ansatz_index, index, z_local, z_iq, z_ii;
   int quad_points = 8, diag_index, found, N_cells, range, index1, index_test_ansatz_loc[64];
@@ -2837,7 +2841,7 @@ double *neum_to_diri_x,
 double *neum_to_diri_y,
 double *neum_to_diri_z)
 {
-  int *col_ptr, *row_ptr;
+  const int *col_ptr, *row_ptr;
   int i, j, k, iq, ii, jj, z, N_Entries, Nodes, ij, start, end;
   int test_index, ansatz_index, index, index1, alpha, beta, gamma, no_of_2dcell;
   int diag_index, found, N_cells, range_y, range_z, topdiri = 0;
@@ -3028,7 +3032,7 @@ double *neum_to_diri_z)
   //t2 = GetTime();
   //OutPut("time bulkfct (3) " << t2-t1 << endl);
   // build matrix for FEM-FCT
-  matM->Reset();
+  matM->reset();
   FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
   OutPut("entries " << Ddot(matM->GetN_Entries(),matM->GetEntries(),matM->GetEntries()) << 
    " lump " << Ddot(Nodes,lump_mass_PSD,lump_mass_PSD) << endl);

@@ -35,7 +35,8 @@ void AlgebraicFluxCorrection::LumpMassMatrixToVector(TSquareMatrix2D *M, double 
 //#endif
 {
   double *Entries;
-  int *RowPtr, i, j, rows, j0, j1;
+  const int * RowPtr;
+  int i, j, rows, j0, j1;
 
   RowPtr        = M->GetRowPtr();
   Entries       = M->GetEntries();
@@ -92,7 +93,6 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 //int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 //#endif
 {
-  int  *RowPtr, *ColInd, N_Entries;
   int i,j,j0,j1,j2,j3,jj,index;
   double nenner, zaehler;
   double *Entries, *F;
@@ -105,10 +105,10 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
     exit(4711);
   }
   // get pointers to columns, rows and entries of matrix A
-  ColInd = sqmatrix->GetKCol();
-  RowPtr = sqmatrix->GetRowPtr();
+  const int * ColInd = sqmatrix->GetKCol();
+  const int * RowPtr = sqmatrix->GetRowPtr();
   Entries = sqmatrix->GetEntries();
-  N_Entries = sqmatrix->GetN_Entries();
+  int N_Entries = sqmatrix->GetN_Entries();
 
   // allocate memory for array F
   F = new double[N_Entries+6*N_U];
@@ -345,8 +345,8 @@ double *lump_mass,int N_U)
   double theta2 = TDatabase::TimeDB->THETA2; //needed only for checking cfl (or checking, whether cfl has to be checked...)
 
 //  // get pointers to columns, rows and entries of matrix M_C
-  int* ColInd_M = M_C->GetKCol();
-  int* RowPtr_M = M_C->GetRowPtr();
+  const int* ColInd_M = M_C->GetKCol();
+  const int* RowPtr_M = M_C->GetRowPtr();
   double*  Entries_M = M_C->GetEntries();
 //  N_Entries_M = M_C->GetN_Entries();
 
@@ -500,14 +500,14 @@ void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareM
   double theta4 = TDatabase::TimeDB->THETA4;
 
   // get pointers to columns, rows and entries of matrix M_C
-  int* ColInd_M = M_C->GetKCol();
-  int* RowPtr_M = M_C->GetRowPtr();
+  const int* ColInd_M = M_C->GetKCol();
+  const int* RowPtr_M = M_C->GetRowPtr();
   double* Entries_M = M_C->GetEntries();
   //int N_Entries_M = M_C->GetN_Entries();
 
   // get pointers to columns, rows and entries of matrix A
-  int* ColInd = A->GetKCol();
-  int* RowPtr = A->GetRowPtr();
+  const int* ColInd = A->GetKCol();
+  const int* RowPtr = A->GetRowPtr();
   double* Entries = A->GetEntries();
   int N_Entries = A->GetN_Entries();
 
@@ -1147,8 +1147,8 @@ void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareM
 void AlgebraicFluxCorrection::computeArtificialDiffusionMatrix(const TSquareMatrix2D& A, double* matrix_D_Entries, int N_U){
 
 	  // get pointers to columns, rows and entries of matrix A
-	  int* ColInd = A.GetKCol();
-	  int* RowPtr = A.GetRowPtr();
+	  const int* ColInd = A.GetKCol();
+	  const int* RowPtr = A.GetRowPtr();
 	  const double* Entries = A.GetEntries();
 	  int N_Entries = A.GetN_Entries();
 
@@ -1233,19 +1233,19 @@ void AlgebraicFluxCorrection::FEM_FCT_SimpleLinear(TSquareMatrix2D *M_C,TSquareM
 
 	double eps = 1e-10;
 	double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-	double theta1 = TDatabase::TimeDB->THETA1;
+	//double theta1 = TDatabase::TimeDB->THETA1;
 	double theta2 = TDatabase::TimeDB->THETA2;
 	double theta3 = TDatabase::TimeDB->THETA3;
 	double theta4 = TDatabase::TimeDB->THETA4;
 
 	// get pointers to columns, rows and entries of matrix M_C
-	int* ColInd_M = M_C->GetKCol();
-	int* RowPtr_M = M_C->GetRowPtr();
+	const int* ColInd_M = M_C->GetKCol();
+	const int* RowPtr_M = M_C->GetRowPtr();
 	double* Entries_M = M_C->GetEntries();
 
 	// get pointers to columns, rows and entries of matrix A (later L); plus number of entries.
-	int* ColInd = A->GetKCol();
-	int* RowPtr = A->GetRowPtr();
+	const int* ColInd = A->GetKCol();
+	const int* RowPtr = A->GetRowPtr();
 	double* Entries = A->GetEntries();
 	int N_Entries = A->GetN_Entries();
 
@@ -1473,8 +1473,8 @@ void AlgebraicFluxCorrection::FEM_FCT_SimpleLinear(TSquareMatrix2D *M_C,TSquareM
 void AlgebraicFluxCorrection::correctDirichletRows(TSquareMatrix2D& MatrixA)
 {
 	//hold pointers to row, kcol, entries array
-	int* RowPtr_A      = MatrixA.GetRowPtr();
-	int* KCol_A        = MatrixA.GetKCol();
+	const int* RowPtr_A      = MatrixA.GetRowPtr();
+	const int* KCol_A        = MatrixA.GetKCol();
 	double* Entries_A  = MatrixA.GetEntries();
 
 	//determine first and one-after-last dirichlet rows

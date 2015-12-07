@@ -277,8 +277,8 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
           {
             // current matrix block
             const TMatrix& cm = this->block(block_row, block_col);
-            int * row_ptr = cm.GetRowPtr();
-            int * col_ptr = cm.GetKCol();
+            const int * row_ptr = cm.GetRowPtr();
+            const int * col_ptr = cm.GetKCol();
             const double * entries = cm.GetEntries();
             // loop over entire row in this block
             for(int e = row_ptr[row]; e < row_ptr[row+1]; ++e)
@@ -299,7 +299,8 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
           new TStructure(n_comb_rows, n_comb_cols, n_comb_entries,
                          column_of_entry, entries_in_rows));
       // create Matrix
-      this->combined_matrix = std::make_shared<TMatrix>(sp, comb_entries);
+      this->combined_matrix = std::make_shared<TMatrix>(sp);
+      this->combined_matrix->setEntries(comb_entries);
       delete [] comb_entries;
     }
   }

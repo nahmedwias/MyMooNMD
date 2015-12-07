@@ -120,7 +120,7 @@ void TADICell1D::SolveAllQdPts(double *G, double *QuadPtsRhsT, CoeffFct2D *Bilin
     memcpy(Sol_Qpt, OldSol, N_V*SizeOfDouble);
 
     // if G is constant then it is enough to assemble A once for all QuadPts
-    A_Internal->Reset();
+    A_Internal->reset();
 
     //working rhs array
     memset(B, 0, N_V*SizeOfDouble);
@@ -200,7 +200,7 @@ void TADICell1D::AssembleARhs(double x, double Conv, CoeffFct2D *Bilinear, Bound
 {
  int i, j, k, l, N_Cells_Internal, N_BaseFunct;
  int N_Points, N_Sets=1, *GlobalNumbers, *BeginIndex, *DOF;
- int TestDOF, begin, end, *RowPtr, *KCol;
+ int TestDOF, begin, end;
 
  double *Weights, *zeta, X[MaxN_QuadPoints_1D], AbsDetjk[MaxN_QuadPoints_1D];
  double **aux, **coeff, *Coeff;
@@ -225,8 +225,8 @@ void TADICell1D::AssembleARhs(double x, double Conv, CoeffFct2D *Bilinear, Bound
   GlobalNumbers = FESpace1D_Internal->GetGlobalNumbers();
   BeginIndex = FESpace1D_Internal->GetBeginIndex();
 
-  RowPtr = A_Internal->GetRowPtr();
-  KCol = A_Internal->GetKCol();
+  const int * RowPtr = A_Internal->GetRowPtr();
+  const int * KCol = A_Internal->GetKCol();
   ValuesA = A_Internal->GetEntries(); 
 
   N_Cells_Internal = Collection_Internal->GetN_Cells();

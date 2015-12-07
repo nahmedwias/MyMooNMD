@@ -622,11 +622,11 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix2D **SQMATRICES,
 {
     TSquareMatrix2D *MatrixA;
     double *Entries_A;
-    int i, l, l0, l1, index, *RowPtr_A, *KCol_A;
+    int i, l, l0, l1, index;
     
     MatrixA = SQMATRICES[0];
-    RowPtr_A      = MatrixA->GetRowPtr();
-    KCol_A        = MatrixA->GetKCol();
+    const int *RowPtr_A      = MatrixA->GetRowPtr();
+    const int *KCol_A        = MatrixA->GetKCol();
     Entries_A     = MatrixA->GetEntries();
     // loop over dof to change
     for (i=0;i<N_neum_to_diri;i++)

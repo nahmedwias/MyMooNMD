@@ -3767,7 +3767,7 @@ void Build_4D_FEM_FCT_Matrix_Q1(TCollection *coll,
   t2 = GetTime();
   OutPut("time bulkfct (3) " << t2-t1 << endl);
   // build matrix for FEM-FCT
-  matM->Reset();
+  matM->reset();
   FEM_FCT_SystemMatrix(matM, mat, lump_mass_PSD, Nodes);
 
   t2 = GetTime();

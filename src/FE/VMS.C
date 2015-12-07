@@ -40,8 +40,8 @@ TSquareMatrix2D **SQMATRICES, TMatrix2D **MATRICES)
   double *val, *Entries_tilde, *Entries, *Entries_A, *Entries_A1, *Entries_L;
   double val1, val2;
   int i, j0, j1, j, k, l0, l1, l, index, m;
-  int *RowPtr_tilde, *KCol_tilde, *RowPtr, *KCol, *RowPtr_A, *KCol_A;
-  int *RowPtr_L, *KCol_L;
+  const int *RowPtr_tilde, *KCol_tilde, *RowPtr, *KCol, *RowPtr_A, *KCol_A;
+  const int *RowPtr_L, *KCol_L;
 
   val = new double[N_U];
   memset(val,0,N_U*SizeOfDouble);

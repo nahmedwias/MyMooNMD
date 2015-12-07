@@ -24,34 +24,30 @@ TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
 {
 }
 
-TMatrix::TMatrix(std::shared_ptr<TStructure> structure, double* Entries)
- : structure(structure), entries(this->structure->GetN_Entries(), 0.)
-{
-  this->setEntries(Entries);
-}
-
-TMatrix::TMatrix(int nRows, int nCols)
- : TMatrix(std::make_shared<TStructure>(nRows, nCols))
-{
-}
-
-void TMatrix::SetStructure(std::shared_ptr<TStructure> structure)
-{
-  this->structure = structure;
-
-  memset(this->GetEntries(), 0, this->structure->GetN_Entries()*SizeOfDouble);
-}
-
 void TMatrix::reset()
 {
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
+void TMatrix::setEntries(double* entries)
+{
+  std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
+}
+
+void TMatrix::setEntries(std::vector<double> entries)
+{
+  if(this->entries.size() != entries.size())
+  {
+    ErrThrow("resetting the entries of a matrix with the wrong number of ",
+             "entries ", this->entries.size(), " != ", entries.size());
+  }
+  this->entries = entries;
+}
 
 void TMatrix::Print(const char *name) const
 {
-  int* RowPtr = structure->GetRowPtr();
-  int* KCol = structure->GetKCol();
+  const int* RowPtr = structure->GetRowPtr();
+  const int* KCol = structure->GetKCol();
   int begin, end, pos=0;
   
   for (int i=0; i<structure->GetN_Rows(); ++i)
@@ -68,11 +64,10 @@ void TMatrix::Print(const char *name) const
   }
 }
 
-
 void TMatrix::PrintFull(std::string name, int fieldWidth) const
 {
-  int* rowPtr = structure->GetRowPtr();
-  int* KCol = structure->GetKCol();
+  const int* rowPtr = structure->GetRowPtr();
+  const int* KCol = structure->GetKCol();
 
   cout << endl << name << " = " << endl;
   for (int curRow = 0; curRow < structure->GetN_Rows(); curRow++) 
@@ -112,8 +107,8 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
              ".\nThe dimension of this matrix is ", this->GetN_Rows(), " x ",
              this->GetN_Columns());
   }
-  int* RowPtr = structure->GetRowPtr();
-  int* KCol = structure->GetKCol();
+  const int* RowPtr = structure->GetRowPtr();
+  const int* KCol = structure->GetKCol();
   std::map<int,double>::iterator it = vals.begin();
   for (int m=RowPtr[i];m < RowPtr[i+1] && it != vals.end(); m++) 
   {
@@ -174,7 +169,7 @@ double & TMatrix::operator()(const int i, const int j)
 {
   return this->get(i, j);
 }
-//was ist der unterschied ausser const?
+
 const double & TMatrix::operator()(const int i, const int j) const
 {
   return this->get(i, j);
@@ -190,7 +185,7 @@ double TMatrix::GetNorm(int p) const
       break;
     case -1:
     {
-      int *rows = this->GetRowPtr();
+      const int * rows = this->GetRowPtr();
       for(int row=0; row<this->GetN_Rows(); row++)
       {
         double row_sum = 0.0;
@@ -230,8 +225,8 @@ double TMatrix::GetNorm(int p) const
 double* operator*(const TMatrix & A,const double* x)
 {
   const double *AEntries = A.GetEntries();
-  int *ARowPtr = A.GetRowPtr();
-  int *AColIndex = A.GetKCol();
+  const int *ARowPtr = A.GetRowPtr();
+  const int *AColIndex = A.GetKCol();
 
   int nrows = A.GetN_Rows();
   
@@ -289,33 +284,13 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 }
 
 
-TMatrix & TMatrix::operator=(const TMatrix& A)
-{
-  // compare structures (first pointers, then structures themselves)
-  if(this->GetStructure() != A.GetStructure()) // compare objects
-  {
-    OutPut("WARNING: TMatrix& operator= Matrices have different structures.\n"
-           << "         The structure in this matrix (on left hand side) is "
-           << "         reset to use the same structure as the right hand "
-           << "side\n         Are you sure this is what you want?\n");
-    ErrThrow("cannot call operator= on TMatrix with different TStructure");
-  }
-  
-  // copy matrix entries.
-  int n_entries = this->GetN_Entries();
-  const double *AEntries = A.GetEntries();
-  for(int i = 0; i < n_entries; i++)
-    this->entries[i] = AEntries[i];
-  return *this;
-}
-
 void TMatrix::multiply(const double * const x, double *y, double a) const
 {
   if(a == 0.0)
     return;
   
-  int *rowPtr = GetRowPtr();
-  int *colIndex = GetKCol();
+  const int *rowPtr = GetRowPtr();
+  const int *colIndex = GetKCol();
 
   int nrows = GetN_Rows();
   
@@ -339,8 +314,8 @@ void TMatrix::transpose_multiply(const double * const x, double *y, double a)
   if(a == 0.0)
     return;
   
-  int *rowPtr = GetRowPtr();
-  int *colIndex = GetKCol();
+  const int *rowPtr = GetRowPtr();
+  const int *colIndex = GetKCol();
   
   int nrows = GetN_Rows();
   
@@ -375,10 +350,10 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
   const double * const b_entries = B->GetEntries();
   
   std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
-  int * c_rows = struc_c->GetRowPtr();
-  int * c_cols = struc_c->GetKCol();
-  double * c_entries = new double[struc_c->GetN_Entries()];
-  memset(c_entries, 0.0, struc_c->GetN_Entries() * SizeOfDouble);
+  const int * c_rows = struc_c->GetRowPtr();
+  const int * c_cols = struc_c->GetKCol();
+  TMatrix * c = new TMatrix(struc_c);
+  double * c_entries = c->GetEntries();
   
   // fill the entries
   // loop over all rows in C
@@ -401,7 +376,7 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
       }
     }
   }
-  return new TMatrix(struc_c, c_entries);
+  return c;
 }
 
 
@@ -409,13 +384,14 @@ TMatrix* TMatrix::GetTransposed() const
 {
   // get transposed structure
   std::shared_ptr<TStructure> structureT = structure->GetTransposed();
-  int * rowsT= structureT->GetRowPtr();
-  int * colsT= structureT->GetKCol();
-  int * rows = this->GetRowPtr();
-  int * cols = this->GetKCol();
+  const int * rowsT= structureT->GetRowPtr();
+  const int * colsT= structureT->GetKCol();
+  const int * rows = this->GetRowPtr();
+  const int * cols = this->GetKCol();
   
   // transpose the entries:
-  double *entriesT = new double[this->GetN_Entries()];
+  TMatrix * mT = new TMatrix(structureT);
+  double *entriesT = mT->GetEntries();
   // loop over all rows of the original matrix
   for(int i=0; i<this->GetN_Rows(); i++)
   {
@@ -437,7 +413,7 @@ TMatrix* TMatrix::GetTransposed() const
     }
   }
   
-  return new TMatrix(structureT,entriesT);
+  return mT;
 }
 
 void TMatrix::remove_zeros(double tol)
@@ -446,8 +422,8 @@ void TMatrix::remove_zeros(double tol)
     tol = this->GetNorm(0) * 1e-15; // largest (in magnitude) entry
   // we want to call this->changeRows(new_entries, true)
   std::map<int,std::map<int,double> > new_entries;
-  int *rows = structure->GetRowPtr();
-  int *cols = structure->GetKCol();
+  const int *rows = structure->GetRowPtr();
+  const int *cols = structure->GetKCol();
   int n_rows = structure->GetN_Rows();
   int n_removed = 0; // number of entries to be removed
   // loop over all rows of this matrix
@@ -488,8 +464,8 @@ void TMatrix::scale(double factor)
 
 void TMatrix::scale(const double * const factor, bool from_left)
 {
-  int *rowPtr = GetRowPtr();
-  int *colIndex = GetKCol();
+  const int *rowPtr = GetRowPtr();
+  const int *colIndex = GetKCol();
   
   if(from_left)
   {
@@ -529,7 +505,7 @@ void TMatrix::reorderMatrix()
   int l, begin, end;
   double value;
   
-  int* Row = structure->GetRowPtr();
+  const int* Row = structure->GetRowPtr();
   int* KCol = structure->GetKCol();
   
   //OutPut("\tPARDISO: reordering of the columns will be performed"<<endl);
@@ -559,8 +535,8 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   if(entries.size() == 0)
     return; // nothing needs to be done
   
-  int *oldRows = structure->GetRowPtr();
-  int *oldCols = structure->GetKCol();
+  const int *oldRows = structure->GetRowPtr();
+  const int *oldCols = structure->GetKCol();
   
   // find out how many entries there are after all changes are applied, i.e. 
   // how many entries are deleted/created

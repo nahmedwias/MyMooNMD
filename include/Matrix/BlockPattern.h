@@ -19,6 +19,8 @@
 * @author     Ulrich Wilbrandt
 * @date       08.09.2015
 *
+* @ruleof0
+*
 ****************************************************************************/
 
 /** @brief the supported problem types when creating a BlockPattern */

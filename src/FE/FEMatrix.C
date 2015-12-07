@@ -92,8 +92,8 @@ void FEMatrix::addActive(const FEMatrix& m, double factor)
 void FEMatrix::multiplyActive(const double* x, double* y, double factor) const
 {
   int nActive= this->GetActiveBound();
-  int * rowPtr = this->GetRowPtr();
-  int * colIndex = this->GetKCol();
+  const int * rowPtr = this->GetRowPtr();
+  const int * colIndex = this->GetKCol();
   
   for(int i=0; i<nActive; ++i)
   {

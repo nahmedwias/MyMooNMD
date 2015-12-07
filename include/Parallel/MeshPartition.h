@@ -33,6 +33,8 @@ void Partition_Mesh(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
  * @param[out] MaxCpV The globally unique maximum number of cells per vertex.
  *
  * @return 0 if partitioning was successful, 1 if unsuccessful.
+ *           At the moment no strong guarantee can be given, because
+ *           we don't know enough about the method yet.
  */
 int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
 

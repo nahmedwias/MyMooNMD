@@ -1,15 +1,23 @@
-// =======================================================================
-// @(#)Matrix.h        1.2 11/20/98
-// 
-// Class:       TMatrix
-//
-// Purpose:     store a  matrix (ansatz != test space)
-//
-// Author:      Gunar Matthies
-//
-// History:     26.08.1998 start implementation
-//
-// =======================================================================
+/** ************************************************************************ 
+*
+* @class     TMatrix
+* @brief     store a sparse matrix
+* 
+* Sparse matrices in ParMooN are stored in <em>compressed row storage</em>. 
+* Basically the matrix consists of a structure and entries and can perform 
+* algebraic operations.
+* 
+* To create a TMatrix either copy or move an existing one or use a TStructure 
+* to construct a new one.
+* 
+* Objects ob type TMatrix are not supposed to be copied. You can copy the 
+* entries from one TMatrix to another or copy/move construct a new TMatrix.
+* 
+* \todo apply naming convention to all methods
+* 
+* @ruleof0
+* 
+ ************************************************************************  */
 
 #ifndef __MATRIX__
 #define __MATRIX__
@@ -22,97 +30,121 @@
 class TMatrix
 {
   protected:
-    /** Sparse structure of the matrix */
+    /** @brief structure of the matrix
+     * 
+     * This stores the information where this matrix has entries. Many objects
+     * of type TMatrix can have the same TStructure, therefore we use a 
+     * `std::shared_ptr` here.
+     */
     std::shared_ptr<TStructure> structure;
     
-    /** matrix elements in an array */
+    /** @brief matrix entries
+     * 
+     * Its size is determined by the TMatrix::structure.
+     */
     std::vector<double> entries;
     
   public:
-    /** generate the matrix, intialize entries with zeros */
+    /** @brief generate the matrix, initialize entries with zeros */
     TMatrix(std::shared_ptr<TStructure> structure);
-    
-    /** generate the matrix with given entries */
-    [[deprecated("use the constructor taking only a TStructure")]]
-    TMatrix(std::shared_ptr<TStructure> structure, double* Entries);
-    
-    /** @brief reset the structure, this may mean that the entries need to be 
-     *         reallocated */
-    [[deprecated("This should never be necessary")]]
-    void SetStructure(std::shared_ptr<TStructure> structure);
-    
-    /** create a nRows*nCols zero matrix */
-    [[deprecated("use the constructor taking only a TStructure")]]
-    TMatrix(int nRows, int nCols);
 
-    /** destructor: free Entries array */
+    /// @brief Default copy constructor
+    ///
+    /// Performs a deep copy of the entries, but not of the structure.
+    TMatrix(const TMatrix&) = default;
+
+    /// @brief Default move constructor.
+    TMatrix(TMatrix&&) = default;
+
+    /// @brief no copy assignment operator to avoid accidental copies
+    TMatrix & operator=(const TMatrix& A) = delete;
+    
+    /// @brief no move assignment operator to avoid accidental moves
+    TMatrix& operator=(TMatrix&&) = delete;
+
+    /// @brief Default destructor.
     virtual ~TMatrix() = default;
-
-    /** reset all matrix entries to zero */
-    [[deprecated("use TMatrix::reset() insead of TMatrix::Reset()")]]
-    void Reset() { this->reset(); }
+    
+    
+    /// @brief reset all matrix entries to zero
     void reset();
-
-    /** return number of rows */
+    
+    /// @brief return number of rows
     int GetN_Rows() const
     { return structure->GetN_Rows(); }
-
-    /** return number of columns */
+    
+    /// @brief return number of columns
     int GetN_Columns() const
     { return structure->GetN_Columns(); }
     
-    /** return number of matrix entries */
+    /// @brief return number of matrix entries
     int GetN_Entries() const
     { return structure->GetN_Entries(); }
-
-    /** return number of matrix entries for hanging node data */
+    
+    /// @brief return the column pointer in the TStructure of this matrix
+    const int *GetKCol() const
+    { return structure->GetKCol(); }
+    /** @brief return the column pointer in the TStructure of this matrix
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetKCol()
+    { return structure->GetKCol(); }
+    
+    /// @brief return the row pointer in the TStructure of this matrix
+    const int *GetRowPtr() const
+    { return structure->GetRowPtr(); }
+    
+    /** @brief return the row pointer in the TStructure of this matrix
+     * 
+     * This version should never be used. It only exists because some other
+     * parts of the software do not respect the const keyword (like AMG) or are
+     * not well implemented (changing the structure of a matrix).
+     */
+    int *GetRowPtr()
+    { return structure->GetRowPtr(); }
+    
+    /// @brief return number of matrix entries for hanging node data
     int GetHangingN_Entries() const
     { return structure->GetHangingN_Entries(); }
-
-    /** return array KCol */
-    int *GetKCol() const
-    { return structure->GetKCol(); }
-
-    /** return array HangingKCol */
-    int *GetHangingKCol() const
+    
+    /// @brief return the column pointer corresponding to hanging nodes
+    const int *GetHangingKCol() const
     { return structure->GetHangingKCol(); }
-
-    /** return array HangingRowPtr */
-    int *GetHangingRowPtr() const
+    
+    /// @brief return the row pointer corresponding to hanging nodes
+    const int *GetHangingRowPtr() const
     { return structure->GetHangingRowPtr(); }
-
-    /** return array RowPtr */
-    int *GetRowPtr() const
-    { return structure->GetRowPtr(); }
-
-    /** return structure */
+    
+    /// @brief return structure
     const TStructure& GetStructure() const
     { return *structure; }
     
-    /** return matrix entries */
+    /// @brief return matrix entries as a pointer to const double
     const double *GetEntries() const
     { return &entries[0]; }
-
-    /** return matrix entries */
-    double *GetEntries()
-    {
-      return &entries[0];
-    }
     
-    /** return the norm of the matrix. p is 
+    /// @brief return matrix entries as a pointer to double
+    double *GetEntries()
+    { return &entries[0]; }
+    
+    /** @brief return the norm of the matrix 
+     * 
+     * The parameter \p p determines which norm to compute. Choose \p as  
      * -2 for Frobenius norm
      * -1 for maximum absolute row sum
      *  0 for maximum entry
-     *  1 for maximum absolute column sum
-     *  2 for euclidean norm, 
-     * 
+     *  1 for maximum absolute column sum (not yet implemented)
+     *  2 for euclidean norm, (not yet implemented)
      */
     double GetNorm(int p=-1) const;
 
-    /** write matrix into file */
+    /// @brief write matrix into file
     int Write(const char *filename) const;
     
-    /** @brief Print matrix into the shell */
+    /// @brief Print matrix into the shell
     void Print(const char *name = "a") const;
     
     /** @brief print the full matrix, including all zeros
@@ -121,40 +153,39 @@ class TMatrix
      */
     void PrintFull(std::string name="", int fieldWidth=4) const;
 
-    // add a value at selected entry
+    /// @brief add a value at selected entry
     void add(int i,int j, double val);
-    // add values in row 'i' given by the map 'vals', multiplied by 'factor'
-    // this should be faster than adding all values in 'vals' individually
+    /** @brief add values in row 'i' given by the map 'vals', multiplied by 
+     * 'factor'
+     * 
+     * This should be faster than adding all values in 'vals' individually
+     */
     void add(int i, std::map<int,double> vals, double factor = 1.0);
-    // add values 'vals[i][j]' to this matrix at the positions (i,j) for all
-    // i,j defined in the map 'vals'
+    /** @brief add values `vals[i][j]` to this matrix at the positions `(i,j)`
+     * for all `i,j` defined in the map `vals`
+     */
     void add(std::map<int, std::map<int,double> > vals, double factor = 1.0);
-    // set a value at selected entry
+    /// @brief set a value at selected entry
     void set(int i, int j, double val);
-    // get a value at selected entry
+    /// @brief get a value at selected entry
     const double& get(int i,int j) const;
-    // get a value at selected entry (you may change that value (similar to set)
+    /// @brief  get a value at selected entry (you may change that value)
     double& get(int i,int j);
     
-    // set the whole elements array
-    void setEntries(double* entries)
-    {
-      std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
-    }
+    /// @brief set the whole elements array, discouraged, use the other 
+    /// setEntries
+    void setEntries(double* entries);
     
-    void setEntries(std::vector<double> entries)
-    {
-      this->entries = entries;
-    }
+    /// @brief reset the entries, the given vector must be of the same size
+    void setEntries(std::vector<double> entries);
     
-    /**
-     * @brief reorders the Matrix to comply with direct solvers. 
+    /** @brief reorders the Matrix to comply with direct solvers. 
      * 
      * @warning This changes the structure of the matrix
      */
     void reorderMatrix();
     
-    /** return ordering of columns */
+    /// @brief return ordering of columns, see TStructure::ColOrder
     int GetColOrder() const
     { return structure->GetColOrder(); }
     
@@ -209,15 +240,6 @@ class TMatrix
     { *this += &A; return *this; }
     /** @brief scale matrix by a factor */
     virtual TMatrix & operator*=(const double a);
-    /** @brief copy entries from A to this 
-     * 
-     * This is of course only possible if the corresponding structures are the
-     * same. 
-     * 
-     * \todo this should be a separate method, not a copy asignment. There 
-     * should not be a copy asignment, because we don't want to asign structures
-     */
-    TMatrix & operator=(const TMatrix& A);
     
     /** @brief compute y += a * A*x
      *
@@ -266,10 +288,7 @@ class TMatrix
      */
     void add_scaled(const TMatrix& m, double factor = 1.0);
     
-    /** @brief scale this matrix
-     * 
-     * That means all entries are scaled.
-     */
+    /// @brief scale all entries of this matrix
     void scale(double factor);
     
     /**
@@ -317,7 +336,7 @@ class TMatrix
      */
     const double & operator()(const int i, const int j) const;
     
-    /** @brief print some information on this TMatrix */
+    /// @brief print some information on this TMatrix
     void info(size_t verbose) const;
 };
 

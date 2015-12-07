@@ -48,7 +48,8 @@ void LumpMassMatrixToVector(TSquareMatrix3D *M, double *lump_mass)
 #endif
 {
   double *Entries;
-  int *RowPtr, i, j, rows, j0, j1;
+  const int * RowPtr;
+  int i, j, rows, j0, j1;
 
   RowPtr        = M->GetRowPtr();
   Entries       = M->GetEntries();
@@ -105,7 +106,6 @@ double *matrix_D_Entries, double *sol, double *rhs,
 int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 #endif
 {
-  int *ColInd, *RowPtr, N_Entries;
   int i,j,j0,j1,j2,j3,jj,index;
   double nenner, zaehler;
   double *Entries, *F;
@@ -118,10 +118,10 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
     exit(4711);
   }
   // get pointers to columns, rows and entries of matrix A
-  ColInd = sqmatrix->GetKCol();
-  RowPtr = sqmatrix->GetRowPtr();
+  const int *ColInd = sqmatrix->GetKCol();
+  const int *RowPtr = sqmatrix->GetRowPtr();
   Entries = sqmatrix->GetEntries();
-  N_Entries = sqmatrix->GetN_Entries();
+  int N_Entries = sqmatrix->GetN_Entries();
 
   // allocate memory for array F
   F = new double[N_Entries+6*N_U];
@@ -399,7 +399,7 @@ void FEM_FCT_SystemMatrix(TSquareMatrix3D *M_C, TSquareMatrix3D *A,
 double *lump_mass,int N_U)
 #endif
 {
-  int *ColInd, *RowPtr, N_Entries, *ColInd_M, *RowPtr_M, N_Entries_M;
+  const int * ColInd, *RowPtr, *ColInd_M, *RowPtr_M;
   int i,j,j0,j1,index;
   double *Entries,*Entries_M, cfl;
   double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -410,13 +410,11 @@ double *lump_mass,int N_U)
   ColInd_M = M_C->GetKCol();
   RowPtr_M = M_C->GetRowPtr();
   Entries_M = M_C->GetEntries();
-  N_Entries_M = M_C->GetN_Entries();
 
   // get pointers to columns, rows and entries of matrix A
   ColInd = A->GetKCol();
   RowPtr = A->GetRowPtr();
   Entries = A->GetEntries();
-  N_Entries = A->GetN_Entries();
 
   for(i=0;i<N_U;i++)
   {
@@ -538,8 +536,8 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
 			 double *BoundaryValues)
 #endif
 {
-  int *ColInd, *RowPtr, N_Entries, *ColInd_M, *RowPtr_M, N_Entries_M;
-  int i,j,j0,j1,j2,j3,jj,index,linear;
+  const int *ColInd, *RowPtr, *ColInd_M, *RowPtr_M;
+  int i,j,j0,j1,j2,j3,jj,index;
   int solver_param[3];
   double *Entries,*Entries_M, *res, *aux_v, *alpha, eps = 1e-10, help;
   double *P_plus, *P_minus, *Q_plus, *Q_minus, *R_plus, *R_minus, val, val1;
@@ -567,13 +565,12 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
   ColInd_M = M_C->GetKCol();
   RowPtr_M = M_C->GetRowPtr();
   Entries_M = M_C->GetEntries();
-  N_Entries_M = M_C->GetN_Entries();
-
+  
   // get pointers to columns, rows and entries of matrix A
   ColInd = A->GetKCol();
   RowPtr = A->GetRowPtr();
   Entries = A->GetEntries();
-  N_Entries = A->GetN_Entries();
+  int N_Entries = A->GetN_Entries();
 
   // allocate memory and set pointers
   res = new double[2*N_Entries+7*N_U];
