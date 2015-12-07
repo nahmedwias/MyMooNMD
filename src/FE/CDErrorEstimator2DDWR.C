@@ -5,7 +5,7 @@
 #include <LinAlg.h>
 #include <FEDatabase2D.h>
 
-namespace dwr_dual {
+namespace {
 
     struct OrigValues {
         int n_points;
@@ -104,7 +104,7 @@ void CDErrorEstimator2DDWR::estimate(const std::vector<MultiIndex2D> &derivative
     std::unique_ptr<double> dual_weights (new double[coll->GetN_Cells()]);
     double* dual_weights_ptr = dual_weights.get();
     // store values from ref transformation
-    dwr_dual::OrigValues origValues;
+    OrigValues origValues;
     // calculate 2nd derivatives, get l2 norm of laplace per cell and store resulting weights
     {
         // get base function set from fe space
@@ -118,9 +118,9 @@ void CDErrorEstimator2DDWR::estimate(const std::vector<MultiIndex2D> &derivative
             // diameter
             const double h_K = cell->GetDiameter();
             // calculate L^2 squared norm of laplace
-            const double laplaceInCell = dwr_dual::calcL2LaplaceInCell(&z_h, cell[0], origValues, baseFunctions, n_baseFunctions);
+            const double laplaceInCell = calcL2LaplaceInCell(&z_h, cell[0], origValues, baseFunctions, n_baseFunctions);
             // save weight (h_K^4 due to squared norm)
-            dual_weights_ptr[cellIdx] = h_K * h_K * h_K * h_K * laplaceInCell;
+            dual_weights_ptr[cellIdx] = h_K * h_K * laplaceInCell * laplaceInCell;
         }
     }
 

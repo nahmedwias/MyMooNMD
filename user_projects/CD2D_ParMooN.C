@@ -65,9 +65,9 @@ int main(int argc, char *argv[]) {
 
     // initialize the error estimator
     //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
-    // this functional evaluates the integral of the solution in the lower left corner
+    // this functional evaluates the integral of the solution in a ball around the center of radius 0.2
     std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional = [](const TFEFunction2D* sol, double x, double y, TBaseCell& cell) {
-        if((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.05) {
+        if( (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.2 * 0.2 ) {
             double integral = 0;
             FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
             // calculate values on original element (i.e. prepare reference transformation)
@@ -83,23 +83,21 @@ int main(int argc, char *argv[]) {
             const int n_loc_dof = fe->GetN_DOF(); // number of local dofs
             int *DOF = sol->GetFESpace2D()->GetGlobalDOF(cell.GetCellIndex());
             // id of the local basis functions
-            BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
+            //BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
             // transformed values of basis functions
-            double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
+            //double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
             // local integration (loop over all quadrature points)
             for (auto j = 0; j < n_points; j++) {
                 // local transformed values on this quadrature point
-                double *orig = orig_values[j];
+                //double *orig = orig_values[j];
                 double value = 0; // value of this TFEFunction2D at this quadrature point
                 for (int l = 0; l < n_loc_dof; l++) {
-                    // entry in the vector of this TFEFunction2D times basis function
-                    value += sol->GetValues()[DOF[l]] * orig[l];
+                    value += sol->GetValues()[DOF[l]];
                 }
 
-                const double w = weights[j] * AbsDetjk[j];
-                integral += w * value;
+                integral += value / n_loc_dof;
             }
-            return integral; //* pow(10, 8)
+            return integral / n_points;
         }
         return 0.0;
     };
