@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <DarcyProblem.h>
 #include <FEDatabase2D.h>
-
+using namespace std;
 /** ************************************************************************ */
 DarcyProblem::DarcyProblem(const TDomain& domain, Example_StokesDarcy2D* ex,
                            InterfaceCondition t,

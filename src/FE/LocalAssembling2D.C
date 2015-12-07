@@ -375,19 +375,19 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   //Catch some things which might cause trouble.
   if(myDerivatives.size() != N_Terms)
   {
-    Output::print("Error: myDerivatives.size() != N_Terms.");
+    Output::print<1>("Error: myDerivatives.size() != N_Terms.");
   }
   if(myFESpaceNumber.size() != N_Terms)
   {
-    Output::print("Error: myFESpaceNumber.size() != N_Terms.");
+    Output::print<1>("Error: myFESpaceNumber.size() != N_Terms.");
   }
   if(myParameterFct.size() != N_ParamFct)
   {
-    Output::print("Error: myParameterFct.size() != myN_ParamFct.");
+    Output::print<1>("Error: myParameterFct.size() != myN_ParamFct.");
   }
   if(myBeginParameter.size() != N_ParamFct)
   {
-    Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
+    Output::print<1>("Error: myBeginParameter.size() != myN_ParamFct.");
   }
 
   name = std::string("CUSTOMIZED");

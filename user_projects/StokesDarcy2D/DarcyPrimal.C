@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <DarcyPrimal.h>
 #include <FEDatabase2D.h>
-
+using namespace std;
 /** ************************************************************************ */
 DarcyPrimal::DarcyPrimal(const TDomain& domain, const Example_CD2D& ex, 
                          InterfaceCondition t,

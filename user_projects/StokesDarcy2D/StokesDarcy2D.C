@@ -6,7 +6,7 @@
 #include <preconditioner.h>
 #include <Output2D.h>
 #include <DirectSolver.h>
-
+#include <solvers/solver.h>
 
 
 /** ************************************************************************ */

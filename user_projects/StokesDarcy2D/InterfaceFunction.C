@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <InterfaceFunction.h>
 #include <BoundEdge.h>
-
+using namespace std;
 /** ************************************************************************ */
 InterfaceFunction::InterfaceFunction(
     const std::vector<const TInnerInterfaceJoint*>& in, int s) :
@@ -296,7 +296,7 @@ void InterfaceFunction::PrintInfo(std::string name) const
       os << DOF[n*i+j] << "\t";
     os << "\n";
   }
-  Output::print<1>(os);
+  Output::print<1>(os.str());
   Output::print<1>("\nnormals");
   for(unsigned int i = 0; i < interface.size(); i++)
   {
@@ -830,7 +830,7 @@ void InterfaceFunction::set_integral(double a)
   
   eta = 1; // constant function
   eta.restrict(); // constant function except for Dirichlet dofs
-  if(abs(integral) > 1e-14)
+  if(fabs(integral) > 1e-14)
   {
     eta *= integral / eta.integral();
     // now eta has the same integral as 'this' and is constant (except for 

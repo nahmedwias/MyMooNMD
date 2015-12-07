@@ -3,6 +3,8 @@
 #include <solver.h>
 #include <preconditioner.h>
 #include <FEDatabase2D.h>
+#include <solvers/UmfpackSolverWrapper.h>
+#include <solvers/solver.h>
 
 /** ************************************************************************ */
 StokesProblem::StokesProblem(const TDomain & domain, 

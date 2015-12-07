@@ -145,10 +145,10 @@ void UmfpackSolverWrapper::handle_error(int ierror, int line)
 	switch(ierror)
 	{
 	//WARNINGS
-	case UMFPACK_WARNING_singular_matrix:
+	case UMFPACK_WARNING_singular_matrix: {
 		cout << "Warning (UMFPACK): Matrix is singular!\n";
-    throw ;
-		break;
+		throw;
+	}
 	case UMFPACK_WARNING_determinant_underflow:
 		cout << "Warning (UMFPACK): Determinant smaller than eps\n";
 		break;
@@ -158,40 +158,30 @@ void UmfpackSolverWrapper::handle_error(int ierror, int line)
 	//ERRORS
 	case UMFPACK_ERROR_out_of_memory:
 		throw new UmfpackSolverWrapperError("Out of Memory");
-		break;
 	case UMFPACK_ERROR_invalid_Numeric_object:
 		throw new UmfpackSolverWrapperError("Invalid numeric factorization object");
-		break;
 	case UMFPACK_ERROR_invalid_Symbolic_object:
 		throw new UmfpackSolverWrapperError("Invalid symbolic factorization object");
-		break;
 	case UMFPACK_ERROR_argument_missing:
 		throw new UmfpackSolverWrapperError("Argument Missing.");
-		break;
 	case UMFPACK_ERROR_n_nonpositive:
 		throw new UmfpackSolverWrapperError("Matrix dimensions not positive.");
-		break;
 	case UMFPACK_ERROR_invalid_matrix:
 		throw new UmfpackSolverWrapperError("Invalid Matrix Structure.");
-		break;
 	case UMFPACK_ERROR_different_pattern:
 		throw new UmfpackSolverWrapperError("Different sparse pattern.");
-		break;
 	case UMFPACK_ERROR_invalid_system:
 		throw new UmfpackSolverWrapperError("Invalid system provided with sys.");
-		break;
 	case UMFPACK_ERROR_invalid_permutation:
 		throw new UmfpackSolverWrapperError("Invalid permutation vector.");
-		break;
 	case UMFPACK_ERROR_file_IO:
 		throw new UmfpackSolverWrapperError("Fille IO error.");
-		break;
 	case UMFPACK_ERROR_internal_error:
 		throw new UmfpackSolverWrapperError("Internal error.");
-		break;
-
-	default:
-		throw new UmfpackSolverWrapperError("Error number " + ierror); break;
-	break;
+	default: {
+        std::stringstream err_msg;
+        err_msg << "Error number " << ierror << std::endl;
+        throw new UmfpackSolverWrapperError(err_msg.str());
+    }
 	}
 }
