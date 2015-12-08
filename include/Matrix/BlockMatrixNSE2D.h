@@ -30,13 +30,15 @@ class BlockMatrixNSE2D : public BlockMatrix
   public:
     /** constructor */
      BlockMatrixNSE2D(const TFESpace2D& velocity, const TFESpace2D& pressure,
-                      BoundValueFunct2D * const * const BoundValue);
+                      BoundValueFunct2D * const * const BoundValue, 
+                      bool mass_matrix= false);
      
     /** destrcutor */
     ~BlockMatrixNSE2D();
     
     /** assemble the system matrix */
-    void Assemble(LocalAssembling2D& la, BlockVector& rhs);
+    void Assemble(LocalAssembling2D& la, BlockVector& rhs, 
+                  BlockMatrixNSE2D* mass = nullptr);
     
     /** assemble the nonlinear part of the NSE system */
     void AssembleNonLinear(LocalAssembling2D& la);
@@ -69,7 +71,34 @@ class BlockMatrixNSE2D : public BlockMatrix
      * @param factor optional scaling   factor, default to 1.0
      */
     void apply_scaled_add(const double *x, double *y, double factor = 1.) const;
+        
+    /** @brief 
+     * scaleActive
+     * This function can scale the A blocks, 
+     * only the actives
+     */
+    void scaleActive(const double factor);
+
+    /** @brief compute y = y + a * Ax 
+     *
+     * add the matrix-vector product "Ax", scaled by "a", to y 
+     * only for the active dofs.
+     * "A" is this matrix.
+     *
+     *
+     * @param x the vector which is multiplied by this matrix
+     * @param y result of matrix-vector-multiplication and scaling
+     * @param factor optional scaling   factor, default to 1.0
+     */
+    void applyScaledAddActive(const double *x, double *y, 
+         double factor = 1.) const;
     
+     /** 
+     * @brief adding a scaled matrix to this matrix, but only the active entries
+     * 
+     * This function only cscales and adds the corresponding A' Blocks 
+     */
+    void addScaledActive(const BlockMatrixNSE2D& A, double factor = 1.0);
     
     /** @brief return the test or ansatz space for a given block
      * 
