@@ -20,7 +20,7 @@
 BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace, 
                                  BoundValueFunct2D * const BoundValue,
                                  bool mass_matrix)
- : BlockMatrix(Problem_type::ConvDiffReac, 2, mass_matrix),
+ : BlockFEMatrix(Problem_type::ConvDiffReac, 2, mass_matrix),
    boundary_values(BoundValue)
 {
   // the stiffness/system matrix for a convection diffusion problem
@@ -30,7 +30,7 @@ BlockMatrixCD2D::BlockMatrixCD2D(const TFESpace2D &fespace,
   unsigned int n_active = sqStructure.GetN_Entries();
   // substract the number of non active entries (non active rows)
   n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
-  this->BlockMatrix::actives[0] = n_active;
+  this->BlockFEMatrix::actives[0] = n_active;
 }
 
 /** ************************************************************************ */
