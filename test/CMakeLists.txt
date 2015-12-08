@@ -38,6 +38,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	add_test(tcd2d ParMooN_test_tcd2d)
 	list(APPEND parmoon_tests ParMooN_test_tcd2d)
 	
+  #darcy2d test
+  add_executable(ParMooN_test_darcy2d darcy2d_test.c++)
+  target_link_libraries(ParMooN_test_darcy2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(darcy2d ParMooN_test_darcy2d)
+  list(APPEND parmoon_tests ParMooN_test_darcy2d)
+	
 	# test for hdiv elements
     add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
     target_link_libraries(ParMooN_test_hdiv parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
