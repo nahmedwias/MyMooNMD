@@ -14,6 +14,7 @@
 #include <Example_Darcy2D.h>
 
 #include <deque>
+#include <array>
 
 /**class for 2D scalar system matrix */
 class Darcy2D
@@ -66,6 +67,24 @@ class Darcy2D
      */
     std::shared_ptr<TMultiGrid2D> multigrid;
     
+    /** @brief store the errors to access them from outside this class
+     * 
+     * This array is filled during a call to Darcy2D::output if 
+     * TDatabase::ParamDB->MEASURE_ERRORS is set to true. The exact solution is
+     * taken from Darcy2D::example. If that example does not provide an exact 
+     * solution, typically it is set to be zero, so that this array contains
+     * the norms of the solution instead of the error.
+     * 
+     * The errors are stored in the following order: 
+     * 
+     *  - L2 error of velocity
+     *  - L2 error of divergence of velocity
+     *  - H1-semi error of velocity
+     *  - L2 error of pressure
+     *  - H1-semi error of pressure
+     */
+    std::array<double, 5> errors;
+    
     /** @brief set parameters in database
      * 
      * This functions checks if the parameters in the database are meaningful 
@@ -116,12 +135,31 @@ class Darcy2D
     /** 
      * @brief measure errors and write pictures 
      * 
-     * The current errors will be printed out. If desired, further output, e.g.,
-     * vtk files are created.
+     * The current errors will be printed out if 
+     * TDatabase::ParamDB->MEASURE_ERRORS is true. The errors will be stored
+     * and are then accessible via the get*Error methods. If desired, further 
+     * output, e.g., vtk files are created. 
      * 
      * @param i suffix for output file name, -1 means no suffix
      */
     void output(int i = -1);
+    
+    /// @name return computed errors
+    ///
+    /// You have to call Darcy2D::output for any of these to return a 
+    /// meaningful value.
+    //@{
+    /// @brief return the computed L2 error of the velocity
+    double getL2VelocityError() const;
+    /// @brief return the computed L2 error of the divergence of the velocity
+    double getL2DivergenceError() const;
+    /// @brief return the computed H1-semi error of the velocity
+    double getH1SemiVelocityError() const;
+    /// @brief return the computed L2 error of the pressure
+    double getL2PressureError() const;
+    /// @brief return the computed L2 error of the pressure
+    double getH1SemiPressureError() const;
+    //@}
     
     // getters and setters
     const BlockMatrixDarcy2D & get_matrix() const
