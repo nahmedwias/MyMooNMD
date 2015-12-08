@@ -21,8 +21,9 @@
 /** ************************************************************************ */
 BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
                                    const TFESpace2D& pressure,
-                                   BoundValueFunct2D * const * const BoundValue)
-    : BlockMatrix(Problem_type::NavierStokes, 2),
+                                   BoundValueFunct2D * const * const BoundValue,
+                                   bool massMatrix)
+    : BlockMatrix(Problem_type::NavierStokes, 2, massMatrix),
       boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
 {
   // build matrices
@@ -41,115 +42,176 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
   unsigned int n_p = pressure.GetN_DegreesOfFreedom();
   // number of velocity degrees of freedom
   unsigned int n_v = velocity.GetN_DegreesOfFreedom();
-  switch(TDatabase::ParamDB->NSTYPE)
+  if(!massMatrix)
   {
-    case 1:
+    switch(TDatabase::ParamDB->NSTYPE)
     {
-      /*
-       * ( A  0  B1^T )
-       * ( 0  A  B2^T )
-       * ( B1 B2 0    )
-       * 
-       * B1^T and B2^T are not explicitly stored.
-       */
-      std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
-      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
-      
-      this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
-      //this->BlockMatrix::blocks[2] stays a nullptr
-      this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
-      this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
-      //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
-      break;
+      case 1:
+      {
+        /*
+         * ( A  0  B1^T )
+         * ( 0  A  B2^T )
+         * ( B1 B2 0    )
+         * 
+         * B1^T and B2^T are not explicitly stored.
+         */
+        std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
+        std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
+        
+        this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
+        //this->BlockMatrix::blocks[2] stays a nullptr
+        this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
+        this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
+        //this->BlockMatrix::blocks[5] stays a nullptr
+        this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = nactive;
+        break;
+      }
+      case 2:
+      {
+        /*
+         * ( A  0  B1T )
+         * ( 0  A  B2T )
+         * ( B1 B2 0    )
+         * 
+         * B1T and B2T are explicitly stored.
+         */
+        std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
+        std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
+        
+        this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
+        this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+        // get that matrix B1T, which will be used to construct the other
+        const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
+        this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
+        this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
+        this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
+        this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = nactive;
+        
+        break;
+      }
+      case 3:
+      {
+        /*
+         * ( A11 A12 B1^T )
+         * ( A21 A22 B2^T )
+         * ( B1  B2  0    )
+         * 
+         * B1^T and B2^T are not explicitly stored.
+         */
+        std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
+        
+        this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+        //this->BlockMatrix::blocks[2] stays a nullptr
+        this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+        //this->BlockMatrix::blocks[5] stays a nullptr
+        this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        
+        this->actives[0] = this->actives[1] = nactive;
+        this->actives[3] = this->actives[4] = nactive;        
+                
+        break;
+      }
+      case 4:
+      {
+        /*
+         * ( A11 A12 B1T )
+         * ( A21 A22 B2T )
+         * ( B1  B2  0   )
+         * 
+         * B1T and B2T are explicitly stored.
+         */
+        std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
+                                                               &pressure));
+        std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
+        
+        this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+        // get that matrix B1T, which will be used to construct the other
+        const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
+        this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
+        this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
+        
+        // setting active dofs
+        const TStructure& sqStructure = this->BlockMatrix::blocks[0]->GetStructure();
+        // the number of active entries
+        unsigned int nactive = sqStructure.GetN_Entries();       
+        // subtract the number of non active entries (non active rows)
+        nactive -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
+        this->actives[0] = this->actives[1] = nactive;
+        this->actives[3] = this->actives[4] = nactive;
+        this->actives[2] = this->actives[5] = nactive;
+                
+        // this->actives[6] = this->actives[7] = this->blocks[6]->GetN_Rows();
+        // this->actives[8] = this->blocks[8]->GetN_Rows();
+        break;
+      }
+      case 14:
+      {
+        /*
+         * ( A11 A12 B1^T )
+         * ( A21 A22 B2^T )
+         * ( B1  B2  C    )
+         * 
+         * B1^T and B2^T are explicitly stored.
+         */
+        
+        this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+        // get that matrix B1T, which will be used to construct the other
+        const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
+        this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+        this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
+        this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(&pressure));
+        break;
+      }
+      default:
+        ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
+        break;
     }
-    case 2:
-    {
-      /*
-       * ( A  0  B1T )
-       * ( 0  A  B2T )
-       * ( B1 B2 0    )
-       * 
-       * B1T and B2T are explicitly stored.
-       */
-      std::shared_ptr<TStructure> empty_block_velocity(new TStructure(n_v));
-      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
-      
-      this->BlockMatrix::blocks[1].reset(new TMatrix(empty_block_velocity));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
-      // get that matrix B1T, which will be used to construct the other
-      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
-      this->BlockMatrix::blocks[3].reset(new TMatrix(empty_block_velocity));
-      this->BlockMatrix::blocks[4] = this->BlockMatrix::blocks[0];
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
-      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
-      break;
-    }
-    case 3:
-    {
-      /*
-       * ( A11 A12 B1^T )
-       * ( A21 A22 B2^T )
-       * ( B1  B2  0    )
-       * 
-       * B1^T and B2^T are not explicitly stored.
-       */
-      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
-      
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
-      //this->BlockMatrix::blocks[2] stays a nullptr
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
-      //this->BlockMatrix::blocks[5] stays a nullptr
-      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
-      break;
-    }
-    case 4:
-    {
-      /*
-       * ( A11 A12 B1T )
-       * ( A21 A22 B2T )
-       * ( B1  B2  0   )
-       * 
-       * B1T and B2T are explicitly stored.
-       */
-      std::shared_ptr<TStructure> structureBT(new TStructure(&velocity,
-                                                             &pressure));
-      std::shared_ptr<TStructure> empty_block_pressure(new TStructure(n_p));
-      
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
-      // get that matrix B1T, which will be used to construct the other
-      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
-      this->BlockMatrix::blocks[8].reset(new TMatrix(empty_block_pressure));
-      break;
-    }
-    case 14:
-    {
-      /*
-       * ( A11 A12 B1^T )
-       * ( A21 A22 B2^T )
-       * ( B1  B2  C    )
-       * 
-       * B1^T and B2^T are explicitly stored.
-       */
-      
-      this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
-      // get that matrix B1T, which will be used to construct the other
-      const TMatrix2D & B1T = (const TMatrix2D &) *this->BlockMatrix::blocks[2];
-      this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
-      this->BlockMatrix::blocks[5].reset(new TMatrix2D(B1T));
-      this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(&pressure));
-      break;
-    }
-    default:
-      ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
-      break;
+  }
+  else
+  {
+    // Here we need the off diagonal A blocks and all B's with
+    // no entries. But the method which is used in the BlockMatrix
+    // class needs with zero entries so that's why they are 
+    // created with zero entries here.
+    this->BlockMatrix::blocks[2].reset(new TMatrix2D(&velocity, &pressure));
+    this->BlockMatrix::blocks[5].reset(new TMatrix2D(&velocity, &pressure));
+    
+    this->BlockMatrix::blocks[1].reset(new TSquareMatrix2D(A11));
+    this->BlockMatrix::blocks[3].reset(new TSquareMatrix2D(A11));
+    this->BlockMatrix::blocks[4].reset(new TSquareMatrix2D(A11));
+    
+    this->BlockMatrix::blocks[8].reset(new TSquareMatrix2D(&pressure));
   }
 }
 
@@ -159,7 +221,8 @@ BlockMatrixNSE2D::~BlockMatrixNSE2D()
 }
 
 /** ************************************************************************ */
-void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
+void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs, 
+                                BlockMatrixNSE2D* mass)
 {
   // this really needs to be rewritten, especially the Assemble2D function!
   int N_Rhs = 3;
@@ -186,15 +249,32 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
   TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
                                       nullptr, nullptr};
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
-    sq_matrices[1] = this->get_A_block(3); // no more square blocks used
+    sq_matrices[1] = mass->get_A_block(0); // mass matrix
   else
   {
     sq_matrices[1] = this->get_A_block(1);
     sq_matrices[2] = this->get_A_block(2);
     sq_matrices[3] = this->get_A_block(3);
-    if(TDatabase::ParamDB->NSTYPE == 14)
+    
+    if(mass != nullptr)
     {
-      sq_matrices[4] = this->get_C_block();
+      // mass matrices 
+      sq_matrices[4] = mass->get_A_block(0);
+      sq_matrices[5] = mass->get_A_block(3);
+      n_sq_mat = 6;
+      if(TDatabase::ParamDB->NSTYPE == 14)
+      {
+        sq_matrices[6] = this->get_C_block();
+        n_sq_mat += 1;
+      }
+    }
+    else
+    {
+      if(TDatabase::ParamDB->NSTYPE == 14)
+      {
+        n_sq_mat += 1;
+        sq_matrices[6] = this->get_C_block();
+      }
     }
   }
   
@@ -509,6 +589,86 @@ void BlockMatrixNSE2D::apply_scaled_add(const double *x, double *y,
     default:
       ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
       break;
+  }
+}
+
+/** ************************************************************************ */
+void BlockMatrixNSE2D::scaleActive(const double factor)
+{
+  if(factor == 1.)
+    return;
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      this->get_A_block(0)->scaleActive(factor);
+      break;
+    case 3:
+    case 4:
+    case 14:
+      this->get_A_block(0)->scaleActive(factor);
+      this->get_A_block(1)->scaleActive(factor);
+      this->get_A_block(2)->scaleActive(factor);
+      this->get_A_block(3)->scaleActive(factor);      
+      break;
+  }
+
+}
+
+/** ************************************************************************ */
+void BlockMatrixNSE2D::applyScaledAddActive(const double* x, double* y, 
+                                            double factor) const
+{
+  if(factor == 0.)
+    return;
+  unsigned int n_v = this->get_velocity_space()->GetN_DegreesOfFreedom();
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      this->get_A_block(0)->multiplyActive(x,     y, factor);
+      this->get_A_block(0)->multiplyActive(x+n_v, y+n_v, factor);
+      break;    
+    case 3:
+    case 4:
+    case 14:
+      this->get_A_block(0)->multiplyActive(x,     y,     factor);
+      this->get_A_block(1)->multiplyActive(x+n_v, y,     factor);
+      this->get_A_block(2)->multiplyActive(x,     y+n_v,  factor);
+      this->get_A_block(3)->multiplyActive(x+n_v, y+n_v, factor);
+      break;
+    default:
+      ErrThrow("Unknown NSETYPE, it must be 1, 2, 3, 4, or 14");
+      break;
+  }
+}
+
+/** ************************************************************************ */
+void BlockMatrixNSE2D::addScaledActive(const BlockMatrixNSE2D& A, double factor)
+{ 
+  unsigned int nActves = this->actives[0];
+  
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+    case 2:
+      Daxpy(nActves, factor, A.get_A_block(0)->GetEntries(),
+            this->get_A_block(0)->GetEntries());
+      break;
+    case 3:
+    case 4:
+    case 14:
+      Daxpy(nActves, factor, A.get_A_block(0)->GetEntries(),
+            this->get_A_block(0)->GetEntries()); // 
+      Daxpy(nActves, factor, A.get_A_block(1)->GetEntries(),
+            this->get_A_block(1)->GetEntries()); // 
+      Daxpy(nActves, factor, A.get_A_block(2)->GetEntries(),
+            this->get_A_block(2)->GetEntries());// 
+      Daxpy(nActves, factor, A.get_A_block(3)->GetEntries(),
+            this->get_A_block(3)->GetEntries());
+      break;
+    default:
+      ErrThrow("NSETYPE must be either 1, 2, 3, or 4! ");
   }
 }
 

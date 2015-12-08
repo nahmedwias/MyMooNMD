@@ -27,6 +27,14 @@ namespace flow_around_cylinder
   #include "NSE_2D/flow_around_cylinder.h"
 }
 
+//=========================================
+// time dependent case 
+namespace bsp1
+{
+ #include "TNSE_2D/Bsp1.h"
+}
+//=========================================
+
 Example_NSE2D::Example_NSE2D() : Example2D()
 {
   switch( TDatabase::ParamDB->EXAMPLE ) 
@@ -114,6 +122,30 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       problem_coefficients = flow_around_cylinder::LinCoeffs;
       
       flow_around_cylinder::ExampleFile();
+      break;
+    case 101:
+      /** exact_solution */
+      exact_solution.push_back( bsp1::ExactU1 );
+      exact_solution.push_back( bsp1::ExactU2 );
+      exact_solution.push_back( bsp1::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( bsp1::BoundCondition );
+      boundary_conditions.push_back( bsp1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( bsp1::U1BoundValue );
+      boundary_data.push_back( bsp1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = bsp1::LinCoeffs;
+      
+      /** initial condition */
+      initial_conditions.push_back(bsp1::InitialU1);
+      initial_conditions.push_back(bsp1::InitialU2);
+      bsp1::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
