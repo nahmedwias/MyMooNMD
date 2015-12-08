@@ -14,6 +14,7 @@
 #define __DOMAIN__
 
 class TDomain;
+class tetgenio;
 
 #include <BoundPart.h>
 #include <Collection.h>
@@ -536,6 +537,17 @@ class TDomain
    * @note This has not been tested with an actual .xGEO-file yet.
    */
   static bool checkIfxGEO(char* GEO);
+
+
+  /**
+   * @brief Read in a tegenio.
+   *
+   * Basically a wrapper for the tetgenio class, makes use of the MaeGrid method.
+   *
+   * @param[in] tetgenInput The tettgen input object to be read in.
+   *            Does not get modified!!!
+   */
+  void readTetgenIo(tetgenio& tetgenInput);
      
      
 };

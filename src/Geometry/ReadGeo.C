@@ -20,6 +20,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <tetgen.h>
+#include <vector>
+#include <algorithm>
+
 #include <InnerInterfaceJoint.h>
 #ifdef __2D__
   #include <IsoBoundEdge.h>
@@ -2883,4 +2887,74 @@ bool TDomain::checkIfxGEO(char* GEO)
       }
       return isXgeo;
   }
+
+// FIXME: The treatment ofvertices on the boundary is different!! There
+// the values in the "DCORVG" array have a different meaning!!! (Use GetTofXY
+// for boundary vertices)
+void TDomain::readTetgenIo(tetgenio& tetgenInput)
+{
+#ifdef __2D__
+
+  size_t nVert = tetgenInput.numberofpoints;
+  size_t nElements = tetgenInput.numberoftrifaces;
+  size_t nEdges = tetgenInput.numberofedges;
+
+  //reset number of root cells - smells like trouble
+  N_RootCells = nElements;
+
+  // fill the array of vertex coordinates
+  std::vector<double> vertexCoords(2*nVert,0.0); //2D!
+
+  for( size_t i=0;i<nVert;i++ )
+  {
+    vertexCoords[2*i] = tetgenInput.pointlist[3*i];
+    vertexCoords[2*i+1] = tetgenInput.pointlist[3*i+1];
+  }
+
+  // create a temporary array of edges
+  std::vector<int> edges (2*nEdges, 0);
+  std::vector<int> colorEdges (nEdges, 0);
+
+  for( size_t i = 0; i<nEdges ; ++i )
+  {
+    edges[2*i] = tetgenInput.edgelist[2*i];
+    edges[2*i+1] = tetgenInput.edgelist[2*i+1];
+    //fill the coloring of edges array
+    colorEdges[i] = tetgenInput.edgemarkerlist[i];
+  }
+
+  //fill the array of triangle
+  std::vector<int> triangles(3*N_RootCells, 0);
+  std::vector<int> colorTria (N_RootCells, 0);
+  for( size_t i = 0; i<N_RootCells ; ++i )
+  {
+    triangles[3*i] = tetgenInput.trifacelist[3*i];
+    triangles[3*i+1] = tetgenInput.trifacelist[3*i+1];
+    triangles[3*i+2] = tetgenInput.trifacelist[3*i+2];
+    //fill the coloring of elements array
+    colorTria[i] = tetgenInput.trifacemarkerlist[i];
+  }
+
+  //do an index shift if necessary
+  if( tetgenInput.firstnumber == 0 )
+  {
+    auto add_one_lambda = [](int& d) { d+=1;};
+    std::for_each(triangles.begin(), triangles.end(), add_one_lambda);
+    std::for_each(edges.begin(), edges.end(), add_one_lambda);
+  }
+
+  std::vector<int> pointToBoundFlag (nVert, 0);
+  for(size_t i = 0 ; i < nEdges ; ++i )
+  {
+    int marker = colorEdges[i];
+    // set boundary component the vertex lies on
+    pointToBoundFlag[edges[2*i]] = std::max(marker, pointToBoundFlag[edges[2*i]] );
+    pointToBoundFlag[edges[2*i+1]] = std::max(marker, pointToBoundFlag[edges[2*i+1]] );
+  }
+
+  MakeGrid(&vertexCoords.front(), &triangles.front(),
+           &pointToBoundFlag.front(), &colorTria.front(), nVert, 3);
+
+#endif
+}
 
