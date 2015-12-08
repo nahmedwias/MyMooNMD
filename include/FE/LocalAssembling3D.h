@@ -26,7 +26,19 @@
 #include <string>
 #include <vector>
 
-enum class LocalAssembling3D_type { CD3D, NSE3D_Linear, NSE3D_NonLinear
+/**
+ * A local assembling object has a type associated with it. The type
+ * determines, which problem type the object can be used for.
+ *
+ * Assembling routines throughout ParMooN might check if they
+ * get an assembling object of the correct type.
+ *
+ * So far there is three built-in types in 3D and one custom type.
+ */
+enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion reaction in 3D
+                                    NSE3D_Linear, /// Linear part of stationary Navier--Stokes in 3D
+                                    NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
+                                    Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
 //Forward declarations
@@ -38,6 +50,9 @@ class TDiscreteForm3D;
 class LocalAssembling3D
 {
   protected:
+    /** @brief The type of problem this assembling objects is made for. */
+    const LocalAssembling3D_type type;
+
     /** name */
     std::string name;
 
@@ -47,7 +62,7 @@ class LocalAssembling3D
     /** @brief number of involved spaces (typically one or two) */
     int N_Spaces;
 
-    /** @brief for each space we store a bool indicatin if second derivatives 
+    /** @brief for each space we store a bool indicating if second derivatives
      *         are needed */
     bool *Needs2ndDerivatives;
 
@@ -124,16 +139,32 @@ class LocalAssembling3D
     void set_parameters_for_nse(LocalAssembling3D_type type);
     
   public:
-    /** constructor */
+    /** Constructs a Local Assembling object of a certain type from an array
+     *  of fe functions and coefficient functions.
+     *
+     * @param[in] type The type of problem this assembling object can be used
+     *            for. Must not be "Custom" - program terminates.
+     * @param fefunctions3d The fe  functions to be evaluated.
+     * @param coeffs A function poitner to the problem coefficients. These must
+     * be hard-coded somewhere, usually in the used example file.
+     *
+     */
     LocalAssembling3D(LocalAssembling3D_type type, TFEFunction3D **fefunctions3d,
                       CoeffFct3D *coeffs);
     
-    /** @brief constructor for backward compatibility
+    /** @brief Constructor for backward compatibility
      * 
      * This uses the deprecated classes TAuxParam3D and TDiscreteForm3D to 
-     * construct an object of this class.
+     * construct an object of this class. Use of this is discouraged, because the
+     * user has to manually tune type, aux and df to make the created object funtioning.
+     *
+     * @param[in] type The type of problem this assembling object will be used
+     *            for. It is the users responsibility to match the type and
+     *            the deprecated TAuxParam3D and TDiscreteForm3D object.
+     *
      */
-    LocalAssembling3D(TAuxParam3D& aux, TDiscreteForm3D& df);
+    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type type,
+                      TAuxParam3D& aux, TDiscreteForm3D& df);
 
     /** destructor */
     ~LocalAssembling3D();
@@ -181,5 +212,9 @@ class LocalAssembling3D
     
     TFEFunction3D* get_fe_function(int i) const
     { return FEFunctions3D[i]; }
+
+    /** @return The type of the local assembling object. */
+    LocalAssembling3D_type get_type() const
+    { return type; }
 };
 #endif

@@ -14,7 +14,7 @@
 #    add_executable(project ${PROJECT_SOURCE_DIR}/user_projects/project_file_with_main.C)
 #    set_target_properties(project PROPERTIES OUTPUT_NAME parMooN_project_${PARMOON_PARALLEL_TYPE})
 #    target_compile_definitions(project PUBLIC -D__2D__)
-#    target_link_libraries(project PROJECT_LIB_2D ${_PARMOON_LIBRARIES_2D} ${_EXTERN_LIBRARIES})
+#    target_link_libraries(project PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 # 
 # Then cmake will create a makefile with a target 'project', so typing 
 #    make project

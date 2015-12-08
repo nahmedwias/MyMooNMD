@@ -278,14 +278,15 @@ switch(type)
   }
   if(AssembleParam == NULL)
   {
-    ErrMsg("a local assmebling routine was not set");
+    ErrMsg("a local assembling routine was not set");
     exit(1);
   }
 }
 
-LocalAssembling2D::LocalAssembling2D(const TAuxParam2D& aux, 
+LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
+                                     const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
- :  
+ : type(type),
    name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
@@ -357,7 +358,8 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
 		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
 		std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
 
-: N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
+: type{LocalAssembling2D_type::Custom},
+  N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
   RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
   N_Matrices(myN_Matrices), N_Rhs(myN_Rhs),

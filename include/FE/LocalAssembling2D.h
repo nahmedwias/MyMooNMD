@@ -28,6 +28,15 @@
 #include <AuxParam2D.h>
 #include <DiscreteForm2D.h>
 
+/**
+ * A local assembling object has a type associated with it. The type
+ * determines, which problem type the object can be used for.
+ *
+ * Assembling routines throughout ParMooN might check if they
+ * get an assembling object of the correct type.
+ *
+ * So far there is nine built-in types in 3D and one custom type.
+ */
 enum LocalAssembling2D_type { ConvDiff,                              
                               TCD2D, // stiffness matrix and rhs
                               TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
@@ -36,14 +45,17 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
-                              Darcy2D_Galerkin
+                              Darcy2D_Galerkin,
+                              Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 
 /** a function from a finite element space */
 class LocalAssembling2D
 {
   protected:
-    LocalAssembling2D_type type;
+
+    /** @brief The type of problem this assembling objects is made for. */
+    const LocalAssembling2D_type type;
     
     /** name */
     std::string name;
@@ -144,8 +156,14 @@ class LocalAssembling2D
      * 
      * The member variable 'type' is likely to be wrong using this constructor!
      * Please do not use it, unless you know what you are doing.
+     * Type, aux and df will need proper tuning for this to work.
+     *
+     * @param[in] type The problem type this assemlbing object will be used for.
+     * @param[in] aux A (deprecated) "aux object".
+     * @param[in] df  A (deprecated) discrete form object.
      */
-    LocalAssembling2D(const TAuxParam2D& aux, const TDiscreteForm2D& df);
+    LocalAssembling2D(LocalAssembling2D_type type,
+                      const TAuxParam2D& aux, const TDiscreteForm2D& df);
 
     /*!
      * @brief Customized constructor.

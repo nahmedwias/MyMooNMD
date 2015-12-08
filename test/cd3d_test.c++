@@ -21,6 +21,7 @@
  * main. This has to do with the static nature of the Database and FEDatabase
  * classes and is described in the forum.
  *
+ *
  * @date 2015/20/11
  * @author Clemens Bartsch
  *
@@ -58,6 +59,10 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
   TDatabase::ParamDB->Comm = comm;
+  // Hold mpi rank and size ready.
+  int mpiRank, mpiSize;
+  MPI_Comm_rank(comm, &mpiRank);
+  MPI_Comm_size(comm, &mpiSize);
 #endif
 
   TFEDatabase3D feDatabase;
@@ -219,6 +224,10 @@ int main(int argc, char* argv[])
     // it was initialized during run of first program.
     // (...and got reset to MPI_COMM_WORLD by SetDefaultParameters())
     MPI_Comm comm = TDatabase::ParamDB->Comm;
+    // Hold mpi rank and size ready.
+    int mpiRank, mpiSize;
+    MPI_Comm_rank(comm, &mpiRank);
+    MPI_Comm_size(comm, &mpiSize);
 #endif
 
     // Construct domain.
@@ -229,8 +238,8 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
     TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
-    TDatabase::ParamDB->UNIFORM_STEPS = 1; // 1 uniform refinement step
-    TDatabase::ParamDB->LEVELS = 3;        // 3 multigrid levels
+    TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement step  - setting this to 1 reproduces a known issue (see 3DPrograms/CD3D_ParMooN)
+    TDatabase::ParamDB->LEVELS = 2;        // 2 multigrid levels
     TDatabase::ParamDB->DRIFT_Z = 1;
     TDatabase::ParamDB->ANSATZ_ORDER = 2;
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -285,7 +294,7 @@ int main(int argc, char* argv[])
 
   // 2nd step: Call the mesh partitioning.
   int maxCellsPerVertex;
-  Partition_Mesh3D(comm, &domain, maxCellsPerVertex); //do the actual partitioning
+  Partition_Mesh3D(comm, &domain, maxCellsPerVertex);
 
   // 3rd step: Generate edge info anew
   domain.GenerateEdgeInfo();

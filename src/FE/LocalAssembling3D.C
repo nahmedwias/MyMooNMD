@@ -36,11 +36,11 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
                                      TFEFunction3D **fefunctions3d,
                                      CoeffFct3D *coeffs)
- : name(LocalAssembling3D_type_to_string(type)), Coeffs(coeffs),
+ : type(type), name(LocalAssembling3D_type_to_string(type)), Coeffs(coeffs),
    FEFunctions3D(fefunctions3d)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-    OutPut("Constructor of LocalAssembling3D: using type " << name << endl);
+
+  Output::print<2>("Constructor of LocalAssembling3D: using type ", name);
   
   this->N_Parameters = 0;
   this->N_ParamFct = 0;
@@ -50,7 +50,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   this->BeginParameter = {};
   
   // set all member variables according to type
-  switch(type)
+  switch(this->type)
   {
     case LocalAssembling3D_type::CD3D:
       switch(TDatabase::ParamDB->DISCTYPE)
@@ -70,19 +70,20 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
           this->Manipulate = NULL;
           break;
         case SUPG:
-        	ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+        	ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
         	               " (SUPG) is not supported by the class CD3D");
           break;
         default:
-        ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+          ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
                " is not supported by the class CD3D");
-        throw("unsupported DISCTYPE");
       }// endswitch TDatabase::ParamDB->DISCTYPE
       break; // break for the type LocalAssembling3D_type::CD3D 
     case LocalAssembling3D_type :: NSE3D_Linear:
     case LocalAssembling3D_type :: NSE3D_NonLinear:
       this->set_parameters_for_nse(type);
       break;
+    default:
+      ErrThrow("Unknown or unhandled LocalAssembling3D_type case.");
   }
   
   AllOrigValues = new double** [N_Terms];
@@ -91,19 +92,18 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   // some consistency checks
   if(Coeffs == NULL)
   {
-    ErrMsg("You need to specify a valid function for the coefficients");
-    exit(1);
+    ErrThrow("You need to specify a valid function for the coefficients");
   }
   if(AssembleParam == NULL)
   {
-    ErrMsg("a local assmebling routine was not set");
-    exit(1);
+    ErrThrow("S local assmebling routine was not set");
   }
 }
 //========================================================================
-LocalAssembling3D::LocalAssembling3D(TAuxParam3D& aux, 
+LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& aux,
                                      TDiscreteForm3D& df)
-  :name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
+  :type(type),
+   name(df.getName()), N_Terms(df.getNTerms()), N_Spaces(df.getNSpaces()),
    Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D000), 
    FESpaceNumber(this->N_Terms, 0), RowSpace(df.getNMatrices(), 0),
    ColumnSpace(df.getNMatrices(), 0), RhsSpace(df.getNRhs(), 0),
@@ -150,15 +150,13 @@ LocalAssembling3D::LocalAssembling3D(TAuxParam3D& aux,
   // some consistency checks
   if(Coeffs == NULL)
   {
-    ErrMsg("You need to specify a valid function for the coefficients");
-    exit(1);
+    ErrThrow("You need to specify a valid function for the coefficients");
   }
   if(this->AssembleParam == NULL)
   {
     // this means in the discrete form there was only a pointer to a
     // AssembleFct3D rather than a AssembleFctParam3D.
-    ErrMsg("can't create LocalAssembling3D object, missing AssembleFctParam3D");
-    throw("can't create LocalAssembling3D object, missing AssembleFctParam3D");
+    ErrThrow("can't create LocalAssembling3D object, missing AssembleFctParam3D");
   }
 }
 //========================================================================
@@ -336,8 +334,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
                   if(TDatabase::ParamDB->LAPLACETYPE != 0)
                   {
-                    ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                    exit(1);
+                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
@@ -366,8 +363,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
                   if(TDatabase::ParamDB->LAPLACETYPE != 0)
                   {
-                    ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                    exit(1);
+                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
@@ -470,9 +466,8 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
               {
                 case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
                 case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  OutPut("Wrong NSTYPE " << TDatabase::ParamDB->NSTYPE << " for Newton's method !!!");
-                  OutPut("Use NSTYPE 3 or 4 !!!");
-                  exit(1);
+                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE,
+                           " for Newton's method !!! Use NSTYPE 3 or 4 !!!");
                   break;
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
                   this->N_Terms = 5;
@@ -549,9 +544,8 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
           }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)
           break;
           default:
-             ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+            ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
                      " is not supported by the class NSE3D");
-              throw("unsupported DISCTYPE");
       }// endswitch for the DISCTYPE 
       break; // break for the LocalAssembling3D_type NSE3D_Linear
     case LocalAssembling3D_type :: NSE3D_NonLinear:
@@ -566,8 +560,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 1: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 1
                   if(TDatabase::ParamDB->LAPLACETYPE != 0)
                   {
-                    ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                    exit(1);
+                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
@@ -596,8 +589,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 2: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 2
                   if(TDatabase::ParamDB->LAPLACETYPE != 0)
                   {
-                    ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
-                    exit(1);
+                    ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 1");
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
@@ -700,9 +692,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
               {
                 case 1:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=1
                 case 2:// GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=1, NSTYPE=2
-                  OutPut("Wrong NSTYPE " << TDatabase::ParamDB->NSTYPE << " for Newton's method !!!");
-                  OutPut("Use NSTYPE 3 or 4 !!!");
-                  exit(1);
+                  ErrThrow("Wrong NSTYPE ", TDatabase::ParamDB->NSTYPE, " for Newton's method !!!", "Use NSTYPE 3 or 4 !!!");
                   break;
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
                   this->N_Terms = 5;
@@ -779,9 +769,8 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
           }// endswitch of the iteration type (FIXED POINT OR NEWTON'S)          
           break; // break for the GALERKIN
           default:
-             ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+             ErrThrow("currently DISCTYPE ", TDatabase::ParamDB->DISCTYPE,
                      " is not supported by the class NSE3D");
-              throw("unsupported DISCTYPE");
       } // endswitch for the DISCTYPE
       break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
   } // endswitch (type)
