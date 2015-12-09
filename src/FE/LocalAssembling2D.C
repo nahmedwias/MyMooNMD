@@ -1060,8 +1060,8 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                     this->N_Matrices = 9;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinSkew; 
                   this->Manipulate = NULL;
                   
@@ -1087,8 +1087,8 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                     this->N_Matrices = 9;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinSkewDD; 
                   this->Manipulate = NULL;
                   
@@ -1125,8 +1125,8 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                     this->N_Matrices = 9;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinRot; 
                   this->Manipulate = NULL;
                   
@@ -1152,8 +1152,8 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                     this->N_Matrices = 9;
                   this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 2;
-                  this->RhsSpace = { 0, 0 };
+                  this->N_Rhs = 3;
+                  this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinRotDD; 
                   this->Manipulate = NULL;
                   
