@@ -191,7 +191,8 @@ void UmfpackSolverWrapper::handle_error(int ierror, int line)
 		break;
 
 	default:
-		throw new UmfpackSolverWrapperError("Error number " + ierror); break;
+		throw new UmfpackSolverWrapperError("Error number " + std::to_string(ierror));
+    break;
 	break;
 	}
 }
