@@ -69,13 +69,14 @@ int main(int argc, char* argv[])
   //ns.assemble_nonlinear_term();
   
   ns.stopIt(0);
-  Output::print<1>("Nonlinear iteration step   0\t", ns.getResiduals());
   
   //======================================================================
   // nonlinear loop
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
+    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t", 
+                     ns.getResiduals());
     ns.solve();
     
     //no nonlinear iteration for Stokes problem
@@ -84,8 +85,6 @@ int main(int argc, char* argv[])
     
     ns.assemble_nonlinear_term();
     
-    Output::print<1>("nonlinear iteration step ", setw(3), k, "\t", 
-                     ns.getResiduals());
     if(ns.stopIt(k))
       break;
   } // end for k
