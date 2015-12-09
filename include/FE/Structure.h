@@ -181,7 +181,7 @@ class TStructure
 
     
     /** @brief Default copy constructor */
-    TStructure(const TStructure&);
+    TStructure(const TStructure&) = default;
 
     /// @brief Default move constructor.
     TStructure(TStructure&&) = default;

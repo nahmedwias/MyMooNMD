@@ -249,7 +249,7 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
       // following two vectors are needed for the constructor
       int * column_of_entry = new int[n_comb_entries];
       int * entries_in_rows = new int[n_comb_rows+1];
-      double * comb_entries = new double[n_comb_entries];
+      std::vector<double> comb_entries(n_comb_entries, 0.0);
       entries_in_rows[0] = 0;
       
       // filling the vectors:
@@ -296,7 +296,6 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
       // create Matrix
       this->combined_matrix = std::make_shared<TMatrix>(sp);
       this->combined_matrix->setEntries(comb_entries);
-      delete [] comb_entries;
     }
   }
   // else reuse the already computed combined matrix

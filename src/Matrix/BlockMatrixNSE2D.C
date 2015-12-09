@@ -246,8 +246,8 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs,
                   "C-block is now ignored");
     //n_sq_mat = 5;
   }
-  TSquareMatrix2D * sq_matrices[5] = {this->get_A_block(0), nullptr, nullptr, 
-                                      nullptr, nullptr};
+  TSquareMatrix2D * sq_matrices[7] = {this->get_A_block(0), nullptr, nullptr, 
+                                      nullptr, nullptr, nullptr, nullptr};
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 2)
     sq_matrices[1] = mass->get_A_block(0); // mass matrix
   else

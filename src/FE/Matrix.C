@@ -29,11 +29,6 @@ void TMatrix::reset()
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
-void TMatrix::setEntries(double* entries)
-{
-  std::copy(entries, entries + this->GetN_Entries(), this->entries.begin());
-}
-
 void TMatrix::setEntries(std::vector<double> entries)
 {
   if(this->entries.size() != entries.size())
@@ -502,6 +497,8 @@ TMatrix & TMatrix::operator*=(const double a)
 
 void TMatrix::reorderMatrix() 
 {
+  // make a deep copy of the structure in case of other matrices sharing it
+  this->copyOwnStructure();
   int l, begin, end;
   double value;
   
@@ -605,6 +602,20 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   
   this->entries = new_entries;
 }
+
+/** ************************************************************************* */
+void TMatrix::copyOwnStructure()
+{
+  if(this->structure.unique())
+  {
+    // no one else knows this->structure
+    return;
+  }
+  // create a deep copy of the own structure
+  std::shared_ptr<TStructure> new_structure(new TStructure(*this->structure));
+  this->structure = new_structure;
+}
+
 
 /** ************************************************************************* */
 void TMatrix::info(size_t verbose) const

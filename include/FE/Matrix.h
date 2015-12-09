@@ -10,8 +10,8 @@
 * To create a TMatrix either copy or move an existing one or use a TStructure 
 * to construct a new one.
 * 
-* Objects ob type TMatrix are not supposed to be copied. You can copy the 
-* entries from one TMatrix to another or copy/move construct a new TMatrix.
+* Objects ob type TMatrix are not supposed to be copied. If you want that 
+* copy/move construct a new TMatrix.
 * 
 * \todo apply naming convention to all methods
 * 
@@ -43,6 +43,23 @@ class TMatrix
      * Its size is determined by the TMatrix::structure.
      */
     std::vector<double> entries;
+    
+    /**
+     * @brief replace the structure by a copy
+     * 
+     * If you plan on calling a method which changes the structure, such as
+     * TMatrix::remove_zeros, TMatrix::changeRows or TMatrix::reorderMatrix,
+     * this method has to be called before. Otherwise other matrices sharing 
+     * the same TStructure will become corrupted. 
+     * 
+     * This method makes a deep copy of the structure. Then this matrix only 
+     * knows its copy and is the only one knowing this copy. Then this matrix 
+     * can safely call any structure changing methods.
+     * 
+     * Note that this method does nothing, if this matrix is the only one 
+     * sharing its structure.
+     */
+    void copyOwnStructure();
     
   public:
     /** @brief generate the matrix, initialize entries with zeros */
@@ -172,10 +189,6 @@ class TMatrix
     /// @brief  get a value at selected entry (you may change that value)
     double& get(int i,int j);
     
-    /// @brief set the whole elements array, discouraged, use the other 
-    /// setEntries
-    void setEntries(double* entries);
-    
     /// @brief reset the entries, the given vector must be of the same size
     void setEntries(std::vector<double> entries);
     
@@ -206,8 +219,11 @@ class TMatrix
      * If there are no rows to change, i.e. if entries.size()==0, nothing is 
      * done.
      * 
+     * This will create a new structure for this matrix. The structure 
+     * previously belonging to this matrix is not changed. So other matrices 
+     * are not affected.
+     * 
      * @param entries for every row a map of columns-to-entries map
-     * @param deleteOldArrays remove old arrays in matrix and structure
      */
     void changeRows(std::map<int,std::map<int,double> > entries);
     
