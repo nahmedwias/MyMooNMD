@@ -185,12 +185,7 @@ void BlockMatrix::scale_active(double factor)
 /* ************************************************************************* */
 void BlockMatrix::apply(const BlockVector & x, BlockVector & y) const
 {
-  unsigned int l = y.length();
-  if(l != this->n_total_cols() && l != 0)
-  {
-    ErrThrow("cannot multiply with matrix, dimension mismatch");
-  }
-  if(l == 0)
+  if(y.length() == 0)
   {
     // BlockVector y is empty, set to to a suitable vector in the image of 
     // this BlockMatrix, true means y is in the image of this, rather 
@@ -210,7 +205,7 @@ void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
 {
   if(y.length() != this->n_total_rows())
   {
-    ErrThrow("cannot multiply with matrix, dimension mismatch");
+    ErrThrow("cannot multiply with matrix, dimension mismatch ",y.length(), " ", this->n_total_rows());
   }
   if(x.length() != this->n_total_cols())
   {
@@ -227,11 +222,11 @@ void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
     int col_offset = 0;
     for(unsigned int j = 0; j < n_cols; j++)
     {
-      auto current_block = this->block(i * n_rows + j);
+      auto current_block = this->block(i * n_cols + j);
       current_block->multiply(xv + col_offset, yv + row_offset, a);
       col_offset += current_block->GetN_Columns();
     }
-    row_offset += this->block(i * n_rows)->GetN_Rows();
+    row_offset += this->block(i * n_cols)->GetN_Rows();
   }
 }
 
