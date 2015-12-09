@@ -7,8 +7,16 @@
                        DoubleFunctVect *evaledge);
 */
 
-static double NF_N_T_RT0_2D_Xi[] =  { 0.5, 0.5, 0};
-static double NF_N_T_RT0_2D_Eta[] = { 0  , 0.5, 0.5};
+// we use a 2-point Gauss quadrature on each edge (which is exact for 
+// polynomials up to order 3)
+static double NF_N_T_RT0_2D_Xi[] =
+{ (-sqrt(1./3.)+1.)/2., (sqrt(1./3.)+1.)/2.,
+  (sqrt(1./3.)+1.)/2., (-sqrt(1./3.)+1.)/2.,
+  0, 0};
+static double NF_N_T_RT0_2D_Eta[] = 
+{ 0, 0 , 
+  (-sqrt(1./3.)+1.)/2., (sqrt(1./3.)+1.)/2., 
+  (sqrt(1./3.)+1.)/2., (-sqrt(1./3.)+1.)/2.};
 static double NF_N_T_RT0_2D_T[] = {0};
 
 void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
@@ -17,9 +25,10 @@ void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
   // on the reference triangle with points (0,0), (1,0), (0,1) 
   if(Cell == nullptr)
   {
-    Functionals[0] = -PointValues[3];
-    Functionals[1] = PointValues[1] + PointValues[4];
-    Functionals[2] = -PointValues[2];
+    Functionals[0] = -0.5*(PointValues[6] + PointValues[7]);
+    Functionals[1] = 0.5*(PointValues[2] + PointValues[3]) 
+                    +0.5*(PointValues[8] + PointValues[9]);
+    Functionals[2] = -0.5*(PointValues[4] + PointValues[5]);
   }
   else // on a real cell
   {
@@ -37,17 +46,20 @@ void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     // first edge:
     nx = y1 - y0;
     ny = x0 - x1;
-    Functionals[0] = PointValues[0]*nx + PointValues[3]*ny;
+    Functionals[0] = 0.5*(PointValues[0] + PointValues[1])*nx
+                    +0.5*(PointValues[6] + PointValues[7])*ny;
     
     // second edge:
     nx = y2 - y1;
     ny = x1 - x2;
-    Functionals[1] = PointValues[1]*nx + PointValues[4]*ny;
+    Functionals[1] = 0.5*(PointValues[2] + PointValues[3])*nx
+                    +0.5*(PointValues[8] + PointValues[9])*ny;
     
     // third edge:
     nx = y0 - y2;
     ny = x2 - x0;
-    Functionals[2] = PointValues[2]*nx + PointValues[5]*ny;
+    Functionals[2] = 0.5*(PointValues[4] + PointValues[5])*nx
+                    +0.5*(PointValues[10]+ PointValues[11])*ny;
   }
 }
 
@@ -78,5 +90,5 @@ void NF_N_T_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
 }
 
 TNodalFunctional2D *NF_N_T_RT0_2D_Obj = new TNodalFunctional2D
-        (NF_N_T_RT0_2D, 3, 1, 3, 1, NF_N_T_RT0_2D_Xi, NF_N_T_RT0_2D_Eta,
+        (NF_N_T_RT0_2D, 3, 1, 6, 1, NF_N_T_RT0_2D_Xi, NF_N_T_RT0_2D_Eta,
          NF_N_T_RT0_2D_T, NF_N_T_RT0_2D_EvalAll, NF_N_T_RT0_2D_EvalEdge);

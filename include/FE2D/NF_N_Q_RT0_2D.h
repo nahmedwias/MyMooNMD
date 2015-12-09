@@ -7,8 +7,14 @@
                        DoubleFunctVect *evaledge);
 */
 
-static double NF_N_Q_RT0_2D_Xi[4] =  { 0, 1, 0, -1 };
-static double NF_N_Q_RT0_2D_Eta[4] = {-1, 0, 1, 0  };
+// we use a 2-point Gauss quadrature on each edge (which is exact for 
+// polynomials up to order 3)
+static double NF_N_Q_RT0_2D_Xi[8] =
+{ -sqrt(1./3.), sqrt(1./3.), 1, 1,
+  -sqrt(1./3.), sqrt(1./3.), -1, -1 };
+static double NF_N_Q_RT0_2D_Eta[8] =
+{-1, -1, -sqrt(1./3.), sqrt(1./3.),
+  1, 1, -sqrt(1./3.), sqrt(1./3.) };
 static double NF_N_Q_RT0_2D_T[2] = {0};
 
 void NF_N_Q_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
@@ -17,10 +23,10 @@ void NF_N_Q_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
   // on the reference cell [-1,1]^2
   if(Cell == nullptr)
   {
-    Functionals[0] = -2*PointValues[4];
-    Functionals[1] = 2*PointValues[1];
-    Functionals[2] = 2*PointValues[6];
-    Functionals[3] = -2*PointValues[3];
+    Functionals[0] = -PointValues[8] - PointValues[9];
+    Functionals[1] = PointValues[2] + PointValues[3];
+    Functionals[2] = PointValues[12] + PointValues[13];
+    Functionals[3] = -PointValues[6] - PointValues[7];
   }
   else // on a real cell
   {
@@ -39,21 +45,25 @@ void NF_N_Q_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     // first edge:
     nx = y1 - y0;
     ny = x0 - x1;
-    Functionals[0] = PointValues[0]*nx + PointValues[4]*ny;
+    Functionals[0] = 0.5*(PointValues[0] + PointValues[1])*nx
+                    +0.5*(PointValues[8] + PointValues[9])*ny;
     
     // second edge:
     nx = y2 - y1;
     ny = x1 - x2;
-    Functionals[1] = PointValues[1]*nx + PointValues[5]*ny;
+    Functionals[1] = 0.5*(PointValues[2] + PointValues[3])*nx
+                    +0.5*(PointValues[10]+ PointValues[11])*ny;
     
     // third edge:
     nx = y3 - y2;
     ny = x2 - x3;
-    Functionals[2] = PointValues[2]*nx + PointValues[6]*ny;
+    Functionals[2] = 0.5*(PointValues[4] + PointValues[5])*nx
+                    +0.5*(PointValues[12]+ PointValues[13])*ny;
     
     nx = y0 - y3;
     ny = x3 - x0;
-    Functionals[3] = PointValues[3]*nx + PointValues[7]*ny;
+    Functionals[3] = 0.5*(PointValues[6] + PointValues[7])*nx
+                    +0.5*(PointValues[14]+ PointValues[15])*ny;
   }
 }
 
@@ -84,5 +94,5 @@ void NF_N_Q_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
 }
 
 TNodalFunctional2D *NF_N_Q_RT0_2D_Obj = new TNodalFunctional2D
-        (NF_N_Q_RT0_2D, 4, 1, 4, 1, NF_N_Q_RT0_2D_Xi, NF_N_Q_RT0_2D_Eta,
+        (NF_N_Q_RT0_2D, 4, 1, 8, 1, NF_N_Q_RT0_2D_Xi, NF_N_Q_RT0_2D_Eta,
          NF_N_Q_RT0_2D_T, NF_N_Q_RT0_2D_EvalAll, NF_N_Q_RT0_2D_EvalEdge);
