@@ -273,7 +273,7 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs,
       if(TDatabase::ParamDB->NSTYPE == 14)
       {
         n_sq_mat += 1;
-        sq_matrices[6] = this->get_C_block();
+        sq_matrices[4] = this->get_C_block();
       }
     }
   }
