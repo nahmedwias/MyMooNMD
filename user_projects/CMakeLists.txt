@@ -20,3 +20,12 @@
 #    make project
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
+
+include_directories("${PROJECT_SOURCE_DIR}/user_projects")
+
+list(APPEND PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/ColoredBlockMatrix.C")
+add_library(PROJECT_LIB STATIC ${PROJECT_SOURCES})
+
+#colored block matrix test
+add_executable(ParMooN_test_colored_block_matrix colored_block_matrix_test.c++)
+target_link_libraries(ParMooN_test_colored_block_matrix PROJECT_LIB parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})

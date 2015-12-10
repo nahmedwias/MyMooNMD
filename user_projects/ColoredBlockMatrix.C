@@ -1,20 +1,20 @@
 
-#include <BlockMatrix.h>
+#include <ColoredBlockMatrix.h>
 #include <BlockVector.h>
 #include <LinAlg.h>
 #include <limits>
 
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix()
-// : BlockMatrix(0, 0)
+//ColoredBlockMatrix::ColoredBlockMatrix()
+// : ColoredBlockMatrix(0, 0)
 //{
 //
 //}
 
-BlockMatrix::CellInfo::CellInfo()
+ColoredBlockMatrix::CellInfo::CellInfo()
 : n_rows_{0}, n_columns_{0},
   //block_in_cell gets default initialised to null
-  color_{std::numberic_limits<size_t>::max()}, // no color
+  color_{std::numeric_limits<size_t>::max()}, // no color
   is_transposed_{false} //non-transposed
 
 {
@@ -24,9 +24,9 @@ BlockMatrix::CellInfo::CellInfo()
 }
 
 ///* ************************************************************************* */
-BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
+ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 : n_rows_{nRows}, n_columns_{nColumns}, //block_in_cell gets default initialised to null
-  color_{std::numberic_limits<size_t>::max()}, // no colour
+  color_{std::numeric_limits<size_t>::max()}, // no colour
   is_transposed_{false} //non-transposed
 
 {
@@ -36,11 +36,11 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 }
 
 /* ************************************************************************* */
-BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
+ColoredBlockMatrix::ColoredBlockMatrix(std::vector<size_t> cellRowNumbers,
                          std::vector<size_t> cellColumnNumbers)
   : n_block_rows_{cellRowNumbers.size()},
     n_block_columns_{cellColumnNumbers.size()},
-    //cell_info_grid gets implicitely default constructed and filled
+    cell_info_grid_(n_block_rows_, std::vector<CellInfo>(n_block_columns_)),
     n_colors_{0}
     // combinde_matrix gets default initialized to smart nullptr
 {
@@ -77,13 +77,13 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 }
 
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix(unsigned int n_rows, unsigned int n_cols,
+//ColoredBlockMatrix::ColoredBlockMatrix(unsigned int n_rows, unsigned int n_cols,
 //                         std::vector<std::shared_ptr<TMatrix>> new_blocks)
-// : BlockMatrix(n_rows, n_cols)
+// : ColoredBlockMatrix(n_rows, n_cols)
 //{
 //  if(new_blocks.size() < this->n_blocks())
 //  {
-//    ErrThrow("Creating a BlockMatrix with ", this->n_rows(), " rows and ",
+//    ErrThrow("Creating a ColoredBlockMatrix with ", this->n_rows(), " rows and ",
 //             this->n_cols(), " columns, but only ", new_blocks.size(),
 //             " blocks given");
 //  }
@@ -119,16 +119,16 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix(const Problem_type type,
+//ColoredBlockMatrix::ColoredBlockMatrix(const Problem_type type,
 //                         unsigned int space_dimension, bool mass_matrix)
-// : BlockMatrix(std::make_shared<const BlockPattern>(type, space_dimension,
+// : ColoredBlockMatrix(std::make_shared<const BlockPattern>(type, space_dimension,
 //                                                    mass_matrix))
 //{
 //  // nothing more to do
 //}
 //
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix(std::shared_ptr<const BlockPattern> bp)
+//ColoredBlockMatrix::ColoredBlockMatrix(std::shared_ptr<const BlockPattern> bp)
 // : block_pattern(bp),
 //   blocks(std::vector<std::shared_ptr<TMatrix>>(bp->n_blocks(), nullptr)),
 //   combined_matrix(std::shared_ptr<TMatrix>())
@@ -137,7 +137,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix(BlockMatrix& other)
+//ColoredBlockMatrix::ColoredBlockMatrix(ColoredBlockMatrix& other)
 // : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
 //   combined_matrix(other.combined_matrix)
 //{
@@ -148,7 +148,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//BlockMatrix::BlockMatrix(BlockMatrix&& other)
+//ColoredBlockMatrix::ColoredBlockMatrix(ColoredBlockMatrix&& other)
 // : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
 //   combined_matrix(other.combined_matrix)
 //{
@@ -162,24 +162,24 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//BlockMatrix::~BlockMatrix() noexcept
+//ColoredBlockMatrix::~ColoredBlockMatrix() noexcept
 //{
 //}
 //
 ///* ************************************************************************* */
-//void BlockMatrix::reset()
+//void ColoredBlockMatrix::reset()
 //{
 //  for(unsigned int b = 0; b < this->n_blocks(); ++b)
 //    this->blocks[b]->reset();
 //}
 //
 ///* ************************************************************************* */
-//void BlockMatrix::add_scaled(const BlockMatrix& A, double factor)
+//void ColoredBlockMatrix::add_scaled(const ColoredBlockMatrix& A, double factor)
 //{
 //  unsigned int n_blocks = A.n_blocks();
 //  if(this->n_blocks() != n_blocks)
 //  {
-//    ErrThrow("BlockMatrix::add_scaled : the two BlockMatrix objects do ",
+//    ErrThrow("ColoredBlockMatrix::add_scaled : the two ColoredBlockMatrix objects do ",
 //             "not have the same number of blocks.");
 //  }
 //
@@ -191,14 +191,14 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //
 //
 ///** ************************************************************************* */
-//void BlockMatrix::scale(double factor)
+//void ColoredBlockMatrix::scale(double factor)
 //{
 //  for(unsigned int b = 0; b < this->n_blocks(); ++b)
 //    this->blocks[b]->scale(factor);
 //}
 //
 ///* ************************************************************************* */
-//void BlockMatrix::apply(const BlockVector & x, BlockVector & y) const
+//void ColoredBlockMatrix::apply(const BlockVector & x, BlockVector & y) const
 //{
 //  unsigned int l = y.length();
 //  if(l != this->n_total_cols() && l != 0)
@@ -208,7 +208,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //  if(l == 0)
 //  {
 //    // BlockVector y is empty, set to to a suitable vector in the image of
-//    // this BlockMatrix, true means y is in the image of this, rather
+//    // this ColoredBlockMatrix, true means y is in the image of this, rather
 //    // than the pre-image
 //    y.copy_structure(*this, true);
 //    // all values of 'y' are set to 0
@@ -220,7 +220,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
+//void ColoredBlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
 //                                         double a) const
 //{
 //  if(y.length() != this->n_total_rows())
@@ -251,7 +251,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
+//std::shared_ptr<TMatrix> ColoredBlockMatrix::get_combined_matrix()
 //{
 //  if(!this->combined_matrix)
 //  {
@@ -276,7 +276,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //      unsigned int row_offset = 0;
 //      // position of current entry in combined matrix
 //      unsigned int pos = 0;
-//      // loop over all block rows of this BlockMatrix
+//      // loop over all block rows of this ColoredBlockMatrix
 //      for(unsigned int block_row = 0, n_block_rows = this->n_rows();
 //          block_row < n_block_rows; ++block_row)
 //      {
@@ -323,48 +323,48 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//std::shared_ptr<const TMatrix> BlockMatrix::block(const unsigned int i) const
+//std::shared_ptr<const TMatrix> ColoredBlockMatrix::block(const unsigned int i) const
 //{
 //  if(i >= this->n_blocks())
 //  {
 //    ErrThrow("There are only ", this->n_blocks(),
-//             " blocks in this BlockMatrix. Cannot access block ", i);
+//             " blocks in this ColoredBlockMatrix. Cannot access block ", i);
 //  }
 //  return this->blocks[i];
 //}
 //
 ///* ************************************************************************* */
-//std::shared_ptr<TMatrix> BlockMatrix::block(const unsigned int i)
+//std::shared_ptr<TMatrix> ColoredBlockMatrix::block(const unsigned int i)
 //{
 //  if(i >= this->n_blocks())
 //  {
 //    ErrThrow("There are only ", this->n_blocks(),
-//             " blocks in this BlockMatrix. Cannot access block ", i);
+//             " blocks in this ColoredBlockMatrix. Cannot access block ", i);
 //  }
 //  return this->blocks[i];
 //}
 //
 ///* ************************************************************************* */
-//const TMatrix& BlockMatrix::block(const unsigned int r,
+//const TMatrix& ColoredBlockMatrix::block(const unsigned int r,
 //                                  const unsigned int c) const
 //{
 //  if(r >= this->n_rows())
 //  {
 //    ErrThrow("There are only ", this->n_rows(),
-//             " block rows in this BlockMatrix. Can not access a block in row ",
+//             " block rows in this ColoredBlockMatrix. Can not access a block in row ",
 //             r);
 //  }
 //  if(c >= this->n_cols())
 //  {
 //    ErrThrow("There are only ", this->n_cols(),
-//             " block columns in this BlockMatrix. Can not access a block in ",
+//             " block columns in this ColoredBlockMatrix. Can not access a block in ",
 //             "column ", c);
 //  }
 //  return *(this->blocks[r * this->n_cols() + c].get());
 //}
 //
 ///* ************************************************************************* */
-//unsigned int BlockMatrix::n_total_rows() const
+//unsigned int ColoredBlockMatrix::n_total_rows() const
 //{
 //  unsigned int n_total_rows = 0;
 //  for(unsigned int i = 0; i < this->n_rows(); i++)
@@ -374,7 +374,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//unsigned int BlockMatrix::n_total_cols() const
+//unsigned int ColoredBlockMatrix::n_total_cols() const
 //{
 //  unsigned int n_total_cols = 0;
 //  for(unsigned int i = 0; i < this->n_cols(); i++)
@@ -384,7 +384,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///** ************************************************************************* */
-//unsigned int BlockMatrix::n_total_entries() const
+//unsigned int ColoredBlockMatrix::n_total_entries() const
 //{
 //  unsigned int n_total_entries = 0;
 //  unsigned int n_blocks = this->n_blocks();
@@ -395,14 +395,14 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///* ************************************************************************* */
-//double & BlockMatrix::operator()(unsigned int i, unsigned int j)
+//double & ColoredBlockMatrix::operator()(unsigned int i, unsigned int j)
 //{
 //  unsigned int bI = this->block_of_index(i, j);
 //  return this->blocks[bI]->operator()(i,j);
 //}
 //
 ///** ************************************************************************* */
-//const double & BlockMatrix::operator()(unsigned int i, unsigned int j)
+//const double & ColoredBlockMatrix::operator()(unsigned int i, unsigned int j)
 //  const
 //{
 //  int bI = this->block_of_index(i, j);
@@ -410,7 +410,7 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //}
 //
 ///** ************************************************************************* */
-//unsigned int BlockMatrix::block_of_index(unsigned int& i, unsigned int& j)
+//unsigned int ColoredBlockMatrix::block_of_index(unsigned int& i, unsigned int& j)
 // const
 //{
 //  unsigned int n_block_rows = this->n_rows();
@@ -438,11 +438,11 @@ BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
 //    i -= n_rows;
 //  }
 //  // until here only in case of an error
-//  ErrThrow("could not find the given index in the BlockMatrix");
+//  ErrThrow("could not find the given index in the ColoredBlockMatrix");
 //}
 //
 ///** ************************************************************************* */
-//void BlockMatrix::info(size_t verbose) const
+//void ColoredBlockMatrix::info(size_t verbose) const
 //{
 //  this->block_pattern->info(verbose);
 //  if(verbose > 0 && verbose < 2)

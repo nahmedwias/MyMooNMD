@@ -15,7 +15,7 @@ class BlockVector;
 
 /** ************************************************************************
 *
-* @class      BlockMatrix
+* @class      ColoredBlockMatrix
 * @brief      represent a matrix consisting of blocks which are sparse matrices
 *
 *             This is a purely algebraic object. And one which does frequently
@@ -37,62 +37,27 @@ class BlockVector;
 * @date       08.09.2015
 *
 ****************************************************************************/
-class BlockMatrix
+class ColoredBlockMatrix
 {
-  //! Store information of a certain grid cell in the block matrix.
-  //! Will by default perform a shallow copy when copied, which is what we want.
-  struct CellInfo
-  {
-      const size_t n_rows_;
-
-      const size_t n_columns_;
-
-      shared_ptr<TMatrix> block_in_cell_;
-
-      size_t color_;
-
-      bool is_transposed_;
-
-      //! Default constructor, will be called implicitely.
-      CellInfo();
-
-      //! Constructo which sets the constant values correctly.
-      CellInfo(size_t n_rows, size_t n_columns);
-
-  };
-
-  protected:
-
-    //! The number of block rows. Equals the number of blocks/cells in each block column.
-    size_t n_block_rows_;
-
-    //! The number of block columns. Equals the number of blocks/cells in each block row.
-    size_t n_block_columns_;
-
-    /*!
-     * A tableau of cell information. Has dimension
-    *   n_block_rows x n_block_columns, and stores cell information.
-    *   I.e. cell_info_grid[i][j] holds information on the cell in block row i,
-    *   block column j.
-    */
-    std::vector<std::vector<CellInfo>> cell_info_grid_;
-
-    /*! The number of colors currently existing in the block matrix,
-     *  i.e. the number of physically stored TMatrices.
-     */
-    size_t n_colors_;
-
-    /** @brief all blocks as one TMatrix
-     *
-     * This object is only created upon request. If there is only one block then
-     * it is combined_matrix = blocks[0] set.
-     *
-     * Consider not storing but making up and returning on request.
-     */
-    std::shared_ptr<TMatrix> combined_matrix_;
-
-
   public:
+
+    /** @brief Creates an empty ColoredBlockMatrix without any properties.
+     */
+    ColoredBlockMatrix();
+
+    /**
+     * @brief Creates a ColoredBlockMatrix which is filled with fitting zero blocks.
+     *
+     * The number of block rows is the length of cell_row_numbers,
+     * the number of block columns the length of cell_column_numbers.
+     *
+     * If e.g. cell_row_numbers[3] == 100, all cells in block row 3 will have
+     * 100 matrix rows.
+     *
+     * @param cell_row_numbers holds the number of rows for all matrices in one block row
+     * @param cell_column_numbers holds the number of columns for all matrices in one block column
+     */
+    ColoredBlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
     /**
      * @brief checks whether the coloring is correct - use in tests only
@@ -127,7 +92,7 @@ class BlockMatrix
      * unsigned int bI = this->blockOfIndex(i,j);
      * double v = (this->blocks[bT])(i,j);
      *
-     * Then the value stored in 'v' is the value of this BlockMatrix at the
+     * Then the value stored in 'v' is the value of this ColoredBlockMatrix at the
      * indices (i,j) which were initially set.
      *
      * @param i row index
@@ -151,44 +116,91 @@ class BlockMatrix
     // Special member functions.
 
     /** @brief copy constructor */
-    BlockMatrix(BlockMatrix&);
+    ColoredBlockMatrix(ColoredBlockMatrix&) = default;
 
     /** @brief move constructor */
-    BlockMatrix(BlockMatrix&&);
+    ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
 
     /// @brief destructor, deleting every block
-    ~BlockMatrix() noexcept;
+    ~ColoredBlockMatrix() = default;
+
+    // Data members (and declaration of a special struct)
+
+    //! Store information of a certain grid cell in the block matrix.
+    //! Will by default perform a shallow copy when copied, which is what we want.
+    struct CellInfo
+    {
+        size_t n_rows_;
+
+        size_t n_columns_;
+
+        std::shared_ptr<TMatrix> block_in_cell_;
+
+        size_t color_;
+
+        bool is_transposed_;
+
+        //! Default constructor, will be called implicitely.
+        CellInfo();
+
+        //! Constructor which sets the constant values correctly.
+        CellInfo(size_t n_rows, size_t n_columns);
+
+    };
+
+    protected:
+
+      //! The number of block rows. Equals the number of blocks/cells in each block column.
+      size_t n_block_rows_;
+
+      //! The number of block columns. Equals the number of blocks/cells in each block row.
+      size_t n_block_columns_;
+
+      /*!
+       * A tableau of cell information. Has dimension
+      *   n_block_rows x n_block_columns, and stores cell information.
+      *   I.e. cell_info_grid[i][j] holds information on the cell in block row i,
+      *   block column j.
+      */
+      std::vector<std::vector<CellInfo>> cell_info_grid_;
+
+      /*! The number of colors currently existing in the block matrix,
+       *  i.e. the number of physically stored TMatrices.
+       */
+      size_t n_colors_;
+
+      /** @brief all blocks as one TMatrix
+       *
+       * This object is only created upon request. If there is only one block then
+       * it is combined_matrix = blocks[0] set.
+       *
+       * Consider not storing but making up and returning on request.
+       */
+      std::shared_ptr<TMatrix> combined_matrix_;
+
+  private:
+    /*!
+     * Enforces the correct coloring by running through the block
+     * matrix and resetting all colors correctly. Call after an
+     * operation which might have changed the coloring of some blocks
+     * took place.
+     */
+    void reColor();
 
   public:
-    /** @brief Creates an empty BlockMatrix without any properties.
-     */
-    BlockMatrix();
 
-    /**
-     * @brief Creates a BlockMatrix which is filled with fitting zero blocks.
-     *
-     * The number of block rows is the length of cell_row_numbers,
-     * the number of block columns the length of cell_column_numbers.
-     *
-     * If e.g. cell_row_numbers[3] == 100, all cells in block row 3 will have
-     * 100 matrix rows.
-     *
-     * @param cell_row_numbers holds the number of rows for all matrices in one block row
-     * @param cell_column_numbers holds the number of columns for all matrices in one block column
-     */
-    BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
 //    /**
-//     * @brief Creates a nRows times nCols BlockMatrix filled with blocks
+//     * @brief Creates a nRows times nCols ColoredBlockMatrix filled with blocks
 //     *
 //     * @param nRows - number of blocks per column
 //     * @param nCols - number of blocks per row
 //     * @param new_blocks - the blocks as a vector
 //     */
-//    BlockMatrix(unsigned int nRows, unsigned int nCols,
+//    ColoredBlockMatrix(unsigned int nRows, unsigned int nCols,
 //                std::vector<std::shared_ptr<TMatrix>> new_blocks);
 //
-//    /** @brief construct a BlockMatrix suitable for the given problem type
+//    /** @brief construct a ColoredBlockMatrix suitable for the given problem type
 //     *
 //     * All blocks contain zeros only.
 //     *
@@ -196,7 +208,7 @@ class BlockMatrix
 //     * arguments, and then does the same as the constructor using only a
 //     * BlockPattern.
 //     */
-//    BlockMatrix(const Problem_type, unsigned int space_dimension,
+//    ColoredBlockMatrix(const Problem_type, unsigned int space_dimension,
 //                bool mass_matrix = false);
 
 
@@ -218,7 +230,7 @@ class BlockMatrix
      *
      * Possibly existing special matrices are not changed.
      */
-    void add_scaled(const BlockMatrix &A, double factor = 1.0);
+    void add_scaled(const ColoredBlockMatrix &A, double factor = 1.0);
 
 
 
@@ -260,7 +272,7 @@ class BlockMatrix
     void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
 
-    /** @brief return this BlockMatrix as one TMatrix
+    /** @brief return this ColoredBlockMatrix as one TMatrix
      *
      * This returns a merged version of this martix. That means this matrix then
      * exists twice, as blocks and as a combined matrix. Changes to one of them
@@ -272,7 +284,6 @@ class BlockMatrix
 
     double & operator()(unsigned int i, unsigned int j);
     const double & operator()(unsigned int i, unsigned int j) const;
-    unsigned int n_blocks() const { return block_pattern->n_blocks(); }
 
     /// @brief total number of rows (> n_block_rows)
     unsigned int n_total_rows() const;
@@ -287,7 +298,7 @@ class BlockMatrix
      */
     const TMatrix& block(const unsigned int r, const unsigned int c) const;
 
-    /** @brief print some information on this BlockMatrix */
+    /** @brief print some information on this ColoredBlockMatrix */
     void info(size_t verbose) const;
 };
 
