@@ -7,6 +7,8 @@
                        DoubleFunctVect *evaledge);
 */
 
+// the nodal functionals on the edges E_i are
+// N_i(v) = int_{E_i} v.n 
 // we use a 2-point Gauss quadrature on each edge (which is exact for 
 // polynomials up to order 3)
 static double NF_N_Q_RT0_2D_Xi[8] =
@@ -15,7 +17,7 @@ static double NF_N_Q_RT0_2D_Xi[8] =
 static double NF_N_Q_RT0_2D_Eta[8] =
 {-1, -1, -sqrt(1./3.), sqrt(1./3.),
   1, 1, -sqrt(1./3.), sqrt(1./3.) };
-static double NF_N_Q_RT0_2D_T[2] = {0};
+static double NF_N_Q_RT0_2D_T[2] = {-sqrt(1./3.), sqrt(1./3.)};
 
 void NF_N_Q_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
@@ -83,16 +85,15 @@ void NF_N_Q_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
    * Be carefull!
    *                                            Ulrich Wilbrandt, 11.05.2012
   */
-  double l; // length of joint
-  double x0,x1,y0,y1;
   #ifdef __2D__
+  double x0,x1,y0,y1;
   Cell->GetVertex(Joint)->GetCoords(x0,y0);
   Cell->GetVertex((Joint+1)%4)->GetCoords(x1,y1);// 4=number of edges
+  double l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1)); // length of joint
+  Functionals[0] = 0.5*(PointValues[0] + PointValues[1])*l;
   #endif
-  l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
-  Functionals[0] = PointValues[0]*l;
 }
 
 TNodalFunctional2D *NF_N_Q_RT0_2D_Obj = new TNodalFunctional2D
-        (NF_N_Q_RT0_2D, 4, 1, 8, 1, NF_N_Q_RT0_2D_Xi, NF_N_Q_RT0_2D_Eta,
+        (NF_N_Q_RT0_2D, 4, 1, 8, 2, NF_N_Q_RT0_2D_Xi, NF_N_Q_RT0_2D_Eta,
          NF_N_Q_RT0_2D_T, NF_N_Q_RT0_2D_EvalAll, NF_N_Q_RT0_2D_EvalEdge);

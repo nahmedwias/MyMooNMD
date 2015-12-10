@@ -131,8 +131,8 @@ int main(int argc, char* argv[])
     std::array<double, 5> errors;
     
     Output::print("\nstarting with RT0 on quads");
-    errors = { 0.50665741516721, 6.2926762302213, 28.267995185207, 
-               0.080296618540803, 4.4428829381584 };
+    errors = { 0.50616706358332, 6.2926762302213, 28.267854806247, 
+               0.079978980936799, 4.4428829381584 };
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on quads");
@@ -183,8 +183,8 @@ int main(int argc, char* argv[])
     std::array<double, 5> errors;
 
     Output::print("\nstarting with RT0 on triangles");
-    errors = {0.50446546401145, 5.1429079193159, 28.151331748344, 
-              0.065512804062722, 4.4428829381584 };
+    errors = {0.50408358816775, 5.1429079193159, 28.151331748344, 
+              0.065260996556179, 4.4428829381584 };
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on triangles");
