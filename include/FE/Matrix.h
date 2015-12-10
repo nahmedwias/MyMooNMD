@@ -65,6 +65,11 @@ class TMatrix
     /** @brief generate the matrix, initialize entries with zeros */
     TMatrix(std::shared_ptr<TStructure> structure);
 
+    /**
+     * @brief Generates an empty `nRows`*`nCols` Matrix with no entries
+     */
+    TMatrix(int nRows, int nCols);
+
     /// @brief Default copy constructor
     ///
     /// Performs a deep copy of the entries, but not of the structure.

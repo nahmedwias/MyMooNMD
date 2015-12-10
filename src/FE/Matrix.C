@@ -24,6 +24,12 @@ TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
 {
 }
 
+TMatrix::TMatrix(int nRows, int nCols)
+ : TMatrix(std::make_shared<TStructure>(nRows,nCols))
+{
+  ;
+}
+
 void TMatrix::reset()
 {
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
