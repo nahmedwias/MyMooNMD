@@ -2,15 +2,12 @@
 #include <ColoredBlockMatrix.h>
 #include <BlockVector.h>
 #include <LinAlg.h>
+
 #include <limits>
+#include <algorithm>
+#include <list>
 
-///* ************************************************************************* */
-//ColoredBlockMatrix::ColoredBlockMatrix()
-// : ColoredBlockMatrix(0, 0)
-//{
-//
-//}
-
+/* ************************************************************************* */
 ColoredBlockMatrix::CellInfo::CellInfo()
 : n_rows_{0}, n_columns_{0},
   //block_in_cell gets default initialised to null
@@ -19,11 +16,11 @@ ColoredBlockMatrix::CellInfo::CellInfo()
 
 {
     //CB DEBUG
-    Output::print("Debug: Default constructing CellInfo");
+    //Output::print("Debug: Default constructing CellInfo");
     //END DEBUG
 }
 
-///* ************************************************************************* */
+/* ************************************************************************* */
 ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 : n_rows_{nRows}, n_columns_{nColumns}, //block_in_cell gets default initialised to null
   color_{std::numeric_limits<size_t>::max()}, // no colour
@@ -31,8 +28,16 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
 {
     //CB DEBUG
-    Output::print("Debug: Constructing CellInfo with n_rows_ ", n_rows_, " and n_columns_ ", n_columns_);
+    //Output::print("Debug: Constructing CellInfo with n_rows_ ", n_rows_, " and n_columns_ ", n_columns_);
     //END DEBUG
+}
+
+/* ************************************************************************* */
+
+bool ColoredBlockMatrix::doesColorMatchBlock(const ColoredBlockMatrix::CellInfo& first,
+                         const ColoredBlockMatrix::CellInfo& second)
+{
+  return (first.color_ == second.color_) == (first.block_in_cell_ == second.block_in_cell_);
 }
 
 /* ************************************************************************* */
@@ -72,8 +77,113 @@ ColoredBlockMatrix::ColoredBlockMatrix(std::vector<size_t> cellRowNumbers,
      // an entirely new block has been added and colored,
      // so raise the number of colors by one
      ++n_colors_;
+
    }
  }
+}
+
+/* ************************************************************************* */
+void ColoredBlockMatrix::checkColoring() const
+{
+  // check if each color appears at least once and no too big colors
+  // ( greater or equal n_colors_) are assigned.
+  checkColorAssignment();
+
+  // check the equivalence of the relations "has the same color as"
+  // and "holds a pointer to the same matrix as"
+  checkEquivalenceOfRelations();
+
+  // check the ascending order of the first appearing colors
+  checkColoringOrder();
+
+}
+
+/* ************************************************************************* */
+void ColoredBlockMatrix::checkColorAssignment() const
+{
+  //a list of the cell colors from left to right, top to bottom
+  std::list<size_t> foundColors;
+  for(size_t i = 0 ; i < n_block_rows_ ; ++i)
+  {
+    for(size_t j = 0; j < n_block_columns_; ++j)
+    {
+      foundColors.push_back(cell_info_grid_[i][j].color_);
+    }
+  }
+  foundColors.sort(); //sort the list in ascending order
+  foundColors.unique(); //remove all duplicates
+  if(foundColors.size() < n_colors_)
+  {
+    ErrThrow("There is a not assigned color in this BlockMatrix.");
+  }
+  if(foundColors.back() >= n_colors_)
+  {
+    ErrThrow("One cell of this BlockMatrix has too big a color.");
+  }
+  //CB DEBUG
+  Output::print("ColoredBlockMatrix passed test 1: checkColorAssignment");
+  //END DEBUG
+}
+
+/* ************************************************************************* */
+void ColoredBlockMatrix::checkEquivalenceOfRelations() const
+{
+  //traverse the matrix to get the first element for the comparison
+  for(size_t i_first = 0 ; i_first < n_block_rows_ ; ++i_first)
+  {
+    for(size_t j_first = 0; j_first < n_block_columns_; ++j_first)
+    {
+      //traverse the matrix to get the second element for the comparison
+
+      // start in the same row as first element, unless that lies in the last column:
+      // then go one row further
+      for(size_t i_second = (j_first < n_block_columns_ - 1) ? i_first : i_first + 1 ;
+          i_second < n_block_rows_ ; ++i_second)
+      {
+        // start one column right from first element, unless we are already in
+        // a further row. then start at zero
+        for(size_t j_second = (i_second == i_first) ? j_first + 1 : 0;
+            j_second < n_block_columns_; ++j_second)
+        {
+          const CellInfo first = cell_info_grid_[i_first][j_first];
+          const CellInfo& second = cell_info_grid_[i_second][j_second];
+          if (! doesColorMatchBlock(first, second) )
+          {
+            ErrThrow(" The equaivalence of relations is broken in this BlockMatrix.");
+          }
+        }
+      }
+    }
+  }
+  //CB DEBUG
+  Output::print("ColoredBlockMatrix passed test 2: checkEquivalenceOfRelations");
+  //END DEBUG
+}
+
+/* ************************************************************************* */
+
+void ColoredBlockMatrix::checkColoringOrder() const
+{
+  //we rely on condition 1 here
+  size_t searched_for = 0;
+
+  for(size_t i = 0 ; i < n_block_rows_ ; ++i)
+  {
+    for(size_t j = 0; j < n_block_columns_; ++j)
+    {
+      if (cell_info_grid_[i][j].color_ > searched_for)
+      {
+        ErrThrow("The color ordering of this ColoredBlockMatrix is incorrect.")
+      }
+      else if (cell_info_grid_[i][j].color_ == searched_for)
+      {
+        ++searched_for;
+      }
+    }
+  }
+  //CB DEBUG
+  Output::print("ColoredBlockMatrix passed test 3: checkColoringOrder");
+  //END DEBUG
 }
 
 ///* ************************************************************************* */

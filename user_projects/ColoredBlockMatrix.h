@@ -64,14 +64,10 @@ class ColoredBlockMatrix
      *
      * The method checks, whether the coloring of the cells is correct, e.g.
      *
-     *  - for each color from 0 to n_colors - 1 there is at least one cell
-     *  in the matrix with that color
+     *  - the set of assigned colors equals the set {0,...,n_colors_ -1}
      *
-     *  - no cell has color greater or equal n_colors
-     *
-     *  - all cells with the same color hold a pointer to the same matrix
-     *
-     *  - cells with different colors hold pointers to different matrices
+     *  - on the set of cells the equivalence relation "has the same color as"
+     *    is equivalent to "holds a pointer to the same matrix as"
      *
      *  - the colors are ordered in such a way that from left to right, top to bottom
      *    the colors of first appearing matrices are in ascending order.
@@ -79,8 +75,13 @@ class ColoredBlockMatrix
      *    Does nothing but throw if one of the rules stated above is broken.
      *    Is written with comprehensibility in mind, not performance. Use
      *    for testing purpose only.
+     *
+     *    @note Please note that this method scales quadratically in the number of blocks
+     *    as it employs checkEquivalenceOfRelations. So please do only use it for testing
+     *    of other methods in this class.
      */
-    void checkColoring();
+    void checkColoring() const;
+
 
     /**
      * @brief find the index of the block where the (i,j)-th entry is at
@@ -126,6 +127,9 @@ class ColoredBlockMatrix
 
     // Data members (and declaration of a special struct)
 
+
+  protected:
+
     //! Store information of a certain grid cell in the block matrix.
     //! Will by default perform a shallow copy when copied, which is what we want.
     struct CellInfo
@@ -147,8 +151,6 @@ class ColoredBlockMatrix
         CellInfo(size_t n_rows, size_t n_columns);
 
     };
-
-    protected:
 
       //! The number of block rows. Equals the number of blocks/cells in each block column.
       size_t n_block_rows_;
@@ -186,6 +188,49 @@ class ColoredBlockMatrix
      * took place.
      */
     void reColor();
+
+    /*
+     * Check whether the set of assigned colors equals the set
+     * {0,...,n_colors_ -1}. If not so - just throw.
+     */
+    void checkColorAssignment() const;
+
+    /*
+     * Check whether on the set of cells the equivalence relation
+     * "has the same color as" is equivalent to "holds a pointer
+     * to the same matrix as". If not so - just throw.
+     *
+     * The result is independent of the check which
+     * checkColorAssignment performs.
+     *
+     * @note That this method scales quadratically in the number of blocks,
+     * so by n^4 for a nxn block matrix - so please do only use it if you
+     * a) want to see your computer failing or
+     * b) test other methods in this class.
+     */
+    void checkEquivalenceOfRelations() const;
+
+    /*!
+     * Check if for two cells the relations "has the same color as"
+     * and "store a pointer to the same matrix" produce the same result.
+     *
+     * @param[in] first  the first CellInfo object to compare
+     * @param[in] second the second CellInfo object to compare
+     */
+    static bool doesColorMatchBlock(const CellInfo& first, const CellInfo& second);
+
+    /**
+     * This method checks whether the coloring fulfils the internal ordering.
+     * If not so it just throws.
+     *
+     * The method relies on conditions 1 and 2 being established.
+     */
+    void checkColoringOrder() const;
+
+
+
+
+    // not yet adapted members of BlockMatrix
 
   public:
 
