@@ -62,7 +62,7 @@ namespace Output
   
   void set_outfile(std::string filename)
   {
-    if(!outfile.is_open())
+    if(outfile.is_open())
     {
       outfile.close();
     }
