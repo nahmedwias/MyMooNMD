@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on quads");
-    errors = { 0.027836487104237, 0.32016058303363, 3.1656276117037, 
-               0.0047912634003738, 0.50325154768943 };
+    errors = { 0.025524493858475, 0.32016058303363, 3.1653722663713, 
+               0.0040560305244671, 0.50312981240831 };
     check(domain, 1001, errors);
     
     Output::print("\nstarting with RT2 on quads");
