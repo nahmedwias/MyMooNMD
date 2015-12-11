@@ -113,7 +113,7 @@ bool check(TDomain & domain, const std::list<FE2D>& elements)
 {
   unsigned int nRefinements = 3;
   // refine grid up to the coarsest level
-  for(int i = 0; i < nRefinements; i++)
+  for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
   }
