@@ -133,7 +133,7 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
   memset(KVIND, 0, SizeOfInt*NVT);
   memset(psi, 0, SizeOfDouble*NVT);
   CellList = new TBaseCell* [N_Cells];
-  memset(CellList, 0, SizeOfPointer*N_Cells);
+  memset(CellList, 0, sizeof(TBaseCell*)*N_Cells);
 
   for(IEH=0;IEH<N_Cells;IEH++)
     Coll->GetCell(IEH)->SetClipBoard(IEH);
