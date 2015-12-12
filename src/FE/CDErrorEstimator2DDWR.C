@@ -119,8 +119,8 @@ void CDErrorEstimator2DDWR::estimate(const std::vector<MultiIndex2D> &derivative
             const double h_K = cell->GetDiameter();
             // calculate L^2 squared norm of laplace
             const double laplaceInCell = calcL2LaplaceInCell(&z_h, cell[0], origValues, baseFunctions, n_baseFunctions);
-            // save weight (h_K^4 due to squared norm)
-            dual_weights_ptr[cellIdx] = h_K * h_K * laplaceInCell * laplaceInCell;
+            // save weight (additional h_K per cell)
+            dual_weights_ptr[cellIdx] = h_K * laplaceInCell * laplaceInCell;
         }
     }
 
@@ -213,7 +213,6 @@ void CD2DDual::output_dual(size_t level) {
     // print the value of the largest and smallest entry in the finite element
     // vector
     TFEFunction2D & fe_function = this->systems.front().fe_function;
-    fe_function.PrintMinMax();
 
     // write solution to a vtk file
     if(TDatabase::ParamDB->WRITE_VTK)

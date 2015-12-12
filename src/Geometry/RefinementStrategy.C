@@ -60,17 +60,13 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
                 // will now be marked in particular
                 changed = 0;
                 // loop over all cells
-#ifdef _OMP
-#pragma omp parallel for
-#endif
+                #pragma omp parallel for
                 for (size_t m = 0; m < n_cells; m++) {
                     cell = collection->GetCell((int) m);
                     // mark cell for refinement
                     if ((estimator2D.GetEta_K()[m] >= reftol) && (cell->GetGeoLevel() < max_cell_level)) {
                         refinements[m] = true;
-#ifdef _OMP
-#pragma omp atomic update
-#endif
+                        #pragma omp atomic update
                         changed++;
                     }
                     if (estimator2D.GetEta_K()[m] <= coarsetol)
@@ -101,9 +97,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
                 // will now be marked in particular
                 changed = 0;
                 // loop over all cells
-#ifdef _OMP
-#pragma omp parallel for
-#endif
+                #pragma omp parallel for
                 for (size_t m = 0; m < n_cells; m++) {
                     // consider m-th cell
                     cell = collection->GetCell((int) m);
@@ -111,14 +105,10 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
                     if ((estimator2D.GetEta_K()[m] >= reftol) && (cell->GetGeoLevel() < max_cell_level)) {
                         refinements[m] = true;
                         // accumulate sum_local_errors
-#ifdef _OMP
-#pragma omp atomic update
-#endif
+                        #pragma omp atomic update
                         sum_local_errors += estimator2D.GetEta_K()[m];
                         // number of changed cells increased
-#ifdef _OMP
-#pragma omp atomic update
-#endif
+                        #pragma omp atomic update
                         changed++;
                     }
                     if (estimator2D.GetEta_K()[m] <= coarsetol)
@@ -173,18 +163,12 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
                 // prevent infinite loop
                 if(eta_max_value == -1) break;
                 // mark all cells with value of eta_K
-#ifdef _OMP
-#pragma omp parallel for
-#endif
+                #pragma omp parallel for
                 for (size_t m = 0; m < n_cells; ++m) {
                     if(!refinements[m] && estimator2D.GetEta_K()[m] == eta_max_value && (collection->GetCell((int) m)->GetGeoLevel() < max_cell_level)) {
-#ifdef _OMP
-#pragma omp atomic update
-#endif
+                        #pragma omp atomic update
                         sum_local_errors += eta_max_value;
-#ifdef _OMP
-#pragma omp atomic update
-#endif
+                        #pragma omp atomic update
                         changed++;
                         refinements[m] = true;
                     }

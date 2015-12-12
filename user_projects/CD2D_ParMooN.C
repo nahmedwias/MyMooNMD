@@ -64,10 +64,9 @@ int main(int argc, char *argv[]) {
     Example_CD2D example;
 
     // initialize the error estimator
-    //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
     // this functional evaluates the integral of the solution in a ball around the center of radius 0.2
-    std::function<double(const TFEFunction2D*, double, double, TBaseCell&)> dwrFunctional = [](const TFEFunction2D* sol, double x, double y, TBaseCell& cell) {
-        if( (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) <= 0.2 * 0.2 ) {
+    std::function<double(const TFEFunction2D *, double, double, TBaseCell &)> dwrFunctional = [](const TFEFunction2D *sol, double x, double y, TBaseCell &cell) {
+        if ((x - 0.5) * (x - 0.5) + y * y <= 0.2 * 0.2) {
             double integral = 0;
             FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
             // calculate values on original element (i.e. prepare reference transformation)
@@ -83,25 +82,31 @@ int main(int argc, char *argv[]) {
             const int n_loc_dof = fe->GetN_DOF(); // number of local dofs
             int *DOF = sol->GetFESpace2D()->GetGlobalDOF(cell.GetCellIndex());
             // id of the local basis functions
-            //BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
+            BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
             // transformed values of basis functions
-            //double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
+            double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
             // local integration (loop over all quadrature points)
             for (auto j = 0; j < n_points; j++) {
                 // local transformed values on this quadrature point
-                //double *orig = orig_values[j];
+                double *orig = orig_values[j];
                 double value = 0; // value of this TFEFunction2D at this quadrature point
                 for (int l = 0; l < n_loc_dof; l++) {
-                    value += sol->GetValues()[DOF[l]];
+                    // entry in the vector of this TFEFunction2D times basis function
+                    value += sol->GetValues()[DOF[l]] * orig[l];
                 }
 
-                integral += value / n_loc_dof;
+                const double w = weights[j] * AbsDetjk[j];
+                integral += w * value;
             }
-            return integral / n_points;
+            return integral; //* pow(10, 8)
         }
         return 0.0;
     };
-    CDErrorEstimator2DDWR estimator {example, dwrFunctional, Domain};
+    std::function<double(const TFEFunction2D *, double, double, TBaseCell &)> dwrFunctional2 = [](const TFEFunction2D *sol, double x, double y, TBaseCell &cell) {
+        return 1.0;
+    };
+    CDErrorEstimator2DDWR estimator{example, dwrFunctional2, Domain};
+    //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
 
     // refinement
     RefinementStrategy refinementStrategy;
@@ -111,7 +116,7 @@ int main(int argc, char *argv[]) {
         double t_start_level = GetTime(); // time for level
         {
             std::stringstream out;
-            out << std::endl << "***********************************************************"<<std::endl;
+            out << std::endl << "***********************************************************" << std::endl;
             out << "GEOMETRY  LEVEL " << curr_level;
             Output::print<1>(out.str());
         }
@@ -137,6 +142,34 @@ int main(int argc, char *argv[]) {
 
         {
             estimator.estimate(cd2d.get_function());
+            {
+                // the FE basis functions
+                BaseFunct2D *baseFunctions = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+                // number of basis functions
+                int *n_baseFunctions = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+                std::vector<double> eta_fct_values;
+                auto coll = cd2d.get_function().GetFESpace2D()->GetCollection();
+                eta_fct_values.resize((unsigned long) cd2d.get_function().GetLength());
+                for (auto cellIdx = 0; cellIdx < coll->GetN_Cells(); cellIdx++) {
+                    // the cell
+                    TBaseCell *cell = coll->GetCell(cellIdx);
+                    // fe2d element on cell
+                    FE2D element = cd2d.get_function().GetFESpace2D()->GetFE2D(cellIdx, cell);
+                    for (unsigned int l = 0; l < n_baseFunctions[element]; l++) {
+                        // fe values of dofs
+                        auto *DOF = cd2d.get_function().GetFESpace2D()->GetGlobalNumbers() + cd2d.get_function().GetFESpace2D()->GetBeginIndex()[cellIdx];
+                        eta_fct_values[DOF[l]] = estimator.GetEta_K()[cellIdx];
+                    }
+                }
+
+                TFEFunction2D eta_fct = TFEFunction2D(cd2d.get_function().GetFESpace2D(), (char *) "etas", (char *) "etas", eta_fct_values.data(), (int) eta_fct_values.size());
+                TOutput2D Output(1, 1, 0, 0, NULL);
+                Output.AddFEFunction(&eta_fct);
+                std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+                filename += "/eta_" + std::to_string(curr_level);
+                filename += ".vtk";
+                Output.WriteVtk(filename.c_str());
+            }
             refinementStrategy.applyEstimator(estimator);
             std::stringstream out;
             out << "estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator];
