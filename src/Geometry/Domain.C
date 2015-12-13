@@ -49,6 +49,7 @@
 #endif
 
 #include <string.h>
+#include <RefinementStrategy.h>
 
 extern "C"
 {
@@ -970,7 +971,7 @@ int TDomain::PS(const char *name, Iterators iterator, int arg)
   i = 0;
   while((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
   {
-    CurrCell->SetClipBoard(i);
+    //CurrCell->SetClipBoard(i);
     CurrCell->PS(dat, scale, StartX, StartY);
     i++;
   }
@@ -1031,7 +1032,7 @@ int TDomain::PS(const char *name, TCollection *Coll)
   for(i=0;i<N_;i++)
   {
     CurrCell = Coll->GetCell(i);
-    CurrCell->SetClipBoard(i);
+    //CurrCell->SetClipBoard(i);
     CurrCell->PS(dat, scale, StartX, StartY);
   }
 
@@ -1195,6 +1196,24 @@ int TDomain::RefineByIndicator(DoubleFunct2D *Indicator)
   return Gen1RegGrid();
 }
 
+int TDomain::RefineByRefinementStrategy(RefinementStrategy* strategy, bool ConfClosure) {
+  TCollection* collection = this->GetCollection(It_Finest, 0);
+  for(size_t k = 0; k < collection->GetN_Cells(); k++) {
+    if(strategy->shouldRefineCell(k)) {
+      collection->GetCell((int) k)->SetRegRefine();
+    }
+  }
+
+  if (ConfClosure) {
+    MakeConfClosure();
+    return 0;
+  } else {
+    Refine();
+    return Gen1RegGrid();
+  }
+  return 0;
+}
+
 int TDomain::RefineByErrorEstimator(TCollection *Collection,
                                     double *eta_K, double eta_max,
                                     double eta, bool ConfClosure)
@@ -1354,13 +1373,12 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
 }
 
 #ifdef __2D__
+static int before_closure_ps_lvl = 0, after_closure_ps_lvl = 0;
 int TDomain::MakeConfClosure()
 {
   TBaseCell *CurrCell, *parent;
   int i, info, MaxLevel, clip;
   Refinements type;
-
-  const char filename[] = "before_closure.ps";
 
   // delete existing closures
   TDatabase::IteratorDB[It_Finest]->Init(0);
@@ -1404,8 +1422,8 @@ int TDomain::MakeConfClosure()
   // look for elements which have to be refined
   TDatabase::IteratorDB[It_Finest]->Init(0);
   MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-  PS(filename,It_Finest,0);
-  OutPut("MaxLevel " << MaxLevel << endl);
+  PS(("before_closure_" + std::to_string(++before_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
+  Output::print<1>("MaxLevel ", MaxLevel);
   
   for (i=MaxLevel;i>=0;i--)
   {
@@ -1469,18 +1487,18 @@ int TDomain::MakeConfClosure()
 						 N_SHAPES + Quad2Conf2]);
                   CurrCell->Refine(RefLevel);
                   break;
-	      case 297: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf3]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 298: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + QuadBis1]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 300: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf0]);
-                  CurrCell->Refine(RefLevel);
-                  break;
+          case 297: CurrCell->SetRefDesc(TDatabase::RefDescDB[
+                         N_SHAPES + Quad2Conf0]);
+              CurrCell->Refine(RefLevel);
+              break;
+        case 298: CurrCell->SetRefDesc(TDatabase::RefDescDB[
+                         N_SHAPES + QuadBis1]);
+              CurrCell->Refine(RefLevel);
+              break;
+        case 300: CurrCell->SetRefDesc(TDatabase::RefDescDB[
+                         N_SHAPES + Quad2Conf3]);
+              CurrCell->Refine(RefLevel);
+              break;
 	      default: if (clip > 512)
 	      {
 		  CurrCell->SetRegRefine();
@@ -1489,7 +1507,7 @@ int TDomain::MakeConfClosure()
 	  }
     }
   }
-
+  PS(("after_closure_" + std::to_string(++after_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
   return 0;
 }
 
