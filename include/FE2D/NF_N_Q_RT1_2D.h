@@ -123,9 +123,6 @@ void NF_N_Q_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     Functionals[4] *= Cell->GetNormalOrientation(2);
     //Functionals[5] *= Cell->GetNormalOrientation(2);
     
-    Output::print("NF_N_Q_RT1_2D_EvalAll ", PointValues[6]," ", PointValues[8],
-                  "\t", Functionals[5]);
-    
     nx = y0 - y3;
     ny = x3 - x0;
     Functionals[6] = ( ( 5*PointValues[9] + 8*PointValues[10] 
@@ -216,7 +213,7 @@ void NF_N_Q_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
   #ifdef __2D__
   double x0, x1, y0, y1;
   Cell->GetVertex(Joint)->GetCoords(x0, y0);
-  Cell->GetVertex((Joint+1)%4)->GetCoords(x1, y1);// 4=number of edges
+  Cell->GetVertex((Joint+1)%4)->GetCoords(x1, y1); // 4=number of edges
   double l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1)); // length of joint
   Functionals[0] = (5*PointValues[0]+8*PointValues[1]+5*PointValues[2])*l/18.;
   Functionals[1] = (-PointValues[0] + PointValues[2])*NF_N_Q_RT1_2D_a*l*5/18.;
