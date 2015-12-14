@@ -543,6 +543,113 @@ void TDomain::UnitSquareRef()
 
 }
 
+
+void TDomain::UnitSquare_US22()
+{
+  TVertex *v[9];
+  TBoundEdge *b[8];
+  TJointEqN *j[4];
+  // vertices of the unit square
+  v[0] = new TVertex(0.0, 0.0);
+  v[1] = new TVertex(0.5, 0.0);
+  v[2] = new TVertex(1.0, 0.0);
+  v[3] = new TVertex(0.0, 0.5);
+  v[4] = new TVertex(0.6, 0.6);
+  v[5] = new TVertex(1.0, 0.5);
+  v[6] = new TVertex(0.0, 1.0);
+  v[7] = new TVertex(0.5, 1.0);
+  v[8] = new TVertex(1.0, 1.0);
+
+   // edges of the square which are on the boundary
+  b[0] = new TBoundEdge(BdParts[0]->GetBdComp(0), 0.0, 0.5);
+  b[1] = new TBoundEdge(BdParts[0]->GetBdComp(0), 0.5, 1.0);
+  
+  b[2] = new TBoundEdge(BdParts[0]->GetBdComp(1), 0.0, 0.5);
+  b[3] = new TBoundEdge(BdParts[0]->GetBdComp(1), 0.5, 1.0);  
+  
+  b[4] = new TBoundEdge(BdParts[0]->GetBdComp(2), 0.0, 0.5);
+  b[5] = new TBoundEdge(BdParts[0]->GetBdComp(2), 0.5, 1.0);  
+  
+  b[6] = new TBoundEdge(BdParts[0]->GetBdComp(3), 0.0, 0.5);
+  b[7] = new TBoundEdge(BdParts[0]->GetBdComp(3), 0.5, 1.0);
+
+  CellTree = new TBaseCell*[4];
+  N_InitVCells = 4;
+  N_RootCells = 4;
+
+  SetBoundBox(1, 1);
+
+  TDatabase::IteratorDB[It_EQ]->SetParam(this);
+  TDatabase::IteratorDB[It_LE]->SetParam(this);
+  TDatabase::IteratorDB[It_Finest]->SetParam(this);
+  TDatabase::IteratorDB[It_Between]->SetParam(this);
+  TDatabase::IteratorDB[It_OCAF]->SetParam(this);
+  
+  CellTree[0] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      QuadReg], RefLevel);
+  CellTree[1] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      QuadReg], RefLevel);
+  CellTree[2] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      QuadReg], RefLevel);
+  CellTree[3] = new TGridCell(TDatabase::RefDescDB[N_SHAPES +
+                      QuadReg], RefLevel);
+  
+  // include four squares into the cell tree
+  CellTree[0]->SetClipBoard(Refinement);
+  CellTree[1]->SetClipBoard(Refinement);
+  CellTree[2]->SetClipBoard(Refinement);
+  CellTree[3]->SetClipBoard(Refinement);
+  
+
+  // allocate joint (edge) between the triangles  
+  j[0] = new TJointEqN(CellTree[0], CellTree[1]);
+  j[1] = new TJointEqN(CellTree[1], CellTree[2]);
+  j[2] = new TJointEqN(CellTree[2], CellTree[3]);
+  j[3] = new TJointEqN(CellTree[3], CellTree[0]);
+
+  // set the vertices of square 0 at (0,0), (0.5,0)
+  CellTree[0]->SetVertex(0, v[0]);
+  CellTree[0]->SetVertex(1, v[1]);
+  CellTree[0]->SetVertex(2, v[4]);
+  CellTree[0]->SetVertex(3, v[3]);
+  // set the vertices of square 1 
+  CellTree[1]->SetVertex(0, v[2]);
+  CellTree[1]->SetVertex(1, v[5]);
+  CellTree[1]->SetVertex(2, v[4]);
+  CellTree[1]->SetVertex(3, v[1]);
+  // set the vertices of square 2 
+  CellTree[2]->SetVertex(0, v[8]);
+  CellTree[2]->SetVertex(1, v[7]);
+  CellTree[2]->SetVertex(2, v[4]);
+  CellTree[2]->SetVertex(3, v[5]);
+  // set the vertices of square 3
+  CellTree[3]->SetVertex(0, v[6]);
+  CellTree[3]->SetVertex(1, v[3]);
+  CellTree[3]->SetVertex(2, v[4]);
+  CellTree[3]->SetVertex(3, v[7]);
+
+  // s0
+  CellTree[0]->SetJoint(0, b[0]);
+  CellTree[0]->SetJoint(1, j[0]);
+  CellTree[0]->SetJoint(2, j[3]);
+  CellTree[0]->SetJoint(3, b[7]);
+  // s1 
+  CellTree[1]->SetJoint(0, b[2]);
+  CellTree[1]->SetJoint(1, j[1]);
+  CellTree[1]->SetJoint(2, j[0]);
+  CellTree[1]->SetJoint(3, b[1]);
+  // s2 
+  CellTree[2]->SetJoint(0, b[4]);
+  CellTree[2]->SetJoint(1, j[2]);
+  CellTree[2]->SetJoint(2, j[1]);
+  CellTree[2]->SetJoint(3, b[3]);
+  // s3
+  CellTree[3]->SetJoint(0, b[6]);
+  CellTree[3]->SetJoint(1, j[3]);
+  CellTree[3]->SetJoint(2, j[2]);
+  CellTree[3]->SetJoint(3, b[5]);
+}
+
 void TDomain::TestGrid2()
 {
   TBaseCell *LocCell;
