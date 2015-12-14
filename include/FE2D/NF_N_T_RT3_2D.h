@@ -90,6 +90,10 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     Functionals[1] = PointValues[1]*nx + PointValues[19]*ny;
     Functionals[2] = PointValues[2]*nx + PointValues[20]*ny;
     Functionals[3] = PointValues[3]*nx + PointValues[21]*ny;
+    Functionals[0] *= Cell->GetNormalOrientation(0);
+    Functionals[1] *= Cell->GetNormalOrientation(0);
+    Functionals[2] *= Cell->GetNormalOrientation(0);
+    Functionals[3] *= Cell->GetNormalOrientation(0);
     
     // second edge:
     nx = y2 - y1;
@@ -98,6 +102,10 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     Functionals[5] = PointValues[5]*nx + PointValues[23]*ny;
     Functionals[6] = PointValues[6]*nx + PointValues[24]*ny;
     Functionals[7] = PointValues[7]*nx + PointValues[25]*ny;
+    Functionals[4] *= Cell->GetNormalOrientation(1);
+    Functionals[5] *= Cell->GetNormalOrientation(1);
+    Functionals[6] *= Cell->GetNormalOrientation(1);
+    Functionals[7] *= Cell->GetNormalOrientation(1);
     
     // third edge:
     nx = y0 - y2;
@@ -106,6 +114,10 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     Functionals[9] = PointValues[9]*nx + PointValues[27]*ny;
     Functionals[10]= PointValues[10]*nx+ PointValues[28]*ny;
     Functionals[11]= PointValues[11]*nx+ PointValues[29]*ny;
+    Functionals[8] *= Cell->GetNormalOrientation(2);
+    Functionals[9] *= Cell->GetNormalOrientation(2);
+    Functionals[10]*= Cell->GetNormalOrientation(2);
+    Functionals[11]*= Cell->GetNormalOrientation(2);
     
     // the measure of the cell multiplied by the inverse measure of the 
     // refernce cell

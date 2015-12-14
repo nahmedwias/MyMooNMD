@@ -45,7 +45,7 @@ void TCollection::GenerateSortedArrays()
     SortedCells = new TBaseCell*[N_Cells];
     Index = new int[N_Cells];
 
-    memcpy(SortedCells, Cells, N_Cells*SizeOfPointer);
+    memcpy(SortedCells, Cells, N_Cells*sizeof(TBaseCell*));
     std::sort(SortedCells, SortedCells+N_Cells);
 
     for(i=0;i<N_Cells;i++)

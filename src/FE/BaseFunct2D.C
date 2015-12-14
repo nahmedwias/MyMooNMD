@@ -31,7 +31,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
                            int polynomialdegree,
                            int accuracy,
                            int n_bf2change,
-                           int **bf2change)
+                           int const * const * bf2change)
 {
   Dimension=dimension;
 
@@ -72,7 +72,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
                            int polynomialdegree,
                            int accuracy,
                            int n_bf2change,
-                           int **bf2change, int baseVectDim)
+                           int const * const * bf2change, int baseVectDim)
 {
   Dimension=dimension;
 
@@ -111,7 +111,7 @@ TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
                  int polynomialdegree,
                  int accuracy,
                  int n_bf2change,
-                 int **bf2change,
+                 int const * const * bf2change,
                  bool spaceDeptBasis
                 )
 {
@@ -673,17 +673,20 @@ TGridCell *TBaseFunct2D::GenerateRefElement()
 /** change basis functions on cell if needed */
 void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 {
-  int *JointArray, i, j;
+  const int *JointArray;
+  int i, j;
   TJoint *joint;
   TBaseCell *neigh;
   int OwnNum, NeighNum;
   int N_Joints;
 
-  if(BF2Change == NULL) return;
+  if(BF2Change == nullptr || Values == nullptr) return;
 
   // /*
   OwnNum = Coll->GetIndex(Cell);
   N_Joints = Cell->GetN_Joints();
+  // Hdiv elements are vector valued, in this case the array Values is longer
+  bool vector_valued = this->GetBaseVectDim() == 2;
   
   for(j=0;j<N_Joints;j++)
   {
@@ -696,7 +699,11 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
       {
         JointArray = BF2Change[j];
         for(i=0;i<N_BF2Change;i++)
+        {
           Values[JointArray[i]] = -Values[JointArray[i]];
+          if(vector_valued)
+            Values[JointArray[i]+Dimension] = -Values[JointArray[i]+Dimension];
+        }
       } // endif NeighNum < OwnNum
     } // endif neigh
   } // endfor j
@@ -761,14 +768,17 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 /** change basis functions on cell in all points if needed */
 void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values)
 {
-  int *JointArray, i, j, k;
+  const int *JointArray;
+  int i, j, k;
   double *Array;
   TJoint *joint;
   TBaseCell *neigh;
   int OwnNum, NeighNum;
   int N_Joints;
+  // Hdiv elements are vector valued, in this case the array Values is longer
+  bool vector_valued = this->GetBaseVectDim() == 2;
 
-  if(BF2Change == NULL) return;
+  if(BF2Change == nullptr || Values == nullptr) return;
 
   // /*
   OwnNum = Coll->GetIndex(Cell);
@@ -788,7 +798,11 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, do
         {
           Array = Values[k];
           for(i=0;i<N_BF2Change;i++)
+          {
             Array[JointArray[i]] = -Array[JointArray[i]];
+            if(vector_valued)
+            Array[JointArray[i]+Dimension] = -Array[JointArray[i]+Dimension];
+          }
         } // endfor k
       } // endif NeighNum < OwnNum
     } // endif neigh

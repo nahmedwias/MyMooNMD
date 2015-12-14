@@ -60,18 +60,24 @@ void NF_N_T_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
     ny = x0 - x1;
     Functionals[0] = PointValues[0]*nx + PointValues[6]*ny;
     Functionals[1] = PointValues[1]*nx + PointValues[7]*ny;
+    Functionals[0] *= Cell->GetNormalOrientation(0);
+    Functionals[1] *= Cell->GetNormalOrientation(0);
     
     // second edge:
     nx = y2 - y1;
     ny = x1 - x2;
     Functionals[2] = PointValues[2]*nx + PointValues[8]*ny;
     Functionals[3] = PointValues[3]*nx + PointValues[9]*ny;
+    Functionals[2] *= Cell->GetNormalOrientation(1);
+    Functionals[3] *= Cell->GetNormalOrientation(1);
     
     // third edge:
     nx = y0 - y2;
     ny = x2 - x0;
     Functionals[4] = PointValues[4]*nx + PointValues[10]*ny;
     Functionals[5] = PointValues[5]*nx + PointValues[11]*ny;
+    Functionals[4] *= Cell->GetNormalOrientation(2);
+    Functionals[5] *= Cell->GetNormalOrientation(2);
   }
 }
 
