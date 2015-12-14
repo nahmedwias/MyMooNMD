@@ -21,6 +21,8 @@ int main(int argc, char* argv[])
 
   myMatrix.check_coloring();
 
+  myMatrix.print_and_check();
+
   Output::print("Test program finished.");
 }
 

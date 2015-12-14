@@ -132,21 +132,50 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::print_and_check() const
+    void ColoredBlockMatrix::print_and_check(std::string matrix_name) const
     {
-      ;
+      // do both prints
+      print_coloring_pattern(matrix_name);
+      print_coloring_count(matrix_name);
+
+      //...and perform the consistency check
+      check_coloring();
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::print_coloring_count() const
+    void ColoredBlockMatrix::print_coloring_count(std::string matrix_name) const
     {
-      ;
+      Output::print("----------------------");
+      Output::print(" Color count: ", matrix_name);
+      Output::print("----------------------");
+      size_t color = 0;
+      for (auto count : color_count_)
+      {
+        Output::print(color, "\t : \t", count );
+        ++color;
+      }
+      Output::print("----------------------");
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::print_coloring_pattern() const
+    void ColoredBlockMatrix::print_coloring_pattern(std::string matrix_name) const
     {
-      ;
+      Output::print("-------------------------");
+      Output::print(" Coloring pattern: ", matrix_name);
+      Output::print("-------------------------");
+      for(size_t i = 0; i < n_block_rows_; ++i)
+      {
+        std::stringstream out_row;
+        out_row << "( ";
+        for(size_t j = 0; j < n_block_columns_; ++j)
+        {
+          out_row << "\t";
+          out_row << cell_info_grid_[i][j].color_;
+        }
+        out_row << "\t )";
+        Output::print(out_row.str());
+      }
+      Output::print("-------------------------");
     }
 
     /* ************************************************************************* */

@@ -83,20 +83,19 @@ class ColoredBlockMatrix
      * Prints matrix coloring pattern and color_count_,
      * then runs the check. Thus one can visualize errors.
      */
-    void print_and_check() const;
-
-    /*
-     * Print out a little picture of the current coloring pattern of the matrix.
-     * Does not perform a check on consistency - use it for debugging!
-     */
-    void print_coloring_pattern() const;
+    void print_and_check(std::string matrix_name = "unnamed") const;
 
     /*
      * Print out the current color count of the matrix.
      * Does not perform a check on consistency - use it for debugging!
      */
-    void print_coloring_count() const;
+    void print_coloring_count(std::string matrix_name = "unnamed") const;
 
+    /*
+     * Print out a little picture of the current coloring pattern of the matrix.
+     * Does not perform a check on consistency - use it for debugging!
+     */
+    void print_coloring_pattern(std::string matrix_name = "unnamed") const;
 
     //! A datatype which stores the block_row the block_column
     //! and the mode where and how a cell should be modified.
