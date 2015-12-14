@@ -12,9 +12,6 @@
 ColoredBlockMatrix::CellInfo::CellInfo()
 : ColoredBlockMatrix::CellInfo::CellInfo(0, 0) //delegate construction
 {
-  //CB DEBUG
-  //Output::print("Debug: Default constructing CellInfo");
-  //END DEBUG
 }
 
 /* ************************************************************************* */
@@ -26,9 +23,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
   re_color_{ReColoringFlag::KEEP}
 
   {
-    //CB DEBUG
-    //Output::print("Debug: Constructing CellInfo with n_rows_ ", n_rows_, " and n_columns_ ", n_columns_);
-    //END DEBUG
   }
 
   /* ************************************************************************* */
@@ -158,7 +152,8 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::print_coloring_pattern(std::string matrix_name) const
+    void ColoredBlockMatrix::print_coloring_pattern(std::string matrix_name,
+                                                    bool print_adress) const
     {
       Output::print("-------------------------");
       Output::print(" Coloring pattern: ", matrix_name);
@@ -171,6 +166,15 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
         {
           out_row << "\t";
           out_row << cell_info_grid_[i][j].color_;
+          if(cell_info_grid_[i][j].is_transposed_)
+          {
+            out_row << "^T";
+          }
+          if(print_adress)
+          {
+            out_row << " ";
+            out_row << cell_info_grid_[i][j].block_.get();
+          }
         }
         out_row << "\t )";
         Output::print(out_row.str());
@@ -186,74 +190,270 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       // first of all check the input, modify if reparable or throw if not so.
       check_grid_fit(new_block, row_column_transpose_tuples);
 
-      // check if the replacement requires color splits and if so,
-      // perform them.
+      // check if the replacement requires color splits and if so perform them.
       size_t colorToSplit = std::numeric_limits<size_t>::max();
-      while (does_modification_require_color_split(
-          colorToSplit, row_column_transpose_tuples
-      ))
+      while (does_modification_require_color_split(colorToSplit, row_column_transpose_tuples))
       {
-        //set split markers
         mark_for_color_split(colorToSplit, row_column_transpose_tuples);
-        // perform the actual color split
         split_color(colorToSplit);
       }
 
-      // check if the replacement requires color merges and if so,
-      // perform them.
-
+      // check if the replacement requires color merges and if so perform them.
+      size_t colorA = std::numeric_limits<size_t>::max();
+      size_t colorB = std::numeric_limits<size_t>::max();
+      while(does_replace_require_color_merge(colorA, colorB, row_column_transpose_tuples))
+      {
+        merge_colors(colorA, colorB);
+      }
 
       // now everything works out - do the actual replacement!
-      // - don't forget to set the tranposed state correctly!
-      ;
+      std::shared_ptr<TMatrix> new_block_shared = std::make_shared<TMatrix>(new_block); //wrap shared ptr around copy of new_block
+      for (auto it : row_column_transpose_tuples)
+      {
+        size_t cell_row = std::get<0>(it);
+        size_t cell_column = std::get<1>(it);
+        bool transposed = std::get<2>(it);
+        //copy assign new shared pointer
+        cell_info_grid_[cell_row][cell_column].block_ = new_block_shared;
+        // set the transposed state correctly
+        cell_info_grid_[cell_row][cell_column].is_transposed_ = transposed;
+      }
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::scale_blocks( double scaling_factor,
-                                           std::vector<grid_place_and_mode> row_column_transpose_tuples)
+    void ColoredBlockMatrix::scale_blocks(
+        double scaling_factor,
+        std::vector<grid_place_and_mode> row_column_transpose_tuples)
     {
       ;
     }
-
-
 
     /* ************************************************************************* */
     // IMPLEMENTATION OF PRIVATE METHODS
     /* ************************************************************************* */
 
     /* ************************************************************************* */
+     void ColoredBlockMatrix::check_and_edit_input(
+         std::vector<grid_place_and_mode>& row_column_transpose_tuples)
+     {
+       // check if the input is
+       //  a) sorted w.r.t. two first indices
 
-    void ColoredBlockMatrix::check_grid_fit(
-        const TMatrix& matrix,
-        std::vector<grid_place_and_mode>& row_column_transpose_tuples
-    ) const
-    {
-      // a) sort input and remove duplicates if need be
-      check_and_edit_input(row_column_transpose_tuples);
+       // a lambda function for alphanumerical sort
+       auto sort_alphnum = [] (grid_place_and_mode a, grid_place_and_mode b) -> bool {
+         if (std::get<0>(a) < std::get<0>(b))
+         {
+           return true;
+         }
+         else if (std::get<0>(a) > std::get<0>(b))
+         {
+           return false;
+         }
+         else
+         {
+           return (std::get<1>(a) < std::get<1>(b));
+         }
+       };
+       std::sort(row_column_transpose_tuples.begin(),
+                 row_column_transpose_tuples.end(),
+                 sort_alphnum);
 
+       //  b) unique w.r.t. two first indices - throw if there is an ambiguity of the
+       //     type "do for transposed and non-transposed"
 
+       // lambda function for that purpose
+       auto unique_wrt_position = [] (grid_place_and_mode a, grid_place_and_mode b) -> bool {
+         // catch the case of one block being modified in transp and non-tranps mode
+         if( std::get<0>(a) == std::get<0>(b)
+             && std::get<1>(a) == std::get<1>(b)
+             && std::get<2>(a) != std::get<2>(b))
+         {
+           ErrThrow("Block can not be"
+               " modified in transposed AND non-transposed state!"
+               " [", std::get<0>(a) ," , ", std::get<1>(a) ,"]" );
+         }
+         return (std::get<0>(a) == std::get<0>(b)
+             && std::get<1>(a) == std::get<1>(b));
+       };
 
-      for (auto it: row_column_transpose_tuples)
+       // move duplicates to the end of the vector and hold an iterator
+       // to the first duplicate-position
+       auto unique_end = std::unique(row_column_transpose_tuples.begin(),
+                                     row_column_transpose_tuples.end(),
+                                     unique_wrt_position);
+
+       // give a warning if there was duplicate input
+       if(unique_end != row_column_transpose_tuples.end())
+       {
+         Output::print("Warning! Duplicates in the input vector removed.");
+       }
+
+       //crop the vector to range of uniques
+       row_column_transpose_tuples.erase(
+           unique_end, row_column_transpose_tuples.end());
+
+     }
+
+     /* ************************************************************************* */
+      void ColoredBlockMatrix::check_color_count() const
       {
-        // b) the index pair is not out of bounds
-        size_t cell_row = std::get<0>(it);
-        size_t cell_column = std::get<1>(it);
-        if (cell_row > n_block_rows_ || cell_column > n_block_columns_)
+        //a list of the cell colors from left to right, top to bottom
+        std::list<size_t> foundColors;
+        for(size_t i = 0 ; i < n_block_rows_ ; ++i)
         {
-          ErrThrow("Cell index pair out of block matrix bounds!");
+          for(size_t j = 0; j < n_block_columns_; ++j)
+          {
+            foundColors.push_back(cell_info_grid_[i][j].color_);
+          }
         }
 
-        //  c) the matrix fits into the given cells
-        const CellInfo& currentCell = cell_info_grid_[cell_row][cell_column];
-        bool transposed = std::get<2>(it);
-
-        if(!does_block_fit_cell(matrix, currentCell, transposed))
+        // check for every color if it is assigned and counted as often as
+        // color_count_ states
+        for(size_t color = 0; color < color_count_.size() ; ++color )
         {
-          ErrThrow("The given matrix will not fit into cell "
-              "[", std::get<0>(it) ," , ", std::get<1>(it) ,"]");
+
+          // count how often color appears in foundColors
+          size_t n_finds = std::count(foundColors.begin(), foundColors.end(), color);
+
+          if(n_finds == 0) //throw if something's wrong
+          {
+            ErrThrow("Here is an unassigned color: ", color);
+          }
+          if( n_finds != color_count_[color] )
+          {
+            ErrThrow("Number of found colors and stored color_count_"
+                "do not match for color: ", color);
+          }
+
         }
+        //CB DEBUG
+        Output::print("ColoredBlockMatrix passed test: check_color_count");
+        //END DEBUG
       }
-    }
+
+      /* ************************************************************************* */
+      void ColoredBlockMatrix::check_coloring_order() const
+      {
+        //we rely on condition 1 here
+        size_t searched_for = 0;
+
+        for(size_t i = 0 ; i < n_block_rows_ ; ++i)
+        {
+          for(size_t j = 0; j < n_block_columns_; ++j)
+          {
+            if (cell_info_grid_[i][j].color_ > searched_for)
+            {
+              ErrThrow("The color ordering of this ColoredBlockMatrix is incorrect.")
+            }
+            else if (cell_info_grid_[i][j].color_ == searched_for)
+            {
+              ++searched_for;
+            }
+          }
+        }
+        //CB DEBUG
+        Output::print("ColoredBlockMatrix passed test: check_coloring_order");
+        //END DEBUG
+      }
+
+
+
+     /* ************************************************************************* */
+     void ColoredBlockMatrix::check_equivalence_of_relations() const
+     {
+       //traverse the matrix to get the first element for the comparison
+       for(size_t i_first = 0 ; i_first < n_block_rows_ ; ++i_first)
+       {
+         for(size_t j_first = 0; j_first < n_block_columns_; ++j_first)
+         {
+           if( is_last_index_pair(i_first, j_first) )
+           {
+             //last index pair reached
+             //CB DEBUG
+             Output::print("ColoredBlockMatrix passed test: check_equivalence_of_relations");
+             //END DEBUG
+             return;
+           }
+
+           //traverse the matrix to get the second element for the comparison
+
+           // start in the same row as first element, unless that lies in the last column:
+           // then go one row further down
+           size_t i_second{i_first};
+           size_t j_second{j_first};
+
+           get_next_cell_grid_index(i_second, j_second);
+
+           for( ; i_second < n_block_rows_ ; ++i_second)
+           {
+             // start one column right from first element, unless we are already in
+             // a further donw row. then start at zero
+             for( ; j_second < n_block_columns_; ++j_second)
+             {
+               const CellInfo first = cell_info_grid_[i_first][j_first];
+               const CellInfo& second = cell_info_grid_[i_second][j_second];
+               if (! does_color_match_block(first, second) )
+               {
+                 ErrThrow(" The equaivalence of relations is broken in this BlockMatrix.");
+               }
+             }
+           }
+         }
+       }
+     }
+
+     /* ************************************************************************* */
+
+     void ColoredBlockMatrix::check_grid_fit(
+         const TMatrix& matrix,
+         std::vector<grid_place_and_mode>& row_column_transpose_tuples
+     ) const
+     {
+       // a) sort input and remove duplicates if need be
+       check_and_edit_input(row_column_transpose_tuples);
+
+       for (auto it: row_column_transpose_tuples)
+       {
+         // b) the index pair is not out of bounds
+         size_t cell_row = std::get<0>(it);
+         size_t cell_column = std::get<1>(it);
+         if (cell_row >= n_block_rows_ || cell_column >= n_block_columns_)
+         {
+           ErrThrow("Cell index pair out of block matrix bounds! "
+               "[", std::get<0>(it) ," , ", std::get<1>(it) ,"]");
+         }
+
+         //  c) the matrix fits into the given cells
+         const CellInfo& currentCell = cell_info_grid_[cell_row][cell_column];
+         bool transposed = std::get<2>(it);
+
+         if(!does_block_fit_cell(matrix, currentCell, transposed))
+         {
+           ErrThrow("The given matrix will not fit into cell "
+               "[", std::get<0>(it) ," , ", std::get<1>(it) ,"]");
+         }
+       }
+     }
+
+     /* ************************************************************************* */
+     void ColoredBlockMatrix::check_re_coloring_flags() const
+     {
+       for(size_t i = 0 ; i < n_block_rows_ ; ++i)
+       {
+         for(size_t j = 0; j < n_block_columns_; ++j)
+         {
+           if (cell_info_grid_[i][j].re_color_ != CellInfo::ReColoringFlag::KEEP)
+           {
+             ErrThrow("Oops! Somebody forgot to clean up a"
+                 "recoloring flag in cell [",i,",",j,"].");
+           }
+         }
+       }
+       //CB DEBUG
+       Output::print("ColoredBlockMatrix passed test: check_re_coloring_flags");
+       //END DEBUG
+     }
+
 
     /* ************************************************************************* */
     bool ColoredBlockMatrix::does_block_fit_cell(
@@ -279,198 +479,10 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       return (first.color_ == second.color_) == (first.block_ == second.block_);
     }
 
-
     /* ************************************************************************* */
-    void ColoredBlockMatrix::check_and_edit_input(
-        std::vector<grid_place_and_mode>& row_column_transpose_tuples)
-    {
-      // check if the input is
-      //  a) sorted w.r.t. two first indices
-
-      // a lambda function for alphanumerical sort
-      auto sort_alphnum = [] (grid_place_and_mode a, grid_place_and_mode b) -> bool {
-        if (std::get<0>(a) < std::get<0>(b))
-        {
-          return true;
-        }
-        else if (std::get<0>(a) > std::get<0>(b))
-        {
-          return false;
-        }
-        else
-        {
-          return (std::get<1>(a) < std::get<1>(b));
-        }
-      };
-      std::sort(row_column_transpose_tuples.begin(),
-                row_column_transpose_tuples.end(),
-                sort_alphnum);
-
-      //  b) unique w.r.t. two first indices - throw if there is an ambiguity of the
-      //     type "do for transposed and non-transposed"
-
-      // lambda function for that purpose
-      auto unique_wrt_position = [] (grid_place_and_mode a, grid_place_and_mode b) -> bool {
-        // catch the case of one block being modified in transp and non-tranps mode
-        if( std::get<0>(a) == std::get<0>(b)
-            && std::get<1>(a) == std::get<1>(b)
-            && std::get<2>(a) != std::get<2>(b))
-        {
-          ErrThrow("Block can not be"
-              " modified in transposed AND non-transposed state!"
-              " [", std::get<0>(a) ," , ", std::get<1>(a) ,"]" );
-        }
-        return (std::get<0>(a) == std::get<0>(b)
-            && std::get<1>(a) == std::get<1>(b));
-      };
-
-      // move duplicates to the end of the vector and hold an iterator
-      // to the first duplicate-position
-      auto unique_end = std::unique(row_column_transpose_tuples.begin(),
-                                    row_column_transpose_tuples.end(),
-                                    unique_wrt_position);
-
-      // give a warning if there was duplicate input
-      if(unique_end != row_column_transpose_tuples.end())
-      {
-        Output::print("Warning! Duplicates in the input vector removed.");
-      }
-
-      //crop the vector to range of uniques
-      row_column_transpose_tuples.erase(
-          unique_end, row_column_transpose_tuples.end());
-
-    }
-
-    /* ************************************************************************* */
-    void ColoredBlockMatrix::check_color_count() const
-    {
-      //a list of the cell colors from left to right, top to bottom
-      std::list<size_t> foundColors;
-      for(size_t i = 0 ; i < n_block_rows_ ; ++i)
-      {
-        for(size_t j = 0; j < n_block_columns_; ++j)
-        {
-          foundColors.push_back(cell_info_grid_[i][j].color_);
-        }
-      }
-
-      // check for every color if it is assigned and counted as often as
-      // color_count_ states
-      for(size_t color = 0; color < color_count_.size() ; ++color )
-      {
-
-        // count how often color appears in foundColors
-        size_t n_finds = std::count(foundColors.begin(), foundColors.end(), color);
-
-        if(n_finds == 0) //throw if something's wrong
-        {
-          ErrThrow("Here is an unassigned color: ", color);
-        }
-        if( n_finds != color_count_[color] )
-        {
-          ErrThrow("Number of found colors and stored color_count_"
-              "do not match for color: ", color);
-        }
-
-      }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_color_count");
-      //END DEBUG
-    }
-
-    /* ************************************************************************* */
-    void ColoredBlockMatrix::check_equivalence_of_relations() const
-    {
-      //traverse the matrix to get the first element for the comparison
-      for(size_t i_first = 0 ; i_first < n_block_rows_ ; ++i_first)
-      {
-        for(size_t j_first = 0; j_first < n_block_columns_; ++j_first)
-        {
-          if( is_last_index_pair(i_first, j_first) )
-          {
-            //last index pair reached
-            //CB DEBUG
-            Output::print("ColoredBlockMatrix passed test: check_equivalence_of_relations");
-            //END DEBUG
-            return;
-          }
-
-          //traverse the matrix to get the second element for the comparison
-
-          // start in the same row as first element, unless that lies in the last column:
-          // then go one row further down
-          size_t i_second{i_first};
-          size_t j_second{j_first};
-
-          get_next_cell_grid_index(i_second, j_second);
-
-          for( ; i_second < n_block_rows_ ; ++i_second)
-          {
-            // start one column right from first element, unless we are already in
-            // a further donw row. then start at zero
-            for( ; j_second < n_block_columns_; ++j_second)
-            {
-              const CellInfo first = cell_info_grid_[i_first][j_first];
-              const CellInfo& second = cell_info_grid_[i_second][j_second];
-              if (! does_color_match_block(first, second) )
-              {
-                ErrThrow(" The equaivalence of relations is broken in this BlockMatrix.");
-              }
-            }
-          }
-        }
-      }
-    }
-
-    /* ************************************************************************* */
-
-    void ColoredBlockMatrix::check_coloring_order() const
-    {
-      //we rely on condition 1 here
-      size_t searched_for = 0;
-
-      for(size_t i = 0 ; i < n_block_rows_ ; ++i)
-      {
-        for(size_t j = 0; j < n_block_columns_; ++j)
-        {
-          if (cell_info_grid_[i][j].color_ > searched_for)
-          {
-            ErrThrow("The color ordering of this ColoredBlockMatrix is incorrect.")
-          }
-          else if (cell_info_grid_[i][j].color_ == searched_for)
-          {
-            ++searched_for;
-          }
-        }
-      }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_coloring_order");
-      //END DEBUG
-    }
-
-    /* ************************************************************************* */
-    void ColoredBlockMatrix::check_re_coloring_flags() const
-    {
-      for(size_t i = 0 ; i < n_block_rows_ ; ++i)
-      {
-        for(size_t j = 0; j < n_block_columns_; ++j)
-        {
-          if (cell_info_grid_[i][j].re_color_ != CellInfo::ReColoringFlag::KEEP)
-          {
-            ErrThrow("Oops! Somebody forgot to clean up a"
-                "recoloring flag in cell [",i,",",j,"].");
-          }
-        }
-      }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_re_coloring_flags");
-      //END DEBUG
-    }
-
-    /* ************************************************************************* */
-    bool ColoredBlockMatrix::does_modification_require_color_split(size_t& color_to_split,
-                                                                   std::vector<grid_place_and_mode> row_column_transposed_tuples) const
+    bool ColoredBlockMatrix::does_modification_require_color_split(
+        size_t& color_to_split,
+        std::vector<grid_place_and_mode> row_column_transposed_tuples) const
     {
       // the part from here performs in O(m log m), when m is size of row_column_tuples
 
@@ -484,10 +496,14 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       }
       color_touches.sort();
 
+      //push back one more element as "stop" element
+      color_touches.push_back(std::numeric_limits<size_t>::max());
+
       // count out how many times each affected color gets affected
       // and compare to the number of its overall appearances
       size_t color = color_touches.front();
       size_t n_touches = 0;
+
       for (auto it : color_touches)
       {
         if(it != color) // finished counting of a certain color
@@ -511,7 +527,106 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
         ++n_touches;
       }
 
-      // great, now color split needed - we finished in O(m log m)
+
+      // great, no color split needed - we finished in O(m log m)
+      return false;
+    }
+
+    /* ************************************************************************* */
+    bool ColoredBlockMatrix::does_replace_require_color_merge(
+            size_t& color_a, size_t& color_b,
+            std::vector<grid_place_and_mode> row_column_transposed_tuples) const
+    {
+      // grab the first color as "fixed_color"
+      size_t first_cell_row = std::get<0>(*row_column_transposed_tuples.begin());
+      size_t first_cell_column = std::get<1>(*row_column_transposed_tuples.begin());
+      size_t fixed_color = cell_info_grid_[first_cell_row][first_cell_column].color_;
+
+      // find out if any other color is affected by the replacement
+      for(auto it : row_column_transposed_tuples)
+      {
+        size_t cell_row = std::get<0>(it);
+        size_t cell_column = std::get<1>(it);
+        size_t cell_color = cell_info_grid_[cell_row][cell_column].color_;
+
+        if (fixed_color != cell_color)
+        { // found two different participating colors!
+          color_a = fixed_color;
+          color_b = cell_color;
+          return true;
+        }
+
+      }
+      // all participating cells belong to the same color class already
+      color_a = fixed_color;
+      color_b = fixed_color;
+      return false;
+
+    }
+
+
+    /* ************************************************************************* */
+    void ColoredBlockMatrix::find_first_appearance_of_color(
+        size_t color_to_find, size_t& block_row , size_t& block_column) const
+    {
+      if( color_to_find >= get_n_colors() )
+      {
+        ErrThrow("That color does not exist in this ColoredBlockMatrix.");
+      }
+
+      for(size_t i = 0; i < n_block_rows_ ; ++i)
+      {
+        for(size_t j = 0; j < n_block_columns_ ; ++j)
+        {
+          if (cell_info_grid_[i][j].color_ == color_to_find)
+          {
+            // color was found
+            block_row = i;
+            block_column = j;
+            return;
+          }
+        }
+      }
+    }
+
+    /* ************************************************************************* */
+    void ColoredBlockMatrix::get_next_cell_grid_index (
+        size_t& block_row, size_t& block_column ) const
+    {
+
+      if( block_row > n_block_rows_
+          || block_column > n_block_columns_)
+      {
+        throw std::runtime_error("Index is out of bounds!");
+      }
+
+      if( is_last_index_pair ( block_row, block_column ) )
+      {
+        throw std::logic_error("Next index pair after last required!");
+      }
+
+      size_t new_row = (block_column < n_block_columns_ - 1) ? block_row : block_row + 1;
+      size_t new_column = (block_row == new_row) ? block_column + 1 : 0;
+
+      block_row = new_row;
+      block_column = new_column;
+
+    }
+
+    /* ************************************************************************* */
+    bool ColoredBlockMatrix::is_last_index_pair(size_t block_row, size_t block_column) const
+    {
+      if( block_row > n_block_rows_
+          || block_column > n_block_columns_)
+      {
+        throw std::runtime_error("Index is out of bounds!");
+      }
+
+      if( block_row == n_block_rows_ -1
+          && block_column == n_block_columns_ - 1)
+      {
+        return true;
+      }
       return false;
     }
 
@@ -533,6 +648,73 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
+    void ColoredBlockMatrix::merge_colors(size_t color_a, size_t color_b)
+    {
+      //hold the color of the merged class
+      size_t new_color = std::min(color_a, color_b);
+
+      // hold the color which will get replaced
+      size_t replaced_color = std::max(color_a, color_b);
+
+      // a shared pointer to the matrix which the merged color class will share
+      std::shared_ptr<TMatrix> shared_matrix;
+      bool searching_shared_matrix;
+
+      //traverse the entire cell grid
+      for (size_t i = 0; i < n_block_rows_; ++i)
+      {
+        for (size_t j = 0; j < n_block_columns_; ++j)
+        {
+          CellInfo& currentCell = cell_info_grid_[i][j];
+
+
+          if (currentCell.color_ == color_a || currentCell.color_ == color_b)
+          {
+            // found  matrix to be merged into new class
+            if(searching_shared_matrix)
+            {
+              //CB DEBUG
+              if(currentCell.color_ != new_color)
+              {
+                ErrThrow("Something's terribly wrong here");
+              }
+              //END DEBUG
+
+              //found the first appeareance of the lower class, hold its block
+              shared_matrix = currentCell.block_;
+              searching_shared_matrix = false;
+            } // end if searching shared matrix
+
+            // replace matrix and color and update color count (it's even done when unnecessary)
+            color_count_[currentCell.color_] -= 1;
+            currentCell.color_ = new_color;
+            currentCell.block_ = shared_matrix;
+            color_count_[currentCell.color_] += 1;
+
+          } //end: found cell of new merged class
+
+          else if (currentCell.color_ > replaced_color)
+          {
+            // we found a class whose color has to be reduced by one
+            color_count_[currentCell.color_] -= 1;
+            currentCell.color_ -= 1;
+            color_count_[currentCell.color_] += 1;
+          }
+        }
+      } //end traversing entire matrix
+
+      // remove the last color class - should be empty (0)!
+      //CB DEBUG
+      if(color_count_.back() != 0)
+      {
+        ErrThrow("Something's terribly wrong here - last color class is not empty!")
+      }
+      //END DEBUG
+
+      color_count_.pop_back();
+    }
+
+    /* ************************************************************************* */
     void ColoredBlockMatrix::split_color(size_t color_to_split)
     {
       // a new color is going to appear - start with 0 count
@@ -551,6 +733,9 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       // class gets the new numbering - the one marked with value
       // equal to first_split maintains its current color number
       CellInfo::ReColoringFlag first_split(cell_info_grid_[i][j].re_color_);
+
+      //reset recoloring flag in this first found cell
+      cell_info_grid_[i][j].re_color_ = CellInfo::ReColoringFlag::KEEP;
 
       if(is_last_index_pair(i,j))
       {
@@ -622,90 +807,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
         } //end: cell of split color class
       } //endwhile
 
-    }
-
-
-    /* ************************************************************************* */
-    bool ColoredBlockMatrix::does_replacement_require_color_merge(
-        std::vector<grid_place_and_mode> row_column_transposed_tuples)
-    {
-      ;
-    }
-
-    /* ************************************************************************* */
-    void ColoredBlockMatrix::merge_colors()
-    {
-      ;
-    }
-
-
-
-    /* ************************************************************************* */
-    // Some methods to navigate in the cell info grid
-    /* ************************************************************************* */
-
-    void ColoredBlockMatrix::find_first_appearance_of_color(
-        size_t color_to_find, size_t& block_row , size_t& block_column) const
-    {
-      if( color_to_find >= get_n_colors() )
-      {
-        ErrThrow("That color does not exist in this ColoredBlockMatrix.");
-      }
-
-      for(size_t i = 0; i < n_block_rows_ ; ++i)
-      {
-        for(size_t j = 0; j < n_block_columns_ ; ++j)
-        {
-          if (cell_info_grid_[i][j].color_ == color_to_find)
-          {
-            // color was found
-            block_row = i;
-            block_column = j;
-            return;
-          }
-        }
-      }
-    }
-
-    /* ************************************************************************* */
-    void ColoredBlockMatrix::get_next_cell_grid_index (
-        size_t& block_row, size_t& block_column ) const
-    {
-
-      if( block_row > n_block_rows_
-          || block_column > n_block_columns_)
-      {
-        throw std::runtime_error("Index is out of bounds!");
-      }
-
-      if( is_last_index_pair ( block_row, block_column ) )
-      {
-        throw std::logic_error("Next index pair after last required!");
-      }
-
-      size_t new_row = (block_column < n_block_columns_ - 1) ? block_row : block_row + 1;
-      size_t new_column = (block_row == new_row) ? block_column + 1 : 0;
-
-      block_row = new_row;
-      block_column = new_column;
-
-    }
-
-    /* ************************************************************************* */
-    bool ColoredBlockMatrix::is_last_index_pair(size_t block_row, size_t block_column) const
-    {
-      if( block_row > n_block_rows_
-          || block_column > n_block_columns_)
-      {
-        throw std::runtime_error("Index is out of bounds!");
-      }
-
-      if( block_row == n_block_rows_ -1
-          && block_column == n_block_columns_ - 1)
-      {
-        return true;
-      }
-      return false;
     }
 
 

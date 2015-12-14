@@ -33,8 +33,12 @@ class BlockVector;
  *             their own copy or move actions along with their knowledge about the actual
  *             type ("FEMatrix") of the matrices.
  *
+ *             So far the ColoredBlockMatrix does not check, whether it
+ *             already holds a block which you want to assign to one of its
+ *             cells, but makes its own copy of whatever you give to it.
  *
- * @author     Ulrich Wilbrandt, Clemens Bartsch
+ *
+ * @author     Clemens Bartsch, Ulrich Wilbrandt
  * @date       08.09.2015
  *
  ****************************************************************************/
@@ -88,14 +92,19 @@ class ColoredBlockMatrix
     /*
      * Print out the current color count of the matrix.
      * Does not perform a check on consistency - use it for debugging!
+     *
+     * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
     void print_coloring_count(std::string matrix_name = "unnamed") const;
 
     /*
      * Print out a little picture of the current coloring pattern of the matrix.
      * Does not perform a check on consistency - use it for debugging!
+     *
+     * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
-    void print_coloring_pattern(std::string matrix_name = "unnamed") const;
+    void print_coloring_pattern(std::string matrix_name = "unnamed",
+                                bool print_adress = false) const;
 
     //! A datatype which stores the block_row the block_column
     //! and the mode where and how a cell should be modified.
@@ -106,25 +115,52 @@ class ColoredBlockMatrix
     /*
      * Add one matrix to several blocks at once.
      *
-     * @param[in]  The matrix to be added.
-     * @param[out] A vector of tuples, each of which encodes information on
-     *             one block where summand is supposed to be added to,
-     *             and the way - "true" is for transposed,
-     *             "false" for not-transposed.
+     * @param[in]  summand the matrix to be added.
+     * @param[out] row_column_transpose_tuples A vector of tuples,
+     * each of which encodes information on
+     * one cell where summand is supposed to be added to,
+     * and which way - "true" is for transposed,
+     * "false" for not-transposed.
      *
      * @note If anyone has a better idea how to realize the input than with
      * a vector of tuples, that would be very welcome...
+     *
      */
     void add_matrix_to_blocks(
         const TMatrix& summand,
         std::vector<grid_place_and_mode> row_column_transpose_tuples);
 
+
+    /*
+     * Add a scaled coyp of one matrix to several blocks at once.
+     *
+     * @param[in]  summand the matrix whose scaled copy is to be added.
+     * @param[in] scaling_factor the factor by which to scale summand before adding
+     * @param[out] row_column_transpose_tuples A vector of tuples,
+     * each of which encodes information on one cell where summand
+     * is supposed to be added to, and which way - "true" is for transposed,
+     * "false" for not-transposed.
+     *
+     * @note If anyone has a better idea how to realize the input than with
+     * a vector of tuples, that would be very welcome...
+     *
+     * TODO Implement!
+     *
+     */
     void add_scaled_matrix_to_blocks(
         const TMatrix& summand, double scaling_factor,
         std::vector<grid_place_and_mode> row_column_transpose_tuples);
 
     /*
-     * Comment
+     * Scale several blocks in the matrix at once by a factor.
+     *
+     * @param[in]  scaling_factor the factor by which to scale the blocks
+     * @param[out] A vector of tuples, each of which encodes information on
+     *             one block to be scaled. The third entry of each tuple
+     *             (transposed or not) is not relevant here (except for the
+     *             input consistency check!).
+     *
+     *             TODO Implement!
      */
     void scale_blocks( double scaling_factor,
                        std::vector<grid_place_and_mode> row_column_transpose_tuples);
@@ -158,6 +194,8 @@ class ColoredBlockMatrix
      *
      * @param i row index
      * @param j column index
+     *
+     * TODO Implement!
      */
     unsigned int block_of_index(unsigned int& i, unsigned int& j) const;
 
@@ -194,8 +232,6 @@ class ColoredBlockMatrix
     /// @brief destructor, deleting every block
     ~ColoredBlockMatrix() = default;
 
-    // Data members (and declaration of a special struct)
-
 
   protected:
 
@@ -225,7 +261,7 @@ class ColoredBlockMatrix
 
       //! A flag used in algorithms which change the coloring scheme
       // of the owning ColoredBlockMatrix
-      enum class ReColoringFlag {SPLIT, MERGE, KEEP} re_color_;
+      enum class ReColoringFlag {SPLIT, KEEP} re_color_;
 
       /*! Default constructor, will be called implicitely. Constructs
        *  a non-transposed, uncolored 0x0 object marked with ReColoringFlag:KEEP.
@@ -266,16 +302,6 @@ class ColoredBlockMatrix
      * with color i in the block matrix
      */
     std::vector<size_t> color_count_;
-
-    /** @brief all blocks as one TMatrix
-     *
-     * This object is only created upon request. If there is only one block then
-     * it is combined_matrix = blocks[0] set.
-     *
-     * Consider not storing but making up and returning on request.
-     */
-    std::shared_ptr<TMatrix> combined_matrix_;
-
 
   private:
 
@@ -379,13 +405,19 @@ class ColoredBlockMatrix
     /**
      * @return True if a block emplacement leads to the merging of at least two colors.
      *
-     * The method marks all the CellInfos of the color that has to be split and which do belong
-     * to the list of grid_place s (that part which is supposed to receive the replacement)
-     * with ReColoringFlag::MERGE - which is then used by the actual color merging method.
+     * @param[out] color_a one color which enters the merge
+     * @param[out] color_b other color which enters the merge
      *
-     * TODO Implement!
+     * If no merge is needed, color_a and color_b both have the value of the color class,
+     * to which all matrices in row_column_transposed_tuples belong.
+     *
+     * @note: To maintain the coloring conditions the method may only be called,
+     * when it is ensured, that a replacement does not require color splits of any kind!
+     * So call it only after does_modification_require_color_split returned false!
      */
-    bool does_replacement_require_color_merge(std::vector<grid_place_and_mode> row_column_tuples);
+    bool does_replace_require_color_merge (
+        size_t& color_a, size_t& color_b,
+        std::vector<grid_place_and_mode> row_column_transposed_tuples) const;
 
     /*!
      * Find the first place in the matrix (oredr from left to right, top to bottom)
@@ -423,7 +455,7 @@ class ColoredBlockMatrix
     bool is_last_index_pair(size_t block_row, size_t block_column) const;
 
     /*
-     * Mark every cell of color_to_mark whose position appears in row_column_tuples
+     * Mark every cell of color_to_mark whose position appears in row_column_transposed_tuples
      * with the recoloring flag "SPLIT". After that, call split_color to perform the
      * actual splitting of the color.
      *
@@ -436,12 +468,11 @@ class ColoredBlockMatrix
                               std::vector<grid_place_and_mode> row_column_transposed_tuples);
 
     /*
-     * Merges all those colors marked with ReColoringFlag::MERGE into one.
+     * Merges two colors marked with ReColoringFlag::MERGE into one.
      * Assumes conditions 1, 2 and 3 to hold and maintains them.
      *
-     * TODO Implement!
      */
-    void merge_colors();
+    void merge_colors(size_t color_a, size_t color_b);
 
     /*
      * Splits a color in two, assuming that conditions 1,2 and 3 hold and maintaining them.
