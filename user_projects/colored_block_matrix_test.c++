@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 
   ColoredBlockMatrix myMatrix(cell_row_numbers, cell_column_numbers);
 
-  myMatrix.checkColoring();
+  myMatrix.check_coloring();
 
   Output::print("Test program finished.");
 }
