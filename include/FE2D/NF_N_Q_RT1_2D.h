@@ -1,11 +1,4 @@
-/*
-    TNodalFunctional2D(NodalFunctional2D id,
-                       int n_allfunctionals, int n_edgefunctionals,
-                       int n_pointsall, int n_pointsedge,
-                       double *xi, double *eta, double *t,
-                       DoubleFunctVect *evalall,
-                       DoubleFunctVect *evaledge);
-*/
+// First order Raviart-Thomas vector element on quads, nonconforming, 2D
 
 static double NF_N_Q_RT1_2D_a = sqrt(3./5.);
 static double NF_N_Q_RT1_2D_Xi[] =

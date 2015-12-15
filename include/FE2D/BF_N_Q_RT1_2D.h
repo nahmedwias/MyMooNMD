@@ -1,15 +1,4 @@
-// ***********************************************************************
-// Q1 Raviart-Thomas vector element, nonconforming , 2D
-// History:  17.11.2011 implementation (Ulrich)
-// ***********************************************************************
-
-// base function values
-// vector function, orthogonal to edges, 
-// functions 1 and 2 are orthogonal to edge 1
-// functions 3 and 4 are orthogonal to edge 2
-// functions 5 and 6 are orthogonal to edge 3
-// functions 7 and 8 are orthogonal to edge 4
-// functions 9-12 correspond to inner degrees of freedom
+// First order Raviart-Thomas vector element on quads, nonconforming, 2D
 
 // coefficient matrix for the degrees of freedom (this is in fact 8 times that 
 // matrix)

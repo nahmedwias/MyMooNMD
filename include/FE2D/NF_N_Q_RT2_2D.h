@@ -1,13 +1,4 @@
-/*
-    TNodalFunctional2D(NodalFunctional2D id,
-                       int n_allfunctionals, int n_edgefunctionals,
-                       int n_pointsall, int n_pointsedge,
-                       double *xi, double *eta, double *t,
-                       DoubleFunctVect *evalall,
-                       DoubleFunctVect *evaledge);
-  used function names in this file must be unique in the entire program. 
-  -> use the identifier as prefix
-*/
+// Second order Raviart-Thomas vector element on quads, nonconforming, 2D
 
 // points for 1D Gauss quadrature with four points (two are symmetric)
 static double NF_N_Q_RT2_2D_a = sqrt(3./7. + (2./7.)*sqrt(6./5.)); // 0.86114

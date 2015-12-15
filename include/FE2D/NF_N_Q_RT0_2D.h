@@ -1,11 +1,4 @@
-/*
-    TNodalFunctional2D(NodalFunctional2D id,
-                       int n_allfunctionals, int n_edgefunctionals,
-                       int n_pointsall, int n_pointsedge,
-                       double *xi, double *eta, double *t,
-                       DoubleFunctVect *evalall,
-                       DoubleFunctVect *evaledge);
-*/
+// Zeroth order Raviart-Thomas vector element on quads, nonconforming, 2D
 
 // the nodal functionals on the edges E_i are
 // N_i(v) = int_{E_i} v.n 
@@ -77,18 +70,6 @@ void NF_N_Q_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, doubl
                            double *Functionals)
 {
   // this is needed for setting boundary conditions
-  /* the functional
-   * int_Joint v.n
-   * will be multiplied by the length of the Joint (edge). Otherwise one would
-   * ensure int_Joint v.n=PointValues[0]. 
-   * Example: If you would like to have u.n=1, then without multiplying by 
-   *          the edge length l would result in having int_Joint u.n=1 on each
-   *          boundary edge. This would mean one gets u.n=1/l on that 
-   *          boundary. To avoid this, we introduce the factor l here. 
-   * However I am not sure if this causes trouble elsewhere later. 
-   * Be carefull!
-   *                                            Ulrich Wilbrandt, 11.05.2012
-  */
   #ifdef __2D__
   double x0,x1,y0,y1;
   Cell->GetVertex(Joint)->GetCoords(x0,y0);
