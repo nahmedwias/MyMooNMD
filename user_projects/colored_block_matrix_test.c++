@@ -13,11 +13,8 @@
 int main(int argc, char* argv[])
 {
   {
-  //check correct splitting and mergingf of colors when replacing blocks
-  std::vector<size_t> cell_row_numbers = {5 , 5 , 2};
-  std::vector<size_t> cell_column_numbers = {5, 5 , 2, 3};
-
-  ColoredBlockMatrix myMatrix(cell_row_numbers, cell_column_numbers);
+  //check correct splitting and merging of colors when replacing blocks
+  ColoredBlockMatrix myMatrix({5 , 5 , 5}, {5, 5 , 5});
 
   TMatrix placeHolderA(5,5);
   auto t_1 = std::make_tuple(0,0,false);
@@ -62,6 +59,7 @@ int main(int argc, char* argv[])
 
   myBlockMatrix.replace_blocks(placeHolderA, vec);
   myBlockMatrix.print_and_check("insert of transp");
+  myBlockMatrix.print_coloring_pattern("insert of transp", true);
 
   }
   Output::print("Test program finished.");
