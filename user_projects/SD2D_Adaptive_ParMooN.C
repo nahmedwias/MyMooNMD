@@ -62,6 +62,13 @@ int main(int argc, char* argv[])
 
         StoDa2DRefinementStrategy refinementStrategy;
 
+        std::vector<const TInnerInterfaceJoint *> interface;
+        GetInnerInterfaceJoints(interface, Domain); // fill vector 'interface'
+        // refine grid up to the coarsest level
+        for (int i = 0; i < TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR; i++) {
+            Domain.RegRefineAll();
+            GetInnerInterfaceJoints(interface, Domain); // update interface vector
+        }
 
         int LEVELS = TDatabase::ParamDB->LEVELS;
         for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
@@ -71,19 +78,17 @@ int main(int argc, char* argv[])
                 out << "GEOMETRY  LEVEL " << curr_level;
                 Output::print<1>(out.str());
             }
-            // vector containing all interface edges (joints)
-            std::vector<const TInnerInterfaceJoint *> interface;
-            GetInnerInterfaceJoints(interface, Domain); // fill vector 'interface'
-
             // refine grid if level is greater than 0
             if ((curr_level > 0)) {
                 // regular refinement if
                 // adaptive procedure should not yet start
                 // or no error estimation
                 if ((curr_level <= TDatabase::ParamDB->UNIFORM_STEPS) || (!TDatabase::ParamDB->ESTIMATE_ERRORS)) {
+                    std::cout << " ----- uniform refine ----- " << std::endl;
                     Domain.RegRefineAll();
                     GetInnerInterfaceJoints(interface, Domain); // update interface vector
                 } else {
+                    std::cout << " ----- refine by refinement strategy ----- " << std::endl;
                     Domain.RefineByRefinementStrategy(&refinementStrategy, true);
                     GetInnerInterfaceJoints(interface, Domain); // update interface vector
                 }
@@ -249,10 +254,10 @@ int main(int argc, char* argv[])
             if(solution_strategy >= 0)
             {
                 sd.solveDirect();
-                std::unique_ptr<TCollection> finest_collection(Domain.GetCollection(It_Finest, 0));
-                cdErrorEstimator2D.estimate(sd.c_darcy()->get_function());
-                nseErrorEstimator2D.estimate(sd.c_stokes()->get_velocity(), sd.c_stokes()->get_pressure(), aux);
-                refinementStrategy.applyEstimator(cdErrorEstimator2D, nseErrorEstimator2D, finest_collection.get());
+                //std::unique_ptr<TCollection> finest_collection(Domain.GetCollection(It_Finest, 0));
+                //cdErrorEstimator2D.estimate(sd.c_darcy()->get_function());
+                //nseErrorEstimator2D.estimate(sd.c_stokes()->get_velocity(), sd.c_stokes()->get_pressure(), aux);
+                //refinementStrategy.applyEstimator(cdErrorEstimator2D, nseErrorEstimator2D, finest_collection.get());
 
                 double error = ErrorOnInterface(*(sd.c_stokes()), *(sd.c_darcy()), -1);
                 Output::print<1>("  Error on interface ", error);
