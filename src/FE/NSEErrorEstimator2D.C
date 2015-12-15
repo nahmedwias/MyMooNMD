@@ -767,7 +767,7 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TBaseCell *cell,
                                         unsigned int N_Points, unsigned int N_Points1D, double *AbsDetjk,
                                         double *weights, double **Derivatives, double **coeffs,
-                                        Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData,
+                                        const Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData,
                                         int *global_numbers_u, int *begin_index_u, double *values_u,
                                         int *global_numbers_p, int *begin_index_p, double *values_p,
                                         double *estimated_local_error) {
@@ -1338,7 +1338,7 @@ void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunc
                         const unsigned int N_child = conform_grid ? 1 : 2;
 
                         // find children of neigh on face l -> child
-                        for (size_t k = 0; k < N_child; k++) {
+                        for (size_t k = 0; k < N_child && TmpoEnE; k++) {
                             // edge child, not general !!!
                             auto edge1 = TmpoEnE[edge2neigh * MaxLen1 + k];
                             // local number of child cell
@@ -2185,10 +2185,10 @@ std::vector<double> NSEErrorEstimator2D::getWeights(const double hK, const doubl
     return alpha;
 }
 
-NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex)
+NSEErrorEstimator2D::NSEErrorEstimator2D(const Example2D &ex)
         : NSEErrorEstimator2D(ex, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION, TDatabase::ParamDB->PROBLEM_TYPE != 3) { }
 
-NSEErrorEstimator2D::NSEErrorEstimator2D(Example2D &ex, int type, bool is_nse) : ErrorEstimator2D(ex), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
+NSEErrorEstimator2D::NSEErrorEstimator2D(const Example2D &ex, int type, bool is_nse) : ErrorEstimator2D(ex), estimatorType{NSE2DErrorEstimatorType(type)}, is_nse(is_nse) {
     estimated_global_error.resize(N_NSE2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
 }
@@ -2222,5 +2222,13 @@ std::ostream &operator<<(std::ostream &os, NSE2DErrorEstimatorType &type) {
     }
     os << " (database value = " << int(type) << ")";
     return os;
+}
+
+int NSEErrorEstimator2D::isConformGrid() const {
+    return this->conform_grid;
+}
+
+void NSEErrorEstimator2D::setConformGrid(int conform_grid) {
+    this->conform_grid = conform_grid;
 }
 

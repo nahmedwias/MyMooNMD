@@ -3,6 +3,7 @@
 
 #include <ErrorEstimator2D.h>
 #include <Example_NSE2D.h>
+#include <AuxParam2D.h>
 
 enum class NSE2DErrorEstimatorType {
     // 0 - gradient indicator
@@ -41,19 +42,23 @@ protected:
     void estimate(const std::vector<MultiIndex2D> &derivatives, const TFEFunction2D &fe_function2D) {};
 
     void calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TBaseCell *cell, unsigned int N_Points, unsigned int N_Points1D, double *AbsDetjk, double *weights, double **Derivatives,
-                           double **coeffs, Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData, int *global_numbers_u, int *begin_index_u, double *values_u, int *global_numbers_p, int *begin_index_p,
+                           double **coeffs, const Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData, int *global_numbers_u, int *begin_index_u, double *values_u, int *global_numbers_p, int *begin_index_p,
                            double *values_p, double *estimated_local_error);
     std::vector<double> getWeights(const double hK, const double delta, const double *coeff);
     unsigned int get_max_n_base_functions(const TFESpace2D &fe_space);
 public:
-    NSEErrorEstimator2D(Example2D &ex);
-    NSEErrorEstimator2D(Example2D &ex, int type, bool is_nse);
+    NSEErrorEstimator2D(const Example2D &ex);
+    NSEErrorEstimator2D(const Example2D &ex, int type, bool is_nse);
 
     void estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TAuxParam2D &Aux);
 
     NSE2DErrorEstimatorType GetEstimatorType() const {
         return estimatorType;
     }
+
+    int isConformGrid() const;
+
+    void setConformGrid(int conform_grid);
 };
 
 #endif //NSEERRORESTIMATOR2D_H

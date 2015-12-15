@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
     std::function<double(const TFEFunction2D *, double, double, TBaseCell &)> dwrFunctional2 = [](const TFEFunction2D *sol, double x, double y, TBaseCell &cell) {
         return 1.0;
     };
-    CDErrorEstimator2DDWR estimator{example, dwrFunctional2, Domain};
-    //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
+    //CDErrorEstimator2DDWR estimator{example, dwrFunctional2, Domain};
+    CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
 
     // refinement
     RefinementStrategy refinementStrategy;

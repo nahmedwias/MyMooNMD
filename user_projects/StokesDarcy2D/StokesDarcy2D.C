@@ -1536,7 +1536,7 @@ double ErrorOnInterface(StokesProblem &s, DarcyPrimal &d, int it)
   std::ofstream ErrorFile;
   if(writeErrorFile)
   {
-    std::ostringstream os(std::ios::trunc);
+    std::ostringstream os(std::ios_base::trunc);
     os << "interfaceFiles/interfaceErrors" << it << ".txt" << ends;
     ErrorFile.open(os.str().c_str());
     ErrorFile << "x\t" << "DarcyFlux\t" << "StokesFlux\t" << "DarcyStress\t"
@@ -1653,7 +1653,7 @@ void WriteVtk_and_measureErrors(StokesProblem &s, DarcyPrimal &d,
     Output_NSE.AddFEVectFunct(&u_NSE);
     Output_Darcy.AddFEFunction(&p_Darcy);
     // write one vtk - file for each subdomain
-    std::ostringstream os(std::ios::trunc);
+    std::ostringstream os(std::ios_base::trunc);
     if(it != -1)
       os << TDatabase::ParamDB->OUTPUTDIR << "/" 
          << TDatabase::ParamDB->BASENAME << "NSE." << it << ".vtk" << ends;

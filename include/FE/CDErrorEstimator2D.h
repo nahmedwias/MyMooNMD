@@ -48,7 +48,7 @@ protected:
     int conform_grid;
 
     // internal function calculating jumps across edges at the boundary
-    bool handleJump_BoundaryEdge(double *result, Example2D &example2D, const int estimatorType, const int N_QuadraturePoints1D, double *const &weights1D, const CDErrorEstimator2D::EdgeData &edgeData, BoundCond &Cond0, const double meas,
+    bool handleJump_BoundaryEdge(double *result, const Example2D &example2D, const int estimatorType, const int N_QuadraturePoints1D, double *const &weights1D, const CDErrorEstimator2D::EdgeData &edgeData, BoundCond &Cond0, const double meas,
                                  const double *coeff, double linfb, const std::vector<double> &alpha, int edgeIdx, const TJoint *joint) const;
 
     // estimate!
@@ -61,7 +61,7 @@ protected:
 
 public:
     // constructor
-    CDErrorEstimator2D(Example2D &ex, int type);
+    CDErrorEstimator2D(const Example2D &ex, int type);
 
     virtual void estimate(const TFEFunction2D &fe_function2D) {
         estimate(derivatives, fe_function2D);

@@ -68,9 +68,9 @@ public:
     }
 
 
-    void applyEstimator(ErrorEstimator2D &estimator2D);
+    virtual void applyEstimator(ErrorEstimator2D &estimator2D);
 
-    bool shouldRefineCell(size_t cellIndex);
+    virtual bool shouldRefineCell(size_t cellIndex);
 
     RefinementStrategyType getRefineStrategy() const;
 

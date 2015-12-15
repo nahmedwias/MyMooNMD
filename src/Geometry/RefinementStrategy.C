@@ -37,6 +37,7 @@ void RefinementStrategy::applyEstimator(ErrorEstimator2D &estimator2D) {
     int changed = -1, it = 0, max_it = 100;
     // maximal local error
     double eta_max = estimator2D.GetMaximalLocalError();
+    Output::print<1>("Refinement strategy eta_max: ", eta_max);
     // reference tolerance as percentage value of the maximal local error
     double reftol = this->reftol * eta_max;
     // since local estimates are stored as square

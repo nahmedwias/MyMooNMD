@@ -86,11 +86,13 @@ private:
     std::vector<double> refNeigh1D_data;
     unsigned int refDataQuadPoints1D;
 public:
+    constexpr static int MaxN_QuadPoints_1D_loc = MaxN_QuadPoints_1D;
+
     // these data structures depend on the maximal number of 2d base functions
     unsigned int max_n_base_funct_2d;
-    std::array<std::array<double *, MaxN_QuadPoints_1D>, MaxN_BaseFunctions2D> xietaval_refNeigh1D;
-    std::array<std::array<double *, MaxN_QuadPoints_1D>, MaxN_BaseFunctions2D> xideriv_refNeigh1D;
-    std::array<std::array<double *, MaxN_QuadPoints_1D>, MaxN_BaseFunctions2D> etaderiv_refNeigh1D;
+    std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, MaxN_BaseFunctions2D> xietaval_refNeigh1D;
+    std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, MaxN_BaseFunctions2D> xideriv_refNeigh1D;
+    std::array<std::array<double *, MaxN_QuadPoints_1D_loc>, MaxN_BaseFunctions2D> etaderiv_refNeigh1D;
 
     // these data structures depend on the number of quadrature points (and therefore may be updated in each cell)
     std::vector<double> xi1DNeigh;
@@ -105,20 +107,20 @@ public:
     std::vector<double> xderiv_Cell1D;
     std::vector<double> yderiv_Cell1D;
     std::vector<double> xyval_Cell1D;
-    std::array<double *, MaxN_QuadPoints_1D> xyval_refNeigh1D{};
-    std::array<double *, MaxN_QuadPoints_1D> xderiv_refNeigh1D{};
-    std::array<double *, MaxN_QuadPoints_1D> yderiv_refNeigh1D{};
+    std::array<double *, MaxN_QuadPoints_1D_loc> xyval_refNeigh1D{};
+    std::array<double *, MaxN_QuadPoints_1D_loc> xderiv_refNeigh1D{};
+    std::array<double *, MaxN_QuadPoints_1D_loc> yderiv_refNeigh1D{};
     std::vector<double> FEFunctValuesNeigh;
 
     EdgeRefData(unsigned int max_n_base_funct_2d) : refDataQuadPoints1D{0}, max_n_base_funct_2d{max_n_base_funct_2d} {
-        unsigned int k = MaxN_BaseFunctions2D * MaxN_QuadPoints_1D * max_n_base_funct_2d;
+        unsigned int k = MaxN_BaseFunctions2D * MaxN_QuadPoints_1D_loc * max_n_base_funct_2d;
         refNeigh1D_data = std::vector<double>(3 * k);
         xietaval_refNeigh1D[0][0] = &refNeigh1D_data[0];
         xideriv_refNeigh1D[0][0] = &refNeigh1D_data[0] + k;
         etaderiv_refNeigh1D[0][0] = &refNeigh1D_data[0] + 2 * k;
         for (unsigned int i = 0; i < MaxN_BaseFunctions2D; i++) {
             unsigned int n = i * MaxN_BaseFunctions2D * max_n_base_funct_2d;
-            for (unsigned int j = 0; j < MaxN_QuadPoints_1D; j++) {
+            for (unsigned int j = 0; j < MaxN_QuadPoints_1D_loc; j++) {
                 unsigned int l = n + j * max_n_base_funct_2d;
                 xietaval_refNeigh1D[i][j] = xietaval_refNeigh1D[0][0] + l;
                 xideriv_refNeigh1D[i][j] = xideriv_refNeigh1D[0][0] + l;
@@ -525,7 +527,8 @@ void CDErrorEstimator2D::estimate(const std::vector<MultiIndex2D> &derivatives, 
 
         // problem's coefficients
         if (example2D.get_coeffs()) {
-            example2D.get_coeffs()(N_Points, X, Y, nullptr, &coefficientsPerQuadPoint[0]);
+            auto coeff_fct = example2D.get_coeffs();
+            coeff_fct(N_Points, X, Y, NULL, &coefficientsPerQuadPoint[0]);
         }
 
         // 1D quadrature formula
@@ -1155,6 +1158,9 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
 
                             // find children of neigh on face l -> child
                             for (unsigned int r = 0; r < N_child; r++) {
+                                if(!TmpoEnE) {
+                                    break;
+                                }
                                 // edge child, not general !!!
                                 int edge1 = TmpoEnE[edge2neigh * MaxLen1 + r];
                                 // local number of child cell
@@ -1552,9 +1558,11 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
                                     if ((fabs(edgeRefData.X1DCell[i] - edgeRefData.X1DNeigh[i]) + fabs(edgeRefData.Y1DCell[i] - edgeRefData.Y1DNeigh[i])) > 1e-8)
                                         cout << " wrong quad points 2 " << edgeRefData.X1DCell[i] << " , " << edgeRefData.Y1DCell[i]
                                         << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
-                                    if (check_cont) if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeRefData.xyval_Cell1D[i]) > 1e-8) {
-                                        cout << "quad points b " << edgeRefData.X1DCell[i] << " , " << edgeRefData.Y1DCell[i] << endl;
-                                        cout << " i " << i << " valb " << edgeRefData.xyval_Cell1D[i] << " neighb " << edgeRefData.xyval_Neigh1D[i] << " " << fabs(edgeRefData.xyval_Cell1D[i] - edgeRefData.xyval_Neigh1D[i]) << endl;
+                                    if (check_cont) {
+                                        if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeRefData.xyval_Cell1D[i]) > 1e-8) {
+                                            cout << "quad points b " << edgeRefData.X1DCell[i] << " , " << edgeRefData.Y1DCell[i] << endl;
+                                            cout << " i " << i << " valb " << edgeRefData.xyval_Cell1D[i] << " neighb " << edgeRefData.xyval_Neigh1D[i] << " " << fabs(edgeRefData.xyval_Cell1D[i] - edgeRefData.xyval_Neigh1D[i]) << endl;
+                                        }
                                     }
                                     double e1 = coeff[0] * ((edgeRefData.xderiv_Cell1D[i] - edgeRefData.xderiv_Neigh1D[i]) * nx
                                                             + (edgeRefData.yderiv_Cell1D[i] - edgeRefData.yderiv_Neigh1D[i]) * ny);
@@ -1829,7 +1837,7 @@ double CDErrorEstimator2D::calculateEtaK(TBaseCell *cell, const TFEFunction2D &f
     return result;
 }
 
-bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, Example2D &example2D, const int estimatorType, const int N_QuadraturePoints1D, double *const &weights1D, const CDErrorEstimator2D::EdgeData &edgeData, BoundCond &Cond0,
+bool CDErrorEstimator2D::handleJump_BoundaryEdge(double *result, const Example2D &example2D, const int estimatorType, const int N_QuadraturePoints1D, double *const &weights1D, const CDErrorEstimator2D::EdgeData &edgeData, BoundCond &Cond0,
                                                  const double meas, const double *coeff, double linfb, const std::vector<double> &alpha, int edgeIdx, const TJoint *joint) const {
     // vector holding the weights corresponding to the estimators, initialized with 0
     std::vector<double> beta(N_CD2D_ESTIMATOR_TYPES - 1, 0);
@@ -1959,7 +1967,7 @@ std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType &type) {
     return os;
 }
 
-CDErrorEstimator2D::CDErrorEstimator2D(Example2D &ex, int type) :
+CDErrorEstimator2D::CDErrorEstimator2D(const Example2D &ex, int type) :
         ErrorEstimator2D(ex), estimatorType{CDErrorEstimatorType(type)} {
     estimated_global_error.resize(N_CD2D_ESTIMATOR_TYPES);
     conform_grid = TDatabase::ParamDB->GRID_TYPE;
