@@ -1,50 +1,4 @@
-/*
-    TNodalFunctional2D(NodalFunctional2D id,
-                       int n_allfunctionals, int n_edgefunctionals,
-                       int n_pointsall, int n_pointsedge,
-                       double *xi, double *eta, double *t,
-                       DoubleFunctVect *evalall,
-                       DoubleFunctVect *evaledge);
-  used function names in this file must be unique in the entire program. 
-  -> use the identifier as prefix
-*/
-
-// static double NF_N_Q_RT3_2D_a = sqrt(2. + sqrt(2.)) / 2.;
-// static double NF_N_Q_RT3_2D_b = sqrt(2. - sqrt(2.)) / 2.;
-// static double NF_N_Q_RT3_2D_c = sqrt(3./4.);
-// 
-// static double NF_N_Q_RT3_2D_Xi[] = 
-// { -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_a,
-//   1, 1,1,1,
-//   NF_N_Q_RT3_2D_a,NF_N_Q_RT3_2D_b,-NF_N_Q_RT3_2D_b,-NF_N_Q_RT3_2D_a,
-//   -1,-1,-1,-1,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_a,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_a, 
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_a,
-//   -NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,
-//   0, 0,0,0,
-//   NF_N_Q_RT3_2D_c, NF_N_Q_RT3_2D_c,NF_N_Q_RT3_2D_c,NF_N_Q_RT3_2D_c
-// };
-// static double NF_N_Q_RT3_2D_Eta[] = 
-// { -1,-1,-1,-1,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_a,
-//   1,1, 1, 1,
-//   NF_N_Q_RT3_2D_a, NF_N_Q_RT3_2D_b,-NF_N_Q_RT3_2D_b,-NF_N_Q_RT3_2D_a,
-//   -NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,-NF_N_Q_RT3_2D_c,
-//   0, 0,0,0,
-//   NF_N_Q_RT3_2D_c, NF_N_Q_RT3_2D_c,NF_N_Q_RT3_2D_c,NF_N_Q_RT3_2D_c,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_b, NF_N_Q_RT3_2D_a,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_a,
-//   -NF_N_Q_RT3_2D_a,-NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_b,NF_N_Q_RT3_2D_a
-// };
-// NOTE: If you want to use other evaluation points for degress of freedom on
-// the edges of a cell, you also have to change basis functions in 
-// BF_N_Q_RT3_2D.h
-//static double NF_N_Q_RT3_2D_T[] = {-0.5,0,0.5};// equidistant points
-//static double NF_N_Q_RT3_2D_T[] = {-0.774596669241483,0.774596669241483}//Gauss-points
-//static double NF_N_Q_RT3_2D_T[] = { -0.923879532511287,  -0.382683432365090,  
-// 0.382683432365090,   0.923879532511287};//Tschebyscheff-points
-
+// Third order Raviart-Thomas vector element on quads, nonconforming, 2D
 
 // points for 1D Gauss quadrature with five points (symmetric)
 static double NF_N_Q_RT3_2D_q[5] =
@@ -357,26 +311,12 @@ void NF_N_Q_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
     {
       Functionals[16+d] *= measure;
     }
- }
+  }
 }
 
 void NF_N_Q_RT3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
                            double *Functionals)
 {
-// this is needed for setting boundary conditions.
-  /* the functionals
-   * int_Joint v.n q_1  and  int_Joint v.n q_2  and  int_Joint v.n q_3
-   * (q_1, q2 and q_3 are two linearly independent polynomials of degree 2)
-   * will be multiplied by the length of the Joint (edge). Otherwise one would
-   * ensure int_Joint v.n=PointValues[0]. 
-   * Example: If you would like to have u.n=1, then without multiplying by 
-   *          the edge length l would result in having int_Joint u.n=1 on each
-   *          boundary edge. This would mean one gets u.n=1/l on that 
-   *          boundary. To avoid this, we introduce the factor l here. 
-   * However I am not sure if this causes trouble elsewhere later. 
-   * Be carefull!
-   *                                            Ulrich Wilbrandt, 11.05.2012
-  */
   #ifdef __2D__
   Functionals[0] = 0.;
   Functionals[1] = 0.;
