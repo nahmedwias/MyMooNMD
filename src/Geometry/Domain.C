@@ -819,6 +819,10 @@ void TDomain::Init(char *PRM, char *GEO)
   {
     SquareInSquare();
   }
+  else if (!strcmp(GEO, "UnitSquare_US22"))
+  {
+    UnitSquare_US22();
+  }
   else if (!strcmp(GEO, "SquareInSquareRef"))
   {
     SquareInSquareRef();
