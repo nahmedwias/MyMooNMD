@@ -4719,6 +4719,8 @@ std::shared_ptr<TStructure> TStructure::GetTransposed() const
   delete []ColB_count;
   
   std::shared_ptr<TStructure> structureT(new TStructure(nRowsT, nColsT, nEntries, colsT, rowsT)); 
+  delete[] rowsT;
+  delete[] colsT;
   return structureT;
 }
 
