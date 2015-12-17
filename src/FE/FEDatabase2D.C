@@ -1282,13 +1282,13 @@ void TFEDatabase2D::RegisterAllFEMappers()
 
   RegisterFE2DMapper(FE_N_T_RT0_2D,FE_N_T_RT0_2D,N1_2_N1_2);
   RegisterFE2DMapper(FE_N_T_RT0_2D,FE_N_Q_RT0_2D,N1_2_N1_2);
-  RegisterFE2DMapper(FE_N_T_RT1_2D,FE_N_T_RT1_2D,C1_2_C1_2);
-  RegisterFE2DMapper(FE_N_T_RT2_2D,FE_N_T_RT2_2D,C2_2_C2_2);
-  RegisterFE2DMapper(FE_N_T_RT3_2D,FE_N_T_RT3_2D,C3_2_C3_2);
+  RegisterFE2DMapper(FE_N_T_RT1_2D,FE_N_T_RT1_2D,N2_2_N2_2);
+  RegisterFE2DMapper(FE_N_T_RT2_2D,FE_N_T_RT2_2D,N3_2_N3_2);
+  RegisterFE2DMapper(FE_N_T_RT3_2D,FE_N_T_RT3_2D,N4_2_N4_2);
   
-  RegisterFE2DMapper(FE_N_T_BDM1_2D,FE_N_T_BDM1_2D,C1_2_C1_2);
-  RegisterFE2DMapper(FE_N_T_BDM2_2D,FE_N_T_BDM2_2D,C2_2_C2_2);
-  RegisterFE2DMapper(FE_N_T_BDM3_2D,FE_N_T_BDM3_2D,C3_2_C3_2);
+  RegisterFE2DMapper(FE_N_T_BDM1_2D,FE_N_T_BDM1_2D,N2_2_N2_2);
+  RegisterFE2DMapper(FE_N_T_BDM2_2D,FE_N_T_BDM2_2D,N3_2_N3_2);
+  RegisterFE2DMapper(FE_N_T_BDM3_2D,FE_N_T_BDM3_2D,N4_2_N4_2);
 
   RegisterFE2DMapper(FE_N_Q_RT0_2D,FE_N_Q_RT0_2D,N1_2_N1_2);
   RegisterFE2DMapper(FE_N_Q_Q1_2D,FE_N_T_RT0_2D,N1_2_N1_2);
