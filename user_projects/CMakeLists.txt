@@ -24,6 +24,7 @@
 include_directories("${PROJECT_SOURCE_DIR}/user_projects")
 
 list(APPEND PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/ColoredBlockMatrix.C")
+list(APPEND PROJECT_SOURCES "${PROJECT_SOURCE_DIR}/user_projects/ColoredBlockFEMatrix.C")
 add_library(PROJECT_LIB STATIC ${PROJECT_SOURCES})
 
 #colored block matrix test
