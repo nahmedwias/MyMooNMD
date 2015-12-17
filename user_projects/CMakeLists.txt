@@ -20,3 +20,17 @@
 #    make project
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
+
+include_directories("${PROJECT_SOURCE_DIR}/user_projects")
+
+list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/BlockFEMatrix.C")
+list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/PrRobustNSE2D.C")
+
+add_library(PROJECT_LIB_2D STATIC ${PROJECT_SOURCES_2D})
+target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
+
+# Then you can create an executable as follows
+add_executable(constr ${PROJECT_SOURCE_DIR}/user_projects/test.C)
+set_target_properties(constr PROPERTIES OUTPUT_NAME parMooN_project_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(constr PUBLIC -D__2D__)
+target_link_libraries(constr PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
