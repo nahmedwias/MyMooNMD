@@ -20,7 +20,7 @@
 BlockMatrixDarcy2D::BlockMatrixDarcy2D(const TFESpace2D& velocity, 
                                        const TFESpace2D& pressure,
                                        BoundValueFunct2D*const*const BoundValue)
- : BlockMatrix(Problem_type::Darcy, 2), 
+ : BlockFEMatrix(Problem_type::Darcy, 2),
    boundary_values({BoundValue[0], BoundValue[1]})
 {
   // ( A  B1' )   ( 0 2 )
@@ -113,25 +113,6 @@ void BlockMatrixDarcy2D::apply_scaled_add(const double *x, double *y,
   
   this->block(2)->multiply(x,       y+n_v, factor);
   this->block(3)->multiply(  x+n_v, y+n_v, factor);
-}
-
-/** ************************************************************************ */
-const TFESpace2D* BlockMatrixDarcy2D::get_space_of_block(unsigned int b,
-                                                         bool test) const
-{
-  unsigned int space_index = 0;
-  if(test)
-    space_index = this->block_pattern->test_space_index_of_block(b);
-  else
-    space_index = this->block_pattern->ansatz_space_index_of_block(b);
-  if(space_index == 0)
-    return this->get_velocity_space();
-  else if(space_index == 1)
-    return this->get_pressure_space();
-  else
-  {
-    ErrThrow("could not find space for block ", b);
-  }
 }
 
 /** ************************************************************************ */

@@ -65,6 +65,11 @@ class TMatrix
     /** @brief generate the matrix, initialize entries with zeros */
     TMatrix(std::shared_ptr<TStructure> structure);
 
+    /**
+     * @brief Generates an empty `nRows`*`nCols` Matrix with no entries
+     */
+    TMatrix(int nRows, int nCols);
+
     /// @brief Default copy constructor
     ///
     /// Performs a deep copy of the entries, but not of the structure.
@@ -266,7 +271,7 @@ class TMatrix
      * @param y array representing the vector to which a * A*x is added
      * @param a scaling factor, default is 1.0
      */
-    void multiply(const double * const x, double *y, double a = 1.0) const;
+    void multiply(const double * const x, double * const y, double a = 1.0) const;
     
     /** @brief compute y += a * A^T * x
      *
@@ -277,7 +282,7 @@ class TMatrix
      * @param y array representing the vector to which a * A*x is added
      * @param a scaling factor, default is 1.0
      */
-    void transpose_multiply(const double * const x, double *y, double a = 1.0)
+    void transpose_multiply(const double * const x, double * const y, double a = 1.0)
       const;
     
     /**

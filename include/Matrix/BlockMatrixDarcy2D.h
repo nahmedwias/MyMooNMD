@@ -24,10 +24,11 @@
 #include <SquareMatrix2D.h>
 #include <Matrix2D.h>
 #include <BlockVector.h>
+#include <BlockFEMatrix.h>
 #include <array>
 
 /**class for 2D scalar system matrix */
-class BlockMatrixDarcy2D : public BlockMatrix
+class BlockMatrixDarcy2D : public BlockFEMatrix
 {
   protected:
     
@@ -80,15 +81,7 @@ class BlockMatrixDarcy2D : public BlockMatrix
      */
     void apply_scaled_add(const double *x, double *y, double factor = 1.0) 
       const;
-    
-    /** @brief return the test or ansatz space for a given block
-     * 
-     * @param b the index of the block whose test/ansatz space is returned
-     * @param test true to return the test space, false to return the ansatz 
-     *             space
-     */
-    const TFESpace2D * get_space_of_block(unsigned int b, bool test) const;
-    
+
     /** @brief return the velocity-velocity block
      * 
      * This is created as a TSquareMatrix2D in the constructor of this class. 
