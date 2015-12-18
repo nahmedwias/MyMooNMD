@@ -6,6 +6,7 @@
  */
 
 #include <ColoredBlockMatrix.h>
+
 #include <vector>
 #include <tuple>
 #include <MooNMD_Io.h>
@@ -86,7 +87,7 @@ int main(int argc, char* argv[])
     myMatrix.replace_blocks(
         matA,
         {{0,0}, {0,2}, {2,0}, {2,2}},
-        {false, false, true, true} );
+        {false, false, true, false} );
 
     myMatrix.print_and_check("after replace");
     myMatrix.print_coloring_pattern("myMatrix", true);
@@ -106,7 +107,7 @@ int main(int argc, char* argv[])
 
     myMatrix.add_matrix_to_blocks(summand,
                                   {{2,0}, {2,2}},
-                                  {true, true}  );
+                                  {true, false}  );
 
     myMatrix.print_and_check("addition to replace");
     myMatrix.get_combined_matrix()->PrintFull();
@@ -120,7 +121,7 @@ int main(int argc, char* argv[])
     myMatrix.get_combined_matrix()->PrintFull();
 
     std::vector<std::vector<size_t>> positions = {{0,0},{2,0}};
-    std::vector<bool> transp_states = {true,true};
+    std::vector<bool> transp_states = {false,true};
 
     myMatrix.add_scaled_matrix_to_blocks(
         summand, 1.0, positions, transp_states);
@@ -139,6 +140,7 @@ int main(int argc, char* argv[])
     delete[] RowA;
     delete[] ColA;
   }
+
   Output::print("Test program finished.");
 
 }

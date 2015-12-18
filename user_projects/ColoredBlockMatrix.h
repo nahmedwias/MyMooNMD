@@ -51,6 +51,11 @@ class ColoredBlockMatrix
   public:
 
     /**
+     * Default constructor. Creates an empty object.
+     */
+    ColoredBlockMatrix();
+
+    /**
      * @brief Creates a ColoredBlockMatrix which is filled with fitting zero blocks.
      *
      * The number of block rows is the length of cell_row_numbers,
@@ -193,7 +198,7 @@ class ColoredBlockMatrix
      * Performs as the same-named method but with a supposedly easier interface.
      * (Does not require tuple making).
      */
-    void replace_blocks(
+    virtual void replace_blocks(
         const TMatrix& new_block,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
@@ -207,12 +212,11 @@ class ColoredBlockMatrix
 
     /*
      * Performs as the same-named method but with a supposedly easier interface.
-     * (Does not require tuple making).
+     * (Does not require tuple making and no transposed states).
      */
     void scale_blocks(
         double scaling_factor,
-        const std::vector<std::vector<size_t>>& cell_positions,
-        const std::vector<bool>& transposed_states);
+        const std::vector<std::vector<size_t>>& cell_positions );
 
 
     // Special member functions.
@@ -221,7 +225,7 @@ class ColoredBlockMatrix
      * Performs a deep copy of the stored TMatrices,
      * so that no two instances of ColoredBlockMatrix share the same blocks.
      */
-    ColoredBlockMatrix(ColoredBlockMatrix&);
+    ColoredBlockMatrix(const ColoredBlockMatrix&);
 
     ///! Default move constructor.
     ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
@@ -242,7 +246,7 @@ class ColoredBlockMatrix
     ColoredBlockMatrix& operator=(ColoredBlockMatrix&&) = default;
 
     /// @brief Destructor. Tidies up nice and clean.
-    ~ColoredBlockMatrix() = default;
+    virtual ~ColoredBlockMatrix() = default;
 
 
   protected:
@@ -313,14 +317,13 @@ class ColoredBlockMatrix
      */
     std::vector<size_t> color_count_;
 
-  private:
-
     //! A datatype which stores the block_row the block_column
     //! and the mode where and how a cell should be modified.
     //! 'Mode' can have to values: true - 'transposed' and
     //! false - 'not transposed'
     typedef std::tuple<size_t, size_t, bool> grid_place_and_mode;
 
+  protected:
 
     /*
      * Add one matrix to several blocks at once.
@@ -435,6 +438,22 @@ class ColoredBlockMatrix
      * If not so it just throws.
      */
     void check_re_coloring_flags() const;
+
+    /*
+     * Check if input transposed state fits to the transposed state of the
+     * cell where the input should go. If not so: throw.
+     *
+     * TODO This is not perfect yet - actually the block matrix should be
+     * able to differ three cases per affected color:
+     *  - all input transp states match the cell transp states - just add!
+     *  - all input transp states do not match the cell transp states - transp and add!
+     *  - some input tranps states match, some don't - throw! for this will only work out in
+     *    symmetric structure cases on the TMatrix anyway and seems just not worth the effort...
+     *    and if there's different occurences of symmetric TMatrices, why store them
+     *    in different transposed states from the beginning?
+     */
+    void compare_transposed_mode(
+        std::vector<grid_place_and_mode>& row_column_transpose_tuples) const;
 
     /*!
      * Check if a given block fits into a given cell in the given transposed state.
@@ -621,10 +640,12 @@ class ColoredBlockMatrix
      *
      * write the matrix-vector product "Ax" to y if "A" is this matrix.
      *
+     * TODO override in ColoredBlockMatrixFE class, make use of template!
+     *
      * @param x the BlockVector which is multiplied by this matrix
      * @param y result of matrix-vector-multiplication
      */
-    void apply(const BlockVector & x, BlockVector & y) const;
+    virtual void apply(const BlockVector & x, BlockVector & y) const;
 
     /** @brief compute y = y + a * Ax
      *
@@ -636,6 +657,7 @@ class ColoredBlockMatrix
      * r = b;             // copy values from b to r
      * A.apply_scaled_add(x, r, -1.0);
      * cout << "Norm of residual " << r.norm() << endl;
+     *
      *
      * @param x the BlockVector which is multiplied by this matrix
      * @param y result of matrix-vector-multiplication
@@ -649,6 +671,9 @@ class ColoredBlockMatrix
      *         column
      */
     const TMatrix& block(const unsigned int r, const unsigned int c) const;
+
+  private:
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
 
 };
 
