@@ -71,7 +71,7 @@ void FEMatrix::scaleActive(double factor)
   // numer of entries in active rows
   int nActive = this->structure->getNActiveEntries();
   std::for_each(this->entries.begin(), this->entries.begin() + nActive,
-                 [factor](double & a){ return a*factor; } );
+                 [factor](double & a){ a = a*factor; } );
 }
 
 void FEMatrix::addActive(const FEMatrix& m, double factor)
