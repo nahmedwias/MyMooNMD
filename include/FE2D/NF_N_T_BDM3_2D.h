@@ -165,19 +165,19 @@ void NF_N_T_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double
       double cx, cy;
       cx = et[i];
       cy = xi[i];
-      Functionals[16] += (PointValues[15+i]*cx + PointValues[49+1]*cy) * iw[i];
+      Functionals[16] += (PointValues[15+i]*cx + PointValues[49+i]*cy) * iw[i];
       
       cx = xi[i] - xi[i]*xi[i] - 2*xi[i]*et[i];
       cy = -et[i] + 2*xi[i]*et[i] + et[i]*et[i];
-      Functionals[17] += (PointValues[15+i]*cx + PointValues[49+1]*cy) * iw[i];
+      Functionals[17] += (PointValues[15+i]*cx + PointValues[49+i]*cy) * iw[i];
       
       cx = xi[i]*xi[i] - xi[i]*xi[i]*xi[i] - 2*xi[i]*xi[i]*et[i];
       cy = -2*xi[i]*et[i] + 3*xi[i]*xi[i]*et[i] + 2*xi[i]*et[i]*et[i];
-      Functionals[18] += (PointValues[15+i]*cx + PointValues[49+1]*cy) * iw[i];
+      Functionals[18] += (PointValues[15+i]*cx + PointValues[49+i]*cy) * iw[i];
       
       cx = 2*xi[i]*et[i] - 2*xi[i]*xi[i]*et[i] - 3*xi[i]*et[i]*et[i];
       cy = -et[i]*et[i] + 2*xi[i]*et[i]*et[i] + et[i]*et[i]*et[i];
-      Functionals[19] += (PointValues[15+i]*cx + PointValues[49+1]*cy) * iw[i];
+      Functionals[19] += (PointValues[15+i]*cx + PointValues[49+i]*cy) * iw[i];
     }
   }
   else // on a real cell
