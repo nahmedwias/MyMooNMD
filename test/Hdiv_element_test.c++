@@ -174,6 +174,7 @@ int main(int argc, char* argv[])
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+    //domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare_US22");
     
     std::list<FE2D> elements = { N_RT0_2D_Q_M, N_RT1_2D_Q_M, N_RT2_2D_Q_M, 
                                  N_RT3_2D_Q_M, N_BDM1_2D_Q_M, N_BDM2_2D_Q_M,
