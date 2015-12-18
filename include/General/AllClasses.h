@@ -1,10 +1,6 @@
 #ifndef __ALLCLASSES__
 #define __ALLCLASSES__
 
-class TADICell;
-class TADICell1D;
-class TADISystem;
-class TADISystem1D;
 class TAuxParam2D;
 class TAuxParam3D;
 class TAssemble;
