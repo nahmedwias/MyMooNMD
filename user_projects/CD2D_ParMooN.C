@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
                     for (unsigned int l = 0; l < n_baseFunctions[element]; l++) {
                         // fe values of dofs
                         auto *DOF = cd2d.get_function().GetFESpace2D()->GetGlobalNumbers() + cd2d.get_function().GetFESpace2D()->GetBeginIndex()[cellIdx];
-                        eta_fct_values[DOF[l]] = estimator.GetEta_K()[cellIdx];
+                        eta_fct_values[DOF[l]] = sqrt(estimator.GetEta_K()[cellIdx]) / estimator.GetMaximalLocalError();
                     }
                 }
 
