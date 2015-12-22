@@ -9,7 +9,7 @@
 // =======================================================================
 
 // more explicit path due to name conflict with the 'triangle' library on mac
-#include <../Geometry/Triangle.h> 
+#include <../Geometry/Triangle.h>
 #include <Constants.h>
 #include <math.h>
 
