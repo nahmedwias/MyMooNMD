@@ -2,10 +2,15 @@ void ExampleFile() {
     OutPut("Example: disc_with_crack.h" << endl);
 }
 
+double atan2_2pi(double y, double x) {
+    double theta = atan2(y, x);
+    return theta > 0 ? theta : theta + 2 * Pi;
+    //return atan2(y,x)+Pi;
+}
+
 void ExactU1(double x, double y, double *values) {
     double r = sqrt(x * x + y * y);
-    double theta = atan(y / x);
-    values[0] = (3 * sqrt(r) / 2) * (cos(theta / 2) - cos(3 * theta / 2));
+    double theta = atan2_2pi(y, x);
     values[1] = (x / (2. * r * sqrt(r))) * (cos(theta / 2) - cos(3 * theta / 2)) + (y * sqrt(r) / (2 * r * r)) * (sin(theta / 2) - 3 * sin(3 * theta / 2));
     values[2] = (y / (2. * r * sqrt(r))) * (cos(theta / 2) - cos(3 * theta / 2)) + (x * sqrt(r) / (2 * r * r)) * (3 * sin(3 * theta / 2) - sin(theta / 2));
     double u1_xx = (x * y / (2 * r * r * r * sqrt(r))) * (sin(theta / 2) - 3 * sin(3 * theta / 2)) + ((1 / (2 * r * sqrt(r))) - 3 * x * x / (4 * r * r * r * sqrt(r))) * (cos(theta / 2) - cos(3 * theta / 2))
@@ -18,7 +23,7 @@ void ExactU1(double x, double y, double *values) {
 
 void ExactU2(double x, double y, double *values) {
     double r = sqrt(x * x + y * y);
-    double theta = atan(y / x);
+    double theta = atan2_2pi(y, x);
     values[0] = sqrt(r) * (3 * sin(theta / 2) - sin(3 * theta / 2));
     values[1] = (x / (2 * r * sqrt(r))) * (3 * sin(theta / 2) - sin(3 * theta / 2)) + (3 * y * sqrt(r) / (2 * r * r)) * (cos(3 * theta / 2) - cos(theta / 2));
     values[2] = (y / (2 * r * sqrt(r))) * (3 * sin(theta / 2) - sin(3 * theta / 2)) + (3 * x * sqrt(r) / (2 * r * r)) * (cos(theta / 2) - cos(3 * theta / 2));
@@ -34,10 +39,10 @@ void ExactU2(double x, double y, double *values) {
 
 void ExactP(double x, double y, double *values) {
     double r = sqrt(x * x + y * y);
-    double theta = atan(y / x);
-    values[0] = (-6 / (sqrt(r))) * cos(theta / 2);
-    values[1] = (3/(r*r*sqrt(r))) * (x*cos(theta/2) - y*sin(theta/2));
-    values[2] = (3/(r*r*sqrt(r))) * (x*sin(theta/2) - y*cos(theta/2));
+    double theta = atan2_2pi(y, x);
+    values[0] = (-4 / (sqrt(r))) * cos(theta / 2);
+    values[1] = (2 / (r * r * sqrt(r))) * (x * cos(theta / 2) - y * sin(theta / 2));
+    values[2] = (2 / (r * r * sqrt(r))) * (x * sin(theta / 2) - y * cos(theta / 2));
     values[3] = 0;
 }
 
@@ -47,6 +52,7 @@ void ExactP(double x, double y, double *values) {
 void BoundCondition(int i, double t, BoundCond &cond) {
     cond = DIRICHLET;
 }
+
 
 void U1BoundValue(int BdComp, double Param, double &value) {
     value = 0;
@@ -74,7 +80,32 @@ void U2BoundValue(int BdComp, double Param, double &value) {
 void LinCoeffs(int n_points, double *X, double *Y,
                double **parameters, double **coeffs) {
     const double nu = 1. / TDatabase::ParamDB->RE_NR;
+    double val1[4];
+    double val2[4];
+    double val3[4];
     for (int i = 0; i < n_points; i++) {
+
+        // check if derivatives make sense
+        {
+            ExactU1(X[i], Y[i], val1);
+            ExactU2(X[i], Y[i], val2);
+            ExactP(X[i], Y[i], val3);
+
+            double f1 = -nu * val1[3] + val3[1];
+            if (fabs(f1) > 1e16) {
+                cout << "wrong f1: " << f1 << endl;
+            }
+            double f2 = -nu * val2[3] + val3[2];
+            if (fabs(f2) > 1e16) {
+                cout << "wrong f1: " << f2 << endl;
+            }
+
+            double div = val1[1] + val2[2];
+            if (fabs(div) > 1e16) {
+                cout << "wrong div = " << div << endl;
+            }
+        }
+
         coeffs[i][0] = nu;
         coeffs[i][1] = 0; // f1
         coeffs[i][2] = 0; // f2
