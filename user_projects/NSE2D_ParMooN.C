@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
                 }
             }
 
-            // create an object of the Naviert-Stokes class
+            // create an object of the Navier-Stokes class
             NSE2D ns(Domain, example);
             ns.assemble();
             // if solution was not zero up to here, you should call
@@ -124,6 +124,10 @@ int main(int argc, char* argv[])
                 ns.get_pressure().project_into_L20(0.0);
 
             ns.output(curr_level);
+
+            double pmin, pmax;
+            ns.get_pressure().MinMax(pmin, pmax);
+            Output::print<1>("pmin ", pmin, " pmax ", pmax);
 
             {
                 estimator.estimate(ns.get_velocity(), ns.get_pressure(), aux);
