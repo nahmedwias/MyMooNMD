@@ -23,7 +23,7 @@ BlockMatrixNSE2D::BlockMatrixNSE2D(const TFESpace2D& velocity,
                                    const TFESpace2D& pressure,
                                    BoundValueFunct2D * const * const BoundValue,
                                    bool massMatrix)
-    : BlockMatrix(Problem_type::NavierStokes, 2, massMatrix),
+    : BlockFEMatrix(Problem_type::NavierStokes, 2, massMatrix),
       boundary_values({{BoundValue[0], BoundValue[1], BoundValue[2]}})
 {
   // build matrices
@@ -273,7 +273,7 @@ void BlockMatrixNSE2D::Assemble(LocalAssembling2D& la, BlockVector& rhs,
       if(TDatabase::ParamDB->NSTYPE == 14)
       {
         n_sq_mat += 1;
-        sq_matrices[6] = this->get_C_block();
+        sq_matrices[4] = this->get_C_block();
       }
     }
   }
@@ -669,25 +669,6 @@ void BlockMatrixNSE2D::addScaledActive(const BlockMatrixNSE2D& A, double factor)
       break;
     default:
       ErrThrow("NSETYPE must be either 1, 2, 3, or 4! ");
-  }
-}
-
-/** ************************************************************************ */
-const TFESpace2D* BlockMatrixNSE2D::get_space_of_block(unsigned int b,
-                                                       bool test) const
-{
-  unsigned int space_index = 0;
-  if(test)
-    space_index = this->block_pattern->test_space_index_of_block(b);
-  else
-    space_index = this->block_pattern->ansatz_space_index_of_block(b);
-  if(space_index == 0)
-    return this->get_velocity_space();
-  else if(space_index == 1)
-    return this->get_pressure_space();
-  else
-  {
-    ErrThrow("could not find space for block ", b);
   }
 }
 

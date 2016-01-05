@@ -39,7 +39,7 @@ Darcy2D::Darcy2D(const TDomain& domain, int reference_id)
 /** ************************************************************************ */
 Darcy2D::Darcy2D(const TDomain& domain, const Example_Darcy2D& ex, 
                  int reference_id)
- : systems(), example(ex), multigrid(nullptr)
+ : systems(), example(ex), multigrid(nullptr), errors()
 {
   // make sure all parameters in the database are set consistently
   this->set_parameters();
@@ -173,25 +173,59 @@ void Darcy2D::output(int i)
   {
     DoubleFunct2D *const *Exact = &(example.get_exact())[0];
     ErrorMethod2D *L2DivH1 = L2DivH1Errors;
-    double errors[6];
-    s.u.GetErrorsForVectorValuedFunction(Exact, L2DivH1, errors);
+    // unfortunatly this needs to be longer than one would expect. This is 
+    // because TFEFunction2D::GetErrors needs this array to be of size
+    // N_Errors+1 (here 2+1).
+    std::array<double, 6> errors;
+    s.u.GetErrorsForVectorValuedFunction(Exact, L2DivH1, errors.data());
     
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
     const TFESpace2D * pointer_to_p_space = &s.pressure_space;
     s.p.GetErrors(example.get_exact(2), 3, AllDerivatives, 2, L2H1Errors,
                   example.get_coeffs(), &aux, 1, &pointer_to_p_space,
-                  errors + 3);
+                  errors.data() + 3);
 
     Output::print<1>(" L2(u):      ", errors[0]);
     Output::print<1>(" L2(div(u)): ", errors[1]);
     Output::print<1>(" H1-semi(u): ", errors[2]);
     Output::print<1>(" L2(p):      ", errors[3]);
     Output::print<1>(" H1-semi(p): ", errors[4]);
+    
+    // copy 
+    std::copy(errors.begin(), errors.end()-1, this->errors.begin());
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
 
 /** ************************************************************************ */
+double Darcy2D::getL2VelocityError() const
+{
+  return this->errors[0];
+}
+
+/** ************************************************************************ */
+double Darcy2D::getL2DivergenceError() const
+{
+  return this->errors[1];
+}
+
+/** ************************************************************************ */
+double Darcy2D::getH1SemiVelocityError() const
+{
+  return this->errors[2];
+}
+
+/** ************************************************************************ */
+double Darcy2D::getL2PressureError() const
+{
+  return this->errors[3];
+}
+
+/** ************************************************************************ */
+double Darcy2D::getH1SemiPressureError() const
+{
+  return this->errors[4];
+}
 
 
 

@@ -1,77 +1,144 @@
-/*
-    TNodalFunctional2D(NodalFunctional2D id,
-                       int n_allfunctionals, int n_edgefunctionals,
-                       int n_pointsall, int n_pointsedge,
-                       double *xi, double *eta, double *t,
-                       DoubleFunctVect *evalall,
-                       DoubleFunctVect *evaledge);
-  used function names in this file must be unique in the entire program. 
-  -> use the identifier as prefix
-*/
+// Third order Brezzi-Douglas-Marini vector element, nonconforming, 2D
 
-static double NF_N_Q_BDM3_2D_a = sqrt(2. + sqrt(2.))/2.;
-static double NF_N_Q_BDM3_2D_b = sqrt(2. - sqrt(2.))/2.;
-static double NF_N_Q_BDM3_2D_c = sqrt(3./4.);
-static double NF_N_Q_BDM3_2D_d = 1./sqrt(2.);
+// points for 1D Gauss quadrature with five points (symmetric)
+static double NF_N_Q_BDM3_2D_q[5] =
+{ -sqrt(5. + 2.*sqrt(10./7.)) / 3., -sqrt(5. - 2.*sqrt(10./7.)) / 3., 0.,
+   sqrt(5. - 2.*sqrt(10./7.)) / 3.,  sqrt(5. + 2.*sqrt(10./7.)) / 3. };
+// weights for the 1D Gauss quadrature with five points
+static double NF_N_Q_BDM3_2D_w[5] = 
+{ (322. - 13.*sqrt(70.))/900., (322. + 13.*sqrt(70.))/900., 128./225.,
+  (322. + 13.*sqrt(70.))/900., (322. - 13.*sqrt(70.))/900. };
+// P_2(x) with P_2 being the second Legendre polynomial and x the Gauss 
+// quadrature // points from above
+static double NF_N_Q_BDM3_2D_p2[5] = 
+ { 0.5*(3*NF_N_Q_BDM3_2D_q[0]*NF_N_Q_BDM3_2D_q[0] - 1.), 
+   0.5*(3*NF_N_Q_BDM3_2D_q[1]*NF_N_Q_BDM3_2D_q[1] - 1.),
+   0.5*(3*NF_N_Q_BDM3_2D_q[2]*NF_N_Q_BDM3_2D_q[2] - 1.),
+   0.5*(3*NF_N_Q_BDM3_2D_q[3]*NF_N_Q_BDM3_2D_q[3] - 1.),
+   0.5*(3*NF_N_Q_BDM3_2D_q[4]*NF_N_Q_BDM3_2D_q[4] - 1.) };
+// P_3(x) with P_3 being the third Legendre polynomial and x the Gauss 
+// quadrature // points from above
+static double NF_N_Q_BDM3_2D_p3[5] = 
+{ 0.5*( 5.*NF_N_Q_BDM3_2D_q[0]*NF_N_Q_BDM3_2D_q[0]*NF_N_Q_BDM3_2D_q[0] 
+       -3.*NF_N_Q_BDM3_2D_q[0]),
+  0.5*( 5.*NF_N_Q_BDM3_2D_q[1]*NF_N_Q_BDM3_2D_q[1]*NF_N_Q_BDM3_2D_q[1] 
+       -3.*NF_N_Q_BDM3_2D_q[1]),
+  0.5*( 5.*NF_N_Q_BDM3_2D_q[2]*NF_N_Q_BDM3_2D_q[2]*NF_N_Q_BDM3_2D_q[2] 
+       -3.*NF_N_Q_BDM3_2D_q[2]),
+  0.5*( 5.*NF_N_Q_BDM3_2D_q[3]*NF_N_Q_BDM3_2D_q[3]*NF_N_Q_BDM3_2D_q[3] 
+       -3.*NF_N_Q_BDM3_2D_q[3]),
+  0.5*( 5.*NF_N_Q_BDM3_2D_q[4]*NF_N_Q_BDM3_2D_q[4]*NF_N_Q_BDM3_2D_q[4] 
+       -3.*NF_N_Q_BDM3_2D_q[4]),
+};
 
 static double NF_N_Q_BDM3_2D_Xi[] = 
-{ -NF_N_Q_BDM3_2D_a,-NF_N_Q_BDM3_2D_b, NF_N_Q_BDM3_2D_b, NF_N_Q_BDM3_2D_a,
-  1, 1,1,1,
-  NF_N_Q_BDM3_2D_a,NF_N_Q_BDM3_2D_b,-NF_N_Q_BDM3_2D_b,-NF_N_Q_BDM3_2D_a,
-  -1,-1,-1,-1,
-  -NF_N_Q_BDM3_2D_c, 0, NF_N_Q_BDM3_2D_c,
-  -NF_N_Q_BDM3_2D_c , 0 , NF_N_Q_BDM3_2D_c
+{ 
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  1, 1, 1, 1, 1,
+  
+NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[3],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[1],
+  NF_N_Q_BDM3_2D_q[0],
+  -1, -1, -1, -1, -1,
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
 };
 static double NF_N_Q_BDM3_2D_Eta[] = 
-{
-  -1,-1,-1,-1,
-  -NF_N_Q_BDM3_2D_a,-NF_N_Q_BDM3_2D_b,NF_N_Q_BDM3_2D_b,NF_N_Q_BDM3_2D_a,
-  1,1, 1, 1,
-  NF_N_Q_BDM3_2D_a, NF_N_Q_BDM3_2D_b,-NF_N_Q_BDM3_2D_b,-NF_N_Q_BDM3_2D_a,
-  NF_N_Q_BDM3_2D_d, NF_N_Q_BDM3_2D_d, NF_N_Q_BDM3_2D_d,
-  -NF_N_Q_BDM3_2D_d , -NF_N_Q_BDM3_2D_d ,-NF_N_Q_BDM3_2D_d
+{ -1, -1, -1, -1, -1,
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[4],
+  1, 1, 1, 1, 1,
+  
+NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[3],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[1],
+  NF_N_Q_BDM3_2D_q[0],
+  
+NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[0],NF_N_Q_BDM3_2D_q[0],
+  NF_N_Q_BDM3_2D_q[0],
+  
+NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[1],NF_N_Q_BDM3_2D_q[1],
+  NF_N_Q_BDM3_2D_q[1],
+  
+NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[2],NF_N_Q_BDM3_2D_q[2],
+  NF_N_Q_BDM3_2D_q[2],
+  
+NF_N_Q_BDM3_2D_q[3],NF_N_Q_BDM3_2D_q[3],NF_N_Q_BDM3_2D_q[3],NF_N_Q_BDM3_2D_q[3],
+  NF_N_Q_BDM3_2D_q[3],
+  
+NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],
+  NF_N_Q_BDM3_2D_q[4],
 };
-// NOTE: If you want to use other evaluation points for degress of freedom on
-// the edges of a cell, you also have to change basis functions in 
-// BF_N_Q_BDM3_2D.h
-//static double NF_N_Q_BDM3_2D_T[] = {-0.6,-0.2,0.2,0.6};// equidistant points
-//static double NF_N_Q_BDM3_2D_T[] = {-0.8611363116, -0.3399810436, 0.3399810436, 0.8611363116};//Gauss-points
-static double NF_N_Q_BDM3_2D_T[] = { -0.923879532511287,  -0.382683432365090,   0.382683432365090,   0.923879532511287};//Tschebyscheff-points
+
 
 void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
                           double *Functionals)
 {
+  // short names
+  const double * q = NF_N_Q_BDM3_2D_q;
+  const double * w = NF_N_Q_BDM3_2D_w;
+  const double * p2 = NF_N_Q_BDM3_2D_p2;
+  const double * p3 = NF_N_Q_BDM3_2D_p3;
+  
+  // set all Functionals to zero intitially
+  for(unsigned int i = 0; i < 22; ++i)
+    Functionals[i] = 0.;
+  
   // on the reference cell [-1,1]^2
   if(Cell == nullptr)
   {
-    Functionals[0] = -2*PointValues[22];
-    Functionals[1] = -2*PointValues[23];
-    Functionals[2] = -2*PointValues[24];
-    Functionals[3] = -2*PointValues[25];
-    
-    Functionals[4] = 2*PointValues[4];
-    Functionals[5] = 2*PointValues[5];
-    Functionals[6] = 2*PointValues[6];
-    Functionals[7] = 2*PointValues[7];
-    
-    Functionals[8] = 2*PointValues[30];
-    Functionals[9] = 2*PointValues[31];
-    Functionals[10]= 2*PointValues[32];
-    Functionals[11]= 2*PointValues[33];
-    
-    Functionals[12]= -2*PointValues[12];
-    Functionals[13]= -2*PointValues[13];
-    Functionals[14]= -2*PointValues[14];
-    Functionals[15]= -2*PointValues[15];
-    
-    Functionals[16]= PointValues[16];
-    Functionals[17]= PointValues[39];
-    
-    Functionals[18]= PointValues[18];
-    Functionals[19]= PointValues[41];
-    
-    Functionals[20]= PointValues[20];
-    Functionals[21]= PointValues[43];
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+      // first edge
+      Functionals[0] -= PointValues[45+i] * w[i];
+      Functionals[1] -= PointValues[45+i] * w[i] * q[i];
+      Functionals[2] -= PointValues[45+i] * w[i] * p2[i];
+      Functionals[3] -= PointValues[45+i] * w[i] * p3[i];
+      // second edge
+      Functionals[4] += PointValues[5+i] * w[i];
+      Functionals[5] += PointValues[5+i] * w[i] * q[i];
+      Functionals[6] += PointValues[5+i] * w[i] * p2[i];
+      Functionals[7] += PointValues[5+i] * w[i] * p3[i];
+      // third edge
+      Functionals[8]  += PointValues[55+i] * w[i];
+      Functionals[9]  += PointValues[55+i] * w[i] * q[i];
+      Functionals[10] += PointValues[55+i] * w[i] * p2[i];
+      Functionals[11] += PointValues[55+i] * w[i] * p3[i];
+      // fourth edge
+      Functionals[12] -= PointValues[15+i] * w[i];
+      Functionals[13] -= PointValues[15+i] * w[i] * q[i];
+      Functionals[14] -= PointValues[15+i] * w[i] * p2[i];
+      Functionals[15] -= PointValues[15+i] * w[i] * p3[i];
+      
+      // inner dofs
+      double pvx, pvy; // PointValues, x and y component
+      for(unsigned int j = 0; j < 5; ++j)
+      {
+        pvx = PointValues[20+i*5+j];
+        pvy = PointValues[65+i*5+j];
+        // test with (1 0)^T and (0 1)^T
+        Functionals[16] += pvx * w[i]*w[j];
+        Functionals[17] += pvy * w[i]*w[j];
+        // test with (x 0)^T and (0 x)^T
+        Functionals[18] += pvx * w[i]*w[j] * q[j];
+        Functionals[19] += pvy * w[i]*w[j] * q[j];
+        // test with (y 0)^T and (0 y)^T
+        Functionals[20] += pvx * w[i]*w[j] * q[i];
+        Functionals[21] += pvy * w[i]*w[j] * q[i];
+      }
+    }
   }
   else
   {
@@ -97,33 +164,61 @@ void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
     // first edge:
     nx = y1 - y0;
     ny = x0 - x1;
-    Functionals[0] = PointValues[0]*nx + PointValues[22]*ny;
-    Functionals[1] = PointValues[1]*nx + PointValues[23]*ny;
-    Functionals[2] = PointValues[2]*nx + PointValues[24]*ny;
-    Functionals[3] = PointValues[3]*nx + PointValues[25]*ny;
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+      Functionals[0] += (PointValues[i]*nx + PointValues[45+i]*ny)*w[i];
+      Functionals[1] += (PointValues[i]*nx + PointValues[45+i]*ny)*w[i] * q[i];
+      Functionals[2] += (PointValues[i]*nx + PointValues[45+i]*ny)*w[i] * p2[i];
+      Functionals[3] += (PointValues[i]*nx + PointValues[45+i]*ny)*w[i] * p3[i];
+    }
+    Functionals[0] *= 0.5*Cell->GetNormalOrientation(0);
+    Functionals[1] *= 0.5; // Cell->GetNormalOrientation(0);
+    Functionals[2] *= 0.5*Cell->GetNormalOrientation(0);
+    Functionals[3] *= 0.5; // Cell->GetNormalOrientation(0);
     
     // second edge:
     nx = y2 - y1;
     ny = x1 - x2;
-    Functionals[4] = PointValues[4]*nx + PointValues[26]*ny;
-    Functionals[5] = PointValues[5]*nx + PointValues[27]*ny;
-    Functionals[6] = PointValues[6]*nx + PointValues[28]*ny;
-    Functionals[7] = PointValues[7]*nx + PointValues[29]*ny;
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+      Functionals[4] += (PointValues[5+i]*nx + PointValues[50+i]*ny)*w[i];
+      Functionals[5] += (PointValues[5+i]*nx + PointValues[50+i]*ny)*w[i]*q[i];
+      Functionals[6] += (PointValues[5+i]*nx + PointValues[50+i]*ny)*w[i]*p2[i];
+      Functionals[7] += (PointValues[5+i]*nx + PointValues[50+i]*ny)*w[i]*p3[i];
+    }
+    Functionals[4] *= 0.5*Cell->GetNormalOrientation(1);
+    Functionals[5] *= 0.5; // Cell->GetNormalOrientation(1);
+    Functionals[6] *= 0.5*Cell->GetNormalOrientation(1);
+    Functionals[7] *= 0.5; // Cell->GetNormalOrientation(1);
     
     // third edge:
     nx = y3 - y2;
     ny = x2 - x3;
-    Functionals[8] = PointValues[8]*nx + PointValues[30]*ny;
-    Functionals[9] = PointValues[9]*nx + PointValues[31]*ny;
-    Functionals[10]= PointValues[10]*nx+ PointValues[32]*ny;
-    Functionals[11]= PointValues[11]*nx+ PointValues[33]*ny;
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+      Functionals[8] += (PointValues[10+i]*nx+ PointValues[55+i]*ny)*w[i];
+      Functionals[9] += (PointValues[10+i]*nx+ PointValues[55+i]*ny)*w[i]*q[i];
+      Functionals[10]+= (PointValues[10+i]*nx+ PointValues[55+i]*ny)*w[i]*p2[i];
+      Functionals[11]+= (PointValues[10+i]*nx+ PointValues[55+i]*ny)*w[i]*p3[i];
+    }
+    Functionals[8] *= 0.5*Cell->GetNormalOrientation(2);
+    Functionals[9] *= 0.5; // Cell->GetNormalOrientation(2);
+    Functionals[10]*= 0.5*Cell->GetNormalOrientation(2);
+    Functionals[11]*= 0.5; // Cell->GetNormalOrientation(2);
     
     nx = y0 - y3;
     ny = x3 - x0;
-    Functionals[12]= PointValues[12]*nx+ PointValues[34]*ny;
-    Functionals[13]= PointValues[13]*nx+ PointValues[35]*ny;
-    Functionals[14]= PointValues[14]*nx+ PointValues[36]*ny;
-    Functionals[15]= PointValues[15]*nx+ PointValues[37]*ny;
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+      Functionals[12]+= (PointValues[15+i]*nx+ PointValues[60+i]*ny)*w[i];
+      Functionals[13]+= (PointValues[15+i]*nx+ PointValues[60+i]*ny)*w[i]*q[i];
+      Functionals[14]+= (PointValues[15+i]*nx+ PointValues[60+i]*ny)*w[i]*p2[i];
+      Functionals[15]+= (PointValues[15+i]*nx+ PointValues[60+i]*ny)*w[i]*p3[i];
+    }
+    Functionals[12]*= 0.5*Cell->GetNormalOrientation(3);
+    Functionals[13]*= 0.5; // Cell->GetNormalOrientation(3);
+    Functionals[14]*= 0.5*Cell->GetNormalOrientation(3);
+    Functionals[15]*= 0.5; // Cell->GetNormalOrientation(3);
     
     // the measure of the cell multiplied by the inverse measure of the 
     // refernce cell
@@ -138,26 +233,31 @@ void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
     // its gradient is (1,0) which is the vector with which we multiply to get
     // the correct dof
     
-    for(unsigned int i = 0; i < 3; ++i)
+    // the dofs:
+    // int_cell v . (1 0)^T 
+    // int_cell v . (0 1)^T 
+    // int_cell v . (x 0)^T
+    // int_cell v . (0 x)^T
+    // int_cell v . (y 0)^T
+    // int_cell v . (0 y)^T
+    for(unsigned int i = 0; i < 25; ++i) // loop over inner quadrature points
     {
-      double uref = 0., uxiref = 1., uetaref = 0., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_BDM3_2D_Xi[16+2*i], 
-                                       NF_N_Q_BDM3_2D_Eta[16+2*i], 1, &uref, 
-                                       &uxiref, &uetaref, &uorig, &uxorig, 
-                                       &uyorig);
-      Functionals[16+2*i] = ( PointValues[16+2*i]*uxorig 
-                             +PointValues[38+2*i]*uyorig) * measure;
+      double x = NF_N_Q_BDM3_2D_Xi[20+i], y = NF_N_Q_BDM3_2D_Eta[20+i];
+      double uxi[6] = {  1,0,  x,0,  y,0 };
+      double ueta[6] = { 0,1,  0,x,  0,y };
+      for(unsigned int d = 0; d < 6; ++d) // inner dofs
+      {
+        double uref = 0., uxiref = uxi[d], uetaref = ueta[d];
+        double uorig, uxorig, uyorig;
+        referenceTransform.GetOrigValues(x, y, 1, &uref, &uxiref, &uetaref, 
+                                         &uorig, &uxorig, &uyorig);
+        Functionals[16+d] += ( PointValues[20+i]*uxorig
+                              +PointValues[65+i]*uyorig ) * w[i%5] * w[i/5];
+      }
     }
-    // dofs in x-direction (x meaning in reference cell)
-    for(unsigned int i = 0; i < 3; ++i)
+    for(unsigned int d = 0; d < 6; ++d) 
     {
-      double uref = 0., uxiref = 0., uetaref = 1., uorig, uxorig, uyorig;
-      referenceTransform.GetOrigValues(NF_N_Q_BDM3_2D_Xi[17+2*i], 
-                                       NF_N_Q_BDM3_2D_Eta[17+2*i], 1, &uref, 
-                                       &uxiref, &uetaref, &uorig, &uxorig, 
-                                       &uyorig);
-      Functionals[17+2*i] = ( PointValues[17+2*i]*uxorig
-                             +PointValues[39+2*i]*uyorig) * measure;
+      Functionals[16+d] *= measure;
     }
   }
 }
@@ -165,33 +265,31 @@ void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
 void NF_N_Q_BDM3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
                            double *Functionals)
 {
-// this is needed for setting boundary conditions.
-  /* the functionals
-   * int_Joint v.n q_1  and  int_Joint v.n q_2  and  int_Joint v.n q_3
-   * (q_1, q2 and q_3 are two linearly independent polynomials of degree 2)
-   * will be multiplied by the length of the Joint (edge). Otherwise one would
-   * ensure int_Joint v.n=PointValues[0]. 
-   * Example: If you would like to have u.n=1, then without multiplying by 
-   *          the edge length l would result in having int_Joint u.n=1 on each
-   *          boundary edge. This would mean one gets u.n=1/l on that 
-   *          boundary. To avoid this, we introduce the factor l here. 
-   * However I am not sure if this causes trouble elsewhere later. 
-   * Be carefull!
-   *                                            Ulrich Wilbrandt, 11.05.2012
-  */
-  double l; // length of joint
-  double x0,x1,y0,y1;
   #ifdef __2D__
-  Cell->GetVertex(Joint)->GetCoords(x0,y0);
-  Cell->GetVertex((Joint+1)%4)->GetCoords(x1,y1);// 4=number of edges
+  Functionals[0] = 0.;
+  Functionals[1] = 0.;
+  Functionals[2] = 0.;
+  Functionals[3] = 0.;
+  for(unsigned int i = 0; i < 5; ++i)
+  {
+    double pv = PointValues[i];
+    Functionals[0] += pv * NF_N_Q_BDM3_2D_w[i];
+    Functionals[1] += pv * NF_N_Q_BDM3_2D_w[i] * NF_N_Q_BDM3_2D_q[i];
+    Functionals[2] += pv * NF_N_Q_BDM3_2D_w[i] * NF_N_Q_BDM3_2D_p2[i];
+    Functionals[3] += pv * NF_N_Q_BDM3_2D_w[i] * NF_N_Q_BDM3_2D_p3[i];
+  }
+  double x0, x1, y0, y1;
+  Cell->GetVertex(Joint)->GetCoords(x0, y0);
+  Cell->GetVertex((Joint+1)%4)->GetCoords(x1, y1);// 4=number of edges
+  // length of joint, 0.5 due to 1D-reference cell having measure 2
+  double l = 0.5*sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
+  Functionals[0] *= l;
+  Functionals[1] *= l;
+  Functionals[2] *= l;
+  Functionals[3] *= l;
   #endif
-  l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
-  Functionals[0] = PointValues[0]*l;
-  Functionals[1] = PointValues[1]*l;
-  Functionals[2] = PointValues[2]*l;
-  Functionals[3] = PointValues[3]*l;
 }
 
 TNodalFunctional2D *NF_N_Q_BDM3_2D_Obj = new TNodalFunctional2D
-        (NF_N_Q_BDM3_2D, 22, 4, 22, 4, NF_N_Q_BDM3_2D_Xi, NF_N_Q_BDM3_2D_Eta,
-         NF_N_Q_BDM3_2D_T, NF_N_Q_BDM3_2D_EvalAll, NF_N_Q_BDM3_2D_EvalEdge);
+        (NF_N_Q_BDM3_2D, 22, 4, 45, 5, NF_N_Q_BDM3_2D_Xi, NF_N_Q_BDM3_2D_Eta,
+         NF_N_Q_BDM3_2D_q, NF_N_Q_BDM3_2D_EvalAll, NF_N_Q_BDM3_2D_EvalEdge);

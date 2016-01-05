@@ -56,11 +56,21 @@ bool CheckFEOnCell(const TFE2D &hdiv_fe, TBaseCell & cell,
   bool ret = true;
   for(int k = 0; k < nDof; k++)
   {
+    // if this dof is on an edge it must be multiplied with -1 if this cell 
+    // index is larger than that of the neighbor at this edge
+    int factor = 1;
+    // the joint this dof is on (-1 for inner dofs)
+    int joint = hdiv_fe.GetFEDesc2D()->GetJointOfThisDOF(k);
+    if(joint != -1) // if this dof is not an inner dof
+    {
+      factor = cell.GetNormalOrientation(joint);
+    }
+    
     for(int l = 0; l < N_Points; l++)
     {
       for(int i = 0; i < baseVectDim; ++i)
       {
-        PointValues[l + i * N_Points] = uorig[l][k + i*nDof];
+        PointValues[l + i * N_Points] = factor * uorig[l][k + i*nDof];
       }
     }
     
@@ -92,7 +102,6 @@ bool CheckFEOnCell(const TFE2D &hdiv_fe, TBaseCell & cell,
       break;
   }
   
-  
   return ret;
 }
 
@@ -104,7 +113,7 @@ bool check(TDomain & domain, const std::list<FE2D>& elements)
 {
   unsigned int nRefinements = 3;
   // refine grid up to the coarsest level
-  for(int i = 0; i < nRefinements; i++)
+  for(unsigned int i = 0; i < nRefinements; i++)
   {
     domain.RegRefineAll();
   }
@@ -156,7 +165,8 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // test with quads
+  Output::print("************************************************************");
+  Output::print("\ntest with quads");
   {
     // default construct a domain object
     TDomain domain;
@@ -164,6 +174,7 @@ int main(int argc, char* argv[])
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+    //domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare_US22");
     
     std::list<FE2D> elements = { N_RT0_2D_Q_M, N_RT1_2D_Q_M, N_RT2_2D_Q_M, 
                                  N_RT3_2D_Q_M, N_BDM1_2D_Q_M, N_BDM2_2D_Q_M,
@@ -172,7 +183,9 @@ int main(int argc, char* argv[])
     if(!check(domain, elements))
       return 1;
   }
-  // test with triangles
+  
+  Output::print("************************************************************");
+  Output::print("test with triangles");
   {
     // default construct a domain object
     TDomain domain;

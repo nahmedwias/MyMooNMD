@@ -1,14 +1,5 @@
-// ***********************************************************************
-// Q0 Raviart-Thomas vector element, nonconforming , 2D
-// History:  10.06.2010 implementation (Sashi)
-//           01.07.2010 modification (Alfonso)
-// ***********************************************************************
+// First order Raviart-Thomas vector element on quads, nonconforming, 2D
 
-// base function values
-// vector function, orthoonal to edges, 
-// function i has 
-//  * flux 1 through edge i 
-//  * flux 0 through other edges
 static void N_Q_RT0_2D_Funct(double xi, double eta, double *values)
 {
   // first component

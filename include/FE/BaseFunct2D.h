@@ -52,7 +52,7 @@ class TBaseFunct2D
 
     /** indices of basis functions with changeable sign,
         sorted by joints */
-    int **BF2Change;    
+    int const * const * BF2Change;    
  
     /** Dimension of the vector basis function */
     int BaseVectDim;
@@ -73,7 +73,7 @@ class TBaseFunct2D
                  int polynomialdegree,
                  int accuracy,
                  int n_bf2change,
-                 int **bf2change
+                 int const * const * bf2change
                 );
 
     /** constructor, fill in all information  with scalar basis function dimension*/
@@ -88,7 +88,7 @@ class TBaseFunct2D
                  int polynomialdegree,
                  int accuracy,
                  int n_bf2change,
-                 int **bf2change,
+                 int const * const * bf2change,
                  int baseVectDim
                 );
 
@@ -104,7 +104,7 @@ class TBaseFunct2D
                  int polynomialdegree,
                  int accuracy,
                  int n_bf2change,
-                 int **bf2change,
+                 int const * const * bf2change,
                  bool spaceDeptBasis
                 );
 
@@ -175,7 +175,7 @@ class TBaseFunct2D
       { return N_BF2Change; }
 
     /** return array with basis function indices */
-    int **GetBF2Change() const
+    int const * const * GetBF2Change() const
       { return BF2Change; }
 
     /** change basis functions on cell if needed */

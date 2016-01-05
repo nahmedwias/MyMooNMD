@@ -23,11 +23,12 @@
 #define __SYSTEMMATSCALAR3D__
 
 #include <BlockVector.h>
+#include <BlockFEMatrix.h>
 #include <SquareMatrix3D.h>
 #include <LocalAssembling3D.h>
 
 /**@brief Class for 3D scalar system matrix. */
-class BlockMatrixCD3D : public BlockMatrix
+class BlockMatrixCD3D : public BlockFEMatrix
 {
   protected:
 
@@ -101,16 +102,6 @@ class BlockMatrixCD3D : public BlockMatrix
     /** @brief return the finite element space, but non-const */
     const TFESpace3D * get_fe_space()
     { return this->get_matrix()->GetFESpace3D(); }
-
-
-    /** @brief return the fe_space
-     *
-     * This is implemented such that
-     * BlockVector::BlockVector<BlockMatrixCD3D>(const BlockMatrixCD3D& , bool)
-     * works.
-     */
-    const TFESpace3D * get_space_of_block(unsigned int b, bool test) const
-    { return this->get_fe_space(); }
 
 };
 

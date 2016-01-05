@@ -213,13 +213,13 @@ void BlockVector::print(const std::string name, const int iB) const
   if(iB < 0)
   { // print full BlockVector
     for (unsigned int i = 0, l = this->length(); i < l; i++) 
-      OutPut(name << "(" << i+1 << ")= " << this->at(i) << ";\n");
+      Output::print(name , "(" , i+1 , ")= " , this->at(i) , ";");
   }
   else if((unsigned int)iB < lengths.size())
   {
     const double *myBlock = this->block(iB);
     for (unsigned int i = 0; i < this->lengths[iB]; i++) 
-      OutPut(name << "(" << i+1 << ")= " << myBlock[i] << ";\n");
+      Output::print(name ,"(" , i+1 , ")= " , myBlock[i] ,";");
   }
   else
     ErrThrow("trying to print subvector ", iB, " which does not exist");

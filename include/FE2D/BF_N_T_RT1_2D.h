@@ -1,63 +1,15 @@
-// ***********************************************************************
-// P1 Raviart-Thomas vector element, nonconforming , 2D
-// History:  17.10.2011 implementation (Ulrich)
-// ***********************************************************************
+// First order Raviart-Thomas vector element, nonconforming, 2D
 
-// base function values
-// vector function, orthonormal to edges, 
-// functions 1 and 2 are orthogonal to edge 1
-// functions 3 and 4 are orthogonal to edge 2
-// functions 5 and 6 are orthogonal to edge 3
-// functions 7 and 8 correspond to inner degrees of freedom
-
-// coefficient matrix
-// using equidistant points on edges and integral evaluation for inner dofs
-/*static double N_T_RT1_2D_CM[64] = { 
-  0, 0, 0, 0, 1,-2, 0,  0,
- -2, 1, 0, 0, 0, 0, 0,  0,
-  3,-2,-2,-1,-1, 6, 16, 8,
-  3,-3, 0, 0, 0, 0, 0,  0,
-  0, 0, 0, 0,-3, 3, 0,  0,
-  6,-1,-1,-2,-2, 3, 8,  16,
- -4, 4, 4, 0, 0,-4,-16,-8,
- -4, 0,-0, 4, 4,-4,-8, -16
-};*/
-/*
-// using Gauss-Points on edges and integral evaluation for inner dofs
-static double N_T_RT1_2D_CM[64] = { // using Gauss-Points
-0,0,0,0,0.3660254,-1.3660254,0,0,
--1.3660254,0.3660254,0,0,0,0,0,0,
-1.94337567,-0.94337567,-1.78867513,-1.21132487,0.47927406,4.52072594,16,8,
-1.73205081,-1.73205081,0,0,0,0,0,0,
-0,0,0,0,-1.73205081,1.73205081,0,0,
-4.52072594,0.47927406,-1.21132487,-1.78867513,-0.94337567,1.94337567,8,16,
--2.30940108,2.30940108,3.15470054,0.84529946,-0.84529946,-3.15470054,-16,-8,
--3.15470054,-0.84529946,0.84529946,3.15470054,2.30940108,-2.30940108,-8,-16
-};
-*/
-/*
-// using Tschebyscheff-points on edges and integral evaluation for inner dofs
-static double N_T_RT1_2D_CM[64] = { 
-0,0,0,0,0.20710678,-1.20710678,0,0,
--1.20710678,0.20710678,-0,-0,-0,0,0,0,
-1.6785113,-0.6785113,-1.73570226,-1.26429774,0.85008418,4.14991582,16,8,
-1.41421356,-1.41421356,0,0,0,-0,-0,-0,
-0,0,0,0,-1.41421356,1.41421356,0,0,
-4.14991582,0.85008418,-1.26429774,-1.73570226,-0.6785113,1.6785113,8,16,
--1.88561808,1.88561808,2.94280904,1.05719096,-1.05719096,-2.94280904,-16,-8,
--2.94280904,-1.05719096,1.05719096,2.94280904,1.88561808,-1.88561808,-8,-16
-};
-*/
-// using Tschebyscheff-points on edges and point evaluation for inner dofs
+// coefficient matrix for the degrees of freedom
 static double N_T_RT1_2D_CM[64] = {
-0,0,0,0,0.2071067812,-1.2071067812,0,0,
--1.2071067812,0.2071067812,0,0,0,0,0,0,
-1.2071067812,-0.2071067812,-1,-1,0.5857864376,3.4142135624,6,3,
-1.4142135624,-1.4142135624,0,0,0,0,0,0,
-0,0,0,0,-1.4142135624,1.4142135624,0,0,
-3.4142135624,0.5857864376,-1,-1,-0.2071067812,1.2071067812,3,6,
--1.4142135624,1.4142135624,2.2071067812,0.7928932188,-0.7928932188,-2.2071067812,-6,-3,
--2.2071067812,-0.7928932188,0.7928932188,2.2071067812,1.4142135624,-1.4142135624,-3,-6
+ 0.,  0.,  0.,  0., -1., -3.,  0.,  0.,
+-1.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,
+ 1., -5., -3.,  1.,  5.,  7., 16.,  8.,
+ 0., -6.,  0.,  0.,  0.,  0.,  0.,  0.,
+ 0.,  0.,  0.,  0.,  0.,  6.,  0.,  0.,
+ 5., -7., -3., -1.,  1.,  5.,  8., 16.,
+ 0.,  8.,  4., -4., -4., -4.,-16., -8.,
+-4.,  4.,  4.,  4.,  0., -8., -8.,-16.
 };
 static void N_T_RT1_2D_Funct(double xi, double eta, double *values)
 {
@@ -167,6 +119,16 @@ static void N_T_RT1_2D_DeriveXiEta(double xi, double eta, double *values)
   }
 }
 
+// the first dof on each edge is the mean flux, the second on each edge is
+// an integral where the integrand is multiplied by x, therefore it has to be
+// changed with TBaseFunct2D::ChangeBF
+static int N_T_RT1_2D_ChangeJ0[1] = { 1 };
+static int N_T_RT1_2D_ChangeJ1[1] = { 3 };
+static int N_T_RT1_2D_ChangeJ2[1] = { 5 };
+
+static int *N_T_RT1_2D_Change[3] = { N_T_RT1_2D_ChangeJ0, N_T_RT1_2D_ChangeJ1,
+                                     N_T_RT1_2D_ChangeJ2};
+
 // ***********************************************************************
 
 TBaseFunct2D *BF_N_T_RT1_2D_Obj = new TBaseFunct2D
@@ -174,4 +136,4 @@ TBaseFunct2D *BF_N_T_RT1_2D_Obj = new TBaseFunct2D
          N_T_RT1_2D_Funct, N_T_RT1_2D_DeriveXi,
          N_T_RT1_2D_DeriveEta, N_T_RT1_2D_DeriveXiXi,
          N_T_RT1_2D_DeriveXiEta, N_T_RT1_2D_DeriveEtaEta, 2, 1,
-         0, NULL, 2);
+         1, N_T_RT1_2D_Change, 2);

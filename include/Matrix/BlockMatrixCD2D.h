@@ -23,9 +23,10 @@
 #include <BlockVector.h>
 #include <SquareMatrix2D.h>
 #include <LocalAssembling2D.h>
+#include <BlockFEMatrix.h>
 
 /**class for 2D scalar system matrix */
-class BlockMatrixCD2D : public BlockMatrix
+class BlockMatrixCD2D : public BlockFEMatrix
 {
   protected:
     
@@ -105,16 +106,7 @@ class BlockMatrixCD2D : public BlockMatrix
     /** @brief return the finite element space */
     const TFESpace2D * get_fe_space() const
     { return this->get_matrix()->GetFESpace2D(); }
-    
-    
-    /** @brief return the fe_space
-     * 
-     * This is implemented such that 
-     * BlockVector::BlockVector<BlockMatrixCD2D>(const BlockMatrixCD2D& , bool)
-     * works.
-     */
-    const TFESpace2D * get_space_of_block(unsigned int b, bool test) const
-    { return this->get_fe_space(); }
+
 };
 
 #endif // __SYSTEMMATSCALAR2D__

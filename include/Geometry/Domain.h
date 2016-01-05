@@ -443,6 +443,7 @@ class TDomain
       void Rectangular(int dimx, int dimy);
       void TestTriaConf();
       void TestTriaConf2();
+      void UnitSquare_US22();
       void CheckCells();
 
       /**

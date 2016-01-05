@@ -2066,10 +2066,11 @@ double ***LocMatrices, double **LocRhs)
   MatrixA12 = LocMatrices[1];
   MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
-  MatrixB1 = LocMatrices[4];
-  MatrixB2 = LocMatrices[5];
-  MatrixB1T = LocMatrices[6];
-  MatrixB2T = LocMatrices[7];
+  int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
+  MatrixB1 = LocMatrices[4+offset];
+  MatrixB2 = LocMatrices[5+offset];
+  MatrixB1T = LocMatrices[6+offset];
+  MatrixB2T = LocMatrices[7+offset];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
