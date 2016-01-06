@@ -38,13 +38,17 @@ class CoupledCDR_2D {
 
 public:
 	/*!
-	 * Three different solution strategies, determines how the systems are assembled and solved.
+	 * Three different solution strategies, determines how
+	 * the systems are assembled and solved.
+	 *
+	 * This is still dreams of the future - currently we
+	 * are only aiming at the "linear_decoupled" strategy.
+	 *
 	 * newton_monolithic - solve the entire linearized system at once by Newton iteration
 	 * newton_decoupled  - decouple the systems and solve each seperately by Newton iteration
 	 * linear_decoupled  - decouple the systems, put reaction term to rhs (with last known solution)
-	 * 					   and solve the linear systems seperately
-	 * none				 - Because an enum class requires a default member - constructor throws exception,
-	 * 					   when this is chosen.
+	 * 					           and solve the linear systems seperately
+	 * none				       - default member - constructor throws exception, when this is chosen.
 	 */
 	enum class SolvingStrategy{
 		newton_monolithic, newton_decoupled, linear_decoupled, none
@@ -108,7 +112,7 @@ protected:
 	/*! @brief The reaction parts which belong to the equation and involve the coupling.*/
 	std::vector<std::shared_ptr<ReactionCoupling>> coupledParts_;
 
-	/*! @brief The used example. Which one is used is determined by the input file.*/
+	/*! @brief The used example.*/
 	Example_CoupledCDR2D example_;
 
 	/*! @brief The strategy for solving the coupled system. */

@@ -2,7 +2,7 @@
  * FEM_FCT_Copy.h
  *
  * Fem-tvd and fem-fct methods for scalar cdr equations. Copied
- * from Volkers's implementation and supposed to be adapted adapted.
+ * from Volkers's implementation and supposed to be adapted.
  *
  * Outcommented 3D parts. Want to take advantage of Eclipse Indexing.
  *
