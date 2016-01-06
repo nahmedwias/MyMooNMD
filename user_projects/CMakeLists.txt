@@ -20,3 +20,9 @@
 #    make project
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
+
+# Add an executable target for the main program.
+add_executable(cd2d_mesh_adapt ${PROJECT_SOURCE_DIR}/user_projects/CD2D_mesh_adaptation.cpp)
+set_target_properties(cd2d_mesh_adapt PROPERTIES OUTPUT_NAME parMooN_CD2D_mesh_adapt)
+target_compile_definitions(cd2d_mesh_adapt PUBLIC -D__2D__)
+target_link_libraries(cd2d_mesh_adapt parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
