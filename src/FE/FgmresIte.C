@@ -537,8 +537,8 @@ double *rhs)
 #endif
         )
         {
-          OutPut("fgmres iteration " << j << " " << res << " " << res/residlast);
-          OutPut(endl);
+          //OutPut("fgmres iteration " << j << " " << res << " " << res/residlast);
+          //OutPut(endl);
         }
         if (res>div_factor*res0)
         {

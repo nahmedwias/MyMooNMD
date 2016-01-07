@@ -230,7 +230,7 @@ public:
 
 #endif
 
-void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TAuxParam2D &Aux) {
+void NSEErrorEstimator2D::estimate(const TFEVectFunct2D &fe_function2D_u, const TFEFunction2D &fe_function2D_p, TAuxParam2D &Aux) {
     // remove old eta_K
     if (eta_K && eta_K == nullptr) delete[] eta_K;
 
@@ -764,12 +764,12 @@ void NSEErrorEstimator2D::estimate(TFEVectFunct2D &fe_function2D_u, TFEFunction2
 }
 
 
-void NSEErrorEstimator2D::calculateEtaK(TFEVectFunct2D &fe_function2D_u, TFEFunction2D &fe_function2D_p, TBaseCell *cell,
+void NSEErrorEstimator2D::calculateEtaK(const TFEVectFunct2D &fe_function2D_u, const TFEFunction2D &fe_function2D_p, TBaseCell *cell,
                                         unsigned int N_Points, unsigned int N_Points1D, double *AbsDetjk,
                                         double *weights, double **Derivatives, double **coeffs,
                                         const Example2D &example, EdgeData &edgeData, EdgeRefData &edgeRefData,
-                                        int *global_numbers_u, int *begin_index_u, double *values_u,
-                                        int *global_numbers_p, int *begin_index_p, double *values_p,
+                                        int *global_numbers_u, int *begin_index_u, const double *values_u,
+                                        int *global_numbers_p, int *begin_index_p, const double *values_p,
                                         double *estimated_local_error) {
 #if DEBUG_COMPARE_RESULTS_WITH_OLD_CODE != 0
 
@@ -2231,4 +2231,3 @@ int NSEErrorEstimator2D::isConformGrid() const {
 void NSEErrorEstimator2D::setConformGrid(int conform_grid) {
     this->conform_grid = conform_grid;
 }
-

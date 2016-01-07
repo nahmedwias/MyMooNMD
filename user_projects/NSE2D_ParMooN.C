@@ -15,6 +15,7 @@
 
 #include <sys/stat.h>
 #include <RefinementStrategy.h>
+#include <NSEErrorEstimator2DDWR.h>
 #include "NSEErrorEstimator2D.h"
 
 // =======================================================================
@@ -62,7 +63,21 @@ int main(int argc, char* argv[])
     // flag for either conforming closures or hanging nodes
     bool conforming = TDatabase::ParamDB->GRID_TYPE != 0;
 
-    NSEErrorEstimator2D estimator {example};
+    std::function<std::vector<double>(const TFEVectFunct2D*, const TFEFunction2D*, double, double, TBaseCell&)> functional = [](const TFEVectFunct2D *u, const TFEFunction2D *p, double x, double y, TBaseCell &cell) {
+        std::vector<double> result = std::vector<double>(6);
+
+        result[0] = x*x + y*y <= 3 ? 5 : 0; // f1
+        result[1] = x*x + y*y <= 3 ? 5 : 0; // f2
+        result[2] = 0; // grad f1
+        result[3] = 0; // grad f1
+        result[4] = 0; // grad f2
+        result[5] = 0; // grad f2
+
+        return result;
+    };
+
+    NSEErrorEstimator2DDWR estimator = NSEErrorEstimator2DDWR(example, functional, Domain);
+    //NSEErrorEstimator2D estimator {example};
     // for adaptive grid refinement
     auto current_estimator = int(estimator.GetEstimatorType());
     RefinementStrategy refinementStrategy;
