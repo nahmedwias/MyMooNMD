@@ -10,19 +10,26 @@
 #include <stdio.h>
 #include <string.h>
 
-BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansatzSpace)
- : BlockMatrix(2,1)
+BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansatzSpace,
+                             const TFESpace2D *pressureSpace)
+ : BlockMatrix(3,1), TestSpace(testSpace), AnsatzSpace(ansatzSpace), 
+   PressureSpace(pressureSpace)
 {
   // checks
   if( (testSpace->GetCollection()) != (ansatzSpace->GetCollection() ))
   {
-    ErrThrow("unsupported collection");
+    Output::print<1>(testSpace->GetCollection()->GetN_Cells(), " ", 
+                     ansatzSpace->GetCollection()->GetN_Cells());
+    ErrThrow("grid is different for the test and ansatz sapces");
   }
   Output::print<2>("dof of testSpace  : ",   testSpace->GetN_DegreesOfFreedom());
   Output::print<2>("dof of ansatzSpace: ", ansatzSpace->GetN_DegreesOfFreedom());
   
   this->BlockMatrix::blocks[0].reset(new FEMatrix(testSpace, ansatzSpace));  
   this->BlockMatrix::blocks[1].reset(new FEMatrix(testSpace, ansatzSpace)); 
+  std::shared_ptr<TStructure> structure(new TStructure(PressureSpace->GetN_DegreesOfFreedom(),
+                                                       AnsatzSpace->GetN_DegreesOfFreedom()));
+  this->BlockMatrix::blocks[2].reset(new TMatrix(structure));
   
   TCollection *coll = testSpace->GetCollection();
   unsigned int nCells = coll->GetN_Cells();
@@ -34,7 +41,7 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansa
   double *xi, *eta;
   
   for(unsigned int c=0; c<nCells; ++c)
-  {   
+  {
     TBaseCell *cell = coll->GetCell(c);
     
     TFE2D *elementAnsatz = TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(c,cell));
@@ -78,6 +85,8 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansa
     
     for(int j=0; j<nDofTest; ++j)
     {
+      if(testSpace->GetGlobalDOF(c)[j] >= testSpace->GetN_ActiveDegrees() )
+        continue;
       for(int k=0; k<nPoints; ++k)
       {
         PointValuesx[k]         = uorig[k][j];
@@ -92,15 +101,21 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansa
         int n = 1; // normal orientation
         if(e != -1)
         {
-          n = cell->GetNormalOrientation(e);
+          // n = cell->GetNormalOrientation(e);
         }
         // fill the correspoding blocks
-        this->BlockMatrix::block(0)->set(testSpace->GetGlobalDOF(c)[j],
-                            ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesx[k]*n);
-        this->BlockMatrix::block(1)->set(testSpace->GetGlobalDOF(c)[j],
-                            ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesy[k]*n);
+        this->block(0)->set(testSpace->GetGlobalDOF(c)[j],
+               ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesx[k]/**n*/);
+        this->block(1)->set(testSpace->GetGlobalDOF(c)[j],
+                            ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesy[k]/**n*/);
       }
     }
+    // this->block(0)->PrintFull();
   }
   // this->get_combined_matrix()->PrintFull();
 }
+
+double BlockFEMatrix::addScaleActive(const double* x, double* y, double factor)
+{  
+}
+
