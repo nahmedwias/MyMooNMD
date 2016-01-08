@@ -359,6 +359,12 @@ class TMatrix
     
     /// @brief print some information on this TMatrix
     void info(size_t verbose) const;
+
+    ///! @return true if this matrix is square
+    bool is_square() const
+    {
+      return structure->isSquare();
+    }
 };
 
 #endif
