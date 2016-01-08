@@ -352,6 +352,22 @@ class BlockVector
     double* get_entries()
     { return &(this->entries.at(0)); }
     
+    /**
+     * @return A const reference to the entire entries vector (all blocks).
+     */
+    const std::vector<double>& get_entries_vector() const
+    {
+      return entries;
+    }
+
+    /**
+     * @return A non-const reference to the entire entries vector (all blocks).
+     */
+    std::vector<double>& get_entries_vector()
+    {
+      return entries;
+    }
+
     /* *********************************************************************
      * overloading standard operators
      * we avoid operators +,-,*,/ because they would require to alocate new
