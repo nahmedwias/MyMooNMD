@@ -4791,6 +4791,50 @@ void TStructure::info() const
   Output::print<2>("Number of matrix entries: ", nEntries);
 }
 
+void TStructure::draw(std::string filename) const
+{
+  std::ofstream out_stream(filename);
+  if(!out_stream)
+  {
+    ErrMsg("cannot open '" << filename << "' for output");
+    return;
+  }
+  
+  double scale = 3;
+  int BX = (int) (scale * this->nColumns); // width of picture
+  int BY = (int) (scale * this->nRows);    // height of picture
+  int offset = 2 * scale; // picture is a bit away from picture boundary
+  
+  out_stream << "%!PS-Adobe-3.0\n";
+  out_stream << "%%Creator: ParMooN (Ulrich Wilbrandt)\n";
+  out_stream << "%%DocumentFonts: Helvetica\n";
+  out_stream << "%%BoundingBox: 0 0 " << 2*offset + BX << " " << 2*offset + BY;
+  out_stream << endl;
+  out_stream << "%%Pages: 1\n";
+  out_stream << "%%EndComments\n";
+  out_stream << "%%EndProlog\n";
+  out_stream << "%%Page: 1 1\n";
+  out_stream << "%% n_rows " << this->nRows << ",  n_columns " 
+             << this->nColumns << ",  n_entries " << this->nEntries << endl;
+  out_stream << "/M {" << scale-1 << " " << scale-1 << " rectfill} def\n";
+  for(unsigned int row = 0; row < this->nRows; ++row)
+  {
+    for(unsigned int col = this->rows[row]; col < this->rows[row+1]; ++col)
+    {
+      out_stream << (offset + scale * this->columns[col]) << " " 
+                 << (offset + scale * (this->nRows - row)) << " M\n";
+    }
+  }
+  out_stream << "stroke" << endl;
+  out_stream << "showpage" << endl;
+  out_stream << "%%Trailer" << endl;
+  out_stream << "%%Pages: 1" << endl;
+  out_stream.close();
+  Output::print<2>("postscript picture of matrix structure drawn in file ",
+                   filename);
+}
+
+
 bool operator==(const TStructure &lhs, const TStructure &rhs)
 {
   return lhs.nRows == rhs.nRows 
