@@ -161,8 +161,8 @@ class TStructure
     /**
      * @brief generate a structure, all arrays are already defined
      * 
-     * Note that the pointers will be deleted from within this class. No deep 
-     * copy is done.
+     * Note that a deep copy of the arrays is performed, TStructure will not
+     * take ownership of the ipnut arrays.
      * 
      * @param nRows number of rows
      * @param nCols number of columns
