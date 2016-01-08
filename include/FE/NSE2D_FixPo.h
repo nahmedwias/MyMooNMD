@@ -435,4 +435,14 @@ int NSAuxProblemColumnSpace[1] = { 0 };
 int NSAuxProblemN_Rhs = 2;
 int NSAuxProblemRhsSpace[2] = { 0, 0 };
 */
+
+
+//==========================================================================
+void NSType4GalerkinPrRob(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
+
+void PrRobustRhs(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs);
 #endif

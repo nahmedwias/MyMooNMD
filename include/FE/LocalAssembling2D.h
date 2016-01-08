@@ -46,6 +46,8 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
                               Darcy2D_Galerkin,
+                              RECONSTR_GALERKIN,
+                              RECONSTR_GALERKIN_Rhs,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 
@@ -142,8 +144,15 @@ class LocalAssembling2D
      */
     void set_parameters_for_nse(LocalAssembling2D_type type);
     /** 
+     * setting every thing for the time dependent Navier-Stokes
+     * problems
      */
     void set_parameters_for_tnse(LocalAssembling2D_type type);
+    /**
+     * parameters and local assembling functions for the 
+     * Stokes and Navier-Stokes equations 
+     */
+    void set_parameters_for_Rec_nse(LocalAssembling2D_type type);
   public:
     /** constructor */
     LocalAssembling2D(LocalAssembling2D_type type, TFEFunction2D **fefunctions2d,
