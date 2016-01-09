@@ -24,6 +24,12 @@ TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
 {
 }
 
+TMatrix::TMatrix(int nRows, int nCols)
+ : TMatrix(std::make_shared<TStructure>(nRows,nCols))
+{
+  ;
+}
+
 void TMatrix::reset()
 {
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
@@ -135,7 +141,12 @@ void TMatrix::add(std::map<int, std::map<int,double> > vals, double factor)
 // return an error if the entry is not in the sparse structure
 void TMatrix::set(int i,int j, double val)
 {
-  this->entries[this->structure->index_of_entry(i, j)] = val;
+  int index_of_entry = this->structure->index_of_entry(i, j);
+  if(index_of_entry == -1)
+  {
+    ErrThrow("Entry ", i,",",j," not in sparsity structure.");
+  }
+  this->entries[index_of_entry] = val;
 }
 
 // get val of a matrix element
@@ -279,7 +290,7 @@ TMatrix & TMatrix::operator-=(const TMatrix* A)
 }
 
 
-void TMatrix::multiply(const double * const x, double *y, double a) const
+void TMatrix::multiply(const double * const x, double * const y, double a) const
 {
   if(a == 0.0)
     return;
@@ -303,7 +314,7 @@ void TMatrix::multiply(const double * const x, double *y, double a) const
   }
 }
 
-void TMatrix::transpose_multiply(const double * const x, double *y, double a)
+void TMatrix::transpose_multiply(const double * const x, double * const y, double a)
       const
 {
   if(a == 0.0)

@@ -121,37 +121,7 @@ class BlockPattern
 
   //! Default destructor.
   ~BlockPattern() = default;
-  
-  /** @brief get the test (row) space index of the b-th block */
-  unsigned int test_space_index_of_block(unsigned int b) const;
-  
-  /** @brief get the ansatz (column) space index of the b-th block */
-  unsigned int ansatz_space_index_of_block(unsigned int b) const;
-  
-  /** @brief get the test (row) space index of the r-th row */
-  unsigned int test_space_index_of_row(unsigned int r) const;
-  
-  /** @brief get the ansatz (column) space index of the c-th column */
-  unsigned int ansatz_space_index_of_column(unsigned int c) const;
-  
-  
-  /** @brief return the space dimension of this BlockPattern
-   * 
-   * This returns a meaningful number only if this object has been constructed 
-   * with a Problem_type and a vector of FE_space. Otherwise 0 is returned.
-   */
-  unsigned int get_space_dim() const;
-  
-  
-  /** @brief get the test space of the p-th sparsity pattern */
-  unsigned int get_test_space_of_pattern(unsigned int p) const;
-  
-  /** @brief get the ansatz space of the p-th sparsity pattern */
-  unsigned int get_ansatz_space_of_pattern(unsigned int p) const;
-  
-  /** @brief get the index of the sparsity pattern of the b-th block */
-  unsigned int pattern_of_block(unsigned int b) const;
-  
+
   /** @brief return true if the b-th block is on the diagonal, otherwise false
    * 
    * This is needed to put ones on the diagonal only of the correct matrix 
