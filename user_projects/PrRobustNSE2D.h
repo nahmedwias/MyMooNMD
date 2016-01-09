@@ -45,12 +45,28 @@ class PrRobustNSE2D : NSE2D
      */
     void solve();
     
-    // getters
+    // getters and setters
     const TFESpace2D & get_projection_space() const 
     { 
       return this->Systems.front().projection_space; 
     }
-
+    
+    const TFESpace2D & get_velocity_space() const
+    { return this->NSE2D::systems.front().velocity_space; }
+    
+    const TFESpace2D & get_pressure_space() const
+    { return this->NSE2D::systems.front().pressure_space; }
+    
+    const TFEVectFunct2D & get_velocity() const
+    { return this->NSE2D::systems.front().u; } 
+    
+    TFEFunction2D *get_velocity_component(int i)
+    { return (i==0) ? this->NSE2D::systems.front().u.GetComponent(0)
+                    : this->NSE2D::systems.front().u.GetComponent(1); }
+                    
+    TFEFunction2D &get_pressure()
+    {return this->NSE2D::systems.front().p; }
+    
   private:
     /** @brief assemble the right hand side for vector space
      * This assemble's only the right hand side 
