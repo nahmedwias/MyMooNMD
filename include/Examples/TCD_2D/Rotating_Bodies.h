@@ -143,22 +143,6 @@ double **parameters, double **coeffs)
 }
 
 ///****************************************************************/
-///* finds the nodes which are Neumann and should be Dirichlet    */
-///* for FEM_FCT schemes                                          */
-///****************************************************************/
-//
-//void CheckWrongNeumannNodes(TCollection *Coll, TFESpace2D *fespace,
-//int &N_neum_to_diri, int* &neum_to_diri,
-//int* &neum_to_diri_bdry,
-//double* &neum_to_diri_param)
-//{
-//  CheckWrongNeumannNodesUnitSquareDiri(fespace,  N_neum_to_diri,
-//				       neum_to_diri, neum_to_diri_bdry,
-//				       neum_to_diri_param);
-//  return;
-//}
-//
-///****************************************************************/
 ///* computes errors in l1 and l2 norm                            */
 ///****************************************************************/
 //void ComputeDiscreteErrors(TFESpace2D *fespace,
