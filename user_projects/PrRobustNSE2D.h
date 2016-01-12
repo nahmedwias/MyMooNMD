@@ -45,6 +45,8 @@ class PrRobustNSE2D : NSE2D
      */
     void solve();
     
+    void output(int i);
+    
     // getters and setters
     const TFESpace2D & get_projection_space() const 
     { 

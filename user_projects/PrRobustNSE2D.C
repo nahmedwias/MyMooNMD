@@ -94,7 +94,10 @@ void PrRobustNSE2D::assemblerhs()
 void PrRobustNSE2D::solve()
 {
   this->NSE2D::solve();
-  this->NSE2D::output(0);  
 }
 
 /** ************************************************************************ */
+void PrRobustNSE2D::output(int i)
+{
+  this->NSE2D::output(i);
+}
