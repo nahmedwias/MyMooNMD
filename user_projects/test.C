@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
   }
   
   TDatabase::ParamDB->EXAMPLE = 41;
-  TDatabase::ParamDB->VELOCITY_SPACE = 2;
-  TDatabase::ParamDB->PRESSURE_SPACE = 1;
+  TDatabase::ParamDB->VELOCITY_SPACE = 12;
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->PROJECTION_SPACE = 1012;
   TDatabase::ParamDB->NSTYPE = 4;
   TDatabase::ParamDB->SOLVER_TYPE = 2;
