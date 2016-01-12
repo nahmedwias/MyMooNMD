@@ -15,7 +15,7 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
  : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
                   TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
    pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
-                  DiscP_PSpace, TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
+                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
    solution(this->matrix, false),
@@ -109,7 +109,91 @@ NSE2D::~NSE2D()
 /** ************************************************************************ */
 void NSE2D::set_parameters()
 {
-
+  int velocity_order = TDatabase::ParamDB->VELOCITY_SPACE;
+  int pressure_order = TDatabase::ParamDB->PRESSURE_SPACE;
+  int order = 0;
+  switch(velocity_order)
+  {
+    case 1: case 2: case 3: case 4: case 5:
+    case 12: case 13: case 14: case 15:
+      if(velocity_order > 10)
+        order = velocity_order-10;
+      else
+        order = velocity_order;
+      break;
+    case -1: case -2: case -3: case -4: case -5:
+    case -101:
+      order = velocity_order;
+      break;
+    // conforming fe spaces with bubbles on triangles 
+    case 22: case 23: case 24:
+      order = velocity_order;
+      break;
+      // discontinuous spaces 
+    case -11: case -12: case -13:
+      order = velocity_order*10;
+      break;
+  }
+  TDatabase::ParamDB->VELOCITY_SPACE = order;
+  
+  switch(pressure_order)
+  {
+    case -4711:
+      switch(velocity_order)
+      {
+        case -1:
+        case -2:
+        case -3:
+        case -4:
+          // nonconforming pw (bi)linear velo/ pw constant pressure
+          // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
+          pressure_order = -velocity_order-1;
+          break; 
+        case 1: // discontinuous space 
+          pressure_order = 0;
+          break;
+        case 2: case 3: case 4: case 5:
+        // standard conforming velo and continuous pressure
+          pressure_order = velocity_order-1;
+          break;
+          // discontinuous pressure spaces 
+          // standard conforming velo and discontinuous pressure
+          // this is not stable on triangles !!!
+        case 12: case 13: case 14: case 15:
+          pressure_order = -(velocity_order-1)*10;
+          break;
+        case 22: case 23: case 24:
+          pressure_order = -(velocity_order-11)*10;
+          break;
+      }
+      break;
+    // discontinuous spaces
+    case 1:case 2: case 3: case 4: case 5:
+      pressure_order = -(velocity_order-1)*10;
+      break;
+    // discontinuous spaces
+    case -11: case -12: case -13: case -14:
+      pressure_order = pressure_order*10;
+      break;
+  }
+  TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
+  
+  Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
+  
+  // projection spaces for reconstructions
+  switch(TDatabase::ParamDB->VELOCITY_SPACE)
+  {
+    case 22:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 3:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1013;
+      break;
+    case 4:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1014;
+      break;
+  }
 }
 
 /** ************************************************************************ */
