@@ -11,11 +11,11 @@
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
-                                         TCollection& coll )
+                        TCollection& coll, std::pair<int,int> velocity_pressure_orders)
  : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
-                  TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
+                  velocity_pressure_orders.first, nullptr),
    pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
-                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
+                  velocity_pressure_orders.second, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
    solution(this->matrix, false),
@@ -41,11 +41,14 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
     : systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10)
 {
-  this->set_parameters();
+  std::pair <int,int> 
+      velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
+                               TDatabase::ParamDB->PRESSURE_SPACE);
+  this->get_velocity_pressure_orders(velocity_pressure_orders);
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-  this->systems.emplace_back(example, *coll);
+  this->systems.emplace_back(example, *coll, velocity_pressure_orders);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
@@ -88,7 +91,7 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   {
     unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
     TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
+    this->systems.emplace_back(example, *coll, velocity_pressure_orders);
   }
   
   // create multigrid-level-objects, must be coarsest first
@@ -107,10 +110,10 @@ NSE2D::~NSE2D()
 }
 
 /** ************************************************************************ */
-void NSE2D::set_parameters()
+void NSE2D::get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders)
 {
-  int velocity_order = TDatabase::ParamDB->VELOCITY_SPACE;
-  int pressure_order = TDatabase::ParamDB->PRESSURE_SPACE;
+  int velocity_order = velocity_pressure_orders.first;
+  int pressure_order = velocity_pressure_orders.second;
   int order = 0;
   switch(velocity_order)
   {
@@ -135,7 +138,7 @@ void NSE2D::set_parameters()
       break;
   }
   TDatabase::ParamDB->VELOCITY_SPACE = order;
-  
+  velocity_pressure_orders.first = order;
   switch(pressure_order)
   {
     case -4711:
@@ -177,6 +180,7 @@ void NSE2D::set_parameters()
       break;
   }
   TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
+  velocity_pressure_orders.second = pressure_order;
   
   Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);

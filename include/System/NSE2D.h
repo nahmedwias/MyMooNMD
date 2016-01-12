@@ -28,6 +28,7 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
+#include <utility>
 
 class NSE2D
 {
@@ -61,7 +62,8 @@ class NSE2D
       TFEFunction2D p;
       
       /** @brief constructor */
-      System_per_grid(const Example_NSE2D& example, TCollection& coll);
+      System_per_grid(const Example_NSE2D& example, TCollection& coll, 
+                      std:: pair <int,int> velocity_pressure_orders);
     };
     
     /** @brief a complete system on each grid 
@@ -129,16 +131,13 @@ class NSE2D
      */
     double initial_residual;
     
-    /** @brief set parameters in database
+    /** @brief set the velocity and pressure orders
      * 
-     * This functions checks if the parameters in the database are meaningful 
-     * and resets them otherwise. The hope is that after calling this function
-     * this class is fully functional.
-     * 
-     * If some parameters are set to unsupported values, an error occurs and 
-     * throws an exception.
+     * This function sets the corresponding velocity and 
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
      */
-    void set_parameters();
+    void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
     
   public:
     
