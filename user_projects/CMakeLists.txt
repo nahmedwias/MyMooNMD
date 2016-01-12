@@ -30,7 +30,7 @@ add_library(PROJECT_LIB_2D STATIC ${PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
 
 # Then you can create an executable as follows
-add_executable(constr ${PROJECT_SOURCE_DIR}/user_projects/test.C)
-set_target_properties(constr PROPERTIES OUTPUT_NAME parMooN_project_${PARMOON_PARALLEL_TYPE})
-target_compile_definitions(constr PUBLIC -D__2D__)
-target_link_libraries(constr PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+add_executable(stokes_reconst ${PROJECT_SOURCE_DIR}/user_projects/main.C)
+set_target_properties(stokes_reconst PROPERTIES OUTPUT_NAME parMooN_stokes_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(stokes_reconst PUBLIC -D__2D__)
+target_link_libraries(stokes_reconst PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
