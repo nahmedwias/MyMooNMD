@@ -5,6 +5,7 @@ void ExampleFile()
 {
   Output::print<1>("Example: StokesZeroSol.h with INTERNAL_PROBLEM_IDENTITY ", 
                    TDatabase::ParamDB->PROBLEM_TYPE);
+  TDatabase::ParamDB->INTERNAL_QUAD_RULE = 99;
 }
 
 // ========================================================================
