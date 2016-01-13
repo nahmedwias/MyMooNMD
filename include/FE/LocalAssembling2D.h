@@ -35,7 +35,7 @@
  * Assembling routines throughout ParMooN might check if they
  * get an assembling object of the correct type.
  *
- * So far there is nine built-in types in 3D and one custom type.
+ * So far there is nine built-in types in 2D and one custom type.
  */
 enum LocalAssembling2D_type { ConvDiff,                              
                               TCD2D, // stiffness matrix and rhs

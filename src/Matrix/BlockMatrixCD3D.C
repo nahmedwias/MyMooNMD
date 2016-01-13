@@ -28,7 +28,7 @@
 BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
         						BoundValueFunct3D *BoundValue,
 								bool massMatrix)
-: BlockMatrix(Problem_type::ConvDiffReac, 3, massMatrix),
+: BlockFEMatrix(Problem_type::ConvDiffReac, 3, massMatrix),
   boundaryValues_(BoundValue)
 {
 	// the stiffness/system matrix for a convection diffusion problem
@@ -40,7 +40,7 @@ BlockMatrixCD3D::BlockMatrixCD3D(const TFESpace3D &feSpace,
 	unsigned int n_active = sqStructure.GetN_Entries();
 	// substract the number of non active entries (non active rows)
 	n_active -= sqStructure.GetN_Rows() - sqStructure.GetActiveBound();
-	BlockMatrix::actives[0] = n_active;
+	BlockFEMatrix::actives[0] = n_active;
 	// END FIXME CB Is this correct - I'd rather like this not to be stored by the class!
 }
 
