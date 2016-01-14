@@ -297,6 +297,14 @@ class TStructure
      */
     void info() const;
     
+    /** 
+     * @brief draw a postscript picture of the sparsity pattern, similar to 
+     * Matlab 'spy'
+     * 
+     * @param filename a file with this name will be created (overwritten)s
+     */
+    void draw(std::string filename) const;
+    
     /**
      * @brief return a structure for the matrix-matrix-product A*B
      * 
