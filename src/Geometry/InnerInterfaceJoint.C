@@ -172,7 +172,6 @@ void TInnerInterfaceJoint::SetIndexInNeighbor(TBaseCell *neigh, int index)
     IndexInNeighbor[1] = index;
   else
   {
-    ErrMsg("ERROR, TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
-    exit(-4711);
+    ErrThrow("TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
   }
 }

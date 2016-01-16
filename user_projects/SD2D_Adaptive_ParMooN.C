@@ -88,9 +88,12 @@ int main(int argc, char* argv[])
                     Domain.RegRefineAll();
                     GetInnerInterfaceJoints(interface, Domain); // update interface vector
                 } else {
+                    interface.clear();
                     std::cout << " ----- refine by refinement strategy ----- " << std::endl;
                     Domain.RefineByRefinementStrategy(&refinementStrategy, true);
+                    //Domain.RegRefineAll();
                     GetInnerInterfaceJoints(interface, Domain); // update interface vector
+                    std::cout << " ----- refine by refinement strategy ----- " << std::endl;
                 }
             }
 
@@ -122,16 +125,16 @@ int main(int argc, char* argv[])
                 delete coll_Darcy;
                 delete coll_NSE;
             }
+            // get the total collection on the finest level (both subdomains)
+            TCollection *coll_tot = Domain.GetCollection(It_Finest, 0);
             if(TDatabase::ParamDB->WRITE_PS)
             {
-                // get the total collection on the finest level (both subdomains)
-                TCollection *coll_tot = Domain.GetCollection(It_Finest, 0);
                 // if you want cell numbers drawn in PS file: uncomment the line 104
                 // "#define __GRIDCELL_WITH_NUMBERS__" in src/Geometry/GridCell.C
                 std::ostringstream os(std::ios_base::trunc);
-                os << TDatabase::ParamDB->BASENAME << "grid.ps" << ends;
+                os << TDatabase::ParamDB->BASENAME << "grid" << curr_level << ".ps" << ends;
                 Domain.PS(os.str().c_str(), coll_tot);
-                delete coll_tot;
+                //delete coll_tot;
             }
             Output::print<1>(""); // empty line
             /* =======================   inteface function   ========================= */
@@ -254,14 +257,14 @@ int main(int argc, char* argv[])
             if(solution_strategy >= 0)
             {
                 sd.solveDirect();
-                //std::unique_ptr<TCollection> finest_collection(Domain.GetCollection(It_Finest, 0));
-                //cdErrorEstimator2D.estimate(sd.c_darcy()->get_function());
-                //nseErrorEstimator2D.estimate(sd.c_stokes()->get_velocity(), sd.c_stokes()->get_pressure(), aux);
-                //refinementStrategy.applyEstimator(cdErrorEstimator2D, nseErrorEstimator2D, finest_collection.get());
+                TCollection * finest_collection = coll_tot;
+                cdErrorEstimator2D.estimate(sd.c_darcy()->get_p_direct());
+                nseErrorEstimator2D.estimate(sd.c_stokes()->get_u_Direct(), sd.c_stokes()->get_p_direct(), aux);
+                refinementStrategy.applyEstimator(cdErrorEstimator2D, nseErrorEstimator2D, finest_collection);
 
                 double error = ErrorOnInterface(*(sd.c_stokes()), *(sd.c_darcy()), -1);
                 Output::print<1>("  Error on interface ", error);
-                WriteVtk_and_measureErrors(*(sd.c_stokes()), *(sd.c_darcy()), NULL, curr_level);
+                WriteVtk_and_measureErrors(*(sd.c_stokes()), *(sd.c_darcy()), NULL, -1);
                 Output::print<1>("Done with direct solution of the coupled system within ",
                                  GetTime()-time, " seconds");
             }
@@ -331,8 +334,8 @@ int main(int argc, char* argv[])
             /* ============================   clean up   ============================= */
             for(unsigned int i = 0; i < interface_conditions.size(); i++)
             {
-                delete ns_problems.at(interface_conditions[i]);
-                delete d_problems.at(interface_conditions[i]);
+              //  delete ns_problems.at(interface_conditions[i]);
+              //  delete d_problems.at(interface_conditions[i]);
             }
         }
         }

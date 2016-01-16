@@ -12,6 +12,8 @@
 
 # if DEBUG_COMPARE_RESULTS_WITH_OLD_CODE != 0
 
+constexpr long loc_maxn_quadpoints_2d = MaxN_QuadPoints_2D * 40;
+
 /**
  * Data structure holding relevant data of the edges.
  *
@@ -43,7 +45,7 @@ struct NSEErrorEstimator2D::EdgeData {
     std::vector<std::vector<double>> XEdge1D, YEdge1D;
 
     // determinant of the affine mapping for each edge
-    std::vector<std::vector<double>> AbsDetjk1D{4, std::vector<double>(MaxN_QuadPoints_2D)};
+    std::vector<std::vector<double>> AbsDetjk1D{4, std::vector<double>(loc_maxn_quadpoints_2d)};
     // values and derivative values in reference cell
     std::vector<std::array<double *, MaxN_QuadPoints_1D>> xyval_ref1D{4};
     std::vector<std::array<double *, MaxN_QuadPoints_1D>> xderiv_ref1D{4};
@@ -165,7 +167,7 @@ public:
 
     EdgeRefData(unsigned int max_n_base_functions_2d) : refDataQuadPoints1D(0), max_n_base_functions_2d(max_n_base_functions_2d) {
         FEFunctValuesNeigh = std::vector<double>(3 * max_n_base_functions_2d);
-        absdet1D = std::vector<double>(MaxN_QuadPoints_2D);
+        absdet1D = std::vector<double>(loc_maxn_quadpoints_2d);
         unsigned int k = MaxN_BaseFunctions2D * MaxN_QuadPoints_1D * max_n_base_functions_2d;
         //refNeigh1D_data.reset(new double[3*k], std::default_delete<double[]>());
         refNeigh1D_data.resize(3 * k);
@@ -276,12 +278,12 @@ void NSEErrorEstimator2D::estimate(const TFEVectFunct2D &fe_function2D_u, const 
     BaseFunct2D BaseFunct, BaseFunctP;
     BF2DRefElements bf2Drefelements;
 
-    double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
-    double AbsDetjk[MaxN_QuadPoints_2D];
+    double X[loc_maxn_quadpoints_2d], Y[loc_maxn_quadpoints_2d];
+    double AbsDetjk[loc_maxn_quadpoints_2d];
     RefTrans2D RefTrans;
-    double *Param[MaxN_QuadPoints_2D];
-    double *Derivatives[3 * MaxN_QuadPoints_2D];
-    double *AuxArray[MaxN_QuadPoints_2D];
+    double *Param[loc_maxn_quadpoints_2d];
+    double *Derivatives[3 * loc_maxn_quadpoints_2d];
+    double *AuxArray[loc_maxn_quadpoints_2d];
     std::vector<double> FEFunctValues(3 * max_n_base_functions);
     double max_loc_err;
     double estimated_global_errors[N_NSE2D_ESTIMATOR_TYPES], estimated_local_errors[N_NSE2D_ESTIMATOR_TYPES];
@@ -460,17 +462,17 @@ void NSEErrorEstimator2D::estimate(const TFEVectFunct2D &fe_function2D_u, const 
         // aux data
         // get number of parameters of equation
         auto N_Parameters = Aux.GetN_Parameters();
-        std::vector<double> ParamData(MaxN_QuadPoints_2D * N_Parameters + 3 * MaxN_QuadPoints_2D * derivatives_u.size() + MaxN_QuadPoints_2D * 20);
+        std::vector<double> ParamData(loc_maxn_quadpoints_2d * N_Parameters + 3 * loc_maxn_quadpoints_2d * derivatives_u.size() + loc_maxn_quadpoints_2d * 20);
         {
 
             auto *ParamDataPtr = &ParamData[0];
             // set pointers
-            for (auto j = 0; j < MaxN_QuadPoints_2D; j++) {
+            for (auto j = 0; j < loc_maxn_quadpoints_2d; j++) {
                 Param[j] = &ParamDataPtr[0] + j * N_Parameters;
-                AuxArray[j] = &ParamDataPtr[MaxN_QuadPoints_2D * N_Parameters + 3 * MaxN_QuadPoints_2D * derivatives_u.size()] + j * 20;
+                AuxArray[j] = &ParamDataPtr[loc_maxn_quadpoints_2d * N_Parameters + 3 * loc_maxn_quadpoints_2d * derivatives_u.size()] + j * 20;
             }
-            for (auto j = 0; j < 3 * MaxN_QuadPoints_2D; j++) {
-                Derivatives[j] = &ParamDataPtr[MaxN_QuadPoints_2D * N_Parameters] + j * derivatives_u.size();
+            for (auto j = 0; j < 3 * loc_maxn_quadpoints_2d; j++) {
+                Derivatives[j] = &ParamDataPtr[loc_maxn_quadpoints_2d * N_Parameters] + j * derivatives_u.size();
             }
         }
 
@@ -562,7 +564,7 @@ void NSEErrorEstimator2D::estimate(const TFEVectFunct2D &fe_function2D_u, const 
                             // k-th u derivative
                             Derivatives[j][k] = value[0];
                             // k-th v derivative
-                            Derivatives[j + MaxN_QuadPoints_2D][k] = value[1];
+                            Derivatives[j + loc_maxn_quadpoints_2d][k] = value[1];
                         }
                     }
                 }
@@ -605,7 +607,7 @@ void NSEErrorEstimator2D::estimate(const TFEVectFunct2D &fe_function2D_u, const 
                             {
                                 value += FEFunctValues[l + 2 * max_n_base_functions] * Orig[l]; // accumulate p value of derivative in point j
                             }
-                            Derivatives[j + 2 * MaxN_QuadPoints_2D][k] = value;// for k-th v derivative
+                            Derivatives[j + 2 * loc_maxn_quadpoints_2d][k] = value;// for k-th v derivative
                         }                                     // endfor j
                     } // endfor k
                 }
@@ -794,7 +796,7 @@ void NSEErrorEstimator2D::calculateEtaK(const TFEVectFunct2D &fe_function2D_u, c
             e1 = deriv[0];
             // y derivative
             e2 = deriv[1];
-            deriv = Derivatives[i + MaxN_QuadPoints_2D];
+            deriv = Derivatives[i + loc_maxn_quadpoints_2d];
             // all v derivatives in quadrature points
             e3 = deriv[0];
             e4 = deriv[1];
@@ -831,8 +833,8 @@ void NSEErrorEstimator2D::calculateEtaK(const TFEVectFunct2D &fe_function2D_u, c
 
             // all u derivatives in quadrature points
             auto *derivatives_u = Derivatives[i];
-            auto *derivatives_v = Derivatives[i + MaxN_QuadPoints_2D];
-            auto *derivatives_p = Derivatives[i + 2 * MaxN_QuadPoints_2D];
+            auto *derivatives_v = Derivatives[i + loc_maxn_quadpoints_2d];
+            auto *derivatives_p = Derivatives[i + 2 * loc_maxn_quadpoints_2d];
             auto w = weights[i] * AbsDetjk[i];
             double e1, e2;
             if (is_nse) {
@@ -1277,10 +1279,10 @@ void NSEErrorEstimator2D::calculateEtaK(const TFEVectFunct2D &fe_function2D_u, c
                             << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
                         if (check_cont_u) {
                             if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeData.xyval_1D[edgeIdx][i]) > 1e-8) {
-                                cout << " i " << i << " uval_a " << edgeData.xyval_1D[edgeIdx][i] << " uneigh_a " << edgeRefData.xyval_Neigh1D[i] << endl;
+                                cout << " cell " << cell->GetCellIndex() << " i " << i << " uval_a " << edgeData.xyval_1D[edgeIdx][i] << " uneigh_a " << edgeRefData.xyval_Neigh1D[i] << endl;
                             }
                             if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeData.xyval_1D[edgeIdx][m]) > 1e-8) {
-                                cout << " i " << i << " vval_a " << edgeData.xyval_1D[edgeIdx][m] << " vneigh_a " << edgeRefData.xyval_Neigh1D[m] << endl;
+                                cout << " cell " << cell->GetCellIndex() << " i " << i << " vval_a " << edgeData.xyval_1D[edgeIdx][m] << " vneigh_a " << edgeRefData.xyval_Neigh1D[m] << endl;
                             }
                         }
                         if (check_cont_p) {
@@ -1846,10 +1848,10 @@ void NSEErrorEstimator2D::calculateEtaK(const TFEVectFunct2D &fe_function2D_u, c
                                     << "   " << edgeRefData.X1DNeigh[i] << " , " << edgeRefData.Y1DNeigh[i] << endl;
                                 if (check_cont_u) {
                                     if (fabs(edgeRefData.xyval_Neigh1D[i] - edgeRefData.xyval_Cell1D[i]) > 1e-8) {
-                                        cout << " i " << i << " uval_c " << edgeRefData.xyval_Cell1D[i] << " uneigh_c " << edgeRefData.xyval_Neigh1D[i] << endl;
+                                        cout << " cell " << cell->GetCellIndex() << " i " << i << " uval_c " << edgeRefData.xyval_Cell1D[i] << " uneigh_c " << edgeRefData.xyval_Neigh1D[i] << endl;
                                     }
                                     if (fabs(edgeRefData.xyval_Neigh1D[m] - edgeRefData.xyval_Cell1D[m]) > 1e-8) {
-                                        cout << " i " << i << " vval_c " << edgeRefData.xyval_Cell1D[m] << " vneigh_c " << edgeRefData.xyval_Neigh1D[m] << endl;
+                                        cout << " cell " << cell->GetCellIndex() << " i " << i << " vval_c " << edgeRefData.xyval_Cell1D[m] << " vneigh_c " << edgeRefData.xyval_Neigh1D[m] << endl;
                                     }
                                 }
                                 if (check_cont_p) {

@@ -20,7 +20,8 @@
 #include <functional>
 #include <MainUtilities.h>
 
-# define COMPARE_TO_VERY_FINE 0
+static double hmin = 0;
+static double hmax = 0;
 
 // =============================================================================
 // main program
@@ -29,32 +30,6 @@ int main(int argc, char *argv[]) {
     //  declaration of database, you need this in every program
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-
-#if COMPARE_TO_VERY_FINE
-    Output::print<1>("solver type = ", TDatabase::ParamDB->SOLVER_TYPE );
-    Output::print<1>("----------------solving on very fine grid----------------");
-    TDomain domain2(argv[1]);
-    domain2.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); //"hemker_fine.01.GEO
-    Output::print<1>("Refining regularly:");
-    for(int j = 0; j < 5; j++) {
-        domain2.RegRefineAll();
-    }
-    std::cout << "done";
-    Example_CD2D example2;
-    CD2D cd2d_2(domain2, example2);
-    std::cout << " assemble .. ";
-    cd2d_2.assemble();
-    std::cout << " solve ..";
-    cd2d_2.solve();
-    std::cout << "done" << std::endl;
-    {
-        TOutput2D Output(1, 1, 0, 0, NULL);
-        Output.AddFEFunction(&cd2d_2.get_function());
-        std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-        filename += "/uniform.vtk";
-        Output.WriteVtk(filename.c_str());
-    }
-#endif
 
     /** set variables' value in TDatabase using argv[1] (*.dat file) */
     TDomain Domain(argv[1]);
@@ -92,56 +67,29 @@ int main(int argc, char *argv[]) {
     // choose example according to the value of TDatabase::ParamDB->EXAMPLE
     Example_CD2D example;
 
-    // initialize the error estimator
-    // this functional evaluates the integral of the solution in a ball around the center of radius 0.2
-    std::function<double(const TFEFunction2D *, double, double, TBaseCell &)> dwrFunctional = [](const TFEFunction2D *sol, double x, double y, TBaseCell &cell) {
-        if ((x - 0.5) * (x - 0.5) + y * y <= 0.2 * 0.2) {
-            double integral = 0;
-            FE2D feID = sol->GetFESpace2D()->GetFE2D(cell.GetCellIndex(), &cell); // id of finite element
-            // calculate values on original element (i.e. prepare reference transformation)
-            bool SecondDer = false; // defined in include/General/Constants.h
-            double *weights, *xi, *eta;//quadrature weights and points in reference cell
-            double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D]; // quadrature points
-            double AbsDetjk[MaxN_QuadPoints_2D]; // determinant of transformation
-            int n_points = 0;
-            TFEDatabase2D::GetOrig(1, &feID, sol->GetFESpace2D()->GetCollection(), &cell, &SecondDer,
-                                   n_points, xi, eta, weights, X, Y, AbsDetjk);
-            // finite element on the current cell
-            TFE2D *fe = TFEDatabase2D::GetFE2D(feID);
-            const int n_loc_dof = fe->GetN_DOF(); // number of local dofs
-            int *DOF = sol->GetFESpace2D()->GetGlobalDOF(cell.GetCellIndex());
-            // id of the local basis functions
-            BaseFunct2D base_fc_id = fe->GetBaseFunct2D()->GetID();
-            // transformed values of basis functions
-            double **orig_values = TFEDatabase2D::GetOrigElementValues(base_fc_id, D00);
-            // local integration (loop over all quadrature points)
-            for (auto j = 0; j < n_points; j++) {
-                // local transformed values on this quadrature point
-                double *orig = orig_values[j];
-                double value = 0; // value of this TFEFunction2D at this quadrature point
-                for (int l = 0; l < n_loc_dof; l++) {
-                    // entry in the vector of this TFEFunction2D times basis function
-                    value += sol->GetValues()[DOF[l]] * orig[l];
-                }
-
-                const double w = weights[j] * AbsDetjk[j];
-                integral += w * value;
-            }
-            return integral; //* pow(10, 8)
-        }
-        return 0.0;
-    };
     std::function<double(const TFEFunction2D *, double, double, TBaseCell &)> dwrFunctional2 = [](const TFEFunction2D *sol, double x, double y, TBaseCell &cell) {
-        return 1.0;
+        if (hmin == 0) {
+            std::cout << " --------- <<<<< assigning hmin >>>>> -----------" << std::endl;
+            //double _hmin, _hmax;
+            //sol->GetFESpace2D()->GetCollection()->GetHminHmax(&_hmin, &_hmax);
+            hmin = 1.;
+        }
+        double r = .01; ////hmin;
+        if ((y - .3) * (y - .3) + (x - .7) * (x - .7) <= r * r) {
+            return 1.0 / (Pi * r * r);
+        } else {
+            return 0.;
+        }
     };
-    //CDErrorEstimator2DDWR estimator{example, dwrFunctional2, Domain};
-    CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
+    CDErrorEstimator2DDWR estimator{example, dwrFunctional2, Domain};
+    //CDErrorEstimator2D estimator {example, TDatabase::ParamDB->ADAPTIVE_REFINEMENT_CRITERION };
 
     // refinement
     RefinementStrategy refinementStrategy;
 
     int LEVELS = TDatabase::ParamDB->LEVELS;
     for (int curr_level = 0; curr_level < LEVELS; curr_level++) {
+        hmin = 0;
         double t_start_level = GetTime(); // time for level
         {
             std::stringstream out;
@@ -167,14 +115,12 @@ int main(int argc, char *argv[]) {
         CD2D cd2d(Domain, example);
         cd2d.assemble();
         cd2d.solve();
-#if !COMPARE_TO_VERY_FINE
         cd2d.output(curr_level);
-#endif
 
-        if(TDatabase::ParamDB->ESTIMATE_ERRORS){
+        if (TDatabase::ParamDB->ESTIMATE_ERRORS) {
             estimator.estimate(cd2d.get_function());
             {
-                if(TDatabase::ParamDB->WRITE_VTK) {
+                if (TDatabase::ParamDB->WRITE_VTK) {
                     // the FE basis functions
                     BaseFunct2D *baseFunctions = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
                     // number of basis functions
@@ -203,33 +149,74 @@ int main(int argc, char *argv[]) {
                     Output.WriteVtk(filename.c_str());
                 }
             }
-#if COMPARE_TO_VERY_FINE
             {
-                // calc errors to very fine sol'n
-                TFEFunction2D *foo = const_cast<TFEFunction2D*>(&cd2d.get_function());
-                double vals [foo->GetLength()];
-                TFEFunction2D foutzz = TFEFunction2D(&cd2d.get_space(), "name", "dsc", vals, foo->GetLength());
-                TFEFunction2D *foo2 = const_cast<TFEFunction2D*>(&cd2d_2.get_function());
-                foutzz.Interpolate(foo2);
-                foo->operator*=(-1.);
-                foo->operator+=(foutzz);
+                double estimated = estimator.GetEstimatedGlobalError()[current_estimator];
+                double trueErr = 0;
+                double FEFunctValues[MaxN_BaseFunctions2D];
+                std::vector<double> values = std::vector<double>((unsigned long) cd2d.get_function().GetLength());
+                // calculate efficiency index
+                TFEFunction2D err_fct = TFEFunction2D(cd2d.get_function().GetFESpace2D(), (char *) "errf", (char *) "errf", values.data(), (int) values.size());
+                err_fct.Interpolate(example.exact_solution[0]);
+                err_fct *= -1.;
+                err_fct += cd2d.get_function();
+
+                double *weights, *xi, *eta;
+                double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+                double AbsDetjk[MaxN_QuadPoints_2D];
+                double *righthand;
+                auto space = cd2d.get_function().GetFESpace2D();
+
+                auto BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+                auto N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+                auto GlobalNumbers = space->GetGlobalNumbers();
+                auto BeginIndex = space->GetBeginIndex();
+                for (auto cellIdx = 0; cellIdx < space->GetN_Cells(); cellIdx++) {
+                    auto cell = space->GetCollection()->GetCell(cellIdx);
+                    constexpr int n_fespaces = 1;
+
+                    auto DOF = GlobalNumbers + BeginIndex[cellIdx];
+
+                    std::vector<FE2D> LocalUsedElements(n_fespaces);
+                    std::vector<int> LocN_BF(n_fespaces);
+                    std::vector<BaseFunct2D> LocBF(n_fespaces);
+                    int iSpace = 0;
+
+                    FE2D CurrentElement = space->GetFE2D(cellIdx, cell);
+                    TFE2D *fe = TFEDatabase2D::GetFE2D(CurrentElement);
+                    LocalUsedElements[iSpace] = CurrentElement;
+                    LocN_BF[iSpace] = fe->GetSize();
+                    LocBF[iSpace] = fe->GetBaseFunct2D_ID();
+
+                    for (auto l = 0; l < N_BaseFunct[CurrentElement]; l++) {
+                        FEFunctValues[l] = err_fct.GetValues()[DOF[l]];
+                    }
+
+                    int N_LocalUsedElements = n_fespaces;
+
+                    int N_Points; // number of quadrature points
+                    bool secondDer[]{false};
+                    TFEDatabase2D::GetOrig(N_LocalUsedElements, &LocalUsedElements[0], cd2d.get_space().GetCollection(),
+                                           cell, secondDer, N_Points, xi, eta, weights, X, Y,
+                                           AbsDetjk);
+                    double **elementVals = TFEDatabase2D::GetOrigElementValues(LocBF[0], D00);
+                    double *orig = elementVals[0];
+                    for (int i = 0; i < N_Points; i++) {
+                        double x = X[i];
+                        double y = Y[i];
+                        double Mult = weights[i] * AbsDetjk[i];
+                        double functVal = 0;
+                        functVal = dwrFunctional2(&err_fct, x, y, cell[0]);
+                        trueErr += Mult * (functVal * FEFunctValues[i] * orig[i]);
+                    }
+
+                }
                 {
-                    double errors[5];
-                    TAuxParam2D aux;
-                    MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
-                    const TFESpace2D* space = foo->GetFESpace2D();
-
-                    foo->GetErrors(example.get_exact(0), 3, AllDerivatives, 4,
-                                          SDFEMErrors, example.get_coeffs(), &aux, 1,
-                                          &space, errors);
-
-                    Output::print<1>("exact L2     : ", errors[0]);
-                    Output::print<1>("exact H1-semi: ", errors[1]);
-                    Output::print<1>("exact SD     : ", errors[2]);
-                    Output::print<1>("exact L_inf  : ", errors[3]);
+                    std::stringstream out;
+                    out << "efficiency index " << setw(10) << (fabs(estimated) / fabs(trueErr)) << ", trueErr " << fabs(trueErr);
+                    Output::print<1>(out.str());
                 }
             }
-#endif
             refinementStrategy.applyEstimator(estimator);
             std::stringstream out;
             out << "estimated global error " << setw(10) << estimator.GetEstimatedGlobalError()[current_estimator];

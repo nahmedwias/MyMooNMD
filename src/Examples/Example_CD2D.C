@@ -31,6 +31,11 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
+namespace two_boundary_layers
+{
+  #include "CD_2D/TwoBoundaryLayers.h"
+}
+
 
 //===========================================================
 // examples for time dependent convection-diffusion-reaction
@@ -123,6 +128,14 @@ Example_CD2D::Example_CD2D() : Example2D()
 
       sharp_boundary_layer::ExampleFile();
       break;
+    case 4: {
+      exact_solution.push_back(two_boundary_layers::Exact);
+      boundary_conditions.push_back(two_boundary_layers::BoundCondition);
+      boundary_data.push_back(two_boundary_layers::BoundValue);
+      problem_coefficients = two_boundary_layers::BilinearCoeffs;
+      two_boundary_layers::ExampleFile();
+      break;
+    }
 
     // starting from 101 the examples for time dependent problems
     case 101:

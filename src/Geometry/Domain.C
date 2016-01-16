@@ -1426,7 +1426,9 @@ int TDomain::MakeConfClosure()
   // look for elements which have to be refined
   TDatabase::IteratorDB[It_Finest]->Init(0);
   MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-  PS(("before_closure_" + std::to_string(++before_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
+  if(TDatabase::ParamDB->WRITE_PS) {
+    PS(("before_closure_" + std::to_string(++before_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
+  }
   Output::print<1>("MaxLevel ", MaxLevel);
   
   for (i=MaxLevel;i>=0;i--)
@@ -1511,7 +1513,7 @@ int TDomain::MakeConfClosure()
 	  }
     }
   }
-  PS(("after_closure_" + std::to_string(++after_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
+  //PS(("after_closure_" + std::to_string(++after_closure_ps_lvl) + ".ps").c_str(), It_Finest, 0);
   return 0;
 }
 

@@ -120,7 +120,7 @@ void CDErrorEstimator2DDWR::estimate(const std::vector<MultiIndex2D> &derivative
             // calculate L^2 squared norm of laplace
             const double laplaceInCell = calcL2LaplaceInCell(&z_h, cell[0], origValues, baseFunctions, n_baseFunctions);
             // save weight (additional h_K per cell)
-            dual_weights_ptr[cellIdx] = h_K * laplaceInCell * laplaceInCell;
+            dual_weights_ptr[cellIdx] = laplaceInCell;
         }
     }
 
@@ -224,7 +224,7 @@ void CD2DDual::output_dual(size_t level) {
 }
 
 CDErrorEstimator2DDWR::CDErrorEstimator2DDWR(Example2D &ex, CD2DDwrFunctional &functional, TDomain &domain)
-        : CDErrorEstimator2D(ex, int(CDErrorEstimatorType::Energy_ResidualEstimatorQuasiRobust)) {
+        : CDErrorEstimator2D(ex, int(CDErrorEstimatorType::L2_ResidualEstimator)) {
     this->dwrFunctional = functional;
     this->domain = domain;
 }

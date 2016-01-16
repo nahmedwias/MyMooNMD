@@ -32,10 +32,10 @@ bool StoDa2DRefinementStrategy::shouldRefineCell(size_t cellIndex) {
     auto cell = finest_collection->GetCell((int) cellIndex);
     if (cell->GetReference_ID() == this->reference_id_darcy) {
         auto darcy_strategy = this->d_strategy.get();
-        return darcy_strategy->shouldRefineCell(cellIndex - begin_index_darcy);
+        return darcy_strategy->shouldRefineCell(darcy_collection->GetIndex(cell));
     } else if (cell->GetReference_ID() == this->reference_id_stokes) {
         auto stokes_strategy = this->nse_strategy.get();
-        return stokes_strategy->shouldRefineCell(cellIndex - begin_index_stokes);
+        return stokes_strategy->shouldRefineCell(stokes_collection->GetIndex(cell));
     } else {
         std::cerr << "cell with index=" << cellIndex << " had reference_id=" << cell->GetReference_ID()
         << ", which is neither the darcy-reference-id=" << reference_id_darcy
@@ -49,12 +49,13 @@ void StoDa2DRefinementStrategy::applyEstimator(CDErrorEstimator2D &d_estimator, 
     d_strategy.reset(new RefinementStrategy(int(refine_strategy), reftol, coarsetol, min_fraction_to_change, decrease_reftol_factor, increase_coarsetol_factor, fraction_of_error, max_cell_level, current_estimator));
     nse_strategy.reset(new RefinementStrategy(int(refine_strategy), reftol, coarsetol, min_fraction_to_change, decrease_reftol_factor, increase_coarsetol_factor, fraction_of_error, max_cell_level, current_estimator));
     this->finest_collection = finestCollection;
+    this->stokes_collection = nse_estimator.GetCollection();
+    this->darcy_collection = d_estimator.GetCollection();
 
     {
         Output::print<1>("Applying Darcy estimator:");
         auto first_darcy_cell = d_estimator.GetCollection()->GetCell(0);
         reference_id_darcy = first_darcy_cell->GetReference_ID();
-        begin_index_darcy = finestCollection->GetIndex(first_darcy_cell);
         d_strategy.get()->applyEstimator(d_estimator);
     }
 
@@ -62,7 +63,6 @@ void StoDa2DRefinementStrategy::applyEstimator(CDErrorEstimator2D &d_estimator, 
         Output::print<1>("Applying Stokes estimator:");
         auto first_cell_stokes = nse_estimator.GetCollection()->GetCell(0);
         reference_id_stokes = first_cell_stokes->GetReference_ID();
-        begin_index_stokes = finestCollection->GetIndex(first_cell_stokes);
         nse_strategy.get()->applyEstimator(nse_estimator);
     }
     Output::print<1>("---- refinement strategies end ----");

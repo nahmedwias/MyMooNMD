@@ -13,6 +13,7 @@
 #include <RefinementStrategy.h>
 #include <CDErrorEstimator2D.h>
 #include <NSEErrorEstimator2D.h>
+#include <memory>
 
 class StoDa2DRefinementStrategy : public RefinementStrategy {
 
@@ -22,10 +23,11 @@ protected:
 
     // values to be set in applyEstimator(...)
     int reference_id_darcy;
-    int begin_index_darcy;
     int reference_id_stokes;
-    int begin_index_stokes;
-    TCollection *finest_collection;
+    
+    TCollection *finest_collection; // stokes and darcy domain together
+    TCollection *stokes_collection;
+    TCollection *darcy_collection;
 
     void applyEstimator(ErrorEstimator2D &estimator2D);
 public:
