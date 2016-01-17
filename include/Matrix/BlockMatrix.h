@@ -184,6 +184,20 @@ class BlockMatrix
     void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
     
+    /**
+     * @brief compute matrix-matrix product C = a*A*B, 
+     * 
+     * 'A' is this matrix, 'a' is a scalar factor, 'B' is given. Then matrix
+     * 'C' is created during this function and the user is responsible to 
+     * delete C.
+     * 
+     * Note that this is rather slow.
+     * 
+     * @param B matrix to be multiplied (from right) to this matrix
+     * @param a scaling factor, default is 1.0
+     */
+    BlockMatrix *multiply(const BlockMatrix & B, double a=1.) const;
+    
     /** @brief return this BlockMatrix as one TMatrix
      * 
      * This returns a merged version of this martix. That means this matrix then
