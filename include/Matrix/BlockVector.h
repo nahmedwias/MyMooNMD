@@ -237,9 +237,14 @@ class BlockVector
       unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
       for(unsigned int b = 0; b < n_blocks; ++b)
       {
-        unsigned int block = b * (image ? mat.n_cols() : 1.);
-        this->actives[b] = mat.get_space_of_block(block,
-                                                  image)->GetN_ActiveDegrees();
+        if( image )
+        { // take actives from row space
+          actives[b] = mat.get_n_row_actives( b );
+        }
+        else
+        { //take actives from column space
+          actives[b] = mat.get_n_column_actives( b );
+        }
       }
     }
     
@@ -347,6 +352,22 @@ class BlockVector
     double* get_entries()
     { return &(this->entries.at(0)); }
     
+    /**
+     * @return A const reference to the entire entries vector (all blocks).
+     */
+    const std::vector<double>& get_entries_vector() const
+    {
+      return entries;
+    }
+
+    /**
+     * @return A non-const reference to the entire entries vector (all blocks).
+     */
+    std::vector<double>& get_entries_vector()
+    {
+      return entries;
+    }
+
     /* *********************************************************************
      * overloading standard operators
      * we avoid operators +,-,*,/ because they would require to alocate new

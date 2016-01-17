@@ -58,15 +58,6 @@ class TFESpace2D : public TFESpace
     TCollection *MortarColl;
 #endif
 
-   /** no. points in internal coordinate direction --- ADI scheme*/
-   int N_IntlPts;
-
-   /** internal points' X coordinate --- ADI scheme*/
-   double *X_Intl;
-
-   /** internal points' Y coordinate --- ADI scheme*/
-   double *Y_Intl;
-
    /** indices for mapping between Nodalfunctional/Nodal-interpolation point 
       in operator-splitting methods ---  Sashikumaar Ganesan */
    int *IntlPtIndexOfPts;

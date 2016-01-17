@@ -49,17 +49,7 @@ class BlockMatrix
      */
     std::vector<std::shared_ptr<TMatrix>> blocks;
     
-    /** @brief number of active entries for each block
-     * 
-     * The size of this vector is the same as the size of the vector 'blocks'.
-     * The i-th block in 'blocks' has 'actives[i]' active entrires. This enables
-     * the methods like scale_active, and add_scaled_active.
-     * 
-     * If you use a constructor which does not create the matrices in 'blocks',
-     * the default value in this vector will be
-     * std::numeric_limits<unsigned int>::max().
-     */
-    std::vector<unsigned int> actives;
+
     
     /** @brief all blocks as one TMatrix
      * 
@@ -154,13 +144,7 @@ class BlockMatrix
      */
     void add_scaled(const BlockMatrix &A, double factor = 1.0);
     
-    /** 
-     * @brief adding a scaled matrix to this matrix, but only the active entries
-     * 
-     * This does exactly the same as add_scaled, except that nonactive entries
-     * are not changed.
-     */
-    void add_scaled_active(const BlockMatrix &A, double factor = 1.0);
+
     
     /** 
      * @brief scale this matrix
@@ -171,14 +155,7 @@ class BlockMatrix
      */
     void scale(double factor);
     
-    /** 
-     * @brief scale all active entries of this matrix
-     * 
-     * That means for each submatrix all active entries are scaled.
-     * 
-     * Possibly existing special matrices are not changed.
-     */
-    void scale_active(double factor);
+
     
     /** @brief compute y = Ax 
      *
