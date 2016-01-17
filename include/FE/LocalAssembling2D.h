@@ -48,6 +48,7 @@ enum LocalAssembling2D_type { ConvDiff,
                               Darcy2D_Galerkin,
                               RECONSTR_GALERKIN,
                               RECONSTR_GALERKIN_Rhs,
+                              RECONSTR_MASS,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 

@@ -99,6 +99,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
       return std::string("RECONSTR_GALERKIN_Rhs");
       break;
+    case LocalAssembling2D_type::RECONSTR_MASS:
+      return std::string("RECONSTR_MASS");
+      break;
   }
   return std::string();
 }
@@ -268,6 +271,7 @@ switch(type)
     break;
  //////////////////////////////////////////////////////////////////////////////
   case LocalAssembling2D_type::RECONSTR_GALERKIN:
+  case LocalAssembling2D_type::RECONSTR_MASS:
     this->set_parameters_for_Rec_nse(type);
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
@@ -2088,6 +2092,30 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->FEValue_FctIndex = { 0, 1 };
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 };  
+      break;
+    case RECONSTR_MASS:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 1;
+      this->RowSpace = { 0 };
+      this->ColumnSpace = { 0 };
+      this->N_Rhs = 2;
+      this->RhsSpace = { 0, 0 };
+      this->AssembleParam = LocAssembleMass; 
+      this->Manipulate = NULL;
+      
+      /*this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 2;
+      this->FEValue_FctIndex = { 0, 1 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 0 }; */ 
+      break;
       break;
   }
 }
