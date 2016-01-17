@@ -53,8 +53,8 @@ TFESpace::TFESpace(TCollection *coll, char *name, char *description)
 /** destructor */
 TFESpace::~TFESpace()
 {
-  delete Name;
-  delete Description;
+  free(Name);
+  free(Description);
   delete [] GlobalNumbers;
   delete [] BeginIndex;
   delete [] BoundaryNodeTypes;

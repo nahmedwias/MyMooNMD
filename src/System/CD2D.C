@@ -210,41 +210,40 @@ void CD2D::performAlgebraicFluxCorrection()
     {
       case 1: //FEM-TVD
       {
-        //get pointers to the relevant objects
+        //get pointers/references to the relevant objects
         TFESpace2D& feSpace = s.fe_space;
-        TSquareMatrix2D * matrix = s.matrix.get_matrix();
-        double* solEntries = s.solution.get_entries();
-        double* rhsEntries = s.rhs.get_entries();
+        FEMatrix& matrix = *s.matrix.get_matrix();
+        const std::vector<double>& solEntries = s.solution.get_entries_vector();
+        std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
 
-        // fill an array "neumannToDirichlet" with those rows, that got internally treated as
-        // Neumann although they are Dirichlet
-        size_t nNeumannToDirichlet = feSpace.GetN_Dirichlet();
-        int* neumannToDirichlet = new int[nNeumannToDirichlet];
+        // fill a vector "neumannToDirichlet" with those rows that got
+        // internally treated as Neumann although they are Dirichlet
+        // TODO put to seperate method in AlgebraicFluxCorrection
+        std::vector<int> neumannToDirichlet(feSpace.GetN_Dirichlet(), 0);
+
         int dirichletDofStartIndex = feSpace.GetDirichletBound();
+
         int* dirichletDofStartPtr = &feSpace.GetGlobalNumbers()[dirichletDofStartIndex];
-        for (size_t i = 0; i < nNeumannToDirichlet ;++i){
+
+        for (size_t i = 0; i < neumannToDirichlet.size() ;++i){
+
           neumannToDirichlet[i]= dirichletDofStartPtr[i];
+
         }
 
-        // Number of dofs.
-        int nDofs = feSpace.GetN_DegreesOfFreedom();
-
-        // array of entries for matrix D
-        double* entriesMatrixD = new double[matrix->GetN_Entries()]();
+        // vector of entries for artificial diffusion matrix D, filled with zeroes
+        std::vector<double>entriesMatrixD(matrix.GetN_Entries(), 0.0);
 
         // apply FEM-TVD
-        AlgebraicFluxCorrection::FEM_TVD_ForConvDiff(
-            matrix, nDofs, nDofs,
-            entriesMatrixD,
+        AlgebraicFluxCorrection::fem_tvd_algorithm(
+            matrix,
+            entriesMatrixD, true,
             solEntries,rhsEntries,
-            nNeumannToDirichlet, neumannToDirichlet, 1);
+            neumannToDirichlet);
 
         //...and finally correct the entries in the Dirchlet rows
-        AlgebraicFluxCorrection::correctDirichletRows(*matrix);
+        AlgebraicFluxCorrection::correct_dirichlet_rows(matrix);
 
-        //clean up
-        delete[] entriesMatrixD;
-        delete[] neumannToDirichlet;
         break;
       }
       default:

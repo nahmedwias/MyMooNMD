@@ -161,8 +161,8 @@ class TStructure
     /**
      * @brief generate a structure, all arrays are already defined
      * 
-     * Note that the pointers will be deleted from within this class. No deep 
-     * copy is done.
+     * Note that a deep copy of the arrays is performed, TStructure will not
+     * take ownership of the ipnut arrays.
      * 
      * @param nRows number of rows
      * @param nCols number of columns
@@ -296,6 +296,14 @@ class TStructure
      * This depends on the current verbosity level.
      */
     void info() const;
+    
+    /** 
+     * @brief draw a postscript picture of the sparsity pattern, similar to 
+     * Matlab 'spy'
+     * 
+     * @param filename a file with this name will be created (overwritten)s
+     */
+    void draw(std::string filename) const;
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B
