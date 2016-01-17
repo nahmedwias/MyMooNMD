@@ -49,6 +49,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
+  
+  #nse2d test
+  add_executable(ParMooN_test_nse2d_mg nse2d_multigrid_test.c++)
+  target_link_libraries(ParMooN_test_nse2d_mg parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(nse2d_mg ParMooN_test_nse2d_mg)
+  list(APPEND parmoon_tests ParMooN_test_nse2d_mg)
 	
 	# test for hdiv elements
     add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
