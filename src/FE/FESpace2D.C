@@ -91,28 +91,11 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Rectangle] = C_Q1_2D_Q_A;
              break;
     case 2:  ElementForShape[Triangle] = C_P2_2D_T_A;
-             // ElementForShape[Triangle] = C_B2_2D_T_A;
              ElementForShape[Quadrangle] = C_Q2_2D_Q_M;
              ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
              ElementForShape[Rectangle] = C_Q2_2D_Q_A;
-             break;
-    case 222:
-      switch((int) (TDatabase::ParamDB->REACTOR_P11 + 0.5))
-      {
-        case 1:
-        case 2:
-          ElementForShape[Triangle] = C_B2_2D_T_A;
-          break;
-          
-        default:
-          ElementForShape[Triangle] = C_P2_2D_T_A;
-      }
-      ElementForShape[Quadrangle] = C_Q2_2D_Q_M;
-      ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
-      ElementForShape[Rectangle] = C_Q2_2D_Q_A;
-      break;
+             break;    
     case 3:  ElementForShape[Triangle] = C_P3_2D_T_A;
-             // ElementForShape[Triangle] = C_B3_2D_T_A;
              ElementForShape[Quadrangle] = C_Q3_2D_Q_M;
              ElementForShape[Parallelogram] = C_Q3_2D_Q_A;
              ElementForShape[Rectangle] = C_Q3_2D_Q_A;
@@ -147,6 +130,28 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Parallelogram] = C_Q9_2D_Q_A;
              ElementForShape[Rectangle] = C_Q9_2D_Q_A;
              break;
+//===============================================================================
+    // conforming fe spaces with bubbles on triangles 
+    case 21:
+      ErrThrow("Conforming space with bubble is not implemented");
+      break;
+    case 22: ElementForShape[Triangle] = C_B2_2D_T_A;
+             ElementForShape[Quadrangle] = C_Q2_2D_Q_M;
+             ElementForShape[Parallelogram] = C_Q2_2D_Q_A;
+             ElementForShape[Rectangle] = C_Q2_2D_Q_A;
+        break;
+    case 23: ElementForShape[Triangle] = C_B3_2D_T_A;
+             ElementForShape[Quadrangle] = C_Q3_2D_Q_M;
+             ElementForShape[Parallelogram] = C_Q3_2D_Q_A;
+             ElementForShape[Rectangle] = C_Q3_2D_Q_A;
+        break;
+    case 24: ElementForShape[Triangle] = C_B4_2D_T_A;
+             ElementForShape[Quadrangle] = C_Q4_2D_Q_M;
+             ElementForShape[Parallelogram] = C_Q4_2D_Q_A;
+             ElementForShape[Rectangle] = C_Q4_2D_Q_A;
+        break;
+//===============================================================================
+    // P1//PQ1 nonconforming
     case -1: ElementForShape[Triangle] = N_P1_2D_T_A;
              ElementForShape[Quadrangle] = N_Q1_2D_Q_M;
              ElementForShape[Parallelogram] = N_Q1_2D_Q_A;
@@ -178,7 +183,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Parallelogram] = N_Q5_2D_Q_A;
              ElementForShape[Rectangle] = N_Q5_2D_Q_A;
              break;
-
+//===============================================================================
     // P1mod
     case -101: 
              ElementForShape[Triangle] = N_P1MOD_2D_T_A;
@@ -196,8 +201,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Rectangle] = C_Q1_2D_Q_A;
              cout << "P1MINI works only on triangles" << endl;
              break;
-            
-    //========LOCALPROJECTION=============
+//===============================================================================            
+    //LOCALPROJECTION
     // Q1+bubble*P0
     case 100: 
              ElementForShape[Triangle] = C_UL1_2D_T_A;
@@ -233,7 +238,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Parallelogram] = C_UL5_2D_Q_A;
              ElementForShape[Rectangle] = C_UL5_2D_Q_A;
              break; 
-
+//===============================================================================             
+    // elements used for Shishkin meshes
     case 200: // enriched Q_1-element, used on Shishkin meshes
              ElementForShape[Triangle] = C_UL2_2D_T_A;
              OutPut("Using usual local projection element on triangles" << endl);
@@ -426,14 +432,14 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Rectangle] = C_M9_2D_Q_A;
              break;
 
-	     // only function zero	     
+       // only function zero       
     case 102:  ElementForShape[Triangle] = C_P00_2D_T_A;
              ElementForShape[Quadrangle] = C_Q00_2D_Q_M;
              ElementForShape[Parallelogram] = C_Q00_2D_Q_A;
              ElementForShape[Rectangle] = C_Q00_2D_Q_A;
              break;
-
-             // discontinous elements
+//===============================================================================
+    // discontinous elements
     case -11:
              ElementForShape[Triangle] = D_P1_2D_T_A;
              ElementForShape[Quadrangle] = D_Q1_2D_Q_M;
@@ -461,8 +467,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Parallelogram] = D_Q4_2D_Q_A;
              ElementForShape[Rectangle] = D_Q4_2D_Q_A;
              break;
-
-              // discontionuous P-elements on quadrangles
+//===============================================================================
+    // discontionuous P-elements on quadrangles
     case -110:
              ElementForShape[Triangle] = D_P1_2D_T_A;
              ElementForShape[Quadrangle] = D_P1_2D_Q_M;
@@ -491,7 +497,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Rectangle] = D_P4_2D_Q_A;
              break;
 
-    //====================================
+//===============================================================================
     //========Vector basis Raviart-Thomas  element=============
     case 1000:
       ElementForShape[Triangle] = N_RT0_2D_T_A;
@@ -517,6 +523,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
       ElementForShape[Parallelogram] = N_RT3_2D_Q_A;
       ElementForShape[Rectangle] = N_RT3_2D_Q_A;
       break;
+//===============================================================================
       //========Vector basis BDM  element=============
     case 1011:
       ElementForShape[Triangle] = N_BDM1_2D_T_A;
@@ -536,7 +543,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
       ElementForShape[Parallelogram] = N_BDM3_2D_Q_A;
       ElementForShape[Rectangle] = N_BDM3_2D_Q_A;
       break;
-
+//===============================================================================
     //========LOCALPROJECTION WITH EXP BUBBLE=============
     // Q1+bubble*P0
     case 1100: 
@@ -712,7 +719,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
           ElementForShape[Parallelogram] = D_P1_2D_Q_A;
           ElementForShape[Rectangle] = D_P1_2D_Q_A;
           break;      
-	  default:
+    default:
           Error("Space is not available" << endl);
           exit(-1);
       }
@@ -1428,7 +1435,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
             } // endif InterfaceJoint
 #ifdef _MPI
            else 
-// 	     if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
+//       if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
             { 
              // the neighbour is not a member of current collection
              Cond0 = SUBDOMAIN_HALOBOUND;
@@ -1437,7 +1444,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 #else
             else
               DirichletUpperBound += l;
-#endif	    
+#endif      
           } // end == -1
           else if(cell_reference != neighbor_reference)
           {
@@ -1603,7 +1610,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
              } // endif InterfaceJoint
 #ifdef _MPI
            else 
-// 	     if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
+//       if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
             {
              Cond0 = SUBDOMAIN_HALOBOUND;
              // OutPut("Halo Boundary Edge" << endl);
