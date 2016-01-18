@@ -1,4 +1,3 @@
-
 #include <Database.h>
 #include <GridCell.h>
 #include <Vertex.h>
@@ -94,11 +93,12 @@ int TGridCell::GetChildNumber(TBaseCell *Me)
   return -1;
 }
 
+
 #ifdef foo
 static double r = 0, g = 64, b = 128;
 #endif
 
-// #define __GRIDCELL_WITH_NUMBERS__
+//#define __GRIDCELL_WITH_NUMBERS__
 
 int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
                   double StartY)
@@ -149,6 +149,15 @@ text_y1 = (text_y1 + text_y2)/2;
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
          " L" << endl;
 dat<<"closepath"<<endl;
+
+  // fill this cell with a either blue or red
+  if(Reference_ID==1 || Reference_ID==2)
+    dat << "gsave\n"
+        << (Reference_ID==1?"0.816 0.637 0.637 setrgbcolor fill\n":
+                            "0.675 0.789 0.855 setrgbcolor fill\n")
+        << "grestore\n"
+        << "stroke\n";
+
 #ifdef foo
   double rr = r;
   double gg = g;

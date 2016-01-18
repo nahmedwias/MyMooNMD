@@ -76,8 +76,8 @@ int main(int argc, char* argv[])
         return result;
     };
 
-    NSEErrorEstimator2DDWR estimator = NSEErrorEstimator2DDWR(example, functional, Domain);
-    //NSEErrorEstimator2D estimator {example};
+    //NSEErrorEstimator2DDWR estimator = NSEErrorEstimator2DDWR(example, functional, Domain);
+    NSEErrorEstimator2D estimator {example};
     // for adaptive grid refinement
     auto current_estimator = int(estimator.GetEstimatorType());
     RefinementStrategy refinementStrategy;
