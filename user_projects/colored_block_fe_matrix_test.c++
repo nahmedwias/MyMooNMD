@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
    TFESpace2D first_fe_space(coll, (char*)"first_fe_space", (char*)"first_fe_space",
                              BoundConditionNSE, first_ansatz_order, nullptr);
    TFESpace2D second_fe_space(coll, (char*)"second_fe_space", (char*)"second_fe_space",
-                              BoundConditionNSE, second_ansatz_order, nullptr);
+                              BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
 
    //create four FE Matrices
    FEMatrix fe_matrix_1(&first_fe_space);
@@ -72,8 +72,9 @@ int main(int argc, char* argv[])
    TMatrix t_matrix_1(dim1,dim2);
 
    //colored block fe matrix
-   ColoredBlockFEMatrix myMatrix({dim1,dim2},{dim1,dim2});
+   ColoredBlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
    myMatrix.check_pointer_types();
+   myMatrix.print_and_check();
 
    myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false } );
 
@@ -84,21 +85,28 @@ int main(int argc, char* argv[])
    myMatrix.check_pointer_types();
 
    myMatrix.print_coloring_pattern("full fe matrix",true);
+   myMatrix.print_and_check();
 
-   std::shared_ptr<TMatrix> combined = myMatrix.get_combined_matrix();
-   combined->PrintFull("combined");
+   // try combination method of base
+   std::shared_ptr<TMatrix> combined_base = myMatrix.ColoredBlockMatrix::get_combined_matrix();
+   combined_base->PrintFull("combined base");
+
+   //try combination method of derived
+   std::shared_ptr<TMatrix> combined_derived = myMatrix.ColoredBlockFEMatrix::get_combined_matrix();
+   combined_derived->PrintFull("combined derived");
 
    //check copying
    ColoredBlockFEMatrix hisMatrix(myMatrix);
    hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
    hisMatrix.check_pointer_types();
+   hisMatrix.print_and_check();
 
    ColoredBlockFEMatrix herMatrix = myMatrix;
    herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
    herMatrix.check_pointer_types();
 
    //check adding of actives
-   fe_matrix_4.setEntries(std::vector<double>(17,1.0));
+   fe_matrix_4.setEntries(std::vector<double>(81,1.0));
 
    herMatrix.add_scaled_matrix_to_blocks(fe_matrix_4, 1.0 ,{{1,1}}, {false});
    herMatrix.get_combined_matrix()->PrintFull("added standard");

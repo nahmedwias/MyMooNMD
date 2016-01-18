@@ -139,6 +139,24 @@ void BlockVector::addScaledActive(const BlockVector& r, double factor)
 }
 
 /** ************************************************************************ */
+void BlockVector::addScaledNonActive(const BlockVector& r, double factor)
+{
+  if(this->n_blocks() != r.n_blocks())
+    ErrThrow("number of blocks in two vectors must be same");
+
+  for(unsigned int i=0; i<this->n_blocks(); ++i)
+  {
+    if(this->actives.at(i) != r.active(i))
+    {
+      ErrThrow("Number of actives in block ",i," do not match!");
+    }
+    // do the daxpy for the nonactives only (includes pointer arithmetic...)
+    int n_non_actives = this->lengths.at(i)- this->actives.at(i);
+    Daxpy(n_non_actives , factor, r.block(i) + this->actives.at(i), this->block(i) + this->actives.at(i));
+  }
+}
+
+/** ************************************************************************ */
 void BlockVector::copy(const double * x, const int i)
 {
   if(i < 0)

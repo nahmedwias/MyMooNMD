@@ -110,24 +110,11 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     /* ************************************************************************* */
     void ColoredBlockMatrix::apply(const BlockVector & x, BlockVector & y) const
     {
-      unsigned int l = y.length();
-      if(l != get_n_total_columns() && l != 0)
-      {
-        ErrThrow("cannot multiply with matrix, dimension mismatch");
-      }
-      if(l == 0)
-      {
-        ErrThrow("Sorry, colored Block Matrix cannot reset an empty Block Vector yet.");
-        //      TODO Make this work for an empty BlockVector!
-        //        // BlockVector y is empty, set to to a suitable vector in the image of
-        //        // this ColoredBlockMatrix, true means y is in the image of this, rather
-        //        // than the pre-image
-        //        y.copy_structure(*this, true);
-        //        // all values of 'y' are set to 0
-      }
-      else
-        y.reset(); // set all values in 'y' to 0
+      //check if the vectors fit, if not so the program throws an error
+      check_vector_fits_pre_image(x);
+      check_vector_fits_image(y);
 
+      //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
       apply_scaled_add(x, y, 1.0);
     }
 
@@ -135,14 +122,9 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     void ColoredBlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
                                               double a) const
     {
-      if(y.length() != get_n_total_rows())
-      {
-        ErrThrow("cannot multiply with matrix, dimension mismatch");
-      }
-      if(x.length() != get_n_total_columns())
-      {
-        ErrThrow("cannot multiply with matrix, dimension mismatch");
-      }
+      //check if the vectors fit, if not so the program throws an error
+      check_vector_fits_pre_image(x);
+      check_vector_fits_image(y);
 
       const double * xv = x.get_entries(); // array of values in x
       double * yv = y.get_entries(); // array of values in y
@@ -190,8 +172,68 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
     }
 
+    ///! Check whether a BlockVector b is fit to be the rhs b of the equation Ax=b.
+    void ColoredBlockMatrix::check_vector_fits_image(const BlockVector& b) const
+    {
+      size_t n_vec_blocks = b.n_blocks();
+
+      //check if number of blocks fits number of block rows
+      if(n_vec_blocks != n_cell_rows_)
+      {
+        ErrThrow("Vector blocks number does not fit cell row number. ",
+                 n_vec_blocks, "!=", n_cell_rows_);
+      }
+
+      //check if each vector block's length fits the number of rows in the corresponding row
+      for(size_t i = 0; i<n_vec_blocks; ++i)
+      {
+        if (b.length(i) != get_n_rows_in_cell(i, 0))
+        {
+          ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
+                   "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
+        }
+        if(b.active(i)!=0)
+        {
+          //maybe put to virtual method: handle_discovery_of_vector_actives
+          // give a warning if the vector has actives - the matrix has definitely not!
+          Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
+              " Did you want to use a BlockFEMatrix instead?");
+        }
+      }
+    }
+
+    ///! Check whether a BlockVector x is fit to be to be factor x in the equation Ax=b.
+    void ColoredBlockMatrix::check_vector_fits_pre_image(const BlockVector& x) const
+    {
+      size_t n_vec_blocks = x.n_blocks();
+
+      //check if number of blocks fits number of block columns
+      if(n_vec_blocks != n_cell_columns_)
+      {
+        ErrThrow("Vector blocks number does not fit cell column number. ",
+                 n_vec_blocks, "!=", n_cell_columns_);
+      }
+
+      //check if each vector block's length fits the number of columns in the corresponding column
+      for(size_t j = 0; j<n_vec_blocks; ++j)
+      {
+        if (x.length(j) != get_n_columns_in_cell(0,j))
+        {
+          ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
+                   "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
+        }
+        if(x.active(j)!=0)
+        {
+          //maybe put to virtual method: handle_discovery_of_vector_actives
+          // give a warning if the vector has actives - the matrix has definitely not!
+          Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
+              " Did you want to use a BlockFEMatrix instead?");
+        }
+      }
+    }
+
     /* ************************************************************************* */
-    std::shared_ptr<TMatrix> ColoredBlockMatrix::get_combined_matrix()
+    std::shared_ptr<TMatrix> ColoredBlockMatrix::get_combined_matrix() const
     {
       // fill an array with smart pointers to blocks,
       // such thate those stored as transposed really get transposed
@@ -703,9 +745,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
         }
 
       }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_color_count");
-      //END DEBUG
     }
 
     /* ************************************************************************* */
@@ -728,9 +767,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           }
         }
       }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_coloring_order");
-      //END DEBUG
     }
 
 
@@ -746,9 +782,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           if( is_last_index_pair(i_first, j_first) )
           {
             //last index pair reached
-            //CB DEBUG
-            Output::print("ColoredBlockMatrix passed test: check_equivalence_of_relations");
-            //END DEBUG
             return;
           }
 
@@ -840,9 +873,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           }
         }
       }
-      //CB DEBUG
-      Output::print("ColoredBlockMatrix passed test: check_re_coloring_flags");
-      //END DEBUG
     }
 
     /* ************************************************************************* */
@@ -1116,13 +1146,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
             // found  matrix to be merged into new class
             if(searching_shared_matrix)
             {
-              //CB DEBUG
-              if(currentCell.color_ != new_color)
-              {
-                ErrThrow("Something's terribly wrong here");
-              }
-              //END DEBUG
-
               //found the first appeareance of the lower class, hold its block
               shared_matrix = currentCell.block_;
               searching_shared_matrix = false;
@@ -1147,12 +1170,10 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       } //end traversing entire matrix
 
       // remove the last color class - should be empty (0)!
-      //CB DEBUG
       if(color_count_.back() != 0)
       {
         ErrThrow("Something's terribly wrong here - last color class is not empty!")
       }
-      //END DEBUG
 
       color_count_.pop_back();
     }
@@ -1281,13 +1302,7 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           {//this means we have not yet found the first element
             // of the second part of the color class to split
             // and thus still have to determine its number
-            //CB DEBUG
-            if(current_cell.color_ > new_color)
-            {
-              ErrThrow("Error when trying to figure out the color"
-                  " of the new color class!")
-            }
-            //END DEBUG
+
             // update new_color, because we have found another class
             // which lies between our two split parts
             ++new_color;
