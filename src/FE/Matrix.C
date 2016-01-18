@@ -385,6 +385,112 @@ TMatrix* TMatrix::multiply(const TMatrix &B, double a) const
   return c;
 }
 
+TMatrix* TMatrix::multiply_with_transpose_from_right() const{
+
+  // put up a unity diagonal matrix as a vector
+  std::vector<double> unityScaling(structure->GetN_Columns(), 1.0);
+
+  // let the other implementations do the work.
+  return multiply_with_transpose_from_right(unityScaling);
+}
+
+TMatrix* TMatrix::multiply_with_transpose_from_right(
+  const std::vector<double>& diagonalScaling) const
+{
+  // put up the structure by call to the specific structure generating method
+  TStructure * productStructure = 
+    structure->get_structure_of_product_with_transpose_from_right();
+
+  // construct the matrix and return a pointer
+  TMatrix * ret =  multiply_with_transpose_from_right(diagonalScaling, 
+                                                      *productStructure);
+  delete productStructure; // this has been (deep) copied in the above method
+  return ret;
+}
+
+TMatrix* TMatrix::multiply_with_transpose_from_right(
+  const std::vector<double>& diagonalScaling, const TStructure& knownStructure) 
+const
+{
+  //check if the dimensions match
+  if(diagonalScaling.size() != structure->GetN_Columns())
+  {
+    ErrThrow("Dimension mismatch! ", diagonalScaling.size(), "  ",
+             structure->GetN_Columns());
+  }
+
+  const size_t nProductRows = structure->GetN_Rows();
+
+  // copy construct the product's TStructure
+  std::shared_ptr<TStructure> productStructure = 
+    std::make_shared<TStructure>(knownStructure);
+  // create new matrix with this structure
+  TMatrix* product = new TMatrix(productStructure);
+  
+  int * productRowPtr = productStructure->GetRowPtr();
+  double * productEntries = product->GetEntries();
+
+  // fill the entries
+  // loop over all rows in the product
+  for(int row = 0; row < nProductRows; row++)
+  {
+    // loop over all entries in this row in the product
+    for(int iEntries = productRowPtr[row]; iEntries < productRowPtr[row + 1];
+        ++iEntries)
+    {
+      // hold row1 and row2 to fix ideas
+      int row1 = row;
+      int row2 = productStructure->GetKCol()[iEntries];
+
+      //store begin and end indices for the columns and entries segments
+      int beginRow1 = structure->GetRowPtr()[row1];
+      int endRow1 = structure->GetRowPtr()[row1+1];
+      int beginRow2 = structure->GetRowPtr()[row2];
+      int endRow2 = structure->GetRowPtr()[row2+1];
+
+      // work on two segments of column array
+      const int* row1ColBegin = &structure->GetKCol()[beginRow1];
+      const double* row1EntriesBegin = &entries[beginRow1];
+      const int row1SegmentSize = endRow1 - beginRow1;
+      const int* row2ColBegin = &structure->GetKCol()[beginRow2];
+      const double* row2EntriesBegin = &entries[beginRow2];
+      const int row2SegmentSize = endRow2 - beginRow2;
+
+      //initialize the value to be written later on
+      double temp = 0;
+      //better use index for control of the loop!
+      size_t index1 = 0;
+      size_t index2 = 0;
+      while (index1 < row1SegmentSize && index2 < row2SegmentSize)
+      {
+        if (row1ColBegin[index1] > row2ColBegin[index2])
+        {
+          index2++;
+        }
+        else if (row2ColBegin[index2] > row1ColBegin[index1])
+        {
+          index1++;
+        }
+        else
+        {
+          //we found a pair of indices with equal entry in KCol: account for 
+          // the scaling matrix!
+          temp +=  row1EntriesBegin[index1]
+                 * row2EntriesBegin[index2]
+                 * diagonalScaling[row1ColBegin[index1]];
+          index1++;
+          index2++;
+        }
+      }
+      //set the current entry to be the freshly calculated vector product
+      productEntries[iEntries]= temp;
+    } //end loop over all entries in this row
+  } //end loop over all rows of the product
+
+  // return the pointer
+  return product;
+}
+
 
 TMatrix* TMatrix::GetTransposed() const
 {

@@ -201,7 +201,7 @@ class CD2D
      * Which afc algorithm is performed is determined by switching over
      * ALGEBRAIC_FLUX_CORRECTION.
      */
-    void performAlgebraicFluxCorrection();
+    void do_algebraic_flux_correction();
 };
 
 #endif // __CD2D_H__

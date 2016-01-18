@@ -432,7 +432,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
              ElementForShape[Rectangle] = C_M9_2D_Q_A;
              break;
 
-	     // only function zero	     
+       // only function zero       
     case 102:  ElementForShape[Triangle] = C_P00_2D_T_A;
              ElementForShape[Quadrangle] = C_Q00_2D_Q_M;
              ElementForShape[Parallelogram] = C_Q00_2D_Q_A;
@@ -719,7 +719,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, char *name, char *description,
           ElementForShape[Parallelogram] = D_P1_2D_Q_A;
           ElementForShape[Rectangle] = D_P1_2D_Q_A;
           break;      
-	  default:
+    default:
           Error("Space is not available" << endl);
           exit(-1);
       }
@@ -1435,7 +1435,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
             } // endif InterfaceJoint
 #ifdef _MPI
            else 
-// 	     if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
+//       if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
             { 
              // the neighbour is not a member of current collection
              Cond0 = SUBDOMAIN_HALOBOUND;
@@ -1444,7 +1444,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 #else
             else
               DirichletUpperBound += l;
-#endif	    
+#endif      
           } // end == -1
           else if(cell_reference != neighbor_reference)
           {
@@ -1610,7 +1610,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
              } // endif InterfaceJoint
 #ifdef _MPI
            else 
-// 	     if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
+//       if(joint->GetType() == SubDomainHaloJoint || joint->GetType() == JointEqN)
             {
              Cond0 = SUBDOMAIN_HALOBOUND;
              // OutPut("Halo Boundary Edge" << endl);

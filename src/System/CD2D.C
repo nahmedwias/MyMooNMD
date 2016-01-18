@@ -7,6 +7,8 @@
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
 
+#include <numeric>
+
 
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
@@ -36,12 +38,6 @@ CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-  // when using afc, create system matrices as if all dofs were active
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 0)
-  {
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
-  }
-
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
   
@@ -105,7 +101,7 @@ CD2D::~CD2D()
 void CD2D::set_parameters()
 {
   //////////////// Algebraic flux correction ////////////
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
   {//some kind of afc enabled
     //make sure that galerkin discretization is used
     if (TDatabase::ParamDB->DISCTYPE !=	1)
@@ -114,7 +110,15 @@ void CD2D::set_parameters()
       Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
                     "Correction is enabled.");
     }
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 1)
+  {
+    ErrThrow("For CD2D only algebraic flux correction of FEM-TVD is implemented"
+        "(ALGEBRAIC_FLUX_CORRECTION: 1).")
+  }
+
 }
 
 /** ************************************************************************ */
@@ -133,9 +137,9 @@ void CD2D::assemble()
   }
 
   // when using afc, do it now
-  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 0)
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
   {
-    performAlgebraicFluxCorrection();
+    do_algebraic_flux_correction();
   }
 
 }
@@ -201,9 +205,9 @@ void CD2D::output(int i)
 }
 
 /** ************************************************************************ */
-void CD2D::performAlgebraicFluxCorrection()
+void CD2D::do_algebraic_flux_correction()
 {
-  for(auto & s : this->systems) // do it on all levels
+  for(auto & s : this->systems) // do it on all levels - TODO untested for multigrid!
   {
     //determine which kind of afc to use
     switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
@@ -218,28 +222,17 @@ void CD2D::performAlgebraicFluxCorrection()
 
         // fill a vector "neumannToDirichlet" with those rows that got
         // internally treated as Neumann although they are Dirichlet
-        // TODO put to seperate method in AlgebraicFluxCorrection
-        std::vector<int> neumannToDirichlet(feSpace.GetN_Dirichlet(), 0);
+        int firstDiriDof = feSpace.GetActiveBound();
+        int nDiri = feSpace.GetN_Dirichlet();
 
-        int dirichletDofStartIndex = feSpace.GetDirichletBound();
-
-        int* dirichletDofStartPtr = &feSpace.GetGlobalNumbers()[dirichletDofStartIndex];
-
-        for (size_t i = 0; i < neumannToDirichlet.size() ;++i){
-
-          neumannToDirichlet[i]= dirichletDofStartPtr[i];
-
-        }
-
-        // vector of entries for artificial diffusion matrix D, filled with zeroes
-        std::vector<double>entriesMatrixD(matrix.GetN_Entries(), 0.0);
+        std::vector<int> neumToDiri(nDiri, 0);
+        std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
 
         // apply FEM-TVD
         AlgebraicFluxCorrection::fem_tvd_algorithm(
             matrix,
-            entriesMatrixD, true,
             solEntries,rhsEntries,
-            neumannToDirichlet);
+            neumToDiri);
 
         //...and finally correct the entries in the Dirchlet rows
         AlgebraicFluxCorrection::correct_dirichlet_rows(matrix);

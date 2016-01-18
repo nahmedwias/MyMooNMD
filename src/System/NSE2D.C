@@ -11,7 +11,7 @@
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
-                        TCollection& coll, std::pair<int,int> velocity_pressure_orders)
+               TCollection& coll, std::pair<int,int> velocity_pressure_orders)
  : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
                   velocity_pressure_orders.first, nullptr),
    pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
@@ -44,6 +44,9 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
+  // set the velocity and preesure spaces
+  // this function returns a pair which consists of 
+  // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
@@ -98,7 +101,6 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   unsigned int i = 0;
   for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
   {
-    ErrThrow("NSE2D-multigrid needs to be checked");
     this->multigrid->AddLevel(this->mg_levels(i, *it));
     i++;
   }
@@ -110,7 +112,8 @@ NSE2D::~NSE2D()
 }
 
 /** ************************************************************************ */
-void NSE2D::get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders)
+void NSE2D::get_velocity_pressure_orders(std::pair <int,int> 
+                 &velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
   int pressure_order = velocity_pressure_orders.second;
@@ -170,9 +173,9 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_
           break;
       }
       break;
-    // discontinuous spaces
-    case 1:case 2: case 3: case 4: case 5:
-      pressure_order = -(velocity_order-1)*10;
+    // continuous pressure spaces
+    case 1: case 2: case 3: case 4: case 5:
+      pressure_order = 1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
