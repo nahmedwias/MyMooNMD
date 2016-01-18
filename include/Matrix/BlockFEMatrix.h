@@ -39,6 +39,13 @@ class BlockFEMatrix : public BlockMatrix
      */
     std::vector<unsigned int> actives;
 
+    private:
+    const TFESpace2D *TestSpace;
+    
+    const TFESpace2D *AnsatzSpace;
+    
+    const TFESpace2D *PressureSpace;
+    
     public:
     /** @brief construct a BlockFEMatrix suitable for the given problem type
      *
@@ -50,6 +57,12 @@ class BlockFEMatrix : public BlockMatrix
     BlockFEMatrix(const Problem_type, unsigned int space_dimension,
                 bool mass_matrix = false);
 
+    /** @brief a constructor
+     * construct a matrix used for the pressure robust methods
+     */
+    BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansatzSpace, 
+                  const TFESpace2D* pressureSpace);
+    
     /**
      * @brief adding a scaled matrix to this matrix, but only the active entries
      *
