@@ -28,10 +28,10 @@ PrRobustNSE2D::PrRobustNSE2D(const TDomain& domain,
   this->Systems.emplace_back(example, *coll, proj_order, 
                              this->NSE2D::get_velocity_space(), 
                              this->NSE2D::get_pressure_space());
-  unsigned int nDofProj = 
-     this->get_projection_space().GetN_DegreesOfFreedom();
-  Output::print<1>("dof        : ",  setw(10), nDofProj);
-  Output::print<1>("active dof : ",  setw(10), this->get_projection_space().GetActiveBound());
+  Output::print<1>("dof of RT/BDM : ",  setw(10), 
+                   this->get_projection_space().GetN_DegreesOfFreedom());
+  Output::print<1>("active dof    : ",  setw(10), 
+                   this->get_projection_space().GetActiveBound());
 }
 /** ************************************************************************ */
 void PrRobustNSE2D::assembleMatrixRhs()
