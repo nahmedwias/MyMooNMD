@@ -6,18 +6,18 @@
 *             A BlockMatrix of subtype BlockFEMatrix stores FEMatrices
 *             instead of simple algebraic TMatrices. Thus it can access
 *             information on finite element spaces and active degrees of
-*             freedoms and exploits this algoritmically. The majority of
-*             BlockMatrices in ParMooN are in fact BlockFEMatrices.
+*             freedoms and exploits this algorithmically. The majority of
+*             BlockMatrices in ParMooN will in fact be BlockFEMatrices.
 *
 *             Each cell row is associated with a certain FE test space
 *             and each cell column with a certain FE ansatz space.
 *
-*             @note The possibility to store matrices as transposed
+*             The possibility to store matrices as transposed
 *             leads to a confusion of Test- and Ansatzspace between the
 *             BlockFEMatrix and the stored FEMatrices. If an FEMatrix is
 *             stored as transposed somewhere and one requests the testspace
 *             of the matrix stored there, it gives a different space than
-*             when requiring the testspacc of the cell where it is stored.
+*             when requiring the testspace of the cell where it is stored.
 *             Because only the BlockFEMatrix knows, whether a block is stored
 *             as tranposed or not, its "answer" is the correct one.
 *             For the moment the only advice we can give is: do not request
@@ -65,7 +65,7 @@
 *             5 NSTypes in 2D
 *             5 NSTypes in 3D
 
-* @author     Naveed Ahmed, Clemens Bartsch, Ulrich Wilbrandt
+* @author     Clemens Bartsch
 * @date       2015/12/08
 *
 * @ruleof0
@@ -86,12 +86,12 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @brief Creates a ColoredBlockFEMatrix which is filled with fitting zero blocks.
      *
      * The number of block rows and the number of block columns
-     *  is the length of spaces.
+     * is the length of spaces.
      *
-     * @param spaces FE spaces, which represent the test spaces rowwise
+     * @param[in] spaces FE spaces, which represent the test spaces rowwise
      * as well as the ansatz spaces columnwise. Each space
      * applies to all blocks of a particular row as testspace and
-     * to all blocks of a particualr column as ansatz space.
+     * to all blocks of a particular column as ansatz space.
      */
     ColoredBlockFEMatrix(std::vector< const TFESpace2D*  > spaces);
 
@@ -101,6 +101,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * This just figures out whether the adding will work, whether the
      * coloring scheme must be adapted and then delegates to FEMatrix
      * to perform the actual adding of actives.
+     *
+     * @param[in] summand The FEMatrix to be added.
+     * @param[in] factor The factor by which to scale it.
+     * @param[in] cell_positions Where to add the matrix.
+     * @param[in] transposed_states In which transposed state to do it.
      */
     void add_scaled_actives(
         const FEMatrix& summand, double factor,
@@ -121,8 +126,6 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * matrix is treated just the way it would be treated as if the non-
      * active rows of the blocks would have been assembled globally correct.
      *
-     *
-     *
      * @param x the BlockVector which is multiplied by this matrix
      * @param y Gets added the result of the scaled matrix-vector-multiplication "aAx"
      * @param a optional factor, defaults to 1.0
@@ -132,7 +135,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
 
     /**
      * Used as a developmental tool to discover slicing,
-     * should not be used anymore when the class is finished.
+     * there should be no reason to use it anymore when the class is finished.
      * Checks if all TMatrix smart pointers stored in the
      * base class can be painlessly casted into smart pointers
      * to FEMatrix. Complains if not so, but does not throw.
@@ -164,17 +167,30 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     const TFESpace2D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
 
+    /// @return The column (means: ansatz-)space of a certain cell column.
+    const TFESpace2D& get_column_space(size_t cell_column) const
+    {
+      return *ansatz_spaces_columnwise_.at(cell_column);
+    }
+
     /** @brief return this ColoredBlockMatrix as one TMatrix
-     *
-     * TODO Implement!
      *
      * This returns a merged version of this matix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
      * up to date, but recreated on every call.
      *
+     * Treats Dirichlet rows correctly and globally, regardless of
+     * what the particular blocks hold in their Dirichlet rows.
+     *
      * Usually this is used to pass this matrix to a solver.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const override;
+
+    /// @return The row (means: test-)space of a certain cell row.
+    const TFESpace2D& get_row_space(size_t cell_row) const
+    {
+      return *test_spaces_rowwise_.at(cell_row);
+    }
 
     /**
      * Get the test space of a certain grid cell. Since the testspace is
@@ -187,17 +203,6 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return The testspace, which is the same for the entire row.
      */
     const TFESpace2D& get_test_space(size_t cell_row, size_t cell_column) const;
-
-
-    const TFESpace2D& get_column_space(size_t cell_column) const
-    {
-      return *ansatz_spaces_columnwise_.at(cell_column);
-    }
-
-    const TFESpace2D& get_row_space(size_t cell_row) const
-    {
-      return *test_spaces_rowwise_.at(cell_row);
-    }
 
     /**
      * Overrides the method from the base class
@@ -256,8 +261,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     ///! Deleted move constructor. (Should be implemented in time)
     ColoredBlockFEMatrix(ColoredBlockFEMatrix&&) = delete;
 
-    /*! Copy assignment operator. Uses copy-and-swap.
-     */
+    /// Copy assignment operator. Uses copy-and-swap.
     ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix);
 
     /** Swap function used for copy-and swap in copy assignment.
@@ -275,20 +279,10 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
   protected:
     /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace2D* > test_spaces_rowwise_;
-    /// Store pointers to the ansatzspaces columnwise.
+    /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace2D* > ansatz_spaces_columnwise_;
 
   private:
-    /**
-     * Try if a given TMatrix can be cast to an FEMatrix (this meaning the object actually is
-     * an FEMatrix) and if so, make an FEMatrix copy of it and return a smart pointer to that,
-     * so that it can be stored as a shared pointer to TMatrix in the baseclass.
-     *
-     * This quirky method is needed due to the baseclass storing TMatrices only,
-     * but this class dealing with FEMatrices.
-     */
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) override;
-
     /**
      * Actual implementation of add scaled actives method, whose interface is given
      * in the public part.
@@ -296,6 +290,16 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     void add_scaled_actives(
         const FEMatrix& summand, double scaling_factor,
         std::vector<grid_place_and_mode> row_column_transpose_tuples);
+
+    /**
+     * Try if a given TMatrix can be cast to an FEMatrix (this meaning the object actually is
+     * an FEMatrix) and if so, make an FEMatrix copy of it and return a smart pointer to that,
+     * so that it can be stored as a shared pointer to TMatrix in the baseclass.
+     *
+     * This quirky method is needed due to the base class storing TMatrices only,
+     * but this class dealing with FEMatrices.
+     */
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) override;
 
     /**
      * Actual implementation of the scale actives method, whose interface is given
