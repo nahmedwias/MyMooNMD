@@ -297,7 +297,7 @@ class TMatrix
      * @param B matrix to be multiplied (from right) to this matrix
      * @param a scaling factor, default is 1.0
      */ 
-    TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
+    TMatrix* multiply(const TMatrix& B, double a = 1.0) const;
     
     /** @brief adding a scaled matrix to this matrix
      * 
