@@ -23,8 +23,9 @@
 
 include_directories("${PROJECT_SOURCE_DIR}/user_projects")
 
-list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/BlockFEMatrix.C")
+#list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/BlockFEMatrix.C")
 list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/PrRobustNSE2D.C")
+list(APPEND PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/PrRobustTime_NSE2D.C")
 
 add_library(PROJECT_LIB_2D STATIC ${PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
@@ -34,3 +35,4 @@ add_executable(stokes_reconst ${PROJECT_SOURCE_DIR}/user_projects/main.C)
 set_target_properties(stokes_reconst PROPERTIES OUTPUT_NAME parMooN_stokes_${PARMOON_PARALLEL_TYPE})
 target_compile_definitions(stokes_reconst PUBLIC -D__2D__)
 target_link_libraries(stokes_reconst PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
