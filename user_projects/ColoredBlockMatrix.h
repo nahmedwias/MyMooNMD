@@ -22,14 +22,53 @@ class BlockVector;
  *             already holds a block which you want to assign to one of its
  *             cells, but makes its own copy of whatever you give to it.
  *
- *             TODO Comment on the features and limitations of this class.
+ *             The ColoredBlockMatrix offers the possibility to store matrices,
+ *             which appear multiple time in the block system, only once.
+ *             It is also supported to store matrices in transposed state.
  *
- *             TODO Methods which take an entire block matrix as argument.
+ *             A ColoredBlockMatrix basically consists of its 'cells', which
+ *             forms the lattice where matrices are stored, and its blocks.
+ *             The basic concept to realize single storage of multiple blocks
+ *             is the following: Each cell has along a shared pointer to its
+ *             block a 'color', which is nothing but a non-negative integer number.
+ *             Cells which hold the same block have the same color, cells
+ *             which hold different blocks have different colors. All colors
+ *             from zero to the current number of different stored blocks must
+ *             be assigned.
+ *
+ *             The ColoredBlockMatrix supports changes in its color structure
+ *             which are necessary due to changes which affect only some of its blocks,
+ *             or affect different blocks differently (e.g. storing new blocks,
+ *             adding to some blocks only, scaling some blocks only) and figures
+ *             out independently, to which TMatrices it has to delegate blockwise
+ *             tasks in order to not perform them multiple times falsely.
+ *
+ *             An auxiliary vector "color_count" is held, which keeps track
+ *             of the number of cells of each color. This additional structure
+ *             helps in quickly deciding whether a change leads to a change in
+ *             coloring.
+ *
+ *             Alongside the color, each cell knows whether its block is held
+ *             in transposed or non-transposed state.
+ *
+ *             There is one principle when working with a ColoredBlockMatrix:
+ *             it is only as clever as you make it! In particular: it can only
+ *             maintain a 'good' block structure (that is not to say: a valid one)
+ *             if you perform your actions on it in a way fo the program to maintain
+ *             them. If you do differently, it will print a warning (but
+ *             only from verbosity level 2 on), to give
+ *             you the possibility to correct your approach.
+ *
+ *
+ *             TODO Implement methods which take an entire block matrix as argument.
  *             (Especialy summation, probably multiplication)
  *             So far the input is always only ONE TMatrix.
+ *             The implementation of such methods should not be a big trouble,
+ *             because one can easily break them down to modifications with only one
+ *             TMatrix affecting multiple cells in the ColoredBlockMatrix.
  *
  * @author     Clemens Bartsch, Ulrich Wilbrandt
- * @date       08.09.2015
+ * @date       2015/12
  *
  * @ruleof0
  *
@@ -39,7 +78,7 @@ class ColoredBlockMatrix
   public:
 
     /**
-     * Default constructor. Creates an empty object.
+     * Default constructor. Creates an empty 0x0 object.
      */
     ColoredBlockMatrix();
 
@@ -52,24 +91,34 @@ class ColoredBlockMatrix
      * If e.g. cell_row_numbers[3] == 100, all cells in cell row 3 will have
      * 100 matrix rows.
      *
-     * @param cell_row_numbers holds the number of rows for all matrices in one block row
-     * @param cell_column_numbers holds the number of columns for all matrices in one block column
+     * @param cell_row_numbers holds the number of rows for all matrices in one cell row
+     * @param cell_column_numbers holds the number of columns for all matrices in one cell column
      */
     ColoredBlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
 
-    /*
-     * Performs as the same-named method but with a supposedly easier interface.
-     * (Does not require tuple making).
+    /**
+     * Add a given TMatrix to the blocks in a bunch of given cells at once.
+     * Of course the TMatrix must fit in dimension to the cells where it is
+     * supposed to be added.
+     * The input will be checked for its validity. Duplicates are removed,
+     * is the input corrupted in other ways the program will quit, informing
+     * you what exactly it does not like.
+     *
+     * @param[summand] The TMatrix to be added to certain blocks.
+     * @param[in] cell_positions The places in the cell grid where to add.
+     * @param[in] transposed_states If the TMatrix goes to a specific place
+     * in transposed ('true') or non-transposed ('false') state.
      */
     void add_matrix_to_blocks(
         const TMatrix& summand,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
 
-    /*
-     * Performs as the same-named method but with a supposedly easier interface.
-     * (Does not require tuple making).
+    /**
+     * Performs as add_matrix_to_blocks but with the possibility
+     * to scale the summand by
+     * @param[in] scaling_factor A scaling factor for the summand.
      */
     void add_scaled_matrix_to_blocks(
         const TMatrix& summand, double scaling_factor,
@@ -102,7 +151,7 @@ class ColoredBlockMatrix
      *
      * @param x the BlockVector which is multiplied by this matrix
      * @param y result of matrix-vector-multiplication
-     * @param a optional factor, default to 1.0
+     * @param a optional factor, defaults to 1.0
      */
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
@@ -125,7 +174,7 @@ class ColoredBlockMatrix
      *    for testing purpose only.
      *
      *    @note Please note that this method scales quadratically in the number of blocks
-     *    as it employs checkEquivalenceOfRelations. So please do only use it for testing
+     *    as it employs checkEquivalenceOfRelations. I used it for testing
      *    of other methods in this class.
      */
     void check_coloring() const;
@@ -138,20 +187,22 @@ class ColoredBlockMatrix
 
     /** @brief return this ColoredBlockMatrix as one TMatrix
      *
-     * This returns a merged version of this matix. Note that the merged
+     * This returns a merged version of this matrix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
-     * up to date, but recreated on every call.
+     * up to date, but is recreated on every call.
      *
      * Usually this is used to pass this matrix to a solver.
+     *
+     * @return A shared pointer to the block matrix, merged together to
+     * a TMatrix.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const;
 
     // Getter.
 
-    //! @return The number of different colors
+    //! @return The number of different colors. Should be needed for testing only.
     size_t get_n_colors() const
     {
-      // color_count_ must be kept up-to-date
       return color_count_.size();
     }
 
@@ -167,6 +218,7 @@ class ColoredBlockMatrix
       return n_cell_columns_;
     }
 
+    /// @return The number of columns a certain cell has (same for all cells in one cell columns)
     size_t get_n_columns_in_cell(size_t cell_row, size_t cell_column) const
     {
       std::vector<grid_place_and_mode>index {std::make_tuple(cell_row, cell_column, true)};
@@ -174,19 +226,22 @@ class ColoredBlockMatrix
       return cell_grid_[cell_row][cell_column].n_columns_;
     }
 
+    /// @return The number of rows a certain cell has (same for all cells in one cell row)
     size_t get_n_rows_in_cell(size_t cell_row, size_t cell_column) const
     {
+      std::vector<grid_place_and_mode>index {std::make_tuple(cell_row, cell_column, true)};
+      check_indices(index);
       return cell_grid_[cell_row][cell_column].n_rows_;
     }
 
 
-    /// @brief total number of columns(> n_cell_columns)
+    /// @brief total number of columns (added over all cells in a cell row)
     size_t get_n_total_columns() const;
 
-    /// @brief total number of entries
+    /// @brief total number of entries (added over all blocks)
     size_t get_n_total_entries() const;
 
-    /// @brief total number of rows (> n_cell_rows)
+    /// @brief total number of rows (added over all cells in a cell column)
     size_t  get_n_total_rows() const;
 
     /// Return number of cell rows - for compatibility
@@ -200,6 +255,8 @@ class ColoredBlockMatrix
     /**
      * Prints matrix coloring pattern and color_count_,
      * then runs the check. Thus one can visualize errors.
+     *
+     * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
     void print_and_check(std::string matrix_name = "unnamed") const;
 
@@ -221,8 +278,15 @@ class ColoredBlockMatrix
                                 bool print_adress = false) const;
 
     /**
-     * Performs as the same-named method but with a supposedly easier interface.
-     * (Does not require tuple making).
+     * Replace the blocks at some cells with a new one. Updates the
+     * coloring accordingly.
+     * If the input does not make sense it will throw an error
+     * and print a sensible message.
+     *
+     * @param[in] new_block The new block. Will be deep copied.
+     * @param[in] cell_positions In which cells to put the new block.
+     * @param[in] transposed_states In which transposed state to put it there
+     * respectively.
      */
     virtual void replace_blocks(
         const TMatrix& new_block,
@@ -233,12 +297,16 @@ class ColoredBlockMatrix
      * @brief scale the entire matrix
      *
      * That means for each block all entries are scaled.
+     *
+     * @param[in] factor The scaling factor.
      */
     void scale(double factor);
 
     /**
-     * Performs as the same-named method but with a supposedly easier interface.
-     * (Does not require tuple making and no transposed states).
+     * Scales some blocks, if necessary updates the coloring scheme.
+     *
+     * @param[in] scaling_factor The scaling factor.
+     * @param[in] cell_positions The cells whose blocks are to be scaled.
      */
     void scale_blocks(
         double scaling_factor,
@@ -253,7 +321,7 @@ class ColoredBlockMatrix
      */
     ColoredBlockMatrix(const ColoredBlockMatrix&);
 
-    ///! Default move constructor.
+    ///! Default move constructor. Performs correctly here (ownership transfer).
     ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
 
     /** Swap function used for copy-and swap in copy assignment.
@@ -268,10 +336,10 @@ class ColoredBlockMatrix
      */
     ColoredBlockMatrix& operator=(ColoredBlockMatrix);
 
-    //! Default move assignment operator.
+    //! Default move assignment operator. Performs correctly here (ownership transfer).
     ColoredBlockMatrix& operator=(ColoredBlockMatrix&&) = default;
 
-    /// @brief Destructor. Tidies up nice and clean.
+    /// @brief Default destructor. Tidies up nice and clean.
     virtual ~ColoredBlockMatrix() = default;
 
 
@@ -305,12 +373,13 @@ class ColoredBlockMatrix
       enum class ReColoringFlag {SPLIT, KEEP} re_color_flag_;
 
       /*! Default constructor, will be called implicitely. Constructs
-       *  a non-transposed, uncolored 0x0 object marked with ReColoringFlag:KEEP.
+       *  a non-transposed, uncolored 0x0 object holding a null pointer
+       *  and marked with ReColoringFlag:KEEP.
        */
       CellInfo();
 
       /*! Constructor which initializes n_rows and n_columns,
-       *  Behaves like default parameter apart from that.
+       *  Behaves like default constructed object apart from that.
        */
       CellInfo(size_t n_rows, size_t n_columns);
 
@@ -325,7 +394,7 @@ class ColoredBlockMatrix
     /*!
      *  A tableau of cell information. Has dimension
      *   n_block_rows x n_block_columns, and stores cell information.
-     *   I.e. cell_info_grid[i][j] holds information on the cell in block row i,
+     *   I.e. cell_grid_[i][j] holds information on the cell in block row i,
      *   block column j.
      */
     std::vector<std::vector<CellInfo>> cell_grid_;
@@ -344,10 +413,12 @@ class ColoredBlockMatrix
      */
     std::vector<size_t> color_count_;
 
-    //! A datatype which stores the block_row the block_column
-    //! and the mode where and how a cell should be modified.
-    //! 'Mode' can have to values: true - 'transposed' and
-    //! false - 'not transposed'
+    /** A datatype which stores the block_row the block_column
+     * and the mode where and how a cell should be modified.
+     * 'Mode' can have to values: true - 'transposed' and
+     * false - 'not transposed'.
+     * Used internally to keep information tied together.
+     */
     typedef std::tuple<size_t, size_t, bool> grid_place_and_mode;
 
   protected:
@@ -376,7 +447,6 @@ class ColoredBlockMatrix
      * each of which encodes information on one cell where summand
      * is supposed to be added to, and which way - "true" is for transposed,
      * "false" for not-transposed.
-     *
      */
     void add_scaled_matrix_to_blocks(
         const TMatrix& summand, double scaling_factor,
@@ -482,6 +552,12 @@ class ColoredBlockMatrix
      */
     void compare_transposed_mode(
         std::vector<grid_place_and_mode>& row_column_transpose_tuples) const;
+
+    /** Copies a given TMatrix and wraps a smart pointer around it, which is returned.
+     *  Is overridden in derrived class ColoredBlockFEMatrix, where a pointer cast has to
+     *  be performed due to the storing of FEMatrices.
+     */
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
 
     /*!
      * Check if a given block fits into a given cell in the given transposed state.
@@ -670,9 +746,7 @@ class ColoredBlockMatrix
      */
     const TMatrix& block(const unsigned int r, const unsigned int c) const;
 
-  private:
-    /// TODO comment
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
+
 
 };
 

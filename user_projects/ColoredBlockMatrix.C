@@ -1259,6 +1259,9 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     /* ************************************************************************* */
     void ColoredBlockMatrix::split_color(size_t color_to_split)
     {
+      Output::print<2>("A color of this BlockMatrix had to be split."
+          " Is that what you intended?");
+
       // a new color is going to appear - start with 0 count
       color_count_.push_back(0);
 
@@ -1344,82 +1347,3 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       } //endwhile
 
     }
-
-
-
-    ///* ************************************************************************* */
-    ///* ************************************************************************* */
-    //ColoredBlockMatrix::ColoredBlockMatrix(ColoredBlockMatrix& other)
-    // : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
-    //   combined_matrix(other.combined_matrix)
-    //{
-    //  for(unsigned int b = 0; b < this->blocks.size(); ++b)
-    //  {
-    //    this->blocks[b] = other.blocks[b]; // set pointer
-    //  }
-    //}
-    //
-    ///* ************************************************************************* */
-    //ColoredBlockMatrix::ColoredBlockMatrix(ColoredBlockMatrix&& other)
-    // : block_pattern(other.block_pattern), blocks(other.blocks.size(), nullptr),
-    //   combined_matrix(other.combined_matrix)
-    //{
-    //  for(unsigned int b = 0; b < this->blocks.size(); ++b)
-    //  {
-    //    this->blocks[b] = other.blocks[b]; // set pointer
-    //    // destructor on this sparse matrix is only called once from 'this', not
-    //    // from 'other'
-    //    other.blocks[b] = nullptr;
-    //  }
-    //}
-    //
-    ///* ************************************************************************* */
-    //ColoredBlockMatrix::~ColoredBlockMatrix() noexcept
-    //{
-    //}
-    //
-    ///* ************************************************************************* */
-    //void ColoredBlockMatrix::reset()
-    //{
-    //  for(unsigned int b = 0; b < this->n_blocks(); ++b)
-    //    this->blocks[b]->reset();
-    //}
-    //
-    ///* ************************************************************************* */
-    //void ColoredBlockMatrix::add_scaled(const ColoredBlockMatrix& A, double factor)
-    //{
-    //  unsigned int n_blocks = A.n_blocks();
-    //  if(this->n_blocks() != n_blocks)
-    //  {
-    //    ErrThrow("ColoredBlockMatrix::add_scaled : the two ColoredBlockMatrix objects do ",
-    //             "not have the same number of blocks.");
-    //  }
-    //
-    //  for(unsigned int i = 0; i < n_blocks; i++)
-    //  {
-    //    this->block(i)->add_scaled(*A.block(i), factor);
-    //  }
-    //}
-    //
-    //
-
-    ///* ************************************************************************* */
-    //const TMatrix& ColoredBlockMatrix::block(const unsigned int r,
-    //                                  const unsigned int c) const
-    //{
-    //  if(r >= this->n_rows())
-    //  {
-    //    ErrThrow("There are only ", this->n_rows(),
-    //             " block rows in this ColoredBlockMatrix. Can not access a block in row ",
-    //             r);
-    //  }
-    //  if(c >= this->n_cols())
-    //  {
-    //    ErrThrow("There are only ", this->n_cols(),
-    //             " block columns in this ColoredBlockMatrix. Can not access a block in ",
-    //             "column ", c);
-    //  }
-    //  return *(this->blocks[r * this->n_cols() + c].get());
-    //}
-    //
-
