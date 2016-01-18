@@ -317,6 +317,14 @@ class TStructure
     friend std::shared_ptr<TStructure> get_product_structure(
         TStructure const & strucA, TStructure const & strucB);
     
+    /**
+     * @brief Compute the structure of the matrix matrix product A*A^T.
+     * 
+     * @return A pointer to the structure of A*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right() const;
+    
     /** @brief Comparision Operator 
      * 
      * It is not explicitly checked if the arrays are the same, only the 
