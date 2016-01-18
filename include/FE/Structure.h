@@ -325,6 +325,16 @@ class TStructure
      */
     TStructure* get_structure_of_product_with_transpose_from_right() const;
     
+    /**
+     * @brief Compute the structure of the matrix matrix product A*B*A^T.
+     * 
+     * @param B structure of the middle matrix B
+     * @return A pointer to the structure of A*B*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right(
+      const TStructure & B) const;
+    
     /** @brief Comparision Operator 
      * 
      * It is not explicitly checked if the arrays are the same, only the 
