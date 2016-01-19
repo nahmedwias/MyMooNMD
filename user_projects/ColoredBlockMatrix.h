@@ -271,6 +271,8 @@ class ColoredBlockMatrix
     /**
      * Print out a little picture of the current coloring pattern of the matrix.
      * Does not perform a check on consistency - use it for debugging!
+     * A matrix stored in transposed is marked with "^T", a matrix
+     * without entries (as happens in our NSE-Types) with brackets.
      *
      * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */

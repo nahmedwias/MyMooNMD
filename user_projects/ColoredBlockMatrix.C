@@ -410,10 +410,18 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
         for(size_t j = 0; j < n_cell_columns_; ++j)
         {
           out_row << "\t";
+          if(cell_grid_[i][j].block_->GetN_Entries()==0)
+          {//for a zero-map block the number is printed in brackets
+            out_row << "(";
+          }
           out_row << cell_grid_[i][j].color_;
           if(cell_grid_[i][j].is_transposed_)
           {
             out_row << "^T";
+          }
+          if(cell_grid_[i][j].block_->GetN_Entries()==0)
+          {
+            out_row << ")";
           }
           if(print_adress)
           {
