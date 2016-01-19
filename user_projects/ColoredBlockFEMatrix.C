@@ -51,8 +51,8 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(
       // construct the new cell info and the zero matrix it will hold
       CellInfo newInfo(n_rows_of_cell, n_columns_of_cell);
 
-      //Create a new FEMatrix block.
-      newInfo.block_ = std::make_shared<FEMatrix>(&testspace_of_row, &ansatzspace_of_column);
+      //Create a new FEMatrix block. "True" is a swatich to make an empty TStructure.
+      newInfo.block_ = std::make_shared<FEMatrix>(&testspace_of_row, &ansatzspace_of_column, true);
 
       // the next color is get_n_colors() (because the colors 0 to
       // get_n_colors() -1 are already assigned)
@@ -71,6 +71,196 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(
   }
 
 
+}
+
+//named constructors
+/* ************************************************************************* */
+ColoredBlockFEMatrix ColoredBlockFEMatrix::CD2D( const TFESpace2D& space )
+{
+  ColoredBlockFEMatrix my_matrix({&space});
+  //replace block by a block with non-empty TStructure
+  my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type1( const TFESpace2D& velocity,
+                                         const TFESpace2D& pressure)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo(&velocity, &velocity); //A block
+  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0},{0,1}}, {false, false});
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{2,0}, {0,2} }, {false, true});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{2,1}, {1,2} }, {false, true});
+
+  //block (2,2) stays as default initialized
+
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type2(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo(&velocity, &velocity); //A block
+  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0},{0,1}}, {false, false});
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,2}}, {false});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,2}}, {false});
+
+  //block (2,2) stays as default initialized
+
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type3(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{2,0}, {0,2} }, {false, true});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{2,1}, {1,2} }, {false, true});
+
+  //block (2,2) stays as default initialized
+
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type4(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,2}}, {false});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,2}}, {false});
+
+  //block (2,2) stays as default initialized
+
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type14(
+    const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
+
+  FEMatrix pressure_pressure(&pressure, &pressure);
+
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,2}}, {false});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,2}}, {false});
+
+  // fill in the pressure-pressure block
+  my_matrix.replace_blocks(pressure_pressure, {{2,2}}, {false});
+
+  return my_matrix;
+}
+
+ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &pressure});
+
+  //fill in the blocks with correct matrices constructed solely for them
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &pressure), {{0,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&pressure, &velocity), {{1,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&pressure, &pressure), {{1,1}}, {false});
+
+  return my_matrix;
 }
 
 /* ************************************************************************* */
@@ -230,7 +420,6 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
       size_t global_row = row_offset + local_row;
       size_t start = rowptr[global_row];
       size_t end = rowptr[global_row + 1];
-      Output::print("b): ", global_row, " ", start , " ", end);
 
       //loop through all entries in the current global row
       for (size_t index = start; index < end; ++index)
@@ -264,13 +453,14 @@ void ColoredBlockFEMatrix::replace_blocks(
     const std::vector<std::vector<size_t>>& cell_positions,
     const std::vector<bool>& transposed_states)
 {
-  // input checking lead to some code duping... TODO can be done by check_and_tupelize!
+  // input checking lead to some code duping...
   if(cell_positions.size() != transposed_states.size())
   {
     ErrThrow("Number of grid positions must equal"
         "number of transposed states.");
   }
 
+  //loop over all positions
   for(size_t i = 0; i<cell_positions.size() ; ++i)
   {
     if(cell_positions[i].size() != 2)
@@ -278,21 +468,10 @@ void ColoredBlockFEMatrix::replace_blocks(
       ErrThrow("A grid position must have TWO values, habibi!");
     }
 
-    // check if we do not try to store a matrix with testspace
-    // non-actives as transposed
-    size_t cell_row = cell_positions[i][0];
-    size_t cell_column = cell_positions[i][1];
-    if (get_test_space(cell_row, cell_column).GetN_ActiveDegrees() !=
-        get_test_space(cell_row, cell_column).GetN_DegreesOfFreedom() )
-    { //the testspace of the row has non-active dofs!
-      if(transposed_states.at(i))
-      {//this is not allowed!!!
-        ErrThrow("I am not allowed to store an FEMatrix with "
-            "test-space-non-actives in transposed state!")
-      }
-    }
+    size_t cell_row = cell_positions[i].at(0); //hold indices
+    size_t cell_column = cell_positions[i].at(1);
 
-    //check if the spaces fit
+    //check if the spaces fit the cell grid
     const TFESpace2D* grid_test_space = &get_test_space(cell_row,cell_column);
     const TFESpace2D* grid_ansatz_space = &get_ansatz_space(cell_row,cell_column);
     const TFESpace2D* block_test_space = new_block.GetTestSpace2D();
@@ -322,10 +501,24 @@ void ColoredBlockFEMatrix::replace_blocks(
         ErrThrow("Grid ansatz space does not match transposed "
             "block's test space at (",cell_row,cell_column,")");
       }
+      // make sure we do not try to store a block with non-active rows in
+      //transposed state
+      int block_test_space_has_non_actives =
+          block_test_space->GetN_DegreesOfFreedom() -
+          block_test_space->GetN_ActiveDegrees();
+      if (block_test_space_has_non_actives)
+      { // the testspace of the matrix block has non-active dofs!
+        // that's not allowed in transposed state
+        Output::print(block_test_space_has_non_actives);
+          ErrThrow("I am not allowed to store an FEMatrix with "
+              "test-space-non-actives in transposed state. This would lead to"
+              " 'non-active columns' and thus to loss of information.",
+              "(Block (",cell_row, " , ", cell_column, ")");
+      }
+
     }//space fitting check done
 
   }
-
 
   // if everything is alright with this class, do the block replacement in the base class
   ColoredBlockMatrix::replace_blocks(

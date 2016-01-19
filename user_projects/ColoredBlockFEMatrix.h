@@ -82,8 +82,10 @@
 class ColoredBlockFEMatrix : public ColoredBlockMatrix
 {
   public:
+    //constructors
     /**
      * @brief Creates a ColoredBlockFEMatrix which is filled with fitting zero blocks.
+     *     * The TStrucuter of each of these zero blocks is the empty zero-map TStructure.
      *
      * The number of block rows and the number of block columns
      * is the length of spaces.
@@ -95,6 +97,134 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     ColoredBlockFEMatrix(std::vector< const TFESpace2D*  > spaces);
 
+    // named constructors for block fe matrices often used in ParMooN
+    //TODO All named constructors should further reduce the number of TMatrix-Copies made
+    // in their body!
+
+    /**
+     * @brief Named constructor for a block Matrix used in 2D convection-
+     * diffusion problems.
+     *
+     * Constructs a 1x1 block matrix which holds one single block with
+     * fitting TStructure.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param space Ansatz- equals testspace.
+     * @return A newly constructed BlockFEMatrix for CD2D problems.
+     */
+    static ColoredBlockFEMatrix CD2D( const TFESpace2D& space );
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 1.
+     * The matrix takes the block structure
+     *
+     * ( A  0  B1T )
+     * ( 0  A  B2T )
+     * ( B1 B2 0   )
+     *
+     * where B1T and B2T are explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 1.
+     */
+    static ColoredBlockFEMatrix NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 2.
+     * The matrix takes the block structure
+     *
+     * ( A  0  B1T )
+     * ( 0  A  B2T )
+     * ( B1 B2 0   )
+     *
+     * where B1T and B2T are explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 2.
+     */
+    static ColoredBlockFEMatrix NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 3.
+     * The matrix takes the block structure
+     *
+     * ( A11 A12 B1^T )
+     * ( A21 A22 B2^T )
+     * ( B1  B2  0    )
+     *
+     * where B1^T and B2^T are are not explicitly stored.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 3.
+     */
+    static ColoredBlockFEMatrix NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 4.
+     * The matrix takes the block structure
+     *
+     * ( A11 A12 B1T )
+     * ( A21 A22 B2T )
+     * ( B1  B2  0   )
+     *
+     * where B1^T and B2^T are explicitly stored (and marked non-transposed)..
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 4.
+     */
+    static ColoredBlockFEMatrix NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
+
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 14.
+     * The matrix takes the block structure
+     *
+     * ( A11 A12 B1^T )
+     * ( A21 A22 B2^T )
+     * ( B1  B2  C    ),
+     *
+     * where B1^T and B2^T are explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 14.
+     */
+    static ColoredBlockFEMatrix NSE2D_Type14( const TFESpace2D& velocity, const TFESpace2D& pressure);
+
+    /**
+     * Named constructor for a matrix for Darcy type problems in 2D.
+     * Creates a 2x2 block matrix of the form
+     *  ( A  B1' )
+     *  ( B2 C   ),
+     * where A is velo-velo coupling, B1' velo-pressure,
+     * B2 pressure-velo and C pressure-pressure coupling.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
+     */
+    static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Add the actives of a certain FEMatrix to several blocks at once.
@@ -258,8 +388,8 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     ColoredBlockFEMatrix(const ColoredBlockFEMatrix&);
 
-    ///! Deleted move constructor. (Should be implemented in time)
-    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&) = delete;
+    ///! Default move constructor. Seems to work fine, even the FEMatrix casts.
+    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&);// = delete;
 
     /// Copy assignment operator. Uses copy-and-swap.
     ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix);
