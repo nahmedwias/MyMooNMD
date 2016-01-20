@@ -28,7 +28,7 @@ namespace flow_around_cylinder
 }
 namespace disc_with_crack
 {
-  #include "NSE_2d/disc_with_crack.h"
+  #include "NSE_2D/disc_with_crack.h"
 }
 
 //=========================================
