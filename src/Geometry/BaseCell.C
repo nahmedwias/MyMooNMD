@@ -76,6 +76,7 @@ TBaseCell::~TBaseCell()
       case MortarBaseJoint:
       case InterfaceJoint:
       case IsoInterfaceJoint:
+      case InnerInterfaceJoint:
 #ifdef __3D__
       case InterfaceJoint3D:
       case IsoInterfaceJoint3D:
