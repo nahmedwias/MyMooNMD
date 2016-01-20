@@ -1,4 +1,3 @@
-
 #include <Database.h>
 #include <GridCell.h>
 #include <Vertex.h>
@@ -94,7 +93,12 @@ int TGridCell::GetChildNumber(TBaseCell *Me)
   return -1;
 }
 
-// #define __GRIDCELL_WITH_NUMBERS__
+
+#ifdef foo
+static double r = 0, g = 64, b = 128;
+#endif
+
+//#define __GRIDCELL_WITH_NUMBERS__
 
 int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
                   double StartY)
@@ -145,6 +149,30 @@ text_y1 = (text_y1 + text_y2)/2;
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
          " L" << endl;
 dat<<"closepath"<<endl;
+
+  // fill this cell with a either blue or red
+  if(Reference_ID==1 || Reference_ID==2)
+    dat << "gsave\n"
+        << (Reference_ID==1?"0.816 0.637 0.637 setrgbcolor fill\n":
+                            "0.675 0.789 0.855 setrgbcolor fill\n")
+        << "grestore\n"
+        << "stroke\n";
+
+#ifdef foo
+  double rr = r;
+  double gg = g;
+  double bb = b;
+  for(int g = 1; g < GetGeoLevel(); g++) {
+    double factor = 0.3*(1.0 - 1.0/((double)(g)));
+    rr += factor * (255.0 - rr);
+    gg += factor * (255.0 - gg);
+    bb += factor * (255.0 - bb);
+  }
+  rr /= 255;
+  gg /= 255;
+  bb /= 255;
+  dat<<"gsave"<<endl<< std::setprecision (15) << rr << " " << gg <<" " << bb <<" setrgbcolor" <<endl<<"fill"<<endl<<"grestore"<<endl;
+#endif
 #ifdef __GRIDCELL_WITH_NUMBERS__
   dat << (30 + (x - StartX) * scale + .5) << " " <<
          (30 + (y - StartY) * scale + .5);
@@ -444,13 +472,14 @@ int TGridCell::MakeConfClosure()
     if ((Neighb = Joints[i]->GetNeighbour(this)))
 	// this neighbour cell is refined regularly or 
 	// it has children 
-	if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512)
-         {
-	  if (Neighb->ExistChildren() ) OutPut("1a");
-	  if (Neighb->GetClipBoard()>512) OutPut("2b");
-	  OutPut(endl);
-        clip += (1 << i) + 16;
+    if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512) {
+      if(TDatabase::ParamDB->SC_VERBOSE > 1) {
+        if (Neighb->ExistChildren()) OutPut("1a");
+        if (Neighb->GetClipBoard() > 512) OutPut("2b");
+        OutPut(endl);
       }
+      clip += (1 << i) + 16;
+    }
   // set regular refinement bit(9)
   if ((clip > 160 && clip < 256) || clip > 304)
     clip |= 512;

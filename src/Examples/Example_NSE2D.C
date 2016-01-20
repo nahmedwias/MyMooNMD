@@ -26,6 +26,10 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace disc_with_crack
+{
+  #include "NSE_2D/disc_with_crack.h"
+}
 
 //=========================================
 // time dependent case 
@@ -107,20 +111,41 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       exact_solution.push_back( flow_around_cylinder::ExactU1 );
       exact_solution.push_back( flow_around_cylinder::ExactU2 );
       exact_solution.push_back( flow_around_cylinder::ExactP );
-      
+
       /** boundary condition */
       boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
       boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
+
       /** boundary values */
       boundary_data.push_back( flow_around_cylinder::U1BoundValue );
       boundary_data.push_back( flow_around_cylinder::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
-      
+
       /** coefficients */
       problem_coefficients = flow_around_cylinder::LinCoeffs;
-      
+
+      flow_around_cylinder::ExampleFile();
+      break;
+    case 4:
+      /** exact_solution */
+      exact_solution.push_back( disc_with_crack::ExactU1 );
+      exact_solution.push_back( disc_with_crack::ExactU2 );
+      exact_solution.push_back( disc_with_crack::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( disc_with_crack::BoundCondition );
+      boundary_conditions.push_back( disc_with_crack::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( disc_with_crack::U1BoundValue );
+      boundary_data.push_back( disc_with_crack::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = disc_with_crack::LinCoeffs;
+
       flow_around_cylinder::ExampleFile();
       break;
     case 101:

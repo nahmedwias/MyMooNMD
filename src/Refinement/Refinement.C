@@ -18,14 +18,16 @@
 #include <InterfaceJoint.h>
 
 #ifdef __2D__
-  #include <BoundEdge.h>
-  #include <InnerInterfaceJoint.h>
+
+#include <BoundEdge.h>
+#include <InnerInterfaceJoint.h>
+
 #else
-  #include <IsoInterfaceJoint3D.h>
-  #include <BoundFace.h>
-  #include <BoundComp3D.h>
-  #include <BdWall.h>
-  #include <Hexahedron.h>
+#include <IsoInterfaceJoint3D.h>
+#include <BoundFace.h>
+#include <BoundComp3D.h>
+#include <BdWall.h>
+#include <Hexahedron.h>
 #endif
 
 #include <stdlib.h>
@@ -36,277 +38,260 @@ static TJoint *NewJoints[MAXN_NEWJOINTS];
 
 #ifdef __2D__
 
-int TGridCell::Refine(int reflevel)
-{
-  int i, j, N_1, N_2, MaxLen1, MaxLen2, MaxLen3, index, auxi;
-  const int *TmpValues1, *TmpValues2, *TmpValues3, *TmpValues4;
-  double TmpX, TmpY, T_0, T_1, auxd;
-  const double *TmpPos;
-  bool Inside;
-  TVertex *CurrVert;
-  
-  if (!IsToRefine()) return 1;
+int TGridCell::Refine(int reflevel) {
+    int i, j, N_1, N_2, MaxLen1, MaxLen2, MaxLen3, index, auxi;
+    const int *TmpValues1, *TmpValues2, *TmpValues3, *TmpValues4;
+    double TmpX, TmpY, T_0, T_1, auxd;
+    const double *TmpPos;
+    bool Inside;
+    TVertex *CurrVert;
 
-  #ifdef __MORTAR__
+    if (!IsToRefine()) return 1;
+
+#ifdef __MORTAR__
     if (RefDesc->GetType() >= Mortar)
     {
       RefineMortar(reflevel);
       return 0;
     }
-  #endif
+#endif
 
-  N_1 = RefDesc->GetN_OrigEdges();
+    N_1 = RefDesc->GetN_OrigEdges();
 
-  // check edges of matching and return all allready existing objects
-  for (i=0;i<N_1;i++)
- //   if (RefDesc->GetEdgeRef(i))
-      if (Joints[i]->CheckMatchingRef(this, i, Tmp[i]))
-      {
-        cerr << "Error: non matching edges!!!" << endl;
+    // check edges of matching and return all allready existing objects
+    for (i = 0; i < N_1; i++)
+        //   if (RefDesc->GetEdgeRef(i))
+        if (Joints[i]->CheckMatchingRef(this, i, Tmp[i])) {
+            cerr << "Error: non matching edges!!!" << endl;
 //         exit(-1);
-      }
-
-  // create children
-  N_1 = RefDesc->GetN_Children();
-  Children = (TBaseCell **) new TGridCell*[N_1];
-
-  for (i=0;i<N_1;i++)
-  {
-    Children[i] = new TGridCell(TDatabase::RefDescDB[RefDesc->
-                        GetChildType(i)], reflevel);
-
-    Children[i]->SetParent(this);
-    // copy physical reference
-    Children[i]->SetReference_ID(this->GetReference_ID());
-  }
-
-  // copy existing vertices
-  N_1 = RefDesc->GetN_NewVertEqOldVert();
-  RefDesc->GetNewVertEqOldVert(TmpValues1, TmpValues2);
-
-  for (i=0;i<N_1;i++)
-    NewVertices[TmpValues1[i]] = Vertices[TmpValues2[i]];
-
-  // create new inner vertices
-  N_1 = RefDesc->GetN_InnerVertices();
-  if(N_1)
-  {
-    RefDesc->GetInnerVerts(TmpValues1, TmpPos, MaxLen1);
-
-    for (i=0;i<N_1;i++)
-    {
-      TmpX = TmpY = 0;
-      auxi = i * MaxLen1;
-      for (j=0;j<MaxLen1;j++)
-      {
-        auxd = TmpPos[auxi++];
-        CurrVert = Vertices[j];
-        TmpX += auxd * CurrVert->GetX();
-        TmpY += auxd * CurrVert->GetY();
-      }
-
-      NewVertices[TmpValues1[i]] = new TVertex(TmpX, TmpY);
-    }
-  }
-
-  // copy existing joints
-  RefDesc->GetEdgeChild(TmpValues4, TmpValues3, MaxLen3);
-  N_1 = RefDesc->GetN_NewEdgeEqOldEdge();
-  if(N_1)
-  {
-    RefDesc->GetNewEdgeEqOldEdge(TmpValues1, TmpValues2);
-
-    for (i=0;i<N_1;i++)
-    {
-      index = TmpValues1[i];
-
-      if (Tmp[TmpValues2[i]].Filled)
-        NewJoints[index] = Tmp[TmpValues2[i]].Joints[0];
-      else
-        NewJoints[index] = Joints[TmpValues2[i]]->NewInst();
-
-      NewJoints[index]->SetNeighbour(Children[
-                          TmpValues4[index * MaxLen3]]);
-    }
-  }
-
-  // create new inner edges
-  N_1 = RefDesc->GetN_InnerEdges();
-  RefDesc->GetInnerEdges(TmpValues1, TmpValues2, MaxLen1);
-
-  for (i=0;i<N_1;i++)
-     NewJoints[TmpValues1[i]] = new
-          TJointEqN(Children[TmpValues2[TmpValues1[i] * MaxLen1]],
-                    Children[TmpValues2[TmpValues1[i] * MaxLen1 + 1]]);
-
-  // refine old edges if necessary
-  N_1 = RefDesc->GetN_OrigEdges();
-
-  RefDesc->GetOldEdgeNewVertex(TmpValues1, TmpValues3, MaxLen1);
-  RefDesc->GetOldEdgeNewEdge(TmpValues2, TmpValues3, MaxLen2);
-
-  for (i=0;i<N_1;i++)
-  {
-    if (RefDesc->GetEdgeRef(i))
-    {
-      if (Tmp[i].Filled)
-      {
-        N_2 = TmpValues3[i]+1;
-
-        // change for periodic boundary conditions
-        if (Joints[i]->GetType() != PeriodicJoint)
-        {
-          auxi = i * MaxLen1;
-          for (j=1;j<N_2;j++)
-            NewVertices[TmpValues1[auxi + j]] = Tmp[i].Vertices[N_2-j];
         }
-        else
-        {
-          auxi = i * MaxLen1;
-          for (j=1;j<N_2;j++)
-            if (LineMidXY(i, j, TmpX, TmpY))
-            {
-              cerr << "Error in Refinement: can't generate mid point!!!"
-                   << endl;
-              return -1;
+
+    // create children
+    N_1 = RefDesc->GetN_Children();
+    Children = (TBaseCell **) new TGridCell *[N_1];
+
+    for (i = 0; i < N_1; i++) {
+        Children[i] = new TGridCell(TDatabase::RefDescDB[RefDesc->
+                GetChildType(i)], reflevel);
+
+        Children[i]->SetParent(this);
+        // copy physical reference
+        Children[i]->SetReference_ID(this->GetReference_ID());
+    }
+
+    // copy existing vertices
+    N_1 = RefDesc->GetN_NewVertEqOldVert();
+    RefDesc->GetNewVertEqOldVert(TmpValues1, TmpValues2);
+
+    for (i = 0; i < N_1; i++)
+        NewVertices[TmpValues1[i]] = Vertices[TmpValues2[i]];
+
+    // create new inner vertices
+    N_1 = RefDesc->GetN_InnerVertices();
+    if (N_1) {
+        RefDesc->GetInnerVerts(TmpValues1, TmpPos, MaxLen1);
+
+        for (i = 0; i < N_1; i++) {
+            TmpX = TmpY = 0;
+            auxi = i * MaxLen1;
+            for (j = 0; j < MaxLen1; j++) {
+                auxd = TmpPos[auxi++];
+                CurrVert = Vertices[j];
+                TmpX += auxd * CurrVert->GetX();
+                TmpY += auxd * CurrVert->GetY();
             }
-            else
-              NewVertices[TmpValues1[auxi + j]] = new TVertex(TmpX, TmpY);
-        }
 
-        auxi = i * MaxLen2;
-        for (j=0;j<N_2;j++)
-        {
-          index = TmpValues2[auxi + j];
-          NewJoints[index] = Tmp[i].Joints[N_2-1 - j];
-          NewJoints[index]->SetNeighbour(Children[
-                              TmpValues4[index * MaxLen3]]);
+            NewVertices[TmpValues1[i]] = new TVertex(TmpX, TmpY);
         }
-      }
-      else
-      {
-        if (Joints[i]->GetType() == InterfaceJoint ||
-            Joints[i]->GetType() == IsoInterfaceJoint)
-          Inside = ((TInterfaceJoint *) Joints[i])->CheckInside(this);
-        else
-          Inside = true;
+    }
 
-        N_2 = TmpValues3[i]+1;
+    // copy existing joints
+    RefDesc->GetEdgeChild(TmpValues4, TmpValues3, MaxLen3);
+    N_1 = RefDesc->GetN_NewEdgeEqOldEdge();
+    if (N_1) {
+        RefDesc->GetNewEdgeEqOldEdge(TmpValues1, TmpValues2);
+
+        for (i = 0; i < N_1; i++) {
+            index = TmpValues1[i];
+
+            if (Tmp[TmpValues2[i]].Filled)
+                NewJoints[index] = Tmp[TmpValues2[i]].Joints[0];
+            else {
+                if (Joints[TmpValues2[i]]->GetType() != InnerInterfaceJoint)
+                    NewJoints[index] = Joints[TmpValues2[i]]->NewInst();
+                else
+                    NewJoints[index]
+                            = Joints[TmpValues2[i]]->NewInst(-1, -1, Children[TmpValues4[index * MaxLen3]]);
+            }
+
+            //if (Joints[TmpValues2[i]]->GetType() != InnerInterfaceJoint)
+                NewJoints[index]->SetNeighbour(Children[TmpValues4[index * MaxLen3]]);
+        }
+    }
+
+    // create new inner edges
+    N_1 = RefDesc->GetN_InnerEdges();
+    RefDesc->GetInnerEdges(TmpValues1, TmpValues2, MaxLen1);
+
+    for (i = 0; i < N_1; i++)
+        NewJoints[TmpValues1[i]] = new
+                TJointEqN(Children[TmpValues2[TmpValues1[i] * MaxLen1]],
+                          Children[TmpValues2[TmpValues1[i] * MaxLen1 + 1]]);
+
+    // refine old edges if necessary
+    N_1 = RefDesc->GetN_OrigEdges();
+
+    RefDesc->GetOldEdgeNewVertex(TmpValues1, TmpValues3, MaxLen1);
+    RefDesc->GetOldEdgeNewEdge(TmpValues2, TmpValues3, MaxLen2);
+
+    for (i = 0; i < N_1; i++) {
+        if (RefDesc->GetEdgeRef(i)) {
+            if (Tmp[i].Filled) {
+                N_2 = TmpValues3[i] + 1;
+
+                // change for periodic boundary conditions
+                if (Joints[i]->GetType() != PeriodicJoint) {
+                    auxi = i * MaxLen1;
+                    for (j = 1; j < N_2; j++)
+                        NewVertices[TmpValues1[auxi + j]] = Tmp[i].Vertices[N_2 - j];
+                }
+                else {
+                    auxi = i * MaxLen1;
+                    for (j = 1; j < N_2; j++)
+                        if (LineMidXY(i, j, TmpX, TmpY)) {
+                            cerr << "Error in Refinement: can't generate mid point!!!"
+                            << endl;
+                            return -1;
+                        }
+                        else
+                            NewVertices[TmpValues1[auxi + j]] = new TVertex(TmpX, TmpY);
+                }
+
+                auxi = i * MaxLen2;
+                for (j = 0; j < N_2; j++) {
+                    index = TmpValues2[auxi + j];
+                    NewJoints[index] = Tmp[i].Joints[N_2 - 1 - j];
+                    NewJoints[index]->SetNeighbour(Children[
+                                                           TmpValues4[index * MaxLen3]]);
+                }
+            }
+            else {
+                if (Joints[i]->GetType() == InterfaceJoint ||
+                    Joints[i]->GetType() == IsoInterfaceJoint)
+                    Inside = ((TInterfaceJoint *) Joints[i])->CheckInside(this);
+                else
+                    Inside = true;
+
+                N_2 = TmpValues3[i] + 1;
+
+                auxi = i * MaxLen1;
+                for (j = 1; j < N_2; j++)
+                    if (LineMidXY(i, j, TmpX, TmpY)) {
+                        cerr << "Error in Refinement: can't generate mid point!!!"
+                        << endl;
+                        return -1;
+                    }
+                    else if (Inside)
+                        NewVertices[TmpValues1[auxi + j]] = new TVertex(TmpX, TmpY);
+                    else
+                        NewVertices[TmpValues1[auxi + N_2 - j]] = new
+                                TVertex(TmpX, TmpY);
+
+                auxi = i * MaxLen2;
+                for (j = 0; j < N_2; j++) {
+                    LineMidT(i, j, T_0, T_1);
+
+                    if (Inside)
+                        index = TmpValues2[auxi + j];
+                    else
+                        index = TmpValues2[auxi + N_2 - 1 - j];
+
+                    NewJoints[index] = Joints[i]->NewInst(T_0, T_1,
+                                                          Children[TmpValues4[index * MaxLen3]]);
+                }
+            }
+        }
+    }
+
+    // distribute vertex and joint pointer to children
+    N_1 = RefDesc->GetN_Children();
+    RefDesc->GetChildVertex(TmpValues1, MaxLen1);
+    RefDesc->GetChildEdge(TmpValues2, MaxLen2);
+
+    for (i = 0; i < N_1; i++) {
+        N_2 = TDatabase::ShapeDB[RefDesc->GetChildType(i)]->GetN_Vertices();
 
         auxi = i * MaxLen1;
-        for (j=1;j<N_2;j++)
-          if (LineMidXY(i, j, TmpX, TmpY))
-          {
-            cerr << "Error in Refinement: can't generate mid point!!!"
-                 << endl;
-            return -1;
-          }
-          else
-            if (Inside)
-              NewVertices[TmpValues1[auxi + j]] = new TVertex(TmpX, TmpY);
-            else
-              NewVertices[TmpValues1[auxi + N_2 - j]] = new
-                          TVertex(TmpX, TmpY);
+        for (j = 0; j < N_2; j++)
+            Children[i]->SetVertex(j, NewVertices[TmpValues1[auxi + j]]);
 
         auxi = i * MaxLen2;
-        for (j=0;j<N_2;j++)
-        {
-          LineMidT(i, j, T_0, T_1);
-
-          if (Inside)
-            index = TmpValues2[auxi + j];
-          else
-            index = TmpValues2[auxi + N_2 -1 - j];
-
-          NewJoints[index] = Joints[i]->NewInst(T_0, T_1,
-                               Children[TmpValues4[index * MaxLen3]]);
-        }
-      }
+        for (j = 0; j < N_2; j++)
+            Children[i]->SetJoint(j, NewJoints[TmpValues2[auxi + j]]);
     }
-  }
 
-  // distribute vertex and joint pointer to children
-  N_1 = RefDesc->GetN_Children();
-  RefDesc->GetChildVertex(TmpValues1, MaxLen1);
-  RefDesc->GetChildEdge(TmpValues2, MaxLen2);
-
-  for (i=0;i<N_1;i++)
-  {
-    N_2 = TDatabase::ShapeDB[RefDesc->GetChildType(i)]->GetN_Vertices();
-
-    auxi = i * MaxLen1;
-    for (j=0;j<N_2;j++)
-      Children[i]->SetVertex(j, NewVertices[TmpValues1[auxi + j]]);
-
-    auxi = i * MaxLen2;
-    for (j=0;j<N_2;j++)
-      Children[i]->SetJoint(j, NewJoints[TmpValues2[auxi + j]]);
-  }
-
-  N_1 = RefDesc->GetN_Edges();
-  for (i=0;i<N_1;i++)
-  {
-    if (NewJoints[i]->GetType() == InterfaceJoint ||
-        NewJoints[i]->GetType() == IsoInterfaceJoint)
-      ((TInterfaceJoint *) NewJoints[i])->CheckOrientation();
-    else if (NewJoints[i]->GetType() == InnerInterfaceJoint)
-    {
-      const int *NewEdgeOnWhichOldEdge;
-      RefDesc->GetNewEdgeOldEdge(NewEdgeOnWhichOldEdge);
-      TJoint *joint = Joints[NewEdgeOnWhichOldEdge[i]];
-      ((TInnerInterfaceJoint *)joint)->SetChild(
-                                        (TInnerInterfaceJoint *)NewJoints[i]);
-      RefDesc->GetEdgeVertex(TmpValues1); // which Vertices lie on an edge
-      ((TInnerInterfaceJoint *)NewJoints[i])->SetParams(
-        NewVertices[TmpValues1[2*i]]->GetX(),
-        NewVertices[TmpValues1[2*i]]->GetY(),
-        NewVertices[TmpValues1[2*i+1]]->GetX()-NewVertices[TmpValues1[2*i]]->GetX(),
-        NewVertices[TmpValues1[2*i+1]]->GetY()-NewVertices[TmpValues1[2*i]]->GetY());
-      // which Index has this edge in the child(ren) it belongs to
-      // we only look at edges which are on the boundary of this cell
-      // (belong to only one child)
-      RefDesc->GetEdgeChildIndex(TmpValues1,TmpValues2,MaxLen1);
-      // which Index have the children to which this edge belongs
-      // we only look at edges which are on the boundary of this cell 
-      // (belong to only one child)
-      RefDesc->GetEdgeChild(TmpValues3,TmpValues4,MaxLen1);
-      ((TInnerInterfaceJoint *)NewJoints[i])->SetIndexInNeighbor(
-        Children[TmpValues3[i*MaxLen1]],TmpValues1[i*MaxLen1]);
-    }
-  }
-
-  N_1 = RefDesc->GetN_Children();
-  for (i=0;i<N_1;i++)
-    if (Children[i]->GetType() == Quadrangle)
-      Children[i]->SetRefDesc(TDatabase::RefDescDB[((TQuadrangle *)
-             TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
-             CheckQuad(((TGridCell *) Children[i])->GetVertices())]);
-
-  #ifdef __CORRECT_MP__
-    if (RefDesc->GetType() == QuadReg)
-    {
-      RefDesc->GetInnerVerts(TmpValues1, TmpPos, MaxLen1);
-      RefDesc->GetOldEdgeNewVertex(TmpValues2, TmpValues3, MaxLen2);
-
-      for (i=0;i<4;i++)
-        if (Joints[i]->GetType() == BoundaryEdge ||
-            Joints[i]->GetType() == InterfaceJoint)
-        {
-          CurrVert = NewVertices[TmpValues2[3*i+1]];
-          TmpX = CurrVert->GetX();
-          TmpY = CurrVert->GetY();
-
-          CurrVert = NewVertices[TmpValues2[3*((i+2)%4)+1]];
-          TmpX = 0.5*(TmpX + CurrVert->GetX());
-          TmpY = 0.5*(TmpY + CurrVert->GetY());
-
-          NewVertices[TmpValues1[0]]->SetCoords(TmpX, TmpY);
+    N_1 = RefDesc->GetN_Edges();
+    for (i = 0; i < N_1; i++) {
+        if (NewJoints[i]->GetType() == InterfaceJoint ||
+            NewJoints[i]->GetType() == IsoInterfaceJoint)
+            ((TInterfaceJoint *) NewJoints[i])->CheckOrientation();
+        else if (NewJoints[i]->GetType() == InnerInterfaceJoint) {
+            const int *NewEdgeOnWhichOldEdge;
+            RefDesc->GetNewEdgeOldEdge(NewEdgeOnWhichOldEdge);
+            TJoint *joint = Joints[NewEdgeOnWhichOldEdge[i]];
+            ((TInnerInterfaceJoint *) joint)->SetChild(
+                    (TInnerInterfaceJoint *) NewJoints[i]);
+            RefDesc->GetEdgeVertex(TmpValues1); // which Vertices lie on an edge
+            ((TInnerInterfaceJoint *) NewJoints[i])->SetParams(
+                    NewVertices[TmpValues1[2 * i]]->GetX(),
+                    NewVertices[TmpValues1[2 * i]]->GetY(),
+                    NewVertices[TmpValues1[2 * i + 1]]->GetX() - NewVertices[TmpValues1[2 * i]]->GetX(),
+                    NewVertices[TmpValues1[2 * i + 1]]->GetY() - NewVertices[TmpValues1[2 * i]]->GetY());
+            // which Index has this edge in the child(ren) it belongs to
+            // we only look at edges which are on the boundary of this cell
+            // (belong to only one child)
+            RefDesc->GetEdgeChildIndex(TmpValues1, TmpValues2, MaxLen1);
+            // which Index have the children to which this edge belongs
+            // we only look at edges which are on the boundary of this cell
+            // (belong to only one child)
+            RefDesc->GetEdgeChild(TmpValues4, TmpValues3, MaxLen1);
+            // TmpValues2 == TmpValues3, MaxLen1 has not changed
+            ((TInnerInterfaceJoint *) NewJoints[i])->SetIndexInNeighbor(
+                    Children[TmpValues4[i * MaxLen1]], TmpValues1[i * MaxLen1]);
         }
     }
-  #endif // __CORRECT_MP__
 
-  return 0;
+    N_1 = RefDesc->GetN_Children();
+    for (i = 0; i < N_1; i++)
+        if (Children[i]->GetType() == Quadrangle)
+            Children[i]->SetRefDesc(TDatabase::RefDescDB[((TQuadrangle *)
+                    TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
+                    CheckQuad(((TGridCell *) Children[i])->GetVertices())]);
+
+#ifdef __CORRECT_MP__
+    if (RefDesc->GetType() == QuadReg) {
+        RefDesc->GetInnerVerts(TmpValues1, TmpPos, MaxLen1);
+        RefDesc->GetOldEdgeNewVertex(TmpValues2, TmpValues3, MaxLen2);
+
+        for (i = 0; i < 4; i++)
+            if (Joints[i]->GetType() == BoundaryEdge ||
+                Joints[i]->GetType() == InterfaceJoint) {
+                CurrVert = NewVertices[TmpValues2[3 * i + 1]];
+                TmpX = CurrVert->GetX();
+                TmpY = CurrVert->GetY();
+
+                CurrVert = NewVertices[TmpValues2[3 * ((i + 2) % 4) + 1]];
+                TmpX = 0.5 * (TmpX + CurrVert->GetX());
+                TmpY = 0.5 * (TmpY + CurrVert->GetY());
+
+                NewVertices[TmpValues1[0]]->SetCoords(TmpX, TmpY);
+            }
+    }
+#endif // __CORRECT_MP__
+
+    return 0;
 }
+
 #else // __3D__
 
 int TGridCell::Refine(int reflevel)
@@ -755,8 +740,8 @@ int TGridCell::Refine(int reflevel)
             bdcomp = ((TInterfaceJoint3D*)Joints[i])->GetBoundComp();
             ((TInterfaceJoint3D*)Joints[i])->GetParameters
                         (ParentParam1, ParentParam2);
-	    //cout << "ParentParam1: " << (long int)(Joints[i]) << " ";
-	    //for(k=0;k<4;k++)
+        //cout << "ParentParam1: " << (long int)(Joints[i]) << " ";
+        //for(k=0;k<4;k++)
             //   cout << ParentParam1[k] << "  ";
             // cout << endl;
           }
@@ -789,7 +774,7 @@ int TGridCell::Refine(int reflevel)
                 S[k] = ParentParam2[k];
                 CurrVert = Vertices[TmpValues2[auxi + TmpValues4[k]]];
                 CurrVert->GetCoords(X[k], Y[k], Z[k]);
-		//cout <<k << " k " << X[k] <<  " " << Y[k] << " " << Z[k] << endl;
+        //cout <<k << " k " << X[k] <<  " " << Y[k] << " " << Z[k] << endl;
               }
               bdcomp->GetXYZandTS(N_3, LinComb, X, Y, Z, T, S,
                                   TmpX, TmpY, TmpZ, TmpT, TmpS);
@@ -986,76 +971,70 @@ int TGridCell::Refine(int reflevel)
 #endif // __2D__
 
 #ifdef __2D__
-int TGridCell::Derefine()
-{
-  int i, j, k, N_1, N_2, MaxLen1, MaxLen2, MaxLen3, MaxLen4;
-  const int *TmpIV, *TmpVC, *TmpVCI, *TmpEC, *TmpECI;
-  const int *TmpoEnE, *TmpoEnV, *TmpLen;
-  const double *TmpPos;
-  TBaseCell *Child, *Neighb1, *Neighb2;
 
-  RefDesc->GetInnerVerts(TmpIV, TmpPos, MaxLen1);
-  RefDesc->GetVertexChild(TmpVC, TmpLen, MaxLen1);
-  RefDesc->GetVertexChildIndex(TmpVCI, TmpLen, MaxLen1);
+int TGridCell::Derefine() {
+    int i, j, k, N_1, N_2, MaxLen1, MaxLen2, MaxLen3, MaxLen4;
+    const int *TmpIV, *TmpVC, *TmpVCI, *TmpEC, *TmpECI;
+    const int *TmpoEnE, *TmpoEnV, *TmpLen;
+    const double *TmpPos;
+    TBaseCell *Child, *Neighb1, *Neighb2;
 
-  if (TmpIV)
-  {
-    N_1 = RefDesc->GetN_InnerVertices();
-    for(i=0;i<N_1;i++)
-      delete Children[TmpVC[TmpIV[i]*MaxLen1]]->
-               GetVertex(TmpVCI[TmpIV[i]*MaxLen1]);
-  }
+    RefDesc->GetInnerVerts(TmpIV, TmpPos, MaxLen1);
+    RefDesc->GetVertexChild(TmpVC, TmpLen, MaxLen1);
+    RefDesc->GetVertexChildIndex(TmpVCI, TmpLen, MaxLen1);
 
-  RefDesc->GetEdgeChild(TmpEC, TmpLen, MaxLen2);
-  RefDesc->GetEdgeChildIndex(TmpECI, TmpLen, MaxLen2);
-  RefDesc->GetOldEdgeNewEdge(TmpoEnE, TmpLen, MaxLen3);
-  RefDesc->GetOldEdgeNewVertex(TmpoEnV, TmpLen, MaxLen4);
-
-  if (Children)
-  {
-    N_1 = RefDesc->GetN_OrigEdges();
-    
-    for (i=0;i<N_1;i++)
-    {
-      N_2 = TmpLen[i];
-      if (N_2)
-      {
-        k = TmpoEnE[i*MaxLen3]*MaxLen2;
-        Child = Children[TmpEC[k]];
-        Neighb1 = Child->GetJoint(TmpECI[k])->
-                  GetNeighbour(Child);
-        for (j=1;j<=N_2;j++)
-        {
-          k = TmpoEnE[i*MaxLen3 + j]*MaxLen2;
-          Child = Children[TmpEC[k]];
-          Neighb2 = Child->GetJoint(TmpECI[k])->GetNeighbour(Child);
-
-          if (!(Neighb1 || Neighb2))
-	   {
-            if (TmpVC[TmpoEnV[i*MaxLen4+j]*MaxLen1] == TmpEC[k])
-	    { delete Child->GetVertex(TmpVCI[TmpoEnV[i*MaxLen4+j]*MaxLen1]);}
-            else
-	    { delete Child->GetVertex(TmpVCI[TmpoEnV[i*MaxLen4+j]*MaxLen1+1]);}
-	   }
-          Neighb1 = Neighb2;
-        }
-      }
-     }
-    N_1 = GetN_Children();
-    for (i=0;i<N_1;i++)
-    {
-      Children[i]->Derefine();
-      delete (TGridCell *) Children[i];
+    if (TmpIV) {
+        N_1 = RefDesc->GetN_InnerVertices();
+        for (i = 0; i < N_1; i++)
+            if (Children) {
+                delete Children[TmpVC[TmpIV[i] * MaxLen1]]->
+                        GetVertex(TmpVCI[TmpIV[i] * MaxLen1]);
+            }
     }
 
-    delete [] Children;
-    Children = NULL;
+    RefDesc->GetEdgeChild(TmpEC, TmpLen, MaxLen2);
+    RefDesc->GetEdgeChildIndex(TmpECI, TmpLen, MaxLen2);
+    RefDesc->GetOldEdgeNewEdge(TmpoEnE, TmpLen, MaxLen3);
+    RefDesc->GetOldEdgeNewVertex(TmpoEnV, TmpLen, MaxLen4);
 
-    RefDesc = TDatabase::RefDescDB[RefDesc->GetShapeDesc()->GetType()];
-  }
+    if (Children) {
+        N_1 = RefDesc->GetN_OrigEdges();
 
-  return 0;
+        for (i = 0; i < N_1; i++) {
+            N_2 = TmpLen[i];
+            if (N_2) {
+                k = TmpoEnE[i * MaxLen3] * MaxLen2;
+                Child = Children[TmpEC[k]];
+                Neighb1 = Child->GetJoint(TmpECI[k])->
+                        GetNeighbour(Child);
+                for (j = 1; j <= N_2; j++) {
+                    k = TmpoEnE[i * MaxLen3 + j] * MaxLen2;
+                    Child = Children[TmpEC[k]];
+                    Neighb2 = Child->GetJoint(TmpECI[k])->GetNeighbour(Child);
+
+                    if (!(Neighb1 || Neighb2)) {
+                        if (TmpVC[TmpoEnV[i * MaxLen4 + j] * MaxLen1] == TmpEC[k]) { delete Child->GetVertex(TmpVCI[TmpoEnV[i * MaxLen4 + j] * MaxLen1]); }
+                        else { delete Child->GetVertex(TmpVCI[TmpoEnV[i * MaxLen4 + j] * MaxLen1 + 1]); }
+                    }
+                    Neighb1 = Neighb2;
+                }
+            }
+        }
+        N_1 = GetN_Children();
+        for (i = 0; i < N_1; i++) {
+            Children[i]->Derefine();
+            delete (TGridCell *) Children[i];
+        }
+
+        delete[] Children;
+        Children = NULL;
+
+        RefDesc = TDatabase::RefDescDB[RefDesc->GetShapeDesc()->GetType()];
+    }
+
+    return 0;
 }
+
 #else
 int TGridCell::Derefine()
 {
@@ -1137,109 +1116,95 @@ int TGridCell::Derefine()
 }
 #endif
 
-int TGridCell::RefDeref()
-{
-  int i, N_;
+int TGridCell::RefDeref() {
+    int i, N_;
 
-  if (ExistChildren() && GetClipBoard() == NoRefinement)
-  {
-    Derefine();
-    SetClipBoard(DeRefinement);
-  }
-  else
-    if (!ExistChildren() && GetClipBoard() == Refinement)
-    {
-      SetRegRefine();
-      Refine(0);
-      N_ = GetN_Children();
-      for(i=0;i<N_;i++) GetChild(i)->SetClipBoard(Refinement);
+    if (ExistChildren() && GetClipBoard() == NoRefinement) {
+        Derefine();
+        SetClipBoard(DeRefinement);
+    }
+    else if (!ExistChildren() && GetClipBoard() == Refinement) {
+        SetRegRefine();
+        Refine(0);
+        N_ = GetN_Children();
+        for (i = 0; i < N_; i++) GetChild(i)->SetClipBoard(Refinement);
     }
 
-  return 0;
+    return 0;
 }
 
-int TGridCell::Gen1RegMarks()
-{
-  TBaseCell *child, *cell;
-  int i, j, k, l, ChildNumber;
+int TGridCell::Gen1RegMarks() {
+    TBaseCell *child, *cell;
+    int i, j, k, l, ChildNumber;
 //   int ToDerefine=0;
-  const int *TmpCE, *TmpnEoE;
-  const int *TmpoEnE, *TmpLen1;
-  const int *TmpEC, *TmpLen2;
-  int MaxLen, LocJointNum;
-  int MaxLen1, MaxLen2;
-  TRefDesc *RefDesc_tmp;
-  int N_ = GetN_Edges();
-  TJoint *CurrJoint;
+    const int *TmpCE, *TmpnEoE;
+    const int *TmpoEnE, *TmpLen1;
+    const int *TmpEC, *TmpLen2;
+    int MaxLen, LocJointNum;
+    int MaxLen1, MaxLen2;
+    TRefDesc *RefDesc_tmp;
+    int N_ = GetN_Edges();
+    TJoint *CurrJoint;
 
-  switch (GetClipBoard())
-  {
-    case Refinement:
-        if (Parent)
-        {
-          RefDesc_tmp = Parent->GetRefDesc();
-          RefDesc_tmp->GetChildEdge(TmpCE, MaxLen);
-          RefDesc_tmp->GetNewEdgeOldEdge(TmpnEoE);
+    switch (GetClipBoard()) {
+        case Refinement:
+            if (Parent) {
+                RefDesc_tmp = Parent->GetRefDesc();
+                RefDesc_tmp->GetChildEdge(TmpCE, MaxLen);
+                RefDesc_tmp->GetNewEdgeOldEdge(TmpnEoE);
 
-          for (i=0;i<N_;i++)
-	  {
-	    cell = Joints[i]->GetNeighbour(this);
-            if(cell)
-            {
-              if (cell->GetClipBoard() == DeRefinement)
-                cell->SetClipBoard(NoRefinement);
+                for (i = 0; i < N_; i++) {
+                    cell = Joints[i]->GetNeighbour(this);
+                    if (cell) {
+                        if (cell->GetClipBoard() == DeRefinement)
+                            cell->SetClipBoard(NoRefinement);
+                    }
+                    else {
+                        // there is no neighbour on the other side of the joint
+                        // either joint is boundary joint or 1-regular situation
+                        ChildNumber = Parent->GetChildNumber(this);
+
+                        LocJointNum = TmpnEoE[TmpCE[ChildNumber * MaxLen + i]];
+                        cell = Parent->GetJoint(LocJointNum)->GetNeighbour(Parent);
+                        if (cell) { cell->SetClipBoard(Refinement); }
+                    }
+                }
             }
-            else
-            {
-              // there is no neighbour on the other side of the joint
-              // either joint is boundary joint or 1-regular situation
-              ChildNumber = Parent->GetChildNumber(this);
+            break;
 
-              LocJointNum = TmpnEoE[TmpCE[ChildNumber * MaxLen + i]];
-              cell = Parent->GetJoint(LocJointNum)->GetNeighbour(Parent);
-              if (cell)
-	      { cell->SetClipBoard(Refinement);}
+        case NoRefinement:
+        case DeRefinement:
+            for (i = 0; i < N_; i++) {
+                cell = Joints[i]->GetNeighbour(this);
+                if (cell) {
+                    if (cell->ExistChildren()) {
+                        if (cell->GetClipBoard() == Refinement)
+                            SetClipBoard(NoRefinement);
+
+                        RefDesc_tmp = cell->GetRefDesc();
+                        j = 0;
+                        CurrJoint = Joints[i];
+                        while (cell->GetJoint(j) != CurrJoint) j++;
+                        // this cell is on local edge j of the neighbour cell
+
+                        RefDesc_tmp->GetOldEdgeNewEdge(TmpoEnE, TmpLen1, MaxLen1);
+                        RefDesc_tmp->GetEdgeChild(TmpEC, TmpLen2, MaxLen2);
+
+                        k = TmpLen1[j] + 1;
+                        for (l = 0; l < k; l++) // loop over all new edge on old edge j in cell
+                        {
+                            ChildNumber = TmpEC[TmpoEnE[j * MaxLen1 + l] * MaxLen2];
+                            child = cell->GetChild(ChildNumber);
+                            if (child->GetClipBoard() == Refinement ||
+                                child->ExistChildren())
+                                SetClipBoard(Refinement);
+                        }
+                    }
+                }
             }
-	   }
-        }
-        break;
+            break;
+    }
 
-    case NoRefinement:
-    case DeRefinement:
-        for (i=0;i<N_;i++)
-	 {
-	   cell = Joints[i]->GetNeighbour(this);
-           if (cell)
-	   {
-            if (cell->ExistChildren())
-            {
-              if (cell->GetClipBoard() == Refinement)
-                SetClipBoard(NoRefinement);
-
-              RefDesc_tmp = cell->GetRefDesc();
-              j = 0;
-              CurrJoint = Joints[i];
-              while (cell->GetJoint(j) != CurrJoint) j++;
-              // this cell is on local edge j of the neighbour cell
-
-              RefDesc_tmp->GetOldEdgeNewEdge(TmpoEnE, TmpLen1, MaxLen1);
-              RefDesc_tmp->GetEdgeChild(TmpEC, TmpLen2, MaxLen2);
-        
-              k = TmpLen1[j]+1;
-              for (l=0;l<k;l++) // loop over all new edge on old edge j in cell
-              {
-                ChildNumber = TmpEC[TmpoEnE[j*MaxLen1+l]*MaxLen2];
-                child=cell->GetChild(ChildNumber);
-                if (child->GetClipBoard() == Refinement ||
-                    child->ExistChildren())
-                  SetClipBoard(Refinement);
-              }
-            }
-	   }
-	 }
-        break;
-  }
-
-  return 0;
+    return 0;
 }
 

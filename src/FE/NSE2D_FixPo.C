@@ -2059,7 +2059,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U, N_P;
-  double c0, c1, c2;
+  double c0, c1, c2, c3, c4, c5, c6;
   double u1,u2;
 
   MatrixA11 = LocMatrices[0];
@@ -2086,6 +2086,10 @@ double ***LocMatrices, double **LocRhs)
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
+  c3 = coeff[3];                 // grad f1
+  c4 = coeff[4];                 // grad f1
+  c5 = coeff[5];                 // grad f2
+  c6 = coeff[6];                 // grad f2
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
@@ -2101,7 +2105,9 @@ double ***LocMatrices, double **LocRhs)
     test00 = Orig2[i];
 
     Rhs1[i] += Mult*test00*c1;
+    Rhs1[i] += Mult*test10*c3 + Mult*test01*c4;
     Rhs2[i] += Mult*test00*c2;
+    Rhs2[i] += Mult*test10*c5 + Mult*test01*c6;
 
     for(j=0;j<N_U;j++)
     {

@@ -9451,6 +9451,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // 40 <= number of terms in bilinear form
   // DUE NOTE CHANGE BELOW 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
   aux = new double [MaxN_QuadPoints_2D*40];
+  for (j = 0; j < MaxN_QuadPoints_2D*40; j++) { aux[j] = 0.;}
   for(j=0;j<MaxN_QuadPoints_2D;j++)
     AuxArray[j] = aux + j*40;
 
