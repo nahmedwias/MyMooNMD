@@ -36,9 +36,9 @@ class Time_CD2D
       /** @brief Finite element space */
       TFESpace2D fe_space;
       /** @brief Stiffness Matrix */
-      BlockMatrixCD2D Stiff_matrix;
+      BlockMatrixCD2D stiff_matrix;
       /** @brief Mass matrix */
-      BlockMatrixCD2D Mass_Matrix;
+      BlockMatrixCD2D mass_matrix;
       /** @brief right hand side vector */
       BlockVector rhs;
       /** @brief solution vector */
@@ -140,6 +140,18 @@ class Time_CD2D
     { return this->systems.front().fe_space; }
     const Example_CD2D& get_example() const
     { return example; }
+
+  private:
+    /**
+     * Apply an algebraic flux correction scheme to the assembled matrix.
+     * Should be called within the assemble routine, after the assembling
+     * of pure mass and stiffness matrix and right hand side
+     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
+     *
+     * Which afc algorithm is performed is determined by switching over
+     * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
+     */
+    void do_algebraic_flux_correction();
 };
 
 #endif

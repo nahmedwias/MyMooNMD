@@ -872,7 +872,7 @@ void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00,
                                                  double *origD00, double xi, 
                                                  double eta)
 {
-  double rec_detjk = 1/( (xc1+xc3*eta)*(yc2+yc3*xi)-(xc2+xc3*xi)*(yc1+yc3*eta));
+  double rec_detjk = 1./((xc1+xc3*eta)*(yc2+yc3*xi)-(xc2+xc3*xi)*(yc1+yc3*eta));
   double a11 = (xc1+xc3*eta)*rec_detjk;
   double a12 = (xc2+xc3*xi )*rec_detjk;
   double a21 = (yc1+yc3*eta)*rec_detjk;
@@ -898,39 +898,39 @@ void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00,
   // Piola transformation
   // phi = 1/|J| DF phi_hat
   // 
-  double rec_detjk = 1/((xc1+xc3*eta)*(yc2+yc3*xi ) 
-                       -(xc2+xc3*xi )*(yc1+yc3*eta));
   // this is \hat{D}F
   double a11 = (xc1+xc3*eta);
   double a12 = (xc2+xc3* xi);
   double a21 = (yc1+yc3*eta);
   double a22 = (yc2+yc3* xi);
+  double rec_detjk = 1./(a11*a22 - a12*a21);
   // this is DF^{-1}
   double z11 =  a22*rec_detjk;
   double z12 = -a12*rec_detjk;
   double z21 = -a21*rec_detjk;
   double z22 =  a11*rec_detjk;
+  // D(det(DF)) (row vector)
+  double b1 = xc1*yc3 - yc1*xc3;
+  double b2 = yc2*xc3 - xc2*yc3;
+  b1 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
+  b2 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
+  
+  // the derivative has three parts (since the Piola transform is a 
+  // product of three factors, namely 1/|J|, DF, and phi_hat) 
+  // according to the product rule
+  
+  // refPiola_(xy)_D.. is the derivative with respect to the 
+  // reference variables xi and eta. In the end we apply the chain 
+  // rule to get the derivative with respect to x and y.
+  double refPiola_x_D10,refPiola_x_D01,refPiola_y_D10,refPiola_y_D01;
   
   for(int k = 0; k < N_Functs; k++)
   {
-    // the derivative has three parts (since the Piola transform is a 
-    // product of three factors, namely 1/|J|, DF, and phi_hat) 
-    // according to the product rule
-  
-    // refPiola_(xy)_D.. is the derivative with respect to the 
-    // reference variables xi and eta. In the end we apply the chain 
-    // rule to get the derivative with respect to x and y.
-    double refPiola_x_D10,refPiola_x_D01,refPiola_y_D10,refPiola_y_D01;
-    
     // first part (differentiate 1/|J|)
     // \hat{D}F \hat{v}
     double DFv1 = a11*refD00[k] + a12*refD00[k+N_Functs];
     double DFv2 = a21*refD00[k] + a22*refD00[k+N_Functs];
-    // D(det(DF)) (row vector)
-    double b1 = xc1*yc3 - yc1*xc3;
-    double b2 = yc2*xc3 - xc2*yc3;
-    b1 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
-    b2 *= -SIGN(rec_detjk)*rec_detjk*rec_detjk;
+    
     // Dfv (-sign(J)/(J^2))DJ
     refPiola_x_D10 = DFv1*b1;
     refPiola_x_D01 = DFv1*b2;

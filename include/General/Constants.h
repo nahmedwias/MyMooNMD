@@ -35,20 +35,10 @@
   #define Abs(x) fabs(x)
 #endif
 
-#define SizeOfPointer  ((long) 4)
 #define SizeOfInt      ((long) 4)
 #define SizeOfFloat    ((long) 4)
 #define SizeOfDouble   ((long) 8)
 
-#ifdef __COMPAQ__
-  #undef SizeOfPointer
-  #define SizeOfPointer ((long) 8)
-#endif
-
-#ifdef __HPaCC64__
-  #undef SizeOfPointer
-  #define SizeOfPointer ((long) 8)
-#endif
 
 #ifdef FALSE
 #undef FALSE

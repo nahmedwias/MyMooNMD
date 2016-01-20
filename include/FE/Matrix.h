@@ -65,6 +65,11 @@ class TMatrix
     /** @brief generate the matrix, initialize entries with zeros */
     TMatrix(std::shared_ptr<TStructure> structure);
 
+    /**
+     * @brief Generates an empty `nRows`*`nCols` Matrix with no entries
+     */
+    TMatrix(int nRows, int nCols);
+
     /// @brief Default copy constructor
     ///
     /// Performs a deep copy of the entries, but not of the structure.
@@ -266,7 +271,7 @@ class TMatrix
      * @param y array representing the vector to which a * A*x is added
      * @param a scaling factor, default is 1.0
      */
-    void multiply(const double * const x, double *y, double a = 1.0) const;
+    void multiply(const double * const x, double * const y, double a = 1.0) const;
     
     /** @brief compute y += a * A^T * x
      *
@@ -277,7 +282,7 @@ class TMatrix
      * @param y array representing the vector to which a * A*x is added
      * @param a scaling factor, default is 1.0
      */
-    void transpose_multiply(const double * const x, double *y, double a = 1.0)
+    void transpose_multiply(const double * const x, double * const y, double a = 1.0)
       const;
     
     /**
@@ -293,6 +298,44 @@ class TMatrix
      * @param a scaling factor, default is 1.0
      */ 
     TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
+    
+    
+    /**
+     * @brief multiply this matrix B with its transposed B^T from the right
+     * 
+     * @return A pointer to the product matrix B*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right() const;
+
+    /** @brief multiply this matrix B with its transposed B^T from the right 
+     * and scale with a diagonal matrix in between. 
+     * 
+     * Compute the product B*D*B^T where B is this matrix and D is a diagonal 
+     * matrix.
+     *
+     * @param[in] diagonalScaling The diagonal scaling matrix D as a vector. 
+     * Must have as many entries as B has columns.
+     * @return A pointer to the product matrix B*D*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right(
+      const std::vector<double>& diagonalScaling) const;
+
+    /** @brief multiply this matrix B with its transposed B^T from the right 
+     * and scale with a diagonal matrix in between.
+     *
+     * Computing the structure of the product is computationally most 
+     * intensive. If it is known from similiar former computations, pass it as 
+     * an argument.
+     *
+     * @param[in] structure The known structure.
+     * @param[in] diagonalScaling The diagonal scaling matrix D as a vector. 
+     * Must have as many entries as B has columns.
+     * @return A pointer to the product matrix B*D*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right(
+      const std::vector<double>& diagonalScaling, const TStructure& structure) 
+    const;
+    
     
     /** @brief adding a scaled matrix to this matrix
      * 
@@ -354,6 +397,12 @@ class TMatrix
     
     /// @brief print some information on this TMatrix
     void info(size_t verbose) const;
+
+    ///! @return true if this matrix is square
+    bool is_square() const
+    {
+      return structure->isSquare();
+    }
 };
 
 #endif

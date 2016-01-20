@@ -161,8 +161,8 @@ class TStructure
     /**
      * @brief generate a structure, all arrays are already defined
      * 
-     * Note that the pointers will be deleted from within this class. No deep 
-     * copy is done.
+     * Note that a deep copy of the arrays is performed, TStructure will not
+     * take ownership of the ipnut arrays.
      * 
      * @param nRows number of rows
      * @param nCols number of columns
@@ -297,6 +297,14 @@ class TStructure
      */
     void info() const;
     
+    /** 
+     * @brief draw a postscript picture of the sparsity pattern, similar to 
+     * Matlab 'spy'
+     * 
+     * @param filename a file with this name will be created (overwritten)s
+     */
+    void draw(std::string filename) const;
+    
     /**
      * @brief return a structure for the matrix-matrix-product A*B
      * 
@@ -308,6 +316,24 @@ class TStructure
      */
     friend std::shared_ptr<TStructure> get_product_structure(
         TStructure const & strucA, TStructure const & strucB);
+    
+    /**
+     * @brief Compute the structure of the matrix matrix product A*A^T.
+     * 
+     * @return A pointer to the structure of A*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right() const;
+    
+    /**
+     * @brief Compute the structure of the matrix matrix product A*B*A^T.
+     * 
+     * @param B structure of the middle matrix B
+     * @return A pointer to the structure of A*B*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right(
+      const TStructure & B) const;
     
     /** @brief Comparision Operator 
      * 

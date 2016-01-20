@@ -1,9 +1,6 @@
 #include <Database.h>
 #include <LinAlg.h>
-#include <Solver.h>
 //#ifdef __2D__
-#include <SquareMatrix2D.h>
-#include <DiscreteForm2D.h>
 #include <FEFunction2D.h>
 #include <FEDatabase2D.h>
 #include <FE2D.h>
@@ -23,116 +20,58 @@
 #include <string.h>
 #include <MooNMD_Io.h>
 
-//**************************************************************
-//compute the lumped matrix
-//output is a vector
-//**************************************************************
-//#ifdef __2D__
-void AlgebraicFluxCorrection::LumpMassMatrixToVector(TSquareMatrix2D *M, double *lump_mass)
-//#endif
-//#ifdef __3D__
-//void LumpMassMatrixToVector(TSquareMatrix3D *M, double *lump_mass)
-//#endif
+
+void AlgebraicFluxCorrection::fem_tvd_algorithm(
+    TMatrix& system_matrix,
+    const std::vector<double>& sol,
+    std::vector<double>& rhs,
+    const std::vector<int>& neum_to_diri, //remark: this argument is unused at the moment
+    bool continuous_proposal,
+    bool nonsymmetric_application)
 {
-  double *Entries;
-  const int * RowPtr;
-  int i, j, rows, j0, j1;
-
-  RowPtr        = M->GetRowPtr();
-  Entries       = M->GetEntries();
-  rows          = M->GetN_Rows();
-
-  memset(lump_mass, 0, rows*SizeOfDouble);
-  for (i=0; i<rows; i++)
+  //catch non-square matrix
+  if (!system_matrix.is_square())
   {
-    lump_mass[i]=0.0;
-    j0 = RowPtr[i];
-    j1 = RowPtr[i+1];
-
-    for (j=j0;j<j1;j++)
-      lump_mass[i] += Entries[j];
-
-    if(lump_mass[i]==0)
-    {
-      OutPut("zero entry in lumped matrix "<< i << " "  << lump_mass[i] << endl);
-      exit(4711);
-    }
+    ErrThrow("System matrix must be square for FEM-TVD!");
   }
-}
 
+  // store the total number of dofs
+  int nDofs = system_matrix.GetN_Rows();
 
-/*******************************************************************************/
-//
-// FEM_TVD_ForConvDiff for steady-state cdr equations
-// following D. Kuzmin (2007)
-//
-// inputs : *sqmatrix         - system matrix
-//          N_U               - total number of dof
-//          N_Active          - active dof, should be the same as N_U
-//          *matrix_D_Entries - entries of matrix D
-//          *sol              - current solution
-//          N_neum_to_diri    - number of Dirichlet dof which are treated as
-//                              Neumann dof, MUST BE ORDERED !!!
-//          *neum_to_diri     - array which contains the indices of Dirichlet
-//                              dof which are treated as Neumann dof
-//          compute_matrix_D  - flag which says if matrix_D_Entries should be
-//                              computed
-//
-// outputs: *rhs              - right hand side of FEM-TVD problem
-//          *matrix_D_Entries - entries of matrix D if compute_matrix_D == 1
-//
-/*******************************************************************************/
-//#ifdef __2D__
-void AlgebraicFluxCorrection::FEM_TVD_ForConvDiff(TSquareMatrix2D *sqmatrix, int N_U, int N_Active,
-double *matrix_D_Entries, double *sol, double *rhs,
-int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
-//#endif
-//#ifdef __3D__
-//void FEM_TVD_ForConvDiff(TSquareMatrix3D *sqmatrix, int N_U, int N_Active,
-//double *matrix_D_Entries, double *sol, double *rhs,
-//int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
-//#endif
-{
+  // heritage style index declaration
   int i,j,j0,j1,j2,j3,jj,index;
   double nenner, zaehler;
-  double *Entries, *F;
-  double *P_plus, *P_minus, *Q_plus, *Q_minus, *R_plus, *R_minus;
 
-  if (N_Active < N_U)
-  {
-    OutPut("N_Active < N_U ("<< N_Active<< "<"<< N_U <<
-      ") !!! FOR APPLYING ALGEBRAIC FLUX CORRECTION, THE BOUNDARY CONDITIONS SHOULD BE NEUMANN !!!" << endl);
-    exit(4711);
-  }
   // get pointers to columns, rows and entries of matrix A
-  const int * ColInd = sqmatrix->GetKCol();
-  const int * RowPtr = sqmatrix->GetRowPtr();
-  Entries = sqmatrix->GetEntries();
-  int N_Entries = sqmatrix->GetN_Entries();
+  const int * ColInd = system_matrix.GetKCol();
+  const int * RowPtr = system_matrix.GetRowPtr();
+  // non-const, matrix entries get modified!
+  double* Entries = system_matrix.GetEntries();
 
-  // allocate memory for array F
-  F = new double[N_Entries+6*N_U];
-  memset(F, 0, (N_Entries+6*N_U)*SizeOfDouble);
-  P_plus = F + N_Entries;
-  P_minus = P_plus + N_U;
-  Q_plus = P_minus + N_U;
-  Q_minus = Q_plus + N_U;
-  R_plus = Q_minus + N_U;
-  R_minus = R_plus + N_U;
+  int N_Entries = system_matrix.GetN_Entries();
 
+  // allocate memory for matrix F and flux limiters
+  double* F = new double[N_Entries+6*nDofs];
+  memset(F, 0, (N_Entries+6*nDofs)*SizeOfDouble);
+  double* P_plus = F + N_Entries;
+  double* P_minus = P_plus + nDofs;
+  double* Q_plus = P_minus + nDofs;
+  double* Q_minus = Q_plus + nDofs;
+  double* R_plus = Q_minus + nDofs;
+  double* R_minus = R_plus + nDofs;
 
-	if(compute_matrix_D){
-		computeArtificialDiffusionMatrix(*sqmatrix, matrix_D_Entries,N_U);
-	}
-
+  // compute entries of the artificial diffusion matrix D
+  // TODO make matrix D an actual TMatrix and not only an entries vector
+  std::vector<double> matrix_D_Entries(N_Entries, 0.0);
+  compute_artificial_diffusion_matrix(system_matrix, matrix_D_Entries);
 
   // add this matrix to A giving \tilde A (Entries)
   // this is the matrix with the properties of an M matrix
-  Daxpy(N_Entries, 1.0, matrix_D_Entries, Entries);
+  Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
 
   // compute matrix F
   // loop over all rows
-  for(i=0;i<N_Active;i++)
+  for(i=0;i<nDofs;i++)
   {
     // i-th row of sqmatrix
     j0 = RowPtr[i];
@@ -150,7 +89,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 
   // compute flux limiters
   // loop over all rows
-  for(i=0;i<N_Active;i++)
+  for(i=0;i<nDofs;i++)
   {
     // i-th row of sqmatrix
     j0 = RowPtr[i];
@@ -171,7 +110,6 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
       {
         if (ColInd[jj]==i)
         {
-          //OutPut(Entries[j] << " " << Entries[jj] <<endl);
           break;
         }
       }
@@ -183,7 +121,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
       if (F[j] > 0)
       {
         P_plus[i] += F[j];
-        if (index<N_U)
+        if (index<nDofs)
           Q_plus[index] += F[j];
         Q_minus[i] -= F[j];
       }
@@ -191,7 +129,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
       {
         P_minus[i] += F[j];
         Q_plus[i] -= F[j];
-        if (index<N_U)
+        if (index<nDofs)
           Q_minus[index] +=  F[j];
       }
     }                                             // end loop j
@@ -199,9 +137,9 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
 
   // apply the nodal correction factor evaluated at the upwind node i
   // loop over all nodes
-  if (TDatabase::ParamDB->P9!=4711) //CB FIXME Replace that by some okay parameter!
+  if (!continuous_proposal)
   { // original but discontinuous proposal
-    for(i=0;i<N_U;i++)
+    for(i=0;i<nDofs;i++)
     {
       if (fabs(P_plus[i])>0)
       {
@@ -215,15 +153,11 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
         if (R_minus[i] >1)
           R_minus[i] = 1;
       }
-      //OutPut(" P " << P_plus[i] << " " <<  P_minus[i] << " ");
-      //OutPut(R_plus[i] << " " <<  R_minus[i] << endl);
     }
   }
   else
-  {
-    // continuous proposal
-
-    for(i=0;i<N_U;i++)
+  { // continuous proposal
+    for(i=0;i<nDofs;i++)
     {
       zaehler =  Q_plus[i];
       if (-Q_minus[i] < zaehler)
@@ -233,28 +167,30 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
         nenner = P_plus[i];
       if (-P_minus[i] > nenner)
         nenner = -P_minus[i];
-      //OutPut(zaehler << " " << nenner );
       R_plus[i] = zaehler/nenner;
       if (R_plus[i] > 1)
         R_plus[i] = 1;
       R_minus[i] = R_plus[i];
-      //OutPut("new " << i << " P " << P_plus[i] << " "  << P_minus[i] <<" Q " << Q_plus[i] << " "  << Q_minus[i] <<
-      //" R " << R_plus[i] << " " << R_minus[i] << endl);
     }
   }
 
 
-  // treat Dirichlet nodes
-  for (j=0;j<N_neum_to_diri;j++)
-  {
-    i=neum_to_diri[j];
-    R_plus[i] = 1;
-    R_minus[i] = 1;
-  }
+//  // treat Dirichlet nodes CB 2016/ I commented this out,
+    // because it breaks my example. TODO Needs further investigation.
+//  for (j=0;j < (int) neum_to_diri.size();j++)
+//  {
+//    i=neum_to_diri[j];
+//    if (i >= nDofs)
+//    {
+//      ErrThrow("neum_to_diri index ", i, " is out of scope!");
+//    }
+//    R_plus[i] = 1;
+//    R_minus[i] = 1;
+//  }
 
   // apply the flux limiters
   // loop over all rows
-  for(i=0;i<N_Active;i++)
+  for(i=0;i<nDofs;i++)
   {
     // i-th row of sqmatrix
     j0 = RowPtr[i];
@@ -268,9 +204,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
        // this should not happen
       if (Entries[j] > 0)
       {
-        OutPut("positive entry in FEMTVD " << i << " " << j << " " << Entries[j] << endl);
-        exit(4711);
-        continue;
+        ErrThrow("positive non-diagonal entry in FEM-TVD ", i, " ", j, " ", Entries[j]);
       }
 
       // check transposed entry
@@ -280,19 +214,17 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
       {
         if (ColInd[jj]==i)
         {
-          //OutPut(Entries[j] << " " << Entries[jj] <<endl);
           break;
         }
       }
 
-      if (TDatabase::ParamDB->P8!=4711) //CB FIXME Replace that by some okay parameter!
+      if (!nonsymmetric_application)
       {
         // original, symmetric application
         // check upwind condition
         // this ensures that the 'link' between i and index is treated only once
         if (Entries[jj] > Entries[j])
           continue;
-        //OutPut(R_plus[i] << " " << R_minus[i] << " : " << R_plus[index] << " " << R_minus[index] << "::");
         // compute contribution to rhs
         if (F[j] > 0)
         {
@@ -304,7 +236,7 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
         rhs[i] += F[j];
         // update rhs wrt to current column
         // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry of alpha matrix)
-        if (index<N_Active)
+        if (index<nDofs)
           rhs[index] -= F[j];
       }
       else
@@ -324,76 +256,418 @@ int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D)
   delete [] F;
 }
 
-//**************************************************************
-//compute system matrix for FEM-FCT
-//output is a vector
-//**************************************************************
-//#ifdef __2D__
-void AlgebraicFluxCorrection::FEM_FCT_SystemMatrix(TSquareMatrix2D *M_C, TSquareMatrix2D *A,
-double *lump_mass,int N_U)
-//#endif
-//#ifdef __3D__
-//void FEM_FCT_SystemMatrix(TSquareMatrix3D *M_C, TSquareMatrix3D *A,
-//double *lump_mass,int N_U)
-//#endif
-{
-  //int *ColInd, *RowPtr, N_Entries, *ColInd_M, *RowPtr_M, N_Entries_M;
-  int i,j,j0,j1,index;
-  //double *Entries,*Entries_M, cfl;
-  double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1; //appears in the system matrix
-  double theta2 = TDatabase::TimeDB->THETA2; //needed only for checking cfl (or checking, whether cfl has to be checked...)
+void AlgebraicFluxCorrection::crank_nicolson_fct(
+       const TMatrix& M_C, TMatrix& K,
+       const std::vector<double>& oldsol,
+       std::vector<double>& rhs, std::vector<double>& rhs_old,
+       double delta_t,
+       const std::vector<int>& neum_to_diri,
+       AlgebraicFluxCorrection::Prelimiter prelim
+       ){
 
-//  // get pointers to columns, rows and entries of matrix M_C
-  const int* ColInd_M = M_C->GetKCol();
-  const int* RowPtr_M = M_C->GetRowPtr();
-  double*  Entries_M = M_C->GetEntries();
-//  N_Entries_M = M_C->GetN_Entries();
-
-  // get pointers to columns, rows and entries of matrix A
-  //ColInd = A->GetKCol();
-  //RowPtr = A->GetRowPtr();
-  double* Entries = A->GetEntries();
-  //N_Entries = A->GetN_Entries();
-
-  for(i=0;i<N_U;i++)
+  //make sure Crank-Nicolson is used
+  if( TDatabase::TimeDB->TIME_DISC != 2 )
   {
-    // i-th row of sqmatrix
-    j0 = RowPtr_M[i];
-    j1 = RowPtr_M[i+1];
+    ErrThrow("crank_nicolson_fct performs Crank-Nicolson time discretization."
+        "Change TDatabase::TimeDB->TIME_DISC to 2.")
+  }
 
-    for(j=j0;j<j1;j++)
+  //check if both matrices are square and dimensions match
+  if(!M_C.is_square() || !K.is_square())
+  {
+    ErrThrow("M_C and K must be square!");
+  }
+  if(M_C.GetN_Rows() != K.GetN_Rows())
+  {
+    ErrThrow("M_C and K dimension mismatch!")
+  }
+
+  int nDofs = K.GetN_Rows();
+
+  // get pointers to columns, rows and entries of matrix M_C
+  const int* ColInd_M = M_C.GetKCol();
+  const int* RowPtr_M = M_C.GetRowPtr();
+  const double* Entries_M = M_C.GetEntries();
+
+  // get pointers to columns, rows and entries of matrix K; plus number of entries.
+  const int* ColInd = K.GetKCol();
+  const int* RowPtr = K.GetRowPtr();
+  double* Entries = K.GetEntries();
+  int N_Entries = K.GetN_Entries();
+
+  //STEP 0.1: Compute artificial diffusion matrix D and add to K, giving K := K + D=L.
+  std::vector<double> matrix_D_Entries(N_Entries, 0.0);
+  compute_artificial_diffusion_matrix(K, matrix_D_Entries);
+
+  Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
+
+  //STEP 0.2: Lump mass matrix.
+  std::vector<double> lump_mass (nDofs, 0.0);
+  lump_mass_matrix_to_vector(M_C, lump_mass);
+
+
+  //STEP 1: Computation of the intermediate solution
+  // follows Kuzmin(2009), S.10 (44)
+
+  double theta = 0.5; //hard-coded implicitness. 1/2 for Crank-Nicolson
+  double one_minus_theta = 0.5; //hard-coded expliciteness
+
+  std::vector<double> u_interm(nDofs,0.0); //approximation to u(t + /frac{1}{2} /delta t)
+  std::vector<double> u_dot_interm(nDofs,0.0); //approximation to u'(t + /frac{1}{2} /delta t)
+
+  // step-by-step build up u_interm...
+  // ...now L u_{k-1}
+  K.multiply(&oldsol[0], &u_interm[0]);
+
+  // ...now M_L^(-1)(f_{k-1} - L u_{k-1})
+  for(int i=0;i<nDofs;i++)
+  {
+    u_interm[i] = (rhs_old[i] - u_interm[i])/lump_mass[i];
+  }
+
+  // ...now u_{k-1} + halftimestep * M_L^(-1)(f_{k-1} - L u_{k-1})
+  double halftimestep = delta_t/2.0;
+  for(int i=0;i<nDofs;i++)
+  {
+    u_interm[i] = oldsol[i] + halftimestep * u_interm[i];
+  }
+
+  // set non-actives for intermediate solution (to those of intermediate solution)
+  for ( int j=0 ; j < (int) neum_to_diri.size() ; j++)
+  {
+    int i=neum_to_diri[j];
+    // just copy the values from old solution - this should
+    // have the non-actives set correctly!
+    u_interm[i] = oldsol[i];
+    //CB DEBUG
+//    if(oldsol[i] != 0)
+//    {
+//      Output::print(i, " : Why u not zero???");
+//    }
+//    else
+//    {
+//      Output::print(i, " : 0, good");
+//    }
+    //END DEBUG
+  }
+
+  // compute u_dot_interm (Kuzmin 2009 S.9 (37))
+  for (int i = 0; i < nDofs ; ++i)
+  {
+    u_dot_interm[i] = 2*(u_interm[i] - oldsol[i])/delta_t;
+  }
+  //intermediate solution is complete
+
+  //STEP 2: compute raw antidiffusive fluxes * delta_t, and apply pre-limiting, if required
+  //(Kuzmin 2009 S.9 (36) )
+  std::vector<double> raw_fluxes(N_Entries, 0.0);
+  for(int i=0;i<nDofs;i++)
+  {
+    // i-th row of mass matrix
+    int j0 = RowPtr_M[i];
+    int j1 = RowPtr_M[i+1];
+
+    for(int j=j0;j<j1;j++)
     {
-      index = ColInd_M[j];
-      if(i == index)
+      // column
+      int index = ColInd_M[j];
+
+      if (index==i) //nothing to do if this is a diagonal entry
+        continue;
+
+      double val = - matrix_D_Entries[j] * (u_interm[i]-u_interm[index]);
+      raw_fluxes[j]= Entries_M[j] * (u_dot_interm[i]-u_dot_interm[index]) + val;
+
+      // pre-limit fluxes
+      switch(prelim)
       {
-        //diagonale
-        Entries_M[j] = lump_mass[i]+delta_t*theta1*Entries[j];
-        double cfl = lump_mass[i]/Entries[j];
-        if (theta2 >0)
+      case Prelimiter::NONE:
+        // no prelimiting
+        break;
+      case Prelimiter::BOTH:
+        // no break statement, will execute both following prelimiters!
+      case Prelimiter::MIN_MOD:
+        raw_fluxes[j] = MinMod(raw_fluxes[j]/delta_t, val);
+        break;
+      case Prelimiter::GRAD_DIRECTION:
+        if (raw_fluxes[j]*(u_interm[index]-u_interm[i])>0)
         {
-          cfl /= theta2;
-          if (delta_t > cfl)
-          {
-            OutPut(lump_mass[i] << " " << "cfl violated: cfl " << cfl << " delta t:" << delta_t <<endl);
-          }
+          raw_fluxes[j] = 0;
+        }
+        break;
+      }
+      //multiply with delta, required by our Zalesak implementation
+      raw_fluxes[j] *= delta_t;
+    }
+  }
+
+  //STEP 3: apply Zalesaks flux correction to gain correction factors alpha
+  std::vector<double> alphas( M_C.GetN_Entries(), 0.0 );
+  ZalesaksFluxLimiter( alphas, M_C, lump_mass, raw_fluxes, u_interm, neum_to_diri);
+
+  // STEP 4: Calculate the new right hand side and system matrix.
+
+    for(int i=0;i<nDofs;i++)
+    {
+      double corrected_flux = 0.0;
+      int j0 = RowPtr[i];
+      int j1 = RowPtr[i+1];
+      for(int j=j0;j<j1;j++)
+      {
+        int index = ColInd[j];
+        if(i != index)
+        {
+          corrected_flux +=  alphas[j] * raw_fluxes[j];
+          //corrected_flux +=  raw_fluxes[j];
         }
       }
-      else
-      {
-        Entries_M[j]= delta_t*theta1*Entries[j];
-        if ( Entries_M[j]>1e-10)
-          OutPut( Entries_M[j] << " ");
+      //do the right hand side updates
+      rhs_old[i]=rhs[i];
+      rhs[i] = u_interm[i] * lump_mass[i] + theta*delta_t*rhs[i] + corrected_flux;
+    }
 
+    //and finally update K to be the final system matrix
+    fem_fct_compute_system_matrix(K, lump_mass, delta_t, theta, one_minus_theta);
+
+}
+
+
+void AlgebraicFluxCorrection::fem_fct_compute_system_matrix(
+    TMatrix& system_matrix,
+    const std::vector<double>& lumped_mass_matrix,
+    double tau, double theta1, double theta2
+    )
+{
+  if (theta1 != 0.5 || theta2 != 0.5  )
+  {
+    ErrThrow("fem_fct_compute_system_matrix for Crank Nicolson only."
+        "TODO Implement other schemes!");
+  }
+  // check if stiffness matrix is square
+  if(!system_matrix.is_square())
+  {
+    ErrThrow("system_matrix must be square for FEM-FCT!");
+  }
+
+  int nDof = system_matrix.GetN_Rows();
+
+  if(!(int) lumped_mass_matrix.size() == nDof)
+  {
+    ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
+  }
+
+  // get pointers to columns, rows and entries of system_matrix
+  const int* ColInd = system_matrix.GetKCol();
+  const int* RowPtr = system_matrix.GetRowPtr();
+  double*  Entries = system_matrix.GetEntries();
+
+  for(int i=0;i<nDof;i++)
+  {
+    // i-th row of sqmatrix
+    int j0 = RowPtr[i];
+    int j1 = RowPtr[i+1];
+
+    for( int j = j0 ; j < j1 ; j++ )
+    {
+      int index = ColInd[j];
+      if( i == index )
+      {//diagonal entry
+
+        check_cfl_condition(lumped_mass_matrix[i], Entries[j], tau, theta2);
+
+        // calculate the new system matrix entry
+        Entries[j] = lumped_mass_matrix[i] + tau * theta1 * Entries[j];
+
+      }
+      else
+      {//non-diagonal entry
+        // calculate the system matrix entry
+        Entries[j]= tau * theta1 * Entries[j];
+
+        //print warning if S violates M-matrix necessary condition (quite a lot!)
+        if ( Entries[j]>1e-10)
+        {
+          Output::print("WARNING in FEM-FCT system matrix:  ",
+                        Entries[j], " is a positive off-diagonal entry!");
+        }
       }
     }
   }
 }
 
+void AlgebraicFluxCorrection::check_cfl_condition(double mass_diag_entry,
+  double system_diag_entry, double tau, double theta2)
+{
+  //check CFL
+  double cfl = mass_diag_entry/system_diag_entry;
+  if (theta2 >0)
+  {
+    cfl /= theta2;
+    if (tau > cfl)
+    {
+      Output::print("WARNING in FEM-FCT system matrix: ",
+                    mass_diag_entry, " cfl violated: cfl ",
+                    cfl, " delta t: ", tau);
+    }
+  }
+}
 
-//**************************************************************
-// MINMOD prelimiter
-//**************************************************************
+void AlgebraicFluxCorrection::compute_artificial_diffusion_matrix(
+    const TMatrix& A, std::vector<double>& matrix_D)
+{
+    // catch non-square matrix
+    if (!A.is_square() )
+    {
+      ErrThrow("Matrix must be square!");
+    }
+    // store number of dofs
+    int nDof = A.GetN_Rows();
+
+	  // get pointers to columns, rows and entries of matrix A
+	  const int* ColInd = A.GetKCol();
+	  const int* RowPtr = A.GetRowPtr();
+	  const double* Entries = A.GetEntries();
+
+	  //reset matrix_D to 0
+	  std::fill(matrix_D.begin(), matrix_D.end(), 0);
+
+		// loop over all rows
+		for(int i=0;i<nDof;i++)
+		{
+			// i-th row of sqmatrix
+			int j0 = RowPtr[i];
+			int j1 = RowPtr[i+1];
+			// compute first the matrix D
+			for(int j=j0;j<j1;j++)
+			{
+				// column
+				int index = ColInd[j];
+				// only the active part of the matrix
+				//if (index>=N_U)
+				//	  continue;
+				// only off-diagonals
+				if (index!=i)
+				{
+					if (Entries[j] > 0)
+						matrix_D[j] = -Entries[j];
+					// now check the transposed entry
+					int j2 = RowPtr[index];
+					int j3 = RowPtr[index+1];
+					for (int jj=j2;jj<j3;jj++)
+					{
+						if (ColInd[jj]==i)
+						{
+							if (-Entries[jj]<matrix_D[j])
+								matrix_D[j] = -Entries[jj];
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// compute diagonal entry of D
+		// loop over all rows
+		for(int i=0;i<nDof;i++)
+		{
+			// i-th row of sqmatrix
+			int j0 = RowPtr[i];
+			int j1 = RowPtr[i+1];
+			double val = 0.0;
+			// add all entries of i-th row
+			int jj = -1;
+			for(int j=j0;j<j1;j++)
+			{
+				val +=  matrix_D[j];
+				int index = ColInd[j];
+				if (index==i)
+					jj = j; //Hold the place of the diagonal entry in the entries array. Is this reached exactly once ?
+			}
+			matrix_D[jj] = -val;
+		}
+}
+
+
+
+void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
+{
+	//hold pointers to row, kcol, entries array
+	const int* RowPtr_A      = MatrixA.GetRowPtr();
+	const int* KCol_A        = MatrixA.GetKCol();
+	double* Entries_A  = MatrixA.GetEntries();
+
+	//determine first and one-after-last dirichlet rows
+	size_t diriHighBound;
+	size_t diriLowBound;
+#ifdef __3D__
+	if(MatrixA.GetFESpace3D())      //it's a 3D matrix!
+	{
+    diriHighBound = MatrixA.GetFESpace3D()->GetDirichletBound();
+    diriLowBound = diriHighBound - MatrixA.GetFESpace3D()->GetN_Dirichlet();
+	}
+#endif
+	if(MatrixA.GetFESpace2D()) //it's a 2D matrix!
+	{
+	  diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
+	  diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
+	}
+	else
+	{
+	  ErrThrow("This matrix has neither 2D nor 3D FE Test Space!");
+	}
+
+	// loop over rows and set them to unity-vectors
+	for (size_t rowIndex = diriLowBound;
+			rowIndex < diriHighBound ;++rowIndex)
+	{
+		int l0 = RowPtr_A[rowIndex];
+		int l1 = RowPtr_A[rowIndex+1];
+		for (int l=l0;l<l1;l++)
+		{
+			// diagonal entry
+			if (KCol_A[l]== (int) rowIndex)
+				Entries_A[l] = 1;
+			else
+				Entries_A[l] = 0;
+		}
+	}
+}
+
+void AlgebraicFluxCorrection::lump_mass_matrix_to_vector(const TMatrix& M, std::vector<double>& lump_mass)
+{
+  // catch non-square matrix
+  if (!M.is_square() )
+  {
+    ErrThrow("Mass matrix must be square!");
+  }
+  // catch not fitting vector size
+  if ( (int) lump_mass.size() != M.GetN_Columns())
+  {
+    ErrThrow("Vector to write lumped mass matrix to has incorrect size! ",
+             lump_mass.size(), " != ", M.GetN_Columns());
+  }
+
+  const int * RowPtr = M.GetRowPtr();
+  const double * Entries = M.GetEntries();
+  int rows = M.GetN_Rows();
+
+  for (int i=0; i<rows; i++)
+  {
+    lump_mass[i]=0.0;
+    int j0 = RowPtr[i];
+    int j1 = RowPtr[i+1];
+
+    for (int j=j0;j<j1;j++)
+    {
+      lump_mass[i] += Entries[j];
+    }
+    if(lump_mass[i]==0)
+    {
+      ErrThrow("zero entry in lumped matrix ", i, " ", lump_mass[i]);
+    }
+  }
+}
+
 double AlgebraicFluxCorrection::MinMod(double a, double b)
 {
   if (a*b < 0)
@@ -413,609 +687,96 @@ double AlgebraicFluxCorrection::MinMod(double a, double b)
   }
 }
 
-
-/*******************************************************************************/
-//
-// FCT-FEM algorithm
-// following D. Kuzmin, M. M"oller (2005) (nonlinear scheme)
-//           D. Kuzmin (2008) (linear scheme)
-//
-// inputs : M_C              - consistent mass matrix
-//          A                - stiffness matrix
-//          N_U              - number of all unknowns
-//          N_Active         - number of active unknows (should be the same
-//                             as N_U !!!)
-//          lump_mass        - lumped mass matrix, stored as array
-//          matrix_D_Entries - set only once in each discrete time, in this
-//                             routine
-//          sol              - array for solution, contains the current
-//                             approximation on the solution
-//          oldsol           - array with solution from previous discrete time
-//          rhs              - array with right hand side f from current
-//                             discrete time
-//          rhs_old          - rhs f from previous discrete time
-//          tilde_u          - low order solution at (Delta t)/2
-//          N_neum_to_diri   - number of dofs which should become finally
-//                             Dirichlet nodes, MUST BE ORDERED !!!
-//          neum_to_diri     - array containing the indices of the dofs which
-//                             should become Dirichlet nodes
-//          neum_to_diri_bdry- array containing the number of the boundary part
-//          neum_to_diri_param - array containing the parameter of the boundary part
-//          compute_matrix_D - flag which says if to compute matrix_D_entries
-//          BoundaryValue    - pointer to function containing the boundary values
-//          BoundaryValues   - contains the boundary values if no pointer is specified
-//
-// output : matrix_D_Entries - if compute_matrix_D is true
-//          B                - array for right hand side for the solver
-//          tilde_u          - if compute_matrix_D is true (CB: fuer nichtlinearen Fall nur dann, sonst immer)
-//
-/*******************************************************************************/
-
-/*! New documentation for the input and output.
- *
- * Apply different variants of the FEM-FCT algebraic flux correction algorithm.
- *
- * @param[out] tilde_u Allocated memory for the low-order auxiliary solution.
- * As far as I see this is only used internally TODO Put construction and destruction into the algorithm,
- * remove as parameter.
- *
- * @param[in] compute_matrix_D - Whether to compute the artificial diffusion matrix D (non-zero)
- * or whether it already is computed and handed over as parameter.
- *
- *
- *
- */
-//#ifdef __2D__
-void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareMatrix2D *A,
-			 int N_U, int N_Active, //da diese ohnehin gleich sein muessen und die matrix speziell assembliert werden muss reicht es, hier nur N_U zu uebergeben.
-			 double *lump_mass, double *matrix_D_Entries,
-			 double *sol, double *oldsol, double *B, double *rhs,
-			 double *rhs_old, double *tilde_u,
-			 int N_neum_to_diri, int *neum_to_diri, int *neum_to_diri_bdry, double *neum_to_diri_param,
-			 int compute_matrix_D, BoundValueFunct2D *BoundaryValue, double *BoundaryValues) //compute_matrix_D kann man sich klemmen, wenn man checkt ob matrix_D_Entries NULL ist
-//#endif
-//#ifdef __3D__
-//void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
-//			 int N_U, int N_Active,
-//			 double *lump_mass, double *matrix_D_Entries,
-//			 double *sol, double *oldsol,
-//			 double *B, double *rhs, double *rhs_old,
-//			 double *tilde_u,
-//			 int N_neum_to_diri, int *neum_to_diri,
-//			 double *neum_to_diri_x, double *neum_to_diri_y, double *neum_to_diri_z,
-//			 int compute_matrix_D,
-//			 BoundValueFunct3D *BoundaryValue,
-//			 double *BoundaryValues)
-//#endif
+void AlgebraicFluxCorrection::ZalesaksFluxLimiter(
+    std::vector<double>& alphas,
+    const TMatrix& mass_matrix,
+    const std::vector<double>& lumped_mass,
+    const std::vector<double>& raw_fluxes,
+    const std::vector<double>& sol_approx,
+    const std::vector<int>& neum_to_diri
+)
 {
-  int i,j,j0,j1,index;
-  int solver_param[3];
-  double eps = 1e-10, help;
-  double val, val1;
-  double solver_param_d[1];
-  double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
-
-  // get pointers to columns, rows and entries of matrix M_C
-  const int* ColInd_M = M_C->GetKCol();
-  const int* RowPtr_M = M_C->GetRowPtr();
-  double* Entries_M = M_C->GetEntries();
-  //int N_Entries_M = M_C->GetN_Entries();
-
-  // get pointers to columns, rows and entries of matrix A
-  const int* ColInd = A->GetKCol();
-  const int* RowPtr = A->GetRowPtr();
-  double* Entries = A->GetEntries();
-  int N_Entries = A->GetN_Entries();
-
-  //Allocate space for auxiliary quantities.
-  double* res = new double[N_Entries];
-  double* alpha = new double[N_Entries];
-  double* P_plus = new double[N_U];
-  double* P_minus = new double[N_U];
-  double* Q_plus = new double[N_U];
-  double* Q_minus = new double[N_U];
-  double* R_plus = new double[N_U];
-  double* R_minus = new double[N_U];
-  double* aux_v = new double[N_U];
-
-  //STEP 0: Compute artificial diffusion matrix D and add to A if need be.
-  if(compute_matrix_D){
-	  computeArtificialDiffusionMatrix(*A, matrix_D_Entries,N_U);
-  }
-  // Add the artificial diffusion matrix to A giving A+D=L.
-  // TODO Should this also only be done once? Differs in the implementation of FEM_TVD and FEM_FCT!!!
-  Daxpy(N_Entries, 1.0, matrix_D_Entries, Entries);
-
-
-  //STEP 1: Computation of the auxiliary solution depending on the chosen
-  // TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME.
-
-  // 0 - nonlinear scheme, with minmod prelimiting
-  //
-  // "linear schemes only for Crank-Nicolson" Worauf genau bezieht sich das?
-  //
-  // 1 -simplest linear scheme, Kuzmin 2009.
-  // 2,3,4 - other linear schemes, but which exactly??
-
-  switch (TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME)
+  //check if all dimensions fit
+  if (!mass_matrix.is_square() )
   {
-    // simplest linear scheme, from the preprint of Kuzmin (2008)
-    // linear schemes only for Crank-Nicolson
-    case 1:
-      // L u_{k-1}
-      MatVect(A,oldsol,aux_v);
-
-      // M_L^(-1)(f_{k-1} - L u_{k-1})
-      for(i=0;i<N_U;i++)
-      {
-    	  aux_v[i] = (rhs_old[i] - aux_v[i])/lump_mass[i];
-      }
-      //OutPut("auxv0 " << Ddot(N_U,aux_v,aux_v) <<
-      // " " << Ddot(N_U,lump_mass,lump_mass) <<
-      // " " <<  Ddot(N_U,rhs_old,rhs_old) <<
-      // " " <<  Ddot(N_U,oldsol,oldsol) << endl);
-      val = delta_t/2.0;
-      for(i=0;i<N_U;i++)
-      {
-        tilde_u[i] = oldsol[i] + val * aux_v[i];
-      }
-
-      TDatabase::TimeDB->CURRENTTIME -= val;
-      // set correct boundary conditions for intermediate solution
-      for (j=0 ;j<N_neum_to_diri;j++)
-      {
-        i=neum_to_diri[j];
-//#ifdef __2D__
-	if (BoundaryValue!=NULL)
-	{
-	    BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
-			  tilde_u[i]);
-	}
-	else
-	{
-	    tilde_u[i] =   BoundaryValues[j];
-	}
-//#endif
-//#ifdef __3D__
-//	if (BoundaryValue!=NULL)
-//	{
-//	    BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
-//			  tilde_u[i]);
-//	}
-//	else
-//	{
-//	    tilde_u[i] =   BoundaryValues[j];
-//	}
-//#endif
-        aux_v[i] = 2*(tilde_u[i] - oldsol[i])/delta_t;
-      }
-      TDatabase::TimeDB->CURRENTTIME += val;
-      // compute matrix res
-      // loop over all rows
-      for(i=0;i<N_U;i++)
-      {
-        // i-th row of sqmatrix
-        j0 = RowPtr_M[i];
-        j1 = RowPtr_M[i+1];
-
-        for(j=j0;j<j1;j++)
-        {
-          // column
-          index = ColInd_M[j];
-          if (index==i)
-            continue;
-          val = - matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]);
-          res[j]= Entries_M[j] * (aux_v[i]-aux_v[index]) + val;
-          // prelimiting with MINMOD
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
-            (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-            res[j] = delta_t*MinMod(res[j]/delta_t, val);
-          // more prelimiting
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
-            (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-          {
-            if (res[j]*(tilde_u[index]-tilde_u[i])>0)
-              res[j] = 0;
-          }
-          res[j] *= delta_t;
-        }
-      }
-
-
-
-      break; //here the "simplest linear scheme" ends with a casebreak.
-    case 2:
-    case 3:
-    case 4:
-      if (TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME > 2)
-      {
-        theta1 = 0.5;
-        theta2 = 1-theta1;
-        // compute auxiliary solution, eq. (55) from [Kuz09]
-        // rhs comes to aux_v
-        // L u_{k-1}, (note: A = -L)
-        MatVect(A,oldsol,aux_v);
-        // delta_t Lu_{k-1}/2
-        val = -theta2 * delta_t;
-        Dscal(N_U, val, aux_v);
-      }
-      val = theta1 * delta_t;
-      for(i=0;i<N_U;i++)
-      {
-        // (M  + delta_t L/2) u_{k-1}
-        aux_v[i] += oldsol[i]*lump_mass[i];
-        // (M  + delta_t L/2) u_{k-1} + delta_t/2 rhs_old
-        aux_v[i] += val * rhs_old[i];
-        // (M  + delta_t L/2) u_{k-1} + delta_t/2 rhs_old + delta_t/2 rhs
-        aux_v[i] += val * rhs[i];
-      }
-
-      // matrix comes to A
-      for (i=0;i<N_U;i++)
-      {
-        // i-th row of sqmatrix
-        j0 = RowPtr[i];
-        j1 = RowPtr[i+1];
-        // j-th column
-        for(j=j0;j<j1;j++)
-        {
-          // column
-          index = ColInd[j];
-          if (index==i)
-          {
-            Entries[j] = lump_mass[i] + val * Entries[j];
-          }
-          else
-          {
-            Entries[j] *= val;
-          }
-        }
-      }
-
-      // prepare solver
-      // use bicgstab with ssor preconditioner
-      solver_param[0] = TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      TDatabase::ParamDB->SC_SOLVER_SCALAR = 13;
-      solver_param[1] = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 3;
-      solver_param[2] = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 100;
-      solver_param_d[0] = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-15;
-      Solver(A, aux_v, tilde_u);
-
-      // reset solver
-      TDatabase::ParamDB->SC_SOLVER_SCALAR = solver_param[0];
-      TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = solver_param[1];
-      TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = solver_param[2];
-      TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = solver_param_d[0];
-
-      // reset matrix
-      for (i=0;i<N_U;i++)
-      {
-        // i-th row of sqmatrix
-        j0 = RowPtr[i];
-        j1 = RowPtr[i+1];
-        // j-th column
-        for(j=j0;j<j1;j++)
-        {
-          // column
-          index = ColInd[j];
-          if (index==i)
-          {
-            Entries[j] = (Entries[j] - lump_mass[i])/val;
-          }
-          else
-          {
-            Entries[j] /= val;
-          }
-        }
-      }
-
-      val = delta_t;
-      TDatabase::TimeDB->CURRENTTIME -= val;
-      // set correct boundary conditions for auxiliary solution
-      for (j=0 ;j<N_neum_to_diri;j++)
-      {
-        i=neum_to_diri[j];
-//#ifdef __2D__
-	if (BoundaryValue!=NULL)
-	{
-	    BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
-			  tilde_u[i]);
-	}
-	else
-	{
-	    tilde_u[i] =   BoundaryValues[j];
-	}
-//#endif
-//#ifdef __3D__
-//	if (BoundaryValue!=NULL)
-//	{
-//	    BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
-//			  tilde_u[i]);
-//	}
-//	else
-//	{
-//	    tilde_u[i] =   BoundaryValues[j];
-//	}
-//#endif
-      }
-
-      TDatabase::TimeDB->CURRENTTIME += val;
-
-      // intermediate solution should be nonnegative
-      for(i=0;i<N_U;i++)
-      {
-       if (tilde_u[i] < 0)
-        OutPut("int sol neg " << tilde_u[i] << endl);
-      }
-
-      switch (TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME)
-      {
-        case 2:
-          for(i=0;i<N_U;i++)
-          {
-            aux_v[i] = tilde_u[i] - oldsol[i];
-          }
-          break;
-        case 3:
-          // eq. (60) from [Kuz09]
-          // L tilde_u
-          MatVect(A,tilde_u,aux_v);
-          // approximation of derivative of tilde_u
-          for(i=0;i<N_U;i++)
-          {
-            aux_v[i] = -aux_v[i]/lump_mass[i];
-            //if (delta_t * aux_v[i] + tilde_u[i]  < -1e-13)
-            //OutPut(delta_t * aux_v[i] + tilde_u[i] << " " << endl);
-          }
-          break;
-        case 4:
-          // restore matrix A
-          Daxpy(N_Entries, -1.0, matrix_D_Entries, Entries);
-          // A tilde_u
-          MatVect(A, tilde_u, R_minus);
-          // restore matrix D
-          Daxpy(N_Entries, 1.0, matrix_D_Entries, Entries);
-          // prepare solver
-          // use bicgstab with ssor preconditioner
-          solver_param[0] = TDatabase::ParamDB->SC_SOLVER_SCALAR;
-          TDatabase::ParamDB->SC_SOLVER_SCALAR = 13;
-          solver_param[1] = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-          TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 3;
-          solver_param[2] = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-          TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 100;
-          solver_param_d[0] = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-          TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-11;
-
-          Solver(M_C, R_minus, aux_v);
-
-          // reset solver
-          TDatabase::ParamDB->SC_SOLVER_SCALAR = solver_param[0];
-          TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = solver_param[1];
-          TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = solver_param[2];
-          TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = solver_param_d[0];
-          memset(R_minus, 0 , N_U*SizeOfDouble);
-          break;
-      }
-
-      // HAS TO BE CHECKED
-      /*for (j=0 ;j<N_neum_to_diri;j++)
-      {
-          i=neum_to_diri[j];
-          aux_v[i] = 0;
-	  }*/
-      // compute matrix res, eq. (57) in [Kuz09]
-      // loop over all rows
-      for(i=0;i<N_U;i++)
-      {
-        // i-th row of sqmatrix
-        j0 = RowPtr_M[i];
-        j1 = RowPtr_M[i+1];
-
-        for(j=j0;j<j1;j++)
-        {
-          // column
-          index = ColInd_M[j];
-          if (index==i)
-            continue;
-          switch (TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME)
-          {
-            case 2:
-              val = - matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]);
-	      val *= delta_t;
-              res[j]= 2 * Entries_M[j] * (aux_v[i]-aux_v[index]) + val;
-	      break;
-            case 3:
-            case 4:
-              theta1 = TDatabase::TimeDB->THETA1;
-              theta2 = TDatabase::TimeDB->THETA2;
-              val = -theta1*tilde_u[i] - theta2*oldsol[i];
-              val += theta1*tilde_u[index] + theta2*oldsol[index];
-              val *= matrix_D_Entries[j];
-              res[j] = Entries_M[j] * (aux_v[i]-aux_v[index]) + val;
-              res[j] *= delta_t;
-              /*val = -theta1*tilde_u[i] - theta2*oldsol[i];
-              val += theta1*tilde_u[index] + theta2*oldsol[index];
-              val *= delta_t * matrix_D_Entries[j];
-              res[j] = Entries_M[j] *(tilde_u[i] - oldsol[i]);
-              res[j] += Entries_M[j] *(tilde_u[index] - oldsol[index]);
-              res[j] += val;*/
-              break;
-          }
-          //prelimiting with MINMOD
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
-              (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-          {
-             val =  -matrix_D_Entries[j]*(tilde_u[i]-tilde_u[index]);
-              res[j] = delta_t*MinMod(res[j]/delta_t, val);
-          }
-          // more prelimiting
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
-              (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-          {
-	    if (res[j]*(tilde_u[index]-tilde_u[i])>0)
-	      res[j] = 0;
-	  }
-        }
-      }
-      break;
-    case 0:
-      //=======================================================
-      //nonlinear scheme
-      //=======================================================
-      if (compute_matrix_D)
-      {
-	  // reset parameter if necessary
-	  if (TDatabase::ParamDB->FEM_FCT_PRELIMITING==0)
-	  {
-	      TDatabase::ParamDB->FEM_FCT_PRELIMITING = 2;
-	      OutPut("nonlinear FEM-FCT works badly without prelimiting, "
-		     << " set ParamDB->FEM_FCT_PRELIMITING to "
-		     << TDatabase::ParamDB->FEM_FCT_PRELIMITING << endl);
-	  }
-        // L u_{k-1}
-        MatVect(A,oldsol,aux_v);
-
-        // M_L^(-1)(f_{k-1} - L u_{k-1})
-        val = delta_t/2.0;
-        for(i=0;i<N_U;i++)
-        {
-          val1 = (rhs_old[i] - aux_v[i])/lump_mass[i];
-          tilde_u[i] = oldsol[i] + val * val1;
-        }
-        //auxiliary variable is computed
-        TDatabase::TimeDB->CURRENTTIME -= val;
-        // set correct boundary conditions for intermediate solution
-        for (j=0;j<N_neum_to_diri;j++)
-        {
-          i=neum_to_diri[j];
-//#ifdef __2D__
-	if (BoundaryValue!=NULL)
-	{
-          BoundaryValue(neum_to_diri_bdry[j], neum_to_diri_param[j],
-            tilde_u[i]);
-	}
-	else
-	{
-	    tilde_u[i] =   BoundaryValues[j];
-	}
-
-          //aux_v[i] = 2*(tilde_u[i] - oldsol[i])/delta_t;
-//#endif
-//#ifdef __3D__
-//          // WRONG
-//	if (BoundaryValue!=NULL)
-//	{
-//          BoundaryValue(neum_to_diri_x[j], neum_to_diri_y[j], neum_to_diri_z[j],
-//            tilde_u[i]);
-//	}
-//	else
-//	{
-//	    tilde_u[i] =   BoundaryValues[j];
-//	}
-//#endif
-        }
-        TDatabase::TimeDB->CURRENTTIME += val;
-      }
-      // compute matrix res
-      // loop over all rows
-      val = theta1 * delta_t;
-      val1 = theta2 * delta_t;
-      for(i=0;i<N_U;i++)
-      {
-        // i-th row of sqmatrix
-        j0 = RowPtr_M[i];
-        j1 = RowPtr_M[i+1];
-
-        for(j=j0;j<j1;j++)
-        {
-          // column
-          index = ColInd_M[j];
-
-          res[j]= -Entries_M[j] * ((sol[index]-sol[i]) - (oldsol[index] - oldsol[i]))
-            + val * matrix_D_Entries[j] * (sol[index] - sol[i])
-            + val1 * matrix_D_Entries[j] * (oldsol[index]- oldsol[i]);
-          // prelimiting with MINMOD, THIS HAS TO BE CHECKED
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
-            (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-            res[j] = delta_t*MinMod(res[j]/delta_t, -matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]));
-          // more prelimiting
-          if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
-            (TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-          {
-            if (res[j]*(tilde_u[index]-tilde_u[i])>0)
-              res[j] = 0;
-          }
-        }
-      }
-      break;
-    default:
-      OutPut("FEM_FCT_LINEAR_TYPE " <<
-        TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE << " DOES NOT EXIST !!!"<<endl);
-      exit(4711);
+    ErrThrow("Matrix must be square!");
   }
 
-  //=======================================================
-  //Zalesaks limiter
-  //=======================================================
+  int nDofs = mass_matrix.GetN_Rows();
+  int nEntries = mass_matrix.GetN_Entries();
 
-  for(i=0;i<N_U;i++)
+  if(! (int) lumped_mass.size() == nDofs)
   {
-    // i-th row of sqmatrix
-    j0 = RowPtr_M[i];
-    j1 = RowPtr_M[i+1];
-    for(j=j0;j<j1;j++)
+    ErrThrow("lumped_mass has incorrect size ", lumped_mass.size(), " != ", nDofs);
+  }
+
+
+  if(! (int) sol_approx.size() == nDofs)
+  {
+    ErrThrow("sol_approx has incorrect size ", sol_approx.size(), " != ", nDofs);
+  }
+
+  if(! (int) alphas.size() == nEntries)
+  {
+    ErrThrow("alphas has incorrect size ", alphas.size(), " != ", nEntries);
+  }
+
+  if(! (int) raw_fluxes.size() == nEntries)
+  {
+    ErrThrow("raw_fluxes has incorrect size ", raw_fluxes.size(), " != ", nEntries);
+  }
+  //end checking input
+
+  // get pointers to columns, rows and entries of mass_matrix
+  const int* ColInd_M = mass_matrix.GetKCol();
+  const int* RowPtr_M = mass_matrix.GetRowPtr();
+
+  // auxiliary space
+  std::vector<double> P_plus (nDofs, 0.0);
+  std::vector<double> P_minus (nDofs, 0.0);
+  std::vector<double> Q_plus (nDofs, 0.0);
+  std::vector<double> Q_minus (nDofs, 0.0);
+  std::vector<double> R_plus (nDofs, 0.0);
+  std::vector<double> R_minus (nDofs, 0.0);
+
+  // 3.1  Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
+  //    where the Qs are "distances to local extrema of the auxiliary solution"
+  for(int i=0;i<nDofs;i++)
+  {
+    // i-th row of mass matrix
+    int j0 = RowPtr_M[i];
+    int j1 = RowPtr_M[i+1];
+    for(int j=j0;j<j1;j++)
     {
-      index = ColInd_M[j];
-      // only the active part of the matrix
-      if(i != index)
+      int index = ColInd_M[j];
+
+      if(i != index) //diagonal entries are skipped
       {
-        // if (i==1111)
-        //  OutPut(i << " " << index << " " << res[j] << " : ");
-        if (res[j] > 0.0)
-          P_plus[i] += res[j];
-        if (res[j] <= 0.0)
-          P_minus[i] += res[j];
+        if (raw_fluxes[j] > 0.0)
+          P_plus[i] += raw_fluxes[j]; //P_plus was initialized with 0
+        if (raw_fluxes[j] <= 0.0)
+          P_minus[i] += raw_fluxes[j]; //P_minus was initialized with 0
 
-        help = tilde_u[index]-tilde_u[i];
+        double help = sol_approx[index]-sol_approx[i];
 
-        // if (i==1111)
-        //    OutPut(tilde_u[index] << " " << tilde_u[i] << " " << help << endl);
-        if (help > Q_plus[i])
+        if (help > Q_plus[i]) //Q_plus was initialized with 0
           Q_plus[i]= help;
 
-        if (help < Q_minus[i])
+        if (help < Q_minus[i]) //Q_minus was initialized with 0
           Q_minus[i]= help;
       }
-    }                                             // end loop j
+    } // end loop j
   }
-  //for(i=0;i<N_U;i++)
-  //    OutPut(i << " "<< P_plus[i] << " " <<  P_minus[i] << " " << Q_plus[i] << " " <<  Q_minus[i] << endl);
-  //exit(1);
-  /*
-    for(i=0;i<N_U;i++)
-    {
-        if (tilde_u[i] + Q_minus[i] < t_min)
-      OutPut("tilde1 " << i << " "  << tilde_u[i] + Q_minus[i] <<
-       " " << tilde_u[i]  << " "  <<   Q_minus[i] <<
-       " " << t_min << endl);
-    }
-  */
 
-  for(i=0;i<N_U;i++)
+  // 3.2  Compute Rs (nodal correction factors)
+  for(int i=0;i<nDofs;i++)
   {
     if(fabs(P_plus[i]) == 0.0)
       R_plus[i] = 1.0;
     else
     {
       //OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
-      help = (lump_mass[i] * Q_plus[i])/P_plus[i];
+      double help = (lumped_mass[i] * Q_plus[i])/P_plus[i];
       if(help < 1.0)
         R_plus[i] = help;
       else
@@ -1026,7 +787,7 @@ void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareM
     else
     {
       //OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
-      help = (lump_mass[i] * Q_minus[i])/P_minus[i];
+      double help = (lumped_mass[i] * Q_minus[i])/P_minus[i];
       if(help < 1.0)
         R_minus[i] = help;
       else
@@ -1034,36 +795,38 @@ void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareM
     }
   }
 
-  // treat Dirichlet nodes
-  for (j=0;j<N_neum_to_diri;j++)
+  // treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27)
+  // TODO actually there it is about inlet and outlet!
+  for (int j=0;j< (int) neum_to_diri.size();j++)
   {
-    i = neum_to_diri[j];
+    int i = neum_to_diri[j];
     R_plus[i] = 1;
     R_minus[i] = 1;
   }
 
-  for(i=0;i<N_U;i++)
+  // 3.3 Compute alphas (final correction factors)
+  for(int i=0;i<nDofs;i++)
   {
     // i-th row of sqmatrix
-    j0 = RowPtr[i];
-    j1 = RowPtr[i+1];
+    int j0 = RowPtr_M[i];
+    int j1 = RowPtr_M[i+1];
 
-    for(j=j0;j<j1;j++)
+    for(int j=j0;j<j1;j++)
     {
-      index = ColInd[j];
-      if(res[j] > 0.0)
+      int index = ColInd_M[j];
+      if(raw_fluxes[j] > 0.0)
       {
         //Initialisation
-        alpha[j] = R_plus[i];
-        if(alpha[j] > R_minus[index])
-          alpha[j] = R_minus[index];
+        alphas[j] = R_plus[i];
+        if(alphas[j] > R_minus[index])
+          alphas[j] = R_minus[index];
       }
-      if(res[j]<=0.0)
+      if(raw_fluxes[j]<=0.0)
       {
         //initialisation
-        alpha[j] = R_minus[i];
-        if(alpha[j] > R_plus[index])
-          alpha[j] = R_plus[index];
+        alphas[j] = R_minus[i];
+        if(alphas[j] > R_plus[index])
+          alphas[j] = R_plus[index];
       }
       // clipping, see Kuzmin (2009), end of Section 5
       //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
@@ -1071,429 +834,5 @@ void AlgebraicFluxCorrection::FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C, TSquareM
     }                                             //end loop j
   }
 
-  //=======================================================
-  //correct right hand side
-  //=======================================================
-
-  // Crank--Nicolson
-  if ((fabs(theta2-0.5)<eps) && (fabs(theta3-0.5)<eps)&&
-    (TDatabase::ParamDB->INTERNAL_LINEAR_SCHEME<2)) //linear scheme 1, nonlinear scheme 0, only for Crank-Nicolson
-  {
-    for(i=0;i<N_U;i++)
-    {
-      val=0.0;
-      j0 = RowPtr[i];
-      j1 = RowPtr[i+1];
-      for(j=j0;j<j1;j++)
-      {
-        index = ColInd[j];
-        if(i != index)
-        {
-          val +=  alpha[j] * res[j];
-        }
-      }
-      B[i] = tilde_u[i] * lump_mass[i] + theta4*delta_t*rhs[i] + val;
-    }
-  }
-  else //linear schemes 2,3,4; other time steps?
-  {
-    // L u_{k-1}
-    MatVect(A,oldsol,aux_v);
-    val1 = theta2*delta_t;
-    for(i=0;i<N_U;i++)
-    {
-      val =0.0;
-      j0 = RowPtr[i];
-      j1 = RowPtr[i+1];
-      for(j=j0;j<j1;j++)
-      {
-        index = ColInd[j];
-        if(i != index)
-        {
-          val +=  alpha[j] * res[j];
-        }
-      }
-      B[i] = lump_mass[i] * oldsol[i] - val1 * aux_v[i] + delta_t * theta3 * rhs_old[i]
-        + delta_t * theta4*rhs[i] + val;
-      /* if (B[i] < -1e-10)
-      {
-          OutPut(i << " " << B[i] <<  " " << lump_mass[i] * oldsol[i]  << " " <<
-           -val1 * aux_v[i] << " " <<
-           delta_t * theta3 * rhs_old[i] << " " <<
-           delta_t * theta4*rhs[i] << " " <<  val << endl);
-           }*/
-    }
-  }
-
-  //OutPut(" vecB " << Ddot(N_U,B,B) << endl);
-  //Clean up.
-  delete[] res;
-  delete[] alpha;
-  delete[] P_plus;
-  delete[] P_minus;
-  delete[] Q_plus;
-  delete[] Q_minus;
-  delete[] R_plus;
-  delete[] R_minus;
-  delete[] aux_v;
-}
-
-/*!
- * Compute the artificial diffusion matrix. Put here to make FEM-FCT algo shorter.
- * @param[in] A The stiffness matrix which need additional diffusion.
- * @param[out] matrix_D_Entries Memory space to write the entries of D, the artificial diffusion matrix.
- * @param[in] N_U The number of degrees of freedom, i.e. number of rows of A.
- */
-void AlgebraicFluxCorrection::computeArtificialDiffusionMatrix(const TSquareMatrix2D& A, double* matrix_D_Entries, int N_U){
-
-	  // get pointers to columns, rows and entries of matrix A
-	  const int* ColInd = A.GetKCol();
-	  const int* RowPtr = A.GetRowPtr();
-	  const double* Entries = A.GetEntries();
-	  int N_Entries = A.GetN_Entries();
-
-		memset(matrix_D_Entries , 0, N_Entries*SizeOfDouble);
-		// loop over all rows
-		for(int i=0;i<N_U;i++)
-		{
-			// i-th row of sqmatrix
-			int j0 = RowPtr[i];
-			int j1 = RowPtr[i+1];
-			// compute first the matrix D
-			for(int j=j0;j<j1;j++)
-			{
-				// column
-				int index = ColInd[j];
-				// only the active part of the matrix
-				//if (index>=N_U)
-				//	  continue;
-				// only off-diagonals
-				if (index!=i)
-				{
-					if (Entries[j] > 0)
-						matrix_D_Entries[j] = -Entries[j];
-					// now check the transposed entry
-					int j2 = RowPtr[index];
-					int j3 = RowPtr[index+1];
-					for (int jj=j2;jj<j3;jj++)
-					{
-						if (ColInd[jj]==i)
-						{
-							if (-Entries[jj]<matrix_D_Entries[j])
-								matrix_D_Entries[j] = -Entries[jj];
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		// compute diagonal entry of D
-		// loop over all rows
-		for(int i=0;i<N_U;i++)
-		{
-			// i-th row of sqmatrix
-			int j0 = RowPtr[i];
-			int j1 = RowPtr[i+1];
-			double val = 0.0;
-			// add all entries of i-th row
-			int jj = -1;
-			for(int j=j0;j<j1;j++)
-			{
-				val +=  matrix_D_Entries[j];
-				int index = ColInd[j];
-				if (index==i)
-					jj = j; //Hold the place of the diagonal entry in the entries array. Is this reached exactly once ?
-			}
-			matrix_D_Entries[jj] = -val;
-		}
-}
-
-/*! New documentation for the input and output.
- *
- * Apply different variants of the FEM-FCT algebraic flux correction algorithm.
- *
- * @param[out] tilde_u Allocated memory for the low-order auxiliary solution.
- * As far as I see this is only used internally TODO Put construction and destruction into the algorithm,
- * remove as parameter.
- *
- * @param[in] compute_matrix_D - Whether to compute the artificial diffusion matrix D (non-zero)
- * or whether it already is computed and handed over as parameter.
- *
- *
- *
- */
-void AlgebraicFluxCorrection::FEM_FCT_SimpleLinear(TSquareMatrix2D *M_C,TSquareMatrix2D *A,
-			 int N_U, int N_Active,
-			 double *lump_mass, double *matrix_D_Entries, int compute_matrix_D,
-			 double *sol, double *oldsol,
-			 double *B, double *rhs, double *rhs_old,
-			 int N_neum_to_diri, int *neum_to_diri,
-			 double *BoundaryValues){
-
-	double eps = 1e-10;
-	double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-	//double theta1 = TDatabase::TimeDB->THETA1;
-	double theta2 = TDatabase::TimeDB->THETA2;
-	double theta3 = TDatabase::TimeDB->THETA3;
-	double theta4 = TDatabase::TimeDB->THETA4;
-
-	// get pointers to columns, rows and entries of matrix M_C
-	const int* ColInd_M = M_C->GetKCol();
-	const int* RowPtr_M = M_C->GetRowPtr();
-	double* Entries_M = M_C->GetEntries();
-
-	// get pointers to columns, rows and entries of matrix A (later L); plus number of entries.
-	const int* ColInd = A->GetKCol();
-	const int* RowPtr = A->GetRowPtr();
-	double* Entries = A->GetEntries();
-	int N_Entries = A->GetN_Entries();
-
-	//Allocate space for auxiliary quantities and initialize with 0.
-	double* res = new double[N_Entries]();
-	double* alpha = new double[N_Entries]();
-	double* P_plus = new double[N_U]();
-	double* P_minus = new double[N_U]();
-	double* Q_plus = new double[N_U]();
-	double* Q_minus = new double[N_U]();
-	double* R_plus = new double[N_U]();
-	double* R_minus = new double[N_U]();
-	double* aux_v = new double[N_U]();
-
-	//STEP 0: Compute artificial diffusion matrix D and add to A if need be.
-	if(compute_matrix_D){
-		computeArtificialDiffusionMatrix(*A, matrix_D_Entries,N_U);
-		// Add the artificial diffusion matrix to A giving A+D=L.
-		// This is only done once, too - from here on the matrix A is equipped with lots of additional diffusion.
-		Daxpy(N_Entries, 1.0, matrix_D_Entries, Entries);
-	}
-
-	//STEP 1: Computation of the auxiliary solution. Here I stripped the code down
-	// to the "simplest linear scheme", case 1 in the original algorithm.
-
-	double* tilde_u = new double[N_U]; //memory for the auxiliary solution
-
-	// L u_{k-1}
-	MatVect(A,oldsol,aux_v); //multiply A*oldsol and store in aux_v
-
-	// M_L^(-1)(f_{k-1} - L u_{k-1})
-	for(int i=0;i<N_U;i++)
-	{
-		aux_v[i] = (rhs_old[i] - aux_v[i])/lump_mass[i];
-	}
-
-	double halftimestep = delta_t/2.0;
-	for(int i=0;i<N_U;i++)
-	{
-		tilde_u[i] = oldsol[i] + halftimestep * aux_v[i];
-	}
-
-	// set correct boundary conditions for intermediate solution
-	for (int j=0 ;j<N_neum_to_diri;j++)
-	{
-		int i=neum_to_diri[j];
-		//sicherstellen, dass die richtigen bdry values uebergeben werden, siehe Handmitschrift 27.07.2015.
-		tilde_u[i] =   BoundaryValues[j];
-		//aux_v wird auf einen Zwischenstand zurueck gesetzt
-		aux_v[i] = 2*(tilde_u[i] - oldsol[i])/delta_t;
-	}
-	//Computation of auxiliary solution is complete.
-
-	//STEP 2: compute matrix res (?) - raw antidiffusive fluxes
-	// loop over all rows of mass matrix
-	for(int i=0;i<N_U;i++)
-	{
-		// i-th row of mass matrix
-		int j0 = RowPtr_M[i];
-		int j1 = RowPtr_M[i+1];
-
-		for(int j=j0;j<j1;j++)
-		{
-			// column
-			int index = ColInd_M[j];
-
-			if (index==i) //nothing to do if this is a diagonal entry (?)
-				continue;
-
-			double val = - matrix_D_Entries[j] * (tilde_u[i]-tilde_u[index]);
-			res[j]= Entries_M[j] * (aux_v[i]-aux_v[index]) + val;
-
-			// prelimiting with MINMOD
-			if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==1)||
-					(TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-				res[j] = delta_t*MinMod(res[j]/delta_t, val);
-			// prelimiting by setting diffusive fluxes in gradient direction to 0
-			if ((TDatabase::ParamDB->FEM_FCT_PRELIMITING==2)||
-					(TDatabase::ParamDB->FEM_FCT_PRELIMITING==3))
-			{
-				if (res[j]*(tilde_u[index]-tilde_u[i])>0)
-					res[j] = 0;
-			}
-			// It seems there are 3 prelimiting strategies implemented. 1 is only minmod, 2
-			// is setting diffusive fluxes in gradient direction to 0 and 3 is combining both.
-			// If FEM_FCT_PRELIMITING is neither 1,2 nor 3 no prelimiting as applied.
-
-			res[j] *= delta_t;
-		}
-	}
-
-	//STEP 3: Apply Zalesak's limiter, input quantities are "res" and "tilde_u".
-
-	// 3.1 	Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
-	//		where the Qs are "distances to local extrema of the auxiliary solution"
-	for(int i=0;i<N_U;i++)
-	{
-		// i-th row of mass matrix
-		int j0 = RowPtr_M[i];
-		int j1 = RowPtr_M[i+1];
-		for(int j=j0;j<j1;j++)
-		{
-			int index = ColInd_M[j];
-
-			if(i != index) //diagonal entries are skipped
-			{
-				if (res[j] > 0.0)
-					P_plus[i] += res[j]; //P_plus was initialized with 0
-				if (res[j] <= 0.0)
-					P_minus[i] += res[j]; //P_minus was initialized with 0
-
-				double help = tilde_u[index]-tilde_u[i];
-
-				if (help > Q_plus[i]) //Q_plus was initialized with 0
-					Q_plus[i]= help;
-
-				if (help < Q_minus[i]) //Q_minus was initialized with 0
-					Q_minus[i]= help;
-			}
-		}                                             // end loop j
-	}
-
-	// 3.2	Compute Rs (nodal correction factors)
-	for(int i=0;i<N_U;i++)
-	{
-		if(fabs(P_plus[i]) == 0.0)
-			R_plus[i] = 1.0;
-		else
-		{
-			//OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
-			double help = (lump_mass[i] * Q_plus[i])/P_plus[i];
-			if(help < 1.0)
-				R_plus[i] = help;
-			else
-				R_plus[i] = 1.0;
-		}
-		if(fabs(P_minus[i]) == 0.0)
-			R_minus[i] = 1.0;
-		else
-		{
-			//OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
-			double help = (lump_mass[i] * Q_minus[i])/P_minus[i];
-			if(help < 1.0)
-				R_minus[i] = help;
-			else
-				R_minus[i] = 1.0;
-		}
-	}
-
-	// treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27) TODO "the same should be performed at outflow boundaries"
-	for (int j=0;j<N_neum_to_diri;j++)
-	{
-		int i = neum_to_diri[j];
-		R_plus[i] = 1;
-		R_minus[i] = 1;
-	}
-
-	// 3.3 Compute alphas (final correction factors)
-	for(int i=0;i<N_U;i++)
-	{
-		// i-th row of sqmatrix
-		int j0 = RowPtr[i];
-		int j1 = RowPtr[i+1];
-
-		for(int j=j0;j<j1;j++)
-		{
-			int index = ColInd[j];
-			if(res[j] > 0.0)
-			{
-				//Initialisation
-				alpha[j] = R_plus[i];
-				if(alpha[j] > R_minus[index])
-					alpha[j] = R_minus[index];
-			}
-			if(res[j]<=0.0)
-			{
-				//initialisation
-				alpha[j] = R_minus[i];
-				if(alpha[j] > R_plus[index])
-					alpha[j] = R_plus[index];
-			}
-			// clipping, see Kuzmin (2009), end of Section 5
-			//if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
-			//  alpha[j] = 0;
-		}                                             //end loop j
-	}
-
-	// STEP 4: Calculate the right hand side.
-	// This is, apart from the addition of a lot of diffusion to A, the only place where smething is actually changed.
-	// but strange enough, the new rhs with the additional limited antidiffusive fluxes is stored in "B",
-	// not in rhs. How is one supposed to use this class from the outside???
-
-	//Die rechte Seite-Berechnung fuer simple linear (1) und nonlinear (0) ist nur fuer C-N implementiert (???)
-	// Crank--Nicolson bzw. theta2 und theta3 sollen 0.5 sein - fuer C-N muss das fuer alle 4 thetas gelten....
-	// Ich wuerde diese ganze Struktur gerne aendern. Warum soll ueberhaupt "B" vollgeschrieben werden,
-	// statt die ganze rechte Seite zu aendern? Und warum wird die Addition von theta4*delta_t*rhs[i]
-	// hier vorgenommen? Dafuer sorgt doch im besten Fall (intermediate Version) schon die Assemblierungsmethode...
-	// TODO Change the whole set up.
-	if ((fabs(theta2-0.5)<eps) && (fabs(theta3-0.5)<eps)) //Why ask for theta 2 and theta3 ??
-	{
-		for(int i=0;i<N_U;i++)
-		{
-			double val=0.0;
-			int j0 = RowPtr[i];
-			int j1 = RowPtr[i+1];
-			for(int j=j0;j<j1;j++)
-			{
-				int index = ColInd[j];
-				if(i != index)
-				{
-					val +=  alpha[j] * res[j];
-				}
-			}
-			B[i] = tilde_u[i] * lump_mass[i] + theta4*delta_t*rhs[i] + val;
-		}
-	}
-
-	//Clean up.
-	delete[] res; delete[] alpha; delete[] P_plus; delete[] P_minus;
-	delete[] Q_plus; delete[] Q_minus; delete[] R_plus; delete[] R_minus;
-	delete[] aux_v;
-	delete[] tilde_u;
-}
-
-void AlgebraicFluxCorrection::correctDirichletRows(TSquareMatrix2D& MatrixA)
-{
-	//hold pointers to row, kcol, entries array
-	const int* RowPtr_A      = MatrixA.GetRowPtr();
-	const int* KCol_A        = MatrixA.GetKCol();
-	double* Entries_A  = MatrixA.GetEntries();
-
-	//determine first and one-after-last dirichlet rows
-	int diriHighBound = MatrixA.GetFESpace2D()->GetDirichletBound();
-	int diriLowBound = diriHighBound - MatrixA.GetFESpace2D()->GetN_Dirichlet();
-
-	// loop over rows and set them to unity-vectors
-	for (size_t rowIndex = diriLowBound;
-			rowIndex < diriHighBound ;++rowIndex)
-	{
-		int l0 = RowPtr_A[rowIndex];
-		int l1 = RowPtr_A[rowIndex+1];
-		for (int l=l0;l<l1;l++)
-		{
-			// diagonal entry
-			if (KCol_A[l]==rowIndex)
-				Entries_A[l] = 1;
-			else
-				Entries_A[l] = 0;
-		}
-	}
+  //end Zalesak!
 }
