@@ -1,4 +1,6 @@
 #include <BlockVector.h>
+#include <ColoredBlockMatrix.h>
+#include <ColoredBlockFEMatrix.h>
 #include <stdlib.h>
 #include <Constants.h>
 #include <Database.h>
@@ -34,6 +36,52 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool image)
   if(TDatabase::ParamDB->SC_VERBOSE > 2)
     OutPut("Constructor of BlockVector using other BlockMatrix\n");
   this->copy_structure(mat, image);
+}
+
+BlockVector::BlockVector(const ColoredBlockMatrix& mat, bool result)
+{
+  // the total length of this vector
+  size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
+  // number of blocks in this BlockVector
+  size_t n_blocks = result ? mat.get_n_cell_rows() : mat.get_n_cell_columns();
+
+  entries.resize(total_length, 0.0);
+  // set all entries to zero
+  std::fill(entries.begin(), entries.end(), 0.0);
+  lengths.resize(n_blocks, 0);
+  actives.resize(n_blocks, 0);
+
+  //determine the length of each vector block
+  for(size_t b = 0; b < n_blocks; b++)
+  {
+    if (result)
+    {//vector on rhs
+      lengths[b] = mat.get_n_rows_in_cell(b,0);
+    }
+    else
+    {//vector as factor
+      lengths[b] = mat.get_n_columns_in_cell(0,b);
+    }
+   // all entries are active
+    actives[b] = lengths[b];
+  }
+}
+
+BlockVector::BlockVector(const ColoredBlockFEMatrix& mat, bool result)
+: BlockVector(static_cast<ColoredBlockMatrix>(mat))
+{
+  //now set actives correctly
+  for(size_t b = 0; b < n_blocks(); ++b)
+  {//go thorugh all blocks of the vector
+    if( result )
+    { // take actives from row space
+      actives[b] = mat.get_n_row_actives( b );
+    }
+    else
+    { //take actives from column space
+      actives[b] = mat.get_n_column_actives( b );
+    }
+  }
 }
 
 /** ************************************************************************ */

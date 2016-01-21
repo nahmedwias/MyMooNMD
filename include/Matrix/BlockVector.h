@@ -18,6 +18,8 @@
 #define __BLOCKVECTOR__
 
 class BlockMatrix; // forward declaration
+class ColoredBlockMatrix;
+class ColoredBlockFEMatrix;
 
 #include <numeric>
 #include <BlockMatrix.h>
@@ -82,6 +84,13 @@ class BlockVector
      */
     BlockVector(const BlockMatrix& mat, bool image = false);
     
+    /// Construct a BlockVector which is suitable to serve as factor ("false")
+    /// or result ("true") in multiplication with a ColoredBlockMatrix.
+    /// Vector is filled with zeroes and all entries are non-active.
+    BlockVector(const ColoredBlockMatrix& mat, bool result = false);
+
+    BlockVector(const ColoredBlockFEMatrix& mat, bool result = false);
+
     /** @brief constructor for a BlockVector suitable for a given BlockMatrix
      * 
      * If 'image' is set to true, the vector will be in the image space of the 

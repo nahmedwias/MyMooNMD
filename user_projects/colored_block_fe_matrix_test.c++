@@ -233,9 +233,13 @@ int main(int argc, char* argv[])
     ColoredBlockFEMatrix blockmat=
             ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
 
-    //BlockVector preimage(blockmat, false);
-    //BlockVector image(blockmat,true);
+    BlockVector preimage((ColoredBlockMatrix)blockmat, false);
+    BlockVector image((ColoredBlockMatrix)blockmat,true);
 
+    BlockVector preimage_act(blockmat, false);
+    BlockVector image_act(blockmat,true);
+
+    Output::print("End reached.");
     //check matrix-vector multiplication
 
 
