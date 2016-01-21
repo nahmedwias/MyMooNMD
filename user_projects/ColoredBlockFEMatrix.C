@@ -265,7 +265,7 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, 
 
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::add_scaled_actives(
+void ColoredBlockFEMatrix::add_matrix_actives(
     const FEMatrix& summand, double factor,
     const std::vector<std::vector<size_t>>& cell_positions,
     const std::vector<bool>& transposed_states)
@@ -338,11 +338,14 @@ void ColoredBlockFEMatrix::check_pointer_types()
       auto foo = std::dynamic_pointer_cast<FEMatrix>(bar);
       if(! foo)
       {
-        Output::print("[",i," , ",j,"] That cast did not work.");
+        //Output::print<2>("[",i," , ",j,"] That cast did not work.");
+        //to use the method in tests, this error is important.
+        // if you want to use it for debugging, outcomment it
+        ErrThrow("[",i," , ",j,"] That cast did not work.");
       }
       else
       {
-        Output::print("[",i," , ",j,"] That cast is fine!");
+        Output::print<2>("[",i," , ",j,"] That cast is fine!");
       }
     }
   }
@@ -390,8 +393,103 @@ void ColoredBlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) con
   }
 
 }
+
 /* ************************************************************************* */
 
+std::vector<std::shared_ptr<const FEMatrix>> ColoredBlockFEMatrix::get_blocks() const
+{
+  std::vector<std::shared_ptr<const FEMatrix>> block_ptrs;
+
+  for(size_t i =0 ; i < n_cell_columns_ ; ++i)
+  {
+    for(size_t j =0 ; j < n_cell_rows_ ; ++j)
+    {
+      //juggle the pointers around until we can store it the way we want...
+      std::shared_ptr<const FEMatrix> shared //cast const and FEMatrix
+      = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][j].block_);
+
+      // make a weak pointer from it and push it back
+      block_ptrs.push_back(shared);
+    }
+  }
+
+  return block_ptrs;
+}
+
+/* ************************************************************************* */
+
+std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely(
+    bool include_zeroes)
+{
+  //put up an all-in-input vector
+  std::vector<std::vector<size_t>> cells;
+  for (size_t i =0; i< n_cell_rows_ ; ++i)
+  {
+    for (size_t j =0; j< n_cell_rows_ ; ++j)
+    {
+      cells.push_back({i,j});
+    }
+  }
+  //...and let the other implementation do the work
+  return get_blocks_uniquely(cells, include_zeroes);
+}
+
+/* ************************************************************************* */
+
+std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely(
+    std::vector<std::vector<size_t>> cells, bool include_zeroes)
+{
+  // stuff the input into a tuple which includes transposed states
+  // - for our purpose it is not necessary, but thus we can make use
+  // of the input checking methods, which always include tranposed state
+  std::vector<bool> transp(cells.size(),false);
+
+  //form to tuples
+  std::vector<grid_place_and_mode> positions =
+      check_and_tupelize_vector_input(cells, transp);
+
+  //static input editing
+  check_and_edit_input(positions);
+
+  //check for index-out-of-bound issues
+  check_indices(positions);
+
+  //check if there is a color which is only partly affected by
+  // the requested return
+  size_t color = 0;
+  if(does_modification_require_color_split(color, positions))
+  {
+    ErrThrow("The blocks you request do affect one color only partly."
+        " This should be avoided, cause it can lead to unwanted side effects!")
+  }
+
+  //you reached here, everything fine? then let's prepare the output
+  std::vector<std::shared_ptr<FEMatrix>> blocks;
+  size_t next_highest_color = 0;
+  //loop through the positions vector
+  for (auto it : positions)
+  {
+    size_t cell_row = std::get<0>(it);
+    size_t cell_column = std::get<1>(it);
+    size_t color = cell_grid_[cell_row][cell_column].color_;
+    if(color >= next_highest_color) //unstored color found
+    {
+      std::shared_ptr<FEMatrix>block =
+          std::dynamic_pointer_cast<FEMatrix>(cell_grid_[cell_row][cell_column].block_);
+
+      bool is_zero = (block->GetN_Entries() == 0); // block without entries has zero-map structure
+      if(include_zeroes || !is_zero)
+      {//if either zeroes are to be included or not zero - store the block!
+        blocks.push_back(block);
+      }
+      next_highest_color = color + 1;
+    }
+  }
+
+  return blocks;
+}
+
+/* ************************************************************************* */
 
 std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
 {
@@ -435,7 +533,18 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
 
   return combined_matrix;
 }
+/* ************************************************************************* */
 
+size_t ColoredBlockFEMatrix::get_n_column_actives(size_t cell_column) const
+{
+  return ansatz_spaces_columnwise_.at(cell_column)->GetN_ActiveDegrees();
+}
+/* ************************************************************************* */
+
+size_t ColoredBlockFEMatrix::get_n_row_actives(size_t cell_row) const
+{
+  return test_spaces_rowwise_.at(cell_row)->GetN_ActiveDegrees();
+}
 
 /* ************************************************************************* */
 

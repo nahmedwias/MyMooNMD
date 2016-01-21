@@ -83,18 +83,18 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
     }
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::add_matrix_to_blocks(
+    void ColoredBlockMatrix::add_unscaled_matrix(
         const TMatrix& summand,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states)
     {
-      add_scaled_matrix_to_blocks(summand, 1.0, cell_positions, transposed_states);
+      add_matrix(summand, 1.0, cell_positions, transposed_states);
     }
 
 
 
     /* ************************************************************************* */
-    void ColoredBlockMatrix::add_scaled_matrix_to_blocks(
+    void ColoredBlockMatrix::add_matrix(
         const TMatrix& summand, double scaling_factor,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states)
@@ -331,7 +331,6 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
       return combined;
     }
-
 
     /// @brief total number of columns(> n_block_columns)
     size_t ColoredBlockMatrix::get_n_total_columns() const

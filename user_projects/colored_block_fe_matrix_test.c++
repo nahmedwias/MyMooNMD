@@ -18,6 +18,7 @@
 #include <Database.h>
 #include <FESpace2D.h>
 #include <MainUtilities.h>
+#include <BlockVector.h>
 
 #include <vector>
 #include <tuple>
@@ -26,74 +27,194 @@
 int main(int argc, char* argv[])
 {
 
-   //  declaration of databases
-   TDatabase Database;
-   TFEDatabase2D FEDatabase;
+  //  declaration of databases
+  TDatabase Database;
+  TFEDatabase2D FEDatabase;
 
-   // default construct a domain object
-   TDomain domain;
+  // default construct a domain object
+  TDomain domain;
 
-   // Set Database values (this is what is usually done by the input-file)
-   TDatabase::ParamDB->UNIFORM_STEPS = 1;
-   TDatabase::ParamDB->LEVELS = 1;
+  // Set Database values (this is what is usually done by the input-file)
+  TDatabase::ParamDB->UNIFORM_STEPS = 1;
+  TDatabase::ParamDB->LEVELS = 1;
 
-   // the domain is initialised with default description and default
-   // initial mesh
-   domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+  Output::setVerbosity(1);
 
-   // refine grid up to the coarsest level
-   for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+  // the domain is initialised with default description and default
+  // initial mesh
+  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+
+  // refine grid up to the coarsest level
+  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+  {
+    domain.RegRefineAll();
+  }
+
+  //collection from finest cell level
+  TCollection *coll = domain.GetCollection(It_EQ, 0);
+
+  // Create FeSpaces2D to fiddle around with
+
+  size_t first_ansatz_order = 2;
+  size_t second_ansatz_order = 1;
+  size_t third_ansatz_order = 3;
+
+  TFESpace2D first_fe_space(coll, (char*)"first_fe_space",
+                            (char*)"first_fe_space", //may act as velo space dummy
+                            BoundConditionNSE, first_ansatz_order, nullptr);
+
+  TFESpace2D second_fe_space(coll, (char*)"second_fe_space",
+                             (char*)"second_fe_space", //may act as pressure space dummy
+                             BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
+
+  TFESpace2D third_fe_space(coll, (char*)"third_fe_space",
+                            (char*)"third_fe_space", //yet another space
+                            BoundConditionNSE, third_ansatz_order, nullptr);
+
+//TODO test some methods on a customized matrix!
+/*
+*  apply (includes check_vector_fits_image)
+*  apply_scaled_add
+*
+*  copy constructor
+*  copy assignment (includes swap)
+*  move constructor
+*
+*  putting into vector
+*/
+
+  //
+  {// test standard methods with custom-made 2x2 FEMatrix, including
+    // one transposed storage and one transposed-storage memory hack
+
+    //create four FE Matrices to fiddle around with
+    FEMatrix fe_matrix_1(&first_fe_space);
+    FEMatrix fe_matrix_2(&first_fe_space, &second_fe_space);
+    FEMatrix fe_matrix_3(&second_fe_space, &first_fe_space);
+    FEMatrix fe_matrix_4(&second_fe_space);
+
+    // one TMatrix, too (copied from one FEMatrix for the sake of a non-emtpy structure)
+    TMatrix t_matrix_1(fe_matrix_3);
+    t_matrix_1.setEntries(std::vector<double>(36,1.0));
+
+   //custom construct and check
+   ColoredBlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   //replace method and check
+   myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false } );
+   myMatrix.replace_blocks(fe_matrix_4, {{1,1}}, { false });
+
+   myMatrix.replace_blocks(fe_matrix_3, {{0,1}, {1,0}}, { true, false }); //replace which leads to color merge
+   myMatrix.replace_blocks(fe_matrix_2, {{0,1}}, {false} ); //replace which leads to color split
+
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   myMatrix.replace_blocks(fe_matrix_3, {{0,1}, {1,0}}, { true, false }); //replace which leads to color merge
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   // try combination method of base
    {
-     domain.RegRefineAll();
+     std::shared_ptr<TMatrix> combined_base
+     = myMatrix.ColoredBlockMatrix::get_combined_matrix();
+//     combined_base->PrintFull("combined base");
+     if(combined_base->GetNorm(-2) != 0)
+     {
+       ErrThrow("Wrong norm of base-class combined matrix!");
+     }
    }
 
-   //collection from finest cell level
-   TCollection *coll = domain.GetCollection(It_EQ, 0);
+   //try combination method of derived
+   {
+     std::shared_ptr<TMatrix> combined_derived
+     = myMatrix.ColoredBlockFEMatrix::get_combined_matrix();
+//     combined_derived->PrintFull("combined derived");
+     if( fabs(combined_derived->GetNorm(-2) - 2.82843) > 1e-5)
+     {
+       ErrThrow("Wrong norm of derived-class combined matrix!");
+     }
+   }
 
-   //create two fespaces2D to fiddle around with
-   size_t first_ansatz_order = 2;
-   size_t second_ansatz_order = 1;
-   TFESpace2D first_fe_space(coll, (char*)"first_fe_space", (char*)"first_fe_space", //may act as velo space dummy
-                             BoundConditionNSE, first_ansatz_order, nullptr);
-   TFESpace2D second_fe_space(coll, (char*)"second_fe_space", (char*)"second_fe_space", //may act as pressuer space dummy
-                              BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
+   // test the space getter methods
+   if(&myMatrix.get_ansatz_space(0,0) != &first_fe_space )
+   {
+     ErrThrow("get_ansatz_space not working correctly.")
+   }
+   if(&myMatrix.get_test_space(0,1) != &first_fe_space )
+   {
+     ErrThrow("get_ansatz_space not working correctly.")
+   }
+   if(&myMatrix.get_row_space(1) != &second_fe_space )
+   {
+     ErrThrow("get_row_space not working correctly.")
+   }
+   if(&myMatrix.get_column_space(1) != &second_fe_space )
+   {
+     ErrThrow("get_column_space not working correctly.")
+   }
 
-//TODO test all methods on a customized matrix!
-//   //create four FE Matrices
-//   FEMatrix fe_matrix_1(&first_fe_space);
-//   FEMatrix fe_matrix_2(&first_fe_space, &second_fe_space);
-//   FEMatrix fe_matrix_3(&second_fe_space, &first_fe_space);
-//   FEMatrix fe_matrix_4(&second_fe_space);
-//
-//
-//   size_t dim1 = first_fe_space.GetN_DegreesOfFreedom();
-//   size_t dim2 = second_fe_space.GetN_DegreesOfFreedom();
-//
-//   TMatrix t_matrix_1(dim1,dim2);
-//
-//   //colored block fe matrix
-//   ColoredBlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
-//   myMatrix.check_pointer_types();
-//   myMatrix.print_and_check();
-//
-//   myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false } );
-//
-//   myMatrix.replace_blocks(fe_matrix_2, {{0,1}, {1,0}}, { false, true });
-//
-//   myMatrix.replace_blocks(fe_matrix_4, {{1,1}}, { false });
-//
-//   myMatrix.check_pointer_types();
-//
-//   myMatrix.print_coloring_pattern("full fe matrix",true);
-//   myMatrix.print_and_check();
-//
-//   // try combination method of base
-//   std::shared_ptr<TMatrix> combined_base = myMatrix.ColoredBlockMatrix::get_combined_matrix();
-//   combined_base->PrintFull("combined base");
-//
-//   //try combination method of derived
-//   std::shared_ptr<TMatrix> combined_derived = myMatrix.ColoredBlockFEMatrix::get_combined_matrix();
-//   combined_derived->PrintFull("combined derived");
+   // check standard adding (no color split intended), here with a simple TMatrix
+   myMatrix.add_matrix(t_matrix_1, 1.0 ,{{1,0}, {0,1}}, {false, true});
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+   if( fabs( myMatrix.get_combined_matrix()->GetNorm(-2) - 6.9282 ) > 1e-5)
+   {//check norm of dirichlet-row corrected matrix
+     ErrThrow("Wrong matrix norm after adding of a TMatrix!")
+   }
+   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 8.48528 ) > 1e-5 )
+   {//check norm of rough, algebraic matrix
+     ErrThrow("Wrong matrix norm after adding of a TMatrix!")
+   }
+
+   //check actives adding (color split intended) with an FEMatrix
+   fe_matrix_1.setEntries(std::vector<double>(17, 2.0));
+   myMatrix.add_matrix_actives(fe_matrix_1, -2.0 ,{{0,0}}, { false });
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   if( fabs( myMatrix.get_combined_matrix()->GetNorm(-2) - 13.8564 ) > 1e-4 )
+   {//check norm of dirichlet-row corrected matrix
+     ErrThrow("Wrong matrix norm after actives adding!")
+   }
+   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 14.6969 ) > 1e-4 )
+   {//check norm of rough, algebraic matrix
+     ErrThrow("Wrong matrix norm after actives adding!")
+   }
+
+
+   //check scaling of entries
+   myMatrix.scale_blocks(0.5, {{0,0},{1,1}});
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   if( fabs( myMatrix.get_combined_matrix()->GetNorm(-2) - 9.16515 ) > 1e-5 )
+   {//check norm of dirichlet-row corrected matrix
+     ErrThrow("Wrong matrix norm after block scaling!")
+   }
+   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 10.3923 ) > 1e-5 )
+   {//check norm of rough, algebraic matrix
+     ErrThrow("Wrong matrix norm after block scaling!")
+   }
+
+   //check scaling of active entries
+   myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false });//give us a new block in {0,0}
+   myMatrix.scale_blocks_actives(-2, {{0,0}});
+   myMatrix.check_pointer_types(); //casts to FEMatrix work?
+   myMatrix.check_coloring(); //coloring is unbroken?
+
+   if( fabs( myMatrix.get_combined_matrix()->GetNorm(-2) - 13.8564 ) > 1e-4 )
+   {//check norm of dirichlet-row corrected matrix
+     ErrThrow("Wrong matrix norm after block scaling!")
+   }
+   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 15.748 ) > 1e-4 )
+   {//check norm of rough, algebraic matrix
+     ErrThrow("Wrong matrix norm after block scaling!")
+   }
+
+
 //
 //   //check copying
 //   ColoredBlockFEMatrix hisMatrix(myMatrix);
@@ -105,80 +226,203 @@ int main(int argc, char* argv[])
 //   herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
 //   herMatrix.check_pointer_types();
 //
-//   //check adding of actives
-//   fe_matrix_4.setEntries(std::vector<double>(81,1.0));
-//
-//   herMatrix.add_scaled_matrix_to_blocks(fe_matrix_4, 1.0 ,{{1,1}}, {false});
-//   herMatrix.get_combined_matrix()->PrintFull("added standard");
-//   herMatrix.check_pointer_types();
-//
-//   herMatrix.add_scaled_actives(fe_matrix_4, - 2.0 ,{{1,1}}, {false});
-//   herMatrix.get_combined_matrix()->PrintFull("subtracted active");
-//   herMatrix.check_pointer_types();
-//
-//   //check scaling of entries
-//
-//   herMatrix.scale_blocks(10, {{1,1}});
-//   herMatrix.get_combined_matrix()->PrintFull("scaled");
-//   herMatrix.check_pointer_types();
-//   herMatrix.print_and_check();
-//
-//   herMatrix.scale_blocks_actives(100, {{1,1}});
-//   herMatrix.get_combined_matrix()->PrintFull("scaled actives");
-//   herMatrix.check_pointer_types();
-//   herMatrix.print_and_check();
+
+  }
+
+  { //make a default NSE Matrix and two vectors
+    ColoredBlockFEMatrix blockmat=
+            ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+
+    //BlockVector preimage(blockmat, false);
+    //BlockVector image(blockmat,true);
+
+    //check matrix-vector multiplication
 
 
-   // try out some named constructors
-   {//CD2D
-   TFESpace2D third_fe_space(coll, (char*)"third_fe_space", (char*)"third_fe_space",
-                                  BoundConditionNSE, 3, nullptr);
 
-   ColoredBlockFEMatrix cd2d_blockmat = ColoredBlockFEMatrix::CD2D(third_fe_space);
+  }
 
-   cd2d_blockmat.print_and_check("matrix for cd2d");
-   cd2d_blockmat.check_pointer_types();
-   }
+
+  // try out some named constructors, plus the block getter
+  // methods for solvers and assemblers
+  {//CD2D
+    ColoredBlockFEMatrix blockmat = ColoredBlockFEMatrix::CD2D(third_fe_space);
+    //blockmat.print_and_check("matrix for cd2d");
+    blockmat.check_pointer_types(); //casts to FEMatrix work?
+    blockmat.check_coloring(); //coloring is unbroken?
+    // assemble blocks getter
+    std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+    = blockmat.get_blocks_uniquely();
+    if (blocks_for_assembler.size() != 1)
+    {
+      ErrThrow("Incorrect blocks_for_assembler.size() !");
+    }
+    //solver blocks getter
+    std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+    = blockmat.get_blocks();
+    if (blocks_for_assembler.size() != 1)
+    {
+      ErrThrow("Incorrect blocks_for_solver.size() !");
+    }
+
+  }
    {//NSE2D Typ 1
-     ColoredBlockFEMatrix nse2d_1_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
-     nse2d_1_blockmat.print_and_check("matrix for nse2d, nstype 1");
-     nse2d_1_blockmat.check_pointer_types();
-     //   std::shared_ptr<TMatrix> combi = nse2d_1_blockmat.get_combined_matrix();
-     //   combi->PrintFull("nstype 1 combi");
-     //   std::shared_ptr<TMatrix> combi_base = nse2d_1_blockmat.ColoredBlockMatrix::get_combined_matrix();
-     //   combi_base->PrintFull("nstype 1 combi_base");
+     //blockmat.print_and_check("matrix for nse2d, nstype 1");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 3)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
    {//NSE2D Typ 2
-     ColoredBlockFEMatrix nse2d_2_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
-     nse2d_2_blockmat.print_and_check("matrix for nse2d, nstype 2");
-     nse2d_2_blockmat.check_pointer_types();
+     //blockmat.print_and_check("matrix for nse2d, nstype 2");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 5)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
    {//NSE2D Typ 3
-     ColoredBlockFEMatrix nse2d_3_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::NSE2D_Type3(first_fe_space, second_fe_space);
-     nse2d_3_blockmat.print_and_check("matrix for nse2d, nstype 3");
-     nse2d_3_blockmat.check_pointer_types();
+     //blockmat.print_and_check("matrix for nse2d, nstype 3");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 6)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
    {//NSE2D Typ 4
-     ColoredBlockFEMatrix nse2d_4_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
-     nse2d_4_blockmat.print_and_check("matrix for nse2d, nstype 4");
-     nse2d_4_blockmat.check_pointer_types();
+     //blockmat.print_and_check("matrix for nse2d, nstype 4");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 8)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
    {//NSE2D Typ 14
-     ColoredBlockFEMatrix nse2d_14_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space);
-     nse2d_14_blockmat.print_and_check("matrix for nse2d, nstype 14");
-     nse2d_14_blockmat.check_pointer_types();
+     //blockmat.print_and_check("matrix for nse2d, nstype 14");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 9)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
    {//Darcy2D
-     ColoredBlockFEMatrix darcy_blockmat=
+     ColoredBlockFEMatrix blockmat=
          ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
-     darcy_blockmat.print_and_check("matrix for darcy 2d");
-     darcy_blockmat.check_pointer_types();
+     //blockmat.print_and_check("matrix for darcy 2d");
+     blockmat.check_pointer_types(); //casts to FEMatrix work?
+     blockmat.check_coloring(); //coloring is unbroken?
+     // assemble blocks getter
+     std::vector<std::shared_ptr<FEMatrix>> blocks_for_assembler
+     = blockmat.get_blocks_uniquely();
+     if (blocks_for_assembler.size() != 4)
+     {
+       ErrThrow("Incorrect blocks_for_assembler.size() !");
+     }
+     //solver blocks getter
+     std::vector<std::shared_ptr<const FEMatrix>> blocks_for_solver
+     = blockmat.get_blocks();
+     if (blocks_for_solver.size() != 4)
+     {
+       ErrThrow("Incorrect blocks_for_solver.size() !");
+     }
    }
+
+   {//more tests on block getter methods (assemble parts getter, "true" for zero blocks)
+     ColoredBlockFEMatrix blockmat= //use NSE Type 2 for the checks
+         ColoredBlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
+
+     std::vector<std::vector<size_t>> positions_A = {{0,0},{0,1},{1,0},{1,1}};
+     std::vector<std::vector<size_t>> positions_B = {{0,2},{1,2},{2,0},{2,1}};
+     // adapt and use that if you want to check the handling of not-so clever input
+     //std::vector<std::vector<size_t>> stupid_input = {{1,1}};
+
+     // positionwise assemble getter
+     std::vector<std::shared_ptr<FEMatrix>> A_blocks_for_assembler
+       = blockmat.get_blocks_uniquely(positions_A);
+     if(A_blocks_for_assembler.size() != 1)
+     {
+       ErrThrow("Incorrect A_blocks_for_assembler.size() !");
+     }
+     std::vector<std::shared_ptr<FEMatrix>> A_blocks_for_assembler_with_zeroes
+       = blockmat.get_blocks_uniquely(positions_A, true); //with "true" for zeroes
+     if(A_blocks_for_assembler_with_zeroes.size() != 2)
+     {
+       ErrThrow("Incorrect A_blocks_for_assembler_with_zeroes.size() !");
+     }
+     std::vector<std::shared_ptr<FEMatrix>> B_blocks_for_assembler
+       = blockmat.get_blocks_uniquely(positions_B);
+     if(B_blocks_for_assembler.size() != 4)
+     {
+       ErrThrow("Incorrect B_blocks_for_assembler.size() !");
+     }
+   }
+
 
 }
 

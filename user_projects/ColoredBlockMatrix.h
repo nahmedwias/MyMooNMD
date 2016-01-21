@@ -110,7 +110,7 @@ class ColoredBlockMatrix
      * @param[in] transposed_states If the TMatrix goes to a specific place
      * in transposed ('true') or non-transposed ('false') state.
      */
-    void add_matrix_to_blocks(
+    void add_unscaled_matrix(
         const TMatrix& summand,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
@@ -120,7 +120,7 @@ class ColoredBlockMatrix
      * to scale the summand by
      * @param[in] scaling_factor A scaling factor for the summand.
      */
-    void add_scaled_matrix_to_blocks(
+    void add_matrix(
         const TMatrix& summand, double scaling_factor,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
@@ -243,14 +243,6 @@ class ColoredBlockMatrix
 
     /// @brief total number of rows (added over all cells in a cell column)
     size_t  get_n_total_rows() const;
-
-    /// Return number of cell rows - for compatibility
-    /// with template BlockVector::copy_structure
-    size_t n_rows() const{ return get_n_cell_rows(); }
-
-    /// Return number of cell columns - for compatibility
-    /// with template BlockVector::copy_structure
-    size_t n_cols() const{ return get_n_cell_columns(); }
 
     /**
      * Prints matrix coloring pattern and color_count_,

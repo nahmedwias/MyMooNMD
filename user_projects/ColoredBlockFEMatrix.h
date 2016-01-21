@@ -85,7 +85,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     //constructors
     /**
      * @brief Creates a ColoredBlockFEMatrix which is filled with fitting zero blocks.
-     *     * The TStrucuter of each of these zero blocks is the empty zero-map TStructure.
+     * The TStructure of each of these zero blocks is the empty zero-map TStructure.
      *
      * The number of block rows and the number of block columns
      * is the length of spaces.
@@ -226,6 +226,8 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
+    //public methods
+
     /**
      * Add the actives of a certain FEMatrix to several blocks at once.
      * This just figures out whether the adding will work, whether the
@@ -237,7 +239,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param[in] cell_positions Where to add the matrix.
      * @param[in] transposed_states In which transposed state to do it.
      */
-    void add_scaled_actives(
+    void add_matrix_actives(
         const FEMatrix& summand, double factor,
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
@@ -284,7 +286,6 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     virtual void check_vector_fits_pre_image(const BlockVector& x) const override;
 
-    // Getters.
     /**
      * Get the ansatz space of a certain grid cell. Since the ansatzspace is
      * identical for all cells in a column, the input cell_row is not actually needed.
@@ -296,6 +297,64 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return The ansatzspace, which is the same for the entire column.
      */
     const TFESpace2D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
+
+    /**
+     * This method is the main interface to ParMooN solving procedures which
+     * depend on the block structure.
+     * It traverses the whole matrix from left to right, top to bottom, and fills
+     * the return vector with pointers to all blocks, regardless of the storage
+     * structure.
+     *
+     * The classes which make use of this method must decide how to proceed
+     * with the gained blocks. They must make use of a priori knowledge
+     * about the block structure of this matrix, or of methods which check
+     * the block structure.
+     *
+     * @note The method returns shared_pointers which is not optimal,
+     * for the solvers should not share ownership. But since most solvers
+     * in ParMooN still expect raw pointer and one can't get those from weak
+     * pointers, we chose sharedp pointers as return values.
+     *
+     * @return A list of pointers to the blocks. Left to right, top to bottom,
+     * all blocks appear as often as they appear in cells.
+     */
+    std::vector<std::shared_ptr<const FEMatrix>> get_blocks() const;
+
+    /**
+     * This method is the main interface to ParMooN assembling procedures.
+     * It traverses the whole matrix from left to right, top to bottom, and fills
+     * the return vector with each new block it finds.
+     *
+     * This results in an output vector which contains each stored matrix
+     * exactly once. That is the only thing the method cares about: that
+     * no stored block is handed out twice.
+     *
+     * The classes which make use of this method must decide how to proceed
+     * with the gained blocks. They must make use of a priori knowledge
+     * about the block structure of this matrix, or of methods which check
+     * the block structure.
+     *
+     * By default the method skips all those blocks which have a zero-map
+     * Structure. To include them, give "true" as an input parameter.
+     *
+     * @param[in] include_zeroes Whether to include blocks with zero-map
+     * Structure or skip them. Defaults to "false" (skipping zero-map blocks).
+     * @return A list of pointers to the blocks. Each (relevant) blocks appears once.
+     */
+    std::vector<std::shared_ptr<FEMatrix>> get_blocks_uniquely(bool include_zeroes = false);
+
+    /**
+     * Acts just as get_blocks_uniquely(bool), but on only those
+     * matrix cells whose coordinates are given in input vector "cells".
+     *
+     * @param[in] cells The positions of the cells whose blocks we are interested in.
+     * should be a vector of double pairs, obviously, and not out of range.
+     * @param[in] include_zeroes Whether to include blocks with zero-map
+     * Structure or skip them. Defaults to "false" (skipping zero-map blocks).
+     * @return A list of pointers to the matrix blocks. Each (relevant) blocks appears once.
+     */
+    std::vector<std::shared_ptr<FEMatrix>> get_blocks_uniquely(std::vector<std::vector<size_t>> cells,
+                                               bool include_zeroes = false);
 
     /// @return The column (means: ansatz-)space of a certain cell column.
     const TFESpace2D& get_column_space(size_t cell_column) const
@@ -315,6 +374,29 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * Usually this is used to pass this matrix to a solver.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const override;
+
+    /**
+     * This method returns the number of actives of a certain cell column's
+     * ansatz-space. It is needed only for the templated constructor of
+     * BlockVector, and wil be removed as soon as ParMooN has a new
+     * handling of non-actives.
+     *
+     * @param cell_column The cell column.
+     * @return The number of actives of the column's ansatzspace.
+     */
+    size_t get_n_column_actives(size_t cell_column) const;
+
+    /**
+     * This method returns the number of actives of a certain cell row's
+     * test-space. It is needed only for the templated constructor of
+     * BlockVector, and wil be removed as soon as ParMooN has a new
+     * handling of non-actives.
+     *
+     * @param cell_row The cell row.
+     * @return The number of actives of the row's testspace.
+     */
+    size_t get_n_row_actives(size_t cell_row) const;
+
 
     /// @return The row (means: test-)space of a certain cell row.
     const TFESpace2D& get_row_space(size_t cell_row) const
