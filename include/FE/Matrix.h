@@ -336,6 +336,15 @@ class TMatrix
       const std::vector<double>& diagonalScaling, const TStructure& structure) 
     const;
     
+    /** @brief multiply this matrix A with its transposed A^T from the right 
+     * and multiply with matrix B in between.
+     *
+     * @param[in] B the matrix to be multiplied in between
+     * @return A pointer to the product matrix A*B*A^T.
+     */
+    std::shared_ptr< TMatrix > multiply_with_transpose_from_right( 
+                   const TMatrix& B) const;
+    
     
     /** @brief adding a scaled matrix to this matrix
      * 

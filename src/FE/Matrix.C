@@ -491,6 +491,97 @@ const
   return product;
 }
 
+std::shared_ptr< TMatrix > 
+  TMatrix::multiply_with_transpose_from_right(const TMatrix& B) const
+{
+  // dimension check
+  if(B.GetN_Rows() != this->GetN_Columns() 
+    || B.GetN_Columns() !=this->GetN_Columns())
+  {
+    ErrThrow("Dimension mismatch  ", B.GetN_Rows(), "  ", this->GetN_Columns());
+  }
+  
+  // construct a product structure
+  std::shared_ptr<TStructure> productStructure(
+    structure->get_structure_of_product_with_transpose_from_right(B.GetStructure()));
+  
+  // lambda function which returns the entry in the BA^T matrix  
+  auto return_BAT_entry = [this, B](int i, int j)
+  {
+    const int* row1ColBegin = &B.GetKCol()[B.GetRowPtr()[i]];
+    const int row1ColSize = B.GetRowPtr()[i+1] - B.GetRowPtr()[i];
+    const double *entriesB = B.GetEntries();
+    
+    const int* row2ColBegin = &this->GetKCol()[this->GetRowPtr()[j]];
+    const int row2ColSize = this->GetRowPtr()[j+1] 
+                               - this->GetRowPtr()[j];
+    
+    size_t indexB = 0;
+    size_t indexA = 0;
+    
+    double entry_in_BAT_product = 0;
+    while (indexB < row1ColSize && indexA < row2ColSize)
+    {
+      if (row1ColBegin[indexB] > row2ColBegin[indexA])
+      {
+        indexA++;
+      }
+      else if (row2ColBegin[indexA] > row1ColBegin[indexB])
+      { 
+        indexB++;
+      }
+      else
+      {        
+        entry_in_BAT_product +=  entriesB[indexB+B.GetRowPtr()[i]]
+                               * entries[indexA+this->GetRowPtr()[j]];
+        indexB++;
+        indexA++;
+      }
+    }
+    return entry_in_BAT_product;
+  };
+  
+  // number of rows in product structure
+  const size_t nProductRows = productStructure->GetN_Rows();
+  int * productRowPtr = productStructure->GetRowPtr();
+  
+  // create product matrix 
+  std::shared_ptr<TMatrix> productMatrix 
+          = std::make_shared<TMatrix>(productStructure);
+  // entries in the product matrix
+  double * productEntries = productMatrix->GetEntries();
+  
+  // fill the entries
+  // loop over all rows in the product
+  for(unsigned int row=0; row<nProductRows; row++)
+  {
+    int begin = productRowPtr[row];
+    int end = productRowPtr[row+1];
+    // loop over entries in "this row" in the product 
+    for(unsigned int iEntries =begin; iEntries<end; iEntries++)
+    {
+      int rowABAT = row;
+      int colABAT = productStructure->GetKCol()[iEntries];
+      
+      // store begin and end indices for columns and entries segments
+      int beginRowA = this->GetStructure().GetRowPtr()[rowABAT];
+      int endRowA   = this->GetStructure().GetRowPtr()[rowABAT+1];
+      
+      double entry_ABAT = 0;
+      for(int k=beginRowA; k<endRowA; ++k)
+      {
+        // compute the entry in the BA^T
+        double BAT_entry = return_BAT_entry(this->GetKCol()[k], colABAT);
+        double a_entry = entries[k];
+        entry_ABAT += a_entry * BAT_entry;
+      }
+      // set the current entry
+      productEntries[iEntries] = entry_ABAT;
+    } //endfor loop over all entries in this row
+  }// endfor loop over all entries in the product 
+  // return point of this matrix
+  return productMatrix;
+}
 
 TMatrix* TMatrix::GetTransposed() const
 {
