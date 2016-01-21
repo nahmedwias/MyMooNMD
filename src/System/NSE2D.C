@@ -187,6 +187,20 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   
   Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
+  
+  // projection spaces for reconstructions
+  switch(TDatabase::ParamDB->VELOCITY_SPACE)
+  {
+    case 22:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 3:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1013;
+      break;
+    case 4:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1014;
+      break;
+  }
 }
 
 /** ************************************************************************ */

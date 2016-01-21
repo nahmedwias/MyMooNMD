@@ -140,7 +140,7 @@ class NSE2D
     void get_velocity_pressure_orders(std::pair <int,int> 
                    &velocity_pressure_orders);
     
-    /** @brief set parameters in database
+    /** @brief check and set parameters
      * 
      * This functions checks if the parameters in the database are meaningful 
      * and resets them otherwise. The hope is that after calling this function
