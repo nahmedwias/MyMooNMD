@@ -10,9 +10,11 @@ include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 
 # Source files to be added to the 2D library.
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrix.C")
+list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockMatrix.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixCD2D.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixDarcy2D.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockFEMatrix.C")
+list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockFEMatrix.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixNSE2D.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockPattern.C")
 list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector.C")
