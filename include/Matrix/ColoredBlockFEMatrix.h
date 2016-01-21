@@ -55,16 +55,16 @@
 *             methods to changes (and of course implementing a new constructor
 *             and/or remove the "no-hanging-nodes" invariant.)
 *
-*             TODO Implement move constructor/assignment.
+*            TODO Write and test move constructor and assignment. Clang and gcc treat
+*            implicit generation and linking differently, and then move constructor
+*            and assignment differently, too. Somehow both compilers create a default move ctor,
+*            which does not make use of copying.
+*            But the move assignment is replaced by copies in gcc and gives a compiler error
+*            in clang (declared default, implicitely deleted, not replaced by copies)...
 *
-*             TODO Put up the 3D Version (basically means wrapping all statements
-*             which contain a TFESpace2D in ifdefs and adding a TFESpace3D alternative).
+*            TODO Put up the 3D Version (basically means wrapping all statements
+*            which contain a TFESpace2D in ifdefs and adding a TFESpace3D alternative).
 *
-*             TODO Named constructors for the typically used types:
-*             Convection-diffusion (1x1...)
-*             5 NSTypes in 2D
-*             5 NSTypes in 3D
-
 * @author     Clemens Bartsch
 * @date       2015/12/08
 *
@@ -470,7 +470,8 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     ColoredBlockFEMatrix(const ColoredBlockFEMatrix&);
 
-    ///! Default move constructor. Seems to work fine, even the FEMatrix casts.
+    ///! Leave moving to the compiler. TODO Investigate, whether this only performs correct
+    /// because it is replaced by copies - if so, implement it by hand!
     ColoredBlockFEMatrix(ColoredBlockFEMatrix&&) = default;
 
     /// Copy assignment operator. Uses copy-and-swap.
@@ -482,7 +483,10 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     friend void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second);
 
-    //! Deleted move assignment operator. (Should be implemented in time)
+    /// Leave moving to the compiler. TODO Investigate, whether this only performs correct
+    /// because it is replaced by copies - if so, implement it by hand!
+    /// With clang, this will not work because it is implicitely deleted,
+    /// clang will not replace it by copying, while gcc will!
     ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix&&) = default;
 
     /// @brief Destructor. Tidies up nice and clean.

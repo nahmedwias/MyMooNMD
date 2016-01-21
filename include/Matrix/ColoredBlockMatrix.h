@@ -67,6 +67,11 @@ class BlockVector;
  *             because one can easily break them down to modifications with only one
  *             TMatrix affecting multiple cells in the ColoredBlockMatrix.
  *
+ *             TODO Write and test move constructor and assignment. Clang and gcc treat
+ *             implicit generation and linking differently, and then move constructor
+ *             and assignment differently, too.
+ *
+ *
  * @author     Clemens Bartsch, Ulrich Wilbrandt
  * @date       2015/12
  *
@@ -315,7 +320,7 @@ class ColoredBlockMatrix
      */
     ColoredBlockMatrix(const ColoredBlockMatrix&);
 
-    ///! Default move constructor. Performs correctly here (ownership transfer).
+    ///! Moving degenerates to copying. No implicit move constructor. TODO Write move constructor!
     ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
 
     /** Swap function used for copy-and swap in copy assignment.
@@ -330,7 +335,7 @@ class ColoredBlockMatrix
      */
     ColoredBlockMatrix& operator=(ColoredBlockMatrix);
 
-    //! Default move assignment operator. Performs correctly here (ownership transfer).
+    ///! Moving degenerates to copying. No implicit move assignment. TODO Write move assignment!
     ColoredBlockMatrix& operator=(ColoredBlockMatrix&&) = default;
 
     /// @brief Default destructor. Tidies up nice and clean.
