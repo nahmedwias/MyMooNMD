@@ -471,7 +471,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     ColoredBlockFEMatrix(const ColoredBlockFEMatrix&);
 
     ///! Default move constructor. Seems to work fine, even the FEMatrix casts.
-    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&);// = delete;
+    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&) = default;
 
     /// Copy assignment operator. Uses copy-and-swap.
     ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix);
@@ -483,7 +483,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     friend void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second);
 
     //! Deleted move assignment operator. (Should be implemented in time)
-    ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix&&) = delete;
+    ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix&&) = default;
 
     /// @brief Destructor. Tidies up nice and clean.
     virtual ~ColoredBlockFEMatrix() = default;

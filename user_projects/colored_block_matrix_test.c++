@@ -105,14 +105,14 @@ int main(int argc, char* argv[])
     summand.GetEntries()[3] = 1;
     summand.GetEntries()[4] = 1;
 
-    myMatrix.add_matrix_to_blocks(summand,
+    myMatrix.add_unscaled_matrix(summand,
                                   {{2,0}, {2,2}},
                                   {true, false}  );
 
     myMatrix.print_and_check("addition to replace");
     myMatrix.get_combined_matrix()->PrintFull();
 
-    myMatrix.add_matrix_to_blocks(
+    myMatrix.add_unscaled_matrix(
         summand ,
         { {2,0}, {2,2} },
         {true, false} );
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
     std::vector<std::vector<size_t>> positions = {{0,0},{2,0}};
     std::vector<bool> transp_states = {false,true};
 
-    myMatrix.add_scaled_matrix_to_blocks(
+    myMatrix.add_matrix(
         summand, 1.0, positions, transp_states);
 
 

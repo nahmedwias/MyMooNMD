@@ -657,6 +657,9 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
   test_spaces_rowwise_(other.test_spaces_rowwise_),
   ansatz_spaces_columnwise_(other.ansatz_spaces_columnwise_)
 {
+
+  Output::print<3>("Used copy constructor!");
+
   // each block instance has to be copied once and all the shared pointers of
   // the same color have to be set pointing to the new block
   std::vector<std::shared_ptr<TMatrix>> treated_colors{color_count_.size(), nullptr};
@@ -682,6 +685,8 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
 /* ************************************************************************* */
 void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
 {
+  Output::print("Used derived swap!");
+
   std::swap(first.n_cell_columns_, second.n_cell_columns_);
   std::swap(first.n_cell_rows_, second.n_cell_rows_);
   std::swap(first.cell_grid_, second.cell_grid_);
@@ -696,6 +701,8 @@ ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other
 {
   //do a swap with the copy constructed object "other"
   swap(*this, other);
+
+  Output::print("Used derived copy assignment!");
 
   return *this;;
 }

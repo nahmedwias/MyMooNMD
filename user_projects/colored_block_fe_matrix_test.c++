@@ -71,19 +71,7 @@ int main(int argc, char* argv[])
                             (char*)"third_fe_space", //yet another space
                             BoundConditionNSE, third_ansatz_order, nullptr);
 
-//TODO test some methods on a customized matrix!
-/*
-*  apply (includes check_vector_fits_image)
-*  apply_scaled_add
-*
-*  copy constructor
-*  copy assignment (includes swap)
-*  move constructor
-*
-*  putting into vector
-*/
 
-  //
   {// test standard methods with custom-made 2x2 FEMatrix, including
     // one transposed storage and one transposed-storage memory hack
 
@@ -215,34 +203,66 @@ int main(int argc, char* argv[])
    }
 
 
-//
-//   //check copying
-//   ColoredBlockFEMatrix hisMatrix(myMatrix);
-//   hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
-//   hisMatrix.check_pointer_types();
-//   hisMatrix.print_and_check();
-//
-//   ColoredBlockFEMatrix herMatrix = myMatrix;
-//   herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
-//   herMatrix.check_pointer_types();
-//
-
   }
 
   { //make a default NSE Matrix and two vectors
     ColoredBlockFEMatrix blockmat=
             ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
 
-    BlockVector preimage((ColoredBlockMatrix)blockmat, false);
-    BlockVector image((ColoredBlockMatrix)blockmat,true);
-
+    //check matrix-vector multiplication (incl. actives)
     BlockVector preimage_act(blockmat, false);
     BlockVector image_act(blockmat,true);
 
-    Output::print("End reached.");
-    //check matrix-vector multiplication
+    for(size_t i = 0 ; i< preimage_act.length() ; ++i)
+    { //fill one vector with with ones
+      preimage_act.at(i) = 1;
+    }
+
+    blockmat.apply(preimage_act, image_act);
+
+    if(image_act.norm() != 4)
+    {
+      ErrThrow("Norm of BlockVector from multiplication is not correct!");
+    }
+
+    //check usage in std::vector
+    std::vector<ColoredBlockFEMatrix> myMatrices;
+    myMatrices.push_back(blockmat);
+    myMatrices.push_back(blockmat);
+    myMatrices.push_back(blockmat); //three pushes
+    myMatrices.pop_back(); //one pop
+    myMatrices.at(0).check_pointer_types(); //random access and check element
+    myMatrices.at(0).check_coloring();
 
 
+    //check copying
+
+    //copy construction
+    ColoredBlockFEMatrix hisMatrix(blockmat);
+    //hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
+    hisMatrix.check_pointer_types();
+    hisMatrix.check_coloring();
+
+    //copy assignment
+    ColoredBlockFEMatrix herMatrix({&first_fe_space});
+    herMatrix = blockmat;
+    //herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
+    herMatrix.check_pointer_types();
+    herMatrix.check_coloring();
+
+    //check moving
+
+    //move constructor
+    ColoredBlockFEMatrix moveConstructedMatrix( ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space) );
+    moveConstructedMatrix.check_pointer_types();
+    moveConstructedMatrix.check_coloring();
+
+    //move assignment
+
+    ColoredBlockFEMatrix moveAssignedMatrix({&first_fe_space});
+    moveAssignedMatrix = ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
+    moveAssignedMatrix.check_pointer_types();
+    moveAssignedMatrix.check_coloring();
 
   }
 
