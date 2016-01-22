@@ -686,7 +686,7 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
   ansatz_spaces_columnwise_(other.ansatz_spaces_columnwise_)
 {
   // CB DEBUG
-  Output::print<5>("Used ColoredBlockFEMatrix copy constructor!");
+  Output::print<5>("ColoredBlockFEMatrix copy constructor!");
   // END DEBUG
 
   // each block instance has to be copied once and all the shared pointers of
@@ -711,11 +711,39 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
 
 }
 
+ColoredBlockFEMatrix::ColoredBlockFEMatrix(ColoredBlockFEMatrix&& other)
+: ColoredBlockMatrix::ColoredBlockMatrix(std::move(other)), //base class move
+  test_spaces_rowwise_(std::move(other.test_spaces_rowwise_)),
+  ansatz_spaces_columnwise_(std::move(other.ansatz_spaces_columnwise_))
+{
+  Output::print<5>("ColoredBlockFEMatrix move constructor!");
+
+  // each block instance has to be copied once and all the shared pointers of
+  // the same color have to be set pointing to the new block
+  std::vector<std::shared_ptr<TMatrix>> treated_colors{color_count_.size(), nullptr};
+  for ( size_t i = 0; i < n_cell_rows_ ; ++i)
+  {
+    for ( size_t j = 0; j < n_cell_columns_; ++j)
+    {
+      size_t color = cell_grid_[i][j].color_;
+      if(!treated_colors[color])
+      { // this is our sign to make a copy
+        treated_colors[color] = create_block_shared_pointer(*other.cell_grid_[i][j].block_);
+        cell_grid_[i][j].block_ = treated_colors[color];
+      }
+      else
+      { // a pointer is stored already
+        cell_grid_[i][j].block_ = treated_colors[color];
+      }
+    }
+  }
+}
+
 /* ************************************************************************* */
 void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
 {
   // CB DEBUG
-  Output::print<5>("Used ColoredBlockFEMatrix swap!");
+  Output::print<5>("ColoredBlockFEMatrix swap!");
   // END DEBUG
 
   std::swap(first.n_cell_columns_, second.n_cell_columns_);
@@ -731,13 +759,13 @@ void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
 ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other)
 {
   //CB DEBUG
-  Output::print<5>("Used ColoredBlockFEMatrix copy assignment!");
+  Output::print<5>("ColoredBlockFEMatrix copy assignment!");
   //END DEBUG
 
   //do a swap with the copy constructed object "other"
   swap(*this, other);
 
-  return *this;;
+  return *this;
 }
 
 /* ************************************************************************* */

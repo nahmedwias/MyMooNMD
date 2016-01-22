@@ -320,7 +320,7 @@ class ColoredBlockMatrix
      */
     ColoredBlockMatrix(const ColoredBlockMatrix&);
 
-    ///! Moving degenerates to copying. No implicit move constructor. TODO Write move constructor!
+    ///! Default move constructor does the job.
     ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
 
     /** Swap function used for copy-and swap in copy assignment.
@@ -329,14 +329,12 @@ class ColoredBlockMatrix
      */
     friend void swap(ColoredBlockMatrix& first, ColoredBlockMatrix& second);
 
-    /** @brief copy assignment operator
+    /** @brief Unified assignment operator
      * Performs a deep copy of the stored TMatrices, using copy-and-swap,
      * so that no two instances of ColoredBlockMatrix share the same blocks.
      */
     ColoredBlockMatrix& operator=(ColoredBlockMatrix);
 
-    ///! Moving degenerates to copying. No implicit move assignment. TODO Write move assignment!
-    ColoredBlockMatrix& operator=(ColoredBlockMatrix&&) = default;
 
     /// @brief Default destructor. Tidies up nice and clean.
     virtual ~ColoredBlockMatrix() = default;

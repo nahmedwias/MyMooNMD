@@ -72,8 +72,15 @@ int main(int argc, char* argv[])
                             (char*)"third_fe_space", //yet another space
                             BoundConditionNSE, third_ansatz_order, nullptr);
 
+  {
+    //test default constructor
+    ColoredBlockFEMatrix zero_matrix;
+    zero_matrix.check_coloring();
+    zero_matrix.check_pointer_types();
+  }
 
-  {// test standard methods with custom-made 2x2 FEMatrix, including
+
+  { // test standard methods with custom-made 2x2 FEMatrix, including
     // one transposed storage and one transposed-storage memory hack
 
     //create four FE Matrices to fiddle around with
@@ -254,24 +261,19 @@ int main(int argc, char* argv[])
 
     //check moving
 
-    //Output::setVerbosity(5);
+    Output::setVerbosity(5);
 
     //move constructor
-    ColoredBlockFEMatrix moveConstructedMatrix( ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space) );
+    ColoredBlockFEMatrix moveConstructedMatrix(ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
 
-//    //move assignment. CB this works only with gcc, not with clang!
-      // the point is, that gcc will replace the defaulted move assignment
-      // by with copy assigning, clang will not be able to decide whether to use
-      // copying or the implicitely deleted move assignment and gives an error.
-      // when explicitely deleting the move assignment, gcc will have the
-      // same issue. FIXME why does the move ctor behave differently?
-//
-//    ColoredBlockFEMatrix moveAssignedMatrix({&first_fe_space});
-//    moveAssignedMatrix = ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
-//    moveAssignedMatrix.check_pointer_types();
-//    moveAssignedMatrix.check_coloring();
+    ColoredBlockFEMatrix moveAssignedMatrix({&first_fe_space});
+    moveAssignedMatrix = ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
+    moveAssignedMatrix.check_pointer_types();
+    moveAssignedMatrix.check_coloring();
+
+    Output::setVerbosity(0);
   }
 
 

@@ -490,11 +490,10 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     ColoredBlockFEMatrix(const ColoredBlockFEMatrix&);
 
-    ///! Leave moving to the compiler. TODO Investigate, whether this only performs correct
-    /// because it is replaced by copies - if so, implement it by hand!
-    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&) = default;
+    /// Move constructor.
+    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&);
 
-    /// Copy assignment operator. Uses copy-and-swap.
+    /// Unified assignment operator. Uses copy-and-swap.
     ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix);
 
     /** Swap function used for copy-and swap in copy assignment.
@@ -502,12 +501,6 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param[in,out] second The object to be swapped with first.
      */
     friend void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second);
-
-    /// Leave moving to the compiler. TODO Investigate, whether this only performs correct
-    /// because it is replaced by copies - if so, implement it by hand!
-    /// With clang, this will not work because it is implicitely deleted,
-    /// clang will not replace it by copying, while gcc will!
-    ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix&&) = default;
 
     /// @brief Destructor. Tidies up nice and clean.
     virtual ~ColoredBlockFEMatrix() = default;
