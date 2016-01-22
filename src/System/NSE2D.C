@@ -245,19 +245,14 @@ void NSE2D::set_parameters()
 /** ************************************************************************ */
 void NSE2D::assemble()
 {
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
 
-    // TODO CB here is the place where the class NSE2D will have to decide
-    // what to do with the output of the ColoredBlockFEMatrix
-
     const TFESpace2D * v_space = &s.velocity_space;
     const TFESpace2D * p_space = &s.pressure_space;
 
-    // declare he variables which Assemble2D needs and each nstype has to fill
+    // declare the variables which Assemble2D needs and each nstype has to fill
     size_t N_FESpaces = 2;
 
     const TFESpace2D *fespmat[2] = {v_space, p_space};
@@ -291,8 +286,8 @@ void NSE2D::assemble()
     {// switch over known Block Matrix types, treat each one individually,
       // using a priori knowledge about the structure and the way it fits
       // to the LocalAssembling2D object
-      // TODO remove all c-style casts as soon as Assembling process takes only FEMatrices
-      // we have to use hard c-style casts because reinterpret downcasting won't work here
+      // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
+      // we have to use reinterpret_casts because dynamic downcasting won't work here
       // FIXME replace global switch by local checking of blockmatrix type!
       case 1:
         //CB DEBUG
@@ -464,9 +459,11 @@ void NSE2D::assemble_nonlinear_term()
 
     size_t n_rect_mat = 0;
     TMatrix2D** rect_mat = nullptr;
+
     size_t n_rhs = 0;
     double** rhs = nullptr;
     const TFESpace2D** fe_rhs = nullptr;
+
     BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
@@ -517,7 +514,7 @@ void NSE2D::assemble_nonlinear_term()
 
     // assemble the nonlinear part of NSE
     for(size_t i =0; i < n_sq_mat; ++i)
-    {//reset the matrices, linear part is als assembled anew
+    {//reset the matrices, linear part is assembled anew
       sq_mat[i]->reset();
     }
     //do the actual assembling
