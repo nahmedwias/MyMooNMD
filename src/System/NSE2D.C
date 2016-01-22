@@ -12,10 +12,10 @@
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders)
- : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr),
+ : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", 
+                  example.get_bc(0), velocity_pressure_orders.first, nullptr),
+   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", 
+                  example.get_bc(2), velocity_pressure_orders.second, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
    solution(this->matrix, false),
