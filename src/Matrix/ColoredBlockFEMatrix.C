@@ -73,6 +73,12 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(
 
 }
 
+ColoredBlockFEMatrix::ColoredBlockFEMatrix() :
+ColoredBlockMatrix(), test_spaces_rowwise_(),
+ansatz_spaces_columnwise_()
+{
+}
+
 //named constructors
 /* ************************************************************************* */
 ColoredBlockFEMatrix ColoredBlockFEMatrix::CD2D( const TFESpace2D& space )
@@ -407,6 +413,28 @@ std::vector<std::shared_ptr<const FEMatrix>> ColoredBlockFEMatrix::get_blocks() 
       //juggle the pointers around until we can store it the way we want...
       std::shared_ptr<const FEMatrix> shared //cast const and FEMatrix
       = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][j].block_);
+
+      // make a weak pointer from it and push it back
+      block_ptrs.push_back(shared);
+    }
+  }
+
+  return block_ptrs;
+}
+
+/* ************************************************************************* */
+
+std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_TERRIBLY_UNSAFE()
+{
+  std::vector<std::shared_ptr<FEMatrix>> block_ptrs;
+
+  for(size_t i =0 ; i < n_cell_columns_ ; ++i)
+  {
+    for(size_t j =0 ; j < n_cell_rows_ ; ++j)
+    {
+      //juggle the pointers around until we can store it the way we want...
+      std::shared_ptr<FEMatrix> shared //cast FEMatrix
+      = std::dynamic_pointer_cast<FEMatrix>(cell_grid_[i][j].block_);
 
       // make a weak pointer from it and push it back
       block_ptrs.push_back(shared);

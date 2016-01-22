@@ -97,6 +97,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     ColoredBlockFEMatrix(std::vector< const TFESpace2D*  > spaces);
 
+    /**
+     * Default constructor. Constructs emtpy matrix which maps zero space to zero space.
+     */
+    ColoredBlockFEMatrix();
+
     // named constructors for block fe matrices often used in ParMooN
     //TODO All named constructors should further reduce the number of TMatrix-Copies made
     // in their body!
@@ -319,6 +324,21 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * all blocks appear as often as they appear in cells.
      */
     std::vector<std::shared_ptr<const FEMatrix>> get_blocks() const;
+
+    /**
+     * This is an awful method which returns non-const shared pointers to all blocks,
+     * ordered from left to right, top to bottom.
+     * Of course calling this method means you can break your entire
+     * ColoredBlockFEMatrix, because whenever you changes something in one
+     * block, you will have no idea which other cells are affected due to
+     * storing the same block.
+     *
+     * At the moment we make use of it, because many of the solvers request
+     * non-const pointers to TMatrices. This must be changed by and by.
+     *
+     * FIXME Fix the solvers (esp. Multigrid!), then delete this method immediately.
+     */
+    std::vector<std::shared_ptr<FEMatrix>> get_blocks_TERRIBLY_UNSAFE();
 
     /**
      * This method is the main interface to ParMooN assembling procedures.
