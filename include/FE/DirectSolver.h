@@ -62,13 +62,13 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs, in
 
 void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol);
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol);
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-                  TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
                   double *rhs1, double *rhs2, double *sol1, double *sol2, int rb_flag=3);
 
 /*void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
@@ -77,56 +77,56 @@ void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
                   TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
                   double *rhs, double *sol, int rb_flag=3);*/
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-                  TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol, int rb_flag);
 
 //****************************************************************************/
 // for NSTYPE == 1
 //****************************************************************************/
-void DirectSolver(TSquareMatrix2D *sqmatrixA, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol);
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol, int rb_flag);
 
 //****************************************************************************/
 // for NSTYPE == 2
 //****************************************************************************/
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-                  TMatrix2D *matrixC,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
+                  const TMatrix2D *matrixC,
                   double *rhs, double *sol);
 
 //****************************************************************************/
 // for NSTYPE == 4
 //****************************************************************************/
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-                  TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol);
 
 //****************************************************************************/
 // for NSTYPE == 14
 //****************************************************************************/
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-                  TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-		  TSquareMatrix2D *sqmatrixC,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TSquareMatrix2D *sqmatrixC,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
                   double *rhs, double *sol);
 
 //****************************************************************************/
 // for Darcy
 //****************************************************************************/
-void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
-                  TMatrix2D *matrixBT, TMatrix2D *matrixB,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA, const TSquareMatrix2D *sqmatrixC,
+                  const TMatrix2D *matrixBT, const TMatrix2D *matrixB,
                   double *rhs, double *sol);
 
 #ifdef __3D__
