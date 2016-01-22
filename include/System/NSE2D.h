@@ -49,13 +49,6 @@ class NSE2D
       TFESpace2D velocity_space;
       /** @brief Finite Element space for the pressure */
       TFESpace2D pressure_space;
-//      /** @brief the system matrix (depends strongly on
-//       *         TDatabase::ParamDB->NSTYPE)
-//       *  [ A11  A12  B1T ]
-//       *  [ A21  A22  B2T ]
-//       *  [ B1   B2   C   ]
-//       */
-//      BlockMatrixNSE2D matrix; TODO
 
       /** The system matrix. */
       ColoredBlockFEMatrix matrix;
@@ -73,6 +66,26 @@ class NSE2D
       System_per_grid(const Example_NSE2D& example, TCollection& coll, 
                       std:: pair <int,int> velocity_pressure_orders,
                       NSE2D::Matrix type);
+
+      /**
+       * Special member functions mostly deleted,
+       * for struct takes ownership of the bad
+       * classes TFEFunction2D, TFEVectFunct2D and TFESpace2D.
+       */
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
     };
     
     /** @brief a complete system on each grid 
