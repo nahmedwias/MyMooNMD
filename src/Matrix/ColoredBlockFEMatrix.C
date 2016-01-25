@@ -286,17 +286,14 @@ void ColoredBlockFEMatrix::add_matrix_actives(
 
 void ColoredBlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
 {
-  //check if the vectors fit, if not so the program throws an error
-  check_vector_fits_pre_image(x);
-  check_vector_fits_image(y);
-
   //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
+  y.reset();
   apply_scaled_add(x, y, 1.0);
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
-                      double a) const
+void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
+                                            BlockVector & y, double a) const
 { //check if the vectors fit, if not so the program throws an error
   check_vector_fits_pre_image(x);
   check_vector_fits_image(y);
@@ -728,7 +725,7 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(ColoredBlockFEMatrix&& other)
       size_t color = cell_grid_[i][j].color_;
       if(!treated_colors[color])
       { // this is our sign to make a copy
-        treated_colors[color] = create_block_shared_pointer(*other.cell_grid_[i][j].block_);
+        treated_colors[color] = create_block_shared_pointer(*this->cell_grid_[i][j].block_);
         cell_grid_[i][j].block_ = treated_colors[color];
       }
       else

@@ -332,8 +332,8 @@ void NSE2D::assemble()
         n_sq_mat = 4;
         sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
         sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
         sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
 
         n_rect_mat = 2;
         rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());

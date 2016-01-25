@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 
     // one TMatrix, too (copied from one FEMatrix for the sake of a non-emtpy structure)
     TMatrix t_matrix_1(fe_matrix_3);
-    t_matrix_1.setEntries(std::vector<double>(36,1.0));
+    t_matrix_1.setEntries(std::vector<double>(t_matrix_1.GetN_Entries(),1.0));
 
    //custom construct and check
    ColoredBlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
@@ -246,7 +246,6 @@ int main(int argc, char* argv[])
     //check copying
 
     //copy construction
-    Output::setVerbosity(5);
     ColoredBlockFEMatrix hisMatrix(blockmat);
     //hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
     hisMatrix.check_pointer_types();
@@ -262,9 +261,11 @@ int main(int argc, char* argv[])
     //check moving
 
     Output::setVerbosity(5);
+    Output::print("Test moving.");
 
     //move constructor
-    ColoredBlockFEMatrix moveConstructedMatrix(ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
+    //ColoredBlockFEMatrix moveConstructedMatrix(ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
+    ColoredBlockFEMatrix moveConstructedMatrix(std::move(ColoredBlockFEMatrix({&first_fe_space, &second_fe_space})));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
 

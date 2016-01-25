@@ -95,7 +95,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * applies to all blocks of a particular row as testspace and
      * to all blocks of a particular column as ansatz space.
      */
-    ColoredBlockFEMatrix(std::vector< const TFESpace2D*  > spaces);
+    ColoredBlockFEMatrix(std::vector< const TFESpace2D* > spaces);
 
     /**
      * Default constructor. Constructs emtpy matrix which maps zero space to zero space.
@@ -128,7 +128,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * ( 0  A  B2T )
      * ( B1 B2 0   )
      *
-     * where B1T and B2T are explicitly stored (and marked non-transposed).
+     * where B1T and B2T are not explicitly stored (and marked non-transposed).
      *
      * How to use a named constructor? Have a look at the test file!
      *
@@ -220,8 +220,8 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * Creates a 2x2 block matrix of the form
      *  ( A  B1' )
      *  ( B2 C   ),
-     * where A is velo-velo coupling, B1' velo-pressure,
-     * B2 pressure-velo and C pressure-pressure coupling.
+     * where A is velocity-velocity coupling, B1' velocity-pressure,
+     * B2 pressure-velocity and C pressure-pressure coupling.
      *
      * How to use a named constructor? Have a look at the test file!
      *
@@ -231,13 +231,12 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
-    //public methods
 
     /**
-     * Add the actives of a certain FEMatrix to several blocks at once.
+     * Add the active rows of a certain FEMatrix to several blocks at once.
      * This just figures out whether the adding will work, whether the
      * coloring scheme must be adapted and then delegates to FEMatrix
-     * to perform the actual adding of actives.
+     * to perform the actual adding of active rows.
      *
      * @param[in] summand The FEMatrix to be added.
      * @param[in] factor The factor by which to scale it.
@@ -249,7 +248,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
         const std::vector<std::vector<size_t>>& cell_positions,
         const std::vector<bool>& transposed_states);
 
-    /** @brief compute y = Ax, paying respect to non-active degrees of freedom.
+    /** @brief compute y = Ax, respecting non-active degrees of freedom.
      *
      * @param[in] x the BlockVector which is multiplied by this matrix
      * @param[out] y result of matrix-vector-multiplication
@@ -338,7 +337,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      *
      * FIXME Fix the solvers (esp. Multigrid!), then delete this method immediately.
      */
-    std::vector<std::shared_ptr<FEMatrix>> get_blocks_TERRIBLY_UNSAFE();
+    [[ deprecated ]] std::vector<std::shared_ptr<FEMatrix>> get_blocks_TERRIBLY_UNSAFE();
 
     /**
      * This method is the main interface to ParMooN assembling procedures.
@@ -398,7 +397,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     /**
      * This method returns the number of actives of a certain cell column's
      * ansatz-space. It is needed only for the templated constructor of
-     * BlockVector, and wil be removed as soon as ParMooN has a new
+     * BlockVector, and will be removed as soon as ParMooN has a new
      * handling of non-actives.
      *
      * @param cell_column The cell column.
