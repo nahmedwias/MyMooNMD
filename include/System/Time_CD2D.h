@@ -14,7 +14,7 @@
 #define __Time_CD2D__
 
 #include <FEFunction2D.h>
-#include <BlockMatrixCD2D.h>
+#include <ColoredBlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_CD2D.h>
 #include <MultiGrid2D.h>
@@ -22,6 +22,8 @@
 
 #include <vector>
 #include <deque>
+
+class LocalAssembling2D; //forward declaration
 
 class Time_CD2D
 {
@@ -36,9 +38,9 @@ class Time_CD2D
       /** @brief Finite element space */
       TFESpace2D fe_space;
       /** @brief Stiffness Matrix */
-      BlockMatrixCD2D stiff_matrix;
+      ColoredBlockFEMatrix stiff_matrix;
       /** @brief Mass matrix */
-      BlockMatrixCD2D mass_matrix;
+      ColoredBlockFEMatrix mass_matrix;
       /** @brief right hand side vector */
       BlockVector rhs;
       /** @brief solution vector */
@@ -48,6 +50,33 @@ class Time_CD2D
       
       /** @brief constructor*/
       System_per_grid(const Example_CD2D& example, TCollection& coll);
+
+      /**
+       * Gives a non-const pointer to the one block which is stored
+       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
+       */
+      TSquareMatrix2D* get_stiff_matrix_pointer();
+
+      /**
+       * Special member functions mostly deleted,
+       * for struct takes ownership of the bad
+       * classes TFEFunction2D and TFESpace2D.
+       */
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
+
     };
     
     /** @brief a complete system on each grid 
@@ -152,6 +181,17 @@ class Time_CD2D
      * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
      */
     void do_algebraic_flux_correction();
+
+    /**
+     * This wraps up the tedious call to Assemble2D and is only used
+     * to avoid code duping. Is really not written very sophisticated,
+     * use it with care.
+     * @param block_mat should be one system's stiffness or mass matrix.
+     * @param la A fittingly constructed LocalAssemble2D object.
+     */
+    void call_assembling_routine(Time_CD2D::System_per_grid& system,
+                                 LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+                                 bool assemble_both);
 };
 
 #endif
