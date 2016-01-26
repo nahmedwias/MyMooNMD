@@ -24,9 +24,9 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            // which do neither provide default constructors nor working copy assignments.)
            stiff_matrix({&fe_space}),
            mass_matrix({&fe_space}),
-
            rhs(this->stiff_matrix, true),
            solution(this->stiff_matrix, false),
+           old_Au(this->stiff_matrix, true),
            fe_function(&this->fe_space, (char*)"u", (char*)"u",
                        this->solution.get_entries(), this->solution.length())
 {
@@ -34,6 +34,32 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
   mass_matrix = ColoredBlockFEMatrix::CD2D(fe_space);
 }
 
+
+/**************************************************************************** */
+
+void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1)
+{
+  if (tau==0 || theta_1 == 0)
+  {
+    ErrThrow("I will not divide by zero in descaling! tau=", tau, "theta_1=", theta_1);
+  }
+  //subtract the mass matrix (TODO smells like cancellation)...
+  const FEMatrix& mass_block = *mass_matrix.get_blocks().at(0).get();
+  //subtract the mass matrix...
+  stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
+  //...and descale the stiffness matrix...
+  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), {{0,0}});
+}
+
+/**************************************************************************** */
+
+void Time_CD2D::System_per_grid::update_old_Au()
+{
+  // the stiffness matrix must have been descaled (pure transport operator)
+  stiff_matrix.apply(solution,old_Au);
+}
+
+/**************************************************************************** */
 TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks =
@@ -207,9 +233,12 @@ void Time_CD2D::assemble_initial_time()
       }
 
     }
-    // copy the current right hand side vector to the old_rhs
-    this->old_rhs = this->systems.front().rhs;
+
+    s.stiff_matrix.apply(s.solution,s.old_Au); //put up initial old_Au
   }
+
+  System_per_grid& s = systems.front();
+  old_rhs = s.rhs; //put up initial old_rhs
 }
 
 /**************************************************************************** */
@@ -219,11 +248,11 @@ void Time_CD2D::assemble()
   
   for(auto &s : this->systems)
   {
+
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create two local assembling object (second one will only be needed in SUPG case)
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
-
 
     if(TDatabase::ParamDB->DISCTYPE == SUPG)
     {
@@ -285,8 +314,8 @@ void Time_CD2D::assemble()
   {
     // rhs += M*uold
     s.mass_matrix.apply_scaled_add(s.solution, s.rhs, 1.0);
-    // rhs -= tau*theta2*A*uold
-    s.stiff_matrix.apply_scaled_add(s.solution, s.rhs, -tau*TDatabase::TimeDB->THETA2);
+    // rhs -= tau*theta2*A_old*uold
+    s.rhs.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
     
     // preparing the left hand side, i.e., the system matrix
     // stiffness matrix is scaled by tau*THETA1, after solving 
@@ -318,15 +347,22 @@ void Time_CD2D::solve()
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
 
-  // restore stiffness matrix (TODO: CB Why descale? It is anyway reassembled at each time step.)
-  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  for(auto &s : this->systems)
+  // restore stiffness matrix and store old_Au on all grids
+  if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
   {
-    //subtract the mass matrix (TODO smells like cancellation)...
-    const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
-    s.stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
-    //...and descale the stiffness matrix...
-    s.stiff_matrix.scale_blocks_actives(1./(tau*TDatabase::TimeDB->THETA1), {{0,0}});
+    for(auto &s : this->systems)
+    {
+      double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+      double theta_1 = TDatabase::TimeDB->THETA1;
+      s.descale_stiff_matrix(tau, theta_1);
+      s.update_old_Au();
+    }
+  }
+  else
+  {
+    //in AFC case the stiffness matrix is "ruined" by now -
+    Output::print<5>("AFC does not yet reset the stiffness"
+        "matrix and old_Au correctly!");
   }
 }
 
@@ -401,13 +437,11 @@ void Time_CD2D::do_algebraic_flux_correction()
       System_per_grid& s = systems.front();
 
       //get references to the relevant objects
-      const TFESpace2D& feSpace = s.fe_space;
-      // mass matrix (const reference)
-      const FEMatrix& mass = *s.mass_matrix.get_blocks().at(0).get();
 
-      //stiffness matrix (non-const reference, gets modified)
-      FEMatrix& stiff = *s.stiff_matrix.get_blocks_uniquely().at(0).get();
-
+      const TFESpace2D& feSpace = s.fe_space; //space
+      const FEMatrix& mass = *s.mass_matrix.get_blocks().at(0).get(); // mass
+      FEMatrix& stiff = *s.stiff_matrix.get_blocks_uniquely().at(0).get(); //stiffness
+      //vector entry arrays
       const std::vector<double>& solEntries = s.solution.get_entries_vector();
       std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
       std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
@@ -416,7 +450,6 @@ void Time_CD2D::do_algebraic_flux_correction()
       // internally treated as Neumann although they are Dirichlet
       int firstDiriDof = feSpace.GetActiveBound();
       int nDiri = feSpace.GetN_Dirichlet();
-
       std::vector<int> neumToDiri(nDiri, 0);
       std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
 
@@ -451,10 +484,9 @@ void Time_CD2D::do_algebraic_flux_correction()
           rhsEntries, oldRhsEntries,
           delta_t,
           neumToDiri,
-          prelim
-      );
+          prelim );
 
-      //...and finally correct the entries in the Dirchlet rows
+      //...and finally correct the entries in the Dirichlet rows
       AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
       break;
     }

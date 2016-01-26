@@ -45,9 +45,12 @@ class Time_CD2D
       BlockVector rhs;
       /** @brief solution vector */
       BlockVector solution;
+      /** Stores stiffness_matrix * solution of last time step -
+       *  this is needed in (partly) explicit time stepping schemes.*/
+      BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
-      
+
       /** @brief constructor*/
       System_per_grid(const Example_CD2D& example, TCollection& coll);
 
@@ -56,6 +59,19 @@ class Time_CD2D
        * by matrix. FIXME Is terribly unsafe and must be replaced soon.
        */
       TSquareMatrix2D* get_stiff_matrix_pointer();
+
+      /**
+       * Reset the stiffness matrix A to its 'pure' state before the
+       * modifications due to a one-step/fractional-step theta scheme.
+       * Sets A = 1/(tau*theta_1)*(A - mass)
+       * This is for the case we want to reuse A in the next time step.
+       *
+       * @param tau The current time step length.
+       * @param theta_1 The impliciteness parameter for the transport (e.g. 1 for bw Euler).
+       */
+      void descale_stiff_matrix(double tau, double theta_1);
+
+      void update_old_Au();
 
       /**
        * Special member functions mostly deleted,
