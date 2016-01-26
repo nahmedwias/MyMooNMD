@@ -309,7 +309,7 @@ void ColoredBlockFEMatrix::add_matrix_actives(
 
 void ColoredBlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
 {
-  //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
+  //reset all values in 'y' to 0 and delegate to apply_scaled_add
   y.reset();
   apply_scaled_add(x, y, 1.0);
 }
@@ -337,11 +337,9 @@ void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
       {
         current_block.multiplyActive(xv + col_offset, yv + row_offset, a);
       }
-      else // in transposed state there is no active- non-active distinction,
-           // since in cells with non-actives-containing test space no tranposed
-           // matrices are stored!
+      else
       {
-        current_block.transpose_multiply(xv + col_offset, yv + row_offset, a);
+        current_block.multiplyTransposedActive(xv + col_offset, yv + row_offset, a);
       }
       col_offset += cell_grid_[i][j].n_columns_;
     }

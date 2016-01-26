@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
     {
       ErrThrow("Program 1: H1-norm of pressure is not correct.");
     } 
-    Output::print<1>("Elements: P2/P1: test passed for the Direct Solver: ");
+    Output::print<1>("Elements: P2/P1: test passed for multigrid: ");
   } // end program 1
   //===================================================================================
   /** @brief Multigrid Test: for Q2/P1^disc elements**/
@@ -323,7 +323,7 @@ int main(int argc, char* argv[])
     {
       ErrThrow("Program 1: H1-norm of pressure is not correct.");
     } 
-    Output::print<1>("Elements: Q_2/P_1^disc: test passed for the Direct Solver: ");
+    Output::print<1>("Elements: Q_2/P_1^disc: test passed for multigrid: ");
   } // end program 1
   
   return 0;

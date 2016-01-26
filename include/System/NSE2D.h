@@ -224,7 +224,7 @@ class NSE2D
      * right hand side. Call this function after assembling the nonlinear
      * matrix with the current solution. 
      */
-    void normOfResidual();
+    void computeNormsOfResiduals();
     
     /** @brief check if one of the stopping criteria is fulfilled
      * 

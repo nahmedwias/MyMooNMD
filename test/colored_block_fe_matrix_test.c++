@@ -458,6 +458,60 @@ int main(int argc, char* argv[])
      }
    }
 
+   {
+     Output::setVerbosity(1);
+    // this is a test on the apply_scaled_add method which is suspected to produce
+    // wrong results when transposition is involved
+     ColoredBlockFEMatrix with_transp =
+         ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+     ColoredBlockFEMatrix no_transp =
+         ColoredBlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
+     //fill some blocks in
+     FEMatrix A(&first_fe_space, &first_fe_space);
+     FEMatrix B(&second_fe_space, &first_fe_space);
+     FEMatrix BT(&first_fe_space, &second_fe_space);
+     A.setEntries(std::vector<double>(A.GetN_Entries(), 1.0));
+     B.setEntries(std::vector<double>(B.GetN_Entries(), 1.0));
+     BT.setEntries(std::vector<double>(BT.GetN_Entries(), 1.0));
+
+     //do some careful replacing, maintaining the coloring
+     with_transp.replace_blocks(A, {{0,0},{1,1}}, {false, false});
+     with_transp.replace_blocks(B,{{0,2},{2,0}},{true,false});
+     with_transp.replace_blocks(B,{{1,2},{2,1}},{true,false});
+
+     no_transp.replace_blocks(A, {{0,0}}, {false});
+     //no_transp.replace_blocks(A, {{0,1}}, {false});
+     //no_transp.replace_blocks(A, {{1,0}}, {false});
+     no_transp.replace_blocks(A, {{1,1}}, {false});
+     no_transp.replace_blocks(BT,{{0,2}}, {false});
+     no_transp.replace_blocks(BT,{{1,2}}, {false});
+     no_transp.replace_blocks(B,{{2,0}}, {false});
+     no_transp.replace_blocks(B,{{2,1}}, {false});
+
+//     //print the combined matrices
+//     with_transp.ColoredBlockMatrix::get_combined_matrix()->PrintFull("with_transp");
+//     no_transp.ColoredBlockMatrix::get_combined_matrix()->PrintFull("no_transp");
+
+     //put up BlockVectors which fit the spaces
+     BlockVector preimage(with_transp, false);
+     for(size_t i = 0 ; i< preimage.length() ; ++i)
+     { //fill the preimage vector with with ones
+       preimage.at(i) = 1;
+     }
+     BlockVector image_with(with_transp, true);
+     BlockVector image_no(no_transp, true);
+
+     with_transp.apply_scaled_add(preimage, image_with, -1.0);
+     //image_with.print("image_with");
+
+     no_transp.apply_scaled_add(preimage, image_no, -1.0);
+     //image_no.print("image_no");
+     image_with.add_scaled(image_no,-1.0);
+     if( image_with.norm() != 0)
+       ErrThrow("Error in test of apply_scaled_add!");
+
+   }
+
 
 }
 

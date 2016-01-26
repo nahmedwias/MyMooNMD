@@ -565,7 +565,7 @@ void NSE2D::assemble_nonlinear_term()
 bool NSE2D::stopIt(unsigned int iteration_counter)
 {
   // compute the residuals with the current matrix and solution
-  this->normOfResidual();
+  this->computeNormsOfResiduals();
   // the current norm of the residual
   const double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
@@ -606,7 +606,7 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
 }
 
 /** ************************************************************************ */
-void NSE2D::normOfResidual()
+void NSE2D::computeNormsOfResiduals()
 {
   System_per_grid& s = this->systems.front();
   unsigned int n_u_dof = s.solution.length(0);
@@ -615,9 +615,6 @@ void NSE2D::normOfResidual()
   // copy rhs to defect
   this->defect = s.rhs;
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
-  
-  //this->matrix[0]->GetResidual(this->get_solution(), this->rhs[0], 
-  //                             &this->defect[0]);
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
@@ -660,7 +657,6 @@ void NSE2D::solve()
         // a big matrix in compressed row storage and calling UMFPACK upon
         // it thus replace the entire code by a call to ColoredBlockFEMatrix::get_combined()
         // and pass that one do a solver wrapper class which does the rest TODO
-
 
         //TODO that stuff will not be necessary anymore as soon we have a solver wrapper
 
@@ -709,7 +705,6 @@ void NSE2D::solve()
         ErrThrow("Unknown Solver");
         break;
     }
-
   }
   else
   { // multigrid preconditioned iterative solver
@@ -717,6 +712,8 @@ void NSE2D::solve()
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
+
+
 }
 
 /** ************************************************************************ */
