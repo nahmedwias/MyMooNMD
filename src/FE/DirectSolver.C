@@ -12,12 +12,240 @@
 #include <MainUtilities.h>
 #include <DirectSolver.h>
 #include <Database.h>
-#include "stdlib.h"
+#include "umfpack.h"
 
-extern "C"
+void handle_error_umfpack(int ierror)
 {
-  #include "umfpack.h"
+  if (ierror == UMFPACK_OK)
+    return;
+
+  switch(ierror)
+  {
+    //WARNINGS
+    case UMFPACK_WARNING_singular_matrix:
+      Output::print<2>("umfpack Warning: Matrix is singular!");
+      break;
+    case UMFPACK_WARNING_determinant_underflow:
+      Output::print<2>("umfpack Warning: Determinant smaller than eps");
+      break;
+    case UMFPACK_WARNING_determinant_overflow:
+      Output::print<2>("umfpack Warning: Determinant is larger than IEEE Inf");
+      break;
+    //ERRORS
+    case UMFPACK_ERROR_out_of_memory:
+      ErrThrow("umfpack: Out of Memory");
+      break;
+    case UMFPACK_ERROR_invalid_Numeric_object:
+      ErrThrow("umfpack: Invalid numeric factorization object");
+      break;
+    case UMFPACK_ERROR_invalid_Symbolic_object:
+      ErrThrow("umfpack: Invalid symbolic factorization object");
+      break;
+    case UMFPACK_ERROR_argument_missing:
+      ErrThrow("umfpack: Argument Missing.");
+      break;
+    case UMFPACK_ERROR_n_nonpositive:
+      ErrThrow("umfpack: Matrix dimensions not positive.");
+      break;
+    case UMFPACK_ERROR_invalid_matrix:
+      ErrThrow("umfpack: Invalid Matrix Structure.");
+      break;
+    case UMFPACK_ERROR_different_pattern:
+      ErrThrow("umfpack: Different sparse pattern.");
+      break;
+    case UMFPACK_ERROR_invalid_system:
+      ErrThrow("umfpack: Invalid system provided with sys.");
+      break;
+    case UMFPACK_ERROR_invalid_permutation:
+      ErrThrow("umfpack: Invalid permutation vector.");
+      break;
+    case UMFPACK_ERROR_file_IO:
+      ErrThrow("umfpack: Fille IO error.");
+      break;
+    case UMFPACK_ERROR_internal_error:
+      ErrThrow("umfpack: Internal error.");
+      break;
+    
+    default:
+      ErrThrow("umfpack: unkown error. Error number ", ierror); break;
+    break;
+  }
 }
+
+/** ************************************************************************ */
+DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
+                           DirectSolver::DirectSolverTypes type)
+ : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr), 
+   isFortranShifted(false)
+{
+  Output::print<3>("constructing a DirectSolver object");
+  if(!matrix->is_square())
+  {
+    ErrThrow("unable to factorize a non-square matrix ", matrix->GetN_Rows(),
+             "  ", matrix->GetN_Columns());
+  }
+  
+  if(type == DirectSolverTypes::pardiso)
+  {
+    ErrThrow("Pardiso does not yet work");
+  }
+  
+  this->symetric_factorize();
+  this->numeric_factorize();
+}
+
+/** ************************************************************************ */
+DirectSolver::DirectSolver(BlockMatrix& matrix, 
+                           DirectSolver::DirectSolverTypes type)
+ : DirectSolver(matrix.get_combined_matrix(), type)
+{
+}
+
+/** ************************************************************************ */
+DirectSolver::~DirectSolver()
+{
+  switch(type)
+  {
+    case DirectSolver::DirectSolverTypes::umfpack:
+      umfpack_di_free_symbolic(&symbolic);
+      umfpack_di_free_numeric(&numeric);
+      break;
+    case DirectSolver::DirectSolverTypes::pardiso:
+      ErrThrow("Pardiso does not yet work");
+      break;
+      default:
+      ErrThrow("unknown DirectSolverTypes ",
+               static_cast<typename 
+                 std::underlying_type<DirectSolverTypes>::type> (type));
+  }
+  Output::print<3>("destructed a DirectSolver object");
+}
+
+/** ************************************************************************ */
+void DirectSolver::symetric_factorize()
+{
+  int n_eq = matrix->GetN_Rows();
+  switch(type)
+  {
+    case DirectSolverTypes::umfpack:
+    {
+      // symbolic factorization
+      int error = umfpack_di_symbolic(n_eq, n_eq, matrix->GetRowPtr(), 
+                                      matrix->GetKCol(), matrix->GetEntries(), 
+                                      &symbolic, nullptr, nullptr);
+      handle_error_umfpack(error);
+      break;
+    }
+    case DirectSolverTypes::pardiso:
+    {
+      ErrThrow("Pardiso does not yet work");
+      break;
+    }
+    default:
+      ErrThrow("unknown DirectSolverTypes ",
+               static_cast<typename 
+                 std::underlying_type<DirectSolverTypes>::type> (type));
+      break;
+  }
+}
+
+/** ************************************************************************ */
+void DirectSolver::numeric_factorize()
+{
+  switch(type)
+  {
+    case DirectSolverTypes::umfpack:
+    {
+      double Info[UMFPACK_INFO];
+      double Control[UMFPACK_CONTROL];
+      umfpack_di_defaults(Control);
+  
+      int error = umfpack_di_numeric(matrix->GetRowPtr(), matrix->GetKCol(),
+                                     matrix->GetEntries(), symbolic, &numeric,
+                                     Control, Info);
+      handle_error_umfpack(error);
+      break;
+    }
+    case DirectSolverTypes::pardiso:
+    {
+      ErrThrow("Pardiso does not yet work");
+      break;
+    }
+    default:
+      ErrThrow("unknown DirectSolverTypes ",
+               static_cast<typename 
+                 std::underlying_type<DirectSolverTypes>::type> (type));
+      break;
+  }
+}
+
+/** ************************************************************************ */
+void DirectSolver::fortranShift()
+{
+  unsigned int n_eq = this->matrix->GetN_Rows();
+  unsigned int n_en = this->matrix->GetN_Entries();
+  if (!isFortranShifted)
+  {
+    for(unsigned int i = 0; i < n_eq+1; i++)
+    {
+      this->matrix->GetRowPtr()[i] += 1;
+    }
+    for (unsigned int i = 0; i < n_en; i++)
+    {
+      this->matrix->GetKCol()[i] += 1;
+    }
+    isFortranShifted = true;
+  }
+  else
+  {
+    for(unsigned int i = 0; i < n_eq+1; i++)
+    {
+      this->matrix->GetRowPtr()[i] -= 1;
+    }
+    for (unsigned int i = 0; i < n_en; i++)
+    {
+      this->matrix->GetKCol()[i] -= 1;
+    }
+    isFortranShifted = false;
+  }
+}
+
+/** ************************************************************************ */
+void DirectSolver::solve(double* rhs, double* solution)
+{
+  Output::print<3>("solving using a direct solver");
+  switch(type)
+  {
+    case DirectSolverTypes::umfpack:
+    {
+      // symbolic factorization
+      int error = umfpack_di_solve(UMFPACK_At, matrix->GetRowPtr(), 
+                                   matrix->GetKCol(), matrix->GetEntries(),  
+                                   solution, rhs, numeric, nullptr, nullptr);
+      handle_error_umfpack(error);
+      break;
+    }
+    case DirectSolverTypes::pardiso:
+    {
+      ErrThrow("Pardiso does not yet work");
+      break;
+    }
+    default:
+      ErrThrow("unknown DirectSolverTypes ",
+               static_cast<typename 
+                 std::underlying_type<DirectSolverTypes>::type> (type));
+      break;
+  }
+}
+
+/** ************************************************************************ */
+void DirectSolver::solve(BlockVector& rhs, BlockVector& solution)
+{
+  solve(rhs.get_entries(), solution.get_entries());
+}
+
+/** ************************************************************************ */
+
 void UMFPACK_return(int ret)
 {
 

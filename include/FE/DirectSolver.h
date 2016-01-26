@@ -12,6 +12,90 @@
 #ifndef __DIRECTSOLVER__
 #define __DIRECTSOLVER__
 
+/**
+ * 
+ */
+
+#include <Matrix.h>
+#include <BlockVector.h>
+
+class DirectSolver
+{
+  public:
+    enum class DirectSolverTypes {umfpack, pardiso};
+    /**
+     * @brief compute the factorization of a matrix, ready to call solve
+     * 
+     * This calls the other (private) constructor with 
+     * matrix.get_combined_matrix().
+     *
+     * @param  matrix the matrix A where Ax=b
+     */
+    DirectSolver(BlockMatrix& matrix, DirectSolverTypes type);
+    
+    /** @brief release all memory, the matrix is not touched */
+    ~DirectSolver();
+
+    /**
+     * @brief Solves the equation A*(solution)=rhs for solution.
+     * 
+     * This calls the other (private) method solve.
+     *
+     * @param rhs the right-hand side of the problem Ax=b
+     * @param solution vector to store the solution into
+     */
+    void solve(BlockVector& rhs, BlockVector& solution);
+    
+  private:
+    /** @brief type of direct solver used */
+    DirectSolverTypes type;
+    
+    /** @brief the matrix of the linear equation A*x=b */
+    std::shared_ptr<TMatrix> matrix;
+    
+    /** @brief storage for umfpack direct solver */
+    //@{
+    void* symbolic;
+    void* numeric;
+    //@}
+    
+    /**
+     * @brief compute the factorization of a matrix, ready to call solve
+     * 
+     * The indices are shifted to conform with Fortran in case of the Pardiso 
+     * solver. This is why this methods has to change the matrix and therefore
+     * does not take a const TMatrix.
+     *
+     * @param  matrix  the matrix A where Ax=b
+     */
+    DirectSolver(std::shared_ptr<TMatrix> matrix, DirectSolverTypes type);
+    
+    /**
+     * @brief Solves the equation A*(solution)=rhs for solution.
+     * 
+     * The computed solution is stored in the provided array solution.
+     *
+     * @param rhs the right-hand side of the problem Ax=b
+     * @param solution vector to store the solution into
+     */
+    void solve(double* rhs, double* solution);
+    
+    /** @brief true if indices start with 1 (Fortran style, for pardiso) */
+    bool isFortranShifted;
+    
+    void symetric_factorize();
+    void numeric_factorize();
+    
+    /**
+     * @brief shifts back and forth the index to comply with fortran.
+     * 
+     * @Note this changes the matrix. It is not usable as usual until this is
+     * called a second time.
+     */
+    void fortranShift();
+};
+
+
 #include <SquareMatrix2D.h>
 #include <Matrix2D.h>
 
@@ -19,36 +103,6 @@
 #include <SquareMatrix3D.h>
 #include <Matrix3D.h>
 #endif
-
-class TDirectSolver
-{
-  public:
-    TDirectSolver() {};
-    
-    virtual ~TDirectSolver() {};
-    
-#ifdef __3D__
-    /** NSTYPE 2 */
-    virtual void SetMatrix(TSquareMatrix3D *sqmatrixA,
-		   TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T,
-		   TMatrix3D *matrixB1, TMatrix3D *matrixB2, TMatrix3D *matrixB3) = 0;
-		   
-    /** NSTYPE 4 */
-    virtual void SetMatrix(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sqmatrixA12,
-		      TSquareMatrix3D *sqmatrixA13, TSquareMatrix3D *sqmatrixA21,
-		      TSquareMatrix3D *sqmatrixA22, TSquareMatrix3D *sqmatrixA23,
-		      TSquareMatrix3D *sqmatrixA31, TSquareMatrix3D *sqmatrixA32,
-		      TSquareMatrix3D *sqmatrixA33,
-		      TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T,
-		      TMatrix3D *matrixB1, TMatrix3D *matrixB2, TMatrix3D *matrixB3) = 0;
-#endif
-    
-    virtual void Analyse() = 0;
-    virtual void Factorize() = 0;
-    virtual void Solve(double *sol, double *rhs) = 0;
-    virtual void FactorizeSolve(double *sol, double *rhs) = 0;
-    
-};
 
 /** solve equation system */
 
