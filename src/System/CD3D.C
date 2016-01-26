@@ -273,8 +273,11 @@ void CD3D::solve()
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
   { // Direct solver chosen.
 #ifdef _SEQ
-    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries,
-                 solutionEntries);
+    /// @todo consider storing an object of DirectSolver in this class
+    // use keyword class here, until all methods with the same name are removed
+    class DirectSolver direct_solver(syst.matrix_, 
+                                     DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(syst.rhs_, syst.solution_);
     return;
 #else
     ErrThrow("Direct solver not yet implemented in parallel. Chose "
