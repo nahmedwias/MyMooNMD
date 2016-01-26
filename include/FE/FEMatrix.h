@@ -45,7 +45,7 @@ class FEMatrix : public TMatrix
     //@{
     FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,  bool is_empty = false);
     #ifdef __3D__
-    FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,  bool is_empty = false);
     #endif // 3D
     //@}
     

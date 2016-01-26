@@ -38,8 +38,8 @@ FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,
 }
 
 #ifdef __3D__
-FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace)
-: TMatrix(std::make_shared<TStructure>(testspace, ansatzspace)),
+FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty)
+: TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),
   AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(ansatzspace),
   TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(testspace)
 {

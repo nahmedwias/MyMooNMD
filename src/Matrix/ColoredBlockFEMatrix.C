@@ -8,9 +8,13 @@
 // IMPLEMENTATION OF PUBLIC METHODS
 /* ************************************************************************* */
 
-
+#ifdef __2D__
 ColoredBlockFEMatrix::ColoredBlockFEMatrix(
     std::vector< const TFESpace2D*  > spaces) :
+#elif __3D__
+    ColoredBlockFEMatrix::ColoredBlockFEMatrix(
+        std::vector< const TFESpace3D*  > spaces) :
+#endif
     ColoredBlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces),
     ansatz_spaces_columnwise_(spaces)
@@ -37,14 +41,22 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(
   for(size_t i = 0; i < n_cell_rows_ ; ++i )
   {
     //hold the testspace each cell in this row will have
+#ifdef __2D__
     const TFESpace2D& testspace_of_row = *spaces[i];
+#elif __3D__
+    const TFESpace3D& testspace_of_row = *spaces[i];
+#endif
     //hold the number of rows each cell in this row will have
     size_t n_rows_of_cell = testspace_of_row.GetN_DegreesOfFreedom();
 
     for(size_t j = 0; j < n_cell_columns_ ; ++j )
     {
       //hold the ansatzspace each cell in this column will have
+#ifdef __2D__
       const TFESpace2D& ansatzspace_of_column = *spaces[j];
+#elif __3D__
+      const TFESpace3D& ansatzspace_of_column = *spaces[j];
+#endif
       //hold the number of columns each cell in this column will have
       size_t n_columns_of_cell = ansatzspace_of_column.GetN_DegreesOfFreedom();
 
@@ -80,6 +92,7 @@ ansatz_spaces_columnwise_()
 }
 
 //named constructors
+#ifdef __2D__
 /* ************************************************************************* */
 ColoredBlockFEMatrix ColoredBlockFEMatrix::CD2D( const TFESpace2D& space )
 {
@@ -268,6 +281,16 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, 
 
   return my_matrix;
 }
+#elif __3D__
+//3D named constructors
+ColoredBlockFEMatrix ColoredBlockFEMatrix::CD3D( const TFESpace3D& space )
+{
+  ColoredBlockFEMatrix my_matrix({&space});
+  //replace block by a block with non-empty TStructure
+  my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
+  return my_matrix;
+}
+#endif
 
 /* ************************************************************************* */
 
@@ -606,10 +629,17 @@ void ColoredBlockFEMatrix::replace_blocks(
     size_t cell_column = cell_positions[i].at(1);
 
     //check if the spaces fit the cell grid
+#ifdef __2D__
     const TFESpace2D* grid_test_space = &get_test_space(cell_row,cell_column);
     const TFESpace2D* grid_ansatz_space = &get_ansatz_space(cell_row,cell_column);
     const TFESpace2D* block_test_space = new_block.GetTestSpace2D();
     const TFESpace2D* block_ansatz_space = new_block.GetAnsatzSpace2D();
+#elif __3D__
+    const TFESpace3D* grid_test_space = &get_test_space(cell_row,cell_column);
+    const TFESpace3D* grid_ansatz_space = &get_ansatz_space(cell_row,cell_column);
+    const TFESpace3D* block_test_space = new_block.GetTestSpace3D();
+    const TFESpace3D* block_ansatz_space = new_block.GetAnsatzSpace3D();
+#endif
     if (!transposed_states.at(i))
     {//non-transposed state
       //check object identity by adress
@@ -682,9 +712,7 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
   test_spaces_rowwise_(other.test_spaces_rowwise_),
   ansatz_spaces_columnwise_(other.ansatz_spaces_columnwise_)
 {
-  // CB DEBUG
   Output::print<5>("ColoredBlockFEMatrix copy constructor!");
-  // END DEBUG
 
   // each block instance has to be copied once and all the shared pointers of
   // the same color have to be set pointing to the new block
@@ -739,9 +767,7 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(ColoredBlockFEMatrix&& other)
 /* ************************************************************************* */
 void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
 {
-  // CB DEBUG
   Output::print<5>("ColoredBlockFEMatrix swap!");
-  // END DEBUG
 
   std::swap(first.n_cell_columns_, second.n_cell_columns_);
   std::swap(first.n_cell_rows_, second.n_cell_rows_);
@@ -749,15 +775,12 @@ void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
   std::swap(first.color_count_, second.color_count_);
   std::swap(first.ansatz_spaces_columnwise_, second.ansatz_spaces_columnwise_);
   std::swap(first.test_spaces_rowwise_, second.test_spaces_rowwise_);
-
 }
 
 /* ************************************************************************* */
 ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other)
 {
-  //CB DEBUG
   Output::print<5>("ColoredBlockFEMatrix copy assignment!");
-  //END DEBUG
 
   //do a swap with the copy constructed object "other"
   swap(*this, other);
@@ -766,7 +789,11 @@ ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other
 }
 
 /* ************************************************************************* */
+#ifdef __2D__
 const TFESpace2D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+#elif __3D__
+const TFESpace3D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+#endif
 {
   if(cell_column >= n_cell_columns_) //just to not let the cell_column go unnoticed
   {
@@ -776,7 +803,11 @@ const TFESpace2D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t c
 }
 
 /* ************************************************************************* */
+#ifdef __2D__
 const TFESpace2D& ColoredBlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+#elif __3D__
+const TFESpace3D& ColoredBlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+#endif
 {
   if(cell_row >= n_cell_rows_)
   {

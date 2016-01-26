@@ -95,7 +95,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * applies to all blocks of a particular row as testspace and
      * to all blocks of a particular column as ansatz space.
      */
+    #ifdef __2D__
     ColoredBlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    #elif __3D__
+    ColoredBlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    #endif // 3D
 
     /**
      * Default constructor. Constructs emtpy matrix which maps zero space to zero space.
@@ -106,6 +110,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     //TODO All named constructors should further reduce the number of TMatrix-Copies made
     // in their body!
 
+#ifdef __2D__
     /**
      * @brief Named constructor for a block Matrix used in 2D convection-
      * diffusion problems.
@@ -231,6 +236,22 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
+#elif __3D__
+    /**
+     * @brief Named constructor for a block Matrix used in 3D convection-
+     * diffusion problems.
+     *
+     * Constructs a 1x1 block matrix which holds one single block with
+     * fitting TStructure.
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param space Ansatz- equals testspace.
+     * @return A newly constructed BlockFEMatrix for CD3D problems.
+     */
+    static ColoredBlockFEMatrix CD3D( const TFESpace3D& space );
+#endif
+
 
     /**
      * Add the active rows of a certain FEMatrix to several blocks at once.
@@ -300,8 +321,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param[in] cell_column The cell column of the grid cell.
      * @return The ansatzspace, which is the same for the entire column.
      */
+#ifdef __2D__
     const TFESpace2D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
-
+#elif __3D__
+    const TFESpace3D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
+#endif
     /**
      * This method is the main interface to ParMooN solving procedures which
      * depend on the block structure.
@@ -376,7 +400,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
                                                bool include_zeroes = false);
 
     /// @return The column (means: ansatz-)space of a certain cell column.
+    #ifdef __2D__
     const TFESpace2D& get_column_space(size_t cell_column) const
+    #elif __3D__
+    const TFESpace3D& get_column_space(size_t cell_column) const
+    #endif
     {
       return *ansatz_spaces_columnwise_.at(cell_column);
     }
@@ -418,7 +446,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
 
 
     /// @return The row (means: test-)space of a certain cell row.
+#ifdef __2D__
     const TFESpace2D& get_row_space(size_t cell_row) const
+#elif __3D__
+    const TFESpace3D& get_row_space(size_t cell_row) const
+#endif
     {
       return *test_spaces_rowwise_.at(cell_row);
     }
@@ -433,7 +465,11 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param[in] cell_column The cell column of the grid cell.
      * @return The testspace, which is the same for the entire row.
      */
+#ifdef __2D__
     const TFESpace2D& get_test_space(size_t cell_row, size_t cell_column) const;
+#elif __3D__
+    const TFESpace3D& get_test_space(size_t cell_row, size_t cell_column) const;
+#endif
 
     /**
      * Overrides the method from the base class
@@ -505,10 +541,17 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
     virtual ~ColoredBlockFEMatrix() = default;
 
   protected:
+#ifdef __2D__
     /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace2D* > test_spaces_rowwise_;
     /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace2D* > ansatz_spaces_columnwise_;
+#elif __3D__
+    /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
+    std::vector<const TFESpace3D* > test_spaces_rowwise_;
+    /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
+    std::vector<const TFESpace3D* > ansatz_spaces_columnwise_;
+#endif
 
   private:
     /**
