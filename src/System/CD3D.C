@@ -1,8 +1,11 @@
 #include <CD3D.h>
+#include <Example_CD3D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <Output3D.h>
 #include <LinAlg.h>
+#include <LocalAssembling3D.h>
+#include <Assemble3D.h>
 
 #include <FixedPointIte.h>
 #include <JacobiIte.h>
@@ -18,7 +21,7 @@
                                          TCollection& coll, int maxSubDomainPerDof)
    : feSpace_(&coll, (char*)"space", (char*)"cd3d fe_space", example.get_bc(0),
               TDatabase::ParamDB->ANSATZ_ORDER),
-     matrix_(feSpace_, example.get_bd(0)), //system block matrix
+     matrix_({&feSpace_}), //system block matrix
      rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
      solution_(matrix_, false), // suitable solution vector filled with zeroes
      feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(), solution_.length()),
@@ -29,11 +32,15 @@
     //inform the fe space about the maximum number of subdomains per dof
     feSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
 
-    //Must be reset here, because feSpace needs special treatment
+    // reset the matrix with named constructor
+    matrix_ = ColoredBlockFEMatrix::CD3D(feSpace_);
+    FEMatrix* block = matrix_.get_blocks_uniquely().at(0).get(); //the single block
+
+    // Must be reset here, because feSpace needs special treatment
     // This includes copy assignment - all because there is no good
     // way to communicate Maximum number of subdomains per dof to FESpace...
-    parMapper_ = TParFEMapper3D(1, &feSpace_, matrix_.get_matrix()->GetRowPtr(),
-               matrix_.get_matrix()->GetKCol());
+    parMapper_ = TParFEMapper3D(1, &feSpace_, block->GetRowPtr(),
+                                block->GetKCol());
     parComm_ = TParFECommunicator3D(&parMapper_);
   }
 #else
@@ -42,12 +49,13 @@
                                          TCollection& coll)
    : feSpace_(&coll, (char*)"space", (char*)"cd3d fe_space", example.get_bc(0),
               TDatabase::ParamDB->ANSATZ_ORDER),
-     matrix_(feSpace_, example.get_bd(0)), //system block matrix
+     matrix_({&feSpace_}), //system block matrix
      rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
      solution_(matrix_, false), // suitable solution vector filled with zeroes
      feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(), solution_.length())
   {
-
+    // reset the matrix with named constructor
+    matrix_ = ColoredBlockFEMatrix::CD3D(feSpace_);
   }
 #endif
 
@@ -85,7 +93,7 @@
       systems_.emplace_back(example_, cellCollection);
 
       // print out some information
-      TFESpace3D & space = this->systems_.front().feSpace_;
+      const TFESpace3D & space = this->systems_.front().feSpace_;
       double hMin, hMax;
       cellCollection.GetHminHmax(&hMin, &hMax);
       Output::print<1>("N_Cells    : ", setw(12), cellCollection.GetN_Cells());
@@ -137,10 +145,14 @@
           nAuxArrays= 4;
         }
 
+        //the single block
+        TSquareMatrix3D* block = reinterpret_cast<TSquareMatrix3D*>(
+            system->matrix_.get_blocks_uniquely().at(0).get());
+
 #ifdef _MPI
         TMGLevel3D* multigridLevel = new TMGLevel3D
             (
-                level, system->matrix_.get_matrix(), system->rhs_.get_entries(),
+                level, block, system->rhs_.get_entries(),
                 system->solution_.get_entries(),
                 &system->parComm_, &system->parMapper_,
                 nAuxArrays, NULL
@@ -148,7 +160,7 @@
 #else
         TMGLevel3D* multigridLevel = new TMGLevel3D
             (
-                level, system->matrix_.get_matrix(), system->rhs_.get_entries(),
+                level, block, system->rhs_.get_entries(),
                 system->solution_.get_entries(),
                 nAuxArrays, NULL
             );
@@ -173,7 +185,8 @@ void CD3D::assemble()
     LocalAssembling3D laObject(laType, &feFunctionPtr, example_.get_coeffs());
 
     // assemble the system matrix with given local assembling, solution and rhs
-    s.matrix_.assemble(laObject, s.solution_, s.rhs_);
+    //s.matrix_.assemble(laObject, s.solution_, s.rhs_);
+    call_assembling_routine(s, laObject);
   }
 
 }
@@ -186,7 +199,15 @@ void CD3D::solve()
 
   // Hold some variable which will be needed in
   // all solver variants.
-  TSquareMatrix3D *sqMat[1] = { syst.matrix_.get_matrix() };
+
+  //get the block for the solver
+  TSquareMatrix* blocks[1] = {reinterpret_cast<TSquareMatrix*>(
+      syst.matrix_.get_blocks_TERRIBLY_UNSAFE().at(0).get())};
+  // FIXME we could use get_blocks_uniquely() here, but that is
+  // intended for assemblers, not solvers - to mark that the basic
+  // problem is still the non-const passing of matrices to the solvers,
+  // we use the deprecated get_blocks_TERRIBLY_UNSAFE() here on purpose
+
   double* solutionEntries = syst.solution_.get_entries();
   double* rhsEntries =syst.rhs_.get_entries();
   #ifdef _MPI
@@ -254,7 +275,7 @@ void CD3D::solve()
       memcpy(iterativeRhs, rhsEntries, nDof*SizeOfDouble);
 
       //call the solver
-      iterativeSolver->Iterate((TSquareMatrix**) sqMat, nullptr, iterativeSol, iterativeRhs);
+      iterativeSolver->Iterate(blocks, nullptr, iterativeSol, iterativeRhs);
 
       //copy back & tidy up
       memcpy(solutionEntries, iterativeSol, nDof*SizeOfDouble);
@@ -264,7 +285,7 @@ void CD3D::solve()
     }
     else
     {
-      iterativeSolver->Iterate((TSquareMatrix**) sqMat, nullptr, solutionEntries, rhsEntries);
+      iterativeSolver->Iterate(blocks, nullptr, solutionEntries, rhsEntries);
     }
     delete preconditioner;
     delete iterativeSolver;
@@ -273,7 +294,7 @@ void CD3D::solve()
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
   { // Direct solver chosen.
 #ifdef _SEQ
-    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries,
+    DirectSolver(blocks[0], rhsEntries,
                  solutionEntries);
     return;
 #else
@@ -426,5 +447,30 @@ void CD3D::checkParameters()
     ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI. Choose 2.");
   }
 #endif
+}
+
+void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)
+{//FIXME the body of this function was copy and paste
+
+  const TFESpace3D * fe_space = &s.feSpace_;
+  BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
+  int N_Matrices = 1;
+  double * rhs_entries = s.rhs_.get_entries();
+
+  BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
+
+  //fetch stiffness matrix as block
+  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
+  TSquareMatrix3D * block[1]{reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get())};
+
+  // Do the Assembling!
+
+  // reset right hand side and matrix to zero
+  s.rhs_.reset();
+  block[0]->reset();
+  //and call the method
+  Assemble3D(1, &fe_space, N_Matrices, block, 0, NULL, 1, &rhs_entries,
+             &fe_space, &boundary_conditions, non_const_bound_value, local_assem);
+
 }
 
