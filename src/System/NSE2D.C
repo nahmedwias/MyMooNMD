@@ -16,9 +16,9 @@
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                NSE2D::Matrix type)
- : velocity_space(&coll, (char*)"u", (char*)"velocity", example.get_bc(0),
+ : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", example.get_bc(0),
                   velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"pressure", example.get_bc(2),
+   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", example.get_bc(2),
                   velocity_pressure_orders.second, nullptr)
 // TODO CB: Building the matrix here and rebuilding later is due to the
 // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
