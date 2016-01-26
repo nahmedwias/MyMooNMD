@@ -108,6 +108,18 @@ class FEMatrix : public TMatrix
     void multiplyActive(const double *x, double *y, double factor = 1.0)
       const;
     
+    /**
+     *  compute y = y + a*A^T x
+     *
+     *  add the matrix-vector product "A^T x", scaled by "a", to y: only active
+     * "A" is this matrix.
+     * @param x
+     * @param y
+     * @param factor
+     */
+    void multiplyTransposedActive(const double *x, double *y, double factor = 1.0)
+      const;
+
     
     /** @brief return the number of active rows */
     int GetActiveBound() const;

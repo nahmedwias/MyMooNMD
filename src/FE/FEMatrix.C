@@ -104,6 +104,25 @@ void FEMatrix::multiplyActive(const double* x, double* y, double factor) const
   }  
 }
 
+void FEMatrix::multiplyTransposedActive(const double *x, double *y, double factor) const
+{
+  //be careful! we have to rely on y's actives being as many as this ansatz spaces
+  //FIXME this can be sped up of course, but for the moment do it like this
+  //assume that y is as long as this has columns
+  int n_actives = this->GetAnsatzSpace()->GetActiveBound();
+  std::vector<double> y_non_actives(this->GetAnsatzSpace()->GetN_Dirichlet());
+  for (int i= n_actives; i<this->GetN_Columns() ; ++i )
+  {//store non-actives
+    y_non_actives[i-n_actives]=y[i];
+  }
+  this->TMatrix::transpose_multiply(x,y,factor);
+  for (int i= n_actives; i<this->GetN_Columns() ; ++i )
+  {//put back non-actives
+    y[i] = y_non_actives[i-n_actives];
+  }
+
+}
+
 
 int FEMatrix::GetActiveBound() const
 {
