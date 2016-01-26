@@ -418,12 +418,12 @@ void CD3D::checkParameters()
   }
 
 #ifdef _MPI // problems only known in MPI case
-  // the case of ANSATZ_ORDER: 1 is known to not converge
+  // the case of ANSATZ_ORDER: 1 with jacobi seems to not converge
   // (this is currently under investigation)
-  // TODO might be this works with a mg predonditioner!
-  if (TDatabase::ParamDB->ANSATZ_ORDER == 1)
+  if (TDatabase::ParamDB->ANSATZ_ORDER == 1 && TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1)
   {
-    ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI. Choose 2.");
+    ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI with "
+        "Jacobi preconditioner. Choose 2.");
   }
 #endif
 }
