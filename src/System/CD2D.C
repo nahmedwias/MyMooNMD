@@ -8,21 +8,35 @@
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
 
+#include <LocalAssembling2D.h>
+#include <Assemble2D.h>
+#include <LocalProjection.h>
+
 #include <numeric>
 
 
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll)
- : fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
-            TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
-   matrix(this->fe_space, example.get_bd(0)),
-   rhs(this->matrix, true),
-   solution(this->matrix, false),
-   fe_function(&this->fe_space, (char*)"c", (char*)"c",
-               this->solution.get_entries(), this->solution.length())
+: fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
+           TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+           // TODO CB: Building the matrix here and rebuilding later is due to the
+           // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
+           // which do neither provide default constructors nor working copy assignments.)
+           matrix({&fe_space}),
+           rhs(this->matrix, true),
+           solution(this->matrix, false),
+           fe_function(&this->fe_space, (char*)"c", (char*)"c",
+                       this->solution.get_entries(), this->solution.length())
 {
-  
+  matrix = ColoredBlockFEMatrix::CD2D(fe_space);
+}
+
+TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()
+{
+  std::vector<std::shared_ptr<FEMatrix>> blocks =
+      matrix.get_blocks_TERRIBLY_UNSAFE();
+  return reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
 }
 
 /** ************************************************************************ */
@@ -82,8 +96,12 @@ CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
   unsigned int i = 0;
   for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
   {
+    //get a non-const pointer to the one block that "matrix" stores
+    // TODO must be changed to const as soon as multigrid allows that
+    TSquareMatrix2D* one_block = it->get_matrix_pointer();
+
     TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, it->matrix.get_matrix(), it->rhs.get_entries(), 
+      i, one_block, it->rhs.get_entries(),
       it->solution.get_entries(), 2, NULL);
     i++;
     this->multigrid->AddLevel(multigrid_level);
@@ -132,9 +150,44 @@ void CD2D::assemble()
   {
     TFEFunction2D * pointer_to_function = &s.fe_function;
     // create a local assembling object which is needed to assemble the matrix
-    LocalAssembling2D la(t, &pointer_to_function, this->example.get_coeffs());
-    // assemble the system matrix with given local assembling, solution and rhs 
-    s.matrix.Assemble(la, s.solution, s.rhs);
+    LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs());
+
+    // assemble the system matrix with given local assembling, solution and rhs
+    const TFESpace2D * fe_space = &s.fe_space;
+    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+    int N_Matrices = 1;
+    double * rhs_entries = s.rhs.get_entries();
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
+
+      // reset right hand side and matrix to zero (just in case)
+      s.rhs.reset();
+      matrix->reset();
+
+      // assemble
+      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+                 &fe_space, &boundary_conditions, non_const_bound_value, la);
+
+      // apply local projection stabilization method
+      if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+      {
+        if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+        {
+          UltraLocalProjection((void *)&matrix, false);
+        }
+        else
+        {
+          ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+        }
+      }
+
+      // copy Dirichlet values from rhs to solution vector (this is not really
+      // necessary in case of a direct solver)
+      s.solution.copy_nonactive(s.rhs);
   }
 
   // when using afc, do it now
@@ -160,7 +213,10 @@ void CD2D::solve()
   }
   else
   {
-    TSquareMatrix2D *SqMat[1] = { s.matrix.get_matrix() };
+    // the one matrix stored in this BlockMatrix
+    FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
+    // in order for the old method 'Solver' to work we need TSquareMatrix2D
+    TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
     Solver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
            s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
            this->multigrid.get(), this->get_size(), 0);
@@ -228,7 +284,7 @@ void CD2D::do_algebraic_flux_correction()
       {
         //get pointers/references to the relevant objects
         TFESpace2D& feSpace = s.fe_space;
-        FEMatrix& matrix = *s.matrix.get_matrix();
+        FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
         const std::vector<double>& solEntries = s.solution.get_entries_vector();
         std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
 
@@ -242,12 +298,12 @@ void CD2D::do_algebraic_flux_correction()
 
         // apply FEM-TVD
         AlgebraicFluxCorrection::fem_tvd_algorithm(
-            matrix,
+            one_block,
             solEntries,rhsEntries,
             neumToDiri);
 
         //...and finally correct the entries in the Dirchlet rows
-        AlgebraicFluxCorrection::correct_dirichlet_rows(matrix);
+        AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
 
         break;
       }

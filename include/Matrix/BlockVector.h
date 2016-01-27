@@ -18,6 +18,8 @@
 #define __BLOCKVECTOR__
 
 class BlockMatrix; // forward declaration
+class ColoredBlockMatrix;
+class ColoredBlockFEMatrix;
 
 #include <numeric>
 #include <BlockMatrix.h>
@@ -82,6 +84,13 @@ class BlockVector
      */
     BlockVector(const BlockMatrix& mat, bool image = false);
     
+    /// Construct a BlockVector which is suitable to serve as factor ("false")
+    /// or result ("true") in multiplication with a ColoredBlockMatrix.
+    /// Vector is filled with zeroes and all entries are non-active.
+    BlockVector(const ColoredBlockMatrix& mat, bool result = false);
+
+    BlockVector(const ColoredBlockFEMatrix& mat, bool result = false);
+
     /** @brief constructor for a BlockVector suitable for a given BlockMatrix
      * 
      * If 'image' is set to true, the vector will be in the image space of the 
@@ -189,6 +198,15 @@ class BlockVector
      */
     void addScaledActive(const BlockVector& r, double factor);
     
+    /**
+     * @brief add scaled vector to this, only non-actives
+     *
+     * @param r BlockVector which is added to this
+     * @param factor factor with which r is multiplied
+     *
+     */
+    void addScaledNonActive(const BlockVector& r, double factor);
+
     /** @brief copy the structure of another BlockVector, 
      * 
      * No values are copied. If there are old values, they are deleted! New 
@@ -339,6 +357,10 @@ class BlockVector
     unsigned int active(const int i) const
     { return actives.at(i); }
     
+    /** @brief return the number of non-active entries for a given block i */
+    size_t n_non_actives(const int i) const
+    { return lengths.at(i) - actives.at(i); }
+
     unsigned int n_blocks() const 
     { return lengths.size(); }
     

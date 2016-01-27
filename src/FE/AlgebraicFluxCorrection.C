@@ -316,16 +316,16 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   std::vector<double> u_dot_interm(nDofs,0.0); //approximation to u'(t + /frac{1}{2} /delta t)
 
   // step-by-step build up u_interm...
-  // ...now L u_{k-1}
+  // ...first L u_{k-1}
   K.multiply(&oldsol[0], &u_interm[0]);
 
-  // ...now M_L^(-1)(f_{k-1} - L u_{k-1})
+  // ...then M_L^(-1)(f_{k-1} - L u_{k-1})
   for(int i=0;i<nDofs;i++)
   {
     u_interm[i] = (rhs_old[i] - u_interm[i])/lump_mass[i];
   }
 
-  // ...now u_{k-1} + halftimestep * M_L^(-1)(f_{k-1} - L u_{k-1})
+  // ...then u_{k-1} + halftimestep * M_L^(-1)(f_{k-1} - L u_{k-1})
   double halftimestep = delta_t/2.0;
   for(int i=0;i<nDofs;i++)
   {
@@ -339,16 +339,6 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
     // just copy the values from old solution - this should
     // have the non-actives set correctly!
     u_interm[i] = oldsol[i];
-    //CB DEBUG
-//    if(oldsol[i] != 0)
-//    {
-//      Output::print(i, " : Why u not zero???");
-//    }
-//    else
-//    {
-//      Output::print(i, " : 0, good");
-//    }
-    //END DEBUG
   }
 
   // compute u_dot_interm (Kuzmin 2009 S.9 (37))
@@ -406,7 +396,6 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   ZalesaksFluxLimiter( alphas, M_C, lump_mass, raw_fluxes, u_interm, neum_to_diri);
 
   // STEP 4: Calculate the new right hand side and system matrix.
-
     for(int i=0;i<nDofs;i++)
     {
       double corrected_flux = 0.0;
@@ -418,7 +407,6 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
         if(i != index)
         {
           corrected_flux +=  alphas[j] * raw_fluxes[j];
-          //corrected_flux +=  raw_fluxes[j];
         }
       }
       //do the right hand side updates

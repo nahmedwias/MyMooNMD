@@ -31,6 +31,7 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <CD3D.h>
+#include <Example_CD3D.h>
 #include <MeshPartition.h>
 
 #include <sys/stat.h>
