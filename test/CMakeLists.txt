@@ -73,6 +73,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
 	add_test(cd3d_seq ParMooN_test_cd3d_seq)
 	list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
+  
+  #nse2d test
+  add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
+  target_link_libraries(ParMooN_test_direct_solver parmoon_2d_SEQUENTIAL 
+                        ${_EXTERN_LIBRARIES})
+  add_test(direct_solver ParMooN_test_direct_solver)
+  list(APPEND parmoon_tests ParMooN_test_direct_solver)
 	
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
 
