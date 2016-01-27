@@ -243,7 +243,8 @@ switch(type)
   case Darcy2D_Galerkin:
     this->N_Terms = 6;
     this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-    this->Needs2ndDerivatives = new bool[1];
+    this->Needs2ndDerivatives = new bool[2];
+    this->Needs2ndDerivatives[0] = false;
     this->Needs2ndDerivatives[1] = false;
     this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
     this->N_Matrices = 4;
