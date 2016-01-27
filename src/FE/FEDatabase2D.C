@@ -1676,7 +1676,7 @@ void TFEDatabase2D::GenerateArrays()
   QFQuadFromDegree[0] = Gauss2Quad;
   QFQuadFromDegree[1] = Gauss2Quad;
   QFQuadFromDegree[2] = Gauss2Quad;
-  QFQuadFromDegree[3] = Gauss2Quad;
+  QFQuadFromDegree[3] = Gauss3Quad;
   QFQuadFromDegree[4] = Gauss3Quad;
   QFQuadFromDegree[5] = Gauss3Quad;
   QFQuadFromDegree[6] = Gauss4Quad;
