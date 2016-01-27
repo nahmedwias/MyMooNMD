@@ -1,4 +1,5 @@
 #include <DirectSolver.h>
+#include <ColoredBlockMatrix.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <cmath>
@@ -95,7 +96,14 @@ int main(int argc, char **argv)
   // unfortunately this is needed here, hopefully we can get rid of this soon
   TDatabase database;
   
-  BlockMatrix mat(2, 2, {matA, matC, matB, matD});
+  //BlockMatrix mat(2, 2, {matA, matC, matB, matD});
+  ColoredBlockMatrix mat({size_t(matA->GetN_Rows()), size_t(matB->GetN_Rows())},
+                         {size_t(matA->GetN_Columns()), 
+                          size_t(matC->GetN_Columns()) } );
+  mat.replace_blocks(*matA, {{0,0}}, {false});
+  mat.replace_blocks(*matC, {{0,1}}, {false});
+  mat.replace_blocks(*matB, {{1,0}}, {false});
+  mat.replace_blocks(*matD, {{1,1}}, {false});
   BlockVector sol(mat, false);
   BlockVector exact_sol(sol);
   BlockVector rhs(mat, true);

@@ -25,6 +25,18 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	target_link_libraries(ParMooN_test_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
 	add_test(matrix ParMooN_test_matrix)
 	list(APPEND parmoon_tests ParMooN_test_matrix)
+
+	#colored block matrix test
+	add_executable(ParMooN_test_colored_block_matrix colored_block_matrix_test.c++)
+	target_link_libraries(ParMooN_test_colored_block_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+	add_test(colored_block ParMooN_test_matrix)
+	list(APPEND parmoon_tests ParMooN_test_colored_block_matrix)
+	
+	#colored block fe matrix test
+	add_executable(ParMooN_test_colored_block_fe_matrix colored_block_fe_matrix_test.c++)
+	target_link_libraries(ParMooN_test_colored_block_fe_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+	add_test(colored_block_fe ParMooN_test_matrix)
+	list(APPEND parmoon_tests ParMooN_test_colored_block_fe_matrix)
 	
 	#cd2d test
 	add_executable(ParMooN_test_cd2d cd2d_test.c++)
@@ -74,7 +86,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	add_test(cd3d_seq ParMooN_test_cd3d_seq)
 	list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
   
-  #nse2d test
+  # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
   target_link_libraries(ParMooN_test_direct_solver parmoon_2d_SEQUENTIAL 
                         ${_EXTERN_LIBRARIES})

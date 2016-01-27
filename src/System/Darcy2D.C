@@ -17,7 +17,7 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
                   TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
    pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(1),
                   TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
-   matrix(this->velocity_space, this->pressure_space, example.get_bd()),
+   matrix({&this->velocity_space, &this->pressure_space}),
    rhs(this->matrix, true),
    solution(this->matrix, false),
    u(&this->velocity_space, (char*)"u", (char*)"u", this->solution.block(0),
@@ -27,6 +27,9 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
 {
   velocity_space.SetAsDGSpace();
   pressure_space.SetAsDGSpace();
+  
+  matrix = ColoredBlockFEMatrix::Darcy2D(this->velocity_space,
+                                         this->pressure_space);
 }
 
 /** ************************************************************************ */
@@ -127,7 +130,40 @@ void Darcy2D::assemble()
     // create a local assembling object which is needed to assemble the matrices
     LocalAssembling2D la(Darcy2D_Galerkin, fe_functions,
                          this->example.get_coeffs());
-    s.matrix.Assemble(la, s.rhs);
+    
+    // everything which follows within this for loop only has the goal to call
+    // Assemble2D_VectFE at the end. 
+    const TFESpace2D * v_space = &s.velocity_space;
+    const TFESpace2D * p_space = &s.pressure_space;
+
+    const size_t n_fe_spaces = 2;
+
+    const TFESpace2D *fespmat[2] = {v_space, p_space};
+    const size_t n_sq_mat = 2;
+    TSquareMatrix2D *sq_matrices[n_sq_mat]{};
+
+    const size_t n_rect_mat = 2;
+    TMatrix2D *rect_matrices[n_rect_mat]{};
+
+    const size_t n_rhs = 2;
+    double *RHSs[n_rhs] = {s.rhs.block(0), s.rhs.block(1)};
+    
+    BoundCondFunct2D * boundary_conditions[n_fe_spaces] = {
+      v_space->GetBoundCondition(), p_space->GetBoundCondition() };
+    std::array<BoundValueFunct2D*, n_fe_spaces> non_const_bound_values;
+    non_const_bound_values[0] = example.get_bd()[0];
+    non_const_bound_values[1] = example.get_bd()[1];
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks 
+      = s.matrix.get_blocks_uniquely();
+    sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+    rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
+    rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+    
+    Assemble2D_VectFE(n_fe_spaces, fespmat, n_sq_mat, sq_matrices, n_rect_mat, 
+                      rect_matrices, n_rhs, RHSs, fespmat, la, 
+                      boundary_conditions, non_const_bound_values.data());
   }
   // copy Dirichlet values from rhs to solution vector (this is not really 
   // necessary in case of a direct solver)
