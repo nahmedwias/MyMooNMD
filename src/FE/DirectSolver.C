@@ -13,6 +13,7 @@
 #include <DirectSolver.h>
 #include <Database.h>
 #include "umfpack.h"
+#include <ColoredBlockMatrix.h>
 
 void handle_error_umfpack(int ierror)
 {
@@ -95,8 +96,8 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 }
 
 /** ************************************************************************ */
-DirectSolver::DirectSolver(BlockMatrix& matrix, 
-                           DirectSolver::DirectSolverTypes type)
+DirectSolver::DirectSolver(const ColoredBlockMatrix& matrix, 
+DirectSolver::DirectSolverTypes type)
  : DirectSolver(matrix.get_combined_matrix(), type)
 {
 }
@@ -241,6 +242,12 @@ void DirectSolver::solve(double* rhs, double* solution)
 /** ************************************************************************ */
 void DirectSolver::solve(BlockVector& rhs, BlockVector& solution)
 {
+  if(  rhs.length() != this->matrix->GetN_Rows() 
+    || solution.length() != this->matrix->GetN_Columns())
+    ErrThrow("solution or right hand side vector has wrong size. ",
+             "Size of the matrix: ", this->matrix->GetN_Rows(), " x ", 
+             this->matrix->GetN_Columns(),"\t rhs size: ", rhs.length(), 
+             "\tsolution size: ", solution.length());
   solve(rhs.get_entries(), solution.get_entries());
 }
 
@@ -813,12 +820,12 @@ void DirectSolverLong(TSquareMatrix *matrix, double *rhs, double *sol)
 // rb_flag = 1 ==> only forward/backward.
 // rb_flag = 2 ==> forward/backward and free up memory
 // rb_flag = 3 ==> allocieren, LU-Zerl, Freigabe
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
 double *rhs1, double *rhs2, double *sol1, double *sol2, int rb_flag)
 {
   const int *KColA, *RowPtrA;
-  double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
+  const double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
   double *sol, *rhs;
   int N_, N_U, N_Entries;
   static double *Entries;
@@ -984,17 +991,17 @@ double *rhs1, double *rhs2, double *sol1, double *sol2, int rb_flag)
 // rb_flag = 1 ==> nur vorw./rueckw.
 // rb_flag = 2 ==> speicher wieder freigeben
 // rb_flag = 3 ==> allocieren, LU-Zerl, Freigabe
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1, const  TMatrix2D *matrixB2,
 double *rhs, double *sol, int rb_flag)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
-  double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
+  const double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
+  const double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   static double *Entries;
   static int *KCol, *RowPtr;
@@ -1221,17 +1228,17 @@ double *rhs, double *sol, int rb_flag)
   */
 }
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-TMatrix2D *matrixC,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
+                  const TMatrix2D *matrixC,
 double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
   const int *KColC, *RowPtrC;
-  double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T, *EntriesC;
+  const double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T, *EntriesC;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;
@@ -1461,13 +1468,13 @@ double *rhs, double *sol)
 //
 //****************************************************************************/
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-double *rhs, double *sol)
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
+                  double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
-  double *EntriesA, *EntriesB1, *EntriesB2;
+  const double *EntriesA, *EntriesB1, *EntriesB2;
   int N_, N_U, N_P, N_B, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;
@@ -1679,13 +1686,13 @@ double *rhs, double *sol)
   */
 }
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-double *rhs, double *sol, int rb_flag)
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
+                  double *rhs, double *sol, int rb_flag)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
-  double *EntriesA, *EntriesB1, *EntriesB2;
+  const double *EntriesA, *EntriesB1, *EntriesB2;
   int N_, N_U, N_P, N_B, N_Entries;
   static double *Entries;
   static int *KCol, *RowPtr;
@@ -1926,15 +1933,15 @@ double *rhs, double *sol, int rb_flag)
 //
 //****************************************************************************/
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1T, const  TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
+  const double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;
@@ -2076,6 +2083,7 @@ double *rhs, double *sol)
     }                            // endfor j
   }                              // endfor i
 
+
   /*
   for(i=0;i<N_;i++)
   {
@@ -2111,15 +2119,15 @@ double *rhs, double *sol)
 //   cout << "UMFPACK total time: " << t5-t1 << endl;
 }
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
 double *rhs, double *sol, int rb_flag)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
+  const double *EntriesA, *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   static double *Entries;
   static int *KCol, *RowPtr;
@@ -2328,17 +2336,17 @@ double *rhs, double *sol, int rb_flag)
 //
 //****************************************************************************/
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
 double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
-  double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
+  const double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
+  const double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;
@@ -2500,7 +2508,6 @@ double *rhs, double *sol)
   }
   */
   
-  
   t2 = GetTime();
 
   ret = umfpack_di_symbolic(N_, N_, RowPtr, KCol, Entries, &Symbolic, null, null);
@@ -2542,18 +2549,18 @@ double *rhs, double *sol)
 //
 //****************************************************************************/
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-TSquareMatrix2D *sqmatrixC,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-double *rhs, double *sol)
+void DirectSolver(const TSquareMatrix2D *sqmatrixA11, const TSquareMatrix2D *sqmatrixA12,
+                  const TSquareMatrix2D *sqmatrixA21, const TSquareMatrix2D *sqmatrixA22,
+                  const TSquareMatrix2D *sqmatrixC,
+                  const TMatrix2D *matrixB1T, const TMatrix2D *matrixB2T,
+                  const TMatrix2D *matrixB1,  const TMatrix2D *matrixB2,
+                  double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA, *KColC, *RowPtrC;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22, *EntriesC;
-  double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
+  const double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22, *EntriesC;
+  const double *EntriesB1, *EntriesB2, *EntriesB1T, *EntriesB2T;
   int N_, N_U, N_P, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;
@@ -2729,13 +2736,7 @@ double *rhs, double *sol)
     }                            // endfor j
   }                              // endfor i
 
-  /*
-  for(i=0;i<N_;i++)
-  {
-    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-      cout << i << " " << KCol[j] << " " << Entries[j] << endl;
-  }
-  */
+
 
   t2 = GetTime();
 
@@ -2768,14 +2769,14 @@ double *rhs, double *sol)
   */
 }
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA, TSquareMatrix2D *sqmatrixC,
-                  TMatrix2D *matrixBT, TMatrix2D *matrixB,
+void DirectSolver(const TSquareMatrix2D *sqmatrixA, const TSquareMatrix2D *sqmatrixC,
+                  const TMatrix2D *matrixBT, const TMatrix2D *matrixB,
                   double *rhs, double *sol)
 {
   const int *KColA, *RowPtrA, *KColC, *RowPtrC;
   const int *KColB, *RowPtrB;
   const int *KColBT, *RowPtrBT;
-  double *EntriesA, *EntriesC, *EntriesB, *EntriesBT;
+  const double *EntriesA, *EntriesC, *EntriesB, *EntriesBT;
   int N_DOF, N_U, N_P, N_Entries;
   double *Entries;
   int *KCol, *RowPtr;

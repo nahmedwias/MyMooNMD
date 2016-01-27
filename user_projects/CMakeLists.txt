@@ -20,3 +20,12 @@
 #    make project
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
+
+
+##colored block matrix test
+#add_executable(ParMooN_test_colored_block_matrix colored_block_matrix_test.c++)
+#target_link_libraries(ParMooN_test_colored_block_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+
+##colored block fe matrix test
+#add_executable(ParMooN_test_colored_block_fe_matrix colored_block_fe_matrix_test.c++)
+#target_link_libraries(ParMooN_test_colored_block_fe_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
