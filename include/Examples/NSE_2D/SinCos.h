@@ -55,10 +55,8 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
-  //cond = DIRICHLET;
-  //TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-  cond = (i == 3) ? NEUMANN : DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+  cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
