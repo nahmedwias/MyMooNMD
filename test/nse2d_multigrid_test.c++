@@ -110,9 +110,9 @@ int main(int argc, char* argv[])
     // check stopping criterion
     nse2d.stopIt(0);
 
-    if(  (fabs(nse2d.getImpulsResidual() - 23.76956404) > 1e-6)
-      || (fabs(nse2d.getMassResidual() - 0.4458821475)   > 1e-6)
-      || (fabs(nse2d.getFullResidual() - 23.77374572)   > 1e-6) )
+    if(  (fabs(nse2d.getImpulsResidual() - 27.96300423) > 1e-6)
+      || (fabs(nse2d.getMassResidual()   - 0.442647637)   > 1e-6)
+      || (fabs(nse2d.getFullResidual()   - 27.96650752)   > 1e-6) )
     {
       ErrThrow("Residual at iteration 0 is not correct");
     }
@@ -124,9 +124,10 @@ int main(int argc, char* argv[])
       Output::print<1>("nonlinear step " , setw(3), k, "\t",
         setprecision(10),nse2d.getResiduals());
       
-      if( (k==1) && ((fabs(nse2d.getImpulsResidual() - 0.2033688532) > 1e-6)
-      || (fabs(nse2d.getMassResidual() - 1.623094958e-14)   > 1e-6)
-      || (fabs(nse2d.getFullResidual() - 0.2033688532)   > 1e-6)) )
+      if( (k==1) 
+        && ((fabs(nse2d.getImpulsResidual()  - 0.2040084814) > 1e-6)
+        || (fabs(nse2d.getMassResidual()  - 4.095420856e-14)   > 1e-6)
+        || (fabs(nse2d.getFullResidual()     - 0.2040084814)   > 1e-6)) )
      {
        ErrThrow("Residual at iteration ", k, " is not correct");
      }
@@ -158,7 +159,7 @@ int main(int argc, char* argv[])
       ErrThrow("Program 1: L2 norm of velocity is not correct.");
     }
     // check the H1-error of the velcoity
-    if( fabs( sqrt(err[1]*err[1] + err[3]*err[3]) - 0.00972393) > 1e-6 )
+    if( fabs( sqrt(err[1]*err[1] + err[3]*err[3]) - 0.00973175) > 1e-6 )
     {
       ErrThrow("Program 1: H1-semi norm of velocity not correct.");
     }
@@ -168,17 +169,18 @@ int main(int argc, char* argv[])
     p.GetErrors(nse2d.get_example().get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     // check the L2-error of the pressure
-    if( fabs(err[0] - 0.00181767) > 1e-6)
+    if( fabs(err[0] - 0.00194342) > 1e-6)
     {
       ErrThrow("Program 1: L2 norm of pressure is not correct.");
     }
     // check the H1-error of the pressure
-    if(fabs( err[1] - 0.224754) > 1e-6 )
+    if(fabs( err[1] - 0.228822) > 1e-6 )
     {
       ErrThrow("Program 1: H1-norm of pressure is not correct.");
     } 
     Output::print<1>("Elements: P2/P1: test passed for the Direct Solver: ");
   } // end program 1
+  
   //===================================================================================
   /** @brief Multigrid Test: for Q2/P1^disc elements**/
   //===================================================================================
@@ -255,9 +257,9 @@ int main(int argc, char* argv[])
     // check stopping criterion
     nse2d.stopIt(0);
     
-    if(  (nse2d.getImpulsResidual() - 25.0153 > 1e-6)
-      || (nse2d.getMassResidual() - 1.20323   > 1e-6)
-      || (nse2d.getFullResidual() - 25.0442   > 1e-6)
+    if(  (nse2d.getImpulsResidual() - 29.42572519 > 1e-6)
+      || (nse2d.getMassResidual() - 1.183051948   > 1e-6)
+      || (nse2d.getFullResidual() - 29.4494977   > 1e-6)
     )
     { 
       ErrThrow("Residual at iteration 0 is not correct");
@@ -272,9 +274,9 @@ int main(int argc, char* argv[])
       if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
         break;
       // checking the first nonlinear iteration
-      if( (k==2) && ( (nse2d.getImpulsResidual() - 0.197715 >1e-6)        
-         ||  (nse2d.getMassResidual() - 5.76228e-16     > 1e-6)
-         ||  (nse2d.getFullResidual() - 0.197715        >1e-6) ) )
+      if( (k==2) && ( (nse2d.getImpulsResidual() - 0.1984203854 >1e-6)        
+         ||  (nse2d.getMassResidual() - 6.936837905e-16     > 1e-6)
+         ||  (nse2d.getFullResidual() - 0.1984203854        >1e-6) ) )
       {
         ErrThrow("Residual at iteration 1 is not correct");
       }
@@ -304,7 +306,7 @@ int main(int argc, char* argv[])
       ErrThrow("Program 1: L2 norm of velocity is not correct.");
     }
     // check the H1-error of the velcoity
-    if( fabs( sqrt(err[1]*err[1] + err[3]*err[3]) - 0.00662124) > 1e-6 )
+    if( fabs( sqrt(err[1]*err[1] + err[3]*err[3]) - 0.00661116) > 1e-6 )
     {
       ErrThrow("Program 1: H1-semi norm of velocity not correct.");
     }
@@ -314,16 +316,16 @@ int main(int argc, char* argv[])
     p.GetErrors(nse2d.get_example().get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     // check the L2-error of the pressure
-    if( fabs(err[0] - 0.00191015) > 1e-6)
+    if( fabs(err[0] - 0.00190367) > 1e-6)
     {
       ErrThrow("Program 1: L2 norm of pressure is not correct.");
     }
     // check the H1-error of the pressure
-    if(fabs( err[1] - 0.17827) > 1e-6 )
+    if(fabs( err[1] - 0.17806) > 1e-6 )
     {
       ErrThrow("Program 1: H1-norm of pressure is not correct.");
     } 
-    Output::print<1>("Elements: Q_2/P_1^disc: test passed for the Direct Solver: ");
+    Output::print<1>("Elements: Q_2/P_1^disc: test passed for the Multigrid: ");
   } // end program 1
   
   return 0;
