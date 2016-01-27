@@ -144,7 +144,7 @@ class Time_NSE2D
     Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
 	       int reference_id = -4711);
     
-    /** @brief Assemble all the matrices before the time iterations
+    /** @brief Assemble all the matrices and rhs before the time iterations
      * 
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 
      * (additional matrixK in case of SUPG stabilization), rhs
@@ -159,18 +159,17 @@ class Time_NSE2D
      */
     void assemble_rhs();
     
-    /** @brief
-     * This function will prepare the system which will be 
-     * used for solvers
-     */
-    void assemble_system();
-    
     /** @brief Assemble the right hand side only
      *  @param la: LocalAssembling2D object
      *  @param rhs: rhs vector to be assembled
     */
     void AssembleRhs(LocalAssembling2D& la, BlockVector& rhs);
-
+    
+    /** @brief Assemble the system matrix
+     * This function will prepare the system which will be 
+     * used for solvers
+     */
+    void assemble_system();
     
     /** @brief assemble nonlinear term
      * 
@@ -181,18 +180,21 @@ class Time_NSE2D
      */
     void assemble_nonlinear_term();
     
-    /**
+    /** @brief check if one of the stopping criteria is fulfilled
+     * 
+     * either converged, maximun number of iterations reached, or slow 
+     * convergence
+     * 
+     * @param it_counter current iterate
      */
     bool stopIte(unsigned int it_counter);
-    /**
-     */
-    void normofResidual();
     
-    /**
-     */
+    /** @brief solve the system */
     void solve();
-    /**
-     * 
+    
+    /** descale matrices
+     * This function will descale all A-blocks which were scaled
+     * during the function call Time_NSE2D::assemble_system():
      */
     void deScaleMatrices();
     /**

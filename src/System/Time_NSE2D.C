@@ -38,7 +38,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, int reference_id)
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
                        int reference_id)
  : systems(), example(ex), multigrid(), defect(), 
-   oldResidual(0), initial_residual(1e10), oldtau(0.0), errors(6,0.)
+   oldResidual(0), initial_residual(1e10), errors(6,0.), oldtau(0.0)
 {
   this->set_parameters();
   
@@ -393,26 +393,35 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
          &this->defect[2*nuDof]);
   
-  cout<<"nonlinear step " << setw(3) << it_counter;
-  cout<<setw(14) << impulse_residual;
-  cout<<setw(14) << mass_residual;
-  cout<<setw(14) << sqrt(residual);
+  Output::print("nonlinear step  :  " , setw(3), it_counter);
+  Output::print("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print("mass_residual   :  " , setw(3), mass_residual);
+  Output::print("residual        :  " , setw(3), sqrt(residual));
+  
   if (it_counter>0)
   {
-    cout<<setw(14) << sqrt(residual)/oldResidual<<endl;
+  Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
   }
-  else
-  {
-    cout<<endl;
-  }
+  
   oldResidual = sqrt(residual);
+  if(it_counter == 0)
+    initial_residual = sqrt(residual);
+  
   int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
   double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  {
+    limit *= sqrt(this->get_size());
+    Output::print("stopping tolerance for nonlinear iteration ", limit);
+  }
+  
   if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
    && (it_counter>=TDatabase::ParamDB->SC_MINIT))
    {
-     OutPut("ITE : " << setw(3) << it_counter<< "  RES : " <<  
-            sqrt(residual) << endl);     
+     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+                   " Reduction : ",  sqrt(residual)/initial_residual);
+     // descale the matrices, since only the diagonal A block will 
+     // be reassembled in the next time step
      this->deScaleMatrices();     
      return true;
    }
@@ -437,8 +446,6 @@ void Time_NSE2D::solve()
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
     this->deScaleMatrices();
-   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       s.p.project_into_L20();
 
   Output::print<3>("solver done");
 }
@@ -519,7 +526,19 @@ TNSE_MGLevel* Time_NSE2D::mg_levels(int i, Time_NSE2D::System_per_grid& s)
                                 nullptr, nullptr);
     break;
     case 14:
-      OutPut("WARNING: NSTYPE 14 is not supported. C block is ignored\n");
+      mg_l = new TNSE_MGLevel14(i, s.matrix.get_A_block(0), 
+                                s.matrix.get_A_block(1),
+                                s.matrix.get_A_block(2),
+                                s.matrix.get_A_block(3),
+                                s.matrix.get_C_block(),
+                                s.matrix.get_B_block(0),
+                                s.matrix.get_B_block(1),
+                                s.matrix.get_BT_block(0),
+                                s.matrix.get_BT_block(1),
+                                s.rhs.get_entries(), 
+                                s.solution.get_entries(), 
+                                n_aux, alpha, v_space_code, p_space_code, 
+                                nullptr, nullptr);
     break;
   }
   return mg_l;
