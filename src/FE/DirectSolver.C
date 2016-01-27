@@ -102,6 +102,30 @@ DirectSolver::DirectSolver(BlockMatrix& matrix,
 }
 
 /** ************************************************************************ */
+DirectSolver::DirectSolver(DirectSolver&& other)
+ : type(other.type), matrix(other.matrix), symbolic(other.symbolic), 
+   numeric(other.numeric), isFortranShifted(other.isFortranShifted)
+{
+  other.symbolic = nullptr;
+  other.numeric = nullptr;
+  Output::print<4>("DirectSolver::DirectSolver(DirectSolver&&)");
+}
+
+/** ************************************************************************ */
+class DirectSolver& DirectSolver::operator=(DirectSolver&& other)
+{
+  this->type = other.type;
+  this->matrix = other.matrix;
+  this->symbolic = other.symbolic;
+  this->numeric = other.numeric;
+  this->isFortranShifted = other.isFortranShifted;
+  other.symbolic = nullptr;
+  other.numeric = nullptr;
+  Output::print<4>("DirectSolver::operator=(DirectSolver&&)");
+  return *this;
+}
+
+/** ************************************************************************ */
 DirectSolver::~DirectSolver()
 {
   switch(type)

@@ -1,20 +1,22 @@
-// =======================================================================
-// @(#)DirectSolver.h
-// 
-// Purpose:     solve equation system by direct solver
-//
-// Author:      Gunar Matthies (06.09.05)
-//
-// History:     start of implementation 06.09.05 (Gunar Matthies)
-//
-// =======================================================================
+/** ************************************************************************ 
+*
+* @class DirectSolver
+* @brief solving a linear system using a direct solver
+*
+* Given a BlockMatrix the constructor of this class computes a factorization of
+* that matrix. Then the method DirectSolver::solve enables the actual solving
+* step which can be called multiple time, reusing the computed factorization.
+* 
+* Note that there is no way to update the matrix, i.e. to recompute a 
+* factorization. In case your matrix changes, you should also create a new
+* object of this class DirectSolver.
+* 
+* @ruleof0
+*
+****************************************************************************/
 
 #ifndef __DIRECTSOLVER__
 #define __DIRECTSOLVER__
-
-/**
- * 
- */
 
 #include <Matrix.h>
 #include <BlockVector.h>
@@ -33,7 +35,19 @@ class DirectSolver
      */
     DirectSolver(BlockMatrix& matrix, DirectSolverTypes type);
     
-    /** @brief release all memory, the matrix is not touched */
+    /** @brief This class is not copy constructible */
+    DirectSolver(const DirectSolver&) = delete;
+
+    /** @brief move constructor */
+    DirectSolver(DirectSolver&&);
+
+    /** @brief This class is not copy assignable */
+    DirectSolver& operator=(const DirectSolver&) = delete;
+
+    /** @brief move assignment operator */
+    DirectSolver& operator=(DirectSolver&&);
+    
+    /** @brief release all memory */
     ~DirectSolver();
 
     /**
