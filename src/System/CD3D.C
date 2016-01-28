@@ -273,8 +273,11 @@ void CD3D::solve()
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
   { // Direct solver chosen.
 #ifdef _SEQ
-    DirectSolver((TSquareMatrix * ) syst.matrix_.get_matrix(), rhsEntries,
-                 solutionEntries);
+    /// @todo consider storing an object of DirectSolver in this class
+    // use keyword class here, until all methods with the same name are removed
+    class DirectSolver direct_solver(syst.matrix_, 
+                                     DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(syst.rhs_, syst.solution_);
     return;
 #else
     ErrThrow("Direct solver not yet implemented in parallel. Chose "
@@ -418,12 +421,12 @@ void CD3D::checkParameters()
   }
 
 #ifdef _MPI // problems only known in MPI case
-  // the case of ANSATZ_ORDER: 1 is known to not converge
+  // the case of ANSATZ_ORDER: 1 with jacobi seems to not converge
   // (this is currently under investigation)
-  // TODO might be this works with a mg predonditioner!
-  if (TDatabase::ParamDB->ANSATZ_ORDER == 1)
+  if (TDatabase::ParamDB->ANSATZ_ORDER == 1 && TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1)
   {
-    ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI. Choose 2.");
+    ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI with "
+        "Jacobi preconditioner. Choose 2.");
   }
 #endif
 }

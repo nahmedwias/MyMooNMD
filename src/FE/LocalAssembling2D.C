@@ -243,7 +243,8 @@ switch(type)
   case Darcy2D_Galerkin:
     this->N_Terms = 6;
     this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-    this->Needs2ndDerivatives = new bool[1];
+    this->Needs2ndDerivatives = new bool[2];
+    this->Needs2ndDerivatives[0] = false;
     this->Needs2ndDerivatives[1] = false;
     this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
     this->N_Matrices = 4;
@@ -990,10 +991,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4Galerkin; 
@@ -1018,10 +1023,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinDD; 
@@ -1056,10 +1065,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[0] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinSkew; 
@@ -1083,10 +1096,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[0] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinSkewDD; 
@@ -1121,10 +1138,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[0] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinRot; 
@@ -1148,10 +1169,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   this->Needs2ndDerivatives[0] = false;
                   this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 8;
+                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
                   if(TDatabase::ParamDB->NSTYPE == 14)
+                  {
                     this->N_Matrices = 9;
-                  this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+                    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+                  }
                   this->N_Rhs = 3;
                   this->RhsSpace = { 0, 0, 1 };
                   this->AssembleParam = NSType4GalerkinRotDD; 
@@ -1774,8 +1799,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
     this->RhsSpace = {};
   }
   
-  this->Needs2ndDerivatives = new bool[1];
-  this->Needs2ndDerivatives[0] = false;   
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
   this->Manipulate = NULL;
   
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)

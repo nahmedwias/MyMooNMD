@@ -1605,9 +1605,19 @@ TStructure::TStructure( const TFESpace3D *space )
 
 /* generate the matrix structure, both spaces are 2D */
 TStructure::TStructure(const TFESpace2D* testspace,
-                       const TFESpace2D* ansatzspace)
+                       const TFESpace2D* ansatzspace, bool is_empty)
  : TStructure()
 {
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
+  ActiveBound = testspace->GetN_ActiveDegrees();
+  rows = std::vector<int>(nRows+1, 0);
+
+  if (is_empty)
+  {//no need to create anything else...
+    return;
+  }
+
   TCollection *coll;
   TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
@@ -1644,8 +1654,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // get collection of mesh cells
   coll = testspace->GetCollection();
   
-  ActiveBound = testspace->GetN_ActiveDegrees();
-
   // test space and ansatz space differ
   // get information from the spaces
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
@@ -1673,9 +1681,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
   AnsatzBeginIndex = ansatzspace->GetBeginIndex();
   TestBeginIndex = testspace->GetBeginIndex();
-
-  nRows = testspace->GetN_DegreesOfFreedom();
-  nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   TestN_Hanging = testspace->GetN_Hanging();
   TestActiveBound = testspace->GetN_ActiveDegrees();

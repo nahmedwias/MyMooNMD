@@ -52,9 +52,6 @@ class BlockMatrixDarcy2D : public BlockFEMatrix
     /** assemble the system matrix */
     void Assemble(LocalAssembling2D& la, BlockVector& rhs);
     
-    /** solve the system matrix */
-    void Solve(BlockVector& sol, BlockVector& rhs);
-
     /** @brief compute y = factor* A*x 
      *
      * write the matrix-vector product "Ax" scaled by a factor to y. 

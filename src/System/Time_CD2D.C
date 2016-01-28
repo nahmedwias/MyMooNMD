@@ -3,6 +3,7 @@
 #include <MultiGrid2D.h>
 #include <Output2D.h>
 #include <Solver.h>
+#include <DirectSolver.h>
 #include <LinAlg.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
@@ -264,10 +265,21 @@ void Time_CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  TSquareMatrix2D *sqMat[1] = {s.stiff_matrix.get_matrix()};
-  Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-         s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-         this->multigrid.get(), s.solution.length(), 0);
+  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
+  {
+    /// @todo consider storing an object of DirectSolver in this class
+    // use keyword class here, until all methods with the same name are removed
+    class DirectSolver direct_solver(s.stiff_matrix, 
+                                     DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs, s.solution);
+  }
+  else
+  {
+    TSquareMatrix2D *sqMat[1] = {s.stiff_matrix.get_matrix()};
+    Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
+           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+           this->multigrid.get(), s.solution.length(), 0);
+  }
   
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);

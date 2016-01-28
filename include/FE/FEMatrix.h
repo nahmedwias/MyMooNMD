@@ -41,8 +41,9 @@ class FEMatrix : public TMatrix
     /// 
     /// A matrix using this structure represents a linear map from the ansatz 
     /// to the test space.
+    /// @param[in] is_empty If true, this TMatrix is created with an empty structure.
     //@{
-    FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace);
+    FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,  bool is_empty = false);
     #ifdef __3D__
     FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
     #endif // 3D

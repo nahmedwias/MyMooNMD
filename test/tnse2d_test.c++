@@ -34,7 +34,7 @@ void testCN(Time_NSE2D &tnse, int m)
   
   TFEFunction2D * u1 = tnse.get_velocity_component(0);
   TFEFunction2D * u2 = tnse.get_velocity_component(1);
-  TFEFunction2D p = tnse.get_pressure();
+  const TFEFunction2D & p = tnse.get_pressure();
   
     
   u1->GetErrors(tnse.get_example().get_exact(0), 3, NSAllDerivatives, 2, L2H1Errors,nullptr,

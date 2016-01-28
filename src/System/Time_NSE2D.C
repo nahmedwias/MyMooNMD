@@ -7,6 +7,7 @@
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <Output2D.h>
+#include <DirectSolver.h>
 
 /**************************************************************************** */
 Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example, 
@@ -437,7 +438,14 @@ void Time_NSE2D::solve()
   if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
     || (TDatabase::ParamDB->SOLVER_TYPE !=1 ))
   {
-    s.matrix.Solve(s.solution.get_entries(),s.rhs.get_entries());
+    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+      ErrThrow("only the direct solver is supported currently");
+    
+    /// @todo consider storing an object of DirectSolver in this class
+    // use keyword class here, until all methods with the same name are removed
+    class DirectSolver direct_solver(s.matrix, 
+                                     DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs, s.solution);
   }
   else
     this->mg_solver();

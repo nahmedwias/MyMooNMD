@@ -462,59 +462,6 @@ void BlockMatrixNSE2D::AssembleNonLinear(LocalAssembling2D& la)
 } //BlockMatrixNSE2D::AssembleNonLinear(
 
 /** ************************************************************************ */
-void BlockMatrixNSE2D::Solve(double *sol, double *rhs)
-{
-  switch(TDatabase::ParamDB->SOLVER_TYPE)
-  {
-    case AMG_SOLVE:
-      Output::print("AMG_SOLVE not yet implemented");
-      break;
-      
-    case GMG:
-      Output::print("GMG solver not yet implemented");
-      break;
-      
-    case DIRECT:
-      switch(TDatabase::ParamDB->NSTYPE)
-      {
-        case 1:
-          DirectSolver(this->get_A_block(0), this->get_B_block(0),
-                       this->get_B_block(1), rhs, sol);
-          break;
-          
-        case 2:
-          DirectSolver(this->get_A_block(0), this->get_BT_block(0), 
-                       this->get_BT_block(1), this->get_B_block(0), 
-                       this->get_B_block(1), rhs, sol);
-          break;
-          
-        case 3:
-          ErrThrow("Solver not included for NSTYPE 3 in this version. Try ",
-                   "NSTYPE 4");
-          break;
-          
-        case 4:
-          DirectSolver(this->get_A_block(0), this->get_A_block(1), 
-                       this->get_A_block(2), this->get_A_block(3),
-                       this->get_BT_block(0),  this->get_BT_block(1),
-                       this->get_B_block(0), this->get_B_block(1), rhs, sol);
-          break;
-        case 14:
-          Output::print("WARNING: NSTYPE 14 is not fully supported, take ",
-                        "NSTYPE 4");
-          DirectSolver(this->get_A_block(0), this->get_A_block(1), 
-                       this->get_A_block(2), this->get_A_block(3),
-                       this->get_BT_block(0), this->get_BT_block(1),
-                       this->get_B_block(0), this->get_B_block(1), rhs, sol);
-      } //  switch(TDatabase::ParamDB->NSTYPE)
-      break;
-    default:
-      ErrThrow("Unknown Solver");
-      break;
-  }
-}
-
-/** ************************************************************************ */
 void BlockMatrixNSE2D::apply(const double *x, double *y, double factor) const
 {
   unsigned int n_total_rows = this->BlockMatrix::n_total_rows();

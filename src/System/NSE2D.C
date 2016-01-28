@@ -12,10 +12,10 @@
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders)
- : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
-                  velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
-                  velocity_pressure_orders.second, nullptr),
+ : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", 
+                  example.get_bc(0), velocity_pressure_orders.first, nullptr),
+   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", 
+                  example.get_bc(2), velocity_pressure_orders.second, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
    solution(this->matrix, false),
@@ -306,17 +306,14 @@ void NSE2D::solve()
   if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
     || (TDatabase::ParamDB->SOLVER_TYPE != 1))
   {
-    s.matrix.Solve(s.solution.get_entries(), s.rhs.get_entries());
-    /*
-    std::shared_ptr<TMatrix> m = s.matrix.get_combined_matrix();
-    TStructure*s = new TStructure(m->GetN_Rows(), m->GetN_Entries(),
-                                              m->GetKCol(), m->GetRowPtr());
-    s->Sort();
-    TSquareMatrix * sm = new TSquareMatrix(s);
-    sm->setEntries(m->GetEntries());
+    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+      ErrThrow("only the direct solver is supported currently");
     
-    DirectSolver(sm,  s.rhs.get_entries(), s.solution.get_entries());
-    */
+    /// @todo consider storing an object of DirectSolver in this class
+    // use keyword class here, until all methods with the same name are removed
+    class DirectSolver direct_solver(s.matrix, 
+                                     DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs, s.solution);
   }
   else
   {

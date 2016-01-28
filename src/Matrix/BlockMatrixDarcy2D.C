@@ -65,34 +65,6 @@ void BlockMatrixDarcy2D::Assemble(LocalAssembling2D& la, BlockVector& rhs)
 } // void BlockMatrixDarcy2D::Assemble
 
 /** ************************************************************************ */
-void BlockMatrixDarcy2D::Solve(BlockVector& sol, BlockVector& rhs)
-{
-  switch(TDatabase::ParamDB->SOLVER_TYPE)
-  {
-   case AMG_SOLVE:
-     Output::print("AMG_SOLVE not yet implemented");
-   break;
-
-   case GMG:
-     Output::print("GMG solver not yet implemented");
-   break;
-
-   case DIRECT:
-   {
-     // the following cast works, because these blocks were constructed as 
-     // TSquareMatrix2D in the constructor of this class 
-     DirectSolver(this->get_A_block(), this->get_C_block(), 
-                  this->get_BT_block(), this->get_B_block(), rhs.get_entries(),
-                  sol.get_entries());
-   }
-   break;
- 
-   default:
-     ErrThrow("Unknown Solver\n");
-  }
-}
-
-/** ************************************************************************ */
 void BlockMatrixDarcy2D::apply(const double *x, double *y, double factor) const
 {
   unsigned int n_total_rows = this->BlockMatrix::n_total_rows();
