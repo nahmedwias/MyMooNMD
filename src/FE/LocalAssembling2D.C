@@ -1836,6 +1836,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
       switch(disc_type) // discrete forms
       {
         case GALERKIN:
+        case RECONSTRUCTION:
           switch(nstype)
           {
             case 1:
@@ -2035,6 +2036,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
       switch(disc_type)
       {
         case GALERKIN:
+        case RECONSTRUCTION:
           this->N_Terms = 1;
           this->Derivatives = { D00 };
           this->Needs2ndDerivatives = new bool[1];
