@@ -5,7 +5,8 @@
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Bsp1.h") ;
+  OutPut("Example: Bsp1.h" << endl) ;
+  TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
 }
 
 // ========================================================================
@@ -16,8 +17,6 @@ void InitialU1(double x, double y, double *values)
   double t=TDatabase::TimeDB->CURRENTTIME;
 
   values[0] = sin(t)*sin(Pi*x)*sin(Pi*y);
-  
-//   cout << " InitialU1 " << values[0] <<endl;
 }
 
 void InitialU2(double x, double y, double *values)
@@ -94,6 +93,7 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
@@ -160,23 +160,22 @@ void LinCoeffs(int n_points, double *X, double *Y,
     t39 = t6*t22*0.3141592653589793E1;
     t41 = t17*t17;
 
-// /*
+/*
     // Stokes
     coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
               +t27*t17*0.3141592653589793E1;
     coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
               -t27*t6*0.3141592653589793E1;
-// */
+*/
 
-//     // Navier-Stokes
-//     coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
-//               +t14*t3*t16*t17*0.3141592653589793E1
-//               +t14*t17*t23*t3*0.3141592653589793E1
-//               +t27*t17*0.3141592653589793E1;
-//     coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
-//               -t14*t36*t39-t14*t41*t39
-//               -t27*t6*0.3141592653589793E1;
+    // Navier-Stokes
+    coeff[1] = t1*t3*t6+2.0*t9*t3*t10*t6
+              +t14*t3*t16*t17*0.3141592653589793E1
+              +t14*t17*t23*t3*0.3141592653589793E1
+              +t27*t17*0.3141592653589793E1;
+    coeff[2] = t1*t17*t22+2.0*t9*t17*t10*t22
+              -t14*t36*t39-t14*t41*t39
+              -t27*t6*0.3141592653589793E1;
+    coeff[3] = 0;
   }
 }
-
-

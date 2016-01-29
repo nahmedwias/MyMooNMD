@@ -44,6 +44,10 @@ namespace bsp1
 {
  #include "TNSE_2D/Bsp1.h"
 }
+namespace lin_space_time
+{
+#include "TNSE_2D/linear_space_time.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D() : Example2D()
@@ -201,6 +205,30 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       initial_conditions.push_back(bsp1::InitialU1);
       initial_conditions.push_back(bsp1::InitialU2);
       bsp1::ExampleFile();
+      break;
+    case 102:
+      /** exact_solution */
+      exact_solution.push_back( lin_space_time::ExactU1 );
+      exact_solution.push_back( lin_space_time::ExactU2 );
+      exact_solution.push_back( lin_space_time::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( lin_space_time::BoundCondition );
+      boundary_conditions.push_back( lin_space_time::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( lin_space_time::U1BoundValue );
+      boundary_data.push_back( lin_space_time::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = lin_space_time::LinCoeffs;
+      
+      initial_conditions.push_back(lin_space_time::InitialU1);
+      initial_conditions.push_back(lin_space_time::InitialU2);
+      
+      lin_space_time::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");

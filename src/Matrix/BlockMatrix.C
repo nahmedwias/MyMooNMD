@@ -2,6 +2,7 @@
 #include <BlockVector.h>
 #include <LinAlg.h>
 #include <limits>
+#include<Database.h>
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix()
@@ -271,6 +272,25 @@ std::shared_ptr<TMatrix> BlockMatrix::get_combined_matrix()
           entries_in_rows[row_offset + row + 1] = pos;
         }
         row_offset += n_rows;
+      }
+      
+      // modify first pressure row 
+      // to only have one entry on the diagonal
+      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+      {
+        if(this->n_blocks() == 9)
+        {
+          int n_rows = this->block(0, 0).GetN_Rows();
+
+          int begin = entries_in_rows[2*n_rows];
+          int end   = entries_in_rows[2*n_rows+1];
+          // set entries to zero
+          for(int j=begin;j<end;j++)
+            comb_entries[j] = 0;
+          
+          comb_entries[end-1] = 1;          
+          column_of_entry[begin] = 2*n_rows;
+        }
       }
       
       // create sparsity structure
