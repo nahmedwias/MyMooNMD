@@ -347,7 +347,8 @@ TMatrix* TMatrix::multiply(const TMatrix &B, double a) const
   
   if(n_A_cols != n_B_rows)
   {
-    ErrThrow("dimention mismatch during matrix-matrix multiplication");
+    ErrThrow("dimention mismatch during matrix-matrix multiplication ",
+             n_A_cols, "  " , n_B_rows);
   }
   const int * const a_rows = this->GetRowPtr();
   const int * const a_cols = this->GetKCol();
@@ -498,7 +499,7 @@ std::shared_ptr< TMatrix >
   if(B.GetN_Rows() != this->GetN_Columns() 
     || B.GetN_Columns() !=this->GetN_Columns())
   {
-    ErrThrow("Dimension mismatch  ", B.GetN_Rows(), "  ", this->GetN_Columns());
+    ErrThrow("Dimension mismatch  ", B.GetN_Rows(), "  ", B.GetN_Columns());
   }
   
   // construct a product structure
