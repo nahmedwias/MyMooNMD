@@ -339,7 +339,7 @@ void TMatrix::transpose_multiply(const double * const x, double * const y, doubl
   }
 }
 
-TMatrix* TMatrix::multiply(const TMatrix &B, double a) const
+std::shared_ptr< TMatrix > TMatrix::multiply(const TMatrix& B) const
 {
   const int n_A_rows = this->GetN_Rows();   // = n_C_rows
   const int n_A_cols = this->GetN_Columns();
@@ -359,7 +359,7 @@ TMatrix* TMatrix::multiply(const TMatrix &B, double a) const
   std::shared_ptr<TStructure> struc_c = get_product_structure(this->GetStructure(), strucB);
   const int * c_rows = struc_c->GetRowPtr();
   const int * c_cols = struc_c->GetKCol();
-  TMatrix * c = new TMatrix(struc_c);
+  std::shared_ptr<TMatrix>c = std::make_shared<TMatrix>(struc_c);
   double * c_entries = c->GetEntries();
   
   // fill the entries
