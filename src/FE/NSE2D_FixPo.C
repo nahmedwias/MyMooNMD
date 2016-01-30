@@ -2210,7 +2210,7 @@ double ***LocMatrices, double **LocRhs)
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
-cout<<c0 <<"  " << c1 <<"  " << c2<< "  " << coeff[3] << endl;
+
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
