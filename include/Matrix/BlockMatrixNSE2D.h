@@ -98,6 +98,17 @@ class BlockMatrixNSE2D : public BlockFEMatrix
      */
     void addScaledActive(const BlockMatrixNSE2D& A, double factor = 1.0);
     
+    /** @brief multiply the blockmatrix matrix A(Mass_Darcy) with its transposed A^T from the right 
+     * and multiply with matrix B(Projection) in between.
+     * 
+     * This function will swap the corresponding blocks of this BlockMatrix results from 
+     * the matrix multiplication
+     *
+     * @param[in] A (Mass_Darcy) the matrix with its transposed A^T to be multiplied from the right
+     * @param[in] B (Projection) the matrix to be multiplied in between
+     */
+    void multiply(BlockMatrix &Mass_Darcy, BlockMatrix &Projection);
+    
     /** @brief return the velocity-velocity block
      * 
      * There are four A-blocks: A11 (i=0), A12 (i=1), A21 (i=2), A22 (i=3).
