@@ -162,8 +162,7 @@ void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
 {
   if(y.length() != this->n_total_rows())
   {
-    ErrThrow("cannot multiply with matrix, dimension mismatch ",y.length(), " ", 
-             this->n_total_rows());
+    ErrThrow("cannot multiply with matrix, dimension mismatch ",y.length(), " ", this->n_total_rows());
   }
   if(x.length() != this->n_total_cols())
   {
@@ -186,33 +185,6 @@ void BlockMatrix::apply_scaled_add(const BlockVector & x, BlockVector & y,
     }
     row_offset += this->block(i * n_cols)->GetN_Rows();
   }
-}
-
-/* ************************************************************************* */
-BlockMatrix* BlockMatrix::multiply(const BlockMatrix& B, double a) const
-{
-  unsigned int n_B_rows = B.n_rows();
-  
-  if(this->n_cols() != n_B_rows)
-  {
-    ErrThrow("Block matrix dimensions do not match: ", this->n_cols(), 
-             "  ", n_B_rows);
-  }
-  if(this->n_cols() != 1)
-  {
-    ErrThrow("BlockMatrix: is not implementd for more than one block");
-  }
-  unsigned int n_blocks = this->n_rows() * B.n_cols();
-  std::vector<std::shared_ptr<TMatrix>> blocks(n_blocks, nullptr);
-  for(unsigned int rows =0; rows< this->n_rows(); ++rows)
-  {
-    for(unsigned int cols=0; cols<B.n_cols(); ++cols)
-    {      
-      blocks[rows*B.n_cols()+cols]= std::shared_ptr<TMatrix>(
-            this->block(rows)->multiply(*B.block(cols), a));
-    }
-  }
-  return new BlockMatrix(this->n_rows(), B.n_cols(), blocks);
 }
 
 /* ************************************************************************* */
