@@ -167,6 +167,7 @@ class TBaseCell
     virtual int SetVertex(int Vert_i, TVertex *Vert) = 0;
     /**  @brief return the pointer to vertex with number i */
     virtual TVertex *GetVertex(int Vert_i) = 0;
+    virtual const TVertex *GetVertex(int Vert_i) const = 0;
 
     /**  @brief set the pointer to face J\_i to J */
     int SetJoint(int J_i, TJoint *J)
@@ -448,6 +449,8 @@ class TBaseCell
      { return NeibProcessesIds; } 
      
 #endif
+
+    virtual void check() const = 0;
 };
 
 #endif

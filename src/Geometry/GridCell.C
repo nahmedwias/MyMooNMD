@@ -52,6 +52,10 @@ TVertex *TGridCell::GetVertex(int Vert_i)
 {
   return Vertices[Vert_i];
 }
+const TVertex *TGridCell::GetVertex(int Vert_i) const
+{
+   return Vertices[Vert_i];
+}
 
 int TGridCell::GetN_Children()
 {
@@ -1177,3 +1181,35 @@ int TGridCell::GetN_BoundaryVertices()
    
   return bdry_vertices;    
 }
+
+void TGridCell::check() const
+{
+  // check if the joints know 'this' as neighbor
+  auto n_joints = this->GetN_Joints();
+  auto n_verts = this->GetN_Vertices();
+  std::stringstream out;
+  out << "cell " << this << "  number of joints " << n_joints << endl;
+  for(auto i = 0; i < n_verts; ++i)
+  {
+    const auto * vert = this->GetVertex(i);
+    Output::print(" vertex ", i, " adress ", (void*)vert, "  at ", vert);
+  }
+  
+  for(auto i = 0; i < n_joints; ++i)
+  {
+    const auto * joint = this->GetJoint(i);
+    out << " joint " << i << " address " << joint << " type "
+        << joint->GetType() << endl;
+    out << "    neighbors " << joint->GetNeighbour(0) << " and "
+        << joint->GetNeighbour(1) << endl;
+    if((joint->GetNeighbour(0) != this && joint->GetNeighbour(1) != this)
+       && (joint->GetType() == JointEqN 
+           || joint->GetType() == InnerInterfaceJoint) )
+    {
+      ErrThrow("One of the joints of this cell does not know the cell as a ",
+               "neighbor");
+    }
+  }
+  Output::print(out.str());
+}
+
