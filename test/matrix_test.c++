@@ -86,9 +86,9 @@ int main(int argc, char **argv)
   matC.PrintFull("matC", 4);
   matD.PrintFull("matD", 4);
   
-  TMatrix* matAC = matA.multiply(&matC);
-  TMatrix* matBA = matB.multiply(&matA);
-  TMatrix* matCB = matC.multiply(&matB);
+  TMatrix* matAC = matA.multiply(matC);
+  TMatrix* matBA = matB.multiply(matA);
+  TMatrix* matCB = matC.multiply(matB);
   
   matAC->PrintFull("matAC");
   matBA->PrintFull("matBA");

@@ -216,7 +216,9 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 #define FEM_FCT          50
 #define FEM_FCT_LIN      51
 #define FEM_TVD          52
-#define GENERAL_SOLD    200 
+#define GENERAL_SOLD    200
+
+#define RECONSTRUCTION  300 
  
 #define SD_POWER_H  1.0
 #define SD_FACTOR_H 1.0
