@@ -274,9 +274,8 @@ void CD3D::solve()
   { // Direct solver chosen.
 #ifdef _SEQ
     /// @todo consider storing an object of DirectSolver in this class
-    // use keyword class here, until all methods with the same name are removed
-    class DirectSolver direct_solver(syst.matrix_, 
-                                     DirectSolver::DirectSolverTypes::umfpack);
+    DirectSolver direct_solver(syst.matrix_, 
+                               DirectSolver::DirectSolverTypes::umfpack);
     direct_solver.solve(syst.rhs_, syst.solution_);
     return;
 #else

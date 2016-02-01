@@ -153,9 +153,8 @@ void CD2D::solve()
   if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
   {
     /// @todo consider storing an object of DirectSolver in this class
-    // use keyword class here, until all methods with the same name are removed
-    class DirectSolver direct_solver(s.matrix, 
-                                     DirectSolver::DirectSolverTypes::umfpack);
+    DirectSolver direct_solver(s.matrix, 
+                               DirectSolver::DirectSolverTypes::umfpack);
     direct_solver.solve(s.rhs, s.solution);
   }
   else
