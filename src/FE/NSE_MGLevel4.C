@@ -1250,11 +1250,11 @@ void TNSE_MGLevel4::SolveExactUMFPACK(double *u1, double *rhs1, int &umfpack_fla
 #ifdef __3D__
     if (umfpack_flag==-1)
     {
-	DirectSolver(A11, A12, A13, A21, A22, A23, A31, A32, A33,
+	DirectSolver_old(A11, A12, A13, A21, A22, A23, A31, A32, A33,
 		     B1T, B2T, B3T, B1, B2, B3, rhs1, u1, 4);
 	umfpack_flag = 0;
     }
-    DirectSolver(A11, A12, A13, A21, A22, A23, A31, A32, A33,
+    DirectSolver_old(A11, A12, A13, A21, A22, A23, A31, A32, A33,
 		 B1T, B2T, B3T, B1, B2, B3, rhs1, u1, umfpack_flag);
     umfpack_flag = 1;
 #endif
@@ -1263,12 +1263,13 @@ void TNSE_MGLevel4::SolveExactUMFPACK(double *u1, double *rhs1, int &umfpack_fla
     // free memory from previous time
     if (umfpack_flag==-1)
     {
-	DirectSolver(A11, A12, A21, A22, B1T, B2T, B1, B2, rhs1, u1, 4);
+	DirectSolver_old(A11, A12, A21, A22, B1T, B2T, B1, B2, rhs1, u1, 4);
 	umfpack_flag = 0;
     }
 	
     //OutPut("TNSE_MGLevel4::SolveExactUMFPACK: Are we here?" << endl);
-    DirectSolver(A11, A12, A21, A22, B1T, B2T, B1, B2, rhs1, u1, umfpack_flag);
+    DirectSolver_old(A11, A12, A21, A22, B1T, B2T, B1, B2, rhs1, u1, 
+                     umfpack_flag);
     umfpack_flag = 1;
 #endif
 }

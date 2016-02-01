@@ -90,7 +90,7 @@ int N_Unknowns, int ns_type
       {
         case 0:
         //  OutPut("DIRECT!");
-          DirectSolver(A, rhs, sol);
+          DirectSolver_old(A, rhs, sol);
           break;
       }
       //TDatabase::ParamDB->SOLVER_TYPE = 1;

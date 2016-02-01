@@ -235,7 +235,7 @@ void DirectSolver::fortranShift()
 }
 
 /** ************************************************************************ */
-void DirectSolver::solve(double* rhs, double* solution)
+void DirectSolver::solve(const double* rhs, double* solution)
 {
   Output::print<3>("solving using a direct solver");
   switch(type)
@@ -263,7 +263,7 @@ void DirectSolver::solve(double* rhs, double* solution)
 }
 
 /** ************************************************************************ */
-void DirectSolver::solve(BlockVector& rhs, BlockVector& solution)
+void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
   solve(rhs.get_entries(), solution.get_entries());
 }
@@ -271,7 +271,7 @@ void DirectSolver::solve(BlockVector& rhs, BlockVector& solution)
 /** ************************************************************************ */
 /// @note everything below this line is to be deleted
 
-void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
+void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
 {
   double t1, t2, t3, t4;
   int ret, i, j, k, l, begin, end;
@@ -330,11 +330,13 @@ void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol)
 // rb_flag = 1 ==> nur vorw./rueckw.
 // rb_flag = 2 ==> speicher wieder freigeben
 // rb_flag = 3 ==> allocieren, LU-Zerl, Freigabe
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-double *rhs, double *sol, int rb_flag)
+void DirectSolver_old(TSquareMatrix2D *sqmatrixA11,
+                      TSquareMatrix2D *sqmatrixA12,
+                      TSquareMatrix2D *sqmatrixA21,
+                      TSquareMatrix2D *sqmatrixA22,
+                      TMatrix2D *matrixB1T, TMatrix2D *matrixB2T,
+                      TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+                      double *rhs, double *sol, int rb_flag)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
@@ -567,9 +569,9 @@ double *rhs, double *sol, int rb_flag)
   */
 }
 
-void DirectSolver(TSquareMatrix2D *sqmatrixA,
-TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-double *rhs, double *sol, int rb_flag)
+void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
+                      TMatrix2D *matrixB2, double *rhs, double *sol,
+                      int rb_flag)
 {
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
@@ -819,15 +821,19 @@ double *rhs, double *sol, int rb_flag)
 // flag = 4 ==> free memory
 //
 //****************************************************************************/
-void DirectSolver(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sqmatrixA12,
-TSquareMatrix3D *sqmatrixA13,
-TSquareMatrix3D *sqmatrixA21, TSquareMatrix3D *sqmatrixA22,
-TSquareMatrix3D *sqmatrixA23,
-TSquareMatrix3D *sqmatrixA31, TSquareMatrix3D *sqmatrixA32,
-TSquareMatrix3D *sqmatrixA33,
-TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T,
-TMatrix3D *matrixB1,  TMatrix3D *matrixB2, TMatrix3D *matrixB3,
-double *rhs, double *sol, int flag)
+void DirectSolver_old(TSquareMatrix3D *sqmatrixA11,
+                      TSquareMatrix3D *sqmatrixA12,
+                      TSquareMatrix3D *sqmatrixA13,
+                      TSquareMatrix3D *sqmatrixA21,
+                      TSquareMatrix3D *sqmatrixA22,
+                      TSquareMatrix3D *sqmatrixA23,
+                      TSquareMatrix3D *sqmatrixA31,
+                      TSquareMatrix3D *sqmatrixA32,
+                      TSquareMatrix3D *sqmatrixA33,
+                      TMatrix3D *matrixB1T, TMatrix3D *matrixB2T,
+                      TMatrix3D *matrixB3T, TMatrix3D *matrixB1,
+                      TMatrix3D *matrixB2, TMatrix3D *matrixB3,
+                      double *rhs, double *sol, int flag)
 {
   Output::print<4>("umf3d");
   int *KColA, *RowPtrA;

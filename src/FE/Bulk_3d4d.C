@@ -2273,7 +2273,7 @@ void Bulk_BWE_FDM_Upwind_4D(TCollection *coll,
   {
     if ( N4 < SC_LDS )
     {
-      DirectSolver(mat, rhs, sol);
+      DirectSolver_old(mat, rhs, sol);
       OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
     }
     else
@@ -3797,7 +3797,7 @@ void Build_4D_FEM_FCT_Matrix_Q1(TCollection *coll,
   {
     if (Nodes<SC_LDS)
     {
-      //DirectSolver(matM, rhs, sol);
+      //DirectSolver_old(matM, rhs, sol);
       OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
       //SolveLU(Nodes, N_Entries, row_ptr, col_ptr, entries, rhs, sol);
       OutPut("done SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
