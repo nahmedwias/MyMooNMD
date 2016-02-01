@@ -142,9 +142,8 @@ void Darcy2D::solve()
   System_per_grid & s = this->systems.front();
   
   /// @todo consider storing an object of DirectSolver in this class
-  // use keyword class here, until all methods with the same name are removed
-  class DirectSolver direct_solver(s.matrix, 
-                                   DirectSolver::DirectSolverTypes::umfpack);
+  DirectSolver direct_solver(s.matrix, 
+                             DirectSolver::DirectSolverTypes::umfpack);
   direct_solver.solve(s.rhs, s.solution);
   
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
