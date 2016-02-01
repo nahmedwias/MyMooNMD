@@ -703,7 +703,7 @@ void Time_NSE2D::output(int m, int& image)
 
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double locerr[4];
+    double locerr[8];
     MultiIndex2D allderiv[3]= {D00, D10, D01};
     const TFESpace2D *v_sp = &this->get_velocity_space();
     const TFESpace2D *p_sp = &this->get_pressure_space();
@@ -742,7 +742,7 @@ void Time_NSE2D::output(int m, int& image)
    delete u1;
    delete u2;
   
-  if((m==0) || (TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  if((m==0) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
     if(TDatabase::ParamDB->WRITE_VTK)
     {
