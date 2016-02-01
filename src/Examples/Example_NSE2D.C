@@ -247,7 +247,7 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       
       /** boundary values */
       boundary_data.push_back( td_quad_pres::U1BoundValue );
-      boundary_data.push_back( quad_pres::U2BoundValue );
+      boundary_data.push_back( td_quad_pres::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
       
       /** coefficients */
