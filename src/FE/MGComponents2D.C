@@ -38,12 +38,10 @@ void SolveDiagonalVanka2D(double *a, double *b, int N_U, int N_P, int LDA)
 //    N_P       number of presure unknowns
 //    LDA       leading dimension of matrix a
 {
-  int i,j,k,l,m, row;
+  int i,j, row;
   int N_Eqn;
   double pp, dp, ffp, tmp;
   double Ai[MaxN_BaseFunctions2D];
-
-  int ii, jj;
 
   N_Eqn = 2*N_U+N_P;
   row = 2*N_U;
@@ -93,7 +91,7 @@ void L1Int(int N_Points, double *X, double *Y, double *AbsDetjk,
                 double **coeffs, double *Loc)
 {
   int i;
-  double *deriv, *exactval, w, t;
+  double *deriv, w, t;
 
   Loc[0] = 0.0;
   Loc[1] = 0.0;
@@ -134,11 +132,10 @@ void Prolongate(const TFESpace2D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double Val2[MaxN_BaseFunctions2D];
-  int *DOF, Index;
+  int Index;
   double *entry;
 
   // begin code
@@ -342,11 +339,10 @@ void Prolongate(const TFESpace2D *CoarseSpace, const TFESpace2D *FineSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double Val2[MaxN_BaseFunctions2D];
-  int *DOF, Index;
+  int Index;
   double *entry;
   int CoarseOffset, FineOffset, IFunct;
 
@@ -567,12 +563,10 @@ void DefectRestriction(const TFESpace2D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double Val2[MaxN_BaseFunctions2D];
   int *DOF, Index;
-  double *entry;
   
   // begin code
   CoarseColl = CoarseSpace->GetCollection();
@@ -795,12 +789,10 @@ void DefectRestriction(const TFESpace2D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double Val2[MaxN_BaseFunctions2D];
   int *DOF, Index;
-  double *entry;
   int FineOffset, CoarseOffset, IFunct;
 
   // begin code
@@ -1040,13 +1032,10 @@ void RestrictFunction(const TFESpace2D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double Val2[MaxN_BaseFunctions2D];
-  int *DOF, Index;
-  double *entry;
-
+  
   // begin code
   CoarseColl = CoarseSpace->GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
@@ -1265,12 +1254,9 @@ void RestrictFunction(const TFESpace2D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions2D];
   double *Val2;
-  int *DOF, Index;
-  double *entry;
   int FineOffset, CoarseOffset, Offset, IFunct;
 
   // begin code
@@ -1568,24 +1554,20 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
                        int velocity_space, int pressure_space)
 {
   double s;
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
-  int Used[N_FEs2D], *N_BaseFunct;
-  TFESpace2D *fespace;
+  int i,j,l, N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE2D *ele;
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
-  RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];
   double *ExactVal[MaxN_QuadPoints_2D];
   double *AuxArray[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, number;
+  int *DOF, number;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex;
@@ -1803,31 +1785,27 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
                       )
 {
   double s;
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
-  int Used[N_FEs2D], *N_BaseFunct;
-  TFESpace2D *fespace;
+  int i,j,l, N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE2D *ele;
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
-  RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];
   double *ExactVal[MaxN_QuadPoints_2D];
   double *AuxArray[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, number;
+  int *DOF;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex;
   double LocError[4];
   double hK;
   bool SecondDer[1];
-  double error0, error1, temp;
+  double error0, error1;
   double *interpol;
   TNodalFunctional2D *nf;
   double PointValues[MaxN_PointsForNodal2D];
@@ -1947,7 +1925,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2029,7 +2007,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2125,7 +2103,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2229,7 +2207,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2351,7 +2329,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2460,7 +2438,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2581,7 +2559,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2711,7 +2689,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -2853,7 +2831,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -3002,7 +2980,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -3332,8 +3310,8 @@ void MatVectCD_VMM(TSquareMatrix *A, TMatrix *B, TMatrix *C, TSquareMatrix *D,
                    double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
-  double s, t, value, value1, value2;
+  int i,j,k,index;
+  double s, value, value1;
   double *u1, *p;
   double *v1, *q;
   const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
@@ -3440,8 +3418,8 @@ void DefectCD_VMM(TSquareMatrix *A, TMatrix *B, TMatrix *C, TSquareMatrix *D,
                    double *x, double *y, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
-  double s, t, value, value1, value2;
+  int i,j,k,index;
+  double s, value, value1;
   double *u1, *p;
   double *v1, *q, *r1, *r2;
   const int *ARowPtr, *BRowPtr, *AKCol, *BKCol;
@@ -3553,7 +3531,7 @@ void MatVectCD_VMM_KL02(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
                         double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *p1, *p2;
   double *v1, *q1, *q2;
@@ -3676,7 +3654,7 @@ void DefectCD_VMM_KL02(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
                         double *x, double *y, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *p1, *p2;
   double *v1, *q1, *q2, *r1, *r2, *r3;
@@ -3803,7 +3781,7 @@ void CoupledMatVectLV96(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *y, double delta)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -3900,7 +3878,7 @@ void CoupledDefectLV96(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *b, double *r, double delta)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q, *help;

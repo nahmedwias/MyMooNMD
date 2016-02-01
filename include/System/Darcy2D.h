@@ -1,9 +1,14 @@
 /** ************************************************************************ 
 *
 * @class     Darcy2D
-* @brief     stores the information of a 2D Darcy system matrix 
-* @author    Ulrich Wilbrandt
-* @date      15.03.15
+* @brief     store everything needed to solve a Darcy problem in 2D
+*
+* Store matrix, right hand side, FE spaces, FE functions and the solution 
+* vector of a Darcy2 problem. This wraps up everything which is necessary to 
+* solve a Darcy problem in 2D.
+* 
+* @ruleof0
+* 
  ************************************************************************  */
 
 
@@ -27,6 +32,8 @@ class Darcy2D
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
      * describe one Darcy problem in 2D.
+     * 
+     * @ruleof0
      */
     struct System_per_grid
     {
@@ -50,6 +57,21 @@ class Darcy2D
       
       /** @brief constructor */
       System_per_grid(const Example_Darcy2D& example, TCollection& coll);
+      
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
     };
     
     /** @brief a complete system on each grid 
@@ -119,6 +141,18 @@ class Darcy2D
      */
     Darcy2D(const TDomain& domain, const Example_Darcy2D& ex, 
             int reference_id = -4711);
+    
+    //! Delete copy constructor.
+    Darcy2D(const Darcy2D&) = delete;
+
+    //! Delete move constructor.
+    Darcy2D(Darcy2D&&) = delete;
+
+    //! Delete copy assignment operator.
+    Darcy2D& operator=(const Darcy2D&) = delete;
+
+    //! Delete move assignment operator.
+    Darcy2D& operator=(Darcy2D&&) = delete;
     
     /** @brief standard destructor */
     ~Darcy2D();

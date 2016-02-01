@@ -119,7 +119,8 @@ class TVertex
 #endif
 
     /** write some information of the vertex in stream s */
-    friend std::ostream& operator << (std::ostream& s, TVertex *v);
+    friend std::ostream& operator << (std::ostream& s, const TVertex *v);
+    
 
     /** set value in ClipBoard */
     void SetClipBoard(int value)

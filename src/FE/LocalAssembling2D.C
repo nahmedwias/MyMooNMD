@@ -1799,8 +1799,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
     this->RhsSpace = {};
   }
   
-  this->Needs2ndDerivatives = new bool[1];
-  this->Needs2ndDerivatives[0] = false;   
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
   this->Manipulate = NULL;
   
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)

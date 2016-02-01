@@ -237,6 +237,50 @@ int main(int argc, char **argv)
     matCCT->PrintFull("CCT");
     delete matCCT;
   }
+  // ##########################################################################
+  // ##########################################################################    
+  {
+    //H =[1  0 0 0 ;
+    //    0  3 0 4 ;
+    //    0  0 0 6 ;
+    int RowH[4] = {0, 1, 3, 4};
+    int ColH[4] = {0, 1, 3, 3};
+    std::shared_ptr<TStructure> structureE(new TStructure(3, 4, 4, ColH, RowH));
+    TMatrix matH(structureE);
+    matH.GetEntries()[0] = 1;
+    matH.GetEntries()[1] = 3;
+    matH.GetEntries()[2] = 4;
+    matH.GetEntries()[3] = 6;
+    
+    matH.PrintFull("matH");
+    
+    // G =[    
+    //      1 7 0 0 0; 
+    //      0 2 0 0 0;
+    //      5 0 0 9 0;
+    //      0 0 0 0 4]
+    //      
+    
+    int RowI[5] = {0, 2, 3, 5, 6};
+    int ColI[6] = {0, 1, 1, 0, 3, 4} ;
+    std::shared_ptr<TStructure> structureI(new TStructure(4, 4, 6, ColI, RowI));
+    TMatrix matI(structureI);
+    matI.GetEntries()[0] = 1;
+    matI.GetEntries()[1] = 7;
+    matI.GetEntries()[2] = 2;
+    matI.GetEntries()[3] = 5;
+    matI.GetEntries()[4] = 9;
+    matI.GetEntries()[5] = 4;
+    matI.PrintFull("I");
+    std::shared_ptr<TMatrix> matHGHT(matH.multiply_with_transpose_from_right(matI));
+    matHGHT->PrintFull("matHGHT");
+    
+    if(!equal(matHGHT->get(0, 0), 1) || !equal(matHGHT->get(0, 1), 21)
+       || !equal(matHGHT->get(1, 1), 18))
+      ErrThrow("wrong results after multiplication with transpose from right, ",
+               "matrix H, and matrix I in between");
+  }
+  
   delete matCT;
   delete matAC;
   delete matBA;
