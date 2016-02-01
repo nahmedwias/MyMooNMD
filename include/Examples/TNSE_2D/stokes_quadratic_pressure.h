@@ -93,7 +93,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
   double v[4];
   ExactU1(x,y,v);
-  value = 2;//v[0];
+  value = v[0];
 }
 
 void U2BoundValue(int BdComp, double Param, double &value)
@@ -119,8 +119,8 @@ void U2BoundValue(int BdComp, double Param, double &value)
   }
   double v[4];
   ExactU2(x,y,v);
-  value = 300;//v[0];
-  std::cout<<"values: " << value<<std::endl;exit(0);
+  value = v[0];
+  
 }
 
 // ========================================================================
