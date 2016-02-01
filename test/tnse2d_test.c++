@@ -11,6 +11,7 @@
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+#include <FEFunction2D.h>
 #include <list>
 
 
@@ -24,9 +25,9 @@ void testBE()
 
 void testCN(Time_NSE2D &tnse, int m)
 {
-  cout<<"testCN: " << m<< "  " ;
-  double errors[6];
-  errors[0]=errors[1]=errors[2]=errors[3]=errors[4]=errors[5]=0.;  
+  // cout<<"testCN: " << m<< "  " ;
+  double errors[8];
+  errors[0]=errors[1]=errors[2]=errors[3]=errors[4]=errors[5]=0.;
   TAuxParam2D aux;
   MultiIndex2D NSAllDerivatives[3] = {D00, D10, D01};
   const TFESpace2D *velocity_space = &tnse.get_velocity_space();
@@ -42,9 +43,10 @@ void testCN(Time_NSE2D &tnse, int m)
   
   u2->GetErrors(tnse.get_example().get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors,nullptr,
                   &aux,1, &velocity_space,errors+2);
+  
   p.GetErrors(tnse.get_example().get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, nullptr, 
                &aux, 1, &pressure_space, errors+4);
-  
+ 
   double eps = 1E-6, err=0;
   if(m==1)
   {
@@ -54,11 +56,14 @@ void testCN(Time_NSE2D &tnse, int m)
                err);
     err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
     if( fabs(err -  0.014616) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct.");
-    if( fabs(errors[4] - 0.0198907) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.");
-    if( fabs(errors[5] - 0.0974169) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.");
+      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
+               err);
+    if( fabs(errors[4] - 0.0200957) > eps )
+      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
+               errors[4]);
+    if( fabs(errors[5] - 0.0972523) > eps )
+      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
+               errors[5]);
   }
   else if(m==2)
   {
@@ -68,12 +73,15 @@ void testCN(Time_NSE2D &tnse, int m)
                err);
     err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
     if( fabs(err - 0.0290912) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct.");
+      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
+               err);
     
-    if( fabs(errors[4] - 0.0208086) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.");
-    if( fabs(errors[5] - 0.153391) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.");
+    if( fabs(errors[4] - 0.0220985) > eps )
+      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
+               errors[4]);
+    if( fabs(errors[5] - 0.152764) > eps )
+      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
+               errors[5]);
   }
   else if(m==18)
   {
@@ -83,12 +91,15 @@ void testCN(Time_NSE2D &tnse, int m)
                err);
     err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
     if( fabs(err - 0.228106) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct.");
+      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
+               err);
     
-    if( fabs(errors[4] - 0.0446204) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.");
-    if( fabs(errors[5] - 1.109628) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.");
+    if( fabs(errors[4] - 0.0820547) > eps )
+      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
+               errors[4]);
+    if( fabs(errors[5] - 1.10258) > 10*eps )
+      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
+               errors[5]);
   }
   else if(m==19)
   {
@@ -98,12 +109,15 @@ void testCN(Time_NSE2D &tnse, int m)
                err);
     err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
     if( fabs(err - 2.368664e-01) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct.");
+      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
+               err);
 
-    if( fabs(errors[4] -   4.584916e-02) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.", errors[4]);
-    if( fabs(errors[5] - 1.152722e+00) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.");
+    if( fabs(errors[4] -   0.0850308) > eps )
+      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
+               errors[4]);
+    if( fabs(errors[5] - 1.14539) > 10*eps )
+      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
+               errors[5]);
   }
   else if(m==20)
   {
@@ -113,12 +127,15 @@ void testCN(Time_NSE2D &tnse, int m)
                err);
     err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
     if( fabs(err - 2.450352e-01) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct.");
+      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
+               err);
 
-    if( fabs(errors[4] - 4.699491e-02) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.", errors[4]);
-    if( fabs(errors[5] - 1.192964e+00) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.");
+    if( fabs(errors[4] - 0.0878139) > eps )
+      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
+               errors[4]);
+    if( fabs(errors[5] - 1.18537) > 10*eps )
+      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
+               errors[5]);
   }
 }
 
@@ -167,7 +184,7 @@ void time_integration(int td, Time_NSE2D& tnse)
     }
     // post processing: error computations
     // and solutions for visualization
-    // tnse.output(step,image);
+    tnse.output(step,image);
     testCN(tnse, step);
   }
   
