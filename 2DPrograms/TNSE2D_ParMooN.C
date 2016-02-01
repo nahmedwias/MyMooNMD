@@ -2,7 +2,6 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 
-#include <Time_CD2D.h>
 
 
 #include <sys/stat.h>
@@ -106,6 +105,8 @@ int main(int argc, char* argv[])
          if(tnse2d.stopIte(k))
            break;
          tnse2d.solve();
+         if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
+           break;
          // assemble the nonlinear matrices 
          tnse2d.assemble_nonlinear_term();
          // prepare the matrices for next nonlinear iteration

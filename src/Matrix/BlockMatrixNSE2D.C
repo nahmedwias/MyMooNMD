@@ -620,6 +620,35 @@ void BlockMatrixNSE2D::addScaledActive(const BlockMatrixNSE2D& A, double factor)
 }
 
 /** ************************************************************************ */
+void BlockMatrixNSE2D::multiply(BlockMatrix& Mass_Darcy, BlockMatrix& Projection)
+{
+  /* D=[
+   *     A1*B*A1T   A1*B*A2T; 
+   *     A2*B*A1T   A2*B*A2T]
+  */ 
+  // A1*B*A1T
+  std::shared_ptr<TMatrix>M00
+   (Projection.block(0)->multiply_with_transpose_from_right(*Mass_Darcy.block(0)));
+  this->blocks[0].swap(M00);
+  
+  // A1*B*A2T
+  std::shared_ptr<TMatrix> A2T(Projection.block(1)->GetTransposed());
+  std::shared_ptr<TMatrix> BA2T(Mass_Darcy.block(0)->multiply(*A2T));
+  std::shared_ptr<TMatrix> M01(Projection.block(0)->multiply(*BA2T));  
+  this->blocks[1].swap(M01);
+  
+  // A2*B*A1T
+  std::shared_ptr<TMatrix> A1T(Projection.block(0)->GetTransposed());
+  std::shared_ptr<TMatrix> BA1T(Mass_Darcy.block(0)->multiply(*A1T));
+  std::shared_ptr<TMatrix> M10(Projection.block(1)->multiply(*BA1T));
+  this->blocks[3].swap(M10);
+  
+  std::shared_ptr<TMatrix>M11
+   (Projection.block(1)->multiply_with_transpose_from_right(*Mass_Darcy.block(0)));
+  this->blocks[4].swap(M11);  
+}
+
+/** ************************************************************************ */
 TSquareMatrix2D * BlockMatrixNSE2D::get_A_block(unsigned int i)
 {
   if(i == 0)

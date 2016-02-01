@@ -26,7 +26,18 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
+namespace quad_pres
+{
+  #include "NSE_2D/quadratic_pressure.h"
+}
 
+//=========================================
+// tests for the pressure robust methods
+//=========================================
+namespace zerosolution
+{
+#include "NSE_2D/StokesZeroSol.h"
+}
 //=========================================
 // time dependent case 
 namespace bsp1
@@ -36,6 +47,10 @@ namespace bsp1
 namespace lin_space_time
 {
 #include "TNSE_2D/linear_space_time.h"
+}
+namespace td_quad_pres
+{
+#include "TNSE_2D/stokes_quadratic_pressure.h"
 }
 //=========================================
 
@@ -127,7 +142,50 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       
       flow_around_cylinder::ExampleFile();
       break;
-            
+      
+    case 40:
+      /** exact_solution */
+      exact_solution.push_back( zerosolution::ExactU1 );
+      exact_solution.push_back( zerosolution::ExactU2 );
+      exact_solution.push_back( zerosolution::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( zerosolution::BoundCondition );
+      boundary_conditions.push_back( zerosolution::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( zerosolution::U1BoundValue );
+      boundary_data.push_back( zerosolution::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = zerosolution::LinCoeffs;
+      
+      zerosolution::ExampleFile();
+      break;
+    case 41:
+      /** exact_solution */
+      exact_solution.push_back( quad_pres::ExactU1 );
+      exact_solution.push_back( quad_pres::ExactU2 );
+      exact_solution.push_back( quad_pres::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( quad_pres::BoundCondition );
+      boundary_conditions.push_back( quad_pres::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( quad_pres::U1BoundValue );
+      boundary_data.push_back( quad_pres::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = quad_pres::LinCoeffs;
+      
+      quad_pres::ExampleFile();
+      break;
+      
     case 101:
       /** exact_solution */
       exact_solution.push_back( bsp1::ExactU1 );
@@ -176,6 +234,30 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       
       lin_space_time::ExampleFile();
       break;
+    case 103:
+      /** exact_solution */
+      exact_solution.push_back( td_quad_pres::ExactU1 );
+      exact_solution.push_back( td_quad_pres::ExactU2 );
+      exact_solution.push_back( td_quad_pres::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( td_quad_pres::BoundCondition );
+      boundary_conditions.push_back( td_quad_pres::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( td_quad_pres::U1BoundValue );
+      boundary_data.push_back( td_quad_pres::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = td_quad_pres::LinCoeffs;
+      
+      initial_conditions.push_back(td_quad_pres::InitialU1);
+      initial_conditions.push_back(td_quad_pres::InitialU2);
+      
+      td_quad_pres::ExampleFile();
+      break;    
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }

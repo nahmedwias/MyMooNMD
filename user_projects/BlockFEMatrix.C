@@ -1,27 +1,16 @@
+/** ************************************************************************ 
+* @brief     source file for BlockMatrixNSE2D
+* @author    Sashikumaar Ganesan, 
+* @date      23.08.14
+* @History 
+* ************************************************************************  */
+
 #include <BlockFEMatrix.h>
 #include <FEDatabase2D.h>
-#include <BlockVector.h>
-#include <Database.h>
 #include <stdio.h>
 #include <string.h>
-#include <MooNMD_Io.h>
-#include <LinAlg.h>
-#include <limits>
 
-/** ************************************************************************* */
-BlockFEMatrix::BlockFEMatrix(const Problem_type type, unsigned int space_dimension,
-                bool mass_matrix)
-: BlockMatrix(type, space_dimension,  mass_matrix),
-  actives(block_pattern->n_blocks(), std::numeric_limits<unsigned int>::max())
-{
-  ;
-}
-
-
-/** ************************************************************************* */
-
-BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, 
-                             const TFESpace2D* ansatzSpace,
+BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace, const TFESpace2D* ansatzSpace,
                              const TFESpace2D *pressureSpace)
  : BlockMatrix(3,1), TestSpace(testSpace), AnsatzSpace(ansatzSpace), 
    PressureSpace(pressureSpace)
@@ -38,9 +27,8 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace,
   
   this->BlockMatrix::blocks[0].reset(new FEMatrix(testSpace, ansatzSpace));  
   this->BlockMatrix::blocks[1].reset(new FEMatrix(testSpace, ansatzSpace)); 
-  std::shared_ptr<TStructure> structure(new 
-                  TStructure(PressureSpace->GetN_DegreesOfFreedom(),
-                             AnsatzSpace->GetN_DegreesOfFreedom()));
+  std::shared_ptr<TStructure> structure(new TStructure(PressureSpace->GetN_DegreesOfFreedom(),
+                                                       AnsatzSpace->GetN_DegreesOfFreedom()));
   this->BlockMatrix::blocks[2].reset(new TMatrix(structure));
   
   TCollection *coll = testSpace->GetCollection();
@@ -57,12 +45,9 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace,
     TBaseCell *cell = coll->GetCell(c);
     
     TFE2D *elementAnsatz = TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(c,cell));
-    // basis funct obj
-    TBaseFunct2D *baseFunctAnsatz = elementAnsatz->GetBaseFunct2D(); 
-    // dimension of baseFunctAnsatz
-    int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
-    // no of basis function
-    int nDofAnsatz = baseFunctAnsatz->GetDimension(); 
+    TBaseFunct2D *baseFunctAnsatz = elementAnsatz->GetBaseFunct2D(); // basis funct obj
+    int baseVectDim = baseFunctAnsatz->GetBaseVectDim(); // dimension of baseFunctAnsatz
+    int nDofAnsatz = baseFunctAnsatz->GetDimension(); // no of basis function
     // compute the points on the reference element
     TNodalFunctional2D *nf = elementAnsatz->GetNodalFunctional2D();
     nf->GetPointsForAll(nPoints, xi, eta);
@@ -112,75 +97,25 @@ BlockFEMatrix::BlockFEMatrix(const TFESpace2D* testSpace,
       
       for(int k=0; k<nDofAnsatz; k++)
       {
+        int e = elementAnsatz->GetFEDesc2D()->GetJointOfThisDOF(k);
+        int n = 1; // normal orientation
+        if(e != -1)
+        {
+          // n = cell->GetNormalOrientation(e);
+        }
         // fill the correspoding blocks
         this->block(0)->set(testSpace->GetGlobalDOF(c)[j],
-               ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesx[k]);
+               ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesx[k]/**n*/);
         this->block(1)->set(testSpace->GetGlobalDOF(c)[j],
-                            ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesy[k]);
+                            ansatzSpace->GetGlobalDOF(c)[k], FunctionalValuesy[k]/**n*/);
       }
     }
     // this->block(0)->PrintFull();
   }
   // this->get_combined_matrix()->PrintFull();
 }
-/** ************************************************************************* */
-void BlockFEMatrix::add_scaled_active(const BlockMatrix& A, double factor)
-{
-  unsigned int n_blocks = A.n_blocks();
-  if(this->n_blocks() != n_blocks)
-  {
-    ErrThrow("BlockFEMatrix::add_scaled_active : the two BlockMatrix objects do ",
-             "not have the same number of blocks.");
-  }
 
-  for(unsigned int b = 0; b < n_blocks; b++)
-  {
-    if(this->actives[b] <= (unsigned int) this->blocks[b]->GetN_Entries())
-    {
-      // note: this could be a method of TMatrix as well, if TMatrix knew its
-      // actives
-      Daxpy(this->actives[b], factor, A.block(b)->GetEntries(),
-            this->blocks[b]->GetEntries());
-    }
-    else
-      ErrThrow("adding actives where the number of actives has not been set");
-  }
+double BlockFEMatrix::addScaleActive(const double* x, double* y, double factor)
+{  
 }
 
-/* ************************************************************************* */
-void BlockFEMatrix::scale_active(double factor)
-{
-  for(unsigned int b = 0; b < this->n_blocks(); ++b)
-  {
-    if(this->actives[b] <= (unsigned int) this->blocks[b]->GetN_Entries())
-    {
-      // note: this could be a method of TMatrix as well, if TMatrix knew its
-      // actives
-      Dscal(this->actives[b], factor, this->blocks[b]->GetEntries());
-    }
-    else
-      ErrThrow("scaling actives where the number of actives has not been set");
-  }
-}
-
-/* ************************************************************************* */
-size_t BlockFEMatrix::get_n_row_actives( size_t index ) const
-{
-  // check if there is as many block rows
-  if(index > block_pattern->n_rows())
-  {
-    ErrThrow("Index out of bounds.");
-  }
-  return ((FEMatrix&)block( index , 0)).GetTestSpace()->GetActiveBound();
-}
-
-/* ************************************************************************* */
-size_t BlockFEMatrix::get_n_column_actives( size_t index ) const
-{
-  // check if there is as many block rows
-  if(index > block_pattern->n_cols())
-  {
-    ErrThrow("Index out of bounds.");
-  }
-  return ((FEMatrix&)block( 0, index)).GetTestSpace()->GetActiveBound();
-}

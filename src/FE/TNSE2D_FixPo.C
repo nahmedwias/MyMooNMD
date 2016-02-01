@@ -7,6 +7,7 @@
 #include <Database.h>
 #include <Convolution.h>
 #include <MooNMD_Io.h>
+#include <Darcy2DMixed.h>
 
 #include <stdlib.h>
 
@@ -6201,4 +6202,47 @@ void TimeNSParams4(double *in, double *out)
   out[1] = in[3];                // u2old
   out[2] = in[4];                // u1, previous time
   out[3] = in[5];                // u2, previous time
+}
+
+
+void LocAssembleMass(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixM = LocMatrices[0];
+  double *Rhs = LocRhs[0];
+  double *Rhs1 = LocRhs[1];
+  
+  int N_U = N_BaseFuncts[0];
+
+  double *Orig0 = OrigValues[0]; // u
+
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+
+  int *sign = new int[N_U];
+  for(int i=0;i<N_U;i++)
+  {
+    // here check whether signs should be inverted
+    sign[i] = GetSignOfThisDOF(N_U,i); // in Darcy2DMixed.C
+  }
+  
+  for(int i=0;i<N_U;i++)
+  {
+    double testx00 = sign[i]*Orig0[i];
+    double testy00 = sign[i]*Orig0[N_U+i];
+    
+    Rhs[i] += Mult*( testx00*c1 + testy00*c2);
+    
+    for(int j=0;j<N_U;j++)
+    {
+      double ansatzx00 = sign[j]*Orig0[j];
+      double ansatzy00 = sign[j]*Orig0[N_U+j];
+   
+      double val  = (testx00*ansatzx00 + testy00*ansatzy00);
+      MatrixM[i][j] += Mult * val;
+    }
+  }  
+  delete [] sign;
 }
