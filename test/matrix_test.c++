@@ -280,6 +280,21 @@ int main(int argc, char **argv)
       ErrThrow("wrong results after multiplication with transpose from right, ",
                "matrix H, and matrix I in between");
   }
+  // ##########################################################################
+  // ##########################################################################    
+  {
+    // test copy/move ans such things
+    
+    // copy constructor
+    TMatrix copyA(matA);
+    // move constructor (extra parentheses to avoid warning from clang)
+    TMatrix moveA((TMatrix(structureA)));
+    
+    // copy assignment
+    TMatrix copyB = matB;
+    // move assignement
+    TMatrix moveB = TMatrix(structureB);
+  }
   
   delete matCT;
   delete matAC;
