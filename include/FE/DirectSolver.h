@@ -58,7 +58,7 @@ class DirectSolver
      * @param rhs the right-hand side of the problem Ax=b
      * @param solution vector to store the solution into
      */
-    void solve(BlockVector& rhs, BlockVector& solution);
+    void solve(const BlockVector& rhs, BlockVector& solution);
     
   private:
     /** @brief type of direct solver used */
@@ -72,6 +72,10 @@ class DirectSolver
     void* symbolic;
     void* numeric;
     //@}
+    
+    /** @brief true if indices start with 1 (Fortran style, for pardiso) */
+    bool isFortranShifted;
+    
     
     /**
      * @brief compute the factorization of a matrix, ready to call solve
@@ -92,12 +96,12 @@ class DirectSolver
      * @param rhs the right-hand side of the problem Ax=b
      * @param solution vector to store the solution into
      */
-    void solve(double* rhs, double* solution);
+    void solve(const double* rhs, double* solution);
     
-    /** @brief true if indices start with 1 (Fortran style, for pardiso) */
-    bool isFortranShifted;
-    
+    /** @brief compute symbolic factorization */
     void symetric_factorize();
+    /** @brief compute numeric factorization (requires symbolic factorization) 
+     */
     void numeric_factorize();
     
     /**
@@ -120,24 +124,34 @@ class DirectSolver
 
 /** solve equation system */
 
-void DirectSolver(TSquareMatrix *matrix, double *rhs, double *sol);
-void DirectSolver(TSquareMatrix2D *sqmatrixA11, TSquareMatrix2D *sqmatrixA12,
-                  TSquareMatrix2D *sqmatrixA21, TSquareMatrix2D *sqmatrixA22,
-                  TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-                  double *rhs, double *sol, int rb_flag);
-void DirectSolver(TSquareMatrix2D *sqmatrixA, 
-                  TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
-                  double *rhs, double *sol, int rb_flag);
+[[deprecated("use the class DirectSolver instead")]]
+void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol);
+[[deprecated("use the class DirectSolver instead")]]
+void DirectSolver_old(TSquareMatrix2D *sqmatrixA11,
+                      TSquareMatrix2D *sqmatrixA12,
+                      TSquareMatrix2D *sqmatrixA21,
+                      TSquareMatrix2D *sqmatrixA22,
+                      TMatrix2D *matrixB1T, TMatrix2D *matrixB2T, 
+                      TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+                      double *rhs, double *sol, int rb_flag);
+[[deprecated("use the class DirectSolver instead")]]
+void DirectSolver_old (TSquareMatrix2D *sqmatrixA, 
+                       TMatrix2D *matrixB1,  TMatrix2D *matrixB2,
+                       double *rhs, double *sol, int rb_flag);
 #ifdef __3D__
-void DirectSolver(TSquareMatrix3D *sqmatrixA11, TSquareMatrix3D *sqmatrixA12,
-		  TSquareMatrix3D *sqmatrixA13,
-                  TSquareMatrix3D *sqmatrixA21, TSquareMatrix3D *sqmatrixA22,
-		  TSquareMatrix3D *sqmatrixA23,
-                  TSquareMatrix3D *sqmatrixA31, TSquareMatrix3D *sqmatrixA32,
-		  TSquareMatrix3D *sqmatrixA33,
-                  TMatrix3D *matrixB1T, TMatrix3D *matrixB2T, TMatrix3D *matrixB3T, 
-                  TMatrix3D *matrixB1,  TMatrix3D *matrixB2, TMatrix3D *matrixB3,
-                  double *rhs, double *sol, int flag);
+[[deprecated("use the class DirectSolver instead")]]
+void DirectSolver_old(TSquareMatrix3D *sqmatrixA11,
+                      TSquareMatrix3D *sqmatrixA12,
+                      TSquareMatrix3D *sqmatrixA13,
+                      TSquareMatrix3D *sqmatrixA21,
+                      TSquareMatrix3D *sqmatrixA22,
+                      TSquareMatrix3D *sqmatrixA23,
+                      TSquareMatrix3D *sqmatrixA31,
+                      TSquareMatrix3D *sqmatrixA32,
+                      TSquareMatrix3D *sqmatrixA33,
+                      TMatrix3D *matrixB1T, TMatrix3D *matrixB2T,
+                      TMatrix3D *matrixB3T, TMatrix3D *matrixB1,
+                      TMatrix3D *matrixB2, TMatrix3D *matrixB3,
+                      double *rhs, double *sol, int flag);
 #endif // __3D__
 #endif // __DIRECTSOLVER__

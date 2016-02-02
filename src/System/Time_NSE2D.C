@@ -426,9 +426,8 @@ void Time_NSE2D::solve()
       ErrThrow("only the direct solver is supported currently");
     
     /// @todo consider storing an object of DirectSolver in this class
-    // use keyword class here, until all methods with the same name are removed
-    class DirectSolver direct_solver(s.matrix, 
-                                     DirectSolver::DirectSolverTypes::umfpack);
+    DirectSolver direct_solver(s.matrix, 
+                               DirectSolver::DirectSolverTypes::umfpack);
     direct_solver.solve(s.rhs, s.solution);
   }
   else

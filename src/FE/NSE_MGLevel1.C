@@ -1022,12 +1022,12 @@ void TNSE_MGLevel1::SolveExactUMFPACK(double *u1, double *rhs1, int &umfpack_fla
     // free memory from previous time
     if (umfpack_flag==-1)
     {
-	DirectSolver(A, B1, B2, rhs1, u1, 4);
+	DirectSolver_old(A, B1, B2, rhs1, u1, 4);
 	umfpack_flag = 0;
     }
 	
     //OutPut("TNSE_MGLevel4::SolveExactUMFPACK: Are we here?" << endl);
-    DirectSolver(A, B1, B2, rhs1, u1, umfpack_flag);
+    DirectSolver_old(A, B1, B2, rhs1, u1, umfpack_flag);
     umfpack_flag = 1;
 #endif  
 }

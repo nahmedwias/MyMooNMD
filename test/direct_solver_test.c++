@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   //rhs.info();
   
   // fill exact solution with some nonzero numbers
-  for(auto i = 0; i < sol.length(); ++i)
+  for(size_t i = 0; i < sol.length(); ++i)
     exact_sol.at(i) = double(i);
   // compute correct rhs = mat*exact_sol
   mat.apply(exact_sol, rhs);
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   // move constructor
   class DirectSolver ds2(std::move(ds));
   // move assignment
-  ds2 = DirectSolver::DirectSolver(mat, type);
+  ds2 = DirectSolver(mat, type);
   } // end local scope
   
   Output::print("test successful");
