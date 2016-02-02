@@ -27,6 +27,7 @@
    - \ref page_rules to stick to when coding in ParMooN
    - \ref page_unit_testing, a guide on unit testing in ParMooN 
    - \ref page_version_control , some information on hg mercurial, the used version control system
+   - \ref page_rule_of_five , some notes on the assertion of the Rule Of Five in ParMooN
 
   
   \subsection forum The ParMooN Q & A Forum
