@@ -78,11 +78,12 @@ class TMatrix
     /// @brief Default move constructor.
     TMatrix(TMatrix&&) = default;
 
-    /// @brief no copy assignment operator to avoid accidental copies
-    TMatrix & operator=(const TMatrix& A) = delete;
+    /// @brief copy assignment, deep copy of the entries, shallow copy of the
+    /// structure
+    TMatrix & operator=(const TMatrix& A) = default;
     
-    /// @brief no move assignment operator to avoid accidental moves
-    TMatrix& operator=(TMatrix&&) = delete;
+    /// @brief Default move assignment
+    TMatrix& operator=(TMatrix&&) = default;
 
     /// @brief Default destructor.
     virtual ~TMatrix() = default;
