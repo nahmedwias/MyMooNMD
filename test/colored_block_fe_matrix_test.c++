@@ -244,7 +244,8 @@ int main(int argc, char* argv[])
 
 
     //check copying
-
+    Output::setVerbosity(5);
+    Output::print("Check copying.");
     //copy construction
     ColoredBlockFEMatrix hisMatrix(blockmat);
     //hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
@@ -260,7 +261,7 @@ int main(int argc, char* argv[])
 
     //check moving
 
-    Output::setVerbosity(5);
+
     Output::print("Test moving.");
 
     //move constructor
@@ -268,6 +269,8 @@ int main(int argc, char* argv[])
     ColoredBlockFEMatrix moveConstructedMatrix(std::move(ColoredBlockFEMatrix({&first_fe_space, &second_fe_space})));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
+
+    Output::print("Test move assigning.");
 
     ColoredBlockFEMatrix moveAssignedMatrix({&first_fe_space});
     moveAssignedMatrix = ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);

@@ -27,6 +27,8 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
      solution.length(2))
 {
   // Mass Matrix
+  Output::increaseVerbosity(5);
+
   Mass_Matrix = ColoredBlockFEMatrix::Mass_NSE2D(velocity_space);
       
   switch(type)
@@ -260,9 +262,9 @@ void Time_NSE2D::assemble_initial_time()
     size_t n_rect_matrices = 4;
     TMatrix2D *rectMatrices[4]{nullptr};
     
-    size_t nRhs = 3;
-    double *RHSs[3] ={s.rhs.block(0), s.rhs.block(1), nullptr};
-    const TFESpace2D *fe_rhs[3] = {velo_space, velo_space, nullptr};
+    size_t nRhs = 2; //is 3 if NSE type is 4 or 14
+    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
+    const TFESpace2D *fe_rhs[3] = {velo_space, velo_space, nullptr};  // if NSE type is 4 or 14
     
     BoundCondFunct2D * boundary_conditions[3] = {
       velo_space->GetBoundCondition(), velo_space->GetBoundCondition(),
@@ -277,13 +279,10 @@ void Time_NSE2D::assemble_initial_time()
     
     LocalAssembling2D la(TNSE2D, fe_functions, 
                          this->example.get_coeffs());
-    cout<<"test1 : " << endl;
     std::vector<std::shared_ptr<FEMatrix>> blocks 
          = s.matrix.get_blocks_uniquely();
-         cout<<"test in between : " << endl;exit(0);
     std::vector<std::shared_ptr<FEMatrix>> mass_blocks
          = s.Mass_Matrix.get_blocks_uniquely();
-cout<<"test after : " << endl;         
     
     switch(TDatabase::ParamDB->NSTYPE)
     {
@@ -378,6 +377,11 @@ cout<<"test after : " << endl;
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+
+        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
+        fe_rhs[2]  = pres_space;
+        nRhs = 3;
+
         break;
       case 14:
         if(blocks.size() != 9)
@@ -411,6 +415,11 @@ cout<<"test after : " << endl;
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
         rectMatrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
         rectMatrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+
+        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
+        fe_rhs[2]  = pres_space;
+        nRhs = 3;
+
         break;
       default:
         ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
