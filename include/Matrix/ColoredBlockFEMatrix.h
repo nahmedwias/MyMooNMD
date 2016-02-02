@@ -235,6 +235,14 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
      */
     static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    
+    /**
+     * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
+     * 
+     * @param velocity The velocity finite element space
+     * @return A newly constructed BlockFEMatrix for 2D NSE problems
+     */
+    static ColoredBlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
 
 #elif __3D__
     /**

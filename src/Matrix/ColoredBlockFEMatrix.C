@@ -281,6 +281,13 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, 
 
   return my_matrix;
 }
+ColoredBlockFEMatrix ColoredBlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
+{
+  ColoredBlockFEMatrix my_matrix({&velocity, &velocity});
+  
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}}, 
+                           {false, false});
+}
 #elif __3D__
 //3D named constructors
 ColoredBlockFEMatrix ColoredBlockFEMatrix::CD3D( const TFESpace3D& space )
