@@ -20,12 +20,453 @@
 #include <string.h>
 #include <MooNMD_Io.h>
 
+//! Anonymous namespace for helper methods which do not have to be assessed
+//! from the outside.
+namespace {
+
+/** Check whether the setup fulfils the cfl-like condition needed in a partly
+ * explicit afc scheme (Kuzmin 2009, eq (11) ).
+ * Print a warning if not so.
+ * @param tau Current timestep length.
+ * @param theta2 Is expliciteness parameter.
+ */
+void check_cfl_condition(double mass_diag_entry,
+  double system_diag_entry, double tau, double theta2)
+{
+  //check CFL
+  double cfl = mass_diag_entry/system_diag_entry;
+  if (theta2 >0)
+  {
+    cfl /= theta2;
+    if (tau > cfl)
+    {
+      Output::print("WARNING in FEM-FCT system matrix: ",
+                    mass_diag_entry, " cfl violated: cfl ",
+                    cfl, " delta t: ", tau);
+    }
+  }
+}
+
+/**
+ * Compute the entire system matrix of a FEM-FCT corrected system, after
+ * its mass matrix got lumped and its stiffness matrix flux corrected.
+ *
+ * Also performs checking of the cfl condition in case an explicit
+ * method has been used as predictor ("intermediate solution").
+ *
+ * @note Makes sense only for (at least partly) implicit schemes.
+ * @param[in, out] system_matrix The systems stiffness matrix A, with additional
+ * diffusion already added to it. Must be square. Will be turned to
+ * S = M_(\text{lumped}) + \Delta_t * \theta_1 * S.
+ * @param[in] lumped_mass_matrix The row wise lumped mass matrix of the system,
+ * as a vector of its diagonal entries. Must have length equal to the stiffness
+ * matrix' dimension.
+ * @param[in] tau The current time step length.
+ * @param theta1 The impliciteness parameter. Must be 0.5 so far
+ * (and defaults to that value).
+ *  * @param theta2 The expliciteness parameter. Must be 0.5 so far
+ * (and defaults to that value).
+ */
+void fem_fct_compute_system_matrix(
+    TMatrix& system_matrix,
+    const std::vector<double>& lumped_mass_matrix,
+    double tau, double theta1 = 0.5, double theta2 = 0.5)
+{
+  if (theta1 != 0.5 || theta2 != 0.5  )
+  {
+    ErrThrow("fem_fct_compute_system_matrix for Crank Nicolson only."
+        "TODO Implement other schemes!");
+  }
+  // check if stiffness matrix is square
+  if(!system_matrix.is_square())
+  {
+    ErrThrow("system_matrix must be square for FEM-FCT!");
+  }
+
+  int nDof = system_matrix.GetN_Rows();
+
+  if(!(int) lumped_mass_matrix.size() == nDof)
+  {
+    ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
+  }
+
+  // get pointers to columns, rows and entries of system_matrix
+  const int* ColInd = system_matrix.GetKCol();
+  const int* RowPtr = system_matrix.GetRowPtr();
+  double*  Entries = system_matrix.GetEntries();
+
+  for(int i=0;i<nDof;i++)
+  {
+    // i-th row of sqmatrix
+    int j0 = RowPtr[i];
+    int j1 = RowPtr[i+1];
+
+    for( int j = j0 ; j < j1 ; j++ )
+    {
+      int index = ColInd[j];
+      if( i == index )
+      {//diagonal entry
+
+        check_cfl_condition(lumped_mass_matrix[i], Entries[j], tau, theta2);
+
+        // calculate the new system matrix entry
+        Entries[j] = lumped_mass_matrix[i] + tau * theta1 * Entries[j];
+
+      }
+      else
+      {//non-diagonal entry
+        // calculate the system matrix entry
+        Entries[j]= tau * theta1 * Entries[j];
+
+        //print warning if S violates M-matrix necessary condition (a lot!)
+        if ( Entries[j]>1e-10)
+        {
+          Output::print("WARNING in FEM-FCT system matrix:  ",
+                        Entries[j], " is a positive off-diagonal entry!");
+        }
+      }
+    }
+  }
+}
+
+
+/*!
+ * Compute the artificial diffusion matrix to a given stiffness matrix.
+ *
+ * @param[in,out] A The stiffness matrix which needs additional
+ * diffusion. Must be square.
+ * @param[out] matrix_D A vector to write the entries
+ * of D, the artificial diffusion matrix to. (Consider TMatrix
+ * with same TStructure as A!)
+ */
+void compute_artificial_diffusion_matrix(
+        const TMatrix& A, std::vector<double>& matrix_D)
+    {
+        // catch non-square matrix
+        if (!A.is_square() )
+        {
+          ErrThrow("Matrix must be square!");
+        }
+        // store number of dofs
+        int nDof = A.GetN_Rows();
+
+        // get pointers to columns, rows and entries of matrix A
+        const int* ColInd = A.GetKCol();
+        const int* RowPtr = A.GetRowPtr();
+        const double* Entries = A.GetEntries();
+
+        //reset matrix_D to 0
+        std::fill(matrix_D.begin(), matrix_D.end(), 0);
+
+        // loop over all rows
+        for(int i=0;i<nDof;i++)
+        {
+          // i-th row of sqmatrix
+          int j0 = RowPtr[i];
+          int j1 = RowPtr[i+1];
+          // compute first the matrix D
+          for(int j=j0;j<j1;j++)
+          {
+            // column
+            int index = ColInd[j];
+            // only the active part of the matrix
+            //if (index>=N_U)
+            //    continue;
+            // only off-diagonals
+            if (index!=i)
+            {
+              if (Entries[j] > 0)
+                matrix_D[j] = -Entries[j];
+              // now check the transposed entry
+              int j2 = RowPtr[index];
+              int j3 = RowPtr[index+1];
+              for (int jj=j2;jj<j3;jj++)
+              {
+                if (ColInd[jj]==i)
+                {
+                  if (-Entries[jj]<matrix_D[j])
+                    matrix_D[j] = -Entries[jj];
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // compute diagonal entry of D
+        // loop over all rows
+        for(int i=0;i<nDof;i++)
+        {
+          // i-th row of sqmatrix
+          int j0 = RowPtr[i];
+          int j1 = RowPtr[i+1];
+          double val = 0.0;
+          // add all entries of i-th row
+          int jj = -1;
+          for(int j=j0;j<j1;j++)
+          {
+            val +=  matrix_D[j];
+            int index = ColInd[j];
+            if (index==i)
+              jj = j; //Hold the place of the diagonal entry in the entries array.
+          }
+          matrix_D[jj] = -val;
+        }
+    }
+/**
+ * @brief Lump a mass matrix row wise.
+ *
+ * @param[in] M The mass matrix to be lumped. Must be square.
+ *
+ * @param[out] lump_mass A vector containing the diagonal entries
+ *  of the lumped mass matrix. Must be of according length.
+ */
+void lump_mass_matrix_to_vector(
+    const TMatrix& M, std::vector<double>& lump_mass)
+{
+  // catch non-square matrix
+  if (!M.is_square() )
+  {
+    ErrThrow("Mass matrix must be square!");
+  }
+  // catch not fitting vector size
+  if ( (int) lump_mass.size() != M.GetN_Columns())
+  {
+    ErrThrow("Vector to write lumped mass matrix to has incorrect size! ",
+             lump_mass.size(), " != ", M.GetN_Columns());
+  }
+
+  const int * RowPtr = M.GetRowPtr();
+  const double * Entries = M.GetEntries();
+  int rows = M.GetN_Rows();
+
+  for (int i=0; i<rows; i++)
+  {
+    lump_mass[i]=0.0;
+    int j0 = RowPtr[i];
+    int j1 = RowPtr[i+1];
+
+    for (int j=j0;j<j1;j++)
+    {
+      lump_mass[i] += Entries[j];
+    }
+    if(lump_mass[i]==0)
+    {
+      ErrThrow("zero entry in lumped matrix ", i, " ", lump_mass[i]);
+    }
+  }
+}
+
+/**
+ * @brief The MinMod Flux Prelimiter.
+ * @param a first value
+ * @param b second value
+ * @return The result of the MinMod Prelimiter.
+ */
+double MinMod(double a, double b)
+{
+  if (a*b < 0)
+  {
+    return 0.0;
+  }
+  //CB 2015/07/27 should not this return a negative value, when a<0 and b<0?
+  // int sign = a < 0 ? -1 : 1;
+
+  if (fabs(a) <  fabs(b))
+  {
+    return a; //return sign * a;
+  }
+  else
+  {
+    return b; //return sign * b;
+  }
+}
+
+/**
+ * Apply Zalesaks flux limiter as described in Kuzmin 2009 pp.6-7
+ * to compute flux correction factors. Used with FEM-FCT for time-
+ * dependent CDR problems.
+ *
+ * @param[out] alphas The flux correction factors, row by row (sorted like
+ * the entries array of the mass_matrix!).
+ * @param[in] mass_matrix The complete mass matrix.
+ * @param[in] lumped_mass The row-wise lumped mass matrix as vector
+ * of its diagonal values.
+ * @param[in] raw_fluxes The raw fluxes, sorted like alphas. Must have been
+ * multiplied with current timesteplength!
+ * @param[in] sol_approx The approximate solution used to calculate
+ * the flux correction.
+ * @param[in] neum_to_diri See FEM-FCT, same story.
+ * @note I'm pretty sure we can get rid of the whole "neum_to_diri"
+ * thing when passing an FEMatrix here which got assembled with Neumann
+ * treatment of dirichlet rows.
+ */
+void ZalesaksFluxLimiter(
+    std::vector<double>& alphas,
+    const TMatrix& mass_matrix,
+    const std::vector<double>& lumped_mass,
+    const std::vector<double>& raw_fluxes,
+    const std::vector<double>& sol_approx,
+    const std::vector<int>& neum_to_diri
+)
+{
+  //check if all dimensions fit
+  if (!mass_matrix.is_square() )
+  {
+    ErrThrow("Matrix must be square!");
+  }
+
+  int nDofs = mass_matrix.GetN_Rows();
+  int nEntries = mass_matrix.GetN_Entries();
+
+  if(! (int) lumped_mass.size() == nDofs)
+  {
+    ErrThrow("lumped_mass has incorrect size ", lumped_mass.size(),
+             " != ", nDofs);
+  }
+
+
+  if(! (int) sol_approx.size() == nDofs)
+  {
+    ErrThrow("sol_approx has incorrect size ", sol_approx.size(),
+             " != ", nDofs);
+  }
+
+  if(! (int) alphas.size() == nEntries)
+  {
+    ErrThrow("alphas has incorrect size ", alphas.size(), " != ", nEntries);
+  }
+
+  if(! (int) raw_fluxes.size() == nEntries)
+  {
+    ErrThrow("raw_fluxes has incorrect size ", raw_fluxes.size(),
+             " != ", nEntries);
+  }
+  //end checking input
+
+  // get pointers to columns, rows and entries of mass_matrix
+  const int* ColInd_M = mass_matrix.GetKCol();
+  const int* RowPtr_M = mass_matrix.GetRowPtr();
+
+  // auxiliary space
+  std::vector<double> P_plus (nDofs, 0.0);
+  std::vector<double> P_minus (nDofs, 0.0);
+  std::vector<double> Q_plus (nDofs, 0.0);
+  std::vector<double> Q_minus (nDofs, 0.0);
+  std::vector<double> R_plus (nDofs, 0.0);
+  std::vector<double> R_minus (nDofs, 0.0);
+
+  // 3.1  Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
+  //    where the Qs are "distances to local extrema of the auxiliary solution"
+  for(int i=0;i<nDofs;i++)
+  {
+    // i-th row of mass matrix
+    int j0 = RowPtr_M[i];
+    int j1 = RowPtr_M[i+1];
+    for(int j=j0;j<j1;j++)
+    {
+      int index = ColInd_M[j];
+
+      if(i != index) //diagonal entries are skipped
+      {
+        if (raw_fluxes[j] > 0.0)
+          P_plus[i] += raw_fluxes[j]; //P_plus was initialized with 0
+        if (raw_fluxes[j] <= 0.0)
+          P_minus[i] += raw_fluxes[j]; //P_minus was initialized with 0
+
+        double help = sol_approx[index]-sol_approx[i];
+
+        if (help > Q_plus[i]) //Q_plus was initialized with 0
+          Q_plus[i]= help;
+
+        if (help < Q_minus[i]) //Q_minus was initialized with 0
+          Q_minus[i]= help;
+      }
+    } // end loop j
+  }
+
+  // 3.2  Compute Rs (nodal correction factors)
+  for(int i=0;i<nDofs;i++)
+  {
+    if(fabs(P_plus[i]) == 0.0)
+      R_plus[i] = 1.0;
+    else
+    {
+      //OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
+      double help = (lumped_mass[i] * Q_plus[i])/P_plus[i];
+      if(help < 1.0)
+        R_plus[i] = help;
+      else
+        R_plus[i] = 1.0;
+    }
+    if(fabs(P_minus[i]) == 0.0)
+      R_minus[i] = 1.0;
+    else
+    {
+      //OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
+      double help = (lumped_mass[i] * Q_minus[i])/P_minus[i];
+      if(help < 1.0)
+        R_minus[i] = help;
+      else
+        R_minus[i] = 1.0;
+    }
+  }
+
+  // treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27)
+  // TODO actually there it is about inlet and outlet!
+  for (int j=0;j< (int) neum_to_diri.size();j++)
+  {
+    int i = neum_to_diri[j];
+    R_plus[i] = 1;
+    R_minus[i] = 1;
+  }
+
+  // 3.3 Compute alphas (final correction factors)
+  for(int i=0;i<nDofs;i++)
+  {
+    // i-th row of sqmatrix
+    int j0 = RowPtr_M[i];
+    int j1 = RowPtr_M[i+1];
+
+    for(int j=j0;j<j1;j++)
+    {
+      int index = ColInd_M[j];
+      if(raw_fluxes[j] > 0.0)
+      {
+        //Initialisation
+        alphas[j] = R_plus[i];
+        if(alphas[j] > R_minus[index])
+          alphas[j] = R_minus[index];
+      }
+      if(raw_fluxes[j]<=0.0)
+      {
+        //initialisation
+        alphas[j] = R_minus[i];
+        if(alphas[j] > R_plus[index])
+          alphas[j] = R_plus[index];
+      }
+      // clipping, see Kuzmin (2009), end of Section 5
+      //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
+      //  alpha[j] = 0;
+    }                                             //end loop j
+  }
+
+  //end Zalesak!
+}
+
+}
+
+// ////////////////////////////////////////////////////////////////////////////
+// Implementation of the methods in the namespace AlgebraicFluxCorrection    //
+// ////////////////////////////////////////////////////////////////////////////
+
 
 void AlgebraicFluxCorrection::fem_tvd_algorithm(
     TMatrix& system_matrix,
     const std::vector<double>& sol,
     std::vector<double>& rhs,
-    const std::vector<int>& neum_to_diri, //remark: this argument is unused at the moment
+    //this argument is used in outcommented code block only
+    const std::vector<int>& neum_to_diri,
     bool continuous_proposal,
     bool nonsymmetric_application)
 {
@@ -204,7 +645,8 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
        // this should not happen
       if (Entries[j] > 0)
       {
-        ErrThrow("positive non-diagonal entry in FEM-TVD ", i, " ", j, " ", Entries[j]);
+        ErrThrow("positive non-diagonal entry in FEM-TVD ", i, " ", j, " ",
+                 Entries[j]);
       }
 
       // check transposed entry
@@ -235,7 +677,7 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
         // update rhs of current row
         rhs[i] += F[j];
         // update rhs wrt to current column
-        // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry of alpha matrix)
+        // note that F[j] = -F[jj] and alpha_j = alpha_jj (symmetry)
         if (index<nDofs)
           rhs[index] -= F[j];
       }
@@ -289,13 +731,14 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   const int* RowPtr_M = M_C.GetRowPtr();
   const double* Entries_M = M_C.GetEntries();
 
-  // get pointers to columns, rows and entries of matrix K; plus number of entries.
+  // get pointers to columns, rows and entries of matrix K; plus number of
+  // entries.
   const int* ColInd = K.GetKCol();
   const int* RowPtr = K.GetRowPtr();
   double* Entries = K.GetEntries();
   int N_Entries = K.GetN_Entries();
 
-  //STEP 0.1: Compute artificial diffusion matrix D and add to K, giving K := K + D=L.
+  //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D=L.
   std::vector<double> matrix_D_Entries(N_Entries, 0.0);
   compute_artificial_diffusion_matrix(K, matrix_D_Entries);
 
@@ -312,8 +755,10 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   double theta = 0.5; //hard-coded implicitness. 1/2 for Crank-Nicolson
   double one_minus_theta = 0.5; //hard-coded expliciteness
 
-  std::vector<double> u_interm(nDofs,0.0); //approximation to u(t + /frac{1}{2} /delta t)
-  std::vector<double> u_dot_interm(nDofs,0.0); //approximation to u'(t + /frac{1}{2} /delta t)
+  //approximation to u(t + /frac{1}{2} /delta t)
+  std::vector<double> u_interm(nDofs,0.0);
+  //approximation to u'(t + /frac{1}{2} /delta t)
+  std::vector<double> u_dot_interm(nDofs,0.0);
 
   // step-by-step build up u_interm...
   // ...now L u_{k-1}
@@ -332,23 +777,13 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
     u_interm[i] = oldsol[i] + halftimestep * u_interm[i];
   }
 
-  // set non-actives for intermediate solution (to those of intermediate solution)
+  // set non-actives for intermediate solution (to those of interm. solution)
   for ( int j=0 ; j < (int) neum_to_diri.size() ; j++)
   {
     int i=neum_to_diri[j];
     // just copy the values from old solution - this should
     // have the non-actives set correctly!
     u_interm[i] = oldsol[i];
-    //CB DEBUG
-//    if(oldsol[i] != 0)
-//    {
-//      Output::print(i, " : Why u not zero???");
-//    }
-//    else
-//    {
-//      Output::print(i, " : 0, good");
-//    }
-    //END DEBUG
   }
 
   // compute u_dot_interm (Kuzmin 2009 S.9 (37))
@@ -358,8 +793,8 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
   }
   //intermediate solution is complete
 
-  //STEP 2: compute raw antidiffusive fluxes * delta_t, and apply pre-limiting, if required
-  //(Kuzmin 2009 S.9 (36) )
+  //STEP 2: compute raw antidiffusive fluxes * delta_t, and apply pre-limiting,
+  // if required to do so (Kuzmin 2009 S.9 (36) )
   std::vector<double> raw_fluxes(N_Entries, 0.0);
   for(int i=0;i<nDofs;i++)
   {
@@ -403,7 +838,8 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
 
   //STEP 3: apply Zalesaks flux correction to gain correction factors alpha
   std::vector<double> alphas( M_C.GetN_Entries(), 0.0 );
-  ZalesaksFluxLimiter( alphas, M_C, lump_mass, raw_fluxes, u_interm, neum_to_diri);
+  ZalesaksFluxLimiter( alphas, M_C, lump_mass, raw_fluxes,
+                       u_interm, neum_to_diri);
 
   // STEP 4: Calculate the new right hand side and system matrix.
 
@@ -423,171 +859,15 @@ void AlgebraicFluxCorrection::crank_nicolson_fct(
       }
       //do the right hand side updates
       rhs_old[i]=rhs[i];
-      rhs[i] = u_interm[i] * lump_mass[i] + theta*delta_t*rhs[i] + corrected_flux;
+      rhs[i] = u_interm[i] * lump_mass[i] + theta*delta_t*rhs[i] +
+          corrected_flux;
     }
 
     //and finally update K to be the final system matrix
-    fem_fct_compute_system_matrix(K, lump_mass, delta_t, theta, one_minus_theta);
+    fem_fct_compute_system_matrix(K, lump_mass, delta_t,
+                                  theta, one_minus_theta);
 
 }
-
-
-void AlgebraicFluxCorrection::fem_fct_compute_system_matrix(
-    TMatrix& system_matrix,
-    const std::vector<double>& lumped_mass_matrix,
-    double tau, double theta1, double theta2
-    )
-{
-  if (theta1 != 0.5 || theta2 != 0.5  )
-  {
-    ErrThrow("fem_fct_compute_system_matrix for Crank Nicolson only."
-        "TODO Implement other schemes!");
-  }
-  // check if stiffness matrix is square
-  if(!system_matrix.is_square())
-  {
-    ErrThrow("system_matrix must be square for FEM-FCT!");
-  }
-
-  int nDof = system_matrix.GetN_Rows();
-
-  if(!(int) lumped_mass_matrix.size() == nDof)
-  {
-    ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
-  }
-
-  // get pointers to columns, rows and entries of system_matrix
-  const int* ColInd = system_matrix.GetKCol();
-  const int* RowPtr = system_matrix.GetRowPtr();
-  double*  Entries = system_matrix.GetEntries();
-
-  for(int i=0;i<nDof;i++)
-  {
-    // i-th row of sqmatrix
-    int j0 = RowPtr[i];
-    int j1 = RowPtr[i+1];
-
-    for( int j = j0 ; j < j1 ; j++ )
-    {
-      int index = ColInd[j];
-      if( i == index )
-      {//diagonal entry
-
-        check_cfl_condition(lumped_mass_matrix[i], Entries[j], tau, theta2);
-
-        // calculate the new system matrix entry
-        Entries[j] = lumped_mass_matrix[i] + tau * theta1 * Entries[j];
-
-      }
-      else
-      {//non-diagonal entry
-        // calculate the system matrix entry
-        Entries[j]= tau * theta1 * Entries[j];
-
-        //print warning if S violates M-matrix necessary condition (quite a lot!)
-        if ( Entries[j]>1e-10)
-        {
-          Output::print("WARNING in FEM-FCT system matrix:  ",
-                        Entries[j], " is a positive off-diagonal entry!");
-        }
-      }
-    }
-  }
-}
-
-void AlgebraicFluxCorrection::check_cfl_condition(double mass_diag_entry,
-  double system_diag_entry, double tau, double theta2)
-{
-  //check CFL
-  double cfl = mass_diag_entry/system_diag_entry;
-  if (theta2 >0)
-  {
-    cfl /= theta2;
-    if (tau > cfl)
-    {
-      Output::print("WARNING in FEM-FCT system matrix: ",
-                    mass_diag_entry, " cfl violated: cfl ",
-                    cfl, " delta t: ", tau);
-    }
-  }
-}
-
-void AlgebraicFluxCorrection::compute_artificial_diffusion_matrix(
-    const TMatrix& A, std::vector<double>& matrix_D)
-{
-    // catch non-square matrix
-    if (!A.is_square() )
-    {
-      ErrThrow("Matrix must be square!");
-    }
-    // store number of dofs
-    int nDof = A.GetN_Rows();
-
-	  // get pointers to columns, rows and entries of matrix A
-	  const int* ColInd = A.GetKCol();
-	  const int* RowPtr = A.GetRowPtr();
-	  const double* Entries = A.GetEntries();
-
-	  //reset matrix_D to 0
-	  std::fill(matrix_D.begin(), matrix_D.end(), 0);
-
-		// loop over all rows
-		for(int i=0;i<nDof;i++)
-		{
-			// i-th row of sqmatrix
-			int j0 = RowPtr[i];
-			int j1 = RowPtr[i+1];
-			// compute first the matrix D
-			for(int j=j0;j<j1;j++)
-			{
-				// column
-				int index = ColInd[j];
-				// only the active part of the matrix
-				//if (index>=N_U)
-				//	  continue;
-				// only off-diagonals
-				if (index!=i)
-				{
-					if (Entries[j] > 0)
-						matrix_D[j] = -Entries[j];
-					// now check the transposed entry
-					int j2 = RowPtr[index];
-					int j3 = RowPtr[index+1];
-					for (int jj=j2;jj<j3;jj++)
-					{
-						if (ColInd[jj]==i)
-						{
-							if (-Entries[jj]<matrix_D[j])
-								matrix_D[j] = -Entries[jj];
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		// compute diagonal entry of D
-		// loop over all rows
-		for(int i=0;i<nDof;i++)
-		{
-			// i-th row of sqmatrix
-			int j0 = RowPtr[i];
-			int j1 = RowPtr[i+1];
-			double val = 0.0;
-			// add all entries of i-th row
-			int jj = -1;
-			for(int j=j0;j<j1;j++)
-			{
-				val +=  matrix_D[j];
-				int index = ColInd[j];
-				if (index==i)
-					jj = j; //Hold the place of the diagonal entry in the entries array. Is this reached exactly once ?
-			}
-			matrix_D[jj] = -val;
-		}
-}
-
-
 
 void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 {
@@ -631,208 +911,4 @@ void AlgebraicFluxCorrection::correct_dirichlet_rows(FEMatrix& MatrixA)
 				Entries_A[l] = 0;
 		}
 	}
-}
-
-void AlgebraicFluxCorrection::lump_mass_matrix_to_vector(const TMatrix& M, std::vector<double>& lump_mass)
-{
-  // catch non-square matrix
-  if (!M.is_square() )
-  {
-    ErrThrow("Mass matrix must be square!");
-  }
-  // catch not fitting vector size
-  if ( (int) lump_mass.size() != M.GetN_Columns())
-  {
-    ErrThrow("Vector to write lumped mass matrix to has incorrect size! ",
-             lump_mass.size(), " != ", M.GetN_Columns());
-  }
-
-  const int * RowPtr = M.GetRowPtr();
-  const double * Entries = M.GetEntries();
-  int rows = M.GetN_Rows();
-
-  for (int i=0; i<rows; i++)
-  {
-    lump_mass[i]=0.0;
-    int j0 = RowPtr[i];
-    int j1 = RowPtr[i+1];
-
-    for (int j=j0;j<j1;j++)
-    {
-      lump_mass[i] += Entries[j];
-    }
-    if(lump_mass[i]==0)
-    {
-      ErrThrow("zero entry in lumped matrix ", i, " ", lump_mass[i]);
-    }
-  }
-}
-
-double AlgebraicFluxCorrection::MinMod(double a, double b)
-{
-  if (a*b < 0)
-  {
-    return 0.0;
-  }
-  //CB 2015/07/27 should not this return a negative value, when a<0 and b<0?
-  // int sign = a < 0 ? -1 : 1;
-
-  if (fabs(a) <  fabs(b))
-  {
-    return a; //return sign * a;
-  }
-  else
-  {
-    return b; //return sign * b;
-  }
-}
-
-void AlgebraicFluxCorrection::ZalesaksFluxLimiter(
-    std::vector<double>& alphas,
-    const TMatrix& mass_matrix,
-    const std::vector<double>& lumped_mass,
-    const std::vector<double>& raw_fluxes,
-    const std::vector<double>& sol_approx,
-    const std::vector<int>& neum_to_diri
-)
-{
-  //check if all dimensions fit
-  if (!mass_matrix.is_square() )
-  {
-    ErrThrow("Matrix must be square!");
-  }
-
-  int nDofs = mass_matrix.GetN_Rows();
-  int nEntries = mass_matrix.GetN_Entries();
-
-  if(! (int) lumped_mass.size() == nDofs)
-  {
-    ErrThrow("lumped_mass has incorrect size ", lumped_mass.size(), " != ", nDofs);
-  }
-
-
-  if(! (int) sol_approx.size() == nDofs)
-  {
-    ErrThrow("sol_approx has incorrect size ", sol_approx.size(), " != ", nDofs);
-  }
-
-  if(! (int) alphas.size() == nEntries)
-  {
-    ErrThrow("alphas has incorrect size ", alphas.size(), " != ", nEntries);
-  }
-
-  if(! (int) raw_fluxes.size() == nEntries)
-  {
-    ErrThrow("raw_fluxes has incorrect size ", raw_fluxes.size(), " != ", nEntries);
-  }
-  //end checking input
-
-  // get pointers to columns, rows and entries of mass_matrix
-  const int* ColInd_M = mass_matrix.GetKCol();
-  const int* RowPtr_M = mass_matrix.GetRowPtr();
-
-  // auxiliary space
-  std::vector<double> P_plus (nDofs, 0.0);
-  std::vector<double> P_minus (nDofs, 0.0);
-  std::vector<double> Q_plus (nDofs, 0.0);
-  std::vector<double> Q_minus (nDofs, 0.0);
-  std::vector<double> R_plus (nDofs, 0.0);
-  std::vector<double> R_minus (nDofs, 0.0);
-
-  // 3.1  Compute Ps and Qs (negative/positive diffusive/antidiffusive fluxes),
-  //    where the Qs are "distances to local extrema of the auxiliary solution"
-  for(int i=0;i<nDofs;i++)
-  {
-    // i-th row of mass matrix
-    int j0 = RowPtr_M[i];
-    int j1 = RowPtr_M[i+1];
-    for(int j=j0;j<j1;j++)
-    {
-      int index = ColInd_M[j];
-
-      if(i != index) //diagonal entries are skipped
-      {
-        if (raw_fluxes[j] > 0.0)
-          P_plus[i] += raw_fluxes[j]; //P_plus was initialized with 0
-        if (raw_fluxes[j] <= 0.0)
-          P_minus[i] += raw_fluxes[j]; //P_minus was initialized with 0
-
-        double help = sol_approx[index]-sol_approx[i];
-
-        if (help > Q_plus[i]) //Q_plus was initialized with 0
-          Q_plus[i]= help;
-
-        if (help < Q_minus[i]) //Q_minus was initialized with 0
-          Q_minus[i]= help;
-      }
-    } // end loop j
-  }
-
-  // 3.2  Compute Rs (nodal correction factors)
-  for(int i=0;i<nDofs;i++)
-  {
-    if(fabs(P_plus[i]) == 0.0)
-      R_plus[i] = 1.0;
-    else
-    {
-      //OutPut(Q_plus[i] << " "  << P_plus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_plus[i])/P_plus[i];
-      if(help < 1.0)
-        R_plus[i] = help;
-      else
-        R_plus[i] = 1.0;
-    }
-    if(fabs(P_minus[i]) == 0.0)
-      R_minus[i] = 1.0;
-    else
-    {
-      //OutPut(Q_minus[i] << " "  << P_minus[i] << " " << lump_mass[i] << " ");
-      double help = (lumped_mass[i] * Q_minus[i])/P_minus[i];
-      if(help < 1.0)
-        R_minus[i] = help;
-      else
-        R_minus[i] = 1.0;
-    }
-  }
-
-  // treat Dirichlet nodes (e.g. Kuzmin & Moeller 2005 S. 27)
-  // TODO actually there it is about inlet and outlet!
-  for (int j=0;j< (int) neum_to_diri.size();j++)
-  {
-    int i = neum_to_diri[j];
-    R_plus[i] = 1;
-    R_minus[i] = 1;
-  }
-
-  // 3.3 Compute alphas (final correction factors)
-  for(int i=0;i<nDofs;i++)
-  {
-    // i-th row of sqmatrix
-    int j0 = RowPtr_M[i];
-    int j1 = RowPtr_M[i+1];
-
-    for(int j=j0;j<j1;j++)
-    {
-      int index = ColInd_M[j];
-      if(raw_fluxes[j] > 0.0)
-      {
-        //Initialisation
-        alphas[j] = R_plus[i];
-        if(alphas[j] > R_minus[index])
-          alphas[j] = R_minus[index];
-      }
-      if(raw_fluxes[j]<=0.0)
-      {
-        //initialisation
-        alphas[j] = R_minus[i];
-        if(alphas[j] > R_plus[index])
-          alphas[j] = R_plus[index];
-      }
-      // clipping, see Kuzmin (2009), end of Section 5
-      //if ((fabs(Q_plus[i])< eps)&&(fabs(Q_minus[i])< eps))
-      //  alpha[j] = 0;
-    }                                             //end loop j
-  }
-
-  //end Zalesak!
 }
