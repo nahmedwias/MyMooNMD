@@ -7,8 +7,6 @@
 * vector of a Darcy2 problem. This wraps up everything which is necessary to 
 * solve a Darcy problem in 2D.
 * 
-* @ruleof0
-* 
  ************************************************************************  */
 
 
@@ -30,8 +28,6 @@ class Darcy2D
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
      * describe one Darcy problem in 2D.
-     * 
-     * @ruleof0
      */
     struct System_per_grid
     {
