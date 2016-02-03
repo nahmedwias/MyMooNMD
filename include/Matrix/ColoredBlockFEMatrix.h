@@ -297,6 +297,23 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const override;
+                          
+     /** @brief Compute y = y + a * Ax
+     * TODO: fix me 
+     * Add the matrix-vector product of sub-matrix of size (sub_row X sub_col)
+     * "Ax", scaled by "a", to y. "A" is this matrix. 
+     * Only active rows are taken into account.
+     *
+     * @param x the BlockVector which is multiplied by this matrix
+     * @param y Gets added the result of the scaled matrix-vector-multiplication "aAx"
+     * @param sub_row number or rows of the submatrix
+     * @param sub_col number of cols of the submatrix
+     * @param a optional factor, defaults to 1.0
+     */
+    void apply_scaled_subMatrix(const BlockVector & x, BlockVector & y,
+                                        unsigned int sub_row, unsigned int sub_col,
+                                        double a = 1.0) const;
+                          
     /** @brief this method is used to compare the number of actives in a block vector
      * to the number of actives in test space
      *  @param nActive number of actives

@@ -364,6 +364,40 @@ void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
 }
 
 /* ************************************************************************* */
+void ColoredBlockFEMatrix::apply_scaled_subMatrix(const BlockVector & x, BlockVector & y,
+                                        unsigned int sub_row, unsigned int sub_col,
+                                        double a) const
+{ //check if the vectors fit, if not so the program throws an error
+  check_vector_fits_pre_image(x);
+  check_vector_fits_image(y);
+
+  const double * xv = x.get_entries(); // array of values in x
+  double * yv = y.get_entries(); // array of values in y
+  size_t row_offset = 0;
+  // n_rows, n_cols are the number of cell rows/columns
+  for(size_t i = 0; i < sub_row; ++i)
+  {
+    int col_offset = 0;
+    for(size_t j = 0; j < sub_col; j++)
+    {
+      const FEMatrix& current_block = dynamic_cast<const FEMatrix&>(*cell_grid_[i][j].block_);
+      bool transp_state = cell_grid_[i][j].is_transposed_;
+      //non-transposed case
+      if(transp_state == false)
+      {
+        current_block.multiplyActive(xv + col_offset, yv + row_offset, a);
+      }
+      else
+      {
+        current_block.multiplyTransposedActive(xv + col_offset, yv + row_offset, a);
+      }
+      col_offset += cell_grid_[i][j].n_columns_;
+    }
+    row_offset += cell_grid_[i][0].n_rows_;
+  }
+}
+
+/* ************************************************************************* */
 void ColoredBlockFEMatrix::handle_discovery_of_vector_actives(const int nActive, 
                                                      const int spaceNumber) const
 {
@@ -595,7 +629,6 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
         // 1 on global diagonal, 0 elsewhere
         entries[index] = ( kcolptr[index] == (int) global_row ? 1 : 0);
       }
-
     }
     // go one block row further
     row_offset += n_local_rows;
