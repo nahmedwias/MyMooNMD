@@ -72,6 +72,10 @@ void fem_tvd_algorithm(
  * linearization.
  * J Comput. Phys. 228(7) pp. 2517--2534.
  *
+ * TODO CB: In the algorithm, the explicit part of the C-N scheme is computed
+ * using the transport operator K_{k} of the current time step and not K_{k-1}
+ * of the previous timestep.
+ * Could one run into trouble when the transport is time dependent?
  *
  * @param[in] mass Consistent mass matrix.
  * @param[in, out] stiff High order transport matrix (
@@ -80,8 +84,8 @@ void fem_tvd_algorithm(
  * modifications due to flux correction AND to timestepping). Must have been
  * assembled with the INTERNAL_FULL_MATRIX_STRUCTURE switch on (but that will
  * not be checked by the algorithm).
- * @param oldsol[in] The solution vector of the last time step.
- * @param rhs[in] The current right hand side (before modifications due to
+ * @param[in] oldsol The solution vector of the last time step.
+ * @param[in] rhs The current right hand side (before modifications due to
  * timestepping!). Will be modified as to be the the right hand side of the =
  * system which has to be solved finally (so it will include
  * modifications due to flux correction AND to timestepping).

@@ -18,8 +18,10 @@
 #ifndef __DIRECTSOLVER__
 #define __DIRECTSOLVER__
 
-#include <Matrix.h>
 #include <BlockVector.h>
+
+// forward declaration
+class ColoredBlockMatrix;
 
 class DirectSolver
 {
@@ -33,7 +35,7 @@ class DirectSolver
      *
      * @param  matrix the matrix A where Ax=b
      */
-    DirectSolver(BlockMatrix& matrix, DirectSolverTypes type);
+    DirectSolver(const ColoredBlockMatrix& matrix, DirectSolverTypes type);
     
     /** @brief This class is not copy constructible */
     DirectSolver(const DirectSolver&) = delete;

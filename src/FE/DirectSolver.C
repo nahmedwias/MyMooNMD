@@ -13,6 +13,7 @@
 #include <DirectSolver.h>
 #include <Database.h>
 #include "umfpack.h"
+#include <ColoredBlockMatrix.h>
 
 void handle_error_umfpack(int ierror)
 {
@@ -95,7 +96,7 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 }
 
 /** ************************************************************************ */
-DirectSolver::DirectSolver(BlockMatrix& matrix, 
+DirectSolver::DirectSolver(const ColoredBlockMatrix& matrix, 
                            DirectSolver::DirectSolverTypes type)
  : DirectSolver(matrix.get_combined_matrix(), type)
 {
@@ -265,6 +266,13 @@ void DirectSolver::solve(const double* rhs, double* solution)
 /** ************************************************************************ */
 void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
+  if(  rhs.length() != this->matrix->GetN_Rows() 
+    || solution.length() != this->matrix->GetN_Columns())
+    ErrThrow("solution or right hand side vector has wrong size. ",
+             "Size of the matrix: ", this->matrix->GetN_Rows(), " x ", 
+             this->matrix->GetN_Columns(),"\t rhs size: ", rhs.length(), 
+             "\tsolution size: ", solution.length());
+
   solve(rhs.get_entries(), solution.get_entries());
 }
 

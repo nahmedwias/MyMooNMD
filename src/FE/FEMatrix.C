@@ -38,8 +38,8 @@ FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,
 }
 
 #ifdef __3D__
-FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace)
-: TMatrix(std::make_shared<TStructure>(testspace, ansatzspace)),
+FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty)
+: TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),
   AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(ansatzspace),
   TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(testspace)
 {
@@ -102,6 +102,25 @@ void FEMatrix::multiplyActive(const double* x, double* y, double factor) const
       val += this->entries[j]*x[colIndex[j]];
     y[i] += factor*val;
   }  
+}
+
+void FEMatrix::multiplyTransposedActive(const double *x, double *y, double factor) const
+{
+  //be careful! we have to rely on y's actives being as many as this ansatz spaces
+  //FIXME this can be sped up of course, but for the moment do it like this
+  //assume that y is as long as this has columns
+  int n_actives = this->GetAnsatzSpace()->GetActiveBound();
+  std::vector<double> y_non_actives(this->GetAnsatzSpace()->GetN_Dirichlet());
+  for (int i= n_actives; i<this->GetN_Columns() ; ++i )
+  {//store non-actives
+    y_non_actives[i-n_actives]=y[i];
+  }
+  this->TMatrix::transpose_multiply(x,y,factor);
+  for (int i= n_actives; i<this->GetN_Columns() ; ++i )
+  {//put back non-actives
+    y[i] = y_non_actives[i-n_actives];
+  }
+
 }
 
 

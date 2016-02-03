@@ -133,7 +133,7 @@ class TStructure
     /// A matrix which owns this structure thus represents the zero-map between two FE spaces.
     //@{
     TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty = false);
-    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty = false);
     //@}
     
     /**
