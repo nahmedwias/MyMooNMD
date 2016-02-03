@@ -129,9 +129,11 @@ class TStructure
     /// 
     /// A matrix using this structure represents a linear map from the ansatz 
     /// to the test space.
+    /// @param[in] is_empty If true, the structure will not have any entries.
+    /// A matrix which owns this structure thus represents the zero-map between two FE spaces.
     //@{
-    TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace);
-    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty = false);
+    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty = false);
     //@}
     
     /**
@@ -297,6 +299,14 @@ class TStructure
      */
     void info() const;
     
+    /** 
+     * @brief draw a postscript picture of the sparsity pattern, similar to 
+     * Matlab 'spy'
+     * 
+     * @param filename a file with this name will be created (overwritten)s
+     */
+    void draw(std::string filename) const;
+    
     /**
      * @brief return a structure for the matrix-matrix-product A*B
      * 
@@ -308,6 +318,24 @@ class TStructure
      */
     friend std::shared_ptr<TStructure> get_product_structure(
         TStructure const & strucA, TStructure const & strucB);
+    
+    /**
+     * @brief Compute the structure of the matrix matrix product A*A^T.
+     * 
+     * @return A pointer to the structure of A*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right() const;
+    
+    /**
+     * @brief Compute the structure of the matrix matrix product A*B*A^T.
+     * 
+     * @param B structure of the middle matrix B
+     * @return A pointer to the structure of A*B*A^T.
+     * @note Relies on sorted columns array, i.e. ColOrder should be 1.
+     */
+    TStructure* get_structure_of_product_with_transpose_from_right(
+      const TStructure & B) const;
     
     /** @brief Comparision Operator 
      * 

@@ -14,7 +14,7 @@
 #define __Time_CD2D__
 
 #include <FEFunction2D.h>
-#include <BlockMatrixCD2D.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_CD2D.h>
 #include <MultiGrid2D.h>
@@ -22,6 +22,8 @@
 
 #include <vector>
 #include <deque>
+
+class LocalAssembling2D; //forward declaration
 
 class Time_CD2D
 {
@@ -36,18 +38,61 @@ class Time_CD2D
       /** @brief Finite element space */
       TFESpace2D fe_space;
       /** @brief Stiffness Matrix */
-      BlockMatrixCD2D Stiff_matrix;
+      BlockFEMatrix stiff_matrix;
       /** @brief Mass matrix */
-      BlockMatrixCD2D Mass_Matrix;
+      BlockFEMatrix mass_matrix;
       /** @brief right hand side vector */
       BlockVector rhs;
       /** @brief solution vector */
       BlockVector solution;
+      /** Stores stiffness_matrix * solution of last time step -
+       *  this is needed in (partly) explicit time stepping schemes.*/
+      BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
-      
+
       /** @brief constructor*/
       System_per_grid(const Example_CD2D& example, TCollection& coll);
+
+      /**
+       * Gives a non-const pointer to the one block which is stored
+       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
+       */
+      TSquareMatrix2D* get_stiff_matrix_pointer();
+
+      /**
+       * Reset the stiffness matrix A to its 'pure' state before the
+       * modifications due to a one-step/fractional-step theta scheme.
+       * Sets A = 1/(tau*theta_1)*(A - mass)
+       * This is for the case we want to reuse A in the next time step.
+       *
+       * @param tau The current time step length.
+       * @param theta_1 The impliciteness parameter for the transport (e.g. 1 for bw Euler).
+       */
+      void descale_stiff_matrix(double tau, double theta_1);
+
+      void update_old_Au();
+
+      /**
+       * Special member functions mostly deleted,
+       * for struct takes ownership of the bad
+       * classes TFEFunction2D and TFESpace2D.
+       */
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
+
     };
     
     /** @brief a complete system on each grid 
@@ -140,6 +185,29 @@ class Time_CD2D
     { return this->systems.front().fe_space; }
     const Example_CD2D& get_example() const
     { return example; }
+
+  private:
+    /**
+     * Apply an algebraic flux correction scheme to the assembled matrix.
+     * Should be called within the assemble routine, after the assembling
+     * of pure mass and stiffness matrix and right hand side
+     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
+     *
+     * Which afc algorithm is performed is determined by switching over
+     * ALGEBRAIC_FLUX_CORRECTION (so far only 2: linear C-N FEM-FCT).
+     */
+    void do_algebraic_flux_correction();
+
+    /**
+     * This wraps up the tedious call to Assemble2D and is only used
+     * to avoid code duping. Is really not written very sophisticated,
+     * use it with care.
+     * @param block_mat should be one system's stiffness or mass matrix.
+     * @param la A fittingly constructed LocalAssemble2D object.
+     */
+    void call_assembling_routine(Time_CD2D::System_per_grid& system,
+                                 LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+                                 bool assemble_both);
 };
 
 #endif

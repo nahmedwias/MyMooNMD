@@ -1,4 +1,6 @@
 #include <BlockVector.h>
+#include <BlockMatrix.h>
+#include <BlockFEMatrix.h>
 #include <stdlib.h>
 #include <Constants.h>
 #include <Database.h>
@@ -27,13 +29,50 @@ BlockVector::BlockVector(int length)
     ErrThrow("cannot construct BlockVector with negative number of entries");
 }
 
-/** ************************************************************************ */
-BlockVector::BlockVector(const BlockMatrix& mat, bool image)
- : entries(), lengths(), actives()
+BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector using other BlockMatrix\n");
-  this->copy_structure(mat, image);
+  // the total length of this vector
+  size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
+  // number of blocks in this BlockVector
+  size_t n_blocks = result ? mat.get_n_cell_rows() : mat.get_n_cell_columns();
+
+  entries.resize(total_length, 0.0);
+  // set all entries to zero
+  std::fill(entries.begin(), entries.end(), 0.0);
+  lengths.resize(n_blocks, 0);
+  actives.resize(n_blocks, 0);
+
+  //determine the length of each vector block
+  for(size_t b = 0; b < n_blocks; b++)
+  {
+    if (result)
+    {//vector on rhs
+      lengths[b] = mat.get_n_rows_in_cell(b,0);
+    }
+    else
+    {//vector as factor
+      lengths[b] = mat.get_n_columns_in_cell(0,b);
+    }
+   // all entries are active
+    actives[b] = lengths[b];
+  }
+}
+
+BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
+: BlockVector(static_cast<BlockMatrix>(mat))
+{
+  //now set actives correctly
+  for(size_t b = 0; b < n_blocks(); ++b)
+  {//go thorugh all blocks of the vector
+    if( result )
+    { // take actives from row space
+      actives[b] = mat.get_n_row_actives( b );
+    }
+    else
+    { //take actives from column space
+      actives[b] = mat.get_n_column_actives( b );
+    }
+  }
 }
 
 /** ************************************************************************ */
@@ -139,6 +178,24 @@ void BlockVector::addScaledActive(const BlockVector& r, double factor)
 }
 
 /** ************************************************************************ */
+void BlockVector::addScaledNonActive(const BlockVector& r, double factor)
+{
+  if(this->n_blocks() != r.n_blocks())
+    ErrThrow("number of blocks in two vectors must be same");
+
+  for(unsigned int i=0; i<this->n_blocks(); ++i)
+  {
+    if(this->actives.at(i) != r.active(i))
+    {
+      ErrThrow("Number of actives in block ",i," do not match!");
+    }
+    // do the daxpy for the nonactives only (includes pointer arithmetic...)
+    int n_non_actives = this->lengths.at(i)- this->actives.at(i);
+    Daxpy(n_non_actives , factor, r.block(i) + this->actives.at(i), this->block(i) + this->actives.at(i));
+  }
+}
+
+/** ************************************************************************ */
 void BlockVector::copy(const double * x, const int i)
 {
   if(i < 0)
@@ -228,21 +285,23 @@ void BlockVector::print(const std::string name, const int iB) const
 /** ************************************************************************ */
 void BlockVector::info()
 {
-  OutPut(" | info to BlockVector : \n");
+  using namespace Output;
+  Output::print(" | info to BlockVector :");
   unsigned int nb = n_blocks();
-  OutPut(" | -- total length " << this->length() << "\tnumber of blocks " 
-         << nb << endl);
+  Output::print(" | -- total length ", length(), "\tnumber of blocks ", nb);
   if(nb > 1)
   {
     for(unsigned int i = 0; i < nb; i++)
     {
-      OutPut(" | ---- block " << i << " has length " << this->lengths[i]);
       if(this->lengths[i] != this->actives[i])
       {
-        OutPut(" (" << this->actives[i] << " active)\n");
+        Output::print(" | ---- block ", i, " has length ", this->lengths[i],
+                      " (", this->actives[i], " active)");
       }
       else
-        OutPut(endl);
+      {
+        Output::print(" | ---- block ", i, " has length ", this->lengths[i]);
+      }
     }
   }
 }
@@ -269,56 +328,6 @@ BlockVector& BlockVector::operator=(const double a)
 BlockVector& BlockVector::operator*=(const double a)
 {
   this->scale(a);
-  return *this;
-}
-
-/** ************************************************************************ */
-BlockVector& BlockVector::operator*=(const BlockMatrix& A)
-{
-  unsigned int l = this->length();
-  if(A.n_total_cols() != l)
-  {
-    ErrThrow("Matrix-vector multiplication not possible because the number of ",
-             "columns in the matrix is not equal to the length of the vector");
-  }
-  if(A.n_total_rows() != l)
-  {
-    ErrThrow("Matrix-vector multiplication with non-square matrix would ",
-              "change the length of the vector. This is not intended here. If ", 
-              "you know what you are doing, change the implementation");
-  }
-  
-  // y is an intermediate vector to store the product A*this
-  double *y = new double[l];
-  
-  // number of blocks (in each block column)
-  unsigned int n_row_blocks = A.n_rows();
-  // number of blocks (in each block row)
-  unsigned int n_col_blocks = A.n_cols();
-  if(n_row_blocks * n_col_blocks != A.n_blocks())
-  {
-    ErrThrow("BlockMatrix must have n_row_blocks*n_col_blocks many blocks");
-  }
-  std::fill(y, y+l, 0.0);
-  //memset(y, 0.0, l*SizeOfDouble); // in string.h
-  
-  int row_offset = 0;
-  for(unsigned int i = 0; i < n_row_blocks; i++)
-  {
-    int col_offset = 0;
-    for(unsigned int j = 0; j < n_col_blocks; j++)
-    {
-      auto current_block = A.block(i * n_row_blocks + j);
-      current_block->multiply(this->get_entries()+col_offset, y + row_offset, 
-                              1.0);
-      col_offset += current_block->GetN_Columns();
-    }
-    row_offset += A.block(i * n_row_blocks)->GetN_Rows();
-  }
-  
-  // write y to this
-  Dcopy(l, y, this->get_entries());
-  delete [] y;
   return *this;
 }
 
@@ -365,26 +374,6 @@ void BlockVector::copy_structure(const BlockVector& r)
   {
     lengths[i] = r.length(i);
     actives[i] = r.active(i);
-  }
-}
-
-/** ************************************************************************ */
-void BlockVector::copy_structure(const BlockMatrix& mat, bool image)
-{
-  // the total length of this vector
-  unsigned int total_length = image ? mat.n_total_rows() : mat.n_total_cols();
-  // number of blocks in this BlockVector
-  unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
-  this->entries.resize(total_length, 0.0);
-  // set all entries to zero
-  std::fill(this->entries.begin(), this->entries.end(), 0.0);
-  this->lengths.resize(n_blocks, 0);
-  this->actives.resize(n_blocks, 0);
-  for(unsigned int b = 0; b < n_blocks; b++)
-  {
-    auto block = mat.block(image ? mat.n_cols() * b : b);
-    this->lengths[b] = image ? block->GetN_Rows() : block->GetN_Columns();
-    this->actives[b] = this->lengths[b];
   }
 }
 

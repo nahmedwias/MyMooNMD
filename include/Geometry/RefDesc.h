@@ -314,31 +314,31 @@ class TRefDesc
 
     // Methods
     /** return type of refinement */
-    Refinements GetType()
+    Refinements GetType() const
     { return Type; }
     /** return number of children */
-    int GetN_Children()
+    int GetN_Children() const
     { return N_Children; }
     /** return number of edges */
-    int GetN_Edges()
+    int GetN_Edges() const
     { return N_Edges; }
     /** return number of vertices */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return N_Vertices; }
 
     /** return number of edges on base cell */
-    int GetN_OrigEdges()
+    int GetN_OrigEdges() const
     { return N_OrigEdges; }
     /** return number of vertices on base cell */
-    int GetN_OrigVertices()
+    int GetN_OrigVertices() const
     { return N_OrigVertices; }
 
     #ifdef __3D__
       /** return number of faces */
-      int GetN_OrigFaces()
+      int GetN_OrigFaces() const
       { return N_OrigFaces; }
       /** return number of faces on base cell*/
-      int GetN_Faces()
+      int GetN_Faces() const
       { return N_Faces; }
     #endif
 
@@ -351,26 +351,26 @@ class TRefDesc
     { return Shape; }
     /** return refinement type of edge J\_i */
     Refinements GetEdgeRef(int J_i)
-    { return EdgeType[J_i]; }
+    { return EdgeType[J_i]; } const
     /** return type of child number C\_i */
-    Shapes GetChildType(int C_i)
+    Shapes GetChildType(int C_i) const
     { return ChildType[C_i]; }
 
     /** return number of new vertices, which equal old vertices */
-    int GetN_NewVertEqOldVert()
+    int GetN_NewVertEqOldVert() const
     { return N_NewVertEqOldVert; }
     /** return number of new inner vertices */
-    int GetN_InnerVertices()
+    int GetN_InnerVertices() const
     { return N_InnerVertices; }
     /** return number of new edges, which equal old edges */
-    int GetN_NewEdgeEqOldEdge() 
+    int GetN_NewEdgeEqOldEdge() const
     { return N_NewEdgeEqOldEdge; }
     /** return number of new inner edges */
-    int GetN_InnerEdges()
+    int GetN_InnerEdges() const
     { return N_InnerEdges; }
 
     /** return auxilary fields in order to copy existing vertices */
-    int GetNewVertEqOldVert(const int *&TmpValues, const int *&TmpIndex)
+    int GetNewVertEqOldVert(const int *&TmpValues, const int *&TmpIndex) const
     {
         TmpValues = NewVertexEqOldVertex;
         TmpIndex = NewVertexEqOldVertexIndex;
@@ -379,7 +379,7 @@ class TRefDesc
 
     /** return auxilary fields in order to create new inner vertices */
     int GetInnerVerts(const int *&TmpValues, const double *&TmpPos,
-          int &MaxLen)
+          int &MaxLen) const
     {
       TmpValues = InteriorVertexOfCell;
       TmpPos = PositionOfIntVert;
@@ -388,7 +388,7 @@ class TRefDesc
     }
 
     /** return auxilary fields in order to copy existing edges */
-    int GetNewEdgeEqOldEdge(const int *&TmpValues, const int *&TmpIndex)
+    int GetNewEdgeEqOldEdge(const int *&TmpValues, const int *&TmpIndex) const
     {
       TmpValues = NewEdgeEqOldEdge;
       TmpIndex = NewEdgeEqOldEdgeIndex;
@@ -396,7 +396,7 @@ class TRefDesc
     }
 
     /** return auxilary fields in order to create new inner edges */
-    int GetInnerEdges(const int *&TmpinE, const int *&TmpEC, int &MaxLen)
+    int GetInnerEdges(const int *&TmpinE, const int *&TmpEC, int &MaxLen) const
     {
        TmpinE = InteriorEdgeOfCell;
        TmpEC = EdgeChild;
@@ -405,8 +405,8 @@ class TRefDesc
     }
 
     /** return the array OldEdgeNewEdge */
-    int GetOldEdgeNewEdge(const int *&TmpoEnE, const int *&TmpLen,
-          int &MaxLen)
+    int GetOldEdgeNewEdge(const int *&TmpoEnE, const int *&TmpLen, int &MaxLen)
+      const
     {
       TmpoEnE = OldEdgeNewEdge;
       TmpLen = InteriorVertexOfEdgeLen;
@@ -415,21 +415,21 @@ class TRefDesc
     }
 
     /** return the array OldEdgeNewLocEdge */
-    int GetOldEdgeNewLocEdge(const int *&TmpoEnlE)
+    int GetOldEdgeNewLocEdge(const int *&TmpoEnlE) const
     {
       TmpoEnlE=OldEdgeNewLocEdge;
       return 0;
     }
 
     /** return the array NewEdgeOldEdge */
-    int GetNewEdgeOldEdge(const int *&TmpnEoE)
+    int GetNewEdgeOldEdge(const int *&TmpnEoE) const
     {
       TmpnEoE = NewEdgeOldEdge;
       return 0;
     }
 
     /** return the array EdgeChild */
-    int GetEdgeChild(const int *&TmpEC, const int *&TmpLen, int &MaxLen)
+    int GetEdgeChild(const int *&TmpEC, const int *&TmpLen, int &MaxLen) const
     {
         TmpEC = EdgeChild;
         TmpLen = EdgeChildLen;
@@ -438,8 +438,8 @@ class TRefDesc
     }
 
     /** return the array EdgeChildIndex */
-    int GetEdgeChildIndex(const int *&TmpECI, const int *&TmpLen,
-          int &MaxLen)
+    int GetEdgeChildIndex(const int *&TmpECI, const int *&TmpLen, int &MaxLen) 
+      const
     {
       TmpECI = EdgeChildIndex;
       TmpLen = EdgeChildLen;
@@ -448,8 +448,8 @@ class TRefDesc
     }
 
     /** return the array OldEdgeNewVertex */
-    int GetOldEdgeNewVertex(const int *&TmpoEnV, const int *&TmpLen,
-          int &MaxLen)
+    int GetOldEdgeNewVertex(const int *&TmpoEnV, const int *&TmpLen, 
+                            int &MaxLen) const
     {
       TmpoEnV = OldEdgeNewVertex;
       TmpLen = InteriorVertexOfEdgeLen;
@@ -458,15 +458,14 @@ class TRefDesc
     }
     
     /** return the array EdgeVertex */
-    int GetEdgeVertex(const int *&TmpEV)
+    int GetEdgeVertex(const int *&TmpEV) const
     {
       TmpEV = EdgeVertex;
       return 0;
     }
 
     /** return the array VertexEdge */
-    int GetVertexEdge(const int *&TmpVE, const int *&TmpLen,
-          int &MaxLen)
+    int GetVertexEdge(const int *&TmpVE, const int *&TmpLen, int &MaxLen) const
     {
       TmpVE = VertexEdge;
       TmpLen = VertexEdgeLen;
@@ -475,8 +474,8 @@ class TRefDesc
     }
 
     /** return the array VertexEdgeIndex */
-    int GetVertexEdgeIndex(const int *&TmpVEI, const int *&TmpLen,
-          int &MaxLen)
+    int GetVertexEdgeIndex(const int *&TmpVEI, const int *&TmpLen, int &MaxLen)
+      const
     {
       TmpVEI = VertexEdgeIndex;
       TmpLen = VertexEdgeLen;
@@ -485,8 +484,7 @@ class TRefDesc
     }
 
     /** return the array VertexChild */
-    int GetVertexChild(const int *&TmpVC, const int *&TmpLen,
-          int &MaxLen)
+    int GetVertexChild(const int *&TmpVC, const int *&TmpLen, int &MaxLen) const
     {
       TmpVC = VertexChild;
       TmpLen = VertexChildLen;
@@ -495,8 +493,8 @@ class TRefDesc
     }
 
     /** return the array VertexChildIndex */
-    int GetVertexChildIndex(const int *&TmpVCI, const int *&TmpLen,
-          int &MaxLen)
+    int GetVertexChildIndex(const int *&TmpVCI, const int *&TmpLen, int &MaxLen)
+      const
     {
       TmpVCI = VertexChildIndex;
       TmpLen = VertexChildLen;
@@ -505,7 +503,7 @@ class TRefDesc
     }
 
     /** return the array ChildVertex */
-    int GetChildVertex(const int *&TmpCV, int &MaxLen)
+    int GetChildVertex(const int *&TmpCV, int &MaxLen) const
     {
       TmpCV =  ChildVertex;
       MaxLen = MaxN_VpC;
@@ -513,7 +511,7 @@ class TRefDesc
     }
 
     /** return the array ChildEdge */
-    int GetChildEdge(const int *&TmpCE, int &MaxLen)
+    int GetChildEdge(const int *&TmpCE, int &MaxLen) const
     {
       TmpCE =  ChildEdge;
       MaxLen = MaxN_EpC;
@@ -522,11 +520,12 @@ class TRefDesc
 
     #ifdef __3D__
       /** return number of inner faces */
-      int GetN_InnerFaces()
+      int GetN_InnerFaces() const
       { return N_InnerFaces; }
     
       /** return auxilary fields in order to create new inner faces */
       int GetInnerFaces(const int *&TmpinF, const int *&TmpFC, int &MaxLen)
+        const
       {
          TmpinF = InteriorFaceOfCell;
          TmpFC = FaceChild;
@@ -536,7 +535,7 @@ class TRefDesc
 
       /** return field of new vertices on an old face */
       int GetOldFaceNewInnerVertex(const int *&TmpoFniV,
-                                   const int *&TmpLen, int &MaxLen)
+                                   const int *&TmpLen, int &MaxLen) const
       {
         TmpoFniV = OldFaceNewInnerVertices;
         TmpLen = OldFaceNewInnerVerticesLen;
@@ -546,7 +545,7 @@ class TRefDesc
 
       /** return field of new faces on old faces */
       int GetOldFaceNewFace(const int *&TmpoFnF, const int *&TmpLen,
-                            int &MaxLen)
+                            int &MaxLen) const
       {
         TmpoFnF = OldFaceNewFace;
         TmpLen = OldFaceNewFaceLen;
@@ -555,15 +554,15 @@ class TRefDesc
       }
 
       /** return the refinement type of face i */
-      Refinements GetFaceRef(int i)
+      Refinements GetFaceRef(int i) const
       { return FaceType[i]; }
 
       /** return number of new faces equal old faces */
-      int GetN_NewFaceEqOldFace()
+      int GetN_NewFaceEqOldFace() const
       { return N_NewFaceEqOldFace; }
 
       /** return the array NewFaceEqOldFace */
-      int GetNewFaceEqOldFace(const int *&TmpValues, const int *&TmpIndex)
+      int GetNewFaceEqOldFace(const int *&TmpValues, const int *&TmpIndex) const
       {
         TmpValues = NewFaceEqOldFace;
         TmpIndex = NewFaceEqOldFaceIndex;
@@ -571,7 +570,7 @@ class TRefDesc
       }
 
       /** return the array FaceChild */
-      int GetFaceChild(const int *&TmpFC, const int *&TmpLen, int &MaxLen)
+      int GetFaceChild(const int *&TmpFC, const int *&TmpLen, int &MaxLen) const
       {
           TmpFC = FaceChild;
           TmpLen = FaceChildLen;
@@ -581,6 +580,7 @@ class TRefDesc
 
       /** return the array FaceChildIndex */
       int GetFaceChildIndex(const int *&TmpFCI, const int *&TmpLen, int &MaxLen)
+        const
       {
           TmpFCI = FaceChildIndex;
           TmpLen = FaceChildLen;
@@ -589,7 +589,7 @@ class TRefDesc
       }
 
       /** return the array FaceEdge */
-      int GetFaceEdge(const int *&TmpFE, int &MaxLen)
+      int GetFaceEdge(const int *&TmpFE, int &MaxLen) const
       {
         TmpFE =  FaceEdge;
         MaxLen = MaxN_EpF;
@@ -598,7 +598,7 @@ class TRefDesc
 
       /** return field NewVertsOnOldFace for face i */
       int GetNewVertsOnOldFace(const int *&TmpNV, const double *&TmpPos,
-                               int &MaxLen)
+                               int &MaxLen) const
       {
         TmpNV = NewVertsOnOldFace;
         TmpPos = NewVertsOnOldFacePos;
@@ -608,7 +608,7 @@ class TRefDesc
       }
 
       /** return the field ChildFace */
-      int GetChildFace(const int *&TmpCF, int &MaxLen)
+      int GetChildFace(const int *&TmpCF, int &MaxLen) const
       {
         TmpCF = ChildFace;
         MaxLen = MaxN_FpC;
@@ -618,7 +618,7 @@ class TRefDesc
 
       /** return the field OldFaceNewVertex */
       int GetOldFaceNewVertex(const int *&TmpoFnV, const int *&TmpLen,
-                              int &MaxLen)
+                              int &MaxLen) const
       {
         TmpoFnV = OldFaceNewVertex;
         TmpLen = OldFaceNewVertexLen;
@@ -629,7 +629,8 @@ class TRefDesc
 
       /** return the field OldFaceNewVertex */
       int GetOldFaceNewVertex(const int *&TmpoFnV, const double *&TmpPos,
-            const int *&TmpLen, int &MaxLen1, int &MaxLen2)
+                              const int *&TmpLen, int &MaxLen1, 
+                              int &MaxLen2) const
       {
         TmpoFnV = OldFaceNewVertex;
         TmpPos = OldFaceNewVertexPos;
@@ -641,7 +642,7 @@ class TRefDesc
       }
 
       /** return the field NewFaceOldFace */
-      int GetNewFaceOldFace(const int *&TmpnFoF)
+      int GetNewFaceOldFace(const int *&TmpnFoF) const
       {
         TmpnFoF = NewFaceOldFace;
 
@@ -649,7 +650,7 @@ class TRefDesc
       }
 
       /** return the array OldFaceNewLocFace */
-      int GetOldFaceNewLocFace(const int *&TmpoFnlF)
+      int GetOldFaceNewLocFace(const int *&TmpoFnlF) const
       {
         TmpoFnlF = OldFaceNewLocFace;
 
@@ -657,7 +658,7 @@ class TRefDesc
       }
 
       /** return the array ChildTwistIndex */
-      int GetChildTwistIndex(const int *&TmpCTI)
+      int GetChildTwistIndex(const int *&TmpCTI) const
       {
         TmpCTI = ChildTwistIndex;
 
@@ -666,12 +667,12 @@ class TRefDesc
       
       // added 25.04.2010 for fixing refinement problem
       /** return the array FaceVertex **/
-      int GetFaceVertex (const int *&TmpFV, int &TmpLen)
+      int GetFaceVertex (const int *&TmpFV, int &TmpLen) const
       {
-	TmpFV = FaceVertex;
-	TmpLen = MaxN_VpF;
-	
-	return 0;
+        TmpFV = FaceVertex;
+        TmpLen = MaxN_VpF;
+        
+        return 0;
       }
 
     #endif

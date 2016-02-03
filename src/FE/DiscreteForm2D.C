@@ -18,7 +18,6 @@
 #include <DiscreteForm2D.h>
 #include <string.h>
 #include <stdlib.h>
-#include <MovingNavierStokes.h>
 
 
 /** constructor with vector initialization */
@@ -184,7 +183,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
                                     double ***LocMatrix, double **LocRhs,
                                     double factor)
 {
-  int i,j,k,l, N_Rows, N_Columns;
+  int i,j, N_Rows, N_Columns;
   double **CurrentMatrix, *MatrixRow;
   double Mult, *Coeff, *Param;
 

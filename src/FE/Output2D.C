@@ -1607,6 +1607,7 @@ int N_LocVertices, TVertex **Vertices)
           dat << function_value[0] << endl;
         }
       }
+      delete [] function_value;
     }
     else if(BaseVectDim==2)
     {

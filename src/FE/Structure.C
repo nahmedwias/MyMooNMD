@@ -1605,9 +1605,19 @@ TStructure::TStructure( const TFESpace3D *space )
 
 /* generate the matrix structure, both spaces are 2D */
 TStructure::TStructure(const TFESpace2D* testspace,
-                       const TFESpace2D* ansatzspace)
+                       const TFESpace2D* ansatzspace, bool is_empty)
  : TStructure()
 {
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
+  ActiveBound = testspace->GetN_ActiveDegrees();
+  rows = std::vector<int>(nRows+1, 0);
+
+  if (is_empty)
+  {//no need to create anything else...
+    return;
+  }
+
   TCollection *coll;
   TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
@@ -1644,8 +1654,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // get collection of mesh cells
   coll = testspace->GetCollection();
   
-  ActiveBound = testspace->GetN_ActiveDegrees();
-
   // test space and ansatz space differ
   // get information from the spaces
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
@@ -1673,9 +1681,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
   AnsatzBeginIndex = ansatzspace->GetBeginIndex();
   TestBeginIndex = testspace->GetBeginIndex();
-
-  nRows = testspace->GetN_DegreesOfFreedom();
-  nColumns = ansatzspace->GetN_DegreesOfFreedom();
 
   TestN_Hanging = testspace->GetN_Hanging();
   TestActiveBound = testspace->GetN_ActiveDegrees();
@@ -2321,9 +2326,19 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
 #ifdef __3D__
 /* generate the matrix structure, both spaces are 3D */
-TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace)
+TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace, bool is_empty)
  : TStructure()
 {
+  nRows = testspace->GetN_DegreesOfFreedom();
+  nColumns = ansatzspace->GetN_DegreesOfFreedom();
+  ActiveBound = testspace->GetN_ActiveDegrees();
+  rows = std::vector<int>(nRows+1, 0);
+
+  if (is_empty)
+  {//no need to create anything else...
+    return;
+  }
+
   TCollection *coll;
   TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
@@ -4788,6 +4803,228 @@ std::shared_ptr<TStructure> get_product_structure(
                                       c_rows);
 }
 
+
+TStructure* TStructure::get_structure_of_product_with_transpose_from_right() 
+const
+{
+  if(this->ColOrder != 1)
+    ErrThrow("TStructure::get_structure_of_product_with_transpose_from_right ",
+             "only works for structures which are ordered. ", this->ColOrder);
+  
+  int nProductEntries = 0; // number of entries in product structure
+  int nProductRows = nRows;
+  int nProductColumns = nRows;
+
+  std::vector<int> productRowPtr(nProductRows + 1, 0); // row pointer
+
+  // this is a temporary storing structure "gridPlaces"
+  std::vector<std::vector<int> > gridPlaces(nRows); 
+  // gridPlaces[row] stores, in which columns in this row there are non-zero 
+  // entries
+
+  // loop over all rows of the product
+  for(int row = 0; row < nProductRows; row++)
+  {
+    // loop over all columns of the product
+    for(int col = 0; col < nProductColumns; col++)
+    {
+      // check whether 'this row of A' x 'this column of A^T' would give an 
+      // entry
+      // this boils down to checking 'row1 of A' x 'row2 of A' with row1 = 
+      // row, row2 = col
+      int row1 = row;
+      int row2 = col; //two definitions to fix ideas
+
+      // work on two segments of column array
+      const int* row1ColBegin = &columns[rows[row1]];
+      const int row1ColSize = rows[row1+1] - rows[row1];
+      const int* row2ColBegin = &columns[rows[row2]];
+      const int row2ColSize = rows[row2+1] - rows[row2];
+
+      // find out if the two arryas contain a common value
+      // exploit the fact that both are sorted
+      size_t index1 = 0;
+      size_t index2 = 0;
+      while (index1 < row1ColSize && index2 < row2ColSize)
+      {
+        if (row1ColBegin[index1] > row2ColBegin[index2])
+        {
+          index2++;
+        }
+        else if (row2ColBegin[index2] > row1ColBegin[index1])
+        {
+          index1++;
+        }
+        else
+        {
+          //we found a pair of indices with equal entry in KCol
+          gridPlaces[row].push_back(col);
+          break;
+        }
+      }
+
+    } //end for columns of the product
+
+    // update the total number of entries in the product
+    nProductEntries += gridPlaces[row].size();
+    // productRowPtr[0] has been set to 0 already
+    productRowPtr[row+1] = nProductEntries;
+  }//end for rows of the product
+
+  // FROM HERE IT'S ONLY TRANSFORMING THE TEMPORARY DATA STRUCTURE TO THE 
+  // REQUIRED ONE
+  // now fill the array productColumnsPtr
+   //initialise the product's columns pointer
+  std::vector<int> productColumnPtr(nProductEntries, 0);
+
+  // loop over all rows of C
+  for(int row = 0; row < nProductRows; row++)
+  {
+    // loop over all columns of C
+    int n_entries_in_this_row = productRowPtr[row+1] - productRowPtr[row];
+    for(int col = 0; col < n_entries_in_this_row; col++)
+    {
+      productColumnPtr[productRowPtr[row] + col] = gridPlaces[row].at(col);
+    }
+  }
+  // hand over a pointer to the product's structure.
+  return new TStructure(nProductRows, nProductColumns, nProductEntries, 
+                        &productColumnPtr[0], &productRowPtr[0]);
+}
+
+
+TStructure* TStructure::get_structure_of_product_with_transpose_from_right(
+  const TStructure& B) const
+{
+  if(this->ColOrder != 1 || B.GetColOrder() != 1)
+    ErrThrow("TStructure::get_structure_of_product_with_transpose_from_right ",
+             "only works for structures which are ordered. ", this->ColOrder,
+             "  ", B.GetColOrder());
+  if(this->nColumns != B.GetN_Rows() || B.GetN_Columns() != this->nColumns)
+    ErrThrow("dimension mismatch, inner matrix has wrong dimensions, ",
+             B.GetN_Rows(), "  ", B.GetN_Columns());
+  
+  int nProductEntries = 0; // number of entries in product structure
+  int nProductRows = this->nRows;
+  int nProductColumns = this->nRows;
+  
+  // lambda funcion to check if the product of 'B*A^T' has an entry (i,j)
+  auto check_entry = [this, B](int i, int j) -> bool
+    {
+      // work on two segments of column array
+      const int* row1ColBegin = &B.GetKCol()[B.GetRowPtr()[i]];
+      const int row1ColSize = B.GetRowPtr()[i+1] - B.GetRowPtr()[i];
+      const int* row2ColBegin = &this->GetKCol()[this->GetRowPtr()[j]];
+      const int row2ColSize = this->GetRowPtr()[j+1] 
+                              - this->GetRowPtr()[j];
+
+      // find out if the two arryas contain a common value
+      // exploit the fact that both are sorted
+      size_t index1 = 0;
+      size_t index2 = 0;
+      while (index1 < row1ColSize && index2 < row2ColSize)
+      {
+        if (row1ColBegin[index1] > row2ColBegin[index2])
+        {
+          index2++;
+        }
+        else if (row2ColBegin[index2] > row1ColBegin[index1])
+        {
+          index1++;
+        }
+        else
+        {
+          return true;
+        }
+      }
+      return false;
+   };
+  
+  std::vector<int> productRowPtr(nProductRows + 1, 0); // row pointer
+  // this is a temporary storing structure "gridPlaces"
+  std::vector<std::vector<int>> gridPlaces(this->nRows);
+  // gridPlaces[row] stores, in which columns in this row there are non-zero 
+  // entries
+  // loop over all rows of the product
+  for(int row = 0; row < nProductRows; row++)
+  {
+    // loop over all columns of the product
+    for(int col = 0; col < nProductColumns; col++)
+    {
+      //Output::print("row ", row, "  column ", col);
+      // check whether 'this row of A' x 'this column of B*A^T' would give an 
+      // entry
+      // this boils down to checking 'row1 of A' x 'row2 of B*A' with row1 = 
+      // row, row2 = col
+      int row1 = row;
+      int row2 = col; //two definitions to fix ideas
+
+      // work on two segments of column array
+      const int* row1ColBegin = &columns[rows[row1]];
+      const int row1ColSize = rows[row1+1] - rows[row1];
+      const int* row2ColBegin = &columns[rows[row2]];
+      const int row2ColSize = rows[row2+1] - rows[row2];
+
+      // find out if the two arryas contain a common value
+      // exploit the fact that both are sorted
+      size_t index1 = 0;
+      size_t index2 = 0;
+      while (index1 < row1ColSize && index2 < this->nColumns)
+      {
+        //Output::print("  index1 ", index1, "  index2 ", index2);
+        if (row1ColBegin[index1] > index2)
+        {
+          index2++;
+        }
+        else if (index2 > row1ColBegin[index1])
+        {
+          index1++;
+          // I think we should never be here (Ulrich)
+        }
+        else
+        {
+          // now we need to check if 'B*A^T' has an entry at (index2,col)
+          if(check_entry(index2, col))
+          {
+            //we found a pair of indices with equal entry in KCol
+            gridPlaces[row].push_back(col);
+            break;
+          }
+          ++index1;
+          ++index2;
+        }
+      }
+
+    } //end for columns of the product
+
+    // update the total number of entries in the product
+    nProductEntries += gridPlaces[row].size();
+    // productRowPtr[0] has been set to 0 already
+    productRowPtr[row+1] = nProductEntries;
+  }//end for rows of the product
+
+  // FROM HERE IT'S ONLY TRANSFORMING THE TEMPORARY DATA STRUCTURE TO THE 
+  // REQUIRED ONE
+  // now fill the array productColumnsPtr
+   //initialise the product's columns pointer
+  std::vector<int> productColumnPtr(nProductEntries, 0);
+
+  // loop over all rows of C
+  for(int row = 0; row < nProductRows; row++)
+  {
+    // loop over all columns of C
+    int n_entries_in_this_row = productRowPtr[row+1] - productRowPtr[row];
+    for(int col = 0; col < n_entries_in_this_row; col++)
+    {
+      productColumnPtr[productRowPtr[row] + col] = gridPlaces[row].at(col);
+    }
+  }
+  // hand over a pointer to the product's structure.
+  return new TStructure(nProductRows, nProductColumns, nProductEntries, 
+                        &productColumnPtr[0], &productRowPtr[0]);
+}
+
+
 void TStructure::info() const
 {
   Output::print<2>("Information on the stored matrix structure");
@@ -4795,6 +5032,50 @@ void TStructure::info() const
   Output::print<2>("Number of columns: ", nColumns);
   Output::print<2>("Number of matrix entries: ", nEntries);
 }
+
+void TStructure::draw(std::string filename) const
+{
+  std::ofstream out_stream(filename);
+  if(!out_stream)
+  {
+    ErrMsg("cannot open '" << filename << "' for output");
+    return;
+  }
+  
+  double scale = 3;
+  int BX = (int) (scale * this->nColumns); // width of picture
+  int BY = (int) (scale * this->nRows);    // height of picture
+  int offset = 2 * scale; // picture is a bit away from picture boundary
+  
+  out_stream << "%!PS-Adobe-3.0\n";
+  out_stream << "%%Creator: ParMooN (Ulrich Wilbrandt)\n";
+  out_stream << "%%DocumentFonts: Helvetica\n";
+  out_stream << "%%BoundingBox: 0 0 " << 2*offset + BX << " " << 2*offset + BY;
+  out_stream << endl;
+  out_stream << "%%Pages: 1\n";
+  out_stream << "%%EndComments\n";
+  out_stream << "%%EndProlog\n";
+  out_stream << "%%Page: 1 1\n";
+  out_stream << "%% n_rows " << this->nRows << ",  n_columns " 
+             << this->nColumns << ",  n_entries " << this->nEntries << endl;
+  out_stream << "/M {" << scale-1 << " " << scale-1 << " rectfill} def\n";
+  for(unsigned int row = 0; row < this->nRows; ++row)
+  {
+    for(unsigned int col = this->rows[row]; col < this->rows[row+1]; ++col)
+    {
+      out_stream << (offset + scale * this->columns[col]) << " " 
+                 << (offset + scale * (this->nRows - row)) << " M\n";
+    }
+  }
+  out_stream << "stroke" << endl;
+  out_stream << "showpage" << endl;
+  out_stream << "%%Trailer" << endl;
+  out_stream << "%%Pages: 1" << endl;
+  out_stream.close();
+  Output::print<2>("postscript picture of matrix structure drawn in file ",
+                   filename);
+}
+
 
 bool operator==(const TStructure &lhs, const TStructure &rhs)
 {

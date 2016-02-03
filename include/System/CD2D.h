@@ -17,11 +17,14 @@
 #ifndef __CD2D_H__
 #define __CD2D_H__
 
-#include <BlockMatrixCD2D.h>
 #include <Example_CD2D.h>
 #include <MultiGrid2D.h>
+#include <FEFunction2D.h>
 #include <Domain.h>
 #include <deque>
+
+#include <BlockFEMatrix.h>
+#include <BlockVector.h>
 
 class CD2D
 {
@@ -37,7 +40,7 @@ class CD2D
       /** @brief Finite Element space */
       TFESpace2D fe_space;
       /** @brief the system matrix */
-      BlockMatrixCD2D matrix;
+      BlockFEMatrix matrix;
       /** @brief the right hand side vector */
       BlockVector rhs;
       /** @brief solution vector with one component. */
@@ -45,6 +48,12 @@ class CD2D
       /** @brief Finite Element function */
       TFEFunction2D fe_function;
       
+      /**
+       * Gives a non-const pointer to the one block which is stored
+       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
+       */
+      TSquareMatrix2D* get_matrix_pointer();
+
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll );
 
@@ -153,9 +162,9 @@ class CD2D
     void output(int i = -1);
     
     // getters and setters
-    const BlockMatrixCD2D & get_matrix() const
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    BlockMatrixCD2D & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
@@ -201,7 +210,7 @@ class CD2D
      * Which afc algorithm is performed is determined by switching over
      * ALGEBRAIC_FLUX_CORRECTION.
      */
-    void performAlgebraicFluxCorrection();
+    void do_algebraic_flux_correction();
 };
 
 #endif // __CD2D_H__

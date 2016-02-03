@@ -167,6 +167,7 @@ class TBaseCell
     virtual int SetVertex(int Vert_i, TVertex *Vert) = 0;
     /**  @brief return the pointer to vertex with number i */
     virtual TVertex *GetVertex(int Vert_i) = 0;
+    virtual const TVertex *GetVertex(int Vert_i) const = 0;
 
     /**  @brief set the pointer to face J\_i to J */
     int SetJoint(int J_i, TJoint *J)
@@ -178,20 +179,22 @@ class TBaseCell
     /**  @brief return the pointer to face with number i */
     TJoint *GetJoint(int J_i)
     { return Joints[J_i]; }
+    const TJoint *GetJoint(int J_i) const
+    { return Joints[J_i]; }
 
     /**  @brief return the number of vertices of the cell */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return RefDesc->GetN_OrigVertices(); }
     /**  @brief return the number of edges of the cell */
-    int GetN_Edges()
+    int GetN_Edges() const
     {  return RefDesc->GetN_OrigEdges(); }
     /**  @brief return the number of joints */
-    int GetN_Joints()
+    int GetN_Joints() const
     {  return RefDesc->GetShapeDesc()->GetN_Joints(); }
 
     #ifdef __3D__
       /**  @brief return the number of faces of the cell */
-      int GetN_Faces()
+      int GetN_Faces() const
       { return RefDesc->GetN_OrigFaces(); }
     #endif
 
@@ -267,7 +270,7 @@ class TBaseCell
     void SetClipBoard(int value)
     { ClipBoard=value; }
     /**  @brief get value from ClipBoard */
-    int GetClipBoard()
+    int GetClipBoard() const
     { return ClipBoard; }
 
     /**  @brief get diameter of a cell */
@@ -446,6 +449,8 @@ class TBaseCell
      { return NeibProcessesIds; } 
      
 #endif
+
+    virtual void check() const = 0;
 };
 
 #endif
