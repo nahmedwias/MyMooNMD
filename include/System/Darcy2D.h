@@ -13,8 +13,10 @@
 #ifndef __SYSTEMDARCY2D__
 #define __SYSTEMDARCY2D__
 
-#include <BlockMatrixDarcy2D.h>
+#include <BlockFEMatrix.h>
 #include <Example_Darcy2D.h>
+#include <FEFunction2D.h>
+#include <BlockVector.h>
 
 #include <deque>
 #include <array>
@@ -39,7 +41,7 @@ class Darcy2D
        *  [ A  BT ]
        *  [ B  C  ]
        */
-      BlockMatrixDarcy2D matrix;
+      BlockFEMatrix matrix;
       /** @brief the right hand side vector */
       BlockVector rhs;
       /** @brief solution vector with two components. */
@@ -192,9 +194,9 @@ class Darcy2D
     //@}
     
     // getters and setters
-    const BlockMatrixDarcy2D & get_matrix() const
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    BlockMatrixDarcy2D & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
