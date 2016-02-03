@@ -18,9 +18,11 @@
 #define __BLOCKVECTOR__
 
 class BlockMatrix; // forward declaration
+class BlockFEMatrix;
 
 #include <numeric>
-#include <BlockMatrix.h>
+#include <vector>
+#include <string>
 
 class BlockVector
 {
@@ -63,50 +65,13 @@ class BlockVector
      */
     BlockVector(int l);
 
-    /** @brief constructor for a BlockVector suitable for a given BlockMatrix
-     * 
-     * If 'image' is set to true, the vector will be in the image space of the 
-     * BlockMatrix 'mat'. Otherwise it will be in the pre-image space. It
-     * is initialized with zeros.
-     * 
-     * The default behavior, 'image' set to false, means this BlockVector will 
-     * have as many blocks as 'mat' has blocks in each row. The length of 
-     * this BlockVector will be the number of (total) columns of the given 
-     * BlockMatrix 'mat'. 
-     * 
-     * For a linear system \f$Ax=b\f$, the solution \f$x\f$ can be created using
-     * \f$A\f$ and 'image' set to false. With 'image' set to true a BlockVector 
-     * suitable for \f$b\f$ is created.
-     * 
-     * In contrast to the templated constructor, all entries are always active.
-     */
-    BlockVector(const BlockMatrix& mat, bool image = false);
-    
-    /** @brief constructor for a BlockVector suitable for a given BlockMatrix
-     * 
-     * If 'image' is set to true, the vector will be in the image space of the 
-     * BlockMatrix 'mat'. Otherwise it will be in the pre-image space. It
-     * is initialized with zeros.
-     * 
-     * The default behavior, 'image' set to false, means this BlockVector will 
-     * have as many blocks as 'mat' has blocks in each row. The length of 
-     * this BlockVector will be the number of (total) columns of the given 
-     * BlockMatrix 'mat'. 
-     * 
-     * For a linear system \f$Ax=b\f$, the solution \f$x\f$ can be created using
-     * \f$A\f$ and 'image' set to false. With 'image' set to true a BlockVector 
-     * suitable for \f$b\f$ is created.
-     * 
-     * In contrast to the non-templated constructor, this sets the the active
-     * entries appropriatly. The class 'BM' should be a derived class from 
-     * BlockMatrix.
-     */
-    template<class BM>
-    BlockVector(const BM& mat, bool image = false)
-    {
-      copy_structure<BM>(mat, image);
-    }
 
+    /// Construct a BlockVector which is suitable to serve as factor ("false")
+    /// or result ("true") in multiplication with a BlockMatrix.
+    /// Vector is filled with zeroes and all entries are non-active.
+    BlockVector(const BlockMatrix& mat, bool result = false);
+
+    BlockVector(const BlockFEMatrix& mat, bool result = false);
 
     //Declaration of special member functions - rule of zero
 
@@ -189,6 +154,15 @@ class BlockVector
      */
     void addScaledActive(const BlockVector& r, double factor);
     
+    /**
+     * @brief add scaled vector to this, only non-actives
+     *
+     * @param r BlockVector which is added to this
+     * @param factor factor with which r is multiplied
+     *
+     */
+    void addScaledNonActive(const BlockVector& r, double factor);
+
     /** @brief copy the structure of another BlockVector, 
      * 
      * No values are copied. If there are old values, they are deleted! New 
@@ -197,56 +171,6 @@ class BlockVector
      * @param r BlockVector from which the structure is copied to this one
      */
     void copy_structure(const BlockVector & r);
-    
-    /** @brief change the structure of a BlockVector so that it is suitable for
-     *         a given BlockMatrix
-     * 
-     * This is exactly what the constructor 
-     * BlockVector(const BlockMatrix& mat, bool image = false) does.
-     * 
-     * This deletes possibly existing data in this BlockVector. After this 
-     * method is called, all values are set to zero. All entries are active.
-     */
-    void copy_structure(const BlockMatrix & mat, bool image);
-    
-    /** @brief change the structure of a BlockVector so that it is suitable for
-     *         a given BlockMatrix
-     * 
-     * This is essentially the method 
-     * copy_structure(const BlockMatrix& mat, bool image), however this method 
-     * is called using a derived class of BlockMatrix, which is used to set the
-     * active entries in this BlockVector.
-     * 
-     * This deletes possibly existing data in this BlockVector. After this 
-     * method is called, all values are set to zero. This sets active entries
-     * appropriatly.
-     * 
-     * The class BM is supposed to be a derived class of BlockMatrix and it must
-     * implement a method
-     *  const TFESpace * get_space_of_block(unsigned int block, bool test) const
-     * which returns the test space (or ansatz space if 'test' is false) of the
-     * b-th block.
-     */
-    /** ************************************************************************ */
-    template <class BM>
-    void copy_structure(const BM& mat, bool image)
-    {
-      // call the regular copy_structure.
-      this->copy_structure((const BlockMatrix&)mat, image);
-      // set the active degrees of freedom
-      unsigned int n_blocks = image ? mat.n_rows() : mat.n_cols();
-      for(unsigned int b = 0; b < n_blocks; ++b)
-      {
-        if( image )
-        { // take actives from row space
-          actives[b] = mat.get_n_row_actives( b );
-        }
-        else
-        { //take actives from column space
-          actives[b] = mat.get_n_column_actives( b );
-        }
-      }
-    }
     
     /**
      * @brief add (scaled) values into a subvector, "this += a*x"
@@ -339,6 +263,10 @@ class BlockVector
     unsigned int active(const int i) const
     { return actives.at(i); }
     
+    /** @brief return the number of non-active entries for a given block i */
+    size_t n_non_actives(const int i) const
+    { return lengths.at(i) - actives.at(i); }
+
     unsigned int n_blocks() const 
     { return lengths.size(); }
     
@@ -399,8 +327,6 @@ class BlockVector
     BlockVector& operator=(const double *r);
     BlockVector& operator=(const double a); // set all values to a
     BlockVector& operator*=(const double a); // multiply by a scalar
-    // mulitply matrix from left (i.e. x <-- A*x), only square A supported
-    BlockVector& operator*=(const BlockMatrix& A);
     BlockVector& operator+=(const BlockVector& r); // add other BlockVector
     BlockVector& operator-=(const BlockVector& r);// substract other BlockVector
     

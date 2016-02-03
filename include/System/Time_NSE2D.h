@@ -14,8 +14,10 @@
 #define __TIME_NSE2D__
 
 #include <FEVectFunct2D.h>
+
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <BlockMatrixNSE2D.h>
+
 #include <FESpace2D.h>
 #include <Example_NSE2D.h>
 
@@ -35,6 +37,7 @@
 
 class Time_NSE2D
 {
+  enum class Matrix{Type14, Type1, Type2, Type3, Type4};
   protected:
     /** @brief store a complete system on a paticular grid.
      * 
@@ -53,13 +56,13 @@ class Time_NSE2D
        *  [ A21  A22  B2 ]
        *  [ B3   B4   C  ]
       */
-      BlockMatrixNSE2D matrix;
+      BlockFEMatrix matrix;
       /** @brief Mass matrix
        *  [ M11  0    0 ]
        *  [ 0    M22  0 ]
        *  [ 0    0    0 ]
        */
-      BlockMatrixNSE2D Mass_Matrix;
+      BlockFEMatrix Mass_Matrix;
       /** @brief right hand side vector*/
       BlockVector rhs;
       /** @brief solution vector*/
@@ -71,7 +74,7 @@ class Time_NSE2D
       
       /** @brief constructor*/
       System_per_grid(const Example_NSE2D& example, TCollection& coll, 
-                      std::pair<int,int> order);
+                      std::pair<int,int> order, Time_NSE2D::Matrix type);
     };
     
     /** @brief a complete system on each grid 
@@ -106,6 +109,8 @@ class Time_NSE2D
       
       /** @brief right hand side vector from previous time step (on finest mesh)*/
       BlockVector old_rhs;
+      
+      BlockVector old_solution;
       
       /** @brief store errors  */
       std::vector<double> errors;
@@ -163,7 +168,7 @@ class Time_NSE2D
      *  @param la: LocalAssembling2D object
      *  @param rhs: rhs vector to be assembled
     */
-    void AssembleRhs(LocalAssembling2D& la, BlockVector& rhs);
+    void AssembleRhs();
     
     /** @brief Assemble the system matrix
      * This function will prepare the system which will be 
@@ -210,8 +215,8 @@ class Time_NSE2D
     void output(int m, int &image);
     
     // getters and setters
-    const BlockMatrixNSE2D & get_matrix() const
-    { return this->systems.front().matrix; }
+    /*const BlockMatrixNSE2D & get_matrix() const
+    { return this->systems.front().matrix; }*/
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
     const TFEVectFunct2D & get_velocity() const

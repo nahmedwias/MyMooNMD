@@ -22,8 +22,9 @@
 #ifndef __CD3D_H__
 #define __CD3D_H__
 
-#include <BlockMatrixCD3D.h>
-#include <Example_CD3D.h>
+#include <BlockFEMatrix.h>
+#include <BlockVector.h>
+
 #include <FEFunction3D.h>
 #include <vector>
 #include <deque>
@@ -34,6 +35,9 @@
 #include <ParFEMapper3D.h>
 #include <ParFECommunicator3D.h>
 #endif
+
+class LocalAssembling3D; //forward declaration
+class Example_CD3D;
 
 class CD3D
 {
@@ -49,7 +53,7 @@ class CD3D
       /** @brief Finite Element space */
       TFESpace3D feSpace_;
       /** @brief the system matrix */
-      BlockMatrixCD3D matrix_;
+      BlockFEMatrix matrix_;
       /** @brief the right hand side vector */
       BlockVector rhs_;
       /** @brief solution vector with one component. */
@@ -201,13 +205,13 @@ class CD3D
     // getters and setters
 
     /** @brief Get the system matrix on the currently finest grid.*/
-    const BlockMatrixCD3D & getMatrix() const
+    const BlockFEMatrix & getMatrix() const
     {
       return systems_.front().matrix_;
     }
 
     /** @brief Get the system matrix on the currently finest grid.*/
-    BlockMatrixCD3D & getMatrix()
+    BlockFEMatrix & getMatrix()
     {
       return systems_.front().matrix_;
     }
@@ -273,6 +277,19 @@ class CD3D
 
     //! Default destructor. Does most likely cause memory leaks.
     ~CD3D() = default;
+
+  private:
+    /**
+     * Scramble together the parameters which Assemble3D needs and call it.
+     * Is only put here to keep the code of assemble() slender.
+     * assemble() should take care of the right choice of the LocalAssembling
+     * object and whether it fits the system matrix' block structure
+     * (which should always be the case in CD3D...).
+     * @param s The sytem where rhs and stiffness matrix are to be assembled.
+     * @param la_stiff The local assembling object of choice.
+     */
+    void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
+
 };
 
 #endif // __CD3D_H__

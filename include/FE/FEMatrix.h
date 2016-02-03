@@ -10,6 +10,10 @@
  * Note that there is no constructor taking a TStructure together with the 
  * spaces it was created with. If you want to create multiple matrices with the
  * same structure object, use the copy constructor which will do just that.
+ * 
+ * @ruleof0
+ * 
+ * @todo write a test for this class
  */
 
 #ifndef __FEMATRIX__
@@ -45,17 +49,17 @@ class FEMatrix : public TMatrix
     //@{
     FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,  bool is_empty = false);
     #ifdef __3D__
-    FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace);
+    FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,  bool is_empty = false);
     #endif // 3D
     //@}
     
-    //! Default copy constructor. Performs deep copy.
+    //! Default copy constructor. Performs shallow copy.
     FEMatrix(const FEMatrix&) = default;
     
     //! Default move constructor.
     FEMatrix(FEMatrix&&) = default;
     
-    //! Default copy assignment operator. Performs deep copy.
+    //! Default copy assignment operator. Performs shallow copy.
     FEMatrix& operator=(const FEMatrix&) = default;
     
     //! Default move assignment operator
@@ -108,6 +112,18 @@ class FEMatrix : public TMatrix
     void multiplyActive(const double *x, double *y, double factor = 1.0)
       const;
     
+    /**
+     *  compute y = y + a*A^T x
+     *
+     *  add the matrix-vector product "A^T x", scaled by "a", to y: only active
+     * "A" is this matrix.
+     * @param x
+     * @param y
+     * @param factor
+     */
+    void multiplyTransposedActive(const double *x, double *y, double factor = 1.0)
+      const;
+
     
     /** @brief return the number of active rows */
     int GetActiveBound() const;
@@ -152,6 +168,7 @@ class FEMatrix : public TMatrix
     /// @name ansatz spaces
     /// @brief the ansatz space (pre-image space)
     /// @details Exactly one of these pointers is not a nullptr.
+    /// @todo make this a share_ptr
     //@{
     const TFESpace1D* AnsatzSpace1D;
     const TFESpace2D* AnsatzSpace2D;
@@ -161,6 +178,7 @@ class FEMatrix : public TMatrix
     /// @name test spaces
     /// @brief the test space (image space)
     /// @details Exactly one of these pointers is not a nullptr.
+    /// @todo make this a share_ptr
     //@{
     const TFESpace1D* TestSpace1D;
     const TFESpace2D* TestSpace2D;

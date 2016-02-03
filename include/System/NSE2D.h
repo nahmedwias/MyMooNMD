@@ -17,9 +17,11 @@
 
 #include <FEVectFunct2D.h>
 #include <Example_NSE2D.h>
-#include <BlockMatrixNSE2D.h>
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
+
+#include <BlockFEMatrix.h>
+#include <BlockVector.h>
 
 
 #include <NSE_MultiGrid.h>
@@ -32,6 +34,8 @@
 
 class NSE2D
 {
+  enum class Matrix{Type14, Type1, Type2 , Type3, Type4};
+
   protected:
     
     /** @brief store a complete system on a particular grid
@@ -45,13 +49,10 @@ class NSE2D
       TFESpace2D velocity_space;
       /** @brief Finite Element space for the pressure */
       TFESpace2D pressure_space;
-      /** @brief the system matrix (depends strongly on 
-       *         TDatabase::ParamDB->NSTYPE)
-       *  [ A11  A12  B1T ]
-       *  [ A21  A22  B2T ]
-       *  [ B1   B2   C   ]
-       */
-      BlockMatrixNSE2D matrix;
+
+      /** The system matrix. */
+      BlockFEMatrix matrix;
+
       /** @brief the right hand side vector */
       BlockVector rhs;
       /** @brief solution vector with two components. */
@@ -63,7 +64,28 @@ class NSE2D
       
       /** @brief constructor */
       System_per_grid(const Example_NSE2D& example, TCollection& coll, 
-                      std:: pair <int,int> velocity_pressure_orders);
+                      std:: pair <int,int> velocity_pressure_orders,
+                      NSE2D::Matrix type);
+
+      /**
+       * Special member functions mostly deleted,
+       * for struct takes ownership of the bad
+       * classes TFEFunction2D, TFEVectFunct2D and TFESpace2D.
+       */
+      //! Delete copy constructor.
+      System_per_grid(const System_per_grid&) = delete;
+
+      //! Delete move constructor.
+      System_per_grid(System_per_grid&&) = delete;
+
+      //! Delete copy assignment operator.
+      System_per_grid& operator=(const System_per_grid&) = delete;
+
+      //! Delete move assignment operator.
+      System_per_grid& operator=(System_per_grid&&) = delete;
+
+      //! Default destructor.
+      ~System_per_grid() = default;
     };
     
     /** @brief a complete system on each grid 
@@ -202,7 +224,7 @@ class NSE2D
      * right hand side. Call this function after assembling the nonlinear
      * matrix with the current solution. 
      */
-    void normOfResidual();
+    void computeNormsOfResiduals();
     
     /** @brief check if one of the stopping criteria is fulfilled
      * 
@@ -233,9 +255,13 @@ class NSE2D
     void mg_solver();
     
     // getters and setters
-    const BlockMatrixNSE2D & get_matrix() const
+//    const BlockMatrixNSE2D & get_matrix() const TODO
+//    { return this->systems.front().matrix; }
+//    BlockMatrixNSE2D & get_matrix()
+//    { return this->systems.front().matrix; }
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    BlockMatrixNSE2D & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }

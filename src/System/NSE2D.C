@@ -7,23 +7,52 @@
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <DirectSolver.h>
+#include <Upwind.h>
+
+#include<Assemble2D.h>
 
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
-               TCollection& coll, std::pair<int,int> velocity_pressure_orders)
- : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", 
-                  example.get_bc(0), velocity_pressure_orders.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", 
-                  example.get_bc(2), velocity_pressure_orders.second, nullptr),
-   matrix(this->velocity_space, this->pressure_space, example.get_bd()),
-   rhs(this->matrix, true),
-   solution(this->matrix, false),
-   u(&this->velocity_space, (char*)"u", (char*)"u", this->solution.block(0),
-     this->solution.length(0), 2),
-   p(&this->pressure_space, (char*)"p", (char*)"p", this->solution.block(2),
-     this->solution.length(2))
+               TCollection& coll, std::pair<int,int> velocity_pressure_orders,
+               NSE2D::Matrix type)
+ : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", example.get_bc(0),
+                  velocity_pressure_orders.first, nullptr),
+   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", example.get_bc(2),
+                  velocity_pressure_orders.second, nullptr)
+// TODO CB: Building the matrix here and rebuilding later is due to the
+// highly non-functional class TFEVectFunction2D (and TFEFunction2D,
+// which do neither provide default constructors nor working copy assignments.)
+   ,matrix({&velocity_space, &velocity_space, &pressure_space}),
+   rhs(matrix, true),
+   solution(matrix, false),
+   u(&velocity_space, (char*)"u", (char*)"u", solution.block(0),
+     solution.length(0), 2),
+   p(&pressure_space, (char*)"p", (char*)"p", solution.block(2),
+     solution.length(2))
 {
+// rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
+// vector which we built above do fit the new matrix, too!
+  switch (type)
+  {
+    case NSE2D::Matrix::Type1:
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+    break;
+    case NSE2D::Matrix::Type2:
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+    break;
+    case NSE2D::Matrix::Type3:
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+    break;
+    case NSE2D::Matrix::Type4:
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+    break;
+    case NSE2D::Matrix::Type14:
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      break;
+    default:
+      ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
+  }
 
 }
 
@@ -33,6 +62,8 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
+  // FIXME Find a workaround - we do not like memory leaks at all,
+  // because they pollute our valgrind tests.
 }
 
 /** ************************************************************************ */
@@ -51,7 +82,20 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-  this->systems.emplace_back(example, *coll, velocity_pressure_orders);
+  // determine NSE TYPE from Database TODO change that handling!
+  NSE2D::Matrix type;
+  switch (TDatabase::ParamDB->NSTYPE)
+  {
+    case  1: type = Matrix::Type1; break;
+    case  2: type = Matrix::Type2; break;
+    case  3: type = Matrix::Type3; break;
+    case  4: type = Matrix::Type4; break;
+    case 14: type = Matrix::Type14; break;
+    default:
+      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+               " That NSE Block Matrix Type is unknown to class NSE2D.");
+  }
+  this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
@@ -72,7 +116,7 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   Output::print<1>("dof pressure       : ", setw(10), n_p);
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
-  // done with the conrtuctor in case we're not using multigrid
+  // done with the constructor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
     || TDatabase::ParamDB->SOLVER_TYPE != 1)
     return;
@@ -94,7 +138,7 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   {
     unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
     TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders);
+    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
   }
   
   // create multigrid-level-objects, must be coarsest first
@@ -189,20 +233,207 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
+void NSE2D::set_parameters()
+{
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+  {
+    //Assemble2DSlipBC does not work, and is not implemented yet
+    ErrThrow("Set INTERNAL_SLIP_WITH_FRICTION to 0, this feature is not yet included.");
+  }
+}
+
 /** ************************************************************************ */
 void NSE2D::assemble()
 {
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
   for(System_per_grid& s : this->systems)
   {
-    TFEFunction2D *fe_functions[3] = 
+    s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
+
+    const TFESpace2D * v_space = &s.velocity_space;
+    const TFESpace2D * p_space = &s.pressure_space;
+
+    // declare the variables which Assemble2D needs and each nstype has to fill
+    size_t N_FESpaces = 2;
+
+    const TFESpace2D *fespmat[2] = {v_space, p_space};
+    size_t n_sq_mat;
+    TSquareMatrix2D *sq_matrices[5]{nullptr};//it's five pointers maximum (Type14)
+
+    size_t n_rect_mat;
+    TMatrix2D *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
+
+    size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
+    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
+    const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
+
+    BoundCondFunct2D * boundary_conditions[3] = {
+      v_space->GetBoundCondition(), v_space->GetBoundCondition(),
+      p_space->GetBoundCondition() };
+    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    non_const_bound_values[0] = example.get_bd()[0];
+    non_const_bound_values[1] = example.get_bd()[1];
+    non_const_bound_values[2] = example.get_bd()[2];
+
+    //same for all: the local asembling object
+    TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
     LocalAssembling2D la(NSE2D_Galerkin, fe_functions,
-                         this->example.get_coeffs());
-    s.matrix.Assemble(la, s.rhs);
-    // set rhs for Dirichlet nodes
+                     this->example.get_coeffs());
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+
+    switch(TDatabase::ParamDB->NSTYPE)
+    {// switch over known Block Matrix types, treat each one individually,
+      // using a priori knowledge about the structure and the way it fits
+      // to the LocalAssembling2D object
+      // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
+      // we have to use reinterpret_casts because dynamic downcasting won't work here
+      // FIXME replace global switch by local checking of blockmatrix type!
+      case 1:
+        //CB DEBUG
+        if(blocks.size() != 3)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        //END DEBUG
+
+        n_sq_mat = 1;
+        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+        n_rect_mat = 2;
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
+        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+
+        break;
+      case 2:
+        //CB DEBUG
+        if(blocks.size() != 5)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        //END DEBUG
+        n_sq_mat = 1;
+        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+        n_rect_mat = 4;
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
+        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
+        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
+        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+
+        break;
+      case 3:
+        //CB DEBUG
+        if(blocks.size() != 6)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        //END DEBUG
+        n_sq_mat = 4;
+        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+
+        n_rect_mat = 2;
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+        break;
+
+      case 4:
+        //CB DEBUG
+        if(blocks.size() != 8)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        //END DEBUG
+
+        n_sq_mat = 4;
+        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+
+        n_rect_mat = 4;
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+
+        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
+        fesprhs[2]  = p_space;
+        N_Rhs = 3;
+
+        break;
+
+      case 14:
+        //CB DEBUG
+        if(blocks.size() != 9)
+        {
+          ErrThrow("Wrong blocks.size() ", blocks.size());
+        }
+        //END DEBUG
+        n_sq_mat = 5;
+        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+        sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+
+        n_rect_mat = 4;
+        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+
+        RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
+        fesprhs[2]  = p_space;
+        N_Rhs = 3;
+
+        break;
+      default:
+        ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
+            "I don't know how to pass its blocks to Assemble2D.");
+    }
+
+    // call the assemble method with the information that has been patched together
+    Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
+               n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+               boundary_conditions, non_const_bound_values.data(), la);
+
+    // do upwinding TODO remove dependency of global values
+    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
+       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
+                                la.get_fe_function(0), la.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE : level ");
+          break;
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE : level ");
+          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
+                                la.get_fe_function(0), la.get_fe_function(1));
+          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
+                                la.get_fe_function(0), la.get_fe_function(1));
+          break;
+      } // endswitch
+    } // endif
+
+    // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
+
+    // TODO Maybe we have to explicitely set non-actives in non-diagonal blocks
+    // to zero here, that was done in former code, but maybe we can move it to the solver part
+
+    //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
   }
@@ -215,13 +446,118 @@ void NSE2D::assemble_nonlinear_term()
   // pointers to finite element functions, i.e. TFEFunction2D **.
   for(System_per_grid& s : this->systems)
   {
+    //hold the velocity space, we'll need it...
+    const TFESpace2D * v_space = &s.velocity_space;
+
+    //the variables we will have to fill for the call to Assemble2D
+
+    size_t n_fe_spaces = 1;
+    const TFESpace2D* fe_spaces[1]{v_space};
+
+    size_t n_sq_mat;
+    TSquareMatrix2D* sq_mat[2]{nullptr};//two pointers maximum
+
+    size_t n_rect_mat = 0;
+    TMatrix2D** rect_mat = nullptr;
+
+    size_t n_rhs = 0;
+    double** rhs = nullptr;
+    const TFESpace2D** fe_rhs = nullptr;
+
+    BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
+    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+    non_const_bound_values[0] = example.get_bd()[0];
+    non_const_bound_values[1] = example.get_bd()[1];
+    non_const_bound_values[2] = example.get_bd()[2];
+
     TFEFunction2D *fe_functions[3] = 
-      { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
     LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
                                    this->example.get_coeffs());
-    s.matrix.AssembleNonLinear(la_nonlinear);
-    // set rhs for Dirichlet nodes (is this necessary here?)
+
+    //fetch us (a) pointer(s) to the diagonal A block(s)
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
+
+    switch(TDatabase::ParamDB->NSTYPE)
+    {// switch over known Block Matrix types, treat each one individually,
+      // using a priori knowledge about the structure and the way it fits
+      // to the LocalAssembling2D object
+      // TODO remove all reinterpret casts as soon as Assembling process takes only FEMatrices
+      // FIXME replace global switch by local checking of blockmatrix type!
+      case 1:
+        n_sq_mat = 1;
+        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        break;
+      case 2:
+        n_sq_mat = 1;
+        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        break;
+      case 3:
+        n_sq_mat = 2;
+        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        break;
+      case 4:
+        n_sq_mat = 2;
+        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        break;
+      case 14:
+        n_sq_mat = 2;
+        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+        break;
+      default:
+        ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
+            "I don't know how to pass its blocks to Assemble2D.");
+    }
+
+    // assemble the nonlinear part of NSE
+    for(size_t i =0; i < n_sq_mat; ++i)
+    {//reset the matrices, linear part is assembled anew
+      sq_mat[i]->reset();
+    }
+    //do the actual assembling
+    Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
+               n_rhs, rhs, fe_rhs, boundary_conditions,
+               non_const_bound_values.data(), la_nonlinear);
+
+    // do upwinding TODO remove dependency of global values
+    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
+        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+    {
+      switch(TDatabase::ParamDB->NSTYPE)
+      {
+        case 1:
+        case 2:
+          // do upwinding with one matrix
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          Output::print<3>("UPWINDING DONE : level ");
+          break;
+
+        case 3:
+        case 4:
+        case 14:
+          // do upwinding with two matrices
+          Output::print<3>("UPWINDING DONE : level ");
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[0],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[1],
+                                la_nonlinear.get_fe_function(0),
+                                la_nonlinear.get_fe_function(1));
+          break;
+      } // endswitch
+    } // endif
+
+    //end nonlinear assembling
+
+    // copy Dirichlet values from right hand side into solution
+    //(is this necessary here? solution has not been touched!)
     s.solution.copy_nonactive(s.rhs);
+
   }
 }
 
@@ -229,7 +565,7 @@ void NSE2D::assemble_nonlinear_term()
 bool NSE2D::stopIt(unsigned int iteration_counter)
 {
   // compute the residuals with the current matrix and solution
-  this->normOfResidual();
+  this->computeNormsOfResiduals();
   // the current norm of the residual
   const double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
@@ -270,7 +606,7 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
 }
 
 /** ************************************************************************ */
-void NSE2D::normOfResidual()
+void NSE2D::computeNormsOfResiduals()
 {
   System_per_grid& s = this->systems.front();
   unsigned int n_u_dof = s.solution.length(0);
@@ -278,10 +614,7 @@ void NSE2D::normOfResidual()
   
   // copy rhs to defect
   this->defect = s.rhs;
-  s.matrix.apply_scaled_add(s.solution.get_entries(), defect.get_entries(),-1.);
-  
-  //this->matrix[0]->GetResidual(this->get_solution(), this->rhs[0], 
-  //                             &this->defect[0]);
+  s.matrix.apply_scaled_add(s.solution, defect,-1.);
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
@@ -315,11 +648,13 @@ void NSE2D::solve()
     direct_solver.solve(s.rhs, s.solution);
   }
   else
-  {
-    this->mg_solver();
+  { // multigrid preconditioned iterative solver
+    mg_solver();
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
+
+
 }
 
 /** ************************************************************************ */
@@ -413,18 +748,31 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
     alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
   }
   
+  //get all blocks for the solver - here blocks may appear more than once
+  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
+  // entire multigrid apparatus expects non-const TMatrix pointers
+  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
+
+  TSquareMatrix2D* A11 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+  TSquareMatrix2D* A12 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+  TMatrix2D* B1T =        reinterpret_cast<TMatrix2D*>( blocks.at(2).get());
+  TSquareMatrix2D* A21 =  reinterpret_cast<TSquareMatrix2D*>( blocks.at(3).get());
+  TSquareMatrix2D* A22 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+  TMatrix2D* B2T =        reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+  TMatrix2D* B1 =         reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
+  TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+  //TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
+
+
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
+      //TODO The files are there, why should that not be supported?
       ErrThrow("NSE2D::mg_levels: NSTYPE 1 is not supported");
       break;
     
     case 2:
-      mg_l = new TNSE_MGLevel2(i, s.matrix.get_A_block(0), 
-                               s.matrix.get_B_block(0), 
-                               s.matrix.get_B_block(1), 
-                               s.matrix.get_BT_block(0),
-                               s.matrix.get_BT_block(1),
+      mg_l = new TNSE_MGLevel2(i, A11, B1, B2, B1T, B2T,
                                s.rhs.get_entries(), 
                                s.solution.get_entries(), 
                                n_aux, alpha, v_space_code, p_space_code, 
@@ -432,25 +780,22 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
       break;
       
     case 3:
+      //TODO The files are there, why should that not be supported?
       ErrThrow("NSE2D::mg_levels: NSTYPE 3 is not supported");
       break;
       
     case 4:
-    case 14:
-       mg_l = new TNSE_MGLevel4(i, s.matrix.get_A_block(0), 
-                                s.matrix.get_A_block(1),
-                                s.matrix.get_A_block(2),
-                                s.matrix.get_A_block(3),
-                                s.matrix.get_B_block(0),
-                                s.matrix.get_B_block(1),
-                                s.matrix.get_BT_block(0),
-                                s.matrix.get_BT_block(1),
+
+       mg_l = new TNSE_MGLevel4(i, A11, A12, A21, A22, B1, B2, B1T, B2T,
                                 s.rhs.get_entries(), 
                                 s.solution.get_entries(), 
                                 n_aux, alpha, v_space_code, p_space_code, 
                                 nullptr, nullptr);
-    if(TDatabase::ParamDB->NSTYPE == 14)
-      Output::print<1>("WARNING: NSTYPE 14 is not supported. C block is ignored");
+       break;
+    case 14:
+      //TODO The files are there, why should that not be supported?
+      ErrThrow("NSE2D::mg_levels: NSTYPE 14 is not supported");
+
     break;
   }
   return mg_l;
@@ -472,51 +817,67 @@ void NSE2D :: mg_solver()
 
   int n_dof = this->get_size();
   
+  //get all blocks for the solver - here blocks may appear more than once
+  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
+  // entire multigrid apparatus expects non-const TMatrix pointers
+  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
+
+  TSquareMatrix2D* A11 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+  TSquareMatrix2D* A12 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+  TMatrix2D* B1T =  reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+  TSquareMatrix2D* A21 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(3).get());
+  TSquareMatrix2D* A22 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(4).get());
+  TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
+  TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
+  TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
+  //TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
+
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      sqMat[0] = s.matrix.get_A_block(0);
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
+      sqMat[0] = A11;
+      recMat[0] = B1;
+      recMat[1] = B2;
       MatVect = MatVect_NSE1;
       Defect = Defect_NSE1;
       break;
     case 2:
-      sqMat[0] = s.matrix.get_A_block(0);
+      sqMat[0] = A11;
       
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
-      recMat[2] = s.matrix.get_BT_block(0);
-      recMat[3] = s.matrix.get_BT_block(1);
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B1T;
+      recMat[3] = B2T;
       
       MatVect = MatVect_NSE2;
       Defect = Defect_NSE2;
       break;
     case 3:
-      sqMat[0] = s.matrix.get_A_block(0);
-      sqMat[1] = s.matrix.get_A_block(1);
-      sqMat[2] = s.matrix.get_A_block(2);
-      sqMat[3] = s.matrix.get_A_block(3);
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
+      sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A21;
+      sqMat[3] = A22;
+      recMat[0] = B1;
+      recMat[1] = B2;
       MatVect = MatVect_NSE3;
       Defect = Defect_NSE3;
       break;
     case 4:
-      sqMat[0] = s.matrix.get_A_block(0);
-      sqMat[1] = s.matrix.get_A_block(1);
-      sqMat[2] = s.matrix.get_A_block(2);
-      sqMat[3] = s.matrix.get_A_block(3);
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
-      recMat[2] = s.matrix.get_BT_block(0);
-      recMat[3] = s.matrix.get_BT_block(1);
+      sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A21;
+      sqMat[3] = A22;
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B1T;
+      recMat[3] = B2T;
+
       MatVect = MatVect_NSE4;
       Defect = Defect_NSE4;
       break;
     case 14:
-      Output::print<1>("WARNING: NSTYPE 14 is not fully supported, take NSTYPE 4");
-      exit(-4711);
+      //TODO The files are there, why should that not be supported?
+      ErrThrow("NSTYPE 14 is not fully supported, take NSTYPE 4");
       break;
   }
 

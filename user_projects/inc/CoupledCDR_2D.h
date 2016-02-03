@@ -13,7 +13,6 @@
 #ifndef CoupledCDR_2D_H_
 #define CoupledCDR_2D_H_
 
-#include <BlockMatrixCD2D.h>
 #include <Example_CoupledCDR2D.h>
 #include <vector>
 #include <memory>
