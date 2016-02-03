@@ -1892,9 +1892,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
               }
               break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
             case 4:
-              this->N_Matrices    = 10;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+              this->N_Matrices    = 9;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
               if(TDatabase::ParamDB->LAPLACETYPE == 0)
               {
                 switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
@@ -1937,6 +1937,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
           }
           break; // break within type TNSE2D->DISCTYPE
         case SUPG:
+          // TODO: implement SUPG method
+          ErrThrow("SUPG method is not supported yet");
+          
           switch(nstype)
           {
             case 1:

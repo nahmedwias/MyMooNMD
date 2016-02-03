@@ -78,13 +78,13 @@ class Example3D
     DoubleFunct3D* get_exact(unsigned int i) const
     { return exact_solution.at(i); }
 
-    BoundCondFunct3D** get_bc()
+    BoundCondFunct3D* const * get_bc() const
     { return &boundary_conditions[0]; }
 
     BoundCondFunct3D* get_bc(unsigned int i) const
     { return boundary_conditions.at(i); }
 
-    BoundValueFunct3D** get_bd()
+    BoundValueFunct3D* const * get_bd() const
     { return &boundary_data[0]; }
 
     BoundValueFunct3D* get_bd(unsigned int i) const
