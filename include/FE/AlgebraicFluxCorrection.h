@@ -15,100 +15,94 @@
 
 namespace AlgebraicFluxCorrection {
 
-//**************************************************************
-//compute the lumped matrix
-//output is a vector
-//**************************************************************
-//#ifdef __2D__
-void LumpMassMatrixToVector(TSquareMatrix2D *M, double *lump_mass);
-//#endif
-//#ifdef __3D__
-//void LumpMassMatrixToVector(TSquareMatrix3D *M, double *lump_mass);
-//#endif
+/**
+ * Control parameters which prelimiter to use (flux limiter before application
+ * of Zalesak's).
+ * NONE: do not use a prelimiter
+ * MIN_MOD: Min_Mod prelimiter.
+ * GRAD_DIRECTION: setting anit-diffusive fluxes in gradient direction to 0
+ * BOTH: apply both - first MIN_MOD, then GRAD_DIRECTION.
+ */
+enum class Prelimiter
+{
+    NONE, MIN_MOD, GRAD_DIRECTION, BOTH
+};
 
-/*******************************************************************************/
-//
-// FEM_TVD_ForConvDiff for steady-state cdr equations
-// following D. Kuzmin (2007)
-//
-/*******************************************************************************/
-//#ifdef __2D__
-void FEM_TVD_ForConvDiff(TSquareMatrix2D *sqmatrix, int N_U, int N_Active,
-double *matrix_D_Entries, double *sol, double *rhs,
-			 int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D);
-//#endif
-//#ifdef __3D__
-//void FEM_TVD_ForConvDiff(TSquareMatrix3D *sqmatrix, int N_U, int N_Active,
-//double *matrix_D_Entries, double *sol, double *rhs,
-//int N_neum_to_diri, int *neum_to_diri, int compute_matrix_D);
-//#endif
+/**
+ * FEM-TVD ('Total Variation Diminishing') algorithm for steady-state
+ * convection-diffusion-reaction problems, following
+ *
+ * Kuzmin, D.(2007): Algebraic Flux Correction for Finite Element
+ * Discretizations of Coupled Systems.
+ *
+ * Note that for the algorithm to operate properly, the system matrix
+ * must have been constructed as if it only had active degrees of freedom.
+ * This is not checked, because when reaching here the matrix is a purely
+ * algebraic object without knowledge of FE spaces.
+ * To regain the correct Dirichlet rows, one has to call
+ * correct_dirichlet_rows upon the system matrix afterwards.
+ *
+ * @param[in,out] system_matrix The matrix to undergo algebraic flux correction.
+ *                         Must be square.
+ * @param[in] sol The current solution vector.
+ * @param[out] rhs The current right hand side vector. Gets modified.
+ * @param[in] neum_to_diri array which contains the indices of actual
+ *  Dirichlet dof which were but treated as Neumann dof. CB: That paramerter
+ *  is unused at the moment!
+ * @param[in] continuous_proposal If true, a slightly different version
+ * of the algorithm is used (continuous proposal in appllication of nodal
+ * correction factors).
+ * @param[in] nonsymmetric_application If true, a slightly different version
+ * of the algorithm is used (nonsymmetric application of flux correction)
+ */
+void fem_tvd_algorithm(
+    TMatrix& system_matrix,
+    const std::vector<double>& sol,
+    std::vector<double>& rhs,
+    const std::vector<int>& neum_to_diri,
+    bool continuous_proposal = false,
+    bool nonsymmetric_application = false);
 
-//**************************************************************
-//compute system matrix for FEM-FCT
-//output is a vector
-//**************************************************************
-//#ifdef __2D__
-void FEM_FCT_SystemMatrix(TSquareMatrix2D *M_C, TSquareMatrix2D *A,
-			  double *lump_mass,int N_U);
-//#endif
-//#ifdef __3D__
-//void FEM_FCT_SystemMatrix(TSquareMatrix3D *M_C, TSquareMatrix3D *A,
-//			  double *lump_mass,int N_U);
-//#endif
-
-//**************************************************************
-// MINMOD prelimiter
-//**************************************************************
-double MinMod(double a, double b);
-
-/*******************************************************************************/
-//
-// FCT-FEM algorithm
-// following D. Kuzmin, M. M"oller (2005) (nonlinear scheme)
-//           D. Kuzmin (2008) (linear scheme)
-//
-/*******************************************************************************/
-//#ifdef __2D__
-void FEM_FCT_ForConvDiff(TSquareMatrix2D *M_C,TSquareMatrix2D *A,
-			 int N_U, int N_Active,
-			 double *lump_mass, double *matrix_D_Entries,
-			 double *sol, double *oldsol,
-			 double *B, double *rhs, double *rhs_old,
-			 double *tilde_u,
-			 int N_neum_to_diri, int *neum_to_diri,
-			 int *neum_to_diri_bdry,
-			 double *neum_to_diri_param,
-			 int compute_matrix_D, BoundValueFunct2D *BoundaryValue,
-			 double *BoundaryValues);
-//#endif
-//#ifdef __3D__
-//void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
-//    int N_U, int N_Active,
-//    double *lump_mass, double *matrix_D_Entries,
-//    double *sol, double *oldsol,
-//    double *B, double *rhs, double *rhs_old,
-//    double *tilde_u,
-//    int N_neum_to_diri, int *neum_to_diri,
-//    double *neum_to_diri_x, double *neum_to_diri_y, double *neum_to_diri_z,
-//    int compute_matrix_D, BoundValueFunct3D *BoundaryValue,
-//    double *BoundaryValues);
-//#endif
-
-// This is an auxiliary function for tests etc., Containing only the simplest linear scheme
-// for calculation of the auxiliary solution.
-void FEM_FCT_SimpleLinear(TSquareMatrix2D *M_C,TSquareMatrix2D *A,
-			 int N_U, int N_Active,
-			 double *lump_mass, double *matrix_D_Entries, int compute_matrix_D,
-			 double *sol, double *oldsol,
-			 double *B, double *rhs, double *rhs_old,
-			 int N_neum_to_diri, int *neum_to_diri,
-			 double *BoundaryValues);
-
-void computeArtificialDiffusionMatrix(const TSquareMatrix2D& A, double* matrix_D_Entries, int N_U);
-
-////////////////////////// Auxiliary methods //////////////////////////
-// The following methods are auxiliary methods to pre- and post- treat
-// CFD matrices which underwent AFC.
+/**
+ * @brief Apply the linear Crank-Nicolson FEM-FCT algorithm for
+ * time-dependent convection-diffusion-reaction problems to a CDR system.
+ *
+ * The algorithm is the FEM-FCT variant which is described in Chapter 7 of
+ * D.Kuzmin(2009): Explicit and implicit FEM-FCT algorithms with flux
+ * linearization.
+ * J Comput. Phys. 228(7) pp. 2517--2534.
+ *
+ *
+ * @param[in] mass Consistent mass matrix.
+ * @param[in, out] stiff High order transport matrix (
+ * before modifications due to time stepping!). Gets modified to be the
+ * system matrix of the system which has to be solved finally (so will include
+ * modifications due to flux correction AND to timestepping). Must have been
+ * assembled with the INTERNAL_FULL_MATRIX_STRUCTURE switch on (but that will
+ * not be checked by the algorithm).
+ * @param oldsol[in] The solution vector of the last time step.
+ * @param rhs[in] The current right hand side (before modifications due to
+ * timestepping!). Will be modified as to be the the right hand side of the =
+ * system which has to be solved finally (so it will include
+ * modifications due to flux correction AND to timestepping).
+ * @param[in, out] rhs_old The right hand side of the last time step
+ * (without modification). As output, stores the right hand side of the current
+ * time step without modifications.
+ * @param[in] delta_t The current time step length.
+ * @param[in] neum_to_diri array which contains the indices of actual
+ * Dirichlet dof which were but treated as Neumann dof due to
+ * INTERNAL_FULL_MATRIX_STRUCTURE.
+ * @param[in] prelim Which prelimiter to use, if at all.
+ */
+void crank_nicolson_fct(
+    const TMatrix& mass, TMatrix& stiff,
+    const std::vector<double>& oldsol,
+    std::vector<double>& rhs, std::vector<double>& rhs_old,
+    double delta_t,
+    const std::vector<int>& neum_to_diri,
+    AlgebraicFluxCorrection::Prelimiter prelim =
+        AlgebraicFluxCorrection::Prelimiter::NONE
+    );
 
 /**
  * Sets all Dirichlet rows of the input Matrix to 0 and 1 on diagonal.
@@ -116,9 +110,9 @@ void computeArtificialDiffusionMatrix(const TSquareMatrix2D& A, double* matrix_D
  * AFC all dofs are treated as active. So after the AFC completed, the
  * actual dirichlet rows have to be reset. This is achieved here.
  *
- * @param MatrixA The matrix to be corrected.
+ * @param[in,out] MatrixA The matrix to be corrected. Must be square.
  */
-void correctDirichletRows(TSquareMatrix2D& MatrixA);
+void correct_dirichlet_rows(FEMatrix& MatrixA);
 
 }
 

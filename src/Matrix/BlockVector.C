@@ -228,21 +228,23 @@ void BlockVector::print(const std::string name, const int iB) const
 /** ************************************************************************ */
 void BlockVector::info()
 {
-  OutPut(" | info to BlockVector : \n");
+  using namespace Output;
+  Output::print(" | info to BlockVector :");
   unsigned int nb = n_blocks();
-  OutPut(" | -- total length " << this->length() << "\tnumber of blocks " 
-         << nb << endl);
+  Output::print(" | -- total length ", length(), "\tnumber of blocks ", nb);
   if(nb > 1)
   {
     for(unsigned int i = 0; i < nb; i++)
     {
-      OutPut(" | ---- block " << i << " has length " << this->lengths[i]);
       if(this->lengths[i] != this->actives[i])
       {
-        OutPut(" (" << this->actives[i] << " active)\n");
+        Output::print(" | ---- block ", i, " has length ", this->lengths[i],
+                      " (", this->actives[i], " active)");
       }
       else
-        OutPut(endl);
+      {
+        Output::print(" | ---- block ", i, " has length ", this->lengths[i]);
+      }
     }
   }
 }

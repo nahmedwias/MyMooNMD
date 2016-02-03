@@ -299,6 +299,53 @@ class TMatrix
      */ 
     TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
     
+    
+    /**
+     * @brief multiply this matrix B with its transposed B^T from the right
+     * 
+     * @return A pointer to the product matrix B*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right() const;
+
+    /** @brief multiply this matrix B with its transposed B^T from the right 
+     * and scale with a diagonal matrix in between. 
+     * 
+     * Compute the product B*D*B^T where B is this matrix and D is a diagonal 
+     * matrix.
+     *
+     * @param[in] diagonalScaling The diagonal scaling matrix D as a vector. 
+     * Must have as many entries as B has columns.
+     * @return A pointer to the product matrix B*D*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right(
+      const std::vector<double>& diagonalScaling) const;
+
+    /** @brief multiply this matrix B with its transposed B^T from the right 
+     * and scale with a diagonal matrix in between.
+     *
+     * Computing the structure of the product is computationally most 
+     * intensive. If it is known from similiar former computations, pass it as 
+     * an argument.
+     *
+     * @param[in] structure The known structure.
+     * @param[in] diagonalScaling The diagonal scaling matrix D as a vector. 
+     * Must have as many entries as B has columns.
+     * @return A pointer to the product matrix B*D*B^T.
+     */
+    TMatrix* multiply_with_transpose_from_right(
+      const std::vector<double>& diagonalScaling, const TStructure& structure) 
+    const;
+    
+    /** @brief multiply this matrix A with its transposed A^T from the right 
+     * and multiply with matrix B in between.
+     *
+     * @param[in] B the matrix to be multiplied in between
+     * @return A pointer to the product matrix A*B*A^T.
+     */
+    std::shared_ptr< TMatrix > multiply_with_transpose_from_right( 
+                   const TMatrix& B) const;
+    
+    
     /** @brief adding a scaled matrix to this matrix
      * 
      * The summation is index-wise, i.e. A(i,j) += factor*m(i.j), where A is 
@@ -359,6 +406,12 @@ class TMatrix
     
     /// @brief print some information on this TMatrix
     void info(size_t verbose) const;
+
+    ///! @return true if this matrix is square
+    bool is_square() const
+    {
+      return structure->isSquare();
+    }
 };
 
 #endif

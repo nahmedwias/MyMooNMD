@@ -1225,7 +1225,7 @@ void Bulk_BWE_FDM_Upwind_3D(TCollection *coll,
   {
     if (N3<SC_LDS)
     {
-      DirectSolver(mat, rhs, sol);
+      DirectSolver_old(mat, rhs, sol);
       OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
       //SolveLU(Nodes, N_Entries, row_ptr, col_ptr, entries, rhs, sol);
       OutPut("done SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
@@ -2527,7 +2527,7 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
   {
     if (Nodes<SC_LDS)
     {
-      //DirectSolver(matM, rhs, sol);
+      //DirectSolver_old(matM, rhs, sol);
       OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
       //SolveLU(Nodes, N_Entries, row_ptr, col_ptr, entries, rhs, sol);
       OutPut("done SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
@@ -3066,7 +3066,7 @@ double *neum_to_diri_z)
   {
     if (Nodes<SC_LDS)
     {
-      //DirectSolver(matM, rhs, sol);
+      //DirectSolver_old(matM, rhs, sol);
       OutPut("SolveLU MEMORY: " << setw(10) << GetMemory() << endl);
       //SolveLU(Nodes, N_Entries, row_ptr, col_ptr, entries, rhs, sol);
       OutPut("done SolveLU MEMORY: " << setw(10) << GetMemory() << endl);

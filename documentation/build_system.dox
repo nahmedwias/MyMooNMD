@@ -266,13 +266,13 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
   
   \subsection conclusion Conclusion
   If you expect that you do not like the automatic values for compilers, buildtype and parallel type, force your own choice into the cache when calling cmake for the first time.
-  For example: if you want to use the clang compiler for C++ (on my machine the executable is under /usr/bin/clang), go for a debug build and want to use OMPONLY as parallel type, you replace your standard cmake call, e.g.
+  For example: if you want to use the clang compiler for C++ and C (on my machine the executables are to be found under /usr/bin/clang++ and /usr/bin/clang), go for a debug build and want to use OMPONLY as parallel type, you replace your standard cmake call, e.g.
   \code
   cmake ..
   \endcode
   by 
   \code
-   cmake -D CMAKE_CXX_COMPILER=/usr/bin/clang -D CMAKE_BUILD_TYPE=Debug -D PARMOON_PARALLEL_TYPE=OMPONLY ..
+   cmake -D CMAKE_CXX_COMPILER=/usr/bin/clang++ -D CMAKE_C_COMPILER=/usr/bin/clang -D CMAKE_BUILD_TYPE=Debug -D PARMOON_PARALLEL_TYPE=OMPONLY ..
   \endcode
   If you want to change any of the troublesome three, then
     - for the compilers: set up a new build and use option (2)

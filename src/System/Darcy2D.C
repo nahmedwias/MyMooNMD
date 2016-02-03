@@ -6,6 +6,7 @@
 #include <Database.h>
 #include <Darcy2D.h>
 #include <Assemble2D.h>
+#include <DirectSolver.h>
 #include <Output2D.h>
 #include <MainUtilities.h>
 
@@ -136,8 +137,14 @@ void Darcy2D::assemble()
 /** ************************************************************************ */
 void Darcy2D::solve()
 {
+  if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+    ErrThrow("only the direct solver is implemented currently");
   System_per_grid & s = this->systems.front();
-  s.matrix.Solve(s.solution, s.rhs);
+  
+  /// @todo consider storing an object of DirectSolver in this class
+  DirectSolver direct_solver(s.matrix, 
+                             DirectSolver::DirectSolverTypes::umfpack);
+  direct_solver.solve(s.rhs, s.solution);
   
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();

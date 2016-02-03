@@ -607,6 +607,10 @@ struct TParaDB
   double CYLINDER_22000_YPLUS_FRONT;
   double CYLINDER_22000_YPLUS_BACK;
   
+  // TODO CB All these parameters starting with BULK are used for one
+  // single example. Let's hardcode them there and remove them from global
+  // scope. Other parameter groups should experience the same treatment
+  // in time.
   //======================================================================
   /** parameters for BULK computations */
   //======================================================================

@@ -7,12 +7,16 @@
  * (concentration). Later the Time_CD2D object will be replaced by an
  * instance of the coupled module.
  *
- * TODO Might be this will need some big changes as soon as the default branch
- * is merged here.
- *
  * @author Clemens Bartsch
  * @date February 3, 2016
  */
+
+#include <Domain.h>
+#include <Database.h>
+#include <FEDatabase2D.h>
+#include <Output2D.h>
+#include <CoupledCDR_2D.h>
+#include <Example_CoupledCDR2D.h>
 
 int main(int argc, char* argv[])
 {

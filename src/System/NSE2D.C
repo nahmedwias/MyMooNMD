@@ -11,11 +11,11 @@
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
-                                         TCollection& coll )
- : velocity_space(&coll, (char*)"u", (char*)"Darcy velocity", example.get_bc(0),
-                  TDatabase::ParamDB->VELOCITY_SPACE, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(2),
-                  TDatabase::ParamDB->PRESSURE_SPACE, nullptr),
+               TCollection& coll, std::pair<int,int> velocity_pressure_orders)
+ : velocity_space(&coll, (char*)"u", (char*)"Navier--Stokes velocity", 
+                  example.get_bc(0), velocity_pressure_orders.first, nullptr),
+   pressure_space(&coll, (char*)"p", (char*)"Navier--Stokes pressure", 
+                  example.get_bc(2), velocity_pressure_orders.second, nullptr),
    matrix(this->velocity_space, this->pressure_space, example.get_bd()),
    rhs(this->matrix, true),
    solution(this->matrix, false),
@@ -41,11 +41,17 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
     : systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10)
 {
-  this->set_parameters();
+  std::pair <int,int> 
+      velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
+                               TDatabase::ParamDB->PRESSURE_SPACE);
+  // set the velocity and preesure spaces
+  // this function returns a pair which consists of 
+  // velocity and pressure order
+  this->get_velocity_pressure_orders(velocity_pressure_orders);
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-  this->systems.emplace_back(example, *coll);
+  this->systems.emplace_back(example, *coll, velocity_pressure_orders);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
@@ -88,14 +94,13 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   {
     unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
     TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
+    this->systems.emplace_back(example, *coll, velocity_pressure_orders);
   }
   
   // create multigrid-level-objects, must be coarsest first
   unsigned int i = 0;
   for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
   {
-    ErrThrow("NSE2D-multigrid needs to be checked");
     this->multigrid->AddLevel(this->mg_levels(i, *it));
     i++;
   }
@@ -107,9 +112,81 @@ NSE2D::~NSE2D()
 }
 
 /** ************************************************************************ */
-void NSE2D::set_parameters()
+void NSE2D::get_velocity_pressure_orders(std::pair <int,int> 
+                 &velocity_pressure_orders)
 {
-
+  int velocity_order = velocity_pressure_orders.first;
+  int pressure_order = velocity_pressure_orders.second;
+  int order = 0;
+  switch(velocity_order)
+  {
+    case 1: case 2: case 3: case 4: case 5:
+    case 12: case 13: case 14: case 15:
+      if(velocity_order > 10)
+        order = velocity_order-10;
+      else
+        order = velocity_order;
+      break;
+    case -1: case -2: case -3: case -4: case -5:
+    case -101:
+      order = velocity_order;
+      break;
+    // conforming fe spaces with bubbles on triangles 
+    case 22: case 23: case 24:
+      order = velocity_order;
+      break;
+      // discontinuous spaces 
+    case -11: case -12: case -13:
+      order = velocity_order*10;
+      break;
+  }
+  TDatabase::ParamDB->VELOCITY_SPACE = order;
+  velocity_pressure_orders.first = order;
+  switch(pressure_order)
+  {
+    case -4711:
+      switch(velocity_order)
+      {
+        case -1:
+        case -2:
+        case -3:
+        case -4:
+          // nonconforming pw (bi)linear velo/ pw constant pressure
+          // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
+          pressure_order = -velocity_order-1;
+          break; 
+        case 1: // discontinuous space 
+          pressure_order = 0;
+          break;
+        case 2: case 3: case 4: case 5:
+        // standard conforming velo and continuous pressure
+          pressure_order = velocity_order-1;
+          break;
+          // discontinuous pressure spaces 
+          // standard conforming velo and discontinuous pressure
+          // this is not stable on triangles !!!
+        case 12: case 13: case 14: case 15:
+          pressure_order = -(velocity_order-1)*10;
+          break;
+        case 22: case 23: case 24:
+          pressure_order = -(velocity_order-11)*10;
+          break;
+      }
+      break;
+    // continuous pressure spaces
+    case 1: case 2: case 3: case 4: case 5:
+      pressure_order = 1;
+      break;
+    // discontinuous spaces
+    case -11: case -12: case -13: case -14:
+      pressure_order = pressure_order*10;
+      break;
+  }
+  TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
+  velocity_pressure_orders.second = pressure_order;
+  
+  Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+  Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
 /** ************************************************************************ */
@@ -229,17 +306,13 @@ void NSE2D::solve()
   if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
     || (TDatabase::ParamDB->SOLVER_TYPE != 1))
   {
-    s.matrix.Solve(s.solution.get_entries(), s.rhs.get_entries());
-    /*
-    std::shared_ptr<TMatrix> m = s.matrix.get_combined_matrix();
-    TStructure*s = new TStructure(m->GetN_Rows(), m->GetN_Entries(),
-                                              m->GetKCol(), m->GetRowPtr());
-    s->Sort();
-    TSquareMatrix * sm = new TSquareMatrix(s);
-    sm->setEntries(m->GetEntries());
+    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+      ErrThrow("only the direct solver is supported currently");
     
-    DirectSolver(sm,  s.rhs.get_entries(), s.solution.get_entries());
-    */
+    /// @todo consider storing an object of DirectSolver in this class
+    DirectSolver direct_solver(s.matrix, 
+                               DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs, s.solution);
   }
   else
   {

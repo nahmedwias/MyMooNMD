@@ -3,9 +3,12 @@
 #include <MultiGrid2D.h>
 #include <Output2D.h>
 #include <Solver.h>
+#include <DirectSolver.h>
 #include <LinAlg.h>
 #include <MainUtilities.h>
+#include <AlgebraicFluxCorrection.h>
 
+#include <numeric>
 
 
 /**************************************************************************** */
@@ -13,10 +16,10 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                             TCollection& coll)
  : fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
             TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
-   Stiff_matrix(this->fe_space, example.get_bd(0)),
-   Mass_Matrix(this->fe_space, example.get_bd(0), true),
-   rhs(this->Stiff_matrix, true),
-   solution(this->Stiff_matrix, false),
+   stiff_matrix(this->fe_space, example.get_bd(0)),
+   mass_matrix(this->fe_space, example.get_bd(0), true),
+   rhs(this->stiff_matrix, true),
+   solution(this->stiff_matrix, false),
    fe_function(&this->fe_space, (char*)"u", (char*)"u", 
                this->solution.get_entries(), this->solution.length())
 {
@@ -84,7 +87,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
   for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
   {
     TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, it->Stiff_matrix.get_matrix(), it->rhs.get_entries(), 
+      i, it->stiff_matrix.get_matrix(), it->rhs.get_entries(),
       it->solution.get_entries(), 2, NULL);
     i++;
     this->multigrid->AddLevel(multigrid_level);
@@ -97,7 +100,7 @@ void Time_CD2D::set_parameters()
   if(TDatabase::ParamDB->EXAMPLE < 101)
   {
     ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-           << "does not supported for time dependent problem");
+           << "is not supported for time dependent problem");
     exit(1);
   }
   
@@ -105,7 +108,48 @@ void Time_CD2D::set_parameters()
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
           << " does not supported");
-    throw("TIME_DISC: 0 does not supported");
+    throw("TIME_DISC: 0 is not supported. Chose 1 (backward Euler) or 2 (Crank-Nicolson).");
+  }
+
+  //////////////// Algebraic flux correction ////////////
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
+  {//some kind of afc enabled
+    if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 2 )
+    {
+      TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 2;
+      Output::print("Only kind of algebraic flux correction"
+          " for TCD problems is Crank-Nicolson FEM-FCT (2).");
+    }
+
+    if(TDatabase::TimeDB->TIME_DISC !=2)
+    {
+      ErrThrow("Algebraic flux correction with FEM-FCT is "
+          "implemented for Crank-Nicolson time stepping scheme only. "
+          "Set TDatabase::TimeDB->TIME_DISC to 2.")
+    }
+
+    if(TDatabase::ParamDB->ANSATZ_ORDER != 1)
+    {
+      ErrThrow("Algebraic flux correction with FEM-FCT does only work for"
+          "linear elements. Change ANSATZ_ORDER to 1!");
+    }
+
+    // so far only direct solver
+    if (TDatabase::ParamDB->SOLVER_TYPE != 2)
+    {
+      ErrThrow("With AFC only direct solver is working so far!");
+    }
+
+    //make sure that galerkin discretization is used
+    if (TDatabase::ParamDB->DISCTYPE != 1)
+    {//some other disctype than galerkin
+      TDatabase::ParamDB->DISCTYPE = 1;
+      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+                    "Correction is enabled.");
+    }
+
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
 }
 
@@ -124,8 +168,8 @@ void Time_CD2D::assemble_initial_time()
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
     // assemble mass matrix, stiffness matrix and rhs
-    s.Mass_Matrix.Assemble(la_mass, s.solution, s.rhs);
-    s.Stiff_matrix.Assemble(la_a_rhs, s.solution, s.rhs);
+    s.mass_matrix.Assemble(la_mass, s.solution, s.rhs);
+    s.stiff_matrix.Assemble(la_a_rhs, s.solution, s.rhs);
   } 
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs;
@@ -149,15 +193,23 @@ void Time_CD2D::assemble()
     // create a local assembling object
     LocalAssembling2D la_a_rhs(stiff_rhs, &pointer_to_function,
                                this->example.get_coeffs());
-    s.Stiff_matrix.Assemble(la_a_rhs,s.solution,s.rhs);
+    s.stiff_matrix.Assemble(la_a_rhs,s.solution,s.rhs);
     if(TDatabase::ParamDB->DISCTYPE == SUPG)
     {
       LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
                                this->example.get_coeffs());
-      s.Mass_Matrix.Assemble(la_m_supg, s.solution, s.rhs);
+      s.mass_matrix.Assemble(la_m_supg, s.solution, s.rhs);
     }
   }
   
+  // here the modifications due to time discretization begin
+  if ( TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 2 )
+  {
+    do_algebraic_flux_correction();
+    return; // modifications due to time discretization are per-
+            // formed inside the afc scheme, so step out here!
+  }
+
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   // preparing rhs 
   System_per_grid& s = this->systems.front();
@@ -182,18 +234,19 @@ void Time_CD2D::assemble()
   {
     if(TDatabase::TimeDB->TIME_DISC == 0)
     {
-      ErrMsg("Bacward Euler method does not implemented");
-      throw("Bacward Euler method does not implemented");
+      ErrThrow("Forward Euler method is not supported. "
+          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
+          " or 2 (Crank-Nicoloson)");
     }
   }
   
   for(auto &s : this->systems)
   {
     // rhs += M*uold
-    s.Mass_Matrix.apply_scaled_add_active(s.solution.get_entries(),
+    s.mass_matrix.apply_scaled_add_active(s.solution.get_entries(),
                                    s.rhs.get_entries(), 1.0);
-    // rhs += tau*theta3*A*uold
-    s.Stiff_matrix.apply_scaled_add_active(s.solution.get_entries(),
+    // rhs -= tau*theta2*A*uold
+    s.stiff_matrix.apply_scaled_add_active(s.solution.get_entries(),
                                     s.rhs.get_entries(),
                                     -tau*TDatabase::TimeDB->THETA2);
     
@@ -201,8 +254,8 @@ void Time_CD2D::assemble()
     // stiffness matrix is scaled by tau*THETA1, after solving 
     // the matrix needs to be descaled if the coeffs does not depends
     // on time
-    s.Stiff_matrix.scale_active(tau*TDatabase::TimeDB->THETA1);
-    s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, 1.0);
+    s.stiff_matrix.scale_active(tau*TDatabase::TimeDB->THETA1);
+    s.stiff_matrix.add_scaled_active(s.mass_matrix, 1.0);
   }  
   this->systems[0].rhs.copy_nonactive(this->systems[0].solution);  
 }
@@ -212,10 +265,20 @@ void Time_CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  TSquareMatrix2D *sqMat[1] = {s.Stiff_matrix.get_matrix()};
-  Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-         s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-         this->multigrid.get(), s.solution.length(), 0);
+  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
+  {
+    /// @todo consider storing an object of DirectSolver in this class
+    DirectSolver direct_solver(s.stiff_matrix, 
+                               DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs, s.solution);
+  }
+  else
+  {
+    TSquareMatrix2D *sqMat[1] = {s.stiff_matrix.get_matrix()};
+    Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
+           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+           this->multigrid.get(), s.solution.length(), 0);
+  }
   
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);
@@ -227,8 +290,8 @@ void Time_CD2D::solve()
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   for(auto &s : this->systems)
   {
-    s.Stiff_matrix.add_scaled_active(s.Mass_Matrix, -1.0);
-    s.Stiff_matrix.scale_active(1./(tau*TDatabase::TimeDB->THETA1));
+    s.stiff_matrix.add_scaled_active(s.mass_matrix, -1.0);
+    s.stiff_matrix.scale_active(1./(tau*TDatabase::TimeDB->THETA1));
   }
 }
 
@@ -292,3 +355,73 @@ void Time_CD2D::output(int m, int& image)
 }
 
 /**************************************************************************** */
+
+void Time_CD2D::do_algebraic_flux_correction()
+{
+  //determine which kind of afc to use
+  switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+  {
+    case 2: //Crank Nicolson FEM-FCT
+    { //TODO implement for multigrid!
+      System_per_grid& s = systems.front();
+
+      //get references to the relevant objects
+      const TFESpace2D& feSpace = s.fe_space;
+      const FEMatrix& mass = *s.mass_matrix.get_matrix();
+      FEMatrix& stiff = *s.stiff_matrix.get_matrix();
+      const std::vector<double>& solEntries = s.solution.get_entries_vector();
+      std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
+      std::vector<double>& oldRhsEntries = old_rhs.get_entries_vector();
+
+      // fill a vector "neumannToDirichlet" with those rows that got
+      // internally treated as Neumann although they are Dirichlet
+      int firstDiriDof = feSpace.GetActiveBound();
+      int nDiri = feSpace.GetN_Dirichlet();
+
+      std::vector<int> neumToDiri(nDiri, 0);
+      std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+
+      //determine prelimiter from Database
+      AlgebraicFluxCorrection::Prelimiter prelim;
+      switch(TDatabase::ParamDB->FEM_FCT_PRELIMITING)
+      {
+        case 1:
+          prelim = AlgebraicFluxCorrection::Prelimiter::MIN_MOD;
+          Output::print<2>("FEM-FCT: MinMod prelimiter chosen.");
+          break;
+        case 2:
+          prelim = AlgebraicFluxCorrection::Prelimiter::GRAD_DIRECTION;
+          Output::print<2>("FEM-FCT: Gradient direcetion prelimiter chosen.");
+          break;
+        case 3:
+          prelim = AlgebraicFluxCorrection::Prelimiter::BOTH;
+          Output::print<2>("FEM-FCT: Double prelimiting (MinMod & Gradient) chosen.");
+          break;
+        default:
+          prelim = AlgebraicFluxCorrection::Prelimiter::NONE;
+          Output::print<2>("FEM-FCT: No prelimiting chosen.");
+      }
+
+      //get current timestep length from Database
+      double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+      // apply C-N FEM-FCT
+      AlgebraicFluxCorrection::crank_nicolson_fct(
+          mass, stiff,
+          solEntries,
+          rhsEntries, oldRhsEntries,
+          delta_t,
+          neumToDiri,
+          prelim
+      );
+
+      //...and finally correct the entries in the Dirchlet rows
+      AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+      break;
+    }
+    default:
+    {
+      ErrThrow("The chosen ALGEBRAIC_FLUX_CORRECTION scheme is unknown to class Time_CD2D.");
+    }
+  }
+}

@@ -14,18 +14,11 @@
  * May 26, 2015
  */
 
-#include <FEFunction2D.h>
-#include <FEDatabase2D.h>
-#include <FESpace2D.h>
+
 #include <Domain.h>
 #include <Database.h>
+#include <FEDatabase2D.h>
 #include <Output2D.h>
-#include <LinAlg.h> //IntoL20FEFunction
-
-#include <DirectSolver.h>
-#include <PardisoSolver.h>
-#include <ConvDiff2D.h>
-
 #include <CoupledCDR_2D.h>
 #include <Example_CoupledCDR2D.h>
 
@@ -44,7 +37,7 @@ int main(int argc, char* argv[])
 	TDomain Domain(argv[1]);
 
 	//===========================================================================
-	OpenFiles();
+	Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 	OutFile.setf(std::ios::scientific);
 	Database.WriteParamDB(argv[0]);
 
@@ -80,7 +73,7 @@ int main(int argc, char* argv[])
 	 **********************************/
 	OutPut("MEMORY   : " << setw(8) << GetMemory()/(1048576.0) << " MB" << endl);
 	OutPut("used time: " << GetTime() - t_start << "s" << endl);
-	CloseFiles();
+  Output::close_file();
 
 	return 0;
 }

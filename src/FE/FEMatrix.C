@@ -29,8 +29,8 @@ FEMatrix::FEMatrix(const TFESpace3D * space)
 }
 #endif // 3D
 
-FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace)
- : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace)),
+FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty)
+ : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),
    AnsatzSpace1D(nullptr), AnsatzSpace2D(ansatzspace), AnsatzSpace3D(nullptr),
    TestSpace1D(nullptr), TestSpace2D(testspace), TestSpace3D(nullptr)
 {

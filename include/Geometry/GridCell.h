@@ -38,6 +38,7 @@ class TGridCell : public TBaseCell
     virtual int SetVertex(int Vert_i, TVertex *Vert);
     /**  @brief return the pointer to vertex with number i */
     virtual TVertex *GetVertex(int Vert_i);
+    virtual const TVertex *GetVertex(int Vert_i) const;
     /**  @brief return field of pointers to all vertices */
     TVertex **GetVertices()
     { return Vertices; }
@@ -142,6 +143,8 @@ class TGridCell : public TBaseCell
 #endif 
     /**  @brief compute number of vertices at the boundary */
     virtual int GetN_BoundaryVertices();
+    
+    virtual void check() const;
 };
 
 #endif

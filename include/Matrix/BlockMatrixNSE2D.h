@@ -44,9 +44,6 @@ class BlockMatrixNSE2D : public BlockFEMatrix
     /** assemble the nonlinear part of the NSE system */
     void AssembleNonLinear(LocalAssembling2D& la);
     
-    /** solve the system matrix */
-    void Solve(double *sol, double *rhs);
-    
     /** @brief compute y = factor* A*x 
      *
      * write the matrix-vector product "Ax" scaled by a factor to y. 

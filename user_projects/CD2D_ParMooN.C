@@ -33,8 +33,8 @@ int main(int argc, char* argv[])
   //set PROBLEM_TYPE to CD (convection diffusion) if not yet set
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 1;
-  //open OUTFILE, where all output is written to (in addition to console)
-  OpenFiles(); // call CloseFiles() at the end of the program
+  //open OUTFILE, this is where all output is written to (addionally to console)
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
  
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
@@ -119,6 +119,6 @@ int main(int argc, char* argv[])
            << endl);
   }
   
-  CloseFiles();
+  Output::close_file();
   return 0;
 } // end main

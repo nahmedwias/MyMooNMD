@@ -63,12 +63,12 @@ void TVertex::SetCoords(double initX, double initY)
 #endif
 
 #ifndef __3D__
-std::ostream& operator << (std::ostream& s, TVertex *v)
+std::ostream& operator << (std::ostream& s, const TVertex *v)
 {
   return s << " X= " << setw(12) << v->X << ", Y= " << setw(12) << v->Y;
 }
 #else
-std::ostream& operator << (std::ostream& s, TVertex *v)
+std::ostream& operator << (std::ostream& s, const TVertex *v)
 {
   return s << " X= " << setw(12) << v->X << ", Y= " << setw(12) << v->Y
            << ", Z= " << setw(12) << v->Z;
