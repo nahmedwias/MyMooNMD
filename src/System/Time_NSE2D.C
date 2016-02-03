@@ -256,11 +256,11 @@ void Time_NSE2D::assemble_initial_time()
     size_t n_fe_spaces = 2;
     const TFESpace2D *fespmat[2] = {velo_space, pres_space};
     
-    size_t n_square_matrices = 7;
-    TSquareMatrix2D *sqMatrices[7]{nullptr};
+    size_t n_square_matrices = 6; // 
+    TSquareMatrix2D *sqMatrices[6]{nullptr}; // maximum number of square matrices
     
-    size_t n_rect_matrices = 4;
-    TMatrix2D *rectMatrices[4]{nullptr};
+    size_t n_rect_matrices = 4; // maximum number of rectangular matrices
+    TMatrix2D *rectMatrices[4]{nullptr}; // maximum number of pointers
     
     size_t nRhs = 2; //is 3 if NSE type is 4 or 14
     double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
@@ -294,9 +294,9 @@ void Time_NSE2D::assemble_initial_time()
         }
         n_square_matrices = 2;
         sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        
+        // mass matrix 
         sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        
+        // rectangular matrices
         n_rect_matrices = 2;
         rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
@@ -308,9 +308,9 @@ void Time_NSE2D::assemble_initial_time()
         }
         n_square_matrices = 2;
         sqMatrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        
+        // mass matrix
         sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        
+        // rectangular matrices
         n_rect_matrices = 4;
         rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
@@ -328,10 +328,9 @@ void Time_NSE2D::assemble_initial_time()
         sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());        
         sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());        
         // mass matrices
-        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-        
+        sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());        
         ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling2D routine");
-        
+        // rectangular matrices
         n_rect_matrices = 2;
         rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
@@ -348,7 +347,7 @@ void Time_NSE2D::assemble_initial_time()
         sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());        
         // mass matrices
         sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
-          
+        // rectangular matrices
         n_rect_matrices = 4;
         rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
@@ -370,12 +369,11 @@ void Time_NSE2D::assemble_initial_time()
         sqMatrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
         sqMatrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
         sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        
         // mass matrices
         sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
         // C block pressure pressure
-        sqMatrices[6] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-          
+        sqMatrices[5] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+        // rectangular matrices  
         n_rect_matrices = 4;
         rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
@@ -399,6 +397,7 @@ void Time_NSE2D::assemble_initial_time()
 
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs; 
+  this->old_solution = this->systems.front().solution;
 }
 
 /**************************************************************************** */
@@ -410,38 +409,42 @@ void Time_NSE2D::assemble_rhs()
   const double theta4 = TDatabase::TimeDB->THETA4;
   
   System_per_grid& s = this->systems.front();
+  // reset the right hand side
   s.rhs.reset();
   // assembling of the right hand side 
-  //{
-    TFEFunction2D *fe_functions[3] = 
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    
-    LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
-                             this->example.get_coeffs());
-    
-    int N_Rhs = 3;
-    const TFESpace2D * v_space = &this->get_velocity_space();
-    const TFESpace2D * p_space = &this->get_pressure_space();
-    
-    s.rhs.reset();
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
-    
-    const TFESpace2D *fespmat[2] = {v_space, p_space};
-    const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
-    
-    BoundCondFunct2D * boundary_conditions[3] = {
-               v_space->GetBoundCondition(), v_space->GetBoundCondition(), 
-                p_space->GetBoundCondition() };
-    
-     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-     non_const_bound_values[0] = this->example.get_bd(0);
-     non_const_bound_values[1] = this->example.get_bd(1);
-     non_const_bound_values[2] = this->example.get_bd(2);
-    
-     Assemble2D(1, fespmat, 0, nullptr,
-                0, nullptr, N_Rhs, RHSs, fesprhs,
-                boundary_conditions, non_const_bound_values.data(), la);
-  //}
+  TFEFunction2D *fe_functions[3] = 
+  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
+  
+  LocalAssembling2D la(TNSE2D_Rhs, fe_functions,
+                           this->example.get_coeffs());
+  
+  int N_Rhs = 3;
+  const TFESpace2D * v_space = &this->get_velocity_space();
+  const TFESpace2D * p_space = &this->get_pressure_space();
+  
+  double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
+  
+  const TFESpace2D *fespmat[2] = {v_space, p_space};
+  const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
+  
+  BoundCondFunct2D * boundary_conditions[3] = {
+             v_space->GetBoundCondition(), v_space->GetBoundCondition(), 
+              p_space->GetBoundCondition() };
+  
+   std::array<BoundValueFunct2D*, 3> non_const_bound_values;
+   non_const_bound_values[0] = this->example.get_bd(0);
+   non_const_bound_values[1] = this->example.get_bd(1);
+   non_const_bound_values[2] = this->example.get_bd(2);
+  
+   Assemble2D(1, fespmat, 0, nullptr,
+              0, nullptr, N_Rhs, RHSs, fesprhs,
+              boundary_conditions, non_const_bound_values.data(), la);
+   // copy the non active to the solution vector
+   // since the rhs vector will be passed to the solver
+   // and is modified with matrix vector multiplication
+   // which also uses the non-actives
+   s.solution.copy_nonactive(s.rhs);
+   
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)  
   s.rhs.scaleActive(tau*theta4);
@@ -452,7 +455,7 @@ void Time_NSE2D::assemble_rhs()
   // next we want to set old_rhs to f^k (to be used in the next time step)
   this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
   this->old_rhs.scaleActive(-theta3/theta4);
-  s.solution.print("s");
+  
   // scale the actives in each block
   double factor = -tau*theta2;
   s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
@@ -460,41 +463,38 @@ void Time_NSE2D::assemble_rhs()
   // matrix = factor*matrix + Mass_Matrix
   const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
   s.matrix.add_matrix_actives(mass_bloks, 1.0, {{0,0}, {1,1}}, {false, false});
+  // multiplying matrix with the old_solution vector
+  s.matrix.apply_scaled_subMatrix(old_solution, s.rhs, 2, 2, 1.0);
   
-  
-  
-  s.matrix.apply_scaled_add(s.solution, s.rhs, 1.0);
-  s.rhs.print("B2");
-  Output::print<1>("Check wheather the apply_scaled_add function is the", 
-     "right one or not????");
   // restore the matrix by subtracting the Mass matrix and 
   // scale by 1./factor
   factor = 1./factor;
   s.matrix.add_matrix_actives(mass_bloks, -1.0, {{0,0}, {1,1}}, {false, false});
   s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
   
-  // memset(s.rhs.block(2), 0, s.rhs.length(2)*SizeOfDouble);
-  
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems)
   {
-    // TODO: change the factor to be THETA1*tau;
-    factor = /*TDatabase::TimeDB->THETA1**/tau;
-    if(this->oldtau != 0.0)
+    if(tau != oldtau)
     {
-      factor /= this->oldtau;
-      Output::print<1>("change in tau", this->oldtau, "->", tau);
+      // TODO: change the factor to be THETA1*tau;
+      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      if(this->oldtau != 0.0)
+      {
+        factor /= this->oldtau;
+        Output::print<1>("change in tau", this->oldtau, "->", tau);
+      }
+      // scale the BT transposed blocks with the current time step
+      s.matrix.scale_blocks(factor, {{0,2}, {1,2}});      
+      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
+      {
+        s.matrix.scale_blocks(factor, {{2,0}, {2,1}});
+      }
     }
-    s.matrix.scale_blocks(factor, {{0,2}, {1,2}});
-    
-    if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-    {
-      s.matrix.scale_blocks(factor, {{2,0}, {2,1}});
-    }    
   }
   this->oldtau = tau;
-  // copy non active from rhs into solution vector
-  s.solution.copy_nonactive(s.rhs);
+  // copy non active from solution into rhs vector
+  s.rhs.copy_nonactive(s.solution);
   
   if(TDatabase::ParamDB->SOLVER_TYPE == GMG
      && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
@@ -589,7 +589,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   System_per_grid& s = this->systems.front();
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
-  s.rhs.print("B"); 
+  
   this->defect = s.rhs; 
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
   // 
@@ -643,7 +643,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
 void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-
+  
   if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
     || (TDatabase::ParamDB->SOLVER_TYPE !=1 ))
   {
@@ -663,7 +663,8 @@ void Time_NSE2D::solve()
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
     this->deScaleMatrices();
-s.solution.print("b");
+
+this->old_solution = s.solution;
   Output::print<5>("solver done");
 }
 
@@ -737,9 +738,9 @@ TNSE_MGLevel* Time_NSE2D::mg_levels(int i, Time_NSE2D::System_per_grid& s)
                                 reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get()),
                                 reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get()),
                                 reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get()),
-                                reinterpret_cast<TMatrix2D*>(blocks.at(6).get()),
+                                reinterpret_cast<TMatrix2D*>(blocks.at(6).get()),   // B blocks
                                 reinterpret_cast<TMatrix2D*>(blocks.at(7).get()),
-                                reinterpret_cast<TMatrix2D*>(blocks.at(2).get()),
+                                reinterpret_cast<TMatrix2D*>(blocks.at(2).get()),  // transposed B-blocks
                                 reinterpret_cast<TMatrix2D*>(blocks.at(5).get()),
                                 s.rhs.get_entries(), 
                                 s.solution.get_entries(), 
@@ -768,7 +769,7 @@ TNSE_MGLevel* Time_NSE2D::mg_levels(int i, Time_NSE2D::System_per_grid& s)
 
 /**************************************************************************** */
 void Time_NSE2D::mg_solver()
-{/*
+{
   System_per_grid& s = this->systems.front(); 
   TSquareMatrix2D *sqMat[5];
   TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
@@ -776,47 +777,38 @@ void Time_NSE2D::mg_solver()
   TMatrix **matrices = (TMatrix **)recMat;
   MatVecProc *MatVect;
   DefectProc *Defect;  
-  
+  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      sqMat[0]=s.matrix.get_A_block(0);
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
+      ErrThrow("multigrid solver for the nstype 1 is not supported yet");
       MatVect = MatVect_NSE1;
       Defect = Defect_NSE1;
       break;
     case 2:
-      sqMat[0]=s.matrix.get_A_block(0);
-      
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
-      recMat[2] = s.matrix.get_BT_block(0);
-      recMat[3] = s.matrix.get_BT_block(1);
+      sqMat[0]  = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      recMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get());
+      recMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
+      recMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+      recMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
       MatVect = MatVect_NSE2;
       Defect = Defect_NSE2;
       break;
     case 3:
-      sqMat[0]=s.matrix.get_A_block(0);
-      sqMat[1]=s.matrix.get_A_block(1);
-      sqMat[2]=s.matrix.get_A_block(2);
-      sqMat[3]=s.matrix.get_A_block(3);
-      
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
+      ErrThrow("multigrid solver for the nstype 3 is not supported yet");
       MatVect = MatVect_NSE3;
       Defect = Defect_NSE3;
       break;
     case 4:
-      sqMat[0]=s.matrix.get_A_block(0);
-      sqMat[1]=s.matrix.get_A_block(1);
-      sqMat[2]=s.matrix.get_A_block(2);
-      sqMat[3]=s.matrix.get_A_block(3);
+      sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+      sqMat[2]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+      sqMat[3]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
       
-      recMat[0] = s.matrix.get_B_block(0);
-      recMat[1] = s.matrix.get_B_block(1);
-      recMat[2] = s.matrix.get_BT_block(0);
-      recMat[3] = s.matrix.get_BT_block(1);
+      recMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
+      recMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+      recMat[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+      recMat[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
       MatVect = MatVect_NSE4;
       Defect = Defect_NSE4;
       break;
@@ -891,7 +883,7 @@ void Time_NSE2D::mg_solver()
     delete itmethod; delete prec;
     delete [] itmethod_rhs;
     delete [] itmethod_sol;
-  }*/
+  }
 }
 
 /**************************************************************************** */
