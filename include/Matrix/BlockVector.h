@@ -17,8 +17,8 @@
 #ifndef __BLOCKVECTOR__
 #define __BLOCKVECTOR__
 
-class ColoredBlockMatrix; // forward declaration
-class ColoredBlockFEMatrix;
+class BlockMatrix; // forward declaration
+class BlockFEMatrix;
 
 #include <numeric>
 #include <vector>
@@ -67,11 +67,11 @@ class BlockVector
 
 
     /// Construct a BlockVector which is suitable to serve as factor ("false")
-    /// or result ("true") in multiplication with a ColoredBlockMatrix.
+    /// or result ("true") in multiplication with a BlockMatrix.
     /// Vector is filled with zeroes and all entries are non-active.
-    BlockVector(const ColoredBlockMatrix& mat, bool result = false);
+    BlockVector(const BlockMatrix& mat, bool result = false);
 
-    BlockVector(const ColoredBlockFEMatrix& mat, bool result = false);
+    BlockVector(const BlockFEMatrix& mat, bool result = false);
 
     //Declaration of special member functions - rule of zero
 

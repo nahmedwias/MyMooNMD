@@ -41,7 +41,7 @@ class Darcy2D
        *  [ A  BT ]
        *  [ B  C  ]
        */
-      ColoredBlockFEMatrix matrix;
+      BlockFEMatrix matrix;
       /** @brief the right hand side vector */
       BlockVector rhs;
       /** @brief solution vector with two components. */
@@ -194,9 +194,9 @@ class Darcy2D
     //@}
     
     // getters and setters
-    const ColoredBlockFEMatrix & get_matrix() const
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    ColoredBlockFEMatrix & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }

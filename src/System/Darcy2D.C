@@ -28,7 +28,7 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
   velocity_space.SetAsDGSpace();
   pressure_space.SetAsDGSpace();
   
-  matrix = ColoredBlockFEMatrix::Darcy2D(this->velocity_space,
+  matrix = BlockFEMatrix::Darcy2D(this->velocity_space,
                                          this->pressure_space);
 }
 

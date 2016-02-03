@@ -1,8 +1,8 @@
 /*
- * Unit testing of the colored block matrix. Since this requires
+ * Unit testing of the block matrix. Since this requires
  * the presence of FEspaces, this starts as a usual ParMooN program,
  * which is needed to build up FESpaces which can than be used for
- * the ColoredBlockFEMatrix.
+ * the BlockFEMatrix.
  *
  *
  *  Created on: Dec 17, 2015
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 
   {
     //test default constructor
-    ColoredBlockFEMatrix zero_matrix;
+    BlockFEMatrix zero_matrix;
     zero_matrix.check_coloring();
     zero_matrix.check_pointer_types();
   }
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     t_matrix_1.setEntries(std::vector<double>(t_matrix_1.GetN_Entries(),1.0));
 
    //custom construct and check
-   ColoredBlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
+   BlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
    // try combination method of base
    {
      std::shared_ptr<TMatrix> combined_base
-     = myMatrix.ColoredBlockMatrix::get_combined_matrix();
+     = myMatrix.BlockMatrix::get_combined_matrix();
 //     combined_base->PrintFull("combined base");
      if(combined_base->GetNorm(-2) != 0)
      {
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
    //try combination method of derived
    {
      std::shared_ptr<TMatrix> combined_derived
-     = myMatrix.ColoredBlockFEMatrix::get_combined_matrix();
+     = myMatrix.BlockFEMatrix::get_combined_matrix();
 //     combined_derived->PrintFull("combined derived");
      if( fabs(combined_derived->GetNorm(-2) - 2.82843) > 1e-5)
      {
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
    {//check norm of dirichlet-row corrected matrix
      ErrThrow("Wrong matrix norm after adding of a TMatrix!")
    }
-   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 8.48528 ) > 1e-5 )
+   if( fabs( myMatrix.BlockMatrix::get_combined_matrix()->GetNorm(-2) - 8.48528 ) > 1e-5 )
    {//check norm of rough, algebraic matrix
      ErrThrow("Wrong matrix norm after adding of a TMatrix!")
    }
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
    {//check norm of dirichlet-row corrected matrix
      ErrThrow("Wrong matrix norm after actives adding!")
    }
-   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 14.6969 ) > 1e-4 )
+   if( fabs( myMatrix.BlockMatrix::get_combined_matrix()->GetNorm(-2) - 14.6969 ) > 1e-4 )
    {//check norm of rough, algebraic matrix
      ErrThrow("Wrong matrix norm after actives adding!")
    }
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
    {//check norm of dirichlet-row corrected matrix
      ErrThrow("Wrong matrix norm after block scaling!")
    }
-   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 10.3923 ) > 1e-5 )
+   if( fabs( myMatrix.BlockMatrix::get_combined_matrix()->GetNorm(-2) - 10.3923 ) > 1e-5 )
    {//check norm of rough, algebraic matrix
      ErrThrow("Wrong matrix norm after block scaling!")
    }
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
    {//check norm of dirichlet-row corrected matrix
      ErrThrow("Wrong matrix norm after block scaling!")
    }
-   if( fabs( myMatrix.ColoredBlockMatrix::get_combined_matrix()->GetNorm(-2) - 15.748 ) > 1e-4 )
+   if( fabs( myMatrix.BlockMatrix::get_combined_matrix()->GetNorm(-2) - 15.748 ) > 1e-4 )
    {//check norm of rough, algebraic matrix
      ErrThrow("Wrong matrix norm after block scaling!")
    }
@@ -214,8 +214,8 @@ int main(int argc, char* argv[])
   }
 
   { //make a default NSE Matrix and two vectors
-    ColoredBlockFEMatrix blockmat=
-            ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+    BlockFEMatrix blockmat=
+            BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
 
     //check matrix-vector multiplication (incl. actives)
     BlockVector preimage_act(blockmat, false);
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
     }
 
     //check usage in std::vector
-    std::vector<ColoredBlockFEMatrix> myMatrices;
+    std::vector<BlockFEMatrix> myMatrices;
     myMatrices.push_back(blockmat);
     myMatrices.push_back(blockmat);
     myMatrices.push_back(blockmat); //three pushes
@@ -247,13 +247,13 @@ int main(int argc, char* argv[])
     Output::setVerbosity(5);
     Output::print("Check copying.");
     //copy construction
-    ColoredBlockFEMatrix hisMatrix(blockmat);
+    BlockFEMatrix hisMatrix(blockmat);
     //hisMatrix.print_coloring_pattern("copy constructed fe matrix",true);
     hisMatrix.check_pointer_types();
     hisMatrix.check_coloring();
 
     //copy assignment
-    ColoredBlockFEMatrix herMatrix({&first_fe_space});
+    BlockFEMatrix herMatrix({&first_fe_space});
     herMatrix = blockmat;
     //herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
     herMatrix.check_pointer_types();
@@ -265,15 +265,15 @@ int main(int argc, char* argv[])
     Output::print("Test moving.");
 
     //move constructor
-    //ColoredBlockFEMatrix moveConstructedMatrix(ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
-    ColoredBlockFEMatrix moveConstructedMatrix(std::move(ColoredBlockFEMatrix({&first_fe_space, &second_fe_space})));
+    //BlockFEMatrix moveConstructedMatrix(BlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
+    BlockFEMatrix moveConstructedMatrix(std::move(BlockFEMatrix({&first_fe_space, &second_fe_space})));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
 
     Output::print("Test move assigning.");
 
-    ColoredBlockFEMatrix moveAssignedMatrix({&first_fe_space});
-    moveAssignedMatrix = ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
+    BlockFEMatrix moveAssignedMatrix({&first_fe_space});
+    moveAssignedMatrix = BlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
     moveAssignedMatrix.check_pointer_types();
     moveAssignedMatrix.check_coloring();
 
@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
   // try out some named constructors, plus the block getter
   // methods for solvers and assemblers
   {//CD2D
-    ColoredBlockFEMatrix blockmat = ColoredBlockFEMatrix::CD2D(third_fe_space);
+    BlockFEMatrix blockmat = BlockFEMatrix::CD2D(third_fe_space);
     //blockmat.print_and_check("matrix for cd2d");
     blockmat.check_pointer_types(); //casts to FEMatrix work?
     blockmat.check_coloring(); //coloring is unbroken?
@@ -305,8 +305,8 @@ int main(int argc, char* argv[])
 
   }
    {//NSE2D Typ 1
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for nse2d, nstype 1");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -326,8 +326,8 @@ int main(int argc, char* argv[])
      }
    }
    {//NSE2D Typ 2
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for nse2d, nstype 2");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -347,8 +347,8 @@ int main(int argc, char* argv[])
      }
    }
    {//NSE2D Typ 3
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::NSE2D_Type3(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type3(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for nse2d, nstype 3");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -368,8 +368,8 @@ int main(int argc, char* argv[])
      }
    }
    {//NSE2D Typ 4
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for nse2d, nstype 4");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -389,8 +389,8 @@ int main(int argc, char* argv[])
      }
    }
    {//NSE2D Typ 14
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for nse2d, nstype 14");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -410,8 +410,8 @@ int main(int argc, char* argv[])
      }
    }
    {//Darcy2D
-     ColoredBlockFEMatrix blockmat=
-         ColoredBlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
      //blockmat.print_and_check("matrix for darcy 2d");
      blockmat.check_pointer_types(); //casts to FEMatrix work?
      blockmat.check_coloring(); //coloring is unbroken?
@@ -432,8 +432,8 @@ int main(int argc, char* argv[])
    }
 
    {//more tests on block getter methods (assemble parts getter, "true" for zero blocks)
-     ColoredBlockFEMatrix blockmat= //use NSE Type 2 for the checks
-         ColoredBlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
+     BlockFEMatrix blockmat= //use NSE Type 2 for the checks
+         BlockFEMatrix::NSE2D_Type2(first_fe_space, second_fe_space);
 
      std::vector<std::vector<size_t>> positions_A = {{0,0},{0,1},{1,0},{1,1}};
      std::vector<std::vector<size_t>> positions_B = {{0,2},{1,2},{2,0},{2,1}};
@@ -465,10 +465,10 @@ int main(int argc, char* argv[])
      Output::setVerbosity(1);
     // this is a test on the apply_scaled_add method which is suspected to produce
     // wrong results when transposition is involved
-     ColoredBlockFEMatrix with_transp =
-         ColoredBlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
-     ColoredBlockFEMatrix no_transp =
-         ColoredBlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
+     BlockFEMatrix with_transp =
+         BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+     BlockFEMatrix no_transp =
+         BlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
      //fill some blocks in
      FEMatrix A(&first_fe_space, &first_fe_space);
      FEMatrix B(&second_fe_space, &first_fe_space);
@@ -492,8 +492,8 @@ int main(int argc, char* argv[])
      no_transp.replace_blocks(B,{{2,1}}, {false});
 
 //     //print the combined matrices
-//     with_transp.ColoredBlockMatrix::get_combined_matrix()->PrintFull("with_transp");
-//     no_transp.ColoredBlockMatrix::get_combined_matrix()->PrintFull("no_transp");
+//     with_transp.BlockMatrix::get_combined_matrix()->PrintFull("with_transp");
+//     no_transp.BlockMatrix::get_combined_matrix()->PrintFull("no_transp");
 
      //put up BlockVectors which fit the spaces
      BlockVector preimage(with_transp, false);

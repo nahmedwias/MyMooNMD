@@ -29,7 +29,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            fe_function(&this->fe_space, (char*)"c", (char*)"c",
                        this->solution.get_entries(), this->solution.length())
 {
-  matrix = ColoredBlockFEMatrix::CD2D(fe_space);
+  matrix = BlockFEMatrix::CD2D(fe_space);
 }
 
 TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()

@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   TDatabase database;
   
   //BlockMatrix mat(2, 2, {matA, matC, matB, matD});
-  ColoredBlockMatrix mat({size_t(matA->GetN_Rows()), size_t(matB->GetN_Rows())},
+  BlockMatrix mat({size_t(matA->GetN_Rows()), size_t(matB->GetN_Rows())},
                          {size_t(matA->GetN_Columns()), 
                           size_t(matC->GetN_Columns()) } );
   mat.replace_blocks(*matA, {{0,0}}, {false});

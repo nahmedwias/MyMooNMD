@@ -96,7 +96,7 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 }
 
 /** ************************************************************************ */
-DirectSolver::DirectSolver(const ColoredBlockMatrix& matrix, 
+DirectSolver::DirectSolver(const BlockMatrix& matrix, 
                            DirectSolver::DirectSolverTypes type)
  : DirectSolver(matrix.get_combined_matrix(), type)
 {

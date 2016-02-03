@@ -1,5 +1,5 @@
 /*
- * Unit testing of the colored block matrix.
+ * Unit testing of the block matrix.
  *
  *  Created on: Dec 10, 2015
  *      Author: bartsch
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 {
   {
   //check correct splitting and merging of colors when replacing blocks
-  ColoredBlockMatrix myMatrix({5 , 5 , 5}, {5, 5 , 5});
+  BlockMatrix myMatrix({5 , 5 , 5}, {5, 5 , 5});
 
   TMatrix placeHolderA(5,5);
   auto t_1 = std::make_tuple(0,0,false);
@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 
   {
   //check if it works with tranposition
-  ColoredBlockMatrix myBlockMatrix({3,7},{3,7});
+  BlockMatrix myBlockMatrix({3,7},{3,7});
   myBlockMatrix.check_coloring();
 
   TMatrix placeHolderA(7,3);
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     matA.GetEntries()[3] = 1;
     matA.GetEntries()[4] = 1;
 
-    ColoredBlockMatrix myMatrix({4 , 2 , 4}, {4 , 2, 4});
+    BlockMatrix myMatrix({4 , 2 , 4}, {4 , 2, 4});
 
     myMatrix.replace_blocks(
         matA,
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     //myMatrix.get_combined_matrix()->PrintFull();
 
     //check copy constructor
-    ColoredBlockMatrix yourMatrix(myMatrix);
+    BlockMatrix yourMatrix(myMatrix);
     yourMatrix.print_and_check("yourMatrix");
     yourMatrix.print_coloring_pattern("yourMatrix", true);
 
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     myMatrix.get_combined_matrix()->PrintFull();
 
     //check copy assignment
-    ColoredBlockMatrix yourAssignedMatrix({0},{0});
+    BlockMatrix yourAssignedMatrix({0},{0});
     yourAssignedMatrix = myMatrix;
     yourAssignedMatrix.print_and_check("yourAssignedMatrix");
     yourAssignedMatrix.print_coloring_pattern("yourAssignedMatrix", true);

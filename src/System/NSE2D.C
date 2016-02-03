@@ -36,19 +36,19 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
   switch (type)
   {
     case NSE2D::Matrix::Type1:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
     break;
     case NSE2D::Matrix::Type2:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
     break;
     case NSE2D::Matrix::Type3:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
     break;
     case NSE2D::Matrix::Type4:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
     break;
     case NSE2D::Matrix::Type14:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
       break;
     default:
       ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");

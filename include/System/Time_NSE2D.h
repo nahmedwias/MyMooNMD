@@ -56,13 +56,13 @@ class Time_NSE2D
        *  [ A21  A22  B2 ]
        *  [ B3   B4   C  ]
       */
-      ColoredBlockFEMatrix matrix;
+      BlockFEMatrix matrix;
       /** @brief Mass matrix
        *  [ M11  0    0 ]
        *  [ 0    M22  0 ]
        *  [ 0    0    0 ]
        */
-      ColoredBlockFEMatrix Mass_Matrix;
+      BlockFEMatrix Mass_Matrix;
       /** @brief right hand side vector*/
       BlockVector rhs;
       /** @brief solution vector*/

@@ -53,7 +53,7 @@ class CD3D
       /** @brief Finite Element space */
       TFESpace3D feSpace_;
       /** @brief the system matrix */
-      ColoredBlockFEMatrix matrix_;
+      BlockFEMatrix matrix_;
       /** @brief the right hand side vector */
       BlockVector rhs_;
       /** @brief solution vector with one component. */
@@ -205,13 +205,13 @@ class CD3D
     // getters and setters
 
     /** @brief Get the system matrix on the currently finest grid.*/
-    const ColoredBlockFEMatrix & getMatrix() const
+    const BlockFEMatrix & getMatrix() const
     {
       return systems_.front().matrix_;
     }
 
     /** @brief Get the system matrix on the currently finest grid.*/
-    ColoredBlockFEMatrix & getMatrix()
+    BlockFEMatrix & getMatrix()
     {
       return systems_.front().matrix_;
     }

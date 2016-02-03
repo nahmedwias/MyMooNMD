@@ -40,7 +40,7 @@ class CD2D
       /** @brief Finite Element space */
       TFESpace2D fe_space;
       /** @brief the system matrix */
-      ColoredBlockFEMatrix matrix;
+      BlockFEMatrix matrix;
       /** @brief the right hand side vector */
       BlockVector rhs;
       /** @brief solution vector with one component. */
@@ -162,9 +162,9 @@ class CD2D
     void output(int i = -1);
     
     // getters and setters
-    const ColoredBlockFEMatrix & get_matrix() const
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    ColoredBlockFEMatrix & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }

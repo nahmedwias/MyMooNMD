@@ -31,8 +31,8 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            fe_function(&this->fe_space, (char*)"u", (char*)"u",
                        this->solution.get_entries(), this->solution.length())
 {
-  stiff_matrix = ColoredBlockFEMatrix::CD2D(fe_space);
-  mass_matrix = ColoredBlockFEMatrix::CD2D(fe_space);
+  stiff_matrix = BlockFEMatrix::CD2D(fe_space);
+  mass_matrix = BlockFEMatrix::CD2D(fe_space);
 }
 
 

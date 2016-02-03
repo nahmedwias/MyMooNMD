@@ -22,7 +22,7 @@
 #include <Matrix.h>
 
 // forward declaration
-class ColoredBlockMatrix;
+class BlockMatrix;
 
 class DirectSolver
 {
@@ -36,7 +36,7 @@ class DirectSolver
      *
      * @param  matrix the matrix A where Ax=b
      */
-    DirectSolver(const ColoredBlockMatrix& matrix, DirectSolverTypes type);
+    DirectSolver(const BlockMatrix& matrix, DirectSolverTypes type);
     
     /** @brief This class is not copy constructible */
     DirectSolver(const DirectSolver&) = delete;

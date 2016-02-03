@@ -38,9 +38,9 @@ class Time_CD2D
       /** @brief Finite element space */
       TFESpace2D fe_space;
       /** @brief Stiffness Matrix */
-      ColoredBlockFEMatrix stiff_matrix;
+      BlockFEMatrix stiff_matrix;
       /** @brief Mass matrix */
-      ColoredBlockFEMatrix mass_matrix;
+      BlockFEMatrix mass_matrix;
       /** @brief right hand side vector */
       BlockVector rhs;
       /** @brief solution vector */

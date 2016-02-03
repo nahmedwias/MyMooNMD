@@ -33,7 +33,7 @@
     feSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
 
     // reset the matrix with named constructor
-    matrix_ = ColoredBlockFEMatrix::CD3D(feSpace_);
+    matrix_ = BlockFEMatrix::CD3D(feSpace_);
     FEMatrix* block = matrix_.get_blocks_uniquely().at(0).get(); //the single block
 
     // Must be reset here, because feSpace needs special treatment
@@ -55,7 +55,7 @@
      feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(), solution_.length())
   {
     // reset the matrix with named constructor
-    matrix_ = ColoredBlockFEMatrix::CD3D(feSpace_);
+    matrix_ = BlockFEMatrix::CD3D(feSpace_);
   }
 #endif
 

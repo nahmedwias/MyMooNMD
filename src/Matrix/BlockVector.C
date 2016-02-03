@@ -29,7 +29,7 @@ BlockVector::BlockVector(int length)
     ErrThrow("cannot construct BlockVector with negative number of entries");
 }
 
-BlockVector::BlockVector(const ColoredBlockMatrix& mat, bool result)
+BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
   // the total length of this vector
   size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
@@ -58,8 +58,8 @@ BlockVector::BlockVector(const ColoredBlockMatrix& mat, bool result)
   }
 }
 
-BlockVector::BlockVector(const ColoredBlockFEMatrix& mat, bool result)
-: BlockVector(static_cast<ColoredBlockMatrix>(mat))
+BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
+: BlockVector(static_cast<BlockMatrix>(mat))
 {
   //now set actives correctly
   for(size_t b = 0; b < n_blocks(); ++b)

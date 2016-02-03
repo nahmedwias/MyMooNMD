@@ -1,7 +1,7 @@
 /** ************************************************************************
  *
- * @class      ColoredBlockFEMatrix
- * @brief      extends ColoredBlockMatrix by handling active degrees of freedom
+ * @class      BlockFEMatrix
+ * @brief      extends BlockMatrix by handling active degrees of freedom
  *
  *             A BlockMatrix of subtype BlockFEMatrix stores FEMatrices
  *             instead of simple algebraic TMatrices. Thus it can access
@@ -72,19 +72,19 @@
  *
  ****************************************************************************/
 
-#ifndef USER_PROJECTS_COLOREDBLOCKFEMATRIX_H_
-#define USER_PROJECTS_COLOREDBLOCKFEMATRIX_H_
+#ifndef USER_PROJECTS_BLOCKFEMATRIX_H_
+#define USER_PROJECTS_BLOCKFEMATRIX_H_
 
 #include <BlockMatrix.h>
 #include <FEMatrix.h>
 #include <FESpace.h>
 
-class ColoredBlockFEMatrix : public ColoredBlockMatrix
+class BlockFEMatrix : public BlockMatrix
 {
   public:
     //constructors
     /**
-     * @brief Creates a ColoredBlockFEMatrix which is filled with fitting zero blocks.
+     * @brief Creates a BlockFEMatrix which is filled with fitting zero blocks.
      * The TStructure of each of these zero blocks is the empty zero-map TStructure.
      *
      * The number of block rows and the number of block columns
@@ -96,15 +96,15 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * to all blocks of a particular column as ansatz space.
      */
 #ifdef __2D__
-    ColoredBlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
 #elif __3D__
-    ColoredBlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
 #endif // 3D
 
     /**
      * Default constructor. Constructs emtpy matrix which maps zero space to zero space.
      */
-    ColoredBlockFEMatrix();
+    BlockFEMatrix();
 
     // named constructors for block fe matrices often used in ParMooN
     //TODO All named constructors should further reduce the number of TMatrix-Copies made
@@ -123,7 +123,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param space Ansatz- equals testspace.
      * @return A newly constructed BlockFEMatrix for CD2D problems.
      */
-    static ColoredBlockFEMatrix CD2D( const TFESpace2D& space );
+    static BlockFEMatrix CD2D( const TFESpace2D& space );
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 1.
@@ -142,7 +142,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 1.
      */
-    static ColoredBlockFEMatrix NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 2.
@@ -161,7 +161,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 2.
      */
-    static ColoredBlockFEMatrix NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 3.
@@ -180,7 +180,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 3.
      */
-    static ColoredBlockFEMatrix NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 4.
@@ -199,7 +199,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 4.
      */
-    static ColoredBlockFEMatrix NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 14.
@@ -218,7 +218,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 14.
      */
-    static ColoredBlockFEMatrix NSE2D_Type14( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type14( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
     /**
      * Named constructor for a matrix for Darcy type problems in 2D.
@@ -234,7 +234,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param pressure The pressure finite element space.
      * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
      */
-    static ColoredBlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
     
     /**
      * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
@@ -242,7 +242,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param velocity The velocity finite element space
      * @return A newly constructed BlockFEMatrix for 2D NSE problems
      */
-    static ColoredBlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
+    static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
 
 #elif __3D__
     /**
@@ -257,7 +257,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * @param space Ansatz- equals testspace.
      * @return A newly constructed BlockFEMatrix for CD3D problems.
      */
-    static ColoredBlockFEMatrix CD3D( const TFESpace3D& space );
+    static BlockFEMatrix CD3D( const TFESpace3D& space );
 #endif
 
 
@@ -390,7 +390,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      * This is an awful method which returns non-const shared pointers to all blocks,
      * ordered from left to right, top to bottom.
      * Of course calling this method means you can break your entire
-     * ColoredBlockFEMatrix, because whenever you changes something in one
+     * BlockFEMatrix, because whenever you changes something in one
      * block, you will have no idea which other cells are affected due to
      * storing the same block.
      *
@@ -447,7 +447,7 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
       return *ansatz_spaces_columnwise_.at(cell_column);
     }
 
-    /** @brief return this ColoredBlockMatrix as one TMatrix
+    /** @brief return this BlockMatrix as one TMatrix
      *
      * This returns a merged version of this matix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
@@ -561,22 +561,22 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      *  matrix twice - once in the base class copy constructor
      *  and once in its body to get the cast to FEMatrix right.
      */
-    ColoredBlockFEMatrix(const ColoredBlockFEMatrix&);
+    BlockFEMatrix(const BlockFEMatrix&);
 
     /// Move constructor.
-    ColoredBlockFEMatrix(ColoredBlockFEMatrix&&);
+    BlockFEMatrix(BlockFEMatrix&&);
 
     /// Unified assignment operator. Uses copy-and-swap.
-    ColoredBlockFEMatrix& operator=(ColoredBlockFEMatrix);
+    BlockFEMatrix& operator=(BlockFEMatrix);
 
     /** Swap function used for copy-and swap in copy assignment.
      * @param[in,out] first The object to be swapped with second.
      * @param[in,out] second The object to be swapped with first.
      */
-    friend void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second);
+    friend void swap(BlockFEMatrix& first, BlockFEMatrix& second);
 
     /// @brief Destructor. Tidies up nice and clean.
-    virtual ~ColoredBlockFEMatrix() = default;
+    virtual ~BlockFEMatrix() = default;
 
   protected:
 #ifdef __2D__
@@ -622,4 +622,4 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
 
 
 
-#endif /* USER_PROJECTS_COLOREDBLOCKFEMATRIX_H_ */
+#endif /* USER_PROJECTS_BLOCKFEMATRIX_H_ */

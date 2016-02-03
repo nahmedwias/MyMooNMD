@@ -10,13 +10,13 @@
 /* ************************************************************************* */
 
 #ifdef __2D__
-ColoredBlockFEMatrix::ColoredBlockFEMatrix(
+BlockFEMatrix::BlockFEMatrix(
     std::vector< const TFESpace2D*  > spaces) :
 #elif __3D__
-    ColoredBlockFEMatrix::ColoredBlockFEMatrix(
+    BlockFEMatrix::BlockFEMatrix(
         std::vector< const TFESpace3D*  > spaces) :
 #endif
-    ColoredBlockMatrix(), //base class object is default (empty) constructed
+    BlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces),
     ansatz_spaces_columnwise_(spaces)
 {
@@ -86,8 +86,8 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(
 
 }
 
-ColoredBlockFEMatrix::ColoredBlockFEMatrix() :
-ColoredBlockMatrix(), test_spaces_rowwise_(),
+BlockFEMatrix::BlockFEMatrix() :
+BlockMatrix(), test_spaces_rowwise_(),
 ansatz_spaces_columnwise_()
 {
 }
@@ -95,18 +95,18 @@ ansatz_spaces_columnwise_()
 //named constructors
 #ifdef __2D__
 /* ************************************************************************* */
-ColoredBlockFEMatrix ColoredBlockFEMatrix::CD2D( const TFESpace2D& space )
+BlockFEMatrix BlockFEMatrix::CD2D( const TFESpace2D& space )
 {
-  ColoredBlockFEMatrix my_matrix({&space});
+  BlockFEMatrix my_matrix({&space});
   //replace block by a block with non-empty TStructure
   my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type1( const TFESpace2D& velocity,
+BlockFEMatrix BlockFEMatrix::NSE2D_Type1( const TFESpace2D& velocity,
                                          const TFESpace2D& pressure)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
 
   //create new blocks with correct structures filled with 0
   FEMatrix velo_velo(&velocity, &velocity); //A block
@@ -130,11 +130,11 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type1( const TFESpace2D& veloci
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type2(
+BlockFEMatrix BlockFEMatrix::NSE2D_Type2(
     const TFESpace2D& velocity, const TFESpace2D& pressure)
 
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
 
   //create new blocks with correct structures filled with 0
   FEMatrix velo_velo(&velocity, &velocity); //A block
@@ -163,10 +163,10 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type2(
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type3(
+BlockFEMatrix BlockFEMatrix::NSE2D_Type3(
     const TFESpace2D& velocity, const TFESpace2D& pressure)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
 
   //create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
@@ -195,10 +195,10 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type3(
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type4(
+BlockFEMatrix BlockFEMatrix::NSE2D_Type4(
     const TFESpace2D& velocity, const TFESpace2D& pressure)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
 
   //create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
@@ -231,10 +231,10 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type4(
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type14(
+BlockFEMatrix BlockFEMatrix::NSE2D_Type14(
     const TFESpace2D& velocity, const TFESpace2D& pressure)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
 
   //create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
@@ -270,9 +270,9 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::NSE2D_Type14(
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure)
+BlockFEMatrix BlockFEMatrix::Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &pressure});
+  BlockFEMatrix my_matrix({&velocity, &pressure});
 
   //fill in the blocks with correct matrices constructed solely for them
   my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}}, {false});
@@ -283,9 +283,9 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::Darcy2D( const TFESpace2D& velocity, 
   return my_matrix;
 }
 
-ColoredBlockFEMatrix ColoredBlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
 {
-  ColoredBlockFEMatrix my_matrix({&velocity, &velocity});
+  BlockFEMatrix my_matrix({&velocity, &velocity});
   
   my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}}, 
                            {false, false});
@@ -295,9 +295,9 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity
 }
 #elif __3D__
 //3D named constructors
-ColoredBlockFEMatrix ColoredBlockFEMatrix::CD3D( const TFESpace3D& space )
+BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
 {
-  ColoredBlockFEMatrix my_matrix({&space});
+  BlockFEMatrix my_matrix({&space});
   //replace block by a block with non-empty TStructure
   my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
   return my_matrix;
@@ -306,7 +306,7 @@ ColoredBlockFEMatrix ColoredBlockFEMatrix::CD3D( const TFESpace3D& space )
 
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::add_matrix_actives(
+void BlockFEMatrix::add_matrix_actives(
     const FEMatrix& summand, double factor,
     const std::vector<std::vector<size_t>>& cell_positions,
     const std::vector<bool>& transposed_states)
@@ -319,7 +319,7 @@ void ColoredBlockFEMatrix::add_matrix_actives(
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
+void BlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
 {
   //reset all values in 'y' to 0 and delegate to apply_scaled_add
   y.reset();
@@ -327,7 +327,7 @@ void ColoredBlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
+void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
                                             BlockVector & y, double a) const
 { //check if the vectors fit, if not so the program throws an error
   check_vector_fits_pre_image(x);
@@ -364,7 +364,7 @@ void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
 }
 
 /* ************************************************************************* */
-void ColoredBlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVector & y,
+void BlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVector & y,
                                         size_t sub_row, size_t sub_col,
                                         double a) const
 { //check if the vectors fit, if not so the program throws an error
@@ -404,7 +404,7 @@ void ColoredBlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVe
 }
 
 /* ************************************************************************* */
-void ColoredBlockFEMatrix::handle_discovery_of_vector_actives(const int nActive, 
+void BlockFEMatrix::handle_discovery_of_vector_actives(const int nActive, 
                                                      const int spaceNumber) const
 {
   if(nActive != this->get_row_space(spaceNumber).GetN_ActiveDegrees())
@@ -416,7 +416,7 @@ void ColoredBlockFEMatrix::handle_discovery_of_vector_actives(const int nActive,
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::check_pointer_types()
+void BlockFEMatrix::check_pointer_types()
 {
   for(size_t i = 0; i < n_cell_rows_;++i)
   {
@@ -440,10 +440,10 @@ void ColoredBlockFEMatrix::check_pointer_types()
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::check_vector_fits_image(const BlockVector& b) const
+void BlockFEMatrix::check_vector_fits_image(const BlockVector& b) const
 {
   //let the base class figure out block dimensions
-  ColoredBlockMatrix::check_vector_fits_image(b);
+  BlockMatrix::check_vector_fits_image(b);
 
   //check if non-actives fit
   for(size_t i = 0; i<b.n_blocks(); ++i)
@@ -459,10 +459,10 @@ void ColoredBlockFEMatrix::check_vector_fits_image(const BlockVector& b) const
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) const
+void BlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) const
 {
   //let the base class figure out block dimensions
-  ColoredBlockMatrix::check_vector_fits_pre_image(x);
+  BlockMatrix::check_vector_fits_pre_image(x);
 
   //check if non-actives fit
   //each vector block must have as many non-actives as the testspace of
@@ -484,7 +484,7 @@ void ColoredBlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) con
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<const FEMatrix>> ColoredBlockFEMatrix::get_blocks() const
+std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
 {
   std::vector<std::shared_ptr<const FEMatrix>> block_ptrs;
 
@@ -506,7 +506,7 @@ std::vector<std::shared_ptr<const FEMatrix>> ColoredBlockFEMatrix::get_blocks() 
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_TERRIBLY_UNSAFE()
+std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_TERRIBLY_UNSAFE()
 {
   std::vector<std::shared_ptr<FEMatrix>> block_ptrs;
 
@@ -528,7 +528,7 @@ std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_TERRIBLY
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely(
+std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
     bool include_zeroes)
 {
   //put up an all-in-input vector
@@ -546,7 +546,7 @@ std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely(
+std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
     std::vector<std::vector<size_t>> cells, bool include_zeroes)
 {
   // stuff the input into a tuple which includes transposed states
@@ -601,10 +601,10 @@ std::vector<std::shared_ptr<FEMatrix>> ColoredBlockFEMatrix::get_blocks_uniquely
 
 /* ************************************************************************* */
 
-std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
+std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
 {
   //let the base class put up the combined matrix as it can
-  std::shared_ptr<TMatrix> combined_matrix = ColoredBlockMatrix::get_combined_matrix();
+  std::shared_ptr<TMatrix> combined_matrix = BlockMatrix::get_combined_matrix();
 
   // ...and revise all the dirichlet rows!
 
@@ -674,20 +674,20 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
 }
 /* ************************************************************************* */
 
-size_t ColoredBlockFEMatrix::get_n_column_actives(size_t cell_column) const
+size_t BlockFEMatrix::get_n_column_actives(size_t cell_column) const
 {
   return ansatz_spaces_columnwise_.at(cell_column)->GetN_ActiveDegrees();
 }
 /* ************************************************************************* */
 
-size_t ColoredBlockFEMatrix::get_n_row_actives(size_t cell_row) const
+size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 {
   return test_spaces_rowwise_.at(cell_row)->GetN_ActiveDegrees();
 }
 
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::replace_blocks(
+void BlockFEMatrix::replace_blocks(
     const TMatrix& new_block,
     const std::vector<std::vector<size_t>>& cell_positions,
     const std::vector<bool>& transposed_states)
@@ -696,7 +696,7 @@ void ColoredBlockFEMatrix::replace_blocks(
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::replace_blocks(
+void BlockFEMatrix::replace_blocks(
     const FEMatrix& new_block,
     const std::vector<std::vector<size_t>>& cell_positions,
     const std::vector<bool>& transposed_states)
@@ -776,13 +776,13 @@ void ColoredBlockFEMatrix::replace_blocks(
   }
 
   // if everything is alright with this class, do the block replacement in the base class
-  ColoredBlockMatrix::replace_blocks(
+  BlockMatrix::replace_blocks(
       new_block, cell_positions, transposed_states);
 
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::scale_blocks_actives(
+void BlockFEMatrix::scale_blocks_actives(
     double factor,
     const std::vector<std::vector<size_t>>& cell_positions )
 {
@@ -798,12 +798,12 @@ void ColoredBlockFEMatrix::scale_blocks_actives(
 // IMPLEMENTATION OF SPECIAL MEMBER FUNCTION(S)
 /* ************************************************************************* */
 
-ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
-: ColoredBlockMatrix::ColoredBlockMatrix(other),
+BlockFEMatrix::BlockFEMatrix(const BlockFEMatrix& other)
+: BlockMatrix::BlockMatrix(other),
   test_spaces_rowwise_(other.test_spaces_rowwise_),
   ansatz_spaces_columnwise_(other.ansatz_spaces_columnwise_)
 {
-  Output::print<5>("ColoredBlockFEMatrix copy constructor!");
+  Output::print<5>("BlockFEMatrix copy constructor!");
 
   // each block instance has to be copied once and all the shared pointers of
   // the same color have to be set pointing to the new block
@@ -827,12 +827,12 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(const ColoredBlockFEMatrix& other)
 
 }
 
-ColoredBlockFEMatrix::ColoredBlockFEMatrix(ColoredBlockFEMatrix&& other)
-: ColoredBlockMatrix::ColoredBlockMatrix(std::move(other)), //base class move
+BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
+: BlockMatrix::BlockMatrix(std::move(other)), //base class move
   test_spaces_rowwise_(std::move(other.test_spaces_rowwise_)),
   ansatz_spaces_columnwise_(std::move(other.ansatz_spaces_columnwise_))
 {
-  Output::print<5>("ColoredBlockFEMatrix move constructor!");
+  Output::print<5>("BlockFEMatrix move constructor!");
 
   // each block instance has to be copied once and all the shared pointers of
   // the same color have to be set pointing to the new block
@@ -856,9 +856,9 @@ ColoredBlockFEMatrix::ColoredBlockFEMatrix(ColoredBlockFEMatrix&& other)
 }
 
 /* ************************************************************************* */
-void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
+void swap(BlockFEMatrix& first, BlockFEMatrix& second)
 {
-  Output::print<5>("ColoredBlockFEMatrix swap!");
+  Output::print<5>("BlockFEMatrix swap!");
 
   std::swap(first.n_cell_columns_, second.n_cell_columns_);
   std::swap(first.n_cell_rows_, second.n_cell_rows_);
@@ -869,9 +869,9 @@ void swap(ColoredBlockFEMatrix& first, ColoredBlockFEMatrix& second)
 }
 
 /* ************************************************************************* */
-ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other)
+BlockFEMatrix& BlockFEMatrix::operator=(BlockFEMatrix other)
 {
-  Output::print<5>("ColoredBlockFEMatrix copy assignment!");
+  Output::print<5>("BlockFEMatrix copy assignment!");
 
   //do a swap with the copy constructed object "other"
   swap(*this, other);
@@ -881,9 +881,9 @@ ColoredBlockFEMatrix& ColoredBlockFEMatrix::operator=(ColoredBlockFEMatrix other
 
 /* ************************************************************************* */
 #ifdef __2D__
-const TFESpace2D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+const TFESpace2D& BlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
 #elif __3D__
-const TFESpace3D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+const TFESpace3D& BlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
 #endif
 {
   if(cell_column >= n_cell_columns_) //just to not let the cell_column go unnoticed
@@ -895,9 +895,9 @@ const TFESpace3D& ColoredBlockFEMatrix::get_test_space(size_t cell_row, size_t c
 
 /* ************************************************************************* */
 #ifdef __2D__
-const TFESpace2D& ColoredBlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+const TFESpace2D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
 #elif __3D__
-const TFESpace3D& ColoredBlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+const TFESpace3D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
 #endif
 {
   if(cell_row >= n_cell_rows_)
@@ -915,7 +915,7 @@ const TFESpace3D& ColoredBlockFEMatrix::get_ansatz_space(size_t cell_row, size_t
 
 // Unfortunately add_scaled_actives and scale_blocks_actives
 // are code dupes of the non-active base class methods...
-void ColoredBlockFEMatrix::add_scaled_actives(
+void BlockFEMatrix::add_scaled_actives(
     const FEMatrix& summand, double scaling_factor,
     std::vector<grid_place_and_mode> row_column_transpose_tuples)
 {
@@ -962,7 +962,7 @@ void ColoredBlockFEMatrix::add_scaled_actives(
 }
 /* ************************************************************************* */
 
-std::shared_ptr<TMatrix> ColoredBlockFEMatrix::create_block_shared_pointer(const TMatrix& block)
+std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatrix& block)
 {
   try
   { //try to cast the given TMatrix to an FEMatrix and make an FEMatrix copy of it
@@ -972,12 +972,12 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::create_block_shared_pointer(const
   }
   catch (std::bad_cast e)
   {//cast did not work!
-    ErrThrow("TMatrix given. Make sure to fill a ColoredBlockFEMatrix only with FEMatrices!");
+    ErrThrow("TMatrix given. Make sure to fill a BlockFEMatrix only with FEMatrices!");
   }
 }
 /* ************************************************************************* */
 
-void ColoredBlockFEMatrix::scale_blocks_actives( double scaling_factor,
+void BlockFEMatrix::scale_blocks_actives( double scaling_factor,
                    std::vector<grid_place_and_mode> row_column_transpose_tuples)
 {
   // first of all check the input, modify if reparable or throw if not so.

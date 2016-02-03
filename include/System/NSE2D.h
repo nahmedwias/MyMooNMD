@@ -51,7 +51,7 @@ class NSE2D
       TFESpace2D pressure_space;
 
       /** The system matrix. */
-      ColoredBlockFEMatrix matrix;
+      BlockFEMatrix matrix;
 
       /** @brief the right hand side vector */
       BlockVector rhs;
@@ -259,9 +259,9 @@ class NSE2D
 //    { return this->systems.front().matrix; }
 //    BlockMatrixNSE2D & get_matrix()
 //    { return this->systems.front().matrix; }
-    const ColoredBlockFEMatrix & get_matrix() const
+    const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
-    ColoredBlockFEMatrix & get_matrix()
+    BlockFEMatrix & get_matrix()
     { return this->systems.front().matrix; }
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }

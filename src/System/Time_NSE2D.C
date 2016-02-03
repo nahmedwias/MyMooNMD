@@ -29,24 +29,24 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
   // Mass Matrix
   // Output::increaseVerbosity(5);
 
-  Mass_Matrix = ColoredBlockFEMatrix::Mass_NSE2D(velocity_space);
+  Mass_Matrix = BlockFEMatrix::Mass_NSE2D(velocity_space);
       
   switch(type)
   {
     case Time_NSE2D::Matrix::Type1:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
       break;
     case Time_NSE2D::Matrix::Type2:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
       break;
     case Time_NSE2D::Matrix::Type3:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
       break;
     case Time_NSE2D::Matrix::Type4:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
       break;
     case Time_NSE2D::Matrix::Type14:
-      matrix = ColoredBlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
       break;
   }
 }

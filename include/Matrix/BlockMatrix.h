@@ -1,5 +1,5 @@
-#ifndef USER_PROJECTS_COLOREDBLOCKMATRIX_H_
-#define USER_PROJECTS_COLOREDBLOCKMATRIX_H_
+#ifndef USER_PROJECTS_BLOCKMATRIX_H_
+#define USER_PROJECTS_BLOCKMATRIX_H_
 
 #include <Matrix.h>
 #include <memory>
@@ -11,22 +11,22 @@ class BlockVector;
 
 /** ************************************************************************
  *
- * @class      ColoredBlockMatrix
+ * @class      BlockMatrix
  * @brief      represent a matrix consisting of blocks which are sparse matrices
  *
  *             This is a purely algebraic object. And one which does frequently
  *             appear in FEM. Identifying and exploiting a certain block structure
  *             of matrices is a fundamental concept of solvers in CFD.
  *
- *             So far the ColoredBlockMatrix does not check, whether it
+ *             So far the BlockMatrix does not check, whether it
  *             already holds a block which you want to assign to one of its
  *             cells, but makes its own copy of whatever you give to it.
  *
- *             The ColoredBlockMatrix offers the possibility to store matrices,
+ *             The BlockMatrix offers the possibility to store matrices,
  *             which appear multiple time in the block system, only once.
  *             It is also supported to store matrices in transposed state.
  *
- *             A ColoredBlockMatrix basically consists of its 'cells', which
+ *             A BlockMatrix basically consists of its 'cells', which
  *             forms the lattice where matrices are stored, and its blocks.
  *             The basic concept to realize single storage of multiple blocks
  *             is the following: Each cell has along a shared pointer to its
@@ -36,7 +36,7 @@ class BlockVector;
  *             from zero to the current number of different stored blocks must
  *             be assigned.
  *
- *             The ColoredBlockMatrix supports changes in its color structure
+ *             The BlockMatrix supports changes in its color structure
  *             which are necessary due to changes which affect only some of its blocks,
  *             or affect different blocks differently (e.g. storing new blocks,
  *             adding to some blocks only, scaling some blocks only) and figures
@@ -51,7 +51,7 @@ class BlockVector;
  *             Alongside the color, each cell knows whether its block is held
  *             in transposed or non-transposed state.
  *
- *             There is one principle when working with a ColoredBlockMatrix:
+ *             There is one principle when working with a BlockMatrix:
  *             it is only as clever as you make it! In particular: it can only
  *             maintain a 'good' block structure (that is not to say: a valid one)
  *             if you perform your actions on it in a way fo the program to maintain
@@ -65,7 +65,7 @@ class BlockVector;
  *             So far the input is always only ONE TMatrix.
  *             The implementation of such methods should not be a big trouble,
  *             because one can easily break them down to modifications with only one
- *             TMatrix affecting multiple cells in the ColoredBlockMatrix.
+ *             TMatrix affecting multiple cells in the BlockMatrix.
  *
  *             TODO Write and test move constructor and assignment. Clang and gcc treat
  *             implicit generation and linking differently, and then move constructor
@@ -78,17 +78,17 @@ class BlockVector;
  * @ruleof0
  *
  ****************************************************************************/
-class ColoredBlockMatrix
+class BlockMatrix
 {
   public:
 
     /**
      * Default constructor. Creates an empty 0x0 object.
      */
-    ColoredBlockMatrix();
+    BlockMatrix();
 
     /**
-     * @brief Creates a ColoredBlockMatrix which is filled with fitting zero blocks.
+     * @brief Creates a BlockMatrix which is filled with fitting zero blocks.
      *
      * The number of block rows is the length of cell_row_numbers,
      * the number of block columns the length of cell_column_numbers.
@@ -99,7 +99,7 @@ class ColoredBlockMatrix
      * @param cell_row_numbers holds the number of rows for all matrices in one cell row
      * @param cell_column_numbers holds the number of columns for all matrices in one cell column
      */
-    ColoredBlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
+    BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
 
     /**
@@ -190,7 +190,7 @@ class ColoredBlockMatrix
     ///! Check whether a BlockVector x is fit to be to be factor x in the equation Ax=b.
     virtual void check_vector_fits_pre_image(const BlockVector& x) const;
 
-    /** @brief return this ColoredBlockMatrix as one TMatrix
+    /** @brief return this BlockMatrix as one TMatrix
      *
      * This returns a merged version of this matrix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
@@ -316,28 +316,28 @@ class ColoredBlockMatrix
 
     /** @brief copy constructor
      * Performs a deep copy of the stored TMatrices,
-     * so that no two instances of ColoredBlockMatrix share the same blocks.
+     * so that no two instances of BlockMatrix share the same blocks.
      */
-    ColoredBlockMatrix(const ColoredBlockMatrix&);
+    BlockMatrix(const BlockMatrix&);
 
     ///! Default move constructor does the job.
-    ColoredBlockMatrix(ColoredBlockMatrix&&) = default;
+    BlockMatrix(BlockMatrix&&) = default;
 
     /** Swap function used for copy-and swap in copy assignment.
      * @param[in,out] first The object to be swapped with second.
      * @param[in,out] second The object to be swapped with first.
      */
-    friend void swap(ColoredBlockMatrix& first, ColoredBlockMatrix& second);
+    friend void swap(BlockMatrix& first, BlockMatrix& second);
 
     /** @brief Unified assignment operator
      * Performs a deep copy of the stored TMatrices, using copy-and-swap,
-     * so that no two instances of ColoredBlockMatrix share the same blocks.
+     * so that no two instances of BlockMatrix share the same blocks.
      */
-    ColoredBlockMatrix& operator=(ColoredBlockMatrix);
+    BlockMatrix& operator=(BlockMatrix);
 
 
     /// @brief Default destructor. Tidies up nice and clean.
-    virtual ~ColoredBlockMatrix() = default;
+    virtual ~BlockMatrix() = default;
 
 
   protected:
@@ -365,7 +365,7 @@ class ColoredBlockMatrix
       bool is_transposed_;
 
       /** A flag used in algorithms which change the coloring scheme
-       *  of the owning ColoredBlockMatrix.
+       *  of the owning BlockMatrix.
        */
       enum class ReColoringFlag {SPLIT, KEEP} re_color_flag_;
 
@@ -551,7 +551,7 @@ class ColoredBlockMatrix
         std::vector<grid_place_and_mode>& row_column_transpose_tuples) const;
 
     /** Copies a given TMatrix and wraps a smart pointer around it, which is returned.
-     *  Is overridden in derrived class ColoredBlockFEMatrix, where a pointer cast has to
+     *  Is overridden in derrived class BlockFEMatrix, where a pointer cast has to
      *  be performed due to the storing of FEMatrices.
      */
     virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
@@ -742,7 +742,7 @@ class ColoredBlockMatrix
      *
      * Possibly existing special matrices are not changed.
      */
-    void add_scaled(const ColoredBlockMatrix &A, double factor = 1.0);
+    void add_scaled(const BlockMatrix &A, double factor = 1.0);
 
 
     /** @brief return the TMatrix located in the r-th block row and c-th block
@@ -756,4 +756,4 @@ class ColoredBlockMatrix
 
 
 
-#endif /* USER_PROJECTS_COLOREDBLOCKMATRIX_H_ */
+#endif /* USER_PROJECTS_BLOCKMATRIX_H_ */
