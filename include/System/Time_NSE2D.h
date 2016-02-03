@@ -110,6 +110,8 @@ class Time_NSE2D
       /** @brief right hand side vector from previous time step (on finest mesh)*/
       BlockVector old_rhs;
       
+      BlockVector old_solution;
+      
       /** @brief store errors  */
       std::vector<double> errors;
     
