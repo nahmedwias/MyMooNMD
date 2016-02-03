@@ -7,6 +7,9 @@
  * (concentration). Later the Time_CD2D object will be replaced by an
  * instance of the coupled module.
  *
+ * TODO Might be this will need some big changes as soon as the default branch
+ * is merged here.
+ *
  * @author Clemens Bartsch
  * @date February 3, 2016
  */
@@ -15,8 +18,6 @@ int main(int argc, char* argv[])
 {
   // Put up domain and databases.
   // These are the usual ParMooN-initialisation steps.
-
-  //
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
