@@ -1,6 +1,7 @@
 #include <ColoredBlockFEMatrix.h>
 #include <FEMatrix.h>
 #include <BlockVector.h>
+#include <Database.h>
 
 #include <limits>
 
@@ -361,6 +362,18 @@ void ColoredBlockFEMatrix::apply_scaled_add(const BlockVector & x,
   y.addScaledNonActive(x,a);
 
 }
+
+/* ************************************************************************* */
+void ColoredBlockFEMatrix::handle_discovery_of_vector_actives(const int nActive, 
+                                                     const int spaceNumber) const
+{
+  if(nActive != this->get_row_space(spaceNumber).GetN_ActiveDegrees())
+  {
+    ErrThrow("Number of actives in this vector's block ", spaceNumber,
+             " does not fit the number of non-actives in the corresponding test space",
+             " of this matrix!");
+  }
+}
 /* ************************************************************************* */
 
 void ColoredBlockFEMatrix::check_pointer_types()
@@ -557,7 +570,7 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
 
   //get pointers in the matrix
   const int* rowptr = combined_matrix->GetRowPtr();
-  const int* kcolptr = combined_matrix->GetKCol();
+  int* kcolptr = combined_matrix->GetKCol();
   double* entries = combined_matrix->GetEntries();
 
   size_t row_offset = 0;
@@ -586,6 +599,36 @@ std::shared_ptr<TMatrix> ColoredBlockFEMatrix::get_combined_matrix() const
     }
     // go one block row further
     row_offset += n_local_rows;
+  }
+  
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {// TODO: remove database dependency
+    // check that its really a Navier-Stokes matrices
+    if(n_cell_rows_ == 3 && n_cell_columns_ ==3)
+    {
+      // number of velocity dofs
+      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+
+      // find the first row of the third block column
+      int begin = rowptr[2*n_rows];
+      int end   = rowptr[2*n_rows+1];
+      
+      int diagonal = end-1;
+      // set entries to zero
+      for(int j=begin;j<end;j++)
+      {
+        entries[j] = 0;
+        if(kcolptr[j] >= 2*n_rows && diagonal == end-1)
+          diagonal = j;
+      }      
+      entries[diagonal] = 1;          
+      kcolptr[diagonal] = 2*n_rows;
+      // if there was already an entry at the diagonal in this row, we use
+      // that one (usually for NSTYPE 14). Otherwise we reset the next
+      // entry (to the right) in this row: That means we change its column.
+      // That entry is set to be one. If there is no entry with a larger
+      // column, we use the last entry in this row (diagonal == end-1). 
+    }
   }
 
   return combined_matrix;

@@ -648,6 +648,13 @@ class ColoredBlockMatrix
      */
     void get_next_cell_grid_index(size_t& block_row, size_t& block_column) const;
 
+    /** @brief this method is used to compare the number of actives in a block vector
+     * to the number of actives in test space
+     *  @param nActive number of actives
+     *  @param spaceNumber number of the test space to compare the actives
+     */
+    virtual void handle_discovery_of_vector_actives(const int nActive, 
+                                                    const int spaceNumber) const;
     /**
      * Check if a given index pair is the last one in the cell_grid_.
      *

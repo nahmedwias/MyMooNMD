@@ -297,7 +297,13 @@ class ColoredBlockFEMatrix : public ColoredBlockMatrix
      */
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const override;
-
+    /** @brief this method is used to compare the number of actives in a block vector
+     * to the number of actives in test space
+     *  @param nActive number of actives
+     *  @param spaceNumber number of the test space to compare the actives
+     */
+    virtual void handle_discovery_of_vector_actives(const int nActive, 
+                                                    const int spaceNumber) const;
     /**
      * Used as a developmental tool to discover slicing,
      * there should be no reason to use it anymore when the class is finished.

@@ -192,13 +192,7 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
                    "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
         }
-        if(b.active(i)!=0)
-        {
-          //maybe put to virtual method: handle_discovery_of_vector_actives
-          // give a warning if the vector has actives - the matrix has definitely not!
-          Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
-              " Did you want to use a BlockFEMatrix instead?");
-        }
+        handle_discovery_of_vector_actives(b.active(i), i);
       }
     }
 
@@ -222,13 +216,7 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
                    "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
         }
-        if(x.active(j)!=0)
-        {
-          //maybe put to virtual method: handle_discovery_of_vector_actives
-          // give a warning if the vector has actives - the matrix has definitely not!
-          Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
-              " Did you want to use a BlockFEMatrix instead?");
-        }
+        handle_discovery_of_vector_actives(x.active(j), j);
       }
     }
 
@@ -1099,6 +1087,18 @@ ColoredBlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
     }
 
+    /* ************************************************************************* */
+    void ColoredBlockMatrix::handle_discovery_of_vector_actives(const int nActive, 
+                                                    const int spaceNumber) const
+    {
+      if(nActive != 0)
+      {
+        //maybe put to virtual method: handle_discovery_of_vector_actives
+        // give a warning if the vector has actives - the matrix has definitely not!
+        Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
+                         " Did you want to use a BlockFEMatrix instead?");
+      }
+    }
     /* ************************************************************************* */
     bool ColoredBlockMatrix::is_last_index_pair(size_t block_row, size_t block_column) const
     {
