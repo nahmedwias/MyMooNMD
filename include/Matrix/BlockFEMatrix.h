@@ -75,7 +75,7 @@
 #ifndef USER_PROJECTS_COLOREDBLOCKFEMATRIX_H_
 #define USER_PROJECTS_COLOREDBLOCKFEMATRIX_H_
 
-#include <ColoredBlockMatrix.h>
+#include <BlockMatrix.h>
 #include <FEMatrix.h>
 #include <FESpace.h>
 

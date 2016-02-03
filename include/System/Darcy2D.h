@@ -13,7 +13,7 @@
 #ifndef __SYSTEMDARCY2D__
 #define __SYSTEMDARCY2D__
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <Example_Darcy2D.h>
 #include <FEFunction2D.h>
 #include <BlockVector.h>

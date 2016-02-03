@@ -5,7 +5,7 @@
  *      Author: bartsch
  */
 
-#include <ColoredBlockMatrix.h>
+#include <BlockMatrix.h>
 
 #include <vector>
 #include <tuple>

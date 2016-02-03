@@ -20,7 +20,7 @@
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 
 

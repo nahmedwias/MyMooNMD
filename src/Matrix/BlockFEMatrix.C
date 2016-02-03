@@ -1,4 +1,4 @@
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <FEMatrix.h>
 #include <BlockVector.h>
 #include <Database.h>

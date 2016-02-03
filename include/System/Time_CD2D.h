@@ -14,7 +14,7 @@
 #define __Time_CD2D__
 
 #include <FEFunction2D.h>
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_CD2D.h>
 #include <MultiGrid2D.h>

@@ -1,4 +1,4 @@
-#include <ColoredBlockMatrix.h>
+#include <BlockMatrix.h>
 #include <BlockVector.h>
 #include <LinAlg.h>
 

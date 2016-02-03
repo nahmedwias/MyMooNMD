@@ -23,7 +23,7 @@
 #include <Domain.h>
 #include <deque>
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 
 class CD2D

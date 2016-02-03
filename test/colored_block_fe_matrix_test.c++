@@ -10,7 +10,7 @@
  */
 
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <FEMatrix.h>
 
 #include <MooNMD_Io.h>

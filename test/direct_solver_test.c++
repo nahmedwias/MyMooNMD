@@ -1,5 +1,5 @@
 #include <DirectSolver.h>
-#include <ColoredBlockMatrix.h>
+#include <BlockMatrix.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
 #include <cmath>

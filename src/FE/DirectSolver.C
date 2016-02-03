@@ -13,7 +13,7 @@
 #include <DirectSolver.h>
 #include <Database.h>
 #include "umfpack.h"
-#include <ColoredBlockMatrix.h>
+#include <BlockMatrix.h>
 
 void handle_error_umfpack(int ierror)
 {

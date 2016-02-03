@@ -1,6 +1,6 @@
 #include <BlockVector.h>
-#include <ColoredBlockMatrix.h>
-#include <ColoredBlockFEMatrix.h>
+#include <BlockMatrix.h>
+#include <BlockFEMatrix.h>
 #include <stdlib.h>
 #include <Constants.h>
 #include <Database.h>

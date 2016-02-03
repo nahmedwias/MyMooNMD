@@ -22,7 +22,7 @@
 #ifndef __CD3D_H__
 #define __CD3D_H__
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 
 #include <FEFunction3D.h>

@@ -15,7 +15,7 @@
 
 #include <FEVectFunct2D.h>
 
-#include <ColoredBlockFEMatrix.h>
+#include <BlockFEMatrix.h>
 #include <BlockVector.h>
 
 #include <FESpace2D.h>
