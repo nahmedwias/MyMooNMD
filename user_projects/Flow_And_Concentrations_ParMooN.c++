@@ -20,6 +20,7 @@
 
 int main(int argc, char* argv[])
 {
+  // //////////////////////////////////////////////////////////////////////////
   // Put up domain and databases.
   // These are the usual ParMooN-initialisation steps.
   TDatabase Database;
@@ -29,19 +30,24 @@ int main(int argc, char* argv[])
   TDomain Domain(argv[1]);
 
   //===========================================================================
-  OpenFiles();
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
   OutFile.setf(std::ios::scientific);
   Database.WriteParamDB(argv[0]);
 
   //===========================================================================
   /* include the mesh from a mesh generator, for a standard mesh use the
    * build-in function. The GEOFILE describes the boundary of the domain. */
-   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
   //===========================================================================
   // do initial refinements of the domain
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-      Domain.RegRefineAll();
+  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    Domain.RegRefineAll();
+  // //////////////////////////////////////////////////////////////////////////
+
+  // TODO Here is where the work begins.
+
+  Output::close_file();
 
   return 0;
 }
