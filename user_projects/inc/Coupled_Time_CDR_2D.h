@@ -30,6 +30,25 @@ class ReactionCoupling;
  */
 class Coupled_Time_CDR_2D {
 
+  public:
+
+    //Deletion of special member functions.
+    //! Delete copy constructor.
+    Coupled_Time_CDR_2D(const Coupled_Time_CDR_2D&) = delete;
+
+    //! Delete move constructor.
+    Coupled_Time_CDR_2D(Coupled_Time_CDR_2D&&) = delete;
+
+    //! Delete copy assignment operator.
+    Coupled_Time_CDR_2D& operator=(const Coupled_Time_CDR_2D&) = delete;
+
+    //! Delete move assignment operator
+    Coupled_Time_CDR_2D& operator=(Coupled_Time_CDR_2D&&) = delete;
+
+    //! Default destructor. Most likely causes memory leaks.
+    ~Coupled_Time_CDR_2D() = default;
+
+
   protected:
 
     /*! @brief The number of CDR equations forming the system.*/
@@ -48,28 +67,7 @@ class Coupled_Time_CDR_2D {
      * (The type is implemented in CoupledCDR_2D) */
     CoupledCDR_2D::SolvingStrategy const strategy_;
 
-  public:
-    //Declaration of special member functions - rule of zero.
-    /**
-     * Note that members cdProblems_ and coupledParts_ are only shared pointers
-     * so far. So a copied/moved object of class Coupled_Time_CDR_2D will just
-     * share ownership of the CD2D and ReactionCoupling objects which
-     * the entries of cdProblems_ and coupledParts_ point to.
-     */
-    // Default copy constructor. Shallow copy!
-    Coupled_Time_CDR_2D(const Coupled_Time_CDR_2D&) = default;
 
-    //! Default move constructor.
-    Coupled_Time_CDR_2D(Coupled_Time_CDR_2D&&) = default;
-
-    //! Default copy assignment operator. Shallow copy!
-    Coupled_Time_CDR_2D& operator=(const Coupled_Time_CDR_2D&) = default;
-
-    //! Default move assignment operator
-    Coupled_Time_CDR_2D& operator=(Coupled_Time_CDR_2D&&) = default;
-
-    //! Default destructor.
-    ~Coupled_Time_CDR_2D() = default;
 
 
 };
