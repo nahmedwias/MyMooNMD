@@ -15,7 +15,7 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
                   Time_NSE2D::Matrix type)
  : velocity_space(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
                   order.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"Darcy pressure", example.get_bc(1),
+   pressure_space(&coll, (char*)"p", (char*)"pressure space", example.get_bc(1),
                   order.second, nullptr),
    matrix({&velocity_space, &velocity_space, &pressure_space}),
    Mass_Matrix({&velocity_space, &velocity_space}),

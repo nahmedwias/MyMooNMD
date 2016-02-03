@@ -19,6 +19,7 @@
 #define __DIRECTSOLVER__
 
 #include <BlockVector.h>
+#include <Matrix.h>
 
 // forward declaration
 class ColoredBlockMatrix;

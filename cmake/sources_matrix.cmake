@@ -8,24 +8,11 @@
 # Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/Matrix")
 
-# Source files to be added to the 2D library.
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrix.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockMatrix.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixCD2D.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixDarcy2D.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockFEMatrix.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockFEMatrix.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixNSE2D.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockPattern.C")
-list(APPEND MATRIX_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector.C")
+# Source files to be added to the 2D and 3D library.
+list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockMatrix.C")
+list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockFEMatrix.C")
+list(APPEND MATRIX_SOURCES "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector.C")
 
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrix.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockMatrixCD3D.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockFEMatrix.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockPattern.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/BlockVector.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockFEMatrix.C")
-list(APPEND MATRIX_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Matrix/ColoredBlockMatrix.C")
 
-list(APPEND PARMOON_SOURCES_2D ${MATRIX_SOURCES_2D})
-list(APPEND PARMOON_SOURCES_3D ${MATRIX_SOURCES_3D})
+list(APPEND PARMOON_SOURCES_2D ${MATRIX_SOURCES})
+list(APPEND PARMOON_SOURCES_3D ${MATRIX_SOURCES})
