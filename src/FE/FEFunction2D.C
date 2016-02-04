@@ -45,8 +45,8 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
-char *description, double *values, int length)
+TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, const char *name,
+const char *description, double *values, int length)
 {
 
   FESpace2D=fespace2D;
@@ -2089,7 +2089,7 @@ void TFEFunction2D::ReadSol(char *BaseName)
 
 
 /** interpolate the old mesh fe function values to the new fe function */
-void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
+void TFEFunction2D::Interpolate(const TFEFunction2D *OldFeFunction)
 {
   int i,j, N_Cells, N_Edges;
   int N_DOFs, N_LocalDOFs;

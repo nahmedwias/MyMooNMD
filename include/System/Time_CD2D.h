@@ -100,7 +100,8 @@ class Time_CD2D
      * 
      * Note that the size of this deque is at least one and larger than that
      * only in case of multigrid (when it holds as many systems as there are
-     * multigrid levels).
+     * multigrid levels). The first entry is the finest grid, the others follow
+     * ordered by fineness.
      */
     std::deque<System_per_grid> systems;
     
@@ -156,15 +157,38 @@ class Time_CD2D
      * 
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 
      * (additional matrixK in case of SUPG stabilization), rhs
+     *
+     * @param velocity_field A constant pointer to a pre-computed
+     * velocity field, which is to be used as coefficient function in the
+     * advective term.
+     * TODO This is still in an experimental state.
+     * The only thing which is checked is, that the given FEFunction has a space
+     * on the same Collection of grid cells as this object (which might not
+     * even be the right thing to check).
+     *
      */
-    void assemble_initial_time();
+    void assemble_initial_time(const TFEFunction2D* velocity_field = nullptr);
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
      * In addition the system matrix and the rhs which passes to the solver 
      * are also prepared within the function
+     *
+     * There is the possibility to give a pre-computed velocity field which is
+     * responsible for the advective transport to this routine, which will then
+     * be used as a parameter in the Assembling process. It is provided as a
+     * raw pointer, such that it can default to nullptr (no externally
+     * precomputed velo field).
+     *
+     * @param velocity_field A constant pointer to a pre-computed
+     * velocity field, which is to be used as coefficient function in the
+     * advective term.
+     * TODO This is still in an experimental state.
+     * The only thing which is checked is, that the given FEFunction has a space
+     * on the same Collection of grid cells as this object (which might not
+     * even be the right thing to check).
      */
-    void assemble();
+    void assemble(const TFEFunction2D* velocity_field = nullptr);
     
     /** @brief solve the system
      */
@@ -212,6 +236,14 @@ class Time_CD2D
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
                                  LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
                                  bool assemble_both);
+
+    /**
+     * Iif there is a velocity field input, thus velocity_field not equals zero,
+     * whether it lives on the same Collection as my finest grid.
+     *
+     * @param velocity_field The velocity field to be checked.
+     */
+    void check_velocity_field(const TFEFunction2D* velocity_field) const;
 };
 
 #endif

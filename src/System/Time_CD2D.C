@@ -199,8 +199,13 @@ void Time_CD2D::set_parameters()
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble_initial_time()
+void Time_CD2D::assemble_initial_time(const TFEFunction2D* velocity_field)
 {
+
+  //check the velocity field input
+  check_velocity_field(velocity_field);
+
+  // chose the types for the local assembling objects
   LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
 
@@ -212,6 +217,39 @@ void Time_CD2D::assemble_initial_time()
                               this->example.get_coeffs());
     LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
                                this->example.get_coeffs());
+
+    // /// PUT THIS IN IF STATEMENT!
+
+    // modify the local assembling object for the stiffness matrix, should a
+    // velocity field be given
+
+      // step 1 - transform the given Function to our FESpace
+    // TODO this will not compile until the interpolate function is not
+    // changed to taking a const (reference), and I am not sure if this will
+    // succeed at all, plus it will be slow.
+
+    // The interpolation of the velocity field into our fespace
+    // - this will change as soon as TFEFunction had a rework
+    // I'm absolutely not sure if this is the right space to project into for
+    // the assemble method to work correctly and accept it as a parameter...
+    // do we not need a different boundary conditions (i.e. those of the original space?)
+    const TFESpace2D& space = s.fe_space;
+    size_t n_dofs = space.GetN_DegreesOfFreedom();
+    std::string name("interpolated velo space");
+    std::string description("what a lovely lady, what a lovely limousine");
+    std::vector<double> interp_funct_values(n_dofs,0.0);
+
+    TFEFunction2D velocity_interpolated(&space, name.c_str(), description.c_str(),
+                                        &interp_funct_values.at(0), n_dofs); //constructor call
+    //velocity_interpolated.Interpolate(velocity_field);
+    // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+
+    //CB DEBUG This is just a test if this compiles
+    TFEFunction2D my_function = velocity_interpolated;
+    //END DEBUG
+
+    // /// END PUT THIS IN IF STATEMENT!
 
     call_assembling_routine(s, la_a_rhs, la_mass , true);
 
@@ -243,7 +281,7 @@ void Time_CD2D::assemble_initial_time()
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble()
+void Time_CD2D::assemble(const TFEFunction2D* velocity_field)
 {
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
   
@@ -548,5 +586,19 @@ void Time_CD2D::call_assembling_routine(
     mass_block[0]->reset();
     Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, NULL, 0, NULL,
                NULL, &boundary_conditions, non_const_bound_value, la_mass);
+  }
+}
+
+
+void Time_CD2D::check_velocity_field(const TFEFunction2D* velocity_field) const
+{
+  if (velocity_field)
+  {
+    if (velocity_field->GetFESpace2D()->GetCollection() !=
+        this->systems.at(0).fe_space.GetCollection())
+    {
+      ErrThrow("The velocity field must be defined on the very cell Collection"
+          " of the finest grid of this Time_CD2D object!");
+    }
   }
 }

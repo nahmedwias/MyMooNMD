@@ -31,68 +31,68 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::ConvDiff:
       switch(TDatabase::ParamDB->DISCTYPE)
       {
-	case GALERKIN:
-	  if(TDatabase::ParamDB->Axial3D)
+        case GALERKIN:
+          if(TDatabase::ParamDB->Axial3D)
             return std::string("CD2D_Axiax3D_Galerkin");
           else
             return std::string("CD2D_Galerkin");
-	case SUPG:
-	  return std::string("CD2D_SUPG");
-	case GLS:
-	  return std::string("CD2D_GLS");
+        case SUPG:
+          return std::string("CD2D_SUPG");
+        case GLS:
+          return std::string("CD2D_GLS");
       }
       break;      
-    ///////////////////////////////////////////////////////////////////////////
-    // TCD2D: time dependent convection diffusion problems
-    case LocalAssembling2D_type::TCD2D:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-	case GALERKIN:
-	  return std::string("TCD2D_Stiff_Rhs");
-	case SUPG:
-	  return std::string("TCD2D_Stiff_Rhs_SUPG");
-      }
-    case LocalAssembling2D_type::TCD2D_Mass:
-      return std::string("TCD2D_Mass");
-    ///////////////////////////////////////////////////////////////////////////
-    // NSE2D: stationary Navier-Stokes problems
-    case NSE2D_Galerkin:
-      return std::string("NSE2D_Galerkin");
-    case NSE2D_Galerkin_Nonlinear:
-      return std::string("NSE2D_Galerkin_Nonlinear");
-    ///////////////////////////////////////////////////////////////////////////
-    // Darcy2D: stationary Darcy problems
-    case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");    
-    ///////////////////////////////////////////////////////////////////////////
-    // TNSE2D: nonstationary Navier-Stokes
-    case LocalAssembling2D_type::TNSE2D:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_Galerkin");
-        case SUPG:
-          return std::string("TNSE2D_SUPG");
-      }
-      break;
-    case LocalAssembling2D_type::TNSE2D_NL:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_NLGalerkin");
-        case SUPG:
-          return std::string("TNSE2D_NLSUPG");
-      }
-      break;
-    case LocalAssembling2D_type::TNSE2D_Rhs:
-      switch(TDatabase::ParamDB->DISCTYPE)
-      {
-        case GALERKIN:
-          return std::string("TNSE2D_Rhs");
-        case SUPG:
-          return std::string("TNSE2D_RhsSUPG");
-      }
-      break;
+      ///////////////////////////////////////////////////////////////////////////
+      // TCD2D: time dependent convection diffusion problems
+        case LocalAssembling2D_type::TCD2D:
+          switch(TDatabase::ParamDB->DISCTYPE)
+          {
+            case GALERKIN:
+              return std::string("TCD2D_Stiff_Rhs");
+            case SUPG:
+              return std::string("TCD2D_Stiff_Rhs_SUPG");
+          }
+            case LocalAssembling2D_type::TCD2D_Mass:
+              return std::string("TCD2D_Mass");
+              ///////////////////////////////////////////////////////////////////////////
+              // NSE2D: stationary Navier-Stokes problems
+            case NSE2D_Galerkin:
+              return std::string("NSE2D_Galerkin");
+            case NSE2D_Galerkin_Nonlinear:
+              return std::string("NSE2D_Galerkin_Nonlinear");
+              ///////////////////////////////////////////////////////////////////////////
+              // Darcy2D: stationary Darcy problems
+            case Darcy2D_Galerkin:
+              return std::string("Darcy2D_Galerkin");
+              ///////////////////////////////////////////////////////////////////////////
+              // TNSE2D: nonstationary Navier-Stokes
+            case LocalAssembling2D_type::TNSE2D:
+              switch(TDatabase::ParamDB->DISCTYPE)
+              {
+                case GALERKIN:
+                  return std::string("TNSE2D_Galerkin");
+                case SUPG:
+                  return std::string("TNSE2D_SUPG");
+              }
+              break;
+                case LocalAssembling2D_type::TNSE2D_NL:
+                  switch(TDatabase::ParamDB->DISCTYPE)
+                  {
+                    case GALERKIN:
+                      return std::string("TNSE2D_NLGalerkin");
+                    case SUPG:
+                      return std::string("TNSE2D_NLSUPG");
+                  }
+                  break;
+                    case LocalAssembling2D_type::TNSE2D_Rhs:
+                      switch(TDatabase::ParamDB->DISCTYPE)
+                      {
+                        case GALERKIN:
+                          return std::string("TNSE2D_Rhs");
+                        case SUPG:
+                          return std::string("TNSE2D_RhsSUPG");
+                      }
+                      break;
   }
   return std::string();
 }
@@ -100,173 +100,173 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type, 
                                      TFEFunction2D **fefunctions2d,
                                      CoeffFct2D *coeffs)
- : type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
-   FEFunctions2D(fefunctions2d)
+: type(type), name(LocalAssembling2D_type_to_string(type)), Coeffs(coeffs),
+  FEFunctions2D(fefunctions2d)
 {
   Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
   
   
-//   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
+  //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
   // the values below only matter if you need an existing finite element 
   // function during your assembly. Change them in such a case
-this->N_Parameters = 0;
-this->N_ParamFct = 0;
-this->ParameterFct = {};
-this->N_FEValues = 0;
-this->FEValue_FctIndex = {};
-this->BeginParameter = {};
+  this->N_Parameters = 0;
+  this->N_ParamFct = 0;
+  this->ParameterFct = {};
+  this->N_FEValues = 0;
+  this->FEValue_FctIndex = {};
+  this->BeginParameter = {};
 
-// set all member variables according to the LocalAssembling2D_type
-switch(type)
-{
-  ///////////////////////////////////////////////////////////////////////////
-  // CD2D: stationary convection diffusion problems
-  case LocalAssembling2D_type::ConvDiff:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-        this->N_Terms = 3;
-        this->Derivatives = { D10, D01, D00 };
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = { 0, 0, 0 };
-        
-        if(TDatabase::ParamDB->Axial3D)
-          this->AssembleParam = BilinearAssemble_Axial3D; 
-        else
-          this->AssembleParam = BilinearAssembleGalerkin; 
-        this->Manipulate = NULL;
-        break;
-      case SUPG:
-      case GLS:
-        this->N_Terms = 5;
-        this->Derivatives = { D10, D01, D00, D20, D02 };
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = true;
-        this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = BilinearAssemble_SD; 
-	else
-	  this->AssembleParam = BilinearAssemble_GLS;
-	
-        if(TDatabase::ParamDB->SDFEM_NORM_B==0)
-          this->Manipulate = linfb;
-        else
-          this->Manipulate = ave_l2b_quad_points;
-        
-	break;
+  // set all member variables according to the LocalAssembling2D_type
+  switch(type)
+  {
+    ///////////////////////////////////////////////////////////////////////////
+    // CD2D: stationary convection diffusion problems
+    case LocalAssembling2D_type::ConvDiff:
+      this->N_Matrices = 1;
+      this->RowSpace = { 0 };
+      this->ColumnSpace = { 0 };
+      this->N_Rhs = 1;
+      this->RhsSpace = { 0 };
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0 };
+
+          if(TDatabase::ParamDB->Axial3D)
+            this->AssembleParam = BilinearAssemble_Axial3D;
+          else
+            this->AssembleParam = BilinearAssembleGalerkin;
+          this->Manipulate = NULL;
+          break;
+        case SUPG:
+        case GLS:
+          this->N_Terms = 5;
+          this->Derivatives = { D10, D01, D00, D20, D02 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 0 };
+          if(TDatabase::ParamDB->DISCTYPE==SUPG)
+            this->AssembleParam = BilinearAssemble_SD;
+          else
+            this->AssembleParam = BilinearAssemble_GLS;
+
+          if(TDatabase::ParamDB->SDFEM_NORM_B==0)
+            this->Manipulate = linfb;
+          else
+            this->Manipulate = ave_l2b_quad_points;
+
+          break;
         default:
           ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
                  " is not supported by the class CD2D");
           throw("unsupported DISCTYPE");
-    }
-    break;
-  ///////////////////////////////////////////////////////////////////////////
-  // TCD2D: time dependent convection diffusion problems
-  case LocalAssembling2D_type::TCD2D:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 1;
-    this->RhsSpace = { 0 };
-    this->Manipulate = NULL;
-    
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-	this->N_Terms = 3;
-	this->Derivatives = { D10, D01, D00 };
-	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[0] = false;
-	this->FESpaceNumber = { 0, 0, 0 };
-	
-	this->AssembleParam = LocalMatrixARhs; 
-	break;
-      case SUPG:
-      case GLS:
-	this->N_Terms = 5;
-	this->Derivatives = { D10, D01, D00, D20, D02 };
-	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[1] = true;
-	this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
-	
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = LocalMatrixARhs_SUPG; 
-	else
-	{
-	  ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
-                 " is not supported by the class CD2D");
-          throw("unsupported DISCTYPE");
-	}
-	break;
-    }
-    break;// case LocalAssembling2D_type::TCD2D:
-  case LocalAssembling2D_type::TCD2D_Mass:
-    this->N_Matrices = 1;
-    this->RowSpace = { 0 };
-    this->ColumnSpace = { 0 };
-    this->N_Rhs = 0;
-    this->RhsSpace = { 0 };
-    this->Manipulate = NULL;
-    this->Manipulate = NULL;
-    switch(TDatabase::ParamDB->DISCTYPE)
-    {
-      case GALERKIN:
-       this->N_Terms = 1;
-       this->Derivatives = { D00 };
-       this->Needs2ndDerivatives = new bool[1];
-       this->Needs2ndDerivatives[0] = false;
-       this->FESpaceNumber = { 0 };
-       this->AssembleParam = LocalMatrixM;
-       break;
-      case SUPG:
-       this->N_Terms = 3;
-       this->Derivatives = { D10, D01, D00 };
-       this->Needs2ndDerivatives = new bool[1];
-       this->Needs2ndDerivatives[0] = false;
-       this->FESpaceNumber = { 0, 0, 0 };
-       this->AssembleParam = LocalMatrixM_SUPG;
-       break;
-    }    
-  break;  //LocalAssembling2D_type::TCD2D_Mass
-  ///////////////////////////////////////////////////////////////////////////
-  // NSE2D: stationary Navier-Stokes problems
-  case NSE2D_Galerkin:
-  case NSE2D_Galerkin_Nonlinear:
-    this->set_parameters_for_nse(type);
-    break;
-  case Darcy2D_Galerkin:
-    this->N_Terms = 6;
-    this->Derivatives = { D00, D00, D10, D01, D10, D01 };
-    this->Needs2ndDerivatives = new bool[2];
-    this->Needs2ndDerivatives[0] = false;
-    this->Needs2ndDerivatives[1] = false;
-    this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
-    this->N_Matrices = 4;
-    this->RowSpace = {0, 1, 0, 1};
-    this->ColumnSpace = { 0, 1, 1, 0};
-    this->N_Rhs = 2;
-    this->RhsSpace = { 0, 1 };
-    this->AssembleParam = BilinearAssembleDarcyGalerkin; 
-    this->Manipulate = NULL;
-    break;
-  ////////////////////////////////////////////////////////////////////////////
-    // TNSE2D: nonstationary Navier-Stokes problems
-  case LocalAssembling2D_type::TNSE2D:
-  case LocalAssembling2D_type::TNSE2D_NL:   
-  case LocalAssembling2D_type::TNSE2D_Rhs:
-    this->set_parameters_for_tnse(type);
-    break;
-    
-  default:
-    ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
-    throw("unknown LocalAssembling2D_type");
-}
+      }
+      break;
+      ///////////////////////////////////////////////////////////////////////////
+      // TCD2D: time dependent convection diffusion problems
+        case LocalAssembling2D_type::TCD2D:
+          this->N_Matrices = 1;
+          this->RowSpace = { 0 };
+          this->ColumnSpace = { 0 };
+          this->N_Rhs = 1;
+          this->RhsSpace = { 0 };
+          this->Manipulate = NULL;
+
+          switch(TDatabase::ParamDB->DISCTYPE)
+          {
+            case GALERKIN:
+              this->N_Terms = 3;
+              this->Derivatives = { D10, D01, D00 };
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0 };
+
+              this->AssembleParam = LocalMatrixARhs;
+              break;
+            case SUPG:
+            case GLS:
+              this->N_Terms = 5;
+              this->Derivatives = { D10, D01, D00, D20, D02 };
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[1] = true;
+              this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
+
+              if(TDatabase::ParamDB->DISCTYPE==SUPG)
+                this->AssembleParam = LocalMatrixARhs_SUPG;
+              else
+              {
+                ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                       " is not supported by the class CD2D");
+                throw("unsupported DISCTYPE");
+              }
+              break;
+          }
+          break;// case LocalAssembling2D_type::TCD2D:
+            case LocalAssembling2D_type::TCD2D_Mass:
+              this->N_Matrices = 1;
+              this->RowSpace = { 0 };
+              this->ColumnSpace = { 0 };
+              this->N_Rhs = 0;
+              this->RhsSpace = { 0 };
+              this->Manipulate = NULL;
+              this->Manipulate = NULL;
+              switch(TDatabase::ParamDB->DISCTYPE)
+              {
+                case GALERKIN:
+                  this->N_Terms = 1;
+                  this->Derivatives = { D00 };
+                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives[0] = false;
+                  this->FESpaceNumber = { 0 };
+                  this->AssembleParam = LocalMatrixM;
+                  break;
+                case SUPG:
+                  this->N_Terms = 3;
+                  this->Derivatives = { D10, D01, D00 };
+                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives[0] = false;
+                  this->FESpaceNumber = { 0, 0, 0 };
+                  this->AssembleParam = LocalMatrixM_SUPG;
+                  break;
+              }
+              break;  //LocalAssembling2D_type::TCD2D_Mass
+              ///////////////////////////////////////////////////////////////////////////
+              // NSE2D: stationary Navier-Stokes problems
+                case NSE2D_Galerkin:
+                case NSE2D_Galerkin_Nonlinear:
+                  this->set_parameters_for_nse(type);
+                  break;
+                case Darcy2D_Galerkin:
+                  this->N_Terms = 6;
+                  this->Derivatives = { D00, D00, D10, D01, D10, D01 };
+                  this->Needs2ndDerivatives = new bool[2];
+                  this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
+                  this->FESpaceNumber = { 0, 1, 0, 0, 1, 1};
+                  this->N_Matrices = 4;
+                  this->RowSpace = {0, 1, 0, 1};
+                  this->ColumnSpace = { 0, 1, 1, 0};
+                  this->N_Rhs = 2;
+                  this->RhsSpace = { 0, 1 };
+                  this->AssembleParam = BilinearAssembleDarcyGalerkin;
+                  this->Manipulate = NULL;
+                  break;
+                  ////////////////////////////////////////////////////////////////////////////
+                  // TNSE2D: nonstationary Navier-Stokes problems
+                case LocalAssembling2D_type::TNSE2D:
+                case LocalAssembling2D_type::TNSE2D_NL:
+                case LocalAssembling2D_type::TNSE2D_Rhs:
+                  this->set_parameters_for_tnse(type);
+                  break;
+
+                default:
+                  ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
+                  throw("unknown LocalAssembling2D_type");
+  }
 
   AllOrigValues = new double** [N_Terms];
   OrigValues = new double* [N_Terms];
@@ -287,19 +287,19 @@ switch(type)
 LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
                                      const TAuxParam2D& aux,
                                      const TDiscreteForm2D& df)
- : type(type),
-   name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
-   Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00), 
-   FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
-   ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),
-   Coeffs(df.GetCoeffFct()), AssembleParam(df.get_AssembleParam()),
-   Manipulate(df.get_Manipulate()), AllOrigValues(new double** [N_Terms]),
-   OrigValues(new double* [N_Terms]), N_Matrices(df.get_N_Matrices()),
-   N_Rhs(df.get_N_Rhs()), N_ParamFct(aux.GetN_ParamFct()), 
-   ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
-   N_Parameters(aux.GetN_Parameters()), N_FEValues(aux.get_N_FEValues()), 
-   FEFunctions2D(aux.get_FEFunctions2D()), FEValue_FctIndex(this->N_FEValues,0),
-   FEValue_MultiIndex(this->N_FEValues, D00)
+: type(type),
+  name(df.GetName()), N_Terms(df.Get_NTerms()), N_Spaces(df.Get_N_Spaces()),
+  Needs2ndDerivatives(nullptr), Derivatives(this->N_Terms, D00),
+  FESpaceNumber(this->N_Terms, 0), RowSpace(df.get_N_Matrices(), 0),
+  ColumnSpace(df.get_N_Matrices(), 0), RhsSpace(df.get_N_Rhs(), 0),
+  Coeffs(df.GetCoeffFct()), AssembleParam(df.get_AssembleParam()),
+  Manipulate(df.get_Manipulate()), AllOrigValues(new double** [N_Terms]),
+  OrigValues(new double* [N_Terms]), N_Matrices(df.get_N_Matrices()),
+  N_Rhs(df.get_N_Rhs()), N_ParamFct(aux.GetN_ParamFct()),
+  ParameterFct(this->N_ParamFct, nullptr), BeginParameter(this->N_ParamFct, 0),
+  N_Parameters(aux.GetN_Parameters()), N_FEValues(aux.get_N_FEValues()),
+  FEFunctions2D(aux.get_FEFunctions2D()), FEValue_FctIndex(this->N_FEValues,0),
+  FEValue_MultiIndex(this->N_FEValues, D00)
 {
   // copy the array indicating if second derivatives are needed (because the 
   // destructor deletes this array)
@@ -350,14 +350,15 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 }
 
 /*! @brief Customized constructor. */
-LocalAssembling2D::LocalAssembling2D(int myN_Terms,
-		std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
-		std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-		CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
-		int myN_Matrices, int myN_Rhs,
-		int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
-		TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
-		std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
+LocalAssembling2D::LocalAssembling2D(
+    int myN_Terms,
+    std::vector<MultiIndex2D> myDerivatives, std::vector<int> myFESpaceNumber,
+    std::vector<int> myRowSpace, std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
+    CoeffFct2D* myCoeffs, AssembleFctParam2D* myAssembleParam, ManipulateFct2D* myManipulate,
+    int myN_Matrices, int myN_Rhs,
+    int myN_ParamFct, std::vector<ParamFct*> myParameterFct, std::vector<int> myBeginParameter, int myN_Parameters,
+    TFEFunction2D **myFEFunctions2D,  int myN_FEValues,
+    std::vector<int> myFEValue_FctIndex, std::vector<MultiIndex2D> myFEValue_MultiIndex)
 
 : type{LocalAssembling2D_type::Custom},
   N_Terms(myN_Terms), Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
@@ -368,7 +369,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   FEFunctions2D(myFEFunctions2D), N_FEValues(myN_FEValues),
   FEValue_FctIndex(myFEValue_FctIndex), FEValue_MultiIndex(myFEValue_MultiIndex)
 
-{
+  {
   // Some data members get an extra treatment - "name" is set to CUSTOMIZED,
   // The auxiliary arrays (All)OrigValues are dynamically allocated with size "N_Terms".
   // "N_Spaces" is determined by finding the max in "FESpaceNumber" (+1).
@@ -397,34 +398,34 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   //Inform the world of what's going on.
   Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
 
-	//Dynamically allocate space for auxiliary arrays
-	AllOrigValues = new double** [N_Terms];
-	OrigValues = new double* [N_Terms];
+  //Dynamically allocate space for auxiliary arrays
+  AllOrigValues = new double** [N_Terms];
+  OrigValues = new double* [N_Terms];
 
-	//CODE taken from TDiscretForm2D::TDiscreteForm2D(...)
-	// find number of spaces
-	int max = -1;
-	for(int i=0;i<N_Terms;i++)
-	{
-		int j = FESpaceNumber[i];
-		if(j > max) max = j;
-	}
-	N_Spaces = max+1;
+  //CODE taken from TDiscretForm2D::TDiscreteForm2D(...)
+  // find number of spaces
+  int max = -1;
+  for(int i=0;i<N_Terms;i++)
+  {
+    int j = FESpaceNumber[i];
+    if(j > max) max = j;
+  }
+  N_Spaces = max+1;
 
-	//Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
-	Needs2ndDerivatives = new bool[N_Spaces];
-	for(int i=0;i<N_Spaces;i++){
-		Needs2ndDerivatives[i] = FALSE;
-	}
-	for(int i=0;i<N_Terms;i++)
-	{
-		MultiIndex2D alpha = Derivatives[i];
-		int j = FESpaceNumber[i];
-		if(alpha == D20 || alpha == D11 || alpha == D02)
-			Needs2ndDerivatives[j] = TRUE;
-	}
-	//END code taken from TDiscretForm2D::TDiscreteForm2D(...)
-}
+  //Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
+  Needs2ndDerivatives = new bool[N_Spaces];
+  for(int i=0;i<N_Spaces;i++){
+    Needs2ndDerivatives[i] = FALSE;
+  }
+  for(int i=0;i<N_Terms;i++)
+  {
+    MultiIndex2D alpha = Derivatives[i];
+    int j = FESpaceNumber[i];
+    if(alpha == D20 || alpha == D11 || alpha == D02)
+      Needs2ndDerivatives[j] = TRUE;
+  }
+  //END code taken from TDiscretForm2D::TDiscreteForm2D(...)
+  }
 
 LocalAssembling2D::~LocalAssembling2D()
 {
@@ -484,8 +485,8 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
   for(i=0; i<N_Terms; ++i)
   {
     AllOrigValues[i] = 
-      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]], 
-                                          Derivatives[i]);
+        TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[i]],
+                                            Derivatives[i]);
   }
 
   for(i=0; i<N_Points; ++i)
@@ -536,21 +537,21 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
   for(int j=0;j<N_Terms;j++)
   {
     AllOrigValues[j] = 
-      TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]], 
-                                        Derivatives[j]);
+        TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]],
+                                            Derivatives[j]);
   }
   
   for(int i=0;i<N_Points;i++)
   {
- 
+
     double Mult = weights[i]*AbsDetjk[i];
     Coefficients[i][19] = AbsDetjk[i];
     
     for(int j=0;j<N_Terms;j++) {
-       OrigValues[j] = AllOrigValues[j][i];
+      OrigValues[j] = AllOrigValues[j][i];
     }
 
- 
+
     AssembleParam(Mult, Coefficients[i], NULL, hK, OrigValues, N_BaseFuncts, 
                   LocMatrix, LocRhs);
   } // endfor i
@@ -698,12 +699,12 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             case 2:
             {
               ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
+                  << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
               exit(1);
             }
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -768,12 +769,12 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             case 2:
             {
               ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
+                  << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
               exit(1);
             }
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -787,7 +788,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -812,7 +813,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -838,7 +839,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -848,7 +849,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -873,7 +874,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -899,7 +900,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -909,7 +910,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -934,7 +935,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -960,14 +961,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
             } // end case NSE_NONLINEAR_FORM=2
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -982,7 +983,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1014,7 +1015,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1047,7 +1048,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1057,7 +1058,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1088,7 +1089,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1120,7 +1121,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1130,7 +1131,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1161,7 +1162,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 4;
                   this->Derivatives = { D10, D01, D00, D00 };
@@ -1193,14 +1194,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
             } // end case NSE_NONLINEAR_FORM=2
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -1275,12 +1276,12 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             case 2:
             {
               ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
+                  << "possible with NSTYPE: 1. Choose NSTYPE: 3, 4 or 14");
               exit(1);
             }
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -1345,12 +1346,12 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             case 2:
             {
               ErrMsg("Using the rotational form (NSE_NONLINEAR_FORM: 2) is not "
-                     << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
+                  << "possible with NSTYPE: 2. Choose NSTYPE: 3, 4 or 14");
               exit(1);
             }
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -1364,7 +1365,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1389,7 +1390,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1415,7 +1416,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1425,7 +1426,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1450,7 +1451,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1476,7 +1477,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1486,7 +1487,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1511,7 +1512,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=3, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1537,14 +1538,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
             } // end case NSE_NONLINEAR_FORM=2
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -1559,7 +1560,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1584,7 +1585,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=0
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1610,7 +1611,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1620,7 +1621,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1, 
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1645,7 +1646,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=1
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1671,7 +1672,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
@@ -1681,7 +1682,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               switch(TDatabase::ParamDB->LAPLACETYPE)
               {
                 case 0: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2,
-                        // LAPLACETYPE=0
+                  // LAPLACETYPE=0
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1706,7 +1707,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                   break;
                 } // end case LAPLACETYPE=0
                 case 1: // NSE2D_Galerkin, NSTYPE=(1)4, NSE_NONLINEAR_FORM=2
-                        // LAPLACETYPE=1
+                  // LAPLACETYPE=1
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
@@ -1732,14 +1733,14 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 } // end case LAPLACETYPE=1
                 default:
                   ErrMsg("unknown LAPLACETYPE " 
-                         << TDatabase::ParamDB->LAPLACETYPE);
+                      << TDatabase::ParamDB->LAPLACETYPE);
                   exit(1);
               } // end switch LAPLACETYPE
               break;
             } // end case NSE_NONLINEAR_FORM=2
             default:
               ErrMsg("unknown NSE_NONLINEAR_FORM "
-                     << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+                  << TDatabase::ParamDB->NSE_NONLINEAR_FORM);
               exit(1);
           } // end switch NSE_NONLINEAR_FORM
           break;
@@ -1848,213 +1849,213 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                   break;
               }
               break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-            case 2:
-              this->N_Matrices    = 6;
-              this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:                  
-                  this->AssembleParam = TimeNSType2Galerkin;
-                  break;
-                case 3:
-                  this->AssembleParam = TimeNSType2GalerkinDiv;
-                  break;                  
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-            case 3:
-              this->N_Matrices    = 8;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
-              if(TDatabase::ParamDB->LAPLACETYPE == 0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:                  
-                    this->AssembleParam = TimeNSType3Galerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3GalerkinRot;
-                    break;                  
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:                  
-                    this->AssembleParam = TimeNSType3GalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3GalerkinRotDD;
-                    break;                  
-                }
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-            case 4:
-              this->N_Matrices    = 9;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-              if(TDatabase::ParamDB->LAPLACETYPE == 0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType4Galerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType4GalerkinRot;
-                    break;                  
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType4GalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType4GalerkinRotDD;
-                    break;                  
-                }
-              }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-            case 14: 
-              this->N_Matrices    = 11;
-              this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-              {
-                case 0:                  
-                  // this->AssembleParam = 
-                  break;
                 case 2:
-                  // this->AssembleParam =
-                  break;                  
-              }
-              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
+                  this->N_Matrices    = 6;
+                  this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
+                  this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
+                  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                  {
+                    case 0:
+                      this->AssembleParam = TimeNSType2Galerkin;
+                      break;
+                    case 3:
+                      this->AssembleParam = TimeNSType2GalerkinDiv;
+                      break;
+                  }
+                  break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+                    case 3:
+                      this->N_Matrices    = 8;
+                      this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
+                      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
+                      if(TDatabase::ParamDB->LAPLACETYPE == 0)
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType3Galerkin;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType3GalerkinRot;
+                            break;
+                        }
+                      }
+                      else
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType3GalerkinDD;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType3GalerkinRotDD;
+                            break;
+                        }
+                      }
+                      break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+                    case 4:
+                      this->N_Matrices    = 9;
+                      this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0 };
+                      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1 };
+                      if(TDatabase::ParamDB->LAPLACETYPE == 0)
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType4Galerkin;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType4GalerkinRot;
+                            break;
+                        }
+                      }
+                      else
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType4GalerkinDD;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType4GalerkinRotDD;
+                            break;
+                        }
+                      }
+                      break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+                    case 14:
+                      this->N_Matrices    = 11;
+                      this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
+                      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+                      switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                      {
+                        case 0:
+                          // this->AssembleParam =
+                          break;
+                        case 2:
+                          // this->AssembleParam =
+                          break;
+                      }
+                      break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
           }
           break; // break within type TNSE2D->DISCTYPE
-        case SUPG:
-          // TODO: implement SUPG method
-          ErrThrow("SUPG method is not supported yet");
-          
-          switch(nstype)
-          {
-            case 1:
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+            case SUPG:
+              // TODO: implement SUPG method
+              ErrThrow("SUPG method is not supported yet");
+
+              switch(nstype)
               {
-                case 0:
-                  break;
-                case 3:
-                  break;                  
+                case 1:
+                  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                  {
+                    case 0:
+                      break;
+                    case 3:
+                      break;
+                  }
+                  break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+                    case 2:
+                      break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+                    case 3:
+                      break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+                    case 4:
+                      break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+                    case 14:
+                      break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
               }
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
-            case 2:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
-            case 3:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
-            case 4:
-              break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
-            case 14: 
-              break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
-          }
-          break;
+              break;
       }
       break;// break; for the TNSE2D type
-    case TNSE2D_NL:
-      switch(disc_type)
-      {
-        case GALERKIN:
-          switch(nstype)
+        case TNSE2D_NL:
+          switch(disc_type)
           {
-            case 1:
-            case 2:
-              this->N_Matrices    = 1;
-              this->RowSpace      = { 0 };
-              this->ColumnSpace   = { 0 };
-              switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+            case GALERKIN:
+              switch(nstype)
               {
-                case 0:
-                  this->AssembleParam = TimeNSType1_2NLGalerkin;
+                case 1:
+                case 2:
+                  this->N_Matrices    = 1;
+                  this->RowSpace      = { 0 };
+                  this->ColumnSpace   = { 0 };
+                  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                  {
+                    case 0:
+                      this->AssembleParam = TimeNSType1_2NLGalerkin;
+                      break;
+                    case 3:
+                      this->AssembleParam = TimeNSType1_2NLGalerkinDiv;
+                      break;
+                  }
                   break;
-                case 3:
-                  this->AssembleParam = TimeNSType1_2NLGalerkinDiv;
+                    case 3:
+                    case 4:
+                      this->N_Matrices    = 2;
+                      this->RowSpace      = { 0, 0 };
+                      this->ColumnSpace   = { 0, 0 };
+                      if(TDatabase::ParamDB->LAPLACETYPE==0)
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType3_4NLGalerkin;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType3_4NLGalerkinRot;
+                            break;
+                        }
+                      }
+                      else
+                      {
+                        switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
+                        {
+                          case 0:
+                            this->AssembleParam = TimeNSType3_4NLGalerkinDD;
+                            break;
+                          case 2:
+                            this->AssembleParam = TimeNSType3_4NLGalerkinRotDD;
+                            break;
+                        }
+                      }
+                      break;
+              }
+              break;// break; TNSE2D_NL->GALERKIN
+
+                case SUPG:
+                  switch(nstype)
+                  {
+                    case 1:
+                    case 2:
+                      break;
+                    case 3:
+                    case 4:
+                      break;
+                  }
+                  break;// break; TNSE2D_NL->SUPG
+          }// case: TNSE2D_NL: endswitch(disc_type):
+          break;
+            case TNSE2D_Rhs:
+              switch(disc_type)
+              {
+                case GALERKIN:
+                  this->N_Terms = 1;
+                  this->Derivatives = { D00 };
+                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives[0] = false;
+                  this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+                  this->N_Matrices = 0;
+                  this->RowSpace = {};
+                  this->ColumnSpace = { };
+                  this->N_Rhs = 3 ;
+                  this->RhsSpace = {0, 0, 0};
+                  this->AssembleParam =TimeNSRHS;
+                  this->Manipulate = NULL;
                   break;
-              }              
-              break;
-            case 3:
-            case 4:
-              this->N_Matrices    = 2;
-              this->RowSpace      = { 0, 0 };
-              this->ColumnSpace   = { 0, 0 };
-              if(TDatabase::ParamDB->LAPLACETYPE==0)
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                   this->AssembleParam = TimeNSType3_4NLGalerkin;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinRot;
-                    break;
-                }
-              }
-              else
-              {
-                switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
-                {
-                  case 0:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinDD;
-                    break;
-                  case 2:
-                    this->AssembleParam = TimeNSType3_4NLGalerkinRotDD;
-                    break;
-                }
+                case SUPG:
+                  ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
+                  break;
+                default:
+                  ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
+                  exit(1);
               }
               break;
-          }
-          break;// break; TNSE2D_NL->GALERKIN
-          
-        case SUPG:
-          switch(nstype)
-          {
-            case 1:
-            case 2:
-              break;
-            case 3:
-            case 4:
-              break;
-          }
-          break;// break; TNSE2D_NL->SUPG
-      }// case: TNSE2D_NL: endswitch(disc_type): 
-      break;
-    case TNSE2D_Rhs:
-      switch(disc_type)
-      {
-        case GALERKIN:
-          this->N_Terms = 1;
-          this->Derivatives = { D00 };
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 0;
-          this->RowSpace = {};
-          this->ColumnSpace = { };
-          this->N_Rhs = 3 ;
-          this->RhsSpace = {0, 0, 0};
-          this->AssembleParam =TimeNSRHS; 
-          this->Manipulate = NULL;
-          break;
-        case SUPG:
-          ErrMsg("unknown LocalAssembling2D_type " << type << "  not yet implemented");
-          break;
-        default:
-          ErrMsg("unknown LocalAssembling2D_type " << type << "  " << this->name);
-          exit(1);
-      }
-      break;
   }
   //=========================================================================
   
