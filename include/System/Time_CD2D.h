@@ -28,7 +28,7 @@ class LocalAssembling2D; //forward declaration
 class Time_CD2D
 {
   protected:
-    /** @brief store a complete system on a paticular grid.
+    /** @brief store a complete system on a particular grid.
      * 
      * This combines a matrix, rhs, solution, spaces and functions 
      * needed to describe a Time CDR problem in 2D
@@ -56,9 +56,10 @@ class Time_CD2D
 
       /**
        * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
+       * by matrix. FIXME Is terribly unsafe as it makes use
+       * of a deprecated block matrix method and must be replaced soon.
        */
-      TSquareMatrix2D* get_stiff_matrix_pointer();
+      [[deprecated]]TSquareMatrix2D* get_stiff_matrix_pointer();
 
       /**
        * Reset the stiffness matrix A to its 'pure' state before the
@@ -90,20 +91,21 @@ class Time_CD2D
       //! Delete move assignment operator.
       System_per_grid& operator=(System_per_grid&&) = delete;
 
-      //! Default destructor.
+      //! Default destructor. Most likely causes memory leaks.
       ~System_per_grid() = default;
 
     };
     
     /** @brief a complete system on each grid 
      * 
-     * Note that the size of this deque is at least one and larger only in case
-     * of multigrid.
+     * Note that the size of this deque is at least one and larger than that
+     * only in case of multigrid (when it holds as many systems as there are
+     * multigrid levels).
      */
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D& example;
+    const Example_CD2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -157,12 +159,6 @@ class Time_CD2D
      */
     void assemble_initial_time();
     
-    /** @brief preparing the right hand side, 
-     * this function will prepare the right during the time iterations
-     * that will be used for solving the system
-     * NOTE: check whether needed or delete
-     */
-    // void prepare_rhs();
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
      * In addition the system matrix and the rhs which passes to the solver 
@@ -203,7 +199,15 @@ class Time_CD2D
      * to avoid code duping. Is really not written very sophisticated,
      * use it with care.
      * @param block_mat should be one system's stiffness or mass matrix.
-     * @param la A fittingly constructed LocalAssemble2D object.
+     * @param la_stiff A fittingly constructed LocalAssemble2D object which
+     * is responsible for the assembling of the stiffness matrix and right hand
+     * side.
+     * @param la_masse A fittingly constructed LocalAssemble2D object which
+     * is responsible for the assembling of the mass matrix. The mass matrix
+     * will not be assembled and la_mass will be ignored, when assemble_both
+     * is 'false'.
+     * @param assemble_both If true, both stiffness (+rhs) and mass matrix are
+     * assembled, if false only stiffness matrix and rhs.
      */
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
                                  LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,

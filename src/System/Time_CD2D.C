@@ -70,7 +70,7 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
- : Time_CD2D(domain, *(new Example_CD2D()), reference_id)
+ : Time_CD2D(domain, Example_CD2D(), reference_id)
 {
   
 }
