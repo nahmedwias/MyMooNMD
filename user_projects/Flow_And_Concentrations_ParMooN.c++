@@ -15,11 +15,22 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Output2D.h>
-#include <CoupledCDR_2D.h>
-#include <Example_CoupledCDR2D.h>
+
+//for the time nse 2d flow object
+#include <Time_NSE2D.h>
+#include <Example_NSE2D.h>
+
+//for the time cd2d object
+#include <Time_CD2D.h>
+#include <Example_CD2D.h>
+
 
 int main(int argc, char* argv[])
 {
+  // TODO it might be a problem that we have no global "problem type" defined
+  // - on the other hand this is good, because that urges us to find out
+  // whether we can remove that global parameter entirely
+
   // //////////////////////////////////////////////////////////////////////////
   // Put up domain and databases.
   // These are the usual ParMooN-initialisation steps.
