@@ -298,8 +298,7 @@ class TMatrix
      * @param B matrix to be multiplied (from right) to this matrix
      * @param a scaling factor, default is 1.0
      */ 
-    TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
-    
+    std::shared_ptr<TMatrix> multiply(const TMatrix& B) const;
     
     /**
      * @brief multiply this matrix B with its transposed B^T from the right

@@ -31,15 +31,15 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::ConvDiff:
       switch(TDatabase::ParamDB->DISCTYPE)
       {
-	case GALERKIN:
-	  if(TDatabase::ParamDB->Axial3D)
+        case GALERKIN:
+          if(TDatabase::ParamDB->Axial3D)
             return std::string("CD2D_Axiax3D_Galerkin");
           else
             return std::string("CD2D_Galerkin");
-	case SUPG:
-	  return std::string("CD2D_SUPG");
-	case GLS:
-	  return std::string("CD2D_GLS");
+        case SUPG:
+          return std::string("CD2D_SUPG");
+        case GLS:
+          return std::string("CD2D_GLS");
       }
       break;      
     ///////////////////////////////////////////////////////////////////////////
@@ -47,10 +47,10 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::TCD2D:
       switch(TDatabase::ParamDB->DISCTYPE)
       {
-	case GALERKIN:
-	  return std::string("TCD2D_Stiff_Rhs");
-	case SUPG:
-	  return std::string("TCD2D_Stiff_Rhs_SUPG");
+        case GALERKIN:
+          return std::string("TCD2D_Stiff_Rhs");
+        case SUPG:
+          return std::string("TCD2D_Stiff_Rhs_SUPG");
       }
     case LocalAssembling2D_type::TCD2D_Mass:
       return std::string("TCD2D_Mass");
@@ -92,6 +92,15 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
         case SUPG:
           return std::string("TNSE2D_RhsSUPG");
       }
+      break;
+    case LocalAssembling2D_type::RECONSTR_GALERKIN:
+      return std::string("RECONSTR_GALERKIN");
+      break;
+    case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
+      return std::string("RECONSTR_GALERKIN_Rhs");
+      break;
+    case LocalAssembling2D_type::RECONSTR_MASS:
+      return std::string("RECONSTR_MASS");
       break;
   }
   return std::string();
@@ -149,17 +158,16 @@ switch(type)
         this->Needs2ndDerivatives = new bool[1];
         this->Needs2ndDerivatives[0] = true;
         this->FESpaceNumber = { 0, 0, 0, 0, 0 };
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = BilinearAssemble_SD; 
-	else
-	  this->AssembleParam = BilinearAssemble_GLS;
-	
+        if(TDatabase::ParamDB->DISCTYPE==SUPG)
+          this->AssembleParam = BilinearAssemble_SD; 
+        else
+          this->AssembleParam = BilinearAssemble_GLS;
+        
         if(TDatabase::ParamDB->SDFEM_NORM_B==0)
           this->Manipulate = linfb;
         else
           this->Manipulate = ave_l2b_quad_points;
-        
-	break;
+        break;
         default:
           ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
                  " is not supported by the class CD2D");
@@ -179,31 +187,31 @@ switch(type)
     switch(TDatabase::ParamDB->DISCTYPE)
     {
       case GALERKIN:
-	this->N_Terms = 3;
-	this->Derivatives = { D10, D01, D00 };
-	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[0] = false;
-	this->FESpaceNumber = { 0, 0, 0 };
-	
-	this->AssembleParam = LocalMatrixARhs; 
-	break;
+        this->N_Terms = 3;
+        this->Derivatives = { D10, D01, D00 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[0] = false;
+        this->FESpaceNumber = { 0, 0, 0 };
+        
+        this->AssembleParam = LocalMatrixARhs; 
+        break;
       case SUPG:
       case GLS:
-	this->N_Terms = 5;
-	this->Derivatives = { D10, D01, D00, D20, D02 };
-	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[1] = true;
-	this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
-	
-	if(TDatabase::ParamDB->DISCTYPE==SUPG)
-	  this->AssembleParam = LocalMatrixARhs_SUPG; 
-	else
-	{
-	  ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
-                 " is not supported by the class CD2D");
-          throw("unsupported DISCTYPE");
-	}
-	break;
+        this->N_Terms = 5;
+        this->Derivatives = { D10, D01, D00, D20, D02 };
+        this->Needs2ndDerivatives = new bool[1];
+        this->Needs2ndDerivatives[1] = true;
+        this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
+        
+        if(TDatabase::ParamDB->DISCTYPE==SUPG)
+          this->AssembleParam = LocalMatrixARhs_SUPG; 
+        else
+        {
+          ErrMsg("currently DISCTYPE " << TDatabase::ParamDB->DISCTYPE <<
+                " is not supported by the class CD2D");
+                throw("unsupported DISCTYPE");
+        }
+        break;
     }
     break;// case LocalAssembling2D_type::TCD2D:
   case LocalAssembling2D_type::TCD2D_Mass:
@@ -262,6 +270,27 @@ switch(type)
   case LocalAssembling2D_type::TNSE2D_Rhs:
     this->set_parameters_for_tnse(type);
     break;
+ //////////////////////////////////////////////////////////////////////////////
+  case LocalAssembling2D_type::RECONSTR_GALERKIN:
+  case LocalAssembling2D_type::RECONSTR_MASS:
+    this->set_parameters_for_Rec_nse(type);
+    break;
+  case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
+    this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 0;
+      this->RowSpace = {};
+      this->ColumnSpace = {};
+      this->N_Rhs = 1;
+      this->RhsSpace = { 0 };
+      this->AssembleParam = PrRobustRhs; 
+      this->Manipulate = NULL;
+    break;
+    
     
   default:
     ErrMsg("unknown LocalAssembling2D_type " << type << " " << this->name);
@@ -538,8 +567,9 @@ void LocalAssembling2D::GetLocalForms(int N_Points, double *weights,
     AllOrigValues[j] = 
       TFEDatabase2D::GetOrigElementValues(BaseFuncts[FESpaceNumber[j]], 
                                         Derivatives[j]);
+      
   }
-  
+ 
   for(int i=0;i<N_Points;i++)
   {
  
@@ -1832,6 +1862,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
       switch(disc_type) // discrete forms
       {
         case GALERKIN:
+        case RECONSTRUCTION:
           switch(nstype)
           {
             case 1:
@@ -2034,6 +2065,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
       switch(disc_type)
       {
         case GALERKIN:
+        case RECONSTRUCTION:
           this->N_Terms = 1;
           this->Derivatives = { D00 };
           this->Needs2ndDerivatives = new bool[1];
@@ -2058,4 +2090,63 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   }
   //=========================================================================
   
+}
+
+void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
+{
+  if(TDatabase::ParamDB->NSTYPE != 4)
+  {
+    ErrMsg("Only implemented of NSTYPE 4 ");
+  }
+  
+  switch(type)
+  {
+    case RECONSTR_GALERKIN:
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 8;
+      this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+      this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+      this->N_Rhs = 3;
+      this->RhsSpace = { 0, 0, 1 };
+      this->AssembleParam = NSType4GalerkinPrRob; 
+      this->Manipulate = NULL;
+      
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 2;
+      this->FEValue_FctIndex = { 0, 1 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 0 };  
+      break;
+    case RECONSTR_MASS:
+      this->N_Terms = 1;
+      this->Derivatives = { D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 1;
+      this->RowSpace = { 0 };
+      this->ColumnSpace = { 0 };
+      this->N_Rhs = 2;
+      this->RhsSpace = { 0, 0 };
+      this->AssembleParam = LocAssembleMass; 
+      this->Manipulate = NULL;
+      
+      /*this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 2;
+      this->FEValue_FctIndex = { 0, 1 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 0 }; */ 
+      break;
+      break;
+  }
 }

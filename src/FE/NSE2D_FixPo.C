@@ -8,6 +8,7 @@
 #include <Convolution.h>
 #include <Database.h>
 #include <TNSE2D_Routines.h>
+#include <Darcy2DMixed.h>
 
 // ======================================================================
 // compute parameter for RFB stabilization
@@ -4723,4 +4724,124 @@ void NSParamsPressSep(double *in, double *out)
 {
   out[0] = in[2];                // P_sep to x
   out[1] = in[3];                // P_sep to y
+}
+
+
+//===========================================================================
+// everything related to the pressure robust (reconstruction ) method 
+// will come in the following
+//===========================================================================
+void NSType4GalerkinPrRob(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA21 = LocMatrices[2];
+  double **MatrixA22 = LocMatrices[3];
+  double **MatrixB1  = LocMatrices[4];
+  double** MatrixB2  = LocMatrices[5];
+  double** MatrixB1T = LocMatrices[6];
+  double** MatrixB2T = LocMatrices[7];
+  
+  double *Orig0 = OrigValues[0]; // u_x
+  double *Orig1 = OrigValues[1]; // u_y
+  double *Orig2 = OrigValues[2]; // u
+  double *Orig3 = OrigValues[3]; // p
+  
+  double c0 = coeff[0];
+  
+  double u1 = param[0];
+  double u2 = param[1];
+  
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+  
+  double *Matrix11Row, *Matrix12Row;
+  double *Matrix21Row, *Matrix22Row;
+  double test10, test00, test01;
+  double ansatz10, ansatz01, ansatz00;
+  double val;
+  
+  for(int i=0; i<N_U; i++)
+  {
+    Matrix11Row = MatrixA11[i];
+    Matrix12Row = MatrixA12[i];
+    Matrix21Row = MatrixA21[i];
+    Matrix22Row = MatrixA22[i];
+    test10 = Orig0[i];
+    test01 = Orig1[i];
+    test00 = Orig2[i];
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      Matrix11Row[j] += Mult * val;
+
+      val  = c0*(test10*ansatz10+test01*ansatz01);
+      val += (u1*ansatz10+u2*ansatz01)*test00;
+      Matrix22Row[j] += Mult * val;
+
+    }
+
+    double *MatrixRow1 = MatrixB1T[i];
+    double *MatrixRow2 = MatrixB2T[i];
+    for(int j=0;j<N_P;j++)
+    {
+      ansatz00 = Orig3[j];
+
+      val = -Mult*ansatz00*test10;
+      MatrixRow1[j] += val;
+
+      val = -Mult*ansatz00*test01;
+      MatrixRow2[j] += val;
+    }
+  } 
+
+  for(int i=0;i<N_P;i++)
+  {
+    double *MatrixRow1 = MatrixB1[i];
+    double *MatrixRow2 = MatrixB2[i];
+
+    test00 = Orig3[i];
+
+    for(int j=0;j<N_U;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+
+      val = -Mult*test00*ansatz10;
+      MatrixRow1[j] += val;
+
+      val = -Mult*test00*ansatz01;
+      MatrixRow2[j] += val;
+    }
+  }
+}
+
+void PrRobustRhs(double Mult, double *coeff, double *param, double hK, 
+                       double **OrigValues, int *N_BaseFuncts,
+                       double ***LocMatrices, double **LocRhs)
+{
+  int N_U = N_BaseFuncts[0];
+  double *Orig0 = OrigValues[0];
+
+  double *Rhs = LocRhs[0];
+  
+  double c1 = coeff[1];
+  double c2 = coeff[2];
+  
+  for(int i=0;i<N_U;i++)
+  {
+    int sign = GetSignOfThisDOF(N_U, i);
+    double testx00 = sign*Orig0[i];
+    double testy00 = sign*Orig0[N_U+i];
+    
+    Rhs[i] += Mult*( testx00*c1 + testy00*c2);
+    //Output::print("testx00: " , testx00, "  testy00  " , testy00, "   rhs:  ", Rhs[i]);
+  }  
 }

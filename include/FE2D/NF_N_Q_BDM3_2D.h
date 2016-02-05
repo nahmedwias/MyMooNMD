@@ -142,12 +142,6 @@ void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
   }
   else
   {
-    if(Cell->GetShapeDesc()->GetType() == Quadrangle) 
-    {
-      // not affine reference transform
-      ErrThrow("NF_N_Q_BDM3_2D_EvalAll not tested for non affine ",
-               "reference transformations");
-    }
     double x0, x1, x2, x3, y0, y1, y2, y3;
     #ifdef __2D__
     Cell->GetVertex(0)->GetCoords(x0, y0);
