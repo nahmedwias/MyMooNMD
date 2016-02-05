@@ -43,10 +43,6 @@ class TFEFunction2D
     /** constructor with vector initialization */
     TFEFunction2D(const TFESpace2D *fespace2D, const char *name, const char *description,
                   double *values, int length);
-
-    /** destructor */
-    ~TFEFunction2D();
-
     /** return name */
     char *GetName() const
     { return Name; }
@@ -198,9 +194,6 @@ class TFEFunction2D
        same space. Only non-Dirichlet dofs are added!  */
    TFEFunction2D & operator+=(const TFEFunction2D & rhs);
    
-   /** copy one TFEFunction2D to another one. Both have to be defined on the 
-       same space */
-   TFEFunction2D & operator=(const TFEFunction2D & rhs);
    /** 
     * @brief find the smallest and largest value in the vector representing this 
     * FE-function
@@ -220,6 +213,26 @@ class TFEFunction2D
     * (default) the used name will be TFEFunction2D::Name.
     */
    void PrintMinMax(std::string name = "") const;
+
+   // Special member functions. Temporary. These will be reworked along with
+   // the class.
+
+    //! "Copy constructor". Implemented along the lines of "copy assignment".
+   TFEFunction2D(const TFEFunction2D&);
+
+    //! Delete move constructor.
+    TFEFunction2D(TFEFunction2D&&) = delete;
+
+
+    //! Delete move assignment operator.
+    TFEFunction2D& operator=(TFEFunction2D&&) = delete;
+
+   /** copy one TFEFunction2D to another one. Both have to be defined on the
+       same space */
+   TFEFunction2D & operator=(const TFEFunction2D & rhs);
+
+   /** destructor */
+   ~TFEFunction2D();
 
 };
 #endif

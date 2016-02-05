@@ -2389,6 +2389,17 @@ TFEFunction2D & TFEFunction2D::operator+=(const TFEFunction2D & rhs)
   return *this;
 }
 
+TFEFunction2D::TFEFunction2D(const TFEFunction2D& other)
+:
+    FESpace2D(other.FESpace2D),
+    Values(other.Values), //points at the same values initially
+    Length(other.Length)
+{
+  // copy name and description
+  Name=strdup(other.Name);
+  Description=strdup(other.Description);
+}
+
 TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)
 {
   if(FESpace2D != rhs.FESpace2D)
@@ -2414,6 +2425,10 @@ TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)
   {
     Values[i] = rhs.Values[i];
   }
+  // copy name and description
+  Name=strdup(rhs.Name);
+  Description=strdup(rhs.Description);
+
   return *this;
 }
 
