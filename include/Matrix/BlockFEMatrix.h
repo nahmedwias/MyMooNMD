@@ -87,8 +87,12 @@ class BlockFEMatrix : public BlockMatrix
      */
 #ifdef __2D__
     BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace2D* > spaces_rows, 
+                  std::vector< const TFESpace2D* > spaces_cols);
 #elif __3D__
     BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    BlockFEMatrix(std::vector< const TFESpace3D* > spaces_rows, 
+                  std::vector< const TFESpace3D* > spaces_cols);
 #endif // 3D
 
     /**
@@ -233,6 +237,18 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for 2D NSE problems
      */
     static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
+    
+    /**
+     * Named constructor for the Projection matrix:
+     * 
+     * @param velocity the velocity finite element space
+     * @param projection the pvelocity projection space
+     * @param pressure the pressure finite element space
+     * @return A newly constructed block fe matrix
+     */
+    static BlockFEMatrix Projection_NSE2D(const TFESpace2D& velocity, 
+                                          const TFESpace2D& projection,
+                                          const TFESpace2D& pressure);
 
 #elif __3D__
     /**

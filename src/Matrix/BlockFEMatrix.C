@@ -2,6 +2,7 @@
 #include <FEMatrix.h>
 #include <BlockVector.h>
 #include <Database.h>
+#include <FEDatabase2D.h>
 
 #include <limits>
 
@@ -16,13 +17,24 @@ BlockFEMatrix::BlockFEMatrix(
     BlockFEMatrix::BlockFEMatrix(
         std::vector< const TFESpace3D*  > spaces) :
 #endif
+BlockFEMatrix(spaces, spaces)
+{
+  
+}
+#ifdef __2D__
+BlockFEMatrix::BlockFEMatrix(std::vector< const TFESpace2D* > spaces_rows, 
+                  std::vector< const TFESpace2D* > spaces_cols) :
+#elif __3D__
+BlockFEMatrix::BlockFEMatrix(std::vector< const TFESpace3D* > spaces_rows, 
+                  std::vector< const TFESpace3D* > spaces_cols) :
+#endif
     BlockMatrix(), //base class object is default (empty) constructed
-    test_spaces_rowwise_(spaces),
-    ansatz_spaces_columnwise_(spaces)
+    test_spaces_rowwise_(spaces_rows),
+    ansatz_spaces_columnwise_(spaces_cols)
 {
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
-  for(auto sp : spaces)
+  for(auto sp : spaces_rows)
   {
     if (sp->GetN_SlaveDegrees() != 0 )
     {//there is  slave dofs, i.e. hanging nodes, quit
@@ -30,10 +42,20 @@ BlockFEMatrix::BlockFEMatrix(
           "Use spaces without hanging nodes.");
     }
   }
+  
+  for(auto sp : spaces_cols)
+  {
+    if (sp->GetN_SlaveDegrees() != 0 )
+    {//there is  slave dofs, i.e. hanging nodes, quit
+      ErrThrow("BlockFEMatrix cannot handle hanging nodes so far! "
+          "Use spaces without hanging nodes.");
+    }
+  }
+  
 
   //reset grid fittingly
-  n_cell_rows_ = spaces.size();
-  n_cell_columns_ = spaces.size();
+  n_cell_rows_ = spaces_rows.size();
+  n_cell_columns_ = spaces_cols.size();
   cell_grid_ = std::vector<std::vector<CellInfo>>(n_cell_rows_, std::vector<CellInfo>(n_cell_columns_));
   color_count_ = std::vector<size_t>(); //reset color counter vector
 
@@ -43,9 +65,9 @@ BlockFEMatrix::BlockFEMatrix(
   {
     //hold the testspace each cell in this row will have
 #ifdef __2D__
-    const TFESpace2D& testspace_of_row = *spaces[i];
+    const TFESpace2D& testspace_of_row = *spaces_rows[i];
 #elif __3D__
-    const TFESpace3D& testspace_of_row = *spaces[i];
+    const TFESpace3D& testspace_of_row = *spaces_rows[i];
 #endif
     //hold the number of rows each cell in this row will have
     size_t n_rows_of_cell = testspace_of_row.GetN_DegreesOfFreedom();
@@ -54,9 +76,9 @@ BlockFEMatrix::BlockFEMatrix(
     {
       //hold the ansatzspace each cell in this column will have
 #ifdef __2D__
-      const TFESpace2D& ansatzspace_of_column = *spaces[j];
+      const TFESpace2D& ansatzspace_of_column = *spaces_cols[j];
 #elif __3D__
-      const TFESpace3D& ansatzspace_of_column = *spaces[j];
+      const TFESpace3D& ansatzspace_of_column = *spaces_cols[j];
 #endif
       //hold the number of columns each cell in this column will have
       size_t n_columns_of_cell = ansatzspace_of_column.GetN_DegreesOfFreedom();
@@ -292,6 +314,28 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
 
   return my_matrix;
 
+}
+
+BlockFEMatrix BlockFEMatrix::Projection_NSE2D(const TFESpace2D& velocity, 
+                                          const TFESpace2D& projection,
+                                          const TFESpace2D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity}, {&projection, &projection, &pressure});
+  
+  if( (velocity.GetCollection()) != projection.GetCollection() )
+  {
+    Output::print<1>(velocity.GetCollection()->GetN_Cells(), " ", 
+                     projection.GetCollection()->GetN_Cells());
+    ErrThrow("grid is different for the test and ansatz sapces");
+  }
+  
+  // first and second column block
+  my_matrix.replace_blocks(FEMatrix(&velocity, &projection), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &projection), {{0,1}}, {false});  
+  // third column
+  my_matrix.replace_blocks(FEMatrix(&velocity, &pressure), {{0,2}}, {false});
+  
+  return my_matrix;
 }
 #elif __3D__
 //3D named constructors
@@ -535,7 +579,7 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
   std::vector<std::vector<size_t>> cells;
   for (size_t i =0; i< n_cell_rows_ ; ++i)
   {
-    for (size_t j =0; j< n_cell_rows_ ; ++j)
+    for (size_t j =0; j< n_cell_columns_ ; ++j)
     {
       cells.push_back({i,j});
     }
@@ -736,11 +780,11 @@ void BlockFEMatrix::replace_blocks(
       //check object identity by adress
       if (grid_test_space != block_test_space)
       {
-        ErrThrow("Test spaces are not identical at (",cell_row,cell_column,")");
+        ErrThrow("Test spaces are not identical at (",cell_row,", ", cell_column,")");
       }
       if (grid_ansatz_space != block_ansatz_space)
       {
-        ErrThrow("Ansatz spaces are not identical at (",cell_row,cell_column,")");
+        ErrThrow("Ansatz spaces are not identical at (",cell_row,", ",cell_column,")");
       }
     }
     else
