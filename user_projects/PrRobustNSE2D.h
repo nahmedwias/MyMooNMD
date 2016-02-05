@@ -14,6 +14,9 @@ class PrRobustNSE2D : NSE2D
       /** @brief matrix used for the reconstruciton*/
       BlockFEMatrix projMat;    
       
+      /**/
+      // std::vector<std::shared_ptr<FEMatrix>> ProjectionMatrix;
+      BlockFEMatrix ProjectionMatrix;
       BlockVector rhsXh;
       /** */
       /** @brief constructor */
@@ -33,18 +36,32 @@ class PrRobustNSE2D : NSE2D
     PrRobustNSE2D(const TDomain& domain, const Example_NSE2D& _example, 
                   unsigned int reference_id = -4711);
     
-    /** @brief update the right hand side
-     * this function will multiply the right hand side
+    /** @brief 
+     * assemble the system matrix and right hand side of the NSE2D.
+     * 
+     * Inside the definition of this function if the reconstruciton
+     * is used then additionally the right hand side is assembled 
+     * using vector value spaces. In the next, the projection matrix 
+     * is assembled via the function "assembleProjectionMatrix". 
+     * 
+     * The system right hand side is then obtained my multiplyig 
+     * the "ProjectionMatrix' with right hand side vector "rhsXh".
+     * 
      * obtained by usual assembling with the matrix 
      * obtained from the RT0 projection
      */
     void assembleMatrixRhs();
     
+    // assemble the projection matrix
+    void assembleProjectionMatrix();
+    
     /** @brief 
      * solve the resulting system
      */
     void solve();
-    
+    /** @brief 
+     * post processing
+     */
     void output(int i);
     
     // getters and setters
@@ -67,14 +84,7 @@ class PrRobustNSE2D : NSE2D
                     : this->NSE2D::systems.front().u.GetComponent(1); }
                     
     TFEFunction2D &get_pressure()
-    {return this->NSE2D::systems.front().p; }
-    
-  private:
-    /** @brief assemble the right hand side for vector space
-     * This assemble's only the right hand side 
-     * which uses the vector-space
-     */
-    void assemblerhs();
+    {return this->NSE2D::systems.front().p; }    
 };
 
 #endif
