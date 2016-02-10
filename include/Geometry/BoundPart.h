@@ -34,6 +34,9 @@ class TBoundPart
     // Constuctor
     /** initialize the data structure */
     TBoundPart(int n_comps);
+    
+    /// @brief destructor
+    ~TBoundPart();
 
     // Methods
     /** return number of boundary components */
