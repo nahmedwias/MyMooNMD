@@ -2389,6 +2389,18 @@ TFEFunction2D & TFEFunction2D::operator+=(const TFEFunction2D & rhs)
   return *this;
 }
 
+TFEFunction2D::TFEFunction2D(TFEFunction2D&& other) :
+  FESpace2D(std::move(other.FESpace2D)),
+  Values(std::move(other.Values)),
+  Length(std::move(other.Length))
+{
+  // move name and description
+  Name=std::move(other.Name);
+  other.Name = nullptr;
+  Description=std::move(other.Description);
+  other.Description = nullptr;
+}
+
 TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)
 {
   if(FESpace2D != rhs.FESpace2D)
