@@ -391,7 +391,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DRIFT_Y = 0;
   ParamDB->DRIFT_Z = 0.41;
 
- 
+  
+  ParamDB->REFINEMENT = 0;
   ParamDB->GRID_TYPE = 0;
   ParamDB->GRID_TYPE_1 = 0;
   ParamDB->GRID_TYPE_2 = 0;
@@ -535,6 +536,8 @@ void TDatabase::SetDefaultParameters()
   tmp = new char[30];
   strcpy(tmp,"MooN_MD_default_basefile");
   ParamDB->BASENAME = tmp;
+  tmp = new char[30];
+  strcpy(tmp,"MooN_MD_default_basefile");
   ParamDB->VTKBASENAME = tmp;
   tmp = new char[2];
   strcpy(tmp,"."); // current directory
@@ -1206,6 +1209,25 @@ void TDatabase::SetDefaultParameters()
   /** parameter for type of projection method (NSE)**/
   ParamDB->PROJECTION_METHOD = 1;
 
+  /** parameters for individual use */
+  ParamDB->P0 = 0.;
+  ParamDB->P1 = 0.;
+  ParamDB->P2 = 0.;
+  ParamDB->P3 = 0.;
+  ParamDB->P4 = 0.;
+  ParamDB->P5 = 0.;
+  ParamDB->P6 = 0.;
+  ParamDB->P7 = 0.;
+  ParamDB->P8 = 0.;
+  ParamDB->P9 = 0.;
+  ParamDB->P10 = 0.;
+  ParamDB->P11 = 0.;
+  ParamDB->P12 = 0.;
+  ParamDB->P13 = 0.;
+  ParamDB->P14 = 0.;
+  ParamDB->P15 = 0.;
+  
+  
   /** parameters for individual use in parallel computations */
   ParamDB->Par_P0 = 0;
   ParamDB->Par_P1 = 0;
@@ -2089,3 +2111,188 @@ void TDatabase::CheckParameterConsistencyNSE()
   }
 
 } // end CheckParameterConsistencyNSE
+
+TDatabase::~TDatabase()
+{
+  // allocate databases
+  delete ParamDB;
+  delete TimeDB;
+
+  // initialize shape descriptors
+  delete ShapeDB[S_Line];
+  delete ShapeDB[Triangle];
+  delete ShapeDB[Quadrangle];
+  delete ShapeDB[Parallelogram];
+  delete ShapeDB[Rectangle];
+  #ifdef __3D__
+    delete ShapeDB[Tetrahedron];
+    delete ShapeDB[Hexahedron];
+    delete ShapeDB[Brick];
+  #endif
+  delete [] ShapeDB;
+  
+  delete RefDescDB[S_Line];
+  delete RefDescDB[Triangle];
+  delete RefDescDB[Quadrangle];
+  delete RefDescDB[Parallelogram];
+  delete RefDescDB[Rectangle];
+  #ifdef __3D__
+    delete RefDescDB[Tetrahedron];
+    delete RefDescDB[Hexahedron];
+    delete RefDescDB[Brick];
+  #endif
+  delete RefDescDB[N_SHAPES + LineReg];
+  delete RefDescDB[N_SHAPES + TriReg];
+  delete RefDescDB[N_SHAPES + TriBis0];
+  delete RefDescDB[N_SHAPES + TriBis1];
+  delete RefDescDB[N_SHAPES + TriBis2];
+  delete RefDescDB[N_SHAPES + TriBis01];
+  delete RefDescDB[N_SHAPES + TriBis02];
+  delete RefDescDB[N_SHAPES + TriBis10];
+  delete RefDescDB[N_SHAPES + TriBis12];
+  delete RefDescDB[N_SHAPES + TriBis20];
+  delete RefDescDB[N_SHAPES + TriBis21];
+  delete RefDescDB[N_SHAPES + QuadReg];
+  delete RefDescDB[N_SHAPES + ParallReg];
+  delete RefDescDB[N_SHAPES + RectReg];
+  delete RefDescDB[N_SHAPES + QuadBis0];
+  delete RefDescDB[N_SHAPES + QuadBis1];
+  delete RefDescDB[N_SHAPES+Quad1Conf0];
+  delete RefDescDB[N_SHAPES+Quad1Conf1];
+  delete RefDescDB[N_SHAPES+Quad1Conf2];
+  delete RefDescDB[N_SHAPES+Quad1Conf3];
+  delete RefDescDB[N_SHAPES+Quad2Conf0];
+  delete RefDescDB[N_SHAPES+Quad2Conf1];
+  delete RefDescDB[N_SHAPES+Quad2Conf2];
+  delete RefDescDB[N_SHAPES+Quad2Conf3];
+  delete RefDescDB[N_SHAPES+QuadToTri0];
+  delete RefDescDB[N_SHAPES+QuadToTri1];
+
+  #ifdef __3D__
+    delete RefDescDB[N_SHAPES + TetraReg];
+    delete RefDescDB[N_SHAPES + TetraReg0];
+    delete RefDescDB[N_SHAPES + TetraReg1];
+    delete RefDescDB[N_SHAPES + TetraReg2];
+    delete RefDescDB[N_SHAPES + TetraBis0];
+    delete RefDescDB[N_SHAPES + TetraBis1];
+    delete RefDescDB[N_SHAPES + TetraBis2];
+    delete RefDescDB[N_SHAPES + TetraBis3];
+    delete RefDescDB[N_SHAPES + TetraBis4];
+    delete RefDescDB[N_SHAPES + TetraBis5];
+    delete RefDescDB[N_SHAPES + TetraBis01];
+    delete RefDescDB[N_SHAPES + TetraBis02];
+    delete RefDescDB[N_SHAPES + TetraBis03];
+    delete RefDescDB[N_SHAPES + TetraBis04];
+    delete RefDescDB[N_SHAPES + TetraBis05];
+    delete RefDescDB[N_SHAPES + TetraBis10];
+    delete RefDescDB[N_SHAPES + TetraBis12];
+    delete RefDescDB[N_SHAPES + TetraBis13];
+    delete RefDescDB[N_SHAPES + TetraBis14];
+    delete RefDescDB[N_SHAPES + TetraBis15];
+    delete RefDescDB[N_SHAPES + TetraBis20];
+    delete RefDescDB[N_SHAPES + TetraBis21];
+    delete RefDescDB[N_SHAPES + TetraBis23];
+    delete RefDescDB[N_SHAPES + TetraBis24];
+    delete RefDescDB[N_SHAPES + TetraBis25];
+    delete RefDescDB[N_SHAPES + TetraBis30];
+    delete RefDescDB[N_SHAPES + TetraBis32];
+    delete RefDescDB[N_SHAPES + TetraBis34];
+    delete RefDescDB[N_SHAPES + TetraBis35];
+    delete RefDescDB[N_SHAPES + TetraBis40];
+    delete RefDescDB[N_SHAPES + TetraBis41];
+    delete RefDescDB[N_SHAPES + TetraBis43];
+    delete RefDescDB[N_SHAPES + TetraBis45];
+    delete RefDescDB[N_SHAPES + TetraBis51];
+    delete RefDescDB[N_SHAPES + TetraBis52];
+    delete RefDescDB[N_SHAPES + TetraBis53];
+    delete RefDescDB[N_SHAPES + TetraBis54];
+    delete RefDescDB[N_SHAPES + TetraQuad0];
+    delete RefDescDB[N_SHAPES + TetraQuad1];
+    delete RefDescDB[N_SHAPES + TetraQuad2];
+    delete RefDescDB[N_SHAPES + TetraQuad3];
+    delete RefDescDB[N_SHAPES + HexaReg];
+    delete RefDescDB[N_SHAPES + BrickReg];
+  #endif
+  delete [] RefDescDB;
+  
+  #ifdef __3D__
+    //initialize mapper
+    delete MapperDB[MapTriReg0];
+    delete MapperDB[MapTriReg1];
+    delete MapperDB[MapTriReg2];
+
+    delete MapperDB[MapTriBis00];
+    delete MapperDB[MapTriBis01];
+    delete MapperDB[MapTriBis02];
+    delete MapperDB[MapTriBis10];
+    delete MapperDB[MapTriBis11];
+    delete MapperDB[MapTriBis12];
+    delete MapperDB[MapTriBis20];
+    delete MapperDB[MapTriBis21];
+    delete MapperDB[MapTriBis22];
+    delete MapperDB[MapTriBis010];
+    delete MapperDB[MapTriBis011];
+    delete MapperDB[MapTriBis012];
+    delete MapperDB[MapTriBis020];
+    delete MapperDB[MapTriBis021];
+    delete MapperDB[MapTriBis022];
+    delete MapperDB[MapTriBis100];
+    delete MapperDB[MapTriBis101];
+    delete MapperDB[MapTriBis102];
+    delete MapperDB[MapTriBis120];
+    delete MapperDB[MapTriBis121];
+    delete MapperDB[MapTriBis122];
+    delete MapperDB[MapTriBis200];
+    delete MapperDB[MapTriBis201];
+    delete MapperDB[MapTriBis202];
+    delete MapperDB[MapTriBis210];
+    delete MapperDB[MapTriBis211];
+    delete MapperDB[MapTriBis212];
+
+    delete MapperDB[MapQuadReg0];
+    delete MapperDB[MapQuadReg1];
+    delete MapperDB[MapQuadReg2];
+    delete MapperDB[MapQuadReg3];
+  #endif
+  delete [] MapperDB;
+
+  // initialize iterators
+  delete IteratorDB[It_EQ];
+  delete IteratorDB[It_LE];
+  delete IteratorDB[It_Finest];
+  delete IteratorDB[It_EQLevel];
+  delete IteratorDB[It_LELevel];
+  delete IteratorDB[It_Between];
+  delete IteratorDB[It_OCAF];
+
+  #ifdef __MORTAR__
+    delete IteratorDB[It_Mortar1];
+    delete IteratorDB[It_Mortar2];
+  #endif
+  delete [] IteratorDB;
+}
+
+TParaDB::~TParaDB()
+{
+  // call delete on all char* which were created in 
+  // TDatabase::SetDefaultParameters()
+  delete [] GEOFILE;
+  delete [] GEOFILE_INTL;
+  delete [] BNDFILE;
+  delete [] BNDFILE_INTL;
+  delete [] MAPFILE;
+  delete [] OUTFILE;
+  delete [] BASENAME;
+  delete [] VTKBASENAME;
+  delete [] OUTPUTDIR;
+  delete [] SAVE_DATA_FILENAME;
+  delete [] READ_DATA_FILENAME;
+  delete [] SMESHFILE;
+  delete [] POD_FILENAME;
+  delete [] SNAP_FILENAME;
+  delete [] FS_INNAME;
+  delete [] FS_OUTNAME;
+  delete [] MATLAB_MATRIX;
+  delete [] PODFILE;
+  Output::print<2>("deleted parameter database");
+}
