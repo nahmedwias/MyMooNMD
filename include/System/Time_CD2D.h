@@ -13,7 +13,7 @@
 #ifndef __Time_CD2D__
 #define __Time_CD2D__
 
-#include <FEFunction2D.h>
+#include <FEVectFunct2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_CD2D.h>
@@ -167,7 +167,7 @@ class Time_CD2D
      * even be the right thing to check).
      *
      */
-    void assemble_initial_time(const TFEFunction2D* velocity_field = nullptr);
+    void assemble_initial_time(const TFEVectFunct2D* velocity_field = nullptr);
     
     /** @brief assemble the matrices
      * this function will assemble the stiffness matrix and rhs
@@ -188,7 +188,7 @@ class Time_CD2D
      * on the same Collection of grid cells as this object (which might not
      * even be the right thing to check).
      */
-    void assemble(const TFEFunction2D* velocity_field = nullptr);
+    void assemble(const TFEVectFunct2D* velocity_field = nullptr);
     
     /** @brief solve the system
      */
@@ -238,8 +238,34 @@ class Time_CD2D
                                  bool assemble_both);
 
     /**
-     * Iif there is a velocity field input, thus velocity_field not equals zero,
-     * whether it lives on the same Collection as my finest grid.
+     * Modifies the local assembling object for stiffness matrix and rhs
+     * to take into account a given flow filed for the convection, then calls
+     * the "standard" call_assembling_routine.
+     * TODO The call to call_assembling_routine happens inside this method
+     * (instead of seperating these functionalities), because the velo functions
+     * gained from the TFEVectFunct2D shouldn ot run out of scope. Fix that!
+     *
+     * @param block_mat should be one system's stiffness or mass matrix.
+     * @param la_stiff A fittingly constructed LocalAssemble2D object which
+     * is responsible for the assembling of the stiffness matrix and right hand
+     * side.
+     * @param la_masse A fittingly constructed LocalAssemble2D object which
+     * is responsible for the assembling of the mass matrix. The mass matrix
+     * will not be assembled and la_mass will be ignored, when assemble_both
+     * is 'false'.
+     * @param assemble_both If true, both stiffness (+rhs) and mass matrix are
+     * assembled, if false only stiffness matrix and rhs.
+     * @param velocity_field The velocity field responsible for the convection.
+     */
+    void modify_and_call_assembling_routine(
+        System_per_grid& s,
+        LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+        bool assemble_both,
+        const TFEVectFunct2D* velocity_field);
+
+    /**
+     * Perform some checks on the velocity field. So far none there are none...
+     * TODO What wrong input must be caught here?
      *
      * @param velocity_field The velocity field to be checked.
      */

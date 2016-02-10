@@ -47,7 +47,7 @@ void ReactionCoupling::assembleLinearDecoupled(TFEFunction2D** latestSolutions){
 	std::vector<int> myRhsSpace({0}); //just one right hand side is assembled
 
 	CoeffFct2D* myCoeffs = nullptr; // The unused coefficient function
-	AssembleFctParam2D* myAssembleParam = rhsAssemblingFct_; // The static assembling function
+	AssembleFctParam2D* myAssembleParam = rhsAssemblingFct_; // The assembling function
 
 	ManipulateFct2D* myManipulate = nullptr; //nobody uses the manipulate function
 	int myN_Matrices = 0; //this is of almost no importance anyway
