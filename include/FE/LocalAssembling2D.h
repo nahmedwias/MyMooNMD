@@ -215,6 +215,29 @@ class LocalAssembling2D
      * 					   	  This value could only be used to control if "myRowSpace" and "myColumnSpace" have the right length.
      *
      * //FROM HERE IT IS MEMBERS OF DEPRECATED TAuxParam2D.
+     *
+     * These parameters all have to do with gaining coefficients which stem from
+     * other, precomputed FE functions, like e.g. a time dependent velocity field
+     * might enter the computation of a cdr system as coefficients for the
+     * advective term.
+     * The functions which put the values of these fe functions to the right
+     * place in the assembling process are called "parameter functions".
+     *
+     * Additional to values gained dirctly from the precomputed fe functions
+     * ("fe values") these parameter functions can put out other values like
+     * time or space coordinates.
+     *
+     * It seems as if it is expected that the fe functions do live on the very
+     * same fe space as the assembling works on (ansatz space?). This eventually
+     * makes interpolation/projection necessary and is currently under
+     * investigation.
+     *
+     * All in all the entire assembling system is incredibly hard to understand,
+     * participating objects are highly entangled and there is absolutely no
+     * safety checks.
+     *
+     * TODO This will be refactored in the near future.
+     *
      * @param myN_ParamFct The number of Parameter functions working on the assembling.
      *
      * @param myParameterFct A list of pointers to parameter functions. Size should equal "myN_ParamFct".
@@ -275,7 +298,10 @@ class LocalAssembling2D
                        double *x, double *y,
                        double **Parameters);
 
-    /** return all parameters at boundary points */
+    /** return all parameters at boundary points
+     * FIXME CB This method is not implemented - why?
+     * Do we not ever need the values of a parameter function at the boundary?
+     */
     void GetParameters(int N_Points, TCollection *Coll,
                        TBaseCell *cell, int cellnum,
                        double *s, int joint,
