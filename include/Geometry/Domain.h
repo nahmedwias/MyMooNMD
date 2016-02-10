@@ -131,6 +131,9 @@ class TDomain
      */
     TDomain(char *ParamFile);
     
+    /** @brief destructor */
+    ~TDomain();
+    
     // Methods
     /** @brief Read in initial mesh from ".GEO" file.
      *
