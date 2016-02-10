@@ -1113,12 +1113,12 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
       values[1] += ux;
       values[2] += uy;
 
-      delete uorig;
-      delete uxorig;
-      delete uyorig;
-      delete uref;
-      delete uxiref;
-      delete uetaref;
+      delete[] uorig;
+      delete[] uxorig;
+      delete[] uyorig;
+      delete[] uref;
+      delete[] uxiref;
+      delete[] uetaref;
 
     }                                             // endif
   }                                               // endfor

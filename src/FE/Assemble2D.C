@@ -10316,8 +10316,15 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   }
 
   if(N_Parameters)
-  {
+  {//Param was used and has to be deleted
     delete [] Param[0];
+  }
+  else
+  { //we have to delete the default initialized thing
+    for(j=0;j<MaxN_QuadPoints_2D;j++)
+    {
+      delete[] Param[j];
+    }
   }
 
   if(N_AllMatrices)

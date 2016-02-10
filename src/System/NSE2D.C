@@ -558,7 +558,13 @@ void NSE2D::assemble_nonlinear_term()
     //(is this necessary here? solution has not been touched!)
     s.solution.copy_nonactive(s.rhs);
 
+    //tidy up
+    delete fe_functions[0];
+    delete fe_functions[1];
+
   }
+
+
 }
 
 /** ************************************************************************ */
