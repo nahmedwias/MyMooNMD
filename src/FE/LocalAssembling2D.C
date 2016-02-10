@@ -19,6 +19,18 @@
 
 #include <DiscreteForm2D.h> // to be removed
 
+/**
+ * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is
+ * constructed with length 1 only although there are two spaces available
+ * (Navier--Stokes, velo and pressure).
+ * This will produce valgrind errors and might lead to even worse things.
+ * Be prepared! And fix it eventually:
+ *
+ *            this->Needs2ndDerivatives = new bool[2];
+ *            this->Needs2ndDerivatives[0] = false;
+ *            this->Needs2ndDerivatives[1] = false;
+ */
+
 /** @brief a helper function returning a string with for the name of the 
  *         LocalAssembling2D_type. This returns an empty string in case the type
  *         is not known. */
@@ -114,6 +126,7 @@ this->N_ParamFct = 0;
 this->ParameterFct = {};
 this->N_FEValues = 0;
 this->FEValue_FctIndex = {};
+  this->FEValue_MultiIndex = {};
 this->BeginParameter = {};
 
 // set all member variables according to the LocalAssembling2D_type
@@ -651,8 +664,9 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             {
               this->N_Terms = 4;
               this->Derivatives = { D10, D01, D00, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 3;
               this->RowSpace = { 0, 1, 1 };
