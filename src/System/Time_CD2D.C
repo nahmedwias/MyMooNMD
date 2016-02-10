@@ -147,7 +147,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
 /**************************************************************************** */
 void Time_CD2D::set_parameters()
 {
-  if(TDatabase::ParamDB->EXAMPLE < 101)
+  if(TDatabase::ParamDB->EXAMPLE < 100)
   {
     ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
            << "is not supported for time dependent problem");

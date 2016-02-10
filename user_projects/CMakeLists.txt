@@ -44,6 +44,12 @@ set_target_properties(ccdr2d PROPERTIES OUTPUT_NAME parMooN_ccdr2d_${PARMOON_PAR
 target_compile_definitions(ccdr2d PUBLIC -D__2D__)
 target_link_libraries(ccdr2d PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+# Add an executable target from Coupled_Time_CDR2D_ParMooN.C
+add_executable(time_ccdr2d ${PROJECT_SOURCE_DIR}/user_projects/Coupled_Time_CDR2D_ParMooN.C)
+set_target_properties(time_ccdr2d PROPERTIES OUTPUT_NAME parMooN_time_ccdr2d_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(time_ccdr2d PUBLIC -D__2D__)
+target_link_libraries(time_ccdr2d PROJECT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 # Add an executable target from Flow_And_Concentrations_ParMooN.c++
 add_executable(flow_and_conc_2d ${PROJECT_SOURCE_DIR}/user_projects/Flow_And_Concentrations_ParMooN.c++)
 set_target_properties(flow_and_conc_2d PROPERTIES OUTPUT_NAME parMooN_flow_and_concentrations_2d_${PARMOON_PARALLEL_TYPE})

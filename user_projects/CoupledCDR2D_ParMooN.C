@@ -1,11 +1,6 @@
 /*!
  * @brief Main program to run an example of a system of coupled CDR equations.
  *
- * This main program starts is life as one which adminsters a one-way coupling
- * between a (simple) Time_NSE2D obejct (flow) and a Time_CD2D object
- * (concentration). Later the Time_CD2D object will be replaced by an
- * instance of the coupled module.
- *
  * @author Clemens Bartsch
  *
  * @date May 8, 2015

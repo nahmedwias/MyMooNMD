@@ -4,6 +4,10 @@
  * @brief        Store everything needed to solve a time dependent
  *               system of convection diffusion reaction problems
  *               which are coupled in the reaction term.
+ *               So far there is only one way to decouple the system,
+ *               which is by inserting the last known values and put them
+ *               onto the right hand side (Richardson iteration,
+ *               "linear_decoupled").
  *
  * @author       Clemens Bartsch
  * @date         6.1.2016
@@ -31,6 +35,26 @@ class ReactionCoupling;
 class Coupled_Time_CDR_2D {
 
   public:
+
+    /**
+     * Standard constructor which gets a domain and an example object.
+     * @param domain The domain to compute on.
+     * @param example The example to be executed.
+     */
+    Coupled_Time_CDR_2D(const TDomain& domain,
+                        const Example_CoupledCDR2D& example);
+
+    /**
+     * Assemble all matrices and rhs at the 0th time step.
+     */
+    void assemble_initial_time();
+
+    /**
+     * Produce some output.
+     * @param[in] image The number of the image, will be used for the naming
+     * of the pictures.
+     */
+    void output(int& image);
 
     //Deletion of special member functions.
     //! Delete copy constructor.
@@ -62,13 +86,6 @@ class Coupled_Time_CDR_2D {
 
     /*! @brief The used example. */
     Example_CoupledCDR2D example_;
-
-    /*! The strategy for solving the coupled system.
-     * (The type is implemented in CoupledCDR_2D) */
-    CoupledCDR_2D::SolvingStrategy const strategy_;
-
-
-
 
 };
 
