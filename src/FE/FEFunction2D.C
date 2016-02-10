@@ -51,9 +51,9 @@ char *description, double *values, int length)
 
   FESpace2D=fespace2D;
  
-  Name=strdup(name);
+  Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'
 
-  Description=strdup(description);
+  Description=strdup(description); // this calls malloc
 
   Values=values;
 
@@ -63,8 +63,8 @@ char *description, double *values, int length)
 
 TFEFunction2D::~TFEFunction2D()
 {
-  delete Name;
-  delete Description;
+  free(Name);
+  free(Description);
 }
 
 
