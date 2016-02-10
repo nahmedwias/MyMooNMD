@@ -710,10 +710,7 @@ double react, double linfb)
       exit(4711);
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>2)
-  {
-    OutPut("delta " << delta << " " << endl);
-  }
+  Output::print<3>("delta ", delta);
   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 120814)
   	TDatabase::ParamDB->INTERNAL_P1_Array[TDatabase::ParamDB->INTERNAL_MOMENT] = delta;
 
