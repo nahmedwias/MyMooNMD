@@ -165,6 +165,7 @@ int TDomain::ReadGeo(std::istream& dat, bool readXgeo)
   delete [] DCORVG;
   delete [] KVERT;
   delete [] KNPR;
+  delete [] ELEMSREF;
 
   return 0;
 }
