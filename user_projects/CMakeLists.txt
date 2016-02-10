@@ -32,8 +32,9 @@ include_directories("${PROJECT_SOURCE_DIR}/user_projects/examples")
 # Shuffle everything into a static project library.
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/CoupledCDR_2D.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Coupled_Time_CDR_2D.C")
-list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/ReactionCoupling.C")
 list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/Example_CoupledCDR2D.C")
+list(APPEND _PROJECT_SOURCES_2D "${PROJECT_SOURCE_DIR}/user_projects/src/ReactionCoupling.C")
+
 add_library(PROJECT_LIB_2D STATIC ${_PROJECT_SOURCES_2D})
 target_compile_definitions(PROJECT_LIB_2D PUBLIC -D__2D__)
 
