@@ -281,8 +281,6 @@ class LocalAssembling2D
                        double *s, int joint,
                        double **Parameters);
     
-    
-
     /** return name */
     const std::string& get_name() const
     { return name; }
@@ -314,6 +312,51 @@ class LocalAssembling2D
     
     LocalAssembling2D_type get_type() const
     { return type; }
+
+    /**
+     * All methods to follow are setter methods which deal with data members
+     * which focus on gaining coefficients from given fe functions.
+     */
+    void setBeginParameter(const std::vector<int>& beginParameter)
+    {
+      BeginParameter = beginParameter;
+    }
+
+    void setFeFunctions2D(TFEFunction2D** feFunctions2D)
+    {
+      FEFunctions2D = feFunctions2D;
+    }
+
+    void setFeValueFctIndex(const std::vector<int>& feValueFctIndex)
+    {
+      FEValue_FctIndex = feValueFctIndex;
+    }
+
+    void setFeValueMultiIndex(
+        const std::vector<MultiIndex2D>& feValueMultiIndex)
+    {
+      FEValue_MultiIndex = feValueMultiIndex;
+    }
+
+    void setN_FeValues(int N_feValues)
+    {
+      N_FEValues = N_feValues;
+    }
+
+    void setN_Parameters(int N_parameters)
+    {
+      N_Parameters = N_parameters;
+    }
+
+    void setN_ParamFct(int N_paramFct)
+    {
+      N_ParamFct = N_paramFct;
+    }
+
+    void setParameterFct(const std::vector<ParamFct*>& parameterFct)
+    {
+      ParameterFct = parameterFct;
+    }
 };
 
 
