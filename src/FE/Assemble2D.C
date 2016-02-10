@@ -9311,6 +9311,15 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D];
+  for(size_t i=0;i<MaxN_QuadPoints_2D;++i) //initialize Param
+  {
+    // NOTE: The number 10 is magic here.
+    // In the current setup it may well happen, that a Coefficient function
+    // expects to evaluate parameters, but the local assembling object
+    // will not make use of them (N_Parameters = 0) - nevertheless the array
+    // must be initialized to something.
+    Param[i]=new double[10]{0.0};
+  }
   double *local_rhs;
   double *righthand;
   double **Matrices, *aux;
@@ -9445,7 +9454,10 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   {
     aux = new double [MaxN_QuadPoints_2D*N_Parameters];
     for(j=0;j<MaxN_QuadPoints_2D;j++)
+    {
+      delete[] Param[j]; //clear away the default initialized array
       Param[j] = aux + j*N_Parameters;
+    }
   }
 
   // 40 <= number of terms in bilinear form
