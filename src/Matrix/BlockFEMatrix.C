@@ -329,38 +329,48 @@ void BlockFEMatrix::apply(const BlockVector & x, BlockVector & y) const
 
 void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
                                             BlockVector & y, double a) const
-{ //check if the vectors fit, if not so the program throws an error
-  check_vector_fits_pre_image(x);
-  check_vector_fits_image(y);
+{
+  // first do the multiplication for active rows only
+  apply_scaled_add_actives(x,y,a);
 
-  const double * xv = x.get_entries(); // array of values in x
-  double * yv = y.get_entries(); // array of values in y
-  size_t row_offset = 0;
-  // n_rows, n_cols are the number of cell rows/columns
-  for(size_t i = 0; i < n_cell_rows_; ++i)
-  {
-    int col_offset = 0;
-    for(size_t j = 0; j < n_cell_columns_; j++)
-    {
-      const FEMatrix& current_block = dynamic_cast<const FEMatrix&>(*cell_grid_[i][j].block_);
-      bool transp_state = cell_grid_[i][j].is_transposed_;
-      //non-transposed case
-      if(transp_state == false)
-      {
-        current_block.multiplyActive(xv + col_offset, yv + row_offset, a);
-      }
-      else
-      {
-        current_block.multiplyTransposedActive(xv + col_offset, yv + row_offset, a);
-      }
-      col_offset += cell_grid_[i][j].n_columns_;
-    }
-    row_offset += cell_grid_[i][0].n_rows_;
-  }
-
-  //...finally update the non-active rows.
+  //and then update the non-active rows.
   y.addScaledNonActive(x,a);
 
+}
+
+/* ************************************************************************* */
+
+void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector & y,
+                              double a) const
+{
+    //check if the vectors fit, if not so the program throws an error
+    check_vector_fits_pre_image(x);
+    check_vector_fits_image(y);
+
+    const double * xv = x.get_entries(); // array of values in x
+    double * yv = y.get_entries(); // array of values in y
+    size_t row_offset = 0;
+    // n_rows, n_cols are the number of cell rows/columns
+    for(size_t i = 0; i < n_cell_rows_; ++i)
+    {
+      int col_offset = 0;
+      for(size_t j = 0; j < n_cell_columns_; j++)
+      {
+        const FEMatrix& current_block = dynamic_cast<const FEMatrix&>(*cell_grid_[i][j].block_);
+        bool transp_state = cell_grid_[i][j].is_transposed_;
+        //non-transposed case
+        if(transp_state == false)
+        {
+          current_block.multiplyActive(xv + col_offset, yv + row_offset, a);
+        }
+        else
+        {
+          current_block.multiplyTransposedActive(xv + col_offset, yv + row_offset, a);
+        }
+        col_offset += cell_grid_[i][j].n_columns_;
+      }
+      row_offset += cell_grid_[i][0].n_rows_;
+    }
 }
 
 /* ************************************************************************* */
