@@ -96,7 +96,7 @@ class NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D & example;
+    const Example_NSE2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
