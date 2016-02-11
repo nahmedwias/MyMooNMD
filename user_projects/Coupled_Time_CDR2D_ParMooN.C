@@ -70,37 +70,37 @@ int main(int argc, char* argv[])
     int image=0;
 
     tcdr_system.output(image);
-//  // ======================================================================
-//  // time iteration
-//  // ======================================================================
-//  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
-//  {
-//    step++;
-//    // Output::print("mem before: ", GetMemory());
-//    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
-//    for(int j=0; j < n_substeps; ++j)
-//    {
-//      SetTimeDiscParameters(1);
-//      if(step==1)
-//      {
-//        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-//        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-//        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-//        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-//      }
-//      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-//      TDatabase::TimeDB->CURRENTTIME += tau;
-//
-//      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-//
-//      tcd.assemble();
-//
-//      tcd.solve();
-//
-//      tcd.output(step, image);
-//    }
-//    // OutPut("mem after: " << GetMemory()<<endl);
-//  }
+  // ======================================================================
+  // time iteration
+  // ======================================================================
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+    // Output::print("mem before: ", GetMemory());
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j=0; j < n_substeps; ++j)
+    {
+      SetTimeDiscParameters(1);
+      if(step==1)
+      {
+        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+      }
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+
+      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+      tcdr_system.assemble_uncoupled_part();
+
+      tcdr_system.couple_and_solve();
+
+      tcdr_system.output(step);
+    }
+    // OutPut("mem after: " << GetMemory()<<endl);
+  }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
   Output::print("used time: ", GetTime() - t_start, "s");

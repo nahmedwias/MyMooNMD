@@ -50,6 +50,19 @@ class Coupled_Time_CDR_2D {
     void assemble_initial_time();
 
     /**
+     * Assembles the decoupled equations for the current time step.
+     * Note that the assembling and adding of the coupled parts is done in the
+     * loop within the solving routine.
+     */
+    void assemble_uncoupled_part();
+
+    /**
+     * Solve the system. Contains a loop in which the coupled part is assembled,
+     * put to the right hand side and the resulting equations is solved.
+     */
+    void couple_and_solve();
+
+    /**
      * Produce some output.
      * @param[in] image The number of the image, will be used for the naming
      * of the pictures.

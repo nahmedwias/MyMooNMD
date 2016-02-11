@@ -56,9 +56,33 @@ void Coupled_Time_CDR_2D::assemble_initial_time()
   }
 }
 
+void Coupled_Time_CDR_2D::assemble_uncoupled_part()
+{
+  for (auto tcd : cdProblems_)
+  {
+    //ask all decoupled problems politely to assemble their state at current time
+    tcd->assemble();
+  }
+}
+
+void Coupled_Time_CDR_2D::couple_and_solve()
+{
+  //dummy: just solve the uncoupled systems
+  for (auto tcd : cdProblems_)
+  {
+    //TODO coupling!!
+
+    //ask all decoupled problems politely to solve themselves
+    tcd->solve();
+
+  }
+}
+
 void Coupled_Time_CDR_2D::output(int& image){
   //Let the work be done by the Time_CD objects for now.
-  for (size_t equation = 0; equation<nEquations_;++equation){
+  for (int equation = 0; equation<nEquations_;++equation){
+//    std::string pic_name("c" + equation);
+//    TDatabase::ParamDB->BASENAME = pic_name.c_str();
     cdProblems_[equation]->output(equation, image);
   }
 }
