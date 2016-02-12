@@ -334,6 +334,27 @@ void Time_CD2D::assemble()
 }
 
 /**************************************************************************** */
+
+void Time_CD2D::descale_stiffness(double tau, double theta_1)
+{
+    // restore stiffness matrix and store old_Au on all grids
+    if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+    {
+      for(auto &s : this->systems)
+      {
+        s.descale_stiff_matrix(tau, theta_1);
+        s.update_old_Au();
+      }
+    }
+    else
+    {
+      //in AFC case the stiffness matrix is "ruined" by now -
+      Output::print("AFC does not yet reset the stiffness"
+          "matrix and old_Au correctly!");
+    }
+}
+
+/**************************************************************************** */
 void Time_CD2D::solve()
 {
   double t = GetTime();
@@ -362,23 +383,6 @@ void Time_CD2D::solve()
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
 
-  // restore stiffness matrix and store old_Au on all grids
-  if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
-  {
-    for(auto &s : this->systems)
-    {
-      double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-      double theta_1 = TDatabase::TimeDB->THETA1;
-      s.descale_stiff_matrix(tau, theta_1);
-      s.update_old_Au();
-    }
-  }
-  else
-  {
-    //in AFC case the stiffness matrix is "ruined" by now -
-    Output::print<5>("AFC does not yet reset the stiffness"
-        "matrix and old_Au correctly!");
-  }
 }
 
 /**************************************************************************** */
