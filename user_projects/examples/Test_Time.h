@@ -19,13 +19,13 @@ void ExampleFile()
 // terms responsible for the coupled reaction
 double couplingTerm1(const double* const c)
 {
-  double rate = 3;
+  double rate = 0.5;
   return rate * c[0] * c[1]; //consumption
 }
 
 double couplingTerm2(const double* const c)
 {
-  double rate = 3;
+  double rate = 0.5;
   return - rate * c[0] * c[1]; //production
 }
 

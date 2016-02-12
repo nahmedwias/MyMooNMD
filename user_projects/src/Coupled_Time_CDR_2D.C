@@ -67,22 +67,60 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part()
 
 void Coupled_Time_CDR_2D::couple_and_solve()
 {
-  //dummy: just solve the uncoupled systems
-  for (auto tcd : cdProblems_)
-  {
-    //TODO coupling!!
+  Output::print("Call to Couple and solve.");
+  // ///////////////// COPY & PASTE FROM STATIONARY ///////////////////////////
+    // Put up an array of pointers to the solutions of previous iteration
+    TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
 
-    //ask all decoupled problems politely to solve themselves
-    tcd->solve();
+    // Store the original right hand sides of the CDR Equations without coupling.
+    std::vector<BlockVector> originalRightHandSides;
+    for (size_t equation = 0; equation<nEquations_;++equation){
+      BlockVector vector(cdProblems_[equation]->get_rhs());
+      originalRightHandSides.push_back(vector);
+    }
 
-  }
+    // while(Abbruchbedingung nicht erfuellt) - beginne einfach mit einer festen Anzahl Iterationen.
+    for (size_t steps = 0; steps<5;steps++){
+      //Fill pointers to available solutions into previousSolutions array
+      for(size_t i =0;i<nEquations_;++i){
+        previousSolutions[i]=&cdProblems_[i]->get_function();
+      }
+      //loop over the equations
+      for (size_t equation = 0; equation<nEquations_;++equation){
+        Output::print("Step ", steps, " Equation ", equation);
+
+        // assemble the coupling term
+        coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
+
+        // add coupled rhs to rhs of the uncoupled equation
+        cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);
+
+        // solve equation with the new right hand side
+        cdProblems_[equation]->solve();
+
+        // Set back to original rhs.
+        cdProblems_[equation]->get_rhs().copy(originalRightHandSides.at(equation).get_entries());
+
+      }//end loop over equations
+
+    }//endwhile bzw. endfor
+
+    //descale the stiffness matrices of the problems, which also updates old_Au
+    for (auto cd : cdProblems_){
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      double theta_1 = TDatabase::TimeDB->THETA1;
+      cd->descale_stiffness(tau, theta_1);
+    }
+
+    delete[] previousSolutions; //just delete the pointers array
+
+    // ///////////////// END COPY & PASTE FROM STATIONARY ///////////////////////////
 }
 
 void Coupled_Time_CDR_2D::output(int& image){
   //Let the work be done by the Time_CD objects for now.
   for (int equation = 0; equation<nEquations_;++equation){
-//    std::string pic_name("c" + equation);
-//    TDatabase::ParamDB->BASENAME = pic_name.c_str();
+//  TODO give meaningful names to the different pictures
     cdProblems_[equation]->output(equation, image);
   }
 }
