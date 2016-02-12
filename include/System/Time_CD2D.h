@@ -190,6 +190,25 @@ class Time_CD2D
      */
     void assemble(const TFEVectFunct2D* velocity_field = nullptr);
     
+    /**
+     * Descales the stiffness matrices from the modifications due to time
+     * discretization (one step/fractional step theta).
+     * This should be called after all solve() of the current time step
+     * have been performed and the stiffness should be reused.
+     *
+     * Sets A := 1/(theta_1 * tau) * (A - M), where A is stiffness matrix and
+     * M mass matrix, on all grids.
+     *
+     * As a side effect, it updates the "old_Au" value which will be needed
+     * for the next time step.
+     *
+     *
+     * @param[in] tau The current timestep length.
+     * @param[in] theta_1 The impliciteness parameter for the transport
+     * (e.g. 1 for bw Euler).
+     */
+    void descale_stiffness(double tau, double theta_1);
+
     /** @brief solve the system
      */
     void solve();
@@ -199,12 +218,23 @@ class Time_CD2D
      */
     void output(int m, int& imgage);
      // getters and setters
-    const TFEFunction2D & get_function() const
-    { return this->systems.front().fe_function; }
-    const TFESpace2D & get_space() const
-    { return this->systems.front().fe_space; }
     const Example_CD2D& get_example() const
     { return example; }
+    const TFEFunction2D & get_function() const
+    { return this->systems.front().fe_function; }
+    TFEFunction2D & get_function()
+    { return this->systems.front().fe_function; }
+    const BlockFEMatrix & get_stiff_matrix() const
+    { return this->systems.front().stiff_matrix; }
+    const BlockVector & get_rhs() const
+    { return this->systems.front().rhs; }
+    BlockVector & get_rhs()
+    { return this->systems.front().rhs; }
+    const BlockVector & get_solution() const
+    { return this->systems.front().solution; }
+    const TFESpace2D & get_space() const
+    { return this->systems.front().fe_space; }
+
 
   private:
     /**
