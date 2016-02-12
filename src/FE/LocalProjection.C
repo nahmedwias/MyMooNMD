@@ -4279,7 +4279,7 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   int i1, i2;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
 
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -4540,7 +4540,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   int i1, i2;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
 
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5765,7 +5765,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   int OrderDiff;
   double lpcoeff, lpexponent;

@@ -244,6 +244,8 @@ class TStructure
      * This version should never be used. It only exists because some other
      * parts of the software do not respect the const keyword (like AMG) or are
      * not well implemented (changing the structure of a matrix).
+     *
+     * \todo Get rid of this, as it's unsafe.
      */
     int *GetKCol()
     { return &columns[0]; }
@@ -255,11 +257,14 @@ class TStructure
     /** @brief return array row pointer */
     const int *GetRowPtr() const
     { return &rows[0]; }
+
     /** @brief return array row pointer
-     * 
+     *
      * This version should never be used. It only exists because some other
      * parts of the software do not respect the const keyword (like AMG) or are
      * not well implemented (changing the structure of a matrix).
+     *
+     * \todo Get rid of this, as it's unsafe.
      */
     int *GetRowPtr()
     { return &rows[0]; }
