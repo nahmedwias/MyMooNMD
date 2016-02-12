@@ -249,6 +249,11 @@ class BlockFEMatrix : public BlockMatrix
     static BlockFEMatrix Projection_NSE2D(const TFESpace2D& velocity, 
                                           const TFESpace2D& projection,
                                           const TFESpace2D& pressure);
+    
+    /** @brief named constructor for modifed mass matrix
+     * 
+     */
+    static BlockFEMatrix Modified_MassMatrix(const TFESpace2D& velocity);
 
 #elif __3D__
     /**
@@ -487,6 +492,16 @@ class BlockFEMatrix : public BlockMatrix
      * @return The number of actives of the row's testspace.
      */
     size_t get_n_row_actives(size_t cell_row) const;
+    /** @brief multiply the blockmatrix matrix A(Mass_Darcy) with its transposed A^T from the right 
+     * and multiply with matrix B(Projection) in between.
+     * 
+     * This function will swap the corresponding blocks of this BlockMatrix results from 
+     * the matrix multiplication
+     *
+     * @param[in] A (Mass_Darcy) the matrix with its transposed A^T to be multiplied from the right
+     * @param[in] B (Projection) the matrix to be multiplied in between
+     */    
+    void multiply(BlockFEMatrix& Mass_Darcy, BlockFEMatrix& Projection);
 
 
     /// @return The row (means: test-)space of a certain cell row.

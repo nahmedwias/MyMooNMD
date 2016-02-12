@@ -10,15 +10,14 @@ class PrRobustNSE2D : NSE2D
     struct SystemPerGrid
     {
       /** @brief Finite Element space for the projection*/
-      TFESpace2D projection_space;
-      /** @brief matrix used for the reconstruciton*/
-      BlockFEMatrix projMat;    
+      TFESpace2D projection_space;      
       
-      /**/
-      // std::vector<std::shared_ptr<FEMatrix>> ProjectionMatrix;
+      /** @brief projection matrix for reconstruciton*/      
       BlockFEMatrix ProjectionMatrix;
+      
+      /** @brief right hand side for reconstruciton*/
       BlockVector rhsXh;
-      /** */
+      
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
                     unsigned int order, const TFESpace2D& testSpace, 
@@ -36,9 +35,9 @@ class PrRobustNSE2D : NSE2D
     PrRobustNSE2D(const TDomain& domain, const Example_NSE2D& _example, 
                   unsigned int reference_id = -4711);
     
-    /** @brief 
+    /** @brief assemvle 
      * assemble the system matrix and right hand side of the NSE2D.
-     * 
+     * In addition: 
      * Inside the definition of this function if the reconstruciton
      * is used then additionally the right hand side is assembled 
      * using vector value spaces. In the next, the projection matrix 

@@ -235,6 +235,9 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   // projection spaces for reconstructions
   switch(TDatabase::ParamDB->VELOCITY_SPACE)
   {
+    case 2: // BDM2
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
     case 22:
       TDatabase::ParamDB->PROJECTION_SPACE = 1012;
       break;

@@ -337,6 +337,18 @@ BlockFEMatrix BlockFEMatrix::Projection_NSE2D(const TFESpace2D& velocity,
   
   return my_matrix;
 }
+
+BlockFEMatrix BlockFEMatrix::Modified_MassMatrix(const TFESpace2D& velocity)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity});
+  
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{1,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{1,1}}, {false}); 
+
+  return my_matrix;
+}
 #elif __3D__
 //3D named constructors
 BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
@@ -729,6 +741,38 @@ size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
   return test_spaces_rowwise_.at(cell_row)->GetN_ActiveDegrees();
 }
 
+/* ************************************************************************* */
+void BlockFEMatrix::multiply(BlockFEMatrix& Mass_Darcy, BlockFEMatrix& Projection)
+{
+  /* D=[
+   *     A1*B*A1T   A1*B*A2T; 
+   *     A2*B*A1T   A2*B*A2T]
+  */ 
+  // A1*B*A1T
+  std::vector<std::shared_ptr<FEMatrix>> projBlocks
+         = Projection.get_blocks_uniquely();
+  std::vector<std::shared_ptr<FEMatrix>> massBlocks
+         = Mass_Darcy.get_blocks_uniquely();
+  
+  std::shared_ptr<TMatrix> M00
+   (projBlocks.at(0)->multiply_with_transpose_from_right(*massBlocks.at(0)));
+  
+  std::shared_ptr<TMatrix> A2T(projBlocks.at(1)->GetTransposed());  
+  std::shared_ptr<TMatrix> BA2T(massBlocks.at(0)->multiply(*A2T));
+  std::shared_ptr<TMatrix> M01(projBlocks.at(0)->multiply(*BA2T));  
+  
+  std::shared_ptr<TMatrix> A1T(projBlocks.at(0)->GetTransposed());
+  std::shared_ptr<TMatrix> BA1T(massBlocks.at(0)->multiply(*A1T));
+  std::shared_ptr<TMatrix> M10(projBlocks.at(1)->multiply(*BA1T));
+   
+  std::shared_ptr<TMatrix> M11
+   (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
+  
+  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M00), {{0,0}}, {false});
+  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M01), {{0,1}}, {false});
+  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M10), {{1,0}}, {false});
+  this->replace_blocks(reinterpret_cast<const FEMatrix&>(*M11), {{1,1}}, {false});
+}
 /* ************************************************************************* */
 
 void BlockFEMatrix::replace_blocks(

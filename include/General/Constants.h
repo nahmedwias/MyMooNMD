@@ -97,6 +97,10 @@ typedef DoubleFunctVect ParamFct;
 typedef void CoeffFct2D(int n_points, double *X, double *Y,
                         double **param, double **coeffs);
 
+typedef void ManipulateMatrices(double ***, int *, int *, 
+                                double ***, int *, int *, 
+                                double **,  int *, double **, int *);
+
 typedef void CoeffFct3D(int n_points, double *X, double *Y, double *Z,
                         double **param, double **coeffs);
                         
@@ -131,6 +135,9 @@ typedef void CheckWrongNeumannNodesFunct2D(TCollection *, TFESpace2D *,
 					   int &, int* &,
 					   int* &, 
 					   double* &);
+
+typedef void ProjectionMatrix(int, const TFESpace2D *, const TFESpace2D *, 
+                              double ***);
 
 class TSquareMatrix;
 class TMatrix;

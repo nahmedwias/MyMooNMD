@@ -6209,8 +6209,7 @@ void LocAssembleMass(double Mult, double *coeff,
 {
   double **MatrixM = LocMatrices[0];
   double *Rhs = LocRhs[0];
-  double *Rhs1 = LocRhs[1];
-  
+   
   int N_U = N_BaseFuncts[0];
 
   double *Orig0 = OrigValues[0]; // u
