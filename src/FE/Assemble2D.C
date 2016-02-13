@@ -3297,7 +3297,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     TFEDatabase2D::GetOrig(N_LocalUsedElements, &LocalUsedElements[0], Coll,
                            cell, SecondDer, N_Points, xi, eta, weights, X, Y,
                            AbsDetjk);
-    
+
     // this could provide values of FE functions during the local assemble
     // routine, not yet supported.
     //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
@@ -10320,14 +10320,12 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
 
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
-           int n_sqmatrices_assemble,
-           std::vector<int> row_space, std::vector<int>col_space, 
+           int n_sqmatrices_assemble, std::vector<int> row_space, std::vector<int>col_space, 
            int n_rhs_assemble, std::vector<int> row_space_rhs,
-           int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,           
-           int n_matrices_stored, TMatrix2D** matrices_stored, int n_rhs_stored,
-           double** rhs_stored, const TFESpace2D** ferhs_stored,
-           LocalAssembling2D& la_assmble, 
-           ManipulateMatrices manipulateMatrices,
+           int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,
+           int n_matrices_stored, TMatrix2D** matrices_stored, 
+           int n_rhs_stored, double** rhs_stored, const TFESpace2D** ferhs_stored,
+           LocalAssembling2D& la_assmble, ManipulateMatrices manipulateMatrices,
            ProjectionMatrix projection_matrix,
            BoundCondFunct2D** BoundaryConditions, 
            BoundValueFunct2D * const * const BoundaryValues)
@@ -10421,6 +10419,20 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       LocRhs_stored[i] = righthand+i*MaxN_BaseFunctions2D;
     
     ndimOutput = new int[n_rhs_stored];   
+  }
+  
+  double *AuxArray[MaxN_QuadPoints_2D];
+  aux = new double [MaxN_QuadPoints_2D*40];
+  for(int j=0;j<MaxN_QuadPoints_2D;j++)
+    AuxArray[j] = aux + j*40;
+  
+  double *Param[MaxN_QuadPoints_2D];
+  int N_Parameters = la_assmble.GetN_Parameters();
+  if(N_Parameters)
+  {
+    aux = new double [MaxN_QuadPoints_2D*N_Parameters];
+    for(int j=0;j<MaxN_QuadPoints_2D;j++)
+      Param[j] = aux + j*N_Parameters;
   }
   // ==============================================================================
   // loop over all cells
@@ -10560,9 +10572,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                            cell, SecondDer, N_Points, xi, eta, weights, X, Y,
                            AbsDetjk);
     
-    // this could provide values of FE functions during the local assemble
-    // routine, not yet supported.
-    //la.GetParameters(N_Points,Coll, cell,icell, xi,eta, X,Y, Param);
+    // this could provide values of FE functions during the local assemble routine
+    la_assmble.GetParameters(N_Points,Coll, cell,icell, X, Y, Param);
 
     // ########################################################################
     // assemble local matrices and right hand sides
@@ -10574,7 +10585,10 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
    
     
     la_assmble.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
-                     cell, LocMatrices_assemble, LocRhs_assemble);
+                     Param, AuxArray, cell, N_AllMatrices_assemble, 
+                     n_rhs_assemble, LocMatrices_assemble, 
+                     LocRhs_assemble);
+    
     const TFESpace2D *pr_space = fespaces[0];
     const TFESpace2D *ve_space = fespaces[1];
     
