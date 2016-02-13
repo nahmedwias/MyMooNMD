@@ -37,6 +37,40 @@ PrRobustNSE2D::PrRobustNSE2D(const TDomain& domain,
                    this->get_projection_space().GetActiveBound());
 }
 /** ************************************************************************ */
+void matrix_multiplication(double ***inputMat, int *nrowInput, int *ncolInput, 
+                                double ***outputMat, int *nrowOut, int *ncolOut, 
+                                double **inputrhs,  int *ndimInput, 
+                                double **outputrhs, int *ndimOutput)
+{
+  /** matrix-vecotr manipulation*/
+  auto matrix_vector_multiply = [] (std::pair<int,int> size, double ***matrix, 
+                                    double *rhs, double **product)
+  {
+    unsigned int nrow = size.first;
+    unsigned int ncol = size.second;
+    
+    for(unsigned int i=0; i<nrow; i++)
+    {
+      double temp = 0;
+      double temp1 = 0;
+      for(unsigned int j=0; j<ncol; j++)
+      {
+        temp += matrix[0][i][j] * rhs[j];
+        temp1 += matrix[1][i][j] * rhs[j];
+      }
+      product[0][i] = temp;
+      product[1][i] = temp1;
+    }
+    return;
+  };
+  // prepare the output right hand 
+  std::pair<int,int> size (nrowInput[1], ncolInput[1]);
+  
+  double **matrix[2];
+  matrix[0] = inputMat[1];
+  matrix[1] = inputMat[2];  
+  matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
+}
 void PrRobustNSE2D::assembleMatrixRhs()
 {
   // TODO: give proper names to the functions
@@ -51,50 +85,63 @@ void PrRobustNSE2D::assembleMatrixRhs()
   System_per_grid& s_base=this->NSE2D::systems.front();
   SystemPerGrid &s_derived = this->Systems.front();
   {
-    TFEFunction2D *fe_functions[2] =  { s_base.u.GetComponent(0), 
-                                        s_base.u.GetComponent(1) };
+    TFEFunction2D *fe_functions[3] =  { s_base.u.GetComponent(0), 
+                                        s_base.u.GetComponent(1), 
+                                        &s_base.p };
       // local assemble      
     LocalAssembling2D larhs(RECONSTR_GALERKIN_Rhs, fe_functions,
-                              this->NSE2D::get_example().get_coeffs());
-    // load the projection space 
-    const TFESpace2D* space = &this->get_projection_space();
-    // boundary conditions
-    BoundCondFunct2D *bc[2] ={ space->GetBoundCondition(), 
-                               space->GetBoundCondition() };
-    // boundary values
-    BoundValueFunct2D * const * const BoundValue 
-       = this->NSE2D::get_example().get_bd();
-    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
-    // pointer to the space 
-    const TFESpace2D * pointer_to_space[1] = { space };
+                              this->NSE2D::get_example().get_coeffs());    
     // reset the right hand side
     s_derived.rhsXh.reset(); 
     unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
     TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
-    // rhs blocks 
-    double *rhs_blocks[1] = { s_derived.rhsXh.get_entries() };
+    // prepare everything which is needed for assembling matrices and 
+    // rhs: 
+    const int nFESpaces = 2;
+    const TFESpace2D *prooject_space=&this->get_projection_space();
+    const TFESpace2D *velocity_space=&this->NSE2D::get_velocity_space();
+    const TFESpace2D *pressure_space=&this->NSE2D::get_pressure_space();
+    // pointers to the fespace
+    const TFESpace2D * pointer_to_space[2] = {prooject_space, velocity_space};
     
-    // call the assemble function
-    // assemble right hand side only
-    Assemble2D_VectFE(1, pointer_to_space, 0, nullptr, 0, 
-                      nullptr, 1, rhs_blocks, pointer_to_space, larhs, 
-                      bc, bv);
-    TDatabase::ParamDB->VELOCITY_SPACE = vel_space;    
-  }
-  // assemble the ProjectionMatrix  
-  this->assembleProjectionMatrix();
-  
-  // update the right hand side with reconstrucion
-  std::vector<std::shared_ptr<FEMatrix>> blocks 
-         = s_derived.ProjectionMatrix.get_blocks_uniquely();
-  // reset rhs 
-  s_base.rhs.reset();
-  // multiply the correspoding blocks with the right hand side 
-  // and add it to the rhs of the base class
-  blocks.at(0)->multiplyActive(s_derived.rhsXh.get_entries(), 
-                               s_base.rhs.block(0));
-  blocks.at(1)->multiplyActive(s_derived.rhsXh.get_entries(), 
-                               s_base.rhs.block(1));
+    const int nSqMatAssemble = 3;
+    // const int nReMatAssemble = 0;
+    
+    const int nRhsAssemble = 1;
+    //NOTE:for the assembling of matrices or right hand side, space numbers
+    //are passed as array: this corresponds to the array "pointer_to_space"
+    std::vector<int> rowSpace ={0,1,1}; // row space for assembling matrices
+    std::vector<int> colSpace ={0,0,0}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
+    
+    // prepare everything for storing the matrices and rhs
+    // this will be used latter inside the class
+    const int nSqMatStored = 0;
+    const int nReMatStored = 0;
+    int nRhsStored = 2;
+    const TFESpace2D * pointToRhsStored[3]={velocity_space,velocity_space,
+                                                 pressure_space};
+    s_base.rhs.reset();
+    double *rhsStored[3] = {s_base.rhs.block(0), s_base.rhs.block(1), 
+                            s_base.rhs.block(2)};
+    // boundary conditions    
+    BoundCondFunct2D *bc[2] ={ prooject_space->GetBoundCondition(), 
+                             pressure_space->GetBoundCondition() };
+    // boundary values
+    BoundValueFunct2D * const * const BoundValue=this->NSE2D::get_example().get_bd();
+    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
+    // assemble the right hand side
+    Assemble2D_VectFE(nFESpaces, pointer_to_space, 
+                      nSqMatAssemble,rowSpace,colSpace, 
+                      nRhsAssemble, rowSpaceRhs, 
+                      nSqMatStored, nullptr, 
+                      nReMatStored, nullptr, 
+                      nRhsStored, rhsStored,pointToRhsStored, 
+                      larhs, matrix_multiplication, 
+                      projection_matrices, bc, bv);
+    // reset the space
+    TDatabase::ParamDB->VELOCITY_SPACE = vel_space;     
+  }  
 }
 
 /** ************************************************************************ */
