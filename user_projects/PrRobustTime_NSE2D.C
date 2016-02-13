@@ -82,96 +82,114 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
   
   double *MP0T = new double[];
   */
- 
-  auto computeTransposed = [](int nrow, int ncol, 
-                              double **mat)
-  {
-    double **matT= new double*[ncol];
-    for(unsigned int i=0; i<ncol; ++i)
-      matT[i] = new double[nrow];
-    for(int i=0; i<nrow; i++)
-    {
-      for (int j=0; j<ncol; j++)
-        matT[j][i] = mat[i][j];
-    }
-    return matT;
-  };
-  
-  auto multiply = [](int *rows, int *cols, 
-                     double **matA, double **matB)
-  {
-    int nrowA = rows[0];
-    int ncolA = cols[0];
-    int nrowB = rows[1];
-    int ncolB = cols[1];
-    
-    double **product = new double*[nrowA];
-    for(unsigned int i=0; i<nrowA; ++i)
-      product[i] = new double[ncolB];
-    
-    for(unsigned int i=0; i<nrowA; ++i)
-    {
-      for(unsigned int j=0; j<ncolB; ++j)
-      {
-        product[i][j] = 0;
-        for(unsigned int k=0; k<nrowB; ++k)
-        {
-          product[i][j] += matA[i][k] * matB[k][j];
-        }
-      }
-    }
-    return product;
-  };
-  // compute the transpose of the projection matrices
-  double **matP0T = computeTransposed(nrowInput[1], ncolInput[1], inputMat[1]);
-  double **matP1T = computeTransposed(nrowInput[2], ncolInput[2], inputMat[2]);
-  // compute the product matrix-matrix-transpose, 
-  int rows[2], cols[2];
-  rows[0] = nrowInput[0]; rows[1] = ncolInput[1];
-  cols[0] = ncolInput[0]; cols[1] = nrowInput[1];  
-  double **matM_matP0T = multiply(rows, cols, inputMat[0], matP0T);// M*P0^T
-  // compute the product matrix-matrix transpose
-  rows[0] = nrowInput[0]; rows[1] = ncolInput[2];
-  cols[0] = ncolInput[0]; cols[1] = nrowInput[2];  
-  double **matM_matP1T = multiply(rows, cols, inputMat[0], matP1T); // M*P1^T
-  
-  // prepare the outputMat[0] = P0 * M * P0^T
-  rows[0] = nrowInput[1]; rows[1] = nrowInput[0];
-  cols[0] = ncolInput[1]; cols[1] = nrowInput[1];
-  outputMat[0] = multiply(rows, cols, inputMat[1], matM_matP0T);
-    
-  // prepare the outputMat[1] = P0 * M * P1^T
-  rows[0] = nrowInput[1]; rows[1] = nrowInput[0];
-  cols[0] = ncolInput[1]; cols[1] = nrowInput[2];
-  outputMat[1] = multiply(rows, cols, inputMat[1], matM_matP1T);
-  
-  // prepare the outputMat[2] = P1 * M * P0^T
-  rows[0] = nrowInput[2]; rows[1] = nrowInput[0];
-  cols[0] = ncolInput[2]; cols[1] = nrowInput[1];
-  outputMat[2] = multiply(rows, cols, inputMat[2], matM_matP0T);
-  
-  // prepare the outputMat[2] = P1 * M * P1^T
-  rows[0] = nrowInput[2]; rows[1] = nrowInput[0];
-  cols[0] = ncolInput[2]; cols[1] = nrowInput[1];
-  outputMat[3] = multiply(rows, cols, inputMat[2], matM_matP1T);
-  
+ /** this lambda function compute the ABC^T
+  * @param: matA projection matrix first velocity part (special case)
+  * @param: matB mass matrix for BDM or RT which is multiplied in between
+  * @param: matC projection matrix which multiplies as transpose from right 
+  *         only for the off diagonal blocks (flag==1 & flag ==2)
+  * @param: product the resulting matrix
+  * @param: flag 0 and 3 are the cases when matA^T is multiplied from right
+  *              1 and 2 when the matC^T is multiplied from right
+  */
+ auto compute_matrix_matrix = [](std::pair<int, int> rows, std::pair<int,int>cols, 
+                                   double **matA, double **matB, double **matC, 
+                                   double **&product, int flag)
+ {
+   unsigned int nRowA = rows.first;
+   unsigned int nRowB = rows.second;
+   unsigned int nColA = cols.first;
+   unsigned int nColB = cols.second;
+   
+   if(nColB != nColA) // nColA is the nRowA of matA
+   {
+     ErrThrow("dimension mismatch ", nColB, " " , nColA);
+   }
+   // transpose of matrix A
+   int nRowProduct = nColA; // column of A; 
+   int nColProduct = nRowA; // rows of A
+   
+   for(unsigned int i=0; i<nRowA; i++)
+   {
+     for(unsigned int j=0; j<nRowA; j++)
+     {
+       double temp = 0;
+       for(unsigned int k=0; k<nRowB; k++)
+       {
+         for(unsigned int l=0; l<nRowProduct; l++)
+         {
+           if(flag == 0 || flag == 3)
+             temp += matA[i][k] * matB[k][l] * matA[j][l];
+           else
+             temp += matA[i][k] * matB[k][l] * matC[j][l];
+         }
+       }
+       product[i][j] = temp;
+     }
+   }
+   return;
+ };
   /** matrix-vecotr manipulation*/
-  auto matrix_vector_multiply = [] (double **matrix, double *rhs)
+  auto matrix_vector_multiply = [] (std::pair<int,int> size, double ***matrix, 
+                                    double *rhs, double **product)
   {
+    unsigned int nrow = size.first;
+    unsigned int ncol = size.second;
     
-  };
-  
-  /*
-  cout<<rows[0] << "  " << cols[1] << endl;
-  for(int i=0; i<rows[0]; i++)
-  {
-    for(int j=0; j<cols[1]; j++)
+    for(unsigned int i=0; i<nrow; i++)
     {
-      cout << outputMat[1][i][j] << "\t";
+      double temp = 0;
+      double temp1 = 0;
+      for(unsigned int j=0; j<ncol; j++)
+      {
+        temp += matrix[0][i][j] * rhs[j];
+        temp1 += matrix[1][i][j] * rhs[j];
+      }
+      product[0][i] = temp;
+      product[1][i] = temp1;
+    }
+    return;
+  };
+  // prepare the outputMat[0] = P0 * M * P0^T
+  std::pair<int, int> rowsArray(nrowInput[1], nrowInput[0]);
+  std::pair<int, int> colsArray(ncolInput[1], ncolInput[0]);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[0], 
+                          nullptr, outputMat[0], 0);
+  // prepare the outputMat[0] = P0 * M * P1^T
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[0], 
+                          inputMat[2], outputMat[1], 1);
+  // prepare the outputMat[0] = P1 * M * P0^T
+  rowsArray.first=nrowInput[2]; rowsArray.second=nrowInput[0];
+  colsArray.first=ncolInput[2]; rowsArray.second=ncolInput[0];
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[2], inputMat[0], 
+                          inputMat[1], outputMat[2], 2);
+  // prepare the outputMat[0] = P1 * M * P1^T
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[2], inputMat[0],
+                          nullptr, outputMat[3], 3);
+  
+  // prepare the output right hand 
+  std::pair<int,int> size (nrowInput[1], ncolInput[1]);
+  double **matrix[2];
+  matrix[0] = inputMat[1];
+  matrix[1] = inputMat[2];  
+  matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
+  /*
+  for(int i=0; i<size.first; i++)
+    cout<<i<<"\t" << outputrhs[0][i]<<"\t" << outputrhs[1][i]<<"\n";  
+    
+  for(int i=0; i<nrowInput[1]; i++)
+  {
+    for(int j=0; j<nrowInput[1]; j++)
+    {
+      cout << outputMat[0][i][j] << "\t"<< outputMat[1][i][j]<<"\t"<<
+              outputMat[2][i][j] << "\t"<< outputMat[3][i][j] << "\n";
     }
     cout <<endl;
-  }*/
+  }
+  exit(-4711);
+  */
+  
 }
+/*
 void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
                          const TFESpace2D* testSpace, double ***locMatrix)
 {
@@ -258,7 +276,7 @@ void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace,
     }
   }
 }
-
+/*
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_initial_time()
 {
@@ -302,10 +320,11 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     // assemble the right hand side separately  
     s_derived.rhsXh.reset();
     // setting the space for sign in GetSignOfThisDOF();
-    const TFESpace2D *pr_space = &this->get_projection_space();
-    const TFESpace2D *v_space = &this->Time_NSE2D::get_velocity_space();
-    const TFESpace2D * pointer_to_space[2] = { pr_space, v_space };
-    const TFESpace2D * pointer_to_space_rhs[2] = { v_space, v_space };
+    const TFESpace2D *projection = &this->get_projection_space();
+    const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
+    // pointers to the fespace
+    const TFESpace2D * pointer_to_space[2] = { projection, velocity_space };
+    const TFESpace2D * pointer_to_space_rhs[2] = { velocity_space, velocity_space };
     
     double *rhs_blocks[1] = { s_derived.rhsXh.get_entries() };
     
@@ -329,11 +348,16 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     std::vector<std::shared_ptr<FEMatrix>> modified_mass
            = s_derived.Modifed_Mass.get_blocks_uniquely();
     
+    unsigned int nSquareMatStored = 4;
+    unsigned int nSquareMatAssemb = 3;
     TSquareMatrix2D * sq_matrices_stored[4];
     sq_matrices_stored[0]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(0).get());
     sq_matrices_stored[1]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(1).get());
     sq_matrices_stored[2]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(2).get());
     sq_matrices_stored[3]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(3).get());
+    // reset the matrices
+    for(int i=0; i<nSquareMatStored; i++)
+      sq_matrices_stored[i]->reset();
     
     double *rhs_blocks_stored[2] = { s_base.rhs.block(0), 
                         s_base.rhs.block(1) };
@@ -342,27 +366,26 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(mass_block.at(0).get());
     
     sq_matrices[0]->reset();
-    std::vector<int> row_space={0, 1, 1};
-    std::vector<int> col_space={0, 0, 0};
-    std::vector<int> row_space_rhs={0};
+    std::vector<int> row_space={0, 1, 1}; // projection space, velocity space, velocity space
+    std::vector<int> col_space={0, 0, 0}; // projection spaces
+    std::vector<int> row_space_rhs={0}; // projection space 
     
     Assemble2D_VectFE(2, pointer_to_space, 3, row_space, col_space, 1, 
                       row_space_rhs, 4, sq_matrices_stored, 0, nullptr, 
                       2, rhs_blocks_stored, pointer_to_space_rhs, 
                       la_mass_rhs_vspace, matrices_reconstruction, 
                       projection_matrices, bc, bv);
-    exit(0);
-    // assemble right hand side only
-    Assemble2D_VectFE(1, pointer_to_space, 1, sq_matrices, 0, 
-                      nullptr, 1, rhs_blocks, pointer_to_space, 
-                      la_mass_rhs_vspace, 
+    
+     Assemble2D_VectFE(1, pointer_to_space, 1, sq_matrices, 0,
+                      nullptr, 1, rhs_blocks, pointer_to_space,
+                      la_mass_rhs_vspace,
                       bc, bv);
+
     
     TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
-    
     // compute the projection matrix
     this->assembleProjectionMatrix();
-    
+
     std::vector<std::shared_ptr<FEMatrix>> projBlocks
          = s_derived.ProjectionMatrix.get_blocks_uniquely();
     std::vector<std::shared_ptr<FEMatrix>> massBlocks
@@ -374,20 +397,23 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     std::shared_ptr<TMatrix> A2T(projBlocks.at(1)->GetTransposed());  
     std::shared_ptr<TMatrix> BA2T(massBlocks.at(0)->multiply(*A2T));
     std::shared_ptr<TMatrix> M01(projBlocks.at(0)->multiply(*BA2T));  
+//    M01->Print("M");
     
     std::shared_ptr<TMatrix> A1T(projBlocks.at(0)->GetTransposed());
     std::shared_ptr<TMatrix> BA1T(massBlocks.at(0)->multiply(*A1T));
     std::shared_ptr<TMatrix> M10(projBlocks.at(1)->multiply(*BA1T));
-     
-    std::shared_ptr<TMatrix> M11
-     (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
     
-    s_base.matrix.add_matrix_actives(reinterpret_cast<const FEMatrix&>(*M00), 
-                                     1.0, {{0,0}}, {false});
+    //sq_matrices_stored[1]->Print("M");
+//      
+//     std::shared_ptr<TMatrix> M11
+//      (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
+//     
+//     s_base.matrix.add_matrix_actives(reinterpret_cast<const FEMatrix&>(*M00), 
+//                                      1.0, {{0,0}}, {false});
     // multiply the projection matrix with mass matrix
     // s_derived.Modifed_Mass.multiply(s_derived.MassMatrix, s_derived.ProjectionMatrix);
     
-    exit(0);
+    //exit(0);
     /*
     // std::shared_ptr<BlockMatrix> Modifed_Mass(s.projMat.multiply(s.MassMatrix));
     
@@ -500,7 +526,7 @@ void PrRobustTime_NSE2D::assembleProjectionMatrix()
 
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_rhs()
-{/*
+{
   double tau =TDatabase::TimeDB->TIMESTEPLENGTH;
   double theta2 = TDatabase::TimeDB->THETA2;
   double theta3 = TDatabase::TimeDB->THETA3;
@@ -510,7 +536,7 @@ void PrRobustTime_NSE2D::assemble_rhs()
   System_per_grid& s_base = this->Time_NSE2D::systems.front();
   // SystemPerGrid for the member access from the current class
   SystemPerGrid& s_derived= this->Systems.front();
-  
+    /*
   if(TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
   { 
     TFEFunction2D *fefct[3] = {s_base.u.GetComponent(0), s_base.u.GetComponent(1), &s_base.p};
