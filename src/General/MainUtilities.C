@@ -3536,3 +3536,90 @@ double graddiv_parameterOseen(double hK, double nu, double b1, double b2)
   }
   return(tau);
 }
+
+void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix)
+{
+  // projection is the ansatzSpace
+  // velocity is the test space
+  int i,j, N_Rows, N_Columns;
+  double **CurrentMatrix, *MatrixRow;
+  
+  TCollection *coll = testSpace->GetCollection();
+  TBaseCell *cell = coll->GetCell(current_cell);
+  
+  TFE2D *eleAnsatz = 
+    TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(current_cell,cell));
+  TBaseFunct2D *baseFunctAnsatz = eleAnsatz->GetBaseFunct2D();
+  int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
+  int nDofAnsatz = baseFunctAnsatz->GetDimension();
+  // compute points on the reference element
+  TNodalFunctional2D *nf = eleAnsatz->GetNodalFunctional2D();
+  int nPoints;
+  double *xi, *eta;
+  nf->GetPointsForAll(nPoints, xi, eta);
+  
+  // everything needed for the velocity space (test)
+  TFE2D *eleTest = 
+    TFEDatabase2D::GetFE2D(testSpace->GetFE2D(current_cell,cell));
+  // basis function for test space
+  TBaseFunct2D *baseFunctTest = eleTest->GetBaseFunct2D();
+  int nDofTest = baseFunctTest->GetDimension();
+  
+  // id for the reference transformation
+  RefTrans2D refTransfID = eleAnsatz->GetRefTransID();
+  TFEDatabase2D::SetCellForRefTrans(cell, refTransfID);
+  
+  // number of basis functions, this is the length of the array needed to 
+  // evaluate the basis functions
+  int nBaseFunct = nDofTest*baseVectDim;
+  double uorig[nPoints][nBaseFunct];
+  double AllPointValues[nDofTest];
+  
+  for(i=1; i<=2; ++i)
+  {
+    CurrentMatrix = locMatrix[i];
+    N_Rows = nDofTest;
+    N_Columns = nDofAnsatz;
+    
+    for(j=0;j<N_Rows;j++)
+    {
+      MatrixRow = CurrentMatrix[j];
+      memset(MatrixRow, 0, SizeOfDouble*N_Columns);
+    } 
+  } 
+  
+  double **MatrixP0 = locMatrix[1];
+  double **MatrixP1 = locMatrix[2];
+  
+  for(int i=0; i<nPoints; ++i)
+  {
+    baseFunctTest->GetDerivatives(D00, xi[i], eta[i], AllPointValues);
+    TFEDatabase2D::GetOrigValues(refTransfID, xi[i], eta[i], baseFunctTest, 
+                                 coll, (TGridCell *)cell, AllPointValues, 
+                                 nullptr,nullptr, uorig[i], nullptr, nullptr );
+  }
+  double PointValuesx[nPoints* baseVectDim];
+  double PointValuesy[nPoints* baseVectDim];
+  memset(PointValuesx,0,nPoints* baseVectDim*sizeof(double));
+  memset(PointValuesy,0,nPoints* baseVectDim*sizeof(double));
+  double FunctionalValuesx[nDofAnsatz];
+  double FunctionalValuesy[nDofAnsatz];
+  
+  for(int j=0; j<nDofTest; ++j)
+  {
+    for(int k=0; k<nPoints; ++k)
+    {
+      PointValuesx[k]         = uorig[k][j];
+      PointValuesy[k+nPoints] = uorig[k][j];
+    }
+    nf->GetAllFunctionals(coll, cell, PointValuesx, FunctionalValuesx);
+    nf->GetAllFunctionals(coll, cell, PointValuesy, FunctionalValuesy);
+    
+    for(int k=0; k<nDofAnsatz; k++)
+    {
+      MatrixP0[j][k] = FunctionalValuesx[k];
+      MatrixP1[j][k] = FunctionalValuesy[k];      
+    }
+  }
+}
