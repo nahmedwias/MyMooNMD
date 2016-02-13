@@ -282,9 +282,9 @@ switch(type)
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-      this->N_Matrices = 0;
-      this->RowSpace = {};
-      this->ColumnSpace = {};
+      this->N_Matrices = 3;
+      this->RowSpace = {0,1,1}; //FIXME: check it carefully currently only fixed for right hand side
+      this->ColumnSpace = {0,0,0}; //FIXME: espeicially for the nonlinear problem
       this->N_Rhs = 1;
       this->RhsSpace = { 0 };
       this->AssembleParam = PrRobustRhs; 
@@ -2131,9 +2131,9 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
       this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-      this->N_Matrices = 1;
-      this->RowSpace = { 0 };
-      this->ColumnSpace = { 0 };
+      this->N_Matrices = 3;
+      this->RowSpace = { 0, 1, 1 };
+      this->ColumnSpace = { 0, 0, 0 };
       this->N_Rhs = 2;
       this->RhsSpace = { 0, 0 };
       this->AssembleParam = LocAssembleMass; 
