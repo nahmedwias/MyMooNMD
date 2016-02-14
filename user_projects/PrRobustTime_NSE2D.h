@@ -23,7 +23,13 @@ class PrRobustTime_NSE2D : Time_NSE2D
        * vector space
        */
       BlockVector rhsXh;
-      
+      /** @brief Modifed_Mass matrices
+       * these blocks comes from the multiplication
+       * of the MassMatrix of RT/BDM and the ProjectionMatrix
+       * matrix: 
+       * (P0*M*P0^T P0*M*P1^T )
+       * (P1*M*P0^T P1*M*P1^T )
+       */
       BlockFEMatrix Modifed_Mass;
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
@@ -43,20 +49,41 @@ class PrRobustTime_NSE2D : Time_NSE2D
     PrRobustTime_NSE2D(const TDomain& domain, Example_NSE2D& _example, 
                        int reference_id = -4711);
   
-    
+    /** @brief Assemble all the matrices and rhs before the time iterations
+     * 
+     * This includes the assembling of: Stiff_matrix, ProjectionMatrix, MassMatrix
+     * for RT/BDM elements, and the Modifed_Mass matrix which comes from the 
+     * multiplication of the projection matrix and MassMatrix of RT/BDM
+     * results in 2 by 2 square blocks
+     */
     void assemble_initial_time();
     
     // assemble the projection matrix
+    // FIXME: temporary function which is for the checking of previous working 
+    // code: delete after the complete check
     void assembleProjectionMatrix();
-    
+    /** @brief 
+     * 1. assembling the right hand side for special reconstruciton of the 
+     * test function: Pressure robust method
+     * 2. scaling of the B-blocks due to time stepping
+     * this function will prepare the right hand side during the time 
+     * discretization
+     */
     void assemble_rhs();
-    
-    void AssembleRHS_Only();
-    
+    /** @brief Assemble the system matrix
+     * This function will prepare the system which will be 
+     * used for solvers
+     */
     void assemble_system_matrix();
-    
+    /** @brief solve the system*/
     void solve();
-    
+    /** @brief descale matrices
+     * This function will reset all A-blocks due to the addition
+     * of mass matrices and scaling factor
+     * during the function call PrRobustTime_NSE2D::assemble_system_matrix()
+     */
+    void descaleMatrices();
+    // post-processing 
     void output(int m);
     
     

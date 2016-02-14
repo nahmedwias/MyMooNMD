@@ -1,6 +1,7 @@
 #include <PrRobustTime_NSE2D.h>
 #include <Database.h>
 #include <Assemble2D.h>
+#include <DirectSolver.h>
 
 PrRobustTime_NSE2D::SystemPerGrid::SystemPerGrid(const Example_NSE2D& example,
       TCollection& coll, const TFESpace2D& velocity_space, 
@@ -106,7 +107,7 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
    }
    // transpose of matrix A
    int nRowProduct = nColA; // column of A; 
-   int nColProduct = nRowA; // rows of A
+   //int nColProduct = nRowA; // rows of A
    
    for(unsigned int i=0; i<nRowA; i++)
    {
@@ -186,97 +187,9 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
     cout <<endl;
   }
   exit(-4711);
-  */
-  
+  */  
 }
-/*
-void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
-                         const TFESpace2D* testSpace, double ***locMatrix)
-{
-  // projection is the ansatzSpace
-  // velocity is the test space
-  int i,j, N_Rows, N_Columns;
-  double **CurrentMatrix, *MatrixRow;
-  
-  TCollection *coll = testSpace->GetCollection();
-  TBaseCell *cell = coll->GetCell(current_cell);
-  
-  TFE2D *eleAnsatz = 
-    TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(current_cell,cell));
-  TBaseFunct2D *baseFunctAnsatz = eleAnsatz->GetBaseFunct2D();
-  int baseVectDim = baseFunctAnsatz->GetBaseVectDim();
-  int nDofAnsatz = baseFunctAnsatz->GetDimension();
-  // compute points on the reference element
-  TNodalFunctional2D *nf = eleAnsatz->GetNodalFunctional2D();
-  int nPoints;
-  double *xi, *eta;
-  nf->GetPointsForAll(nPoints, xi, eta);
-  
-  // everything needed for the velocity space (test)
-  TFE2D *eleTest = 
-    TFEDatabase2D::GetFE2D(testSpace->GetFE2D(current_cell,cell));
-  // basis function for test space
-  TBaseFunct2D *baseFunctTest = eleTest->GetBaseFunct2D();
-  int nDofTest = baseFunctTest->GetDimension();
-  
-  // id for the reference transformation
-  RefTrans2D refTransfID = eleAnsatz->GetRefTransID();
-  TFEDatabase2D::SetCellForRefTrans(cell, refTransfID);
-  
-  // number of basis functions, this is the length of the array needed to 
-  // evaluate the basis functions
-  int nBaseFunct = nDofTest*baseVectDim;
-  double uorig[nPoints][nBaseFunct];
-  double AllPointValues[nDofTest];
-  
-  for(i=1; i<=2; ++i)
-  {
-    CurrentMatrix = locMatrix[i];
-    N_Rows = nDofTest;
-    N_Columns = nDofAnsatz;
-    
-    for(j=0;j<N_Rows;j++)
-    {
-      MatrixRow = CurrentMatrix[j];
-      memset(MatrixRow, 0, SizeOfDouble*N_Columns);
-    } 
-  } 
-  
-  double **MatrixP0 = locMatrix[1];
-  double **MatrixP1 = locMatrix[2];
-  
-  for(int i=0; i<nPoints; ++i)
-  {
-    baseFunctTest->GetDerivatives(D00, xi[i], eta[i], AllPointValues);
-    TFEDatabase2D::GetOrigValues(refTransfID, xi[i], eta[i], baseFunctTest, 
-                                 coll, (TGridCell *)cell, AllPointValues, 
-                                 nullptr,nullptr, uorig[i], nullptr, nullptr );
-  }
-  double PointValuesx[nPoints* baseVectDim];
-  double PointValuesy[nPoints* baseVectDim];
-  memset(PointValuesx,0,nPoints* baseVectDim*sizeof(double));
-  memset(PointValuesy,0,nPoints* baseVectDim*sizeof(double));
-  double FunctionalValuesx[nDofAnsatz];
-  double FunctionalValuesy[nDofAnsatz];
-  
-  for(int j=0; j<nDofTest; ++j)
-  {
-    for(int k=0; k<nPoints; ++k)
-    {
-      PointValuesx[k]         = uorig[k][j];
-      PointValuesy[k+nPoints] = uorig[k][j];
-    }
-    nf->GetAllFunctionals(coll, cell, PointValuesx, FunctionalValuesx);
-    nf->GetAllFunctionals(coll, cell, PointValuesy, FunctionalValuesy);
-    
-    for(int k=0; k<nDofAnsatz; k++)
-    {
-      MatrixP0[j][k] = FunctionalValuesx[k];
-      MatrixP1[j][k] = FunctionalValuesy[k];      
-    }
-  }
-}
-/*
+
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_initial_time()
 {
@@ -296,146 +209,135 @@ void PrRobustTime_NSE2D::assemble_initial_time()
   
   System_per_grid& s_base = this->Time_NSE2D::systems.front();
   // assemble mass matrix using vector space  
-  for(auto &s_derived: this->Systems)
+  for(SystemPerGrid &s_derived : this->Systems)
   {
     TFEFunction2D *fefct[3] = {this->Time_NSE2D::systems.front().u.GetComponent(0), 
                                this->Time_NSE2D::systems.front().u.GetComponent(1), 
                                &this->Time_NSE2D::systems.front().p};
     // local assemble routine
     LocalAssembling2D la_mass_rhs_vspace(RECONSTR_MASS, fefct, 
-                                   this->Time_NSE2D::get_example().get_coeffs());
-    // boundary conditions
-    BoundCondFunct2D *bc[2] = 
-       { this->Time_NSE2D::systems.front().velocity_space.GetBoundCondition(),
-         this->get_projection_space().GetBoundCondition() };
-    
-    // change the velocity space to assign the correct sign 
-    unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
-    TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
-    
-    BoundValueFunct2D * const * const BoundValue 
-       = this->Time_NSE2D::get_example().get_bd();
-    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
-      
+                                   this->Time_NSE2D::get_example().get_coeffs());    
     // assemble the right hand side separately  
     s_derived.rhsXh.reset();
     // setting the space for sign in GetSignOfThisDOF();
-    const TFESpace2D *projection = &this->get_projection_space();
+    unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
+    TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
+    // prepare everything which is needed for assembling matrices and 
+    // the right hand side
+    const int nFESpaces = 2;
+    const TFESpace2D *project_space  = &this->get_projection_space();
     const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
+    const TFESpace2D *pressure_space = &this->Time_NSE2D::get_pressure_space();
     // pointers to the fespace
-    const TFESpace2D * pointer_to_space[2] = { projection, velocity_space };
-    const TFESpace2D * pointer_to_space_rhs[2] = { velocity_space, velocity_space };
+    const TFESpace2D * pointer_to_space[2] = { project_space, velocity_space };
     
-    double *rhs_blocks[1] = { s_derived.rhsXh.get_entries() };
+    const int nSqMatAssemble=3;
+    // const int nReMatAssemble = 0;
+    const int nRhsAssemble = 1;
+    //NOTE:for the assembling of matrices or right hand side, space numbers
+    //are passed as array: this corresponds to the array "pointer_to_space"
+    std::vector<int> rowSpace ={0, 1, 1}; // row space for assembling matrices
+    std::vector<int> colSpace ={0, 0, 0}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
     
-    std::vector<std::shared_ptr<FEMatrix>> mass_block
-         = s_derived.MassMatrix.get_blocks_uniquely();
-    // BDM/RT mass matrix
-    FEMatrix M(&s_derived.projection_space, 
-               &s_derived.projection_space);
-    
-    FEMatrix P0(&this->Time_NSE2D::get_velocity_space(), 
-                &s_derived.projection_space);
-    
-    FEMatrix P1(&this->Time_NSE2D::get_velocity_space(), 
-                &s_derived.projection_space);
-    
-    TSquareMatrix2D * sq_matrices_assem[3];
-    sq_matrices_assem[0] = reinterpret_cast<TSquareMatrix2D*>(&M);
-    sq_matrices_assem[1] = reinterpret_cast<TSquareMatrix2D*>(&P0);
-    sq_matrices_assem[2] = reinterpret_cast<TSquareMatrix2D*>(&P1);
-    
+    // prepare everything for storing the matrices and rhs
+    // this will be used latter inside the class
+    const int nSqMatStored = 4;
+    TSquareMatrix2D * sqMatricesStored[4];
+    // 
     std::vector<std::shared_ptr<FEMatrix>> modified_mass
            = s_derived.Modifed_Mass.get_blocks_uniquely();
-    
-    unsigned int nSquareMatStored = 4;
-    unsigned int nSquareMatAssemb = 3;
-    TSquareMatrix2D * sq_matrices_stored[4];
-    sq_matrices_stored[0]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(0).get());
-    sq_matrices_stored[1]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(1).get());
-    sq_matrices_stored[2]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(2).get());
-    sq_matrices_stored[3]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(3).get());
+    //
+    sqMatricesStored[0]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(0).get());
+    sqMatricesStored[1]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(1).get());
+    sqMatricesStored[2]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(2).get());
+    sqMatricesStored[3]=reinterpret_cast<TSquareMatrix2D*>(modified_mass.at(3).get());
     // reset the matrices
-    for(int i=0; i<nSquareMatStored; i++)
-      sq_matrices_stored[i]->reset();
+    for(int i=0; i<nSqMatStored; i++)
+            sqMatricesStored[i]->reset();
     
-    double *rhs_blocks_stored[2] = { s_base.rhs.block(0), 
-                        s_base.rhs.block(1) };
-    
-    TSquareMatrix2D * sq_matrices[1];
-    sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(mass_block.at(0).get());
-    
-    sq_matrices[0]->reset();
-    std::vector<int> row_space={0, 1, 1}; // projection space, velocity space, velocity space
-    std::vector<int> col_space={0, 0, 0}; // projection spaces
-    std::vector<int> row_space_rhs={0}; // projection space 
-    
-    Assemble2D_VectFE(2, pointer_to_space, 3, row_space, col_space, 1, 
-                      row_space_rhs, 4, sq_matrices_stored, 0, nullptr, 
-                      2, rhs_blocks_stored, pointer_to_space_rhs, 
-                      la_mass_rhs_vspace, matrices_reconstruction, 
+    const int nReMatStored = 0;
+    int nRhsStored = 2;
+    const TFESpace2D * pointToRhsStored[3]={velocity_space,velocity_space,
+                                                 pressure_space};
+    double *rhsStored[3] = {s_base.rhs.block(0), s_base.rhs.block(1), 
+                            s_base.rhs.block(2)};
+    s_base.rhs.reset();
+    // boundary conditions    
+    BoundCondFunct2D *bc[2] ={ project_space->GetBoundCondition(), 
+                             pressure_space->GetBoundCondition() };
+    // boundary values
+    BoundValueFunct2D * const * const BoundValue=this->Time_NSE2D::get_example().get_bd();
+    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
+    // assemble the correspoding matrices and right hand side
+    Assemble2D_VectFE(nFESpaces, pointer_to_space, 
+                      nSqMatAssemble, rowSpace, colSpace, 
+                      nRhsAssemble, rowSpaceRhs, 
+                      nSqMatStored, sqMatricesStored, 
+                      nReMatStored, nullptr, 
+                      nRhsStored, rhsStored,pointToRhsStored, 
+                      la_mass_rhs_vspace, 
+                      matrices_reconstruction, nullptr,
                       projection_matrices, bc, bv);
     
-     Assemble2D_VectFE(1, pointer_to_space, 1, sq_matrices, 0,
-                      nullptr, 1, rhs_blocks, pointer_to_space,
-                      la_mass_rhs_vspace,
-                      bc, bv);
-
-    
+    // commit this line when the line below is tested
     TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
-    // compute the projection matrix
-    this->assembleProjectionMatrix();
-
-    std::vector<std::shared_ptr<FEMatrix>> projBlocks
-         = s_derived.ProjectionMatrix.get_blocks_uniquely();
-    std::vector<std::shared_ptr<FEMatrix>> massBlocks
+    // sqMatricesStored[0]->Print("M");exit(0);
+    // this piece of code is to check the old routines
+    /*{
+      double *rhs_blocks[1] = { s_derived.rhsXh.get_entries() };
+      
+      std::vector<std::shared_ptr<FEMatrix>> mass_block
            = s_derived.MassMatrix.get_blocks_uniquely();
+          
+      TSquareMatrix2D * sq_matrices[1];
+      sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(mass_block.at(0).get());
+      
+      sq_matrices[0]->reset();
+       Assemble2D_VectFE(1, pointer_to_space, 1, sq_matrices, 0,
+                        nullptr, 1, rhs_blocks, pointer_to_space,
+                        la_mass_rhs_vspace,
+                        bc, bv);
+      
+      
+      TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
+      // compute the projection matrix
+      this->assembleProjectionMatrix();
+      
+      std::vector<std::shared_ptr<FEMatrix>> projBlocks
+           = s_derived.ProjectionMatrix.get_blocks_uniquely();
+      std::vector<std::shared_ptr<FEMatrix>> massBlocks
+             = s_derived.MassMatrix.get_blocks_uniquely();
+      
+      std::shared_ptr<const TMatrix> M00
+       (projBlocks.at(0)->multiply_with_transpose_from_right(*massBlocks.at(0)));
+      
+      // M00->Print("M");exit(0);
+      std::shared_ptr<TMatrix> A2T(projBlocks.at(1)->GetTransposed());  
+      std::shared_ptr<TMatrix> BA2T(massBlocks.at(0)->multiply(*A2T));
+      std::shared_ptr<TMatrix> M01(projBlocks.at(0)->multiply(*BA2T));  
+      
+      std::shared_ptr<TMatrix> A1T(projBlocks.at(0)->GetTransposed());
+      std::shared_ptr<TMatrix> BA1T(massBlocks.at(0)->multiply(*A1T));
+      std::shared_ptr<TMatrix> M10(projBlocks.at(1)->multiply(*BA1T));
+      
+      std::shared_ptr<TMatrix> M11
+        (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
+      // projBlocks.at(1)->PrintFull("M");exit(0);
+      // s_derived.rhsXh.print("r");exit(0);
     
-    std::shared_ptr<const TMatrix> M00
-     (projBlocks.at(0)->multiply_with_transpose_from_right(*massBlocks.at(0)));
-    
-    std::shared_ptr<TMatrix> A2T(projBlocks.at(1)->GetTransposed());  
-    std::shared_ptr<TMatrix> BA2T(massBlocks.at(0)->multiply(*A2T));
-    std::shared_ptr<TMatrix> M01(projBlocks.at(0)->multiply(*BA2T));  
-//    M01->Print("M");
-    
-    std::shared_ptr<TMatrix> A1T(projBlocks.at(0)->GetTransposed());
-    std::shared_ptr<TMatrix> BA1T(massBlocks.at(0)->multiply(*A1T));
-    std::shared_ptr<TMatrix> M10(projBlocks.at(1)->multiply(*BA1T));
-    
-    //sq_matrices_stored[1]->Print("M");
-//      
-//     std::shared_ptr<TMatrix> M11
-//      (projBlocks.at(1)->multiply_with_transpose_from_right(*massBlocks.at(0)));
-//     
-//     s_base.matrix.add_matrix_actives(reinterpret_cast<const FEMatrix&>(*M00), 
-//                                      1.0, {{0,0}}, {false});
-    // multiply the projection matrix with mass matrix
-    // s_derived.Modifed_Mass.multiply(s_derived.MassMatrix, s_derived.ProjectionMatrix);
-    
-    //exit(0);
-    /*
-    // std::shared_ptr<BlockMatrix> Modifed_Mass(s.projMat.multiply(s.MassMatrix));
-    
-    s_derived.projMat.apply(s_derived.rhsXh,this->Time_NSE2D::systems.front().rhs);
-    */
-  //  /**
-  //   * checking the new block matrix
-  //   */
-  //  s_derived.Modifed_Mass.multiply(s_derived.MassMatrix, s_derived.projMat);
-  }
+    }*/
+  }// endof assembling for all grids
   
-  //Output::print<1>("leaving the assemble_initial_time PrRobustTime_NSE2D");
   // copy the modified rhs to the old_rhs_modified for the right hand 
   // side at the initial time
-  //this->old_rhs_modified = this->Time_NSE2D::systems.front().rhs;
-  
+  this->old_rhs_modified = this->Time_NSE2D::systems.front().rhs;
+  this->old_solution = s_base.solution;
 }
 
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assembleProjectionMatrix()
-{
-  
+{  
   SystemPerGrid &s_derived = this->Systems.front();
   
   std::vector<std::shared_ptr<FEMatrix>> blocks 
@@ -536,154 +438,227 @@ void PrRobustTime_NSE2D::assemble_rhs()
   System_per_grid& s_base = this->Time_NSE2D::systems.front();
   // SystemPerGrid for the member access from the current class
   SystemPerGrid& s_derived= this->Systems.front();
-    /*
+  
   if(TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
   { 
     TFEFunction2D *fefct[3] = {s_base.u.GetComponent(0), s_base.u.GetComponent(1), &s_base.p};
     // assembling the right hand side at current time step     
-    LocalAssembling2D la_rhs(TNSE2D_Rhs, fefct,
-                           this->example.get_coeffs());
-    // assemble the standard right hand side
-    this->Time_NSE2D::AssembleRhs(la_rhs, s_base.rhs);
+    LocalAssembling2D larhs(RECONSTR_GALERKIN_Rhs, fefct,
+                          this->Time_NSE2D::get_example().get_coeffs());
+    unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
+    TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
+    // assembling the right hand side
+    // for this one have to assemble the projection matrices as well
+    // FIXME: try to assemble the projection matrices separately in order 
+    // to assemble the right hand side for the pressure robust method
+    // prepare everything needed for the right hand side assembling
+    s_derived.rhsXh.reset();
+    s_base.rhs.reset();
+    const int nFESpaces = 2;
+    const TFESpace2D *prooject_space=&this->get_projection_space();
+    const TFESpace2D *velocity_space=&this->Time_NSE2D::get_velocity_space();
+    const TFESpace2D *pressure_space=&this->Time_NSE2D::get_pressure_space();
+    // pointers to the fespace
+    const TFESpace2D * pointer_to_space[2] = {prooject_space, velocity_space};
+    // matrices to assemble in order to assemble the right hand 
+    // side of the method
+    const int nSqMatAssemble = 3;
+    // const int nReMatAssemble = 0;
     
+    const int nRhsAssemble = 1;    
+    //NOTE:for the assembling of matrices or right hand side, space numbers
+    //are passed as array: this corresponds to the array "pointer_to_space"
+    std::vector<int> rowSpace ={0,1,1}; // row space for assembling matrices
+    std::vector<int> colSpace ={0,0,0}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
+    
+    // prepare everything for storing the matrices and rhs
+    // this will be used latter inside the class
+    const int nSqMatStored = 0;
+    const int nReMatStored = 0;
+    int nRhsStored = 2;
+    const TFESpace2D * pointToRhsStored[3]={velocity_space,velocity_space,
+                                                 pressure_space};
+    s_base.rhs.reset();
+    double *rhsStored[3] = {s_base.rhs.block(0), s_base.rhs.block(1), 
+                            s_base.rhs.block(2)};
+    // boundary conditions    
+    BoundCondFunct2D *bc[3] ={ velocity_space->GetBoundCondition(), 
+                             velocity_space->GetBoundCondition(), 
+                             pressure_space->GetBoundCondition() };
+    // boundary values
+    BoundValueFunct2D * const * const BoundValue=this->Time_NSE2D::get_example().get_bd();
+    BoundValueFunct2D *bv[3] = {BoundValue[0], BoundValue[1], BoundValue[2] };
+    // assemble the right hand side
+    Assemble2D_VectFE(nFESpaces, pointer_to_space, 
+                      nSqMatAssemble,rowSpace,colSpace, 
+                      nRhsAssemble, rowSpaceRhs, 
+                      nSqMatStored, nullptr, 
+                      nReMatStored, nullptr, 
+                      nRhsStored, rhsStored,pointToRhsStored, 
+                      larhs, nullptr, MatVectMult,
+                      projection_matrices, bc, bv);
+    TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
+    // copy nonactive
     s_base.solution.copy_nonactive(s_base.rhs);
     // assemble the right hand side vector 
-    this->AssembleRHS_Only();
     
-    // modified Mass Matrix
-//     std::shared_ptr<BlockMatrixNSE2D::BlockMatrix> 
-//       Modifed_Mass(s_derived.projMat.multiply(s_derived.MassMatrix));
-    
-    s_derived.projMat.apply(s_derived.rhsXh, this->Time_NSE2D::systems.front().rhs);
-  
     // scale the current right hand side with tau*theta4
     s_base.rhs.scaleActive(tau*theta4);
     // add right hand side from the previous time step, which 
     // is scaled by theta3*tau
     s_base.rhs.addScaledActive(this->old_rhs_modified, tau*theta3);
-    
+        
     // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
     // next we want to set old_rhs to f^k (to be used in the next time step)
     this->old_rhs_modified.addScaledActive(s_base.rhs, -1./(tau*theta3));
     this->old_rhs_modified.scaleActive(-theta3/theta4);
+    // scale actives in each block
+    double factor = -tau*theta2;
+    s_base.matrix.scale_blocks_actives(factor, {{0,0},{0,1},{1,0},{1,1}});
+    // add blocks from the mass matrix to the current matrix
+    const FEMatrix& MFM00 = *s_derived.Modifed_Mass.get_blocks().at(0).get();    
+    s_base.matrix.add_matrix_actives(MFM00, 1.0, {{0,0}}, {false});
     
-    // from now on: multiply the M and A blocks with previous solution
-    // and add to the right hand side
-    // One can use "applyScaledAddActive" if the fespaces are known
-    s_derived.Modifed_Mass.BlockMatrix::apply_scaled_add(s_base.solution,
-                                                s_base.rhs, 1.0);
+    const FEMatrix& MFM01 = *s_derived.Modifed_Mass.get_blocks().at(1).get();    
+    s_base.matrix.add_matrix_actives(MFM01, 1.0, {{0,1}}, {false});
     
-    s_base.matrix.applyScaledAddActive(s_base.solution.get_entries(), 
-                                  s_base.rhs.get_entries(), -tau*theta2);
-    s_base.rhs.copy_nonactive(s_base.solution);
+    const FEMatrix& MFM10 = *s_derived.Modifed_Mass.get_blocks().at(2).get();    
+    s_base.matrix.add_matrix_actives(MFM10, 1.0, {{1,0}}, {false});
+    
+    const FEMatrix& MFM11 = *s_derived.Modifed_Mass.get_blocks().at(3).get();    
+    s_base.matrix.add_matrix_actives(MFM11, 1.0, {{1,1}}, {false});
+    
+    // multiplying matrix with the old_solution vector
+    // FIXME FInd other solution than this submatrix method.
+    s_base.matrix.apply_scaled_submatrix(old_solution, s_base.rhs, 2, 2, 1.0);
+    
+    // restore the matrix by subtracting the mass matrix and scale by 1./factor
+    factor = 1./factor;
+    s_base.matrix.add_matrix_actives(MFM00, -1.0, {{0,0}},{false});
+    s_base.matrix.add_matrix_actives(MFM01, -1.0, {{0,1}},{false});
+    s_base.matrix.add_matrix_actives(MFM10, -1.0, {{1,0}},{false});
+    s_base.matrix.add_matrix_actives(MFM11, -1.0, {{1,1}},{false});
+    // rescale now 
+    s_base.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    
     // scaling the B blocks with current time step length
-    for(System_per_grid &s : this->Time_NSE2D::systems)
+    // scale the BT blocks with time step length
+    for(System_per_grid& s : this->Time_NSE2D::systems)
     {
-      if(tau != this->Time_NSE2D::oldtau)
+      if(tau != oldtau)
       {
-        double factor = tau;
-        
-        if(this->Time_NSE2D::oldtau != 0.0)
+        // TODO: change the factor to be THETA1*tau;
+        factor = /*TDatabase::TimeDB->THETA1**/tau;
+        if(this->oldtau != 0.0)
         {
           factor /= this->oldtau;
           Output::print<1>("change in tau", this->oldtau, "->", tau);
         }
-        s.matrix.get_BT_block(0)->operator *=(factor);
-        s.matrix.get_BT_block(1)->operator *=(factor);
-        if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT >0 )
+        // scale the BT transposed blocks with the current time step
+        s.matrix.scale_blocks(factor, {{0,2}, {1,2}});      
+        if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
         {
-          s.matrix.get_B_block(0)->operator*=(factor);
-          s.matrix.get_B_block(1)->operator*=(factor);
+          s.matrix.scale_blocks(factor, {{2,0}, {2,1}});
         }
-        Output::print<1>("NOTE: scaling in the B-blocks have to be checked",
-                      "PrRobustTime_NSE2D " );
       }
     }
-    this->Time_NSE2D::oldtau= 0.0;
+    this->Time_NSE2D::oldtau= tau;
   }
   else
   {
     this->Time_NSE2D::assemble_rhs();
   }
-  Output::print<3>("leaving the assemble_rhs PrRobustTime_NSE2D");*/
+  s_base.rhs.copy_nonactive(s_base.solution);
+  Output::print<3>("leaving the assemble_rhs PrRobustTime_NSE2D");
 }
-
-/**************************************************************************** */
-void PrRobustTime_NSE2D::AssembleRHS_Only()
-{
-  /*TFEFunction2D *fe_functions[2] = 
-     { this->Time_NSE2D::systems.front().u.GetComponent(0), 
-       this->Time_NSE2D::systems.front().u.GetComponent(1) };
-  // local assemble      
-  LocalAssembling2D larhs(RECONSTR_GALERKIN_Rhs, fe_functions,
-                          this->Time_NSE2D::get_example().get_coeffs());
-  
-  BoundCondFunct2D *bc[2] = { this->get_projection_space().GetBoundCondition(),
-                              this->get_projection_space().GetBoundCondition() };
-  
-  BoundValueFunct2D * const * const BoundValue 
-       = this->Time_NSE2D::get_example().get_bd();
-  BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
-  
-  const TFESpace2D *v_space = &this->get_projection_space();
-  const TFESpace2D * pointer_to_space[1] = { v_space };
-  
-  // assemble the right hand side separately  
-  this->Systems.front().rhsXh.reset();
-  
-  // setting the space for sign in GetSignOfThisDOF();
-  unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
-  TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
-  
-  double *rhs_blocks[1] = { this->Systems.front().rhsXh.get_entries() };
-  
-  // assemble right hand side only
-  Assemble2D_VectFE(1, pointer_to_space, 0, nullptr, 0, 
-                    nullptr, 1, rhs_blocks, pointer_to_space, larhs, 
-                    bc, bv);
-  TDatabase::ParamDB->VELOCITY_SPACE = vel_space;*/
-}
-
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_system_matrix()
 {
- /* double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
   double factor = tau*TDatabase::TimeDB->THETA1;
-  System_per_grid& s_base = this->Time_NSE2D::systems.front();    
+  int i=0;
   if(TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
   {
-    SystemPerGrid& s_derived = this->Systems.front();
-    s_base.matrix.scaleActive(factor);
-    s_base.matrix.addScaledActive(s_derived.Modifed_Mass,1.0);
+    for(System_per_grid& s_base : this->systems)
+    {
+      s_base.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+      const FEMatrix& MFM00 = *this->Systems[i].Modifed_Mass.get_blocks().at(0).get();
+      s_base.matrix.add_matrix_actives(MFM00, 1.0, {{0,0}}, {false});
+      
+      const FEMatrix& MFM01 = *this->Systems[i].Modifed_Mass.get_blocks().at(1).get();    
+      s_base.matrix.add_matrix_actives(MFM01, 1.0, {{0,1}}, {false});
+      
+      const FEMatrix& MFM10 = *this->Systems[i].Modifed_Mass.get_blocks().at(2).get();    
+      s_base.matrix.add_matrix_actives(MFM10, 1.0, {{1,0}}, {false});
+      
+      const FEMatrix& MFM11 = *this->Systems[i].Modifed_Mass.get_blocks().at(3).get();    
+      s_base.matrix.add_matrix_actives(MFM11, 1.0, {{1,1}}, {false});
+      i++;
+    }
   }
   else
   {
     this->Time_NSE2D::assemble_system();
-    // s_base.matrix.scaleActive(factor);
-    // s_base.matrix.addScaledActive(s_base.Mass_Matrix,1.0);    
   }
-  Output::print<3>("System matrix in PrRobustTime_NSE2D is assembled");*/
+  Output::print<3>("System matrix in PrRobustTime_NSE2D is assembled");
 }
 
 /**************************************************************************** */
 void PrRobustTime_NSE2D::solve()
-{/*
-  System_per_grid& s_base = this->Time_NSE2D::systems.front();
-
-  if((TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE != 5)
-    || (TDatabase::ParamDB->SOLVER_TYPE !=1) )
+{
+  if(TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
   {
-    // s_base.Solve(s_base.solution.get_entries(), 
-    //                    s_base.rhs.get_entries());
+    System_per_grid& s = this->systems.front();
+    if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
+      || (TDatabase::ParamDB->SOLVER_TYPE !=1 ))
+    {
+      if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+        ErrThrow("only the direct solver is supported currently");
+     
+      /// @todo consider storing an object of DirectSolver in this class
+      DirectSolver direct_solver(s.matrix, 
+                                 DirectSolver::DirectSolverTypes::umfpack);
+      direct_solver.solve(s.rhs, s.solution);
+    }
+    else
+      ErrThrow("Multigrid is not tested yet");
+  
+    this->descaleMatrices();
+  }
+  else
     this->Time_NSE2D::solve();
-  }*/
+  
+  Output::print<3>("System matrix in PrRobustTime_NSE2D is solved");
+}
+
+/**************************************************************************** */
+void PrRobustTime_NSE2D::descaleMatrices()
+{
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double factor = tau*TDatabase::TimeDB->THETA1;  
+  int i=0;
+  for(System_per_grid& s : this->systems)
+  {
+    const FEMatrix& MFM00 = *this->Systems[i].Modifed_Mass.get_blocks().at(0).get();
+    const FEMatrix& MFM01 = *this->Systems[i].Modifed_Mass.get_blocks().at(1).get();
+    const FEMatrix& MFM10 = *this->Systems[i].Modifed_Mass.get_blocks().at(2).get();
+    const FEMatrix& MFM11 = *this->Systems[i].Modifed_Mass.get_blocks().at(3).get();
+    
+    s.matrix.add_matrix_actives(MFM00, -1.0, {{0,0}}, {false});
+    s.matrix.add_matrix_actives(MFM01, -1.0, {{0,1}}, {false});
+    s.matrix.add_matrix_actives(MFM10, -1.0, {{1,0}}, {false});
+    s.matrix.add_matrix_actives(MFM11, -1.0, {{1,1}}, {false});
+    s.matrix.scale_blocks_actives(1./factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    i++;
+  }  
 }
 
 /**************************************************************************** */
 void PrRobustTime_NSE2D::output(int m)
 {
-  /*int im=0;
-  this->Time_NSE2D::output(m, im);*/
+  int im=0;
+  this->Time_NSE2D::output(m, im);
 }
 
 
