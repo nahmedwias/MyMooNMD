@@ -1,7 +1,5 @@
-// Navier-Stokes problem, Poiseuille-Problem
-// 
-// u(x,y) = (sin(t)*sin(Pi*x)*sin(Pi*y), sin(t)*cos(Pi*x)*cos(Pi*y))
-// p(x,y) = sin(t)*(sin(Pi*x)+cos(Pi*y)-2/Pi)
+// transient Stokes: potential flow example
+// U = grad phi, phi = x*x - y*y
 
 void ExampleFile()
 {
@@ -28,7 +26,8 @@ void InitialU2(double x, double y, double *values)
 
 void InitialP(double x, double y, double *values)
 {
-  values[0] = x*x - y*y;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  values[0] = t*(x*x - y*y);
 }
 
 
@@ -56,7 +55,8 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] =  x*x - y*y;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  values[0] =  (x*x - y*y);
   values[1] =  2.*x;
   values[2] = -2.*y;
   values[3] =  0;
@@ -68,6 +68,7 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double t, BoundCond &cond)
 {
   cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
