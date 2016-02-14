@@ -10326,7 +10326,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
            int n_matrices_stored, TMatrix2D** matrices_stored, 
            int n_rhs_stored, double** rhs_stored, const TFESpace2D** ferhs_stored,
            LocalAssembling2D& la_assmble, ManipulateMatrices manipulateMatrices,
-           ProjectionMatrix projection_matrix,
+           MatrixVector matrixvector, ProjectionMatrix projection_matrix,
            BoundCondFunct2D** BoundaryConditions, 
            BoundValueFunct2D * const * const BoundaryValues)
 {
@@ -10596,10 +10596,21 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     projection_matrix(icell, pr_space, ve_space, LocMatrices_assemble);
     
     // manipulate matrices, matrix matrix multiplication
-    manipulateMatrices(LocMatrices_assemble, nrowInput, ncolInput, 
+    if(manipulateMatrices != nullptr)
+    {
+      manipulateMatrices(LocMatrices_assemble, nrowInput, ncolInput, 
                        LocMatrices_stored, rowOutpu, colOutput, 
                        LocRhs_assemble, ndimInput, 
                        LocRhs_stored, ndimOutput);
+    }
+    if(matrixvector != nullptr)
+    {
+      //double*** inputMat, std::pair< int, int > size,
+      //           double* inputRhs, double** outputRhs
+      std::pair<int,int> size(nrowInput[1], ncolInput[1]);
+      matrixvector(LocMatrices_assemble, size, LocRhs_assemble[0], LocRhs_stored);
+      //cout<<"matrixvector"<<endl;exit(0);
+    }
    
   /*
    cout<<nrowInput[2] << "  " << nrowInput[1] << endl;

@@ -170,8 +170,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
            int n_matrices_stored, TMatrix2D** matrices_stored, int n_rhs_stored,
            double** rhs_stored, const TFESpace2D** ferhs_stored,
            LocalAssembling2D& la_assmble, 
-           ManipulateMatrices manipulateMatrices,
-           ProjectionMatrix projection_matrix,
+           ManipulateMatrices manipulateMatrices, MatrixVector matrixvector,
+           ProjectionMatrix projection_matrix, 
            BoundCondFunct2D** BoundaryConditions, 
            BoundValueFunct2D * const * const BoundaryValues);
 
