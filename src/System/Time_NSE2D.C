@@ -242,6 +242,23 @@ void Time_NSE2D::get_velocity_pressure_orders(std::pair< int, int > &velo_pres_o
   
   Output::print("velocity space", setw(10), velo_pres_order.first);
   Output::print("pressure space", setw(10), velo_pres_order.second);
+  
+  // projection spaces for reconstructions
+  switch(TDatabase::ParamDB->VELOCITY_SPACE)
+  {
+    case 2: // BDM2
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 22:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1012;
+      break;
+    case 3:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1013;
+      break;
+    case 4:
+      TDatabase::ParamDB->PROJECTION_SPACE = 1014;
+      break;
+  }
 }
 
 /**************************************************************************** */
