@@ -170,6 +170,9 @@ double graddiv_parameterOseen(double hK, double nu, double b1, double b2);
 void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
                          const TFESpace2D* testSpace, double ***locMatrix);
 
+void MatVectMult(double*** inputMat, std::pair< int, int > size,
+                 double* inputRhs, double** outputRhs);
+
 #ifdef __3D__
 void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1, 
                                 TFEFunction3D *u2, TFEFunction3D *u3,

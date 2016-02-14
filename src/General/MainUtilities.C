@@ -3619,7 +3619,33 @@ void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace,
     for(int k=0; k<nDofAnsatz; k++)
     {
       MatrixP0[j][k] = FunctionalValuesx[k];
-      MatrixP1[j][k] = FunctionalValuesy[k];      
+      MatrixP1[j][k] = FunctionalValuesy[k];
     }
+  }
+}
+void MatVectMult(double ***inputMat, std::pair<int,int>size, double *inputRhs, 
+                 double **outputRhs)
+{
+  unsigned int nrow = size.first;
+  unsigned int ncol = size.second;
+  
+  for(unsigned int i=0; i<nrow; i++)
+  {
+    double temp = 0;
+    double temp1 = 0;
+    for(unsigned int j=0; j<ncol; j++)
+    { //FIXME the difference here is the number of 
+      // matrices: currently even in the steady state case
+      // three matrices are allocated but only two of them
+      // are assembled namly the inputMat[1] and inputMat[2]
+      // but in the time dependent case also the matrix inputMat[0]
+      // is assembled. The thing which has to be fixed is the assembling
+      // of matrices. Try to assemble only two matrices and then change 
+      // the argument in the product case
+      temp  += inputMat[1][i][j] * inputRhs[j];
+      temp1 += inputMat[2][i][j] * inputRhs[j];//
+    }
+    outputRhs[0][i] = temp;
+    outputRhs[1][i] = temp1;
   }
 }

@@ -18,6 +18,7 @@
 #define NULL 0
 
 #include <math.h>
+#include <iostream>
 
 #ifdef __2D__
 #define GEO_DIM 2
@@ -100,6 +101,8 @@ typedef void CoeffFct2D(int n_points, double *X, double *Y,
 typedef void ManipulateMatrices(double ***, int *, int *, 
                                 double ***, int *, int *, 
                                 double **,  int *, double **, int *);
+
+typedef void MatrixVector(double ***, std::pair<int,int>, double *, double **);
 
 typedef void CoeffFct3D(int n_points, double *X, double *Y, double *Z,
                         double **param, double **coeffs);
