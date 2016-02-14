@@ -137,7 +137,7 @@ void PrRobustNSE2D::assembleMatrixRhs()
                       nSqMatStored, nullptr, 
                       nReMatStored, nullptr, 
                       nRhsStored, rhsStored,pointToRhsStored, 
-                      larhs, matrix_multiplication, 
+                      larhs, nullptr, MatVectMult,
                       projection_matrices, bc, bv);
     // reset the space
     TDatabase::ParamDB->VELOCITY_SPACE = vel_space;     
