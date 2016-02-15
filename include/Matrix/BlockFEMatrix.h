@@ -288,6 +288,18 @@ class BlockFEMatrix : public BlockMatrix
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                                   double a = 1.0) const override;
 
+    /**
+     * Compute y = y + a * Ax, but leave y's non-active entries untouched.
+     * Methods of this type are needed in the assembling process due to ParMooN's
+     * handling of Dirchlet dofs.
+     *
+     * @param x the BlockVector which is multiplied by this matrix
+     * @param y Gets added the result of the scaled matrix-vector-multiplication "aAx"
+     * @param a optional factor, defaults to 1.0
+     */
+    void apply_scaled_add_actives(const BlockVector & x, BlockVector & y,
+                                  double a = 1.0) const;
+
     /** @brief Compute y = y + a * Ax
      *
      * TODO This method is at the moment used in class Time_NSE2D. There it is

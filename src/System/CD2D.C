@@ -303,7 +303,8 @@ void CD2D::do_algebraic_flux_correction()
 
         //...and finally correct the entries in the Dirchlet rows
         AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
-
+        //...and in the right hand side, too, assum correct in solution vector
+        s.rhs.copy_nonactive(s.solution);
         break;
       }
       default:

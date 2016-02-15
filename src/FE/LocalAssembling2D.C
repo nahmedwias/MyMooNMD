@@ -205,7 +205,7 @@ switch(type)
 	this->N_Terms = 5;
 	this->Derivatives = { D10, D01, D00, D20, D02 };
 	this->Needs2ndDerivatives = new bool[1];
-	this->Needs2ndDerivatives[1] = true;
+              this->Needs2ndDerivatives[0] = true;
 	this->FESpaceNumber = { 0, 0, 0, 0, 0 }; // number of terms = 5
 	
 	if(TDatabase::ParamDB->DISCTYPE==SUPG)
