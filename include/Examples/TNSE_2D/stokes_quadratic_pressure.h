@@ -27,7 +27,7 @@ void InitialU2(double x, double y, double *values)
 void InitialP(double x, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
-  values[0] = t*(x*x - y*y);
+  values[0] = (x*x - y*y);
 }
 
 
@@ -49,7 +49,7 @@ void ExactU2(double x, double y, double *values)
 
   values[0] = -2.*t*y;
   values[1] =  0;
-  values[2] = -2;
+  values[2] = -2*t;
   values[3] =  0;
 }
 
