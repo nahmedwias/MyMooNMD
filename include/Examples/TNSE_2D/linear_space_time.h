@@ -120,8 +120,6 @@ void LinCoeffs(int n_points, double *X, double *Y,
 {
   static double nu = 1/TDatabase::ParamDB->RE_NR;
   double t = TDatabase::TimeDB->CURRENTTIME;
-  double t1, t2, t3, t5, t6, t8, t9, t10, t14, t16;
-  double t17, t22, t23, t35, t38, t40;
   int i;
   double *coeff, x, y;
 
