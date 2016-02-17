@@ -171,8 +171,14 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
   std::pair<int,int> size (nrowInput[1], ncolInput[1]);
   double **matrix[2];
   matrix[0] = inputMat[1];
-  matrix[1] = inputMat[2];  
+  matrix[1] = inputMat[2];
   matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
+  
+  /** local matrices P0 and P1 needs to be globally assembled
+   * so copy them to the outputMat here 
+   */
+  outputMat[4] = inputMat[1];
+  outputMat[5] = inputMat[2];
   /*
   for(int i=0; i<size.first; i++)
     cout<<i<<"\t" << outputrhs[0][i]<<"\t" << outputrhs[1][i]<<"\n";  
@@ -255,8 +261,17 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     // reset the matrices
     for(int i=0; i<nSqMatStored; i++)
             sqMatricesStored[i]->reset();
-    
-    const int nReMatStored = 0;
+    // rectangular matrices to be stored
+    const int nReMatStored = 2;
+    std::vector<std::shared_ptr<FEMatrix>> proj_matrices 
+      = s_derived.ProjectionMatrix.get_blocks_uniquely();
+    TMatrix2D *rectMatricesStored[3];
+    rectMatricesStored[0]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(0).get());
+    rectMatricesStored[1]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(1).get());
+    rectMatricesStored[2]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(2).get());
+    for(int i=0; i<nReMatStored; i++)
+      rectMatricesStored[i]->reset();
+    // right hand vector to be stored
     int nRhsStored = 2;
     const TFESpace2D * pointToRhsStored[3]={velocity_space,velocity_space,
                                                  pressure_space};
@@ -274,7 +289,7 @@ void PrRobustTime_NSE2D::assemble_initial_time()
                       nSqMatAssemble, rowSpace, colSpace, 
                       nRhsAssemble, rowSpaceRhs, 
                       nSqMatStored, sqMatricesStored, 
-                      nReMatStored, nullptr, 
+                      nReMatStored, rectMatricesStored, 
                       nRhsStored, rhsStored,pointToRhsStored, 
                       la_mass_rhs_vspace, 
                       matrices_reconstruction, nullptr,
@@ -607,9 +622,9 @@ void PrRobustTime_NSE2D::assemble_system_matrix()
 /**************************************************************************** */
 void PrRobustTime_NSE2D::solve()
 {
+  System_per_grid& s_base = this->Time_NSE2D::systems.front();
   if(TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
   {
-    System_per_grid& s = this->systems.front();
     if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
       || (TDatabase::ParamDB->SOLVER_TYPE !=1 ))
     {
@@ -617,9 +632,9 @@ void PrRobustTime_NSE2D::solve()
         ErrThrow("only the direct solver is supported currently");
      
       /// @todo consider storing an object of DirectSolver in this class
-      DirectSolver direct_solver(s.matrix, 
+      DirectSolver direct_solver(s_base.matrix, 
                                  DirectSolver::DirectSolverTypes::umfpack);
-      direct_solver.solve(s.rhs, s.solution);
+      direct_solver.solve(s_base.rhs, s_base.solution);
     }
     else
       ErrThrow("Multigrid is not tested yet");
@@ -628,6 +643,8 @@ void PrRobustTime_NSE2D::solve()
   }
   else
     this->Time_NSE2D::solve();
+  
+  this->old_solution = s_base.solution;
   
   Output::print<3>("System matrix in PrRobustTime_NSE2D is solved");
 }
@@ -655,10 +672,9 @@ void PrRobustTime_NSE2D::descaleMatrices()
 }
 
 /**************************************************************************** */
-void PrRobustTime_NSE2D::output(int m)
+void PrRobustTime_NSE2D::output(int m, int &image)
 {
-  int im=0;
-  this->Time_NSE2D::output(m, im);
+  this->Time_NSE2D::output(m, image);
 }
 
 

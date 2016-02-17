@@ -84,7 +84,7 @@ class PrRobustTime_NSE2D : Time_NSE2D
      */
     void descaleMatrices();
     // post-processing 
-    void output(int m);
+    void output(int m, int& image);
     
     
     // getters and setters
