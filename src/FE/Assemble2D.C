@@ -10464,9 +10464,9 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
         ndimOutput[i] = fe->GetSize();
       }
     }
-    if(N_AllMatrices_stored)
+    if(n_sqmatrices_stored)
     {
-      for(int i=0; i<N_AllMatrices_stored; i++)
+      for(int i=0; i<n_sqmatrices_stored; i++)
       {
         fespace = sqmatrices_stored[i]->GetTestSpace2D();
         // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
@@ -10662,7 +10662,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // add local matrices to global matrices (ansatz != test)
     // ########################################################################
     //FIXME: 
-   /* for(int iMat=0;iMat<n_matrices_stored;iMat++)
+    for(int iMat=0;iMat<n_matrices_stored;iMat++)
     {
       const TFESpace2D* testSpace = matrices_stored[iMat]->GetTestSpace2D();
       
@@ -10674,7 +10674,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       int N_Test = test_fe->GetSize();
       int N_Ansatz = ansatz_fe->GetSize();
       
-      double **Matrix = LocMatrices[iMat+n_sqmatrices];
+      double **Matrix = LocMatrices_stored[iMat+n_sqmatrices_stored];
       
       int *TestDOF = testSpace->GetGlobalDOF(icell);
       int *AnsatzDOF = ansatzSpace->GetGlobalDOF(icell);
@@ -10695,7 +10695,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
         }
       }                                           // endfor m
     }                                             // endfor j  (n_matrices)
-    */
+    
     
     // ########################################################################
     // add local right-hand sides to global right-hand side
