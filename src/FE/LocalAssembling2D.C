@@ -16,6 +16,7 @@
 
 #include <MooNMD_Io.h>
 #include <string.h>
+#include <algorithm>
 
 #include <DiscreteForm2D.h> // to be removed
 
@@ -101,6 +102,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
       break;
     case LocalAssembling2D_type::RECONSTR_MASS:
       return std::string("RECONSTR_MASS");
+      break;
+    case LocalAssembling2D_type::RECONSTR_TNSENL:
+      return std::string("RECONSTR_TNSENL");
       break;
   }
   return std::string();
@@ -273,20 +277,21 @@ switch(type)
  //////////////////////////////////////////////////////////////////////////////
   case LocalAssembling2D_type::RECONSTR_GALERKIN:
   case LocalAssembling2D_type::RECONSTR_MASS:
+  case LocalAssembling2D_type::RECONSTR_TNSENL:
     this->set_parameters_for_Rec_nse(type);
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
-    this->N_Terms = 1;
+    this->N_Terms = 2;
       this->Derivatives = { D00 };
       this->Needs2ndDerivatives = new bool[2];
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
-      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-      this->N_Matrices = 3;
-      this->RowSpace = {0,1,1}; //FIXME: check it carefully currently only fixed for right hand side
-      this->ColumnSpace = {0,0,0}; //FIXME: espeicially for the nonlinear problem
+      this->FESpaceNumber = {0, 1 }; // 0: velocity, 1: pressure
+      this->N_Matrices = 2;
+      this->RowSpace = {0, 0, 1}; //FIXME: check it carefully currently only fixed for right hand side
+      this->ColumnSpace = {1, 1, 1}; //FIXME: espeicially for the nonlinear problem
       this->N_Rhs = 1;
-      this->RhsSpace = { 0 };
+      this->RhsSpace = { 1 };
       this->AssembleParam = PrRobustRhs; 
       this->Manipulate = NULL;
     break;
@@ -602,7 +607,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
   double **Values = new double* [N_FEValues];
   double ***orig_values = new double** [N_FEValues];
   int **Index = new int* [N_FEValues];
-  double Temp[2 + N_FEValues];
+  std::vector<int> base_vec_dim(N_FEValues, 1);
   // collect information
   for(j=0; j<this->N_FEValues; j++)
   {
@@ -615,12 +620,15 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
     BaseFunct2D BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_Id)->GetBaseFunct2D_ID();
 
     N_BaseFunct[j]=TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetDimension();
+    base_vec_dim[j] = TFEDatabase2D::GetBaseFunct2D(BaseFunct_Id)->GetBaseVectDim();
     
     orig_values[j] = TFEDatabase2D::GetOrigElementValues(BaseFunct_Id, 
                                                          FEValue_MultiIndex[j]);
     Index[j] = fespace->GetGlobalDOF(cellnum);
   } // endfor j
 
+  double Temp[2 + std::accumulate(base_vec_dim.begin(), base_vec_dim.end(), 0)];
+  
   // loop over all quadrature points
   if(N_ParamFct != 0)
   {
@@ -632,16 +640,20 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
       Temp[1] = y[i];
 
       // loop to calculate all FE values
-      for(k=2,j=0; j<N_FEValues; j++,k++)
+      for(k=2,j=0; j<N_FEValues; j++)
       {
-        s = 0;
         n = N_BaseFunct[j];
         CurrValues = Values[j];
-        CurrOrigValues = orig_values[j][i];
         CurrIndex = Index[j];
-        for(l=0;l<n;l++)
-          s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
-        Temp[k] = s;
+        for(unsigned int m = 0; m < base_vec_dim[j]; ++m)
+        {
+          s = 0;
+          CurrOrigValues = orig_values[j][i + m*n_points];
+          for(l=0;l<n;l++)
+            s += CurrValues[CurrIndex[l]]*CurrOrigValues[l];
+          Temp[k] = s;
+          ++k;
+        }
       }  // endfor j
 
       // loop to calculate all parameters
@@ -2125,17 +2137,17 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->BeginParameter = { 0 };  
       break;
     case RECONSTR_MASS:
-      this->N_Terms = 1;
-      this->Derivatives = { D00 };
+      this->N_Terms = 2;
+      this->Derivatives = { D00, D00 };
       this->Needs2ndDerivatives = new bool[2];
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
-      this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+      this->FESpaceNumber = { 0, 1 }; // 0: velocity, 1: pressure
       this->N_Matrices = 3;
-      this->RowSpace = { 0, 1, 1 };
-      this->ColumnSpace = { 0, 0, 0 };
+      this->RowSpace    = { 0, 0, 1 };
+      this->ColumnSpace = { 1, 1, 1 };
       this->N_Rhs = 2;
-      this->RhsSpace = { 0, 0 };
+      this->RhsSpace = { 1, 1 };
       this->AssembleParam = LocAssembleMass; 
       this->Manipulate = NULL;
       
@@ -2147,6 +2159,28 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 }; */ 
       break;
+    case RECONSTR_TNSENL:
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
+      this->N_Matrices = 4;
+      this->RowSpace    = { 0, 0, 0, 0 };
+      this->ColumnSpace = { 0, 0, 1, 1 };
+      this->N_Rhs = 3;
+      this->RhsSpace = { 0, 0, 1 };
+      this->AssembleParam = NSType4GalerkinPrRob;
+      this->Manipulate = NULL;
+      
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 2;
+      this->FEValue_FctIndex = { 0 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 0 }; 
       break;
   }
 }
