@@ -3576,7 +3576,7 @@ void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace,
   double uorig[nPoints][nBaseFunct];
   double AllPointValues[nDofTest];
   
-  for(i=1; i<=2; ++i)
+  for(i=0; i<=1; ++i)
   {
     CurrentMatrix = locMatrix[i];
     N_Rows = nDofTest;
@@ -3589,8 +3589,8 @@ void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace,
     } 
   } 
   
-  double **MatrixP0 = locMatrix[1];
-  double **MatrixP1 = locMatrix[2];
+  double **MatrixP0 = locMatrix[0];
+  double **MatrixP1 = locMatrix[1];
   
   for(int i=0; i<nPoints; ++i)
   {
@@ -3642,8 +3642,8 @@ void MatVectMult(double ***inputMat, std::pair<int,int>size, double *inputRhs,
       // is assembled. The thing which has to be fixed is the assembling
       // of matrices. Try to assemble only two matrices and then change 
       // the argument in the product case
-      temp  += inputMat[1][i][j] * inputRhs[j];
-      temp1 += inputMat[2][i][j] * inputRhs[j];//
+      temp  += inputMat[0][i][j] * inputRhs[j];
+      temp1 += inputMat[1][i][j] * inputRhs[j];//
     }
     outputRhs[0][i] = temp;
     outputRhs[1][i] = temp1;

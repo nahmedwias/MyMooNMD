@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
       stokes_prbst.output(i);
     }    
   }
-  
+  /*
   Output::print<1>('\n');
   Output::print('\n','\n',"*******************************************************" );  
   Output::print<1>("STARTED TIME DEPENDENT STOKES PROBLEM ");
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     
     
     exit(0);
-  }
+  }*/
   
   
 }

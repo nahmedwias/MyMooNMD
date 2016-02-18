@@ -7,11 +7,14 @@ PrRobustTime_NSE2D::SystemPerGrid::SystemPerGrid(const Example_NSE2D& example,
       TCollection& coll, const TFESpace2D& velocity_space, 
       const TFESpace2D& pressure_space, int order)
 : projection_space(velocity_space.GetCollection(), (char*)"u", 
-                    (char*)"projection space", example.get_bc(0), order, nullptr),
+                    (char*)"projection space", example.get_bc(2), order, nullptr),
    ProjectionMatrix({&velocity_space}, {&projection_space, &projection_space, &pressure_space}),
    MassMatrix({&projection_space, &projection_space}),
    rhsXh(projection_space.GetN_DegreesOfFreedom()), 
-   Modifed_Mass({&velocity_space, &velocity_space})
+   Modifed_Mass({&velocity_space, &velocity_space}),
+   solutionVV(rhsXh),
+   fefctVV(&projection_space, (char*)"uv", (char*)"uv", solutionVV.block(0), 
+           solutionVV.length(0))
 {
   ProjectionMatrix.print_coloring_pattern("P");
   Modifed_Mass.print_coloring_pattern("MM");
@@ -151,34 +154,35 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
     return;
   };
   // prepare the outputMat[0] = P0 * M * P0^T
-  std::pair<int, int> rowsArray(nrowInput[1], nrowInput[0]);
-  std::pair<int, int> colsArray(ncolInput[1], ncolInput[0]);
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[0], 
+
+  std::pair<int, int> rowsArray(nrowInput[0], nrowInput[2]);
+  std::pair<int, int> colsArray(ncolInput[0], ncolInput[2]);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[0], inputMat[2], 
                           nullptr, outputMat[0], 0);
   // prepare the outputMat[0] = P0 * M * P1^T
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[0], 
-                          inputMat[2], outputMat[1], 1);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[0], inputMat[2], 
+                          inputMat[1], outputMat[1], 1);
   // prepare the outputMat[0] = P1 * M * P0^T
-  rowsArray.first=nrowInput[2]; rowsArray.second=nrowInput[0];
-  colsArray.first=ncolInput[2]; rowsArray.second=ncolInput[0];
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[2], inputMat[0], 
-                          inputMat[1], outputMat[2], 2);
+  rowsArray.first=nrowInput[1]; rowsArray.second=nrowInput[2];
+  colsArray.first=ncolInput[1]; rowsArray.second=ncolInput[2];
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[2], 
+                          inputMat[0], outputMat[2], 2);
   // prepare the outputMat[0] = P1 * M * P1^T
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[2], inputMat[0],
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[2],
                           nullptr, outputMat[3], 3);
   
   // prepare the output right hand 
-  std::pair<int,int> size (nrowInput[1], ncolInput[1]);
+  std::pair<int,int> size (nrowInput[0], ncolInput[0]);
   double **matrix[2];
-  matrix[0] = inputMat[1];
-  matrix[1] = inputMat[2];
+  matrix[0] = inputMat[0];
+  matrix[1] = inputMat[1];
   matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
   
   /** local matrices P0 and P1 needs to be globally assembled
    * so copy them to the outputMat here 
    */
-  outputMat[4] = inputMat[1];
-  outputMat[5] = inputMat[2];
+  outputMat[4] = inputMat[0];
+  outputMat[5] = inputMat[1];
   /*
   for(int i=0; i<size.first; i++)
     cout<<i<<"\t" << outputrhs[0][i]<<"\t" << outputrhs[1][i]<<"\n";  
@@ -235,16 +239,16 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
     const TFESpace2D *pressure_space = &this->Time_NSE2D::get_pressure_space();
     // pointers to the fespace
-    const TFESpace2D * pointer_to_space[2] = { project_space, velocity_space };
+    const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
     
     const int nSqMatAssemble=3;
     // const int nReMatAssemble = 0;
     const int nRhsAssemble = 1;
     //NOTE:for the assembling of matrices or right hand side, space numbers
     //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0, 1, 1}; // row space for assembling matrices
-    std::vector<int> colSpace ={0, 0, 0}; // cols space for assembling matrices
-    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
+    std::vector<int> rowSpace ={0, 0, 1}; // row space for assembling matrices
+    std::vector<int> colSpace ={1, 1, 1}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={1}; // row space for assembling rhs 
     
     // prepare everything for storing the matrices and rhs
     // this will be used latter inside the class
@@ -279,11 +283,12 @@ void PrRobustTime_NSE2D::assemble_initial_time()
                             s_base.rhs.block(2)};
     s_base.rhs.reset();
     // boundary conditions    
-    BoundCondFunct2D *bc[2] ={ project_space->GetBoundCondition(), 
+    BoundCondFunct2D *bc[3] ={ velocity_space->GetBoundCondition(), 
+                             velocity_space->GetBoundCondition(),
                              pressure_space->GetBoundCondition() };
     // boundary values
     BoundValueFunct2D * const * const BoundValue=this->Time_NSE2D::get_example().get_bd();
-    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
+    BoundValueFunct2D *bv[3] = {BoundValue[0], BoundValue[1], BoundValue[2] };
     // assemble the correspoding matrices and right hand side
     Assemble2D_VectFE(nFESpaces, pointer_to_space, 
                       nSqMatAssemble, rowSpace, colSpace, 
@@ -294,7 +299,7 @@ void PrRobustTime_NSE2D::assemble_initial_time()
                       la_mass_rhs_vspace, 
                       matrices_reconstruction, nullptr,
                       projection_matrices, bc, bv);
-    
+
     // commit this line when the line below is tested
     TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
     // sqMatricesStored[0]->Print("M");exit(0);
@@ -474,7 +479,7 @@ void PrRobustTime_NSE2D::assemble_rhs()
     const TFESpace2D *velocity_space=&this->Time_NSE2D::get_velocity_space();
     const TFESpace2D *pressure_space=&this->Time_NSE2D::get_pressure_space();
     // pointers to the fespace
-    const TFESpace2D * pointer_to_space[2] = {prooject_space, velocity_space};
+    const TFESpace2D * pointer_to_space[2] = {velocity_space, prooject_space};
     // matrices to assemble in order to assemble the right hand 
     // side of the method
     const int nSqMatAssemble = 3;
@@ -483,9 +488,9 @@ void PrRobustTime_NSE2D::assemble_rhs()
     const int nRhsAssemble = 1;    
     //NOTE:for the assembling of matrices or right hand side, space numbers
     //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0,1,1}; // row space for assembling matrices
-    std::vector<int> colSpace ={0,0,0}; // cols space for assembling matrices
-    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
+    std::vector<int> rowSpace ={0, 0, 1}; // row space for assembling matrices
+    std::vector<int> colSpace ={1, 1, 1}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={1}; // row space for assembling rhs 
     
     // prepare everything for storing the matrices and rhs
     // this will be used latter inside the class
@@ -587,6 +592,35 @@ void PrRobustTime_NSE2D::assemble_rhs()
   s_base.rhs.copy_nonactive(s_base.solution);
   Output::print<3>("leaving the assemble_rhs PrRobustTime_NSE2D");
 }
+
+/**************************************************************************** */
+void PrRobustTime_NSE2D::assemble_nonlinear()
+{
+  // check and return if the DISCTYPE==RECONSTRUCTION
+  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION)
+  {
+    this->Time_NSE2D::assemble_nonlinear_term();
+    return;
+  }
+  // assemble the nonlinear term  
+  SystemPerGrid& s_derived = this->Systems.front();
+  for(System_per_grid& s_base : this->Time_NSE2D::systems)
+  {
+    //NOTE: What to assemble:
+    // pi_h u^old = projection_matrices*sol
+    // assemble the Matrix A = (pi_h u^old grad u, pi_h v)
+    // This will results in 
+    // ModifiedA = (A00 A01)
+    //             (A10 A11)
+    // preparing pi_h u^old u in V_h, pi_h u in X_h
+    // s_base.solution.print("r");
+    s_derived.ProjectionMatrix.apply_scaled_transposed_submatrix(s_base.solution,
+                               s_derived.solutionVV, 1, 2, 1.0);
+    //s_derived.solutionVV.print("sv");exit(0);
+    
+  }
+}
+
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_system_matrix()
 {

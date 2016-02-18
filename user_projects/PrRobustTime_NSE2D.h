@@ -31,6 +31,10 @@ class PrRobustTime_NSE2D : Time_NSE2D
        * (P1*M*P0^T P1*M*P1^T )
        */
       BlockFEMatrix Modifed_Mass;
+      /** @brief solution vector*/
+      BlockVector solutionVV;
+      /** @brief Finite element function*/
+      TFEFunction2D fefctVV;
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
                     const TFESpace2D& velocity_space, 
@@ -70,6 +74,15 @@ class PrRobustTime_NSE2D : Time_NSE2D
      * discretization
      */
     void assemble_rhs();
+    
+    /** @brief assemble nonlinear term
+     * 
+     * The matrix blocks to which the nonlinear term contributes are reset to 
+     * zero and then completely reassembled, including the linear and nonlinear
+     * terms. If this->assemble() has been called before, the matrix is now set
+     * up correctly. 
+     */
+    void assemble_nonlinear();
     /** @brief Assemble the system matrix
      * This function will prepare the system which will be 
      * used for solvers

@@ -10589,8 +10589,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                      n_rhs_assemble, LocMatrices_assemble, 
                      LocRhs_assemble);
     
-    const TFESpace2D *pr_space = fespaces[0];
-    const TFESpace2D *ve_space = fespaces[1];
+    const TFESpace2D *pr_space = fespaces[1];
+    const TFESpace2D *ve_space = fespaces[0];
     
     // assemble the local projection matrices
     projection_matrix(icell, pr_space, ve_space, LocMatrices_assemble);
@@ -10605,23 +10605,10 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     }
     if(matrixvector != nullptr)
     {
-      //double*** inputMat, std::pair< int, int > size,
-      //           double* inputRhs, double** outputRhs
-      std::pair<int,int> size(nrowInput[1], ncolInput[1]);
+      std::pair<int,int> size(nrowInput[0], ncolInput[0]);
       matrixvector(LocMatrices_assemble, size, LocRhs_assemble[0], LocRhs_stored);
-      //cout<<"matrixvector"<<endl;exit(0);
     }
-   
-  /*
-   cout<<nrowInput[2] << "  " << nrowInput[1] << endl;
-   for(int i=0; i<nrowInput[2]; i++)
-   {
-     for(int j=0; j<nrowInput[1]; j++)
-     {
-       cout << LocMatrices_stored[0][i][j] << "\t";
-     }
-     cout <<endl;
-   }*/
+
     // ########################################################################
     // add local matrices to global matrices (ansatz == test)
     // ########################################################################

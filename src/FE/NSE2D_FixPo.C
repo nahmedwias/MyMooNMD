@@ -4827,8 +4827,8 @@ void PrRobustRhs(double Mult, double *coeff, double *param, double hK,
                        double **OrigValues, int *N_BaseFuncts,
                        double ***LocMatrices, double **LocRhs)
 {
-  int N_U = N_BaseFuncts[0];
-  double *Orig0 = OrigValues[0];
+  int N_U = N_BaseFuncts[1];
+  double *Orig0 = OrigValues[1];
 
   double *Rhs = LocRhs[0];
   

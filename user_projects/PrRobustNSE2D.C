@@ -8,7 +8,7 @@ PrRobustNSE2D::SystemPerGrid::SystemPerGrid(const Example_NSE2D& example,
 TCollection& coll, unsigned int order, const TFESpace2D& space, 
                    const TFESpace2D& presSpace)
 : projection_space(space.GetCollection(), (char*)"u", 
-                   (char*)"projection velocity", example.get_bc(0),
+                   (char*)"projection velocity", example.get_bc(2),
                    TDatabase::ParamDB->PROJECTION_SPACE, nullptr), 
  ProjectionMatrix({&space}, {&projection_space, &projection_space, &presSpace}),
  rhsXh(projection_space.GetN_DegreesOfFreedom()) 
@@ -102,17 +102,17 @@ void PrRobustNSE2D::assembleMatrixRhs()
     const TFESpace2D *velocity_space=&this->NSE2D::get_velocity_space();
     const TFESpace2D *pressure_space=&this->NSE2D::get_pressure_space();
     // pointers to the fespace
-    const TFESpace2D * pointer_to_space[2] = {prooject_space, velocity_space};
+    const TFESpace2D * pointer_to_space[2] = {velocity_space, prooject_space};
     
-    const int nSqMatAssemble = 3;
+    const int nSqMatAssemble = 2;
     // const int nReMatAssemble = 0;
     
     const int nRhsAssemble = 1;
     //NOTE:for the assembling of matrices or right hand side, space numbers
     //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0,1,1}; // row space for assembling matrices
-    std::vector<int> colSpace ={0,0,0}; // cols space for assembling matrices
-    std::vector<int> rowSpaceRhs={0}; // row space for assembling rhs 
+    std::vector<int> rowSpace ={0,0,1}; // row space for assembling matrices
+    std::vector<int> colSpace ={1,1,1}; // cols space for assembling matrices
+    std::vector<int> rowSpaceRhs={1}; // row space for assembling rhs 
     
     // prepare everything for storing the matrices and rhs
     // this will be used latter inside the class
@@ -129,7 +129,7 @@ void PrRobustNSE2D::assembleMatrixRhs()
                              pressure_space->GetBoundCondition() };
     // boundary values
     BoundValueFunct2D * const * const BoundValue=this->NSE2D::get_example().get_bd();
-    BoundValueFunct2D *bv[2] = {BoundValue[2], BoundValue[2] };
+    BoundValueFunct2D *bv[2] = {BoundValue[0], BoundValue[1] };
     // assemble the right hand side
     Assemble2D_VectFE(nFESpaces, pointer_to_space, 
                       nSqMatAssemble,rowSpace,colSpace, 
