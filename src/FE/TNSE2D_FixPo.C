@@ -2131,59 +2131,49 @@ void TimeNSType4Galerkin(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixM11, **MatrixM22;
-  double **MatrixB1, **MatrixB2;
-  double **MatrixB1T, **MatrixB2T;
-  double *Rhs1, *Rhs2, val;
+{  
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA21 = LocMatrices[2];
+  double **MatrixA22 = LocMatrices[3];
+  double **MatrixM11 = LocMatrices[4];
+  double **MatrixB1 = LocMatrices[5];
+  double **MatrixB2 = LocMatrices[6];
+  double **MatrixB1T = LocMatrices[7];
+  double **MatrixB2T = LocMatrices[8];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0];         // u_x
+  double *Orig1 = OrigValues[1];         // u_y
+  double *Orig2 = OrigValues[2];         // u
+  double *Orig3 = OrigValues[3];         // p
+
+  double c0 = coeff[0];                 // nu
+  double c1 = coeff[1];                 // f1
+  double c2 = coeff[2];                 // f2
+
+  double u1 = param[0];                 // u1old
+  double u2 = param[1];                 // u2old
+
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double *MatrixM11Row, *MatrixM22Row;
+  double *MatrixM11Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  MatrixM11 = LocMatrices[4];
-  MatrixM22 = LocMatrices[5];
-  MatrixB1 = LocMatrices[6];
-  MatrixB2 = LocMatrices[7];
-  MatrixB1T = LocMatrices[8];
-  MatrixB2T = LocMatrices[9];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
+  double test00, test10, test01, val;
+  
+  for(int i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
+    
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
@@ -2191,7 +2181,7 @@ double ***LocMatrices, double **LocRhs)
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
@@ -2213,12 +2203,11 @@ double ***LocMatrices, double **LocRhs)
 
       val = Mult*(ansatz00*test00);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
     }                            // endfor j
 
     MatrixRow1 = MatrixB1T[i];
     MatrixRow2 = MatrixB2T[i];
-    for(j=0;j<N_P;j++)
+    for(int j=0;j<N_P;j++)
     {
       ansatz00 = Orig3[j];
 
@@ -2230,14 +2219,14 @@ double ***LocMatrices, double **LocRhs)
     }
   }                              // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
     test00 = Orig3[i];
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
@@ -6207,12 +6196,12 @@ void LocAssembleMass(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixM = LocMatrices[0];
+  double **MatrixM = LocMatrices[2];
   double *Rhs = LocRhs[0];
    
-  int N_U = N_BaseFuncts[0];
+  int N_U = N_BaseFuncts[1];
 
-  double *Orig0 = OrigValues[0]; // u
+  double *Orig0 = OrigValues[1]; // u
 
   double c1 = coeff[1]; // f1
   double c2 = coeff[2]; // f2
@@ -6241,4 +6230,118 @@ void LocAssembleMass(double Mult, double *coeff,
     }
   }  
   delete [] sign;
+}
+
+void LocAssembleNSTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs)
+{
+  // what to assemble here
+  // mass matrix, (grad,grad), nonlinear matrix (separately)
+  // because it have to be multiplied by the projection matrix
+  // and the right hand side
+  // 0 and 1 are the projection matrices which are assemble 
+  // in a separate routine
+  double **MassMatrix = LocMatrices[2]; // vv 
+  double **StifMatrix = LocMatrices[3]; // sv
+  double **NLMatrix00 = LocMatrices[4]; // rectangular matrix
+  double **NLMatrix11 = LocMatrices[5]; // rectangular matrix
+  
+  
+  int M = N_BaseFuncts[0];// nbasis for BDM
+  int N = N_BaseFuncts[1];// nbasis for V_h
+  
+  double u1 = param[0];
+  double u2 = param[1];
+  
+  double nu = coeff[0];
+  double f1 = coeff[1];
+  double f2 = coeff[2];
+  
+  // assembling of grad grad
+  for(int i=0; i<N; i++)
+  {
+    for(int j=0; j<N; j++)
+    {
+      
+    }
+  }
+  
+  for(int i=0; i<M; i++)
+  {
+    // assmeble rhs 
+    
+    // mass matrix
+    for(int j=0; j<M; j++)
+    {
+    }
+    
+    // assembling of modified nonlinear term
+    for(int j=0; j<N; j++)
+    {
+      
+    }
+  }
+}
+
+void LocAssembleNLNSTYPE4(double Mult, double *coeff,
+                  double *param, double hK,
+                  double **OrigValues, int *N_BaseFuncts,
+                  double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11GradGrad=LocMatrices[0];
+  double **MatrixA22GradGrad=LocMatrices[1];
+  double **MatrixA11NL = LocMatrices[2];
+  double **MatrixA22NL = LocMatrices[3];
+  
+  
+  int N_US = N_BaseFuncts[0];
+  int N_UV = N_BaseFuncts[1];
+  
+  double u1 = param[0];
+  double u2 = param[1];
+  
+  double nu = coeff[0];
+  
+  double *orig0S = OrigValues[0]; // u_x scaler space
+  double *Orig1S = OrigValues[1]; // u_y scaler space
+  double *Orig2S = OrigValues[2]; // u   scaler space 
+  double *Orig0V = OrigValues[3]; // u   vector space
+  double test00, ansatz00, test01, ansatz01;
+  double test10, ansatz10, val;
+  
+  int *sign = new int[N_UV];
+  for(int i=0;i<N_UV;i++)
+  {
+    // here check whether signs should be inverted
+    sign[i] = GetSignOfThisDOF(N_UV,i); // in Darcy2DMixed.C
+  }
+  
+  for(int i=0; i<N_US; i++) // loop over nbf_tests (rows)
+  {
+    test00 = orig0S[i];
+    test10 = Orig1S[i];
+    test01 = Orig2S[i];
+    
+    for(int j=0; j<N_US; j++) // loop over nbf_ansatz
+    {
+      val = nu*(test10*ansatz10 + test01*ansatz01);
+      MatrixA11GradGrad[i][j] += val;
+      MatrixA22GradGrad[i][j] += val;
+    }
+    
+    for(int j=0; j<N_UV; j++) // loop over nbf_ansatz vector valued (cols)
+    {
+      double ansatz_x00 = sign[j]*Orig0V[j];
+      double ansatz_y00 = sign[j]*Orig0V[j+N_US];
+      
+      val = (u1*test10 + u2*test01)*ansatz_x00;
+      MatrixA11NL[i][j] += val;
+      val = (u1*test10 + u2*test01)*ansatz_y00;
+      MatrixA22NL[i][j] += val;
+    }
+  }
+  exit(0);
+  
 }
