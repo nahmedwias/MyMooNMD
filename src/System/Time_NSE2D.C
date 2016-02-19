@@ -948,7 +948,7 @@ void Time_NSE2D::output(int m, int& image)
    delete u1;
    delete u2;
   
-  if((m==0) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
     if(TDatabase::ParamDB->WRITE_VTK)
     {
