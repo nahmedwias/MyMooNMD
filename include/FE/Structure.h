@@ -67,7 +67,7 @@ class TStructure
      * The `j`-th entry in the `i`-th row is at the `TStructure[i]+j`-th 
      * position in the global entries vector. So this also gives you the right 
      * index if you are interested in the column of that entry, 
-     * `TStructure::columns[TStructure[i]+j]`.
+     * `TStructure::columns[TStructure::rows[i]+j]`.
      */
     std::vector<int> rows;
 
@@ -284,6 +284,17 @@ class TStructure
      * @param j column of entry to check
      */ 
     int index_of_entry(const int i, const int j) const;
+    
+    /** @brief shift all indices by 1
+     * 
+     * In fortran indices start with 1 instead of 0. Calling this function 
+     * changes from one to the other, so calling it twice does not change 
+     * anything.
+     */
+    void fortran_shift();
+    
+    /** @brief return if indices start with one (true) or zero (false) */
+    bool is_fortran_shifted() const;
     
     /** 
      * @brief return a new structure for a transposed matrix

@@ -405,6 +405,17 @@ class TMatrix
      */
     const double & operator()(const int i, const int j) const;
     
+    /** @brief shift all indices in the structure of this matrix by 1
+     * 
+     * See also the documentation of TStructure::fortran_shift().
+     * 
+     * Note that this affects all matrices sharing this structure. This is only
+     * needed to call fortran code. Don't use it in other situation as it may
+     * break the functionality of other functions. 
+     */
+    void fortran_shift()
+    { this->structure->fortran_shift(); }
+    
     /// @brief print some information on this TMatrix
     void info(size_t verbose) const;
 
