@@ -6247,10 +6247,10 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
   double **StifMatrix = LocMatrices[3]; // sv
   double **NLMatrix00 = LocMatrices[4]; // rectangular matrix
   double **NLMatrix11 = LocMatrices[5]; // rectangular matrix
+  double *Rhs = LocRhs[0];
   
-  
-  int M = N_BaseFuncts[0];// nbasis for BDM
-  int N = N_BaseFuncts[1];// nbasis for V_h
+  int scalar_nbf = N_BaseFuncts[0];// nbasis for V_h
+  int vector_nbf = N_BaseFuncts[1];// nbasis for BDM
   
   double u1 = param[0];
   double u2 = param[1];
@@ -6259,28 +6259,62 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
   double f1 = coeff[1];
   double f2 = coeff[2];
   
+  double *Orig1 = OrigValues[0]; // u_x
+  double *Orig2 = OrigValues[1]; // u_y
+  double *Orig0 = OrigValues[2]; // u
+  
+  double *OrigV0 = OrigValues[3];
+  
+  double test00, test10, test01;
+  double ansatz00, ansatz10, ansatz01;
+  double val;
   // assembling of grad grad
-  for(int i=0; i<N; i++)
+  for(int i=0; i<scalar_nbf; i++)
   {
-    for(int j=0; j<N; j++)
+    test10 = Orig1[i];
+    test01 = Orig2[i];
+    
+    for(int j=0; j<scalar_nbf; j++)
     {
+      ansatz10 = Orig1[i];
+      ansatz01 = Orig2[i];
       
+      val = nu*(test10*ansatz10 + test01*ansatz01);
+      StifMatrix[i][j] += Mult*val;
     }
   }
+  int *sign = new int[vector_nbf];
+  for(int i=0;i<vector_nbf;i++)
+    sign[i] = GetSignOfThisDOF(vector_nbf, i);
   
-  for(int i=0; i<M; i++)
+  double testx00, testy00;
+  for(int i=0; i<vector_nbf; i++)
   {
+    testx00 = sign[i] * OrigV0[i];
+    testy00 = sign[i] * OrigV0[vector_nbf+i];
+    
     // assmeble rhs 
+    Rhs[i] += Mult*( testx00*f1 + testy00*f2);
     
     // mass matrix
-    for(int j=0; j<M; j++)
+    for(int j=0; j<vector_nbf; j++)
     {
+      double ansatzx00 = sign[j]*OrigV0[j];
+      double ansatzy00 = sign[j]*OrigV0[j+vector_nbf];
+      val = testx00*ansatzx00 + testy00*ansatzy00;
+      MassMatrix[i][j] += Mult*val;
     }
     
     // assembling of modified nonlinear term
-    for(int j=0; j<N; j++)
+    for(int j=0; j<scalar_nbf; j++)
     {
+      ansatz10 = Orig1[j];
+      ansatz01 = Orig2[j];
+      val = (u1*ansatz10 + u2*ansatz01)*testx00;
+      NLMatrix00[i][j] += Mult * val;
       
+      val = (u1*ansatz10 + u2*ansatz01)*testy00;
+      NLMatrix00[i][j] += Mult * val;
     }
   }
 }

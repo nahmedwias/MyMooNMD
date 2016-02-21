@@ -106,6 +106,12 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case LocalAssembling2D_type::RECONSTR_TNSENL:
       return std::string("RECONSTR_TNSENL");
       break;
+    case LocalAssembling2D_type::RECONSTR_TNSE:
+      return std::string("RECONSTR_TNSE");
+      break;
+    case LocalAssembling2D_type::NO_LOCAL_ASSEMBLE:
+      return std::string("NO_LOCAL_ASSEMBLE");
+      break;
   }
   return std::string();
 }
@@ -278,6 +284,8 @@ switch(type)
   case LocalAssembling2D_type::RECONSTR_GALERKIN:
   case LocalAssembling2D_type::RECONSTR_MASS:
   case LocalAssembling2D_type::RECONSTR_TNSENL:
+  case LocalAssembling2D_type::RECONSTR_TNSE:
+  case LocalAssembling2D_type::NO_LOCAL_ASSEMBLE:
     this->set_parameters_for_Rec_nse(type);
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
@@ -311,7 +319,7 @@ switch(type)
     ErrMsg("You need to specify a valid function for the coefficients");
     exit(1);
   }
-  if(AssembleParam == NULL)
+  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION && AssembleParam == NULL)
   {
     ErrMsg("a local assembling routine was not set");
     exit(1);
@@ -2159,7 +2167,36 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 }; */ 
       break;
+    case RECONSTR_TNSE:
+      if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
+        ErrThrow("Pressure robust method is only implemented for LAPLACETYPE = ", 0
+                ," and NSTYPE = 4");
+      this->N_Terms = 4;
+      this->Derivatives = { D10, D01, D00, D00 };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
+      this->N_Matrices = 6;
+      this->RowSpace    = { 0, 0, 1, 0, 1, 1 };
+      this->ColumnSpace = { 1, 1, 1, 0, 0, 0 };
+      this->N_Rhs = 1;
+      this->RhsSpace = { 1};
+      this->AssembleParam = LocAssembleNSTYPE4;
+      this->Manipulate = NULL;
+      
+      this->N_Parameters = 2;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamsVelo };
+      this->N_FEValues = 2;
+      this->FEValue_FctIndex = { 1 };
+      this->FEValue_MultiIndex = { D00, D00 };
+      this->BeginParameter = { 0 }; 
+      break;
     case RECONSTR_TNSENL:
+      if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
+        ErrThrow("Pressure robust method is only implemented for LAPLACETYPE = ", 0
+                ," and NSTYPE = 4");
       this->N_Terms = 4;
       this->Derivatives = { D10, D01, D00, D00 };
       this->Needs2ndDerivatives = new bool[2];
@@ -2167,20 +2204,38 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->Needs2ndDerivatives[1] = false;
       this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
       this->N_Matrices = 4;
-      this->RowSpace    = { 0, 0, 0, 0 };
-      this->ColumnSpace = { 0, 0, 1, 1 };
-      this->N_Rhs = 3;
-      this->RhsSpace = { 0, 0, 1 };
-      this->AssembleParam = NSType4GalerkinPrRob;
+      this->RowSpace    = { 0, 0, 1, 1 };
+      this->ColumnSpace = { 0, 0, 0, 0 };
+      this->N_Rhs = 0;
+      this->RhsSpace = { };
+      this->AssembleParam = LocAssembleNLNSTYPE4;
       this->Manipulate = NULL;
       
       this->N_Parameters = 2;
       this->N_ParamFct = 1;
       this->ParameterFct =  { NSParamsVelo };
       this->N_FEValues = 2;
-      this->FEValue_FctIndex = { 0 };
+      this->FEValue_FctIndex = { 1 };
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 }; 
+      break;
+    case NO_LOCAL_ASSEMBLE:
+      if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
+        ErrThrow("Pressure robust method is only implemented for LAPLACETYPE = ", 0
+                ," and NSTYPE = 4");
+      this->N_Terms = 0;
+      this->Derivatives = { };
+      this->Needs2ndDerivatives = new bool[2];
+      this->Needs2ndDerivatives[0] = false;
+      this->Needs2ndDerivatives[1] = false;
+      this->FESpaceNumber = { }; // 0: velocity, 1: vector valued velocity
+      this->N_Matrices = 0;
+      this->RowSpace    = { };
+      this->ColumnSpace = { };
+      this->N_Rhs = 0;
+      this->RhsSpace = { };
+      this->AssembleParam = NULL;
+      this->Manipulate = NULL;
       break;
   }
 }

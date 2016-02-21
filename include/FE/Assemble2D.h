@@ -163,7 +163,7 @@ void ComputeInterfaceConditionStress(TSquareMatrix2D  **sqmatrices,
 #endif // __2D__
 
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
-           int n_sqmatrices_assemble,
+           int n_matrices_assemble,
            std::vector<int> row_space, std::vector<int>col_space, 
            int n_rhs_assemble, std::vector<int> row_space_rhs,
            int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,

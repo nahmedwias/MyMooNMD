@@ -49,7 +49,9 @@ enum LocalAssembling2D_type { ConvDiff,
                               RECONSTR_GALERKIN,
                               RECONSTR_GALERKIN_Rhs,
                               RECONSTR_MASS,
+                              RECONSTR_TNSE,
                               RECONSTR_TNSENL,
+                              NO_LOCAL_ASSEMBLE,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 

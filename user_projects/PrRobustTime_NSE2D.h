@@ -48,11 +48,18 @@ class PrRobustTime_NSE2D : Time_NSE2D
     std::deque<SystemPerGrid> Systems;
     
     /** @brief right hand side vector from previous time step (on finest mesh)*/
-      BlockVector old_rhs_modified;
+    BlockVector old_rhs_modified;      
+    
   public:
     PrRobustTime_NSE2D(const TDomain& domain, Example_NSE2D& _example, 
                        int reference_id = -4711);
   
+    /** @brief
+     * Assemble the projection matrix only:
+     * This will be used later for the post-processing 
+     * of the nonlinear term:
+     */
+    bool assembleProjMat();
     /** @brief Assemble all the matrices and rhs before the time iterations
      * 
      * This includes the assembling of: Stiff_matrix, ProjectionMatrix, MassMatrix

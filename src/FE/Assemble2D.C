@@ -10320,7 +10320,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
 
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
-           int n_sqmatrices_assemble, std::vector<int> row_space, std::vector<int>col_space, 
+           int n_matrices_assemble, std::vector<int> row_space, std::vector<int>col_space, 
            int n_rhs_assemble, std::vector<int> row_space_rhs,
            int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,
            int n_matrices_stored, TMatrix2D** matrices_stored, 
@@ -10331,7 +10331,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
            BoundValueFunct2D * const * const BoundaryValues)
 {
 #ifdef __2D__
-  int N_AllMatrices_assemble = n_sqmatrices_assemble;
+  int N_AllMatrices_assemble = n_matrices_assemble;
   int N_AllMatrices_stored = n_sqmatrices_stored + n_matrices_stored;
   double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -10573,7 +10573,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                            AbsDetjk);
     
     // this could provide values of FE functions during the local assemble routine
-    la_assmble.GetParameters(N_Points,Coll, cell,icell, X, Y, Param);
+    if(la_assmble.get_type() != NO_LOCAL_ASSEMBLE)
+      la_assmble.GetParameters(N_Points,Coll, cell,icell, X, Y, Param);
 
     // ########################################################################
     // assemble local matrices and right hand sides
@@ -10583,8 +10584,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // for every matrix we allocate a local matrix with corresponding number of 
     // rows and columns
    
-    
-    la_assmble.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
+    if(la_assmble.get_type() != NO_LOCAL_ASSEMBLE)
+      la_assmble.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, &LocN_BF[0], &LocBF[0],
                      Param, AuxArray, cell, N_AllMatrices_assemble, 
                      n_rhs_assemble, LocMatrices_assemble, 
                      LocRhs_assemble);
@@ -10673,7 +10674,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       {
         int rowDOF = TestDOF[irow];
         if(rowDOF<ActiveBound)
-        {
+        {cout<<ActiveBound<<endl;
           for(int icolumn=0; icolumn<N_Ansatz; icolumn++)
           {
             int columnDOF = AnsatzDOF[icolumn];

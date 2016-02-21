@@ -154,7 +154,6 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
     return;
   };
   // prepare the outputMat[0] = P0 * M * P0^T
-
   std::pair<int, int> rowsArray(nrowInput[0], nrowInput[2]);
   std::pair<int, int> colsArray(ncolInput[0], ncolInput[2]);
   compute_matrix_matrix(rowsArray, colsArray, inputMat[0], inputMat[2], 
@@ -201,6 +200,78 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
 }
 
 /**************************************************************************** */
+bool PrRobustTime_NSE2D::assembleProjMat()
+{
+  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION)
+    return false;
+  
+  // setting the space for sign in GetSignOfThisDOF();
+  unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
+  TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
+  // prepare everything to assemble the global projection matrix 
+  SystemPerGrid& s_derived = this->Systems.front();
+  
+  const int nFESpaces = 2;
+  const TFESpace2D *project_space  = &this->get_projection_space();
+  const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
+  // pointers to the fespace
+  const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
+  // assemble all square and rectangular matrices
+  // nAllMatAssemble = nSquareMatrice + nRectMatrices;
+  const int nAllMatAssemble = 2;
+  //NOTE:for the assembling of matrices or right hand side, space numbers
+  //are passed as array: this corresponds to the array "pointer_to_space"
+  std::vector<int> rowSpace ={0, 0}; // row space for assembling matrices
+  std::vector<int> colSpace ={1, 1}; // cols space for assembling matrices
+  
+  const int nRhsAssemble = 0;
+  std::vector<int> rowSpaceRhs={};
+  const int nSqMatStored = 0;
+  TSquareMatrix2D** sqMatricesStored = nullptr;
+  
+  int nRhsStored = 0;
+  double **rhsStored = nullptr;
+  const TFESpace2D ** pointToRhsStored=nullptr;
+  
+  // rectangular matrices to be stored
+  const int nReMatStored = 2;
+  std::vector<std::shared_ptr<FEMatrix>> proj_matrices 
+     = s_derived.ProjectionMatrix.get_blocks_uniquely();
+  TMatrix2D *rectMatricesStored[2];
+  rectMatricesStored[0]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(0).get());
+  rectMatricesStored[1]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(1).get());
+  rectMatricesStored[2]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(1).get());
+  for(int i=0; i<nReMatStored; i++)
+      rectMatricesStored[i]->reset();
+  BoundCondFunct2D * boundCond[2] = {
+      project_space->GetBoundCondition(), project_space->GetBoundCondition()};
+  
+  std::array<BoundValueFunct2D*, 3> boundVal;
+  boundVal[0] = example.get_bd()[0];
+  boundVal[1] = example.get_bd()[1];
+  boundVal[2] = example.get_bd()[2];
+  
+  TFEFunction2D ** fefct = {};
+  LocalAssembling2D empty_constructor(NO_LOCAL_ASSEMBLE, fefct, 
+                                      this->Time_NSE2D::get_example().get_coeffs());
+  
+  Assemble2D_VectFE(nFESpaces, pointer_to_space, 
+                      nAllMatAssemble, rowSpace, colSpace, 
+                      nRhsAssemble, rowSpaceRhs, 
+                      nSqMatStored, sqMatricesStored, 
+                      nReMatStored, rectMatricesStored, 
+                      nRhsStored, rhsStored,pointToRhsStored, 
+                      empty_constructor, nullptr, nullptr,
+                      projection_matrices, boundCond, boundVal.data());
+  rectMatricesStored[0]->Print("M");exit(0);
+  
+  if(TDatabase::ParamDB->PROBLEM_TYPE ==5)
+    return true;
+  else 
+    return false;
+}
+
+/**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_initial_time()
 {
   // assemble matrices and right hand side
@@ -241,7 +312,7 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     // pointers to the fespace
     const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
     
-    const int nSqMatAssemble=3;
+    const int nAllMatAssemble=3;
     // const int nReMatAssemble = 0;
     const int nRhsAssemble = 1;
     //NOTE:for the assembling of matrices or right hand side, space numbers
@@ -291,7 +362,7 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     BoundValueFunct2D *bv[3] = {BoundValue[0], BoundValue[1], BoundValue[2] };
     // assemble the correspoding matrices and right hand side
     Assemble2D_VectFE(nFESpaces, pointer_to_space, 
-                      nSqMatAssemble, rowSpace, colSpace, 
+                      nAllMatAssemble, rowSpace, colSpace, 
                       nRhsAssemble, rowSpaceRhs, 
                       nSqMatStored, sqMatricesStored, 
                       nReMatStored, rectMatricesStored, 
@@ -482,7 +553,7 @@ void PrRobustTime_NSE2D::assemble_rhs()
     const TFESpace2D * pointer_to_space[2] = {velocity_space, prooject_space};
     // matrices to assemble in order to assemble the right hand 
     // side of the method
-    const int nSqMatAssemble = 3;
+    const int nAllMatAssemble = 3;
     // const int nReMatAssemble = 0;
     
     const int nRhsAssemble = 1;    
@@ -511,7 +582,7 @@ void PrRobustTime_NSE2D::assemble_rhs()
     BoundValueFunct2D *bv[3] = {BoundValue[0], BoundValue[1], BoundValue[2] };
     // assemble the right hand side
     Assemble2D_VectFE(nFESpaces, pointer_to_space, 
-                      nSqMatAssemble,rowSpace,colSpace, 
+                      nAllMatAssemble,rowSpace,colSpace, 
                       nRhsAssemble, rowSpaceRhs, 
                       nSqMatStored, nullptr, 
                       nReMatStored, nullptr, 
