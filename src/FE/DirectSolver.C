@@ -76,7 +76,8 @@ void handle_error_umfpack(int ierror)
 /** ************************************************************************ */
 DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
                            DirectSolver::DirectSolverTypes type)
- : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr)
+ : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr), cols(), 
+   rows()
 {
   Output::print<3>("constructing a DirectSolver object");
   if(!matrix->is_square())
@@ -90,6 +91,17 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
     ErrThrow("Pardiso does not yet work");
   }
   
+  // the threshold is rather small here, it should furthermore depend on the 
+  // dimension (2 or 3) and the polynomial degree (and possibly more).
+  if(this->matrix->GetN_Rows() > 2e5)
+  {
+    this->cols.resize(this->matrix->GetN_Entries(), 0);
+    this->rows.resize(this->matrix->GetN_Rows()+1, 0);
+    for(size_t i = 0; i < this->matrix->GetN_Entries(); ++i)
+      this->cols[i] = this->matrix->GetKCol()[i];
+    for(size_t i = 0; i < this->matrix->GetN_Rows()+1; ++i)
+      this->rows[i] = this->matrix->GetRowPtr()[i];
+  }
   this->symetric_factorize();
   this->numeric_factorize();
 }
@@ -104,7 +116,8 @@ DirectSolver::DirectSolver(const BlockMatrix& matrix,
 /** ************************************************************************ */
 DirectSolver::DirectSolver(DirectSolver&& other)
  : type(other.type), matrix(other.matrix), symbolic(other.symbolic), 
-   numeric(other.numeric)
+   numeric(other.numeric), cols(std::move(other.cols)), 
+   rows(std::move(other.rows))
 {
   other.symbolic = nullptr;
   other.numeric = nullptr;
@@ -118,6 +131,8 @@ class DirectSolver& DirectSolver::operator=(DirectSolver&& other)
   this->matrix = other.matrix;
   this->symbolic = other.symbolic;
   this->numeric = other.numeric;
+  this->cols = std::move(other.cols);
+  this->rows = std::move(other.rows);
   other.symbolic = nullptr;
   other.numeric = nullptr;
   Output::print<4>("DirectSolver::operator=(DirectSolver&&)");
@@ -130,8 +145,18 @@ DirectSolver::~DirectSolver()
   switch(type)
   {
     case DirectSolver::DirectSolverTypes::umfpack:
-      umfpack_di_free_symbolic(&symbolic);
-      umfpack_di_free_numeric(&numeric);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        umfpack_di_free_symbolic(&symbolic);
+        umfpack_di_free_numeric(&numeric);
+      }
+      else
+      {
+        // using long for indices
+        umfpack_dl_free_symbolic(&symbolic);
+        umfpack_dl_free_numeric(&numeric);
+      }
       break;
     case DirectSolver::DirectSolverTypes::pardiso:
       ErrThrow("Pardiso does not yet work");
@@ -153,10 +178,22 @@ void DirectSolver::symetric_factorize()
     case DirectSolverTypes::umfpack:
     {
       // symbolic factorization
-      int error = umfpack_di_symbolic(n_eq, n_eq, matrix->GetRowPtr(), 
-                                      matrix->GetKCol(), matrix->GetEntries(), 
-                                      &symbolic, nullptr, nullptr);
-      handle_error_umfpack(error);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_symbolic(n_eq, n_eq, matrix->GetRowPtr(),
+                                        matrix->GetKCol(), matrix->GetEntries(),
+                                        &symbolic, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_symbolic(n_eq, n_eq, &this->rows[0], 
+                                        &this->cols[0], matrix->GetEntries(), 
+                                        &symbolic, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:
@@ -182,11 +219,23 @@ void DirectSolver::numeric_factorize()
       double Info[UMFPACK_INFO];
       double Control[UMFPACK_CONTROL];
       umfpack_di_defaults(Control);
-  
-      int error = umfpack_di_numeric(matrix->GetRowPtr(), matrix->GetKCol(),
-                                     matrix->GetEntries(), symbolic, &numeric,
-                                     Control, Info);
-      handle_error_umfpack(error);
+      
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_numeric(matrix->GetRowPtr(), matrix->GetKCol(),
+                                       matrix->GetEntries(), symbolic, &numeric,
+                                       Control, Info);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_numeric(&this->rows[0], &this->cols[0],
+                                       matrix->GetEntries(), symbolic, &numeric,
+                                       Control, Info);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:
@@ -211,10 +260,22 @@ void DirectSolver::solve(const double* rhs, double* solution)
     case DirectSolverTypes::umfpack:
     {
       // symbolic factorization
-      int error = umfpack_di_solve(UMFPACK_At, matrix->GetRowPtr(), 
-                                   matrix->GetKCol(), matrix->GetEntries(),  
-                                   solution, rhs, numeric, nullptr, nullptr);
-      handle_error_umfpack(error);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_solve(UMFPACK_At, matrix->GetRowPtr(), 
+                                     matrix->GetKCol(), matrix->GetEntries(),
+                                     solution, rhs, numeric, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_solve(UMFPACK_At, &this->rows[0], 
+                                     &this->cols[0], matrix->GetEntries(),  
+                                     solution, rhs, numeric, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:

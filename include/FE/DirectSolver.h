@@ -70,6 +70,22 @@ class DirectSolver
     /** @brief the matrix of the linear equation A*x=b */
     std::shared_ptr<TMatrix> matrix;
     
+    /** @brief temporary variables for the matrix indices 
+     * 
+     * These are only used if the matrix size exceeds a certain threshold value
+     * and umfpack is used. In that case we call the umfpack routines which use
+     * long int instead of int. This avoids out of memory errors in umfpack.
+     * 
+     * The DirectSolver::cols and DirectSolver::rows are replacements of the 
+     * respective matrix structure members, see Structure.h.
+     * 
+     * This should not be the final solution. We need the structure to also
+     * handle long. Implementing this is quite intrusive, and up to now it is
+     * only needed for umfpack.
+     */
+    std::vector<long int> cols;
+    std::vector<long int> rows;
+    
     /** @brief storage for umfpack direct solver */
     //@{
     void* symbolic;
