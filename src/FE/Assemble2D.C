@@ -10910,8 +10910,624 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
 #endif // __2D__
 } // end of Assemble_VectFE
 
+void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
+           int n_sqmatrices_assemble, int n_recmatrices_assemble,
+           std::vector<int> row_space, std::vector<int>col_space, 
+           int n_rhs_assemble, std::vector<int> row_space_rhs,
+           int n_sqmatrices_stored, TSquareMatrix2D** sqmatrices_stored,
+           int n_matrices_stored, TMatrix2D** matrices_stored, 
+           int n_rhs_stored, double** rhs_stored, const TFESpace2D** ferhs_stored,
+           LocalAssembling2D& la_assmble, ManipulateMatrices manipulateMatrices,
+           MatrixVector matrixvector, ProjectionMatrix projection_matrix,
+           BoundCondFunct2D** BoundaryConditions, 
+           BoundValueFunct2D * const * const BoundaryValues)
+{
+#ifdef __2D__
+  int N_AllMatrices_assemble = n_sqmatrices_assemble + n_recmatrices_assemble;
+  int N_AllMatrices_stored = n_sqmatrices_stored + n_matrices_stored;
+  double *weights, *xi, *eta;
+  double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
+  double AbsDetjk[MaxN_QuadPoints_2D];
+  double *righthand;
+  int *nrowInput, *ncolInput, *rowOutpu, *colOutput, *ndimInput, *ndimOutput;
+  double *aux;
+  const TFESpace2D *fespace;
+  FE2D CurrentElement;
+  TFE2D *fe;
+  bool secondDerPre[2] = {FALSE, FALSE};
+  // check if hanging nodes exist, I don't know how this works, we quit the
+  // program in that case.
+  for (int iSpace=0; iSpace<n_fespaces; iSpace++)
+  {
+    if(fespaces[iSpace]->GetN_Hanging()!=0)
+    {
+      Error("Assemble2D_VectFE: hanging entries not supported. Exiting");
+      throw(std::runtime_error("hanging entries not supported"));
+    }
+  }
+  // bool *SecondDer = la_assmble.GetNeeds2ndDerivatives();
+  
+  // ########################################################################
+  // loop over all cells
+  // ########################################################################
+  TCollection *Coll = fespaces[0]->GetCollection();// all spaces use same Coll
+  int N_Cells = Coll->GetN_Cells(); // number of cells in this collection
+  // set cell indices for all cells
+  for(int icell=0; icell<N_Cells; icell++)
+    Coll->GetCell(icell)->SetCellIndex(icell);
+  /** The case is different here to the standard Assemble2D routine
+   * The local matrices are assembled, multiplied and then 
+   * copied to the sqmatrices_stored, matrices_stored which have to be 
+   * assembled globally
+   **/
+  double ***LocMatrices_assemble = NULL;
+  if(N_AllMatrices_assemble)
+  {
+    aux = new double
+    [N_AllMatrices_assemble*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+     double **Matrices = new double* [N_AllMatrices_assemble*MaxN_BaseFunctions2D];
+     for(int j=0;j<N_AllMatrices_assemble*MaxN_BaseFunctions2D;j++)
+       Matrices[j] = aux+j*MaxN_BaseFunctions2D;
+     
+     LocMatrices_assemble = new double**[N_AllMatrices_assemble];
+     nrowInput = new int[N_AllMatrices_assemble];
+     ncolInput = new int[N_AllMatrices_assemble];
+     for(int i=0;i<N_AllMatrices_assemble;i++)
+       LocMatrices_assemble[i] = Matrices+i*MaxN_BaseFunctions2D;       
+  }                                               // endif N_AllMatrices_assemble
+  
+  double **LocRhs_assemble;
+  if(n_rhs_assemble)
+  {
+    LocRhs_assemble = new double* [n_rhs_assemble];
+    righthand = new double [n_rhs_assemble*MaxN_BaseFunctions2D];
+    memset(righthand,0,SizeOfDouble*n_rhs_assemble*MaxN_BaseFunctions2D);
+        
+    for(int i=0;i<n_rhs_assemble;i++)
+      LocRhs_assemble[i] = righthand+i*MaxN_BaseFunctions2D;
+    
+    ndimInput = new int[n_rhs_assemble]; 
+  }
+  
+  double ***LocMatrices_stored= NULL;
+  if(N_AllMatrices_stored)
+  {
+    aux = new double
+      [N_AllMatrices_stored*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
+    double **Matrices = new double* [N_AllMatrices_stored*MaxN_BaseFunctions2D];
+    for(int j=0;j<N_AllMatrices_stored*MaxN_BaseFunctions2D;j++)
+      Matrices[j] = aux+j*MaxN_BaseFunctions2D;
+    
+    LocMatrices_stored = new double**[N_AllMatrices_stored];
+    rowOutpu = new int[N_AllMatrices_stored];
+    colOutput = new int[N_AllMatrices_stored];
+    for(int i=0;i<N_AllMatrices_stored;i++)
+      LocMatrices_stored[i] = Matrices+i*MaxN_BaseFunctions2D;
+  }  
+  
+  double **LocRhs_stored;
+  if(n_rhs_stored)
+  {
+    LocRhs_stored= new double* [n_rhs_stored];
+    righthand = new double [n_rhs_stored*MaxN_BaseFunctions2D];
+    memset(righthand,0,SizeOfDouble*n_rhs_stored*MaxN_BaseFunctions2D);
+        
+    for(int i=0;i<n_rhs_stored;i++)
+      LocRhs_stored[i] = righthand+i*MaxN_BaseFunctions2D;
+    
+    ndimOutput = new int[n_rhs_stored];   
+  }
+  
+  double *AuxArray[MaxN_QuadPoints_2D];
+  aux = new double [MaxN_QuadPoints_2D*40];
+  for(int j=0;j<MaxN_QuadPoints_2D;j++)
+    AuxArray[j] = aux + j*40;
+  
+  double *Param[MaxN_QuadPoints_2D];
+  int N_Parameters=0;
+  if(la_assmble.get_type() != NO_LOCAL_ASSEMBLE)
+  {
+    N_Parameters = la_assmble.GetN_Parameters();
+    if(N_Parameters)
+    {
+      aux = new double [MaxN_QuadPoints_2D*N_Parameters];
+      for(int j=0;j<MaxN_QuadPoints_2D;j++)
+        Param[j] = aux + j*N_Parameters;
+    }
+  }
+  // ==============================================================================
+  // loop over all cells
+  // ==============================================================================
+  for(int icell=0; icell<N_Cells; icell++)
+  {
+    TBaseCell *cell = Coll->GetCell(icell); // current cell
+    int N_Edges  = cell->GetN_Edges(); // number of edges of this cell
+    
+    if(n_rhs_assemble)
+    {
+      for(int i=0;i<n_rhs_assemble;i++)
+      {
+        fespace = fespaces[row_space_rhs[i]];
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        
+        ndimInput[i] = fe->GetSize();
+      }
+    }
+    if(n_rhs_stored)
+    {
+      for(int i=0;i<n_rhs_stored;i++)
+      {
+        fespace = ferhs_stored[i];
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+      
+        ndimOutput[i] = fe->GetSize();
+      }
+    }
+    if(n_sqmatrices_stored)
+    {
+      for(int i=0; i<n_sqmatrices_stored; i++)
+      {
+        fespace = sqmatrices_stored[i]->GetTestSpace2D();
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        
+        int n_rows =fe->GetSize();//number of rows
+        fespace = sqmatrices_stored[i]->GetAnsatzSpace2D();
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        int n_cols =fe->GetSize();//number of columns
+        
+        rowOutpu[i] = n_rows;
+        colOutput[i] = n_cols;
+      }
+    }
+    if(N_AllMatrices_assemble)
+    {
+      for(int i=0; i<N_AllMatrices_assemble; i++)
+      {
+        fespace = fespaces[row_space[i]];
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        
+        int n_rows =fe->GetSize();//number of rows
+        // fespace = sqmatrices_assemble[i]->GetAnsatzSpace2D();
+        fespace = fespaces[col_space[i]];
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        int n_cols =fe->GetSize();//number of columns
+        
+        nrowInput[i] = n_rows;
+        ncolInput[i] = n_cols;    
+      }
+    }
+    // set orientation of normal at internal edges
+    // this function is not accessable during the local assembling routine
+    // so we use a global parameter as well
+    cell->SetNormalOrientation();
+    for (int ijo = 0; ijo<N_Edges; ijo++)
+    {
+      if (N_Edges==4)
+      {                                       // Raviart-Thomas, quadrilaterals
+        TDatabase::ParamDB->NORMAL_ORIENTATION_QUAD[ijo] = 
+            cell->GetNormalOrientation(ijo);
+        
+      } 
+      else if (N_Edges==3)
+      {                                       // Raviart-Thomas, triangles
+        TDatabase::ParamDB->NORMAL_ORIENTATION_TRIA[ijo] = 
+            cell->GetNormalOrientation(ijo);
+      }
+    }                                             // for ijo
+    double hK = 0; // size of cell
+    switch (TDatabase::ParamDB->CELL_MEASURE)
+    {
+      case 0:                           // diameter
+      case 4:                           // mesh size in convection direction
+      case 5:                           // take value from an array
+        hK = cell->GetDiameter();
+        break;
+      case 2:                           // shortest edge
+        hK = cell->GetShortestEdge();
+        break;
+      case 1:                           // with reference map
+      case 3:                           // measure
+        hK = cell->GetMeasure();
+        hK = sqrt(hK);
+        break;
+      default:                          // diameter
+        hK = cell->GetDiameter();
+        break;
+    }
+    // ########################################################################
+    // find local used elements on this cell
+    // ########################################################################
+    std::vector<FE2D> LocalUsedElements(n_fespaces);
+    std::vector<int> LocN_BF(n_fespaces);
+    std::vector<BaseFunct2D> LocBF(n_fespaces);
+    for(int iSpace=0; iSpace<n_fespaces; iSpace++)
+    {
+      CurrentElement = fespaces[iSpace]->GetFE2D(icell, cell);
+      fe = TFEDatabase2D::GetFE2D(CurrentElement);
+      LocalUsedElements[iSpace] = CurrentElement;
+      LocN_BF[iSpace] = fe->GetSize();
+      LocBF[iSpace] = fe->GetBaseFunct2D_ID();
+    }
+    
+    int N_LocalUsedElements = n_fespaces;
+    
+    // ########################################################################
+    // calculate values on original element
+    // ########################################################################
+    int N_Points; // number of quadrature points
+    TFEDatabase2D::GetOrig(N_LocalUsedElements, LocalUsedElements.data(), Coll,
+                           cell, secondDerPre, N_Points, xi, eta, weights, X, Y,
+                           AbsDetjk);
+    
+    // this could provide values of FE functions during the local assemble routine
+    if(la_assmble.get_type() != NO_LOCAL_ASSEMBLE)
+      la_assmble.GetParameters(N_Points,Coll, cell,icell, X, Y, Param);
 
+    // ########################################################################
+    // assemble local matrices and right hand sides
+    // ########################################################################
+    // maximum number of used basis functions
+    //int max_n_BF = *max_element(LocN_BF.begin(),LocN_BF.end()); 
+    // for every matrix we allocate a local matrix with corresponding number of 
+    // rows and columns
+   
+    if(la_assmble.get_type() != NO_LOCAL_ASSEMBLE)
+    {
+      la_assmble.GetLocalForms(N_Points, weights, AbsDetjk, X, Y, 
+                     LocN_BF.data(), LocBF.data(),
+                     Param, AuxArray, cell, N_AllMatrices_assemble, 
+                     n_rhs_assemble, LocMatrices_assemble, 
+                     LocRhs_assemble);
+    }
+    
+    const TFESpace2D *ve_space = fespaces[0];
+    const TFESpace2D *pr_space = fespaces[1];
+    
+    // assemble the local projection matrices
+    projection_matrix(icell, pr_space, ve_space, LocMatrices_assemble);
+    
+    // manipulate matrices, matrix matrix multiplication
+    if(manipulateMatrices != nullptr)
+    {
+      manipulateMatrices(LocMatrices_assemble, nrowInput, ncolInput, 
+                       LocMatrices_stored, rowOutpu, colOutput, 
+                       LocRhs_assemble, ndimInput, 
+                       LocRhs_stored, ndimOutput);
+    }
+    if(matrixvector != nullptr)
+    {
+      std::pair<int,int> size(nrowInput[0], ncolInput[0]);
+      matrixvector(LocMatrices_assemble, size, LocRhs_assemble[0], LocRhs_stored);
+    }
+    /** @brief: here we set the matrices which needs to be globally assembled
+     */    
+    switch(N_AllMatrices_stored)
+    {
+      case 2:
+        if(n_matrices_stored==2 && n_sqmatrices_stored == 0)
+        {
+          LocMatrices_stored[0] = LocMatrices_assemble[0];
+          LocMatrices_stored[1] = LocMatrices_assemble[1];
+        }
+        else
+        {
+          ErrThrow("Global matrices can not be assembled");
+        }
+        break;
+      case 6:
+        LocMatrices_stored[4] = LocMatrices_assemble[0];
+        LocMatrices_stored[5] = LocMatrices_assemble[1];
+        break;
+      case 10:
+        // other matrcies are allocated in the manipulateMatrices routine
+        LocMatrices_stored[8]= LocMatrices_assemble[0];
+        LocMatrices_stored[9]= LocMatrices_assemble[1];
+        break;
+    }    
+    // ########################################################################
+    // add local matrices to global matrices (ansatz == test)
+    // ########################################################################
+    for(int iSqMat=0;iSqMat<n_sqmatrices_stored;iSqMat++)
+    {
+      // fe space for this square matrix
+      fespace = sqmatrices_stored[iSqMat]->GetTestSpace2D();
+      // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+      // the number of local basis functions (= size of local matrix)
+      CurrentElement = fespace->GetFE2D(icell, cell);
+      fe = TFEDatabase2D::GetFE2D(CurrentElement);
+      int N_BaseFunctions = fe->GetSize();
+      
+      double **Matrix = LocMatrices_stored[iSqMat];
+      int ActiveBound = fespace->GetActiveBound();
+      int *DOF = fespace->GetGlobalDOF(icell);
+      
+      // add local matrix to global
+      for(int irow = 0; irow < N_BaseFunctions; irow++)
+      {
+        int RowDOF = DOF[irow];
+        if(RowDOF<ActiveBound)
+        { // active degree of freedom
+          for(int icolumn=0;icolumn<N_BaseFunctions;icolumn++)
+          {
+            int columnDOF=DOF[icolumn];
+            sqmatrices_stored[iSqMat]->add(RowDOF,columnDOF,Matrix[irow][icolumn]);
+          }
+        }
+        else
+        { // nonactive degree of freedom (Dirichlet)
+          sqmatrices_stored[iSqMat]->set(RowDOF,RowDOF,1.0); // 1 on diagonal
+        }
+      }                                           // endfor m
+    }                                             // endfor j
+    
+    // ########################################################################
+    // add local matrices to global matrices (ansatz != test)
+    // ########################################################################
+    //FIXME: 
+    for(int iMat=0;iMat<n_matrices_stored;iMat++)
+    {
+      const TFESpace2D* testSpace = matrices_stored[iMat]->GetTestSpace2D();
+      
+      const TFESpace2D* ansatzSpace = matrices_stored[iMat]->GetAnsatzSpace2D();
+      TFE2D * test_fe = TFEDatabase2D::GetFE2D(testSpace->GetFE2D(icell, cell));
+      TFE2D *ansatz_fe=TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(icell,cell));
+      
+      // number of test and ansatz functions
+      int N_Test = test_fe->GetSize();
+      int N_Ansatz = ansatz_fe->GetSize();
+      
+      double **Matrix = LocMatrices_stored[iMat+n_sqmatrices_stored];
+      
+      int *TestDOF = testSpace->GetGlobalDOF(icell);
+      int *AnsatzDOF = ansatzSpace->GetGlobalDOF(icell);
+      
+      int ActiveBound = testSpace->GetActiveBound();
+      
+      // add local matrix to global
+      for(int irow = 0; irow < N_Test; irow++)
+      {
+        int rowDOF = TestDOF[irow];
+        if(rowDOF<ActiveBound)
+        {
+          for(int icolumn=0; icolumn<N_Ansatz; icolumn++)
+          {
+            int columnDOF = AnsatzDOF[icolumn];
+            matrices_stored[iMat]->add(rowDOF,columnDOF,Matrix[irow][icolumn]);
+          }
+        }
+      }                                           // endfor m
+    }                                             // endfor j  (n_matrices)
+    
+    
+    // ########################################################################
+    // add local right-hand sides to global right-hand side
+    // ########################################################################
+    for(int irhs=0;irhs<n_rhs_stored;irhs++)
+    {
+      fespace = ferhs_stored[irhs];
+      CurrentElement = fespace->GetFE2D(icell, cell);
+      fe = TFEDatabase2D::GetFE2D(CurrentElement);
 
+      int N_BaseFunctions = fe->GetSize();
 
+      double *local_rhs = LocRhs_stored[irhs];
+      double *RHS = rhs_stored[irhs];
+      int ActiveBound = fespace->GetActiveBound();
+      
+      // dof of the rhs nodes connected to this cell
+      int *DOF = fespace->GetGlobalDOF(icell);
 
-
+      // add local right-hand side to the global one
+      for(int irow = 0; irow < N_BaseFunctions; irow++)
+      { 
+        int rowDOF = DOF[irow];
+        if(rowDOF<ActiveBound)
+        {
+          // node l is inner or Neumann node
+          RHS[rowDOF] += local_rhs[irow];
+        }                                         // endif l
+      }                                           // endfor m
+      //////////////////////////////////////////////////////////////////////
+      // take care of boundary conditions:      
+      BoundCondFunct2D *BoundaryCondition = BoundaryConditions[irhs];
+      BoundValueFunct2D * const BoundaryValue = BoundaryValues[irhs];
+      
+      for(int ijoint=0; ijoint<N_Edges; ijoint++)
+      {
+        TJoint *joint = cell->GetJoint(ijoint);
+        if(joint->GetType() == BoundaryEdge)
+        {
+          TBoundEdge *boundedge = (TBoundEdge *)joint;
+          double t0,t1;
+          boundedge->GetParameters(t0, t1);
+          // get id of the boundary component
+          int comp = boundedge->GetBoundComp()->GetID();
+          // get type of the boundary condition in the middle of the edge
+          BoundCond Cond;
+          BoundaryCondition(comp, (t0+t1)/2, Cond);
+          switch(Cond)
+          {
+            case DIRICHLET:
+            {
+              TFEDesc2D *FEDesc_Obj = fe->GetFEDesc2D();
+              int N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
+              // if DG
+              if (N_EdgeDOF==0)
+                break;
+              TNodalFunctional2D *nf = fe->GetNodalFunctional2D();
+              // number of points used for computation of nodal functionals
+              int N_EdgePoints; 
+              // points used for computation of nodal functionals
+              double *EdgePoints; 
+              nf->GetPointsForEdge(N_EdgePoints, EdgePoints);
+              
+              // read boundary values for each point
+              double PointValues[N_EdgePoints];
+              for(int iedgePoint=0;iedgePoint<N_EdgePoints;iedgePoint++)
+              {
+                double s = EdgePoints[iedgePoint];
+                s = 0.5*(t0*(1-s) + t1*(1+s)); // map s from [-1,1] to [t0,t1]
+                BoundaryValue(comp, s, PointValues[iedgePoint]);
+              }
+              // compute values for each dof on the boundary edge with the 
+              // nodal functionals
+              double FunctionalValues[N_EdgeDOF];
+              nf->GetEdgeFunctionals(Coll, cell, ijoint, PointValues,
+                FunctionalValues);
+              int *EdgeDOF = FEDesc_Obj->GetJointDOF(ijoint);
+              // save boundary values of each dof on the boundary
+              // edge in the rhs
+              for(int l=0;l<N_EdgeDOF;l++)
+              {
+                RHS[DOF[EdgeDOF[l]]] = FunctionalValues[l];
+              }
+              break;
+            }
+            case NEUMANN:
+            {
+              // Basis functions
+              TBaseFunct2D* BaseFunct = fe->GetBaseFunct2D();
+              // get polynomial degree of fe
+              int polynomialDegree = BaseFunct->GetPolynomialDegree();
+              // get a suitable line quadrature formula
+              QuadFormula1D LineQuadFormula = 
+                     TFEDatabase2D::GetQFLineFromDegree(2*polynomialDegree);
+              TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+              int N_LinePoints; // number of quadrature points on this edge
+              double *LineWeights, *zeta;// quadrature points and weights
+              qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+              BaseFunct->MakeRefElementData(LineQuadFormula);
+              double **JointValues=TFEDatabase2D::GetJointValues2D(
+                BaseFunct->GetID(), LineQuadFormula, ijoint);
+              BaseFunct->ChangeBF(Coll, cell, N_LinePoints, JointValues);
+              // get vertices of boundary edge
+              double x0, x1, y0, y1;
+              cell->GetVertex(ijoint)->GetCoords(x0, y0);
+              cell->GetVertex((ijoint+1) % N_Edges)->GetCoords(x1, y1);
+              // compute (half of the) length of the boundary edge
+              double hE = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))/2;
+              double nx = (y1-y0)/(2*hE);
+              double ny = (x0-x1)/(2*hE);
+              // for Piola transform
+              double *JointValuesTransformed = 
+                    new double [N_BaseFunctions * BaseFunct->GetBaseVectDim()];
+              // compute boundary integral
+              for(int ilinePoint=0; ilinePoint<N_LinePoints; ilinePoint++)
+              {
+                // values of test functions in this quadrature point
+                double *JointValue = JointValues[ilinePoint];
+                TFEDatabase2D::GetOrigValues(
+                    fe->GetRefTransID(), zeta[ilinePoint], BaseFunct, ijoint,
+                    JointValue, NULL,NULL, JointValuesTransformed, NULL,NULL); 
+                // get quadrature point on the boundary
+                double t = t0 + 0.5*(t1-t0)*(zeta[ilinePoint]+1);
+                double s;
+                // get value in this quadrature point (in s)
+                BoundaryValue(comp, t, s);
+                // multiply value with weights from quadrature formula
+                // and determinant from integral transformation to the
+                // unit edge (-1,1)
+                s *= hE * LineWeights[ilinePoint];
+                // in case of the pressure right hand side, the values in 
+                // JointValuesTransformed[k+N_] are not valid. Therefore we 
+                // need HOMOGENEOUS Neumann boundary conditions for the 
+                // pressure function
+                if(s==0.0)
+                  continue;
+                
+                // update rhs for all test functions
+                for(int k=0;k<N_BaseFunctions;k++)
+                {
+                  int rowDOF = DOF[k];
+                  if(rowDOF < ActiveBound)
+                  {
+                    RHS[rowDOF] -= s*(JointValuesTransformed[k]*nx 
+                                 +JointValuesTransformed[k+N_BaseFunctions]*ny);
+                  }
+                }
+              }
+              
+              delete [] JointValuesTransformed;
+              break;
+            }
+            case ROBIN:
+              /*// get polynomial degree of fe
+              l = TFEDatabase2D::GetPolynomialDegreeFromFE2D
+                (CurrentElement);
+              // get a suitable line quadrature formula
+              LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*l);
+              qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+              qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
+              TFEDatabase2D::GetBaseFunct2DFromFE2D(CurrentElement)
+                ->MakeRefElementData(LineQuadFormula);
+              JointValues=TFEDatabase2D::GetJointValues2D(
+                BaseFuncts[CurrentElement], LineQuadFormula, m);
+              // get vertices of boundary edge
+              cell->GetVertex(m)->GetCoords(x0, y0);
+              cell->GetVertex((m+1) % N_Joints)->GetCoords(x1, y1);
+              // compute (half of the) length of the boundary edge
+              hE = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))/2;
+              // compute boundary integral
+              for(l=0;l<N_LinePoints;l++)
+              {
+                // values of test functions in this quadrature point
+                JointValue = JointValues[l];
+                // get quadrature point on the boundary
+                t = t0 + 0.5*(t1-t0)*(zeta[l]+1);
+                // get value in this quadrature point (in s)
+                BoundaryValue(comp, t, s);
+                // multiply value with weights from quadrature formula
+                // and determinant from integral transformation to the
+                // unit edge (-1,1)
+                s *= hE * LineWeights[l];
+                // update rhs for all test functions
+                for(k=0;k<N_BaseFunctions;k++)
+                  if((l3 = DOF[k])<ActiveBound)
+                    RHS[l3] += s*JointValue[k];
+              }*/
+              Error("Robin boundary conditions not yet supported. Exiting\n");
+              exit(1);
+              break;
+            default:
+              OutPut("Unknown boundary condition !"<< endl);
+              exit(4711);
+              break;
+          }                                     // endswitch Cond0
+        }                                         // endif (boundary joint)
+      }                                           // endfor m (N_Joints)
+    }                                             // endfor j (n_rhs)
+ 
+  } // endfor i (N_Cells)
+  if(n_rhs_assemble)
+  {
+    delete [] LocRhs_assemble[0]; 
+    delete [] LocRhs_assemble;
+  }
+  
+  if(N_Parameters)
+  {
+    delete Param[0];
+  }
+  
+  if(N_AllMatrices_assemble)
+  {
+    delete [] LocMatrices_assemble[0][0];
+    delete [] LocMatrices_assemble[0];
+    delete [] LocMatrices_assemble;    
+  }
+#endif // __2D__
+} // Assemble2D_MixedFEM
