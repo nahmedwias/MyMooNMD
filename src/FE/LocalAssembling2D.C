@@ -290,18 +290,18 @@ switch(type)
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
     this->N_Terms = 2;
-      this->Derivatives = { D00 };
-      this->Needs2ndDerivatives = new bool[2];
-      this->Needs2ndDerivatives[0] = false;
-      this->Needs2ndDerivatives[1] = false;
-      this->FESpaceNumber = {0, 1 }; // 0: velocity, 1: pressure
-      this->N_Matrices = 2;
-      this->RowSpace = {0, 0, 1}; //FIXME: check it carefully currently only fixed for right hand side
-      this->ColumnSpace = {1, 1, 1}; //FIXME: espeicially for the nonlinear problem
-      this->N_Rhs = 1;
-      this->RhsSpace = { 1 };
-      this->AssembleParam = PrRobustRhs; 
-      this->Manipulate = NULL;
+    this->Derivatives = { D00 };
+    this->Needs2ndDerivatives = new bool[2];
+    this->Needs2ndDerivatives[0] = false;
+    this->Needs2ndDerivatives[1] = false;
+    this->FESpaceNumber = {0, 1 }; // 0: velocity, 1: pressure
+    this->N_Matrices = 2;
+    this->RowSpace = {0, 0, 1}; //FIXME: check it carefully currently only fixed for right hand side
+    this->ColumnSpace = {1, 1, 1}; //FIXME: espeicially for the nonlinear problem
+    this->N_Rhs = 1;
+    this->RhsSpace = { 1 };
+    this->AssembleParam = PrRobustRhs; 
+    this->Manipulate = NULL;
     break;
     
     
@@ -319,7 +319,7 @@ switch(type)
     ErrMsg("You need to specify a valid function for the coefficients");
     exit(1);
   }
-  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION && AssembleParam == NULL)
+  if(AssembleParam == NULL && type !=NO_LOCAL_ASSEMBLE)
   {
     ErrMsg("a local assembling routine was not set");
     exit(1);
@@ -2188,10 +2188,10 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->N_Parameters = 2;
       this->N_ParamFct = 1;
       this->ParameterFct =  { NSParamsVelo };
-      this->N_FEValues = 2;
-      this->FEValue_FctIndex = { 1 };
+      this->N_FEValues = 1;
+      this->FEValue_FctIndex = { 0 };
       this->FEValue_MultiIndex = { D00, D00 };
-      this->BeginParameter = { 0 }; 
+      this->BeginParameter = { 1 }; 
       break;
     case RECONSTR_TNSENL:
       if(TDatabase::ParamDB->LAPLACETYPE && TDatabase::ParamDB->NSTYPE !=4)
@@ -2233,7 +2233,7 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->RowSpace    = { };
       this->ColumnSpace = { };
       this->N_Rhs = 0;
-      this->RhsSpace = { };
+      this->RhsSpace = {  };
       this->AssembleParam = NULL;
       this->Manipulate = NULL;
       break;
