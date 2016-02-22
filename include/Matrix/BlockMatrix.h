@@ -157,6 +157,8 @@ class BlockMatrix
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
 
+    void apply_scaled_submatrix_mixed(const BlockVector & x, BlockVector & y,
+                                  double a = 1.0) const;
     /**
      * @brief checks whether the coloring is correct - use in tests only
      *
