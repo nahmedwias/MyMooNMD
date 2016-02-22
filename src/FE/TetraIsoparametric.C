@@ -99,7 +99,7 @@ void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, double xi, double eta,
 void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, int N_Points, double *xi, double *eta,
                                               double *X, double *Y, double *Z)
 {
-  int i, k, l, temp;
+  int i, k, l;
   double Xi, Eta, Zeta;
   double AuxVector[MaxN_BaseFunctions3D];
   TBaseFunct3D *bf;
@@ -108,7 +108,7 @@ void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, int N_Points, double *x
   bf = TFEDatabase3D::GetBaseFunct3D(
             BaseFunctFromOrder[ApproximationOrder]);
 
-   temp = Joint*MaxN_BaseFunctions3D;
+  //int temp = Joint*MaxN_BaseFunctions3D;
   for(i=0;i<N_Points;i++)
   {
     switch(Joint)
@@ -298,10 +298,8 @@ void TTetraIsoparametric::GetRefFromOrig(double X, double Y, double Z, double &x
   double xt = X - xc0;
   double yt = Y - yc0;
   double zt = Z - zc0;
-  double xi0, eta0, zeta0;
   double recdetaffine;
-  double eps=1e-14;
-
+  
   recdetaffine = 1/( xc1*yc2*zc3-xc1*yc3*zc2-yc1*xc2*zc3
                     +yc1*xc3*zc2+zc1*xc2*yc3-zc1*xc3*yc2 );
 
@@ -335,36 +333,19 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                double *zeta, QuadFormula3D quadformula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
   double **refvaluesD001, **origvaluesD001;
-  double **refvaluesD200, **origvaluesD200;
-  double **refvaluesD110, **origvaluesD110;
-  double **refvaluesD101, **origvaluesD101;
-  double **refvaluesD011, **origvaluesD011;
-  double **refvaluesD020, **origvaluesD020;
-  double **refvaluesD002, **origvaluesD002;
   double *refD000, *origD000;
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD020, *origD020;
-  double *refD002, *origD002;
-  double r20, r11, r02, o20, o11, o02;
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
   BaseFunct3D BaseFunct;
   int N_Functs;
   bool SecondDer;
-  int ii,ij,ik;
-  double tmp,Eye1[3][3];
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -635,7 +616,7 @@ void TTetraIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
 
-  int i, j, k, temp;
+  int j, k;
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -648,7 +629,7 @@ void TTetraIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
   bf = TFEDatabase3D::GetBaseFunct3D(
             BaseFunctFromOrder[ApproximationOrder]);
 
-  temp = JointNr*MaxN_BaseFunctions3D;
+  //int temp = JointNr*MaxN_BaseFunctions3D;
 
   switch(JointNr)
   {
@@ -737,24 +718,20 @@ void TTetraIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
 
 void TTetraIsoparametric::SetCell(TBaseCell *cell)
 {
-  int i, ii, j, k, l, m, n, auxvert, N_AuxVertices=0, N_IsoFaces=0;
+  int i, j, k, N_AuxVertices=0, N_IsoFaces=0;
   TJoint *joint;
   JointType type;
   TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
   int MaxLen;
   int *JointDOF, LocIsoDOF[4];
-  double Param1[4], Param2[4];
-  TBoundFace *bdface;
   TFEDesc3D *fedesc;
   TBaseFunct3D *bf;
-  double dt, ds;
-  double T, S, t[3], s[3], xm, ym, zm, xp, yp, zp;
+  double xm, ym, zm, xp, yp, zp;
   TVertex **Vertices, **AuxVertices;
   double x[3], y[3], z[3], factor;
   double LinComb[3][3];
-  double a,b,c, project_a, project_b, project_c;
-
+  
   N_AuxPoints = 0;
 
   Vertices = ((TGridCell*)cell)->GetVertices();
@@ -798,7 +775,7 @@ void TTetraIsoparametric::SetCell(TBaseCell *cell)
 
       JointDOF = fedesc->GetJointDOF(i);
 
-      bdface = (TBoundFace*)joint;
+      //TBoundFace *bdfacebdface = (TBoundFace*)joint;
 //       bdface->GetParameters(Param1, Param2);
 
 //       // do not apply moving of nodes on the bottom and the
@@ -1100,7 +1077,7 @@ void TTetraIsoparametric::GetTangentVectors(int j, double p1, double p2,
 {
 
   double Xi, Eta, Zeta;
-  int i, k, temp;
+  int i, k;
   double AuxVector[3*MaxN_BaseFunctions3D];
   TBaseFunct3D *bf;
 
