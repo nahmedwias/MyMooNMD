@@ -10,6 +10,7 @@
 #include <Darcy2DMixed.h>
 
 #include <stdlib.h>
+#include <vector>
 
 // ======================================================================
 // compute turbulent viscosity for LES
@@ -27,21 +28,21 @@ double TurbulentViscosity(double delta, double* gradU, double* u, double* uConv)
   {
       // no turbulent viscosity
       case 0:
-	  nu = 0;
-	  return(nu);
-	  break;
+    nu = 0;
+    return(nu);
+    break;
       case 5:
-	  nu = nu_constant;
-	  return(nu);
-	  break;
-	  // defect correction  
+    nu = nu_constant;
+    return(nu);
+    break;
+    // defect correction  
       case 6:
-	  if (TDatabase::ParamDB->DEFECT_CORRECTION_TYPE)	  
-	      nu = delta;
-	  else
-	      nu = 0;  // bwe
-	  return(nu);
-	  break;
+    if (TDatabase::ParamDB->DEFECT_CORRECTION_TYPE)   
+        nu = delta;
+    else
+        nu = 0;  // bwe
+    return(nu);
+    break;
   }
 
   // compute square of the Frobenius norm of the tensor
@@ -124,20 +125,20 @@ void SUPG_Param2D(double Mult, double* u, double* coeff, double* params)
     // triangle
     if (TDatabase::ParamDB->INTERNAL_VERTEX_X[3]== -4711)
     {
-	d11 = (y2-y1) * rec_detjk;  //dxi/dx
-	d12 = (x1-x2) * rec_detjk;  //dxi/dy
-	d21 = (y0-y1) * rec_detjk;  //deta/dx
-	d22 = (x1-x0) * rec_detjk;  //deta/dy
+       d11 = (y2-y1) * rec_detjk;  //dxi/dx
+       d12 = (x1-x2) * rec_detjk;  //dxi/dy
+       d21 = (y0-y1) * rec_detjk;  //deta/dx
+       d22 = (x1-x0) * rec_detjk;  //deta/dy
     }
     else
     {
-	// quadrilateral
-	d11 = (y2-y1) * 0.5 * rec_detjk;  //dxi/dx
-	d12 = (x1-x2) * 0.5 * rec_detjk;  //dxi/dy
-	d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
-	d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
+  // quadrilateral
+  d11 = (y2-y1) * 0.5 * rec_detjk;  //dxi/dx
+  d12 = (x1-x2) * 0.5 * rec_detjk;  //dxi/dy
+  d21 = (y0-y1) * 0.5 * rec_detjk;  //deta/dx
+  d22 = (x1-x0) * 0.5 * rec_detjk;  //deta/dy
     }
-	
+  
     g11 = d11*d11 + d21*d21;
     g12 = d11*d12 + d21*d22;
     g22 = d12*d12 + d22*d22;
@@ -156,7 +157,7 @@ void SUPG_Param2D(double Mult, double* u, double* coeff, double* params)
     params[1] = tau_c;
 
 /*    delta = (d11*d11+d21*d21)*(d11*d11+d21*d21)+2*(d11*d12+d21*d22)*(d11*d12+d21*d22)+  // G:G
-	(d12*d12+d22*d22)*(d12*d12+d22*d22);
+  (d12*d12+d22*d22)*(d12*d12+d22*d22);
     delta *= C_I*nu*nu;         
     delta += 4/(time_step*time_step);  
     delta += u1*u1*(d11*d11+d21*d21)+2*u1*u2*(d11*d12+d21*d22)+u2*u2*(d12*d12+d22*d22);  // uGu
@@ -2221,23 +2222,23 @@ double ***LocMatrices, double **LocRhs)
 
   for(int i=0;i<N_P;i++)
   {
-    MatrixRow1 = MatrixB1[i];
-    MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(int j=0;j<N_U;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
-    }                            // endfor j
-
+   MatrixRow1 = MatrixB1[i];
+   MatrixRow2 = MatrixB2[i];
+  
+   test00 = Orig3[i];
+  
+   for(int j=0;j<N_U;j++)
+   {
+     ansatz10 = Orig0[j];
+     ansatz01 = Orig1[j];
+  
+     val = -Mult*test00*ansatz10;
+     MatrixRow1[j] += val;
+  
+     val = -Mult*test00*ansatz01;
+     MatrixRow2[j] += val;
+   }                            // endfor j
+  
   }                              // endfor i
 }
 
@@ -6137,9 +6138,9 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4;
-  double *Orig0, *Orig1, *Orig2;
-  double test00, test10, test01;
+  double /**Rhs1, *Rhs2,*/ *Rhs3, *Rhs4;
+  double *Orig0, *Orig1;//, *Orig2;
+  double /*test00,*/ test10, test01;
   double u1, u2, c0, c1, c2, ugrad, delta;
   int N_U;
   
@@ -6152,7 +6153,7 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
   
   Orig0=OrigValues[0]; // u_x
   Orig1=OrigValues[1]; // u_y 
-  Orig2=OrigValues[2]; // u 
+  //Orig2=OrigValues[2]; // u 
 
   c0=coeff[0];
   c1=coeff[1];
@@ -6170,7 +6171,7 @@ void TimeNSRHSSUPG(double Mult, double *coeff,
   {
     test10=Orig0[i]; 
     test01=Orig1[i];
-    test00=Orig2[i];
+    // test00=Orig2[i];
     
     ugrad=delta*(u1*test10 + u2*test01);
     /*
@@ -6249,41 +6250,40 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
   double **NLMatrix11 = LocMatrices[5]; // rectangular matrix
   double *Rhs = LocRhs[0];
   
-  int scalar_nbf = N_BaseFuncts[0];// nbasis for V_h
-  int vector_nbf = N_BaseFuncts[1];// nbasis for BDM
+  int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
+  int vector_nbf = N_BaseFuncts[1]; // nbasis for BDM
   
-  double u1 = param[0];
-  double u2 = param[1];
+  double *Orig0  = OrigValues[0]; // u_x
+  double *Orig1  = OrigValues[1]; // u_y
+  // double *Orig2  = OrigValues[2]; // u
+  double *OrigV0 = OrigValues[3]; // p
+
+  double nu = coeff[0];  // nu
+  double f1 = coeff[1];  // f1
+  double f2 = coeff[2];  // f2
+
+  double u1 = param[0];  // u1old
+  double u2 = param[1];  // u2old
+
+  double ansatz10, ansatz01;
+  double test10, test01, val;
   
-  double nu = coeff[0];
-  double f1 = coeff[1];
-  double f2 = coeff[2];
-  
-  double *Orig1 = OrigValues[0]; // u_x
-  double *Orig2 = OrigValues[1]; // u_y
-  double *Orig0 = OrigValues[2]; // u
-  
-  double *OrigV0 = OrigValues[3];
-  
-  double test00, test10, test01;
-  double ansatz00, ansatz10, ansatz01;
-  double val;
-  // assembling of grad grad
-  for(int i=0; i<scalar_nbf; i++)
+  for(int i=0;i<scalar_nbf; i++)
   {
-    test10 = Orig1[i];
-    test01 = Orig2[i];
-    
-    for(int j=0; j<scalar_nbf; j++)
+    test10 = Orig0[i];
+    test01 = Orig1[i];    
+
+    for(int j=0;j<scalar_nbf;j++)
     {
-      ansatz10 = Orig1[i];
-      ansatz01 = Orig2[i];
-      
-      val = nu*(test10*ansatz10 + test01*ansatz01);
-      StifMatrix[i][j] += Mult*val;
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];      
+
+      val  = nu*(test10*ansatz10+test01*ansatz01);
+      StifMatrix[i][j] += Mult * val;
     }
   }
-  int *sign = new int[vector_nbf];
+  
+  std::vector<int> sign(vector_nbf);
   for(int i=0;i<vector_nbf;i++)
     sign[i] = GetSignOfThisDOF(vector_nbf, i);
   
@@ -6301,6 +6301,7 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
     {
       double ansatzx00 = sign[j]*OrigV0[j];
       double ansatzy00 = sign[j]*OrigV0[j+vector_nbf];
+      
       val = testx00*ansatzx00 + testy00*ansatzy00;
       MassMatrix[i][j] += Mult*val;
     }
@@ -6308,15 +6309,15 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
     // assembling of modified nonlinear term
     for(int j=0; j<scalar_nbf; j++)
     {
-      ansatz10 = Orig1[j];
-      ansatz01 = Orig2[j];
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
       val = (u1*ansatz10 + u2*ansatz01)*testx00;
       NLMatrix00[i][j] += Mult * val;
       
       val = (u1*ansatz10 + u2*ansatz01)*testy00;
-      NLMatrix00[i][j] += Mult * val;
+      NLMatrix11[i][j] += Mult * val;
     }
-  }
+  }  
 }
 
 void LocAssembleNLNSTYPE4(double Mult, double *coeff,
@@ -6324,58 +6325,60 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11GradGrad=LocMatrices[0];
-  double **MatrixA22GradGrad=LocMatrices[1];
-  double **MatrixA11NL = LocMatrices[2];
-  double **MatrixA22NL = LocMatrices[3];
-  
-  
-  int N_US = N_BaseFuncts[0];
-  int N_UV = N_BaseFuncts[1];
-  
-  double u1 = param[0];
-  double u2 = param[1];
-  
-  double nu = coeff[0];
-  
-  double *orig0S = OrigValues[0]; // u_x scaler space
-  double *Orig1S = OrigValues[1]; // u_y scaler space
-  double *Orig2S = OrigValues[2]; // u   scaler space 
-  double *Orig0V = OrigValues[3]; // u   vector space
-  double test00, ansatz00, test01, ansatz01;
-  double test10, ansatz10, val;
-  
-  int *sign = new int[N_UV];
-  for(int i=0;i<N_UV;i++)
-  {
-    // here check whether signs should be inverted
-    sign[i] = GetSignOfThisDOF(N_UV,i); // in Darcy2DMixed.C
-  }
-  
-  for(int i=0; i<N_US; i++) // loop over nbf_tests (rows)
-  {
-    test00 = orig0S[i];
-    test10 = Orig1S[i];
-    test01 = Orig2S[i];
-    
-    for(int j=0; j<N_US; j++) // loop over nbf_ansatz
-    {
-      val = nu*(test10*ansatz10 + test01*ansatz01);
-      MatrixA11GradGrad[i][j] += val;
-      MatrixA22GradGrad[i][j] += val;
-    }
-    
-    for(int j=0; j<N_UV; j++) // loop over nbf_ansatz vector valued (cols)
-    {
-      double ansatz_x00 = sign[j]*Orig0V[j];
-      double ansatz_y00 = sign[j]*Orig0V[j+N_US];
-      
-      val = (u1*test10 + u2*test01)*ansatz_x00;
-      MatrixA11NL[i][j] += val;
-      val = (u1*test10 + u2*test01)*ansatz_y00;
-      MatrixA22NL[i][j] += val;
-    }
-  }
-  exit(0);
+//   double **MatrixA11GradGrad=LocMatrices[0];
+//   double **MatrixA22GradGrad=LocMatrices[1];
+//   double **MatrixA11NL = LocMatrices[2];
+//   double **MatrixA22NL = LocMatrices[3];
+//   
+//   
+//   int N_US = N_BaseFuncts[0];
+//   int N_UV = N_BaseFuncts[1];
+//   
+//   double u1 = param[0];
+//   double u2 = param[1];
+//   
+//   double nu = coeff[0];
+//   
+//   double *orig0S = OrigValues[0]; // u_x scaler space
+//   double *Orig1S = OrigValues[1]; // u_y scaler space
+//   double *Orig2S = OrigValues[2]; // u   scaler space 
+//   double *Orig0V = OrigValues[3]; // u   vector space
+//   double test00, ansatz00, test01, ansatz01;
+//   double test10, ansatz10, val;
+//   
+//   int *sign = new int[N_UV];
+//   for(int i=0;i<N_UV;i++)
+//   {
+//     // here check whether signs should be inverted
+//     sign[i] = GetSignOfThisDOF(N_UV,i); // in Darcy2DMixed.C
+//   }
+//   
+//   for(int i=0; i<N_US; i++) // loop over nbf_tests (rows)
+//   {
+//     test00 = orig0S[i];
+//     test10 = Orig1S[i];
+//     test01 = Orig2S[i];
+//     
+//     for(int j=0; j<N_US; j++) // loop over nbf_ansatz
+//     {
+//       ansatz10 = orig0S[j];
+//       ansatz01 = Orig1S[j];
+//       val = nu*(test10*ansatz10 + test01*ansatz01);
+//       MatrixA11GradGrad[i][j] += val;
+//       MatrixA22GradGrad[i][j] += val;
+//     }
+//     
+//     for(int j=0; j<N_UV; j++) // loop over nbf_ansatz vector valued (cols)
+//     {
+//       double ansatz_x00 = sign[j]*Orig0V[j];
+//       double ansatz_y00 = sign[j]*Orig0V[j+N_US];
+//       
+//       val = (u1*test10 + u2*test01)*ansatz_x00;
+//       MatrixA11NL[i][j] += val;
+//       val = (u1*test10 + u2*test01)*ansatz_y00;
+//       MatrixA22NL[i][j] += val;
+//     }
+//   }
+//   exit(0);
   
 }
