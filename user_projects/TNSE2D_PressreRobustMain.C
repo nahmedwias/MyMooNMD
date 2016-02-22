@@ -59,8 +59,9 @@ int main(int argc, char *argv[])
   double end_time = TDatabase::TimeDB->ENDTIME;
   
   // assemble the projection matrix
-  stokes_prbst_time.assemble_initial_time();
-  // stokes_prbst_time.assembleProjMat();
+  //stokes_prbst_time.assembleProjMat();
+  stokes_prbst_time.assemble_initial_timeNS();
+  // stokes_prbst_time.assemble_initial_time();
   // 
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
@@ -82,14 +83,15 @@ int main(int argc, char *argv[])
        
        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
        
-       stokes_prbst_time.assemble_rhs();
-       
-       stokes_prbst_time.assemble_nonlinear();
-       
+       stokes_prbst_time.assemble_rhsNS();
+       // stokes_prbst_time.assemble_rhs();
+//        
+//        //stokes_prbst_time.assemble_nonlinear();
+//        
        stokes_prbst_time.assemble_system_matrix();
-       
+//        
        stokes_prbst_time.solve();
-       
+//        
        stokes_prbst_time.output(step, image);
      }
   }
