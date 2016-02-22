@@ -76,8 +76,7 @@ void handle_error_umfpack(int ierror)
 /** ************************************************************************ */
 DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
                            DirectSolver::DirectSolverTypes type)
- : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr), 
-   isFortranShifted(false)
+ : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr)
 {
   Output::print<3>("constructing a DirectSolver object");
   if(!matrix->is_square())
@@ -105,7 +104,7 @@ DirectSolver::DirectSolver(const BlockMatrix& matrix,
 /** ************************************************************************ */
 DirectSolver::DirectSolver(DirectSolver&& other)
  : type(other.type), matrix(other.matrix), symbolic(other.symbolic), 
-   numeric(other.numeric), isFortranShifted(other.isFortranShifted)
+   numeric(other.numeric)
 {
   other.symbolic = nullptr;
   other.numeric = nullptr;
@@ -119,7 +118,6 @@ class DirectSolver& DirectSolver::operator=(DirectSolver&& other)
   this->matrix = other.matrix;
   this->symbolic = other.symbolic;
   this->numeric = other.numeric;
-  this->isFortranShifted = other.isFortranShifted;
   other.symbolic = nullptr;
   other.numeric = nullptr;
   Output::print<4>("DirectSolver::operator=(DirectSolver&&)");
@@ -201,37 +199,6 @@ void DirectSolver::numeric_factorize()
                static_cast<typename 
                  std::underlying_type<DirectSolverTypes>::type> (type));
       break;
-  }
-}
-
-/** ************************************************************************ */
-void DirectSolver::fortranShift()
-{
-  unsigned int n_eq = this->matrix->GetN_Rows();
-  unsigned int n_en = this->matrix->GetN_Entries();
-  if (!isFortranShifted)
-  {
-    for(unsigned int i = 0; i < n_eq+1; i++)
-    {
-      this->matrix->GetRowPtr()[i] += 1;
-    }
-    for (unsigned int i = 0; i < n_en; i++)
-    {
-      this->matrix->GetKCol()[i] += 1;
-    }
-    isFortranShifted = true;
-  }
-  else
-  {
-    for(unsigned int i = 0; i < n_eq+1; i++)
-    {
-      this->matrix->GetRowPtr()[i] -= 1;
-    }
-    for (unsigned int i = 0; i < n_en; i++)
-    {
-      this->matrix->GetKCol()[i] -= 1;
-    }
-    isFortranShifted = false;
   }
 }
 

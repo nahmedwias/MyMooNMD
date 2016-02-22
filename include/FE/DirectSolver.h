@@ -76,9 +76,6 @@ class DirectSolver
     void* numeric;
     //@}
     
-    /** @brief true if indices start with 1 (Fortran style, for pardiso) */
-    bool isFortranShifted;
-    
     
     /**
      * @brief compute the factorization of a matrix, ready to call solve
@@ -106,14 +103,6 @@ class DirectSolver
     /** @brief compute numeric factorization (requires symbolic factorization) 
      */
     void numeric_factorize();
-    
-    /**
-     * @brief shifts back and forth the index to comply with fortran.
-     * 
-     * @Note this changes the matrix. It is not usable as usual until this is
-     * called a second time.
-     */
-    void fortranShift();
 };
 
 
