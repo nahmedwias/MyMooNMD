@@ -37,9 +37,6 @@ TNSE_MGLevel::TNSE_MGLevel(int level,
              int n_aux, double *al, int velocity_space, 
              int pressure_space, TCollection *coll)
 {
-  int i;
-  double *aux;
-
   Level = level;
 
   Rhs1 = f1;
@@ -104,9 +101,6 @@ void TNSE_MGLevel::Update(double *u1, double *v1)
 /** correct Dirichlet and hanging nodes */
 void TNSE_MGLevel::CorrectNodes(double *u1)
 {
-  int i,j,k, index;
-  double s, t;
-
   memset(u1+HangingNodeBound, 0, N_Dirichlet*SizeOfDouble);
   memset(u1+N_UDOF+HangingNodeBound, 0, N_Dirichlet*SizeOfDouble);
 #ifdef __2D__
@@ -176,7 +170,6 @@ void TNSE_MGLevel::SetHangingNodes(double *u1)
 void TNSE_MGLevel::CorrectDefect(double *v1)
 {
   int i;
-  double sum;
 
   int N_Hanging, N_Nodes;
   THangingNode *hn, **HangingNodes;
