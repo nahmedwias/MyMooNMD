@@ -3536,7 +3536,7 @@ double graddiv_parameterOseen(double hK, double nu, double b1, double b2)
   }
   return(tau);
 }
-
+#ifdef __2D__
 void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace, 
                          const TFESpace2D* testSpace, double ***locMatrix)
 {
@@ -3649,3 +3649,5 @@ void MatVectMult(double ***inputMat, std::pair<int,int>size, double *inputRhs,
     outputRhs[1][i] = temp1;
   }
 }
+
+#endif
