@@ -320,7 +320,7 @@ BlockFEMatrix BlockFEMatrix::Projection_NSE2D(const TFESpace2D& velocity,
                                           const TFESpace2D& projection,
                                           const TFESpace2D& pressure)
 {
-  BlockFEMatrix my_matrix({&velocity}, {&projection, &projection, &pressure});
+  BlockFEMatrix my_matrix({&velocity}, {&projection, &projection});
   
   if( (velocity.GetCollection()) != projection.GetCollection() )
   {
@@ -331,9 +331,7 @@ BlockFEMatrix BlockFEMatrix::Projection_NSE2D(const TFESpace2D& velocity,
   
   // first and second column block
   my_matrix.replace_blocks(FEMatrix(&velocity, &projection), {{0,0}}, {false});
-  my_matrix.replace_blocks(FEMatrix(&velocity, &projection), {{0,1}}, {false});  
-  // third column
-  my_matrix.replace_blocks(FEMatrix(&velocity, &pressure), {{0,2}}, {false});
+  my_matrix.replace_blocks(FEMatrix(&velocity, &projection), {{0,1}}, {false});
   
   return my_matrix;
 }
