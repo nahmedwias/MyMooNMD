@@ -11,8 +11,6 @@
 #include <NSE3D.h>
 #include <MeshPartition.h>
 
-#include <BlockMatrixNSE3D.h>
-
 #include <sys/stat.h>
 
 #ifdef _MPI
@@ -161,4 +159,10 @@ int main(int argc, char* argv[])
 #else
   NSE3D nse3d(gridCollections, example);
 #endif
+  
+  nse3d.assembleLinearTerms();
+  
+  nse3d.assembleNonLinearTerm();
+  
+  return 0;
 }
