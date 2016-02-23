@@ -8,8 +8,9 @@
  *             the solution vector of a NSE problem in 3D. When a multigrid
  *             solver is used then all of this is stored on multiple grids.
  *
- * @author     Clemens Bartsch
- * @date       2015/12/07
+ * @author     Clemens Bartsch, Naveed Ahmed
+ * @date       2015/12/07 
+ * @history    2016/02/21
  *
  ******************************************************************************/
 
@@ -35,6 +36,7 @@
 
 class NSE3D
 {
+  enum class Matrix{Type14, Type1, Type2, Type3, Type4};
  protected:
     /** @brief store a complete system on a particular grid
      *
@@ -54,9 +56,11 @@ class NSE3D
        */
 #ifdef _MPI
       SystemPerGrid(const Example_NSE3D& example,
-                    TCollection& coll, int maxSubDomainPerDof);
+                    TCollection& coll, std::pair<int, int> order, NSE3D::Matrix type, 
+                    int maxSubDomainPerDof);
 #else
-      SystemPerGrid(const Example_NSE3D& example, TCollection& coll );
+      SystemPerGrid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order, 
+                    NSE3D::Matrix type);
 #endif
 
       /** @brief Finite Element space for the velocity */
@@ -133,6 +137,18 @@ class NSE3D
      *         needed.
      */
     std::shared_ptr<TNSE_MultiGrid> multigrid_;
+    
+    /** @brief set the velocity and pressure orders
+     * 
+     * This function sets the corresponding velocity and 
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
+     * 
+     * Tried to stay with the function GetVelocityPressureSpace3D()
+     * in the MainUtilities file.
+     */
+    void get_velocity_pressure_orders(std::pair <int,int> 
+                   &velocity_pressure_orders);
 
  public:
 
@@ -212,6 +228,14 @@ class NSE3D
     //! Default destructor. Does most likely cause memory leaks.
     ~NSE3D() = default;
 
+/*******************************************************************************/
+    /**
+     * @brief initialize multigrid levels for different NSTYPE's
+     * 
+     * @param: level
+     * @param: grid
+     */
+    TNSE_MGLevel* mg_levels(int level, SystemPerGrid& s);
 
 };
 

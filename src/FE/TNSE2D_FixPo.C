@@ -19,7 +19,7 @@ double TurbulentViscosity(double delta, double* gradU, double* u, double* uConv)
   double nu_constant = TDatabase::ParamDB->TURBULENT_VISCOSITY_CONSTANT;
   int nu_tensor =  TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
   double nu_power, nu_sigma;
-  double frobenius_norm_tensor,nu,a,b,c,sigma;
+  double frobenius_norm_tensor,nu,a,b,c;
 
   // compute turbulent viscosity
   switch(nu_type)
@@ -102,7 +102,7 @@ double TurbulentViscosity(double delta, double* gradU, double* u, double* uConv)
 void SUPG_Param2D(double Mult, double* u, double* coeff, double* params)
 {
     double x0, x1, x2, y0, y1, y2, g11, g12, g22;
-    double d11, d12, d21, d22, delta, nu, tau_c, tau_m;
+    double d11, d12, d21, d22, nu, tau_c, tau_m;
     double u1, u2, rec_detjk;
     double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;    
     double C_I = TDatabase::ParamDB->DELTA0;
@@ -723,8 +723,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2;
-
+  
   MatrixA = LocMatrices[0];
   MatrixM = LocMatrices[1];
   MatrixB1 = LocMatrices[2];
@@ -746,9 +745,6 @@ double ***LocMatrices, double **LocRhs)
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
 
   for(i=0;i<N_U;i++)
   {
@@ -938,7 +934,7 @@ double ***LocMatrices, double **LocRhs)
   int i,j, N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
-  double delta, ngu, val1, mu, mu2;
+  double delta, mu, mu2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
   MatrixA = LocMatrices[0];
@@ -1053,11 +1049,11 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22;
-  double **MatrixM11, **MatrixM22;
+  double **MatrixM11;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix22Row;
-  double *MatrixM11Row, *MatrixM22Row;
+  double *MatrixM11Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -1069,9 +1065,8 @@ double ***LocMatrices, double **LocRhs)
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
-  MatrixM22 = LocMatrices[5];
-  MatrixB1  = LocMatrices[6];
-  MatrixB2  = LocMatrices[7];
+  MatrixB1  = LocMatrices[5];
+  MatrixB2  = LocMatrices[6];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -1096,7 +1091,6 @@ double ***LocMatrices, double **LocRhs)
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
 
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1118,7 +1112,6 @@ double ***LocMatrices, double **LocRhs)
 
       val = Mult*(ansatz00*test00);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
     }                            // endfor j
   }                              // endfor i
 
@@ -1155,55 +1148,48 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixM11, **MatrixM22;
-  double **MatrixB1, **MatrixB2;
-  double *Rhs1, *Rhs2, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double *MatrixM11Row, *MatrixM22Row;
-  double *MatrixRow1, *MatrixRow2;
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double **MatrixA21 = LocMatrices[2];
+  double **MatrixA22 = LocMatrices[3];
+  double **MatrixM11 = LocMatrices[4];
+  double **MatrixB1  = LocMatrices[5];
+  double **MatrixB2  = LocMatrices[6];
+
+  double *Rhs1 = LocRhs[0];
+  double *Rhs2 = LocRhs[1];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double *Orig0 = OrigValues[0];         // u_x
+  double *Orig1 = OrigValues[1];         // u_y
+  double *Orig2 = OrigValues[2];         // u
+  double *Orig3 = OrigValues[3];         // p
+
+  double c0 = coeff[0];                 // nu
+  double c1 = coeff[1];                 // f1
+  double c2 = coeff[2];                 // f2
+
+  double u1 = param[0];                 // u1old
+  double u2 = param[1];                 // u2old
+
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
-  double u1, u2;
-
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
-  MatrixA22 = LocMatrices[3];
-  MatrixM11 = LocMatrices[4];
-  MatrixM22 = LocMatrices[5];
-  MatrixB1  = LocMatrices[6];
-  MatrixB2  = LocMatrices[7];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-
-  u1 = param[0];                 // u1old
-  u2 = param[1];                 // u2old
-
-  for(i=0;i<N_U;i++)
+  
+  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *MatrixM11Row;
+  double *MatrixRow1, *MatrixRow2;
+  double val, val1;
+  
+  for(int i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
     Matrix12Row = MatrixA12[i];
     Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
+    
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
@@ -1211,12 +1197,12 @@ double ***LocMatrices, double **LocRhs)
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       ansatz00 = Orig2[j];
-
+      
       val1 = (u1*ansatz10+u2*ansatz01)*test00;
       val  = c0*(2*test10*ansatz10+test01*ansatz01);
       val += val1;
@@ -1234,18 +1220,17 @@ double ***LocMatrices, double **LocRhs)
 
       val = Mult*(ansatz00*test00);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
     }                            // endfor j
   }                              // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
     test00 = Orig3[i];
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
@@ -1285,7 +1270,6 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2;
 
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[3];
@@ -1481,7 +1465,7 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
@@ -1524,8 +1508,6 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -1717,7 +1699,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double delta, ngu, val1, mu, mu2;
+  double delta, mu, mu2;
   double u1, u2;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
@@ -2136,7 +2118,7 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
@@ -2177,9 +2159,7 @@ double ***LocMatrices, double **LocRhs)
 
   for(i=0;i<N_U;i++)
   {
-    Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+    Matrix11Row = MatrixA11[i];    
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -2199,12 +2179,6 @@ double ***LocMatrices, double **LocRhs)
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix12Row[j] += Mult * val;
-
-      // val  = 0;
-      // Matrix21Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01)*test00;
@@ -2267,7 +2241,6 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *AuxMatrixRow, **AuxMatrix;;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row;
   double *MatrixRow1, *MatrixRow2;

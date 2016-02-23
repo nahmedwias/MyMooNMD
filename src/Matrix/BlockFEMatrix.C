@@ -302,6 +302,228 @@ BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
   my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
   return my_matrix;
 }
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+
+  // create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_1_1(velo_velo_0_0);
+  FEMatrix velo_velo_2_2(velo_velo_0_0);
+  
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  // zero velocity blocks
+  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1);
+  FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
+ 
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{3,0}, {0,3} }, {false, true});
+ 
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{3,1}, {1,3} }, {false, true});
+
+  // fill in the pressure_velo blocks B_3 and B_3^T
+  my_matrix.replace_blocks(pressure_velo_3, {{3,2}, {2,3} }, {false, true});  
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+
+  //create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_1_1(velo_velo_0_0);
+  FEMatrix velo_velo_2_2(velo_velo_0_0);
+  
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  
+  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+  
+  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+  
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); 
+  FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
+
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); 
+  FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
+
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{3,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,3}}, {false});  
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{3,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,3}}, {false});
+  
+  // fill in the pressure_velo blocks B_3 and B_3^T
+  my_matrix.replace_blocks(pressure_velo_3, {{3,2}}, {false});
+  my_matrix.replace_blocks(velo_pressure_3, {{2,3}}, {false});  
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+
+  // create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_0_2(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_2(velo_velo_0_0);
+  FEMatrix velo_velo_2_0(velo_velo_0_0);
+  FEMatrix velo_velo_2_1(velo_velo_0_0);
+  FEMatrix velo_velo_2_2(velo_velo_0_0);   //all copy constructed, share one TStructure
+  
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_2, {{0,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_2, {{1,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_0, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); 
+  FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
+  
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{3,0}, {0,3} }, {false, true});
+ 
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{3,1}, {1,3} }, {false, true});
+
+  // fill in the pressure_velo blocks B_3 and B_3^T
+  my_matrix.replace_blocks(pressure_velo_3, {{3,2}, {2,3} }, {false, true});
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+
+  // create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_0_2(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_2(velo_velo_0_0);
+  FEMatrix velo_velo_2_0(velo_velo_0_0);
+  FEMatrix velo_velo_2_1(velo_velo_0_0);
+  FEMatrix velo_velo_2_2(velo_velo_0_0);   //all copy constructed, share one TStructure
+  
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_2, {{0,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_2, {{1,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_0, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); 
+  FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
+  
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); 
+  FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
+  
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{3,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,3}}, {false});  
+  
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{3,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,3}}, {false});
+  
+  // fill in the pressure_velo blocks B_3 and B_3^T
+  my_matrix.replace_blocks(pressure_velo_3, {{3,2}}, {false});
+  my_matrix.replace_blocks(velo_pressure_3, {{2,3}}, {false});  
+  
+  return my_matrix;
+
+}
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+
+  // create new blocks with correct structures filled with 0
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_0_2(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_2(velo_velo_0_0);
+  FEMatrix velo_velo_2_0(velo_velo_0_0);
+  FEMatrix velo_velo_2_1(velo_velo_0_0);
+  FEMatrix velo_velo_2_2(velo_velo_0_0);   //all copy constructed, share one TStructure
+  
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{0,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_2, {{0,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{1,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_2, {{1,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_0, {{2,0}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
+  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); 
+  FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
+  
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); 
+  FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
+  
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{3,0}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{0,3}}, {false});  
+  
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{3,1}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{1,3}}, {false});
+  
+  // fill in the pressure_velo blocks B_3 and B_3^T
+  my_matrix.replace_blocks(pressure_velo_3, {{3,2}}, {false});
+  my_matrix.replace_blocks(velo_pressure_3, {{2,3}}, {false});  
+  
+  FEMatrix pressure_pressure(&pressure, &pressure);
+  // fill in the pressure-pressure block
+  my_matrix.replace_blocks(pressure_pressure, {{3,3}}, {false});
+  
+  return my_matrix;
+
+}
 #endif
 
 /* ************************************************************************* */
