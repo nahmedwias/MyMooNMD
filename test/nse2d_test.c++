@@ -59,16 +59,17 @@ void compare(NSE2D& nse2d, std::array<double, int(6)> errors)
   if(fabs(computed_errors[3] - errors[3]) > 1e-6 )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
-  } 
-  Output::print<1>("Elements: P2/P1: test passed for the Direct Solver: ");
-  
+  }  
 }
-void check(TDomain &domain, int velocity_order, int nstype, 
+void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
+           int nonlinear_form,
            std::array<double, int(6)> errors)
 {
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
+  TDatabase::ParamDB->LAPLACETYPE = laplace_type;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
   NSE2D nse2d(domain);
   nse2d.assemble();
@@ -130,21 +131,32 @@ int main(int argc, char* argv[])
     {
       domain.RegRefineAll();
     }
-    
+    //===========================================================
+    Output::print<1>("Testing the P2/P1 elements");
+    //===========================================================
     std::array<double, int(6)> errors;
     errors = {{0.000610487, 0.0389713, 0.0107332,  0.512621}};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
     // NSTYPE = 1
-    check(domain, 2, 1, errors);
+    check(domain, 2, 1, 0, 0, errors);
     // NSTYPE = 2
-    check(domain, 2, 2, errors);
+    check(domain, 2, 2, 0, 0, errors);
     // NSTYPE = 3
-    check(domain, 2, 3, errors);
+    check(domain, 2, 3, 0, 0, errors);
     // NSTYPE is 4
-    check(domain, 2, 4, errors);
+    check(domain, 2, 4, 0, 0, errors);
     //===========================================================
-    // test the 
+    Output::print<1>("Testing the P3/P2 elements");
     //===========================================================
+    errors = {{1.84056e-05, 0.00142784, 0.000556315, 0.0430551}};
+    // NSTYPE = 1
+    check(domain, 3, 1, 0, 0, errors);
+    // NSTYPE = 2
+    check(domain, 3, 2, 0, 0, errors);
+    // NSTYPE = 3
+    check(domain, 3, 3, 0, 0, errors);
+    // NSTYPE = 4
+    check(domain, 3, 4, 0, 0, errors);
     
   } // end program 1
 //================================================================================  
@@ -183,18 +195,59 @@ int main(int argc, char* argv[])
     {
       domain.RegRefineAll();
     }
-    
+    //===========================================================
+    Output::print<1>("Testing the Q2/P1-disc elements");
+    //===========================================================
     std::array<double, int(6)> errors;
     errors = {{6.37755e-05, 0.00661116, 0.00190367,  0.17806}};
     // VELOCITY_SPACE  = 12
     // NSTYPE = 1
-    check(domain, 12, 1, errors);
+    check(domain, 12, 1, 0, 0, errors);
     // NSTYPE = 2
-    check(domain, 12, 2, errors);
+    check(domain, 12, 2, 0, 0, errors);
     // NSTYPE = 3
-    check(domain, 12, 3, errors);
+    check(domain, 12, 3, 0, 0, errors);
     // NSTYPE 4 
-    check(domain, 12, 4, errors);
+    check(domain, 12, 4, 0, 0, errors);
+    //===========================================================
+    Output::print<1>("Testing the Q3/P2-disc elements");
+    //===========================================================    
+    errors = {{8.44484e-07, 0.000121079, 6.07644e-05,  0.00859989}};
+    // VELOCITY_SPACE  = 12
+    // NSTYPE = 1
+    check(domain, 13, 1, 0, 0, errors);
+    // NSTYPE = 2
+    check(domain, 13, 2, 0, 0, errors);
+    // NSTYPE = 3
+    check(domain, 13, 3, 0, 0, errors);
+    // NSTYPE 4 
+    check(domain, 13, 4, 0, 0, errors);
+    //===========================================================
+    Output::print<1>("Testing the Q4/P3-disc elements");
+    //===========================================================
+    errors = {{1.02856e-08, 1.81526e-06, 1.45146e-06, 0.000287603}};
+    // VELOCITY_SPACE  = 12
+    // NSTYPE = 1
+    check(domain, 14, 1, 0, 0, errors);
+    // NSTYPE = 2
+    check(domain, 14, 2, 0, 0, errors);
+    // NSTYPE = 3
+    check(domain, 14, 3, 0, 0, errors);
+    // NSTYPE 4 
+    check(domain, 14, 4, 0, 0, errors);
+    //===========================================================
+    Output::print<1>("Testing the Q5/P4-disc elements");
+    //===========================================================    
+    errors = {{1.41762e-10, 2.90308e-08, 2.7216e-08,  7.02901e-06}};
+    // VELOCITY_SPACE  = 12
+    // NSTYPE = 1
+    check(domain, 15, 1, 0, 0, errors);
+    // NSTYPE = 2
+    check(domain, 15, 2, 0, 0, errors);
+    // NSTYPE = 3
+    check(domain, 15, 3, 0, 0, errors);
+    // NSTYPE 4 
+    check(domain, 15, 4, 0, 0, errors);
   }
   
   return 0;
