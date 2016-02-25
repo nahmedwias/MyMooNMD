@@ -250,6 +250,96 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
 }
 
 /**************************************************************************** */
+void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInput, 
+                                double ***outputMat, int *nrowOut, int *ncolOut, 
+                                double **inputrhs,  int *ndimInput, 
+                                double **outputrhs, int *ndimOutput)
+{
+  //======================================================================
+  // matrix-matrix multiplication using dgemm for the stiffness
+  // matrix
+  //======================================================================
+  /**
+   * A_NL * P^T + AL
+   * 0 is loc matrix P0
+   * 1 is loc matrix P1
+   * 2 is loc matrix M
+   * 3 is loc matrix A(grad grad)
+   * 4 is loc matrix Anl0
+   * 5 is loc matrix Anl1
+   */
+  double *P0 =  new double[nrowInput[0]*ncolInput[0]];
+  double *P1 =  new double[nrowInput[1]*ncolInput[1]];
+  // copy the matrices
+  for(int i=0; i<nrowInput[0]; ++i)
+  {
+    memcpy(P0+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
+    memcpy(P1+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
+  }
+  double *A00= new double[nrowInput[2]*ncolInput[2]];
+  double *A01= new double[nrowInput[2]*ncolInput[2]];
+  double *A10= new double[nrowInput[2]*ncolInput[2]];
+  double *A11= new double[nrowInput[2]*ncolInput[2]];
+  memset(A10,0,nrowInput[2]*ncolInput[2]*SizeOfDouble);
+  memset(A01,0,nrowInput[2]*ncolInput[2]*SizeOfDouble);
+  for(int i=0; i<nrowInput[2]; ++i)
+  {
+    memcpy(A00+i*ncolInput[2], inputMat[2][i], ncolInput[2]*SizeOfDouble);
+    memcpy(A11+i*ncolInput[2], inputMat[2][i], ncolInput[2]*SizeOfDouble);
+  }
+  double *Anl0 = new double[nrowInput[3]*ncolInput[3]];
+  double *Anl1 = new double[nrowInput[4]*ncolInput[4]];
+  for(int i=0; i<nrowInput[4]; ++i)
+  {
+    memcpy(Anl0+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
+    memcpy(Anl1+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
+  }
+  int m, n, k, lda, ldb, ldc;
+  // local matrix A00 = P0*Anl0 + A(grad,grad)
+  m  =nrowInput[0]; // nrowA;
+  n  =ncolInput[3]; // ncolB;
+  k  =ncolInput[0]; // ncolA;
+  lda=ncolInput[0]; // ncolA;
+  ldb=ncolInput[3]; // ncolB;
+  ldc=ncolInput[3]; // ncolB;
+  double alpha = 1.;
+  double beta  = 1.;
+  
+  //======================================================================
+  // normally dgemm uses fortran format where the entries are treated
+  // as column storage format, but we can calkulate the matrices 
+  // multiplication and addition in the row-storage format as follows:
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P0, &lda, 
+         &beta, A00, &ldc);
+  
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P1, &lda, 
+         &beta, A01, &ldc);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P0, &lda, 
+         &beta, A10, &ldc);
+
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P1, &lda, 
+         &beta, A11, &ldc);
+
+  for(int i=0; i<ldc; i++)
+  {
+    memcpy(outputMat[0][i], A00+i*ldc, ldc*SizeOfDouble);
+    memcpy(outputMat[1][i], A01+i*ldc, ldc*SizeOfDouble);
+    memcpy(outputMat[2][i], A10+i*ldc, ldc*SizeOfDouble);
+    memcpy(outputMat[3][i], A11+i*ldc, ldc*SizeOfDouble);
+  }
+
+  delete [] P0;
+  delete [] P1;
+  delete [] A00;
+  delete [] A01;
+  delete [] A10;
+  delete [] A11;
+  delete [] Anl0;
+  delete [] Anl1;  
+}
+
+/**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_initial_time()
 {
   // assemble matrices and right hand side
@@ -295,8 +385,8 @@ void PrRobustTime_NSE2D::assemble_initial_time()
     const int nRhsAssemble = 1;
     //NOTE:for the assembling of matrices or right hand side, space numbers
     //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0, 0, 1}; // row space for assembling matrices
-    std::vector<int> colSpace ={1, 1, 1}; // cols space for assembling matrices
+    std::vector<int> rowSpace ={0, 0, 0}; // row space for assembling matrices
+    std::vector<int> colSpace ={1, 1, 0}; // cols space for assembling matrices
     std::vector<int> rowSpaceRhs={1}; // row space for assembling rhs 
     
     // prepare everything for storing the matrices and rhs
@@ -598,34 +688,6 @@ void PrRobustTime_NSE2D::assemble_rhs()
 }
 
 /**************************************************************************** */
-void PrRobustTime_NSE2D::assemble_nonlinear()
-{
-  // check and return if the DISCTYPE==RECONSTRUCTION
-  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION)
-  {
-    this->Time_NSE2D::assemble_nonlinear_term();
-    return;
-  }
-  // assemble the nonlinear term  
-  SystemPerGrid& s_derived = this->Systems.front();
-  for(System_per_grid& s_base : this->Time_NSE2D::systems)
-  {
-    //NOTE: What to assemble:
-    // pi_h u^old = projection_matrices*sol
-    // assemble the Matrix A = (pi_h u^old grad u, pi_h v)
-    // This will results in 
-    // ModifiedA = (A00 A01)
-    //             (A10 A11)
-    // preparing pi_h u^old u in V_h, pi_h u in X_h
-    // s_base.solution.print("r");
-//     s_derived.ProjectionMatrix.apply_scaled_transposed_submatrix(s_base.solution,
-//                                s_derived.solutionVV, 1, 2, 1.0);
-    //s_derived.solutionVV.print("sv");exit(0);
-    
-  }
-}
-
-/**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_system_matrix()
 {
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
@@ -646,7 +708,7 @@ void PrRobustTime_NSE2D::assemble_system_matrix()
       s_base.matrix.add_matrix_actives(MFM10, 1.0, {{1,0}}, {false});
       
       const FEMatrix& MFM11 = *this->Systems[i].Modifed_Mass.get_blocks().at(3).get();    
-      s_base.matrix.add_matrix_actives(MFM11, 1.0, {{1,1}}, {false});
+      s_base.matrix.add_matrix_actives(MFM11, 1.0, {{1,1}}, {false});     
       i++;
     }
   }
@@ -788,7 +850,7 @@ bool PrRobustTime_NSE2D::assembleProjMat()
                         empty_constructor, nullptr, nullptr,
                         projection_matrices, boundCond, boundVal.data());
   }//
-  
+  TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
   if(TDatabase::ParamDB->PROBLEM_TYPE ==5)
     return true;
   else 
@@ -893,8 +955,6 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
                              velocity_space->GetBoundCondition(),
                              pressure_space->GetBoundCondition() };
     // boundary values
-    BoundValueFunct2D * const * const BoundValue
-         =this->Time_NSE2D::get_example().get_bd();
     std::array<BoundValueFunct2D*, 3> boundVal;
     boundVal[0] = example.get_bd()[0];
     boundVal[1] = example.get_bd()[1];
@@ -1069,6 +1129,161 @@ void PrRobustTime_NSE2D::assemble_rhsNS()
   }
   s_base.rhs.copy_nonactive(s_base.solution);
   Output::print<3>("leaving the assemble_rhs PrRobustTime_NSE2D");
+}
+
+/**************************************************************************** */
+void PrRobustTime_NSE2D::assemble_nonlinearNS()
+{
+  // check and return if the DISCTYPE==RECONSTRUCTION
+  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION)
+  {
+    this->Time_NSE2D::assemble_nonlinear_term();
+    return;
+  }
+  System_per_grid& s_base = this->Time_NSE2D::systems.front();
+  // assemble mass matrix using vector space  
+  for(SystemPerGrid &s_derived : this->Systems)
+  {
+    /**======================== 
+     * preparing pi_h u^old
+     */   
+    // reset the solutionVV
+    s_derived.solutionVV.reset();
+    // copy non active in case only
+    s_base.solution.copy_nonactive(s_base.rhs);
+    s_derived.ProjectionMatrix.apply_scaled_submatrix_mixed(s_base.solution, s_derived.solutionVV, 1.);
+    //=========================
+    // assemble all matrices and right hand side     
+    // local assemble routine
+    TFEFunction2D *fefct[1] = {&s_derived.fefctVV};
+    LocalAssembling2D la(RECONSTR_TNSENL, fefct, 
+                           this->Time_NSE2D::get_example().get_coeffs());
+    // assemble the right hand side separately  
+    s_derived.rhsXh.reset();
+    // setting the space for sign in GetSignOfThisDOF();
+    unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
+    TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
+    // prepare everything which is needed for assembling matrices and 
+    // the right hand side
+    const int nFESpaces = 2;
+    const TFESpace2D *project_space  = &this->get_projection_space();
+    const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
+    const TFESpace2D *pressure_space = &this->Time_NSE2D::get_pressure_space();
+    // pointers to the fespace
+    const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
+     
+    const int nSqMatAssemble=1;
+    const int nReMatAssemble=4;
+    std::vector<int> rowSpace ={0, 0, 0, 1, 1}; // row space for assembling matrices
+    std::vector<int> colSpace ={1, 1, 0, 0, 0}; // cols space for assembling matrices
+    
+    const int nRhsAssemble = 0;
+   //NOTE:for the assembling of matrices or right hand side, space numbers
+   //are passed as array: this corresponds to the array "pointer_to_space"
+   std::vector<int> rowSpaceRhs={}; // row space for assembling rhs 
+
+    // prepare everything for storing the matrices and rhs
+    // this will be used latter inside the class
+    const int nSqMatStored = 4;
+    TSquareMatrix2D * sqMatricesStored[nSqMatStored]{nullptr}; // 8 matrices to be stored
+   
+    std::vector<std::shared_ptr<FEMatrix>> matrixA
+           = s_base.matrix.get_blocks_uniquely();
+
+    sqMatricesStored[0]=reinterpret_cast<TSquareMatrix2D*>(matrixA.at(0).get());
+    sqMatricesStored[1]=reinterpret_cast<TSquareMatrix2D*>(matrixA.at(1).get());
+    sqMatricesStored[2]=reinterpret_cast<TSquareMatrix2D*>(matrixA.at(3).get());
+    sqMatricesStored[3]=reinterpret_cast<TSquareMatrix2D*>(matrixA.at(4).get());
+    // reset the matrices
+    for(int i=0; i<nSqMatStored; i++)
+      sqMatricesStored[i]->reset();
+    
+    // rectangular matrices to be stored
+    const int nReMatStored = 0;
+    TMatrix2D ** rectMatricesStored = nullptr;
+    
+    // right hand vector to be stored
+    int nRhsStored = 0;
+    const TFESpace2D ** pointToRhsStored{nullptr};
+    double **rhsStored{nullptr};    
+    // boundary conditions    
+    BoundCondFunct2D *boundCond[3] ={ velocity_space->GetBoundCondition(), 
+                             velocity_space->GetBoundCondition(),
+                             pressure_space->GetBoundCondition() };
+    // boundary values
+    BoundValueFunct2D * const * const BoundValue
+         =this->Time_NSE2D::get_example().get_bd();
+    std::array<BoundValueFunct2D*, 3> boundVal;
+    boundVal[0] = example.get_bd()[0];
+    boundVal[1] = example.get_bd()[1];
+    boundVal[2] = example.get_bd()[2];
+    // assemble the correspoding matrices and right hand side
+    Assemble2D_MixedFEM(nFESpaces, pointer_to_space, 
+                        nSqMatAssemble, nReMatAssemble,
+                        rowSpace, colSpace, 
+                        nRhsAssemble, rowSpaceRhs, 
+                        nSqMatStored, sqMatricesStored, 
+                        nReMatStored, rectMatricesStored, 
+                        nRhsStored, rhsStored,pointToRhsStored, 
+                        la, nonlinear_term_reconstruct, nullptr,
+                        projection_matrices, boundCond, boundVal.data());    
+  }// endof assembling for all grids
+}
+
+/**************************************************************************** */
+bool PrRobustTime_NSE2D::stopIte(unsigned int it_counter)
+{
+  System_per_grid& s = this->systems.front();
+  unsigned int nuDof = s.solution.length(0);
+  unsigned int npDof = s.solution.length(2);
+  
+  this->defect = s.rhs; 
+  s.matrix.apply_scaled_add(s.solution, defect,-1.);
+  // 
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
+                      TDatabase::ParamDB->VELOCITY_SPACE, 
+                      TDatabase::ParamDB->PRESSURE_SPACE);
+  double residual =  Ddot(2*nuDof+npDof, &this->defect[0], &this->defect[0]);
+  double impulse_residual = Ddot(2*nuDof, &this->defect[0],
+         &this->defect[0]);
+  double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
+         &this->defect[2*nuDof]);
+  
+  Output::print("nonlinear step  :  " , setw(3), it_counter);
+  Output::print("impulse_residual:  " , setw(3), impulse_residual);
+  Output::print("mass_residual   :  " , setw(3), mass_residual);
+  Output::print("residual        :  " , setw(3), sqrt(residual));
+  
+  if (it_counter>0)
+  {
+    Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  }
+  
+  oldResidual = sqrt(residual);
+  if(it_counter == 0)
+    initial_residual = sqrt(residual);
+  
+  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  {
+    limit *= sqrt(this->get_size());
+    Output::print("stopping tolerance for nonlinear iteration ", limit);
+  }
+  
+  if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
+   && (it_counter>=TDatabase::ParamDB->SC_MINIT))
+   {
+     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+                   " Reduction : ",  sqrt(residual)/initial_residual);
+     // descale the matrices, since only the diagonal A block will 
+     // be reassembled in the next time step
+     this->descaleMatrices();     
+     return true;
+   }
+   else
+     return false;
 }
 
 /**************************************************************************** */

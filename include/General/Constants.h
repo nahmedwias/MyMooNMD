@@ -166,6 +166,11 @@ class TFEVectFunct2D;
 typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **, 
                                      double *, int *);
 
+typedef void GetDragLiftFunct2D(const TFEFunction2D *, const TFEFunction2D *, const TFEFunction2D *,
+                                const TFEFunction2D *, const TFEFunction2D *,
+                                double &, double &);
+//typedef void ComputeDragLift(TFEFunction2D *, TFEFunction2D *, TFEFunction2D *, TFEFunction2D *, TFEFunction2D *);
+
 
 #define GALERKIN         1
 #define SDFEM            2

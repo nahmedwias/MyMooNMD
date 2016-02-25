@@ -18,10 +18,28 @@
 #define __EXAMPLE_NSE2D__
 
 #include<Example2D.h>
-
+#include <functional>
 
 class Example_NSE2D : public Example2D
 {
+  /** @brief a function which can be called as a post processing step 
+   *
+   * The arguments are the two velocity components and the pressure function. 
+   * This is for stationary problems
+   */
+  std::function<void(TFEFunction2D *, TFEFunction2D *,TFEFunction2D *)>
+    post_processing;
+
+  /** @brief A function which can be called as a post processing step
+   *    in the time dependent case
+   *
+   * The arguments are the two velocity components and the pressure function
+   * at the last time step, plus the two velocity components at the
+   * last-but-one time step.
+   */
+  std::function<void(TFEFunction2D *, TFEFunction2D *,TFEFunction2D *,TFEFunction2D *,TFEFunction2D *)>
+    post_processing_time;
+    
   public:
     /** @brief default constructor
      * 
@@ -54,6 +72,24 @@ class Example_NSE2D : public Example2D
 
     //! Default destructor.
     ~Example_NSE2D() = default;
+
+    void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2,TFEFunction2D *p)
+    { 
+      if(this->post_processing)
+        this->post_processing(u1, u2, p);
+    }
+  /*! @brief Example dependent post processing and output generating method.
+   *
+   * Checks if the std::function member post_processing_time was initialized
+   * for the current example and if so calls the method to do whatever it was
+   * intended to do.
+   */
+  void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2, TFEFunction2D *p,
+                          TFEFunction2D *u1old, TFEFunction2D *u2old)
+  {
+    if(this->post_processing_time)
+      this->post_processing_time(u1, u2, p, u1old, u2old);
+  }
 };
 
 

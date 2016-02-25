@@ -6325,60 +6325,61 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs)
 {
-//   double **MatrixA11GradGrad=LocMatrices[0];
-//   double **MatrixA22GradGrad=LocMatrices[1];
-//   double **MatrixA11NL = LocMatrices[2];
-//   double **MatrixA22NL = LocMatrices[3];
-//   
-//   
-//   int N_US = N_BaseFuncts[0];
-//   int N_UV = N_BaseFuncts[1];
-//   
-//   double u1 = param[0];
-//   double u2 = param[1];
-//   
-//   double nu = coeff[0];
-//   
-//   double *orig0S = OrigValues[0]; // u_x scaler space
-//   double *Orig1S = OrigValues[1]; // u_y scaler space
-//   double *Orig2S = OrigValues[2]; // u   scaler space 
-//   double *Orig0V = OrigValues[3]; // u   vector space
-//   double test00, ansatz00, test01, ansatz01;
-//   double test10, ansatz10, val;
-//   
-//   int *sign = new int[N_UV];
-//   for(int i=0;i<N_UV;i++)
-//   {
-//     // here check whether signs should be inverted
-//     sign[i] = GetSignOfThisDOF(N_UV,i); // in Darcy2DMixed.C
-//   }
-//   
-//   for(int i=0; i<N_US; i++) // loop over nbf_tests (rows)
-//   {
-//     test00 = orig0S[i];
-//     test10 = Orig1S[i];
-//     test01 = Orig2S[i];
-//     
-//     for(int j=0; j<N_US; j++) // loop over nbf_ansatz
-//     {
-//       ansatz10 = orig0S[j];
-//       ansatz01 = Orig1S[j];
-//       val = nu*(test10*ansatz10 + test01*ansatz01);
-//       MatrixA11GradGrad[i][j] += val;
-//       MatrixA22GradGrad[i][j] += val;
-//     }
-//     
-//     for(int j=0; j<N_UV; j++) // loop over nbf_ansatz vector valued (cols)
-//     {
-//       double ansatz_x00 = sign[j]*Orig0V[j];
-//       double ansatz_y00 = sign[j]*Orig0V[j+N_US];
-//       
-//       val = (u1*test10 + u2*test01)*ansatz_x00;
-//       MatrixA11NL[i][j] += val;
-//       val = (u1*test10 + u2*test01)*ansatz_y00;
-//       MatrixA22NL[i][j] += val;
-//     }
-//   }
-//   exit(0);
+  double **StifMatrix = LocMatrices[2]; // sv
+  double **NLMatrix00 = LocMatrices[3]; // rectangular matrix
+  double **NLMatrix11 = LocMatrices[4]; // rectangular matrix
+  
+  int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
+  int vector_nbf = N_BaseFuncts[1]; // nbasis for BDM
+  
+  double *Orig0  = OrigValues[0]; // u_x
+  double *Orig1  = OrigValues[1]; // u_y
+  double *OrigV0 = OrigValues[3]; // 
+
+  double nu = coeff[0];  // nu
+
+  double u1 = param[0];  // u1old
+  double u2 = param[1];  // u2old
+
+  double ansatz10, ansatz01;
+  double test10, test01, val;
+  
+  for(int i=0;i<scalar_nbf; i++)
+  {
+    test10 = Orig0[i];
+    test01 = Orig1[i];    
+
+    for(int j=0;j<scalar_nbf;j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];      
+
+      val  = nu*(test10*ansatz10+test01*ansatz01);
+      StifMatrix[i][j] += Mult * val;
+    }
+  }
+  
+  std::vector<int> sign(vector_nbf);
+  for(int i=0;i<vector_nbf;i++)
+    sign[i] = GetSignOfThisDOF(vector_nbf, i);
+  
+  double testx00, testy00;
+  for(int i=0; i<vector_nbf; i++)
+  {
+    testx00 = sign[i] * OrigV0[i];
+    testy00 = sign[i] * OrigV0[vector_nbf+i];
+    
+    // assembling of modified nonlinear term
+    for(int j=0; j<scalar_nbf; j++)
+    {
+      ansatz10 = Orig0[j];
+      ansatz01 = Orig1[j];
+      val = (u1*ansatz10 + u2*ansatz01)*testx00;
+      NLMatrix00[i][j] += Mult * val;
+      
+      val = (u1*ansatz10 + u2*ansatz01)*testy00;
+      NLMatrix11[i][j] += Mult * val;
+    }
+  }
   
 }

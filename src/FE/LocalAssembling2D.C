@@ -2203,9 +2203,9 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
       this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: vector valued velocity
-      this->N_Matrices = 4;
-      this->RowSpace    = { 0, 0, 1, 1 };
-      this->ColumnSpace = { 0, 0, 0, 0 };
+      this->N_Matrices = 5;
+      this->RowSpace    = { 0, 0, 0, 1, 1};
+      this->ColumnSpace = { 1, 1, 0, 0, 0};
       this->N_Rhs = 0;
       this->RhsSpace = { };
       this->AssembleParam = LocAssembleNLNSTYPE4;
@@ -2214,8 +2214,8 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->N_Parameters = 2;
       this->N_ParamFct = 1;
       this->ParameterFct =  { NSParamsVelo };
-      this->N_FEValues = 2;
-      this->FEValue_FctIndex = { 1 };
+      this->N_FEValues = 1;
+      this->FEValue_FctIndex = { 0 };
       this->FEValue_MultiIndex = { D00, D00 };
       this->BeginParameter = { 0 }; 
       break;

@@ -91,12 +91,22 @@ class PrRobustTime_NSE2D : Time_NSE2D
      * terms. If this->assemble() has been called before, the matrix is now set
      * up correctly. 
      */
-    void assemble_nonlinear();
+    void assemble_nonlinearNS();
     /** @brief Assemble the system matrix
      * This function will prepare the system which will be 
      * used for solvers
      */
     void assemble_system_matrix();
+    
+    /** @brief check if one of the stopping criteria is fulfilled
+     * 
+     * either converged, maximun number of iterations reached, or slow 
+     * convergence
+     * 
+     * @param it_counter current iterate
+     */
+    bool stopIte(unsigned int it_counter);
+    
     /** @brief solve the system*/
     void solve();
     /** @brief descale matrices

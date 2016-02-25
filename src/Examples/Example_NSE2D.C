@@ -52,6 +52,11 @@ namespace td_quad_pres
 {
 #include "TNSE_2D/stokes_quadratic_pressure.h"
 }
+
+namespace time_flow_around_cylinder
+{
+#include "TNSE_2D/flow_over_cylinder.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D() : Example2D()
@@ -258,6 +263,35 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       
       td_quad_pres::ExampleFile();
       break;    
+    case 104:
+      /** exact_solution */
+      exact_solution.push_back( time_flow_around_cylinder::ExactU1 );
+      exact_solution.push_back( time_flow_around_cylinder::ExactU2 );
+      exact_solution.push_back( time_flow_around_cylinder::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
+      boundary_conditions.push_back( time_flow_around_cylinder::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( time_flow_around_cylinder::U1BoundValue );
+      boundary_data.push_back( time_flow_around_cylinder::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** initial conditions, in case of a non-stationary problem */
+      initial_conditions.push_back(time_flow_around_cylinder::InitialU1);
+      initial_conditions.push_back(time_flow_around_cylinder::InitialU2);
+      initial_conditions.push_back(time_flow_around_cylinder::InitialP);
+      
+      /** post processing function to  compute drag and lift */
+      post_processing_time = time_flow_around_cylinder::compute_drag_and_lift;
+
+      /** coefficients */
+      problem_coefficients = time_flow_around_cylinder::LinCoeffs;
+      
+      time_flow_around_cylinder::ExampleFile();
+      break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
