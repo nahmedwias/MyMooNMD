@@ -33,8 +33,15 @@ class PrRobustTime_NSE2D : Time_NSE2D
       BlockFEMatrix Modifed_Mass;
       /** @brief solution vector*/
       BlockVector solutionVV;
+      
       /** @brief Finite element function*/
       TFEFunction2D fefctVV;
+      
+      /** @brief solution for computing quantities of interest*/
+      BlockVector formerSol;
+      
+      /** @brief fefunction for computing drag and lift*/
+      TFEFunction2D u1Old, u2Old;
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
                     const TFESpace2D& velocity_space, 

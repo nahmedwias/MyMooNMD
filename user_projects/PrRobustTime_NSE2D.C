@@ -2,6 +2,7 @@
 #include <Database.h>
 #include <Assemble2D.h>
 #include <DirectSolver.h>
+#include <Output2D.h>
 
 #include <stdlib.h>
 #include <assert.h>
@@ -26,7 +27,10 @@ PrRobustTime_NSE2D::SystemPerGrid::SystemPerGrid(const Example_NSE2D& example,
    Modifed_Mass({&velocity_space, &velocity_space}),
    solutionVV(rhsXh),
    fefctVV(&projection_space, (char*)"uv", (char*)"uv", solutionVV.block(0), 
-           solutionVV.length(0))
+           solutionVV.length(0)),
+   formerSol(Modifed_Mass, false),
+   u1Old(&velocity_space, (char*)"dlp", (char*)"dlp", formerSol.block(0), formerSol.length(0)),
+   u2Old(&velocity_space, (char*)"dlp", (char*)"dlp", formerSol.block(1), formerSol.length(1))
 {
   ProjectionMatrix.print_coloring_pattern("P");
   Modifed_Mass.print_coloring_pattern("MM");
@@ -342,6 +346,7 @@ void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInp
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_initial_time()
 {
+  this->Systems.front().formerSol.reset();
   // assemble matrices and right hand side
   // till here no modification of the right hand side 
   // and the mass matrix is done  
@@ -775,7 +780,37 @@ void PrRobustTime_NSE2D::descaleMatrices()
 /**************************************************************************** */
 void PrRobustTime_NSE2D::output(int m, int &image)
 {
-  this->Time_NSE2D::output(m, image);
+  System_per_grid& s_base = this->Time_NSE2D::systems.front();
+  SystemPerGrid& s_derived = this->Systems.front();
+  if(TDatabase::ParamDB->WRITE_VTK)
+  {   
+    if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
+    {
+      if(TDatabase::ParamDB->WRITE_VTK)
+      {
+        TOutput2D output(2, 3, 1, 0, NULL);
+        output.AddFEFunction(&s_base.p);
+        output.AddFEVectFunct(&s_base.u);
+        std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+        filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+        if(image<10) filename += ".0000";
+        else if(image<100) filename += ".000";
+        else if(image<1000) filename += ".00";
+        else if(image<10000) filename += ".0";
+        else filename += ".";
+        filename += std::to_string(image) + ".vtk";
+        output.WriteVtk(filename.c_str());
+        image++;
+      }
+    }
+    this->example.do_post_processing(s_base.u.GetComponent(0), 
+                                   s_base.u.GetComponent(1),
+                                   &s_base.p, &s_derived.u1Old, &s_derived.u2Old);
+    memcpy(s_derived.formerSol.block(0), s_base.solution.block(0), s_base.solution.length(0));
+    memcpy(s_derived.formerSol.block(1), s_base.solution.block(1), s_base.solution.length(1));
+  }
+  else
+   this->Time_NSE2D::output(m, image);
 }
 
 /**************************************************************************** */
@@ -969,6 +1004,7 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
                         nRhsStored, rhsStored,pointToRhsStored, 
                         la, matrices_reconstruction, nullptr,
                         projection_matrices, boundCond, boundVal.data());
+    TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
   }// endof assembling for all grids
   //s_base.matrix.get_blocks().at(4)->Print("A");
   //  cout<<"Its really my function: ???" << endl;exit(0);
@@ -982,7 +1018,7 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
 /**************************************************************************** */
 void PrRobustTime_NSE2D::assemble_rhsNS()
 {
-    double tau =TDatabase::TimeDB->TIMESTEPLENGTH;
+  double tau =TDatabase::TimeDB->TIMESTEPLENGTH;
   double theta2 = TDatabase::TimeDB->THETA2;
   double theta3 = TDatabase::TimeDB->THETA3;
   double theta4 = TDatabase::TimeDB->THETA4;
@@ -1015,14 +1051,14 @@ void PrRobustTime_NSE2D::assemble_rhsNS()
     const TFESpace2D * pointer_to_space[2] = {velocity_space, prooject_space};
     // matrices to assemble in order to assemble the right hand 
     // side of the method
-    const int nSqMatAssemble = 3;
-    const int nReMatAssemble = 0;
+    const int nSqMatAssemble = 0;
+    const int nReMatAssemble = 2;
     
     const int nRhsAssemble = 1;    
     //NOTE:for the assembling of matrices or right hand side, space numbers
     //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0, 0, 1}; // row space for assembling matrices
-    std::vector<int> colSpace ={1, 1, 1}; // cols space for assembling matrices
+    std::vector<int> rowSpace ={0, 0}; // row space for assembling matrices
+    std::vector<int> colSpace ={1, 1}; // cols space for assembling matrices
     std::vector<int> rowSpaceRhs={1}; // row space for assembling rhs 
     
     // prepare everything for storing the matrices and rhs
@@ -1071,34 +1107,15 @@ void PrRobustTime_NSE2D::assemble_rhsNS()
     // next we want to set old_rhs to f^k (to be used in the next time step)
     this->old_rhs_modified.addScaledActive(s_base.rhs, -1./(tau*theta3));
     this->old_rhs_modified.scaleActive(-theta3/theta4);
-    // scale actives in each block
-    double factor = -tau*theta2;
-    s_base.matrix.scale_blocks_actives(factor, {{0,0},{0,1},{1,0},{1,1}});
-    // add blocks from the mass matrix to the current matrix
-    const FEMatrix& MFM00 = *s_derived.Modifed_Mass.get_blocks().at(0).get();    
-    s_base.matrix.add_matrix_actives(MFM00, 1.0, {{0,0}}, {false});
     
-    const FEMatrix& MFM01 = *s_derived.Modifed_Mass.get_blocks().at(1).get();    
-    s_base.matrix.add_matrix_actives(MFM01, 1.0, {{0,1}}, {false});
-    
-    const FEMatrix& MFM10 = *s_derived.Modifed_Mass.get_blocks().at(2).get();    
-    s_base.matrix.add_matrix_actives(MFM10, 1.0, {{1,0}}, {false});
-    
-    const FEMatrix& MFM11 = *s_derived.Modifed_Mass.get_blocks().at(3).get();    
-    s_base.matrix.add_matrix_actives(MFM11, 1.0, {{1,1}}, {false});
-    
-    // multiplying matrix with the old_solution vector
     // FIXME FInd other solution than this submatrix method.
-    s_base.matrix.apply_scaled_submatrix(old_solution, s_base.rhs, 2, 2, 1.0);
+    // M u^{k-1}
+    s_derived.Modifed_Mass.apply_scaled_submatrix(old_solution, s_base.rhs, 2, 2, 1.0);
+    // -tau*theta2 * A u^{k-1}
+    double factor = -tau*theta2;
+    s_base.matrix.apply_scaled_submatrix(old_solution, s_base.rhs, 2, 2, factor);
     
-    // restore the matrix by subtracting the mass matrix and scale by 1./factor
-    factor = 1./factor;
-    s_base.matrix.add_matrix_actives(MFM00, -1.0, {{0,0}},{false});
-    s_base.matrix.add_matrix_actives(MFM01, -1.0, {{0,1}},{false});
-    s_base.matrix.add_matrix_actives(MFM10, -1.0, {{1,0}},{false});
-    s_base.matrix.add_matrix_actives(MFM11, -1.0, {{1,1}},{false});
-    // rescale now 
-    s_base.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    // scale actives in each block
     
     // scaling the B blocks with current time step length
     // scale the BT blocks with time step length
@@ -1211,8 +1228,6 @@ void PrRobustTime_NSE2D::assemble_nonlinearNS()
                              velocity_space->GetBoundCondition(),
                              pressure_space->GetBoundCondition() };
     // boundary values
-    BoundValueFunct2D * const * const BoundValue
-         =this->Time_NSE2D::get_example().get_bd();
     std::array<BoundValueFunct2D*, 3> boundVal;
     boundVal[0] = example.get_bd()[0];
     boundVal[1] = example.get_bd()[1];
@@ -1227,63 +1242,73 @@ void PrRobustTime_NSE2D::assemble_nonlinearNS()
                         nRhsStored, rhsStored,pointToRhsStored, 
                         la, nonlinear_term_reconstruct, nullptr,
                         projection_matrices, boundCond, boundVal.data());    
+    TDatabase::ParamDB->VELOCITY_SPACE=vel_space;
   }// endof assembling for all grids
 }
 
 /**************************************************************************** */
 bool PrRobustTime_NSE2D::stopIte(unsigned int it_counter)
 {
-  System_per_grid& s = this->systems.front();
-  unsigned int nuDof = s.solution.length(0);
-  unsigned int npDof = s.solution.length(2);
-  
-  this->defect = s.rhs; 
-  s.matrix.apply_scaled_add(s.solution, defect,-1.);
-  // 
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-    IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
-                      TDatabase::ParamDB->VELOCITY_SPACE, 
-                      TDatabase::ParamDB->PRESSURE_SPACE);
-  double residual =  Ddot(2*nuDof+npDof, &this->defect[0], &this->defect[0]);
-  double impulse_residual = Ddot(2*nuDof, &this->defect[0],
-         &this->defect[0]);
-  double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
-         &this->defect[2*nuDof]);
-  
-  Output::print("nonlinear step  :  " , setw(3), it_counter);
-  Output::print("impulse_residual:  " , setw(3), impulse_residual);
-  Output::print("mass_residual   :  " , setw(3), mass_residual);
-  Output::print("residual        :  " , setw(3), sqrt(residual));
-  
-  if (it_counter>0)
+  if(TDatabase::ParamDB->DISCTYPE==RECONSTRUCTION)
   {
-    Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+    System_per_grid& s = this->systems.front();
+    unsigned int nuDof = s.solution.length(0);
+    unsigned int npDof = s.solution.length(2);
+    
+    this->defect = s.rhs; 
+    s.matrix.apply_scaled_add(s.solution, defect,-1.);
+    // 
+    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+      IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
+                        TDatabase::ParamDB->VELOCITY_SPACE, 
+                        TDatabase::ParamDB->PRESSURE_SPACE);
+    double residual =  Ddot(2*nuDof+npDof, &this->defect[0], &this->defect[0]);
+    double impulse_residual = Ddot(2*nuDof, &this->defect[0],
+           &this->defect[0]);
+    double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
+           &this->defect[2*nuDof]);
+    
+    Output::print("nonlinear step  :  " , setw(3), it_counter);
+    Output::print("impulse_residual:  " , setw(3), impulse_residual);
+    Output::print("mass_residual   :  " , setw(3), mass_residual);
+    Output::print("residual        :  " , setw(3), sqrt(residual));
+    
+    if (it_counter>0)
+    {
+      Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+    }
+    
+    oldResidual = sqrt(residual);
+    if(it_counter == 0)
+      initial_residual = sqrt(residual);
+    
+    int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+    double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+    if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+    {
+      limit *= sqrt(this->get_size());
+      Output::print("stopping tolerance for nonlinear iteration ", limit);
+    }
+    
+    if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
+     && (it_counter>=TDatabase::ParamDB->SC_MINIT))
+     {
+       Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
+                     " Reduction : ",  sqrt(residual)/initial_residual);
+       // descale the matrices, since only the diagonal A block will 
+       // be reassembled in the next time step
+       this->descaleMatrices();     
+       return true;
+     }
+     else
+       return false;
   }
-  
-  oldResidual = sqrt(residual);
-  if(it_counter == 0)
-    initial_residual = sqrt(residual);
-  
-  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  else
   {
-    limit *= sqrt(this->get_size());
-    Output::print("stopping tolerance for nonlinear iteration ", limit);
+    int ret;
+    ret=this->Time_NSE2D::stopIte(it_counter);
+    return ret;
   }
-  
-  if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
-   && (it_counter>=TDatabase::ParamDB->SC_MINIT))
-   {
-     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
-                   " Reduction : ",  sqrt(residual)/initial_residual);
-     // descale the matrices, since only the diagonal A block will 
-     // be reassembled in the next time step
-     this->descaleMatrices();     
-     return true;
-   }
-   else
-     return false;
 }
 
 /**************************************************************************** */
