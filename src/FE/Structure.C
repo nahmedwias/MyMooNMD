@@ -27,6 +27,7 @@
 #include <cstring>
 #include <vector>
 #include <stdlib.h>
+#include <algorithm>
 
 
 /* generate the matrix structure, both space are 1D */
@@ -4957,13 +4958,13 @@ TStructure* TStructure::get_structure_of_product_with_transpose_from_right(
       // this boils down to checking 'row1 of A' x 'row2 of B*A' with row1 = 
       // row, row2 = col
       int row1 = row;
-      int row2 = col; //two definitions to fix ideas
+      //int row2 = col; //two definitions to fix ideas
 
       // work on two segments of column array
       const int* row1ColBegin = &columns[rows[row1]];
       const int row1ColSize = rows[row1+1] - rows[row1];
-      const int* row2ColBegin = &columns[rows[row2]];
-      const int row2ColSize = rows[row2+1] - rows[row2];
+      //const int* row2ColBegin = &columns[rows[row2]];
+      //const int row2ColSize = rows[row2+1] - rows[row2];
 
       // find out if the two arryas contain a common value
       // exploit the fact that both are sorted
@@ -5024,6 +5025,37 @@ TStructure* TStructure::get_structure_of_product_with_transpose_from_right(
                         &productColumnPtr[0], &productRowPtr[0]);
 }
 
+
+void TStructure::fortran_shift()
+{
+  // the first entry in the this->rows is always zero (when indices start with 
+  // zero), so it is used as an indicator if the entries in this->rows and 
+  // this->columns are in fortran or c++ style.
+  int s = 1; // forward shift
+  if(this->is_fortran_shifted())
+  {
+    // backward shift (indices start with 1)
+    s = -1;
+  }
+  // else // forward shift (indices start with 0)
+  std::for_each(this->rows.begin(), this->rows.end(),       [s](int& i){i+=s;});
+  std::for_each(this->columns.begin(), this->columns.end(), [s](int& i){i+=s;});
+}
+
+bool TStructure::is_fortran_shifted() const
+{
+  if(this->rows[0] == 1)
+  {
+    return true;
+  }
+  else if(this->rows[0] == 0)
+  {
+    return false;
+  }
+  else
+    ErrThrow("broken matrix structure, first index in row vector is neither ",
+             "0 nor 1, but ", this->rows[0]);
+}
 
 void TStructure::info() const
 {

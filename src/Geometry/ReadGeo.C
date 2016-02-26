@@ -165,6 +165,7 @@ int TDomain::ReadGeo(std::istream& dat, bool readXgeo)
   delete [] DCORVG;
   delete [] KVERT;
   delete [] KNPR;
+  delete [] ELEMSREF;
 
   return 0;
 }
@@ -209,7 +210,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   for (int i=0;i<N_Vertices;i++)
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
   
-  delete KVEL;
+  delete [] KVEL;
 
   //KVEL = new int[++maxElpV * N_Vertices];
   maxElpV = maxElpV+1;
@@ -615,9 +616,9 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   } //for (i=0;i<N_RootCells;i++) {
 
   // free memory
-  delete KVEL;
-  delete NewVertices;
-  delete KMT;
+  delete [] KVEL;
+  delete [] NewVertices;
+  delete [] KMT;
   
   return 0;
 }
@@ -647,7 +648,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
    for (i=0;i<N_Vertices;i++)
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
 
-  delete KVEL;
+  delete [] KVEL;
   KVEL = new int[++maxElpV * N_Vertices];
 
   memset(KVEL, 0, maxElpV * N_Vertices * SizeOfInt);
@@ -970,9 +971,9 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
   }
 
    // free memory
-  delete KVEL;
-  delete NewVertices;
-  delete KMT;
+  delete [] KVEL;
+  delete [] NewVertices;
+  delete [] KMT;
   
   return 0;
 }

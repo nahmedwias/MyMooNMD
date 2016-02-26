@@ -28,7 +28,7 @@ Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            rhs(this->stiff_matrix, true),
            solution(this->stiff_matrix, false),
            old_Au(this->stiff_matrix, true),
-           fe_function(&this->fe_space, (char*)"u", (char*)"u",
+           fe_function(&this->fe_space, (char*)"c", (char*)"c",
                        this->solution.get_entries(), this->solution.length())
 {
   stiff_matrix = BlockFEMatrix::CD2D(fe_space);
@@ -70,7 +70,7 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
- : Time_CD2D(domain, *(new Example_CD2D()), reference_id)
+ : Time_CD2D(domain, Example_CD2D(), reference_id)
 {
   
 }
@@ -314,7 +314,7 @@ void Time_CD2D::assemble()
   for(auto &s : this->systems)
   {
     // rhs += M*uold
-    s.mass_matrix.apply_scaled_add(s.solution, s.rhs, 1.0);
+    s.mass_matrix.apply_scaled_add_actives(s.solution, s.rhs, 1.0);
     // rhs -= tau*theta2*A_old*uold
     s.rhs.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
     
@@ -329,7 +329,29 @@ void Time_CD2D::assemble()
     const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
   }  
-  this->systems[0].rhs.copy_nonactive(this->systems[0].solution);  
+  //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
+  systems[0].solution.copy_nonactive(systems[0].rhs);
+}
+
+/**************************************************************************** */
+
+void Time_CD2D::descale_stiffness(double tau, double theta_1)
+{
+    // restore stiffness matrix and store old_Au on all grids
+    if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+    {
+      for(auto &s : this->systems)
+      {
+        s.descale_stiff_matrix(tau, theta_1);
+        s.update_old_Au();
+      }
+    }
+    else
+    {
+      //in AFC case the stiffness matrix is "ruined" by now -
+      Output::print("AFC does not yet reset the stiffness"
+          "matrix and old_Au correctly!");
+    }
 }
 
 /**************************************************************************** */
@@ -361,23 +383,6 @@ void Time_CD2D::solve()
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
 
-  // restore stiffness matrix and store old_Au on all grids
-  if(!TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
-  {
-    for(auto &s : this->systems)
-    {
-      double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-      double theta_1 = TDatabase::TimeDB->THETA1;
-      s.descale_stiff_matrix(tau, theta_1);
-      s.update_old_Au();
-    }
-  }
-  else
-  {
-    //in AFC case the stiffness matrix is "ruined" by now -
-    Output::print<5>("AFC does not yet reset the stiffness"
-        "matrix and old_Au correctly!");
-  }
 }
 
 /**************************************************************************** */
@@ -502,6 +507,8 @@ void Time_CD2D::do_algebraic_flux_correction()
 
       //...and finally correct the entries in the Dirichlet rows
       AlgebraicFluxCorrection::correct_dirichlet_rows(stiff);
+      //...and in the right hand side, too
+      s.rhs.copy_nonactive(old_rhs);
       break;
     }
     default:

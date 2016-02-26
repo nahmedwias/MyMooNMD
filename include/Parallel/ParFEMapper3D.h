@@ -112,7 +112,8 @@ class TParFEMapper3D
 
     /**
      * The standard constructor. Idea: Add a constructor which takes a TStructure/TMatrix?
-     * @param[in]
+     * @param[in] N_dim The number of dimensions associated with a certain dof (range), e.g. "3" if
+     * the ParFEMapper is for the velocity of a 3D NSE problem or "1" for a 3D CDR problem.
      * @param[in] fespace the FE space the dofs belong to.
      * @param[in] rowptr The rowptr of the TMatrix/TStructure this belongs to.
      * @param[in] kcol The kcol pointer of the TMatrix/TStructure this belongs to.

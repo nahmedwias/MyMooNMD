@@ -31,7 +31,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 {
   matrix = BlockFEMatrix::CD2D(fe_space);
 }
-
+/** ************************************************************************ */
 TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks =
@@ -46,7 +46,7 @@ CD2D::CD2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, Example_CD2D example, int reference_id)
+CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
  : systems(), example(example), multigrid(nullptr)
 {
   this->set_parameters();
@@ -303,7 +303,8 @@ void CD2D::do_algebraic_flux_correction()
 
         //...and finally correct the entries in the Dirchlet rows
         AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
-
+        //...and in the right hand side, too, assum correct in solution vector
+        s.rhs.copy_nonactive(s.solution);
         break;
       }
       default:

@@ -104,6 +104,8 @@ int main(int argc, char* argv[])
       
       tcd.solve();
       
+      tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
+
       tcd.output(step, image);
     }
     // OutPut("mem after: " << GetMemory()<<endl);

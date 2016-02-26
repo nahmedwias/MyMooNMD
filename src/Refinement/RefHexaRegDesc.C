@@ -342,7 +342,8 @@ TRefHexaRegDesc::TRefHexaRegDesc(TShapeDesc *shape) : TRefDesc(shape)
   N_NewVertEqOldVert = 8;
   N_InnerEdges = 6;
   N_InnerFaces = 12;
-
+  N_NewFaceEqOldFace = 0;
+  
   // initialize all dimension values
   MaxN_VpC = REFHEXAREGMAXN_VpC;
   MaxN_CpV = REFHEXAREGMAXN_CpV;

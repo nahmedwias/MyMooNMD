@@ -51,9 +51,9 @@ char *description, double *values, int length)
 
   FESpace2D=fespace2D;
  
-  Name=strdup(name);
+  Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'
 
-  Description=strdup(description);
+  Description=strdup(description); // this calls malloc
 
   Values=values;
 
@@ -63,8 +63,8 @@ char *description, double *values, int length)
 
 TFEFunction2D::~TFEFunction2D()
 {
-  delete Name;
-  delete Description;
+  free(Name);
+  free(Description);
 }
 
 
@@ -1113,12 +1113,12 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
       values[1] += ux;
       values[2] += uy;
 
-      delete uorig;
-      delete uxorig;
-      delete uyorig;
-      delete uref;
-      delete uxiref;
-      delete uetaref;
+      delete[] uorig;
+      delete[] uxorig;
+      delete[] uyorig;
+      delete[] uref;
+      delete[] uxiref;
+      delete[] uetaref;
 
     }                                             // endif
   }                                               // endfor
@@ -2387,6 +2387,18 @@ TFEFunction2D & TFEFunction2D::operator+=(const TFEFunction2D & rhs)
     Values[i] += rhs.Values[i];
   }
   return *this;
+}
+
+TFEFunction2D::TFEFunction2D(TFEFunction2D&& other) :
+  FESpace2D(std::move(other.FESpace2D)),
+  Values(std::move(other.Values)),
+  Length(std::move(other.Length))
+{
+  // move name and description
+  Name=std::move(other.Name);
+  other.Name = nullptr;
+  Description=std::move(other.Description);
+  other.Description = nullptr;
 }
 
 TFEFunction2D & TFEFunction2D::operator=(const TFEFunction2D & rhs)

@@ -26,6 +26,8 @@
 #include <BlockVector.h>
 
 #include <FEFunction3D.h>
+#include <Example_CD3D.h>
+
 #include <vector>
 #include <deque>
 #include <list>
@@ -113,7 +115,7 @@ class CD3D
     std::deque<SystemPerGrid> systems_;
     
     /** @brief Definition of the used example. */
-    const Example_CD3D& example_;
+    const Example_CD3D example_;
     
     /** @brief A multigrid object which is set to nullptr in case it is not
      *         needed.
@@ -263,7 +265,7 @@ class CD3D
     // TODO CB Apply rule of zero/five as soon as underlying classes do.
 
     /** Delete copy constructor. This class may not be copied,
-     * until its member classes fulfil the rule of 0/5, which is a TODO. */
+     * until its member classes fulfil the rule of 0/5. */
     CD3D(const CD3D&) = delete;
 
     /** Delete move constructor. This class may not be moved yet. */

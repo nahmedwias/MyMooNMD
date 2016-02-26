@@ -34,6 +34,8 @@ int main(int argc, char **argv)
   matA.GetEntries()[1] = 0.75;
   matA.GetEntries()[2] = 1;
   matA.GetEntries()[3] = 1.5;
+  matA.fortran_shift(); // shift indices in underlying structure
+  matA.fortran_shift(); // shift indices back
 
   //Matrix B
   int * RowB = new int[4];

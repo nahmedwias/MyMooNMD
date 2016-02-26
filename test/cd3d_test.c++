@@ -95,8 +95,10 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-12; //absolute error breaking criterion (not reached)
 
   // choose unit cube as test domain and a corresponding initial mesh
-  TDatabase::ParamDB->BNDFILE = (char*)"Default_UnitCube";
-  TDatabase::ParamDB->GEOFILE = (char*)"Default_UnitCube_Geo";
+  TDatabase::ParamDB->BNDFILE = new char[17];
+  strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
+  TDatabase::ParamDB->GEOFILE = new char[21];
+  strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Geo");
 
   // Initialize geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
@@ -217,6 +219,8 @@ int main(int argc, char* argv[])
    *  4 processes) and sequential run.
    */
   {
+    // Construct the ParMooN Databases.
+    TDatabase Database;
     // Reset the Database (this method is unchecked and unsafe!)
     TDatabase::SetDefaultParameters();
 
@@ -272,9 +276,11 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 0;  // no slc
 
     // choose unit cube as test domain and a corresponding initial mesh
-    TDatabase::ParamDB->BNDFILE = (char*)"Default_UnitCube";
-    TDatabase::ParamDB->GEOFILE = (char*)"Default_UnitCube_Geo";
-
+    TDatabase::ParamDB->BNDFILE = new char[17];
+    strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
+    TDatabase::ParamDB->GEOFILE = new char[21];
+    strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Geo");
+    
     // makeshift parameter check
     CD3D::checkParameters();
 

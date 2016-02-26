@@ -22,4 +22,11 @@ TBoundPart::TBoundPart (int n_comps)
 #endif
 }
 
+TBoundPart::~TBoundPart()
+{
+  for(unsigned int i = 0; i < N_BdComps; ++i)
+    delete BdComps[i];
+  delete [] BdComps;
+}
+
 // Methods

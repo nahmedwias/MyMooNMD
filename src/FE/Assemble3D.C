@@ -93,7 +93,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   int *DOF, ActiveBound, DirichletBound, begin, end, last, middle;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *RHS, *MatrixRow;
   double **HangingEntries, **HangingRhs;
   double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -1235,7 +1235,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  int *DOF, ActiveBound, DirichletBound, begin, end, last, middle;
 	  int *TestDOF, *AnsatzDOF;
 	  double *Entries;
-	  int *ColInd, *RowPtr;
+	  const int *ColInd, *RowPtr;
 	  double *RHS, *MatrixRow;
 	  double **HangingEntries, **HangingRhs;
 	  double *CurrentHangingEntries, *CurrentHangingRhs;
@@ -2420,9 +2420,9 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   double *EdgePoints1, *EdgePoints2;
   double *Entries1,*Entries2,*Entries3, *Entries4, *Entries5;
   double *Entries6,*Entries7;
-  int *ColInd1, *RowPtr1,*ColInd2, *RowPtr2, *ColInd3, *RowPtr3;
-  int *ColInd4, *RowPtr4, *ColInd5, *RowPtr5, *ColInd6, *RowPtr6;
-  int *ColInd7, *RowPtr7;
+  const int *ColInd1, *RowPtr1,*ColInd2, *RowPtr2, *ColInd3, *RowPtr3;
+  const int *ColInd4, *RowPtr4, *ColInd5, *RowPtr5, *ColInd6, *RowPtr6;
+  const int *ColInd7, *RowPtr7;
   double penetration_penalty, friction_parameter;
   double friction_constant= TDatabase::ParamDB->FRICTION_CONSTANT;
   double friction_power = TDatabase::ParamDB->FRICTION_POWER;
@@ -3449,7 +3449,8 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
 void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
     int N_U, double *rhs)
 {
-    int i, j, k, j0, j1, index, *ColInd, *RowPtr, row_off, col_off;
+    int i, j, k, j0, j1, index, row_off, col_off;
+    const int *RowPtr, *ColInd;
     double *setzero, bound, *Entries, maximal = -1;; 
 
     return;
@@ -3702,7 +3703,7 @@ TAuxParam3D *Parameters)
   int *DOF, ActiveBound, DirichletBound, begin, end, middle;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
-  int *ColInd, *RowPtr;
+  const int *ColInd, *RowPtr;
   double *RHS, *MatrixRow;
   double t0, t1, t2;
   BoundCond Cond0;

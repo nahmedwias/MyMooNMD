@@ -312,6 +312,8 @@ class TRefDesc
     /** initialize the whole data structure */
     TRefDesc(TShapeDesc *shape);
 
+    virtual ~TRefDesc(){};
+    
     // Methods
     /** return type of refinement */
     Refinements GetType() const

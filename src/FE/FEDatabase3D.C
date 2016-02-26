@@ -1774,6 +1774,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         for(k=0;k<MaxN_BaseFunctions3D;k++)
           for(l=0;l<MaxN_BaseFunctions3D;l++)
             ret[k*MaxN_BaseFunctions3D+l] = ret2[l*MaxN_BaseFunctions3D+k];
+        delete ret2;
   
         RegisterProlongationMatrix3D(Coarse, refine, Fine, j, ret);
       } // endfor j

@@ -84,6 +84,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->GEOFILE;
       TDatabase::ParamDB->GEOFILE = aux_char;
       N_Param++;
     }
@@ -92,6 +93,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->GEOFILE_INTL;
       TDatabase::ParamDB->GEOFILE_INTL = aux_char;
       N_Param++;
     }
@@ -101,6 +103,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->BNDFILE;
       TDatabase::ParamDB->BNDFILE = aux_char;
       N_Param++;
     }
@@ -110,6 +113,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->BNDFILE_INTL;
       TDatabase::ParamDB->BNDFILE_INTL = aux_char;
       N_Param++;
     }
@@ -119,6 +123,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->MAPFILE;
       TDatabase::ParamDB->MAPFILE = aux_char;
       N_Param++;
     }
@@ -128,6 +133,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->OUTFILE;
       TDatabase::ParamDB->OUTFILE = aux_char;
       N_Param++;
     }
@@ -723,6 +729,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->BASENAME;
       TDatabase::ParamDB->BASENAME = aux_char;
       N_Param++;
     }
@@ -731,6 +738,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->VTKBASENAME;
       TDatabase::ParamDB->VTKBASENAME = aux_char;
       N_Param++;
     }    
@@ -739,6 +747,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->OUTPUTDIR;
       TDatabase::ParamDB->OUTPUTDIR = aux_char;
       N_Param++;
     }
@@ -796,6 +805,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;                                                                                              
       aux_char = new char[strlen(line) + 1];                                                                    
       strcpy(aux_char, line);                                                                                   
+      delete [] TDatabase::ParamDB->SMESHFILE;
       TDatabase::ParamDB->SMESHFILE = aux_char;                                                                 
       N_Param++;                                                                                                
     }
@@ -805,6 +815,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->SAVE_DATA_FILENAME;
       TDatabase::ParamDB->SAVE_DATA_FILENAME = aux_char;
       N_Param++;
     }
@@ -814,6 +825,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->READ_DATA_FILENAME;
       TDatabase::ParamDB->READ_DATA_FILENAME = aux_char;
       N_Param++;
     }
@@ -822,6 +834,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->POD_FILENAME;
       TDatabase::ParamDB->POD_FILENAME = aux_char;
       N_Param++;
     }
@@ -831,6 +844,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->SNAP_FILENAME;
       TDatabase::ParamDB->SNAP_FILENAME = aux_char;
       N_Param++;
     }
@@ -966,6 +980,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->PODFILE;
       TDatabase::ParamDB->PODFILE = aux_char;
 
       N_Param++;
@@ -2432,6 +2447,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->FS_INNAME;
       TDatabase::ParamDB->FS_INNAME = aux_char;
       N_Param++;
     }
@@ -2441,6 +2457,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->FS_OUTNAME;
       TDatabase::ParamDB->FS_OUTNAME = aux_char;
       N_Param++;
     }
@@ -3125,6 +3142,7 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> line;
       aux_char = new char[strlen(line) + 1];
       strcpy(aux_char, line);
+      delete [] TDatabase::ParamDB->MATLAB_MATRIX;
       TDatabase::ParamDB->MATLAB_MATRIX = aux_char;
       N_Param++;
     }
@@ -3804,14 +3822,9 @@ int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   char line[100];
-  int i, j, N_, N_Cells, ID, NMortarCell, LocEdge;
-  int N_MortarRefs, CellID, N_MortarRefDesc = 0;
-  int *MortarRefDesc;
-  bool Exist;
+  int i, N_Cells, ID;
   std::ifstream dat(MapFile);
-  TBaseCell *CurrCell, *NeighbCell;
-  TJoint *CurrJoint;
-
+  
   if (!dat)
   {
 #ifdef _MPI

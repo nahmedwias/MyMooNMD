@@ -173,6 +173,13 @@ class NSE2D
      */
     void set_parameters();
     
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call NSE2D::output()
+     * Currently, the errors store the L2 and H1 errors of the velocity
+     * and pressure
+     */
+    std::array<double, int(6)> errors;
+    
   public:
     
     /** @brief constructor 
@@ -299,6 +306,8 @@ class NSE2D
     double getMassResidual() const;
     /// @brief get the current residual (updated in NSE2D::normOfResidual)
     double getFullResidual() const;
+    /// @brief return the computed errors
+    std::array<double, int(6)> get_errors();
 };
 
 

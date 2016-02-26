@@ -138,7 +138,8 @@ class CD2D
      * @param[in] reference_id The cell reference id, of which cells to create
      *                         the TCollection.
      */
-    CD2D(const TDomain& domain, Example_CD2D example, int reference_id = -4711);
+    CD2D(const TDomain& domain, const Example_CD2D& example,
+         int reference_id = -4711);
     
     /** @brief assemble matrix, 
      * 

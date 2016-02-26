@@ -979,6 +979,8 @@ struct TParaDB
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/
   MPI_Comm Comm;
  #endif
+  
+  ~TParaDB();
 };
 
 typedef struct TParaDB TParamDB;
@@ -1137,6 +1139,8 @@ class TDatabase
     // Constructors
     /** initialize the database */
     TDatabase();
+    
+    ~TDatabase();
 
     // Methods
 #ifdef __MORTAR__
