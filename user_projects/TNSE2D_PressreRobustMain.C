@@ -25,6 +25,9 @@ int main(int argc, char *argv[])
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  
+  // possibly change parameters in the database, if they are not meaningful now
+  Database.CheckParameterConsistencyNSE();
 
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
@@ -44,10 +47,6 @@ int main(int argc, char *argv[])
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
-  // set some parameters for time stepping 
-  //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
-  SetTimeDiscParameters(0);
 
   Example_NSE2D example;
   PrRobustTime_NSE2D stokes_prbst_time(Domain, example);
@@ -62,8 +61,6 @@ int main(int argc, char *argv[])
   if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==5)
     stokes_prbst_time.assembleProjMat();
   stokes_prbst_time.assemble_initial_timeNS();
-  // stokes_prbst_time.assemble_initial_time();
-  //  
   
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
