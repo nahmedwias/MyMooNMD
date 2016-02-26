@@ -303,7 +303,7 @@ switch(type)
     break;
   case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
     this->N_Terms = 2;
-    this->Derivatives = { D00 };
+    this->Derivatives = { D00, D00 };
     this->Needs2ndDerivatives = new bool[2];
     this->Needs2ndDerivatives[0] = false;
     this->Needs2ndDerivatives[1] = false;
