@@ -2114,12 +2114,12 @@ double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixM11, **MatrixM22;
+  double **MatrixM11;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix22Row;
-  double *MatrixM11Row, *MatrixM22Row;
+  double *MatrixM11Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -2133,11 +2133,10 @@ double ***LocMatrices, double **LocRhs)
   MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
-  MatrixM22 = LocMatrices[5];
-  MatrixB1 = LocMatrices[6];
-  MatrixB2 = LocMatrices[7];
-  MatrixB1T = LocMatrices[8];
-  MatrixB2T = LocMatrices[9];
+  MatrixB1 = LocMatrices[5];
+  MatrixB2 = LocMatrices[6];
+  MatrixB1T = LocMatrices[7];
+  MatrixB2T = LocMatrices[8];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2162,7 +2161,6 @@ double ***LocMatrices, double **LocRhs)
     Matrix11Row = MatrixA11[i];    
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
     test00 = Orig2[i];
@@ -2186,7 +2184,6 @@ double ***LocMatrices, double **LocRhs)
 
       val = Mult*(ansatz00*test00);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
     }                            // endfor j
 
     MatrixRow1 = MatrixB1T[i];
