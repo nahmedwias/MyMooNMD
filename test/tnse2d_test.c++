@@ -15,135 +15,48 @@
 #include <list>
 
 
-
-
-
-void testBE()
+void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors)
 {
+  std::array<double, int(6)> computed_errors;
+  computed_errors = tnse2d.get_errors();
   
+  // check the L2-error of the velcoity
+  if( fabs(computed_errors[0]-errors[0]) > 1e-6 )
+  {
+    ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
+  }
+  // check the H1-error of the velcoity
+  if( fabs(computed_errors[1] - errors[1]) > 1e-6 )
+  {
+    ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
+  }    
+  // check the L2-error of the pressure
+  if( fabs(computed_errors[2] - errors[2]) > 1e-6)
+  {
+    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
+  }
+  // check the H1-error of the pressure
+  if(fabs(computed_errors[3] - errors[3]) > 1e-6 )
+  {
+    ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+  }  
 }
 
-void testCN(Time_NSE2D &tnse, int m)
+void check(TDomain& domain, int velocity_order, int pressure_order, 
+           int nstype, int laplace_type, int nonlinear_form, int time_disc, 
+           std::array<std::array<double, int(4)>,4> errors)
 {
-  // cout<<"testCN: " << m<< "  " ;
-  double errors[8];
-  errors[0]=errors[1]=errors[2]=errors[3]=errors[4]=errors[5]=0.;
-  TAuxParam2D aux;
-  MultiIndex2D NSAllDerivatives[3] = {D00, D10, D01};
-  const TFESpace2D *velocity_space = &tnse.get_velocity_space();
-  const TFESpace2D *pressure_space = &tnse.get_pressure_space();
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->NSTYPE = nstype;
+  TDatabase::ParamDB->LAPLACETYPE = laplace_type;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
-  TFEFunction2D * u1 = tnse.get_velocity_component(0);
-  TFEFunction2D * u2 = tnse.get_velocity_component(1);
-  const TFEFunction2D & p = tnse.get_pressure();
-  
-    
-  u1->GetErrors(tnse.get_example().get_exact(0), 3, NSAllDerivatives, 2, L2H1Errors,nullptr,
-                &aux,1, &velocity_space,errors);   
-  
-  u2->GetErrors(tnse.get_example().get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors,nullptr,
-                  &aux,1, &velocity_space,errors+2);
-  
-  p.GetErrors(tnse.get_example().get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, nullptr, 
-               &aux, 1, &pressure_space, errors+4);
- 
-  double eps = 1E-6, err=0;
-  if(m==1)
-  {
-    err = sqrt(errors[0]*errors[0] + errors[2]*errors[2]);
-    if( fabs(err - 0.00110029) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of velocity is not correct. ", 
-               err);
-    err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
-    if( fabs(err -  0.014616) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
-               err);
-    if( fabs(errors[4] - 0.0200957) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
-               errors[4]);
-    if( fabs(errors[5] - 0.0972523) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
-               errors[5]);
-  }
-  else if(m==2)
-  {
-    err = sqrt(errors[0]*errors[0] + errors[2]*errors[2]);
-    if( fabs(err - 0.00222401) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of velocity is not correct. ", 
-               err);
-    err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
-    if( fabs(err - 0.0290912) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
-               err);
-    
-    if( fabs(errors[4] - 0.0220985) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
-               errors[4]);
-    if( fabs(errors[5] - 0.152764) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
-               errors[5]);
-  }
-  else if(m==18)
-  {
-    err = sqrt(errors[0]*errors[0] + errors[2]*errors[2]);
-    if( fabs(err - 0.0175156) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of velocity is not correct. ", 
-               err);
-    err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
-    if( fabs(err - 0.228106) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
-               err);
-    
-    if( fabs(errors[4] - 0.0820547) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
-               errors[4]);
-    if( fabs(errors[5] - 1.10258) > 10*eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
-               errors[5]);
-  }
-  else if(m==19)
-  {
-    err = sqrt(errors[0]*errors[0] + errors[2]*errors[2]);
-    if( fabs(err - 1.818933e-02) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of velocity is not correct. ", 
-               err);
-    err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
-    if( fabs(err - 2.368664e-01) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
-               err);
-
-    if( fabs(errors[4] -   0.0850308) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
-               errors[4]);
-    if( fabs(errors[5] - 1.14539) > 10*eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
-               errors[5]);
-  }
-  else if(m==20)
-  {
-    err = sqrt(errors[0]*errors[0] + errors[2]*errors[2]);
-    if( fabs(err - 1.881760e-02) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of velocity is not correct. ", 
-               err);
-    err = sqrt(errors[1]*errors[1] + errors[3]*errors[3]);
-    if( fabs(err - 2.450352e-01) > eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of velocity is not correct. ", 
-               err);
-
-    if( fabs(errors[4] - 0.0878139) > eps )
-      ErrThrow("test Crank-Nicolson: L2 norm of pressure is not correct.  ", 
-               errors[4]);
-    if( fabs(errors[5] - 1.18537) > 10*eps )
-      ErrThrow("test Crank-Nicolson: H1 norm of pressure is not correct.  ", 
-               errors[5]);
-  }
-}
-
-void time_integration(int td, Time_NSE2D& tnse)
-{
-  TDatabase::TimeDB->TIME_DISC = td;
+  TDatabase::TimeDB->TIME_DISC=time_disc;
   
   TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  
+  Time_NSE2D tnse(domain);
   
   tnse.assemble_initial_time();
   
@@ -183,9 +96,14 @@ void time_integration(int td, Time_NSE2D& tnse)
       tnse.assemble_system();         
     }
     // post processing: error computations
-    // and solutions for visualization
     tnse.output(step,image);
-    testCN(tnse, step);
+    // check the errors
+    if(step==1)
+      compare(tnse, errors[0]);
+    else if(step ==2)
+      compare(tnse, errors[1]);
+    else if(step ==20)
+      compare(tnse, errors[2]);    
   }
   
 }
@@ -193,7 +111,7 @@ void time_integration(int td, Time_NSE2D& tnse)
 int main(int argc, char* argv[])
 {
   
-  // test with Crank Nicolson euler 
+  // test for quads
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
@@ -202,17 +120,9 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
-    TDatabase::ParamDB->VELOCITY_SPACE=12;
-    TDatabase::ParamDB->PRESSURE_SPACE  =-4711;
-    // FLOW_PROBLEM_TYPE: 3 Stokes
-    // FLOW_PROBLEM_TYPE: 5 NSE
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
-    TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LAPLACETYPE= 1;
-    TDatabase::ParamDB->NSE_NONLINEAR_FORM= 0;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     
-    TDatabase::TimeDB->TIME_DISC= 2;
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
@@ -223,20 +133,97 @@ int main(int argc, char* argv[])
     //  declaration of databases
     TDomain domain;
     SetTimeDiscParameters(0);
-    // some parameters
-       
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< TDatabase::ParamDB->UNIFORM_STEPS; ++i)
     domain.RegRefineAll();
-    TDatabase::ParamDB->SOLVER_TYPE=2;
     
-    Time_NSE2D tnse(domain);
-    // direct SOLVER_TYPE = 2
-    time_integration(2,tnse);
+    // test here
+    std::array<std::array<double, int(4)>, 4> errors;
+    // errors[0], errors[1] are at first two time steps
+    // and errors[2] at ENDTIME for comparison
+    //domain, velocity_order, pressure_order,  nstype=1,2,3,4, 
+    // laplace_type=0, nonlinear_form, time_disc, 
+    //errors)
+    //=============================================================================
+    // CRANK-NICOLSON TIME STEPPING SCHEME
+    int time_disc=2; int laplace_type; int nl_form=0;
+    //=============================================================================
+    Output::print<1>("Testing the Q2/P1-disc elements");
+    //=============================================================================
+    Output::print<1>("LAPLACETYPE: ", 0, " NSTYPE's: ",1,", ",2,", ",3,", ",4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.001112092818, 0.01455279725, 0.02027240218, 0.09770369527}};
+    errors[1] = {{0.002261228092, 0.02900169754, 0.02290308963, 0.1548609258}};
+    errors[2] = {{0.01917368068, 0.2444306449, 0.1019443925, 1.213868823}};
+    laplace_type = 0;
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    
+    Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.001100290828, 0.01461603719, 0.02009574353, 0.09725227236}};
+    errors[1] = {{0.002224014719, 0.02909117943, 0.0220984703, 0.1527635601}};
+    errors[2] = {{0.01881760343, 0.245035241, 0.08781391363, 1.185368926}};
+    laplace_type = 1;
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    //=============================================================================
+    Output::print<1>("Testing the Q3/P2-disc elements");
+    //=============================================================================
+    Output::print<1>("LAPLACETYPE: ", 0, " NSTYPE's: ",1,", ",2,", ",3,", ",4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{9.921682115e-05, 0.001899852996, 0.01927905366, 0.07644264853}};
+    errors[1] = {{0.0001999247874, 0.003792810533, 0.01926073977, 0.07440290132}};
+    errors[2] = {{0.001688306366, 0.03196972361, 0.01508981038, 0.2468378611}};
+    laplace_type=0;
+    check(domain, 13, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    
+    Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.0001001227494, 0.001903725617, 0.01927900725, 0.07644570017}};
+    errors[1] = {{0.0002016432211, 0.003804972955, 0.01926093964, 0.07442742209}};
+    errors[2] = {{0.001701216631, 0.03207217596, 0.01515796884, 0.2477427189}};
+    laplace_type=1; 
+    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    //=============================================================================
+    // more elements 
+    //=============================================================================
+    //=============================================================================
+    // BACKWARD-EULER TIME STEPPING SCHEME
+    time_disc = 1;
+    //=============================================================================
+    //=============================================================================
+    Output::print<1>("Testing the Q2/P1-disc elements");
+    //=============================================================================
+    Output::print<1>("LAPLACETYPE: ", 0, " NSTYPE's: ",1,", ",2,", ",3,", ",4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.001123315065, 0.01452798821, 0.008151783113, 0.07430027476}};
+    errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
+    errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
+    laplace_type = 0;
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    
+    Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
+    " TIME_DISC: ", time_disc );
+    errors[0] = {{0.001107694207, 0.01458218406, 0.006922680518, 0.07227851039}};
+    errors[1] = {{0.002221829805, 0.02909724362, 0.01167668865, 0.1422431078}};
+    errors[2] = {{0.01883002947, 0.2450131733, 0.0861689347, 1.187591355}};
+    laplace_type = 1;
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    
   }
-  
   
   Output::print<1>("TEST SUCCESFULL: ");
   return 0;
