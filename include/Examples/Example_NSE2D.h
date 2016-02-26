@@ -19,6 +19,7 @@
 
 #include<Example2D.h>
 #include <functional>
+#include <FEFunction2D.h>
 
 class Example_NSE2D : public Example2D
 {
@@ -73,7 +74,7 @@ class Example_NSE2D : public Example2D
     //! Default destructor.
     ~Example_NSE2D() = default;
 
-    void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2,TFEFunction2D *p)
+    void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2,TFEFunction2D *p) const
     { 
       if(this->post_processing)
         this->post_processing(u1, u2, p);
@@ -85,7 +86,7 @@ class Example_NSE2D : public Example2D
    * intended to do.
    */
   void do_post_processing(TFEFunction2D *u1, TFEFunction2D *u2, TFEFunction2D *p,
-                          TFEFunction2D *u1old, TFEFunction2D *u2old)
+                          TFEFunction2D *u1old, TFEFunction2D *u2old) const
   {
     if(this->post_processing_time)
       this->post_processing_time(u1, u2, p, u1old, u2old);

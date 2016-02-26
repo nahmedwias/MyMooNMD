@@ -57,6 +57,11 @@ namespace time_flow_around_cylinder
 {
 #include "TNSE_2D/flow_over_cylinder.h"
 }
+
+namespace ns_test_code1
+{
+#include "TNSE_2D/Navier_Stokes_Test_code1.h"
+}
 //=========================================
 
 Example_NSE2D::Example_NSE2D() : Example2D()
@@ -291,6 +296,31 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       problem_coefficients = time_flow_around_cylinder::LinCoeffs;
       
       time_flow_around_cylinder::ExampleFile();
+      break;
+    case 105:
+      /** exact_solution */
+      exact_solution.push_back( ns_test_code1::ExactU1 );
+      exact_solution.push_back( ns_test_code1::ExactU2 );
+      exact_solution.push_back( ns_test_code1::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( ns_test_code1::BoundCondition );
+      boundary_conditions.push_back( ns_test_code1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( ns_test_code1::U1BoundValue );
+      boundary_data.push_back( ns_test_code1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** initial conditions, in case of a non-stationary problem */
+      initial_conditions.push_back(ns_test_code1::InitialU1);
+      initial_conditions.push_back(ns_test_code1::InitialU2);
+      initial_conditions.push_back(ns_test_code1::InitialP);
+      /** coefficients */
+      problem_coefficients = ns_test_code1::LinCoeffs;
+      
+      ns_test_code1::ExampleFile();
       break;
     default:
       ErrThrow("Unknown Navier-Stokes example!");
