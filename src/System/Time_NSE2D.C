@@ -669,9 +669,8 @@ void Time_NSE2D::solve()
   // before the solving process. Only A11 and A22 matrices are 
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
-    this->deScaleMatrices();
+  this->deScaleMatrices();
 
-this->old_solution = s.solution;
   Output::print<5>("solver done");
 }
 
@@ -978,6 +977,21 @@ void Time_NSE2D::output(int m, int& image)
       image++;
     }
   }
+  
+  TFEFunction2D u1old(&systems[0].velocity_space, (char*) "u1old",
+                      (char*) "u1old", this->old_solution.block(0),
+                      this->old_solution.length(0));
+  TFEFunction2D u2old(&systems[0].velocity_space, (char*) "u1old",
+                      (char*) "u1old", this->old_solution.block(1),
+                      this->old_solution.length(1));
+  
+  this->example.do_post_processing(systems[0].u.GetComponent(0), 
+                                   systems[0].u.GetComponent(1),
+                                   &systems[0].p, &u1old, &u2old);
+  //copy solution to be used for the right hand side from the previous time 
+  //step also to compute some quantities of interests for the different 
+  //examples
+  this->old_solution = s.solution;
 }
 /**************************************************************************** */
 std::array< double, int(6) > Time_NSE2D::get_errors()
