@@ -662,7 +662,8 @@ void BlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVector & 
   
   // check_vector_fits_pre_image(x); 
   // check_vector_fits_image(y);
-  
+  if(a==0)
+    return;
   if(sub_row > this->n_cell_rows_
       || sub_col > this->n_cell_columns_)
   {
