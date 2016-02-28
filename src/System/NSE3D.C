@@ -2,6 +2,7 @@
 #include <Database.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
+#include <MainUtilities.h>
 
 #include <NSE_MGLevel.h>
 #include <NSE_MGLevel1.h>
@@ -9,6 +10,15 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
+#include <LinAlg.h>
+
+#include <ItMethod.h>
+#include <FgmresIte.h>
+#include <FixedPointIte.h>
+#include <MultiGridIte.h>
+
+#include <DirectSolver.h>
+#include <Output3D.h>
 
 NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
@@ -82,7 +92,6 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 #endif
-  Output::print<1>("Leaving the SystemPerGrid: ");
 }
 
 
@@ -90,7 +99,8 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), multigrid_(nullptr)
+) : systems_(), example_(example), multigrid_(nullptr),
+    defect(), oldResidual(0), initial_residual(1e10), errors()
 {
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -196,7 +206,6 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
       level++;      
     }
   }
-  Output::print<1>("Leaving the constructor NSE3D: ");
 }
 
 void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressure_orders)
@@ -274,14 +283,15 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
 
 void NSE3D::assembleLinearTerms()
 {
-  size_t nFESpace = 2;
-  size_t nSqMatrices=10;
+  size_t nFESpace = 2; // spaces used for assembling matrices
+  size_t nSqMatrices=10; // no of square matrices Maximum 10
   std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 6;
+  size_t nReMatrices = 6; //no of rectangular matrices
   std::vector<TMatrix3D*> reMatrices(nReMatrices);
-  size_t nRhs=3;
-  std::vector<double*> rhsEntries(nRhs);  
-  std::vector<TFEFunction3D*> feFunction(4);
+  size_t nRhs=3; // number of right hand sides 
+  std::vector<double*> rhsArray(nRhs); // right hand side 
+  // finite element function used for nonlinear term
+  std::vector<TFEFunction3D*> feFunction(3); 
   
   for(auto &s : this->systems_)
   {
@@ -290,9 +300,10 @@ void NSE3D::assembleLinearTerms()
     const TFESpace3D* rhsSpaces[3] = {&s.velocitySpace_, &s.pressureSpace_, 
                                       &s.velocitySpace_};
     // spaces for right hand side    
-    rhsEntries[0]=s.rhs_.block(0);
-    rhsEntries[1]=s.rhs_.block(1);
-    rhsEntries[2]=s.rhs_.block(2);
+    s.rhs_.reset();
+    rhsArray[0]=s.rhs_.block(0);
+    rhsArray[1]=s.rhs_.block(1);
+    rhsArray[2]=s.rhs_.block(2);
     
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
     
@@ -379,8 +390,19 @@ void NSE3D::assembleLinearTerms()
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+        
+        nRhs +=1;
+        rhsArray.resize(4);
+        rhsArray[0]=s.rhs_.block(0);
+        rhsArray[1]=s.rhs_.block(1);
+        rhsArray[2]=s.rhs_.block(2);
+        rhsArray[3]=s.rhs_.block(3);
         break;
     }// endswitch nstype
+    for(unsigned int i=0; i<nSqMatrices; i++)
+      sqMatrices[i]->reset();
+    for(unsigned int i=0; i<nReMatrices;i++)
+      reMatrices[i]->reset();
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
       spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
@@ -391,11 +413,10 @@ void NSE3D::assembleLinearTerms()
     boundValues[1]=example_.get_bd()[1];
     boundValues[2]=example_.get_bd()[2];
     boundValues[3]=example_.get_bd()[3];
-
+    // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);
-    feFunction[3]=&s.p_;
+    feFunction[2]=s.u_.GetComponent(2);    
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
@@ -404,22 +425,21 @@ void NSE3D::assembleLinearTerms()
     Assemble3D(nFESpace, spaces, 
                nSqMatrices, sqMatrices.data(),
                nReMatrices, reMatrices.data(), 
-               nRhs, rhsEntries.data(), rhsSpaces,
+               nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
   }// endfor auto grid
-  Output::print<1>("Leaving the assembleLinearTerms: ");
 }
 
 void NSE3D::assembleNonLinearTerm()
 {
-  size_t nFESpace = 1;
-  size_t nSqMatrices=3;
+  size_t nFESpace = 1; // space needed for assembling matrices
+  size_t nSqMatrices=3; // no of square matrices (Maximum 3)
   std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 0;
+  size_t nReMatrices = 0; // no rectangular matrix in nonlinear iteration
   std::vector<TMatrix3D*> reMatrices{nullptr};
-  size_t nRhs=0;
-  std::vector<double*> rhsEntries{nullptr};  
-  std::vector<TFEFunction3D*> feFunction(4);
+  size_t nRhs=0; // no right hand side to be assembled
+  std::vector<double*> rhsArray{nullptr};  
+  std::vector<TFEFunction3D*> feFunction(3);
   const TFESpace3D** rhsSpaces{nullptr};
   
   
@@ -459,8 +479,7 @@ void NSE3D::assembleNonLinearTerm()
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);
-    feFunction[3]=&s.p_;
+    feFunction[2]=s.u_.GetComponent(2);    
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                          feFunction.data(), example_.get_coeffs());
@@ -469,15 +488,148 @@ void NSE3D::assembleNonLinearTerm()
     Assemble3D(nFESpace, spaces, 
                nSqMatrices, sqMatrices.data(),
                nReMatrices, reMatrices.data(), 
-               nRhs, rhsEntries.data(), rhsSpaces,
+               nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
   }// endfor auto grid
-  Output::print<1>("Leaving the assembleNonLinearTerm: ");
+}
+
+bool NSE3D::stopIt(unsigned int iteration_counter)
+{
+  SystemPerGrid& s = this->systems_.front();
+  unsigned int nDofU = s.solution_.length(0);
+  unsigned int nDofP = s.solution_.length(3);
+  
+  defect = s.rhs_;
+  s.matrix_.apply_scaled_add(s.solution_, defect, -1);
+  
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+    IntoL20Vector3D(&defect[3*nDofU], nDofP,
+                    TDatabase::ParamDB->PRESSURE_SPACE);
+  }
+  // compute residuals of mass and momentum
+  double residual, impulseResidual, massResidual;
+  residual = Ddot(3*nDofU+nDofP, &this->defect[0], &this->defect[0]);
+  impulseResidual = Ddot(3*nDofU, &this->defect[0], &this->defect[0]);
+  massResidual = Ddot(nDofP,&this->defect[3*nDofU],&this->defect[3*nDofU]);
+  
+  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
+  Output::print("impulse_residual:  " , setw(3), impulseResidual);
+  Output::print("mass_residual   :  " , setw(3), massResidual);
+  Output::print("residual        :  " , setw(3), sqrt(residual));
+  
+  if (iteration_counter>0)
+  {
+    Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+  }
+  oldResidual=sqrt(residual);
+  int maxIte = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+  double limit=TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+  if(TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE)
+  {
+    limit *=sqrt(this->get_size());
+    Output::print("stopping tolerance for nonlinear iteration ", limit);
+  }
+  if(iteration_counter==0)
+    initial_residual = sqrt(residual);
+  if ((((sqrt(residual)<=limit)||(iteration_counter==maxIte)))
+   && (iteration_counter>=TDatabase::ParamDB->SC_MINIT))
+   {
+     Output::print("ITE : ", setw(3), iteration_counter, "  RES : ", sqrt(residual), 
+                   " Reduction : ",  sqrt(residual)/initial_residual);
+     return true;
+   }
+   else
+     return false;
 }
 
 void NSE3D::solve()
 {
+  SystemPerGrid& s = this->systems_.front();
+  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
+    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
+  {
+    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+      ErrThrow("only the direct solver is supported currently");
+    
+    /// @todo consider storing an object of DirectSolver in this class
+    DirectSolver direct_solver(s.matrix_, 
+                               DirectSolver::DirectSolverTypes::umfpack);
+    direct_solver.solve(s.rhs_, s.solution_);
+  }
+  else
+  { // multigrid preconditioned iterative solver
+    mg_solver();
+  }
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+   s.p_.project_into_L20();
+}
+
+void NSE3D::output(int i)
+{
+    if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+    return;
   
+  SystemPerGrid& s=this->systems_.front();
+  
+  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  {
+    s.u_.GetComponent(0)->PrintMinMax();
+    s.u_.GetComponent(1)->PrintMinMax();
+    s.u_.GetComponent(2)->PrintMinMax();
+    s.p_.PrintMinMax();
+  }
+  
+  // write solution to a vtk file
+  if(TDatabase::ParamDB->WRITE_VTK)
+  {
+    // last argument in the following is domain, but is never used in this class
+    TOutput3D Output(5, 5, 2, 1, NULL);
+    Output.AddFEFunction(&s.p_);
+    Output.AddFEVectFunct(&s.u_);
+    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    if(i >= 0)
+      filename += "_" + std::to_string(i);
+    filename += ".vtk";
+    Output.WriteVtk(filename.c_str());
+  }
+  
+  // measure errors to known solution
+  // If an exact solution is not known, it is usually set to be zero, so that
+  // in such a case here only integrals of the solution are computed.
+  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  {
+    double err[7];
+    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    MultiIndex3D nsAllDerivs[4] = {D000, D100, D010, D001};
+    const TFESpace3D *velocity_space = &this->get_velocity_space();
+    const TFESpace3D *pressure_space = &this->get_pressure_space();
+    
+    // errors in first velocity component
+    s.u_.GetComponent(0)->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 2, 
+                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err);
+    // errors in second velocity component
+    s.u_.GetComponent(1)->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 2, 
+                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err + 2);
+    
+    s.u_.GetComponent(2)->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2, 
+                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err + 4);
+    
+    errors[0] = sqrt(err[0]*err[0] + err[2]*err[2] + err[3]*err[3]);
+    errors[1] = sqrt(err[4]*err[4] + err[5]*err[5] + err[6]*err[6]);    
+    Output::print<1>("L2(u)     : ", errors[0]);
+    Output::print<1>("H1-semi(u): ", errors[1]);
+    // errors in pressure
+    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors, 
+                  nullptr, &aux, 1, &pressure_space, err);
+    
+    errors[2] = err[0];
+    errors[3] = err[1];    
+    Output::print<1>("L2(p)     : ", errors[2]);
+    Output::print<1>("H1-semi(p): ", errors[3]);    
+    
+  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
 
 TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::SystemPerGrid& s)
@@ -577,3 +729,185 @@ TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::SystemPerGrid& s)
   return multigridLevel;
 }
 
+void NSE3D::mg_solver()
+{
+  SystemPerGrid& s = this->systems_.front();
+  std::shared_ptr<TItMethod> itMethod;
+  std::shared_ptr<TItMethod> prec;
+  int zero_start;  
+  TSquareMatrix3D *sqMat[10];
+  TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
+  TMatrix3D *recMat[6];
+  TMatrix **matrices = (TMatrix **)recMat;
+  MatVecProc *MatVect;
+  DefectProc *Defect;
+  
+  std::vector<double> itMethodSol;
+  std::vector<double> itMethodRhs;
+
+  int nDof = this->get_size();
+  
+  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_TERRIBLY_UNSAFE();
+  
+  TSquareMatrix3D *A11=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+  TSquareMatrix3D *A12=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+  TSquareMatrix3D *A13=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+  TSquareMatrix3D *A21=reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
+  TSquareMatrix3D *A22=reinterpret_cast<TSquareMatrix3D*>(blocks.at(5).get());
+  TSquareMatrix3D *A23=reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());
+  TSquareMatrix3D *A31=reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());
+  TSquareMatrix3D *A32=reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());
+  TSquareMatrix3D *A33=reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
+  // pressure-pressure block
+  TSquareMatrix3D *C = reinterpret_cast<TSquareMatrix3D*>(blocks.at(15).get());
+  
+  TMatrix3D* B1T=reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+  TMatrix3D* B2T=reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
+  TMatrix3D* B3T=reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+  TMatrix3D* B1 =reinterpret_cast<TMatrix3D*>(blocks.at(12).get());
+  TMatrix3D* B2 =reinterpret_cast<TMatrix3D*>(blocks.at(13).get());
+  TMatrix3D* B3 =reinterpret_cast<TMatrix3D*>(blocks.at(14).get());
+  
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1:
+      sqMat[0] = A11;
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B3;
+      MatVect = MatVect_NSE1;
+      Defect = Defect_NSE1;
+      break;
+    case 2:
+      sqMat[0] = A11;
+      
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B3;
+      recMat[3] = B1T;
+      recMat[4] = B2T;
+      recMat[5] = B3T;
+      
+      MatVect = MatVect_NSE2;
+      Defect = Defect_NSE2;
+      break;
+    case 3:
+      sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A13;
+      sqMat[3] = A21;
+      sqMat[4] = A22;
+      sqMat[5] = A23;
+      sqMat[6] = A31;
+      sqMat[7] = A32;
+      sqMat[8] = A33;
+      
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B3;
+      MatVect = MatVect_NSE3;
+      Defect = Defect_NSE3;
+      break;
+    case 4:
+      sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A13;
+      sqMat[3] = A21;
+      sqMat[4] = A22;
+      sqMat[5] = A23;
+      sqMat[6] = A31;
+      sqMat[7] = A32;
+      sqMat[8] = A33;
+      
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B3;
+      recMat[3] = B1T;
+      recMat[4] = B2T;
+      recMat[5] = B3T;
+
+      MatVect = MatVect_NSE4;
+      Defect = Defect_NSE4;
+      break;
+    case 14:
+            sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A13;
+      sqMat[3] = A21;
+      sqMat[4] = A22;
+      sqMat[5] = A23;
+      sqMat[6] = A31;
+      sqMat[7] = A32;
+      sqMat[8] = A33;
+      sqMat[9] = C;
+      
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B3;
+      recMat[3] = B1T;
+      recMat[4] = B2T;
+      recMat[5] = B3T;
+
+      //FIXME: MatVect_EquOrd_NSE4 is not implemented for 3D case
+      // I have to implement that as well
+      //MatVect = MatVect_EquOrd_NSE4;
+      //Defect = Defect_EquOrd_NSE4;
+      break;
+  }
+  
+  
+    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
+    {
+      case 11:
+        zero_start = 1;
+        break; 
+      case 16:
+        zero_start = 0;
+        break;
+    }
+    switch(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
+    {
+      case 5:
+        prec=std::make_shared<TMultiGridIte>(MatVect, Defect, nullptr, 0, nDof, 
+                                 this->multigrid_.get(), zero_start);
+        break;
+      default:
+        ErrThrow("Unknown preconditioner !!!");
+    }
+    
+    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
+    {
+        itMethodSol.resize(nDof);
+        itMethodRhs.resize(nDof);      
+    }
+    else
+    {
+        itMethodSol=s.solution_.get_entries_vector();
+        itMethodRhs=s.rhs_.get_entries_vector();
+    }
+
+    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
+    {
+      case 11:
+        itMethod=std::make_shared<TFixedPointIte>(MatVect, Defect, prec.get(), 0, nDof, 0);
+        break;
+      case 16:
+        itMethod=std::make_shared<TFgmresIte>(MatVect, Defect, prec.get(), 0, nDof, 0);
+        break;
+      default:
+        ErrThrow("Unknown preconditioner !!!");
+    }
+    
+    itMethod->Iterate(sqmatrices, matrices, itMethodSol.data(), itMethodRhs.data());
+    
+    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE==5)
+    {
+      s.solution_.get_entries_vector() = itMethodSol;
+      s.rhs_.get_entries_vector() = itMethodRhs;
+    }
+}
+
+std::array< double, int(4) > NSE3D::get_errors()
+{
+  return errors;
+}

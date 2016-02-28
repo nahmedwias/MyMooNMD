@@ -28,6 +28,7 @@
 #include <vector>
 #include <deque>
 #include <list>
+#include <utility>
 
 #ifdef _MPI
 #include <ParFEMapper3D.h>
@@ -149,7 +150,22 @@ class NSE3D
      */
     void get_velocity_pressure_orders(std::pair <int,int> 
                    &velocity_pressure_orders);
-
+    
+    /** @brief an array to store defect, so that we don't have to reallocate
+     *         so often
+     */
+    BlockVector defect;
+    /***/
+    double oldResidual;
+    
+    /** @brief store the initial residual so that the nonlinear iteration can 
+     *         be stopped as soon as a desired reduction is achieved
+     */
+    double initial_residual;
+    
+    /** @brief
+     */
+    std::array<double, int(4)> errors;
  public:
 
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
@@ -197,6 +213,15 @@ class NSE3D
      * is a Navier Stokes problem.
      */
     void assembleNonLinearTerm();
+    
+    /** @brief check if one of the stopping criteria is fulfilled
+     * 
+     * either converged, maximun number of iterations reached, or slow 
+     * convergence
+     * 
+     * @param iteration_counter current iterate
+     */
+    bool stopIt(unsigned int iteration_counter);
 
     //! Solve the current linear system. Nonlinear loop will be outside of this class.
     void solve();
@@ -233,9 +258,42 @@ class NSE3D
      * @brief initialize multigrid levels for different NSTYPE's
      * 
      * @param: level
-     * @param: grid
+     * @param: grid to be added
      */
     TNSE_MGLevel* mg_levels(int level, SystemPerGrid& s);
+    
+    /**
+     * @brief multigrid solver
+     * preparing the stuff used to call multigrid solver
+     */
+    void mg_solver();
+    
+/********************************************************************************/
+// getters
+   const TFEVectFunct3D & get_velocity() const
+    { return this->systems_.front().u_; }
+    TFEVectFunct3D & get_velocity()
+    { return this->systems_.front().u_; }    
+    TFEFunction3D *get_velocity_component(int i)
+    { 
+      if(i==0) 
+        return this->systems_.front().u_.GetComponent(0);
+      else if(i==1) 
+        return this->systems_.front().u_.GetComponent(1);
+      else 
+        return this->systems_.front().u_.GetComponent(2);
+    }
+    TFEFunction3D & get_pressure()
+    { return this->systems_.front().p_; }
+    const TFESpace3D & get_velocity_space() const
+    { return this->systems_.front().velocitySpace_; }
+    const TFESpace3D & get_pressure_space() const
+    { return this->systems_.front().pressureSpace_; }
+    
+    const int get_size(){return this->systems_.front().solution_.length();}
+    
+    /// @brief return the computed errors 
+    std::array<double, int(4)> get_errors();
 
 };
 

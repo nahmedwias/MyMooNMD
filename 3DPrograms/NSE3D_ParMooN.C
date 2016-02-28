@@ -159,10 +159,22 @@ int main(int argc, char* argv[])
 #else
   NSE3D nse3d(gridCollections, example);
 #endif
-  
+  // assemble all matrices and right hand side
   nse3d.assembleLinearTerms();
+  nse3d.stopIt(0);
+  // check initial residuals
+  //======================================================================
+  for(unsigned int k=1;; k++)
+  {
+    // solve the system
+    nse3d.solve();
+    // checking residuals
+    if(nse3d.stopIt(k))
+      break;    
+    nse3d.assembleNonLinearTerm();
+  }
+  nse3d.output();
   
-  nse3d.assembleNonLinearTerm();
-  
+  Output::close_file();
   return 0;
 }
