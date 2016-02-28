@@ -124,12 +124,25 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
   const double eps = 1./TDatabase::ParamDB->RE_NR;
+  double u1[5], u2[5], u3[5], p[5];
   for(int i=0;i<n_points;i++)
   {
     coeffs[i][0] =  eps;
-    coeffs[i][1] =  eps*3*Pi*Pi*cos(X[i]*Pi)*sin(Y[i]*Pi)*sin(Z[i]*Pi); // f1
-    coeffs[i][2] =  eps*3*Pi*Pi*sin(X[i]*Pi)*cos(Y[i]*Pi)*sin(Z[i]*Pi); // f2
-    coeffs[i][3] = -eps*6*Pi*Pi*sin(X[i]*Pi)*sin(Y[i]*Pi)*cos(Z[i]*Pi); // f3
+    
+    ExactU1(X[i], Y[i], Z[i], u1);
+    ExactU2(X[i], Y[i], Z[i], u2);
+    ExactU3(X[i], Y[i], Z[i], u3);
+    ExactP( X[i], Y[i], Z[i], p);
+
+    coeffs[i][1] = -eps * u1[4] + p[1]; 
+    coeffs[i][2] = -eps * u2[4] + p[2]; 
+    coeffs[i][3] = -eps * u3[4] + p[3];
+    if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5)
+    {
+      coeffs[i][1] += u1[0]*u1[1] + u2[0]*u1[2] + u3[0]*u1[3];
+      coeffs[i][2] += u1[0]*u2[1] + u2[0]*u2[2] + u3[0]*u2[3];
+      coeffs[i][3] += u1[0]*u3[1] + u2[0]*u3[2] + u3[0]*u3[3];
+    }
     coeffs[i][4] = 0; // g
   }
 }
