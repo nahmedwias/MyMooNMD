@@ -37,11 +37,6 @@ class PrRobustTime_NSE2D : Time_NSE2D
       /** @brief Finite element function*/
       TFEFunction2D fefctVV;
       
-      /** @brief solution for computing quantities of interest*/
-      BlockVector formerSol;
-      
-      /** @brief fefunction for computing drag and lift*/
-      TFEFunction2D u1Old, u2Old;
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
                     const TFESpace2D& velocity_space, 
@@ -74,14 +69,9 @@ class PrRobustTime_NSE2D : Time_NSE2D
      * multiplication of the projection matrix and MassMatrix of RT/BDM
      * results in 2 by 2 square blocks
      */
-    void assemble_initial_time();
     // will be replaced latter
     void assemble_initial_timeNS();
     
-    // assemble the projection matrix
-    // FIXME: temporary function which is for the checking of previous working 
-    // code: delete after the complete check
-    void assembleProjectionMatrix();
     /** @brief 
      * 1. assembling the right hand side for special reconstruciton of the 
      * test function: Pressure robust method
@@ -89,7 +79,6 @@ class PrRobustTime_NSE2D : Time_NSE2D
      * this function will prepare the right hand side during the time 
      * discretization
      */
-    void assemble_rhs();
     void assemble_rhsNS();
     /** @brief assemble nonlinear term
      * 

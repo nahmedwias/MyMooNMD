@@ -415,6 +415,8 @@ void Time_NSE2D::assemble_initial_time()
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs; 
   this->old_solution = this->systems.front().solution;
+  formerSolution = this->systems.front().solution;
+  formerSolution.reset();
 }
 
 /**************************************************************************** */
@@ -979,19 +981,17 @@ void Time_NSE2D::output(int m, int& image)
   }
   
   TFEFunction2D u1old(&systems[0].velocity_space, (char*) "u1old",
-                      (char*) "u1old", this->old_solution.block(0),
-                      this->old_solution.length(0));
+                      (char*) "u1old", this->formerSolution.block(0),
+                      this->formerSolution.length(0));
   TFEFunction2D u2old(&systems[0].velocity_space, (char*) "u1old",
-                      (char*) "u1old", this->old_solution.block(1),
-                      this->old_solution.length(1));
+                      (char*) "u1old", this->formerSolution.block(1),
+                      this->formerSolution.length(1));
   
   this->example.do_post_processing(systems[0].u.GetComponent(0), 
                                    systems[0].u.GetComponent(1),
                                    &systems[0].p, &u1old, &u2old);
-  //copy solution to be used for the right hand side from the previous time 
-  //step also to compute some quantities of interests for the different 
-  //examples
-  this->old_solution = s.solution;
+  // copy solution vector to formerSolution for post processin
+  this->formerSolution = s.solution;
 }
 /**************************************************************************** */
 std::array< double, int(6) > Time_NSE2D::get_errors()

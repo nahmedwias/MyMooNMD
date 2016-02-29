@@ -109,8 +109,11 @@ class Time_NSE2D
       
       /** @brief right hand side vector from previous time step (on finest mesh)*/
       BlockVector old_rhs;
-      
+      /** @brief */
       BlockVector old_solution;
+      
+      /** @brief solution vector for computing drag and lift coeffs*/
+      BlockVector formerSolution;
       
       /** @brief store errors  */
       std::vector<double> errors;

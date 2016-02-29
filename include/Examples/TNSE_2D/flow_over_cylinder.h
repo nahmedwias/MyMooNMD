@@ -371,9 +371,10 @@ TFEFunction2D *u1oldfct, TFEFunction2D *u2oldfct)
   pfct->FindGradient(0.15, 0.2, dP1);
   pfct->FindGradient(0.25, 0.2, dP2);
 
-  OutPut("dof " << 2 * u1fct->GetLength() + pfct->GetLength());
-  OutPut( " C_drag = " << setprecision(16) << Cd);
-  OutPut( " C_lift = " << setprecision(16) << Cl);
-  OutPut( " deltaP = " << setprecision(16) << dP1[0] - dP2[0] << endl);
+  // OutPut("dof " << 2 * u1fct->GetLength() + pfct->GetLength());
+  Output::print(TDatabase::TimeDB->CURRENTTIME , 
+             " C_drag = ", setprecision(16), Cd, " C_lift = ", setprecision(16), Cl,
+             " deltaP = ", setprecision(16), dP1[0] - dP2[0]);
+  
   OutPut(setprecision(6));
 }

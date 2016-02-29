@@ -58,8 +58,10 @@ int main(int argc, char *argv[])
   double end_time = TDatabase::TimeDB->ENDTIME;
   
   // assemble the projection matrix
-  if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==5)
+  if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE==5 && 
+     TDatabase::ParamDB->DISCTYPE == RECONSTRUCTION)
     stokes_prbst_time.assembleProjMat();
+  // assemble intial matrices and right hand side
   stokes_prbst_time.assemble_initial_timeNS();
   
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
