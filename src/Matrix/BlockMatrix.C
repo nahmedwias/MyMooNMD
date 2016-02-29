@@ -167,9 +167,9 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
           
           current_block->transpose_multiply(xv + col_offset, yv + row_offset, a);
           
-          col_offset += cell_grid_[i][j].n_columns_;
+          col_offset += cell_grid_[i][j].n_rows_;
         }
-        row_offset += cell_grid_[i][0].n_rows_;
+        row_offset += cell_grid_[i][0].n_columns_;
       }
     }
 
