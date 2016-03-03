@@ -30,6 +30,15 @@ class PrRobustNSE2D : NSE2D
      */
     std::deque<SystemPerGrid> Systems;
     
+    /**
+       * @brief store the square root of the residual from previous iteration
+       */
+      double oldResidual;
+      /** @brief store the initial residual so that the nonlinear iteration can 
+       *         be stopped as soon as a desired reduction is achieved
+       */
+      double initial_residual;
+    
   public:
     // 
     PrRobustNSE2D(const TDomain& domain, const Example_NSE2D& _example, 
@@ -53,6 +62,13 @@ class PrRobustNSE2D : NSE2D
     
     // assemble the projection matrix
     void assembleProjectionMatrix();
+    
+    /** @brief stopping creterion and residuals*/
+    bool stopIteration(unsigned int it);
+    /** @brief assembling of nonlinear matrices
+     * no right hand side and pressure blocks
+     */
+    void assembleNL();
     
     /** @brief 
      * solve the resulting system

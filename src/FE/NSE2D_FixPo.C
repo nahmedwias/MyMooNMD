@@ -9,6 +9,7 @@
 #include <Database.h>
 #include <TNSE2D_Routines.h>
 #include <Darcy2DMixed.h>
+#include <vector>
 
 // ======================================================================
 // compute parameter for RFB stabilization
@@ -4736,89 +4737,75 @@ void NSType4GalerkinPrRob(double Mult, double *coeff, double *param, double hK,
                        double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11 = LocMatrices[0];
-  double **MatrixA12 = LocMatrices[1];
-  double **MatrixA21 = LocMatrices[2];
-  double **MatrixA22 = LocMatrices[3];
-  double **MatrixB1  = LocMatrices[4];
-  double** MatrixB2  = LocMatrices[5];
-  double** MatrixB1T = LocMatrices[6];
-  double** MatrixB2T = LocMatrices[7];
+  double **MatrixA22 = LocMatrices[1];
+  double **MatrixA11NL = LocMatrices[2];
+  double **MatrixA22NL = LocMatrices[3];
   
   double *Orig0 = OrigValues[0]; // u_x
   double *Orig1 = OrigValues[1]; // u_y
   double *Orig2 = OrigValues[2]; // u
-  double *Orig3 = OrigValues[3]; // p
+  
+  double *OrigV = OrigValues[3]; // u Vector
   
   double c0 = coeff[0];
   
-  double u1 = param[0];
-  double u2 = param[1];
   
-  int N_U = N_BaseFuncts[0];
-  int N_P = N_BaseFuncts[1];
+  int scalar_dof = N_BaseFuncts[0];
+  int vector_dof = N_BaseFuncts[1];
   
-  double *Matrix11Row, *Matrix12Row;
-  double *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row;
+  double *Matrix22Row;
   double test10, test00, test01;
   double ansatz10, ansatz01, ansatz00;
   double val;
   
-  for(int i=0; i<N_U; i++)
+  double u1 = param[0];
+  double u2 = param[1];
+  
+  for(int i=0; i<scalar_dof; i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
+    
     test10 = Orig0[i];
     test01 = Orig1[i];
-    test00 = Orig2[i];
+    //test00 = Orig2[i];
 
-    for(int j=0;j<N_U;j++)
+    for(int j=0;j<scalar_dof;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //val += (u1*ansatz10 + u2*ansatz01)*test00;
       Matrix11Row[j] += Mult * val;
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
-      val += (u1*ansatz10+u2*ansatz01)*test00;
+      //val += (u1*ansatz10 + u2*ansatz01)*test00;
       Matrix22Row[j] += Mult * val;
-
     }
+  }
 
-    double *MatrixRow1 = MatrixB1T[i];
-    double *MatrixRow2 = MatrixB2T[i];
-    for(int j=0;j<N_P;j++)
-    {
-      ansatz00 = Orig3[j];
-
-      val = -Mult*ansatz00*test10;
-      MatrixRow1[j] += val;
-
-      val = -Mult*ansatz00*test01;
-      MatrixRow2[j] += val;
-    }
-  } 
-
-  for(int i=0;i<N_P;i++)
+  std::vector<int> sign(vector_dof);
+  for(int i=0;i<vector_dof;i++)
+    sign[i] = GetSignOfThisDOF(vector_dof, i);
+  
+  
+  for(int i=0;i<vector_dof;i++)
   {
-    double *MatrixRow1 = MatrixB1[i];
-    double *MatrixRow2 = MatrixB2[i];
-
-    test00 = Orig3[i];
-
-    for(int j=0;j<N_U;j++)
+    double testx00 = sign[i]*OrigV[i];
+    double testy00 = sign[i]*OrigV[i+vector_dof];
+    
+    for(int j=0;j<scalar_dof;j++)
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
 
-      val = -Mult*test00*ansatz10;
-      MatrixRow1[j] += val;
+      val = (u1*ansatz10 + u2*ansatz01)*testx00;
+      MatrixA11NL[i][j] += Mult*val;
 
-      val = -Mult*test00*ansatz01;
-      MatrixRow2[j] += val;
+      val = (u1*ansatz10 + u2*ansatz01)*testy00;
+      MatrixA22NL[i][j] += Mult*val;
     }
   }
 }

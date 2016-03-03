@@ -748,6 +748,8 @@ void NSE2D::output(int i)
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
   delete u1;
   delete u2;
+  
+  this->example.do_post_processing(s.u.GetComponent(0), s.u.GetComponent(1),&s.p);
 }
 
 /** ************************************************************************ */

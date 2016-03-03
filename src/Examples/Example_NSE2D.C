@@ -1,6 +1,7 @@
 #include <Example_NSE2D.h>
 
 #include <Database.h>
+#include <BoundEdge.h>
 #include <Example_NSE2D.h>
 #include <FEDatabase2D.h>
 #include <SquareMatrix2D.h>
@@ -26,10 +27,6 @@ namespace flow_around_cylinder
 {
   #include "NSE_2D/flow_around_cylinder.h"
 }
-namespace quad_pres
-{
-  #include "NSE_2D/quadratic_pressure.h"
-}
 
 //=========================================
 // tests for the pressure robust methods
@@ -38,6 +35,17 @@ namespace zerosolution
 {
 #include "NSE_2D/StokesZeroSol.h"
 }
+
+namespace quad_pres
+{
+  #include "NSE_2D/quadratic_pressure.h"
+}
+
+namespace bsp1_pr1
+{
+#include "NSE_2D/Bsp_PR1.h"
+}
+
 //=========================================
 // time dependent case 
 namespace bsp1
@@ -150,6 +158,10 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       /** coefficients */
       problem_coefficients = flow_around_cylinder::LinCoeffs;
       
+      /** function for computation of drag lift and pressure difference*/
+      /** post processing function to  compute drag and lift */
+      post_processing = flow_around_cylinder::compute_drag_and_lift;
+      
       flow_around_cylinder::ExampleFile();
       break;
       
@@ -194,6 +206,28 @@ Example_NSE2D::Example_NSE2D() : Example2D()
       problem_coefficients = quad_pres::LinCoeffs;
       
       quad_pres::ExampleFile();
+      break;
+      
+       case 42:
+      /** exact_solution */
+      exact_solution.push_back( bsp1_pr1::ExactU1 );
+      exact_solution.push_back( bsp1_pr1::ExactU2 );
+      exact_solution.push_back( bsp1_pr1::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( bsp1_pr1::BoundCondition );
+      boundary_conditions.push_back( bsp1_pr1::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( bsp1_pr1::U1BoundValue );
+      boundary_data.push_back( bsp1_pr1::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = bsp1_pr1::LinCoeffs;
+      
+      bsp1_pr1::ExampleFile();
       break;
       
     case 101:

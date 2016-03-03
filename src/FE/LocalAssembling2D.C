@@ -106,8 +106,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
           return std::string("TNSE2D_RhsSUPG");
       }
       break;
-    case LocalAssembling2D_type::RECONSTR_GALERKIN:
-      return std::string("RECONSTR_GALERKIN");
+    case LocalAssembling2D_type::RECONSTR_NLGALERKIN:
+      return std::string("RECONSTR_NLGALERKIN");
       break;
     case LocalAssembling2D_type::RECONSTR_GALERKIN_Rhs:
       return std::string("RECONSTR_GALERKIN_Rhs");
@@ -294,7 +294,7 @@ switch(type)
     this->set_parameters_for_tnse(type);
     break;
  //////////////////////////////////////////////////////////////////////////////
-  case LocalAssembling2D_type::RECONSTR_GALERKIN:
+  case LocalAssembling2D_type::RECONSTR_NLGALERKIN:
   case LocalAssembling2D_type::RECONSTR_MASS:
   case LocalAssembling2D_type::RECONSTR_TNSENL:
   case LocalAssembling2D_type::RECONSTR_TNSE:
@@ -2135,18 +2135,24 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
   
   switch(type)
   {
-    case RECONSTR_GALERKIN:
+    case RECONSTR_NLGALERKIN:
       this->N_Terms = 4;
       this->Derivatives = { D10, D01, D00, D00 };
       this->Needs2ndDerivatives = new bool[2];
       this->Needs2ndDerivatives[0] = false;
       this->Needs2ndDerivatives[1] = false;
-      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-      this->N_Matrices = 8;
-      this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-      this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-      this->N_Rhs = 3;
-      this->RhsSpace = { 0, 0, 1 };
+      this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: projection
+      // Here note that the local assemble routine "NSType4GalerkinPrRob"
+      // only assembles the 4 matrices, two extra matrices are the projection
+      // which have to be setted to zero in the GetLocalForms()
+      // These matrices are assembled totally different to the 
+      // structure of the other local assembling routines that's why they 
+      // are assembled separately in the MainUtilities.C file
+      this->N_Matrices = 6;
+      this->RowSpace =    { 0, 0, 1, 1, 0, 0 };
+      this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
+      this->N_Rhs = 0;
+      this->RhsSpace = { };
       this->AssembleParam = NSType4GalerkinPrRob; 
       this->Manipulate = NULL;
       
@@ -2156,7 +2162,7 @@ void LocalAssembling2D::set_parameters_for_Rec_nse(LocalAssembling2D_type type)
       this->N_FEValues = 2;
       this->FEValue_FctIndex = { 0, 1 };
       this->FEValue_MultiIndex = { D00, D00 };
-      this->BeginParameter = { 0 };  
+      this->BeginParameter = { 0 };
       break;
     case RECONSTR_MASS:
       this->N_Terms = 2;

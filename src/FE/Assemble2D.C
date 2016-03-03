@@ -10356,7 +10356,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *righthand;
-  int *nrowInput, *ncolInput, *rowOutpu, *colOutput, *ndimInput, *ndimOutput;
+  int *nrowInput, *ncolInput, *nrowOutput, *ncolOutput, *ndimInput, *ndimOutput;
   double *aux;
   const TFESpace2D *fespace;
   FE2D CurrentElement;
@@ -10421,8 +10421,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       Matrices[j] = aux+j*MaxN_BaseFunctions2D;
     
     LocMatrices_stored = new double**[N_AllMatrices_stored];
-    rowOutpu = new int[N_AllMatrices_stored];
-    colOutput = new int[N_AllMatrices_stored];
+    nrowOutput = new int[N_AllMatrices_stored];
+    ncolOutput = new int[N_AllMatrices_stored];
     for(int i=0;i<N_AllMatrices_stored;i++)
       LocMatrices_stored[i] = Matrices+i*MaxN_BaseFunctions2D;
   }  
@@ -10501,8 +10501,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
         fe = TFEDatabase2D::GetFE2D(CurrentElement);
         int n_cols =fe->GetSize();//number of columns
         
-        rowOutpu[i] = n_rows;
-        colOutput[i] = n_cols;
+        nrowOutput[i] = n_rows;
+        ncolOutput[i] = n_cols;
       }
     }
     if(N_AllMatrices_assemble)
@@ -10619,7 +10619,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     if(manipulateMatrices != nullptr)
     {
       manipulateMatrices(LocMatrices_assemble, nrowInput, ncolInput, 
-                       LocMatrices_stored, rowOutpu, colOutput, 
+                       LocMatrices_stored, nrowOutput, ncolOutput, 
                        LocRhs_assemble, ndimInput, 
                        LocRhs_stored, ndimOutput);
     }
@@ -10948,7 +10948,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *righthand;
-  int *nrowInput, *ncolInput, *rowOutpu, *colOutput, *ndimInput, *ndimOutput;
+  int *nrowInput, *ncolInput, *nrowOutput, *ncolOutput, *ndimInput, *ndimOutput;
   double *aux;
   const TFESpace2D *fespace;
   FE2D CurrentElement;
@@ -10982,18 +10982,9 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
   double ***LocMatrices_assemble = NULL;
   if(N_AllMatrices_assemble)
   {
-    aux = new double
-    [N_AllMatrices_assemble*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
-     double **Matrices = new double* [N_AllMatrices_assemble*MaxN_BaseFunctions2D];
-     for(int j=0;j<N_AllMatrices_assemble*MaxN_BaseFunctions2D;j++)
-       Matrices[j] = aux+j*MaxN_BaseFunctions2D;
-     
-     LocMatrices_assemble = new double**[N_AllMatrices_assemble];
-     nrowInput = new int[N_AllMatrices_assemble];
-     ncolInput = new int[N_AllMatrices_assemble];
-     for(int i=0;i<N_AllMatrices_assemble;i++)
-       LocMatrices_assemble[i] = Matrices+i*MaxN_BaseFunctions2D;       
-  }                                               // endif N_AllMatrices_assemble
+    nrowInput = new int[N_AllMatrices_assemble];
+    ncolInput = new int[N_AllMatrices_assemble];
+  }
   
   double **LocRhs_assemble;
   if(n_rhs_assemble)
@@ -11011,17 +11002,8 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
   double ***LocMatrices_stored= NULL;
   if(N_AllMatrices_stored)
   {
-    aux = new double
-      [N_AllMatrices_stored*MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
-    double **Matrices = new double* [N_AllMatrices_stored*MaxN_BaseFunctions2D];
-    for(int j=0;j<N_AllMatrices_stored*MaxN_BaseFunctions2D;j++)
-      Matrices[j] = aux+j*MaxN_BaseFunctions2D;
-    
-    LocMatrices_stored = new double**[N_AllMatrices_stored];
-    rowOutpu = new int[N_AllMatrices_stored];
-    colOutput = new int[N_AllMatrices_stored];
-    for(int i=0;i<N_AllMatrices_stored;i++)
-      LocMatrices_stored[i] = Matrices+i*MaxN_BaseFunctions2D;
+    nrowOutput = new int[N_AllMatrices_stored];
+    ncolOutput = new int[N_AllMatrices_stored];
   }  
   
   double **LocRhs_stored;
@@ -11061,7 +11043,9 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
   {
     TBaseCell *cell = Coll->GetCell(icell); // current cell
     int N_Edges  = cell->GetN_Edges(); // number of edges of this cell
-    
+    /** ***********************************************************************/
+    /** filling the arrays used for the matrix multiplications */
+    /** ***********************************************************************/
     if(n_rhs_assemble)
     {
       for(int i=0;i<n_rhs_assemble;i++)
@@ -11086,8 +11070,9 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
     }
     if(n_sqmatrices_stored)
     {
+      LocMatrices_stored = new double**[n_sqmatrices_stored];
       for(int i=0; i<n_sqmatrices_stored; i++)
-      {
+      {        
         fespace = sqmatrices_stored[i]->GetTestSpace2D();
         // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
         // the number of local basis functions (= size of local matrix)
@@ -11102,12 +11087,52 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
         fe = TFEDatabase2D::GetFE2D(CurrentElement);
         int n_cols =fe->GetSize();//number of columns
         
-        rowOutpu[i] = n_rows;
-        colOutput[i] = n_cols;
+        nrowOutput[i] = n_rows;
+        ncolOutput[i] = n_cols;
+        
+        LocMatrices_stored[i] = new double*[n_rows];
+        for(int j=0; j<n_rows; j++)
+        {
+          LocMatrices_stored[i][j] = new double[n_cols];
+          memset(LocMatrices_stored[i][j], 0, n_cols*SizeOfDouble);
+        }
       }
+
+    }
+    else // currently nothing is assembled globally for the Rectangular matrices
+    {
+      //cout<<"here 2 : " << endl;
+      LocMatrices_stored = new double**[n_matrices_stored];
+      for(int i=0; i<n_matrices_stored; i++)
+      {//cout<<i<<endl;
+        fespace = fespaces[row_space[i]];
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        
+        int n_rows =fe->GetSize();//number of rows
+        // fespace = sqmatrices_assemble[i]->GetAnsatzSpace2D();
+        fespace = fespaces[col_space[i]];
+        // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
+        // the number of local basis functions (= size of local matrix)
+        CurrentElement = fespace->GetFE2D(icell, cell);
+        fe = TFEDatabase2D::GetFE2D(CurrentElement);
+        int n_cols =fe->GetSize();//number of columns
+        
+        LocMatrices_stored[i] = new double*[n_rows];
+        for(int j=0; j<n_rows; j++)
+        {
+          LocMatrices_stored[i][j] = new double[n_cols];
+          memset(LocMatrices_stored[i][j], 0, n_cols*SizeOfDouble);
+        }
+      }
+      //FIXME: check this if you wana assemble the global rectangular matrices
+      // A possibility is the projection matrices if needed
     }
     if(N_AllMatrices_assemble)
     {
+      LocMatrices_assemble = new double**[N_AllMatrices_assemble];
       for(int i=0; i<N_AllMatrices_assemble; i++)
       {
         fespace = fespaces[row_space[i]];
@@ -11127,8 +11152,17 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
         
         nrowInput[i] = n_rows;
         ncolInput[i] = n_cols;    
+        
+        LocMatrices_assemble[i] = new double*[n_rows];
+        for(int j=0; j<n_rows; j++)
+        {
+          LocMatrices_assemble[i][j] = new double[n_cols];
+          memset(LocMatrices_assemble[i][j], 0, n_cols*SizeOfDouble);
+        }
       }
     }
+    /** ***********************************************************************/
+    /** ***********************************************************************/
     // set orientation of normal at internal edges
     // this function is not accessable during the local assembling routine
     // so we use a global parameter as well
@@ -11212,7 +11246,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
                      n_rhs_assemble, LocMatrices_assemble, 
                      LocRhs_assemble);
     }
-    
+
     const TFESpace2D *ve_space = fespaces[0];
     const TFESpace2D *pr_space = fespaces[1];
     
@@ -11223,7 +11257,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
     if(manipulateMatrices != nullptr)
     {
       manipulateMatrices(LocMatrices_assemble, nrowInput, ncolInput, 
-                       LocMatrices_stored, rowOutpu, colOutput, 
+                       LocMatrices_stored, nrowOutput, ncolOutput, 
                        LocRhs_assemble, ndimInput, 
                        LocRhs_stored, ndimOutput);
     }
@@ -11241,6 +11275,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
         {
           LocMatrices_stored[0] = LocMatrices_assemble[0];
           LocMatrices_stored[1] = LocMatrices_assemble[1];
+          ErrThrow("Not tested");
         }
         else
         {
@@ -11250,11 +11285,13 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
       case 6:
         LocMatrices_stored[4] = LocMatrices_assemble[0];
         LocMatrices_stored[5] = LocMatrices_assemble[1];
+        ErrThrow("Not tested");
         break;
       case 10:
         // other matrcies are allocated in the manipulateMatrices routine
         LocMatrices_stored[8]= LocMatrices_assemble[0];
         LocMatrices_stored[9]= LocMatrices_assemble[1];
+        ErrThrow("Not tested");
         break;
     }    
     // ########################################################################
@@ -11331,7 +11368,18 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
       }                                           // endfor m
     }                                             // endfor j  (n_matrices)
     
-    
+    if(N_AllMatrices_stored)
+    {
+      delete [] LocMatrices_stored[0][0];
+      delete [] LocMatrices_stored[0];
+      delete [] LocMatrices_stored;
+    }
+    if(N_AllMatrices_assemble)
+    {
+      delete [] LocMatrices_assemble[0][0];
+      // delete [] LocMatrices_assemble[0];
+      delete [] LocMatrices_assemble;    
+    }
     // ########################################################################
     // add local right-hand sides to global right-hand side
     // ########################################################################
@@ -11540,13 +11588,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
   if(N_Parameters)
   {
     delete Param[0];
-  }
+  } 
   
-  if(N_AllMatrices_assemble)
-  {
-    delete [] LocMatrices_assemble[0][0];
-    delete [] LocMatrices_assemble[0];
-    delete [] LocMatrices_assemble;    
-  }
 #endif // __2D__
 } // Assemble2D_MixedFEM
