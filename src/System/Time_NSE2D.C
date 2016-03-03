@@ -112,6 +112,13 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   u1->Interpolate(example.get_initial_cond(0));
   u2->Interpolate(example.get_initial_cond(1));
   
+  if(TDatabase::ParamDB->READ_DATA)
+  {
+    this->systems.front().solution.read_from_file(
+        TDatabase::ParamDB->READ_DATA_FILENAME);
+    // this->output();
+  }
+  
   // done with the conrtuctor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE!= 5 
     || TDatabase::ParamDB->SOLVER_TYPE != 1)
@@ -995,6 +1002,10 @@ void Time_NSE2D::output(int m, int& image)
                                    &systems[0].p, &u1old, &u2old);
   // copy solution vector to formerSolution for post processin
   this->formerSolution = s.solution;
+  if(TDatabase::ParamDB->SAVE_DATA)
+  {
+    s.solution.write_to_file(TDatabase::ParamDB->SAVE_DATA_FILENAME);
+  }
 }
 /**************************************************************************** */
 std::array< double, int(6) > Time_NSE2D::get_errors()
