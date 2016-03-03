@@ -173,6 +173,9 @@ void projection_matrices(int current_cell, const TFESpace2D* ansatzSpace,
 void ProjectionMatricesNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
                          const TFESpace2D* testSpace, double ***locMatrix);
 
+void ProjectionMatricesTNSE2D(int current_cell, const TFESpace2D* ansatzSpace, 
+                         const TFESpace2D* testSpace, double ***locMatrix);
+
 void MatVectMult(double*** inputMat, std::pair< int, int > size,
                  double* inputRhs, double** outputRhs);
 
