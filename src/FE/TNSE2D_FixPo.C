@@ -6211,16 +6211,12 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs)
 {
-  // what to assemble here
-  // mass matrix, (grad,grad), nonlinear matrix (separately)
-  // because it have to be multiplied by the projection matrix
-  // and the right hand side
-  // 0 and 1 are the projection matrices which are assemble 
-  // in a separate routine
-  double **MassMatrix = LocMatrices[2]; // vv 
-  double **StifMatrix = LocMatrices[3]; // sv
-  double **NLMatrix00 = LocMatrices[4]; // rectangular matrix
-  double **NLMatrix11 = LocMatrices[5]; // rectangular matrix
+  double **MatrixA11 = LocMatrices[0]; // sv
+  double **MatrixA22 = LocMatrices[1];
+  double **MatrixM   = LocMatrices[2]; // vv 
+  double **MatrixA11NL = LocMatrices[3]; // rectangular matrix
+  double **MatrixA22NL = LocMatrices[4]; // rectangular matrix
+  
   double *Rhs = LocRhs[0];
   
   int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
@@ -6252,7 +6248,9 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
       ansatz01 = Orig1[j];      
 
       val  = nu*(test10*ansatz10+test01*ansatz01);
-      StifMatrix[i][j] += Mult * val;
+      MatrixA11[i][j] += Mult * val;
+      
+      MatrixA22[i][j] += Mult * val;
     }
   }
   
@@ -6276,7 +6274,7 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
       double ansatzy00 = sign[j]*OrigV0[j+vector_nbf];
       
       val = testx00*ansatzx00 + testy00*ansatzy00;
-      MassMatrix[i][j] += Mult*val;
+      MatrixM[i][j] += Mult*val;
     }
     
     // assembling of modified nonlinear term
@@ -6285,10 +6283,10 @@ void LocAssembleNSTYPE4(double Mult, double *coeff,
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       val = (u1*ansatz10 + u2*ansatz01)*testx00;
-      NLMatrix00[i][j] += Mult * val;
+      MatrixA11NL[i][j] += Mult * val;
       
       val = (u1*ansatz10 + u2*ansatz01)*testy00;
-      NLMatrix11[i][j] += Mult * val;
+      MatrixA22NL[i][j] += Mult * val;
     }
   }  
 }
@@ -6298,9 +6296,10 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
                   double **OrigValues, int *N_BaseFuncts,
                   double ***LocMatrices, double **LocRhs)
 {
-  double **StifMatrix = LocMatrices[2]; // sv
-  double **NLMatrix00 = LocMatrices[3]; // rectangular matrix
-  double **NLMatrix11 = LocMatrices[4]; // rectangular matrix
+  double **MatrixA11 = LocMatrices[0]; // sv
+  double **MatrixA22 = LocMatrices[1];
+  double **MatrixA11NL = LocMatrices[2]; // rectangular matrix
+  double **MatrixA22NL = LocMatrices[3]; // rectangular matrix
   
   int scalar_nbf = N_BaseFuncts[0]; // nbasis for V_h
   int vector_nbf = N_BaseFuncts[1]; // nbasis for BDM
@@ -6328,7 +6327,9 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
       ansatz01 = Orig1[j];      
 
       val  = nu*(test10*ansatz10+test01*ansatz01);
-      StifMatrix[i][j] += Mult * val;
+      MatrixA11[i][j] += Mult * val;
+      
+      MatrixA22[i][j] += Mult * val;
     }
   }
   
@@ -6348,10 +6349,10 @@ void LocAssembleNLNSTYPE4(double Mult, double *coeff,
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       val = (u1*ansatz10 + u2*ansatz01)*testx00;
-      NLMatrix00[i][j] += Mult * val;
+      MatrixA11NL[i][j] += Mult * val;
       
       val = (u1*ansatz10 + u2*ansatz01)*testy00;
-      NLMatrix11[i][j] += Mult * val;
+      MatrixA22NL[i][j] += Mult * val;
     }
   }
   
