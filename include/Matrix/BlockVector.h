@@ -237,7 +237,7 @@ class BlockVector
      * A file created with this method can be read into a BlockVector using 
      * BlockVector::read_from_file(std::string);
      */
-    void write_fo_file(std::string filename);
+    void write_to_file(std::string filename);
     
     /** 
      * @brief read data into this BlockVector from a file
