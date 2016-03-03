@@ -613,10 +613,13 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
          &this->defect[2*nuDof]);
   
-  Output::print("nonlinear step  :  " , setw(3), it_counter);
-  Output::print("impulse_residual:  " , setw(3), impulse_residual);
-  Output::print("mass_residual   :  " , setw(3), mass_residual);
-  Output::print("residual        :  " , setw(3), sqrt(residual));
+//   Output::print("nonlinear step  :  " , setw(3), it_counter);
+//   Output::print("impulse_residual:  " , setw(3), impulse_residual);
+//   Output::print("mass_residual   :  " , setw(3), mass_residual);
+//   Output::print("residual        :  " , setw(3), sqrt(residual));
+   OutPut("nonlinear step  :  " << setw(3)<< it_counter << setw(14)<<
+                   impulse_residual << setw(14) << mass_residual<< 
+                   setw(14) << sqrt(residual));
   
   if (it_counter>0)
   {
