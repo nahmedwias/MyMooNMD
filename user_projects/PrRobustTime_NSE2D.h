@@ -31,12 +31,7 @@ class PrRobustTime_NSE2D : Time_NSE2D
        * (P1*M*P0^T P1*M*P1^T )
        */
       BlockFEMatrix Modifed_Mass;
-      /** @brief solution vector*/
-      BlockVector solutionVV;
-      
-      /** @brief Finite element function*/
-      TFEFunction2D fefctVV;
-      
+            
       /** @brief constructor */
       SystemPerGrid(const Example_NSE2D& example, TCollection& coll, 
                     const TFESpace2D& velocity_space, 
@@ -53,14 +48,7 @@ class PrRobustTime_NSE2D : Time_NSE2D
       BlockVector old_rhs_modified;
   public:
     PrRobustTime_NSE2D(const TDomain& domain, Example_NSE2D& _example, 
-                       int reference_id = -4711);
-  
-    /** @brief
-     * Assemble the projection matrix only:
-     * This will be used later for the post-processing 
-     * of the nonlinear term:
-     */
-    bool assembleProjMat();
+                       int reference_id = -4711);  
     
     /** @brief Assemble all the matrices and rhs before the time iterations
      * 

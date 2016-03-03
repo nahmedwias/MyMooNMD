@@ -24,10 +24,7 @@ PrRobustTime_NSE2D::SystemPerGrid::SystemPerGrid(const Example_NSE2D& example,
    ProjectionMatrix({&velocity_space}, {&projection_space, &projection_space, &pressure_space}),
    MassMatrix({&projection_space, &projection_space}),
    rhsXh(projection_space.GetN_DegreesOfFreedom()), 
-   Modifed_Mass({&velocity_space, &velocity_space}),
-   solutionVV(rhsXh),
-   fefctVV(&projection_space, (char*)"uv", (char*)"uv", solutionVV.block(0), 
-           solutionVV.length(0))
+   Modifed_Mass({&velocity_space, &velocity_space})
 {
   ProjectionMatrix.print_coloring_pattern("P");
   Modifed_Mass.print_coloring_pattern("MM");
@@ -142,29 +139,29 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
       product[1][i] = temp1;
     }
     return;
-  };
+  };  
   // prepare the outputMat[0] = P0 * M * P0^T
-  std::pair<int, int> rowsArray(nrowInput[0], nrowInput[2]);
-  std::pair<int, int> colsArray(ncolInput[0], ncolInput[2]);
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[0], inputMat[2], 
+  std::pair<int, int> rowsArray(nrowInput[5], nrowInput[2]);
+  std::pair<int, int> colsArray(ncolInput[5], ncolInput[2]);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[5], inputMat[2], 
                           nullptr, outputMat[0], 0);
   // prepare the outputMat[0] = P0 * M * P1^T
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[0], inputMat[2], 
-                          inputMat[1], outputMat[1], 1);
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[5], inputMat[2], 
+                          inputMat[6], outputMat[1], 1);
   // prepare the outputMat[0] = P1 * M * P0^T
-  rowsArray.first=nrowInput[1]; rowsArray.second=nrowInput[2];
-  colsArray.first=ncolInput[1]; rowsArray.second=ncolInput[2];
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[2], 
-                          inputMat[0], outputMat[2], 2);
+  rowsArray.first=nrowInput[6]; rowsArray.second=nrowInput[2];
+  colsArray.first=ncolInput[6]; rowsArray.second=ncolInput[2];
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[6], inputMat[2], 
+                          inputMat[5], outputMat[2], 2);
   // prepare the outputMat[0] = P1 * M * P1^T
-  compute_matrix_matrix(rowsArray, colsArray, inputMat[1], inputMat[2],
+  compute_matrix_matrix(rowsArray, colsArray, inputMat[6], inputMat[2],
                           nullptr, outputMat[3], 3);
   
   // prepare the output right hand 
   std::pair<int,int> size (nrowInput[0], ncolInput[0]);
   double **matrix[2];
-  matrix[0] = inputMat[0];
-  matrix[1] = inputMat[1];
+  matrix[0] = inputMat[4];
+  matrix[1] = inputMat[5];
   matrix_vector_multiply(size, matrix, inputrhs[0], outputrhs);
   //======================================================================
   // matrix-matrix multiplication using dgemm for the stiffness
@@ -179,40 +176,41 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
    * 4 is loc matrix Anl0
    * 5 is loc matrix Anl1
    */
-  double *P0 =  new double[nrowInput[0]*ncolInput[0]];
-  double *P1 =  new double[nrowInput[1]*ncolInput[1]];
+  double *P0 =  new double[nrowInput[5]*ncolInput[5]];
+  double *P1 =  new double[nrowInput[6]*ncolInput[6]];
   // copy the matrices
+  for(int i=0; i<nrowInput[5]; ++i)
+  {
+    memcpy(P0+i*ncolInput[5], inputMat[5][i], ncolInput[5]*SizeOfDouble);
+    memcpy(P1+i*ncolInput[6], inputMat[6][i], ncolInput[6]*SizeOfDouble);
+  }
+  // nrowInput[0]=nrowInput[1]; and ncolInput[0] = ncolInput[1]
+  double *A00= new double[nrowInput[0]*ncolInput[0]];
+  double *A01= new double[nrowInput[0]*ncolInput[0]];
+  double *A10= new double[nrowInput[0]*ncolInput[0]];
+  double *A11= new double[nrowInput[1]*ncolInput[1]];
+  
+  memset(A10,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
+  memset(A01,0,nrowInput[0]*ncolInput[1]*SizeOfDouble);
+  
   for(int i=0; i<nrowInput[0]; ++i)
   {
-    memcpy(P0+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
-    memcpy(P1+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
+    memcpy(A00+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
+    memcpy(A11+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
   }
-  double *A00= new double[nrowInput[3]*ncolInput[3]];
-  double *A01= new double[nrowInput[3]*ncolInput[3]];
-  double *A10= new double[nrowInput[3]*ncolInput[3]];
-  double *A11= new double[nrowInput[3]*ncolInput[3]];
-  memset(A10,0,nrowInput[3]*ncolInput[3]*SizeOfDouble);
-  memset(A01,0,nrowInput[3]*ncolInput[3]*SizeOfDouble);
+  double *Anl00 = new double[nrowInput[3]*ncolInput[3]];
+  double *Anl11 = new double[nrowInput[4]*ncolInput[4]];
   for(int i=0; i<nrowInput[3]; ++i)
   {
-    memcpy(A00+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
-    memcpy(A11+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
+    memcpy(Anl00+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
+    memcpy(Anl11+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
   }
-  double *Anl0 = new double[nrowInput[4]*ncolInput[4]];
-  double *Anl1 = new double[nrowInput[5]*ncolInput[5]];
-  for(int i=0; i<nrowInput[4]; ++i)
-  {
-    memcpy(Anl0+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
-    memcpy(Anl1+i*ncolInput[5], inputMat[5][i], ncolInput[5]*SizeOfDouble);
-  }
-  int m, n, k, lda, ldb, ldc;
+  int m, n, k;
   // local matrix A00 = P0*Anl0 + A(grad,grad)
-  m  =nrowInput[0]; // nrowA;
-  n  =ncolInput[4]; // ncolB;
-  k  =ncolInput[0]; // ncolA;
-  lda=ncolInput[0]; // ncolA;
-  ldb=ncolInput[4]; // ncolB;
-  ldc=ncolInput[4]; // ncolB;
+  m = nrowInput[5];
+  n = ncolInput[3];
+  k = nrowInput[3];
+  
   double alpha = 1.;
   double beta  = 1.;
   
@@ -220,205 +218,105 @@ void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput,
   // normally dgemm uses fortran format where the entries are treated
   // as column storage format, but we can calkulate the matrices 
   // multiplication and addition in the row-storage format as follows:
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P0, &lda, 
-         &beta, A00, &ldc);
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k, 
+         &beta, A00, &n);
   
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P1, &lda, 
-         &beta, A01, &ldc);
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k, 
+         &beta, A01, &n);  
 
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P0, &lda, 
-         &beta, A10, &ldc);
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k, 
+         &beta, A10, &n);
 
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P1, &lda, 
-         &beta, A11, &ldc);
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k, 
+         &beta, A11, &n);
 
-  for(int i=0; i<ldc; i++)
+  for(int i=0; i<n; i++)
   {
-    memcpy(outputMat[4][i], A00+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[5][i], A01+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[6][i], A10+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[7][i], A11+i*ldc, ldc*SizeOfDouble);
+    memcpy(outputMat[4][i], A00+i*n, n*SizeOfDouble);
+    memcpy(outputMat[5][i], A01+i*n, n*SizeOfDouble);
+    memcpy(outputMat[6][i], A10+i*n, n*SizeOfDouble);
+    memcpy(outputMat[7][i], A11+i*n, n*SizeOfDouble);
   }
 
-  delete P0;
-  delete P1;
-  delete A00;
-  delete A01;
-  delete A10;
-  delete A11;
-  delete Anl0;
-  delete Anl1;  
+  delete [] P0;    delete [] P1;
+  delete [] A00;   delete [] A01;
+  delete [] A10;   delete [] A11;
+  delete [] Anl00; delete [] Anl11;
 }
 
 /**************************************************************************** */
-void nonlinear_term_reconstruct(double ***inputMat, int *nrowInput, int *ncolInput, 
-                                double ***outputMat, int *nrowOut, int *ncolOut, 
-                                double **inputrhs,  int *ndimInput, 
-                                double **outputrhs, int *ndimOutput)
+void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn, 
+                                double ***outputMat, int *nrowOut, int *ncolOut,
+                                double **inputrhs,  int *ndimIn, 
+                                double **outputrhs, int *ndimOut)
 {
-  //======================================================================
-  // matrix-matrix multiplication using dgemm for the stiffness
-  // matrix
-  //======================================================================
-  /**
-   * A_NL * P^T + AL
-   * 0 is loc matrix P0
-   * 1 is loc matrix P1
-   * 2 is loc matrix M
-   * 3 is loc matrix A(grad grad)
-   * 4 is loc matrix Anl0
-   * 5 is loc matrix Anl1
+  /** inputMat[0] = A00,    inputMat[1] = A11;
+   *  inputMat[2] = A00_nl  inputMat[3] = A11_nl
+   *  inputMat[4] = P0      inputMat[5] = P1
    */
-  double *P0 =  new double[nrowInput[0]*ncolInput[0]];
-  double *P1 =  new double[nrowInput[1]*ncolInput[1]];
-  // copy the matrices
-  for(int i=0; i<nrowInput[0]; ++i)
+  // preparation for dgemm_
+  double *A00 = new double[nrowIn[0]*ncolIn[0]];
+  double *A11 = new double[nrowIn[1]*ncolIn[1]];  
+  // A00 and A11 have the same size
+  for(int i=0; i<nrowIn[0]; i++)
   {
-    memcpy(P0+i*ncolInput[0], inputMat[0][i], ncolInput[0]*SizeOfDouble);
-    memcpy(P1+i*ncolInput[1], inputMat[1][i], ncolInput[1]*SizeOfDouble);
+    memcpy(A00+i*ncolIn[0], inputMat[0][i], ncolIn[0]*SizeOfDouble);
+    memcpy(A11+i*ncolIn[1], inputMat[1][i], ncolIn[1]*SizeOfDouble);
   }
-  double *A00= new double[nrowInput[2]*ncolInput[2]];
-  double *A01= new double[nrowInput[2]*ncolInput[2]];
-  double *A10= new double[nrowInput[2]*ncolInput[2]];
-  double *A11= new double[nrowInput[2]*ncolInput[2]];
-  memset(A10,0,nrowInput[2]*ncolInput[2]*SizeOfDouble);
-  memset(A01,0,nrowInput[2]*ncolInput[2]*SizeOfDouble);
-  for(int i=0; i<nrowInput[2]; ++i)
+  // empty matrices filled with zeros
+  double *A01 = new double[nrowIn[0]*ncolIn[0]];
+  double *A10 = new double[nrowIn[1]*ncolIn[1]];
+  memset(A01, 0, nrowIn[0]*ncolIn[0]*SizeOfDouble);
+  memset(A10, 0, nrowIn[1]*ncolIn[1]*SizeOfDouble);
+  
+  // prepareing nonlinear matrices
+  double *Anl00 = new double[nrowIn[2]*ncolIn[2]];
+  double *Anl11 = new double[nrowIn[3]*ncolIn[3]];
+  for(int i=0; i<nrowIn[2]; i++)
   {
-    memcpy(A00+i*ncolInput[2], inputMat[2][i], ncolInput[2]*SizeOfDouble);
-    memcpy(A11+i*ncolInput[2], inputMat[2][i], ncolInput[2]*SizeOfDouble);
+    memcpy(Anl00+i*ncolIn[2], inputMat[2][i], ncolIn[2]*SizeOfDouble);
+    memcpy(Anl11+i*ncolIn[3], inputMat[3][i], ncolIn[3]*SizeOfDouble);
   }
-  double *Anl0 = new double[nrowInput[3]*ncolInput[3]];
-  double *Anl1 = new double[nrowInput[4]*ncolInput[4]];
-  for(int i=0; i<nrowInput[4]; ++i)
+  // preparing P0 and p1
+  double *P0 = new double[nrowIn[4]*ncolIn[4]];
+  double *P1 = new double[nrowIn[5]*ncolIn[5]];
+  for(int i=0; i<nrowIn[4]; i++)
   {
-    memcpy(Anl0+i*ncolInput[3], inputMat[3][i], ncolInput[3]*SizeOfDouble);
-    memcpy(Anl1+i*ncolInput[4], inputMat[4][i], ncolInput[4]*SizeOfDouble);
+    memcpy(P0+i*ncolIn[4], inputMat[4][i], ncolIn[4]*SizeOfDouble);
+    memcpy(P1+i*ncolIn[5], inputMat[5][i], ncolIn[5]*SizeOfDouble);
   }
-  int m, n, k, lda, ldb, ldc;
-  // local matrix A00 = P0*Anl0 + A(grad,grad)
-  m  =nrowInput[0]; // nrowA;
-  n  =ncolInput[3]; // ncolB;
-  k  =ncolInput[0]; // ncolA;
-  lda=ncolInput[0]; // ncolA;
-  ldb=ncolInput[3]; // ncolB;
-  ldc=ncolInput[3]; // ncolB;
+  
+  int m, n, k;//, lda, ldb, ldc;
+  m = nrowIn[4];
+  n = ncolIn[2];
+  k = nrowIn[2]; // = ncolIn[4]
+  
   double alpha = 1.;
   double beta  = 1.;
+    
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P0, &k, 
+         &beta, A00, &n);
   
-  //======================================================================
-  // normally dgemm uses fortran format where the entries are treated
-  // as column storage format, but we can calkulate the matrices 
-  // multiplication and addition in the row-storage format as follows:
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P0, &lda, 
-         &beta, A00, &ldc);
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl00, &n, P1, &k, 
+         &beta, A01, &n);
   
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl0, &ldb, P1, &lda, 
-         &beta, A01, &ldc);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P0, &lda, 
-         &beta, A10, &ldc);
-
-  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl1, &ldb, P1, &lda, 
-         &beta, A11, &ldc);
-
-  for(int i=0; i<ldc; i++)
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P0, &k, 
+         &beta, A10, &n);
+  
+  dgemm_((char*)"N", (char*)"N", &n, &m, &k, &alpha, Anl11, &n, P1, &k, 
+         &beta, A11, &n);
+  
+  for(int i=0; i<n; i++)
   {
-    memcpy(outputMat[0][i], A00+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[1][i], A01+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[2][i], A10+i*ldc, ldc*SizeOfDouble);
-    memcpy(outputMat[3][i], A11+i*ldc, ldc*SizeOfDouble);
+    memcpy(outputMat[0][i], A00+i*n, n*SizeOfDouble);
+    memcpy(outputMat[1][i], A01+i*n, n*SizeOfDouble);
+    memcpy(outputMat[2][i], A10+i*n, n*SizeOfDouble);
+    memcpy(outputMat[3][i], A11+i*n, n*SizeOfDouble);
   }
-
-  delete [] P0;
-  delete [] P1;
-  delete [] A00;
-  delete [] A01;
-  delete [] A10;
-  delete [] A11;
-  delete [] Anl0;
-  delete [] Anl1;  
-}
-
-
-/**************************************************************************** */
-bool PrRobustTime_NSE2D::assembleProjMat()
-{
-  if(TDatabase::ParamDB->DISCTYPE != RECONSTRUCTION)
-    return false;
-  
-  // setting the space for sign in GetSignOfThisDOF();
-  unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
-  TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
-  // prepare everything to assemble the global projection matrix 
-  
-  for(SystemPerGrid& s_derived : this->Systems)
-  {
-    const int nFESpaces = 2;
-    const TFESpace2D *project_space  = &this->get_projection_space();
-    const TFESpace2D *velocity_space = &this->Time_NSE2D::get_velocity_space();
-    // pointers to the fespace
-    const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
-    // assemble all square and rectangular matrices  
-    const int nSqMatAssemble = 0;
-    const int reqMatAssemble = 2;
-    //NOTE:for the assembling of matrices or right hand side, space numbers
-    //are passed as array: this corresponds to the array "pointer_to_space"
-    std::vector<int> rowSpace ={0, 0}; // row space for assembling matrices
-    std::vector<int> colSpace ={1, 1}; // cols space for assembling matrices
-    
-    const int nRhsAssemble = 0;
-    std::vector<int> rowSpaceRhs={};
-    const int nSqMatStored = 0;
-    TSquareMatrix2D** sqMatricesStored = nullptr;
-    
-    int nRhsStored = 0;
-    double **rhsStored = nullptr;
-    const TFESpace2D ** pointToRhsStored=nullptr;
-    
-    // rectangular matrices to be stored
-    const int nReMatStored = 2;
-    std::vector<std::shared_ptr<FEMatrix>> proj_matrices 
-       = s_derived.ProjectionMatrix.get_blocks_uniquely();
-    TMatrix2D *rectMatricesStored[2];
-    rectMatricesStored[0]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(0).get());
-    rectMatricesStored[1]=reinterpret_cast<TMatrix2D*>(proj_matrices.at(1).get());
-    
-    for(int i=0; i<nReMatStored; i++)
-        rectMatricesStored[i]->reset();
-    BoundCondFunct2D * boundCond[2] = {
-        project_space->GetBoundCondition(), project_space->GetBoundCondition()};
-    
-    std::array<BoundValueFunct2D*, 3> boundVal;
-    boundVal[0] = example.get_bd()[0];
-    boundVal[1] = example.get_bd()[1];
-    boundVal[2] = example.get_bd()[2];
-    
-    TFEFunction2D * fefct[3] = {this->Time_NSE2D::systems.front().u.GetComponent(0), 
-                                 this->Time_NSE2D::systems.front().u.GetComponent(1), 
-                                 &this->Time_NSE2D::systems.front().p};
-    // no local assembling routine is needed
-    // the projection matrix uses alternate routine
-    // namely "projection_matrices"
-    LocalAssembling2D empty_constructor(NO_LOCAL_ASSEMBLE, fefct, 
-                                        this->Time_NSE2D::get_example().get_coeffs());
-    
-    Assemble2D_MixedFEM(nFESpaces, pointer_to_space, 
-                        nSqMatAssemble, reqMatAssemble,
-                        rowSpace, colSpace, 
-                        nRhsAssemble, rowSpaceRhs, 
-                        nSqMatStored, sqMatricesStored, 
-                        nReMatStored, rectMatricesStored, 
-                        nRhsStored, rhsStored,pointToRhsStored, 
-                        empty_constructor, nullptr, nullptr,
-                        projection_matrices, boundCond, boundVal.data());
-  }//
-  TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
-  if(TDatabase::ParamDB->PROBLEM_TYPE ==5)
-    return true;
-  else 
-    return false;
-  
+  delete [] A00;   delete [] A01; 
+  delete [] A10;   delete [] A11;
+  delete [] Anl00; delete Anl11;
+  delete [] P0;    delete P1;  
 }
 
 /**************************************************************************** */
@@ -442,18 +340,10 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
   // assemble mass matrix using vector space  
   for(SystemPerGrid &s_derived : this->Systems)
   {
-    /**======================== 
-     * preparing pi_h u^old
-     */   
-    // reset the solutionVV
-    s_derived.solutionVV.reset();
-    // copy non active in case only
-    s_base.solution.copy_nonactive(s_base.rhs);
-    s_derived.ProjectionMatrix.apply_scaled_submatrix_mixed(s_base.solution, s_derived.solutionVV, 1.);
     //=========================
     // assemble all matrices and right hand side     
     // local assemble routine
-    TFEFunction2D *fefct[1] = {&s_derived.fefctVV};
+    TFEFunction2D *fefct[3] = {s_base.u.GetComponent(0), s_base.u.GetComponent(1),&s_base.p};
     LocalAssembling2D la(RECONSTR_TNSE, fefct, 
                            this->Time_NSE2D::get_example().get_coeffs());
     // assemble the right hand side separately  
@@ -470,10 +360,10 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
     // pointers to the fespace
     const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
      
-    const int nSqMatAssemble=2;
+    const int nSqMatAssemble=3;
     const int nReMatAssemble=4;
-    std::vector<int> rowSpace ={0, 0, 1, 0, 1, 1}; // row space for assembling matrices
-    std::vector<int> colSpace ={1, 1, 1, 0, 0, 0}; // cols space for assembling matrices
+    std::vector<int> rowSpace = {0, 0, 1, 1, 1, 0, 0}; // row space for assembling matrices
+    std::vector<int> colSpace = {0, 0, 1, 0, 0, 1, 1}; // cols space for assembling matrices
     
     const int nRhsAssemble = 1;
    //NOTE:for the assembling of matrices or right hand side, space numbers
@@ -531,7 +421,8 @@ void PrRobustTime_NSE2D::assemble_initial_timeNS()
                         nReMatStored, rectMatricesStored, 
                         nRhsStored, rhsStored,pointToRhsStored, 
                         la, matrices_reconstruction, nullptr,
-                        projection_matrices, boundCond, boundVal.data());
+                        ProjectionMatricesTNSE2D, boundCond, boundVal.data());
+    
     TDatabase::ParamDB->VELOCITY_SPACE = vel_space;
   }// endof assembling for all grids
   //s_base.matrix.get_blocks().at(4)->Print("A");
@@ -753,23 +644,14 @@ void PrRobustTime_NSE2D::assemble_nonlinearNS()
   System_per_grid& s_base = this->Time_NSE2D::systems.front();
   // assemble mass matrix using vector space  
   for(SystemPerGrid &s_derived : this->Systems)
-  {
-    /**======================== 
-     * preparing pi_h u^old
-     */   
-    // reset the solutionVV
-    s_derived.solutionVV.reset();
-    // copy non active in case only
-    s_base.solution.copy_nonactive(s_base.rhs);
-    s_derived.ProjectionMatrix.apply_scaled_submatrix_mixed(s_base.solution, s_derived.solutionVV, 1.);
+  {    
     //=========================
     // assemble all matrices and right hand side     
     // local assemble routine
-    TFEFunction2D *fefct[1] = {&s_derived.fefctVV};
+    TFEFunction2D *fefct[3] = {s_base.u.GetComponent(0), s_base.u.GetComponent(1), 
+                               &s_base.p};
     LocalAssembling2D la(RECONSTR_TNSENL, fefct, 
-                           this->Time_NSE2D::get_example().get_coeffs());
-    // assemble the right hand side separately  
-    s_derived.rhsXh.reset();
+                           this->Time_NSE2D::get_example().get_coeffs());    
     // setting the space for sign in GetSignOfThisDOF();
     unsigned int vel_space = TDatabase::ParamDB->VELOCITY_SPACE;
     TDatabase::ParamDB->VELOCITY_SPACE = TDatabase::ParamDB->PROJECTION_SPACE;
@@ -782,10 +664,10 @@ void PrRobustTime_NSE2D::assemble_nonlinearNS()
     // pointers to the fespace
     const TFESpace2D * pointer_to_space[2] = { velocity_space, project_space };
      
-    const int nSqMatAssemble=1;
+    const int nSqMatAssemble=2;
     const int nReMatAssemble=4;
-    std::vector<int> rowSpace ={0, 0, 0, 1, 1}; // row space for assembling matrices
-    std::vector<int> colSpace ={1, 1, 0, 0, 0}; // cols space for assembling matrices
+    std::vector<int> rowSpace ={0, 0, 1, 1, 0, 0}; // row space for assembling matrices
+    std::vector<int> colSpace ={0, 0, 0, 0, 1, 1}; // cols space for assembling matrices
     
     const int nRhsAssemble = 0;
    //NOTE:for the assembling of matrices or right hand side, space numbers
@@ -834,7 +716,7 @@ void PrRobustTime_NSE2D::assemble_nonlinearNS()
                         nReMatStored, rectMatricesStored, 
                         nRhsStored, rhsStored,pointToRhsStored, 
                         la, nonlinear_term_reconstruct, nullptr,
-                        projection_matrices, boundCond, boundVal.data());    
+                        ProjectionMatricesNSE2D, boundCond, boundVal.data());
     TDatabase::ParamDB->VELOCITY_SPACE=vel_space;
   }// endof assembling for all grids
 }
@@ -890,10 +772,9 @@ bool PrRobustTime_NSE2D::stopIte(unsigned int it_counter)
     double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
            &this->defect[2*nuDof]);
     
-    Output::print("nonlinear step  :  " , setw(3), it_counter);
-    Output::print("impulse_residual:  " , setw(3), impulse_residual);
-    Output::print("mass_residual   :  " , setw(3), mass_residual);
-    Output::print("residual        :  " , setw(3), sqrt(residual));
+    Output::print("nonlinear step  :  " , setw(3), it_counter , setw(14),
+                   impulse_residual , setw(14) , mass_residual, 
+                   setw(14) , sqrt(residual));
     
     if (it_counter>0)
     {

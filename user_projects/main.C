@@ -36,6 +36,9 @@ int main(int argc, char *argv[])
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR,0777);
   
+  if(TDatabase::ParamDB->WRITE_PS)
+    Domain.PS("Domain.ps", It_Finest, 0);
+  
   Example_NSE2D example;
   
   
