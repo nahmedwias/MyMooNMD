@@ -67,6 +67,9 @@ PrRobustTime_NSE2D::PrRobustTime_NSE2D(const TDomain& domain,
     return;
   }
 }
+/**************************************************************************** */
+
+
 void matrices_reconstruction(double ***inputMat, int *nrowInput, int *ncolInput, 
                                 double ***outputMat, int *nrowOut, int *ncolOut, 
                                 double **inputrhs,  int *ndimInput, 
@@ -315,8 +318,8 @@ void nonlinear_term_reconstruct(double ***inputMat, int *nrowIn, int *ncolIn,
   }
   delete [] A00;   delete [] A01; 
   delete [] A10;   delete [] A11;
-  delete [] Anl00; delete Anl11;
-  delete [] P0;    delete P1;  
+  delete [] Anl00; delete [] Anl11;
+  delete [] P0;    delete [] P1;  
 }
 
 /**************************************************************************** */
