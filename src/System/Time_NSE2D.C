@@ -85,7 +85,6 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
   this->systems.emplace_back(example, *coll, velo_pres_order, type);
   
   // the defect has the same structure as the rhs (and as the solution)
@@ -106,11 +105,11 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   Output::print<1>("dof all     : ", setw(10), n_dof );
   Output::print<1>("active dof  : ", setw(10), 2*nActive);
   
-  TFEFunction2D * u1 = this->systems.front().u.GetComponent(0);
-  TFEFunction2D * u2 = this->systems.front().u.GetComponent(1);
+  std::shared_ptr<TFEFunction2D> u1(this->systems.front().u.GetComponent(0));
+  std::shared_ptr<TFEFunction2D> u2(this->systems.front().u.GetComponent(1));
   
   u1->Interpolate(example.get_initial_cond(0));
-  u2->Interpolate(example.get_initial_cond(1));
+  u2->Interpolate(example.get_initial_cond(1));  
   
   if(TDatabase::ParamDB->READ_DATA)
   {
