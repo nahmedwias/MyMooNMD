@@ -1,6 +1,8 @@
 /**
  * \page page_geo_prm_specification What are '.GEO' and '.PRM' files?
  *
+ * \brief Description of the file formats used to read meshes in ParMooN.
+ *
  * \tableofcontents
  * 
  * Here we try to exactly describe which format the GEO and PRM files must have
