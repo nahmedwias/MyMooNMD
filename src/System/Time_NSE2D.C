@@ -971,7 +971,7 @@ void Time_NSE2D::output(int m, int& image)
   
   if(TDatabase::ParamDB->WRITE_VTK)
   {
-    if((m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+    if(m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
     {
       TOutput2D output(2, 3, 1, 0, NULL);
       output.AddFEFunction(&s.p);
