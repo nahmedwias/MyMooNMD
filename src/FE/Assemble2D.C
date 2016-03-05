@@ -10693,7 +10693,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       {
         int rowDOF = TestDOF[irow];
         if(rowDOF<ActiveBound)
-        {cout<<ActiveBound<<endl;
+        {
           for(int icolumn=0; icolumn<N_Ansatz; icolumn++)
           {
             int columnDOF = AnsatzDOF[icolumn];
@@ -11112,10 +11112,9 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
     }
     else // currently nothing is assembled globally for the Rectangular matrices
     {
-      //cout<<"here 2 : " << endl;
       LocMatrices_stored = new double**[n_matrices_stored];
       for(int i=0; i<n_matrices_stored; i++)
-      {//cout<<i<<endl;
+      {
         fespace = fespaces[row_space[i]];
         // fespaces[la_stored.rowSpaceOfMat(iSqMat)];
         // the number of local basis functions (= size of local matrix)
@@ -11603,8 +11602,7 @@ void Assemble2D_MixedFEM(int n_fespaces, const TFESpace2D** fespaces,
       }                                           // endfor m (N_Joints)
     }                                             // endfor j (n_rhs)
  
-  } // endfor i (N_Cells)
-  Output::print<1>("assembled done");
+  } // endfor i (N_Cells)  
   if(N_AllMatrices_stored)
   {
     delete [] nrowOutput;
