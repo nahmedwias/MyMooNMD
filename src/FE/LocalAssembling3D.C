@@ -10,6 +10,9 @@
 #include <NSE3D_Param.h>
 #include <NSE3D_ParamRout.h>
 
+#include <TNSE3D_FixPo.h>
+#include <TNSE3D_ParamRout.h>
+
 
 #include <MooNMD_Io.h>
 #include <string.h>
@@ -85,6 +88,10 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     case LocalAssembling3D_type :: NSE3D_Linear:
     case LocalAssembling3D_type :: NSE3D_NonLinear:
       this->set_parameters_for_nse(type);
+      break;
+    // time dependent Navier-Stokes
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+    case LocalAssembling3D_type::TNSE3D_NLGAL:
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling3D_type case.");
@@ -779,4 +786,198 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
       break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
   } // endswitch (type)
 }
+//========================================================================
+void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
+{
+  unsigned int nstype = TDatabase::ParamDB->NSTYPE;
+  unsigned int laplace_type = TDatabase::ParamDB->LAPLACETYPE;
+  if(laplace_type == 1 && (nstype==1 || nstype==2))
+  {
+    ErrThrow("LAPLACETYPE ", laplace_type, " is supported for NSTYPE 3 and 4");
+  }
+  // same for all nstypes; 
+  //NOTE: change according to the discretization schemes used
+  // changing needed for turbulent models and also for the newton method 
+  this->N_Parameters = 3;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { TimeNSParamsVelo3D };
+  this->N_FEValues = 3;
+  this->FEValue_FctIndex = { 0, 1, 2 };
+  this->FEValue_MultiIndex = { D000, D000, D000 };
+  this->BeginParameter = { 0 };
+  
+  switch(la_type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+      // case 0: fixed point, case 1: newton iteration
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        case 0: // fixed point iteration
+          switch(nstype)
+          {
+            case 1:
+            {
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 5;
+              this->RowSpace    = { 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0 };
+              this->N_Rhs = 3;
+              this->RhsSpace = { 0, 0, 0 };
+              this->AssembleParam = TimeNSType1Galerkin3D;
+              this->Manipulate = NULL;              
+            }
+              break;
+            case 2:
+            {
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 8;
+              this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Rhs = 3;
+              this->RhsSpace = { 0, 0, 0 };
+              this->AssembleParam = TimeNSType2Galerkin3D;
+              this->Manipulate = NULL;
+            }
+              break;
+            case 3:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 13;//FIXME depending on how many mass matrices assembles
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+              this->N_Rhs = 3;
+              this->RhsSpace = { 0, 0, 0 };
+              
+              if(laplace_type==0)
+                this->AssembleParam = TimeNSType3Galerkin3D;
+              else 
+                this->AssembleParam = TimeNSType3GalerkinDD3D;
+              
+              this->Manipulate = NULL;
+              break;
+            case 4:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 16;//FIXME depending on how many mass matrices assembles
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Rhs = 3;
+              this->RhsSpace = { 0, 0, 0 };
+              
+              if(laplace_type==0)
+                this->AssembleParam = TimeNSType4Galerkin3D;
+              else 
+                this->AssembleParam = TimeNSType4GalerkinDD3D;
+              
+              this->Manipulate = NULL;
+              break;
+            case 14:
+              // I have to do that 
+              break;
+          }
+          break;
+        case 1: // newton iteration
+          switch(nstype)
+          {
+            case 1:
+            case 2:
+              ErrThrow("NEWTON method is only supported for NSTYPE 3 and 4");
+              break;
+            case 3:
+              if(laplace_type==1)
+                ErrThrow("Newton method only for LAPLACETYPE 0 is supported");
+              break;
+            case 4:
+              ErrThrow("Newton method is not supported yet");
+              break;
+          }
+          break;
+        default:
+          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ",  TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE, 
+                   "not supported");
+      }
+      break;
+    // local assembling of nonlinear term
+    case LocalAssembling3D_type::TNSE3D_NLGAL:
+      // case 0: fixed point, case 1: newton iteration
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        case 0: // fixed point iteration
+          switch(nstype)
+          {
+            case 1:
+            case 2:
+              this->N_Terms = 4;
+              this->Derivatives = {D100, D010, D001, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 1;
+              this->RowSpace    = { 0};
+              this->ColumnSpace = { 0};
+              this->N_Rhs = 0;
+              this->RhsSpace = { };
+              this->AssembleParam = TimeNSType1_2NLGalerkin3D;
+              this->Manipulate = NULL;    
+              break;
+            case 3:
+            case 4:
+              this->N_Terms = 4;
+              this->Derivatives = {D100, D010, D001, D000};
+              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives[0] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 3;
+              this->RowSpace    = { 0, 0, 0};
+              this->ColumnSpace = { 0, 0, 0};
+              this->N_Rhs = 0;
+              this->RhsSpace = { };
+              if(laplace_type==0)
+                this->AssembleParam = TimeNSType3_4NLGalerkin3D;
+              else
+                this->AssembleParam = TimeNSType3_4NLGalerkinDD3D;
+              this->Manipulate = NULL;    
+              break;
+            case 14:
+              ErrThrow("NSTYPE 14 is not supported yet");
+              break;
+          }
+          break;
+        case 1: // newton iteration
+          switch(nstype)
+          {
+            case 1:
+            case 2:
+              ErrThrow("NEWTON iteration is only supported for NSTYPE 3 and 4");
+              break;
+            case 3:
+              ErrThrow("Newton method is not supported yet");
+              break;
+            case 4:
+              ErrThrow("Newton method is not supported yet");
+              break;
+          }
+          break;
+        default:
+          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ",  TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE, 
+                   "not supported");
+      }
+      break;
+  }
+}
+
 //========================================================================

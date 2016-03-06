@@ -38,6 +38,8 @@
 enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion reaction in 3D
                                     NSE3D_Linear, /// Linear part of stationary Navier--Stokes in 3D
                                     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
+                                    TNSE3D_LinGAL, 
+                                    TNSE3D_NLGAL,
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
@@ -138,6 +140,9 @@ class LocalAssembling3D
      */
     void set_parameters_for_nse(LocalAssembling3D_type type);
     
+    /** @brief 
+     */
+    void set_parameters_for_tnse(LocalAssembling3D_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.
@@ -163,7 +168,7 @@ class LocalAssembling3D
      *            the deprecated TAuxParam3D and TDiscreteForm3D object.
      *
      */
-    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type type,
+    [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type la_type,
                       TAuxParam3D& aux, TDiscreteForm3D& df);
 
     /** destructor */
