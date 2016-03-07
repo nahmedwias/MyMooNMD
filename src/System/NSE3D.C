@@ -71,7 +71,7 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
 
   if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 3)
   {
-    ErrThrow("Parallel solve needs correctly stored BT-blocks, so NSTYPE 2 or 4.");
+    ErrThrow("Parallel solve needs explicitely stored BT-blocks, chose NSTYPE 2 or 4.");
   }
 
   velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
@@ -297,8 +297,8 @@ void NSE3D::assembleLinearTerms()
   {
     // spaces for matrices
     const TFESpace3D* spaces[2] = {&s.velocitySpace_, &s.pressureSpace_};
-    const TFESpace3D* rhsSpaces[3] = {&s.velocitySpace_, &s.pressureSpace_, 
-                                      &s.velocitySpace_};
+    const TFESpace3D* rhsSpaces[4] = {&s.velocitySpace_, &s.velocitySpace_,
+                                      &s.velocitySpace_, &s.pressureSpace_};
     // spaces for right hand side    
     s.rhs_.reset();
     rhsArray[0]=s.rhs_.block(0);
@@ -428,6 +428,10 @@ void NSE3D::assembleLinearTerms()
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
   }// endfor auto grid
+
+  //copy non-actives from rhs to solution on finest grid
+  this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+
 }
 
 void NSE3D::assembleNonLinearTerm()
@@ -498,10 +502,10 @@ bool NSE3D::stopIt(unsigned int iteration_counter)
   SystemPerGrid& s = this->systems_.front();
   unsigned int nDofU = s.solution_.length(0);
   unsigned int nDofP = s.solution_.length(3);
-  
+
   defect = s.rhs_;
   s.matrix_.apply_scaled_add(s.solution_, defect, -1);
-  
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
     IntoL20Vector3D(&defect[3*nDofU], nDofP,
