@@ -265,7 +265,7 @@ class BlockFEMatrix : public BlockMatrix
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 1.
      */
     static BlockFEMatrix NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
@@ -285,28 +285,28 @@ class BlockFEMatrix : public BlockMatrix
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 2.
      */
     static BlockFEMatrix NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
     
     /**
-     * Named constructor for a matrix of ParMooN-specific NSE Type 4.
+     * Named constructor for a matrix of ParMooN-specific NSE Type 3.
      * The matrix takes the block structure
      *
-     * ( A  0  0  B1T )
-     * ( 0  A  0  B2T )
-     * ( 0  0  A  B3T )
-     * ( B1 B2 B3 0  )
+     * ( A11  A12  A13  B1T )
+     * ( A21  A22  A23  B2T )
+     * ( A31  A32  A33  B3T )
+     * ( B1   B2   B3   0   )
      *
-     * where B1^T B2T and B3T are explicitly stored (and marked non-transposed)..
+     * where B1T, B2T and B3T are not explicitly stored (and marked non-transposed)..
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
-     * whose block structure is of NSE Type 4.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 3.
      */
     static BlockFEMatrix NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
     
@@ -319,13 +319,13 @@ class BlockFEMatrix : public BlockMatrix
      * ( A31  A32  A33  B3T )
      * ( B1   B2   B3   0   )
      *
-     * where B1^T, B2^T and B3T are explicitly stored (and marked non-transposed)..
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed)..
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 4.
      */
     static BlockFEMatrix NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
@@ -339,13 +339,13 @@ class BlockFEMatrix : public BlockMatrix
      * ( A31  A32  A33  B3T )
      * ( B1   B2   B3   C   )
      *
-     * where B1^T and B2^T are explicitly stored (and marked non-transposed).
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed).
      *
      * How to use a named constructor? Have a look at the test file!
      *
      * @param velocity The velocity finite element space.
      * @param pressure The pressure finite element space.
-     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 14.
      */
     static BlockFEMatrix NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure);
