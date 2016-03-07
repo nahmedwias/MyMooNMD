@@ -2354,7 +2354,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
               }
               break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
             case 14: 
-              this->N_Matrices    = 11;
+              this->N_Matrices    = 10;
               this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
               this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
