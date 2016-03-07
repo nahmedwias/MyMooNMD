@@ -781,11 +781,11 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
   TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
   TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
 
-  TStructure structure = B1T->GetStructure();
+  std::shared_ptr<TStructure> structure = B1T->GetStructure().GetTransposed();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, &structure, 
+      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, structure.get(),
                                s.rhs.get_entries(), s.solution.get_entries(),
                                n_aux, alpha, v_space_code, p_space_code,
                                nullptr, nullptr);
@@ -798,7 +798,7 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
                                nullptr, nullptr);
       break;      
     case 3:
-      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, &structure, 
+      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, structure.get(),
                                s.rhs.get_entries(), s.solution.get_entries(),
                                n_aux, alpha, v_space_code, p_space_code,
                                nullptr, nullptr);
