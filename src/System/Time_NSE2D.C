@@ -681,6 +681,8 @@ void Time_NSE2D::solve()
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
   this->deScaleMatrices();
+  
+  this->old_solution = s.solution;
 
   Output::print<5>("solver done");
 }
