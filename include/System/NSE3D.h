@@ -200,19 +200,37 @@ class NSE3D
     NSE3D(std::list<TCollection* > collections, const Example_NSE3D& _example);
 #endif
 
-    /*
+    /**
+     * @brief Check whether the program will be working with the
+     * current input parameters.
+     *
+     * ParMooN is work in progress, and so is this class. This method
+     * checks the parameters stored in the database and stops execution
+     * of the program, if some of these do not match.
+     * The method is a little makeshift and the cases caught here are various,
+     * but basically it is intended to stop execution of cases with
+     * parameter combinations which are not implemented for NSE3D or
+     * are currently known to be problematic.
+     *
+     * This is not yet a guarantee for a functioning program, but is
+     * intended to be, someday. Eventually this method and the like
+     * will be moved to TDatabase.
+     */
+    static void check_parameters();
+
+    /**
      * Assemble those parts which do not contain nonlinearities
      * i.e. a Stokes problem. When solving a Navier Stokes problem
      * then this must be called once before entering the nonlinear loop.
      */
-    void assembleLinearTerms();
+    void assemble_linear_terms();
 
-    /*
+    /**
      * Assemble the nonlinear term. Need not be used when this is
      * a Stokes problem, or once per nonlinear iteration if this
      * is a Navier Stokes problem.
      */
-    void assembleNonLinearTerm();
+    void assemble_non_linear_term();
     
     /** @brief check if one of the stopping criteria is fulfilled
      * 
@@ -221,16 +239,13 @@ class NSE3D
      * 
      * @param iteration_counter current iterate
      */
-    bool stopIt(unsigned int iteration_counter);
+    bool stop_it(unsigned int iteration_counter);
 
     //! Solve the current linear system. Nonlinear loop will be outside of this class.
     void solve();
 
     //! Measure errors and draw a nice VTK picture, if requested to do so.
     void output(int i = -1);
-
-    // TODO A residual handling which can be used to control the nonlinear
-    // loop is still missing.
 
 /*******************************************************************************/
     // Declaration of special member functions - delete all but destructor.

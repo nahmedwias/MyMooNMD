@@ -51,6 +51,9 @@ int main(int argc, char* argv[])
 #endif
     Database.WriteParamDB(argv[0]);
 
+  // Do a makeshift parameter check
+  NSE3D::check_parameters();
+
   // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
@@ -160,8 +163,8 @@ int main(int argc, char* argv[])
   NSE3D nse3d(gridCollections, example);
 #endif
   // assemble all matrices and right hand side
-  nse3d.assembleLinearTerms();
-  nse3d.stopIt(0);
+  nse3d.assemble_linear_terms();
+  nse3d.stop_it(0);
   // check initial residuals
   //======================================================================
   for(unsigned int k=1;; k++)
@@ -169,9 +172,9 @@ int main(int argc, char* argv[])
     // solve the system
     nse3d.solve();
     // checking residuals
-    if(nse3d.stopIt(k))
+    if(nse3d.stop_it(k))
       break;    
-    nse3d.assembleNonLinearTerm();
+    nse3d.assemble_non_linear_term();
   }
   nse3d.output();
   

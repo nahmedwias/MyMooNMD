@@ -208,6 +208,33 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
   }
 }
 
+void NSE3D::check_parameters()
+{
+  // this has to do with the relation of UNIFORM_STEPS and LEVELS
+  // copied from CD3D, it should actually be unified
+  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5
+                        && TDatabase::ParamDB->SOLVER_TYPE == 1;
+  if (!usingMultigrid)
+  { //case of direct solve or non-multigrid iterative solve
+    if (TDatabase::ParamDB->LEVELS < 1)
+    {
+      ErrThrow("Parameter LEVELS must be greater or equal 1.");
+    }
+    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
+    TDatabase::ParamDB->LEVELS = 1;
+    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added "
+        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
+        TDatabase::ParamDB->UNIFORM_STEPS, ".");
+  }
+  else if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+  {  // iterative solve with multigrid prec
+    if (TDatabase::ParamDB->LEVELS < 2)
+    {
+      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
+    }
+  }
+}
+
 void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
@@ -281,7 +308,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
   velocity_pressure_orders.second = pressure_order;
 }
 
-void NSE3D::assembleLinearTerms()
+void NSE3D::assemble_linear_terms()
 {
   size_t nFESpace = 2; // spaces used for assembling matrices
   size_t nSqMatrices=10; // no of square matrices Maximum 10
@@ -434,7 +461,7 @@ void NSE3D::assembleLinearTerms()
 
 }
 
-void NSE3D::assembleNonLinearTerm()
+void NSE3D::assemble_non_linear_term()
 {
   size_t nFESpace = 1; // space needed for assembling matrices
   size_t nSqMatrices=3; // no of square matrices (Maximum 3)
@@ -497,7 +524,7 @@ void NSE3D::assembleNonLinearTerm()
   }// endfor auto grid
 }
 
-bool NSE3D::stopIt(unsigned int iteration_counter)
+bool NSE3D::stop_it(unsigned int iteration_counter)
 {
   SystemPerGrid& s = this->systems_.front();
   unsigned int nDofU = s.solution_.length(0);
