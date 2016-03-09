@@ -2489,7 +2489,13 @@ int TOutput3D::Write_ParVTK(
 
   char *VtkBaseName, Dquot;
   char *Comment;
-  const char vtudir[] = "VTU";
+
+  //get the proper path for the VTU directory (which contains the parts)
+  std::string outputdir(TDatabase::ParamDB->OUTPUTDIR);
+  std::string vtu("VTU/");
+  std::string vtudir = outputdir + std::string("/") + vtu;
+  Output::print(vtudir);
+
   time_t rawtime;
   struct tm * timeinfo;
 
@@ -2518,7 +2524,7 @@ int TOutput3D::Write_ParVTK(
   if(rank==0)
    {
 //     remove(vtudir);
-    mkdir(vtudir, 0777); // create the folder to store SubDomain vtu files
+    mkdir(vtudir.c_str(), 0777); // create the folder to store SubDomain vtu files
    }
 
 #ifdef _MPI
@@ -2635,38 +2641,38 @@ int TOutput3D::Write_ParVTK(
 
       if(img<10)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
        }
       else if(img<100)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu"<<Dquot<<"/>"<<endl;
        }
       else if(img<1000)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu"<<Dquot<<"/>"<<endl;
        }
       else if(img<10000)
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu"<<Dquot<<"/>"<<endl;
        }
       else
        {
-        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
-        else            dat <<   "  <Piece Source="<<Dquot<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        if(i<10)        dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<100)  dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else if(i<1000) dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
+        else            dat <<   "  <Piece Source="<<Dquot<<vtu<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu"<<Dquot<<"/>"<<endl;
        }
      }
     dat << endl;
@@ -2799,41 +2805,42 @@ int TOutput3D::Write_ParVTK(
     os.seekp(std::ios::beg);
       if(img<10)
        {
-        if(rank<10)        os<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu" <<ends;
-        else if(rank<100)  os<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu" <<ends;
-        else if(rank<1000) os<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu" <<ends;
-        else            os<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu" <<ends;
+        if(rank<10)        os<<vtudir<<VtkBaseName<<subID<<".000"<<ID<<".0000"<<img<<".vtu" <<ends;
+        else if(rank<100)  os<<vtudir<<VtkBaseName<<subID<<".00" <<ID<<".0000"<<img<<".vtu" <<ends;
+        else if(rank<1000) os<<vtudir<<VtkBaseName<<subID<<".0"  <<ID<<".0000"<<img<<".vtu" <<ends;
+        else            os<<vtudir<<VtkBaseName<<subID<<"."   <<ID<<".0000"<<img<<".vtu" <<ends;
        }
       else if(img<100)
        {
-        if(rank<10)        os<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu" <<ends;
-        else if(rank<100)  os<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu" <<ends;
-        else if(rank<1000) os<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu" <<ends;
-        else            os<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu" <<ends;
+        if(rank<10)        os<<vtudir<<VtkBaseName<<subID<<".000"<<ID<<".000"<<img<<".vtu" <<ends;
+        else if(rank<100)  os<<vtudir<<VtkBaseName<<subID<<".00" <<ID<<".000"<<img<<".vtu" <<ends;
+        else if(rank<1000) os<<vtudir<<VtkBaseName<<subID<<".0"  <<ID<<".000"<<img<<".vtu" <<ends;
+        else            os<<vtudir<<VtkBaseName<<subID<<"."   <<ID<<".000"<<img<<".vtu" <<ends;
        }
       else if(img<1000)
        {
-        if(rank<10)        os<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu" <<ends;
-        else if(rank<100)  os<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu" <<ends;
-        else if(rank<1000) os<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu" <<ends;
-        else            os<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu" <<ends;
+        if(rank<10)        os<<vtudir<<VtkBaseName<<subID<<".000"<<ID<<".00"<<img<<".vtu" <<ends;
+        else if(rank<100)  os<<vtudir<<VtkBaseName<<subID<<".00" <<ID<<".00"<<img<<".vtu" <<ends;
+        else if(rank<1000) os<<vtudir<<VtkBaseName<<subID<<".0"  <<ID<<".00"<<img<<".vtu" <<ends;
+        else            os<<vtudir<<VtkBaseName<<subID<<"."   <<ID<<".00"<<img<<".vtu" <<ends;
        }
       else if(img<10000)
        {
-        if(rank<10)        os<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu" <<ends;
-        else if(rank<100)  os<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu" <<ends;
-        else if(rank<1000) os<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu" <<ends;
-        else            os<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu" <<ends;
+        if(rank<10)        os<<vtudir<<VtkBaseName<<subID<<".000"<<ID<<".0"<<img<<".vtu" <<ends;
+        else if(rank<100)  os<<vtudir<<VtkBaseName<<subID<<".00" <<ID<<".0"<<img<<".vtu" <<ends;
+        else if(rank<1000) os<<vtudir<<VtkBaseName<<subID<<".0"  <<ID<<".0"<<img<<".vtu" <<ends;
+        else            os<<vtudir<<VtkBaseName<<subID<<"."   <<ID<<".0"<<img<<".vtu" <<ends;
        }
       else
        {
-        if(rank<10)        os<<"VTU/"<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu" <<ends;
-        else if(rank<100)  os<<"VTU/"<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu" <<ends;
-        else if(rank<1000) os<<"VTU/"<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu" <<ends;
-        else            os<<"VTU/"<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu" <<ends;
+        if(rank<10)        os<<vtudir<<VtkBaseName<<subID<<".000"<<ID<<"."<<img<<".vtu" <<ends;
+        else if(rank<100)  os<<vtudir<<VtkBaseName<<subID<<".00" <<ID<<"."<<img<<".vtu" <<ends;
+        else if(rank<1000) os<<vtudir<<VtkBaseName<<subID<<".0"  <<ID<<"."<<img<<".vtu" <<ends;
+        else            os<<vtudir<<VtkBaseName<<subID<<"."   <<ID<<"."<<img<<".vtu" <<ends;
        }
 
     std::ofstream dat(os.str().c_str());
+    Output::print(os.str().c_str());
     if (!dat)
      {
       cerr << "cannot open file for output" << endl;
