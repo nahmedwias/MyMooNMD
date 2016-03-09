@@ -393,8 +393,10 @@ void Time_NSE2D::assemble_initial_time()
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices, 
                n_rect_matrices, rectMatrices, nRhs, RHSs, fe_rhs, 
                boundary_conditions, non_const_bound_values.data(), la);
+    // copy nonactives
+    s.solution.copy_nonactive(s.rhs);
   }
-
+  
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs; 
   this->old_solution = this->systems.front().solution;
@@ -449,13 +451,16 @@ void Time_NSE2D::assemble_rhs()
   // scale by time step length and theta4 (only active dofs)  
   s.rhs.scaleActive(tau*theta4);
   // add rhs from previous time step 
-  s.rhs.addScaledActive((this->old_rhs), tau*theta3);
-  
-  // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
-  // next we want to set old_rhs to f^k (to be used in the next time step)
-  this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
-  this->old_rhs.scaleActive(-theta3/theta4);
-  
+  if(theta3 != 0)
+  {    
+    s.rhs.addScaledActive((this->old_rhs), tau*theta3);
+    
+    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
+    // next we want to set old_rhs to f^k (to be used in the next time step)
+    this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
+    this->old_rhs.scaleActive(-theta3/theta4);
+    this->old_rhs.copy_nonactive(s.rhs);
+  }  
   // FIXME FInd other solution than this submatrix method.
   // M u^{k-1}
   s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
