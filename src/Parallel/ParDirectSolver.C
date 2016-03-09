@@ -39,9 +39,9 @@ TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunica
   MPI_Comm_size(Comm, &size);  
   
   if(matB != NULL)
-   { SystemType = NSE; }
+  { SystemType = NSE; }
   else
-   { SystemType = SCALAR; }   
+  { SystemType = SCALAR; }
   
   if(SystemType==NSE)
   {
@@ -50,106 +50,106 @@ TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunica
     NDof_U      = ParComm->GetNDof();
     NDof        = 3*NDof_U + NDof_P;   
     
-   switch(NSEType)
-     {
+    switch(NSEType)
+    {
       case 1:
-             if(rank == 0)
-              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-              MPI_Finalize();
-              exit(0);
-      break;
+        if(rank == 0)
+          printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+        MPI_Finalize();
+        exit(0);
+        break;
 
       case 2:
-             MatB  = matB[0];   
-             MatBT = matB[3];
-            
-             MatA11 = mat[0];    
-	     MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];      
-	     MatBT1 = matB[3];   MatBT2 = matB[4];   MatBT3 = matB[5]; 
-	
-      break;
-    
+        MatB  = matB[0];
+        MatBT = matB[3];
+
+        MatA11 = mat[0];
+        MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];
+        MatBT1 = matB[3];   MatBT2 = matB[4];   MatBT3 = matB[5];
+
+        break;
+
       case 3:
-             if(rank == 0)
-              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-              MPI_Finalize();
-              exit(0);
-      break;
-    
+        if(rank == 0)
+          printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+        MPI_Finalize();
+        exit(0);
+        break;
+
       case 4:
-             MatB  = matB[0];   
-             MatBT = matB[3];
-    
-             MatA11 = mat[0];    MatA12 = mat[1];    MatA13 = mat[2];	MatBT1 = matB[3];
-             MatA21 = mat[3];    MatA22 = mat[4];    MatA23 = mat[5];	MatBT2 = matB[4];
-             MatA31 = mat[6];    MatA32 = mat[7];    MatA33 = mat[8];	MatBT3 = matB[5];
-             MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];      //[0]
-       break;
-      
+        MatB  = matB[0];
+        MatBT = matB[3];
+
+        MatA11 = mat[0];    MatA12 = mat[1];    MatA13 = mat[2];	MatBT1 = matB[3];
+        MatA21 = mat[3];    MatA22 = mat[4];    MatA23 = mat[5];	MatBT2 = matB[4];
+        MatA31 = mat[6];    MatA32 = mat[7];    MatA33 = mat[8];	MatBT3 = matB[5];
+        MatB1  = matB[0];   MatB2  = matB[1];   MatB3  = matB[2];      //[0]
+                                                                          break;
+
       default:
-            OutPut("Unknown NSETYPE " << NSEType <<"  it must be 1 to 4" << endl);
-            exit(4711);;      
-      
-     }  
-   }
+        OutPut("Unknown NSETYPE " << NSEType <<"  it must be 1 to 4" << endl);
+        exit(4711);;
+
+    }
+  }
   else //scalar problem
-   {
+  {
     MatB = NULL;
-   }
+  }
   
   if(DSType == 1)
-   {
+  {
     if(rank == 0)
       printf("ParDirectSolver Type ---(Select _OMPONLY in makefile)---> ParDiso\n");
-      MPI_Finalize();
-      exit(0);
-   }
+    MPI_Finalize();
+    exit(0);
+  }
   else if(DSType == 2) // Mumps
-   {
+  {
     if(rank == 0)
       printf("ParDirectSolver Type ------> Mumps\n");
     
     if(SystemType==NSE)
-     { 
+    {
       switch(NSEType)
-       {
+      {
         case 1:
-             if(rank == 0)
-              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-              MPI_Finalize();
-              exit(0);
-        break;
+          if(rank == 0)
+            printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+          MPI_Finalize();
+          exit(0);
+          break;
 
         case 2:
-              InitMumps_NSE2();
-        break;
-    
+          InitMumps_NSE2();
+          break;
+
         case 3:
-            if(rank == 0)
-             printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-             MPI_Finalize();
-             exit(0);
-        break;
-    
+          if(rank == 0)
+            printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+          MPI_Finalize();
+          exit(0);
+          break;
+
         case 4:
-              InitMumps_NSE4();
-        break; 
-       } //  switch(NSEType)     
-     }
+          InitMumps_NSE4();
+          break;
+      } //  switch(NSEType)
+    }
     else
-     {
+    {
       InitMumps_Scalar();
-     }
+    }
     
     //initilize the Mumps solver
     Mumps = new TMumpsSolver(N_Eqns, N_Nz, I_rn, J_cn, N_rhs);
-   }
+  }
   else
-   {
+  {
     printf("Select ParDirectSolver Type\n");
     MPI_Finalize();
     exit(0);
-   }
+  }
   
 }
 
@@ -163,7 +163,7 @@ TParDirectSolver::~TParDirectSolver()
   delete [] I_rn;
   delete [] J_cn;
   delete [] GlobalRhs;
-//   delete Mumps;
+  //   delete Mumps;
 }
 
 void TParDirectSolver::InitMumps_Scalar()
@@ -177,47 +177,47 @@ void TParDirectSolver::InitMumps_Scalar()
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
   
-    RowPtr = Mat->GetRowPtr();
-    KCol   = Mat->GetKCol();
-    
-    N_Nz = 0;
-    for(i=0;i<NDof;i++)
-      if(Master[i] == rank)
-	N_Nz += RowPtr[i+1] - RowPtr[i];
-    
-    N_Master = ParComm->GetN_Master();
-    
-    I_rn   = new int[N_Nz];
-    J_cn   = new int[N_Nz];
-    MatLoc = new double[N_Nz];
-    
-    k = 0;
-    for(i=0;i<NDof;i++)
+  RowPtr = Mat->GetRowPtr();
+  KCol   = Mat->GetKCol();
+
+  N_Nz = 0;
+  for(i=0;i<NDof;i++)
+    if(Master[i] == rank)
+      N_Nz += RowPtr[i+1] - RowPtr[i];
+
+  N_Master = ParComm->GetN_Master();
+
+  I_rn   = new int[N_Nz];
+  J_cn   = new int[N_Nz];
+  MatLoc = new double[N_Nz];
+
+  k = 0;
+  for(i=0;i<NDof;i++)
+  {
+    if(Master[i] == rank)
     {
-      if(Master[i] == rank)
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	{
-	  I_rn[k] = local2global[i] + 1;              //fortran format
-	  J_cn[k] = local2global[KCol[j]] + 1;        //fortran format
-	  k++;
-	}
+        I_rn[k] = local2global[i] + 1;              //fortran format
+        J_cn[k] = local2global[KCol[j]] + 1;        //fortran format
+        k++;
       }
     }
+  }
 
-    OwnRhs = new double[N_Master];
-    
-    MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
-    
-    GlobalRhsSize = N_Eqns;
-    
-    if(rank == 0)
-      GlobalRhs = new double[GlobalRhsSize];
+  OwnRhs = new double[N_Master];
+
+  MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
+
+  GlobalRhsSize = N_Eqns;
+
+  if(rank == 0)
+    GlobalRhs = new double[GlobalRhsSize];
 }
 
 void TParDirectSolver::InitMumps_NSE2()
 {
-             
+
   int i,j,k,l,m,t,N_Active, row_index, index_disp2U, index_disp3U;
   int *Master_P,*local2global_P;
   int *Master         = ParComm->GetMaster();
@@ -226,195 +226,196 @@ void TParDirectSolver::InitMumps_NSE2()
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
-
   
-    Master_P       = ParComm_P->GetMaster();
-    local2global_P = ParComm_P->Get_Local2Global();
   
-    N_Active = Mat->GetActiveBound();
-     
-    //compute N_Nz in sqmatrices i.e. A blocks
-    RowPtr = Mat->GetRowPtr();
-    KCol   = Mat->GetKCol();
-    
-    RowPtr_B = MatB->GetRowPtr();
-    KCol_B   = MatB->GetKCol();
+  Master_P       = ParComm_P->GetMaster();
+  local2global_P = ParComm_P->Get_Local2Global();
 
-    RowPtr_BT = MatBT->GetRowPtr();
-    KCol_BT   = MatBT->GetKCol();
-    
-    N_Nz_U = 0;
-    N_Nz_P = 0;
-    
-   for(i=0;i<NDof_U;i++)
+  N_Active = Mat->GetActiveBound();
+
+  //compute N_Nz in sqmatrices i.e. A blocks
+  RowPtr = Mat->GetRowPtr();
+  KCol   = Mat->GetKCol();
+
+  RowPtr_B = MatB->GetRowPtr();
+  KCol_B   = MatB->GetKCol();
+
+  RowPtr_BT = MatBT->GetRowPtr();
+  KCol_BT   = MatBT->GetKCol();
+
+  N_Nz_U = 0;
+  N_Nz_P = 0;
+
+  for(i=0;i<NDof_U;i++)
+  {
+    if(Master[i] == rank)
     {
-      if(Master[i] == rank)
-      {
-	N_Nz_U += RowPtr[i+1] - RowPtr[i];		//for each A type blocks
-	N_Nz_P += RowPtr_BT[i+1] - RowPtr_BT[i];	//for each BT type blocks
-      }
+      N_Nz_U += RowPtr[i+1] - RowPtr[i];		//for each A type blocks
+      N_Nz_P += RowPtr_BT[i+1] - RowPtr_BT[i];	//for each BT type blocks
     }
-    
-    for(i=0;i<NDof_P;i++)
+  }
+
+  for(i=0;i<NDof_P;i++)
+  {
+    if(Master_P[i] == rank)
     {
-      if(Master_P[i] == rank)
-      {
-	N_Nz_P += RowPtr_B[i+1] - RowPtr_B[i];		//for each B type blocks
-      }
+      N_Nz_P += RowPtr_B[i+1] - RowPtr_B[i];		//for each B type blocks
     }
-    
-    N_Nz = 3*N_Nz_P + 3*N_Nz_U; 	
+  }
+
+  N_Nz = 3*N_Nz_P + 3*N_Nz_U;
+
+  N_Master_U  = ParComm->GetN_Master();
+  N_Master_P  = ParComm_P->GetN_Master();
+  N_Master    = N_Master_P + 3*N_Master_U;
+
+  MPI_Allreduce(&N_Master_U, &Global_N_DOF_U, 1, MPI_INT, MPI_SUM, Comm);
+
+  OwnRhs = new double[N_Master];
+
+  MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
+
+  GlobalRhsSize = N_Eqns;
+
+  if(rank == 0)
+    GlobalRhs = new double[GlobalRhsSize];
+
+  I_rn   = new int[N_Nz];
+  J_cn   = new int[N_Nz];
+  MatLoc = new double[N_Nz];
+
+
+  index_disp3U = 3*Global_N_DOF_U;
+  index_disp2U = 2*Global_N_DOF_U;
+  /** U1 component */
+  k = 0;
+  for(i=0;i<NDof_U;i++)
+  {
+    if(Master[i] == rank)
+    {
+      row_index = local2global[i] + 1; //fortran format
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
+      {
+        I_rn[k] =  row_index;
+        J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+
       
-    N_Master_U  = ParComm->GetN_Master();
-    N_Master_P  = ParComm_P->GetN_Master();
-    N_Master    = N_Master_P + 3*N_Master_U;
-    
-    MPI_Allreduce(&N_Master_U, &Global_N_DOF_U, 1, MPI_INT, MPI_SUM, Comm);
-    
-    OwnRhs = new double[N_Master];
-    
-    MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
-    
-    GlobalRhsSize = N_Eqns;
-    
-    if(rank == 0)
-      GlobalRhs = new double[GlobalRhsSize];
-    
-    I_rn   = new int[N_Nz];
-    J_cn   = new int[N_Nz];
-    MatLoc = new double[N_Nz];
-    
-    
-    index_disp3U = 3*Global_N_DOF_U;
-    index_disp2U = 2*Global_N_DOF_U;
- /** U1 component */   
-    k = 0;
-    for(i=0;i<NDof_U;i++)
-    {
-      if(Master[i] == rank)
-       {
-        row_index = local2global[i] + 1; //fortran format
-
-	 for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	  {
-	   I_rn[k] =  row_index;     
-	   J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
-	   k++;
-	  }//for(j=
-	 
-	
-	 //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	   {
-	    I_rn[k] = row_index;                
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	   }//for(j=
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-    
-    
-  /** U2 component */      
-   for(i=0;i<NDof_U;i++)
-    {
-     if(Master[i] == rank)
-      {
-       row_index = Global_N_DOF_U + local2global[i] + 1;              //fortran format
-
-       for(j=RowPtr[i];j<RowPtr[i+1];j++)
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
         {
-         I_rn[k] = row_index;
-         J_cn[k] = Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
-         k++;
-       }//for(j=
-	 
-	
-         //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    I_rn[k] = row_index;  
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	  }//for(j=
-	  
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-   
-       
+          I_rn[k] = row_index;
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+
+  /** U2 component */      
+  for(i=0;i<NDof_U;i++)
+  {
+    if(Master[i] == rank)
+    {
+      row_index = Global_N_DOF_U + local2global[i] + 1;              //fortran format
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
+      {
+        I_rn[k] = row_index;
+        J_cn[k] = Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          I_rn[k] = row_index;
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+
   /** U3 component */    
-    for(i=0;i<NDof_U;i++)
+  for(i=0;i<NDof_U;i++)
+  {
+    if(Master[i] == rank)
     {
-      if(Master[i] == rank)
+      row_index = index_disp2U + local2global[i] + 1;              //fortran format
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-       row_index = index_disp2U + local2global[i] + 1;              //fortran format
-       
-	for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	 {
-	  I_rn[k] = row_index;
-          J_cn[k] = index_disp2U + local2global[KCol[j]] + 1;        //fortran format
-           k++;
-	  }//for(j=
-	 
-	
-	  //Mat BT(m)
-        if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    I_rn[k] = row_index;
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	  }//for(j=  
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-     
-    /** pressure */
-    for(i=0;i<NDof_P;i++)
+        I_rn[k] = row_index;
+        J_cn[k] = index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          I_rn[k] = row_index;
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+  /** pressure */
+  for(i=0;i<NDof_P;i++)
+  {
+
+    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     {
-      
-     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-      {  
-        printf("ParDirectSolver->InitMumps_NSE2(): NSEType 2  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
-        MPI_Finalize();
-        exit(0); 
-      }
-      
-      if(Master_P[i] == rank)
+      printf("ParDirectSolver->InitMumps_NSE2(): NSEType 2  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
+      MPI_Finalize();
+      exit(0);
+    }
+
+    if(Master_P[i] == rank)
+    {
+      row_index = index_disp3U + local2global_P[i] + 1;                //fortran format
+      //Mat B(l)
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-       row_index = index_disp3U + local2global_P[i] + 1;                //fortran format
-	//Mat B(l)
-        for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;
-	    J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
- 
-         for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;
-	    J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
-	  
-	 for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;
-	    J_cn[k] = index_disp2U + local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-    
-    /** since the BT entries of Dirichlet U DOF row is not added */
-    N_Nz = k ; 
-   
+        I_rn[k] = row_index;
+        J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+      
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        I_rn[k] = row_index;
+        J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+      
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        I_rn[k] = row_index;
+        J_cn[k] = index_disp2U + local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+  /** since the BT entries of Dirichlet U DOF row is not added */
+  N_Nz = k ;
+
 }
 
 
 void TParDirectSolver::InitMumps_NSE4()
 {
+
   int i,j,k,l,m,t,N_Active, row_index, index_disp2U, index_disp3U;
   int *Master_P,*local2global_P;
   int *Master         = ParComm->GetMaster();
@@ -424,240 +425,239 @@ void TParDirectSolver::InitMumps_NSE4()
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
 
-    Master_P       = ParComm_P->GetMaster();
-    local2global_P = ParComm_P->Get_Local2Global();
-    
-    N_Active = Mat->GetActiveBound();
-    
-    //compute N_Nz in sqmatrices i.e. A blocks
-    RowPtr = Mat->GetRowPtr();
-    KCol   = Mat->GetKCol();
-    
-    RowPtr_B = MatB->GetRowPtr();
-    KCol_B   = MatB->GetKCol();
+  Master_P       = ParComm_P->GetMaster();
+  local2global_P = ParComm_P->Get_Local2Global();
 
-    RowPtr_BT = MatBT->GetRowPtr();
-    KCol_BT   = MatBT->GetKCol();
-    
-    N_Nz_U = 0;
-    N_Nz_P = 0;
-    
-    for(i=0;i<NDof_U;i++)
+  N_Active = Mat->GetActiveBound();
+
+  //compute N_Nz in sqmatrices i.e. A blocks
+  RowPtr = Mat->GetRowPtr();
+  KCol   = Mat->GetKCol();
+
+  RowPtr_B = MatB->GetRowPtr();
+  KCol_B   = MatB->GetKCol();
+
+  RowPtr_BT = MatBT->GetRowPtr();
+  KCol_BT   = MatBT->GetKCol();
+
+  N_Nz_U = 0;
+  N_Nz_P = 0;
+
+  for(i=0;i<NDof_U;i++)
+  {
+    if(Master[i] == rank)
     {
-      if(Master[i] == rank)
-      {
-	N_Nz_U += RowPtr[i+1] - RowPtr[i];		//for each A type blocks
-	N_Nz_P += RowPtr_BT[i+1] - RowPtr_BT[i];	//for each BT type blocks
-      }
+      N_Nz_U += RowPtr[i+1] - RowPtr[i];		//for each A type blocks
+      N_Nz_P += RowPtr_BT[i+1] - RowPtr_BT[i];	//for each BT type blocks
     }
+  }
 
-    for(i=0;i<NDof_P;i++)
+  for(i=0;i<NDof_P;i++)
+  {
+    if(Master_P[i] == rank)
     {
-      if(Master_P[i] == rank)
-      {
-	N_Nz_P += RowPtr_B[i+1] - RowPtr_B[i];		//for each B type blocks
-      }
+      N_Nz_P += RowPtr_B[i+1] - RowPtr_B[i];		//for each B type blocks
     }
+  }
 
-    N_Nz = 3*N_Nz_P + 9*N_Nz_U; 	//total non zeros in system matrix ( 3*(B + BT) + 9*A )
-      
-    N_Master_U  = ParComm->GetN_Master();
-    N_Master_P  = ParComm_P->GetN_Master();
-    N_Master    = N_Master_P + 3*N_Master_U;
+  N_Nz = 3*N_Nz_P + 9*N_Nz_U; 	//total non zeros in system matrix ( 3*(B + BT) + 9*A )
+
+  N_Master_U  = ParComm->GetN_Master();
+  N_Master_P  = ParComm_P->GetN_Master();
+  N_Master    = N_Master_P + 3*N_Master_U;
+
+  OwnRhs = new double[N_Master];
+
+  MPI_Allreduce(&N_Master_U, &Global_N_DOF_U, 1, MPI_INT, MPI_SUM, Comm);
+
+  MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
+
+  GlobalRhsSize = N_Eqns;
+
+  if(rank == 0)
+    GlobalRhs = new double[GlobalRhsSize];
+
+  I_rn   = new int[N_Nz];
+  J_cn   = new int[N_Nz];
+  MatLoc = new double[N_Nz];
+
+  index_disp3U = 3*Global_N_DOF_U;
+  index_disp2U = 2*Global_N_DOF_U;
+
+  k = 0;
+  for(i=0;i<NDof_U;i++)
+  {
     
-    OwnRhs = new double[N_Master];
-    
-    MPI_Allreduce(&N_Master_U, &Global_N_DOF_U, 1, MPI_INT, MPI_SUM, Comm);
-    
-    MPI_Allreduce(&N_Master, &N_Eqns, 1, MPI_INT, MPI_SUM, Comm);
-    
-    GlobalRhsSize = N_Eqns;
-    
-    if(rank == 0)
-      GlobalRhs = new double[GlobalRhsSize];
-    
-    I_rn   = new int[N_Nz];
-    J_cn   = new int[N_Nz];
-    MatLoc = new double[N_Nz];
-    
-    index_disp3U = 3*Global_N_DOF_U;
-    index_disp2U = 2*Global_N_DOF_U;
-    
-    k = 0;
-    for(i=0;i<NDof_U;i++)
+    if(Master[i] == rank)
     {
+      row_index = local2global[i] + 1; //fortran format
       
-      if(Master[i] == rank)
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	row_index = local2global[i] + 1; //fortran format
-	
-	
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	      
-	      if(i<N_Active)
-	    {	
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	    }
-	    if(i<N_Active)
-	    {
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;     
-	    } 
-	    }//for(j=
-	
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    I_rn[k] =  row_index;                //fortran format
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	  }//for(j=
-	  
+        I_rn[k] =  row_index;              //fortran format
+        J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+        k++;
+
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+      }//for(j=
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          I_rn[k] =  row_index;                //fortran format
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
       
-      }//if(Master[i] == rank)
-    }//for(i=0;i<
+
+    }//if(Master[i] == rank)
+  }//for(i=0;i<
+
+  for(i=0;i<NDof_U;i++)
+  {
     
-        for(i=0;i<NDof_U;i++)
+    if(Master[i] == rank)
     {
+      row_index = Global_N_DOF_U + local2global[i] + 1; //fortran format
       
-      if(Master[i] == rank)
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	row_index = Global_N_DOF_U + local2global[i] + 1; //fortran format
-	
-	
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	          if(i<N_Active)
-	    {	
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	    }
-	  
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	  
-	    if(i<N_Active)
-	    {
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;     
-	    } 
-	    }//for(j=
-	
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    I_rn[k] =  row_index;                //fortran format
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	  }//for(j=
-	  
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+
+        I_rn[k] =  row_index;              //fortran format
+        J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+        k++;
+
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+      }//for(j=
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          I_rn[k] =  row_index;                //fortran format
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
       
-      }//if(Master[i] == rank)
-    }//for(i=0;i<
+
+    }//if(Master[i] == rank)
+  }//for(i=0;i<
+
+  for(i=0;i<NDof_U;i++)
+  {
     
-            for(i=0;i<NDof_U;i++)
+    if(Master[i] == rank)
     {
+      row_index = index_disp2U + local2global[i] + 1; //fortran format
       
-      if(Master[i] == rank)
+
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	row_index = index_disp2U + local2global[i] + 1; //fortran format
-	
-	
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	          if(i<N_Active)
-	    {	
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	    }
-	    
-	   if(i<N_Active)
-	    {
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;
-	    }
-	   
-	      I_rn[k] =  row_index;              //fortran format
-	      J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
-	      k++;     
-	   
-	    }//for(j=
-	
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    I_rn[k] =  row_index;                //fortran format
-	    J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
-	    k++;
-	  }//for(j=
-	  
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+
+        if(i<N_Active)
+        {
+          I_rn[k] =  row_index;              //fortran format
+          J_cn[k] =  Global_N_DOF_U + local2global[KCol[j]] + 1;        //fortran format
+          k++;
+        }
+
+        I_rn[k] =  row_index;              //fortran format
+        J_cn[k] =  index_disp2U + local2global[KCol[j]] + 1;        //fortran format
+        k++;
+
+      }//for(j=
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          I_rn[k] =  row_index;                //fortran format
+          J_cn[k] = index_disp3U + local2global_P[KCol_BT[j]] + 1;       //fortran format
+          k++;
+        }//for(j=
       
-      }//if(Master[i] == rank)
+
+    }//if(Master[i] == rank)
+  }
+
+
+  for(i=0;i<NDof_P;i++)
+  {
+    if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+    {
+      printf("ParDirectSolver->InitMumps_NSE2(): NSEType 4  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
+      MPI_Finalize();
+      exit(0);
     }
     
-    
-    for(i=0;i<NDof_P;i++)
+    if(Master_P[i] == rank)
     {
-      if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-      {  
-        printf("ParDirectSolver->InitMumps_NSE2(): NSEType 4  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
-        MPI_Finalize();
-        exit(0); 
-      }
-      
-      if(Master_P[i] == rank)
+      row_index = index_disp3U + local2global_P[i] + 1;                //fortran format
+
+      //Mat B1
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-	row_index = index_disp3U + local2global_P[i] + 1;                //fortran format
-	
-	//Mat B1
-	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;                //fortran format
-	    J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
-	  
-	  	//Mat B2
-	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;                //fortran format
-	    J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
-	  
-	  	//Mat B3
-	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    I_rn[k] = row_index;                //fortran format
-	    J_cn[k] = index_disp2U + local2global[KCol_B[j]] + 1;        //fortran format
-	    k++;
-	  }//for(j=
-	  
-	  
+        I_rn[k] = row_index;                //fortran format
+        J_cn[k] = local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
 
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-    
-     /** since the BT entries of Dirichlet U DOF row is not added */
-    N_Nz = k ; 
+      //Mat B2
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        I_rn[k] = row_index;                //fortran format
+        J_cn[k] = Global_N_DOF_U + local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
+      
+      //Mat B3
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        I_rn[k] = row_index;                //fortran format
+        J_cn[k] = index_disp2U + local2global[KCol_B[j]] + 1;        //fortran format
+        k++;
+      }//for(j=
 
+
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+  /** since the BT entries of Dirichlet U DOF row is not added */
+  N_Nz = k ;
   
-  
+
 }
 
 
@@ -668,7 +668,7 @@ void TParDirectSolver::AssembleMatrix()
   int i,j,k,l,m,t;
   int *Master = ParComm->GetMaster();;
   double *EntriesA;
- 
+
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -684,7 +684,7 @@ void TParDirectSolver::AssembleMatrix()
         for(j=RowPtr[i];j<RowPtr[i+1];j++)
         {
           MatLoc[k] = EntriesA[j];
-	  k++;
+          k++;
         }
       }
     }
@@ -692,35 +692,36 @@ void TParDirectSolver::AssembleMatrix()
   else
   {
     switch(NSEType)
-       {
-        case 1:
-             if(rank == 0)
-               printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-             MPI_Finalize();
-             exit(0);
+    {
+      case 1:
+        if(rank == 0)
+          printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+        MPI_Finalize();
+        exit(0);
         break;
 
-        case 2:
-              AssembleMatrix_NSE2();
+      case 2:
+        AssembleMatrix_NSE2();
         break;
-    
-        case 3:
-            if(rank == 0)
-              printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
-            MPI_Finalize();
-            exit(0);
+
+      case 3:
+        if(rank == 0)
+          printf("ParDirectSolver NSEType %d not yet implemented\n",NSEType);
+        MPI_Finalize();
+        exit(0);
         break;
-    
-        case 4:
-	      AssembleMatrix_NSE4();
+
+      case 4:
+        AssembleMatrix_NSE4();
         break; 
-       } //  switch(NSEType)   
+    } //  switch(NSEType)
   }
- 
+
 }
 
 void TParDirectSolver::AssembleMatrix_NSE2()
 {
+
   int rank,size, N_Active;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -728,14 +729,14 @@ void TParDirectSolver::AssembleMatrix_NSE2()
   int i,j,k,l,m,t;
   int *Master   = ParComm->GetMaster();
   int *Master_P = ParComm_P->GetMaster();
-  
+
   double *EntriesA = MatA11->GetEntries();
   double *EntriesB = MatBT1->GetEntries();
   
   N_Active = Mat->GetActiveBound();
   
-
   
+
   k = 0;
   for(i=0;i<NDof_U;i++)
   {
@@ -743,19 +744,19 @@ void TParDirectSolver::AssembleMatrix_NSE2()
     {
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	MatLoc[k] = EntriesA[j];
-	
-	k++;
+        MatLoc[k] = EntriesA[j];
+
+        k++;
       }//for(j=
       
       //Mat B1T(m)
       if(i<N_Active)
-      for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-      {
-	MatLoc[k] = EntriesB[j];
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[j];
 
-	k++;
-      }//for(j=
+          k++;
+        }//for(j=
     }//if(Master_P[i] == rank)
   }//for(i=0;i<
   
@@ -766,19 +767,19 @@ void TParDirectSolver::AssembleMatrix_NSE2()
     {
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-	MatLoc[k] = EntriesA[j];
+        MatLoc[k] = EntriesA[j];
 
-	k++;
+        k++;
       }//for(j=
 
       //Mat B2T(m)
       if(i<N_Active)
-      for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-      {
-	MatLoc[k] = EntriesB[j];
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[j];
 
-	k++;
-      }//for(j=
+          k++;
+        }//for(j=
     }//if(Master_P[i] == rank)
   }//for(i=0;i<
 
@@ -789,19 +790,19 @@ void TParDirectSolver::AssembleMatrix_NSE2()
     {
       for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
-       MatLoc[k] = EntriesA[j];
+        MatLoc[k] = EntriesA[j];
 
-	k++;
+        k++;
       }//for(j=
 
       //Mat BT(m)
       if(i<N_Active)
-      for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-      {
-	MatLoc[k] = EntriesB[j];
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[j];
 
-	k++;
-      }//for(j=
+          k++;
+        }//for(j=
     }//if(Master_P[i] == rank)  
   }//for(i=0;i<
   
@@ -816,33 +817,34 @@ void TParDirectSolver::AssembleMatrix_NSE2()
       //Mat B(l)
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-	MatLoc[k] = EntriesB[j];
+        MatLoc[k] = EntriesB[j];
 
-	k++;
+        k++;
       }//for(j=
       
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-	MatLoc[k] = EntriesB2[j];
+        MatLoc[k] = EntriesB2[j];
 
-	k++;
+        k++;
       }//for(j=
 
       for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-	MatLoc[k] = EntriesB3[j];
+        MatLoc[k] = EntriesB3[j];
 
-	k++;
+        k++;
       }//for(j=
     }//if(Master_P[i] == rank)  
   }//for(i=0;i<
-
-
   
+
+
 }
 
 void TParDirectSolver::AssembleMatrix_NSE4()
 {
+
   int rank,size, N_Active;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -850,7 +852,7 @@ void TParDirectSolver::AssembleMatrix_NSE4()
   int i,j,k,l,m,t;
   int *Master   = ParComm->GetMaster();
   int *Master_P = ParComm_P->GetMaster();
-  
+
   double* EntriesA[9];
   double* EntriesB[6];
   
@@ -876,150 +878,150 @@ void TParDirectSolver::AssembleMatrix_NSE4()
   
   N_Active = Mat->GetActiveBound();
 
-     k = 0;
-    for(i=0;i<NDof_U;i++)
+  k = 0;
+  for(i=0;i<NDof_U;i++)
+  {
+
+    if(Master[i] == rank)
     {
       
-      if(Master[i] == rank)
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
+        MatLoc[k] = EntriesA[0][j];
+        k++;
 
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	      MatLoc[k] = EntriesA[0][j]; 
-	      k++;
-	      
-	      if(i<N_Active)
-	      {
-	       MatLoc[k] = EntriesA[1][j];
-	      k++;
-	      }
-	      
-	       if(i<N_Active)
-	       {
-		 MatLoc[k] = EntriesA[2][j];
-	         k++;
-	       }
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[1][j];
+          k++;
+        }
 
-	    }
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[2][j];
+          k++;
+        }
+
+      }
 
 
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[0][j];
-	    k++;
-	  }//for(j=
-	  
-     
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[0][j];
+          k++;
+        }//for(j=
+
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+
+  for(i=0;i<NDof_U;i++)
+  {
     
-    
-        for(i=0;i<NDof_U;i++)
+    if(Master[i] == rank)
     {
       
-      if(Master[i] == rank)
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[3][j];
+          k++;
+        }
+        MatLoc[k] = EntriesA[4][j];
+        k++;
 
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	      if(i<N_Active)
-	      {
-	       MatLoc[k] = EntriesA[3][j];
-	       k++;
-	      }
-	        MatLoc[k] = EntriesA[4][j];
-	        k++;
-	      
-	       if(i<N_Active)
-	       {
-		 MatLoc[k] = EntriesA[5][j];
-	          k++; 
-	      }
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[5][j];
+          k++;
+        }
 
-	      
-	    }
 
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[1][j];     
-	    k++;
-	  }//for(j=
-	  
-     
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
+      }
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[1][j];
+          k++;
+        }//for(j=
+
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+
+  for(i=0;i<NDof_U;i++)
+  {
     
-    
-        for(i=0;i<NDof_U;i++)
+    if(Master[i] == rank)
     {
       
-      if(Master[i] == rank)
+      for(j=RowPtr[i];j<RowPtr[i+1];j++)
       {
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[6][j];
+          k++;
 
-	    for(j=RowPtr[i];j<RowPtr[i+1];j++)
-	    {
-	      if(i<N_Active)
-	      {
-		MatLoc[k] = EntriesA[6][j];
-	      k++;
-		
-	      }
-	      
-	      if(i<N_Active)
-	      {
-		MatLoc[k] = EntriesA[7][j];
-	      k++;
-	      }
-	      
-	      MatLoc[k] = EntriesA[8][j];
-	      k++;  
-	    }
+        }
 
-	  //Mat BT(m)
-	 if(i<N_Active)
-	  for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[2][j]; 
-	    k++;
-	  }//for(j=
-	  
-     
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
-    
-    
-    
-    
-    for(i=0;i<NDof_P;i++)
+        if(i<N_Active)
+        {
+          MatLoc[k] = EntriesA[7][j];
+          k++;
+        }
+
+        MatLoc[k] = EntriesA[8][j];
+        k++;
+      }
+
+      //Mat BT(m)
+      if(i<N_Active)
+        for(j=RowPtr_BT[i];j<RowPtr_BT[i+1];j++)
+        {
+          MatLoc[k] = EntriesB[2][j];
+          k++;
+        }//for(j=
+
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
+
+
+
+
+  for(i=0;i<NDof_P;i++)
+  {
+    if(Master_P[i] == rank)
     {
-      if(Master_P[i] == rank)
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
       {
-	  for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[3][j];
-	    k++;
-	  }
-	  
-	  // if(i<N_Active)
-	   for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[4][j];
-	    k++;
-	  }
-	  
-	//   if(i<N_Active)
-	   for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
-	  {
-	    MatLoc[k] = EntriesB[5][j];
-	    k++;
-	  }
-	
-      }//if(Master_P[i] == rank)
-    }//for(i=0;i<
+        MatLoc[k] = EntriesB[3][j];
+        k++;
+      }
+
+      // if(i<N_Active)
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        MatLoc[k] = EntriesB[4][j];
+        k++;
+      }
+
+      //   if(i<N_Active)
+      for(j=RowPtr_B[i];j<RowPtr_B[i+1];j++)
+      {
+        MatLoc[k] = EntriesB[5][j];
+        k++;
+      }
+
+    }//if(Master_P[i] == rank)
+  }//for(i=0;i<
 
 }
 
@@ -1039,7 +1041,7 @@ void TParDirectSolver::GetRhs(double *Rhs)
     {
       if(Master[i] == rank)
       {
-	OwnRhs[t++] = Rhs[i];
+        OwnRhs[t++] = Rhs[i];
       }
     }
     
@@ -1054,10 +1056,10 @@ void TParDirectSolver::GetRhs(double *Rhs)
     {
       if(Master[i] == rank)
       {
-	OwnRhs[t               ] = Rhs[i           ];
-	OwnRhs[t +   N_Master_U] = Rhs[i +   NDof_U];
-	OwnRhs[t + 2*N_Master_U] = Rhs[i + 2*NDof_U];
-	t++;
+        OwnRhs[t               ] = Rhs[i           ];
+        OwnRhs[t +   N_Master_U] = Rhs[i +   NDof_U];
+        OwnRhs[t + 2*N_Master_U] = Rhs[i + 2*NDof_U];
+        t++;
       }
     }
     
@@ -1080,8 +1082,8 @@ void TParDirectSolver::GetRhs(double *Rhs)
     {
       if(Master_P[i] == rank)
       {
-	OwnRhs[k + 3*N_Master_U] = Rhs[i + 3*NDof_U];
-	k++;
+        OwnRhs[k + 3*N_Master_U] = Rhs[i + 3*NDof_U];
+        k++;
       }
     }
     
@@ -1104,32 +1106,32 @@ void TParDirectSolver::UpdateSol(double *Sol)
   if(MatB == NULL)
   {
     ParComm->ScatterFromRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master, 0);
-  
+
     t = 0;
     for(i=0;i<NDof;i++)
     {
       if(Master[i] == rank)
       {
-	Sol[i] = OwnRhs[t++];
+        Sol[i] = OwnRhs[t++];
       }
     }
     ParComm->CommUpdate(Sol);
   }
   else
   {
-//     if(rank == 0)
-//     {
-//       double sum=0;
-//       for(i=0;i<GlobalRhsSize;i++)
-//       {
-// 	sum += GlobalRhs[i]*GlobalRhs[i];
-// // 	GlobalRhs[i] = i;
-//       }
-// //       cout<<"norm of sol :: "<<sqrt(sum)<<endl;
-// //       cout<<"GlobalRhsSize :: "<<GlobalRhsSize<<endl;
-//     }
-// //     MPI_Finalize();
-// //     exit(0);
+    //     if(rank == 0)
+    //     {
+    //       double sum=0;
+    //       for(i=0;i<GlobalRhsSize;i++)
+    //       {
+    // 	sum += GlobalRhs[i]*GlobalRhs[i];
+    // // 	GlobalRhs[i] = i;
+    //       }
+    // //       cout<<"norm of sol :: "<<sqrt(sum)<<endl;
+    // //       cout<<"GlobalRhsSize :: "<<GlobalRhsSize<<endl;
+    //     }
+    // //     MPI_Finalize();
+    // //     exit(0);
     
     
     int *Master_P = ParComm_P->GetMaster();
@@ -1147,16 +1149,16 @@ void TParDirectSolver::UpdateSol(double *Sol)
     temp  = GlobalRhs+2*Global_N_DOF_U;
     temp2 = OwnRhs+2*N_Master_U;
     ParComm->ScatterFromRoot(temp, GlobalRhsSize, temp2, N_Master_U, 0);
-  
+
     t = 0;
     for(i=0;i<NDof_U;i++)
     {
       if(Master[i] == rank)
       {
-	Sol[i           ] = OwnRhs[t               ];
-	Sol[i +   NDof_U] = OwnRhs[t +   N_Master_U];
-	Sol[i + 2*NDof_U] = OwnRhs[t + 2*N_Master_U];
-	t++;
+        Sol[i           ] = OwnRhs[t               ];
+        Sol[i +   NDof_U] = OwnRhs[t +   N_Master_U];
+        Sol[i + 2*NDof_U] = OwnRhs[t + 2*N_Master_U];
+        t++;
       }
     }
     ParComm->CommUpdate(Sol);
@@ -1170,8 +1172,8 @@ void TParDirectSolver::UpdateSol(double *Sol)
     {
       if(Master_P[i] == rank)
       {
-	Sol[i + 3*NDof_U] = OwnRhs[t + 3*N_Master_U];
-	t++;
+        Sol[i + 3*NDof_U] = OwnRhs[t + 3*N_Master_U];
+        t++;
       }
     }
     ParComm_P->CommUpdate(Sol+3*NDof_U);
@@ -1186,17 +1188,17 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
   
   double t = MPI_Wtime();
   int i,j;
- 
+
   if(DSType == 2)
   {
     GetRhs(Rhs);
-       
+
     if(Factorize)
     {
       AssembleMatrix();
- 
+
       Mumps->FactorizeAndSolve(MatLoc,GlobalRhs);
- 
+
     }
     else
     {
@@ -1212,7 +1214,7 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
     exit(0);
   }
   
-//   printf("time taken for solving::%lf\n",MPI_Wtime()-t);
+  //   printf("time taken for solving::%lf\n",MPI_Wtime()-t);
 }
 
 #else
@@ -1242,7 +1244,7 @@ TParDirectSolver::TParDirectSolver(TSquareMatrix3D *mat)
 
   if(DSType == 1)
   {
-      printf("ParDirectSolver Type ------> ParDiso\n");
+    printf("ParDirectSolver Type ------> ParDiso\n");
     
     InitPardiso();
     ParDiso = new TParDiso(N_Eqns, N_Nz, RowPtr, KCol);
@@ -1264,7 +1266,7 @@ TParDirectSolver::~TParDirectSolver()
 void TParDirectSolver::InitPardiso()
 {
   int i,j,k,t;
-   
+
   RowPtr = Mat->GetRowPtr();
   KCol   = Mat->GetKCol();
 
@@ -1300,25 +1302,9 @@ void TParDirectSolver::Solve(double *Sol, double *Rhs, bool Factorize)
   }
   
   printf("time taken for solving::%lf\n",GetTime()-t);
- 
+
 }
 
 #endif
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   

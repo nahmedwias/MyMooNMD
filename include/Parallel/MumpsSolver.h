@@ -10,19 +10,19 @@
 //
 // =======================================================================
 #ifdef _MPI
- extern "C"
- {
-  #  include "dmumps_c.h"
- }
+extern "C"
+{
+#  include "dmumps_c.h"
+}
 
 #ifndef __MUMPSSOLVER__
 #define __MUMPSSOLVER__
 
- #include <SquareMatrix.h>
- #include <Matrix.h>
- #include <SquareMatrix3D.h>
- #include <Matrix3D.h>
- #include <ParFECommunicator3D.h>
+#include <SquareMatrix.h>
+#include <Matrix.h>
+#include <SquareMatrix3D.h>
+#include <Matrix3D.h>
+#include <ParFECommunicator3D.h>
 
 /** general class for all parallel direct solvers */
 
@@ -30,29 +30,29 @@ class TMumpsSolver
 {
   protected:
 
-  /** MPI_Comm for which the fespace communications are needed */
-  MPI_Comm Comm;
+    /** MPI_Comm for which the fespace communications are needed */
+    MPI_Comm Comm;
 
-  /**  internal pointers of MUMPS solver*/
-  DMUMPS_STRUC_C id;
- 
-  /** global rhs */
-  double *MumpsRhs;
- 
-  /** */
-  bool FactorFlag;
-  
-  
+    /**  internal pointers of MUMPS solver*/
+    DMUMPS_STRUC_C id;
+
+    /** global rhs */
+    double *MumpsRhs;
+
+    /** */
+    bool FactorFlag;
+
+
   public:
-   /** constructor */
-   TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_dist_Jcn, int N_Rhs);
+    /** constructor */
+    TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_dist_Jcn, int N_Rhs);
 
-   void FactorizeAndSolve(double *Mat_loc, double *rhs);
+    void FactorizeAndSolve(double *Mat_loc, double *rhs);
 
-   void Solve(double *Mat_loc, double *rhs);
-   
-   void Clean();
-  
+    void Solve(double *Mat_loc, double *rhs);
+
+    void Clean();
+
     /** destructor */
     ~TMumpsSolver();
 };
