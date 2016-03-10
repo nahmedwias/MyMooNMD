@@ -476,10 +476,12 @@ void Time_NSE2D::assemble_rhs()
         Output::print<1>("change in tau", this->oldtau, "->", tau);
       }
       // scale the BT transposed blocks with the current time step
-      s.matrix.scale_blocks(factor, {{0,2}, {1,2}});      
+      const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
+	s.matrix.scale_blocks(factor, cell_positions);      
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
-        s.matrix.scale_blocks(factor, {{2,0}, {2,1}});
+        const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
+	s.matrix.scale_blocks(factor, cell_positions_t);
       }
     }
   }
@@ -502,7 +504,11 @@ void Time_NSE2D::assemble_system()
   
   for(System_per_grid& s : this->systems)
   {
-    s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix.scale_blocks_actives(factor, cell_positions);
     const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass_bloks, 1.0, {{0,0}, {1,1}}, {false, false});
   }
@@ -667,7 +673,11 @@ void Time_NSE2D::deScaleMatrices()
   {
     const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass_bloks, -1.0, {{0,0}, {1,1}}, {false, false});
-    s.matrix.scale_blocks_actives(1./factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix.scale_blocks_actives(1./factor, cell_positions);
   }  
 }
 

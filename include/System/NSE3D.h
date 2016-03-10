@@ -29,6 +29,7 @@
 #include <deque>
 #include <list>
 #include <utility>
+#include <array>
 
 #ifdef _MPI
 #include <ParFEMapper3D.h>
