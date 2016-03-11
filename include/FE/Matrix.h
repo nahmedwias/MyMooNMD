@@ -164,8 +164,20 @@ class TMatrix
      */
     double GetNorm(int p=-1) const;
 
-    /// @brief write matrix into file
-    int Write(const char *filename) const;
+    /** @brief write matrix into file in MatrixMarket format
+     *
+     * Writes the matrix into the file whose path and name is given as input
+     * parameter.
+     * So far there is only one format: the MatrixMarket coordinate format.
+     * It is human readable and explained at
+     *  http://math.nist.gov/MatrixMarket/formats.html.
+     * There is a nice MATLAB read-in function (mmread.m) for that format on
+     * the same homepage. You can use "write" in combination with that function
+     * to examine your TMatrix in MATLAB, which is great for debugging.
+     *
+     * @param[in] filename The filename where to write the matrix.
+     */
+    void write(const char *filename) const;
     
     /// @brief Print matrix into the shell
     void Print(const char *name = "a") const;

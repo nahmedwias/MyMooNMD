@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #include <MooNMD_Io.h>
+#include <fstream>
 
 TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
  : structure(structure), entries(this->structure->GetN_Entries(), 0.)
@@ -43,6 +44,40 @@ void TMatrix::setEntries(std::vector<double> entries)
              "entries ", this->entries.size(), " != ", entries.size());
   }
   this->entries = entries;
+}
+
+void TMatrix::write(const char *filename) const
+{
+  std::ofstream matrixfile;
+  matrixfile.open (filename);
+
+  //write the header line - coordinate format, real values, no symmetry used
+  matrixfile << "%%MatrixMarket matrix coordinate real general \n";
+
+  //write general matrix information
+  matrixfile << GetN_Rows() << "\t" << GetN_Columns() << "\t" << GetN_Entries() << "\n";
+
+  //loop through matrix and print row - column - entry
+  // for each entry in the sparsity structure
+  const int* RowPtr = structure->GetRowPtr();
+  const int* KCol = structure->GetKCol();
+  int begin, end, pos=0;
+
+  for (int i=0; i<structure->GetN_Rows(); ++i)
+  {
+    begin = RowPtr[i];
+    end   = RowPtr[i+1];
+
+    for (int j=begin; j<end; ++j)
+    {
+      // shift row and col by +1 (fortran style)
+      matrixfile << i +1 << "\t" << KCol[pos] + 1 << "\t" << entries[pos] << "\n";
+      ++pos;
+    }
+  }
+
+
+  matrixfile.close();
 }
 
 void TMatrix::Print(const char *name) const
