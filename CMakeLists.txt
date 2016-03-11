@@ -150,9 +150,8 @@ if(_USING_MPI)
     find_library(MUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
     # mumps_common library
     find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # esmumps/dmumps/tesmumps
+    # esmumps/tesmumps
     find_library(MUMPS_ESMUMPS_LIBRARY NAMES esmumps_TYRONE64 PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_DMUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
     find_library(MUMPS_TESMUMPS_LIBRARY NAMES ptesmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
     # scotch and pord libraries
     find_library(MUMPS_PORD_LIBRARY NAMES pord_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
@@ -163,7 +162,8 @@ if(_USING_MPI)
      
     set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_DMUMPS_LIBRARY} ${MUMPS_ESMUMPS_LIBRARY} ${MUMPS_TESMUMPS_LIBRARY}
                         ${MUMPS_LIBRARY_COMMON} ${MUMPS_SCOTCH_LIBRARY} ${MUMPS_SCOTCHERR_LIBRARY} ${MUMPS_PORD_LIBRARY}
-                        ${MUMPS_SCALAPACK_LIBRARY})
+                        ${MUMPS_SCALAPACK_LIBRARY}
+                        gfortran)
     set(MUMPS_INCLUDE_DIRS ${MUMPS_INCLUDE_DIR})
     
     if(NOT (MUMPS_LIBRARIES AND  MUMPS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour

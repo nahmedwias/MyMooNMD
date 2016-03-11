@@ -16,45 +16,45 @@
 
 if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 
-	###################################################
-	####### Tests for parallel type: SEQUENTIAL #######
-	###################################################
+  ###################################################
+  ####### Tests for parallel type: SEQUENTIAL #######
+  ###################################################
+  
+  #matrix test
+  add_executable(ParMooN_test_matrix matrix_test.c++)
+  target_link_libraries(ParMooN_test_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(matrix ParMooN_test_matrix)
+  list(APPEND parmoon_tests ParMooN_test_matrix)
+  
+  #block matrix test
+  add_executable(ParMooN_test_block_matrix block_matrix_test.c++)
+  target_link_libraries(ParMooN_test_block_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(block_matrix ParMooN_test_block_matrix)
+  list(APPEND parmoon_tests ParMooN_test_block_matrix)
+  
+  #block fe matrix test
+  add_executable(ParMooN_test_block_fe_matrix block_fe_matrix_test.c++)
+  target_link_libraries(ParMooN_test_block_fe_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(block_fe_matrix ParMooN_test_block_fe_matrix)
+  list(APPEND parmoon_tests ParMooN_test_block_fe_matrix)
+ 
+  #cd2d test
+  add_executable(ParMooN_test_cd2d cd2d_test.c++)
+  target_link_libraries(ParMooN_test_cd2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(cd2d ParMooN_test_cd2d)
+  list(APPEND parmoon_tests ParMooN_test_cd2d)
 	
-	#matrix test
-	add_executable(ParMooN_test_matrix matrix_test.c++)
-	target_link_libraries(ParMooN_test_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(matrix ParMooN_test_matrix)
-	list(APPEND parmoon_tests ParMooN_test_matrix)
-
-	#block matrix test
-	add_executable(ParMooN_test_block_matrix block_matrix_test.c++)
-	target_link_libraries(ParMooN_test_block_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(block_matrix ParMooN_test_block_matrix)
-	list(APPEND parmoon_tests ParMooN_test_block_matrix)
-	
-	#block fe matrix test
-	add_executable(ParMooN_test_block_fe_matrix block_fe_matrix_test.c++)
-	target_link_libraries(ParMooN_test_block_fe_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(block_fe_matrix ParMooN_test_block_fe_matrix)
-	list(APPEND parmoon_tests ParMooN_test_block_fe_matrix)
-	
-	#cd2d test
-	add_executable(ParMooN_test_cd2d cd2d_test.c++)
-	target_link_libraries(ParMooN_test_cd2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(cd2d ParMooN_test_cd2d)
-	list(APPEND parmoon_tests ParMooN_test_cd2d)
-	
-    #tcd2d test
-	add_executable(ParMooN_test_tcd2d tcd2d_test.c++)
-	target_link_libraries(ParMooN_test_tcd2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(tcd2d ParMooN_test_tcd2d)
-	list(APPEND parmoon_tests ParMooN_test_tcd2d)
-	
-	#tcd2d with fem fct test
-	add_executable(ParMooN_test_tcd2d_femfct tcd2d_femfct_test.c++)
-	target_link_libraries(ParMooN_test_tcd2d_femfct parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(tcd2d_femfct ParMooN_test_tcd2d_femfct)
-	list(APPEND parmoon_tests ParMooN_test_tcd2d_femfct)
+  #tcd2d test
+  add_executable(ParMooN_test_tcd2d tcd2d_test.c++)
+  target_link_libraries(ParMooN_test_tcd2d parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(tcd2d ParMooN_test_tcd2d)
+  list(APPEND parmoon_tests ParMooN_test_tcd2d)
+  
+  #tcd2d with fem fct test
+  add_executable(ParMooN_test_tcd2d_femfct tcd2d_femfct_test.c++)
+  target_link_libraries(ParMooN_test_tcd2d_femfct parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(tcd2d_femfct ParMooN_test_tcd2d_femfct)
+  list(APPEND parmoon_tests ParMooN_test_tcd2d_femfct)
 	
   #darcy2d test
   add_executable(ParMooN_test_darcy2d darcy2d_test.c++)
@@ -80,37 +80,48 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
   add_test(tnse2d ParMooN_test_tnse2d)
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
 	
-	# test for hdiv elements
+  # test for hdiv elements
   add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
   target_link_libraries(ParMooN_test_hdiv parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
   add_test(hdiv ParMooN_test_hdiv)
   list(APPEND parmoon_tests ParMooN_test_hdiv)
     
-	#cd3d test sequential
-	add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
-	target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
-	add_test(cd3d_seq ParMooN_test_cd3d_seq)
-	list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
+  #cd3d test sequential
+  add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
+  target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(cd3d_seq ParMooN_test_cd3d_seq)
+  list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
-  target_link_libraries(ParMooN_test_direct_solver parmoon_2d_SEQUENTIAL 
-                        ${_EXTERN_LIBRARIES})
+  target_link_libraries(ParMooN_test_direct_solver parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
   add_test(direct_solver ParMooN_test_direct_solver)
   list(APPEND parmoon_tests ParMooN_test_direct_solver)
 	
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
 
-	###################################################
-	####### Tests for parallel type: MPI #######
-	###################################################
-	
-	#cd3d test mpi (run with 4 processes)
-	add_executable(ParMooN_test_cd3d_mpi cd3d_test.c++)
-	target_link_libraries(ParMooN_test_cd3d_mpi parmoon_3d_MPI ${_EXTERN_LIBRARIES})
-	add_test(NAME cd3d_mpi COMMAND mpirun -n 4 ParMooN_test_cd3d_mpi )
-	list(APPEND parmoon_tests ParMooN_test_cd3d_mpi)
-	
+  ###################################################
+  ####### Tests for parallel type: MPI #######
+  ###################################################
+  
+  # cd3d test mpi (run with 4 processes)
+  add_executable(ParMooN_test_cd3d_mpi cd3d_test.c++)
+  target_link_libraries(ParMooN_test_cd3d_mpi parmoon_3d_MPI ${_EXTERN_LIBRARIES})
+  add_test(NAME cd3d_mpi COMMAND mpirun -n 4 ParMooN_test_cd3d_mpi )
+  list(APPEND parmoon_tests ParMooN_test_cd3d_mpi)
+  
+  # 1st mumps solver test mpi (run with 2 processes)
+  add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
+  target_link_libraries(ParMooN_test_mumps_1_mpi ${_EXTERN_LIBRARIES})
+  add_test(NAME mumps_1_mpi COMMAND mpirun -n 2 ParMooN_test_mumps_1_mpi )
+  list(APPEND parmoon_tests ParMooN_test_mumps_1_mpi)
+  
+  # 2nd mumps solver test mpi (run with 4 processes)
+  add_executable(ParMooN_test_mumps_2_mpi mumps_test_2.c++)
+  target_link_libraries(ParMooN_test_mumps_2_mpi ${_EXTERN_LIBRARIES})
+  add_test(NAME mumps_2_mpi COMMAND mpirun -n 4 ParMooN_test_mumps_2_mpi )
+  list(APPEND parmoon_tests ParMooN_test_mumps_2_mpi)
+
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	
 ####################################################
