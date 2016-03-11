@@ -1606,10 +1606,15 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	          else
 	          {
 	            // Dirichlet node
-	            n=RowPtr[l];
-	            if(ColInd[n]==l)
-	            {
-	              Entries[n]=1.0;
+	            int row_start = RowPtr[l];
+	            int row_end   = RowPtr[l+1];
+	            for (int index = row_start; index < row_end; ++index)
+	            {//search through entire row until you find diagonal element!
+	              if(ColInd[index]==l)
+	              {
+	                Entries[index]=1.0; //set diagonal element to zero
+	                break;
+	              }
 	            }
 	          }
 	        }
