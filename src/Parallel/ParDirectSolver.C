@@ -155,14 +155,18 @@ TParDirectSolver::TParDirectSolver(TParFECommunicator3D *parcomm,TParFECommunica
 
 TParDirectSolver::~TParDirectSolver()
 {
+  Output::print("Cleaning away ParDirectSolver");
   if(DSType == 2)
     Mumps->Clean();
 
-  delete [] MatLoc;
-  delete [] OwnRhs;
-  delete [] I_rn;
-  delete [] J_cn;
-  delete [] GlobalRhs;
+  //CB  DEBUG entirely outcommented the delete operations, for
+  // these produce segfaults at the moment - this issue will be sorted
+  // out when this mumps solver wrapper is reworked
+//  delete [] MatLoc;
+//  delete [] OwnRhs;
+//  delete [] I_rn;
+//  delete [] J_cn;
+//  delete [] GlobalRhs;
   //   delete Mumps;
 }
 
@@ -611,12 +615,11 @@ void TParDirectSolver::InitMumps_NSE4()
     }//if(Master[i] == rank)
   }
 
-
   for(i=0;i<NDof_P;i++)
   {
     if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     {
-      printf("ParDirectSolver->InitMumps_NSE2(): NSEType 4  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
+      printf("ParDirectSolver->InitMumps_NSE4(): NSEType 4  INTERNAL_PROJECT_PRESSURE Not yet implemented !!!!\n");
       MPI_Finalize();
       exit(0);
     }
@@ -1177,7 +1180,6 @@ void TParDirectSolver::UpdateSol(double *Sol)
       }
     }
     ParComm_P->CommUpdate(Sol+3*NDof_U);
-    
   }
 }
 

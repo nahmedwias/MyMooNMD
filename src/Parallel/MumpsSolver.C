@@ -93,7 +93,7 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
   //   id.ICNTL(8)=4;
   //   id.ICNTL(10)=5;  // maximum number of allowed iterative refinement steps
   //   id.ICNTL(13)=1;
-  id.ICNTL(14)=200; //the percentage increase in the estimated working space
+  id.ICNTL(14)=400; //the percentage increase in the estimated working space
 
   // 3 - structure and values on slave process
   id.ICNTL(18) = 3;
@@ -115,7 +115,10 @@ TMumpsSolver::TMumpsSolver(int N_Eqns, int M_dist_Nz, int *M_dist_Irn, int *M_di
   id.jcn_loc  = M_dist_Jcn;
 
   if(rank == 0)
+  {
     id.n  = N_Eqns;
+    Output::print("N_Eqns: ", N_Eqns);
+  }
 
   if(N_Rhs>1)
   {
@@ -154,6 +157,14 @@ void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
   // define the local system matrix
   id.a_loc  = Mat_loc;
   
+//  //CB DEBUG - repeat the analysis phase. now there's entries for printing.
+//  // call the MUMPS for analysis
+//  id.job=JOB_ANALYSIS;
+//  char name[256]{"matrix"};
+//  strcpy(id.write_problem, name);
+//  dmumps_c(&id);
+//  //END DEBUG
+
   double t1 = MPI_Wtime();
   if(rank==TDatabase::ParamDB->Par_P0)
     OutPut("MUMPS Factorization : ");

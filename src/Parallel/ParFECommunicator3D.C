@@ -84,6 +84,15 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
     }
   }
 
+//  //CB DEBUG I want to see what gets sent here
+//  int mpi_rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+//  Output::print("Process ", mpi_rank, "\n",
+//                "Send buffer at ", Send_InfoMS, ".\n",
+//                "Sending: ", N_DofSendMS[0], " " ,N_DofSendMS[1] , " elements. ", ".\n",
+//                "Receive buffer at ", Recv_InfoMS, ".\n",
+//                "Receiving: ", N_DofRecvMS[0], " ", N_DofRecvMS[1], " elements.");
+//  //END DEBUG
   MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
   
   for(i=0;i<N_InterfaceS;i++)  
@@ -222,7 +231,7 @@ void TParFECommunicator3D::CommUpdate(double *sol)
 	Send_Info[k]=sol[DofSend[i]+j*N_Dof];
       }
     }
-  
+
     MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
   
     for(i=0;i<N_Slave;i++)  
