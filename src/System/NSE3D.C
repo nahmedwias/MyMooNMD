@@ -18,6 +18,7 @@
 #include <MultiGridIte.h>
 
 #include <DirectSolver.h>
+#include <ParDirectSolver.h>
 #include <Output3D.h>
 
 NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
@@ -81,16 +82,17 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
   // This includes copy assignment - all because there is no good
   // way to communicate Maximum number of subdomains per dof to FESpace...
   parMapperVelocity_ = TParFEMapper3D(3, &velocitySpace_, //magic number
-                                      matrix_.block(0,0)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.block(0,0)->GetKCol());  // pointer from the A matrices
-  parMapperVelocity_ = TParFEMapper3D(1, &pressureSpace_,
-                                      matrix_.block(0,3)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.block(0,3)->GetKCol());  // pointer from the BTransposed matrices - I don't know why exactly!
+                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(0)->GetRowPtr(), // The parMapper for velocity expects row and column
+                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(0)->GetKCol());  // non-const pointer from the A matrices
+  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_,
+                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(3)->GetRowPtr(), // The parMapper for velocity expects row and column
+                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(3)->GetKCol());  // non-const pointer from the B-Transposed matrices - I don't know why exactly!
   // TODO The upper thing will lead to extreme trouble if there are no real BT blocks,
   // i.e. NSTYPE 1 or 3. Catch that case in an input-check method AND in the constructor.
 
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
+
 #endif
 }
 
@@ -212,7 +214,7 @@ void NSE3D::check_parameters()
 {
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
   // copied from CD3D, it should actually be unified
-  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5
+  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
                         && TDatabase::ParamDB->SOLVER_TYPE == 1;
   if (!usingMultigrid)
   { //case of direct solve or non-multigrid iterative solve
@@ -226,7 +228,7 @@ void NSE3D::check_parameters()
         "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
         TDatabase::ParamDB->UNIFORM_STEPS, ".");
   }
-  else if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+  else
   {  // iterative solve with multigrid prec
     if (TDatabase::ParamDB->LEVELS < 2)
     {
@@ -311,26 +313,30 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
 void NSE3D::assemble_linear_terms()
 {
   size_t nFESpace = 2; // spaces used for assembling matrices
-  size_t nSqMatrices=10; // no of square matrices Maximum 10
+  size_t nSqMatrices=10; // maximum no of square matrices (type 14)
   std::vector<TSquareMatrix3D*> sqMatrices(nSqMatrices);
-  size_t nReMatrices = 6; //no of rectangular matrices
+  size_t nReMatrices = 6; // maximum no of rectangular matrices (e.g. type 14)
   std::vector<TMatrix3D*> reMatrices(nReMatrices);
-  size_t nRhs=3; // number of right hand sides 
+  size_t nRhs=4; // maximum number of right hand sides (e.g. type 4)
   std::vector<double*> rhsArray(nRhs); // right hand side 
   // finite element function used for nonlinear term
-  std::vector<TFEFunction3D*> feFunction(3); 
+  std::vector<TFEFunction3D*> feFunction(4, nullptr);
   
   for(auto &s : this->systems_)
   {
+
+    const TFESpace3D * v_space = &s.velocitySpace_;
+    const TFESpace3D * p_space = &s.pressureSpace_;
+
     // spaces for matrices
-    const TFESpace3D* spaces[2] = {&s.velocitySpace_, &s.pressureSpace_};
-    const TFESpace3D* rhsSpaces[4] = {&s.velocitySpace_, &s.velocitySpace_,
-                                      &s.velocitySpace_, &s.pressureSpace_};
+    const TFESpace3D* spaces[2] = {v_space, p_space};
+    const TFESpace3D* rhsSpaces[4] = {v_space, v_space, v_space, p_space};
     // spaces for right hand side    
     s.rhs_.reset();
     rhsArray[0]=s.rhs_.block(0);
     rhsArray[1]=s.rhs_.block(1);
     rhsArray[2]=s.rhs_.block(2);
+    rhsArray[3]=nullptr; //will be reset for type 4 and 14
     
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
     
@@ -344,6 +350,8 @@ void NSE3D::assemble_linear_terms()
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+
+        nRhs = 3;
         break;
       case 2:
         nSqMatrices = 1;
@@ -356,6 +364,8 @@ void NSE3D::assemble_linear_terms()
         reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[1].get());
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[2].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+
+        nRhs = 3;
         break;
       case 3:
         nSqMatrices = 9;
@@ -369,12 +379,14 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         
-        
         nReMatrices = 3;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+
+        nRhs = 3;
         break;
+
       case 4:
         nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
@@ -387,14 +399,17 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         
-        
         nReMatrices = 6;
-        reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get());
+        reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get()); //first the lying B blocks
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
         reMatrices[2]=reinterpret_cast<TMatrix3D*>(blocks[14].get());
-        reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get());
+        reMatrices[3]=reinterpret_cast<TMatrix3D*>(blocks[3].get()); //than the standing B blocks
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
+
+        //right hand side must be adapted
+        nRhs = 4;
+        rhsArray[3]=s.rhs_.block(3);
         break;
       case 14:        
         nSqMatrices = 10;
@@ -408,8 +423,7 @@ void NSE3D::assemble_linear_terms()
         sqMatrices[7]=reinterpret_cast<TSquareMatrix3D*>(blocks[9].get());
         sqMatrices[8]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());
         sqMatrices[9]=reinterpret_cast<TSquareMatrix3D*>(blocks[15].get());
-        
-        
+
         nReMatrices = 6;
         reMatrices[0]=reinterpret_cast<TMatrix3D*>(blocks[12].get());
         reMatrices[1]=reinterpret_cast<TMatrix3D*>(blocks[13].get());
@@ -418,14 +432,13 @@ void NSE3D::assemble_linear_terms()
         reMatrices[4]=reinterpret_cast<TMatrix3D*>(blocks[7].get());
         reMatrices[5]=reinterpret_cast<TMatrix3D*>(blocks[11].get());
         
-        nRhs +=1;
-        rhsArray.resize(4);
-        rhsArray[0]=s.rhs_.block(0);
-        rhsArray[1]=s.rhs_.block(1);
-        rhsArray[2]=s.rhs_.block(2);
+        //right hand side must be adapted
+        nRhs = 4;
         rhsArray[3]=s.rhs_.block(3);
+
         break;
     }// endswitch nstype
+
     for(unsigned int i=0; i<nSqMatrices; i++)
       sqMatrices[i]->reset();
     for(unsigned int i=0; i<nReMatrices;i++)
@@ -443,7 +456,8 @@ void NSE3D::assemble_linear_terms()
     // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);    
+    feFunction[2]=s.u_.GetComponent(2);
+    feFunction[3]=&s.p_;
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
@@ -576,24 +590,79 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
 
 void NSE3D::solve()
 {
+
   SystemPerGrid& s = this->systems_.front();
-  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
-  {
-    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-      ErrThrow("only the direct solver is supported currently");
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix_, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs_, s.solution_);
+
+  bool using_multigrid = //determine whether we make use of multigrid
+      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
+      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+
+  if(!using_multigrid)
+  {//no multigrid
+    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
+    {
+      ErrThrow("You chose a non-multigrid iterative solver. This not available for NSE3D so far.");
+    }
+    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    {
+#ifdef _SEQ // So far only UMFPACK is available as direct solver in sequential case.
+            // Actuate it via DirectSolver class.
+      /// @todo consider storing an object of DirectSolver in this class
+      DirectSolver direct_solver(s.matrix_,
+                                 DirectSolver::DirectSolverTypes::umfpack);
+      direct_solver.solve(s.rhs_, s.solution_);
+#elif _MPI//try out the Mumps interface in MPI case
+
+      // assume NSE Type 4
+      if (TDatabase::ParamDB->NSTYPE != 4)
+      {
+        ErrThrow("The old mumps interface, which is used here expects nse type 4 (or 2).")
+      }
+      // scramble together the matrices (NS_TYPE 4 assumed)
+      std::vector<std::shared_ptr<FEMatrix>> matrices = s.matrix_.get_blocks_TERRIBLY_UNSAFE();
+      TSquareMatrix3D* SQMATRICES[9];
+      TMatrix3D* MATRICES[6];
+
+      SQMATRICES[0] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(0).get());
+      SQMATRICES[1] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(1).get());
+      SQMATRICES[2] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(2).get());
+      SQMATRICES[3] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(4).get());
+      SQMATRICES[4] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(5).get());
+      SQMATRICES[5] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(6).get());
+      SQMATRICES[6] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(8).get());
+      SQMATRICES[7] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(9).get());
+      SQMATRICES[8] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(10).get());
+
+      MATRICES[0] = reinterpret_cast<TMatrix3D*>(matrices.at(12).get());
+      MATRICES[1] = reinterpret_cast<TMatrix3D*>(matrices.at(13).get());
+      MATRICES[2] = reinterpret_cast<TMatrix3D*>(matrices.at(14).get());
+      MATRICES[3] = reinterpret_cast<TMatrix3D*>(matrices.at(3).get());
+      MATRICES[4] = reinterpret_cast<TMatrix3D*>(matrices.at(7).get());
+      MATRICES[5] = reinterpret_cast<TMatrix3D*>(matrices.at(11).get());
+
+      TDatabase::ParamDB->DSType = 2;
+
+      //construct a "ParDirectSolver"
+      TParDirectSolver mumps_wrapper(&s.parCommVelocity_,&s.parCommPressure_,SQMATRICES,MATRICES);
+
+      Output::print<>("I put up the solver.");
+
+      //do the solve with it
+      mumps_wrapper.Solve(s.solution_.get_entries(), s.rhs_.get_entries(), true);
+
+      Output::print<>("Yes I solved.");
+#endif
+    }
   }
   else
-  { // multigrid preconditioned iterative solver
+  {//multigrid preconditioned iterative solver is used
     mg_solver();
   }
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
    s.p_.project_into_L20();
+  }
 }
 
 void NSE3D::output(int i)
@@ -618,12 +687,17 @@ void NSE3D::output(int i)
     TOutput3D Output(5, 5, 2, 1, NULL);
     Output.AddFEFunction(&s.p_);
     Output.AddFEVectFunct(&s.u_);
+#ifdef _MPI
+    char SubID[] = "";
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+#else
     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
     filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
+#endif
   }
   
   // measure errors to known solution

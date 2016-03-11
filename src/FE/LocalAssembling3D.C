@@ -19,6 +19,18 @@
 
 #include <DiscreteForm3D.h>
 
+/**
+ * TODO There is still a lot of cases where the array "Needs2ndDerivatives" is
+ * constructed with length 1 only although there are two spaces available
+ * (Navier--Stokes, velo and pressure).
+ * This will produce valgrind errors and might lead to even worse things.
+ * Be prepared! And fix it eventually:
+ *
+ *            this->Needs2ndDerivatives = new bool[2];
+ *            this->Needs2ndDerivatives[0] = false;
+ *            this->Needs2ndDerivatives[1] = false;
+ */
+
 /** @brief a helper function returning a string with for the name of the 
  *         LocalAssembling3D_type. This returns an empty string in case the type
  *         is not known. */
@@ -349,8 +361,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 4;
                   this->RowSpace = { 0, 1, 1, 1 };
@@ -378,8 +391,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                   }
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 7;
                   this->RowSpace    = { 0, 1, 1, 1, 0, 0, 0 };
@@ -403,8 +417,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 12;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
@@ -438,14 +453,18 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 15;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
+                  //this->N_Rhs = 3;
+                  //CB DEBUG
+                  this->N_Rhs = 4;
+                  //END DEBUG
+                  this->RhsSpace = { 0, 0, 0, 1 };
                   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
                   {
                     if(TDatabase::ParamDB->LAPLACETYPE == 0)
@@ -483,8 +502,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 12;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
@@ -518,14 +538,18 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 15;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
                   this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                  this->N_Rhs = 3;
-                  this->RhsSpace = { 0, 0, 0 };
+                  //this->N_Rhs = 3;
+                  //CB DEBUG
+                  this->N_Rhs = 4;
+                  //END DEBUG
+                  this->RhsSpace = { 0, 0, 0, 1 };
                   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM ==0)
                   {
                     // if(TDatabase::ParamDB->LAPLACETYPE == 0)
@@ -575,8 +599,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                   }
                   this->N_Terms = 4;
                   this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 1;
                   this->RowSpace = { 0 };
@@ -604,8 +629,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                   }
                   this->N_Terms = 4;
                   this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 1;
                   this->RowSpace = { 0 };
@@ -629,8 +655,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 3
                   this->N_Terms = 4;
                   this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0}; // 0: velocity, 1: pressure
                   this->N_Matrices = 3;
                   this->RowSpace    = { 0, 0, 0 };
@@ -664,8 +691,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=0, NSTYPE 4
                   this->N_Terms = 4;
                   this->Derivatives = {D100, D010, D001, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 3;
                   this->RowSpace    = { 0, 0, 0};
@@ -708,8 +736,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 3: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=3
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 9;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -743,8 +772,9 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                 case 4: // GALERKIN , SC_NONLIN_ITE_TYPE_SADDLE=3, NSTYPE=4
                   this->N_Terms = 5;
                   this->Derivatives = {D100, D010, D001, D000, D000};
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 9;
                   this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
