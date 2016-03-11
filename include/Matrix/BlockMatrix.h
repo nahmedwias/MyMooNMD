@@ -97,6 +97,24 @@ class BlockMatrix
      */
     BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
+    
+    /**
+     * @brief Creates a nRows times nCols BlockMatrix filled with blocks
+     * 
+     * The blocks are given row wise. That means block (i,j) in the resulting 
+     * BlockMatrix will be the (i*nCols+j)-th block in \c blocks. In other 
+     * words this creates a BlockMatrix where each block has its own color and 
+     * is not stored as transposed.
+     * 
+     * The caller has to make sure all blocks are appropriate, otherwise this 
+     * constructor will throw an exception.
+     *
+     * @param nRows - number of blocks per column
+     * @param nCols - number of blocks per row
+     * @param blocks - the given blocks, must be of length nRows*nCols
+     */
+    BlockMatrix(int nRows, int nCols, 
+                std::vector<std::shared_ptr<TMatrix>> blocks);
 
     /**
      * Add a given TMatrix to the blocks in a bunch of given cells at once.

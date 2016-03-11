@@ -75,6 +75,71 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
       }
     }
 
+/* ************************************************************************* */
+BlockMatrix::BlockMatrix(int nRows, int nCols, 
+                         std::vector<std::shared_ptr<TMatrix>> blocks)
+ : n_cell_rows_(nRows), n_cell_columns_(nCols),
+   cell_grid_(nRows, std::vector<CellInfo>(nCols)), color_count_(nRows*nCols, 1)
+{
+  // make sure enough blocks are provided
+  if(blocks.size() < n_cell_rows_ * n_cell_columns_)
+  {
+    ErrThrow("unable to create a ", n_cell_rows_, "x", n_cell_columns_, 
+             " BlockMatrix out of only ", blocks.size(), " blocks");
+  }
+  // check if all given blocks exist (none of the pointers are to nullptr)
+  for(auto& m : blocks)
+  {
+    if(!m)
+    {
+      // we might be able to create a zero matrix of the right size, but most 
+      // likely this is an error
+      ErrThrow("unable to create BlockMatrix with one block given as nullptr");
+    }
+  }
+  
+  for(size_t i = 0; i < n_cell_rows_ ; ++i )
+  {
+    //hold the number of rows each cell in this row will have
+    size_t nRowsOfCell = blocks.at(i * this->n_cell_columns_)->GetN_Rows();
+    for(size_t j = 0; j < n_cell_columns_ ; ++j )
+    {
+      //hold the number of columns each cell in this column will have
+      size_t nColumnsOfCell = blocks.at(j)->GetN_Columns();
+      
+      // construct the new cell info
+      CellInfo newInfo(nRowsOfCell, nColumnsOfCell);
+      
+      // add the matrix
+      newInfo.block_ = blocks.at(i * this->n_cell_columns_ + j);
+      
+      // check if the block has the correct dimensions, basically this checks if
+      // all blocks in one row/column have the same number of rows/columns.
+      if(  newInfo.block_->GetN_Rows() != nRowsOfCell
+        || newInfo.block_->GetN_Columns() != nColumnsOfCell)
+      {
+        ErrThrow("unable to create a block matrix at entry ", i, " ", j,
+                 ". The matrix block should have dimensions ", nRowsOfCell, 
+                 "x", nColumnsOfCell, ", but has ", newInfo.block_->GetN_Rows(),
+                 "x", newInfo.block_->GetN_Columns());
+      }
+      
+      // each block has its own color, ordered row wise
+      newInfo.color_ = i*n_cell_columns_ + j;
+      
+      //start as non-transposed
+      newInfo.is_transposed_ = false;
+      
+      // put the new cell info to the correct place by copy assignment
+      cell_grid_[i][j] = newInfo;
+    }
+  }
+  
+  // perform a few checks to make sure this matrix is properly defined
+  this->check_coloring();
+}
+
+
     /* ************************************************************************* */
     void BlockMatrix::add_matrix_to_blocks(const TMatrix& summand,
                                                   std::vector<grid_place_and_mode> row_column_transpose_tuples)
