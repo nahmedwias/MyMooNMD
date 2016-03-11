@@ -46,6 +46,9 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1]);
 
+  //open OUTFILE, this is where all output is written to (addionally to console)
+  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+
 #ifdef _MPI
   if(iAmOutRank) //Only one process should do that.
 #endif
@@ -156,7 +159,6 @@ int main(int argc, char* argv[])
   Example_NSE3D example;
 
   // Construct an object of the NSE3D-problem type.
-  // Construct the cd3d problem object.
 #ifdef _MPI
   NSE3D nse3d(gridCollections, example, maxSubDomainPerDof);
 #else
@@ -167,17 +169,28 @@ int main(int argc, char* argv[])
   nse3d.stop_it(0);
   // check initial residuals
   //======================================================================
+//  //CB DEBUG - fixed number of iterations to avoid stop_it for the moment
+//  for(unsigned int k=1; k < 4; k++)
+//  //END DEBUG
   for(unsigned int k=1;; k++)
   {
     // solve the system
     nse3d.solve();
+
+    nse3d.assemble_non_linear_term();
+
     // checking residuals
     if(nse3d.stop_it(k))
-      break;    
-    nse3d.assemble_non_linear_term();
+      break;
+
   }
   nse3d.output();
   
   Output::close_file();
+
+#ifdef _MPI
+  MPI_Finalize();
+#endif
+
   return 0;
 }
