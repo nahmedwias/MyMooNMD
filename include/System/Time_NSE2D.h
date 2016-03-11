@@ -33,7 +33,7 @@
 #include <vector>
 #include <deque>
 #include <utility>
-
+#include <array>
 
 class Time_NSE2D
 {

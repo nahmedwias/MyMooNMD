@@ -31,6 +31,7 @@
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
 #include <utility>
+#include <array>
 
 class NSE2D
 {

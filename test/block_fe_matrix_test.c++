@@ -182,7 +182,8 @@ int main(int argc, char* argv[])
 
 
    //check scaling of entries
-   myMatrix.scale_blocks(0.5, {{0,0},{1,1}});
+   const std::vector<std::vector<size_t>>& cell_positions = {{0,0},{1,1}};
+     myMatrix.scale_blocks(0.5, cell_positions);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 
@@ -197,7 +198,8 @@ int main(int argc, char* argv[])
 
    //check scaling of active entries
    myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false });//give us a new block in {0,0}
-   myMatrix.scale_blocks_actives(-2, {{0,0}});
+   const std::vector<std::vector<size_t>>& cell_positions_2 = {{0,0}};
+   myMatrix.scale_blocks_actives(-2, cell_positions_2);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 

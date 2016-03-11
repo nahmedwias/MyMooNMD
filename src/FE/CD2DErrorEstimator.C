@@ -18,6 +18,7 @@
 #include <BoundEdge.h>
 #include <Database.h>
 #include <ConvDiff.h>
+#include <AuxParam2D.h>
 
 #include <cmath>
 #include <string.h>
