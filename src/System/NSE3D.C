@@ -193,7 +193,28 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
                               type);
       #endif
     }
-    
+    //CLEMENS: this is just for me to be sure about some information
+    //You can delete it or modify somehow: b/c the same lines of code 
+    // is used above in the case where multigrid is not used 
+    {
+      TCollection& cellCollection = *collections.front();
+      Output::print<1>("N_Cells      :  ", setw(10), cellCollection.GetN_Cells());
+      const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
+      const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
+      
+      size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
+      size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
+      size_t nTotal = 3*nDofu + nDofp;
+      size_t nActive= 3*velocity_space.GetActiveBound();
+      
+      Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
+      Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
+      Output::print<1>("ndof Total   :  ", setw(10), nTotal );
+      Output::print<1>("nActive      :  ", setw(10), nActive);
+      double hmin, hmax;
+      cellCollection.GetHminHmax(&hmin, &hmax);
+      Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
+    }
     size_t level = 0;
     //Create multigrid-level-objects and add them to the multgrid object.
     // Must be coarsest level first, therefore reverse order iteration.
@@ -510,6 +531,8 @@ void NSE3D::assemble_non_linear_term()
         sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());        
         break;
     }// endswitch nstype
+    for(int i=0; i<nSqMatrices; i++)
+      sqMatrices[i]->reset();
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
       spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
@@ -557,10 +580,9 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   impulseResidual = Ddot(3*nDofU, &this->defect[0], &this->defect[0]);
   massResidual = Ddot(nDofP,&this->defect[3*nDofU],&this->defect[3*nDofU]);
   
-  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-  Output::print("impulse_residual:  " , setw(3), impulseResidual);
-  Output::print("mass_residual   :  " , setw(3), massResidual);
-  Output::print("residual        :  " , setw(3), sqrt(residual));
+  OutPut("nonlinear iteration step " << setw(3) << impulseResidual << " "
+         << setw(14) << residual-impulseResidual << " " << setw(14)
+         << sqrt(residual));
   
   if (iteration_counter>0)
   {
@@ -569,7 +591,7 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   oldResidual=sqrt(residual);
   int maxIte = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
   double limit=TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if(TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE)
+  if(TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
   {
     limit *=sqrt(this->get_size());
     Output::print("stopping tolerance for nonlinear iteration ", limit);
@@ -684,18 +706,18 @@ void NSE3D::output(int i)
     s.u_.GetComponent(2)->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2, 
                             L2H1Errors, nullptr, &aux, 1, &velocity_space, err + 4);
     
-    errors[0] = sqrt(err[0]*err[0] + err[2]*err[2] + err[3]*err[3]);
-    errors[1] = sqrt(err[4]*err[4] + err[5]*err[5] + err[6]*err[6]);    
-    Output::print<1>("L2(u)     : ", errors[0]);
-    Output::print<1>("H1-semi(u): ", errors[1]);
+    errors[0] = sqrt(err[0]*err[0] + err[2]*err[2] + err[4]*err[4]);
+    errors[1] = sqrt(err[1]*err[1] + err[3]*err[3] + err[5]*err[5]);    
+    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
+    Output::print<1>("H1-semi(u): ", setprecision(10), errors[1]);
     // errors in pressure
     s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors, 
                   nullptr, &aux, 1, &pressure_space, err);
     
     errors[2] = err[0];
     errors[3] = err[1];    
-    Output::print<1>("L2(p)     : ", errors[2]);
-    Output::print<1>("H1-semi(p): ", errors[3]);    
+    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
+    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
     
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
@@ -945,15 +967,18 @@ void NSE3D::mg_solver()
     
     if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
     {
-        itMethodSol.resize(nDof);
-        itMethodRhs.resize(nDof);      
+      itMethodSol.resize(nDof);
+      itMethodRhs.resize(nDof);
+      //FIXME find some other way than memcpy???
+      memcpy(itMethodSol.data(), s.solution_.get_entries(), nDof*sizeof(double));
+      memcpy(itMethodRhs.data(), s.rhs_.get_entries(), nDof*sizeof(double));
     }
     else
     {
-        itMethodSol=s.solution_.get_entries_vector();
-        itMethodRhs=s.rhs_.get_entries_vector();
+      itMethodSol=s.solution_.get_entries_vector();
+      itMethodRhs=s.rhs_.get_entries_vector();
     }
-
+    
     switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
     {
       case 11:
@@ -970,8 +995,8 @@ void NSE3D::mg_solver()
     
     if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE==5)
     {
-      s.solution_.get_entries_vector() = itMethodSol;
-      s.rhs_.get_entries_vector() = itMethodRhs;
+      s.rhs_ = itMethodRhs.data();
+      s.solution_ = itMethodSol.data();
     }
 }
 
