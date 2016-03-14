@@ -164,7 +164,7 @@ class TStructure
      * @brief generate a structure, all arrays are already defined
      * 
      * Note that a deep copy of the arrays is performed, TStructure will not
-     * take ownership of the ipnut arrays.
+     * take ownership of the ipnut arrays. All rows are considered active.
      * 
      * @param nRows number of rows
      * @param nCols number of columns
@@ -174,6 +174,22 @@ class TStructure
      */
     TStructure(int nRows, int nCols, int N_entries, int *col_ptr, int *row_ptr);
 
+    /**
+     * @brief generate a structure, all arrays are already defined
+     * 
+     * Note that a deep copy of the arrays is performed, TStructure will not
+     * take ownership of the ipnut arrays.
+     * 
+     * @param nRows number of rows
+     * @param nCols number of columns
+     * @param nActive number of active rows
+     * @param N_entries number of entries in this structure
+     * @param col_ptr the new TStructure::columns vector
+     * @param row_ptr the new TStructure::rows vector
+     */
+    TStructure(int nRows, int nCols, int nActive, int N_entries, int *col_ptr,
+               int *row_ptr);
+    
     /** @brief Generates an empty `n`*`n` Structure with no entries */
     explicit TStructure(int n);
     

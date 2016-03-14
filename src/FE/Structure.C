@@ -3519,8 +3519,15 @@ TStructure::TStructure(int n, int nEntries, int *col_ptr, int *row_ptr)
 /* generate the matrix structure, all arrays are already defined */
 TStructure::TStructure(int nRows, int nCols, int nEntries, int *col_ptr, 
                        int *row_ptr)
+ : TStructure(nRows, nCols, nRows, nEntries, col_ptr, row_ptr)
+{
+  
+}
+
+TStructure::TStructure(int nRows, int nCols, int nActive, int nEntries,
+                       int *col_ptr, int *row_ptr)
  : nRows(nRows), nColumns(nCols), nEntries(nEntries), columns(nEntries, 0), 
-   rows(nRows+1), ActiveBound(0), ColOrder(0), nHangingEntries(0),
+   rows(nRows+1), ActiveBound(nActive), ColOrder(0), nHangingEntries(0),
    hangingColums(), HangingRows()
 {
   std::copy(col_ptr, col_ptr + this->GetN_Entries(), this->columns.begin());

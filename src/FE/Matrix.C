@@ -677,12 +677,12 @@ void TMatrix::remove_zeros(double tol)
   }
   if(n_removed != 0)
   {
-    OutPut("TMatrix::remove_zeros: tol " << tol << "\tn_removed " << n_removed
-            << "\tratio " << (double)n_removed/(rows[n_rows]) << endl);
+    Output::print<2>("TMatrix::remove_zeros: tol ", tol, "\tn_removed ",
+                     n_removed, "\tratio ", (double)n_removed/(rows[n_rows]));
     this->changeRows(new_entries);
   }
   else
-    OutPut("TMatrix::remove_zeros: no removable entries\n");
+    Output::print<2>("TMatrix::remove_zeros: no removable entries");
 }
 
 
@@ -793,6 +793,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   // new number of columns = old number of columns
   int n_cols = structure->GetN_Columns(); 
   int n_entries = structure->GetN_Entries() + offset; // new number of entries
+  int n_active = structure->GetActiveBound();
   int *columns = new int[n_entries];  // new pointer to columns
   int *rows = new int[n_rows+1];      // new row pointer
   rows[0] = 0;
@@ -840,9 +841,10 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
   }
   
   // change Structure of this matrix
-  this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_entries, 
-                                                 columns, rows);
-  
+  this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_active,
+                                                 n_entries, columns, rows);
+  delete [] columns;
+  delete [] rows;
   this->entries = new_entries;
 }
 
