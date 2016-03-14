@@ -10,8 +10,12 @@
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
 
+#include <Brinkman2D_Mixed.h>// local assembling routines for 2D Navier-Stokes
+
+
 #include <NSE2D_EquOrd_FixPo.h> // local assembling routines for equal order elements
 #include <NSE2D_Newton.h>
+
 
 #include <TNSE2D_FixPo.h> // local assembling routines for 2D Time dependent Navier-Stokes
 #include <TNSE2D_FixPoRot.h>
@@ -83,7 +87,11 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     ///////////////////////////////////////////////////////////////////////////
     // Darcy2D: stationary Darcy problems
     case Darcy2D_Galerkin:
-      return std::string("Darcy2D_Galerkin");    
+      return std::string("Darcy2D_Galerkin");
+    ///////////////////////////////////////////////////////////////////////////
+    // Darcy2D: stationary Darcy problems
+    case Brinkman2D_Galerkin:
+    return std::string("Brinkman2D_Galerkin");
     ///////////////////////////////////////////////////////////////////////////
     // TNSE2D: nonstationary Navier-Stokes
     case LocalAssembling2D_type::TNSE2D:
@@ -256,9 +264,10 @@ switch(type)
     }    
   break;  //LocalAssembling2D_type::TCD2D_Mass
   ///////////////////////////////////////////////////////////////////////////
-  // NSE2D: stationary Navier-Stokes problems
+  // NSE2D: stationary Navier-Stokes problems and Brinkman problem
   case NSE2D_Galerkin:
   case NSE2D_Galerkin_Nonlinear:
+    case Brinkman2D_Galerkin:
     this->set_parameters_for_nseGalerkin(type);
     break;
   ///////////////////////////////////////////////////////////////////////////

@@ -48,6 +48,7 @@ enum LocalAssembling2D_type { ConvDiff,
                               TNSE2D_NL,
                               TNSE2D_Rhs,
                               Darcy2D_Galerkin,
+                              Brinkman2D_Galerkin,
                               Custom /// Customized local assembling object. To be used with non-standard problems.
 };
 
