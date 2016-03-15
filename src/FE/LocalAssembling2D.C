@@ -89,7 +89,7 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case Darcy2D_Galerkin:
       return std::string("Darcy2D_Galerkin");
     ///////////////////////////////////////////////////////////////////////////
-    // Darcy2D: stationary Darcy problems
+    // Brinkman2D: Brinkman problems
     case Brinkman2D_Galerkin:
     return std::string("Brinkman2D_Galerkin");
     ///////////////////////////////////////////////////////////////////////////
@@ -263,11 +263,36 @@ switch(type)
        break;
     }    
   break;  //LocalAssembling2D_type::TCD2D_Mass
+        ///////////////////////////////////////////////////////////////////////////
+        // Brinkman2D: problems and Brinkman problem
+   
+    case Brinkman2D_Galerkin:
+        //NSType4
+        this->N_Terms = 4;
+        this->Derivatives = { D10, D01, D00, D00 };
+        this->Needs2ndDerivatives = new bool[2];
+        this->Needs2ndDerivatives[0] = false;
+        this->Needs2ndDerivatives[1] = false;
+        this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+        this->N_Matrices = 8;
+        this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
+        this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+        if(TDatabase::ParamDB->NSTYPE == 14)
+        {
+            this->N_Matrices = 9;
+            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+        }
+        this->N_Rhs = 3;
+        this->RhsSpace = { 0, 0, 1 };
+        this->AssembleParam = BrinkmanType4Galerkin;
+        this->Manipulate = NULL;
+        break;
+
   ///////////////////////////////////////////////////////////////////////////
   // NSE2D: stationary Navier-Stokes problems and Brinkman problem
   case NSE2D_Galerkin:
   case NSE2D_Galerkin_Nonlinear:
-    case Brinkman2D_Galerkin:
     this->set_parameters_for_nseGalerkin(type);
     break;
   ///////////////////////////////////////////////////////////////////////////

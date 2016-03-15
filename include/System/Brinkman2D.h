@@ -16,7 +16,7 @@
 #define Brinkman2D_H_
 
 #include <FEVectFunct2D.h>
-#include <Example_NSE2D.h>
+#include <Example_Brinkman2D.h>
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
 
@@ -64,7 +64,7 @@ class Brinkman2D
       TFEFunction2D p;
       
       /** @brief constructor */
-      System_per_grid(const Example_NSE2D& example, TCollection& coll, 
+      System_per_grid(const Example_Brinkman2D& example, TCollection& coll,
                       std:: pair <int,int> velocity_pressure_orders,
                       Brinkman2D::Matrix type);
 
@@ -97,7 +97,7 @@ class Brinkman2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D & example;
+    const Example_Brinkman2D & example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -200,7 +200,7 @@ class Brinkman2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Brinkman2D(const TDomain & domain, const Example_NSE2D & _example,
+    Brinkman2D(const TDomain & domain, const Example_Brinkman2D & _example,
           unsigned int reference_id = -4711);
     
     /** @brief standard destructor */
@@ -212,15 +212,7 @@ class Brinkman2D
      * I.e. it assembles a Stokes matrix.
      */
     void assemble();
-    
-    /** @brief assemble nonlinear term
-     * 
-     * The matrix blocks to which the nonlinear term contributes are reset to 
-     * zero and then completely reassembled, including the linear and nonlinear
-     * terms. If this->assemble() has been called before, the matrix is now set
-     * up correctly. 
-     */
-    void assemble_nonlinear_term();
+
     
     /** @brief solve the system */
     void solve();
@@ -297,7 +289,7 @@ class Brinkman2D
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_NSE2D & get_example() const
+    const Example_Brinkman2D & get_example() const
     { return example; }
     /// @brief get the current residuals  (updated in NSE2D::normOfResidual)
     const Residuals& getResiduals() const;

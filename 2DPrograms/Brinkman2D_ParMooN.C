@@ -1,10 +1,10 @@
 // =======================================================================
 //
-// Purpose:     main program for solving a stationary NSE equation in ParMooN
+// Purpose:     main program for solving a stationary Brinkman equation in ParMooN
 //
-// Author:      Sashikumaar Ganesan
+// Author:      Laura Blank
 //
-// History:     Implementation started on 23.08.2014
+// History:     Implementation started on  14.03.2016
 
 // =======================================================================
 #include <Domain.h>
@@ -15,7 +15,7 @@
 #include <Output2D.h>
 #include <MainUtilities.h>
 #include <LocalAssembling2D.h>
-#include <Example_NSE2D.h>
+#include <Example_Brinkman2D.h>
 
 #include <MooNMD_Io.h>
 #include <sys/stat.h>
@@ -26,6 +26,7 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
@@ -60,37 +61,16 @@ int main(int argc, char* argv[])
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   
-  Example_NSE2D example;
+  Example_Brinkman2D example;
   
-  // create an object of the Naviert-Stokes class
-  Brinkman2D ns(Domain, example);
-  ns.assemble();
-  // if solution was not zero up to here, you should call 
-  //ns.assemble_nonlinear_term();
-  
-  ns.stopIt(0);
-  
-  //======================================================================
-  // nonlinear loop
-  // in function 'stopIt' termination condition is checked
-  for(unsigned int k = 1;; k++)
-  {
-    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t", 
-                     ns.getResiduals());
-    ns.solve();
-    
-    //no nonlinear iteration for Stokes problem
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
-      break;
-    
-    ns.assemble_nonlinear_term();
-    
-    if(ns.stopIt(k))
-      break;
-  } // end for k
-  
-  ns.output();
-  
+  //=========================================================================
+  // create an object of the Brinkman class
+  Brinkman2D brinkman2d(Domain, example);
+  brinkman2d.assemble();
+  brinkman2d.solve();
+  brinkman2d.output();
+  //=========================================================================
+
   Output::close_file();
   return 0;
 } // end main

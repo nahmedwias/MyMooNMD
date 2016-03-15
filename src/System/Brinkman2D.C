@@ -13,7 +13,7 @@
 
 
 /** ************************************************************************ */
-Brinkman2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
+Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                Brinkman2D::Matrix type)
  : velocity_space(&coll, (char*)"u", (char*)"Brinkman velocity", example.get_bc(0),
@@ -58,7 +58,7 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 
 /** ************************************************************************ */
 Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
- : Brinkman2D(domain, *(new Example_NSE2D()), reference_id)
+ : Brinkman2D(domain, *(new Example_Brinkman2D()), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -67,7 +67,7 @@ Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
-Brinkman2D::Brinkman2D(const TDomain & domain, const Example_NSE2D & e,
+Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
              unsigned int reference_id)
     : systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10), errors()
@@ -439,133 +439,7 @@ void Brinkman2D::assemble()
   }
 }
 
-/** ************************************************************************ */
-void Brinkman2D::assemble_nonlinear_term()
-{
-  // the class LocalAssembling2D which we will need next, requires an array of
-  // pointers to finite element functions, i.e. TFEFunction2D **.
-  for(System_per_grid& s : this->systems)
-  {
-    //hold the velocity space, we'll need it...
-    const TFESpace2D * v_space = &s.velocity_space;
 
-    //the variables we will have to fill for the call to Assemble2D
-
-    size_t n_fe_spaces = 1;
-    const TFESpace2D* fe_spaces[1]{v_space};
-
-    size_t n_sq_mat;
-    TSquareMatrix2D* sq_mat[2]{nullptr};//two pointers maximum
-
-    size_t n_rect_mat = 0;
-    TMatrix2D** rect_mat = nullptr;
-
-    size_t n_rhs = 0;
-    double** rhs = nullptr;
-    const TFESpace2D** fe_rhs = nullptr;
-
-    BoundCondFunct2D * boundary_conditions[1] = { v_space->GetBoundCondition() };
-    std::array<BoundValueFunct2D*, 3> non_const_bound_values;
-    non_const_bound_values[0] = example.get_bd()[0];
-    non_const_bound_values[1] = example.get_bd()[1];
-    non_const_bound_values[2] = example.get_bd()[2];
-
-    TFEFunction2D *fe_functions[3] = 
-    { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la_nonlinear(NSE2D_Galerkin_Nonlinear, fe_functions,
-                                   this->example.get_coeffs());
-
-    //fetch us (a) pointer(s) to the diagonal A block(s)
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
-
-    switch(TDatabase::ParamDB->NSTYPE)
-    {// switch over known Block Matrix types, treat each one individually,
-      // using a priori knowledge about the structure and the way it fits
-      // to the LocalAssembling2D object
-      // TODO remove all reinterpret casts as soon as Assembling process takes only FEMatrices
-      // FIXME replace global switch by local checking of blockmatrix type!
-      case 1:
-        n_sq_mat = 1;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
-      case 2:
-        n_sq_mat = 1;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        break;
-      case 3:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
-      case 4:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
-      case 14:
-        n_sq_mat = 2;
-        sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        break;
-      default:
-        ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
-            "I don't know how to pass its blocks to Assemble2D.");
-    }
-
-    // assemble the nonlinear part of NSE
-    for(size_t i =0; i < n_sq_mat; ++i)
-    {//reset the matrices, linear part is assembled anew
-      sq_mat[i]->reset();
-    }
-    //do the actual assembling
-    Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
-               n_rhs, rhs, fe_rhs, boundary_conditions,
-               non_const_bound_values.data(), la_nonlinear);
-
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
-    {
-      switch(TDatabase::ParamDB->NSTYPE)
-      {
-        case 1:
-        case 2:
-          // do upwinding with one matrix
-          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[0],
-                                la_nonlinear.get_fe_function(0),
-                                la_nonlinear.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
-          break;
-
-        case 3:
-        case 4:
-        case 14:
-          // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
-          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[0],
-                                la_nonlinear.get_fe_function(0),
-                                la_nonlinear.get_fe_function(1));
-          UpwindForNavierStokes(la_nonlinear.GetCoeffFct(), sq_mat[1],
-                                la_nonlinear.get_fe_function(0),
-                                la_nonlinear.get_fe_function(1));
-          break;
-      } // endswitch
-    } // endif
-
-    //end nonlinear assembling
-
-    // copy Dirichlet values from right hand side into solution
-    //(is this necessary here? solution has not been touched!)
-    s.solution.copy_nonactive(s.rhs);
-
-    //tidy up
-    delete fe_functions[0];
-    delete fe_functions[1];
-
-  }
-
-
-}
 
 /** ************************************************************************ */
 bool Brinkman2D::stopIt(unsigned int iteration_counter)
