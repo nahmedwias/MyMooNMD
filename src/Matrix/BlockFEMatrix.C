@@ -721,6 +721,19 @@ void BlockFEMatrix::check_vector_fits_pre_image(const BlockVector& x) const
 
 }
 
+std::shared_ptr<const FEMatrix> BlockFEMatrix::get_block(
+    size_t cell_row, size_t cell_col,  bool& is_transposed) const
+{
+  //find out the transposed state
+  is_transposed = cell_grid_.at(cell_row).at(cell_col).is_transposed_;
+
+  //cast const and FEMatrix (range check is done via "at")
+  std::shared_ptr<const FEMatrix> shared
+  = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_.at(cell_row).at(cell_col).block_);
+  return shared;
+}
+
+
 /* ************************************************************************* */
 
 std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
@@ -735,7 +748,7 @@ std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
       std::shared_ptr<const FEMatrix> shared //cast const and FEMatrix
       = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][j].block_);
 
-      // make a weak pointer from it and push it back
+      // push it back
       block_ptrs.push_back(shared);
     }
   }
@@ -842,6 +855,22 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
 
 std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
 {
+  //check for empty diagonal blocks with non-actives TODO Is there a need to fix this?
+  for(size_t diag = 0; diag < n_cell_rows_; ++diag)
+  {
+    if(this->cell_grid_[diag][diag].block_->GetN_Entries()==0)
+    {//zero-block on diagonal
+      if(get_n_row_actives(diag) != get_n_rows_in_cell(diag, diag))
+      {// This is trouble, because the baseclass will not place any entries at all
+       // into the combined matrix where this empty block stands.
+       // This means, that there will be no entries on the diagonal for the
+       // BlockFEMatrix to put ones to - will result in 0 rows!
+        Output::print("Warning! Trying to get combined matrix of a BlockFEMatrix "
+            "with a zero block on a diagonal with test-space non-actives.");
+      }
+    }
+  }
+
   //let the base class put up the combined matrix as it can
   std::shared_ptr<TMatrix> combined_matrix = BlockMatrix::get_combined_matrix();
 
@@ -988,12 +1017,12 @@ void BlockFEMatrix::replace_blocks(
       if (grid_test_space != block_ansatz_space)
       {
         ErrThrow("Grid test space does not match transposed "
-            "block's ansatz space at (",cell_row,cell_column,")");
+            "block's ansatz space at (",cell_row,",",cell_column,")");
       }
       if (grid_ansatz_space != block_test_space)
       {
         ErrThrow("Grid ansatz space does not match transposed "
-            "block's test space at (",cell_row,cell_column,")");
+            "block's test space at (",cell_row,",",cell_column,")");
       }
       // make sure we do not try to store a block with non-active rows in
       //transposed state
