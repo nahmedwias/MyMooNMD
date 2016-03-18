@@ -610,10 +610,10 @@ void NSE3D::solve()
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI//try out the Mumps interface in MPI case
-
-      ErrThrow("Here is the place to interface the MumpsWrapper!")
-
+#elif _MPI
+    ErrThrow("This is the place to interface the mumps solver!");
+#else
+    ErrThrow("No OMPONLY solver (PARDISO) interfaced yet.");
 #endif
     }
   }
