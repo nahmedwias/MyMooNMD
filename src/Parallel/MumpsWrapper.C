@@ -14,14 +14,17 @@
 #include <mpi.h>
 #include <memory>
 
-//define macros for mumps integer parameters
+//two of the used mumps job codes
 #define JOB_INIT -1
 #define JOB_END -2
-#define ICNTL(I) icntl[(I)-1] //macro doing the fortran shift for control params
+
+//macros doing the fortran shift for mumps control and info params
+#define ICNTL(I) icntl[(I)-1]
 #define INFOG(I) infog[(I)-1]
 
 MumpsWrapper::MumpsWrapper(
-    const BlockFEMatrix& bmatrix, std::vector<const TParFECommunicator3D*> comms)
+    const BlockFEMatrix& bmatrix,
+    std::vector<const TParFECommunicator3D*> comms)
 {
   //input checks
   if (comms.size() != bmatrix.get_n_cell_rows())
@@ -45,16 +48,15 @@ MumpsWrapper::MumpsWrapper(
       throw std::runtime_error("MumpsWrapper can only be used with "
           "ParFeCommunicators of dimension 1");
   }
-  //todo these input checks are makeshift and will be adapted later when the
-  //class takes clearer shape (and eventually Mapper & Communicator got reworked)
 
   // initialize the mumps entity
-  // set "hard" parameters
-  id_.par = 1; // root used in computation
+  // set those "hard" parameters which must be set before initializing
+  id_.par = 1; // root will take part in computation
   id_.comm_fortran = MPI_Comm_c2f(MPI_COMM_WORLD);
   id_.sym = 0; //non-symmetric matrix
   id_.job=JOB_INIT;
   dmumps_c(&id_);
+
   // the "softer" parameters must be set after initializing
   set_mumps_parameters();
 
@@ -63,7 +65,7 @@ MumpsWrapper::MumpsWrapper(
 
 }
 
-int MumpsWrapper::solve(
+void MumpsWrapper::solve(
     const BlockVector& rhs, BlockVector& solution,
     std::vector<TParFECommunicator3D*> comms)
 {
@@ -71,26 +73,27 @@ int MumpsWrapper::solve(
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-
-  int n_masters_local_comms;
-  int n_dofs_global_comms;
-  check_input_solve(rhs, solution, comms, n_masters_local_comms, n_dofs_global_comms);
-
-  //1) set up the global right hand side in root
   int root_rank = 0;
   bool i_am_root = (mpi_rank == root_rank);
 
+  //0) do input check and gather two important numbers
+  int n_masters_local_comms;
+  int n_dofs_global_comms;
+  check_input_solve(rhs, solution, comms,
+                    n_masters_local_comms, n_dofs_global_comms);
+
+  //1) set up the global right hand side in root
   std::vector<double> master_values;
-  master_values.reserve(n_masters_local_comms); //reserve space for local rhs and local solution
-  std::vector<double> rhs_global(n_dofs_global_comms, 0); //used in root only, initialized everywhere FIXME replace by dummy calls
+  master_values.reserve(n_masters_local_comms); //space for loc rhs and solution
+  std::vector<double> rhs_global;
+  if(i_am_root) //put up an array for the global right hand side
+    rhs_global.resize(n_dofs_global_comms, 0);
 
   //three different shifts in this loop, all due to arrangement in blocks
-  // - for reading the local rhs "block_read_shift", which
-  //   accounts for all dofs (master, slave, halo)
-  // - for writing the local rhs "block_write_shift", which
-  //   accounts for master dofs only
-  // - for writing the global right hand side "global_write_shift", which
-  //   accounts for the global number of dofs per block (determined by adding up master dofs)
+  // - "loc_dof_shift", accounts for all local dofs (master, slave, halo)
+  // - "loc_master_shift", which accounts for master dofs only
+  // - "glob_dof_shift", which accounts for the global number of dofs per block
+  //   (determined by adding up master dofs)
   size_t loc_master_shift = 0;
   size_t loc_dof_shift = 0;
   size_t glob_dof_shift = 0;
@@ -101,37 +104,21 @@ int MumpsWrapper::solve(
     const int* masters = comms.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!
     size_t n_loc_dofs_block = comms.at(index)->GetNDof();
     for(size_t i = 0; i< n_loc_dofs_block; ++i)
-    {//push rhs values for all master dofs on this rank and block into rhs2sol_local_
+    {//push rhs values for master dofs on this rank and block to master_values
       if(masters[i] == mpi_rank)
       {
         master_values.push_back(rhs.at(loc_master_shift + i));
       }
     }
-    //...and gather those local right hand sides globally, maintaining the local2global dof ordering
 
-//    //mpi calls
-//    //determine how many values to send per process - n_masters_per_proc
-//    size_t block_n_masters_local = comms.at(index)->GetN_Master();
-//    int* n_masters_per_proc = new int[mpi_size];
-//    MPI_Allgather(&block_n_masters_local, 1, MPI_INT, //send
-//                  n_masters_per_proc, 1, MPI_INT,     //receive
-//                  MPI_COMM_WORLD);                    //control
-//    //determine the shifts in the receiving vector
-//    //- this is what takes care of maintaining the global dof order!
-//    int* recv_shift = new int[mpi_size];
-//    recv_shift[0] = 0;
-//    for(int i=1;i< mpi_size; ++i)
-//      recv_shift[i] = recv_shift[i-1] + n_masters_per_proc[i-1];
-//    //now fill the current block's portion in the global rhs vector
-//    double* temp_glob = &rhs_global.at(global_write_shift);
-//    double* temp_loc = &master_values.at(block_write_shift);
-//    MPI_Gatherv(temp_loc, block_n_masters_local, MPI_DOUBLE, //send
-//                temp_glob, n_masters_per_proc, recv_shift, MPI_DOUBLE, //receive
-//                root_rank, MPI_COMM_WORLD); //control
-
+    //...and gather these local right hand sides globally
     int n_loc_masters_block = comms.at(index)->GetN_Master();
+    double* global_rhs_dummy = nullptr;
+    if(i_am_root)
+      global_rhs_dummy = &rhs_global.at(glob_dof_shift);
+
     comms.at(index)->GatherToRoot(
-        &rhs_global.at(glob_dof_shift),        //receive
+        global_rhs_dummy,                                          //receive
         &master_values.at(loc_master_shift), n_loc_masters_block,  //send
         root_rank);                                                //control
 
@@ -139,18 +126,17 @@ int MumpsWrapper::solve(
     loc_master_shift += n_loc_masters_block;
     loc_dof_shift += n_loc_dofs_block;
     int current_n_dofs_global;
-    MPI_Allreduce(&n_loc_masters_block,&current_n_dofs_global,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    MPI_Allreduce(&n_loc_masters_block,&current_n_dofs_global,1,
+                  MPI_INT,MPI_SUM,MPI_COMM_WORLD);
     glob_dof_shift += current_n_dofs_global;
   }
 
   //2) let mumps do its jobs
-  //2.1) give the data to mumps...
-  // ..the (distributed) matrix
   id_.nz_loc  = matrix_.nz_loc;
   id_.irn_loc = &matrix_.irn_loc.at(0);
   id_.jcn_loc = &matrix_.jcn_loc.at(0);
   id_.a_loc   = &matrix_.a_loc.at(0);
-  //...the (centralized) rhs
+
   if(i_am_root)
   {
     id_.rhs  = &rhs_global.at(0);
@@ -159,17 +145,11 @@ int MumpsWrapper::solve(
     id_.n    = matrix_.n;
   }
 
-  //2.2) kick off the job
   kick_off_job(std::string("analyze"));
   kick_off_job(std::string("factorize"));
   kick_off_job(std::string("solve"));
 
-  //3) distribute solution among processes (?)
-  //three different shifts in this loop, all due to arrangement in blocks
-  // - "block_dof_shift", which accounts for all dofs (master, slave, halo)
-  // - "block_master_shift", which accounts for master dofs only
-  // - "global_shift", which accounts for the global number of dofs
-  //    per block (determined by adding up master dofs)
+  //3) distribute solution among processes
   loc_dof_shift = 0;
   loc_master_shift = 0;
   glob_dof_shift = 0;
@@ -179,10 +159,15 @@ int MumpsWrapper::solve(
     //receive all master values from root and store in master_values
     int n_loc_masters_block = comms.at(index)->GetN_Master();
     int n_glob_dofs_block;
-    MPI_Allreduce(&n_loc_masters_block,&n_glob_dofs_block,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    MPI_Allreduce(&n_loc_masters_block,&n_glob_dofs_block,
+                  1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+
+    double* global_rhs_dummy = nullptr;
+    if(i_am_root)
+      global_rhs_dummy = &rhs_global.at(glob_dof_shift);
 
     comms.at(index)->ScatterFromRoot(
-        &rhs_global.at(glob_dof_shift),                           //send
+        global_rhs_dummy,                                         //send
         &master_values.at(loc_master_shift), n_loc_masters_block, //receive
         root_rank);                                               //control
 
@@ -191,15 +176,16 @@ int MumpsWrapper::solve(
     int n_local_dofs_block = comms.at(index)->GetNDof();
     int i_master = 0;
     for(int i_dof = 0; i_dof< n_local_dofs_block; ++i_dof)
-    {//write solution values for all master dofs on this rank into solution vector (at correct place)
+    {//write solution values for master dofs on this rank into solution vector
       if(masters[i_dof] == mpi_rank)
       {
-        solution.at(loc_dof_shift + i_dof) = master_values.at(loc_master_shift + i_master);
+        solution.at(loc_dof_shift + i_dof)
+            = master_values.at(loc_master_shift + i_master);
         ++i_master;
       }
     }
 
-    // Update all non-master values in solution vector. Fire!
+    // Update all non-master values in solution vector. Big fire!
     comms.at(index)->CommUpdate(&solution.at(loc_dof_shift));
 
     // count up the block shifts
@@ -208,10 +194,9 @@ int MumpsWrapper::solve(
     loc_master_shift += n_loc_masters_block;
     glob_dof_shift += n_glob_dofs_block;
   }
-  return 0;
 }
 
-void MumpsWrapper::write_matrix_distributed(std::string filename) const
+void MumpsWrapper::write_matrix_distributed(const std::string& filename) const
 {
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -234,19 +219,7 @@ void MumpsWrapper::write_matrix_distributed(std::string filename) const
 }
 
 
-// Special member functions.
-MumpsWrapper::MumpsWrapper(MumpsWrapper&&)
-{
-  //todo
-  ;
-}
-
-MumpsWrapper& MumpsWrapper::operator=(MumpsWrapper&&)
-{
-  //todo
-  ;
-}
-
+// Special member function.
 MumpsWrapper::~MumpsWrapper()
 {
   id_.job=JOB_END;
@@ -254,11 +227,10 @@ MumpsWrapper::~MumpsWrapper()
 }
 
 // Private functions.
-
-void MumpsWrapper::check_input_solve(const BlockVector& rhs, const BlockVector& solution,
-                                     const std::vector<TParFECommunicator3D*>& comms,
-                                     int& n_masters_local_comms,
-                                     int& n_dofs_global_comms)
+void MumpsWrapper::check_input_solve(
+    const BlockVector& rhs, const BlockVector& solution,
+    const std::vector<TParFECommunicator3D*>& comms,
+    int& n_masters_local_comms, int& n_dofs_global_comms)
 {
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -279,19 +251,23 @@ void MumpsWrapper::check_input_solve(const BlockVector& rhs, const BlockVector& 
 
      if(local_n_dofs != block_length_rhs)
      {
-       ErrThrow("Length of rhs block ", i, " does not fit n of local dofs in given communicator.");
+       ErrThrow("Length of rhs block ", i, " does not"
+           " fit n of local dofs in given communicator.");
      }
      if(local_n_dofs != block_length_sol)
      {
-       ErrThrow("Length of sol block ", i, " does not fit n of local dofs in given communicator.");
+       ErrThrow("Length of sol block ", i, " does not fit n "
+           "of local dofs in given communicator.");
      }
      // add up all masters
      n_masters_local_comms += comms.at(i)->GetN_Master();
    }
-   MPI_Allreduce(&n_masters_local_comms, &n_dofs_global_comms, 1, MPI_INT,MPI_SUM, MPI_COMM_WORLD);
+   MPI_Allreduce(&n_masters_local_comms, &n_dofs_global_comms,
+                 1, MPI_INT,MPI_SUM, MPI_COMM_WORLD);
    if(n_dofs_global_comms != (int) matrix_.n)
    {
-     ErrThrow("Total number of masters of given communicators not equal global stored matrix order.");
+     ErrThrow("Total number of masters of given communicators "
+         "not equal global stored matrix order.");
    }
 
 }
@@ -355,7 +331,6 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
 {
   // no input checks - assume that this method is only called from
   // the constructor, which already performed checks
-
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -369,12 +344,13 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
     {
       n_masters_local += comm->GetN_Master();
     }
-    MPI_Allreduce(&n_masters_local, &n_dofs_global, 1,MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_masters_local, &n_dofs_global,
+                  1,MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   }
 
   // 0.1)
   //determine an array which holds index-shifts
-  size_t nComms = comms.size(); //should equal the numbers of block rows/block columns/spaces
+  size_t nComms = comms.size();
   std::vector<size_t> shifts(nComms,0);
   //for each space, find out how many dofs there are in total
   //(over all processors) - adding up those will give the shift
@@ -382,7 +358,8 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   {
     int n_masters_local = comms.at(index)->GetN_Master();
     //sum up all nLocalMasters over all processes and store
-    MPI_Allreduce(&n_masters_local, &shifts.at(index + 1), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_masters_local, &shifts.at(index + 1),
+                  1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     //add up the shift with the previous one
     shifts.at(index + 1) += shifts.at(index);
   }
@@ -393,7 +370,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   for (size_t index = 0; index<nComms; ++index)
   {
     const int* master_array = comms.at(index)->GetMaster();
-    size_t master_array_length = comms.at(index)->GetNDof(); //that correct??? - fuer N_Dim =1 wahrscheinlich schon
+    size_t master_array_length = comms.at(index)->GetNDof();
     dof_masters.at(index).resize(master_array_length);
     std::copy(master_array,
               master_array + master_array_length, //pointer arithmetic!
@@ -406,7 +383,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   for (size_t index = 0; index<nComms; ++index)
   {
     const int* l2g = comms.at(index)->Get_Local2Global();
-    size_t array_length = comms.at(index)->GetNDof(); //that correct??? - fuer N_Dim =1 wahrscheinlich schon
+    size_t array_length = comms.at(index)->GetNDof();
     local2globals.at(index).resize(array_length);
     std::copy(l2g,
               l2g + array_length, //pointer arithmetic!
@@ -414,7 +391,6 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   }
 
   // 1) setting up the matrix
-  // 1.1)
   //get a rough overview and reserve some space
   matrix_.n = n_dofs_global;
   matrix_.nz_loc = 0;
@@ -424,7 +400,6 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
     matrix_.jcn_loc.reserve(expected_entries);
     matrix_.a_loc.reserve(expected_entries);
   }
-
 
   //loop through the block matrix
   //will always hold the transposed state of the last treated block

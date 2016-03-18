@@ -3,7 +3,22 @@
  * for ParMooN's BlockFEMatrix and ParFECommunicator.
  * It can be used only when ParMooN is compiled for parallel type MPI.
  *
- * @note Replaces the older classes ParDirectSolver and MumpsSolver.h
+ * Although the MUMPS solver can be configured in some ways, there is several
+ * "invariants" if one wants to use it with MPI ParMooN. These are especially:
+ * Matrix input is distributed, right hand side input dense, solution output
+ * is centralized.
+ * For some insight, read the MUMPS documentation
+ *   http://mumps.enseeiht.fr/doc/userguide_5.0.1.pdf
+ * If you want to hard-code changes to some parameters, the method
+ * "set_mumps_parameters" is the place to go to.
+ *
+ * TODO 1) Try out for actual problems.
+ * TODO 2) Try out different sets of parameters.
+ * TODO 3) Make some reuse of a factorization possible.
+ * TODO 4) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
+ *         to make the class at least movable (although not copyable yet.)
+ *
+ * @note Replaces the older classes ParDirectSolver and MumpsSolver.
  *
  * @date 2016/03/14
  * @author Clemens Bartsch
@@ -29,16 +44,22 @@ class TParFECommunicator3D;
 class MumpsWrapper
 {
   public:
-    /** */
+    /**
+     * Set up a Mumps wrapper for a certain BlockFEMatrix and suitable
+     * ParFECommunicators. The communicators have to belong to the
+     * testspaces of the matrix and must be in the same order.
+     * Also their dimension variable "N_Dim" must equal 1.
+     *
+     * @param[in] bmatrix The matrix to wrap a mumps solver around.
+     * @param[in] comms The FE communicators for the testspaces. Must be of dimension 1.
+     */
     MumpsWrapper(
         const BlockFEMatrix& bmatrix,
         std::vector<const TParFECommunicator3D*> comms);
 
-    // Something like this would be nice
-    // TODO Figure out how to reuse factorizations etc.!
-    // int factorize_and_store();
-
-    /** Solve method - maybe return an integer error code.
+    /**
+     * Solve an equation system for the wrapped up matrix with the mumps solver.
+     *
      * @param[in] rhs The right hand side vector - local to each process.
      * Must fit in dimension to the stored matrix and the given communicators,
      * obviously.
@@ -49,29 +70,32 @@ class MumpsWrapper
      * the blocks of the BlockVectors - these should be the same as have been
      * given to the constructor, but this is not checked explicitly.
      */
-    int solve(const BlockVector& rhs, BlockVector& solution,
+    void solve(const BlockVector& rhs, BlockVector& solution,
               std::vector<TParFECommunicator3D*> comms);
 
     /**
      * Write the locally stored matrix to a file in MatrixMarket
      * coordinate format. It will automatically append the number of the
      * process to the filename.
+     * @param[in] filename The filename (and path) to write the matrix to.
      */
-    void write_matrix_distributed(std::string filename) const;
+    void write_matrix_distributed(const std::string& filename) const;
 
-    // Declare special member functions.
 
-    /** @brief This class is not copy constructible */
+    // Declare special member functions. Delete all copy and move operations,
+    // because I have not yet figured out how the DMUMPS_STRUC_C object treats
+    // its memory.
+    /** @brief This class is not yet copy constructible */
     MumpsWrapper(const MumpsWrapper&) = delete;
 
-    /** @brief move constructor */
-    MumpsWrapper(MumpsWrapper&&);
+    /** @brief This class is not yet movable. */
+    MumpsWrapper(MumpsWrapper&&) = delete;
 
-    /** @brief This class is not copy assignable */
+    /** @brief This class is not yet copy assignable */
     MumpsWrapper& operator=(const MumpsWrapper&) = delete;
 
-    /** @brief move assignment operator */
-    MumpsWrapper& operator=(MumpsWrapper&&);
+    /** @brief This class is not yet movable.  */
+    MumpsWrapper& operator=(MumpsWrapper&&) = delete;
 
     /** @brief Destructor. Must be called before MPI_FINALIZE()! */
     ~MumpsWrapper();
@@ -80,12 +104,15 @@ class MumpsWrapper
     /**
      * Performs a couple of input checks for the solve method.
      * As a side effect, counts the global number of dofs
-     * and the local number of masters across all blocks. (Yeah, that's pretty badass...)
-     * @param[in] rhs
-     * @param[in] solution
-     * @param[in comms
-     * @param[out] n_masters_local_comms
-     * @param[out] n_dofs_global_comms
+     * and the local number of masters across all blocks.
+     * (Yeah, that's pretty badass, but I wanted to double-use these loops...)
+     *
+     * @param[in] rhs The right hand side vector.
+     * @param[in] solution The solution vector.
+     * @param[in comms The communicators for the FE spaces.
+     * @param[out] n_masters_local_comms The local number of masters, counted
+     * across all blocks of the input vectors.
+     * @param[out] n_dofs_global_comms The overall, global number of dofs.
      */
     void check_input_solve(const BlockVector& rhs, const BlockVector& solution,
                            const std::vector<TParFECommunicator3D*>& comms,
@@ -95,6 +122,7 @@ class MumpsWrapper
     /**
      * Wraps call and output error handling of a MUMPS job with the stored mumps
      * handler.
+     * Throws if you give an unknown input string.
      * @param job The job to execute. Choose "analyze", "factorize" or "solve".
      */
     void kick_off_job(const std::string& job);
@@ -105,7 +133,8 @@ class MumpsWrapper
      * Set some hard coded parameters in the mumps solver object.
      * Is called during the constructor.
      * You should not change these parameters, unless you know what you are
-     * doing. Take a look at the Mumps Solver Documentation, if you are interested.
+     * doing.
+     * Take a look at the Mumps Solver Documentation, if you are interested.
      */
     void set_mumps_parameters();
 
@@ -114,18 +143,18 @@ class MumpsWrapper
      * BlockFEMatrix to the coordinate format which mumps requires.
      * On each process only those dofs which it is master of will be regarded.
      *
+     * Performs no input checks, the constructor who calls it does that.
+     *
      * @param bmatrix The BlockFEMatrix which is to transform.
      * @param comms An array containing the ParFECommunicators which belong
      * to the fespaces of the matrix' block rows (in the same order).
      * So far they all must have dimension 1, this method cannot yet deal
      * with using the same communicator for more than one block row.
-     *
-     * Performs no input checks, the constructor who calls it does that.
+
      */
     void store_in_distributed_coordinate_form(
         const BlockFEMatrix& bmatrix,
         std::vector<const TParFECommunicator3D*> comms);
-
 
 
     /// An instance of the mumps solver. Naming it "id_" is common mumps style.
@@ -161,10 +190,6 @@ class MumpsWrapper
         /// The vector of stored entry values.
         std::vector<double> a_loc;
     } matrix_;
-
-    ///A vector which holds the globally gathered right hand side.
-    /// Will be filled only on root process.
-    std::vector<double> rhs_global_;
 
 
 };
