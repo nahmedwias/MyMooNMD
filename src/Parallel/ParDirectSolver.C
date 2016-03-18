@@ -174,8 +174,8 @@ void TParDirectSolver::InitMumps_Scalar()
 {
   int i,j,k,l,m,t;
   int *Master_P,*local2global_P;
-  int *Master         = ParComm->GetMaster();
-  int *local2global   = ParComm->Get_Local2Global();
+  const int *Master         = ParComm->GetMaster();
+  const int *local2global   = ParComm->Get_Local2Global();
 
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
@@ -223,9 +223,10 @@ void TParDirectSolver::InitMumps_NSE2()
 {
 
   int i,j,k,l,m,t,N_Active, row_index, index_disp2U, index_disp3U;
-  int *Master_P,*local2global_P;
-  int *Master         = ParComm->GetMaster();
-  int *local2global   = ParComm->Get_Local2Global();
+  const int* Master_P;
+  const int* local2global_P;
+  const int* Master         = ParComm->GetMaster();
+  const int* local2global   = ParComm->Get_Local2Global();
 
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
@@ -421,9 +422,10 @@ void TParDirectSolver::InitMumps_NSE4()
 {
 
   int i,j,k,l,m,t,N_Active, row_index, index_disp2U, index_disp3U;
-  int *Master_P,*local2global_P;
-  int *Master         = ParComm->GetMaster();
-  int *local2global   = ParComm->Get_Local2Global();
+  const int* Master_P;
+  const int* local2global_P;
+  const int* Master         = ParComm->GetMaster();
+  const int* local2global   = ParComm->Get_Local2Global();
 
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
@@ -669,7 +671,7 @@ void TParDirectSolver::InitMumps_NSE4()
 void TParDirectSolver::AssembleMatrix()
 { 
   int i,j,k,l,m,t;
-  int *Master = ParComm->GetMaster();;
+  const int *Master = ParComm->GetMaster();;
   double *EntriesA;
 
   int rank,size;
@@ -730,8 +732,8 @@ void TParDirectSolver::AssembleMatrix_NSE2()
   MPI_Comm_size(Comm, &size);
   
   int i,j,k,l,m,t;
-  int *Master   = ParComm->GetMaster();
-  int *Master_P = ParComm_P->GetMaster();
+  const int *Master   = ParComm->GetMaster();
+  const int *Master_P = ParComm_P->GetMaster();
 
   double *EntriesA = MatA11->GetEntries();
   double *EntriesB = MatBT1->GetEntries();
@@ -853,8 +855,8 @@ void TParDirectSolver::AssembleMatrix_NSE4()
   MPI_Comm_size(Comm, &size);
   
   int i,j,k,l,m,t;
-  int *Master   = ParComm->GetMaster();
-  int *Master_P = ParComm_P->GetMaster();
+  const int *Master   = ParComm->GetMaster();
+  const int *Master_P = ParComm_P->GetMaster();
 
   double* EntriesA[9];
   double* EntriesB[6];
@@ -1031,7 +1033,7 @@ void TParDirectSolver::AssembleMatrix_NSE4()
 void TParDirectSolver::GetRhs(double *Rhs)
 {
   int i,j,k,t;
-  int *Master = ParComm->GetMaster();
+  const int *Master = ParComm->GetMaster();
   
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
@@ -1048,12 +1050,12 @@ void TParDirectSolver::GetRhs(double *Rhs)
       }
     }
     
-    ParComm->GatherToRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master, 0);
+    ParComm->GatherToRoot(GlobalRhs, OwnRhs, N_Master, 0);
   }
   else
   {
     double *temp,*temp2;
-    int *Master_P = ParComm_P->GetMaster();
+    const int *Master_P = ParComm_P->GetMaster();
     t = 0;
     for(i=0;i<NDof_U;i++)
     {
@@ -1067,17 +1069,17 @@ void TParDirectSolver::GetRhs(double *Rhs)
     }
     
     //send Ux
-    ParComm->GatherToRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master_U, 0);
+    ParComm->GatherToRoot(GlobalRhs, OwnRhs, N_Master_U, 0);
     
     //send Uy
     temp  = GlobalRhs+Global_N_DOF_U;
     temp2 = OwnRhs+N_Master_U;
-    ParComm->GatherToRoot(temp, GlobalRhsSize, temp2, N_Master_U, 0);
+    ParComm->GatherToRoot(temp, temp2, N_Master_U, 0);
     
     //send Uz
     temp  = GlobalRhs+2*Global_N_DOF_U;
     temp2 = OwnRhs+2*N_Master_U;
-    ParComm->GatherToRoot(temp, GlobalRhsSize, temp2, N_Master_U, 0);
+    ParComm->GatherToRoot(temp, temp2, N_Master_U, 0);
     
     //Send P
     k = 0;
@@ -1092,7 +1094,7 @@ void TParDirectSolver::GetRhs(double *Rhs)
     
     temp  = GlobalRhs+3*Global_N_DOF_U;
     temp2 = OwnRhs+3*N_Master_U;
-    ParComm->GatherToRoot(temp	, GlobalRhsSize, temp2, N_Master_P, 0);
+    ParComm->GatherToRoot(temp	, temp2, N_Master_P, 0);
 
   }
 }
@@ -1100,7 +1102,7 @@ void TParDirectSolver::GetRhs(double *Rhs)
 void TParDirectSolver::UpdateSol(double *Sol)
 {
   int i,j,k,t;
-  int *Master = ParComm->GetMaster();
+  const int *Master = ParComm->GetMaster();
   
   int rank,size;
   MPI_Comm_rank(Comm, &rank);
@@ -1108,7 +1110,7 @@ void TParDirectSolver::UpdateSol(double *Sol)
   
   if(MatB == NULL)
   {
-    ParComm->ScatterFromRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master, 0);
+    ParComm->ScatterFromRoot(GlobalRhs, OwnRhs, N_Master, 0);
 
     t = 0;
     for(i=0;i<NDof;i++)
@@ -1137,24 +1139,24 @@ void TParDirectSolver::UpdateSol(double *Sol)
     // //     exit(0);
     
     
-    int *Master_P = ParComm_P->GetMaster();
+    const int *Master_P = ParComm_P->GetMaster();
     double *temp,*temp2;
     
     //Recv Ux
-    ParComm->ScatterFromRoot(GlobalRhs, GlobalRhsSize, OwnRhs, N_Master_U, 0);
+    ParComm->ScatterFromRoot(GlobalRhs, OwnRhs, N_Master_U, 0);
     
     //Recv Uy
     temp  = GlobalRhs+Global_N_DOF_U;
     temp2 = OwnRhs+N_Master_U;
-    ParComm->ScatterFromRoot(temp, GlobalRhsSize, temp2, N_Master_U, 0);
+    ParComm->ScatterFromRoot(temp, temp2, N_Master_U, 0);
     
     //Recv Uz
     temp  = GlobalRhs+2*Global_N_DOF_U;
     temp2 = OwnRhs+2*N_Master_U;
-    ParComm->ScatterFromRoot(temp, GlobalRhsSize, temp2, N_Master_U, 0);
+    ParComm->ScatterFromRoot(temp, temp2, N_Master_U, 0);
 
     t = 0;
-    for(i=0;i<NDof_U;i++)
+    for(i=0;i<NDof_U;i++) //CB: fill ONLY my master rows in sol (which I just received from global)
     {
       if(Master[i] == rank)
       {
@@ -1164,11 +1166,11 @@ void TParDirectSolver::UpdateSol(double *Sol)
         t++;
       }
     }
-    ParComm->CommUpdate(Sol);
+    ParComm->CommUpdate(Sol); //CB Update the slave and halo rows in my solution vector by synchronizing with the other processes
     
     temp  = GlobalRhs + 3*Global_N_DOF_U;
     temp2 = OwnRhs + 3*N_Master_U;
-    ParComm_P->ScatterFromRoot(temp, GlobalRhsSize, temp2, N_Master_P, 0);
+    ParComm_P->ScatterFromRoot(temp, temp2, N_Master_P, 0);
     
     t=0;
     for(i=0;i<NDof_P;i++)

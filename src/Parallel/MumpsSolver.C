@@ -156,14 +156,6 @@ void TMumpsSolver::FactorizeAndSolve(double *Mat_loc, double *rhs)
 
   // define the local system matrix
   id.a_loc  = Mat_loc;
-  
-//  //CB DEBUG - repeat the analysis phase. now there's entries for printing.
-//  // call the MUMPS for analysis
-//  id.job=JOB_ANALYSIS;
-//  char name[256]{"matrix"};
-//  strcpy(id.write_problem, name);
-//  dmumps_c(&id);
-//  //END DEBUG
 
   double t1 = MPI_Wtime();
   if(rank==TDatabase::ParamDB->Par_P0)

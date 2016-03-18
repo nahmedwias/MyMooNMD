@@ -62,6 +62,9 @@ class TParFECommunicator3D
     int *Master;
     
   public:
+    // TODO When the buffers would be put mutable, most of theses public methods
+    // could be const!
+
     //TODO Comment the usage of this!
     TParFECommunicator3D(TParFEMapper3D *mapper);
     
@@ -88,29 +91,39 @@ class TParFECommunicator3D
     
     //TODO Comment the usage of this!
     void CommUpdate(double *sol, double *rhs);
-    
+
+    void ScatterFromRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
+
+    void GatherToRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
+
     //TODO Comment the usage of this!
-    void GatherToRoot(double *&GlobalArray, int &GolabalSize, double *LocalArray, int LocalSize, int root);
-    
-    //TODO Comment the usage of this!
-    void ScatterFromRoot(double *GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root);
-    
-    //TODO Comment the usage of this!
-    int *GetMaster()
+    const int *GetMaster() const
     {return Master;}
     
     //TODO Comment the usage of this!
-    int GetNDof()
+    int GetNDof() const
     {return N_Dof;}
     
+    /// Return number of dimensions the communicator is used for.
+    int get_n_dim() const
+    {
+      return Mapper->get_n_dim();
+    }
+
     //TODO Comment the usage of this!
-    int* Get_Local2Global()
+    const int* Get_Local2Global() const
     { return Mapper->Get_Local2Global();}
     
     //TODO Comment the usage of this!
-    int GetN_Master()
+    int GetN_Master() const
     { return Mapper->GetN_Master();}
     
+    /// Return a pointer to the fe space this communicator belongs to.
+    const TFESpace3D* get_fe_space() const
+    {
+      return Mapper->get_fe_space();
+    }
+
     //Special member functions. Rule of zero applied (class does not manage ressources).
 
     //Declaration of special member functions - rule of zero

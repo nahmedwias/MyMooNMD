@@ -35,7 +35,7 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
   {
     printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator3D \n");
     MPI_Finalize();
-    exit(0);
+    exit(-1);
   }
   
   if(TDatabase::ParamDB->MapperType != 2)

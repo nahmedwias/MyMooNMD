@@ -84,15 +84,6 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
     }
   }
 
-//  //CB DEBUG I want to see what gets sent here
-//  int mpi_rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-//  Output::print("Process ", mpi_rank, "\n",
-//                "Send buffer at ", Send_InfoMS, ".\n",
-//                "Sending: ", N_DofSendMS[0], " " ,N_DofSendMS[1] , " elements. ", ".\n",
-//                "Receive buffer at ", Recv_InfoMS, ".\n",
-//                "Receiving: ", N_DofRecvMS[0], " ", N_DofRecvMS[1], " elements.");
-//  //END DEBUG
   MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
   
   for(i=0;i<N_InterfaceS;i++)  
@@ -343,7 +334,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::GatherToRoot(double *&GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root)
+void TParFECommunicator3D::GatherToRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const
 {
   int rank, size;
   MPI_Comm_rank(Comm, &rank);
@@ -352,6 +343,7 @@ void TParFECommunicator3D::GatherToRoot(double *&GlobalArray, int &GlobalSize, d
   int i,j,k;
   int *displ         = new int[size];
   int *N_ElementsAll = new int[size];
+  //determine how many elements to receive per process - N_ElementsAll
   MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
 
   displ[0] = 0;
@@ -373,7 +365,7 @@ void TParFECommunicator3D::GatherToRoot(double *&GlobalArray, int &GlobalSize, d
   delete [] N_ElementsAll;	N_ElementsAll = NULL;
 }
 
-void TParFECommunicator3D::ScatterFromRoot(double *GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root)
+void TParFECommunicator3D::ScatterFromRoot(double *GlobalArray, double *LocalArray, int LocalSize, int root) const
 {
   int rank, size;
   MPI_Comm_rank(Comm, &rank);
