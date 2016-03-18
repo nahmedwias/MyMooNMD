@@ -421,15 +421,6 @@ target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
-### TCD3D ###
-# Standard executable target.
-add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
-set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARALLEL_TYPE})
-# Add the correct geometry flag to the target.
-target_compile_definitions(tcd3d PUBLIC -D__3D__)
-# Link in the required libraries.
-target_link_libraries(tcd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-
 ###############################################################################
 # building the documentation using doxygen
 find_package(Doxygen)
