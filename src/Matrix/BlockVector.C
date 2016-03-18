@@ -283,6 +283,28 @@ void BlockVector::print(const std::string name, const int iB) const
 }
 
 /** ************************************************************************ */
+void BlockVector::write(std::string filename) const
+{
+  std::ofstream vectorfile;
+  vectorfile.open(filename.c_str());
+
+  //write the header line - array format, real values
+  vectorfile << "%%MatrixMarket matrix array real general \n";
+
+  //write general matrix information
+  vectorfile << length() << "\t" << 1 << "\t" << "\n";
+
+  //loop through matrix and print each entry
+  for(auto it : entries)
+  {
+    vectorfile << it << "\n";
+  }
+
+
+  vectorfile.close();
+}
+
+/** ************************************************************************ */
 void BlockVector::info()
 {
   using namespace Output;
