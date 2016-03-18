@@ -117,7 +117,7 @@ void MumpsWrapper::solve(
     if(i_am_root)
       global_rhs_dummy = &rhs_global.at(glob_dof_shift);
 
-    comms.at(index)->GatherToRoot(
+    gather_vector(
         global_rhs_dummy,                                          //receive
         &master_values.at(loc_master_shift), n_loc_masters_block,  //send
         root_rank);                                                //control
@@ -166,7 +166,7 @@ void MumpsWrapper::solve(
     if(i_am_root)
       global_rhs_dummy = &rhs_global.at(glob_dof_shift);
 
-    comms.at(index)->ScatterFromRoot(
+    scatter_vector(
         global_rhs_dummy,                                         //send
         &master_values.at(loc_master_shift), n_loc_masters_block, //receive
         root_rank);                                               //control
@@ -506,6 +506,53 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
       }//end treating dirichlet rows
     }//end loop over columns
   }//end loop over rows
+}
+
+void MumpsWrapper::gather_vector(
+    double* GlobalArray, double *LocalArray, int LocalSize, int root) const
+{
+  MPI_Comm Comm = MPI_COMM_WORLD;
+  int size;
+  MPI_Comm_size(Comm, &size);
+
+  int *displ         = new int[size];
+  int *N_ElementsAll = new int[size];
+  //determine how many elements to receive per process - N_ElementsAll
+  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
+
+  displ[0] = 0;
+  for(int i=1;i<size;i++)
+    displ[i] = displ[i-1] + N_ElementsAll[i-1];
+
+  MPI_Gatherv(LocalArray, LocalSize, MPI_DOUBLE, //send
+              GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, //receive
+              root, Comm); //control
+
+  delete [] displ;
+  delete [] N_ElementsAll;
+}
+
+void MumpsWrapper::scatter_vector(
+    double *GlobalArray, double *LocalArray, int LocalSize, int root) const
+{
+  MPI_Comm Comm = MPI_COMM_WORLD;
+  int size;
+  MPI_Comm_size(Comm, &size);
+
+  int *displ         = new int[size];
+  int *N_ElementsAll = new int[size];
+  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
+
+  displ[0] = 0;
+  for(int i=1;i<size;i++)
+    displ[i] = displ[i-1] + N_ElementsAll[i-1];
+
+  MPI_Scatterv(GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, //send
+               LocalArray, LocalSize, MPI_DOUBLE,             //receive
+               root, Comm);                                   //control
+
+  delete [] displ;
+  delete [] N_ElementsAll;
 }
 
 #endif

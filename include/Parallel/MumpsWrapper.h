@@ -12,8 +12,8 @@
  * If you want to hard-code changes to some parameters, the method
  * "set_mumps_parameters" is the place to go to.
  *
- * TODO 1) Try out for actual problems.
- * TODO 2) Try out different sets of parameters.
+ * TODO 1) Try out for actual ParMooN problems.
+ * TODO 2) Play with sets of parameters.
  * TODO 3) Make some reuse of a factorization possible.
  * TODO 4) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
  *         to make the class at least movable (although not copyable yet.)
@@ -155,6 +155,32 @@ class MumpsWrapper
     void store_in_distributed_coordinate_form(
         const BlockFEMatrix& bmatrix,
         std::vector<const TParFECommunicator3D*> comms);
+
+    /**
+     * Wraps two MPI calls which are used to comunicate all local master values
+     * at a certain block to a global vector present in root.
+     * Will order the dofs as proposed by Sashi as
+     *    global_dof_id(i,p) = \sum_{k=0}^{p-1} n_own_dofs(k) + local_dof_id(i,p)
+     * where i,p is the i-th local master dof on process p.
+     * Performs no input checks or anything, this is just pure raw pointers and
+     * mpi routines.
+     *
+     * @note Use it blockwise - not for the whole thing at once!
+     *
+     * @param GlobalArray Start here to write the global vector - here should
+     * be as much space for doubles allocated as there is dofs globally.
+     * @param LocalArray Start here to read the local vector.
+     * @param LocalSize The size of the local vector (should be number of
+     * masters of the fitting communicator).
+     * @param root The root process which will store the global vector.
+     */
+    void gather_vector(
+        double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
+
+    /// This is the reverse operation of gather_vector. Read doc there, this
+    /// works the same but the other way round.
+    void scatter_vector(
+        double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
 
 
     /// An instance of the mumps solver. Naming it "id_" is common mumps style.

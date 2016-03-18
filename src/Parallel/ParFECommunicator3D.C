@@ -334,57 +334,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::GatherToRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const
-{
-  int rank, size;
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-  
-  int i,j,k;
-  int *displ         = new int[size];
-  int *N_ElementsAll = new int[size];
-  //determine how many elements to receive per process - N_ElementsAll
-  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
 
-  displ[0] = 0;
-  for(i=1;i<size;i++)
-    displ[i] = displ[i-1] + N_ElementsAll[i-1];
-  
-  MPI_Gatherv(LocalArray, LocalSize, MPI_DOUBLE, GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, root, Comm);
-  
-//   if(rank == root)
-//   {
-//     printf("\nglobalSize=%d\n",GlobalSize);
-//     for(i=0;i<GlobalSize;i++)
-//     {
-//       printf("global[%d]=%lf\n",i,GlobalArray[i]);
-//     }
-//   }
-  
-  delete [] displ;		displ         = NULL;
-  delete [] N_ElementsAll;	N_ElementsAll = NULL;
-}
-
-void TParFECommunicator3D::ScatterFromRoot(double *GlobalArray, double *LocalArray, int LocalSize, int root) const
-{
-  int rank, size;
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-  
-  int i,j,k;
-  int *displ         = new int[size];
-  int *N_ElementsAll = new int[size];
-  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
-
-  displ[0] = 0;
-  for(i=1;i<size;i++)
-    displ[i] = displ[i-1] + N_ElementsAll[i-1];
-  
-  MPI_Scatterv(GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, LocalArray, LocalSize, MPI_DOUBLE, root, Comm);
-  
-  delete [] displ;		displ         = NULL;
-  delete [] N_ElementsAll;	N_ElementsAll = NULL;
-}
 
 void TParFECommunicator3D::CommUpdate(double *sol, double *rhs)
 {

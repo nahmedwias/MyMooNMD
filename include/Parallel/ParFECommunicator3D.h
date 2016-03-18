@@ -92,10 +92,6 @@ class TParFECommunicator3D
     //TODO Comment the usage of this!
     void CommUpdate(double *sol, double *rhs);
 
-    void ScatterFromRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
-
-    void GatherToRoot(double* GlobalArray, double *LocalArray, int LocalSize, int root) const;
-
     //TODO Comment the usage of this!
     const int *GetMaster() const
     {return Master;}
