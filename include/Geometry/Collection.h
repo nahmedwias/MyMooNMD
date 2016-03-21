@@ -11,6 +11,7 @@
 #ifndef __COLLECTION__
 #define __COLLECTION__
 
+#include <vector>
 #include <BaseCell.h>
 #include <JointCollection.h>
 
@@ -30,14 +31,16 @@ class TCollection
     /** @brief array with index of SortedCells in Cells */
     int *Index;
 
-    #ifdef  _MPI
+    
+    
+#ifdef  _MPI
     /** @brief Number of own cells (excluding Halo cells) */
     int N_OwnCells;
-
+#endif
+    
     /** @brief array for Globalcell number in Cells */
     int *GlobalIndex;
-    #endif
-
+    
   public:
     /** @brief constructor */
     TCollection(int n_cells, TBaseCell **cells);
@@ -81,19 +84,37 @@ class TCollection
     int GetN_HaloCells()
      { return (N_Cells - N_OwnCells); }
 
-    int *GetGlobalIndex()
-     {
-      return GlobalIndex;
-     }
+   
 #endif
 
-   void Replace_Coll(int n_cells, TBaseCell **cells)
+    int *GetGlobalIndex()
+    {
+      return GlobalIndex;
+    }
+
+    void Replace_Coll(int n_cells, TBaseCell **cells)
      {
       N_Cells = n_cells;
       Cells = cells;
      }
+   
+   // ------------------------------------------------
+   ///@brief create a list of nodes, vertices, elements
+   int createElementLists();
+   std::vector<double> NodesCoords;
+   std::vector<int> NodesReferences;
+   std::vector<int> ElementNodes, ElementReferences;
+   std::vector<int> BdFacesNodes;
+   std::vector<int> BdFacesReferences;
+   std::vector<int> DomainVertexNumbers;
+   int getIndexInCollection(TBaseCell *cell);
 
-  private:
+   ///@brief Write the geometry in .mesh format
+   int writeMesh(const char *meshFileName);
+    
+   // ------------------------------------------------
+
+ private:
     /** @brief provide additional arrays */
     void GenerateSortedArrays();
 
