@@ -22,6 +22,7 @@
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <Residuals.h>
 
 
 #include <NSE_MultiGrid.h>
@@ -32,6 +33,7 @@
 #include <NSE_MGLevel14.h>
 #include <utility>
 #include <array>
+
 
 class NSE2D
 {
@@ -104,49 +106,13 @@ class NSE2D
      */
     std::shared_ptr<TNSE_MultiGrid> multigrid;
     
-    /** @brief an array to store defect, so that we don't have to reallocate
-     *         so often
-     */
+    //! @brief An array to store the current defect.
     BlockVector defect;
-
-    /** @brief stores the norms of the residuals of previous iterations.
-     * The default length is 10
-     */
-    std::vector<double> norms_of_residuals;
     
-  public:
-    /**
-     * @brief a simple struct storing one set of residuals
-     * 
-     * The full residual is the \f$\ell^2\f$-norm of the vector \f$Ax-b\f$ 
-     * where \f$A\f$ is the current matrix and \f$b\f$ the right hand side. It
-     * is composed of two parts, the impuls and the residual.
-     * 
-     * If not default constructed it holds 
-     *     fullResidual*fullResidual = impulsResidual*impulsResidual
-     *                                 +massResidual*massResidual
-     */
-    struct Residuals
-    {
-      /// @brief the impuls residual
-      double impulsResidual;
-      /// @brief the mass residual
-      double massResidual;
-      /// @brief the fulf residual
-      double fullResidual;
-      ///@brief standard constructor, initialize with large numbers
-      Residuals();
-      /// @brief constructor given the \e square of the impuls and mass 
-      /// residuals
-      Residuals(double imR, double maR);
-      /// @brief write out the three numbers to a stream.
-      friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
-    };
+
   protected:
     
-    /**
-     * @brief store the norms of residuals from previous iterations 
-     */
+    ///@brief The norms of residuals from up to 10 previous iterations
     FixedSizeQueue<10, Residuals> oldResiduals;
 
     /** @brief store the initial residual so that the nonlinear iteration can 
@@ -179,7 +145,7 @@ class NSE2D
      * Currently, the errors store the L2 and H1 errors of the velocity
      * and pressure
      */
-    std::array<double, int(6)> errors;
+    std::array<double, int(4)> errors;
     
   public:
     
@@ -263,10 +229,6 @@ class NSE2D
     void mg_solver();
     
     // getters and setters
-//    const BlockMatrixNSE2D & get_matrix() const TODO
-//    { return this->systems.front().matrix; }
-//    BlockMatrixNSE2D & get_matrix()
-//    { return this->systems.front().matrix; }
     const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
     BlockFEMatrix & get_matrix()
@@ -308,7 +270,7 @@ class NSE2D
     /// @brief get the current residual (updated in NSE2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors() const;
+    std::array<double, int(4)> get_errors() const;
 };
 
 
