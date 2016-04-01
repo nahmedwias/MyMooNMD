@@ -35,9 +35,9 @@
 
 #include <MainUtilities.h> //for error measuring
 
-void compare(const NSE2D& nse2d, std::array<double, int(6)> errors)
+void compare(const NSE2D& nse2d, std::array<double, int(4)> errors)
 {
-  std::array<double, int(6)> computed_errors;
+  std::array<double, int(4)> computed_errors;
   computed_errors = nse2d.get_errors();
   
   // check the L2-error of the velcoity
@@ -63,7 +63,7 @@ void compare(const NSE2D& nse2d, std::array<double, int(6)> errors)
 }
 void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
            int nonlinear_form,
-           std::array<double, int(6)> errors)
+           std::array<double, int(4)> errors)
 {
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     //===========================================================
     Output::print<1>("Testing the P2/P1 elements");
     //===========================================================
-    std::array<double, int(6)> errors;
+    std::array<double, int(4)> errors;
     errors = {{0.000610487, 0.0389713, 0.0107332,  0.512621}};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
     // NSTYPE = 1
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
     //===========================================================
     Output::print<1>("Testing the Q2/P1-disc elements");
     //===========================================================
-    std::array<double, int(6)> errors;
+    std::array<double, int(4)> errors;
     errors = {{6.37755e-05, 0.00661116, 0.00190367,  0.17806}};
     // VELOCITY_SPACE  = 12
     // NSTYPE = 1

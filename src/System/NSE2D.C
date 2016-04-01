@@ -734,7 +734,7 @@ void NSE2D::output(int i)
 }
 
 /** ************************************************************************ */
-std::array< double, int(6) > NSE2D::get_errors() const
+std::array< double, int(4) > NSE2D::get_errors() const
 {
   return errors;
 }
@@ -981,7 +981,7 @@ void NSE2D :: mg_solver()
 }
 
 /** ************************************************************************ */
-const NSE2D::Residuals& NSE2D::getResiduals() const
+const Residuals& NSE2D::getResiduals() const
 {
   return this->oldResiduals.back();
 }
@@ -1004,22 +1004,4 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals()
- : impulsResidual(1e10), massResidual(1e10), fullResidual(1e10)
-{}
-
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals(double imR, double maR)
- : impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
-   fullResidual(sqrt(imR + maR))
-{}
-
-/** ************************************************************************ */
-std::ostream& operator<<(std::ostream& s, const NSE2D::Residuals& n)
-{
-  s << setw(14) << n.impulsResidual << "\t" << setw(14)
-    << n.massResidual << "\t" << setw(14) << n.fullResidual;
-  return s;
-}
 

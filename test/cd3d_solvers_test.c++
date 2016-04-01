@@ -1,5 +1,5 @@
 /**
- * @brief A test program for the solving of NSE2D problems.
+ * @brief A test program for the solving of CD3D problems.
  *
  * This test program is intended to check whether different solvers for CD3D
  * are able to solve three artificial CDR problems with analytic solution,
