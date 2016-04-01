@@ -19,6 +19,7 @@
 #include <fstream>
 #include <string.h>
 #include <stdlib.h>
+#include <vector>
 
 #include <InnerInterfaceJoint.h>
 #ifdef __2D__
@@ -1136,7 +1137,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   int *KVEL, *NewJoints_aux1, *NewJoints_aux2, NewJoints_aux3;
   int aux1, aux2, aux3;
   TVertex **NewVertices, *CurrVert, *Vert[4];
-  TJoint **NewJoints;
+  std::vector<TJoint *> NewJoints;
   Shapes CellType;
   TBaseCell *CurrCell, *CurrCell_aux;
   int maxlen, maxlen_aux, N_Faces, N_Verts, N_Faces_aux;
@@ -1161,7 +1162,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   for (i=0;i<N_Vertices;i++)
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
 
-  delete KVEL;
+  delete[] KVEL;
   KVEL = new int[++maxElpV * N_Vertices];
 
   memset(KVEL, 0, maxElpV * N_Vertices * SizeOfInt);
@@ -1275,8 +1276,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
 
   // generate faces
-  NewJoints = new TJoint*[N_RootCells*6];
-  memset(NewJoints, 0, N_RootCells*6 * SizeOfInt);
+  NewJoints.resize(N_RootCells*6, nullptr);
 
   //OutPut("NBF a " << NBF << endl);
   // first generate boundary joints
@@ -1289,12 +1289,12 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     //cout << "free " << bdcomp->IsFreeBoundary()  << endl;
     if(bdcomp->IsFreeBoundary())
     {
-      NewJoints[FaceParam[auxi]*6 + FaceParam[auxi + 1] - 7] =
+      NewJoints.at(FaceParam[auxi]*6 + FaceParam[auxi + 1] - 7) =
         new TIsoBoundFace(bdcomp);
     }
     else
     {
-      NewJoints[FaceParam[auxi]*6 + FaceParam[auxi + 1] - 7] =
+      NewJoints.at(FaceParam[auxi]*6 + FaceParam[auxi + 1] - 7) =
         new TBoundFace(bdcomp);
     }
   }
@@ -1309,16 +1309,16 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
                 GetBdComp(InterfaceParam[auxi + 5] - 1);
     if(bdcomp->IsFreeBoundary())
     {
-      NewJoints[InterfaceParam[auxi    ]*6 + InterfaceParam[auxi + 1] - 7] =
-      NewJoints[InterfaceParam[auxi + 2]*6 + InterfaceParam[auxi + 3] - 7] =
+      NewJoints.at(InterfaceParam[auxi    ]*6 + InterfaceParam[auxi + 1] - 7) =
+      NewJoints.at(InterfaceParam[auxi + 2]*6 + InterfaceParam[auxi + 3] - 7) =
         new TIsoInterfaceJoint3D(bdcomp, Param1, Param2,
                 CellTree[InterfaceParam[auxi]-1],
                 CellTree[InterfaceParam[auxi+2]-1]);
     }
     else
     {
-      NewJoints[InterfaceParam[auxi    ]*6 + InterfaceParam[auxi + 1] - 7] =
-      NewJoints[InterfaceParam[auxi + 2]*6 + InterfaceParam[auxi + 3] - 7] =
+      NewJoints.at(InterfaceParam[auxi    ]*6 + InterfaceParam[auxi + 1] - 7) =
+      NewJoints.at(InterfaceParam[auxi + 2]*6 + InterfaceParam[auxi + 3] - 7) =
         new TInterfaceJoint3D(bdcomp, Param1, Param2,
                 CellTree[InterfaceParam[auxi]-1],
                 CellTree[InterfaceParam[auxi+2]-1]);
@@ -1338,7 +1338,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     auxi = i*6;
     for (j=0;j<N_Faces;j++)
     {
-      if (!NewJoints[auxi++])
+      if (!NewJoints.at(auxi++))
       {
         N_Verts = TmpLen[j];
         aux2 = (KVERT[NVE*i + TmpFV[maxlen*j]] - 1)*maxElpV;
@@ -1413,9 +1413,9 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
             exit (-1);
           }
 
-          NewJoints[aux1*6 + j] = NewJoints[aux2*6 + k] = new
+          NewJoints.at(aux1*6 + j) = NewJoints.at(aux2*6 + k) = new
             TJointEqN(CellTree[aux2], CellTree[aux1]);
-          NewJoints[aux1*6 + j]->SetMapType(l);
+          NewJoints.at(aux1*6 + j)->SetMapType(l);
         }
         else
         {
@@ -1429,7 +1429,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     auxi = i*6;
     for (j=0;j<N_Faces;j++)
     {
-      CurrCell->SetJoint(j, NewJoints[auxi]);
+      CurrCell->SetJoint(j, NewJoints.at(auxi));
       //if(NewJoints[auxi]->GetType() == InterfaceJoint3D)
       //  cout << auxi << " cell: " << i << " joint: " << j << endl;
       auxi++;
@@ -1514,11 +1514,10 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   }
   
   // free memory
-  delete KVEL;
-  delete NewVertices;
-  delete NewJoints;
-  delete NewJoints_aux1;
-  delete NewJoints_aux2;
+  delete[] KVEL;
+  delete[] NewVertices;
+  delete[] NewJoints_aux1;
+  delete[] NewJoints_aux2;
 
   return 0;
 }
@@ -2859,7 +2858,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 
 #endif // __2D__
 
-bool TDomain::checkIfxGEO(char* GEO)
+bool TDomain::checkIfxGEO(const char* GEO)
   {
       bool isXgeo{false};
       // check if input file is an extended geo file (.xGEO)

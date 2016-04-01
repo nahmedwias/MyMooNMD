@@ -772,7 +772,7 @@ int TDomain::GenInitGrid()
   return 0;
 }
 
-void TDomain::Init(char *PRM, char *GEO)
+void TDomain::Init(const char *PRM, const char *GEO)
 {
   int Flag;
 
@@ -871,7 +871,7 @@ void TDomain::Init(char *PRM, char *GEO)
   }
 }
 #else // 3D
-void TDomain::Init(char *PRM, char *GEO)
+void TDomain::Init(const char *PRM, const char *GEO)
 {
   int IsSandwich = 0;
 
@@ -906,9 +906,13 @@ void TDomain::Init(char *PRM, char *GEO)
     {
       TestGrid3D();
     }
-    if (!strcmp(GEO, "Default_UnitCube_Geo"))
+    else if (!strcmp(GEO, "Default_UnitCube_Hexa"))
     {
-      initializeDefaultCubeInitialMesh();
+      initialize_cube_hexa_mesh();
+    }
+    else if (!strcmp(GEO, "Default_UnitCube_Tetra"))
+    {
+      initialize_cube_tetra_mesh();
     }
     else
     {

@@ -1685,9 +1685,9 @@ int TDomain::initializeDefaultCubeBdry()
   return isSandwich;
 }
 
-void TDomain::initializeDefaultCubeInitialMesh()
+void TDomain::initialize_cube_hexa_mesh()
 {
-  OutPut("Loading default initial mesh: Default_UnitCube_Geo." << endl);
+  OutPut("Loading default initial mesh: Default_UnitCube_Hexa." << endl);
 
   //create an i/o string stream
   std::stringstream geoStream;
@@ -1724,6 +1724,66 @@ void TDomain::initializeDefaultCubeInitialMesh()
   geoStream << "1   4   1   6 \n";
   geoStream << "1   5   1   2 \n";
   geoStream << "1   6   1   4 \n";
+
+  //call the readin method
+  ReadGeo( geoStream, false );
+}
+
+void TDomain::initialize_cube_tetra_mesh()
+{
+  OutPut("Loading default initial mesh: Default_UnitCube_Tetra." << endl);
+
+  //create an i/o string stream
+  std::stringstream geoStream;
+
+  //...and fill it with input in .PRM-format
+  geoStream << "Grobgitter 3D \n";
+  geoStream << "Parametrisierung \n";
+  geoStream << "6    8    3    4    12         NEL NVT NVpF NVpEL NBF \n";
+  geoStream << "DCORVG (comp, t, s  or  x, y, z) \n";
+  geoStream << "0.000000E+0000     0.000000E+0000     0.000000E+0000 \n";
+  geoStream << "0.000000E+0000     1.000000E+0000     0.000000E+0000 \n";
+  geoStream << "0.000000E+0000     1.000000E+0000     1.000000E+0000 \n";
+  geoStream << "0.000000E+0000     0.000000E+0000     1.000000E+0000 \n";
+  geoStream << "3.000000E+0000     0.000000E+0000     0.000000E+0000 \n";
+  geoStream << "3.000000E+0000     1.000000E+0000     0.000000E+0000 \n";
+  geoStream << "3.000000E+0000     1.000000E+0000    -1.000000E+0000 \n";
+  geoStream << "3.000000E+0000     0.000000E+0000    -1.000000E+0000 \n";
+  geoStream << "KVERT \n";
+  geoStream << "1  2  3  7 \n";
+  geoStream << "1  6  2  7 \n";
+  geoStream << "1  3  4  7 \n";
+  geoStream << "1  4  8  7 \n";
+  geoStream << "1  5  6  7 \n";
+  geoStream << "1  8  5  7 \n";
+  geoStream << "KNPR  \n";
+  geoStream << "1   1   1   1   1   1   1   1   \n";
+  geoStream << "BoundFaces \n";
+  geoStream << "1   2   3 \n";
+  geoStream << "3   2   7 \n";
+  geoStream << "1   6   2 \n";
+  geoStream << "2   6   7 \n";
+  geoStream << "1   3   4 \n";
+  geoStream << "4   3   7 \n";
+  geoStream << "1   4   8 \n";
+  geoStream << "8   4   7 \n";
+  geoStream << "1   5   6 \n";
+  geoStream << "6   5   7 \n";
+  geoStream << "1   8   5 \n";
+  geoStream << "5   8   7 \n";
+  geoStream << "FaceParam (cell, locface, boundary part/component) \n";
+  geoStream << "1   1   1   1 \n";
+  geoStream << "1   3   1   5 \n";
+  geoStream << "2   1   1   3 \n";
+  geoStream << "2   3   1   5 \n";
+  geoStream << "3   1   1   1 \n";
+  geoStream << "3   3   1   6 \n";
+  geoStream << "4   1   1   2 \n";
+  geoStream << "4   3   1   6 \n";
+  geoStream << "5   1   1   3 \n";
+  geoStream << "5   3   1   4 \n";
+  geoStream << "6   1   1   2 \n";
+  geoStream << "6   3   1   4 \n";
 
   //call the readin method
   ReadGeo( geoStream, false );

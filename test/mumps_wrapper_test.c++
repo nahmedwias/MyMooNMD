@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 
   // the domain is initialised with default description and default
   // initial mesh
-  domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Geo");
+  domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Hexa");
 
   // refine grid just once
   domain.RegRefineAll();
