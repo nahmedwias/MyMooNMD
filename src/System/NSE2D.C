@@ -734,7 +734,7 @@ void NSE2D::output(int i)
 }
 
 /** ************************************************************************ */
-std::array< double, int(6) > NSE2D::get_errors()
+std::array< double, int(6) > NSE2D::get_errors() const
 {
   return errors;
 }

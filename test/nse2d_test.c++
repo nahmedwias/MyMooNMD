@@ -35,7 +35,7 @@
 
 #include <MainUtilities.h> //for error measuring
 
-void compare(NSE2D& nse2d, std::array<double, int(6)> errors)
+void compare(const NSE2D& nse2d, std::array<double, int(6)> errors)
 {
   std::array<double, int(6)> computed_errors;
   computed_errors = nse2d.get_errors();
