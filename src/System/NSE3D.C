@@ -20,7 +20,7 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
-NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
+NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
                                     NSE3D::Matrix type
 #ifdef _MPI
@@ -39,7 +39,7 @@ NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
         solution_.length(3))
 
 #ifdef _MPI
-     //default construct parallel infrastructrue, will be reset in the body
+     //default construct parallel infrastructure, will be reset in the body
      , parMapperVelocity_(),
      parMapperPressure_(),
      parCommVelocity_(),
@@ -101,7 +101,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
              , int maxSubDomainPerDof
 #endif
 ) : systems_(), example_(example), multigrid_(nullptr),
-    defect(), oldResidual(0), initial_residual(1e10), errors()
+    defect_(), old_residuals_(), initial_residual_(1e10), errors_()
 {
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -562,57 +562,114 @@ void NSE3D::assemble_non_linear_term()
 
 bool NSE3D::stop_it(unsigned int iteration_counter)
 {
-  SystemPerGrid& s = this->systems_.front();
-  unsigned int nDofU = s.solution_.length(0);
-  unsigned int nDofP = s.solution_.length(3);
+  //compute and update defect and residuals
+  compute_residuals();
+  
+  // the current norm of the residual
+  const double normOfResidual = this->get_full_residual();
+  // store initial residual, so later we can print the overall reduction
+  if(iteration_counter == 0)
+    initial_residual_ = normOfResidual;
 
-  defect = s.rhs_;
-  s.matrix_.apply_scaled_add(s.solution_, defect, -1);
+  // hold the residual from 10 iterations ago
+  const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
+
+
+  size_t max_it = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  bool slow_conv = false;
+
+
+  if(normOfResidual >= conv_speed*oldNormOfResidual)
+    slow_conv = true;
+
+  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  {
+    limit *= sqrt(this->get_size());
+    Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
+  }
+
+  // check if the iteration has converged, or reached the maximum number of
+  // iterations or if convergence is too slow. Then return true otherwise false
+  if( (normOfResidual<=limit) || (iteration_counter==max_it) || (slow_conv) )
+  {
+    if(slow_conv)
+      Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
+
+    // stop iteration
+    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
+                     " RES : ", normOfResidual, " Reduction : ",
+                     normOfResidual/initial_residual_);
+    return true;
+  }
+  else
+    return false;
+}
+
+/** ************************************************************************ */
+void NSE3D::compute_residuals()
+{
+  System_per_grid& s = this->systems_.front();
+  unsigned int n_u_dof = s.solution_.length(0);
+  unsigned int n_p_dof = s.solution_.length(3);
+
+  // copy rhs to defect and compute defect
+  defect_ = s.rhs_;
+  s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
-    IntoL20Vector3D(&defect[3*nDofU], nDofP,
+    IntoL20Vector3D(&defect_[3*n_u_dof], n_p_dof,
                     TDatabase::ParamDB->PRESSURE_SPACE);
   }
-  // compute residuals of mass and momentum
-  double residual, impulseResidual, massResidual;
-  residual = Ddot(3*nDofU+nDofP, &this->defect[0], &this->defect[0]);
-  impulseResidual = Ddot(3*nDofU, &this->defect[0], &this->defect[0]);
-  massResidual = Ddot(nDofP,&this->defect[3*nDofU],&this->defect[3*nDofU]);
-  
-  OutPut("nonlinear iteration step " << setw(3) << impulseResidual << " "
-         << setw(14) << residual-impulseResidual << " " << setw(14)
-         << sqrt(residual));
-  
-  if (iteration_counter>0)
-  {
-    Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+
+  // square of the norms of the residual components
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
+  //Eliminate all non-master rows in defect_m!
+  for(int ui = 0; ui < 3; ++ui)
+  {//velocity rows
+    const int* masters = s.parMapperVelocity_.GetMaster();
+    for(size_t i = 0; i<n_u_dof; ++i)
+    {
+      if (masters[i]!=my_rank)
+      {
+        defect_m[n_u_dof*ui + i]=0;
+      }
+    }
   }
-  oldResidual=sqrt(residual);
-  int maxIte = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double limit=TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if(TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
-  {
-    limit *=sqrt(this->get_size());
-    Output::print("stopping tolerance for nonlinear iteration ", limit);
+  {//pressure row
+    const int* masters = s.parMapperPressure_.GetMaster();
+    for(size_t i = 0; i<n_p_dof; ++i)
+    {
+      if (masters[i]!=my_rank)
+      {
+        defect_m[n_u_dof*3 + i]=0;
+      }
+    }
   }
-  if(iteration_counter==0)
-    initial_residual = sqrt(residual);
-  if ((((sqrt(residual)<=limit)||(iteration_counter==maxIte)))
-   && (iteration_counter>=TDatabase::ParamDB->SC_MINIT))
-   {
-     Output::print("ITE : ", setw(3), iteration_counter, "  RES : ", sqrt(residual), 
-                   " Reduction : ",  sqrt(residual)/initial_residual);
-     return true;
-   }
-   else
-     return false;
+  //TODO write this nicer (std!)
+  double impuls_Residual = Ddot(3*n_u_dof, &defect_m.at(0),&defect_m.at(0));
+  double mass_residual = Ddot(n_p_dof, &defect_m.at(3*n_u_dof),
+                              &defect_m.at(3*n_u_dof));
+#else
+  //should not BlockVector be able to do vector*vector?
+  double impuls_Residual = Ddot(3*n_u_dof, &this->defect_[0],&this->defect_[0]);
+  double mass_residual = Ddot(n_p_dof, &this->defect_[3*n_u_dof],
+                              &this->defect_[3*n_u_dof]);
+#endif
+
+  Residuals current_residuals(impuls_Residual, mass_residual);
+  old_residuals_.add(current_residuals);
 }
 
 void NSE3D::solve()
 {
 
-  SystemPerGrid& s = this->systems_.front();
+  System_per_grid& s = this->systems_.front();
 
   bool using_multigrid = //determine whether we make use of multigrid
       TDatabase::ParamDB->SOLVER_TYPE == 1 &&
@@ -652,16 +709,19 @@ void NSE3D::solve()
 
 void NSE3D::output(int i)
 {
-    if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
     return;
   
-  SystemPerGrid& s=this->systems_.front();
+  System_per_grid& s=this->systems_.front();
+  TFEFunction3D* u1 = s.u_.GetComponent(0);
+  TFEFunction3D* u2 = s.u_.GetComponent(1);
+  TFEFunction3D* u3 = s.u_.GetComponent(2);
   
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-    s.u_.GetComponent(0)->PrintMinMax();
-    s.u_.GetComponent(1)->PrintMinMax();
-    s.u_.GetComponent(2)->PrintMinMax();
+    u1->PrintMinMax();
+    u2->PrintMinMax();
+    u3->PrintMinMax();
     s.p_.PrintMinMax();
   }
   
@@ -690,39 +750,83 @@ void NSE3D::output(int i)
   // in such a case here only integrals of the solution are computed.
   if(TDatabase::ParamDB->MEASURE_ERRORS)
   {
-    double err[7];
+    double err_u1[4]; // of these arrays only the two first entries are used,
+    double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
+    double err_u3[4]; // have not at least size 4
+    double err_p[4];
+
+
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     MultiIndex3D nsAllDerivs[4] = {D000, D100, D010, D001};
     const TFESpace3D *velocity_space = &this->get_velocity_space();
     const TFESpace3D *pressure_space = &this->get_pressure_space();
     
     // errors in first velocity component
-    s.u_.GetComponent(0)->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 2, 
-                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err);
+    u1->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u1);
     // errors in second velocity component
-    s.u_.GetComponent(1)->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 2, 
-                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err + 2);
-    
-    s.u_.GetComponent(2)->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2, 
-                            L2H1Errors, nullptr, &aux, 1, &velocity_space, err + 4);
-    
-    errors[0] = sqrt(err[0]*err[0] + err[2]*err[2] + err[4]*err[4]);
-    errors[1] = sqrt(err[1]*err[1] + err[3]*err[3] + err[5]*err[5]);    
-    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
-    Output::print<1>("H1-semi(u): ", setprecision(10), errors[1]);
+    u2->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u2);
+    // errors in third velocity component
+    u3->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2,
+                  L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u3);
     // errors in pressure
-    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors, 
-                  nullptr, &aux, 1, &pressure_space, err);
+    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors,
+                   nullptr, &aux, 1, &pressure_space, err_p);
     
-    errors[2] = err[0];
-    errors[3] = err[1];    
-    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
-    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
-    
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    double err_red[8]; //memory for global (across all processes) error
+    double err_send[8]; //fill send buffer
+    err_send[0]=err_u1[0];
+    err_send[1]=err_u1[1];
+    err_send[2]=err_u2[0];
+    err_send[3]=err_u2[1];
+    err_send[4]=err_u3[0];
+    err_send[5]=err_u3[1];
+    err_send[6]=err_p[0];
+    err_send[7]=err_p[1];
+
+    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for(i=0;i<8;i++)
+    {//MPI: sqrt was skipped in GetErrors function - do it here globally!
+      err_red[i] = sqrt(err_red[i]);
+    }
+    //fill the reduced errors back where they belong
+    err_u1[0] = err_red[0];
+    err_u1[1] = err_red[1];
+    err_u2[0] = err_red[2];
+    err_u2[1] = err_red[3];
+    err_u3[0] = err_red[4];
+    err_u3[1] = err_red[5];
+    err_p[0] = err_red[6];
+    err_p[1] = err_red[7];
+#else
+    int my_rank =0;
+#endif
+
+    errors_.at(0) = sqrt(err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] + err_u3[0]*err_u3[0]);//L2
+    errors_.at(1) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
+    errors_.at(2) = err_p[0];
+    errors_.at(3) = err_p[1];
+    //print errors
+    if(my_rank == 0)
+    {
+      Output::print("");
+      Output::print<1>("L2(u)     : ", setprecision(10), errors_.at(0));
+      Output::print<1>("H1-semi(u): ", setprecision(10), errors_.at(1));
+      Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));
+      Output::print<1>("H1-semi(p): ", setprecision(10), errors_.at(3));
+    }
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  delete u1;
+  delete u2;
+  delete u3;
 }
 
-TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::SystemPerGrid& s)
+TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::System_per_grid& s)
 {
   TNSE_MGLevel * multigridLevel;
   size_t nAuxArray = 2;
@@ -821,7 +925,7 @@ TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::SystemPerGrid& s)
 
 void NSE3D::mg_solver()
 {
-  SystemPerGrid& s = this->systems_.front();
+  System_per_grid& s = this->systems_.front();
   std::shared_ptr<TItMethod> itMethod;
   std::shared_ptr<TItMethod> prec;
   int zero_start;  
@@ -1000,7 +1104,39 @@ void NSE3D::mg_solver()
     }
 }
 
-std::array< double, int(4) > NSE3D::get_errors()
+TFEFunction3D* NSE3D::get_velocity_component(int i)
 {
-  return errors;
+  if(i==0)
+    return this->systems_.front().u_.GetComponent(0);
+  else if(i==1)
+    return this->systems_.front().u_.GetComponent(1);
+  else  if(i==2)
+    return this->systems_.front().u_.GetComponent(2);
+  else
+    throw std::runtime_error("There are only three velocity components!");
+}
+
+const Residuals& NSE3D::get_residuals() const
+{
+  return old_residuals_.back();
+}
+
+double NSE3D::get_impuls_residual() const
+{
+  return old_residuals_.back().impulsResidual;
+}
+
+double NSE3D::get_mass_residual() const
+{
+  return old_residuals_.back().massResidual;
+}
+
+double NSE3D::get_full_residual() const
+{
+  return old_residuals_.back().fullResidual;
+}
+
+std::array<double, int(4)> NSE3D::get_errors() const
+{
+  return errors_;
 }
