@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <deque>
+#include <array>
 #include <list>
 
 #ifdef _MPI
@@ -121,6 +122,12 @@ class CD3D
      *         needed.
      */
     std::shared_ptr<TMultiGrid3D> multigrid_;
+
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call CD3D::output()
+     * Currently, the errors store the global L2 and H1 errors.
+     */
+    std::array<double, int(2)> errors_;
 
   public:
 
@@ -259,6 +266,12 @@ class CD3D
     const Example_CD3D& getExample() const
     {
       return example_;
+    }
+
+    /** ************************************************************************ */
+    std::array< double, int(2) > get_errors() const
+    {
+      return errors_;
     }
 
     // Declaration of special member functions - delete all but destructor.
