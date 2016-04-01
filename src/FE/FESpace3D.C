@@ -2030,10 +2030,10 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
   ActiveBound = N_ActiveDegrees;
 
-  delete BoundaryUpperBound;
-  delete BoundCounter;
-  delete BoundMark;
-  delete BoundOffset;
+  delete[] BoundaryUpperBound;
+  delete[] BoundCounter;
+  delete[] BoundMark;
+  delete[] BoundOffset;
   
 //   #ifdef _MPI
 //   int rank, size;
@@ -2051,16 +2051,16 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
 TFESpace3D::~TFESpace3D()
 {
-  delete BoundaryNodesBound;
+  delete[] BoundaryNodesBound;
 
   if (UsedElements)
-    delete UsedElements;
+    delete[] UsedElements;
 
   if(AllElements)
-    delete AllElements;
+    delete[] AllElements;
 
   if(ElementForShape)
-    delete ElementForShape;
+    delete[] ElementForShape;
 }
 
 /** return position of all dofs */

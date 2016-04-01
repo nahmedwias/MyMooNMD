@@ -1432,7 +1432,7 @@ TStructure::TStructure( const TFESpace3D *space )
   HangingRows[N_]=index;
 
   // free HangingKColAux
-  delete HangingKColAux;
+  delete[] HangingKColAux;
 
   // add the additional columns from hanging nodes to other nodes
   Offset=ActiveBound;
@@ -1585,7 +1585,7 @@ TStructure::TStructure( const TFESpace3D *space )
 */
 
   // free KColAux
-  delete KColAux;
+  delete[] KColAux;
 
 
 #ifdef _MPI
