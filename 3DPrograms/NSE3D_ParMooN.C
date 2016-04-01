@@ -169,9 +169,6 @@ int main(int argc, char* argv[])
   nse3d.stop_it(0);
   // check initial residuals
   //======================================================================
-//  //CB DEBUG - fixed number of iterations to avoid stop_it for the moment
-//  for(unsigned int k=1; k < 4; k++)
-//  //END DEBUG
   for(unsigned int k=1;; k++)
   {
     // solve the system
