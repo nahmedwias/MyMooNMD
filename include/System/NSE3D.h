@@ -17,13 +17,15 @@
 #ifndef INCLUDE_SYSTEM_NSE3D_H_
 #define INCLUDE_SYSTEM_NSE3D_H_
 
-#include <NSE_MultiGrid.h>
-#include <FESpace3D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <FEVectFunct3D.h>
-#include <FEFunction3D.h>
 #include <Example_NSE3D.h>
+#include <FEFunction3D.h>
+#include <FESpace3D.h>
+#include <FEVectFunct3D.h>
+#include <MainUtilities.h> // FixedSizeQueue
+#include <NSE_MultiGrid.h>
+#include <Residuals.h>
 
 #include <vector>
 #include <deque>
@@ -46,7 +48,7 @@ class NSE3D
      * needed to describe one Navier Stokes flow problem in 3D.
      * In MPI case the parallel infrastructure is stored, too.
      */
-    struct SystemPerGrid
+    struct System_per_grid
     {
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -57,11 +59,11 @@ class NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      SystemPerGrid(const Example_NSE3D& example,
+      System_per_grid(const Example_NSE3D& example,
                     TCollection& coll, std::pair<int, int> order, NSE3D::Matrix type, 
                     int maxSubDomainPerDof);
 #else
-      SystemPerGrid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order, 
+      System_per_grid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order,
                     NSE3D::Matrix type);
 #endif
 
@@ -106,23 +108,23 @@ class NSE3D
 #endif
 
 
-      // SystemPerGrid is not supposed to be copied or moved
+      // System_per_grid is not supposed to be copied or moved
       // until underlying classes realize the rule of zero.
 
       //! Delete copy constructor. No copies allowed.
-      SystemPerGrid( const SystemPerGrid& ) = delete;
+      System_per_grid( const System_per_grid& ) = delete;
 
       //! Delete move constructor. No moves allowed.
-      SystemPerGrid( SystemPerGrid&& ) = delete;
+      System_per_grid( System_per_grid&& ) = delete;
 
       //! Delete copy assignment operator. No copies allowed.
-      SystemPerGrid& operator=( const SystemPerGrid& ) = delete;
+      System_per_grid& operator=( const System_per_grid& ) = delete;
 
       //! Default move assignment operator. No moves allowed.
-      SystemPerGrid& operator=( SystemPerGrid&& ) = delete;
+      System_per_grid& operator=( System_per_grid&& ) = delete;
 
       //! Default destructor. Does most likely cause memory leaks.
-      ~SystemPerGrid() = default;
+      ~System_per_grid() = default;
     };
 
     /** @brief A complete system on each involved grid.
@@ -130,7 +132,7 @@ class NSE3D
      * Note that the size of this double ended queue is at least one and
      * larger only when a multgrid preconditioner is used.
      */
-    std::deque<SystemPerGrid> systems_;
+    std::deque<System_per_grid> systems_;
 
     /** @brief Definition of the used example. */
     const Example_NSE3D& example_;
@@ -152,21 +154,24 @@ class NSE3D
     void get_velocity_pressure_orders(std::pair <int,int> 
                    &velocity_pressure_orders);
     
-    /** @brief an array to store defect, so that we don't have to reallocate
-     *         so often
-     */
-    BlockVector defect;
-    /***/
-    double oldResidual;
+    //! @brief An array to store the current defect.
+    BlockVector defect_;
     
-    /** @brief store the initial residual so that the nonlinear iteration can 
-     *         be stopped as soon as a desired reduction is achieved
-     */
-    double initial_residual;
+    ///@brief The norms of residuals from up to 10 previous iterations
+    FixedSizeQueue<10, Residuals> old_residuals_;
+
+    //! @brief The initial residual. Stored so that the nonlinear iteration can
+    //!        be stopped as soon as a desired reduction is achieved
+    double initial_residual_;
     
-    /** @brief
+    /** @brief Errors, held in ready to be accesed from outside the class
+     * The array is filled during the function call NSE3D::output()
+     * Currently, the errors store the L2 and H1-semi errors of the velocity
+     * (errors.at(0) is L2 and errors.at(1) is H1-semi)
+     * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
      */
-    std::array<double, int(4)> errors;
+    std::array<double, int(4)> errors_;
+
  public:
 
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
@@ -233,19 +238,33 @@ class NSE3D
      */
     void assemble_non_linear_term();
     
+    //! Solve the current linear system. Nonlinear loop is outside of this class.
+    void solve();
+
     /** @brief check if one of the stopping criteria is fulfilled
      * 
      * either converged, maximun number of iterations reached, or slow 
      * convergence
      * 
      * @param iteration_counter current iterate
+     *
+     * @note For the sequential case, this is the copy-paste NSE2D
+     * (with exception of slightly different compute_residual methods).
      */
     bool stop_it(unsigned int iteration_counter);
 
-    //! Solve the current linear system. Nonlinear loop will be outside of this class.
-    void solve();
+    /**
+     * @brief Compute the defect Ax-b, and the residuals and store it all.
+     *
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
 
     //! Measure errors and draw a nice VTK picture, if requested to do so.
+    //! @param i suffix for output file name, -1 means no suffix.
     void output(int i = -1);
 
 /*******************************************************************************/
@@ -276,7 +295,7 @@ class NSE3D
      * @param: level
      * @param: grid to be added
      */
-    TNSE_MGLevel* mg_levels(int level, SystemPerGrid& s);
+    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
     
     /**
      * @brief multigrid solver
@@ -290,15 +309,7 @@ class NSE3D
     { return this->systems_.front().u_; }
     TFEVectFunct3D & get_velocity()
     { return this->systems_.front().u_; }    
-    TFEFunction3D *get_velocity_component(int i)
-    { 
-      if(i==0) 
-        return this->systems_.front().u_.GetComponent(0);
-      else if(i==1) 
-        return this->systems_.front().u_.GetComponent(1);
-      else 
-        return this->systems_.front().u_.GetComponent(2);
-    }
+    TFEFunction3D *get_velocity_component(int i);
     TFEFunction3D & get_pressure()
     { return this->systems_.front().p_; }
     const TFESpace3D & get_velocity_space() const
@@ -307,9 +318,18 @@ class NSE3D
     { return this->systems_.front().pressureSpace_; }
     
     const int get_size(){return this->systems_.front().solution_.length();}
+
+    /// @brief Get the current residuals  (updated in compute_residuals)
+    const Residuals& get_residuals() const;
+    /// @brief get the current impuls residual (updated in compute_residuals)
+    double get_impuls_residual() const;
+    /// @brief get the current mass residual (updated in compute_residuals)
+    double get_mass_residual() const;
+    /// @brief get the current residual (updated in compute_residuals)
+    double get_full_residual() const;
     
-    /// @brief return the computed errors 
-    std::array<double, int(4)> get_errors();
+    /// @brief return the computed errors (computed in output())
+    std::array<double, int(4)> get_errors() const;
 
 };
 
