@@ -308,7 +308,7 @@ class NSE2D
     /// @brief get the current residual (updated in NSE2D::normOfResidual)
     double getFullResidual() const;
     /// @brief return the computed errors
-    std::array<double, int(6)> get_errors();
+    std::array<double, int(6)> get_errors() const;
 };
 
 
