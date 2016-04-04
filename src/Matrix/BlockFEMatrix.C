@@ -309,18 +309,18 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFES
 
   // create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity);
-  FEMatrix velo_velo_1_1(velo_velo_0_0);
-  FEMatrix velo_velo_2_2(velo_velo_0_0);
   
   // fill in the velo-velo blocks
-  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
-  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
-  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
+                                          {false, false, false});
+
   // zero velocity blocks
   FEMatrix velo_velo_zero(&velocity, &velocity, true);
-  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
+                                            {1,2}, {2,0}, {2,1}},
+                                            {false, false, false,
+                                             false, false, false});
+
 
   FEMatrix pressure_velo_1(&pressure, &velocity);
   FEMatrix pressure_velo_2(pressure_velo_1);
@@ -341,22 +341,19 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFES
 BlockFEMatrix BlockFEMatrix::NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure)
 {
   BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
-
-  //create new blocks with correct structures filled with 0
+  // create new blocks with correct structures filled with 0
   FEMatrix velo_velo_0_0(&velocity, &velocity);
-  FEMatrix velo_velo_1_1(velo_velo_0_0);
-  FEMatrix velo_velo_2_2(velo_velo_0_0);
   
   // fill in the velo-velo blocks
-  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
-  my_matrix.replace_blocks(velo_velo_1_1, {{1,1}}, {false});
-  my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
-  
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
-  
-  my_matrix.replace_blocks(velo_velo_zero, {{1,0}, {0,1}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,0}, {0,2}}, {false, false});
-  my_matrix.replace_blocks(velo_velo_zero, {{2,1}, {1,2}}, {false, false});
+  my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
+                                          {false, false, false});
+
+  // zero velocity blocks
+  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
+                                            {1,2}, {2,0}, {2,1}},
+                                            {false, false, false,
+                                             false, false, false});
   
   FEMatrix pressure_velo_1(&pressure, &velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 

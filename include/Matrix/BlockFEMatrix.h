@@ -563,9 +563,9 @@ class BlockFEMatrix : public BlockMatrix
 
     /** @brief return this BlockMatrix as one TMatrix
      *
-     * This returns a merged version of this matix. Note that the merged
+     * This returns a merged version of this matrix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
-     * up to date, but recreated on every call.
+     * up to date, but is recreated on every call.
      *
      * Treats Dirichlet rows correctly and globally, regardless of
      * what the particular blocks hold in their Dirichlet rows.
