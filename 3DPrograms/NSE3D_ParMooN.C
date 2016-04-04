@@ -171,6 +171,8 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
+    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t",
+                     nse3d.get_residuals());
     // solve the system
     nse3d.solve();
 
