@@ -181,6 +181,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
     param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
     
     this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
+    this->transposed_B_structures_.resize(nLevels,nullptr);
     
     // constructing systems per grid
     for(auto it : collections)
@@ -668,7 +669,6 @@ void NSE3D::compute_residuals()
 
 void NSE3D::solve()
 {
-
   System_per_grid& s = this->systems_.front();
 
   bool using_multigrid = //determine whether we make use of multigrid
@@ -811,6 +811,7 @@ void NSE3D::output(int i)
     errors_.at(1) = sqrt(err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] + err_u3[1]*err_u3[1]);//H1-semi
     errors_.at(2) = err_p[0];
     errors_.at(3) = err_p[1];
+
     //print errors
     if(my_rank == 0)
     {
@@ -868,17 +869,20 @@ TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::System_per_grid& s)
   TMatrix3D* B2 = reinterpret_cast<TMatrix3D*>(blocks[13].get());
   TMatrix3D* B3 = reinterpret_cast<TMatrix3D*>(blocks[14].get());
   
-  TStructure structure = B1T->GetStructure();
+
   std::pair<int, int> velo_pres_code(TDatabase::ParamDB->VELOCITY_SPACE,
                                              TDatabase::ParamDB->PRESSURE_SPACE);
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      multigridLevel = new TNSE_MGLevel1(level, A11, B1, B2, B3, &structure, 
+    {
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
+      multigridLevel = new TNSE_MGLevel1(level, A11, B1, B2, B3, transposed_B_structures_.back().get(),
                                          s.rhs_.get_entries(),s.solution_.get_entries(), 
                                          nAuxArray, alpha.data(), 
                                          velo_pres_code.first,velo_pres_code.second, 
                                          nullptr, nullptr);
+    }
       break;
     case 2:
       multigridLevel = new TNSE_MGLevel2(level, A11, B1, B2, B3, 
@@ -889,13 +893,16 @@ TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::System_per_grid& s)
                                          nullptr, nullptr);
       break;
     case 3:
+    {
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
       multigridLevel = new TNSE_MGLevel3(level, A11, A12, A13, A21, A22, A23,
                                          A31, A32, A33,
-                                         B1, B2, B3, &structure, 
+                                         B1, B2, B3, transposed_B_structures_.back().get(),
                                          s.rhs_.get_entries(),s.solution_.get_entries(), 
                                          nAuxArray, alpha.data(), 
                                          velo_pres_code.first,velo_pres_code.second, 
                                          nullptr, nullptr);
+    }
       break;
     case 4:
        multigridLevel = new TNSE_MGLevel4(level, 

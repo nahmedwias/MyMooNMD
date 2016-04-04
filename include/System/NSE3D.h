@@ -141,6 +141,9 @@ class NSE3D
      *         needed.
      */
     std::shared_ptr<TNSE_MultiGrid> multigrid_;
+    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
+    /// transposed blocks are not stored explicitely...sad but true.
+    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
     
     /** @brief set the velocity and pressure orders
      * 
