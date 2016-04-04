@@ -132,6 +132,8 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   if(LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
+  this->transposed_B_structures_.resize(LEVELS,nullptr);
+
   // the matrix and rhs side on the finest grid are already constructed 
   // now construct all matrices, rhs, and solutions on coarser grids
   for(int i = LEVELS - 2; i >= 0; i--)
@@ -781,11 +783,11 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
   TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
   TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
 
-  std::shared_ptr<TStructure> structure = B1T->GetStructure().GetTransposed();
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, structure.get(),
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
+      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, transposed_B_structures_.back().get(),
                                s.rhs.get_entries(), s.solution.get_entries(),
                                n_aux, alpha, v_space_code, p_space_code,
                                nullptr, nullptr);
@@ -798,7 +800,8 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
                                nullptr, nullptr);
       break;      
     case 3:
-      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, structure.get(),
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
+      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, transposed_B_structures_.back().get(),
                                s.rhs.get_entries(), s.solution.get_entries(),
                                n_aux, alpha, v_space_code, p_space_code,
                                nullptr, nullptr);
