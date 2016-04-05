@@ -14,14 +14,14 @@
 //      B1, B2 (divergence blocks)
 // ======================================================================
 
-static int TimeNSType1N_Terms = 5;
-static MultiIndex3D TimeNSType1Derivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType1SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
-static int TimeNSType1N_Matrices = 5;
-static int TimeNSType1RowSpace[5] = { 0, 0, 1, 1, 1 };
-static int TimeNSType1ColumnSpace[5] = { 0, 0, 0, 0, 0 };
-static int TimeNSType1N_Rhs = 3;
-static int TimeNSType1RhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSType1N_Terms = 5;
+//static MultiIndex3D TimeNSType1Derivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType1SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
+//static int TimeNSType1N_Matrices = 5;
+//static int TimeNSType1RowSpace[5] = { 0, 0, 1, 1, 1 };
+//static int TimeNSType1ColumnSpace[5] = { 0, 0, 0, 0, 0 };
+//static int TimeNSType1N_Rhs = 3;
+//static int TimeNSType1RhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // Type 1, Standard Galerkin
@@ -70,9 +70,9 @@ void TimeNSType1GL00Convolution3D(double Mult, double *coeff,
 // ======================================================================
 // Type 1, GL00AuxProblem
 // ======================================================================
-static int TimeNSType1GL00AuxProblemN_Matrices = 6;
-static int TimeNSType1GL00AuxProblemRowSpace[6] = { 0, 0, 2, 1, 1, 1 };
-static int TimeNSType1GL00AuxProblemColumnSpace[6] = { 0, 0, 2, 0, 0, 0 };
+//static int TimeNSType1GL00AuxProblemN_Matrices = 6;
+//static int TimeNSType1GL00AuxProblemRowSpace[6] = { 0, 0, 2, 1, 1, 1 };
+//static int TimeNSType1GL00AuxProblemColumnSpace[6] = { 0, 0, 2, 0, 0, 0 };
 
 void TimeNSType1GL00AuxProblem3D(double Mult, double *coeff,
                         double *param, double hK,
@@ -87,14 +87,14 @@ void TimeNSType1GL00AuxProblem3D(double Mult, double *coeff,
 //      B1T, B2T (gradient blocks)
 // ======================================================================
 
-static int TimeNSType2N_Terms = 5;
-static MultiIndex3D TimeNSType2Derivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType2SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
-static int TimeNSType2N_Matrices = 8;
-static int TimeNSType2RowSpace[8] = { 0, 0, 1, 1, 1, 0, 0, 0 };
-static int TimeNSType2ColumnSpace[8] = { 0, 0, 0, 0, 0, 1, 1, 1 };
-static int TimeNSType2N_Rhs = 3;
-static int TimeNSType2RhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSType2N_Terms = 5;
+//static MultiIndex3D TimeNSType2Derivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType2SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
+//static int TimeNSType2N_Matrices = 8;
+//static int TimeNSType2RowSpace[8] = { 0, 0, 1, 1, 1, 0, 0, 0 };
+//static int TimeNSType2ColumnSpace[8] = { 0, 0, 0, 0, 0, 1, 1, 1 };
+//static int TimeNSType2N_Rhs = 3;
+//static int TimeNSType2RhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // Type 2, Standard Galerkin
@@ -144,9 +144,9 @@ void TimeNSType2GL00Convolution3D(double Mult, double *coeff,
 // ======================================================================
 // Type 2, GL00AuxProblem
 // ======================================================================
-static int TimeNSType2GL00AuxProblemN_Matrices = 9;
-static int TimeNSType2GL00AuxProblemRowSpace[9] = { 0, 0, 2, 1, 1, 1, 0, 0, 0 };
-static int TimeNSType2GL00AuxProblemColumnSpace[9] = { 0, 0, 2, 0, 0, 0, 1, 1, 1 };
+//static int TimeNSType2GL00AuxProblemN_Matrices = 9;
+//static int TimeNSType2GL00AuxProblemRowSpace[9] = { 0, 0, 2, 1, 1, 1, 0, 0, 0 };
+//static int TimeNSType2GL00AuxProblemColumnSpace[9] = { 0, 0, 2, 0, 0, 0, 1, 1, 1 };
 
 void TimeNSType2GL00AuxProblem3D(double Mult, double *coeff,
                         double *param, double hK,
@@ -159,16 +159,16 @@ void TimeNSType2GL00AuxProblem3D(double Mult, double *coeff,
 //      B1, B2 (divergence blocks), 
 // ======================================================================
 
-static int TimeNSType3N_Terms = 5;
-static MultiIndex3D TimeNSType3Derivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType3SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
-static int TimeNSType3N_Matrices = 15;
-static int TimeNSType3RowSpace[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                1, 1, 1 };
-static int TimeNSType3ColumnSpace[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0, 0, 0 };
-static int TimeNSType3N_Rhs = 3;
-static int TimeNSType3RhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSType3N_Terms = 5;
+//static MultiIndex3D TimeNSType3Derivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType3SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
+//static int TimeNSType3N_Matrices = 15;
+//static int TimeNSType3RowSpace[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                                1, 1, 1 };
+//static int TimeNSType3ColumnSpace[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                                   0, 0, 0 };
+//static int TimeNSType3N_Rhs = 3;
+//static int TimeNSType3RhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v)
@@ -257,13 +257,13 @@ void TimeNSType3GL00ConvolutionDD3D(double Mult, double *coeff,
 // ======================================================================
 // Type 3, GL00AuxProblem, (grad u, grad v)
 // ======================================================================
-static int TimeNSType3GL00AuxProblemN_Matrices = 16;
-static int TimeNSType3GL00AuxProblemRowSpace[16] =  { 0, 0, 0, 0, 0, 0, 
-                                               0, 0, 0, 0, 0, 0, 
-                                               2, 1, 1, 1 };
-static int TimeNSType3GL00AuxProblemColumnSpace[16] = { 0, 0, 0, 0, 0, 0, 
-                                                 0, 0, 0, 0, 0, 0, 
-                                                 2, 0, 0, 0 };
+//static int TimeNSType3GL00AuxProblemN_Matrices = 16;
+//static int TimeNSType3GL00AuxProblemRowSpace[16] =  { 0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               2, 1, 1, 1 };
+//static int TimeNSType3GL00AuxProblemColumnSpace[16] = { 0, 0, 0, 0, 0, 0,
+//                                                 0, 0, 0, 0, 0, 0,
+//                                                 2, 0, 0, 0 };
 
 void TimeNSType3GL00AuxProblem3D(double Mult, double *coeff,
                         double *param, double hK,
@@ -285,16 +285,16 @@ void TimeNSType3GL00AuxProblemDD3D(double Mult, double *coeff,
 //      B1T, B2T (gradient blocks)
 // ======================================================================
 
-static int TimeNSType4N_Terms = 5;
-static MultiIndex3D TimeNSType4Derivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType4SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
-static int TimeNSType4N_Matrices = 18;
-static int TimeNSType4RowSpace[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                1, 1, 1, 0, 0, 0 };
-static int TimeNSType4ColumnSpace[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0, 0, 0, 1, 1, 1 };
-static int TimeNSType4N_Rhs = 3;
-static int TimeNSType4RhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSType4N_Terms = 5;
+//static MultiIndex3D TimeNSType4Derivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType4SpaceNumbers[5] = { 0, 0, 0, 0, 1 };
+//static int TimeNSType4N_Matrices = 18;
+//static int TimeNSType4RowSpace[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                                1, 1, 1, 0, 0, 0 };
+//static int TimeNSType4ColumnSpace[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                                   0, 0, 0, 1, 1, 1 };
+//static int TimeNSType4N_Rhs = 3;
+//static int TimeNSType4RhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // Type 4, Standard Galerkin, (grad u, grad v)
@@ -383,11 +383,11 @@ void TimeNSType4GL00ConvolutionDD3D(double Mult, double *coeff,
 // ======================================================================
 // Type 4, GL00AuxProblem, (grad u, grad v)
 // ======================================================================
-static int TimeNSType4GL00AuxProblemN_Matrices = 19;
-static int TimeNSType4GL00AuxProblemRowSpace[19] =  
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0 };
-static int TimeNSType4GL00AuxProblemColumnSpace[19] = 
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1 };
+//static int TimeNSType4GL00AuxProblemN_Matrices = 19;
+//static int TimeNSType4GL00AuxProblemRowSpace[19] =
+//    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0 };
+//static int TimeNSType4GL00AuxProblemColumnSpace[19] =
+//    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1 };
 
 void TimeNSType4GL00AuxProblem3D(double Mult, double *coeff,
                         double *param, double hK,
@@ -405,19 +405,19 @@ void TimeNSType4GL00AuxProblemDD3D(double Mult, double *coeff,
 // ======================================================================
 // Type 4, VMS_Projection, D(u):D(v)
 // ======================================================================
-static int TimeNSType4VMS_ProjectionN_Terms = 6;
-static MultiIndex3D TimeNSType4VMS_ProjectionDerivatives[6] = { D100, D010, D001, D000, D000, D000 };
-static int TimeNSType4VMS_ProjectionSpaceNumbers[6] = { 0, 0, 0, 0, 1, 2 };
-static int TimeNSType4VMS_ProjectionN_Matrices = 25;
-static int TimeNSType4VMS_ProjectionRowSpace[25] = { 0, 0, 0, 0, 0, 0, 
-                                              0, 0, 0, 0, 0, 0,
-                                              2, 1, 1, 1, 0, 0, 0,
-                                              0, 0, 0, 2, 2, 2};
-                                            
-static int TimeNSType4VMS_ProjectionColumnSpace[25] = { 0, 0, 0, 0, 0, 0, 
-                                                 0, 0, 0, 0, 0, 0,
-                                                 2, 0, 0, 0, 1, 1, 1,
-                                                 2, 2, 2, 0, 0, 0};
+//static int TimeNSType4VMS_ProjectionN_Terms = 6;
+//static MultiIndex3D TimeNSType4VMS_ProjectionDerivatives[6] = { D100, D010, D001, D000, D000, D000 };
+//static int TimeNSType4VMS_ProjectionSpaceNumbers[6] = { 0, 0, 0, 0, 1, 2 };
+//static int TimeNSType4VMS_ProjectionN_Matrices = 25;
+//static int TimeNSType4VMS_ProjectionRowSpace[25] = { 0, 0, 0, 0, 0, 0,
+//                                              0, 0, 0, 0, 0, 0,
+//                                              2, 1, 1, 1, 0, 0, 0,
+//                                              0, 0, 0, 2, 2, 2};
+//
+//static int TimeNSType4VMS_ProjectionColumnSpace[25] = { 0, 0, 0, 0, 0, 0,
+//                                                 0, 0, 0, 0, 0, 0,
+//                                                 2, 0, 0, 0, 1, 1, 1,
+//                                                 2, 2, 2, 0, 0, 0};
                                                  
 void TimeNSType4VMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -439,15 +439,15 @@ void TimeNSType4VMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
 // ONLY right hand sides
 // ======================================================================
 
-static int TimeNSVMS_Rhs_SUPGN_Terms = 7;
-static MultiIndex3D TimeNSVMS_Rhs_SUPGDerivatives[7] = { D100, D010, D001, D000,
-                                                         D100, D010, D001 };
-static int TimeNSVMS_Rhs_SUPGSpaceNumbers[7] = { 0, 0, 0, 0, 1, 1, 1 };
-static int TimeNSVMS_Rhs_SUPGN_Matrices = 0;
-static int *TimeNSVMS_Rhs_SUPGRowSpace = NULL;
-static int *TimeNSVMS_Rhs_SUPGColumnSpace = NULL;
-static int TimeNSVMS_Rhs_SUPGN_Rhs = 7;
-static int TimeNSVMS_Rhs_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
+//static int TimeNSVMS_Rhs_SUPGN_Terms = 7;
+//static MultiIndex3D TimeNSVMS_Rhs_SUPGDerivatives[7] = { D100, D010, D001, D000,
+//                                                         D100, D010, D001 };
+//static int TimeNSVMS_Rhs_SUPGSpaceNumbers[7] = { 0, 0, 0, 0, 1, 1, 1 };
+//static int TimeNSVMS_Rhs_SUPGN_Matrices = 0;
+//static int *TimeNSVMS_Rhs_SUPGRowSpace = NULL;
+//static int *TimeNSVMS_Rhs_SUPGColumnSpace = NULL;
+//static int TimeNSVMS_Rhs_SUPGN_Rhs = 7;
+//static int TimeNSVMS_Rhs_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
 
 // compute stabilization parameters
 void SUPG_Param3D(double u1, double u2, double u3, double* coeff, double* params);
@@ -461,48 +461,48 @@ void TimeNSType14VMS_Rhs_SUPGDD3D(double Mult, double *coeff, double *param,
 // ======================================================================
 // Type 4, VMS_SUPG, D(u):D(v)
 // ======================================================================
-static int TimeNSType4VMS_SUPGN_Terms = 8;
-static MultiIndex3D TimeNSType4VMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
-                                                          D100, D010, D001, D000 };
-static int TimeNSType4VMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
-static int TimeNSType4VMS_SUPGN_Matrices = 28;
-static int TimeNSType4VMS_SUPGRowSpace[28] = { 0, 0, 0, 0, 0, 0, 
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 
-					       1, 1, 1, 0, 0, 0};
-                                            
-static int TimeNSType4VMS_SUPGColumnSpace[28] = {0, 0, 0, 0, 0, 0, 
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 
-					       0, 0, 0, 1, 1, 1};
-                                                 
-static int TimeNSType4VMS_SUPGN_Rhs = 4;
-static int TimeNSType4VMS_SUPGRhsSpace[4] = { 0, 0, 0, 1};
+//static int TimeNSType4VMS_SUPGN_Terms = 8;
+//static MultiIndex3D TimeNSType4VMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
+//                                                          D100, D010, D001, D000 };
+//static int TimeNSType4VMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
+//static int TimeNSType4VMS_SUPGN_Matrices = 28;
+//static int TimeNSType4VMS_SUPGRowSpace[28] = { 0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0,
+//					       1, 1, 1, 0, 0, 0};
+//
+//static int TimeNSType4VMS_SUPGColumnSpace[28] = {0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0,
+//					       0, 0, 0, 1, 1, 1};
+//
+//static int TimeNSType4VMS_SUPGN_Rhs = 4;
+//static int TimeNSType4VMS_SUPGRhsSpace[4] = { 0, 0, 0, 1};
 
 void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-static int TimeNSType4NLVMS_SUPGN_Terms = 8;
-static MultiIndex3D TimeNSType4NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
-							  D100, D010, D001, D000 };
-static int TimeNSType4NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
-static int TimeNSType4NLVMS_SUPGN_Matrices = 22;
-static int TimeNSType4NLVMS_SUPGRowSpace[22] = { 0, 0, 0, 0, 0, 0, 
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0};
-                                            
-static int TimeNSType4NLVMS_SUPGColumnSpace[22] = {0, 0, 0, 0, 0, 0, 
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 0, 0,
-						   0, 0, 0, 0};
-
-static int TimeNSType4NLVMS_SUPGN_Rhs = 0;
-static int *TimeNSType4NLVMS_SUPGRhsSpace = NULL;
+//static int TimeNSType4NLVMS_SUPGN_Terms = 8;
+//static MultiIndex3D TimeNSType4NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
+//							  D100, D010, D001, D000 };
+//static int TimeNSType4NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1 };
+//static int TimeNSType4NLVMS_SUPGN_Matrices = 22;
+//static int TimeNSType4NLVMS_SUPGRowSpace[22] = { 0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//						 0, 0, 0, 0};
+//
+//static int TimeNSType4NLVMS_SUPGColumnSpace[22] = {0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//                                               0, 0, 0, 0, 0, 0,
+//						   0, 0, 0, 0};
+//
+//static int TimeNSType4NLVMS_SUPGN_Rhs = 0;
+//static int *TimeNSType4NLVMS_SUPGRhsSpace = NULL;
 
 void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -523,54 +523,54 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
 // ======================================================================
 // Type 14, VMS_SUPG, D(u):D(v)
 // ======================================================================
-static int TimeNSType14VMS_SUPGN_Terms =8;
-static MultiIndex3D TimeNSType14VMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
-                             D100, D010, D001, D000};
-static int TimeNSType14VMS_SUPGSpaceNumbers[11] = { 0, 0, 0, 0, 1, 1, 1, 1};
-static int TimeNSType14VMS_SUPGN_Matrices = 37;
-static int TimeNSType14VMS_SUPGRowSpace[37] = { 0, 0, 0, 0, 0, 0, 
-                                                0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 0, 0, 0,
-                  1, 1, 1, 1, 0, 0, 0};
-                                           
-static int TimeNSType14VMS_SUPGColumnSpace[37] = {0, 0, 0, 0, 0, 0, 
-                                                  0, 0, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0,
-                    1, 0, 0, 0, 1, 1, 1};
-                                                 
-static int TimeNSType14VMS_SUPGN_Rhs = 7;
-static int TimeNSType14VMS_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
+//static int TimeNSType14VMS_SUPGN_Terms =8;
+//static MultiIndex3D TimeNSType14VMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
+//                             D100, D010, D001, D000};
+//static int TimeNSType14VMS_SUPGSpaceNumbers[11] = { 0, 0, 0, 0, 1, 1, 1, 1};
+//static int TimeNSType14VMS_SUPGN_Matrices = 37;
+//static int TimeNSType14VMS_SUPGRowSpace[37] = { 0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 0, 0, 0,
+//                  1, 1, 1, 1, 0, 0, 0};
+//
+//static int TimeNSType14VMS_SUPGColumnSpace[37] = {0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//                    1, 0, 0, 0, 1, 1, 1};
+//
+//static int TimeNSType14VMS_SUPGN_Rhs = 7;
+//static int TimeNSType14VMS_SUPGRhsSpace[7] = { 0, 0, 0, 0, 0, 0, 1};
 
 void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs);
 
-static int TimeNSType14NLVMS_SUPGN_Terms = 8;
-static MultiIndex3D TimeNSType14NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000, 
-                   D100, D010, D001, D000};
-static int TimeNSType14NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1};
-static int TimeNSType14NLVMS_SUPGN_Matrices = 34;
-static int TimeNSType14NLVMS_SUPGRowSpace[34] = { 0, 0, 0, 0, 0, 0, 
-                                                  0, 0, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0,
-              0, 0, 0, 1, 1, 1,
-              1, 0, 0, 0};
-                                            
-static int TimeNSType14NLVMS_SUPGColumnSpace[34] = {0, 0, 0, 0, 0, 0, 
-                                                    0, 0, 0, 0, 0, 0,
-                                                    0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                                                    0, 0, 0, 1, 0, 0,
-                0, 1, 1, 1};
-
-static int TimeNSType14NLVMS_SUPGN_Rhs = 3;
-static int TimeNSType14NLVMS_SUPGRhsSpace[3] = {0, 0, 0};
+//static int TimeNSType14NLVMS_SUPGN_Terms = 8;
+//static MultiIndex3D TimeNSType14NLVMS_SUPGDerivatives[8] = { D100, D010, D001, D000,
+//                   D100, D010, D001, D000};
+//static int TimeNSType14NLVMS_SUPGSpaceNumbers[8] = { 0, 0, 0, 0, 1, 1, 1, 1};
+//static int TimeNSType14NLVMS_SUPGN_Matrices = 34;
+//static int TimeNSType14NLVMS_SUPGRowSpace[34] = { 0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//                                                  0, 0, 0, 0, 0, 0,
+//              0, 0, 0, 0, 0, 0,
+//              0, 0, 0, 1, 1, 1,
+//              1, 0, 0, 0};
+//
+//static int TimeNSType14NLVMS_SUPGColumnSpace[34] = {0, 0, 0, 0, 0, 0,
+//                                                    0, 0, 0, 0, 0, 0,
+//                                                    0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0, 0,
+//                                                    0, 0, 0, 1, 0, 0,
+//                0, 1, 1, 1};
+//
+//static int TimeNSType14NLVMS_SUPGN_Rhs = 3;
+//static int TimeNSType14NLVMS_SUPGRhsSpace[3] = {0, 0, 0};
 
 void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -595,14 +595,14 @@ void TimeNSType4LerayAlphaDD3D(double Mult, double *coeff,
 //      WITHOUT right hand sides
 // ======================================================================
 
-static int TimeNSType1_2NLN_Terms = 4;
-static MultiIndex3D TimeNSType1_2NLDerivatives[4] = { D100, D010, D001, D000 };
-static int TimeNSType1_2NLSpaceNumbers[4] = { 0, 0, 0, 0 };
-static int TimeNSType1_2NLN_Matrices = 1;
-static int TimeNSType1_2NLRowSpace[1] = { 0 };
-static int TimeNSType1_2NLColumnSpace[1] = { 0 };
-static int TimeNSType1_2NLN_Rhs = 0;
-static int *TimeNSType1_2NLRhsSpace = NULL;
+//static int TimeNSType1_2NLN_Terms = 4;
+//static MultiIndex3D TimeNSType1_2NLDerivatives[4] = { D100, D010, D001, D000 };
+//static int TimeNSType1_2NLSpaceNumbers[4] = { 0, 0, 0, 0 };
+//static int TimeNSType1_2NLN_Matrices = 1;
+//static int TimeNSType1_2NLRowSpace[1] = { 0 };
+//static int TimeNSType1_2NLColumnSpace[1] = { 0 };
+//static int TimeNSType1_2NLN_Rhs = 0;
+//static int *TimeNSType1_2NLRhsSpace = NULL;
 
 // ======================================================================
 // Type 1, Standard Galerkin, only nonlinear part
@@ -641,14 +641,14 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
 //      WITHOUT right hand sides
 // ======================================================================
 
-static int TimeNSType3_4NLN_Terms = 4;
-static MultiIndex3D TimeNSType3_4NLDerivatives[4] = { D100, D010, D001, D000 };
-static int TimeNSType3_4NLSpaceNumbers[4] = { 0, 0, 0, 0 };
-static int TimeNSType3_4NLN_Matrices = 3;
-static int TimeNSType3_4NLRowSpace[3] = { 0, 0, 0 };
-static int TimeNSType3_4NLColumnSpace[3] = { 0, 0, 0 };
-static int TimeNSType3_4NLN_Rhs = 0;
-static int *TimeNSType3_4NLRhsSpace = NULL;
+//static int TimeNSType3_4NLN_Terms = 4;
+//static MultiIndex3D TimeNSType3_4NLDerivatives[4] = { D100, D010, D001, D000 };
+//static int TimeNSType3_4NLSpaceNumbers[4] = { 0, 0, 0, 0 };
+//static int TimeNSType3_4NLN_Matrices = 3;
+//static int TimeNSType3_4NLRowSpace[3] = { 0, 0, 0 };
+//static int TimeNSType3_4NLColumnSpace[3] = { 0, 0, 0 };
+//static int TimeNSType3_4NLN_Rhs = 0;
+//static int *TimeNSType3_4NLRhsSpace = NULL;
 
 // ======================================================================
 // Type 3, Standard Galerkin, (grad u, grad v), only nonlinear part
@@ -698,9 +698,9 @@ void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff,
 // Type 3, Standard Smagorinsky, (grad u, grad v), only nonlinear part
 // Type 4, Standard Smagorinsky, (grad u, grad v), only nonlinear part
 // ======================================================================
-static int TimeNSType3_4NLSmagorinskyN_Matrices = 9;
-static int TimeNSType3_4NLSmagorinskyRowSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-static int TimeNSType3_4NLSmagorinskyColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+//static int TimeNSType3_4NLSmagorinskyN_Matrices = 9;
+//static int TimeNSType3_4NLSmagorinskyRowSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+//static int TimeNSType3_4NLSmagorinskyColumnSpace[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
 void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff, 
@@ -731,14 +731,14 @@ void TimeNSType3_4NLGalerkin3D(double Mult, double *coeff,
 // Type 3, VMS_Projection, D(u):D(v), only nonlinear diagonal blocks
 // Type 4, VMS_Projection, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
-static int TimeNSType3_4NLVMS_ProjectionN_Terms = 5;
-static MultiIndex3D TimeNSType3_4NLVMS_ProjectionDerivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType3_4NLVMS_ProjectionSpaceNumbers[5] = { 0, 0, 0, 0, 2 };
-static int TimeNSType3_4NLVMS_ProjectionN_Matrices = 12;
-static int TimeNSType3_4NLVMS_ProjectionRowSpace[12] = { 0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 0, 0, 0};
-static int TimeNSType3_4NLVMS_ProjectionColumnSpace[12] = { 0, 0, 0, 0, 0, 0, 
-                                                   0, 0, 0, 2, 2, 2};
+//static int TimeNSType3_4NLVMS_ProjectionN_Terms = 5;
+//static MultiIndex3D TimeNSType3_4NLVMS_ProjectionDerivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType3_4NLVMS_ProjectionSpaceNumbers[5] = { 0, 0, 0, 0, 2 };
+//static int TimeNSType3_4NLVMS_ProjectionN_Matrices = 12;
+//static int TimeNSType3_4NLVMS_ProjectionRowSpace[12] = { 0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 0, 0, 0};
+//static int TimeNSType3_4NLVMS_ProjectionColumnSpace[12] = { 0, 0, 0, 0, 0, 0,
+//                                                   0, 0, 0, 2, 2, 2};
 
 void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -749,14 +749,14 @@ void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff,
 // Type 3, VMS_Projection, D(u):D(v), adaptive coarse space
 // Type 4, VMS_Projection, D(u):D(v), adaptive coarse space
 // ======================================================================
-static int TimeNSType3_4NL_Adap_VMS_ProjectionN_Terms = 5;
-static MultiIndex3D TimeNSType3_4NL_Adap_VMS_ProjectionDerivatives[5] = { D100, D010, D001, D000, D000 };
-static int TimeNSType3_4NL_Adap_VMS_ProjectionSpaceNumbers[5] = { 0, 0, 0, 0, 2 };
-static int TimeNSType3_4NL_Adap_VMS_ProjectionN_Matrices = 16;
-static int TimeNSType3_4NL_Adap_VMS_ProjectionRowSpace[16] = { 0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 2, 0, 0, 0, 2, 2, 2};
-static int TimeNSType3_4NL_Adap_VMS_ProjectionColumnSpace[16] = { 0, 0, 0, 0, 0, 0, 
-                                                   0, 0, 0, 2, 2, 2, 2, 0, 0, 0};
+//static int TimeNSType3_4NL_Adap_VMS_ProjectionN_Terms = 5;
+//static MultiIndex3D TimeNSType3_4NL_Adap_VMS_ProjectionDerivatives[5] = { D100, D010, D001, D000, D000 };
+//static int TimeNSType3_4NL_Adap_VMS_ProjectionSpaceNumbers[5] = { 0, 0, 0, 0, 2 };
+//static int TimeNSType3_4NL_Adap_VMS_ProjectionN_Matrices = 16;
+//static int TimeNSType3_4NL_Adap_VMS_ProjectionRowSpace[16] = { 0, 0, 0, 0, 0, 0,
+//                                                0, 0, 0, 2, 0, 0, 0, 2, 2, 2};
+//static int TimeNSType3_4NL_Adap_VMS_ProjectionColumnSpace[16] = { 0, 0, 0, 0, 0, 0,
+//                                                   0, 0, 0, 2, 2, 2, 2, 0, 0, 0};
 
 void TimeNSType3_4NL_Adap_VMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -778,12 +778,12 @@ void TimeNSType3_4NLVMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
 // Type 4, VMS_Projection explicit, only Matrix_tilde_G??
 // ======================================================================
 
-static int TimeNSType3_4NLVMS_ProjectionExplN_Terms = 4;
-static MultiIndex3D TimeNSType3_4NLVMS_ProjectionExplDerivatives[4] = { D100, D010, D001, D000};
-static int TimeNSType3_4NLVMS_ProjectionExplSpaceNumbers[4] = { 0, 0, 0, 1 };
-static int TimeNSType3_4NLVMS_ProjectionExplN_Matrices = 3;
-static int TimeNSType3_4NLVMS_ProjectionExplRowSpace[3] = {0, 0, 0  };
-static int TimeNSType3_4NLVMS_ProjectionExplColumnSpace[3] = {1, 1, 1 };
+//static int TimeNSType3_4NLVMS_ProjectionExplN_Terms = 4;
+//static MultiIndex3D TimeNSType3_4NLVMS_ProjectionExplDerivatives[4] = { D100, D010, D001, D000};
+//static int TimeNSType3_4NLVMS_ProjectionExplSpaceNumbers[4] = { 0, 0, 0, 1 };
+//static int TimeNSType3_4NLVMS_ProjectionExplN_Matrices = 3;
+//static int TimeNSType3_4NLVMS_ProjectionExplRowSpace[3] = {0, 0, 0  };
+//static int TimeNSType3_4NLVMS_ProjectionExplColumnSpace[3] = {1, 1, 1 };
 
 void TimeNSType3_4VMS_ProjectionExpl3D(double Mult, double *coeff, 
                 double *param, double hK, 
@@ -808,14 +808,14 @@ void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff,
 //      ONLY right hand sides
 // ======================================================================
 
-static int TimeNSRHSN_Terms = 1;
-static MultiIndex3D TimeNSRHSDerivatives[1] = { D000 };
-static int TimeNSRHSSpaceNumbers[1] = { 0 };
-static int TimeNSRHSN_Matrices = 0;
-static int *TimeNSRHSRowSpace = NULL;
-static int *TimeNSRHSColumnSpace = NULL;
-static int TimeNSRHSN_Rhs = 3;
-static int TimeNSRHSRhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSRHSN_Terms = 1;
+//static MultiIndex3D TimeNSRHSDerivatives[1] = { D000 };
+//static int TimeNSRHSSpaceNumbers[1] = { 0 };
+//static int TimeNSRHSN_Matrices = 0;
+//static int *TimeNSRHSRowSpace = NULL;
+//static int *TimeNSRHSColumnSpace = NULL;
+//static int TimeNSRHSN_Rhs = 3;
+//static int TimeNSRHSRhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // right-hand side ONLY
@@ -825,14 +825,14 @@ void TimeNSRHS3D(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs);
 
-static int TimeNSRHSLESN_Terms = 4;
-static MultiIndex3D TimeNSRHSLESDerivatives[4] = { D100, D010, D001, D000 };
-static int TimeNSRHSLESSpaceNumbers[4] = { 0, 0, 0, 0 };
-static int TimeNSRHSLESN_Matrices = 0;
-static int *TimeNSRHSLESRowSpace = NULL;
-static int *TimeNSRHSLESColumnSpace = NULL;
-static int TimeNSRHSLESN_Rhs = 3;
-static int TimeNSRHSLESRhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSRHSLESN_Terms = 4;
+//static MultiIndex3D TimeNSRHSLESDerivatives[4] = { D100, D010, D001, D000 };
+//static int TimeNSRHSLESSpaceNumbers[4] = { 0, 0, 0, 0 };
+//static int TimeNSRHSLESN_Matrices = 0;
+//static int *TimeNSRHSLESRowSpace = NULL;
+//static int *TimeNSRHSLESColumnSpace = NULL;
+//static int TimeNSRHSLESN_Rhs = 3;
+//static int TimeNSRHSLESRhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // right-hand side ONLY, ClassicalLES model
@@ -857,14 +857,14 @@ void TimeNSRHSLESModel3D(double Mult, double *coeff,
 // ONLY, Galdi-Layton model with auxiliary problem
 // ======================================================================
 
-static int TimeNSGL00AuxProblemRHSN_Terms = 1;
-static MultiIndex3D TimeNSGL00AuxProblemRHSDerivatives[1] = { D000 };
-static int TimeNSGL00AuxProblemRHSSpaceNumbers[1] = { 0 };
-static int TimeNSGL00AuxProblemRHSN_Matrices = 0;
-static int *TimeNSGL00AuxProblemRHSRowSpace = NULL;
-static int *TimeNSGL00AuxProblemRHSColumnSpace = NULL;
-static int TimeNSGL00AuxProblemRHSN_Rhs = 6;
-static int TimeNSGL00AuxProblemRHSRhsSpace[6] = { 0, 0, 0, 0, 0, 0 };
+//static int TimeNSGL00AuxProblemRHSN_Terms = 1;
+//static MultiIndex3D TimeNSGL00AuxProblemRHSDerivatives[1] = { D000 };
+//static int TimeNSGL00AuxProblemRHSSpaceNumbers[1] = { 0 };
+//static int TimeNSGL00AuxProblemRHSN_Matrices = 0;
+//static int *TimeNSGL00AuxProblemRHSRowSpace = NULL;
+//static int *TimeNSGL00AuxProblemRHSColumnSpace = NULL;
+//static int TimeNSGL00AuxProblemRHSN_Rhs = 6;
+//static int TimeNSGL00AuxProblemRHSRhsSpace[6] = { 0, 0, 0, 0, 0, 0 };
 
 void TimeNSGL00AuxProblemRHS3D(double Mult, double *coeff,
                double *param, double hK,
@@ -885,14 +885,14 @@ void TimeNSRHSAuxProblemU(double Mult, double *coeff,
 //    only rhs
 // ======================================================================
 
-static int TimeNSRFBExplRhsN_Terms = 1;
-static MultiIndex3D TimeNSRFBExplRhsDerivatives[1] = { D000 };
-static int TimeNSRFBExplRhsSpaceNumbers[1] = { 0 };
-static int TimeNSRFBExplRhsN_Matrices = 0;
-static int *TimeNSRFBExplRhsRowSpace = NULL;
-static int *TimeNSRFBExplRhsColumnSpace = NULL;
-static int TimeNSRFBExplRhsN_Rhs = 3;
-static int TimeNSRFBExplRhsRhsSpace[3] = { 0, 0, 0 };
+//static int TimeNSRFBExplRhsN_Terms = 1;
+//static MultiIndex3D TimeNSRFBExplRhsDerivatives[1] = { D000 };
+//static int TimeNSRFBExplRhsSpaceNumbers[1] = { 0 };
+//static int TimeNSRFBExplRhsN_Matrices = 0;
+//static int *TimeNSRFBExplRhsRowSpace = NULL;
+//static int *TimeNSRFBExplRhsColumnSpace = NULL;
+//static int TimeNSRFBExplRhsN_Rhs = 3;
+//static int TimeNSRFBExplRhsRhsSpace[3] = { 0, 0, 0 };
 
 // ======================================================================
 // Assembling routine for matrices for auxiliary problems
@@ -917,14 +917,14 @@ static int TimeNSRFBExplRhsRhsSpace[3] = { 0, 0, 0 };
 //               double ***LocMatrices, double **LocRhs);
 
 
-static int MatrixAuxiliaryProblemN_Terms = 4;
-static MultiIndex3D MatrixAuxiliaryProblemDerivatives[4] = { D100, D010, D001, D000};
-static int MatrixAuxiliaryProblemSpaceNumbers[4] = { 0, 0, 0, 0};
-static int MatrixAuxiliaryProblemN_Matrices = 1;
-static int MatrixAuxiliaryProblemRowSpace[1] = { 0 };
-static int MatrixAuxiliaryProblemColumnSpace[1] = { 0 };
-static int MatrixAuxiliaryProblemN_Rhs = 0;
-static int *MatrixAuxiliaryProblemRhsSpace = NULL;
+//static int MatrixAuxiliaryProblemN_Terms = 4;
+//static MultiIndex3D MatrixAuxiliaryProblemDerivatives[4] = { D100, D010, D001, D000};
+//static int MatrixAuxiliaryProblemSpaceNumbers[4] = { 0, 0, 0, 0};
+//static int MatrixAuxiliaryProblemN_Matrices = 1;
+//static int MatrixAuxiliaryProblemRowSpace[1] = { 0 };
+//static int MatrixAuxiliaryProblemColumnSpace[1] = { 0 };
+//static int MatrixAuxiliaryProblemN_Rhs = 0;
+//static int *MatrixAuxiliaryProblemRhsSpace = NULL;
 
 void MatrixAuxiliaryProblem(double Mult, double *coeff, 
                             double *param, double hK, 
@@ -946,14 +946,14 @@ void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff,
 // ONLY right hand sides
 // ======================================================================
 
-static int TimeNS_ho_RHSN_Terms = 4;
-static MultiIndex3D TimeNS_ho_RHSDerivatives[4] = {  D100, D010, D001, D000};
-static int TimeNS_ho_RHSSpaceNumbers[1] = { 0 };
-static int TimeNS_ho_RHSN_Matrices = 0;
-static int *TimeNS_ho_RHSRowSpace = NULL;
-static int *TimeNS_ho_RHSColumnSpace = NULL;
-static int TimeNS_ho_RHSN_Rhs = 3;
-static int TimeNS_ho_RHSRhsSpace[3] = { 0, 0, 0 };
+//static int TimeNS_ho_RHSN_Terms = 4;
+//static MultiIndex3D TimeNS_ho_RHSDerivatives[4] = {  D100, D010, D001, D000};
+//static int TimeNS_ho_RHSSpaceNumbers[1] = { 0 };
+//static int TimeNS_ho_RHSN_Matrices = 0;
+//static int *TimeNS_ho_RHSRowSpace = NULL;
+//static int *TimeNS_ho_RHSColumnSpace = NULL;
+//static int TimeNS_ho_RHSN_Rhs = 3;
+//static int TimeNS_ho_RHSRhsSpace[3] = { 0, 0, 0 };
 
 void TimeNSType1GalerkinJ3D(double Mult, double *coeff, 
                 double *param, double hK, 
