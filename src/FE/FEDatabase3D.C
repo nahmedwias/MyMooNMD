@@ -1121,7 +1121,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
                           double* &zeta, double* &weights,
                           double* X, double* Y, double* Z, double* absdetjk)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
+  int i,MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
   BF3DRefElements RefElement;
   QuadFormula3D QuadFormula;
   TQuadFormula3D *qf2;
@@ -1631,7 +1631,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
     Refinements refine, FE3D child, int childnumber)
 { 
   double *ret, *ret2;
-  int i,j,k,l;
+  int j,k,l;
   int N_Coarse, N_Fine, N_Points, N_Children;
   double *xi, *eta, *zeta;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
@@ -1792,17 +1792,17 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent, 
     Refinements refine, FE3D child, int childnumber)
 { 
-  double *ret, *ret2;
-  int i,j,k,l, l1, l2;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  double *ret; // double *ret2;
+  int i,j,k, l1, l2;
+  int N_Coarse, N_Fine, N_Children; // int N_Points;
   double AllPointValues[MaxN_QuadPoints_3D][MaxN_BaseFunctions3D];
-  double PointValues[MaxN_PointsForNodal3D];
+  //double PointValues[MaxN_PointsForNodal3D];
   TFE3D *CoarseElement, *FineElement;
   TRefDesc *RefDesc;
   TBaseFunct3D *BaseFunctions, *FineBF;
   BaseFunct3D Coarse, Fine;
   TBaseCell *RefCell, *cell;
-  TNodalFunctional3D *nf;
+  //TNodalFunctional3D *nf;
   RefTrans3D F_K;
   TRefTrans3D *rt;
 
@@ -1815,7 +1815,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *zeta, *weights, sum, w;
+  double *xi, *eta, *zeta, *weights, w; // double sum;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
