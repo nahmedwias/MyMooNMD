@@ -3004,7 +3004,7 @@ void TimeNSType3_4NLGalerkinNewtonDD3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double val, val1;
+  double val1;
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -3164,7 +3164,7 @@ void TimeNSType3_4NLUpwindNewtonDD3D(double Mult, double *coeff,
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2;
   int i,j, N_U;
   double c0;
   OutPut("Discretization not yet implemented !!!"<<endl);
@@ -3181,7 +3181,6 @@ void TimeNSType3_4NLUpwindNewtonDD3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-  Orig3 = OrigValues[3]; // u
 
   c0 = coeff[0]; // nu
 
@@ -3309,8 +3308,8 @@ void TimeNSType3_4NLSmagorinskyNewtonDD3D(double Mult, double *coeff,
   double *Matrix33Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j,N_U;
   double c0, viscosity, delta;
   double u1, u2, u3, mu, a000t000;
   double du1x, du1y, du1z, du2x, du2y, du2z, du3x, du3y, du3z;
@@ -3428,7 +3427,7 @@ void TimeNSType3_4NLVMS_ProjectionNewtonDD3D(double Mult, double *coeff,
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P, N_L;
+  int i,j,N_U, N_L;
   double c0, viscosity, delta;
   double u1, u2, u3, mu, a000t000;
   double du1x, du1y, du1z, du2x, du2y, du2z, du3x, du3y, du3z;
@@ -3606,7 +3605,6 @@ void TimeNSRHSNewtonNL3D(double Mult, double *coeff,
   double test000;
   double *Orig0;
   int i, N_U;
-  double c1, c2, c3;
   double u1, u2, u3, du1x, du1y, du1z, du2x, du2y, du2z, du3x, du3y, du3z;
 
   Rhs4 = LocRhs[0];
@@ -3650,13 +3648,12 @@ void TimeNSRHSClassicalLESNewton3D(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, val;
+  double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2;
   int i, N_U;
-  double c1, c2, c3;
 
-  double delta, ngu, val1, mu1;
+  double delta, val1, mu1;
   double D1u1, D2u1, D3u1, D1u2, D2u2, D3u2, D1u3, D2u3, D3u3;
   double a[3][3];
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
@@ -3670,10 +3667,6 @@ void TimeNSRHSClassicalLESNewton3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
 
   D1u1 = param[3]; // D1u1
   D1u2 = param[4]; // D1u2;
