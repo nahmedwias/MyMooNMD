@@ -9,7 +9,7 @@
                        DoubleFunctVect *evalface);
 */
 
-static double NF_D_H_P3_3D_Array1[] = {
+/* static double NF_D_H_P3_3D_Array1[] = {
         1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0,
@@ -25,7 +25,7 @@ static double NF_D_H_P3_3D_Array1[] = {
         1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0 };
+        1.0, 1.0, 1.0, 1.0 }; */
 
 static double NF_D_H_P3_3D_Array2[] = {
 	-0.8611363115940526, -0.3399810435848563,

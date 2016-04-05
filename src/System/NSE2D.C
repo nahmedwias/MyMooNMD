@@ -167,11 +167,18 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   switch(velocity_order)
   {
     case 1: case 2: case 3: case 4: case 5:
-    case 12: case 13: case 14: case 15:
+    case 14: case 15:
       if(velocity_order > 10)
         order = velocity_order-10;
       else
         order = velocity_order;
+      break;
+    // P2/P1disc and P3/P2disc elements are not stable on triangles and not allowed
+    // They are transformed into P2bubbles/P1disc and P3bubbles/P2disc
+    // On quads, it will be Q2/P1disc, Q3/P2disc
+    case 12: case 13:
+      velocity_order += 10;
+      order = velocity_order;
       break;
     case -1: case -2: case -3: case -4: case -5:
     case -101:
@@ -719,16 +726,16 @@ void NSE2D::output(int i)
     
     errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
     errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);    
-    Output::print<1>("L2(u)     : ", errors[0]);
-    Output::print<1>("H1-semi(u): ", errors[1]);
+    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
+    Output::print<1>("H1-semi(u): ", setprecision(10),errors[1]);
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
     
     errors.at(2) = err[0];
     errors.at(3) = err[1];    
-    Output::print<1>("L2(p)     : ", errors[2]);
-    Output::print<1>("H1-semi(p): ", errors[3]);    
+    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
+    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
     
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
   delete u1;
