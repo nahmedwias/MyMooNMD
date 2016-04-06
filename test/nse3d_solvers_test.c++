@@ -147,29 +147,13 @@ void check(int example, int geo,
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
 #endif
-
-  // Collect those Collections which will be used in multigrid.
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-
-  // Further mesh refinement and grabbing of collections.
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
-  {
-    domain.RegRefineAll();
-#ifdef _MPI
-    domain.GenerateEdgeInfo();  // has to be called anew after every refinement step
-    Domain_Crop(MPI_COMM_WORLD, &domain); // remove unwanted cells in the halo after refinement
-#endif
-    // Grab collection.
-    gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-  }
   /* *****************End domain creation. ************************ */
 
   // Construct the nse3d problem object.
 #ifdef _MPI
-  NSE3D nse3d(gridCollections, example_obj, maxSubDomainPerDof);
+  NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
 #else
-  NSE3D nse3d(gridCollections, example_obj);
+  NSE3D nse3d(domain, example_obj);
 #endif
 
   nse3d.assemble_linear_terms();
