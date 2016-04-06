@@ -904,11 +904,12 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
     // go one block row further
     row_offset += n_local_rows;
   }
-  
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
-    // check that its really a Navier-Stokes matrices
-    if(n_cell_rows_ == 3 && n_cell_columns_ ==3)
+   // TODO: this entire business is still a mess!!!
+   // check that its really a Navier-Stokes matrices
+    if( n_cell_rows_ == 3 && n_cell_columns_ ==3 ) //2D case
     {
       // number of velocity dofs
       int n_rows = this->get_blocks().at(0)->GetN_Rows();
@@ -933,7 +934,32 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
       // That entry is set to be one. If there is no entry with a larger
       // column, we use the last entry in this row (diagonal == end-1). 
     }
+    if( n_cell_rows_ == 4 && n_cell_columns_ == 4 ) //3D case
+    {
+      // number of velocity dofs
+      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+
+      // find the first row of the fourth block column
+      int begin = rowptr[3*n_rows];
+      int end   = rowptr[3*n_rows+1];
+
+      int diagonal = end-1;
+      // set entries to zero
+      for(int j=begin;j<end;j++)
+      {
+        entries[j] = 0;
+        if(kcolptr[j] >= 3*n_rows && diagonal == end-1)
+          diagonal = j;
+      }
+      entries[diagonal] = 1;
+      kcolptr[diagonal] = 3*n_rows;
+    }
   }
+
+  // Remove all zero entries from the structure and the entries array
+  // TODO doing this here is very slow and it should be changed,
+  // but removing zeroes is important for the interface with direct solvers.
+  combined_matrix->remove_zeros(0);
 
   return combined_matrix;
 }

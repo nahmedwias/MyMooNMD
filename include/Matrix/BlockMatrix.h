@@ -214,6 +214,11 @@ class BlockMatrix
      *
      * @return A shared pointer to the block matrix, merged together to
      * a TMatrix.
+     *
+     * @todo This method is performance critical when using a direct solver, but
+     * it is rather slow - profile and speed up!
+     * Make sure that zero entries are not put into the combined matrix - this
+     * might already speed things up.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const;
 

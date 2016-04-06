@@ -177,7 +177,7 @@ class TMatrix
      *
      * @param[in] filename The filename where to write the matrix.
      */
-    void write(const char *filename) const;
+    void write(std::string filename) const;
     
     /// @brief Print matrix into the shell
     void Print(const char *name = "a") const;
