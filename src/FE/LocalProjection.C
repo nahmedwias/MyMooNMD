@@ -4505,10 +4505,10 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
 void UltraLocalProjection(TSquareMatrix3D* A, 
                           double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   int N_UsedElements, N_Points;  
   int i1, i2;
@@ -4523,7 +4523,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
@@ -4539,11 +4539,11 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   double **ChildValuesZ, *ChildValueZ;  
   double **PCValues;
   double *PCValue;
-  double w, val, valx, valy, valz;
+  double w, val;  // double valx, valy, valz;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s, hK;
   double *Entries;
-  double BValue[MaxN_BaseFunctions3D];
+//  double BValue[MaxN_BaseFunctions3D];
 
   fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
@@ -5703,10 +5703,10 @@ double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
 // stabilisation of full gradient (velocity or pressure)
 void UltraLocalProjection3D(void* A, bool ForPressure)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5716,7 +5716,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -5735,7 +5735,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   double w, val;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
   int ActiveBound, dof;
   int p, end;
@@ -5984,10 +5984,10 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
 {
   // cout << "\n start of lps error \n" << endl;
   
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5997,7 +5997,7 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -6014,12 +6014,12 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy, valz;
-  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+//  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
+//  int ActiveBound, dof;
+//  int p, end;
   double *Values;
   double error, locerror;
   double exactval[5];
