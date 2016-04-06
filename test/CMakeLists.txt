@@ -115,6 +115,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
   #richardson iteration with multigrid
   add_test(NAME cd3d_seq_mg COMMAND ParMooN_test_cd3d_solver_seq multigrid)
 
+  #nse3d solver tests
+  set(_EXEC_NAME ParMooN_test_nse3d_solver_seq)
+  set(_FILE_NAME nse3d_solvers_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME nse3d_seq_umfpack COMMAND ParMooN_test_nse3d_solver_seq umfpack)
+
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)

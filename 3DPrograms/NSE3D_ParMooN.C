@@ -54,8 +54,9 @@ int main(int argc, char* argv[])
 #endif
     Database.WriteParamDB(argv[0]);
 
-  // Do a makeshift parameter check
+  // Do a makeshift parameter check and the old parameter check of the Database.
   NSE3D::check_parameters();
+  Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
