@@ -174,7 +174,7 @@ void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
                                QuadFormula2D formula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k; // int N_, start, end;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -184,13 +184,13 @@ void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   double *refD00, *origD00;
   double *refD10, *origD10;
   double *refD01, *origD01;
-  double *refD20, *origD20;
-  double *refD11, *origD11;
-  double *refD02, *origD02;
-  double r20, r11, r02, o20, o11, o02;
+//  double *refD20, *origD20;
+//  double *refD11, *origD11;
+//  double *refD02, *origD02;
+//  double r20, r11, r02, o20, o11, o02;
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
+//  double GeoData[3][3];
+//  double Eye[3][3];
   BaseFunct2D BaseFunct;
   int N_Functs;
   bool SecondDer;
@@ -401,7 +401,7 @@ void TQuadIsoparametric::GetOrigValues(int joint, double zeta,
             double *uref, double *uxiref, double *uetaref,
             double *uorig, double *uxorig, double *uyorig)
 {
-  int i, j, k;
+  int i, k;
   double a11, a12, a21, a22, rec_detjk;
   double xi, eta;
   TBaseFunct2D *bf;
@@ -463,7 +463,7 @@ void TQuadIsoparametric::GetOrigValues(int joint, double zeta,
 
 void TQuadIsoparametric::SetCell(TBaseCell *cell)
 {
-  int i, j, k, N_;
+  int i, j;
   TJoint *joint;
   TBoundEdge *boundedge;
   TBoundComp2D *comp;
@@ -471,8 +471,8 @@ void TQuadIsoparametric::SetCell(TBaseCell *cell)
   JointType type;
   double t0, t1, t, dt;
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
-  int compid;
-  BoundTypes bdtype;
+//  int compid;
+//  BoundTypes bdtype;
   TBaseFunct2D *bf;
   TFEDesc2D *fedesc;
   int *JointDOF;
@@ -1126,7 +1126,7 @@ void TQuadIsoparametric::GetTangent(int j, double zeta,
   double *values[1];
   double xip, etap;
   int i, k;
-  double a11, a12, a21, a22, rec_detjk;
+  double a11, a12, a21, a22; // double rec_detjk;
   double xi, eta;
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
@@ -1188,7 +1188,7 @@ double TQuadIsoparametric::GetVolume()
 {
   double locvol;
 
-  int i, j, k;
+  int i, k;
   double Xi, Eta, a11, a12, a21, a22;
   double absdetjk;
 

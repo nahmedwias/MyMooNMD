@@ -80,7 +80,7 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
                                int N_Points, double *xi, double *eta,
                                int N_Functs, QuadFormula2D QuadFormula)
 {
-  int i,j,k, BaseVectDim;
+  int i,j, BaseVectDim;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -90,12 +90,12 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
   double *refD00, *origD00;
   double *refD10, *origD10;
   double *refD01, *origD01;
-  double *refD20, *origD20;
-  double *refD11, *origD11;
-  double *refD02, *origD02;
+//	double *refD20, *origD20;
+//	double *refD11, *origD11;
+//	double *refD02, *origD02;
   double *aux;
-//   double AllData[MaxN_BaseFunctions2D][5];
-  double GeoData[5][5];
+//	double AllData[MaxN_BaseFunctions2D][5];
+//  double GeoData[5][5];
 
   BaseVectDim = TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim();
 
@@ -294,7 +294,7 @@ void TQuadAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
                                QuadFormula2D QuadFormula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end, BaseVectDim;
+  int i,j,k,BaseVectDim;  // int start, end;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
@@ -314,8 +314,8 @@ void TQuadAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
   BaseFunct2D BaseFunct;
   int N_Functs;
   bool SecondDer;
-  int ii,ij,ik;
-  double tmp,Eye1[3][3];
+//  int ii,ij,ik;
+//  double tmp,Eye1[3][3];
 
   SecondDer = false;
   for(i=0;i<N_Sets;i++)
@@ -601,7 +601,7 @@ void TQuadAffin::GetOrigValues(int joint, double zeta,
 
 void TQuadAffin::SetCell(TBaseCell *cell)
 {
-  int i;
+
 #ifdef __3D__
   double z0, z1, z2, z3;
 #endif
