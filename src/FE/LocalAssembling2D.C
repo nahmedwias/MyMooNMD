@@ -689,7 +689,7 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
               this->RhsSpace = { 0, 0 };
               this->AssembleParam = NSType1Galerkin; 
               this->Manipulate = NULL;
-              
+
               this->N_Parameters = 2;
               this->N_ParamFct = 1;
               this->ParameterFct =  { NSParamsVelo };
