@@ -24,13 +24,13 @@ void handle_error_umfpack(int ierror)
   {
     //WARNINGS
     case UMFPACK_WARNING_singular_matrix:
-      Output::print<2>("umfpack Warning: Matrix is singular!");
+      Output::print<1>("umfpack Warning: Matrix is singular!");
       break;
     case UMFPACK_WARNING_determinant_underflow:
-      Output::print<2>("umfpack Warning: Determinant smaller than eps");
+      Output::print<1>("umfpack Warning: Determinant smaller than eps");
       break;
     case UMFPACK_WARNING_determinant_overflow:
-      Output::print<2>("umfpack Warning: Determinant is larger than IEEE Inf");
+      Output::print<1>("umfpack Warning: Determinant is larger than IEEE Inf");
       break;
     //ERRORS
     case UMFPACK_ERROR_out_of_memory:
@@ -76,8 +76,8 @@ void handle_error_umfpack(int ierror)
 /** ************************************************************************ */
 DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
                            DirectSolver::DirectSolverTypes type)
- : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr), cols(), 
-   rows()
+ : type(type), matrix(matrix), cols(), rows(),
+   symbolic(nullptr), numeric(nullptr)
 {
   Output::print<3>("constructing a DirectSolver object");
   if(!matrix->is_square())
@@ -90,19 +90,19 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
   {
     ErrThrow("Pardiso does not yet work");
   }
-  
+
   // the threshold is rather small here, it should furthermore depend on the 
   // dimension (2 or 3) and the polynomial degree (and possibly more).
   if(this->matrix->GetN_Rows() > 2e5)
   {
     this->cols.resize(this->matrix->GetN_Entries(), 0);
     this->rows.resize(this->matrix->GetN_Rows()+1, 0);
-    for(size_t i = 0; i < this->matrix->GetN_Entries(); ++i)
+    for(int i = 0; i < this->matrix->GetN_Entries(); ++i)
       this->cols[i] = this->matrix->GetKCol()[i];
-    for(size_t i = 0; i < this->matrix->GetN_Rows()+1; ++i)
+    for(int i = 0; i < this->matrix->GetN_Rows()+1; ++i)
       this->rows[i] = this->matrix->GetRowPtr()[i];
   }
-  this->symetric_factorize();
+  this->symbolic_factorize();
   this->numeric_factorize();
 }
 
@@ -115,9 +115,9 @@ DirectSolver::DirectSolver(const BlockMatrix& matrix,
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(DirectSolver&& other)
- : type(other.type), matrix(other.matrix), symbolic(other.symbolic), 
-   numeric(other.numeric), cols(std::move(other.cols)), 
-   rows(std::move(other.rows))
+ : type(other.type), matrix(other.matrix),
+   cols(std::move(other.cols)), rows(std::move(other.rows)),
+   symbolic(other.symbolic), numeric(other.numeric)
 {
   other.symbolic = nullptr;
   other.numeric = nullptr;
@@ -170,7 +170,7 @@ DirectSolver::~DirectSolver()
 }
 
 /** ************************************************************************ */
-void DirectSolver::symetric_factorize()
+void DirectSolver::symbolic_factorize()
 {
   int n_eq = matrix->GetN_Rows();
   switch(type)
@@ -254,6 +254,7 @@ void DirectSolver::numeric_factorize()
 /** ************************************************************************ */
 void DirectSolver::solve(const double* rhs, double* solution)
 {
+
   Output::print<3>("solving using a direct solver");
   switch(type)
   {
@@ -294,14 +295,15 @@ void DirectSolver::solve(const double* rhs, double* solution)
 /** ************************************************************************ */
 void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
-  if(  rhs.length() != this->matrix->GetN_Rows() 
-    || solution.length() != this->matrix->GetN_Columns())
+  if(  (int) rhs.length() != this->matrix->GetN_Rows()
+    || (int) solution.length() != this->matrix->GetN_Columns())
     ErrThrow("solution or right hand side vector has wrong size. ",
              "Size of the matrix: ", this->matrix->GetN_Rows(), " x ", 
              this->matrix->GetN_Columns(),"\t rhs size: ", rhs.length(), 
              "\tsolution size: ", solution.length());
 
   solve(rhs.get_entries(), solution.get_entries());
+
 }
 
 /** ************************************************************************ */
@@ -309,9 +311,8 @@ void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 
 void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
 {
-  double t1, t2, t3, t4;
-  int ret, i, j, k, l, begin, end;
-  double value;
+  int ret;
+
   int N_Eqn;
   const int *Row, *KCol;
   double *Values;
@@ -331,10 +332,10 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
     matrix->reorderMatrix();
   }
  
-  t1 = GetTime();
+  //t1 = GetTime();
   ret = umfpack_di_symbolic(N_Eqn, N_Eqn, Row, KCol, Values,
     &Symbolic, NULL, NULL);
-  t2 = GetTime();
+  //t2 = GetTime();
   // error occured
   if (ret!=0)
   {
@@ -344,7 +345,7 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
     &Numeric, NULL, NULL);
   umfpack_di_free_symbolic(&Symbolic);
-  t3 = GetTime();
+  //t3 = GetTime();
   // error occured
   if (ret!=0)
   {
@@ -354,7 +355,7 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
     sol, rhs, Numeric, NULL, NULL);
   umfpack_di_free_numeric(&Numeric);
-  t4 = GetTime();
+  //t4 = GetTime();
   if (ret!=0)
   {
     ErrThrow("error in umfpack_di_solve ", ret);
@@ -388,8 +389,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA11,
   double value;
   int N_Active;
   double t1, t2, t3, t4, t5;
-  int verbose = TDatabase::ParamDB->SC_VERBOSE;
-  double sum = 0;
 
   if (rb_flag==4)
   {
@@ -612,7 +611,7 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   double *EntriesA, *EntriesB1, *EntriesB2;
-  int N_, N_U, N_P, N_B, N_Entries;
+  int N_, N_U, N_P, N_Entries;
   static double *Entries;
   static int *KCol, *RowPtr;
   double *null = (double *) NULL;
@@ -620,7 +619,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   int i, j, k, l, begin, end, ret, pos;
   double value;
   int N_Active;
-  double t1, t2, t3, t4, t5, sum;
   
   if (rb_flag==4)
   {
@@ -637,7 +635,7 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   
   if (rb_flag==0 || rb_flag==3)
   {
-    t1 = GetTime();
+    //t1 = GetTime();
     // get information from the matrices
     // size
     N_U = sqmatrixA->GetN_Rows();
@@ -664,7 +662,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
     KCol = new int[N_Entries];
     RowPtr = new int[N_+1];
     RowPtr[0] = 0;
-    N_B = RowPtrB[N_P];
 
     pos = 0;
     // fill combined matrix
@@ -818,11 +815,11 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
     umfpack_di_free_symbolic(&Symbolic);
   }
 
-  t4 = GetTime();
+  //t4 = GetTime();
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
   Output::print<2>("solve: ", ret);
-  t5 = GetTime();
+  //t5 = GetTime();
 
   if (rb_flag==2 || rb_flag==3)
   {
@@ -887,7 +884,6 @@ void DirectSolver_old(TSquareMatrix3D *sqmatrixA11,
   double value;
   int N_Active;
   double t1, t2, t3, t4, t5;
-  int verbose = TDatabase::ParamDB->SC_VERBOSE;
 
   if (flag==4)
   {
