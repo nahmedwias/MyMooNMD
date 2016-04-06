@@ -277,7 +277,7 @@ void Time_NSE2D::assemble_initial_time()
 
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    
+
     LocalAssembling2D la(TNSE2D, fe_functions, 
                          this->example.get_coeffs());
     std::vector<std::shared_ptr<FEMatrix>> blocks 
