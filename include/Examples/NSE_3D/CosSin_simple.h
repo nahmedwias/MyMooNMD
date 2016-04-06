@@ -1,5 +1,11 @@
 // Navier-Stokes problem, sin and cos solution
 // 
+/**
+ * @file Navier-Stokes problem, sin and cos solution.
+ * This example seems to be made for the cube [-1,1]x[-1,1]x[-1,1]
+ * - at least that is what the boundary conditions look like.
+ * Don't expect the example to work anywhere else.
+ */
 
 void ExampleFile()
 {
