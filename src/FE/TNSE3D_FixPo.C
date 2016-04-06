@@ -137,21 +137,21 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
     nu = nu_constant * pow(delta,nu_sigma) * 
       pow(frobenius_norm_tensor,nu_power/2.0) ;
     break;
-      case 100: // van Driest damping for channel 
- 	  Re = TDatabase::ParamDB->RE_NR;
-	  // walls at z=0 and z=2
-	  zplus = Re*(1-fabs(1-z[0]));
-	  if(zplus < 5)
-	    {
-	      nu = nu_constant * delta * delta * (1-exp(-zplus/A)) *
-		(1-exp(-zplus/A)) * sqrt(frobenius_norm_tensor);
-	    }
-	  else
-	    {
-	      nu  =  nu_constant * delta * delta * sqrt(frobenius_norm_tensor);
-	    }
-	  break;
-      case 101: // van Driest damping for cylinder with squared cross--section
+  case 100: // van Driest damping for channel
+ 	Re = TDatabase::ParamDB->RE_NR;
+	// walls at z=0 and z=2
+	zplus = Re*(1-fabs(1-z[0]));
+	if(zplus < 5)
+	  {
+	    nu = nu_constant * delta * delta * (1-exp(-zplus/A)) *
+	     (1-exp(-zplus/A)) * sqrt(frobenius_norm_tensor);
+	  }
+	else
+	  {
+	    nu  =  nu_constant * delta * delta * sqrt(frobenius_norm_tensor);
+	  }
+	break;
+  case 101: // van Driest damping for cylinder with squared cross--section
 	  // left and right wall at the cylinder
 	  zplus = 1000;
 	  if ((x[0] > 0.45 - eps) && (x[0] < 0.55 + eps))
@@ -257,8 +257,8 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
 
       /*OutPut("Van Driest: " << (1-exp(-zplus/A)) *
       (1-exp(-zplus/A)) << endl);*/
-      break;
-    case 103:                                     // van Driest damping for channel flow (paper: Rudman, Blackburn'99)
+    break;
+  case 103:                                     // van Driest damping for channel flow (paper: Rudman, Blackburn'99)
       Re = TDatabase::ParamDB->RE_NR;
       // walls at z=0 and z=2
       zplus = Re*(1-fabs(1-z[0]));
@@ -266,8 +266,8 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
 
       /*OutPut("Van Driest: " << (1-exp(-zplus/A)) *
       (1-exp(-zplus/A)) << endl);*/
-      break;
-    case 104:                                     // van Driest damping for channel flow (paper: Rudman, Blackburn'99) with diff A+
+    break;
+  case 104:                                     // van Driest damping for channel flow (paper: Rudman, Blackburn'99) with diff A+
       Re = TDatabase::ParamDB->RE_NR;
       A =17.0;
       // walls at z=0 and z=2
@@ -276,9 +276,9 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
 
       /*OutPut("Van Driest: " << (1-exp(-zplus/A)) *
       (1-exp(-zplus/A)) << endl);*/
-      break;
+    break;
 
-    case 105:
+  case 105:
       // eddy viscosity model: Vreman, Phys. Fluids 16 (10), 3670 -3681, 2004
       // frobenius norm of gradient of velocity
       // use same notations as in paper
@@ -320,8 +320,8 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // scale, in Vreman (2004) it is recommended to use 2.5 times Smagorinsky constant
       nu = nu_constant*sqrt(Bbeta/Alpha);
 
-      break;
-    case 106:                                     // van Driest damping (continuous, classical) for cylinder with squared cross--section
+    break;
+  case 106:                                     // van Driest damping (continuous, classical) for cylinder with squared cross--section
       // left and right wall at the cylinder
       zplus = 1000;
       if ((x[0] > 0.45 - eps) && (x[0] < 0.55 + eps))
@@ -353,8 +353,8 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       nu = nu_constant * delta * delta * (1-exp(-zplus/A)) *
         (1-exp(-zplus/A)) * sqrt(frobenius_norm_tensor);
       //OutPut("nu " << x[0] << " " << y[0] << " " << x0 << " " << y0 << " " << zplus << endl);
-      break;
-    case 107:                                     // van Driest damping (paper: Rudman, Blackburn'99) for cylinder with squared cross--section
+    break;
+  case 107:                                     // van Driest damping (paper: Rudman, Blackburn'99) for cylinder with squared cross--section
       // left and right wall at the cylinder
       zplus = 1000;
       if ((x[0] > 0.45 - eps) && (x[0] < 0.55 + eps))
@@ -385,9 +385,9 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       }
       nu = nu_constant * delta * delta * (1-exp(-(zplus/A)*(zplus/A)*(zplus/A))) *  sqrt(frobenius_norm_tensor);
       //OutPut("nu " << x[0] << " " << y[0] << " " << x0 << " " << y0 << " " << zplus << endl);
-      break;
+    break;
       
-    case 108: /** Verstappen model (J Sci Comput'11) */
+  case 108: /** Verstappen model (J Sci Comput'11) */
       
       /* C = 1/mu_max as on page 107 */
       
@@ -405,18 +405,18 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       
       switch(nu_tensor)
       {
-  case 0:
-    a11 = a11/2.;
-    a12 = a12/2.;
-    a13 = a13/2.;
-    a22 = a22/2.;
-    a23 = a23/2.;   
-    a33 = a33/2.; 
-    break;
+      case 0:
+    	  a11 = a11/2.;
+    	  a12 = a12/2.;
+    	  a13 = a13/2.;
+    	  a22 = a22/2.;
+    	  a23 = a23/2.;
+    	  a33 = a33/2.;
+    	break;
     
-  case 1:
-    OutPut("ERROR: Verstappen model needs a symmetric stress tensor!" << endl);
-    exit(0);
+      case 1:
+    	  OutPut("ERROR: Verstappen model needs a symmetric stress tensor!" << endl);
+        exit(0);
       }
       
       //invariant_3 = - det(D(u))
@@ -424,9 +424,9 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       invariant_2 = 0.5 * frobenius_norm_tensor;
       
       nu = (1.5 * fabs(invariant_3) ) / (mu_max * invariant_2);      
-      break;
+    break;
       
-    case 109:  /** Verstappen model (J Sci Comput'11) */
+  case 109:  /** Verstappen model (J Sci Comput'11) */
       
       /* C = (h/pi)^2 as on page as on page 97, where Delta = (h_x*h_y*h_z)^(1/3) */
       
