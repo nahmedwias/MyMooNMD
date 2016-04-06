@@ -1,53 +1,61 @@
 /**
  * Simple example for Navier-Stokes 3D, used for development, debugging and testing.
- * Should work for each geometry.
- * 
- * Linear velocity solution u = (x,-y,0).
- * Constant zero pressure solution p = 0.
- * Dirichlet boundary conditions only.
- * 
- * @author ???, Clemens Bartsch imported this from MooNMD
- * @date 2016/03/11 Import to ParMooN.
+ * This example has two nice features: it calculates the boundary values
+ * (Dirichlet only!) and the right hand side matching the intended exact
+ * solution.
+ *
+ * The advantage is: adapting the example is really, really easy.
+ *
+ * The disadvantage is: the L^2 error of the pressure will not be zero
+ * in general, because the Dirichlet-only case requires an internal projection
+ * of the pressure to L^2_0. If your chosen pressure is not in L^2_0 for
+ * the geometry you run this problem with, you will get the error there
+ * (which will equal the L^2 norm of your hard--coded pressure on the
+ * chosen geometry).
+ * This cannot be fixed as long as geometry and example are not better
+ * connected.
+ *
+ * @author Clemens Bartsch
+ * @date 2016/04/04
  */
 
 void ExampleFile()
 {
-  OutPut("Example: test_u_1_p_0. Linear velocity solution u=(x,-y,0), "
-   "constant zero pressure solution p=0. \n");
+  OutPut("Example: test_u_3_p_2.");
 }
 
 // exact solution
 void ExactU1(double x, double y,  double z, double *values)
 {
-  values[0] =  x;
-  values[1] =  1;
-  values[2] =  0;
-  values[3] =  0;
-  values[4] =  0; //Laplacien
+  values[0] =  2*x*y*z;   //u
+  values[1] =  2*y*z;   //dx
+  values[2] =  2*x*z;   //dy
+  values[3] =  2*x*y;   //dz
+  values[4] =  0;   //Laplace
 }
 void ExactU2(double x, double y,  double z, double *values)
 {
-  values[0] = -y;
-  values[1] =  0;
-  values[2] = -1;
-  values[3] =  0;
-  values[4] =  0; //Laplacien
+  values[0] =  -y*y*z;   //u
+  values[1] =  0;   //dx
+  values[2] =  -2*y*z;   //dy
+  values[3] =  -y*y;   //dz
+  values[4] =  -2;   //Laplace
 }
 void ExactU3(double x, double y,  double z, double *values)
 {
-  values[0] =  0;
-  values[1] =  0;
-  values[2] =  0;
-  values[3] =  0;
-  values[4] =  0; //Laplacien
+  values[0] =  -x*x*x;   //u
+  values[1] =  -3*x*x;   //dx
+  values[2] =  0;   //dy
+  values[3] =  0;   //dz
+  values[4] =  0;   //Laplace
 }
 
 void ExactP(double x, double y,  double z, double *values)
 {
-  values[0] = 0;
+  values[0] = z*z;
   values[1] = 0;
   values[2] = 0;
-  values[3] = 0;
+  values[3] = 2;
   values[4] = 0;
 }
 

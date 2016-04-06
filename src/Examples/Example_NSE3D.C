@@ -30,22 +30,20 @@ namespace test_u_0_p_0
 {
 #include "NSE_3D/test_u_0_p_0.h"
 }
-namespace test_u_1_p_0_zero
-{
-#include "NSE_3D/test_u_1_p_0_zero.h"
-}
 namespace test_u_1_p_0
 {
 #include "NSE_3D/test_u_1_p_0.h"
 }
-namespace test_u_1_p_1_x
+namespace test_u_2_p_1
 {
-#include "NSE_3D/test_u_1_p_1_x.h"
+#include "NSE_3D/test_u_2_p_1.h"
 }
-namespace test_u_1_p_1_z
+namespace test_u_3_p_2
 {
-#include "NSE_3D/test_u_1_p_1_z.h"
+#include "NSE_3D/test_u_3_p_2.h"
 }
+
+
 
 Example_NSE3D::Example_NSE3D() : Example3D()
 {
@@ -179,7 +177,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       }
       case -2:
       {
-        using namespace test_u_1_p_0_zero;
+        using namespace test_u_1_p_0;
         /** exact_solution */
         exact_solution.push_back( ExactU1 );
         exact_solution.push_back( ExactU2 );
@@ -206,7 +204,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       }
       case -3:
       {
-        using namespace test_u_1_p_0;
+        using namespace test_u_2_p_1;
         /** exact_solution */
         exact_solution.push_back( ExactU1 );
         exact_solution.push_back( ExactU2 );
@@ -233,7 +231,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       }
       case -4:
       {
-        using namespace test_u_1_p_1_x;
+        using namespace test_u_3_p_2;
         /** exact_solution */
         exact_solution.push_back( ExactU1 );
         exact_solution.push_back( ExactU2 );
@@ -258,33 +256,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         ExampleFile();
         break;
       }
-      case -5:
-      {
-        using namespace test_u_1_p_1_z;
-        /** exact_solution */
-        exact_solution.push_back( ExactU1 );
-        exact_solution.push_back( ExactU2 );
-        exact_solution.push_back( ExactU3 );
-        exact_solution.push_back( ExactP );
 
-        /** boundary condition */
-        boundary_conditions.push_back( BoundCondition );
-        boundary_conditions.push_back( BoundCondition );
-        boundary_conditions.push_back( BoundCondition );
-        boundary_conditions.push_back( BoundConditionNoBoundCondition );
-
-        /** boundary values */
-        boundary_data.push_back( U1BoundValue );
-        boundary_data.push_back( U2BoundValue );
-        boundary_data.push_back( U3BoundValue );
-        boundary_data.push_back( BoundaryValueHomogenous );
-
-        /** coefficients */
-        problem_coefficients = LinCoeffs;
-
-        ExampleFile();
-        break;
-      }
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
