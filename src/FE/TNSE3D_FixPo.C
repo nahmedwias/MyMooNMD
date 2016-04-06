@@ -20,13 +20,12 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
   int nu_type = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
   double nu_constant = TDatabase::ParamDB->TURBULENT_VISCOSITY_CONSTANT;
   int nu_tensor =  TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
-  int found;
-  double Re, zplus, r, eps = 1e-6, lambda, val, x0, y0;
-  double c, Alpha, b11, b22, b33, b12, b13, b23, Bbeta;
+  double Re, zplus, eps = 1e-6, x0, y0;
+  double Alpha, b11, b22, b33, b12, b13, b23, Bbeta;
   double nu_power, nu_sigma;
   double delta_x, delta_y, delta_z, hk;
   double mu_max, invariant_2, invariant_3;
-  double frobenius_norm_tensor,nu,a11,a12,a13,a22,a23,a33,sigma;
+  double frobenius_norm_tensor,nu,a11,a12,a13,a22,a23,a33;
   
   // van Driest damping, Do 09.02.06
   double A =26.0;
@@ -521,7 +520,7 @@ double DivDivStab3D(double u1, double u2, double u3, double hK, double eps)
 void SUPG_Param3D(double u1, double u2, double u3, double* coeff, double* params)
 {
     double x1, x2, x3, x0, y1, y2, y3, y0, z1, z2, z3, z0, x4, y4, z4;
-    double d11, d12, d13, d21, d22, d23, d31, d32, d33, delta, nu;
+    double d11, d12, d13, d21, d22, d23, d31, d32, d33, nu;
     double g11, g12, g13, g22, g23, g33;
     double rec_detjk, tau_c, tau_m;
     double eps  = 1e-12;
@@ -5073,7 +5072,7 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double val, val1;
+  double val1;
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -5332,8 +5331,8 @@ void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff,
   double *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j,N_U;
   double c0, viscosity, delta, dummy_param[6] = {0, 0, 0, 0, 0, 0};
   double u1, u2, u3, mu;
 
@@ -5436,10 +5435,10 @@ void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double ansatz100, ansatz010, ansatz001;  // double ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P, N_L;
+  int i,j,N_U, N_L;  // int N_P;
   double c0, viscosity, delta;
   double u1, u2, u3, mu;
 
@@ -5559,12 +5558,12 @@ void TimeNSType3_4NL_Adap_VMS_ProjectionDD3D(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
-  double *MatrixRow1, *MatrixRow2, *MatrixRow3;
+  double *MatrixRow1; // double *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5;
-  int i,j,N_U, N_P, N_L;
-  double c0, c1, c2, c3, delta, val, val1;
+  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;  // double *Orig5;
+  int i,j,N_U, N_L;  // int N_P;
+  double c0, delta, val, val1;  // double c1,c2,c3;
   double u1, u2, u3, mu, viscosity;
 
   MatrixA11 = LocMatrices[0];
@@ -5794,7 +5793,7 @@ void TimeNSType3_4NLVMS_ProjectionStreamlineDD3D(double Mult, double *coeff,
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P, N_L;
+  int i,j,N_U,N_L;  // int N_P;
   double c0, delta, test_stream, ansatz_stream;
   double u1, u2, u3, mu, val;
 
@@ -5908,7 +5907,7 @@ void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
-  double val1,val2, val3, val4;
+  double val1;   // double val2, val3, val4;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
@@ -5916,10 +5915,10 @@ void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double tautest100, tautest010, tautest001;
   double c0test100, c0test010, c0test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P;
+  double *Orig0, *Orig1, *Orig2, *Orig3;  // double *Orig4;
+  int i,j,N_U; // int N_P;
   double c0, tau;
-  double u1, u2, u3, mu;
+  double u1, u2, u3; // double mu;
   double val;
   double theta1 = TDatabase::TimeDB->THETA1;
   
@@ -6041,7 +6040,7 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
   double **MatrixM11, **MatrixM22, **MatrixM33, **MatrixC;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixBT1, **MatrixBT2,  **MatrixBT3;
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6, *Rhs7, val, val2;
+  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6, *Rhs7, val;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
@@ -6059,24 +6058,24 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
   double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, norm_u, temp1, sh3, m1, m2, ah2, bh1;
+  double sh1, sh2, ah, bth1, h1, sh3, m1, m2, ah2, bh1;  // double temp1, norm_u;
   //OutPut("supg");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7, *Orig8, *Orig9, *Orig10;
+  double *Orig6, *Orig7;  // double *Orig8, *Orig9, *Orig10;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3; // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
   double supg_params[2];
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
+//  double theta1 = TDatabase::TimeDB->THETA1;
+//  double theta2 = TDatabase::TimeDB->THETA2;
+//  double theta3 = TDatabase::TimeDB->THETA3;
+//  double theta4 = TDatabase::TimeDB->THETA4;
 
   // matrices for vicous and convective term
   MatrixA11 = LocMatrices[0];
@@ -6480,7 +6479,7 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
   double **MatrixC;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixBT1, **MatrixBT2,  **MatrixBT3;
-  double *Rhs4, *Rhs5, *Rhs6, val, val2;
+  double *Rhs4, *Rhs5, *Rhs6, val;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
@@ -6498,24 +6497,24 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
   double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, norm_u, sh3, m2, ah2, bh1;
+  double sh1, sh2, ah, bth1, h1, sh3, m2, ah2, bh1; // double norm_u;
   //OutPut("supg");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7, *Orig8, *Orig9, *Orig10;
+  double *Orig6, *Orig7; // double *Orig8, *Orig9, *Orig10;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3;   // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
   double supg_params[2]   ;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
+//  double theta1 = TDatabase::TimeDB->THETA1;
+//  double theta2 = TDatabase::TimeDB->THETA2;
+//  double theta3 = TDatabase::TimeDB->THETA3;
+//  double theta4 = TDatabase::TimeDB->THETA4;
 
   // matrices for vicous and convective term
   MatrixA11 = LocMatrices[0];
@@ -6877,7 +6876,7 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
   double **MatrixM11, **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1, val2;
+  double *Rhs1, *Rhs2, *Rhs3, val, val1;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row, *MatrixKRow;
@@ -6896,7 +6895,7 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
   double *Orig6, *Orig7;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3; //  double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -7195,7 +7194,7 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
   double **MatrixM11, **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val, val1, val2;
+  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val, val1;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row, *MatrixKRow;
@@ -7208,10 +7207,10 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
   //OutPut("supg");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7, *Orig8, *Orig9, *Orig10;
+  double *Orig6, *Orig7;  // double *Orig8, *Orig9, *Orig10;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3, c4, c5, c6;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3;   // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -7511,18 +7510,18 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, val, val1, val2;
-   double ansatz000, ansatz100, ansatz010, ansatz001;
+  double *Rhs1, *Rhs2, *Rhs3; // double val, val1, val2;
+  //double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
+  //double tautest001, tautest100, tautest010;
   //OutPut("supg_rhs");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
   double *Orig6, *Orig7;
-  int i,j,N_U, N_P;
+  int i,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3;  // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -7600,18 +7599,18 @@ void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val, val1;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val;
+  //double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
-  double tautest001, tautest100, tautest010;
+  //double tautest001, tautest100, tautest010;
   //OutPut("supg_rhs");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
   double *Orig6;
-  int i,j,N_U, N_P;
+  int i,N_U, N_P;
   double c0, c1, c2, c3, c4, c5, c6;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3;  // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -7725,7 +7724,7 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
   double **MatrixA33, **MatrixK;
   double **MatrixS11, **MatrixS12, **MatrixS13, **MatrixS21;
   double **MatrixS22, **MatrixS23, **MatrixS31, **MatrixS32, **MatrixS33;
-  double val, val1, val2;
+  double val, val1;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row, *MatrixKRow;
@@ -7741,7 +7740,7 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
   double *Orig3, *Orig4, *Orig5;
   double *Orig6, *Orig7;
   int i,j,N_U, N_P;
-  double c0, u1, u2, u3, px, py, pz;
+  double c0, u1, u2, u3;   // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -7951,7 +7950,8 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   double **MatrixM11, **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val, val1, val2;
+  double val, val1;
+  // double *Rhs1, *Rhs2, *Rhs3, *Rhs4, val2;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row, *MatrixKRow;
@@ -7964,10 +7964,10 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   //OutPut("supgnl");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7, *Orig8, *Orig9, *Orig10;
+  double *Orig6, *Orig7; // double *Orig8, *Orig9, *Orig10;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3, c4, c5, c6;
-  double u1, u2, u3, px, py, pz;
+  double u1, u2, u3;  // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
@@ -8245,12 +8245,12 @@ void TimeNSType1GalerkinJ3D(double Mult, double *coeff,
 {
   double **MatrixA;
   double val;
-  double *MatrixRow, *MatrixRow1, *MatrixRow2, *MatrixMRow;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double *MatrixRow;  // double *MatrixRow1, *MatrixRow2, *MatrixMRow;
+  double ansatz100, ansatz010, ansatz001;  // douible ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
+  int i,j,N_U;  // int N_P;
+  double c0, c1, c2;
   double u1, u2, u3;
   
   MatrixA = LocMatrices[0];
@@ -8298,7 +8298,7 @@ void TimeNSGalerkinC3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, val;
+  double *Rhs1, *Rhs2, *Rhs3;
   double test000;
   double *Orig3;
   int i, N_U;
@@ -8335,14 +8335,14 @@ void TimeNSType3GalerkinJ3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA13;
   double **MatrixA21, **MatrixA22, **MatrixA23;
   double **MatrixA31, **MatrixA32, **MatrixA33;
-  double val, val1;
+  double val;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_U, N_P;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_U;  // int N_P;
   double c0;
   double u1, u2, u3, u1_x, u1_y, u1_z, u2_x, u2_y, u2_z, u3_x, u3_y, u3_z;
 
@@ -8493,13 +8493,13 @@ void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
                double **OrigValues, int *N_BaseFuncts,
                double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, val;
+  double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2;
   int i, N_U;
   double c1, c2, c3;
 
-  double delta, ngu, val1, mu1;
+  double delta, val1, mu1;
   double D1u1, D2u1, D3u1, D1u2, D2u2, D3u2, D1u3, D2u3, D3u3;
   double a[3][3];
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
