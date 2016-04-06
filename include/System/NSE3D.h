@@ -177,36 +177,21 @@ class NSE3D
 
  public:
 
-    /** @brief The standard constructor, can be used for multigrid and non-multigrid.
+    /** @brief Standard constructor of an NSE3D problem.
      *
-     * It is user responsibility to call this constructor with correct TCollections.
-     * Here is a "safe" way to do it.
+     * @note The domain must have been refined a couple of times already if you want
+     * to use multigrid. On the finest level the finite element spaces and
+     * functions as well as matrices, solution and right hand side vectors are
+     * initialized.
      *
-     * When not using multigrid, this must be of length 1,
-     * containing a reference to a collection gained e.g. by calling
-     * domain.GetCollection(It_Finest, 0) in the main program.
-     *
-     * In multigrid case, the collections vector must contain TCollections gained
-     * by calling domain.GetCollection(It_Finest, 0) in the main program repeatedly,
-     * directly after the corresponding refinement step (and after Domain_Crop in MPI
-     * case).
-     *
-     * @param[in] collections A hierarchy of cell collections used for multigrid solve,
-     * or just one collection in non-multigrid case. Ordered by fineness of the grid -
-     * finest collection first!
-     *
-     * @param[in] example The example which is to be calculated.
-     *
-     * @param[in] maxSubDomainPerDof Only in MPI case! the maximal number of
-     * processes which share a single dof. The value is calculated in the
-     * main program and handed down to the FESpaces. Getting rid of this
-     * construction is a TODO .
+     * @param domain The domain this problem lives on.
+     * @param example The example to perform
      */
 #ifdef _MPI
-    NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example, int maxSubDomainPerDof);
+    NSE3D(const TDomain& domain, const Example_NSE3D& example,
+          int maxSubDomainPerDof);
 #else
-
-    NSE3D(std::list<TCollection* > collections, const Example_NSE3D& _example);
+    NSE3D(const TDomain& domain, const Example_NSE3D& example);
 #endif
 
     /**

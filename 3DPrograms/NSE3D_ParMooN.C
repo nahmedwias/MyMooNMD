@@ -35,10 +35,11 @@ int main(int argc, char* argv[])
 
   // Hold mpi rank and size ready, check whether the current processor
   // is responsible for output (usually root, 0).
-  int mpiRank, mpiSize;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-  MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-  bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#else
+  int my_rank = 0;
 #endif
 
   TFEDatabase3D feDatabase;
@@ -49,9 +50,7 @@ int main(int argc, char* argv[])
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
-#ifdef _MPI
-  if(iAmOutRank) //Only one process should do that.
-#endif
+  if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
   // Do a makeshift parameter check and the old parameter check of the Database.
@@ -68,11 +67,8 @@ int main(int argc, char* argv[])
   }
 
   // Write grid into a postscript file (before partitioning)
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
   {
-#ifdef _MPI
-    if(iAmOutRank)
-#endif
       domain.PS("Domain.ps", It_Finest, 0);
   }
 
@@ -111,42 +107,13 @@ int main(int argc, char* argv[])
   domain.GenerateEdgeInfo();
 
   // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
+  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
-#endif
-
-  // Collect those Collections which will be used in multigrid.
-  // ("Collection" in ParMooN means a set of grid cells which form a
-  // specific computational domain).
-  // This must be done here instead of deep inside CD3D, because the Domain_Crop
-  // method disables the use of sensible Collection Iterators. The only possibility
-  // to get a certain level of cells is to grab it the moment when it's the finest...
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-
-  // Further mesh refinement and grabbing of collections,
-  // which is only performed when a multgrid solver is used.
-  // (If no multigrid is used, CD3D::checkParameters() took care of setting
-  // LEVELS to 1.)
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
-  {
-    domain.RegRefineAll();
-#ifdef _MPI
-    domain.GenerateEdgeInfo();  // has to be called anew after every refinement step
-    Domain_Crop(comm, &domain); // remove unwanted cells in the halo after refinement
-#endif
-    // Grab collection.
-    gridCollections.push_front(domain.GetCollection(It_Finest, 0));
-  }
-
-#ifdef _MPI
-  //print information on the mesh partition on the finest grid
-  Output::print("Process ", mpiRank, ". N_Cells: ",
-                gridCollections.front()->GetN_Cells(),
-                ". N_OwnCells: ",
-                gridCollections.front()->GetN_OwnCells(),
+  //print information on the mesh partitioning
+  Output::print("Process ", my_rank, ". N_OwnCells: ",
+                domain.GetN_OwnCells(),
                 ". N_HaloCells: ",
-                gridCollections.front()->GetN_HaloCells());
+                domain.GetN_HaloCells());
 #endif
 
   // Create output directory, if not already existing.
@@ -161,9 +128,9 @@ int main(int argc, char* argv[])
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
-  NSE3D nse3d(gridCollections, example, maxSubDomainPerDof);
+  NSE3D nse3d(domain, example, maxSubDomainPerDof);
 #else
-  NSE3D nse3d(gridCollections, example);
+  NSE3D nse3d(domain, example);
 #endif
   // assemble all matrices and right hand side
   nse3d.assemble_linear_terms();

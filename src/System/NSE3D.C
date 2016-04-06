@@ -96,7 +96,7 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 }
 
 
-NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
+NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
@@ -133,21 +133,15 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
                         && TDatabase::ParamDB->SOLVER_TYPE ==1);
   if(!usingMultigrid)
   {
-    // Check at least if the collections list contains exactly one Collection.
-    if(collections.size() != 1 )
-    {
-      ErrThrow("Non-multigrid: Expected exactly one collection!");
-    }
-    // Get the one given collection.
-    TCollection& cellCollection = *collections.front();
+    TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
         
     #ifdef _MPI
     // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, cellCollection, velocity_pressure_orders, type,
+    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
                           maxSubDomainPerDof);
     #else
     // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, cellCollection, velocity_pressure_orders, type);
+    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
     
     const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
     const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
@@ -157,31 +151,32 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
     size_t nTotal = 3*nDofu + nDofp;
     size_t nActive= 3*velocity_space.GetActiveBound();
     
-    Output::print<1>("N_Cells      :  ", setw(10), cellCollection.GetN_Cells());
+    Output::print<1>("N_Cells      :  ", setw(10), coll->GetN_Cells());
     Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
     Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
     Output::print<1>("ndof Total   :  ", setw(10), nTotal );
     Output::print<1>("nActive      :  ", setw(10), nActive);
     double hmin, hmax;
-    cellCollection.GetHminHmax(&hmin, &hmax);
+    coll->GetHminHmax(&hmin, &hmax);
     Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);    
     #endif
   }
   else // multigrid
   {
-    size_t nLevels = TDatabase::ParamDB->LEVELS;
-    // check
-    if(collections.size() != nLevels)
+    size_t n_levels = TDatabase::ParamDB->LEVELS;
+    std::vector<TCollection*> collections(n_levels,nullptr);
+    for(int i =0 ; i< n_levels ; ++i)
     {
-      ErrThrow("Multigrid: Expected ", nLevels, " collections, "
-                 , collections.size(), " provided.");
+      ErrThrow("This loop for multigrid NSE3D is not tested and thus most likely incorrect!");
+      collections.at(i)=domain.GetCollection(It_EQ, i, -4711);
     }
+
     std::vector<double> param(2);
     param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
     param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
     
     this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
-    this->transposed_B_structures_.resize(nLevels,nullptr);
+    this->transposed_B_structures_.resize(n_levels,nullptr);
     
     // constructing systems per grid
     for(auto it : collections)
@@ -222,7 +217,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const Example_NSE3D& example
     for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
     {
       #ifdef _MPI
-        ErrThrow("Clemens has to take care about the MPI implementation");
+        ErrThrow("There is no multigrid in MPI!");
       #else
         multigrid_->AddLevel(this->mg_levels(level, *system));
       #endif
