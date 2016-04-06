@@ -113,6 +113,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
           return std::string("TNSE2D_RhsSUPG");
       }
       break;
+   case LocalAssembling2D_type::Custom:
+     return std::string("customized");
   }
   return std::string();
 }
@@ -125,8 +127,6 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 {
   Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
   
-  
-//   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
   // the values below only matter if you need an existing finite element 
   // function during your assembly. Change them in such a case
 this->N_Parameters = 0;
@@ -134,7 +134,7 @@ this->N_ParamFct = 0;
 this->ParameterFct = {};
 this->N_FEValues = 0;
 this->FEValue_FctIndex = {};
-  this->FEValue_MultiIndex = {};
+this->FEValue_MultiIndex = {};
 this->BeginParameter = {};
 
 // set all member variables according to the LocalAssembling2D_type
@@ -306,7 +306,7 @@ switch(type)
   }
   if(AssembleParam == NULL)
   {
-    ErrMsg("a local assembling routine was not set");
+    ErrMsg("a local assembling routine was not set!");
     exit(1);
   }
 }
@@ -392,7 +392,7 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
   N_Matrices(myN_Matrices), N_Rhs(myN_Rhs),
   N_ParamFct(myN_ParamFct), ParameterFct(myParameterFct), BeginParameter(myBeginParameter), N_Parameters(myN_Parameters),
-  FEFunctions2D(myFEFunctions2D), N_FEValues(myN_FEValues),
+  N_FEValues(myN_FEValues), FEFunctions2D(myFEFunctions2D),
   FEValue_FctIndex(myFEValue_FctIndex), FEValue_MultiIndex(myFEValue_MultiIndex)
 
 {
@@ -403,19 +403,19 @@ LocalAssembling2D::LocalAssembling2D(int myN_Terms,
   // according to the appearance of "D20", "D11" or "D02" in "Derivatives".
   
   //Catch some things which might cause trouble.
-  if(myDerivatives.size() != N_Terms)
+  if((int)myDerivatives.size() != N_Terms)
   {
     Output::print("Error: myDerivatives.size() != N_Terms.");
   }
-  if(myFESpaceNumber.size() != N_Terms)
+  if((int)myFESpaceNumber.size() != N_Terms)
   {
     Output::print("Error: myFESpaceNumber.size() != N_Terms.");
   }
-  if(myParameterFct.size() != N_ParamFct)
+  if((int)myParameterFct.size() != N_ParamFct)
   {
     Output::print("Error: myParameterFct.size() != myN_ParamFct.");
   }
-  if(myBeginParameter.size() != N_ParamFct)
+  if((int)myBeginParameter.size() != N_ParamFct)
   {
     Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
   }
@@ -1256,8 +1256,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1317,8 +1318,7 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
         {
           if(TDatabase::ParamDB->LAPLACETYPE != 0)
           {
-            ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-            exit(1);
+            ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
           }
           switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
           {
@@ -1326,8 +1326,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1396,8 +1397,9 @@ void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type ty
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1896,7 +1898,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
               }
               else // newton iteration
               {
-                this->AssembleParam == NSType4SDFEMNewton;
+                this->AssembleParam = NSType4SDFEMNewton;
               }
               this->Manipulate = NULL;
               
@@ -2089,7 +2091,7 @@ void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
                 this->N_Matrices = 6;
                 this->RowSpace    = { 0, 0, 0, 0, 0, 0};
                 this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
-                this->AssembleParam == NSType4NLSDFEMNewton;
+                this->AssembleParam = NSType4NLSDFEMNewton;
               }
               this->Manipulate = NULL;
               
@@ -2534,6 +2536,8 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
           exit(1);
       }
       break;
+    default:
+      ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
   //=========================================================================
   

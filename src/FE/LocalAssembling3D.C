@@ -50,6 +50,7 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
     default:
       return std::string();
   }
+  return std::string(); //avoid compiler warning
 }
 
 LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, 
@@ -59,18 +60,23 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
    FEFunctions3D(fefunctions3d)
 {
 
-  Output::print<2>("Constructor of LocalAssembling3D: using type ", name);
+  Output::print<3>("Constructor of LocalAssembling3D: using type ", name);
   
+  // the values below only matter if you need an existing finite element
+  // function during your assembly. Change them in such a case
   this->N_Parameters = 0;
   this->N_ParamFct = 0;
   this->ParameterFct = {};
   this->N_FEValues = 0;
   this->FEValue_FctIndex = {};
+  this->FEValue_MultiIndex = {};
   this->BeginParameter = {};
   
   // set all member variables according to type
   switch(this->type)
   {
+    ///////////////////////////////////////////////////////////////////////////
+    // CD3D: stationary convection diffusion problems
     case LocalAssembling3D_type::CD3D:
       switch(TDatabase::ParamDB->DISCTYPE)
       {
@@ -97,11 +103,14 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                " is not supported by the class CD3D");
       }// endswitch TDatabase::ParamDB->DISCTYPE
       break; // break for the type LocalAssembling3D_type::CD3D 
+    ///////////////////////////////////////////////////////////////////////////
+    // NSE3D: stationary Navier-Stokes problems
     case LocalAssembling3D_type :: NSE3D_Linear:
     case LocalAssembling3D_type :: NSE3D_NonLinear:
       this->set_parameters_for_nse(type);
       break;
-    // time dependent Navier-Stokes
+    ////////////////////////////////////////////////////////////////////////////
+    // TNSE3D: nonstationary Navier-Stokes problems
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
       break;
@@ -119,7 +128,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
   }
   if(AssembleParam == NULL)
   {
-    ErrThrow("S local assmebling routine was not set");
+    ErrThrow("A local assembling routine was not set!");
   }
 }
 //========================================================================
@@ -346,6 +355,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
   switch(type)
   {
     case LocalAssembling3D_type::NSE3D_Linear:
+    {
       switch(TDatabase::ParamDB->DISCTYPE)
       {
         case GALERKIN: // GALERKIN 
@@ -583,6 +593,7 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                      " is not supported by the class NSE3D");
       }// endswitch for the DISCTYPE 
       break; // break for the LocalAssembling3D_type NSE3D_Linear
+  }
     case LocalAssembling3D_type :: NSE3D_NonLinear:
       switch(TDatabase::ParamDB->DISCTYPE)
       {
@@ -814,6 +825,8 @@ void LocalAssembling3D::set_parameters_for_nse(LocalAssembling3D_type type)
                      " is not supported by the class NSE3D");
       } // endswitch for the DISCTYPE
       break; // endswitch for the LocalAssembling3D_type NSE3D_NonLinear
+      default:
+        ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_nse.");
   } // endswitch (type)
 }
 //========================================================================
@@ -1007,6 +1020,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
                    "not supported");
       }
       break;
+    default:
+      ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
   }
 }
 
