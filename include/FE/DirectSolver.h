@@ -115,7 +115,7 @@ class DirectSolver
     void solve(const double* rhs, double* solution);
     
     /** @brief compute symbolic factorization */
-    void symetric_factorize();
+    void symbolic_factorize();
     /** @brief compute numeric factorization (requires symbolic factorization) 
      */
     void numeric_factorize();
