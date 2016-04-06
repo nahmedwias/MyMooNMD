@@ -256,6 +256,28 @@ void NSE3D::check_parameters()
       ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
     }
   }
+
+
+  // Some implementation/testing constraints on the used discretization.
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
+  {
+    ErrThrow("Every SC_NONLIN_ITE_TYPE_SADDLE except 0 is untested!");
+  }
+  if(TDatabase::ParamDB->LAPLACETYPE != 0)
+  {
+    ErrThrow("Every LAPLACETYPE except 0 is untested!");
+  }
+  if(TDatabase::ParamDB->DISCTYPE != 1)
+  {
+    ErrThrow("Every DISCTYPE except 1 is untested!");
+  }
+  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
+  {
+    ErrThrow("Every NSE_NONLINEAR_FORM except 0 is untested!");
+  }
+
+
+
 }
 
 void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressure_orders)

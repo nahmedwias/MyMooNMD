@@ -7,6 +7,26 @@
  * It can be easily adapted to include more solvers, the control which solver
  * to use should come from the outside.
  *
+ * The program tests a selection of combinations of
+ *  - the polynomial examples -1 to -3,
+ *  - the stable finite element pairs P2/P1, P3/P2, Q2/Q1, Q2/P1_disc, Q3/Q2
+ *  - the NSTYPES 1,2,3,4
+ * on the default unit cube geometry.
+ * We're only testing examples whose analytic solution is in the ansatz space,
+ * thus we expect very small errors every time.
+ * Fixed are DISCTYPE 1, LAPLACETYPE 0, NSE_NONLINEAR_FORM 0
+ * and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * Note that for these discretizations it is futile to choose any other NSTYPE
+ * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
+ * for the sake of testing the different types.
+ *
+ * So far the test is only adapted for testing the umfpack solver in sequential.
+ *
+ * @todo TODO Fix the example -4 (something wrong with error computation) and let the
+ * order 3 elements deal with that one instead.
+ * @todo TODO Enable this test for: mumps (mpi only), pardiso,
+ * fgmres with multigrid, fgmres with lsc preconditioner
+ *
  * @author Clemens Bartsch (heavily inspired by Najib's NSE2D Test program)
  *
  * @date 2016/04/04
@@ -39,11 +59,11 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   {
     ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
   }
-//  // check the L2-error of the pressure
-//  if( fabs(computed_errors[2] - errors[2]) > tol)
-//  {
-//    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
-//  }
+  // check the L2-error of the pressure
+  if( fabs(computed_errors[2] - errors[2]) > tol)
+  {
+    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
+  }
   // check the H1-error of the pressure
   if(fabs(computed_errors[3] - errors[3]) > tol )
   {
@@ -70,15 +90,28 @@ void check(int example, int geo,
                   pressure_order, " ",nstype," *******");
   }
 
+
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
-  // form of the Laplacian and the non-linear term set fixed
-  TDatabase::ParamDB->LAPLACETYPE = 0;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
+
+  TDatabase::ParamDB->BNDFILE = "Default_UnitCube";
+
+
+  if(geo == 6)
+    TDatabase::ParamDB->GEOFILE = "Default_UnitCube_Hexa";
+  else if(geo == 4)
+    TDatabase::ParamDB->GEOFILE = "Default_UnitCube_Tetra";
+  else
+    ErrThrow("Chose geo = 6 (hexahedra) or 4 (tets) for this test.");
 
   TDatabase::ParamDB->EXAMPLE = example;
   Example_NSE3D example_obj;
+
+  //Perform usual checks on the parameter consistency
+  NSE3D::check_parameters(); //makeshift check
+  TDatabase::CheckParameterConsistencyNSE(); //old check
+
 
   /* *****************Start domain creation. ************************ */
   // I'd love to put this in some method, but that's a bit out of reach for
@@ -88,14 +121,9 @@ void check(int example, int geo,
 
   TDomain domain;
 
-  if(geo == 6)
-    domain.Init(std::string("Default_UnitCube").c_str(),
-                std::string("Default_UnitCube_Hexa").c_str());
-  else if(geo == 4)
-    domain.Init(std::string("Default_UnitCube").c_str(),
-                std::string("Default_UnitCube_Tetra").c_str());
-  else
-    ErrThrow("Chose geo = 6 (hexahedra) or 4 (tets) for this test.");
+  domain.Init(TDatabase::ParamDB->BNDFILE,
+              TDatabase::ParamDB->GEOFILE);
+
 
   for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
   {
@@ -136,7 +164,6 @@ void check(int example, int geo,
     gridCollections.push_front(domain.GetCollection(It_Finest, 0));
   }
   /* *****************End domain creation. ************************ */
-
 
   // Construct the nse3d problem object.
 #ifdef _MPI
@@ -182,7 +209,7 @@ void set_solver_globals(std::string solver_name)
   else if(solver_name.compare("umfpack") == 0)
   {
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 50;
+    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
@@ -208,7 +235,7 @@ double get_tolerance(std::string solver_name)
 
   #ifdef _SEQ
   if(solver_name.compare("umfpack") == 0)
-    return 1e-8 ;
+    return 1e-9 ;
 #endif
 
   else
@@ -240,17 +267,19 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement steps
+  TDatabase::ParamDB->UNIFORM_STEPS = 1; // 1 uniform refinement step
   TDatabase::ParamDB->LEVELS = 1;
   TDatabase::ParamDB->DRIFT_Z = 1;
+
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
+  TDatabase::ParamDB->LAPLACETYPE = 0;
+  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
+  TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
 
   TDatabase::ParamDB->MEASURE_ERRORS = 1;
-
-
 
   set_solver_globals(std::string(argv[1]));
 
@@ -268,51 +297,53 @@ int main(int argc, char* argv[])
   if(my_rank==0)
     Output::print<1>(">>>>> Hexahedra grid. <<<<<");
   //===========================================================
-  if(my_rank==0)
-    Output::print<1>(">>>>> Q2/Q1 element on hexahedral grid. <<<<<");
-  for(int exmpl = -1; exmpl > -4 ; --exmpl)
-  {//four test examples
+  {
+    if(my_rank==0)
+      Output::print<1>(">>>>> Q2/Q1 element on hexahedral grid. <<<<<");
+    size_t exmpl = -2;
     size_t geo = 6;
-    for(int nstype = 1; nstype < 5; ++nstype)
-    {// all nstypes but 14
-      check(exmpl, geo, 2,-4711, nstype, errors, tol);
-    }
+    size_t nstype = 1;
+    check(exmpl, geo, 2, -4711, nstype, errors, tol);
   }
-  if(my_rank==0)
-    Output::print<1>(">>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
-  for(int exmpl = -1; exmpl > -4 ; --exmpl)
-  {//four test examples
+  {
+    if(my_rank==0)
+      Output::print<1>(">>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
+    size_t exmpl = -3;
     size_t geo = 6;
-    for(int nstype = 1; nstype < 5; ++nstype)
-    {// all nstypes but 14
-      check(exmpl, geo, 12,-4711, nstype, errors, tol);
-    }
+    size_t nstype = 2;
+    check(exmpl, geo, 12, -4711, nstype, errors, tol);
+  }
+  {
+    if(my_rank==0)
+      Output::print<1>(">>>>> Q3/Q2 element on hexahedral grid. <<<<<");
+    size_t exmpl = -3; //TODO -4
+    size_t geo = 6;
+    size_t nstype = 3;
+    check(exmpl, geo, 3, -4711, nstype, errors, tol);
   }
 
   //============= Tests on tetra grid =========================
   if(my_rank==0)
     Output::print<1>(">>>>> Tetrahedral grid. <<<<<");
   //===========================================================
-  if(my_rank==0)
-    Output::print<1>(">>>>> P2/P1 element on tetrahedral grid. <<<<<");
-  for(int exmpl = -1; exmpl > -4 ; --exmpl)
-  {//four test examples
+  {
+    size_t exmpl = -3;
     size_t geo = 4;
-    for(int nstype = 1; nstype < 5; ++nstype)
-    {// all nstypes but 14
-      check(exmpl, geo, 2,-4711, nstype, errors, tol);
-    }
+    size_t nstype = 4;
+    if(my_rank==0)
+      Output::print<1>(">>>>> P2/P1 element on tetrahedral grid. <<<<<");
+
+    check(exmpl, geo, 2,-4711, nstype, errors, tol);
   }
-  if(my_rank==0)
-    Output::print<1>(">>>>> P3/P2 element on tetrahedral grid. <<<<<");
-  for(int exmpl = -1; exmpl > - 4 ; --exmpl)
-  {//four test examples
+  {
+    if(my_rank==0)
+      Output::print<1>(">>>>> P3/P2 element on tetrahedral grid. <<<<<");
+    size_t exmpl = -3; //TODO -4
     size_t geo = 4;
-    for(int nstype = 1; nstype < 5; ++nstype)
-    {// all nstypes but 14
-      check(exmpl, geo, 3,-4711, nstype, errors, tol);
-    }
+    size_t nstype = 4; //TODO 14
+    check(exmpl, geo, 3,-4711, nstype, errors, tol);
   }
+
 
 #ifdef _MPI
   MPI_Finalize();
