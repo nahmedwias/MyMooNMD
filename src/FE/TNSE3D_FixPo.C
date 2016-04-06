@@ -198,7 +198,7 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
 	  // in the direction of (x[0],y[0])
 	  // compute the parameter of the line from the center to (x[0],y[0])
 	  // which determines the intersection with the boundary of the cylinder
-	  found = 0;
+	  int found = 0;
 	  if (fabs(x0)>eps)
 	  {
 	      lambda = 0.05/x0;
