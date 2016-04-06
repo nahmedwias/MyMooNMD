@@ -4,16 +4,7 @@
  * (Dirichlet only!) and the right hand side matching the intended exact
  * solution.
  *
- * The advantage is: adapting the example is really, really easy.
- *
- * The disadvantage is: the L^2 error of the pressure will not be zero
- * in general, because the Dirichlet-only case requires an internal projection
- * of the pressure to L^2_0. If your chosen pressure is not in L^2_0 for
- * the geometry you run this problem with, you will get the error there
- * (which will equal the L^2 norm of your hard--coded pressure on the
- * chosen geometry).
- * This cannot be fixed as long as geometry and example are not better
- * connected.
+ * Pressure solution is adapted to Default_UnitCube ([0,1]^3) geometry.
  *
  * @author Clemens Bartsch
  * @date 2016/04/04
@@ -22,6 +13,13 @@
 void ExampleFile()
 {
   OutPut("Example: test_u_3_p_2.");
+  // check if the expected geometry is used
+  // FIXME at the moment I see no other possibility than to refer to global scope
+  if(!(strcmp("Default_UnitCube",TDatabase::ParamDB->BNDFILE) == 0))
+  {
+    ErrThrow(">>>>> This example has its pressure solution adapted to "
+        " BNDFILE: Default_UnitCube. Choose that geometry!");
+  }
 }
 
 // exact solution
@@ -52,7 +50,7 @@ void ExactU3(double x, double y,  double z, double *values)
 
 void ExactP(double x, double y,  double z, double *values)
 {
-  values[0] = z*z;
+  values[0] = z*z - 1/3; //adapted to be L^2_0 on unit cube
   values[1] = 0;
   values[2] = 0;
   values[3] = 2;
