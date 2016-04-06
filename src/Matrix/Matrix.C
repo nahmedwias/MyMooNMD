@@ -46,10 +46,10 @@ void TMatrix::setEntries(std::vector<double> entries)
   this->entries = entries;
 }
 
-void TMatrix::write(const char *filename) const
+void TMatrix::write(std::string filename) const
 {
   std::ofstream matrixfile;
-  matrixfile.open (filename);
+  matrixfile.open(filename.c_str());
 
   //write the header line - coordinate format, real values, no symmetry used
   matrixfile << "%%MatrixMarket matrix coordinate real general \n";
