@@ -391,7 +391,7 @@ double ***LocMatrices, double **LocRhs)
 
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity(delta,&param[2],&param[0],&param[0]);
-  
+
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
