@@ -302,6 +302,8 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
           break; 
         case 1: // discontinuous space 
           pressure_order = 0;
+          Output::print<1>("Warning: The P1/P0 element pair (Q1/Q0 on hexa) is "
+              " not stable. Make sure to use stabilization!");
           break;
         case 2: case 3: case 4: case 5:
         // standard conforming velo and continuous pressure
@@ -514,36 +516,38 @@ void NSE3D::assemble_non_linear_term()
     // spaces for matrices
     const TFESpace3D* spaces[1] = {&s.velocitySpace_};
     
-    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
-    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+
     switch(TDatabase::ParamDB->NSTYPE)
     {
       case 1:
       case 2:
         nSqMatrices = 1;
-        sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());        
+        sqMatrices.resize(nSqMatrices);
+        sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         break;
       case 3:
       case 4:
       case 14:
         nSqMatrices = 3;
-        sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());        
-        sqMatrices[1]=reinterpret_cast<TSquareMatrix3D*>(blocks[5].get());
-        sqMatrices[2]=reinterpret_cast<TSquareMatrix3D*>(blocks[10].get());        
+        sqMatrices.at(0)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+        sqMatrices.at(1)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+        sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
         break;
     }// endswitch nstype
-    for(int i=0; i<nSqMatrices; i++)
-      sqMatrices[i]->reset();
+    for(auto mat : sqMatrices)
+    {
+      mat->reset();
+    }
+
     // boundary conditions and boundary values
-    BoundCondFunct3D * boundContion[4]={
-      spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
-      spaces[0]->getBoundCondition(), spaces[1]->getBoundCondition() };
-      
-    std::array<BoundValueFunct3D*, 4> boundValues;
+    BoundCondFunct3D * boundCondition[1]={
+      spaces[0]->getBoundCondition() };
+
+    std::array<BoundValueFunct3D*, 3> boundValues;
     boundValues[0]=example_.get_bd()[0];
     boundValues[1]=example_.get_bd()[1];
     boundValues[2]=example_.get_bd()[2];
-    boundValues[3]=example_.get_bd()[3];
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
@@ -557,8 +561,14 @@ void NSE3D::assemble_non_linear_term()
                nSqMatrices, sqMatrices.data(),
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
-               boundContion, boundValues.data(), la);
+               boundCondition, boundValues.data(), la);
+
+    //TODO: UPWINDING??
+    //TODO: Copying non-actives??
+
   }// endfor auto grid
+
+
 }
 
 bool NSE3D::stop_it(unsigned int iteration_counter)
@@ -685,6 +695,7 @@ void NSE3D::solve()
     {
 #ifdef _SEQ // So far only UMFPACK is available as direct solver in sequential case.
             // Actuate it via DirectSolver class.
+
       /// @todo consider storing an object of DirectSolver in this class
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
@@ -694,6 +705,7 @@ void NSE3D::solve()
 #else
     ErrThrow("No OMPONLY solver (PARDISO) interfaced yet.");
 #endif
+
     }
   }
   else
