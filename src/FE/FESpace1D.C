@@ -170,35 +170,35 @@ void TFESpace1D::FindUsedElements()
 
 void TFESpace1D::ConstructSpace()
 {
-  int i, j, k, l, m, m2, n, comp, N_Joints, NEdges;
-  int *v;
-  TBaseCell *cell, *neigh, *child1, *child2;
+  int i, j, k, l, n, N_Joints;
+//  int *v;
+  TBaseCell *cell, *neigh; // TBaseCell *child1, *child2;
   TJoint *joint;
-  double t0,t1;
+//  double t0,t1;
 
-  TFE2DMapper *mapper;
-  TFE2DMapper1Reg *mapper1reg;
+//  TFE2DMapper *mapper;
+//  TFE2DMapper1Reg *mapper1reg;
 
-  const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
-  int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+//  const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
+//  int MaxLen1, MaxLen2;
+//  TRefDesc *refdesc;
 
   int SumLocDOF, N_JointDOF;
-  int count, *BoundaryUpperBound;
-  int *BoundCounter, Counter;
-  int *BoundMark, DirichletMark;
-  int DirichletOffset, InnerOffset, SlaveOffset;
-  int *BoundOffset;
+  int count; // int *BoundaryUpperBound;
+  int Counter;
+//  int DirichletMark;
+//  int DirichletOffset, InnerOffset, SlaveOffset;
+//  int *BoundOffset;
 
-  FE1D FEType0, FEType1, FEType2;
-  TFE1D *FE0, *FE1, *FE2;
-  TFEDesc1D *FEDesc0_Obj, *FEDesc1_Obj, *FEDesc2_Obj;
-  FEDesc1D FEDesc0, FEDesc1, FEDesc2;
+  FE1D FEType0, FEType1;  // FE1D FEType2;
+  TFE1D *FE0, *FE1; // TFE1D *FE2;
+  TFEDesc1D *FEDesc0_Obj, *FEDesc1_Obj;  // TFEDesc1D *FEDesc2_Obj;
+  FEDesc1D FEDesc0, FEDesc1; // FEDesc1D FEDesc2;
 
-  int I_K0, I_K1, I_K2;
-  int *J_K0, *J_K1, *J_K2;
-  int *Indices0, *Indices1, *Indices2;
-  int c1, c2, e1, e2, chnum1, chnum2;
+  int I_K0, I_K1; // int I_K2;
+  int *J_K0, *J_K1; // int *J_K2;
+  int *Indices0, *Indices1; // int *Indices2;
+//  int c1, c2, e1, e2, chnum1, chnum2;
 
   // boundary structures (no boundary values used)
   N_DiffBoundNodeTypes=N_BOUNDCOND-1; // not only Neumann nodes possible
