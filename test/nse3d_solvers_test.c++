@@ -50,7 +50,8 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   computed_errors = nse3d.get_errors();
 
   // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > tol )
+  if( fabs(computed_errors[0]-errors[0]) > tol ||
+      computed_errors[0] != computed_errors[0]) //check for nan!
   {
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
@@ -70,7 +71,7 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
 }
-void check(int example, int geo,
+void check(int example, const TDomain& domain,
            int velocity_order, int pressure_order,
            int nstype,
            std::array<double, int(4)> errors, double tol)
@@ -85,8 +86,7 @@ void check(int example, int geo,
 
   if (my_rank ==0)
   {
-    Output::print();
-    Output::print("******* Check ",example, " ",geo, " ",velocity_order, " ",
+    Output::print("******* Check ",example, " ",velocity_order, " ",
                   pressure_order, " ",nstype," *******");
   }
 
@@ -95,15 +95,7 @@ void check(int example, int geo,
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-  TDatabase::ParamDB->BNDFILE = "Default_UnitCube";
 
-
-  if(geo == 6)
-    TDatabase::ParamDB->GEOFILE = "Default_UnitCube_Hexa";
-  else if(geo == 4)
-    TDatabase::ParamDB->GEOFILE = "Default_UnitCube_Tetra";
-  else
-    ErrThrow("Chose geo = 6 (hexahedra) or 4 (tets) for this test.");
 
   TDatabase::ParamDB->EXAMPLE = example;
   Example_NSE3D example_obj;
@@ -111,43 +103,6 @@ void check(int example, int geo,
   //Perform usual checks on the parameter consistency
   NSE3D::check_parameters(); //makeshift check
   TDatabase::CheckParameterConsistencyNSE(); //old check
-
-
-  /* *****************Start domain creation. ************************ */
-  // I'd love to put this in some method, but that's a bit out of reach for
-  // the domain is not safely movable so far.
-  // FIMXE Maybe it would be better if NSE3D was equipped with a constructor
-  // taking a Domain - it does not have an mpi multigrid...
-
-  TDomain domain;
-
-  domain.Init(TDatabase::ParamDB->BNDFILE,
-              TDatabase::ParamDB->GEOFILE);
-
-
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-  {
-    domain.RegRefineAll();
-  }
-
-#ifdef _MPI
-  // Partition the by now finest grid using Metis and distribute among processes.
-
-  // 1st step: Analyse interfaces and create edge objects,.
-  domain.GenerateEdgeInfo();
-
-  // 2nd step: Call the mesh partitioning.
-  int maxCellsPerVertex;
-  Partition_Mesh3D(MPI_COMM_WORLD, &domain, maxCellsPerVertex);
-
-  // 3rd step: Generate edge info anew
-  domain.GenerateEdgeInfo();
-
-  // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
-#endif
-  /* *****************End domain creation. ************************ */
 
   // Construct the nse3d problem object.
 #ifdef _MPI
@@ -269,6 +224,10 @@ int main(int argc, char* argv[])
 
   double tol = get_tolerance(std::string(argv[1]));
 
+  TDatabase::ParamDB->BNDFILE = "Default_UnitCube";
+  TDatabase::ParamDB->GEOFILE = "not_specified_globally";
+
+
   //===========================================================
   if(my_rank==0)
     Output::print<1>(">>>>> Starting computations with solver: <<<<<"
@@ -282,28 +241,54 @@ int main(int argc, char* argv[])
     Output::print<1>(">>>>> Hexahedra grid. <<<<<");
   //===========================================================
   {
-    if(my_rank==0)
-      Output::print<1>(">>>>> Q2/Q1 element on hexahedral grid. <<<<<");
-    size_t exmpl = -2;
-    size_t geo = 6;
-    size_t nstype = 1;
-    check(exmpl, geo, 2, -4711, nstype, errors, tol);
-  }
+    //do the domain thingy
+    TDomain domain_hex;
+    domain_hex.Init(TDatabase::ParamDB->BNDFILE,
+                    "Default_UnitCube_Hexa");
+    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    {
+      domain_hex.RegRefineAll();
+    }
+
+//#ifdef _MPI
+//  // Partition the by now finest grid using Metis and distribute among processes.
+//
+//  // 1st step: Analyse interfaces and create edge objects,.
+//  domain_hex.GenerateEdgeInfo();
+//
+//  // 2nd step: Call the mesh partitioning.
+//  int maxCellsPerVertex;
+//  Partition_Mesh3D(MPI_COMM_WORLD, &domain_hex, maxCellsPerVertex);
+//
+//  // 3rd step: Generate edge info anew
+//  domain_hex.GenerateEdgeInfo();
+//
+//  // calculate largest possible number of processes which share one dof
+//  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+//
+//#endif
+
   {
     if(my_rank==0)
-      Output::print<1>(">>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
+      Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
     size_t exmpl = -3;
-    size_t geo = 6;
-    size_t nstype = 2;
-    check(exmpl, geo, 12, -4711, nstype, errors, tol);
+    size_t nstype = 1;
+    check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
   }
   {
     if(my_rank==0)
-      Output::print<1>(">>>>> Q3/Q2 element on hexahedral grid. <<<<<");
+      Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
+    size_t exmpl = -3;
+    size_t nstype = 2;
+    check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
+  }
+  {
+    if(my_rank==0)
+      Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
     size_t exmpl = -3; //TODO -4
-    size_t geo = 6;
     size_t nstype = 3;
-    check(exmpl, geo, 3, -4711, nstype, errors, tol);
+    check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
+  }
   }
 
   //============= Tests on tetra grid =========================
@@ -311,23 +296,50 @@ int main(int argc, char* argv[])
     Output::print<1>(">>>>> Tetrahedral grid. <<<<<");
   //===========================================================
   {
+    //do the domain thingy
+    TDomain domain_tet;
+    domain_tet.Init(TDatabase::ParamDB->BNDFILE,
+                    "Default_UnitCube_Tetra");
+    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    {
+      domain_tet.RegRefineAll();
+    }
+
+    //#ifdef _MPI
+    //  // Partition the by now finest grid using Metis and distribute among processes.
+    //
+    //  // 1st step: Analyse interfaces and create edge objects,.
+    //  domain_tet.GenerateEdgeInfo();
+    //
+    //  // 2nd step: Call the mesh partitioning.
+    //  int maxCellsPerVertex;
+    //  Partition_Mesh3D(MPI_COMM_WORLD, &domain_tet, maxCellsPerVertex);
+    //
+    //  // 3rd step: Generate edge info anew
+    //  domain_tet.GenerateEdgeInfo();
+    //
+    //  // calculate largest possible number of processes which share one dof
+    //  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+    //
+    //#endif
+
+  {
     size_t exmpl = -3;
-    size_t geo = 4;
     size_t nstype = 4;
     if(my_rank==0)
-      Output::print<1>(">>>>> P2/P1 element on tetrahedral grid. <<<<<");
+      Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
 
-    check(exmpl, geo, 2,-4711, nstype, errors, tol);
+    check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
   }
   {
     if(my_rank==0)
-      Output::print<1>(">>>>> P3/P2 element on tetrahedral grid. <<<<<");
+      Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
     size_t exmpl = -3; //TODO -4
     size_t geo = 4;
     size_t nstype = 4; //TODO 14
-    check(exmpl, geo, 3,-4711, nstype, errors, tol);
+    check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
   }
-
+  }
 
 #ifdef _MPI
   MPI_Finalize();
