@@ -937,14 +937,14 @@ void MatrixAuxiliaryProblem(double Mult, double *coeff,
 // ONLY right hand sides
 // ======================================================================
 
-static int TimeNS_ho_RHSN_Terms = 3;
-static MultiIndex2D TimeNS_ho_RHSDerivatives[4] = {  D10, D01, D00};
-static int TimeNS_ho_RHSSpaceNumbers[1] = { 0 };
-static int TimeNS_ho_RHSN_Matrices = 0;
-static int *TimeNS_ho_RHSRowSpace = NULL;
-static int *TimeNS_ho_RHSColumnSpace = NULL;
-static int TimeNS_ho_RHSN_Rhs = 2;
-static int TimeNS_ho_RHSRhsSpace[2] = { 0, 0 };
+//static int TimeNS_ho_RHSN_Terms = 3;
+//static MultiIndex2D TimeNS_ho_RHSDerivatives[4] = {  D10, D01, D00};
+//static int TimeNS_ho_RHSSpaceNumbers[1] = { 0 };
+//static int TimeNS_ho_RHSN_Matrices = 0;
+//static int *TimeNS_ho_RHSRowSpace = NULL;
+//static int *TimeNS_ho_RHSColumnSpace = NULL;
+//static int TimeNS_ho_RHSN_Rhs = 2;
+//static int TimeNS_ho_RHSRhsSpace[2] = { 0, 0 };
 
 
 void TimeNSType1GalerkinRHS(double Mult, double *coeff, 
