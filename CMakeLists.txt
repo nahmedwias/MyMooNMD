@@ -129,9 +129,11 @@ if(_USING_MPI)
   message("==================Including Parmetis - begin===============================================")
       find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
       find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-      include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
+      
       
       set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
+      include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
+      
       set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
       
       if(NOT (PARMETIS_LIBRARIES AND  PARMETIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
