@@ -155,7 +155,7 @@ void Time_NSE2D::set_parameters()
   if(TDatabase::ParamDB->EXAMPLE < 101)
   {
     ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-    <<"does not supported for time dependent problem");
+    <<" is not supported for time dependent problem");
     exit(1);
   }
   
@@ -163,7 +163,7 @@ void Time_NSE2D::set_parameters()
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
           << " does not supported");
-    throw("TIME_DISC: 0 does not supported");
+    throw("TIME_DISC: 0 is not supported");
   }  
 }
 
