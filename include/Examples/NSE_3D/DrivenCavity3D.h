@@ -6,6 +6,14 @@
 void ExampleFile()
 {
   Output::print<1>("Example: DrivenCavity3D.h");
+  // check if the expected geometry is used
+  // FIXME at the moment I see no other possibility than to refer to global scope
+  if(!(strcmp("Default_UnitCube",TDatabase::ParamDB->BNDFILE) == 0))
+  {
+    ErrThrow(">>>>> This example has its pressure solution adapted to "
+        " BNDFILE: Default_UnitCube. Choose that geometry!");
+  }
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 // ========================================================================
@@ -56,14 +64,11 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-  double tol = 1e-5;
+  double tol = 1e-10;
 
   if (fabs(1-z)<tol)
   {
-    if ((fabs(1+x) < tol) || (fabs(1-x) < tol) || (fabs(1+y) < tol) || (fabs(1-y) < tol))
-      value = 0.0;
-    else
-      value = 1.0;
+    value = 1.0;
   }
   else
     value = 0.0 ;
