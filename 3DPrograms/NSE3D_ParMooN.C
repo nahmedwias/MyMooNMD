@@ -24,6 +24,8 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+
   // Construct the ParMooN Databases.
   TDatabase Database;
 
@@ -69,7 +71,7 @@ int main(int argc, char* argv[])
   // Write grid into a postscript file (before partitioning)
   if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
   {
-      domain.PS("Domain.ps", It_Finest, 0);
+    domain.PS("Domain.ps", It_Finest, 0);
   }
 
 #ifdef _MPI
@@ -139,8 +141,9 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
-    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t",
+    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",
                      nse3d.get_residuals());
+
     // solve the system
     nse3d.solve();
 
@@ -152,12 +155,12 @@ int main(int argc, char* argv[])
 
   }
   nse3d.output();
-  
+
   Output::close_file();
 
 #ifdef _MPI
   MPI_Finalize();
 #endif
-
+  
   return 0;
 }
