@@ -20,6 +20,7 @@ void ExampleFile()
     ErrThrow(">>>>> This example has its pressure solution adapted to "
         " BNDFILE: Default_UnitCube. Choose that geometry!");
   }
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 // exact solution
@@ -64,7 +65,6 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
