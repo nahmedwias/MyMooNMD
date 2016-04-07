@@ -2823,7 +2823,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
 */
   
   // free KColAux
-  delete KColAux;
+  delete[] KColAux;
 
 #ifdef _MPI
   int rank;
