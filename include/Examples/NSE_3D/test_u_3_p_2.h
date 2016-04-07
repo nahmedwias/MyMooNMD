@@ -20,6 +20,7 @@ void ExampleFile()
     ErrThrow(">>>>> This example has its pressure solution adapted to "
         " BNDFILE: Default_UnitCube. Choose that geometry!");
   }
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
 // exact solution
@@ -37,7 +38,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[1] =  0;   //dx
   values[2] =  -2*y*z;   //dy
   values[3] =  -y*y;   //dz
-  values[4] =  -2;   //Laplace
+  values[4] =  -2*z;   //Laplace
 }
 void ExactU3(double x, double y,  double z, double *values)
 {
@@ -45,17 +46,18 @@ void ExactU3(double x, double y,  double z, double *values)
   values[1] =  -3*x*x;   //dx
   values[2] =  0;   //dy
   values[3] =  0;   //dz
-  values[4] =  0;   //Laplace
+  values[4] =  -6*x;   //Laplace
 }
 
 void ExactP(double x, double y,  double z, double *values)
 {
-  values[0] = z*z - 1/3; //adapted to be L^2_0 on unit cube
+  values[0] = z*z - 1/3.0; //adapted to be L^2_0 on unit cube
   values[1] = 0;
   values[2] = 0;
-  values[3] = 2;
-  values[4] = 0;
+  values[3] = 2*z;
+  values[4] = 2;
 }
+
 
 /* ****
  From here it's the same for all NSE3D test Examples.
@@ -64,7 +66,6 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
@@ -89,7 +90,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = 1;
+  const double eps = 10;
   std::vector<double> u1(5,0.0);
   std::vector<double> u2(5,0.0);
   std::vector<double> u3(5,0.0);

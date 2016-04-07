@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
   {
     if(my_rank==0)
       Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
-    size_t exmpl = -3; //TODO -4
+    size_t exmpl = -4;
     size_t nstype = 3;
     check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
   }
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
   {
     if(my_rank==0)
       Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
-    size_t exmpl = -3; //TODO -4
+    size_t exmpl = -4;
     size_t geo = 4;
     size_t nstype = 4; //TODO 14
     check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
