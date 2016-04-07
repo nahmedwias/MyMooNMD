@@ -2394,6 +2394,29 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
               break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
           }
           break;
+        case SMAGORINSKY:  // basically, the same as Galerkin but with added turbulent viscosity
+		  switch(nstype)   // only with NSTYPE 1 at the moment
+		  {
+		    case 1:
+		      this->N_Matrices		= 4;
+		      this->RowSpace		= { 0, 0, 1, 1 };
+		      this->ColumnSpace		= { 0, 0, 0, 0 };
+		      switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
+		      {
+		        case 0:
+		          this->AssembleParam = TimeNSType1Smagorinsky;
+		    	  break;
+		      }
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+		    case 2:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+		    case 3:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+		    case 4:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+		    case 14:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 14
+		  }
       }
       break;// break; for the TNSE2D type
     case TNSE2D_NL:
@@ -2461,12 +2484,35 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
               break;
           }
           break;// break; TNSE2D_NL->SUPG
+        case SMAGORINSKY:  // basically the same as Galerkin but with added turbulent viscosity
+          switch(nstype)   // only with NSTYPE 1 at the moment
+          {
+            case 1:
+          	  this->N_Matrices	= 1;
+          	  this->RowSpace	= { 0 };
+          	  this->ColumnSpace	= { 0 };
+          	  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
+          	  {
+          	    case 0:
+          		  this->AssembleParam = TimeNSType1_2NLSmagorinsky;
+          		  break;
+          	  }
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+          	case 2:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+          	case 3:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+          	case 4:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+          }
+          break; // TNSE2D_NL->SMAGORINSKY
       }// case: TNSE2D_NL: endswitch(disc_type): 
       break;
     case TNSE2D_Rhs:
       switch(disc_type)
       {
         case GALERKIN:
+        case SMAGORINSKY:
           this->N_Terms = 1;
           this->Derivatives = { D00 };
           this->Needs2ndDerivatives = new bool[1];
