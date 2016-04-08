@@ -20,11 +20,11 @@
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
  *
- * So far the test is only adapted for testing the umfpack solver in sequential.
+ * So far the test is adapted to:
+ *  - testing the umfpack solver when compiled SEQUENTIAL
+ *  - testing the mumps solver when compiled MPI
  *
- * @todo TODO Fix the example -4 (something wrong with error computation) and let the
- * order 3 elements deal with that one instead.
- * @todo TODO Enable this test for: mumps (mpi only), pardiso,
+ * @todo TODO Enable this test for: pardiso,
  * fgmres with multigrid, fgmres with lsc preconditioner
  *
  * @author Clemens Bartsch (heavily inspired by Najib's NSE2D Test program)
@@ -71,10 +71,17 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
 }
+#ifdef _SEQ
 void check(int example, const TDomain& domain,
            int velocity_order, int pressure_order,
            int nstype,
            std::array<double, int(4)> errors, double tol)
+#elif _MPI
+void check(int example, const TDomain& domain, int maxSubDomainPerDof,
+           int velocity_order, int pressure_order,
+           int nstype,
+           std::array<double, int(4)> errors, double tol)
+#endif
 {
 #ifdef _MPI
   int my_rank, size;
@@ -105,10 +112,10 @@ void check(int example, const TDomain& domain,
   TDatabase::CheckParameterConsistencyNSE(); //old check
 
   // Construct the nse3d problem object.
-#ifdef _MPI
-  NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
-#else
+#ifdef _SEQ
   NSE3D nse3d(domain, example_obj);
+#elif _MPI
+  NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
 #endif
 
   nse3d.assemble_linear_terms();
@@ -159,7 +166,9 @@ void set_solver_globals(std::string solver_name)
 #ifdef _MPI
   else if (solver_name.compare("mumps") == 0)
   {
-    ErrThrow("mumps not yet set!");
+    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
+    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
   else
@@ -172,13 +181,16 @@ void set_solver_globals(std::string solver_name)
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
 
-  #ifdef _SEQ
+#ifdef _SEQ
   if(solver_name.compare("umfpack") == 0)
+    return 1e-9 ;
+#elif _MPI
+  if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
 #endif
 
   else
-    throw std::runtime_error("Unknown solver for CD3D problem!");
+    throw std::runtime_error("Unknown solver for NSE3D problem!");
 
   return 0;
 }
@@ -250,45 +262,55 @@ int main(int argc, char* argv[])
       domain_hex.RegRefineAll();
     }
 
-//#ifdef _MPI
-//  // Partition the by now finest grid using Metis and distribute among processes.
-//
-//  // 1st step: Analyse interfaces and create edge objects,.
-//  domain_hex.GenerateEdgeInfo();
-//
-//  // 2nd step: Call the mesh partitioning.
-//  int maxCellsPerVertex;
-//  Partition_Mesh3D(MPI_COMM_WORLD, &domain_hex, maxCellsPerVertex);
-//
-//  // 3rd step: Generate edge info anew
-//  domain_hex.GenerateEdgeInfo();
-//
-//  // calculate largest possible number of processes which share one dof
-//  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-//
-//#endif
+#ifdef _MPI
+    // Partition the by now finest grid using Metis and distribute among processes.
 
-  {
-    if(my_rank==0)
-      Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
-    size_t exmpl = -3;
-    size_t nstype = 1;
-    check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
-  }
-  {
-    if(my_rank==0)
-      Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
-    size_t exmpl = -3;
-    size_t nstype = 2;
-    check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
-  }
-  {
-    if(my_rank==0)
-      Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
-    size_t exmpl = -4;
-    size_t nstype = 3;
-    check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
-  }
+    // 1st step: Analyse interfaces and create edge objects,.
+    domain_hex.GenerateEdgeInfo();
+
+    // 2nd step: Call the mesh partitioning.
+    int maxCellsPerVertex;
+    Partition_Mesh3D(MPI_COMM_WORLD, &domain_hex, maxCellsPerVertex);
+
+    // 3rd step: Generate edge info anew
+    domain_hex.GenerateEdgeInfo();
+
+    // calculate largest possible number of processes which share one dof
+    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+
+#endif
+
+    {
+      if(my_rank==0)
+        Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
+      size_t exmpl = -3;
+      size_t nstype = 1;
+#ifdef _SEQ
+      check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
+#elif _MPI
+      check(exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
+#endif
+    }
+    {
+      if(my_rank==0)
+        Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
+      size_t exmpl = -3;
+      size_t nstype = 2;
+#ifdef _SEQ
+      check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
+#elif _MPI
+      check(exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+#endif
+    }
+#ifdef _SEQ //only for seq, 3rd order elements are not yet adapted for parallel
+    {
+      if(my_rank==0)
+        Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
+      size_t exmpl = -4;
+      size_t nstype = 3;
+      check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
+    }
+#endif
   }
 
   //============= Tests on tetra grid =========================
@@ -305,40 +327,46 @@ int main(int argc, char* argv[])
       domain_tet.RegRefineAll();
     }
 
-    //#ifdef _MPI
-    //  // Partition the by now finest grid using Metis and distribute among processes.
-    //
-    //  // 1st step: Analyse interfaces and create edge objects,.
-    //  domain_tet.GenerateEdgeInfo();
-    //
-    //  // 2nd step: Call the mesh partitioning.
-    //  int maxCellsPerVertex;
-    //  Partition_Mesh3D(MPI_COMM_WORLD, &domain_tet, maxCellsPerVertex);
-    //
-    //  // 3rd step: Generate edge info anew
-    //  domain_tet.GenerateEdgeInfo();
-    //
-    //  // calculate largest possible number of processes which share one dof
-    //  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-    //
-    //#endif
+#ifdef _MPI
+    // Partition the by now finest grid using Metis and distribute among processes.
 
-  {
-    size_t exmpl = -3;
-    size_t nstype = 4;
-    if(my_rank==0)
-      Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
+    // 1st step: Analyse interfaces and create edge objects,.
+    domain_tet.GenerateEdgeInfo();
 
-    check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
-  }
-  {
-    if(my_rank==0)
-      Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
-    size_t exmpl = -4;
-    size_t geo = 4;
-    size_t nstype = 4; //TODO 14
-    check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
-  }
+    // 2nd step: Call the mesh partitioning.
+    int maxCellsPerVertex;
+    Partition_Mesh3D(MPI_COMM_WORLD, &domain_tet, maxCellsPerVertex);
+
+    // 3rd step: Generate edge info anew
+    domain_tet.GenerateEdgeInfo();
+
+    // calculate largest possible number of processes which share one dof
+    int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+
+#endif
+
+    {
+      size_t exmpl = -3;
+      size_t nstype = 4;
+      if(my_rank==0)
+        Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
+#ifdef _SEQ
+      check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
+#elif _MPI
+      check(exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
+#endif
+    }
+    {
+      if(my_rank==0)
+        Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
+      size_t exmpl = -4;
+      size_t nstype = 4; //TODO 14
+#ifdef _SEQ
+      check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
+#elif _MPI
+      check(exmpl, domain_tet, maxSubDomainPerDof,3,-4711, nstype, errors, tol);
+#endif
+    }
   }
 
 #ifdef _MPI
