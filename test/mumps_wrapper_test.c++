@@ -138,8 +138,8 @@ int main(int argc, char* argv[])
     //this should fail! - catch
     //MumpsWrapper wrap_fail(bfem, {&comm_2, &comm_1});
 
-    //write matrices to file
-    wrap.write_matrix_distributed(std::string("1d"));
+    // //write matrices to file
+    //wrap.write_matrix_distributed(std::string("1d"));
   }
 
   {
