@@ -1,7 +1,10 @@
-// Driven cavity
-// 
-// u(x,y,z) = unknown
-// p(x,y,z) = unknown
+/**
+ * @file The driven cavity benchmark example in 3D.
+ *
+ * The boundary data is adapted to the [0.1]^3 unit cube example, which is
+ * availabe as default geometry in ParMooN. It will throw an error if you
+ * try running it on any other domain - just to make you aware of that fact.
+ */
 
 void ExampleFile()
 {
