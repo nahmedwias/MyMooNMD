@@ -42,11 +42,12 @@ class TParFEMapper3D
     //! Number of degrees of freedom in the process.
     int N_Dof;
     
-    //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
+#ifdef _HYBRID
     int* RowPtr;
 
     //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
     int* KCol;
+#endif _HYBRID
     
     //! The underlying fe space for which the communications are needed.
     TFESpace3D *FESpace;
@@ -105,7 +106,7 @@ class TParFEMapper3D
      * object.
      *
      * @note Try not to call any methods on a default constructed object,
-     * because it holds nullptrs to FESpace, RowPtr, KCol.
+     * because it holds a nullptrs to FESpace.
      *
      */
     TParFEMapper3D();
@@ -115,11 +116,12 @@ class TParFEMapper3D
      * @param[in] N_dim The number of dimensions associated with a certain dof (range), e.g. "3" if
      * the ParFEMapper is for the velocity of a 3D NSE problem or "1" for a 3D CDR problem.
      * @param[in] fespace the FE space the dofs belong to.
-     * @param[in] rowptr The rowptr of the TMatrix/TStructure this belongs to.
-     * @param[in] kcol The kcol pointer of the TMatrix/TStructure this belongs to.
      */
+#ifndef _HYBRID
+    TParFEMapper3D(int N_dim, TFESpace3D *fespace);
+#else _HYBRID
     TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol);
-
+#endif
     
     //! A getter method which gives all information needed by the ParFECommunicator.
     //! All parameters are out-parameters.

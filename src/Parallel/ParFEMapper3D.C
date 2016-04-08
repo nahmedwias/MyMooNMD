@@ -20,13 +20,20 @@
 
 extern double timeC;
 
+#ifndef _HYBRID
+TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace)
+#else
 TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol)
+#endif
 {
   N_Dim       = N_dim; 
   Comm        = TDatabase::ParamDB->Comm;
   FESpace     = fespace;
+
+#ifdef _HYBRID
   RowPtr      = rowptr;
   KCol        = kcol;
+#endif
  
   N_Dof = FESpace->GetN_DegreesOfFreedom();
   
@@ -69,8 +76,11 @@ TParFEMapper3D::TParFEMapper3D()
 		Comm = TDatabase::ParamDB->Comm;
 
 		FESpace = nullptr;
+
+#ifdef _HYBRID
 		RowPtr = nullptr;
 		KCol = nullptr;
+#endif
 
 		//assign non-array built-in type data members
 		N_Dim = 0;
@@ -2189,8 +2199,11 @@ TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
 {
 	//shallow copies
 	FESpace = other.FESpace;
+
+#ifdef _HYBRID
 	RowPtr = other.RowPtr; //shallow copy
 	KCol = other.KCol; //shallow copy
+#endif
 
 	//copy assign mpi communicator
 	Comm = other.Comm;
@@ -2341,8 +2354,10 @@ void swap(TParFEMapper3D& first, TParFEMapper3D& second)
 	std::swap(first.Comm, second.Comm);
 	std::swap(first.N_Dim , second.N_Dim );
 	std::swap(first.N_Dof , second.N_Dof );
+#ifdef _HYBRID
 	std::swap(first.RowPtr , second.RowPtr );
 	std::swap(first.KCol , second.KCol );
+#endif
 	std::swap(first.FESpace , second.FESpace );
 	std::swap(first.MaxSubDomainPerDof , second.MaxSubDomainPerDof );
 	std::swap(first.Master , second.Master );
@@ -2437,8 +2452,8 @@ TParFEMapper3D& TParFEMapper3D::operator=(TParFEMapper3D other)
 
 TParFEMapper3D::~TParFEMapper3D()
 {
-	//does NOT delete the objects pointed to by FESpace, KCol and RowPtr
-	//     - those belong to other objects
+	//does NOT delete the objects pointed to by FESpace
+	//     - this belong to other objects
 	if(TDatabase::ParamDB->MapperType != 2)
 	{
 		//dofs were mapped with master/slave/halo concept

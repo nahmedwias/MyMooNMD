@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   //do the actual partitioning, and examine the return value
   if ( Partition_Mesh3D(comm, &domain, maxCellsPerVertex) == 1)
   {
-    /** \todo It is a knwon issue, that Metis does not operate entirely
+    /** \todo It is a known issue that Metis does not operate entirely
      * deterministic here. On a coarse grid (as if doing the partitioning on
      * the coarsest grid of a multgrid hierarchy) it can happen, that
      * one process goes entirely without own cells to work on.
