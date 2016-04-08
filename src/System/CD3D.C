@@ -38,13 +38,11 @@
 
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
-    FEMatrix* block = matrix_.get_blocks_uniquely().at(0).get(); //the single block
 
     // Must be reset here, because feSpace needs special treatment
     // This includes copy assignment - all because there is no good
     // way to communicate Maximum number of subdomains per dof to FESpace...
-    parMapper_ = TParFEMapper3D(1, &feSpace_, block->GetRowPtr(),
-                                block->GetKCol());
+    parMapper_ = TParFEMapper3D(1, &feSpace_);
     parComm_ = TParFECommunicator3D(&parMapper_);
   }
 #else

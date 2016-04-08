@@ -80,14 +80,8 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   //Must be reset here, because feSpace needs special treatment
   // This includes copy assignment - all because there is no good
   // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(3, &velocitySpace_, //magic number
-                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(0)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(0)->GetKCol());  // non-const pointer from the A matrices
-  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_,
-                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(3)->GetRowPtr(), // The parMapper for velocity expects row and column
-                                      matrix_.get_blocks_TERRIBLY_UNSAFE().at(3)->GetKCol());  // non-const pointer from the B-Transposed matrices - I don't know why exactly!
-  // TODO The upper thing will lead to extreme trouble if there are no real BT blocks,
-  // i.e. NSTYPE 1 or 3. Catch that case in an input-check method AND in the constructor.
+  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
+  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
 
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
@@ -270,8 +264,6 @@ void NSE3D::check_parameters()
   {
     ErrThrow("Every NSE_NONLINEAR_FORM except 0 is untested!");
   }
-
-
 
 }
 

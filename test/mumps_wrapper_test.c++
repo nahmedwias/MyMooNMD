@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
   //end blackbox
 
   //build ParFECommunicators, -mappers and a BlockFEMatrix for testing
-  TParFEMapper3D mapper_1(1, &fe_space_1, nullptr, nullptr);
+  TParFEMapper3D mapper_1(1, &fe_space_1);
   TParFECommunicator3D comm_1(&mapper_1);
-  TParFEMapper3D mapper_2(1, &fe_space_2, nullptr, nullptr);
+  TParFEMapper3D mapper_2(1, &fe_space_2);
   TParFECommunicator3D comm_2(&mapper_2);
 
   BlockFEMatrix bfem({&fe_space_1, &fe_space_2});
