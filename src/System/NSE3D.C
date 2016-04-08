@@ -68,12 +68,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
 #ifdef _MPI
-
-  if(TDatabase::ParamDB->NSTYPE == 1 || TDatabase::ParamDB->NSTYPE == 3)
-  {
-    ErrThrow("Parallel solve needs explicitely stored BT-blocks, chose NSTYPE 2 or 4.");
-  }
-
   velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
   pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
 
@@ -710,9 +704,20 @@ void NSE3D::solve()
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
 #elif _MPI
-    ErrThrow("This is the place to interface the mumps solver!");
+      //two vectors of communicators (const for init, non-const for solving)
+      std::vector<const TParFECommunicator3D*> par_comms_init =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+      std::vector<TParFECommunicator3D*> par_comms_solv =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+
+      //set up a MUMPS wrapper
+      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+
+      //kick off the solving process
+      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+
 #else
-    ErrThrow("No OMPONLY solver (PARDISO) interfaced yet.");
+      ErrThrow("You shouldn't use anything but MPI or SEQUENTIAL yet!");
 #endif
 
     }
