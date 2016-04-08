@@ -85,6 +85,7 @@ void MumpsWrapper::solve(
   //1) set up the global right hand side in root
   std::vector<double> master_values;
   master_values.reserve(n_masters_local_comms); //space for loc rhs and solution
+
   std::vector<double> rhs_global;
   if(i_am_root) //put up an array for the global right hand side
     rhs_global.resize(n_dofs_global_comms, 0);
@@ -107,7 +108,7 @@ void MumpsWrapper::solve(
     {//push rhs values for master dofs on this rank and block to master_values
       if(masters[i] == mpi_rank)
       {
-        master_values.push_back(rhs.at(loc_master_shift + i));
+        master_values.push_back(rhs.at(loc_dof_shift + i));
       }
     }
 
@@ -297,8 +298,8 @@ void MumpsWrapper::kick_off_job(const std::string& job)
     bool i_am_root = (rank == 0);
     if(i_am_root)
     {
-      Output::print("MUMPS Analyze failed INFOG(1) = ",  id_.INFOG(1));
-      Output::print("MUMPS Analyze failed INFOG(2) = ",  id_.INFOG(2));
+      Output::print("MUMPS job ", job ," failed INFOG(1) = ",  id_.INFOG(1));
+      Output::print("MUMPS job ", job ," failed INFOG(2) = ",  id_.INFOG(2));
     }
     MPI_Finalize();
     exit(-1);
