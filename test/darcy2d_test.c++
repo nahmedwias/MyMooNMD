@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     
     Output::print("\nstarting with BDM2 on quads");
     errors = {{ 0.0046193106648853, 0.59661934959593, 0.54355308167768, 
-                0.0075575031515213, 0.70825254317319 }};
+                0.00755750437127, 0.708252543173 }};
     check(domain, 1012, errors);
     
     Output::print("\nstarting with BDM3 on quads");
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 
     Output::print("\nstarting with RT0 on triangles");
     errors = {{ 0.50408358816775, 5.1429079193159, 28.151331748344, 
-                0.065260996556179, 4.4428829381584 }};
+                0.0652645752817, 4.4428829381584 }};
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on triangles");
@@ -203,8 +203,8 @@ int main(int argc, char* argv[])
     check(domain, 1003, errors);
     
     Output::print("\nstarting with BDM1 on triangles");
-    errors = {{ 0.099862267417049, 5.1429079193159, 7.4906379811947, 
-                0.065730785418563, 4.4428829381584 }};
+    errors = {{ 0.099862267417049, 5.1429079193159, 7.4906379811947,
+                0.0657343839084, 4.4428829381584 }};
     check(domain, 1011, errors);
     
     Output::print("\nstarting with BDM2 on triangles");

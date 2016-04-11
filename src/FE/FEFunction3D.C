@@ -2152,7 +2152,7 @@ void TFEFunction3D::project_into_L20(double a)
   }
 
   // the vector 'interpol' is now complete
-  // substract it from the vector of this TFEFunction2D
+  // substract it from the vector of this TFEFunction3D
   for(int i = 0; i < Length; i++)
     Values[i] -= interpol[i];
 
