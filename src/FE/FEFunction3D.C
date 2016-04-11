@@ -2073,6 +2073,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
 void TFEFunction3D::compute_integral_and_measure(double& integral,
                                                  double& measure) const
 {
+
   TCollection *coll = FESpace3D->GetCollection();
 
   integral = 0.0; // variable to store integral value of this TFEFunction3D
@@ -2084,6 +2085,12 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
   for(int i = 0; i < n_cells; i++)
   {
     TBaseCell *cell = coll->GetCell(i); // current cell
+#ifdef _MPI // skip halo cells
+    if (cell->IsHaloCell())
+    {
+      continue;
+    }
+#endif
     FE3D feID = FESpace3D->GetFE3D(i, cell); // id of finite element
 
     // calculate values on original element (i.e. prepare reference
@@ -2123,6 +2130,16 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
       measure += w;
     } // endfor j
   }
+
+#ifdef _MPI //communicate the results and add up over all processes
+  double sendbuf[2] = {0.0, 0.0};
+  double recvbuf[2] = {0.0, 0.0};
+  sendbuf[0] = integral; //partial values
+  sendbuf[1] = measure;
+  MPI_Allreduce(sendbuf, recvbuf, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  integral = recvbuf[0]; //fill in the summed up values
+  measure = recvbuf[1];
+#endif
 }
 
 /** project function into the space L20 (having zero mean value, or in general a mean value) */
@@ -2133,8 +2150,16 @@ void TFEFunction3D::project_into_L20(double a)
   this->compute_integral_and_measure(integral, measure);
   double new_mean = (integral - a)/measure;
 
-  //OutPut("TFEFunction2D::project_into_L20 computed mean value before " <<
-  //       integral/measure << endl);
+  //CB DEBUG
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  my_rank = 0;
+#endif
+  Output::print("Integral on process ", my_rank,": ", integral);
+  Output::print(" Measure on process ", my_rank,": ", measure);
+  //END DEBUG
 
   // vector of the same length as this TFEFunction3D. It represents a function
   // which has the constant value 'mean' for all nodal functionals. The last
