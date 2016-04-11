@@ -12,10 +12,9 @@
  * If you want to hard-code changes to some parameters, the method
  * "set_mumps_parameters" is the place to go to.
  *
- * TODO 1) Try out for actual ParMooN problems.
- * TODO 2) Play with sets of parameters.
- * TODO 3) Make some reuse of a factorization possible.
- * TODO 4) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
+ * TODO 1) Play with sets of parameters.
+ * TODO 2) Make some reuse of a factorization possible.
+ * TODO 3) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
  *         to make the class at least movable (although not copyable yet.)
  *
  * @note Replaces the older classes ParDirectSolver and MumpsSolver.
@@ -155,6 +154,12 @@ class MumpsWrapper
     void store_in_distributed_coordinate_form(
         const BlockFEMatrix& bmatrix,
         std::vector<const TParFECommunicator3D*> comms);
+
+    /**
+     * This method is need for enclosed flows. Determines which row is the
+     * first pressure row and sets it to 0 with a 1 on the diagonal.
+     */
+    void pressure_row_correction(std::vector<const TParFECommunicator3D*> comms);
 
     /**
      * Wraps two MPI calls which are used to comunicate all local master values

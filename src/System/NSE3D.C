@@ -153,7 +153,7 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
   {
     size_t n_levels = TDatabase::ParamDB->LEVELS;
     std::vector<TCollection*> collections(n_levels,nullptr);
-    for(int i =0 ; i< n_levels ; ++i)
+    for(size_t i =0 ; i< n_levels ; ++i)
     {
       ErrThrow("This loop for multigrid NSE3D is not tested and thus most likely incorrect!");
       collections.at(i)=domain.GetCollection(It_EQ, i, -4711);

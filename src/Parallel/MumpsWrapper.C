@@ -10,6 +10,7 @@
 #include <BlockVector.h>
 #include <MumpsWrapper.h>
 #include <ParFECommunicator3D.h>
+#include <Database.h> // for handling of INTERNAL_PROJECT_PRESSURE
 
 #include <mpi.h>
 #include <memory>
@@ -507,6 +508,56 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
       }//end treating dirichlet rows
     }//end loop over columns
   }//end loop over rows
+
+  // if the matrix conme from an enclosed flow problem,
+  // an internal pressure row correction is necessary
+  if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+    pressure_row_correction(comms);
+  }
+}
+
+void MumpsWrapper::pressure_row_correction(
+    std::vector<const TParFECommunicator3D*> comms)
+{
+  if(comms.size() != 4)
+  {
+    ErrThrow("I expected that 'comms' had size 4, since this should be a"
+        " NSE3D problem!");
+  }
+  int size, my_rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+  int n_velo_dofs_global;
+  int n_velo_dofs_local = comms.at(0)->GetN_Master(); //master dofs
+  int sendbuf[1]={n_velo_dofs_local};
+  int recvbuf[1]={0};
+  //gather total number of velo dofs in root 0
+  MPI_Reduce(sendbuf, recvbuf, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  // due to the used global ordering it is process 0 that hold the
+  // globally first pressure row. that row should to be set to unit vector
+  if(my_rank == 0)
+  {
+    n_velo_dofs_global = 3*recvbuf[0]; //we're in 3D, thus multiply by 3
+    int first_p_rw = n_velo_dofs_global;
+    //go through the matrix and remove all entries
+    for(size_t i = 0; i<matrix_.nz_loc; ++i)
+    {
+      if(matrix_.irn_loc.at(i)==first_p_rw)
+      {
+        if(matrix_.jcn_loc.at(i) != first_p_rw)
+        {//off-diagonal entry - set to zero!
+          matrix_.a_loc.at(i) = 0;
+        }
+        else
+        {//diagonal entry - put to one!
+          matrix_.a_loc.at(i) = 1;
+        }
+      }
+    }
+  }
+
 }
 
 void MumpsWrapper::gather_vector(
