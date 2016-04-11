@@ -188,8 +188,6 @@ double get_tolerance(std::string solver_name)
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
 #endif
-
-  else
     throw std::runtime_error("Unknown solver for NSE3D problem!");
 
   return 0;

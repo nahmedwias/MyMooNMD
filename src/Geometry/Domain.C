@@ -2599,7 +2599,7 @@ static void Sort(TVertex **Array, int length)
 
   } while (i<r);
 
-  delete rr;
+  delete[] rr;
 }
 
 static int GetIndex(TVertex **Array, int Length, TVertex *Element)
