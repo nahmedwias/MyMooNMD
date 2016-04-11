@@ -4,6 +4,9 @@
 #include <Residuals.h>
 #include <cmath>
 #include <iomanip>
+#ifdef _MPI
+#include <mpi.h>
+#endif
 
 ///@brief standard constructor, initialize with large numbers (1e10).
 Residuals::Residuals()
@@ -13,9 +16,21 @@ Residuals::Residuals()
 /// @brief constructor given the \e square of the impuls and mass
 /// residuals
 Residuals::Residuals(double imR, double maR)
-: impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
-  fullResidual(sqrt(imR + maR))
-{}
+: impulsResidual(0), massResidual(0),
+  fullResidual(0)
+{
+#ifdef _MPI
+  //sum the square residuals across the domains
+  double sendbuf[2] = {imR, maR};
+  double recvbuf[2];
+  MPI_Allreduce(sendbuf, recvbuf, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  imR = recvbuf[0];
+  maR = recvbuf[1];
+#endif
+  impulsResidual = sqrt(imR);
+  massResidual = sqrt(maR);
+  fullResidual = sqrt(imR + maR);
+}
 
 /// @brief Write out the three numbers to a stream.
 std::ostream& operator<<(std::ostream& s, const Residuals& n)
