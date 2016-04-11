@@ -2106,17 +2106,6 @@ void TFEFunction3D::project_into_L20(double a)
   this->compute_integral_and_measure(integral, measure);
   double new_mean = (integral - a)/measure;
 
-  //CB DEBUG
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#else
-  int my_rank = 0;
-#endif
-  Output::print("Integral on process ", my_rank,": ", integral);
-  Output::print(" Measure on process ", my_rank,": ", measure);
-  //END DEBUG
-
   // vector of the same length as this TFEFunction3D. It represents a function
   // which has the constant value 'mean' for all nodal functionals. The last
   // step in this projection will be to substract this vector from the vector of
