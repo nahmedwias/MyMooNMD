@@ -1,4 +1,4 @@
-#ifdef _MPI
+  #ifdef _MPI
 
 #include "mpi.h"
 #include <ParFEMapper3D.h>
@@ -236,14 +236,13 @@ int TParFEMapper3D::find_min(int *arr, int N, char *temp_arr){
 
 void TParFEMapper3D::ConstructDofMap_Master_Halo()
 { 
-  int aa, bb, i, ii, j, jj, k, kk, l, ll, m, mm;
-  int M, N, N_Vert, ID;
-  int *DOF, *GlobalNumbers, *BeginIndex, *JointDof, *LocalIndex;
+  int aa, i, j, m;
+  int N, ID;
+  int *DOF, *GlobalNumbers, *BeginIndex, *LocalIndex;
   int N_Cells, N_OwnCells, N_Dof, N_Active, N_LocDof;
   int temp,temp_globalno,temp_dofno;
  
   double start_time, end_time, temp_time;
-  bool UPDATE;
 
   TCollection *Coll;
   TBaseCell *cell;
@@ -1159,8 +1158,8 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   temp_arrH1 = new int[size];
   temp_arrH2 = new int[size];
   
-  SlaveBuf  = new int*[2];
-  MasterBuf = new int*[2]; 
+  SlaveBuf  = new int*[2]; SlaveBuf[0]=nullptr; SlaveBuf[1]=nullptr;
+  MasterBuf = new int*[2]; MasterBuf[0]=nullptr;MasterBuf[1]=nullptr;
 
   for(N=0;N<N_Dof;N++){
    
@@ -1390,25 +1389,37 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   int **SlaveBufH1,**MasterBufH1;
   int **SlaveBufH2,**MasterBufH2;
  
-  SlaveBufH1  = new int*[2];
-  MasterBufH1 = new int*[2];
+  SlaveBufH1  = new int*[2];SlaveBufH1[0]=nullptr;SlaveBufH1[1]=nullptr;
+  MasterBufH1 = new int*[2];MasterBufH1[0]=nullptr;MasterBufH1[1]=nullptr;
  
-  SlaveBufH2  = new int*[2];
-  MasterBufH2 = new int*[2];
+  SlaveBufH2  = new int*[2];SlaveBufH2[0]=nullptr;SlaveBufH2[1]=nullptr;
+  MasterBufH2 = new int*[2];MasterBufH2[0]=nullptr;MasterBufH2[1]=nullptr;
  
   for(i=0;i<2;i++){
     if(N_Halo1>0)
+    {
       SlaveBufH1[i]  = new int[N_Halo1];
+      for(int indx = 0; indx<N_Halo1;++indx)
+        SlaveBufH1[i][indx]=0;
+    }
     if(N_SendDofH1>0)
+    {
       MasterBufH1[i] = new int[N_SendDofH1];
-     //memset (SlaveBufH1[i] , 0, size*SizeOfInt);
-     //memset (MasterBufH1[i], 0, size*SizeOfInt);
+      for(int indx = 0; indx<N_SendDofH1;++indx)
+        MasterBufH1[i][indx]=0;
+    }
     if(N_Halo2>0)
+    {
       SlaveBufH2[i]  = new int[N_Halo2];
+      for(int indx = 0; indx<N_Halo2;++indx)
+        SlaveBufH2[i][indx]=0;
+    }
     if(N_SendDofH2>0)
+    {
       MasterBufH2[i] = new int[N_SendDofH2];
-      //memset (SlaveBufH2[i] , 0, size*SizeOfInt);
-      //memset (MasterBufH2[i], 0, size*SizeOfInt);
+      for(int indx = 0; indx<N_SendDofH2;++indx)
+        MasterBufH2[i][indx]=0;
+    }
   }
   
   for(i=0;i<N_Dof;i++){
@@ -1574,19 +1585,13 @@ if(TDatabase::ParamDB->Par_P5 == 1)
 void TParFEMapper3D::ConstructDofMap()
 {
    
- int rank, size, i,jj,ii, j, k, l, m, m1, P, N_Cells, N_U,N_Active, N_LocDof, ID;
- int M, N, N_Vert, N_Joints, N_JointDOF, Neib_ID;
- int *DOF, *GlobalNumbers, *BeginIndex, *JointDof, Disp, N_EdgeDOF, *EdgeDof,*LocalIndex,*Verify;
- int N_CrossEdgeNeibs, *CrossEdgeNeibsRank, N_Edges, N_VertInCell,N_OwnCells;
- int N_VertCrossNeibs, *VertCrossNeibs, VertDof;
- int test, N_Dof;
-
- double x,y,z;
-
- bool UPDATE;
+ int rank, size, i, j, m, N_Cells, N_U, N_LocDof, ID;
+ int N;
+ int *DOF, *GlobalNumbers, *BeginIndex,*LocalIndex,*Verify;
+ int N_OwnCells;
 
  TCollection *Coll;
- TBaseCell *cell, *Neib_cell;
+ TBaseCell *cell;
 
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -1594,7 +1599,6 @@ void TParFEMapper3D::ConstructDofMap()
   Coll = FESpace->GetCollection();
   N_Cells = Coll->GetN_Cells();
   N_U = FESpace->GetN_DegreesOfFreedom();
-  N_Active = FESpace->GetN_ActiveDegrees();
   N_OwnCells = Coll->GetN_OwnCells();
   
  // printf("N_U is %d----Rank %d\n",N_U,rank);
@@ -1946,7 +1950,7 @@ void TParFEMapper3D::Assign_GlobalDofNo()
   int *Send_dataMS, *Send_dataH1, *Send_dataH2;
   int *Recv_dataMS, *Recv_dataH1, *Recv_dataH2;
   
-  int i,j,k,start;
+  int i,k,start;
   double t1 = MPI_Wtime();
   int *all_own_dofs_info = new int[size];
 

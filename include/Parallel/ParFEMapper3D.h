@@ -47,7 +47,7 @@ class TParFEMapper3D
 
     //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
     int* KCol;
-#endif _HYBRID
+#endif
     
     //! The underlying fe space for which the communications are needed.
     TFESpace3D *FESpace;
@@ -119,7 +119,7 @@ class TParFEMapper3D
      */
 #ifndef _HYBRID
     TParFEMapper3D(int N_dim, TFESpace3D *fespace);
-#else _HYBRID
+#else
     TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol);
 #endif
     

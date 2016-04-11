@@ -507,7 +507,7 @@ class TDomain
     #ifdef  _MPI
       void ReplaceTreeInfo(int n_cells, TBaseCell **cells, int *GLOB_cellIndex, int n_OwnCells)
        {
-        if(CellTree) delete CellTree;
+        if(CellTree) delete[] CellTree;
         N_RootCells = n_cells;
         CellTree = cells;
         GlobalCellIndex = GLOB_cellIndex;
