@@ -160,7 +160,10 @@ class TFEFunction3D
     /**
      * @brief find the integral of this function and the measure of its domain
      *
-     * @param[out] integral double value for the integral of this TFEFunction2D
+     * In MPI case it returns the global integral and measure, summed up over
+     * the own domains of all processes.
+     *
+     * @param[out] integral double value for the integral of this TFEFunction3D
      * @param[out] measure double value for the measure of its domain
      */
     void compute_integral_and_measure(double& integral, double& measure) const;
