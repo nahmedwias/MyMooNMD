@@ -24,6 +24,11 @@
  *  - testing the umfpack solver when compiled SEQUENTIAL
  *  - testing the mumps solver when compiled MPI
  *
+ * The MPI Mumps test contains one example for the three combinations
+ * 1 - 2 (hexa), 2 - 12 (hexa), 4 - 2 (hexa) of nstype and velocity space.
+ * The tests for 3rd order elements cannot be run, because these elements are
+ * not fitted for mpi yet.
+ *
  * @todo TODO Enable this test for: pardiso,
  * fgmres with multigrid, fgmres with lsc preconditioner
  *
@@ -354,17 +359,15 @@ int main(int argc, char* argv[])
       check(exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
 #endif
     }
+#ifdef _SEQ
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       size_t exmpl = -4;
       size_t nstype = 4; //TODO 14
-#ifdef _SEQ
       check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
-#elif _MPI
-      check(exmpl, domain_tet, maxSubDomainPerDof,3,-4711, nstype, errors, tol);
-#endif
     }
+#endif
   }
 
 #ifdef _MPI
