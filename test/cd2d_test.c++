@@ -52,6 +52,10 @@ int main(int argc, char* argv[])
 
     // default construct a domain object
     TDomain domain;
+    
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["problem_type"].set<size_t>(1);
+    db.add("solver_type", (size_t)2, "");
 
     // Set Database values (this is what is usually done by the input-file)
     TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
@@ -85,7 +89,7 @@ int main(int argc, char* argv[])
 
     //Here the actual computations take place
     //=========================================================================
-    CD2D cd2d(domain);
+    CD2D cd2d(domain, db);
     cd2d.assemble();
     cd2d.solve();
     //=========================================================================
