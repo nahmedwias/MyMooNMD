@@ -32,6 +32,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
   ####### Tests for parallel type: SEQUENTIAL #######
   ###################################################
   
+  #parameter database test
+  add_executable(ParMooN_test_parameter_database parameter_database_test.c++)
+  target_link_libraries(ParMooN_test_parameter_database parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
+  add_test(parameter_database ParMooN_test_parameter_database)
+  list(APPEND parmoon_tests ParMooN_test_parameter_database)
+  
   #matrix test
   add_executable(ParMooN_test_matrix matrix_test.c++)
   target_link_libraries(ParMooN_test_matrix parmoon_2d_SEQUENTIAL ${_EXTERN_LIBRARIES})
