@@ -12,7 +12,7 @@
 #include <FEFunction2D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <FEM_TVD_FCT.h>
 #include <Bulk_2d3d.h>
 #include <Bulk.h>

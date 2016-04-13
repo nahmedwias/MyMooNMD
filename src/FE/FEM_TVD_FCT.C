@@ -13,7 +13,7 @@
 
 #include <Database.h>
 #include <LinAlg.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
 #include <SquareMatrix2D.h>
 #include <DiscreteForm2D.h>
