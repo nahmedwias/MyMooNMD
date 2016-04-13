@@ -146,9 +146,6 @@ void MumpsWrapper::solve(
                   MPI_INT,MPI_SUM,MPI_COMM_WORLD);
     glob_dof_shift += current_n_dofs_global;
   }
-  //CB DEBUG
-  Output::print("end part 1");
-  //END DEBUG
   //2) let mumps do its jobs
   id_.nz_loc  = matrix_.nz_loc;
   id_.irn_loc = &matrix_.irn_loc.at(0);

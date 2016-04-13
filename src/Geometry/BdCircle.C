@@ -50,7 +50,8 @@ int TBdCircle::GetXYofT(double T, double &X, double &Y)
 
   if (T < -0.001 || T > 1.001)
   { 
-    cerr << "Error: parameter T out of range " << T << endl;
+    Output::print<2>("WARNING in TBdCircle::GetXYofT. Parameter T=",T," out of range."
+        " Not writing on X and Y. ");;
      return -2;
   }
 
@@ -68,7 +69,11 @@ int TBdCircle::GetTofXY(double X, double Y, double &T)
   T = (T - Phi1) / (Phi2 - Phi1);
 
   if (T < -0.001 || T > 1.001)
+  {
+    Output::print<2>("WARNING in TBdCircle::GetTofXY. Parameter T=",T," out of range "
+        " for X=",X, ", Y=",Y);
     return -1;
+  }
   else
     return 0;
 }
