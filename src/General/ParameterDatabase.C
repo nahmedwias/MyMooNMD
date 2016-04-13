@@ -19,9 +19,9 @@ find_parameter(std::string name, std::list<Parameter>& parameters)
   return std::find_if(parameters.begin(), parameters.end(), search_lambda);
 }
 
-bool ParameterDatabase::contains(std::string name) const
+bool ParameterDatabase::contains(std::string param_name) const
 {
-  if(find_parameter(name, this->parameters) == this->parameters.end())
+  if(find_parameter(param_name, this->parameters) == this->parameters.end())
     return false;
   else
     return true;
@@ -111,7 +111,7 @@ template void ParameterDatabase::add(std::string n,std::string v,std::string d,
 void ParameterDatabase::add(Parameter&& p)
 {
   // check if such a parameter already exists in this database
-  if(!this->contains(name))
+  if(!this->contains(p.get_name()))
     this->parameters.emplace_back(std::move(p));
   else
     ErrThrow("parameter with this name already exists");
@@ -692,7 +692,7 @@ void ParameterDatabase::read(std::istream& is)
     }
     
     tmp.add(create_parameter(param_name, value_string, description,
-                               range_string));
+                             range_string));
     description.clear();
   }
   Output::print<2>("Done reading database from stream. Read ",
