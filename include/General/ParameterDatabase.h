@@ -170,7 +170,10 @@ class ParameterDatabase
                bool create_new_parameters = true);
     
     /// @brief out some information on the parameters
-    void info(bool only_names = true) const;
+    ///
+    /// Setting `only_names_and_values` to true prints only little information
+    /// on each parameter. Setting it to false prints all details.
+    void info(bool only_names_and_values = true) const;
   
   private:
     /// @brief name of this parameter database

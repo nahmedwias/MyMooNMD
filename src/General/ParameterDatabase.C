@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ctime>
 #include <memory>
+#include <MooNMD_Io.h>
 
 // helper functions
 std::list<Parameter>::const_iterator 
@@ -113,7 +114,7 @@ void ParameterDatabase::add(Parameter&& p)
   if(!this->contains(name))
     this->parameters.emplace_back(std::move(p));
   else
-    throw(std::runtime_error("parameter with this name already exists"));
+    ErrThrow("parameter with this name already exists");
     // what happens to p now?
 }
 
@@ -122,14 +123,14 @@ const Parameter& ParameterDatabase::operator[](std::string parameter_name) const
 {
   auto it = find_parameter(parameter_name, this->parameters);
   if(it == this->parameters.end())
-    throw(std::runtime_error("unknown parameter"));
+    ErrThrow("unknown parameter ", parameter_name);
   return *it;
 }
 Parameter& ParameterDatabase::operator[](std::string parameter_name)
 {
   auto it = find_parameter(parameter_name, this->parameters);
   if(it == this->parameters.end())
-    throw(std::runtime_error("unknown parameter"));
+    ErrThrow("unknown parameter ", parameter_name);
   return *it;
 }
 
@@ -151,18 +152,17 @@ size_t ParameterDatabase::get_n_parameters() const
   return this->parameters.size();
 }
 
-constexpr auto database_name = "ParameterDatabase_name";
 /* ************************************************************************** */
 void ParameterDatabase::write(std::ostream& os, size_t verbose) const
 {
   if(!os.good())
   {
-    std::cout << "Error in ParameterDatabase::write. stream not good\n";
+    Output::print("Error in ParameterDatabase::write. stream not good");
     return;
   }
   if(verbose > 2) // make sure verbose is either 0,1, or 2
   {
-    std::cout << "Error in ParameterDatabase::write. unknown verbosity level\n";
+    Output::print("Error in ParameterDatabase::write. unknown verbosity level");
     return;
   }
   
@@ -249,7 +249,7 @@ std::list<std::string> get_lines_of_database(std::istream& is,
     position = is.tellg(); // update to new position
   }
   if(!is)
-    std::cout << "read last line of input stream\n";
+    Output::print<3>("read last line of input stream");
   
   if(!found_name)
   {
@@ -336,9 +336,9 @@ void adjust_type(Parameter::types& type,
       continue;
     // type and t are different
     if(type == Parameter::types::_bool || t == Parameter::types::_bool)
-      throw(std::runtime_error("value and range have different types, one is bool"));
+      ErrThrow("value and range have different types, one is bool");
     if(type == Parameter::types::_string || t == Parameter::types::_string)
-      throw(std::runtime_error("value and range have different types, one is string"));
+      ErrThrow("value and range have different types, one is string");
     if(type == Parameter::types::_size_t && t == Parameter::types::_int)
       type = Parameter::types::_int;
     if((type == Parameter::types::_size_t || type == Parameter::types::_int)
@@ -364,13 +364,13 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
     auto end    = range.find("]", begin);
     if(middle == npos || end == npos)
     {
-      throw(std::runtime_error("wrong range format for interval."));
+      ErrThrow("wrong range format for interval.");
     }
     if(range.find(",", middle+1) < end)
     {
       // another comma between '[' and ']'
-      std::cout << "WARNING a parameter interval should only have two " 
-                << "values. Did you mean a set? Then use '{' and '}'.\n";
+      Output::print("WARNING a parameter interval should only have two values. "
+                    "Did you mean a set? Then use '{' and '}'.");
     }
     std::string min_string = range.substr(begin, middle-begin);
     std::string max_string = range.substr(middle+1, end-middle-1);
@@ -420,7 +420,7 @@ void add_range_to_parameter(Parameter& p,
     case Parameter::types::_bool:
     {
       if(range_list.first)
-        throw(std::runtime_error("unable to set an interval range for a boolean parameter"));
+        ErrThrow("unable to set an interval range for a boolean parameter");
       auto rl = range_list.second;
       if(rl.count("true") == 1 || rl.count("True") == 1)
       {
@@ -453,7 +453,7 @@ void add_range_to_parameter(Parameter& p,
           if(p.get_type() == Parameter::types::_size_t)
           {
             if(min < 0 || max < 0)
-              throw(std::runtime_error("reading negative value for size_t??"));
+              ErrThrow("reading negative value for size_t??");
             p.set_range((size_t)min, (size_t)max);
           }
           else
@@ -461,7 +461,7 @@ void add_range_to_parameter(Parameter& p,
         }
         catch(...)
         {
-          throw(std::runtime_error("could not read interval range for int parameter"));
+          ErrThrow("could not read interval range for int parameter");
         }
       }
       else
@@ -477,7 +477,7 @@ void add_range_to_parameter(Parameter& p,
         }
         catch(...)
         {
-          throw(std::runtime_error("could not read range for int parameter"));
+          ErrThrow("could not read range for int parameter");
         }
         // convert to the right `set` and set_range
         if(p.get_type() == Parameter::types::_size_t)
@@ -486,7 +486,7 @@ void add_range_to_parameter(Parameter& p,
           for(auto t : long_range)
           {
             if(t < 0)
-                throw(std::runtime_error("reading negative value for size_t??"));
+              ErrThrow("reading negative value for size_t??");
             size_t_range.insert(t);
           }
           p.set_range(size_t_range);
@@ -503,7 +503,7 @@ void add_range_to_parameter(Parameter& p,
     case Parameter::types::_double:
     {
       if(!range_list.first)
-        throw(std::runtime_error("unable to set a set range for a double parameter"));
+        ErrThrow("unable to set a set range for a double parameter");
       std::string min_string = *range_list.second.begin();
       std::string max_string;
         if(range_list.second.size() == 1)
@@ -518,19 +518,19 @@ void add_range_to_parameter(Parameter& p,
       }
       catch(...)
       {
-        throw(std::runtime_error("could not read range for double parameter"));
+        ErrThrow("could not read range for double parameter");
       }
       break;
     }
     case Parameter::types::_string:
     {
       if(range_list.first)
-        throw(std::runtime_error("unable to set an interval range for a string parameter"));
+        ErrThrow("unable to set an interval range for a string parameter");
       p.set_range(range_list.second);
       break;
     }
     default:
-      throw(std::runtime_error("unknown parameter type"));
+      ErrThrow("unknown parameter type");
       break;
   }
 }
@@ -589,7 +589,7 @@ Parameter create_parameter(std::string name, std::string value_string,
       p.reset(new Parameter(name, value_string, description));
       break;
     default:
-      throw(std::runtime_error("unknown type"));
+      ErrThrow("unknown type");
       break;
   }
   
@@ -641,13 +641,13 @@ void ParameterDatabase::read(std::istream& is)
 {
   if(!is.good())
   {
-    std::cout << "Error in ParameterDatabase::read. stream not good\n";
+    Output::print("Error in ParameterDatabase::read. stream not good");
     return;
   }
   
   ParameterDatabase tmp("");
   
-  std::cout << "\nReading database from stream\n";
+  Output::print<2>("\nReading database from stream");
   
   // get all lines of the input stream as a list of strings
   std::list<std::string> lines_read = get_lines_of_database(is, tmp.name);
@@ -678,8 +678,9 @@ void ParameterDatabase::read(std::istream& is)
     std::string param_name, value_string, range_string;
     bool found_parameter = read_parameter(line, param_name, value_string,
                                           range_string);
-    //std::cout << "FOUND " << param_name << " \t " << value_string << " \t ->" 
-    //          << range_string << "<-     " << found_parameter << "\n";
+    Output::print<4>("Reading parameter from stream: ", param_name, " \t ",
+                     value_string, " \t ->", range_string, "<-     ",
+                     found_parameter);
     if(!found_parameter)
     {
       description.clear();
@@ -694,8 +695,8 @@ void ParameterDatabase::read(std::istream& is)
                                range_string));
     description.clear();
   }
-  std::cout << "Done reading database from stream. Read "
-            << this->parameters.size() << " parameters\n\n";
+  Output::print<2>("Done reading database from stream. Read ",
+                   this->parameters.size(), " parameters");
   
   this->name = tmp.get_name();
   this->merge(tmp);
@@ -719,17 +720,14 @@ void ParameterDatabase::merge(const ParameterDatabase &other,
 /* ************************************************************************** */
 void ParameterDatabase::info(bool only_names) const
 {
-  std::cout << "Parameter database: " << this->name << "\n";
-  std::cout << "  number of parameters: " << this->parameters.size() << "\n";
+  Output::print("Parameter database: ", this->name);
+  Output::print("  number of parameters: ", this->parameters.size());
   for(const auto& p : this->parameters)
   {
     if(only_names)
-      std::cout << "    " << p.get_name() << ": " << p.value_as_string() <<"\n";
+      Output::print("    ", p.get_name(), ": ", p.value_as_string());
     else
-    {
-      std::cout << "  ";
       p.info();
-    }
   }
 }
 
