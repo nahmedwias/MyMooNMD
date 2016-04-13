@@ -160,13 +160,16 @@ class Parameter
     template <typename T>
     bool is(T value) const;
     
+    /// @name casts for easier access
     /// @brief explicit casts, throws if wrong type
+    //@{
     operator bool() const;
     operator int() const;
     operator size_t() const;
     operator double() const;
     operator std::string() const;
     operator const char*() const;
+    //@}
     
     /// @brief print some information on this parameter
     void info() const;
@@ -188,12 +191,18 @@ class Parameter
     /// @brief the type of this parameter (not changeable after construction)
     const types type;
     
+    /// @name storing the value of this parameter
     /// @brief the value of this parameter, exactly one is actually used
+    /// 
+    /// Which one is used depends on Parameter::type. The others are simply 
+    /// not used.
+    //@{
     bool bool_value;
     int int_value;
     size_t unsigned_value;
     double double_value;
     std::string string_value;
+    //@}
     
     /// @brief Access count
     mutable std::size_t access_count;
@@ -207,16 +216,30 @@ class Parameter
     /// @brief Parameter description
     std::string description;
     
+    /// @name describing the range (valid values) of this parameter
     /// @brief Parameter range describing all valid parameter values
     ///
-    /// Exactly one is actually used.
-    // if false, the range is {bool_value}, otherwise it is {true, false}
+    /// Exactly one is actually used (int case of a Parameter of type `double`,
+    /// it is `min` and `max`). The others are meaningless and are not set or 
+    /// used.
+    //@{
+    /// @brief if false, the range is {bool_value}, otherwise it is {true,false}
     bool not_bool_value_allowed;
+    /// @brief set of all possible integers for this parameter
+    ///
+    /// Even if the range is an interval, here all numbers are listed
     std::set<int> int_range;
+    /// @brief set of all possible `size_t`s for this parameter
+    ///
+    /// Even if the range is an interval, here all numbers are listed
     std::set<size_t> unsigned_range;
-    // the range is the interval [min, max]
-    double min, max;
+    /// @brief the range is the interval [min, max]
+    double min;
+    /// @brief the range is the interval [min, max]
+    double max;
+    /// @brief set of all possible strings for this parameter
     std::set<std::string> string_range;
+    //@}
 };
 
 #endif // __PARAMETER__
