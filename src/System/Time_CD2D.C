@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <MultiGrid2D.h>
 #include <Output2D.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <LinAlg.h>
 #include <MainUtilities.h>
