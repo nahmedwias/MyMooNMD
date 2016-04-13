@@ -9,7 +9,7 @@
 //
 // =======================================================================
 #include <Database.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <MooNMD_Io.h>
 #include <LinAlg.h>
 
