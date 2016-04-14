@@ -23,6 +23,7 @@
 
 // forward declaration
 class BlockMatrix;
+constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
 {
@@ -92,12 +93,23 @@ class DirectSolver
     void* numeric;
     //@}
     
+    /** @brief storage for pardiso direct solver */
+    //@{
+    void *pt[pardiso_options_array_length]; /// memory pointers for pardiso_
+    int maxfct;    /// maximum number of numerical factorization to perform
+    int mnum;      /// number of matrices
+    int mtype;     /// type of the matrix (ref. @b PARDISO_MTYPE_*)
+    int perm;      /// User supplied permutation to apply in advance
+    int nrhs;      /// number of right-hand sides
+    int iparm[pardiso_options_array_length]; /// contains the pardiso settings
+    int msglvl;    /// message level (0 - no messages, 1 - verbose)
+    //@}
     
     /**
      * @brief compute the factorization of a matrix, ready to call solve
      * 
      * The indices are shifted to conform with Fortran in case of the Pardiso 
-     * solver. This is why this methods has to change the matrix and therefore
+     * solver. This is why this method has to change the matrix and therefore
      * does not take a const TMatrix.
      *
      * @param  matrix  the matrix A where Ax=b
