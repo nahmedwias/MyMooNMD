@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   TDomain domain(argv[1]);
 
   //set PROBLEM_TYPE to CD if not yet set
-  if(parmoon_db["problem_type"].get<size_t>()  == 0)
+  if(parmoon_db["problem_type"].is(0))
     parmoon_db["problem_type"].set((size_t)1);
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);

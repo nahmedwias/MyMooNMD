@@ -29,15 +29,19 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);  
+  TDomain domain(argv[1]);
   
   //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
-    TDatabase::ParamDB->PROBLEM_TYPE = 5;
+  if(!parmoon_db["problem_type"].is(3) && !parmoon_db["problem_type"].is(5))
+    parmoon_db["problem_type"].set<size_t>(5);
   //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  Output::set_outfile(parmoon_db["outfile"]);
   
   // possibly change parameters in the database, if they are not meaningful now
   Database.CheckParameterConsistencyNSE();
@@ -46,24 +50,25 @@ int main(int argc, char* argv[])
   
   /* include the mesh from a mesh generator, for a standard mesh use the 
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
   
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain.RegRefineAll();  
+  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  for(size_t i = 0; i < n_ref; i++)
+    domain.RegRefineAll();
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
-    Domain.PS("Domain.ps",It_Finest,0);
+  if(parmoon_db["write_ps"])
+    domain.PS("domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  if(parmoon_db["WRITE_VTK"].get<size_t>() == 1)
+    mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
   
   Example_NSE2D example;
   
   // create an object of the Naviert-Stokes class
-  NSE2D ns(Domain, example);
+  NSE2D ns(domain, parmoon_db, example);
   ns.assemble();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
@@ -80,7 +85,7 @@ int main(int argc, char* argv[])
     ns.solve();
     
     //no nonlinear iteration for Stokes problem
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
+    if(parmoon_db["problem_type"].is(3))
       break;
     
     ns.assemble_nonlinear_term();
