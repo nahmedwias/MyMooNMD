@@ -696,8 +696,9 @@ void NSE3D::solve()
     }
     else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
     {
-#ifdef _SEQ // So far only UMFPACK is available as direct solver in sequential case.
-            // Actuate it via DirectSolver class.
+#ifndef _MPI
+      // So far only UMFPACK is available as direct solver in sequential case.
+      // Actuate it via DirectSolver class.
 
       /// @todo consider storing an object of DirectSolver in this class
       DirectSolver direct_solver(s.matrix_,
@@ -715,9 +716,6 @@ void NSE3D::solve()
 
       //kick off the solving process
       mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-
-#else
-      ErrThrow("You shouldn't use anything but MPI or SEQUENTIAL yet!");
 #endif
 
     }
