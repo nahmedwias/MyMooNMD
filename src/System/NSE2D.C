@@ -80,7 +80,7 @@ NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
-             const Example_NSE2D & e, unsigned int reference_id)
+             const Example_NSE2D e, unsigned int reference_id)
     : systems(), example(e), multigrid(), db(get_default_NSE2D_parameters()),
       solver(param_db), defect(), oldResiduals(), initial_residual(1e10), 
       errors()

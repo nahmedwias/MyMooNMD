@@ -80,7 +80,7 @@ class Darcy2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_Darcy2D& example;
+    const Example_Darcy2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -156,7 +156,7 @@ class Darcy2D
      * should be used. The default implies all cells.
      */
     Darcy2D(const TDomain& domain, const ParameterDatabase & db,
-            const Example_Darcy2D& ex, int reference_id = -4711);
+            const Example_Darcy2D ex, int reference_id = -4711);
     
     //! Delete copy constructor.
     Darcy2D(const Darcy2D&) = delete;
