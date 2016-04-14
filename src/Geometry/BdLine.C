@@ -31,7 +31,7 @@ int TBdLine::GetXYofT(double T, double &X, double &Y)
 {
   if (T < -0.001 || T > 1.001)
   { 
-    cerr << "Error: parameter T out of range" << endl;
+    cerr << "Error in TBdLine: parameter T out of range" << endl;
     cerr << T << endl;
     return -2;
   }

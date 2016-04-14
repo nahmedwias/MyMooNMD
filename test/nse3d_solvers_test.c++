@@ -76,12 +76,12 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
 }
-#ifdef _SEQ
+#ifndef _MPI
 void check(int example, const TDomain& domain,
            int velocity_order, int pressure_order,
            int nstype,
            std::array<double, int(4)> errors, double tol)
-#elif _MPI
+#else
 void check(int example, const TDomain& domain, int maxSubDomainPerDof,
            int velocity_order, int pressure_order,
            int nstype,
@@ -117,9 +117,9 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
   TDatabase::CheckParameterConsistencyNSE(); //old check
 
   // Construct the nse3d problem object.
-#ifdef _SEQ
+#ifndef _MPI
   NSE3D nse3d(domain, example_obj);
-#elif _MPI
+#else
   NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
 #endif
 
@@ -156,7 +156,7 @@ void set_solver_globals(std::string solver_name)
   {
     ErrThrow("Multigrid not yet set!");
   }
-#ifdef _SEQ
+#ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
@@ -167,8 +167,7 @@ void set_solver_globals(std::string solver_name)
   {
     ErrThrow("pardiso not yet set!");
   }
-#endif
-#ifdef _MPI
+#else
   else if (solver_name.compare("mumps") == 0)
   {
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
@@ -186,10 +185,10 @@ void set_solver_globals(std::string solver_name)
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
 
-#ifdef _SEQ
+#ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
     return 1e-9 ;
-#elif _MPI
+#else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
 #endif
@@ -239,8 +238,10 @@ int main(int argc, char* argv[])
 
   double tol = get_tolerance(std::string(argv[1]));
 
-  TDatabase::ParamDB->BNDFILE = "Default_UnitCube";
-  TDatabase::ParamDB->GEOFILE = "not_specified_globally";
+  // the TDatabase::ParamDB will delete this char*, so we should call new before
+  char* boundary_file = new char[20]; strcpy(boundary_file,"Default_UnitCube");
+  TDatabase::ParamDB->BNDFILE = boundary_file;
+  //TDatabase::ParamDB->GEOFILE = (char*)"not_specified_globally";
 
 
   //===========================================================
@@ -288,9 +289,9 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q2/Q1 element on hexahedral grid. <<<<<");
       size_t exmpl = -3;
       size_t nstype = 1;
-#ifdef _SEQ
+#ifndef _MPI
       check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
-#elif _MPI
+#else
       check(exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
 #endif
     }
@@ -299,13 +300,13 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
       size_t exmpl = -3;
       size_t nstype = 2;
-#ifdef _SEQ
+#ifndef _MPI
       check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
-#elif _MPI
+#else
       check(exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
 #endif
     }
-#ifdef _SEQ //only for seq, 3rd order elements are not yet adapted for parallel
+#ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
@@ -353,13 +354,13 @@ int main(int argc, char* argv[])
       size_t nstype = 4;
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
-#ifdef _SEQ
+#ifndef _MPI
       check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
-#elif _MPI
+#else
       check(exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
 #endif
     }
-#ifdef _SEQ
+#ifndef _MPI
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
@@ -373,6 +374,6 @@ int main(int argc, char* argv[])
 #ifdef _MPI
   MPI_Finalize();
 #endif
-  exit(0);
+  return 0;
 
 }

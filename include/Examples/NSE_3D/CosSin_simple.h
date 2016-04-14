@@ -58,7 +58,6 @@ void ExactP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double tol = 1e-10;
   cond = DIRICHLET;
 }
 // value of boundary condition
