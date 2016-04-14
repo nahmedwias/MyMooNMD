@@ -239,6 +239,19 @@ message("==================Including TECPLOT - begin============================
 	include_directories(${TECPLOT_INCLUDE_DIRS})
 message("==================Including TECPLOT - end==================================================")
 
+# Include pardiso library
+if(_USING_OMP)
+  message("==================Including PARDISO - begin================================================")
+    # for some reason the pardiso library is in the mumps directory
+    find_library(PARDISO_LIBRARY NAMES libpardisoj83.2.9.x86_omp_gfortran_gcc43.a PATHS ${PARMOON_EXTLIB_PATH}/pardiso NO_DEFAULT_PATH)
+    if(NOT (PARDISO_LIBRARY)) #Mimic "REQUIRED" behaviour
+        message(FATAL_ERROR "pardiso is missing from ParMooN.")
+    else()
+        message(STATUS "Done.")
+    endif()
+  message("==================Including PARDISO - end==================================================")
+endif(_USING_OMP)
+
 # Include UMFPACK library.
 message("==================Including UMFPACK - begin================================================")
     find_path(UMFPACK_INCLUDE_DIR  umfpack.h PATHS ${PARMOON_EXTLIB_PATH}/UMFPACK/Include NO_DEFAULT_PATH)
@@ -346,6 +359,9 @@ LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${TECPLOT_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARIES})
+if(_USING_OMP)
+    LIST(APPEND _EXTERN_LIBRARIES ${PARDISO_LIBRARY})
+endif(_USING_OMP)
 LIST(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
 if(_USING_MPI)
     LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
