@@ -10,6 +10,18 @@
 #include <Output2D.h>
 #include <MainUtilities.h>
 
+ParameterDatabase get_default_Darcy2D_parameters()
+{
+  Output::print<3>("creating a default Darcy2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("CD2D parameter database");
+  
+  return db;
+}
+
+
 /** ************************************************************************ */
 Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
                                           TCollection& coll)
@@ -33,18 +45,22 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
 }
 
 /** ************************************************************************ */
-Darcy2D::Darcy2D(const TDomain& domain, int reference_id)
- : Darcy2D(domain, *(new Example_Darcy2D()), reference_id)
+Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db, 
+                 int reference_id)
+ : Darcy2D(domain, param_db, Example_Darcy2D(), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
 }
 
 /** ************************************************************************ */
-Darcy2D::Darcy2D(const TDomain& domain, const Example_Darcy2D& ex, 
-                 int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors()
+Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
+                 const Example_Darcy2D& ex, int reference_id)
+ : systems(), example(ex), multigrid(nullptr), 
+   db(get_default_Darcy2D_parameters()), solver(param_db), errors()
 {
+  // get the parameters to control the behavior of this class
+  this->db.merge(param_db, false);
   // make sure all parameters in the database are set consistently
   this->set_parameters();
   
@@ -173,14 +189,12 @@ void Darcy2D::assemble()
 /** ************************************************************************ */
 void Darcy2D::solve()
 {
-  if(TDatabase::ParamDB->SOLVER_TYPE != 2)
+  if(!this->solver.get_db()["solver_type"].is(2))
     ErrThrow("only the direct solver is implemented currently");
   System_per_grid & s = this->systems.front();
   
-  /// @todo consider storing an object of DirectSolver in this class
-  DirectSolver direct_solver(s.matrix, 
-                             DirectSolver::DirectSolverTypes::umfpack);
-  direct_solver.solve(s.rhs, s.solution);
+  this->solver.update_matrix(s.matrix);
+  this->solver.solve(s.rhs, s.solution);
   
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
@@ -189,7 +203,7 @@ void Darcy2D::solve()
 /** ************************************************************************ */
 void Darcy2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
     return;
   
   System_per_grid & s = this->systems.front();
@@ -205,14 +219,14 @@ void Darcy2D::output(int i)
     TOutput2D Output(2, 2, 0, 0, nullptr);
     Output.AddFEFunction(&s.u);
     Output.AddFEFunction(&s.p);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    std::string filename = this->db["output_directory"];
+    filename += "/" + this->db["base_name"].value_as_string();
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(this->db["compute_errors"])
   {
     DoubleFunct2D *const *Exact = &(example.get_exact())[0];
     ErrorMethod2D *L2DivH1 = L2DivH1Errors;
