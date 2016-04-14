@@ -55,7 +55,7 @@ Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
 
 /** ************************************************************************ */
 Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
-                 const Example_Darcy2D& ex, int reference_id)
+                 const Example_Darcy2D ex, int reference_id)
  : systems(), example(ex), multigrid(nullptr), 
    db(get_default_Darcy2D_parameters()), solver(param_db), errors()
 {
