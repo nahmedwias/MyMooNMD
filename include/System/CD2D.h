@@ -93,8 +93,21 @@ class CD2D
      */
     std::shared_ptr<TMultiGrid2D> multigrid;
     
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * CD2D::solver object.
+     */
     ParameterDatabase db;
     
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
     Solver solver;
     
     /** @brief set parameters in database
