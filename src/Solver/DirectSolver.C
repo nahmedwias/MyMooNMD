@@ -15,6 +15,53 @@
 #include "umfpack.h"
 #include <BlockMatrix.h>
 
+#ifdef _OMP
+#include <omp.h>
+/* Pardiso Fortran Function */
+extern "C" void pardiso_(
+    void * handle,
+    int *max_factorizations,
+    int *matrix_num,
+    int *matrix_type,
+    int *ido,
+    int *neqns,
+    double *a,
+    int *ia,
+    int *ja,
+    int *perm_user,
+    int *nb,
+    int iparam[pardiso_options_array_length],
+    int *msglvl,
+    double *b,
+    double *x,
+    int *error
+);
+#else
+void pardiso_(
+    void * handle,
+    int *max_factorizations,
+    int *matrix_num,
+    int *matrix_type,
+    int *ido,
+    int *neqns,
+    double *a,
+    int *ia,
+    int *ja,
+    int *perm_user,
+    int *nb,
+    int iparam[pardiso_options_array_length],
+    int *msglvl,
+    double *b,
+    double *x,
+    int *error
+)
+{
+  ErrThrow("you compiled without openmp, therefore pardiso does not work."
+           "Change PARMOON_PARALLEL_TYPE in your CMakeCache.txt");
+}
+#endif
+
+
 void handle_error_umfpack(int ierror)
 {
   if (ierror == UMFPACK_OK)
@@ -72,12 +119,54 @@ void handle_error_umfpack(int ierror)
     break;
   }
 }
+void handle_error_pardiso(int ierror)
+{
+  if (ierror==0) return;
+
+  switch(ierror)
+  {
+  case -1:
+    ErrThrow("Input inconsistent."); break;
+  case -2:
+    ErrThrow("Not enough memory."); break;
+  case -3:
+    ErrThrow("Reordering problem."); break;
+  case -4:
+    ErrThrow("Zero pivot, numerical factorization or iterative refinement problem."); break;
+  case -5:
+    ErrThrow("Unclassified (internal) error."); break;
+  case -6:
+    ErrThrow("Preordering failed"); break;
+  case -7:
+    ErrThrow("Diagonal matrix problem."); break;
+  case -8:
+    ErrThrow("32-bit integer overflow problem."); break;
+  case -10:
+    ErrThrow("No license file pardiso.lic found."); break;
+  case -11:
+    ErrThrow("License is expired."); break;
+  case -12:
+    ErrThrow("Wrong user name or host name."); break;
+  case -100:
+    ErrThrow("Reached maximum number of Krylov-subspace iteration in iterative solver."); break;
+  case -101:
+    ErrThrow("No sufficient convergence in Krylov-subspace iteration within 25 iterations"); break;
+  case -102:
+    ErrThrow("Error in Krylov-subspace iteration."); break;
+  case -103:
+    ErrThrow("Break-Down in Krylov-subspace iteration."); break;
+  default:
+    ErrThrow("pardiso: unkown error. Error number ", ierror); break;
+  break;
+  }
+}
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
                            DirectSolver::DirectSolverTypes type)
  : type(type), matrix(matrix), cols(), rows(),
-   symbolic(nullptr), numeric(nullptr)
+   symbolic(nullptr), numeric(nullptr), pt(), maxfct(10), mnum(1), 
+   mtype(11), perm(0), nrhs(1), iparm(), msglvl(0)
 {
   Output::print<3>("constructing a DirectSolver object");
   if(!matrix->is_square())
@@ -88,12 +177,23 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
   
   if(type == DirectSolverTypes::pardiso)
   {
-    ErrThrow("Pardiso does not yet work");
+    this->matrix->fortran_shift();
+    // initialize all values to zero/nullptr
+    for(size_t i = 0; i < pardiso_options_array_length; ++i)
+    {
+      this->pt[i] = nullptr;
+      this->iparm[i] = 0;
+    }
+    this->iparm[0] = 0; /* override defaults */
+    this->iparm[1] = 2; /* Metis reordering, default: minimize fill-in; 3D */
+    this->iparm[2] = 1; /* number of threads */
+    this->iparm[3] = 0; /* precond cgs, solver type */
+    this->iparm[4] = 0; /* user permute */
   }
 
   // the threshold is rather small here, it should furthermore depend on the 
   // dimension (2 or 3) and the polynomial degree (and possibly more).
-  if(this->matrix->GetN_Rows() > 2e5)
+  if(this->matrix->GetN_Rows() > 1e5 && type == DirectSolverTypes::umfpack)
   {
     this->cols.resize(this->matrix->GetN_Entries(), 0);
     this->rows.resize(this->matrix->GetN_Rows()+1, 0);
@@ -102,6 +202,7 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
     for(int i = 0; i < this->matrix->GetN_Rows()+1; ++i)
       this->rows[i] = this->matrix->GetRowPtr()[i];
   }
+  
   this->symbolic_factorize();
   this->numeric_factorize();
 }
@@ -159,9 +260,22 @@ DirectSolver::~DirectSolver()
       }
       break;
     case DirectSolver::DirectSolverTypes::pardiso:
-      ErrThrow("Pardiso does not yet work");
+    {
+      int phase = -1; /* Release internal memory. */
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries , rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
+      this->matrix->fortran_shift();
       break;
-      default:
+    }
+    default:
       ErrThrow("unknown DirectSolverTypes ",
                static_cast<typename 
                  std::underlying_type<DirectSolverTypes>::type> (type));
@@ -198,7 +312,17 @@ void DirectSolver::symbolic_factorize()
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      int phase = 11; // analysing phase
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries , rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:
@@ -240,7 +364,17 @@ void DirectSolver::numeric_factorize()
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      int phase = 22; // numerical factorization
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:
@@ -254,7 +388,6 @@ void DirectSolver::numeric_factorize()
 /** ************************************************************************ */
 void DirectSolver::solve(const double* rhs, double* solution)
 {
-
   Output::print<3>("solving using a direct solver");
   switch(type)
   {
@@ -281,7 +414,21 @@ void DirectSolver::solve(const double* rhs, double* solution)
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      // you should usually never do this!! Here we have to do it because 
+      // pardiso has a really bad interface. Let's just hope pardiso does not 
+      // write into the rhs array.
+      double * rhs_nonconst = const_cast<double*>(rhs);
+      int phase = 33; //PHASE: solve
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, rhs_nonconst, solution, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:

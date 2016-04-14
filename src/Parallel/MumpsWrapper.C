@@ -70,12 +70,12 @@ void MumpsWrapper::solve(
     const BlockVector& rhs, BlockVector& solution,
     std::vector<TParFECommunicator3D*> comms)
 {
-
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   int root_rank = 0;
   bool i_am_root = (mpi_rank == root_rank);
+
 
   //0) do input check and gather two important numbers
   int n_masters_local_comms;
@@ -109,7 +109,7 @@ void MumpsWrapper::solve(
     {//push rhs values for master dofs on this rank and block to master_values
       if(masters[i] == mpi_rank)
       {
-        master_values.push_back(rhs.at(loc_dof_shift + i));
+       master_values.push_back(rhs.at(loc_dof_shift + i));
       }
     }
 
@@ -117,12 +117,26 @@ void MumpsWrapper::solve(
     int n_loc_masters_block = comms.at(index)->GetN_Master();
     double* global_rhs_dummy = nullptr;
     if(i_am_root)
+    {
       global_rhs_dummy = &rhs_global.at(glob_dof_shift);
+    }
+
+    //BUGFIX: make sure that master_values.at(loc_master_shift) does not throw,
+    //even if the number of masters on this rank in this block was 0
+    if(n_loc_masters_block == 0)
+    {
+      master_values.push_back(0);
+    }
 
     gather_vector(
         global_rhs_dummy,                                          //receive
         &master_values.at(loc_master_shift), n_loc_masters_block,  //send
         root_rank);                                                //control
+
+    if(n_loc_masters_block == 0)
+    {
+      master_values.pop_back();  //revert action due to BUGFIX above
+    }
 
     // one block treated - count up the shifts
     loc_master_shift += n_loc_masters_block;
@@ -132,7 +146,6 @@ void MumpsWrapper::solve(
                   MPI_INT,MPI_SUM,MPI_COMM_WORLD);
     glob_dof_shift += current_n_dofs_global;
   }
-
   //2) let mumps do its jobs
   id_.nz_loc  = matrix_.nz_loc;
   id_.irn_loc = &matrix_.irn_loc.at(0);
@@ -168,10 +181,24 @@ void MumpsWrapper::solve(
     if(i_am_root)
       global_rhs_dummy = &rhs_global.at(glob_dof_shift);
 
+    //BUGFIX: make sure that master_values.at(loc_master_shift) does not throw,
+    //even if the number of masters on this rank in this block was 0
+    if(n_loc_masters_block == 0)
+    {
+      master_values.push_back(0);
+    }
+
     scatter_vector(
         global_rhs_dummy,                                         //send
         &master_values.at(loc_master_shift), n_loc_masters_block, //receive
         root_rank);                                               //control
+
+    //BUGFIX: make sure that master_values.at(loc_master_shift) does not throw,
+    //even if the number of masters on this rank in this block was 0
+    if(n_loc_masters_block == 0)
+    {
+      master_values.pop_back();
+    }
 
     //write master values into local solution vector
     const int* masters = comms.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!

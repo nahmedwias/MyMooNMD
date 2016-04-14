@@ -297,7 +297,7 @@ void CD3D::solve()
   }
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
   { // Direct solver chosen.
-#ifdef _SEQ
+#ifndef _MPI
     /// @todo consider storing an object of DirectSolver in this class
     DirectSolver direct_solver(syst.matrix_, 
                                DirectSolver::DirectSolverTypes::umfpack);
@@ -309,8 +309,6 @@ void CD3D::solve()
 
     MumpsWrapper mumps_wrapper(syst.matrix_, par_comms_init);
     mumps_wrapper.solve(syst.rhs_, syst.solution_, par_comms_solv);
-#else
-    ErrThrow("Don't use anything but MPI or SEQUENTIAL yet!");
 #endif
   }
   else
@@ -406,14 +404,14 @@ void CD3D::checkParameters()
   }
 
   // the only solving strategy implemented is iterative
-#ifndef _SEQ
+#ifdef _MPI
   // among the iterative solvers only 11 (fixed point iteration/
   // Richardson) is working
   if(TDatabase::ParamDB->SOLVER_TYPE == 1 & TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
   {
       ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
   }
-#endif // not sequential
+#endif // mpi
 
 
   // this has to do with the relation of UNIFORM_STEPS and LEVELS

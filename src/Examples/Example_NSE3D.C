@@ -8,37 +8,41 @@
 /* examples */
 
 
-namespace driven_cavity3d
-{
-#include "NSE_3D/DrivenCavity3D.h"
-}
-namespace cos_sin_simple
-{
-#include "NSE_3D/CosSin_simple.h"
-}
-namespace ansatz_quad_lin
-{
-#include "NSE_3D/AnsatzQuadLin.h"
-}
-namespace ansatz_lin_const
+namespace ansatz_lin_const //0
 {
 #include "NSE_3D/AnsatzLinConst.h"
 }
+namespace ansatz_quad_lin //1
+{
+#include "NSE_3D/AnsatzQuadLin.h"
+}
+namespace cos_sin_simple //2
+{
+#include "NSE_3D/CosSin_simple.h"
+}
+namespace driven_cavity3d //3
+{
+#include "NSE_3D/DrivenCavity3D.h"
+}
+namespace flow_around_cylinder_stat
+{
+#include "NSE_3D/FlowAroundCylinder_stat.h"
+}
 
 //test examples
-namespace test_u_0_p_0
+namespace test_u_0_p_0 //-1
 {
 #include "NSE_3D/test_u_0_p_0.h"
 }
-namespace test_u_1_p_0
+namespace test_u_1_p_0 //-2
 {
 #include "NSE_3D/test_u_1_p_0.h"
 }
-namespace test_u_2_p_1
+namespace test_u_2_p_1 //-3
 {
 #include "NSE_3D/test_u_2_p_1.h"
 }
-namespace test_u_3_p_2
+namespace test_u_3_p_2 //-4
 {
 #include "NSE_3D/test_u_3_p_2.h"
 }
@@ -147,6 +151,34 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       
       driven_cavity3d::ExampleFile();
       break;
+
+      case 4:
+      {
+        using namespace flow_around_cylinder_stat;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        ExampleFile();
+        break;
+      }
 
       case -1:
       {

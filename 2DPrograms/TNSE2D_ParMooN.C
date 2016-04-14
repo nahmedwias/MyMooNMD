@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   TDomain Domain(argv[1]);  
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 2;
+    TDatabase::ParamDB->PROBLEM_TYPE = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   Database.WriteParamDB(argv[0]);
