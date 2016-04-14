@@ -938,7 +938,7 @@ void Time_NSE2D::output(int m, int& image)
     Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
 
     Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-    Output::print<1>("L2(0,t,H1(u)) : ", sqrt(this->errors[2]));
+    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
 
     s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors, 
                   nullptr, &aux, 1, &p_sp, locerr);
@@ -950,9 +950,9 @@ void Time_NSE2D::output(int m, int& image)
     errors[5] = locerr[0]*locerr[0];
     Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
     
-    errors[6] += (locerr[1]*locerr[1] + this->errors[6])*tau*0.5;
+    errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
     errors[7] = locerr[1]*locerr[1];
-    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
   }
    delete u1;
    delete u2;
