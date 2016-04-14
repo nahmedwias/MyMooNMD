@@ -168,6 +168,8 @@ void set_solver_globals(std::string solver_name)
   {
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
+#endif
+#ifdef _MPI
   else if (solver_name.compare("mumps") == 0)
   {
     TDatabase::ParamDB->SOLVER_TYPE = 2;

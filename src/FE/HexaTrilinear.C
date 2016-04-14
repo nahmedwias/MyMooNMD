@@ -154,7 +154,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
                                int N_Points, double *xi, double *eta, double *zeta,
                                int N_Functs, QuadFormula3D QuadFormula)
 {
-  int i,j,k;
+  int i,j;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
@@ -169,15 +169,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD020, *origD020;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD002, *origD002;
   double *aux;
-  double AllData[MaxN_BaseFunctions3D][5];
-  double GeoData[5][5];
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -435,36 +427,19 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                QuadFormula3D QuadFormula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
   double **refvaluesD001, **origvaluesD001;
-  double **refvaluesD200, **origvaluesD200;
-  double **refvaluesD110, **origvaluesD110;
-  double **refvaluesD101, **origvaluesD101;
-  double **refvaluesD011, **origvaluesD011;
-  double **refvaluesD020, **origvaluesD020;
-  double **refvaluesD002, **origvaluesD002;
   double *refD000, *origD000;
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD020, *origD020;
-  double *refD002, *origD002;
-  double r20, r11, r02, o20, o11, o02;
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
   BaseFunct3D BaseFunct;
   int N_Functs;
   bool SecondDer;
-  int ii,ij,ik;
-  double tmp,Eye1[3][3];
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -794,7 +769,6 @@ void THexaTrilinear::GetOrigValues(double xi, double eta, double zeta,
 
 void THexaTrilinear::SetCell(TBaseCell *cell)
 {
-  int i;
 
   Cell = cell;
 
