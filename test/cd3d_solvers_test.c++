@@ -163,13 +163,11 @@ void set_solver_globals(std::string solver_name)
     Output::setVerbosity(2);
 
   }
-#ifdef _SEQ
+#ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
-#endif
-#ifdef _MPI
   else if (solver_name.compare("mumps") == 0)
   {
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -190,12 +188,10 @@ double get_tolerance(std::string solver_name)
   else if (solver_name.compare("multigrid") == 0)
     return 1e-10;
 
-#ifdef _SEQ
+#ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
     return 1e-13 ;
-#endif
-
-#ifdef _MPI
+#else
   else if (solver_name.compare("mumps") == 0)
     return 1e-13;
 #endif
@@ -275,6 +271,6 @@ int main(int argc, char* argv[])
 #ifdef _MPI
   MPI_Finalize();
 #endif
-  exit(0);
+  return 0;
 
 }
