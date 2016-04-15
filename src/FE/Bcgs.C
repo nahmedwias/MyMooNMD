@@ -88,13 +88,14 @@ double *rhs)
 {
 
   int maxite = maxit, i, j, verbose = TDatabase::ParamDB->SC_VERBOSE, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
-  double t1, t2, t3, t4, dnorm, dnorm0, dnormlast, rho,rho_last=1.0,alpha, beta, omega, delta;
+//  double t1, t2;
+  double dnorm, dnorm0, dnormlast, rho,rho_last=1.0,alpha, beta, omega, delta;
 
   // 0 - not flexible
   // 1 - flexible
   int flexible = 0;
 
-  t1 = GetTime();
+//  t1 = GetTime();
   if (verbose>1)
     OutPut("Entering bcgs" << endl);
 
@@ -264,7 +265,7 @@ double *rhs)
     }
   }
 
-  t2 = GetTime();
+//  t2 = GetTime();
   if (i==maxit && !ex_maxit)
   {
     OutPut("solver not converged\n");
