@@ -205,6 +205,6 @@ endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} S
 #   running all tests corresponding to the current #
 #   parallel type. Use it excessively!             #
 ####################################################
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure DEPENDS ${parmoon_tests})
 
 

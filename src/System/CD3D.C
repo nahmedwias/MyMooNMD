@@ -88,8 +88,8 @@ ParameterDatabase get_default_CD3D_parameters()
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
     bool usingMultigrid = 
-      !this->solver.get_db()["solver_type"].is(2) 
-      && !this->solver.get_db()["preconditioner"].is("multigrid");
+      this->solver.get_db()["solver_type"].is(1) 
+      && this->solver.get_db()["preconditioner"].is("multigrid");
 
     if (!usingMultigrid)
     {
@@ -432,8 +432,8 @@ void CD3D::checkParameters()
   // so far this strategy to treat them is only followed here, it should be unified
   // helper variable
   bool usingMultigrid = 
-    !this->solver.get_db()["solver_type"].is(2) 
-    && !this->solver.get_db()["preconditioner"].is("multigrid");
+    this->solver.get_db()["solver_type"].is(1) 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
   if (!usingMultigrid)
   { //case of direct solve or non-multigrid iterative solve
     if (TDatabase::ParamDB->LEVELS < 1)
@@ -446,7 +446,7 @@ void CD3D::checkParameters()
         "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
         TDatabase::ParamDB->UNIFORM_STEPS, ".");
   }
-  else if (this->solver.get_db()["preconditioner"].is("multigrid"))
+  else if (usingMultigrid)
   {  // iterative solve with multigrid prec
     if (TDatabase::ParamDB->LEVELS < 2)
     {
@@ -455,8 +455,9 @@ void CD3D::checkParameters()
   }
 
   // the only preconditioners implemented are Jacobi and multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1 &&
-     this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(this->solver.get_db()["solver_type"].is(1) 
+     && !this->solver.get_db()["preconditioner"].is("jacobi") 
+     && !this->solver.get_db()["preconditioner"].is("multigrid"))
   {
     ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
         " are implemented so far.");
