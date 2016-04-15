@@ -1139,7 +1139,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
   double **origvaluesD000, **origvaluesD100, **origvaluesD010, **origvaluesD001;
   double **origvaluesD200, **origvaluesD110, **origvaluesD101, **origvaluesD020;
   double **origvaluesD011, **origvaluesD002;
-  int N_Functs;
+//  int N_Functs;
 
 #ifdef _MPI
   int rank;
@@ -1438,7 +1438,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
   for(i=0;i<N_LocalUsedElements;i++)
   {
     BaseFunct=BaseFuncts[i];
-    N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
+//    N_Functs = TFEDatabase3D::GetBaseFunct3D(BaseFunct)->GetDimension();
     origvaluesD000=TFEDatabase3D::GetOrigElementValues(BaseFunct, D000);
     origvaluesD100=TFEDatabase3D::GetOrigElementValues(BaseFunct, D100);
     origvaluesD010=TFEDatabase3D::GetOrigElementValues(BaseFunct, D010);
@@ -1632,7 +1632,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 { 
   double *ret, *ret2;
   int j,k,l;
-  int N_Coarse, N_Fine, N_Points, N_Children;
+  int N_Coarse, N_Points, N_Children; // int N_Fine;
   double *xi, *eta, *zeta;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
@@ -1671,7 +1671,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
 
       RefCell = BaseFunctions->GenerateRefElement();
       FineElement = TFEDatabase3D::GetFE3D(child);
-      N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
+//      N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
 
       nf = FineElement->GetNodalFunctional3D();
       nf->GetPointsForAll(N_Points, xi, eta, zeta);
@@ -1733,7 +1733,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         cell = (TGridCell *)RefCell->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
-        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
+//        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
   
         nf = FineElement->GetNodalFunctional3D();
         nf->GetPointsForAll(N_Points, xi, eta, zeta);
@@ -1801,7 +1801,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   TRefDesc *RefDesc;
   TBaseFunct3D *BaseFunctions, *FineBF;
   BaseFunct3D Coarse, Fine;
-  TBaseCell *RefCell, *cell;
+  TBaseCell *RefCell; // *cell;
   //TNodalFunctional3D *nf;
   RefTrans3D F_K;
   TRefTrans3D *rt;
@@ -1925,7 +1925,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
         memset(R, 0, MaxN_BaseFunctions3D*MaxN_BaseFunctions3D*
                      SizeOfDouble);
   
-        cell = RefCell->GetChild(j);
+//        cell = RefCell->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
         FineBF = FineElement->GetBaseFunct3D();
