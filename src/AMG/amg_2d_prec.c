@@ -1275,7 +1275,7 @@ int schur_complement_gmres_bcgs (AMG_SolverContext *sc, int k, int depth,
         AMG_VECTOR *x[AMG_MAX_LEVELS],
         AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
 {
-  double alpha,numerator,nominator,eps=1e-12,alpha_eps=0.05;  //schur_alpha;
+  double alpha,numerator,nominator,alpha_eps=0.05;  // eps =1e-12, schur_alpha;
   int m_b,n_b,i,ite=0,k1; //schur_step_length_control;
   int  schur_iteration_maxit; //schur_inv_of_A_iterations;
   double resid,beta,residlast;

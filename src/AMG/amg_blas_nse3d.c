@@ -65,10 +65,10 @@ extern AMG_MATRIX *M[AMG_MAX_LEVELS];
 int AMG_dmatmul_SADDLE_3_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1,l,ll;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
   register double s0,s1;
-  register int b,bb;
+  register int bb;
   
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -218,10 +218,10 @@ int AMG_dmatmul_SADDLE_3_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, 
 int AMG_dmatminus_SADDLE_3_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1,l,ll;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
   register double s0,s1;
-  register int b,bb;
+//  register int b,bb;
   
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
