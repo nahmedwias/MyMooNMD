@@ -39,9 +39,10 @@ int main(int argc, char* argv[])
   
   //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
   if(!parmoon_db["problem_type"].is(3) && !parmoon_db["problem_type"].is(5))
-    parmoon_db["problem_type"].set<size_t>(5);
+    parmoon_db["problem_type"] = 5;
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
   
   // possibly change parameters in the database, if they are not meaningful now
   Database.CheckParameterConsistencyNSE();
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
     domain.PS("domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
-  if(parmoon_db["WRITE_VTK"].get<size_t>() == 1)
+  if(parmoon_db["WRITE_VTK"].is(1))
     mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
   
   Example_NSE2D example;
