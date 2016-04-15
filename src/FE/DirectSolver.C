@@ -423,7 +423,7 @@ void DirectSolver::solve(const double* rhs, double* solution)
       double * entries = this->matrix->GetEntries();
       int * rows = this->matrix->GetRowPtr();
       int * cols = this->matrix->GetKCol();
-      double dzero; // ??
+//      double dzero; // ??
       int error;
       pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
                &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
