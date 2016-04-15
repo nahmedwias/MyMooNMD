@@ -17,6 +17,8 @@
 #include <Example_Darcy2D.h>
 #include <FEFunction2D.h>
 #include <BlockVector.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
 
 #include <deque>
 #include <array>
@@ -78,7 +80,7 @@ class Darcy2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_Darcy2D& example;
+    const Example_Darcy2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -86,6 +88,23 @@ class Darcy2D
      * @note multigrid for Darcy type problems is not yet implemented
      */
     std::shared_ptr<TMultiGrid2D> multigrid;
+    
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * Darcy2D::solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver solver;
     
     /** @brief store the errors to access them from outside this class
      * 
@@ -123,20 +142,21 @@ class Darcy2D
      * This constructor calls the other constructor creating an Example_Darcy2D
      * object for you. See there for more documentation.
      */
-    Darcy2D(const TDomain& domain, int reference_id = -4711);
+    Darcy2D(const TDomain& domain, const ParameterDatabase & db,
+            int reference_id = -4711);
     
     /** @brief constructor 
      * 
      * The domain must have been refined a couple of times already if you want
      * to use multigrid. On the finest level the finite element spaces and 
      * functions as well as matrices, solution and right hand side vectors are 
-     * initialized. 
+     * initialized. This is determined by the values in the parameter database.
      * 
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Darcy2D(const TDomain& domain, const Example_Darcy2D& ex, 
-            int reference_id = -4711);
+    Darcy2D(const TDomain& domain, const ParameterDatabase & db,
+            const Example_Darcy2D ex, int reference_id = -4711);
     
     //! Delete copy constructor.
     Darcy2D(const Darcy2D&) = delete;

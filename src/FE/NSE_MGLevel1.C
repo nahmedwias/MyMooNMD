@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 #include <DirectSolver.h>
