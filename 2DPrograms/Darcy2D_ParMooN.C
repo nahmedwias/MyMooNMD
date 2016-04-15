@@ -25,40 +25,43 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1]);
 
-  //set PROBLEM_TYPE to CD if not yet set
-  if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 1;
   //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
  
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
   
   /* include the mesh from a mesh generator, for a standard mesh use the 
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
    
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    domain.RegRefineAll();  
+  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  for(size_t i = 0; i < n_ref; i++)
+    domain.RegRefineAll();
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(parmoon_db["write_ps"])
     domain.PS("domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  if(parmoon_db["WRITE_VTK"].is(1))
+    mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
   
-  // choose example according to the value of TDatabase::ParamDB->EXAMPLE
+  // choose example according to the value of db["example"]
   Example_Darcy2D example;
   
   //=========================================================================
-  Darcy2D darcy2d(domain, example);
+  Darcy2D darcy2d(domain, parmoon_db, example);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();

@@ -20,7 +20,7 @@
 #include <NSE_MGLevel3.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <FEDatabase2D.h>
@@ -34,7 +34,6 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 

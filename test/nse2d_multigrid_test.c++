@@ -41,6 +41,9 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
 
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["problem_type"].set<size_t>(5);
+    
     // default construct a domain object
     TDomain domain;
 
@@ -104,7 +107,7 @@ int main(int argc, char* argv[])
 
     //=========================================================================
     // creat an object 
-    NSE2D nse2d(domain);
+    NSE2D nse2d(domain, db);
     // assemble all 
     nse2d.assemble();
     // check stopping criterion
@@ -190,6 +193,9 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
 
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["problem_type"].set<size_t>(5);
+    
     // default construct a domain object
     TDomain domain;
 
@@ -251,7 +257,7 @@ int main(int argc, char* argv[])
 
     //=========================================================================
     // creat an object 
-    NSE2D nse2d(domain);
+    NSE2D nse2d(domain, db);
     // assemble all 
     nse2d.assemble();
     // check stopping criterion

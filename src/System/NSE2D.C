@@ -12,6 +12,17 @@
 #include<Assemble2D.h>
 
 
+ParameterDatabase get_default_NSE2D_parameters()
+{
+  Output::print<3>("creating a default NSE2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE2D parameter database");
+  
+  return db;
+}
+
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
@@ -57,8 +68,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain& domain, int reference_id)
- : NSE2D(domain, *(new Example_NSE2D()), reference_id)
+NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+             int reference_id)
+ : NSE2D(domain, param_db, Example_NSE2D(), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -67,10 +79,11 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
-             unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), oldResiduals(),
-      initial_residual(1e10), errors()
+NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
+             const Example_NSE2D e, unsigned int reference_id)
+    : systems(), example(e), multigrid(), db(get_default_NSE2D_parameters()),
+      solver(param_db), defect(), oldResiduals(), initial_residual(1e10), 
+      errors()
 {
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -117,19 +130,19 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
   // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
+  if(this->solver.get_db()["solver_type"].is(2) || 
+     !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
   
   // create spaces, functions, matrices on coarser levels
   double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+  param[0] = this->solver.get_db()["damping_factor"];
+  param[1] = this->solver.get_db()["damping_factor_finest_grid"];
   this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
+  size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+  if((int)LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
   this->transposed_B_structures_.resize(LEVELS,nullptr);
@@ -412,7 +425,7 @@ void NSE2D::assemble()
 
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+       && !(this->db["problem_type"].is(3)))
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -533,7 +546,7 @@ void NSE2D::assemble_nonlinear_term()
 
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+        && !(this->db["problem_type"].is(3)))
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -651,16 +664,10 @@ void NSE2D::computeNormsOfResiduals()
 void NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
+  if(this->solver.get_db()["solver_type"].is(2))
   {
-    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-      ErrThrow("only the direct solver is supported currently");
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
+    this->solver.update_matrix(s.matrix);
+    this->solver.solve(s.rhs, s.solution);
   }
   else
   { // multigrid preconditioned iterative solver
@@ -668,14 +675,12 @@ void NSE2D::solve()
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
-
-
 }
 
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
     return;
   
   System_per_grid& s = this->systems.front();
@@ -698,8 +703,8 @@ void NSE2D::output(int i)
     TOutput2D Output(2, 3, 1, 0, NULL);
     Output.AddFEFunction(&s.p);
     Output.AddFEVectFunct(&s.u);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    std::string filename = this->db["output_directory"];
+    filename += "/" + this->db["base_name"].value_as_string();
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -709,7 +714,7 @@ void NSE2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(this->db["compute_errors"])
   {
     double err[4];
     TAuxParam2D NSEaux_error;
@@ -737,7 +742,7 @@ void NSE2D::output(int i)
     Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
     Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
     
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
 }

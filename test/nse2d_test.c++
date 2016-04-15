@@ -65,13 +65,17 @@ void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
            int nonlinear_form,
            std::array<double, int(4)> errors)
 {
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db["problem_type"].set<size_t>(5);
+  db.add("solver_type", (size_t)2, "");
+  
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
-  NSE2D nse2d(domain);
+  NSE2D nse2d(domain, db);
   nse2d.assemble();
   
   // check stopping criterion
