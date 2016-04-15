@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
 
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
  
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
     domain.PS("domain.ps", It_Finest, 0);
   
   // create output directory, if not already existing
-  if(parmoon_db["WRITE_VTK"].get<size_t>() == 1)
+  if(parmoon_db["WRITE_VTK"].is(1))
     mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
   
   // choose example according to the value of db["example"]
