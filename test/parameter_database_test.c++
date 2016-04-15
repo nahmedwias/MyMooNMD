@@ -51,6 +51,8 @@ int main(int argc, char* argv[])
     return 1;
   }
   
+  ParameterDatabase timedb = ParameterDatabase::default_time_database();
+
   Output::print("successful test");
   return 0;
 }

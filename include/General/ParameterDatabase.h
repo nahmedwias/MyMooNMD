@@ -36,6 +36,11 @@ class ParameterDatabase
     /// "problem_type", "base_name", ...
     static ParameterDatabase parmoon_default_database();
     
+    /// @brief construct a database filled with parameters for time
+    /// discretization
+    ///
+    static ParameterDatabase default_time_database();
+
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
     
