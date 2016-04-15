@@ -171,6 +171,17 @@ class Parameter
     operator const char*() const;
     //@}
     
+    /// @name simple way to set the value of a Parameter
+    /// @brief set the value of this parameter, throw if wrong type
+    //@{
+    Parameter& operator=(bool);
+    Parameter& operator=(int);
+    Parameter& operator=(size_t);
+    Parameter& operator=(double);
+    Parameter& operator=(std::string);
+    Parameter& operator=(const char*);
+    //@}
+    
     /// @brief print some information on this parameter
     void info() const;
     

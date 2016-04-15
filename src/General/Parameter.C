@@ -488,17 +488,6 @@ template<> void Parameter::set(bool new_value)
   this->change_count++;
   this->bool_value = new_value;
 }
-template<> void Parameter::set(int new_value)
-{
-  if(!check_type<int>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int");
-  // check if new_value is in the specified parameter range
-  if(!check_value_in_range(new_value, this->int_range))
-    ErrThrow("new parameter value out of range");
-  
-  this->change_count++;
-  this->int_value = new_value;
-}
 template<> void Parameter::set(size_t new_value)
 {
   if(!check_type<size_t>(this->type))
@@ -509,6 +498,25 @@ template<> void Parameter::set(size_t new_value)
   
   this->change_count++;
   this->unsigned_value = new_value;
+}
+template<> void Parameter::set(int new_value)
+{
+  if(!check_type<int>(this->type) && !check_type<size_t>(this->type))
+    throw(std::runtime_error("wrong type"));
+  if(check_type<size_t>(this->type))
+  {
+    if(new_value < 0)
+      throw(std::runtime_error("wrong type"));
+    // setting a positive integer to a size_t parameter
+    this->set<size_t>(new_value);
+    return;
+  }
+  // check if new_value is in the specified parameter range
+  if(!check_value_in_range(new_value, this->int_range))
+    ErrThrow("new parameter value out of range");
+  
+  this->change_count++;
+  this->int_value = new_value;
 }
 template<> void Parameter::set(double new_value)
 {
@@ -532,6 +540,42 @@ template<> void Parameter::set(std::string new_value)
   
   this->change_count++;
   this->string_value = new_value;
+}
+template<> void Parameter::set(const char* new_value)
+{
+  this->set<std::string>(std::string(new_value));
+}
+
+/* ************************************************************************** */
+Parameter& Parameter::operator=(bool new_value)
+{
+  this->set<bool>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(int new_value)
+{
+  this->set<int>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(size_t new_value)
+{
+  this->set<size_t>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(double new_value)
+{
+  this->set<double>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(std::string new_value)
+{
+  this->set<std::string>(new_value);
+  return *this;
+}
+Parameter& Parameter::operator=(const char* new_value)
+{
+  this->set<const char*>(new_value);
+  return *this;
 }
 
 /* ************************************************************************** */
