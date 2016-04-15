@@ -368,6 +368,10 @@ Parameter::operator size_t() const
 {
   return this->get<size_t>();
 }
+Parameter::operator unsigned int() const
+{
+  return this->get<size_t>();
+}
 Parameter::operator double() const
 {
   return this->get<double>();

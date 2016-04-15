@@ -166,6 +166,7 @@ class Parameter
     operator bool() const;
     operator int() const;
     operator size_t() const;
+    operator unsigned int() const;
     operator double() const;
     operator std::string() const;
     operator const char*() const;
