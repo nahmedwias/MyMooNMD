@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
     wrap.solve(rhs, sol, {&comm_1, &comm_1, &comm_2});
 
     //hard-coded test, I don't know anything better at the moment...
-    if(abs(sol.norm() - 24.6171) > 1e-6)
+    if(fabs(sol.norm() - 24.6171) > 1e-6)
     {// solution is same (resp. permutations)
      // on all processes, cause all dofs are known to both processes,
      // which makes this easy test possible. For bigger matrix- check residual
