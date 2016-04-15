@@ -292,7 +292,7 @@ int SymmetrizeSaddleProblem (AMG_SolverContext *sc,AMG_MATRIX *A,
 int Build_B_Block_for_Dirichlet(AMG_SolverContext *sc,AMG_MATRIX *A, 
                                 AMG_MATRIX *B[AMG_MAX_LEVELS])
 {
-  int *ra,*ja,*ara,*aja,i,k,m_b0,n_a,start,end,current,next_start,columns;
+  int *ra,*ja,*ara,*aja,i,k,m_b0,start,end;
   double *a;
   
   if (sc->verbose>1)
@@ -452,7 +452,8 @@ int schur_complement_fixed (AMG_SolverContext *sc, int k, int depth,
 {
   double alpha,schur_alpha,numerator,nominator,eps=1e-12,alpha_eps=0.05;
   int m_b,n_b,iter,max_iter,i,schur_step_length_control,j;
-  int  schur_iteration_maxit,schur_inv_of_A_iterations;
+//  int  schur_iteration_maxit;
+  int schur_inv_of_A_iterations;
   
   schur_alpha = sc->schur_iteration_damp;          /* set parameters */   
   max_iter=sc->schur_iteration_maxit;
@@ -684,14 +685,15 @@ int schur_complement_cg (AMG_SolverContext *sc, int k, int depth,
         AMG_VECTOR *x[AMG_MAX_LEVELS],
         AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
 {
-  double alpha,schur_alpha,numerator,nominator,eps=1e-12,alpha_eps=0.05;
-  int m_b,n_b,iter,max_iter,i,schur_step_length_control,j;
-  int  schur_iteration_maxit,schur_inv_of_A_iterations;
+  double alpha,numerator,nominator,alpha_eps=0.05; // double eps=1e-12,schur_alpha;
+  int m_b,n_b,iter,max_iter,i,j; // int schur_step_length_control;
+//  int  schur_iteration_maxi;
+  int schur_inv_of_A_iterations;
   double dnorm,dnorm0,dnormlast,rho,rho_last;
 
-  schur_alpha = sc->schur_iteration_damp;          /* set parameters */   
+//  schur_alpha = sc->schur_iteration_damp;          /* set parameters */
   max_iter=sc->schur_iteration_maxit;
-  schur_step_length_control=sc-> schur_step_length_control; 
+//  schur_step_length_control=sc-> schur_step_length_control;
   schur_inv_of_A_iterations=sc->schur_inv_of_A_maxit;
   switch(sc->system_type)
     {
@@ -930,14 +932,14 @@ int schur_complement_gmres (AMG_SolverContext *sc, int k, int depth,
         AMG_VECTOR *x[AMG_MAX_LEVELS],
         AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
 {
-  double alpha,schur_alpha,numerator,nominator,eps=1e-12,alpha_eps=0.05;
-  int m_b,n_b,iter,max_iter,i,schur_step_length_control,j,ite=0,k1;
+  double alpha,numerator,nominator,alpha_eps=0.05; //double schur_alpha;
+  int m_b,n_b,i,j,ite=0,k1;  // int schur_step_length_control;
   int  schur_iteration_maxit,schur_inv_of_A_iterations;
   double resid,beta,residlast;
 
-  schur_alpha = sc->schur_iteration_damp;          /* set parameters */   
+//  schur_alpha = sc->schur_iteration_damp;          /* set parameters */
   schur_iteration_maxit=sc->schur_iteration_maxit;
-  schur_step_length_control=sc-> schur_step_length_control; 
+//  schur_step_length_control=sc-> schur_step_length_control;
   schur_inv_of_A_iterations=sc->schur_inv_of_A_maxit;
   switch(sc->system_type)
     {
