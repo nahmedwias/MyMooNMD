@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   // get a parameter
   Parameter & p = db["double_parameter"];
   p.set_range(-3.0, 12.64789);
-  p.set(10.0);
+  p = 10.0;
   if(!p.is(10.0))
   {
     Output::print("parameter is not 10.0 as it should be");

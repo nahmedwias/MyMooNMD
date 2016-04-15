@@ -69,8 +69,8 @@ void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
 void check(TDomain & domain, int velocityCode, std::array<double, 5> errors)
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db["problem_type"].set<size_t>(0); // problem type is not needed
-  db["example"].set<size_t>(0);
+  db["problem_type"] = 0; // problem type is not needed
+  db["example"] = 0;
   db.add("solver_type", (size_t)2, "");
   
   TDatabase::ParamDB->VELOCITY_SPACE = velocityCode;

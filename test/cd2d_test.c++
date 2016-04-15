@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     TDomain domain;
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db["problem_type"].set<size_t>(1);
+    db["problem_type"] = 1;
     db.add("solver_type", (size_t)2, "");
 
     // Set Database values (this is what is usually done by the input-file)

@@ -766,7 +766,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "This is the number of refinement steps before any computation "
          "starts. Usually the mesh is uniformly refined. In a multigrid "
          "program, this determines the number of uniform refinements until the "
-         "finest mesh.");
+         "finest mesh.", (size_t)0, (size_t)20);
   
   db.add("write_ps", true, 
          "Draw a postscript file of the domain. This only works in two space "
@@ -802,10 +802,10 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "output you will get. Such output will be written to console and the "
          "'outfile'.", (size_t)1, (size_t)5);
   
-  db.add("example", (size_t)0,
+  db.add("example", 0,
          "Choose which example to run. \nNote that depending on the type of "
          "problem you want to solve, different values are meaningful here. See "
-         "the class 'Example' and its derived classes.");
+         "the class 'Example' and its derived classes.", -5, 5);
   
   return db;
 }
