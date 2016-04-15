@@ -35,17 +35,17 @@ void SolveDiagonalVanka3D(double *a, double *b, int N_U, int N_P, int LDA)
 //    N_P       number of presure unknowns
 //    LDA       leading dimension of matrix a
 {
-  int i,j,k,l,m, row;
+  int i,j,k, row;
   int N_Eqn;
   double pp, dp, ffp, tmp;
   double Ai[8*MaxN_BaseFunctions3D];
 
-  int ii, jj;
+//  int ii, jj;
 
-  double S[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
-  double r[MaxN_BaseFunctions3D];
-  double q[MaxN_BaseFunctions3D];
-  int NU3;
+//  double S[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+//  double r[MaxN_BaseFunctions3D];
+//  double q[MaxN_BaseFunctions3D];
+//  int NU3;
 
   N_Eqn = 3*N_U+N_P;
   row = 3*N_U;
@@ -156,7 +156,7 @@ void L1Int3D(int N_Points, double *X, double *Y, double *Z,
              double **coeffs, double *Loc)
 {
   int i;
-  double *deriv, *exactval, w, t;
+  double *deriv, w, t;
 
   Loc[0] = 0.0;
   Loc[1] = 0.0;
@@ -190,7 +190,7 @@ void Prolongate(const TFESpace3D *CoarseSpace,
   BaseFunct3D CoarseBF, FineBF;
   TBaseFunct3D *BaseFunctions;
   int N_CoarseCells, N_FineCells, N_Children;
-  int N_FineDOFs, N_CoarseDOFs;
+  int N_FineDOFs; // N_CoarseDOFs;
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
@@ -198,7 +198,7 @@ void Prolongate(const TFESpace3D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double Val2[MaxN_BaseFunctions3D];
@@ -215,7 +215,7 @@ void Prolongate(const TFESpace3D *CoarseSpace,
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace->GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace->GetGlobalNumbers();
-  N_CoarseDOFs = CoarseSpace->GetN_DegreesOfFreedom();
+//  N_CoarseDOFs = CoarseSpace->GetN_DegreesOfFreedom();
   
   FineColl = FineSpace->GetCollection();
   N_FineCells = FineColl->GetN_Cells();
@@ -478,11 +478,11 @@ void Prolongate(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double Val2[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int Index; //*DOF,
   double *entry;
   int CoarseOffset, FineOffset, IFunct;
 
@@ -702,12 +702,12 @@ void DefectRestriction(const TFESpace3D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double Val2[MaxN_BaseFunctions3D];
   int *DOF, Index;
-  double *entry;
+//  double *entry;
   double t1,t2;
 #ifdef _MPI
   t1 = MPI_Wtime();
@@ -986,12 +986,12 @@ void DefectRestriction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpac
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double Val2[MaxN_BaseFunctions3D];
   int *DOF, Index;
-  double *entry;
+//  double *entry;
   int FineOffset, CoarseOffset, IFunct;
 
   // begin code
@@ -1223,7 +1223,7 @@ void RestrictFunction(const TFESpace3D *CoarseSpace,
   BaseFunct3D CoarseBF, FineBF;
   TBaseFunct3D *BaseFunctions;
   int N_CoarseCells, N_FineCells, N_Children;
-  int N_FineDOFs, N_CoarseDOFs;
+  int N_CoarseDOFs; //N_FineDOFs
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
@@ -1231,12 +1231,12 @@ void RestrictFunction(const TFESpace3D *CoarseSpace,
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double Val2[MaxN_BaseFunctions3D];
-  int *DOF, Index;
-  double *entry;
+//  int *DOF, Index;
+//  double *entry;
 
   // begin code
   CoarseColl = CoarseSpace->GetCollection();
@@ -1249,7 +1249,7 @@ void RestrictFunction(const TFESpace3D *CoarseSpace,
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace->GetBeginIndex();
   FineGlobalNumbers = FineSpace->GetGlobalNumbers();
-  N_FineDOFs = FineSpace->GetN_DegreesOfFreedom();
+//  N_FineDOFs = FineSpace->GetN_DegreesOfFreedom();
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   // cout << "N_CoarseCells: " << N_CoarseCells << endl;
@@ -1498,12 +1498,12 @@ void RestrictFunction(const TFESpace3D *CoarseSpace, const TFESpace3D *FineSpace
   int N_Fine, N_Coarse;
   Refinements Ref;
   double *QQ;
-  double *CurrentCoarseFct, *CurrentFineFct;
+//  double *CurrentCoarseFct, *CurrentFineFct;
   double s;
   double Val[MaxN_BaseFunctions3D];
   double *Val2;
-  int *DOF, Index;
-  double *entry;
+//  int *DOF, Index;
+//  double *entry;
   int FineOffset, CoarseOffset, Offset, IFunct;
 
   // begin code
@@ -1798,25 +1798,25 @@ void IntoL20Vector3D(double *v, int Length, int order)
 void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
 {
   double s;
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
-  int Used[N_FEs3D], *N_BaseFunct;
-  TFESpace3D *fespace;
+  int i,j,l,N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct; //Used[N_FEs3D];
+//  TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  RefTrans3D RefTrans;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double *Derivatives[MaxN_QuadPoints_3D], der[MaxN_QuadPoints_3D];
   double *ExactVal[MaxN_QuadPoints_3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, number;
+  int *DOF; //ActiveBound, DirichletBound, end, last, number;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex;
@@ -1937,24 +1937,24 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
                        int velocity_space, int pressure_space)
 {
   double s;
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
-  int Used[N_FEs3D], *N_BaseFunct;
-  TFESpace3D *fespace;
+  int i,j,l,N_LocalUsedElements;
+  int N_Cells, N_Points, N_;
+  int *N_BaseFunct;
+//  TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  RefTrans3D RefTrans;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double *Derivatives[MaxN_QuadPoints_3D], der[MaxN_QuadPoints_3D];
   double *ExactVal[MaxN_QuadPoints_3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, number;
+  int *DOF;// ActiveBound, DirichletBound, end, last, number;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex;
@@ -2088,7 +2088,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TMatrix *B3,
         double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3;
   double *u1, *u2, *u3, *p;
   double *v1, *v2, *v3, *q;
@@ -2178,7 +2178,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TMatrix *B3,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3;
   double *u1, *u2, *u3, *p;
   double *v1, *v2, *v3, *q;
@@ -2299,7 +2299,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TMatrix *B3,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3;
   double *u1, *u2, *u3, *p;
   double *v1, *v2, *v3, *q;
@@ -2416,7 +2416,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2, TMatrix *B3,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3;
   double *u1, *u2, *u3, *p;
   double *v1, *v2, *v3, *q;
@@ -2548,7 +2548,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3, value4;
   double value5, value6, value7, value8;
   double *u1, *u2, *u3, *p;
@@ -2685,7 +2685,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3;
   double value4, value5, value6, value7, value8;
   double *u1, *u2, *u3, *p;
@@ -2845,7 +2845,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3, value4;
   double value5, value6, value7, value8, value9, value10, value11;
   double *u1, *u2, *u3, *p;
@@ -3011,7 +3011,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3, value4;
   double value5, value6, value7, value8, value9, value10, value11;
   double *u1, *u2, *u3, *p;
@@ -3199,7 +3199,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3, value4;
   double value5, value6, value7, value8, value9, value10, value11;
   double *u1, *u2, *u3, *p;
@@ -3384,7 +3384,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A13,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, u, value, value1, value2, value3, value4;
   double value5, value6, value7, value8, value9, value10, value11;
   double *u1, *u2, *u3, *p;

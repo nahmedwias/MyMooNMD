@@ -159,12 +159,19 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
   double **refvaluesD001, **origvaluesD001;
-  double **refvaluesD200, **origvaluesD200;
-  double **refvaluesD110, **origvaluesD110;
-  double **refvaluesD020, **origvaluesD020;
-  double **refvaluesD101, **origvaluesD101;
-  double **refvaluesD011, **origvaluesD011;
-  double **refvaluesD002, **origvaluesD002;
+
+  double **origvaluesD200;
+  double **origvaluesD110;
+  double **origvaluesD020;
+  double **origvaluesD101;
+  double **origvaluesD011;
+  double **origvaluesD002;
+//  double **refvaluesD200,
+//  double **refvaluesD110,
+//  double **refvaluesD020,
+//  double **refvaluesD101,
+//  double **refvaluesD011,
+//  double **refvaluesD002,
   double *refD000, *origD000;
   double *refD100, *origD100;
   double *refD010, *origD010;
@@ -233,7 +240,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D001, origvaluesD001);
     } 
   
-  refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
+//  refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
   origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
   if(origvaluesD200==NULL)
     { 
@@ -244,7 +251,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D200, origvaluesD200);
     } 
   
-  refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
+//  refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
   origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
   if(origvaluesD110==NULL)
     { 
@@ -255,7 +262,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D110, origvaluesD110);
     } 
   
-  refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
+//  refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
   origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
   if(origvaluesD101==NULL)
     { 
@@ -266,7 +273,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D101, origvaluesD101);
     } 
   
-  refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
+//  refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
   origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
   if(origvaluesD011==NULL)
     { 
@@ -277,7 +284,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D011, origvaluesD011);
     } 
   
-  refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
+//  refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
   origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
   if(origvaluesD020==NULL)
     {
@@ -288,7 +295,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D020, origvaluesD020);
     } 
   
-  refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
+//  refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
   origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
   if(origvaluesD002==NULL)
     {
