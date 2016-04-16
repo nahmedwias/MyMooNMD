@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   // TDatabase::ParamDB->EXAMPLE, e.g. 101, and construct it.
   Example_NSE3D example;
 
-//
+//--------------------------------------------------------------------
 //  // Construct an object of the NSE3D-problem type.
 //#ifdef _MPI
 //  NSE3D nse3d(domain, example, maxSubDomainPerDof);

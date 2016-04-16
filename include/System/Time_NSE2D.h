@@ -226,6 +226,7 @@ class Time_NSE2D
     { return this->systems.front().matrix; }*/
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
+
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
     // try not to use this as it is not const
