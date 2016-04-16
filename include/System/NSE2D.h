@@ -46,7 +46,7 @@ class NSE2D
     /** @brief store a complete system on a particular grid
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
-     * describe one Darcy problem in 2D.
+     * describe one stationary Navier-Stokes problem in 2D.
      */
     struct System_per_grid
     {
@@ -113,10 +113,7 @@ class NSE2D
     
     //! @brief An array to store the current defect.
     BlockVector defect;
-    
 
-  protected:
-    
     ///@brief The norms of residuals from up to 10 previous iterations
     FixedSizeQueue<10, Residuals> oldResiduals;
 
@@ -125,14 +122,12 @@ class NSE2D
      */
     double initial_residual;
     
-    /** @brief set the velocity and pressure orders
-     * 
-     * This function sets the corresponding velocity and 
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call NSE2D::output()
+     * Currently, the errors store the L2 and H1 errors of the velocity
+     * and pressure
      */
-    void get_velocity_pressure_orders(std::pair <int,int> 
-                   &velocity_pressure_orders);
+    std::array<double, int(4)> errors;
     
     /** @brief set parameters in database
      * 
@@ -145,12 +140,14 @@ class NSE2D
      */
     void set_parameters();
     
-    /** @brief Errors to be accesed from outside the class
-     * The array is filled during the function call NSE2D::output()
-     * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
      */
-    std::array<double, int(4)> errors;
+    void get_velocity_pressure_orders(std::pair <int,int>
+                   &velocity_pressure_orders);
     
   public:
     
@@ -228,9 +225,8 @@ class NSE2D
    * @brief initialize multigrid levels for different NSTYPE's
    */
     TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-    /**
-   * @brief multigrid solver
-   */
+
+    /** @brief multigrid solver */
     void mg_solver();
     
     // getters and setters
