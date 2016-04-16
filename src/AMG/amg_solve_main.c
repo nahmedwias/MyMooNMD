@@ -669,7 +669,7 @@ static int solver_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc,
                          AMG_MATRIX *A_in,int user_solver)
 {
   int k,solver,A_length[AMG_MAX_LEVELS],B_length[AMG_MAX_LEVELS];
-  int i,prepare_amg;
+  int prepare_amg;
 
 
   prepare_amg=0;
@@ -1445,7 +1445,7 @@ static int ReportSolverParameters(AMG_SolverContext *sc)
                 
 static int AMG_ClearSolverOverhead (AMG_SolverContext *sc, AMG_CoarsenContext *cc)
 {
-  int k,solver,i,clear_amg=0;
+  int solver,clear_amg=0;
   
   solver=sc->solver;
                                   /* free coarse grid matrices */
@@ -1601,7 +1601,7 @@ static int AMG_ClearSolverOverhead (AMG_SolverContext *sc, AMG_CoarsenContext *c
 int AMG (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A,
          AMG_MATRIX **B0, AMG_VECTOR *x, AMG_VECTOR *b0)
 {
-  int rv,i,j,memory[3];
+  int rv,i; //j,memory[3];
  
  
 //   struct mallinfo MALLINFO;
@@ -1779,7 +1779,7 @@ int AMG (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A,
 int AMG_Build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A,
          AMG_MATRIX **B0, AMG_VECTOR *x, AMG_VECTOR *b)
 {
-  int rv,i,j,memory[2];
+  int rv; //i,j,memory[2];
 //   struct mallinfo MALLINFO;
 
   /*sprintf(buf,"elapsed_time: %g sec\n", elapsed_time);
@@ -1865,7 +1865,7 @@ int AMG_Build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A,
 int AMG_Solve (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A,
          AMG_MATRIX **B0, AMG_VECTOR *x, AMG_VECTOR *b)
 {
-  int rv,i,j,memory[2];
+  int rv,i; //j,memory[2];
 //   struct mallinfo MALLINFO;
 
   elapsed_time=0.0;
