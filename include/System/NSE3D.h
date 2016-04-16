@@ -42,8 +42,11 @@
 
 class NSE3D
 {
+
   enum class Matrix{Type14, Type1, Type2, Type3, Type4};
- protected:
+
+  protected:
+
     /** @brief store a complete system on a particular grid
      *
      * This combines a matrix, rhs, solution, spaces and functions
@@ -146,19 +149,7 @@ class NSE3D
     /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
     /// transposed blocks are not stored explicitely...sad but true.
     std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
-    
-    /** @brief set the velocity and pressure orders
-     * 
-     * This function sets the corresponding velocity and 
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
-     * 
-     * Tried to stay with the function GetVelocityPressureSpace3D()
-     * in the MainUtilities file.
-     */
-    void get_velocity_pressure_orders(std::pair <int,int> 
-                   &velocity_pressure_orders);
-    
+
     //! @brief An array to store the current defect.
     BlockVector defect_;
     
@@ -177,6 +168,17 @@ class NSE3D
      */
     std::array<double, int(4)> errors_;
 
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
+     *
+     * Tried to stay with the function GetVelocityPressureSpace3D()
+     * in the MainUtilities file.
+     */
+    void get_velocity_pressure_orders(std::pair <int,int>
+                   &velocity_pressure_orders);
  public:
 
     /** @brief Standard constructor of an NSE3D problem.
@@ -231,6 +233,16 @@ class NSE3D
     //! Solve the current linear system. Nonlinear loop is outside of this class.
     void solve();
 
+    /**
+     * @brief Compute the defect Ax-b, and the residuals and store it all.
+     *
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
+
     /** @brief check if one of the stopping criteria is fulfilled
      * 
      * either converged, maximun number of iterations reached, or slow 
@@ -243,18 +255,8 @@ class NSE3D
      */
     bool stop_it(unsigned int iteration_counter);
 
-    /**
-     * @brief Compute the defect Ax-b, and the residuals and store it all.
-     *
-     * Updates defect and old_residuals.
-     * A is the current matrix, x is the current solution and b is the
-     * right hand side. Call this function after assembling the nonlinear
-     * matrix with the current solution.
-     */
-    void compute_residuals();
-
-    //! Measure errors and draw a nice VTK picture, if requested to do so.
-    //! @param i suffix for output file name, -1 means no suffix.
+    /**! Measure errors and draw a nice VTK picture, if requested to do so.
+    ! @param i suffix for output file name, -1 means no suffix. */
     void output(int i = -1);
 
 /*******************************************************************************/
