@@ -475,7 +475,7 @@ int AMG_dmatmul (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 
 int AMG_dmatminus (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
-  register int n,i,k,start,end, l;
+  register int n,i,k,start,end; //l;
   register double *x, *y, *a, *xx, *aa, *yy;
   register int *ra, *ja;
   register double s;
@@ -526,7 +526,7 @@ int AMG_dmatminus (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_
           s = a[start]*y[i];
           for (k=start+1; k<end; k++)
           {
-             l =ja[k];
+//             l =ja[k];
              s += a[k]*y[ja[k]];
           }
           x[i] -= s;
@@ -1004,10 +1004,10 @@ int AMG_dmatminus_SCALAR6 (AMG_VECTOR *x_, AMG_MATRIX *A,
 int AMG_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AMG_VECTOR *y_)
 {
   register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register double s;
-  register int b,bb;
+//  register int b,bb;
   register AMG_MATRIX *B=List_B[0];
 
   
@@ -1088,10 +1088,10 @@ int AMG_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AM
 int AMG_dmatminus_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AMG_VECTOR *y_)
 {
   register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register double s;
-  register int b,bb;
+//  register int b,bb;
   register AMG_MATRIX *B=List_B[0];
   
   n_a = AMG_MATRIX_N(A);          /* columns in A */
@@ -1171,10 +1171,10 @@ int AMG_dmatminus_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, 
 int AMG_A_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AMG_VECTOR *y_)
 {
   register int n_a,n_x,n_y,i,k,start,end;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register double s;
-  register int b,bb;
+//  register int b,bb;
   
   n_a = AMG_MATRIX_N(A);          /* columns in A */
   n_x = AMG_VECTOR_N(x_);          /* length of solution vector */
@@ -1215,10 +1215,10 @@ int AMG_A_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, 
 int AMG_B_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AMG_VECTOR *y_)
 {
   register int n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register double s;
-  register int b,bb;
+//  register int b,bb;
   register AMG_MATRIX *B=List_B[0];
   
   n_b = AMG_MATRIX_N(B);          /* columns in B */
@@ -1264,10 +1264,10 @@ int AMG_B_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, 
 int AMG_B_Trans_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **List_B, AMG_VECTOR *y_)
 {
   register int n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
-  register double s;
-  register int b,bb;
+//  register double s;
+//  register int b,bb;
   register AMG_MATRIX *B=List_B[0];
   
   n_b = AMG_MATRIX_N(B);          /* columns in B */
@@ -1325,10 +1325,10 @@ int AMG_B_Trans_dmatmul_SADDLE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **Li
 int AMG_dmatmul_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
-  register double s0,s1;
-  register int b,bb;
+  register double s0; //s1;
+//  register int b,bb;
   
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -1412,10 +1412,10 @@ int AMG_dmatmul_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, 
 int AMG_dmatminus_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
-  register double s0,s1;
-  register int b,bb;
+  register double s0; //s1;
+//  register int b,bb;
 
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -1497,11 +1497,11 @@ int AMG_dmatminus_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B
 
 int AMG_B_dmatmul_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
-  register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register int n_b,n_x,n_y,i,k,start,end,m_b;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
-  register double s0,s1;
-  register int b,bb;
+//  register double s0,s1;
+//  register int b,bb;
   
   n_b = AMG_MATRIX_N(B[0]);          /* columns in B */
   m_b = AMG_MATRIX_M(B[0]);          /* rows in B */
@@ -1548,11 +1548,11 @@ int AMG_B_dmatmul_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B
 
 int AMG_B_Trans_dmatmul_SADDLE_1_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
-  register int n_a,n_b,n_x,n_y,i,k,start,end,m_b;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register int n_b,n_x,n_y,i,k,start,end,m_b;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
-  register double s0,s1;
-  register int b,bb;
+  register double s0; //s1;
+//  register int b,bb;
   
   n_b = AMG_MATRIX_N(B[0]);          /* columns in B */
   m_b = AMG_MATRIX_M(B[0]);          /* rows in B */
@@ -1633,12 +1633,12 @@ int AMG_dmatminus_gal_RestrictResultFromLevel0(int k)
 
 int AMG_dmatminus_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
-  register int n_a,n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1,n_b,n_a0;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *ara, *aja;
+  register int n_a,n_x,n_y,i,k,start,end,m_b0,m_b1,n_b,n_a0;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *ara, *aja;
   register double s0,s1;
-  register int b,bb;
-  AMG_VECTOR inter_y;
+//  register int b,bb;
+//  AMG_VECTOR inter_y;
   int level;
    
   level = A->level;
@@ -1649,9 +1649,9 @@ int AMG_dmatminus_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX
     }
 
   n_a = AMG_MATRIX_N(A);              /* columns in A */
-  n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B on finest level */
+//  n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B on finest level */
   m_b0 = AMG_MATRIX_M(B[0]);          /* rows in B on finest level */
-  n_b1 = AMG_MATRIX_N(B[1]);          /* columns in B on finest level */
+//  n_b1 = AMG_MATRIX_N(B[1]);          /* columns in B on finest level */
   m_b1 = AMG_MATRIX_M(B[1]);          /* rows in B on finest level */
   n_x = AMG_VECTOR_N(x_);             /* length of solution vector */
   n_y = AMG_VECTOR_N(y_);             /* length of rhs vector */
@@ -1798,16 +1798,16 @@ return(0);
 
 int AMG_B_dmatmul_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_) 
 {
-  register int n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *aja , *ara;
-  register double s0,s1;
-  register int b,bb;
+  register int n_b0,n_x,n_y,i,k,start,end,m_b0,m_b1;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *aja , *ara;
+//  register double s0, s1;
+//  register int b,bb;
   int level;
   
   n_b0 = AMG_MATRIX_N(B[2]);          /* columns in B */
   m_b0 = AMG_MATRIX_M(B[2]);          /* rows in B */
-  n_b1 = AMG_MATRIX_N(B[3]);          /* columns in B */
+//  n_b1 = AMG_MATRIX_N(B[3]);          /* columns in B */
   m_b1 = AMG_MATRIX_M(B[3]);          /* rows in B */
   n_x = AMG_VECTOR_N(x_);             /* length of solution vector */
   n_y = AMG_VECTOR_N(y_);             /* length of rhs vector */
@@ -1835,8 +1835,8 @@ int AMG_B_dmatmul_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX
   a = AMG_MATRIX_A(B[2]);
   ra = AMG_MATRIX_RA(B[2]);
   ja = AMG_MATRIX_JA(B[2]);
-  ara = AMG_MATRIX_RA(A);
-  aja = AMG_MATRIX_JA(A);
+//  ara = AMG_MATRIX_RA(A);
+//  aja = AMG_MATRIX_JA(A);
   for  (i=0; i<m_b0; i++)
     {
       start=ra[i]; 
@@ -1904,11 +1904,11 @@ int AMG_B_Trans_dmatmul_gal_RestrictResultFromLevel0(int k)
 
 int AMG_B_Trans_dmatmul_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
-  register int n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register int n_b0,n_x,n_y,i,k,start,end,m_b0,m_b1;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
-  register double s0,s1;
-  register int b,bb;
+  register double s0; //s1;
+//  register int b,bb;
   int level;
   
   level = A->level;
@@ -1920,7 +1920,7 @@ int AMG_B_Trans_dmatmul_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_
 
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
   m_b0 = AMG_MATRIX_M(B[0]);          /* rows in B */
-  n_b1 = AMG_MATRIX_N(B[1]);          /* columns in B */
+//  n_b1 = AMG_MATRIX_N(B[1]);          /* columns in B */
   m_b1 = AMG_MATRIX_M(B[1]);          /* rows in B */
   n_x = AMG_VECTOR_N(x_);             /* length of solution vector */
   n_y = AMG_VECTOR_N(y_);             /* length of rhs vector */
@@ -1992,11 +1992,11 @@ int AMG_B_Trans_dmatmul_gal_SADDLE_2_TYPE_1 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_
 int AMG_dmatmul_SCALAR_VAL_LAZ_2 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1;
-  register double *x, *y, *a, *xx, *aa, *yy, *tmp;
+  register double *x, *y, *a, *tmp; //*aa, *yy, *xx;
   register int *ra, *ja, *ara, *aja;
   register double s0,s1,delta;
-  register int b,bb;
-  
+//  register int b,bb;
+//
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
   m_b0 = AMG_MATRIX_M(B[0]);          /* rows in B */
@@ -2125,10 +2125,10 @@ int AMG_dmatmul_SCALAR_VAL_LAZ_2 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B,
 int AMG_dmatminus_SCALAR_VAL_LAZ_2 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_b0,n_x,n_y,i,k,start,end,m_b0,n_b1,m_b1;
-  register double *x, *y, *a, *xx, *aa, *yy, *tmp;
+  register double *x, *y, *a, *tmp; // *xx, *aa, *yy;
   register int *ra, *ja, *ara, *aja;
   register double s0,s1,delta;
-  register int b,bb;
+//  register int b,bb;
   
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -2273,11 +2273,11 @@ int AMG_dmatminus_SCALAR_VAL_LAZ_2 (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **
 int AMG_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_x,n_y,i,k,start,end,l;
-  register int n_b0,n_b1,n_b2,n_b3,n_b4,m_b0,m_b1,m_b2,m_b3,m_b4;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *ara, *aja;
+  register int n_b0,n_b1,n_b2,n_b3,m_b0,m_b1,m_b2,m_b3,m_b4;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *ara, *aja;
   register double s0,s1;
-  register int b,bb;
+//  register int b,bb;
 
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -2288,7 +2288,7 @@ int AMG_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATR
   m_b2 = AMG_MATRIX_M(B[2]);          /* rows in B */
   n_b3 = AMG_MATRIX_N(B[3]);          /* columns in B */
   m_b3 = AMG_MATRIX_M(B[3]);          /* rows in B */
-  n_b4 = AMG_MATRIX_N(B[4]);          /* columns in B */
+//  n_b4 = AMG_MATRIX_N(B[4]);          /* columns in B */
   m_b4 = AMG_MATRIX_M(B[4]);          /* rows in B */
   n_x = AMG_VECTOR_N(x_);             /* length of solution vector */
   n_y = AMG_VECTOR_N(y_);             /* length of rhs vector */
@@ -2345,8 +2345,8 @@ int AMG_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATR
   a = AMG_MATRIX_A(B[0]);
   ra = AMG_MATRIX_RA(B[0]);
   ja = AMG_MATRIX_JA(B[0]);
-  ara = AMG_MATRIX_RA(A);
-  aja = AMG_MATRIX_JA(A);
+//  ara = AMG_MATRIX_RA(A);
+//  aja = AMG_MATRIX_JA(A);
 
   for (i=0; i<m_b0; i++)     /* multiply columnwise */ 
     {
@@ -2460,11 +2460,11 @@ int AMG_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATR
 int AMG_dmatminus_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n_a,n_x,n_y,i,k,start,end,l;
-  register int n_b0,n_b1,n_b2,n_b3,n_b4,m_b0,m_b1,m_b2,m_b3,m_b4;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *ara, *aja;
+  register int n_b0,n_b1,n_b2,n_b3,m_b0,m_b1,m_b2,m_b3,m_b4;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *ara, *aja;
   register double s0,s1;
-  register int b,bb;
+//  register int b,bb;
 
   n_a = AMG_MATRIX_N(A);              /* columns in A */
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
@@ -2475,7 +2475,7 @@ int AMG_dmatminus_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MA
   m_b2 = AMG_MATRIX_M(B[2]);          /* rows in B */
   n_b3 = AMG_MATRIX_N(B[3]);          /* columns in B */
   m_b3 = AMG_MATRIX_M(B[3]);          /* rows in B */
-  n_b4 = AMG_MATRIX_N(B[4]);          /* columns in B */
+//  n_b4 = AMG_MATRIX_N(B[4]);          /* columns in B */
   m_b4 = AMG_MATRIX_M(B[4]);          /* rows in B */
   n_x = AMG_VECTOR_N(x_);             /* length of solution vector */
   n_y = AMG_VECTOR_N(y_);             /* length of rhs vector */
@@ -2532,8 +2532,8 @@ int AMG_dmatminus_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MA
   a = AMG_MATRIX_A(B[0]);
   ra = AMG_MATRIX_RA(B[0]);
   ja = AMG_MATRIX_JA(B[0]);
-  ara = AMG_MATRIX_RA(A);
-  aja = AMG_MATRIX_JA(A);
+//  ara = AMG_MATRIX_RA(A);
+//  aja = AMG_MATRIX_JA(A);
 
   for (i=0; i<m_b0; i++)     /* multiply columnwise */ 
     {
@@ -2648,10 +2648,10 @@ int AMG_B_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MA
 {
   register int n_x,n_y,i,k,start,end,l;
   register int n_b0,n_b1,n_b4,m_b0,m_b1,m_b4;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *ara, *aja;
-  register double s0,s1;
-  register int b,bb;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *ara, *aja;
+  register double s0;
+//  register int b,bb;
  
   n_b0 = AMG_MATRIX_N(B[0]);          /* columns in B */
   m_b0 = AMG_MATRIX_M(B[0]);          /* rows in B */
@@ -2703,8 +2703,8 @@ int AMG_B_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MA
   a = AMG_MATRIX_A(B[0]);
   ra = AMG_MATRIX_RA(B[0]);
   ja = AMG_MATRIX_JA(B[0]);
-  ara = AMG_MATRIX_RA(A);
-  aja = AMG_MATRIX_JA(A);
+//  ara = AMG_MATRIX_RA(A);
+//  aja = AMG_MATRIX_JA(A);
 
   for (i=0; i<m_b0; i++)     /* multiply columnwise */ 
     {
@@ -2764,10 +2764,10 @@ int AMG_B_Trans_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, 
 {
   register int n_x,n_y,i,k,start,end,l;
   register int n_b2,n_b3,n_b4,m_b2,m_b3,m_b4;
-  register double *x, *y, *a, *xx, *aa, *yy;
-  register int *ra, *ja, *ara, *aja;
+  register double *x, *y, *a; // *xx, *aa, *yy;
+  register int *ra, *ja; // *ara, *aja;
   register double s0,s1;
-  register int b,bb;
+//  register int b,bb;
 
   n_b2 = AMG_MATRIX_N(B[2]);          /* columns in B */
   m_b2 = AMG_MATRIX_M(B[2]);          /* rows in B */
@@ -2863,9 +2863,9 @@ int AMG_B_Trans_dmatmul_SADDLE_2_TYPE_2_MORTAR  (AMG_VECTOR *x_, AMG_MATRIX *A, 
 int AMG_dmattransmul (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR *y_)
 {
   register int n,i,k,start,end,col;
-  register double *x, *y, *a, *xx, *aa, *yy;
+  register double *x, *y, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
-  register int b,bb;
+  register int b; //bb;
   
   /* plausi */
   if (global_sc->verbose>1)
@@ -2892,7 +2892,7 @@ int AMG_dmattransmul (AMG_VECTOR *x_, AMG_MATRIX *A, AMG_MATRIX **B, AMG_VECTOR 
   /* prepare data */
   n = AMG_VECTOR_N(x_);
   b = AMG_VECTOR_B(x_);
-  bb = AMG_MATRIX_BB(A);
+//  bb = AMG_MATRIX_BB(A);
   x = AMG_VECTOR_X(x_);
   y = AMG_VECTOR_X(y_);
   a = AMG_MATRIX_A(A);

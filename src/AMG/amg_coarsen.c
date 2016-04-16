@@ -112,7 +112,7 @@ static int stackhead=0;                     /* push/pop entry */
 static int stack[AMG_MAX_STACK];     /* current stack */
 static int connectsize=0;             /* number of neighbors */
 static int connect[AMG_MAX_ROW];     /* connectivity list */
-static char buf[256];
+//static char buf[256];
 
 /****************************************************************************/
 /*                                                                            */
@@ -227,14 +227,14 @@ static int Dependency (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int e = AMG_GRAPH_E(g);          /* number of edges/nonzeros */
   int *ra = AMG_GRAPH_RA(g);     
   int *ja = AMG_GRAPH_JA(g);
-  int *ca = AMG_GRAPH_CA(g);       /* connectivity array */
+//  int *ca = AMG_GRAPH_CA(g);       /* connectivity array */
   char *na = AMG_GRAPH_NA(g);
   char *la = AMG_GRAPH_LA(g);
   double *a = AMG_MATRIX_A(A);
   char buffer[128];
   int comp,sas=AMG_GRAPH_SAS(g);   /* sas - system as scalar */
   
-  int i,k,kk,start,end;
+  int i,k,start,end;
   double maxval;
   int strong=0;
                   
@@ -327,7 +327,7 @@ static int Dependency_sym (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int e = AMG_GRAPH_E(g);
   int *ra = AMG_GRAPH_RA(g);
   int *ja = AMG_GRAPH_JA(g);
-  int *ca = AMG_GRAPH_CA(g);
+//  int *ca = AMG_GRAPH_CA(g);
   char *na = AMG_GRAPH_NA(g);
   char *la = AMG_GRAPH_LA(g);
   double *a = AMG_MATRIX_A(A);
@@ -468,7 +468,7 @@ static int AddCluster (AMG_GRAPH *g, int s, int clusternumber)
 /* initialize cluster with seed node */
 static int SeedCluster (AMG_GRAPH *g, int s, int clusternumber)
 {
-        int *ca=g->ca;
+//        int *ca=g->ca;
 
         clustersize = 0;
         connectsize=1;
@@ -481,7 +481,7 @@ static int SetFront (AMG_GRAPH *g)
 {
   int i,k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na; // *la=g->la;
   int comp,sas=AMG_GRAPH_SAS(g);
   
   frontsize = 0;
@@ -549,7 +549,7 @@ static int Connected (AMG_GRAPH *g, int f, int clusternumber)
 {
   int k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *la=g->la;
+//  char *la=g->la;
   
   start = ra[f]; end = start+ja[start];
   for (k=start+1; k<end; k++)
@@ -562,7 +562,7 @@ static int FrontNeighbors (AMG_GRAPH *g, int f)
 {
   int k,start,end,w;
   int *ra=g->ra, *ja=g->ja;
-  char *la=g->la, *na=g->na;
+  char *na=g->na; //*la=g->la;
   
   w = 0;
   start = ra[f]; end = start+ja[start];
@@ -643,7 +643,7 @@ static int InnerNeighborCluster (AMG_GRAPH *g, int f)
 {
   int k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char  *na=g->na, *la=g->la;
+  char  *na=g->na; // *la=g->la;
   int comp,sas=AMG_GRAPH_SAS(g);
   
   start = ra[f]; end = start+ja[start]; comp=f%sas;
@@ -667,7 +667,7 @@ static float AutoDamp (AMG_GRAPH *g, int clusternumber)
 {
   int f,k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char  *na=g->na, *la=g->la;
+  char  *la=g->la; // *na=g->na;
   int strong=0,depends=0;
   float d;
   
@@ -696,7 +696,7 @@ static int Distance (AMG_GRAPH *g, int f, int clusternumber)
 {
   int i,k,start,end,first,last,l;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca; 
-  char *la=g->la, *na=g->na;
+  char *na=g->na; // *la=g->la;
   int visitedsize=0;
   int visited[AMG_MAX_CLUSTER];
   int dist=0;
@@ -731,7 +731,7 @@ static int Distance (AMG_GRAPH *g, int f, int clusternumber)
 static int Admissible (AMG_GRAPH *g, int f, int clusternumber)
 {
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *la=g->la, *na=g->na;
+  char *la=g->la; // *na=g->na;
   int i,j,ki,kj,kij,starti,startj,startij,endi,endj,endij,found;
   
   /* situation 1, front node depends on two nodes in cluster */        
@@ -797,7 +797,7 @@ static int PopMajor (AMG_GRAPH *g, AMG_CoarsenContext *cc)
         int i,umin,isoumin,majisoumin,majumin;
         int n = AMG_GRAPH_N(g);
         int iso,con;
-    int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+    int isomaj,conmaj,sas=AMG_GRAPH_SAS(g),major=cc->major;
 
         if (major<0) return(-1);
         
@@ -909,7 +909,7 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int i,umin,isoumin,majisoumin,majumin;
   int n = AMG_GRAPH_N(g);
   int iso,con;
-  int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+  int isomaj,conmaj; //comp,sas=AMG_GRAPH_SAS(g), major=cc->major;
   
   /* get from stack */
   while (stacksize>0)
@@ -1110,12 +1110,12 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int m,s,f,i,n=g->n;
   int *ca=g->ca;
   char *na=g->na;
-  int C,D,T,O,W,N,Cmax,Nmax,Tmax,Omax,Wmax,candidate,c;
+  int C,D,T,O,W,Cmax,Tmax,Omax,Wmax,candidate,c;
   int clusternumber,conclusters,isoclusters;
   char buffer[128];
   int comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
-  int noniso,iso;
-  clock_t start_coarsen,finish_coarsen;  
+//  int noniso,iso;
+//  clock_t start_coarsen,finish_coarsen;
                         
   /* initialization */
   for (i=0; i<n; i++) {
@@ -1512,7 +1512,7 @@ static int ReconstructCluster (AMG_GRAPH *g, int f)
 {
   int i,k,start,end,first,last,dist;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na; // *la=g->la;
   int clusternumber;
   
   /* first, reconstruct the cluster */
@@ -1548,7 +1548,7 @@ static int ConstructConnectivity (AMG_GRAPH *g, int f)
 {
   int i,k,m,n,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na; // *la=g->la;
   int clusternumber;
   
   clusternumber=ca[f];
@@ -1774,7 +1774,7 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
 */   
 /****************************************************************************/
 
-static void LexPrint (AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS], int level)
+/*static void LexPrint (AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS], int level)
 {
         int i,j,k,n,d;
         char ch,b;
@@ -1793,7 +1793,7 @@ static void LexPrint (AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS
                 }
                 AMG_Print("\n");
         }
-}
+}*/ // Commented in order to avoid irrelevant compiler warnings
                 
 static int Statistic (AMG_MATRIX *A, int depth)
 {
