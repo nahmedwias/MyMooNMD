@@ -63,7 +63,7 @@ int TBdNoPRM::GetXYZandTS(int N_Points, double *LinComb,
 int TBdNoPRM::GetTSofXYZ(double X, double Y, double Z,
                         double &T, double &S)
 {
-  double TS_aux;
+//  double TS_aux;
 
   T = -4711;
   S = -4711;
