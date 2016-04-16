@@ -56,7 +56,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
   TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
-  TFE1D *FE_Obj;
+//  TFE1D *FE_Obj;
   TNodalFunctional1D *nf;
   TRefTrans1D *rt;
 //  TBaseFunct1D *bf;
@@ -76,7 +76,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
     cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
-    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
+//    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
 //    bf = FE_Obj->GetBaseFunct1D();
     nf = Element->GetNodalFunctional1D();
     nf->GetPointsForAll(N_Points, xi, eta);
@@ -133,7 +133,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
   TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
-  TFE1D *FE_Obj;
+//  TFE1D *FE_Obj;
   TNodalFunctional1D *nf;
   TRefTrans1D *rt;
 //  TBaseFunct1D *bf;
@@ -151,7 +151,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
     cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
-    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
+//    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
 //    bf = FE_Obj->GetBaseFunct1D();
     nf = Element->GetNodalFunctional1D();
     nf->GetPointsForAll(N_Points, xi, eta);
@@ -210,7 +210,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
   TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
-  TFE1D *FE_Obj;
+//  TFE1D *FE_Obj;
   TNodalFunctional1D *nf;
   TRefTrans1D *rt;
 //  TBaseFunct1D *bf;
@@ -228,7 +228,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
     cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
-    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
+//    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
 //    bf = FE_Obj->GetBaseFunct1D();
     nf = Element->GetNodalFunctional1D();
     nf->GetPointsForAll(N_Points, xi, eta);
@@ -277,7 +277,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
   TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
-  TFE1D *FE_Obj;
+//  TFE1D *FE_Obj;
   TNodalFunctional1D *nf;
   TRefTrans1D *rt;
 //  TBaseFunct1D *bf;
@@ -309,7 +309,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
     cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
-    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
+//    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
 //    bf = FE_Obj->GetBaseFunct1D();
     nf = Element->GetNodalFunctional1D();
     nf->GetPointsForAll(N_Points, xi, eta);
@@ -368,7 +368,7 @@ void TFEFunction1D::GridToData()
   TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
-  TFE1D *FE_Obj;
+//  TFE1D *FE_Obj;
   TNodalFunctional1D *nf;
   TRefTrans1D *rt;
 //  TBaseFunct1D *bf;
@@ -387,7 +387,7 @@ void TFEFunction1D::GridToData()
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 
-    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
+//    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
 //    bf = FE_Obj->GetBaseFunct1D();
     nf = Element->GetNodalFunctional1D();
     nf->GetPointsForAll(N_Points, xi, eta);

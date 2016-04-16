@@ -129,7 +129,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
 {
   static double nu = 1/TDatabase::ParamDB->RE_NR;
   int i;
-  double *coeff, x, y, z;
+  double *coeff; // x, y, z;
   double t = TDatabase::TimeDB->CURRENTTIME;
 
  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE==STOKES)
@@ -150,9 +150,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
     {
       coeff = coeffs[i];
       
-      x = X[i];
-      y = Y[i];
-      z = Z[i];
+//      x = X[i];
+//      y = Y[i];
+//      z = Z[i];
       coeff[0] = nu;
       coeff[1] = 0*t; // f1
       coeff[2] = -10; // f2

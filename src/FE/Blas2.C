@@ -220,8 +220,8 @@ void MatVect1(TMatrix *B, double *x, double *y)
 void TransMatVect(TMatrix *B, double *x, double *y)
 {
   int N_UDOF;
-  int i,j,k,l,index;
-  double s, value;
+  int i,j,k,index;
+  double value;
   const int *BRowPtr, *BKCol;
   double *BEntries;
 
