@@ -16,14 +16,12 @@
 #define NSE2D_H_
 
 #include <FEVectFunct2D.h>
-#include <Example_NSE2D.h>
-#include <MultiGrid2D.h>
-#include <MainUtilities.h> // FixedSizeQueue
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Residuals.h>
 
+#include <Example_NSE2D.h>
 
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
@@ -31,6 +29,10 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
+#include <MultiGrid2D.h>
+
+#include <MainUtilities.h> // FixedSizeQueue
+
 #include <utility>
 #include <array>
 

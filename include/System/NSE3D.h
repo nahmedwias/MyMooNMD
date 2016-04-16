@@ -17,15 +17,17 @@
 #ifndef INCLUDE_SYSTEM_NSE3D_H_
 #define INCLUDE_SYSTEM_NSE3D_H_
 
+#include <FEVectFunct3D.h>
+#include <FEFunction3D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_NSE3D.h>
-#include <FEFunction3D.h>
-#include <FESpace3D.h>
-#include <FEVectFunct3D.h>
-#include <MainUtilities.h> // FixedSizeQueue
-#include <NSE_MultiGrid.h>
 #include <Residuals.h>
+#include <FESpace3D.h>
+#include <Example_NSE3D.h>
+
+#include <NSE_MultiGrid.h>
+
+#include <MainUtilities.h> // FixedSizeQueu
 
 #include <vector>
 #include <deque>
