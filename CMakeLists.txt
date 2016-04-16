@@ -128,7 +128,7 @@ if(_USING_MPI)
   #Include Metis
   message("==================Including METIS - begin==================================================")
       find_path(METIS_INCLUDE_DIR  metis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/include NO_DEFAULT_PATH)
-      find_library(METIS_LIBRARY NAMES metis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
+      find_library(METIS_LIBRARY NAMES metis PATHS ${PARMOON_EXTLIB_PATH}/Metis/${_ARCH} NO_DEFAULT_PATH)
       
       set(METIS_LIBRARIES ${METIS_LIBRARY} )
       set(METIS_INCLUDE_DIRS ${METIS_INCLUDE_DIR} )
@@ -140,23 +140,22 @@ if(_USING_MPI)
       include_directories(${METIS_INCLUDE_DIRS})
   message("==================Indcluding METIS - end====================================================")
   
-#   #When using MPI we're also using Parmetis. Include it.
-#   message("==================Including Parmetis - begin===============================================")
-#       find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-#       find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-#       
-#       
-#       set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
-#       include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
-#       
-#       set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
-#       
-#       if(NOT (PARMETIS_LIBRARIES AND  PARMETIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-#         message(FATAL_ERROR "Parmetis is missing from ParMooN.")
-#     else()
-#         message(STATUS "Done.")
-#     endif()
-#   message("==================Including Parmetis - end=================================================")
+  #When using MPI we're also using Parmetis. Include it.
+  message("==================Including Parmetis - begin===============================================")
+      find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/include NO_DEFAULT_PATH)
+      find_library(PARMETIS_LIBRARY NAMES parmetis PATHS ${PARMOON_EXTLIB_PATH}/Metis/${_ARCH} NO_DEFAULT_PATH)
+         
+      set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
+      include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
+      
+      set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY})
+      
+      if(NOT (PARMETIS_LIBRARIES AND  PARMETIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
+        message(FATAL_ERROR "Parmetis is missing from ParMooN.")
+    else()
+        message(STATUS "Done.")
+    endif()
+  message("==================Including Parmetis - end=================================================")
    
   #When using MPI we're also using MUMPS solver. Take the supplied dmumps, mumps_common and scalapack dependencies.
   message("==================Including MUMPS and ScaLapack - begin====================================")
@@ -167,14 +166,24 @@ if(_USING_MPI)
     find_library(MUMPS_LIBRARY NAMES dmumps PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
     # mumps_common library
     find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    #scalapack library 
+    # pord library (the sequential ordering tool which ships with mumps)
+    find_library(PORD_LIBRARY NAMES pord PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
+    # scalapack library 
     find_library(SCALAPACK_LIBRARY NAMES scalapack PATHS ${PARMOON_EXTLIB_PATH}/ScaLapack/${_ARCH} NO_DEFAULT_PATH) 
      
-    set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_LIBRARY_COMMON} ${SCALAPACK_LIBRARY} ${LAPACK_LIBRARIES} gfortran)
+    set(MUMPS_LIBRARIES ${MUMPS_LIBRARY}
+			${MUMPS_LIBRARY_COMMON}
+			${METIS_LIBRARIES}
+			${PARMETIS_LIBRARIES}
+			${SCALAPACK_LIBRARY}
+			${PORD_LIBRARY}
+			${LAPACK_LIBRARIES}
+			gfortran)
+			
     set(MUMPS_INCLUDE_DIRS ${MUMPS_INCLUDE_DIR})
     
     if(NOT (MUMPS_LIBRARIES AND  MUMPS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Mumps or scalapack is missing from ParMooN - check CMakeCache.txt.")
+        message(FATAL_ERROR "Mumps or one of its dependencies is missing from ParMooN - check CMakeCache.txt.")
     else()
         message(STATUS "Done.")
     endif()
@@ -351,6 +360,7 @@ if(_USING_OMP)
 endif(_USING_OMP)
 LIST(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
 if(_USING_MPI)
+    LIST(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARIES})
     LIST(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARIES})
     LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
     LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
