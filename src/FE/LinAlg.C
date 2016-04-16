@@ -136,13 +136,13 @@ void SolveLinearSystem(double *a, double *b, int N_Eqn, int LDA)
 //    N_Eqn     number of equations
 //    LDA       leading dimension of matrix a
 {
-  int i,j,k,l,m, row;
+  int i,l,m, row;
   double pivot, tmp, eps=1e-12;
 
 
   OutPut("Use SolveLinearSystemNew !!!"<< endl);
   exit(4711);
-  int ii, jj;
+//  int ii, jj;
 /*
   for(ii=0;ii<N_Eqn;ii++)
   {
@@ -267,7 +267,7 @@ void SolveMultipleSystemsLapack_old(double *A, double *B, int N_Eqn,
 // The result will be stored column wise
 {
   int info, *ipiv;
-  int i, j;
+//  int i, j;
   double *transp;
   char t='t';
   transp = new double[N_Eqn*N_Rhs];
@@ -319,10 +319,10 @@ void SolveMultipleSystemsNew(double *a, double *b, int N_Eqn,
 //                LDB = N_Rhs
 // The result will be stored column wise
 {
-  int i,j,k,l,m, row,info, *ipiv;
+  int i,j,l,m, row;  // k, info, *ipiv;
   double pivot, tmp, *f, *frow,eps=0.0;
 
-  int ii, jj;
+//  int ii, jj;
 /*
   for(ii=0;ii<N_Eqn;ii++)
   {
@@ -450,10 +450,10 @@ void SolveMultipleSystems(double *a, double *b, int N_Eqn,
 //                LDA = LDB
 // The result will be stored row wise
 {
-  int i,j,k,l,m, row;
+  int i,j,l,m, row;
   double pivot, tmp, *f;
 
-  int ii, jj;
+//  int ii, jj;
 
 /*
   for(ii=0;ii<N_Eqn;ii++)
@@ -580,7 +580,7 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
 
  int info, i;
  char uplo='U';
- char compz='N';
+// char compz='N';
 //  double *d = new double[N_Eqn];
  double *e = new double[N_Eqn-1];
  double *tau = new double[N_Eqn-1];
