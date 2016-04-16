@@ -47,7 +47,13 @@ namespace test_u_3_p_2 //-4
 #include "NSE_3D/test_u_3_p_2.h"
 }
 
-
+//========================================
+// time dependent cases
+namespace lin_space_time
+{
+  #include "TNSE_3D/linear_space_time.h"  // 101
+}
+//========================================
 
 Example_NSE3D::Example_NSE3D() : Example3D()
 {
@@ -284,6 +290,38 @@ Example_NSE3D::Example_NSE3D() : Example3D()
 
         /** coefficients */
         problem_coefficients = LinCoeffs;
+
+        ExampleFile();
+        break;
+      }
+      case 101:
+      {
+        using namespace lin_space_time;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
 
         ExampleFile();
         break;
