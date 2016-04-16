@@ -78,7 +78,8 @@
 /* definition of variables global to this source file only (static!)        */
 /*                                                                          */
 /****************************************************************************/
-static char buffer[128];
+
+//static char buffer[128];
 extern AMG_SolverContext *global_sc;
 /****************************************************************************/
 /*                                                                          */
@@ -111,10 +112,10 @@ D*/
 
 int AMG_jac (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
-  register int n,i,k,start,end;
-  register double *v, *d, *a, *xx, *aa, *yy, diag;
+  register int n,i; //k,start,end;
+  register double *v, *d, *a, diag; // *xx, *aa, *yy;
   register int *ra;
-  register int b,blocks;
+  register int blocks;
   double om;
   char buf[60];
   
@@ -225,7 +226,7 @@ D*/
 int AMG_sorf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks;
   register double s,s1,s2,s3,s4,s5,om;
@@ -356,7 +357,7 @@ int AMG_sorf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 int AMG_sorb (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks;
   register double s,s1,s2,s3,s4,s5,om;
@@ -487,7 +488,7 @@ int AMG_sorb (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 int AMG_sorfb (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks, n2,n3,n4,n5;
   register double s,s1,s2,s3,s4,s5,om;
@@ -715,7 +716,7 @@ D*/
 int AMG_iluf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 {
   register int n,i,k,start,end,l;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks;
   register double s,s1,s2,s3,s4,s5;
@@ -846,7 +847,7 @@ int AMG_iluf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 int AMG_ilub (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 {
   register int n,i,k,start,end,l;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks;
   register double s,s1,s2,s3,s4,s5;
@@ -1130,10 +1131,10 @@ D*/
 int AMG_sorf_trans(AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l,j;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ratr, *jatr, *postr;
   register int blocks;
-  register double s,s1,s2,s3,s4,s5,om;
+  register double s,om;
   char buf[60];
 
   /* prepare data */
@@ -1294,10 +1295,10 @@ int AMG_sorf_trans(AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 int AMG_sorb_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l,j;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
   register int blocks;
-  register double s,s1,s2,s3,s4,s5,om;
+  register double s,om;
   char buf[60];
   
   /* prepare data */
@@ -1434,10 +1435,10 @@ int AMG_sorb_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega
 int AMG_sorfb_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end,l,j;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja;
-  register int blocks, n2,n3,n4,n5;
-  register double s,s1,s2,s3,s4,s5,om;
+  register int blocks; // n2,n3,n4,n5;
+  register double s,om;
   char buf[60];
 
   printf("ssor for transposed matrix not implemented !\n");
@@ -1685,10 +1686,10 @@ D*/
 int AMG_iluf_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 {
   register int n,i,k,start,end,l,j;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ratr, *jatr, *postr;
   register int blocks;
-  register double s,s1,s2,s3,s4,s5;
+  register double s; //s1,s2,s3,s4,s5;
   char buf[60];
   
   /* prepare data */
@@ -1780,10 +1781,10 @@ int AMG_iluf_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 int AMG_ilub_trans (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_)
 {
   register int n,i,k,start,end,l,j;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a; // *xx, *aa, *yy;
   register int *ra, *ja, *ratr, *jatr, *postr;
   register int blocks;
-  register double s,s1,s2,s3,s4,s5;
+  register double s; //s1,s2,s3,s4,s5;
   char buf[60];
   
   /* prepare data */
