@@ -202,7 +202,7 @@ void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
 }
 int TJoint::GetNeighbourEdgeIndex(TBaseCell* me, int LocEdge)
 {
-  int N_Edges, MaxLen;
+  int N_Edges; //MaxLen;
   const int *TmpEV;
   TVertex *Vert0, *Vert1;
   TBaseCell* neigh;
