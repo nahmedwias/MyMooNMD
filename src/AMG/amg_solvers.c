@@ -724,7 +724,7 @@ int mixed_bcgs_cgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
 {
   int i,j,k,cgs;
   double dnorm, dnorm0, dnormlast,tol;
-  double rho,rho_new,alpha[max_switch],beta[max_switch],omega,delta,tmp;
+  double rho,rho_new,alpha[max_switch],beta[max_switch],omega,tmp;
   AMG_SolverContext *sc=global_sc;
 
   tol = sc->mixed_bcgs_cgs_switch_tol;
@@ -1594,7 +1594,7 @@ int clear_gmres_flexible_solve(AMG_SolverContext *sc, int depth)
 
 int gmres_flexible_solve (AMG_VECTOR *x, AMG_VECTOR *b)
 {
-  int i,j,k,l;
+  int i,j,k;
   double beta,resid,residlast,dnorm0;
   AMG_SolverContext *sc=global_sc;
   
@@ -1791,7 +1791,7 @@ int clear_exact_solve(AMG_SolverContext *sc)
 int exact_solve (AMG_VECTOR *x, AMG_VECTOR *b)
 {
   AMG_SolverContext *sc=global_sc;
-  int i;
+//  int i;
 
   AMG_dset(r[0],0.0);                        /* copy rhs (b) into r */
   AMG_dcopy(z[0],b);                        /* copy rhs (b) into r */
@@ -1901,8 +1901,8 @@ int clear_lcd_solve(AMG_SolverContext *sc,int depth)
 
 int lcd_solve (AMG_VECTOR *x, AMG_VECTOR *b)
 {
-  int i,j,k,l,n, *ra,row;
-  double resid,residlast,alpha,alpha_deno, *a,*t,*s;
+  int i,j,k,n, *ra,row;
+  double resid,residlast,alpha,alpha_deno, *a; //*t,*s;
   AMG_SolverContext *sc=global_sc;
   double *beta_deno;
   
