@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
 
   // Construct the ParMooN Databases.
   TDatabase Database;
+  TFEDatabase3D feDatabase;
 
 #ifdef _MPI
   //Construct and initialise the default MPI communicator and store it.
@@ -53,8 +54,6 @@ int main(int argc, char* argv[])
 #else
   int my_rank = 0;
 #endif
-
-  TFEDatabase3D feDatabase;
 
   // =====================================================================
   // set the database values and generate mesh
@@ -146,10 +145,10 @@ int main(int argc, char* argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  //-------------------------------------------------------
-//  // Choose example according to the value of
-//  // TDatabase::ParamDB->EXAMPLE and construct it.
-//  Example_NSE3D example;
+  // Choose example according to the value of
+  // TDatabase::ParamDB->EXAMPLE, e.g. 101, and construct it.
+  Example_NSE3D example;
+
 //
 //  // Construct an object of the NSE3D-problem type.
 //#ifdef _MPI
