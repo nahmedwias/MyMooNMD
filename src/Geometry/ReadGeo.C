@@ -1147,8 +1147,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TBoundComp3D *bdcomp;
   double Param1[4], Param2[4];
   JointType CurrJointType;
-  TInterfaceJoint3D *IFJoint;
-  TIsoInterfaceJoint3D *IIJoint;
+//  TInterfaceJoint3D *IFJoint;
+//  TIsoInterfaceJoint3D *IIJoint;
 
   // generate vertices, faces and cells
   // search neighbours
@@ -1549,10 +1549,10 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   int i0, i1, i2;
   int *KMTupper, *KMTlower;
 
-  double x0, x1, x2, x3;
-  double y0, y1, y2, y3;
-  double z0, z1, z2, z3;
-  double det;
+  double x0, x1, x2; // x3;
+  double y0, y1, y2; // y3;
+  double z0, z1, z2; // z3;
+//  double det;
 
   // generate vertices, edges and cells
   // search neighbours
