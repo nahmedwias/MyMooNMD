@@ -195,7 +195,7 @@ void TFESpace1D::ConstructSpace()
   TFEDesc1D *FEDesc0_Obj, *FEDesc1_Obj;  // TFEDesc1D *FEDesc2_Obj;
   FEDesc1D FEDesc0, FEDesc1; // FEDesc1D FEDesc2;
 
-  int I_K0, I_K1; // int I_K2;
+  int I_K0; // I_K1, I_K2;
   int *J_K0, *J_K1; // int *J_K2;
   int *Indices0, *Indices1; // int *Indices2;
 //  int c1, c2, e1, e2, chnum1, chnum2;
@@ -296,7 +296,7 @@ void TFESpace1D::ConstructSpace()
             FEType1 = GetFE1D(n, neigh);
             FE1 = TFEDatabase2D::GetFE1D(FEType1);
             FE1->GetFEDesc1D(FEDesc1, FEDesc1_Obj);
-            I_K1 = BeginIndex[n];
+//            I_K1 = BeginIndex[n];
             J_K1 = GlobalNumbers + BeginIndex[n];
             Indices1 = FEDesc1_Obj->GetJointDOF(l);
 
