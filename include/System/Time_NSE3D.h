@@ -218,7 +218,7 @@ class Time_NSE3D
     
     
 // ======================================================================
-//    /**
+     /**
 //     * TODO Implement this method. What's the difference with "set_parameters()"
 //     * in TNSE2D class?
 //     * @brief Check whether the program will be working with the
@@ -237,17 +237,16 @@ class Time_NSE3D
 //     * will be moved to TDatabase.
 //     */
 //    static void check_parameters();
-//
-//   /** TODO Implement this method.
-//    * @brief Assemble all the matrices and rhs before the time iterations
-//    *
-//    * This includes the assembling of the Stiffness matrix, the Mass matrix,
-//    * the additional matrix K in case of SUPG stabilization, and rhs.
-//    * This assembling occurs just once, before entering any loop. It assembles
-//    * linear terms only.
-//    */
-//    void assemble_initial_time();
-//
+
+   /** @brief Assemble all the matrices and rhs before the time iterations
+    *
+    * This includes the assembling of the Stiffness matrix, the Mass matrix,
+    * the additional matrix K in case of SUPG stabilization, and rhs.
+    * This assembling occurs just once, before entering any loop. It assembles
+    * linear terms only.
+    */
+    void assemble_initial_time();
+
 //   /** TODO Implement this method.
 //    * @brief Assemble the rhs only
 //    * 1. Assembling the right hand side only

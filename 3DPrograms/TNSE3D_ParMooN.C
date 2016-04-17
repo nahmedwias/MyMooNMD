@@ -156,8 +156,11 @@ int main(int argc, char* argv[])
   Time_NSE3D tnse3d(domain, example);
 //#endif
 
-//  // assemble all matrices and right hand side
-//  nse3d.assemble_linear_terms();
+  // assemble all matrices and right hand side at start time
+  // it assembles A's, B's and M's blocks. Nonlinear blocks are
+  // added in the loops thanks to assemble_nonlinear()
+  tnse3d.assemble_initial_time();
+
 //  nse3d.stop_it(0);
 //  // check initial residuals
 //  //======================================================================

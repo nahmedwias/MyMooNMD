@@ -352,12 +352,13 @@ void NSE3D::assemble_linear_terms()
   for(auto &s : this->systems_)
   {
 
-    const TFESpace3D * v_space = &s.velocitySpace_;
-    const TFESpace3D * p_space = &s.pressureSpace_;
+    const TFESpace3D *v_space = &s.velocitySpace_;
+    const TFESpace3D *p_space = &s.pressureSpace_;
 
     // spaces for matrices
-    const TFESpace3D* spaces[2] = {v_space, p_space};
-    const TFESpace3D* rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+    const TFESpace3D *spaces[2] = {v_space, p_space};
+    const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+
     // spaces for right hand side    
     s.rhs_.reset();
     rhsArray[0]=s.rhs_.block(0);
@@ -470,6 +471,7 @@ void NSE3D::assemble_linear_terms()
       sqMatrices[i]->reset();
     for(unsigned int i=0; i<nReMatrices;i++)
       reMatrices[i]->reset();
+
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
       spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
@@ -480,11 +482,13 @@ void NSE3D::assemble_linear_terms()
     boundValues[1]=example_.get_bd()[1];
     boundValues[2]=example_.get_bd()[2];
     boundValues[3]=example_.get_bd()[3];
+
     // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
     feFunction[2]=s.u_.GetComponent(2);
     feFunction[3]=&s.p_;
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
