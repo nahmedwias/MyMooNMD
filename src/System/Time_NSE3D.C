@@ -81,6 +81,12 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   // This function returns a pair which consists of
   // velocity and pressure order. It takes the input read in
   // ParamDB and return a couple of VALID space orders.
+  // TODO In this method there is an important thing to check about
+  // pressure space.
+  // NOTE: this method has the same purpose as set_parameters or check_parameters
+  // In the future, these 3 different functions should be merged in one
+  // check function. This will certainly be the case with the implementation of
+  // the new database.
   this->get_velocity_pressure_orders(velocity_pressure_orders);
 
 //
@@ -165,8 +171,6 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
 
 
 
-
-
 //
 //
 ///**************************************************************************** */
@@ -186,84 +190,87 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
 //    throw("TIME_DISC: 0 is not supported");
 //  }
 //}
-//
-///**************************************************************************** */
-//void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velo_pres_order)
-//{
-//  int velocity_order = velo_pres_order.first;
-//  int pressure_order = velo_pres_order.second;
-//  int order = 0;
-//  switch(velocity_order)
-//  {
-//    case 1: case 2: case 3: case 4: case 5:
-//    case 12: case 13: case 14: case 15:
-//      if(velocity_order > 10)
-//        order = velocity_order-10;
-//      else
-//        order = velocity_order;
-//      break;
-//    case -1: case -2: case -3: case -4: case -5:
-//    case -101:
-//      order = velocity_order;
-//      break;
-//    // conforming fe spaces with bubbles on triangles
-//    case 22: case 23: case 24:
-//      order = velocity_order;
-//      break;
-//      // discontinuous spaces
-//    case -11: case -12: case -13:
-//      order = velocity_order*10;
-//      break;
-//  }
-//  TDatabase::ParamDB->VELOCITY_SPACE = order;
-//  velo_pres_order.first = order;
-//  switch(pressure_order)
-//  {
-//    case -4711:
-//      switch(velocity_order)
-//      {
-//        case -1:
-//        case -2:
-//        case -3:
-//        case -4:
-//          // nonconforming pw (bi)linear velo/ pw constant pressure
-//          // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
-//          pressure_order = -velocity_order-1;
-//          break;
-//        case 1: // discontinuous space
-//          pressure_order = 0;
-//          break;
-//        case 2: case 3: case 4: case 5:
-//        // standard conforming velo and continuous pressure
-//          pressure_order = velocity_order-1;
-//          break;
-//          // discontinuous pressure spaces
-//          // standard conforming velo and discontinuous pressure
-//          // this is not stable on triangles !!!
-//        case 12: case 13: case 14: case 15:
-//          pressure_order = -(velocity_order-1)*10;
-//          break;
-//        case 22: case 23: case 24:
-//          pressure_order = -(velocity_order-11)*10;
-//          break;
-//      }
-//      break;
-//    // discontinuous spaces
-//    case 1:case 2: case 3: case 4: case 5:
-//      pressure_order = -(velocity_order-1)*10;
-//      break;
-//    // discontinuous spaces
-//    case -11: case -12: case -13: case -14:
-//      pressure_order = pressure_order*10;
-//      break;
-//  }
-//  TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
-//  velo_pres_order.second = pressure_order;
-//
-//  Output::print("velocity space", setw(10), velo_pres_order.first);
-//  Output::print("pressure space", setw(10), velo_pres_order.second);
-//}
-//
+
+/**************************************************************************** */
+void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pressure_orders)
+{
+  int velocity_order = velocity_pressure_orders.first;
+  int pressure_order = velocity_pressure_orders.second;
+  int order = 0;
+  switch(velocity_order)
+  {
+    case 1: case 2: case 3: case 4: case 5:
+    case 12: case 13: case 14: case 15:
+      if(velocity_order > 10)
+        order = velocity_order-10;
+      else
+        order = velocity_order;
+      break;
+    case -1: case -2: case -3: case -4: case -5:
+    case -101:
+      order = velocity_order;
+      break;
+    // conforming fe spaces with bubbles on triangles
+    case 22: case 23: case 24:
+      order = velocity_order;
+      break;
+      // discontinuous spaces
+    case -11: case -12: case -13:
+      order = velocity_order*10;
+      break;
+  }
+  TDatabase::ParamDB->VELOCITY_SPACE = order;
+  velocity_pressure_orders.first = order;
+  switch(pressure_order)
+  {
+    case -4711:
+      switch(velocity_order)
+      {
+        case -1:
+        case -2:
+        case -3:
+        case -4:
+          // nonconforming pw (bi)linear velo/ pw constant pressure
+          // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
+          pressure_order = -velocity_order-1;
+          break;
+        case 1: // discontinuous space
+          pressure_order = 0;
+          Output::print<1>("Warning: The P1/P0 element pair (Q1/Q0 on hexa) is "
+              " not stable. Make sure to use stabilization!");
+          break;
+        case 2: case 3: case 4: case 5:
+        // standard conforming velocity and continuous pressure
+          pressure_order = velocity_order-1;
+          break;
+          // discontinuous pressure spaces
+          // standard conforming velo and discontinuous pressure
+          // this is not stable on triangles !!!
+        case 12: case 13: case 14: case 15:
+          pressure_order = -(velocity_order-1)*10;
+          break;
+        case 22: case 23: case 24:
+          pressure_order = -(velocity_order-11)*10;
+          break;
+      }
+      break;
+    // discontinuous spaces
+    case 1:case 2: case 3: case 4: case 5:
+      // TODO CHECK IF THIS IS CORRECT!!! IN NSE3D,pressure_order=1  ?!!
+      pressure_order = -(velocity_order-1)*10;
+      break;
+    // discontinuous spaces
+    case -11: case -12: case -13: case -14:
+      pressure_order = pressure_order*10;
+      break;
+  }
+  TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
+  velocity_pressure_orders.second = pressure_order;
+
+  Output::print("velocity space", setw(10), velocity_pressure_orders.first);
+  Output::print("pressure space", setw(10), velocity_pressure_orders.second);
+}
+
 ///**************************************************************************** */
 //void Time_NSE3D::assemble_initial_time()
 //{
