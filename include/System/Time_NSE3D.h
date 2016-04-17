@@ -361,13 +361,13 @@ class Time_NSE3D
 //
 //   const TFEFunction3D  & get_pressure() const
 //     { return this->systems_.front().p_; }
-//
-//   const TFESpace3D     & get_velocity_space() const
-//     { return this->systems_.front().velocitySpace_; }
-//
-//   const TFESpace3D     & get_pressure_space() const
-//     { return this->systems_.front().pressureSpace_; }
-//
+
+   const TFESpace3D     & get_velocity_space() const
+     { return this->systems_.front().velocitySpace_; }
+
+   const TFESpace3D     & get_pressure_space() const
+     { return this->systems_.front().pressureSpace_; }
+
 //   const BlockVector    & get_solution() const
 //     { return this->systems_.front().solution_; }
 //

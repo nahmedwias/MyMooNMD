@@ -89,42 +89,50 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   // the new database.
   this->get_velocity_pressure_orders(velocity_pressure_orders);
 
-//
-//  Time_NSE3D::Matrix type;
-//  switch(TDatabase::ParamDB->NSTYPE)
-//  {
-//    case  1: type = Matrix::Type1;  break;
-//    case  2: type = Matrix::Type2;  break;
-//    case  3: type = Matrix::Type3;  break;
-//    case  4: type = Matrix::Type4;  break;
-//    case 14: type = Matrix::Type14; break;
-//    default:
-//      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-//               " That NSE Block Matrix Type is unknown to class NSE3D.");
-//  }
-//
-//  // create the collection of cells from the domain (finest grid)
-//  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-//
-//  this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
-//
-//  // the defect has the same structure as the rhs (and as the solution)
-//  this->defect.copy_structure(this->systems.front().rhs);
-//
-//  // print out some information
-//  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-//  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-//  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
-//  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
-//
+
+  Time_NSE3D::Matrix type;
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case  1: type = Matrix::Type1;  break;
+    case  2: type = Matrix::Type2;  break;
+    case  3: type = Matrix::Type3;  break;
+    case  4: type = Matrix::Type4;  break;
+    case 14: type = Matrix::Type14; break;
+    default:
+      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
+  }
+
+  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
+                        && TDatabase::ParamDB->SOLVER_TYPE == 1 );
+
+  if(!usingMultigrid)
+  {
+  // create the collection of cells from the domain (finest grid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+
+  // create finite element space and function, a matrix, rhs and solution
+  // all this by calling constructor of System_Per_Grid
+  this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+
+  // initialize the defect of the system. It has the same structure as
+  // the rhs (and as the solution)
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+
+  // print out some information about number of DoFs
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
+  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
+
 //  double h_min, h_max;
 //  coll->GetHminHmax(&h_min, &h_max);
 //  Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
 //  Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
-//  Output::print<1>("dof Velocity: ", setw(10), 2* n_u);
+//  Output::print<1>("dof Velocity: ", setw(10), 3* n_u);
 //  Output::print<1>("dof Pressure: ", setw(10), n_p   );
 //  Output::print<1>("dof all     : ", setw(10), n_dof );
-//  Output::print<1>("active dof  : ", setw(10), 2*nActive);
+//  Output::print<1>("active dof  : ", setw(10), 3*nActive);
 //
 //  TFEFunction3D * u1 = this->systems.front().u.GetComponent(0);
 //  TFEFunction3D * u2 = this->systems.front().u.GetComponent(1);
