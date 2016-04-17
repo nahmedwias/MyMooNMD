@@ -118,6 +118,7 @@ void TNSE_MGLevel::CorrectNodes(double *u1)
 /** set hanging nodes in order to satisfy coupling condition */
 void TNSE_MGLevel::SetHangingNodes(double *u1)
 {
+#ifdef __2D__
   int i, j, k;
   double value, value1, value2;
   int N_Hanging, N_Nodes;
@@ -130,8 +131,7 @@ void TNSE_MGLevel::SetHangingNodes(double *u1)
   double *u2;
 
   u2 = u1 + N_UDOF;
- 
-#ifdef __2D__
+
   N_Hanging = USpace->GetN_Hanging();
   if(N_Hanging)
   {
@@ -169,19 +169,7 @@ void TNSE_MGLevel::SetHangingNodes(double *u1)
 /** correct defect */
 void TNSE_MGLevel::CorrectDefect(double *v1)
 {
-  int i;
-
-  int N_Hanging, N_Nodes;
-  THangingNode *hn, **HangingNodes;
-  HNDesc HNDescr;
-  THNDesc *HNDescr_Obj;
-  double *Coupling;
-  int *DOF;
-  int FirstHangingNodeNumber;
-  double value, value1, value2;
-  int j,k;
   double *v2;
-
   v2 = v1 + N_UDOF;
 
   /*
@@ -196,8 +184,20 @@ void TNSE_MGLevel::CorrectDefect(double *v1)
   }
   */
 
-// /*
+  // /*
 #ifdef __2D__
+
+  int i;
+  int N_Hanging, N_Nodes;
+  THangingNode *hn, **HangingNodes;
+  HNDesc HNDescr;
+  THNDesc *HNDescr_Obj;
+  double *Coupling;
+  int *DOF;
+  int FirstHangingNodeNumber;
+  double value, value1, value2;
+  int j,k;
+
   N_Hanging = USpace->GetN_Hanging();
   if(N_Hanging)
   {
