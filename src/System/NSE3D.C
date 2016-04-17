@@ -94,7 +94,7 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // set the velocity and preesure spaces
+  // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);

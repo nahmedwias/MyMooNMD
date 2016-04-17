@@ -521,6 +521,19 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFE
   return my_matrix;
 
 }
+
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D(const TFESpace3D& velocity)
+{
+  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity});
+
+  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity),
+                           {{0,0}, {1,1}, {2,2}},
+                           {false, false, false});
+
+  return my_matrix;
+
+}
+
 #endif
 
 /* ************************************************************************* */
