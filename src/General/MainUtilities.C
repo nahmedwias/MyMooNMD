@@ -1521,11 +1521,11 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
   TFE3D *Element;
   TNodalFunctional3D *nf;
   RefTrans3D RefTrans;
-  double values[4], *xi_ref, *eta_ref, *zeta_ref;
+  double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
   double AbsDetjkVort[MaxN_QuadPoints_3D];
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
-  double val[4], *div1, *v1, *v2, *v3;
+  double val[4], *v1, *v2, *v3;  // *div1;
 
   // get information of the numbering of the degrees of freedom
   // of the vorticity
@@ -1803,7 +1803,7 @@ void SubGridDissipation(int N_Points, double *X, double *Y, double *Z,
                 double **coeffs, double *LocError)
 {
   int i;
-  double *deriv_x, *exactval, *deriv_y, *deriv_z, *exactval1, w, t, s;
+  double *deriv_x, *deriv_y, *deriv_z, w, t, s;
   double delta, mu, gradu[9], u[3];
 
   LocError[0] = 0.0;
@@ -1900,7 +1900,7 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
 {
   int i;
   double *deriv, *exactval, w, t, *coeff;
-  double eps, b1, b2, b3, c, f;
+  double b1, b2, b3, c, f;  //eps;
 
   LocError[0] = 0.0;
   LocError[1] = 0.0;
@@ -1908,7 +1908,7 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
   for(i=0;i<N_Points;i++)
   {
     coeff = coeffs[i];
-    eps = coeff[0];
+//    eps = coeff[0];
     b1 = coeff[1];
     b2 = coeff[2];
     b3 = coeff[3];
@@ -2820,10 +2820,10 @@ int ReadGrapeFile3D(char *name, int N_FEFct, int N_FEVectFct,
   int N_ScalarVar, N_VectorVar, N_Parameters, N_, N_LocFaces;
   int i, scalar;
   int *N_LocDOF;
-  TFEFunction3D *fct;
-  TFEVectFunct3D *vectfct;
+//  TFEFunction3D *fct;
+//  TFEVectFunct3D *vectfct;
   int N_Comp, N_DOF;
-  double *val, val1;
+  double *val; // val1;
   int SwitchBytes;
 
   std::ifstream dat(name);
