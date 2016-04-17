@@ -103,7 +103,7 @@ class Time_NSE3D
       TParFECommunicator3D parCommPressure_;
 #endif
 
-      /** TODO Implement these 2 constructors
+      /** TODO Implement the constructor used when ifdef_MPI
        * @brief constructor in mpi case
        * @param[in] example The current example.
        * @param[in] coll The collection of mesh cells of this grid.
@@ -112,14 +112,14 @@ class Time_NSE3D
        * main program and handed down to the FESpaces. Getting rid of this
        * construction is a TODO .
        */
-#ifdef _MPI
-      System_per_grid(const Example_NSE3D& example,
-                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
-                    int maxSubDomainPerDof);
-#else
+//#ifdef _MPI
+//      System_per_grid(const Example_NSE3D& example,
+//                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
+//                    int maxSubDomainPerDof);
+//#else
       System_per_grid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order,
                     Time_NSE3D::Matrix type);
-#endif
+//#endif
 
       // System_per_grid is not supposed to be copied or moved
       // until underlying classes realize the rule of zero.
@@ -198,7 +198,7 @@ class Time_NSE3D
                    &velocity_pressure_orders);
  public:
 
-    /** TODO Implement these 2 constructors
+    /** TODO Implement the constructor used when ifdef_MPI
      * @brief Standard constructor of an NSE3D problem.
      *
      * @note The domain must have been refined a couple of times already if you want
@@ -361,13 +361,10 @@ class Time_NSE3D
 //
 //   const TFEFunction3D  & get_pressure() const
 //     { return this->systems_.front().p_; }
-
    const TFESpace3D     & get_velocity_space() const
      { return this->systems_.front().velocitySpace_; }
-
    const TFESpace3D     & get_pressure_space() const
      { return this->systems_.front().pressureSpace_; }
-
 //   const BlockVector    & get_solution() const
 //     { return this->systems_.front().solution_; }
 //

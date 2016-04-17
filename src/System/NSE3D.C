@@ -138,15 +138,16 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
     size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
     size_t nTotal = 3*nDofu + nDofp;
     size_t nActive= 3*velocity_space.GetActiveBound();
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
     
     Output::print<1>("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
     Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
     Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
     Output::print<1>("ndof Total   :  ", setw(10), nTotal );
     Output::print<1>("nActive      :  ", setw(10), nActive);
-    double hmin, hmax;
-    coll->GetHminHmax(&hmin, &hmax);
-    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);    
+
     #endif
   }
   else // multigrid
