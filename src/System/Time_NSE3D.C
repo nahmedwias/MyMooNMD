@@ -177,8 +177,6 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   }
 }
 
-
-
 //
 //
 ///**************************************************************************** */
