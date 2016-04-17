@@ -168,7 +168,7 @@ class Time_NSE3D
     !        be stopped as soon as a desired reduction is achieved */
     double initial_residual_;
     
-    /** @brief Errors, held in ready to be accesed from outside the class
+    /** @brief Errors, held in ready to be accessed from outside the class
      * The array is filled during the function call NSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
      * (errors.at(0) is L2 and errors.at(1) is H1-semi)
@@ -209,190 +209,192 @@ class Time_NSE3D
      * @param domain The domain this problem lives on.
      * @param example The example to perform
      */
-#ifdef _MPI
-    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
-          int maxSubDomainPerDof);
-#else
+//#ifdef _MPI
+//    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
+//          int maxSubDomainPerDof);
+//#else
     Time_NSE3D(const TDomain& domain, const Example_NSE3D& example);
-#endif
-
-    /**
-     * TODO Implement this method. What's the difference with "set_parameters()"
-     * in TNSE2D class?
-     * @brief Check whether the program will be working with the
-     * current input parameters.
-     *
-     * ParMooN is work in progress, and so is this class. This method
-     * checks the parameters stored in the database and stops execution
-     * of the program, if some of these do not match.
-     * The method is a little makeshift and the cases caught here are various,
-     * but basically it is intended to stop execution of cases with
-     * parameter combinations which are not implemented for NSE3D or
-     * are currently known to be problematic.
-     *
-     * This is not yet a guarantee for a functioning program, but is
-     * intended to be, someday. Eventually this method and the like
-     * will be moved to TDatabase.
-     */
-    static void check_parameters();
-
-   /** TODO Implement this method.
-    * @brief Assemble all the matrices and rhs before the time iterations
-    *
-    * This includes the assembling of the Stiffness matrix, the Mass matrix,
-    * the additional matrix K in case of SUPG stabilization, and rhs.
-    * This assembling occurs just once, before entering any loop. It assembles
-    * linear terms only.
-    */
-    void assemble_initial_time();
-
-   /** TODO Implement this method.
-    * @brief Assemble the rhs only
-    * 1. Assembling the right hand side only
-    * 2. Scaling of the B-Blocks due to time stepping
-    * This function will prepare the right hand side during the time
-    * discretization but should be outside the nonlinear loop.
-    */
-    void assemble_rhs();
-
-    /** TODO Implement this method.
-     * @brief Assemble the whole system matrix which will be passed
-     * to the solvers.
-     */
-    void assemble_system();
-
-    /** TODO Implement this method.
-     * @brief Descale matrices
-     * This function will descale all A-blocks which were scaled
-     * during the function call time Time_NSE3D::assemble_system().
-     */
-    void descale_matrices();
-
-    /** TODO Implement this method.
-     * @brief Assemble the nonlinear terms
-     * Assemble the nonlinear terms. Need not be used when this is
-     * a Stokes problem, or once per nonlinear iteration if this
-     * is a Navier Stokes problem.
-     * The matrix blocks to which the nonlinear term contribute are reset
-     * to zero and then completely reassembled, including the linear and
-     * nonlinear terms.
-     */
-    void assemble_nonlinear_term();
+//#endif
     
-    /** TODO Implement this method.
-    *Solve the current linear system. Nonlinear loop is outside of this class.
-    */
-    void solve();
-
-    /** TODO Implement this method.
-     *  @brief check if one of the stopping criteria is fulfilled
-     * 
-     * either converged, maximum number of iterations reached, or slow
-     * convergence
-     * 
-     * @param iteration_counter current iterate
-     *
-     * @note For the sequential case, this is the copy-paste NSE2D
-     * (with exception of slightly different compute_residual methods).
-     */
-    bool stop_it(unsigned int iteration_counter);
-
-    /** TODO Implement this method.
-     * ! Measure errors and draw a nice VTK picture, if requested to do so.
-    ! @param i suffix for output file name, -1 means no suffix. */
-    void output(int i = -1);
-
-    /** TODO Implement this method.
-     * @brief Compute the defect Ax-b, and the residuals and store it all.
-     *
-     * Updates defect and old_residuals.
-     * A is the current matrix, x is the current solution and b is the
-     * right hand side. Call this function after assembling the nonlinear
-     * matrix with the current solution.
-     */
-    void compute_residuals();
-
-/*******************************************************************************/
-    // Declaration of special member functions - delete all but destructor.
-    // This problem class will be used to request the whole process of
-    // putting up and solving a single flow problem. It is, due to
-    // its procedural nature, not supposed to be copied.
-
-    //! Delete copy constructor. No copies allowed.
-    Time_NSE3D(const Time_NSE3D&) = delete;
-
-    //! Delete move constructor. No moves allowed.
-    Time_NSE3D(Time_NSE3D&&) = delete;
-
-    //! Delete copy assignment operator. No copies allowed.
-    Time_NSE3D& operator=(const Time_NSE3D&) = delete;
-
-    //! Default move assignment operator. No moves allowed.
-    Time_NSE3D& operator=(Time_NSE3D&&) = delete;
-
-    //! Default destructor. Does most likely cause memory leaks.
-    ~Time_NSE3D() = default;
-
-/*******************************************************************************/
-    /**
-     * @brief initialize multigrid levels for different NSTYPE's
-     * 
-     * @param: level
-     * @param: grid to be added
-     */
-    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
     
-    /**
-     * TODO Implement this method.
-     * @brief multigrid solver
-     * preparing the stuff used to call multigrid solver
-     */
-    void mg_solver();
-    
-/********************************************************************************/
-// getters
-   const BlockVector    & get_rhs()      const
-    { return this->systems_.front().rhs_; }
-
-   const TFEVectFunct3D & get_velocity() const
-    { return this->systems_.front().u_; }
-
-   const TFEFunction3D  & get_pressure() const
-     { return this->systems_.front().p_; }
-
-   const TFESpace3D     & get_velocity_space() const
-     { return this->systems_.front().velocitySpace_; }
-
-   const TFESpace3D     & get_pressure_space() const
-     { return this->systems_.front().pressureSpace_; }
-
-   const BlockVector    & get_solution() const
-     { return this->systems_.front().solution_; }
-
-   const int get_size() const
-     { return this->systems_.front().solution_.length(); }
-
-   const Example_NSE2D  & get_example()  const
-     { return example_; }
-
-//  // try not to use the below methods which are not const
-//  TFEVectFunct3D & get_velocity()
+// ======================================================================
+//    /**
+//     * TODO Implement this method. What's the difference with "set_parameters()"
+//     * in TNSE2D class?
+//     * @brief Check whether the program will be working with the
+//     * current input parameters.
+//     *
+//     * ParMooN is work in progress, and so is this class. This method
+//     * checks the parameters stored in the database and stops execution
+//     * of the program, if some of these do not match.
+//     * The method is a little makeshift and the cases caught here are various,
+//     * but basically it is intended to stop execution of cases with
+//     * parameter combinations which are not implemented for NSE3D or
+//     * are currently known to be problematic.
+//     *
+//     * This is not yet a guarantee for a functioning program, but is
+//     * intended to be, someday. Eventually this method and the like
+//     * will be moved to TDatabase.
+//     */
+//    static void check_parameters();
+//
+//   /** TODO Implement this method.
+//    * @brief Assemble all the matrices and rhs before the time iterations
+//    *
+//    * This includes the assembling of the Stiffness matrix, the Mass matrix,
+//    * the additional matrix K in case of SUPG stabilization, and rhs.
+//    * This assembling occurs just once, before entering any loop. It assembles
+//    * linear terms only.
+//    */
+//    void assemble_initial_time();
+//
+//   /** TODO Implement this method.
+//    * @brief Assemble the rhs only
+//    * 1. Assembling the right hand side only
+//    * 2. Scaling of the B-Blocks due to time stepping
+//    * This function will prepare the right hand side during the time
+//    * discretization but should be outside the nonlinear loop.
+//    */
+//    void assemble_rhs();
+//
+//    /** TODO Implement this method.
+//     * @brief Assemble the whole system matrix which will be passed
+//     * to the solvers.
+//     */
+//    void assemble_system();
+//
+//    /** TODO Implement this method.
+//     * @brief Descale matrices
+//     * This function will descale all A-blocks which were scaled
+//     * during the function call time Time_NSE3D::assemble_system().
+//     */
+//    void descale_matrices();
+//
+//    /** TODO Implement this method.
+//     * @brief Assemble the nonlinear terms
+//     * Assemble the nonlinear terms. Need not be used when this is
+//     * a Stokes problem, or once per nonlinear iteration if this
+//     * is a Navier Stokes problem.
+//     * The matrix blocks to which the nonlinear term contribute are reset
+//     * to zero and then completely reassembled, including the linear and
+//     * nonlinear terms.
+//     */
+//    void assemble_nonlinear_term();
+//
+//    /** TODO Implement this method.
+//    *Solve the current linear system. Nonlinear loop is outside of this class.
+//    */
+//    void solve();
+//
+//    /** TODO Implement this method.
+//     *  @brief check if one of the stopping criteria is fulfilled
+//     *
+//     * either converged, maximum number of iterations reached, or slow
+//     * convergence
+//     *
+//     * @param iteration_counter current iterate
+//     *
+//     * @note For the sequential case, this is the copy-paste NSE2D
+//     * (with exception of slightly different compute_residual methods).
+//     */
+//    bool stop_it(unsigned int iteration_counter);
+//
+//    /** TODO Implement this method.
+//     * ! Measure errors and draw a nice VTK picture, if requested to do so.
+//    ! @param i suffix for output file name, -1 means no suffix. */
+//    void output(int i = -1);
+//
+//    /** TODO Implement this method.
+//     * @brief Compute the defect Ax-b, and the residuals and store it all.
+//     *
+//     * Updates defect and old_residuals.
+//     * A is the current matrix, x is the current solution and b is the
+//     * right hand side. Call this function after assembling the nonlinear
+//     * matrix with the current solution.
+//     */
+//    void compute_residuals();
+//
+///*******************************************************************************/
+//    // Declaration of special member functions - delete all but destructor.
+//    // This problem class will be used to request the whole process of
+//    // putting up and solving a single flow problem. It is, due to
+//    // its procedural nature, not supposed to be copied.
+//
+//    //! Delete copy constructor. No copies allowed.
+//    Time_NSE3D(const Time_NSE3D&) = delete;
+//
+//    //! Delete move constructor. No moves allowed.
+//    Time_NSE3D(Time_NSE3D&&) = delete;
+//
+//    //! Delete copy assignment operator. No copies allowed.
+//    Time_NSE3D& operator=(const Time_NSE3D&) = delete;
+//
+//    //! Default move assignment operator. No moves allowed.
+//    Time_NSE3D& operator=(Time_NSE3D&&) = delete;
+//
+//    //! Default destructor. Does most likely cause memory leaks.
+//    ~Time_NSE3D() = default;
+//
+///*******************************************************************************/
+//    /**
+//     * @brief initialize multigrid levels for different NSTYPE's
+//     *
+//     * @param: level
+//     * @param: grid to be added
+//     */
+//    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
+//
+//    /**
+//     * TODO Implement this method.
+//     * @brief multigrid solver
+//     * preparing the stuff used to call multigrid solver
+//     */
+//    void mg_solver();
+//
+///********************************************************************************/
+//// getters
+//   const BlockVector    & get_rhs()      const
+//    { return this->systems_.front().rhs_; }
+//
+//   const TFEVectFunct3D & get_velocity() const
 //    { return this->systems_.front().u_; }
-//  TFEFunction3D *get_velocity_component(int i);
-
-//  /// @brief Get the current residuals  (updated in compute_residuals)
-//  const Residuals& get_residuals() const;
-//  /// @brief get the current impuls residual (updated in compute_residuals)
-//  double get_impuls_residual() const;
-//  /// @brief get the current mass residual (updated in compute_residuals)
-//  double get_mass_residual() const;
-//  /// @brief get the current residual (updated in compute_residuals)
-//  double get_full_residual() const;
-
-  /** TODO Implement this method.
-   * @brief return the computed errors (computed in output())
-   */
-  std::array<double, int(4)> get_errors() const;
+//
+//   const TFEFunction3D  & get_pressure() const
+//     { return this->systems_.front().p_; }
+//
+//   const TFESpace3D     & get_velocity_space() const
+//     { return this->systems_.front().velocitySpace_; }
+//
+//   const TFESpace3D     & get_pressure_space() const
+//     { return this->systems_.front().pressureSpace_; }
+//
+//   const BlockVector    & get_solution() const
+//     { return this->systems_.front().solution_; }
+//
+//   const int get_size() const
+//     { return this->systems_.front().solution_.length(); }
+//
+//   const Example_NSE2D  & get_example()  const
+//     { return example_; }
+//
+////  // try not to use the below methods which are not const
+////  TFEVectFunct3D & get_velocity()
+////    { return this->systems_.front().u_; }
+////  TFEFunction3D *get_velocity_component(int i);
+//
+////  /// @brief Get the current residuals  (updated in compute_residuals)
+////  const Residuals& get_residuals() const;
+////  /// @brief get the current impuls residual (updated in compute_residuals)
+////  double get_impuls_residual() const;
+////  /// @brief get the current mass residual (updated in compute_residuals)
+////  double get_mass_residual() const;
+////  /// @brief get the current residual (updated in compute_residuals)
+////  double get_full_residual() const;
+//
+//  /** TODO Implement this method.
+//   * @brief return the computed errors (computed in output())
+//   */
+//  std::array<double, int(4)> get_errors() const;
 };
 
 

@@ -351,6 +351,16 @@ class BlockFEMatrix : public BlockMatrix
      * whose block structure is of NSE Type 14.
      */
     static BlockFEMatrix NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure);
+
+    /**
+     * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
+     *
+     * @param velocity The velocity finite element space
+     * @return A newly constructed BlockFEMatrix for
+     * 3D NSE time dependent problems
+     */
+    static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
+
 #endif
 
 
