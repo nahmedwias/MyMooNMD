@@ -85,7 +85,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   // pressure space.
   // NOTE: this method has the same purpose as set_parameters or check_parameters
   // In the future, these 3 different functions should be merged in one
-  // check function. This will certainly be the case with the implementation of
+  // check function. This will be the case with the implementation of
   // the new database.
   this->get_velocity_pressure_orders(velocity_pressure_orders);
 
@@ -119,33 +119,32 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
 
-  // print out some information about number of DoFs
+  // print out some information about number of DoFs and mesh size
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
   int nActive = this->get_velocity_space().GetN_ActiveDegrees();
+  double h_min, h_max;
+  coll->GetHminHmax(&h_min, &h_max);
 
-//  double h_min, h_max;
-//  coll->GetHminHmax(&h_min, &h_max);
-//  Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
-//  Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
-//  Output::print<1>("dof Velocity: ", setw(10), 3* n_u);
-//  Output::print<1>("dof Pressure: ", setw(10), n_p   );
-//  Output::print<1>("dof all     : ", setw(10), n_dof );
-//  Output::print<1>("active dof  : ", setw(10), 3*nActive);
-//
-//  TFEFunction3D * u1 = this->systems.front().u.GetComponent(0);
-//  TFEFunction3D * u2 = this->systems.front().u.GetComponent(1);
-//
-//  u1->Interpolate(example.get_initial_cond(0));
-//  u2->Interpolate(example.get_initial_cond(1));
-//
-//  // done with the conrtuctor in case we're not using multigrid
-//  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE!= 5
-//    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-//    return;
-//  // else multigrid
-//
+  Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
+  Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
+  Output::print<1>("dof Velocity: ", setw(10), 3* n_u);
+  Output::print<1>("dof Pressure: ", setw(10), n_p   );
+  Output::print<1>("dof all     : ", setw(10), n_dof );
+  Output::print<1>("active dof  : ", setw(10), 3*nActive);
+
+  // Initial velocity = interpolation of initial conditions
+  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+  u1->Interpolate(example_.get_initial_cond(0));
+  u2->Interpolate(example_.get_initial_cond(1));
+  u3->Interpolate(example_.get_initial_cond(2));
+  }
+  else // multigrid  TODO: Multigrid in TNSE3D is not implemented yet.
+    // it has to be constructed here
+  {
 //  // create spaces, functions, matrices on coarser levels
 //  double *param = new double[10];
 //  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
@@ -175,6 +174,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
 //    this->multigrid->AddLevel(this->mg_levels(i, *it));
 //    i++;
 //  }
+  }
 }
 
 

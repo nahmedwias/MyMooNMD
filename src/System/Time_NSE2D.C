@@ -96,9 +96,9 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
   int nActive = this->get_velocity_space().GetN_ActiveDegrees();  
-  
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
+
   Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
   Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
   Output::print<1>("dof Velocity: ", setw(10), 2* n_u);
