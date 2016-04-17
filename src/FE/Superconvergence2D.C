@@ -309,18 +309,18 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
  
   const TFESpace2D *q1_space, *q2_space;
   double *q1_values, *q2_values;
-  int q1_ndof, q2_ndof;
+//  int q1_ndof, q2_ndof;   // set but unused variables
   TCollection *q1_coll, *q2_coll;
   TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   TBaseCell *child_cell2,*child_cell3;
   double coarse_values[9];
-  double fine_values[9];
+//  double fine_values[9];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
   int *coarse_BeginIndex,*fine_BeginIndex;
   int l,n0,n1,n2,n3;
   int *dof;
-  TAuxParam2D *aux2d;
-  const TFESpace2D *fesp2d[1];
+//  TAuxParam2D *aux2d;
+//  const TFESpace2D *fesp2d[1];
   int j,k;
   
   q1_space=q1_function->GetFESpace2D();
@@ -329,9 +329,9 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
   q2_coll=q2_space->GetCollection();
   q1_coll=q1_space->GetCollection();
   
-  q1_ndof=q1_space->GetN_DegreesOfFreedom();
+//  q1_ndof=q1_space->GetN_DegreesOfFreedom();   // it is not used in the rest of this function
   q1_values=q1_function->GetValues();
-  q2_ndof=q2_space->GetN_DegreesOfFreedom();
+//  q2_ndof=q2_space->GetN_DegreesOfFreedom();   // it is not used in the rest of this function
   q2_values=q2_function->GetValues();
   
 
@@ -397,7 +397,7 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
   const TFESpace2D *q3_space;
 
   double *q2_values,*q3_values;
-  int q2_ndof,q3_ndof;
+//  int q2_ndof,q3_ndof;   // set but unused variables
   
   TCollection *q3_coll, *q2_coll;
   TBaseCell *coarse_cell,*child_cell0,*child_cell1;
@@ -408,8 +408,8 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
   int *coarse_BeginIndex,*fine_BeginIndex;
   int l,n0,n1,n2,n3;
   int *dof;
-  TAuxParam2D *aux2d;
-  const TFESpace2D *fesp2d[1];
+//  TAuxParam2D *aux2d;
+//  const TFESpace2D *fesp2d[1];
   int j,k;
 
   q2_space=q2_function->GetFESpace2D();
@@ -418,9 +418,9 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
   q2_coll=q2_space->GetCollection();
   q3_coll=q3_space->GetCollection();
   
-  q2_ndof=q2_space->GetN_DegreesOfFreedom();
+//  q2_ndof=q2_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q2_values=q2_function->GetValues();
-  q3_ndof=q3_space->GetN_DegreesOfFreedom();
+//  q3_ndof=q3_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q3_values=q3_function->GetValues();
   
   coarse_GlobalNumbers=q3_space->GetGlobalNumbers();
@@ -485,7 +485,7 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
   const TFESpace2D *q4_space;
 
   double *q2_values,*q4_values;
-  int q2_ndof,q4_ndof;
+//  int q2_ndof,q4_ndof;   // set but unused
   
   TCollection *q4_coll, *q2_coll;
   TBaseCell *coarse_cell;
@@ -496,8 +496,8 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
   int *coarse_BeginIndex,*fine_BeginIndex;
   int l,n0,n1,n2,n3;
   int *dof;
-  TAuxParam2D *aux2d;
-  const TFESpace2D *fesp2d[1];
+//  TAuxParam2D *aux2d;
+//  const TFESpace2D *fesp2d[1];
   int j,k;
   
   q2_space=q2_function->GetFESpace2D();
@@ -506,9 +506,9 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
   q2_coll=q2_space->GetCollection();
   q4_coll=q4_space->GetCollection();
   
-  q2_ndof=q2_space->GetN_DegreesOfFreedom();
+//  q2_ndof=q2_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   q2_values=q2_function->GetValues();
-  q4_ndof=q4_space->GetN_DegreesOfFreedom();
+//  q4_ndof=q4_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   q4_values=q4_function->GetValues();
   
   coarse_GlobalNumbers=q4_space->GetGlobalNumbers();
@@ -571,7 +571,7 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
 {
   const TFESpace2D *p1_space, *p2_space;
   double *p1_values, *p2_values;
-  int p1_ndof, p2_ndof;
+//  int p1_ndof, p2_ndof;   // set but unused
   TCollection *p1_coll, *p2_coll;
   TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   TBaseCell *child_cell2,*child_cell3;
@@ -581,8 +581,8 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
   int *coarse_BeginIndex,*fine_BeginIndex;
   int l,n0,n1,n2,n3;
   int *dof;
-  TAuxParam2D *aux2d;
-  const TFESpace2D *fesp2d[1];
+//  TAuxParam2D *aux2d;
+//  const TFESpace2D *fesp2d[1];
   int j,k;
   
   p1_space=p1_function->GetFESpace2D();
@@ -591,9 +591,9 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
   p2_coll=p2_space->GetCollection();
   p1_coll=p1_space->GetCollection();
   
-  p1_ndof=p1_space->GetN_DegreesOfFreedom();
+//  p1_ndof=p1_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   p1_values=p1_function->GetValues();
-  p2_ndof=p2_space->GetN_DegreesOfFreedom();
+//  p2_ndof=p2_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   p2_values=p2_function->GetValues();
   
 
@@ -660,7 +660,7 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
   const TFESpace2D *p2_space;
 
   double *q1n_values,*p2_values;
-  int q1n_ndof,p2_ndof;
+//  int q1n_ndof,p2_ndof;   // set but unused
   
   TCollection *p2_coll, *q1n_coll;
   TBaseCell *coarse_cell,*child_cell0,*child_cell1;
@@ -671,8 +671,8 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
   int *coarse_BeginIndex,*fine_BeginIndex;
   int l,n0,n1,n2,n3;
   int *dof;
-  TAuxParam2D *aux2d;
-  const TFESpace2D *fesp2d[1];
+//  TAuxParam2D *aux2d;
+//  const TFESpace2D *fesp2d[1];
   int j,k;
 
   q1n_space=q1n_function->GetFESpace2D();
@@ -681,9 +681,9 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
   q1n_coll=q1n_space->GetCollection();
   p2_coll=p2_space->GetCollection();
   
-  q1n_ndof=q1n_space->GetN_DegreesOfFreedom();
+//  q1n_ndof=q1n_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q1n_values=q1n_function->GetValues();
-  p2_ndof=p2_space->GetN_DegreesOfFreedom();
+//  p2_ndof=p2_space->GetN_DegreesOfFreedom();    // not used in the rest of this function
   p2_values=p2_function->GetValues();
   
   coarse_GlobalNumbers=p2_space->GetGlobalNumbers();
