@@ -195,6 +195,10 @@ int main(int argc, char* argv[])
       TDatabase::TimeDB->CURRENTTIME += tau;
 
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+      // prepare the right hand side vector - needed only once per time step
+      tnse3d.assemble_rhs();
+
 //  for(unsigned int k=1;; k++)
 //  {
 //    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",

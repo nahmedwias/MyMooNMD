@@ -113,6 +113,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     // TNSE3D: nonstationary Navier-Stokes problems
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling3D_type::TNSE3D_Rhs:
       this->set_parameters_for_tnse(type);
       break;
     default:
@@ -1020,6 +1021,33 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
         default:
           ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ",  TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE, 
                    "not supported");
+      }
+      break;
+    // local assembling of right hand side
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+      // case 0: fixed point iteration, case 1: Newton iteration
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+      {
+        case 0:  // fixed point iteration
+          this->N_Terms = 1;
+          this->Derivatives = { D000 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 0};
+          this->AssembleParam =TimeNSRHS3D;
+          this->Manipulate = NULL;
+          break;
+        case 1: // Newton iteration
+          ErrThrow("Newton iteration is not supported yet.");
+          break;
+        default:
+          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ", TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
+                   " not supported.");
       }
       break;
     default:

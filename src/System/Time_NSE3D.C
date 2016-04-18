@@ -460,10 +460,10 @@ void Time_NSE3D::assemble_initial_time()
       v_space->getBoundCondition(), p_space->getBoundCondition() };
 
     std::array<BoundValueFunct3D*, 4> boundary_values;
-    boundary_values[0] = example_.get_bd()[0];
-    boundary_values[1] = example_.get_bd()[1];
-    boundary_values[2] = example_.get_bd()[2];
-    boundary_values[3] = example_.get_bd()[3];
+    boundary_values[0] = example_.get_bd(0);
+    boundary_values[1] = example_.get_bd(1);
+    boundary_values[2] = example_.get_bd(2);
+    boundary_values[3] = example_.get_bd(3);
 
     // Finite element functions for non-linear terms
     // for initial assembling, they correspond to the initial conditions
@@ -502,45 +502,55 @@ void Time_NSE3D::assemble_initial_time()
   this->old_solution_ = this->systems_.front().solution_;
 }
 
-///**************************************************************************** */
-//void Time_NSE3D::assemble_rhs()
-//{
-//  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-//  const double theta2 = TDatabase::TimeDB->THETA2;
-//  const double theta3 = TDatabase::TimeDB->THETA3;
-//  const double theta4 = TDatabase::TimeDB->THETA4;
-//
-//  System_per_grid& s = this->systems.front();
-//  // reset the right hand side
-//  s.rhs.reset();
-//  // assembling of the right hand side
-//  TFEFunction3D *fe_functions[3] =
-//  { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-//
-//  LocalAssembling3D la(TNSE3D_Rhs, fe_functions,
-//                           this->example.get_coeffs());
-//
-//  int N_Rhs = 3;
-//  const TFESpace3D * v_space = &this->get_velocity_space();
-//  const TFESpace3D * p_space = &this->get_pressure_space();
-//
-//  double *rhsArray[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
-//
-//  const TFESpace3D *fespmat[2] = {v_space, p_space};
-//  const TFESpace3D *fesprhs[3] = {v_space, v_space, p_space};
-//
-//  BoundCondFunct3D * boundary_conditions[3] = {
-//             v_space->GetBoundCondition(), v_space->GetBoundCondition(),
-//              p_space->GetBoundCondition() };
-//
-//   std::array<BoundValueFunct3D*, 3> non_const_bound_values;
-//   non_const_bound_values[0] = this->example.get_bd(0);
-//   non_const_bound_values[1] = this->example.get_bd(1);
-//   non_const_bound_values[2] = this->example.get_bd(2);
-//
+/**************************************************************************** */
+void Time_NSE3D::assemble_rhs()
+{
+  // TODO Should it be timesteplength or currenttimesteplength
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  const double theta1 = TDatabase::TimeDB->THETA1;
+  const double theta2 = TDatabase::TimeDB->THETA2;
+  const double theta3 = TDatabase::TimeDB->THETA3;
+  const double theta4 = TDatabase::TimeDB->THETA4;
+
+  // reset the right hand side of the grid of interest (finest)
+  System_per_grid& s = this->systems_.front();
+  s.rhs_.reset();
+
+  // some definitions necessary for assembling
+  TFEFunction3D *fe_functions[4] =
+  { s.u_.GetComponent(0),
+    s.u_.GetComponent(1),
+    s.u_.GetComponent(2),
+    &s.p_ };
+
+  int nRhs = 3;  // number of rhs blocks - TODO for NSType 4 and 14, it is 4
+  const TFESpace3D *v_space = &this->get_velocity_space();
+  const TFESpace3D *p_space = &this->get_pressure_space();
+
+  // TODO Implement the case NSType 4 and 14 where there's a 4th rhs block
+  double *rhsArray[3] = {s.rhs_.block(0), s.rhs_.block(1), s.rhs_.block(2)};
+
+  const TFESpace3D *spaces[2] = {v_space, p_space};
+  const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+
+  BoundCondFunct3D *boundary_conditions[4] = {
+             v_space->getBoundCondition(), v_space->getBoundCondition(),
+             v_space->getBoundCondition(), p_space->getBoundCondition() };
+
+   std::array<BoundValueFunct3D*, 4> boundary_values;
+   boundary_values[0] = this->example_.get_bd(0);
+   boundary_values[1] = this->example_.get_bd(1);
+   boundary_values[2] = this->example_.get_bd(2);
+   boundary_values[3] = this->example_.get_bd(3);
+
+   // Assembling the right hand side
+  LocalAssembling3D
+      localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
+                      fe_functions,this->example_.get_coeffs());
+
 //   Assemble3D(1, fespmat, 0, nullptr,
 //              0, nullptr, N_Rhs, rhsArray, fesprhs,
-//              boundary_conditions, non_const_bound_values.data(), la);
+//              boundary_conditions, non_const_bound_values.data(), localAssembling);
 //   // copy the non active to the solution vector
 //   // since the rhs vector will be passed to the solver
 //   // and is modified with matrix vector multiplication
@@ -599,8 +609,8 @@ void Time_NSE3D::assemble_initial_time()
 //     this->multigrid->RestrictToAllGrids();
 //
 //  Output::print<5>("assembled the system right hand side ");
-//}
-//
+}
+
 ///**************************************************************************** */
 //void Time_NSE3D::assemble_system()
 //{
