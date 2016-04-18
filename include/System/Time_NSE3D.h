@@ -117,8 +117,8 @@ class Time_NSE3D
 //                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
 //                    int maxSubDomainPerDof);
 //#else
-      System_per_grid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order,
-                    Time_NSE3D::Matrix type);
+      System_per_grid(const Example_NSE3D& example, TCollection& coll,
+                      std::pair<int, int> order, Time_NSE3D::Matrix type);
 //#endif
 
       // System_per_grid is not supposed to be copied or moved
@@ -198,6 +198,12 @@ class Time_NSE3D
                    &velocity_pressure_orders);
  public:
 
+    /** @brief constructor
+    * This constructor calls the other constructor creating an Example_NSE3D
+    * object.
+    */
+   Time_NSE3D(const TDomain& domain, int reference_id = -4711);
+
     /** TODO Implement the constructor used when ifdef_MPI
      * @brief Standard constructor of an NSE3D problem.
      *
@@ -213,7 +219,8 @@ class Time_NSE3D
 //    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
 //          int maxSubDomainPerDof);
 //#else
-    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example);
+    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
+               int reference_id = -4711);
 //#endif
     
     
@@ -245,7 +252,7 @@ class Time_NSE3D
     * This assembling occurs just once, before entering any loop. It assembles
     * linear terms only.
     */
-    void assemble_initial_time();
+//    void assemble_initial_time();
 
 //   /** TODO Implement this method.
 //    * @brief Assemble the rhs only
