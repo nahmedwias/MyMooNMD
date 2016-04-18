@@ -289,7 +289,7 @@ void Time_NSE3D::assemble_initial_time()
   std::vector<TMatrix3D*>       rectMatrices(nRectMatrices);
   std::vector<double*>          rhsArray(nRhs);
 
-  for(System_per_grid& s : this->systems_)
+  for(System_per_grid& s : this->systems_) // from back to front (coarse to fine)
   {
     const TFESpace3D *v_space = &s.velocitySpace_;
     const TFESpace3D *p_space = &s.pressureSpace_;
@@ -477,11 +477,17 @@ void Time_NSE3D::assemble_initial_time()
 //               nRectMatrices, rectMatrices, nRhs, rhsArray, rhsSpaces,
 //               boundary_conditions, boundary_values.data(), la);
 
-    // TODO does this have to be inside this loop or outside?
-    // see difference between TNSE2D and NSE3D
-    // copy non-actives from rhs to solution of current grid
-    s.solution_.copy_nonactive(s.rhs_);
-  }// end for system per grid - the last system is the finer one
+  }// end for system per grid - the last system is the finer one (front)
+
+  /** manage dirichlet condition by copying non-actives DoFs
+  * from rhs to solution of front grid (=finest grid)
+  * Note: this operation can also be done inside the loop, so that
+  * the s.solution is corrected on every grid. This is the case in
+  * TNSE2D.
+  * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
+  * and doing it only on the finest grid!
+  * **/
+  this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
 
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
