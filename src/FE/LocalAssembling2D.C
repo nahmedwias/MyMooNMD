@@ -2198,7 +2198,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   // few checks
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
-    ErrMsg("Newton method does not supported yet");
+    ErrMsg("Newton method is not supported yet");
     exit(1);
   }
   if(TDatabase::ParamDB->LAPLACETYPE == 1)
@@ -2212,7 +2212,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
   {
-    ErrMsg("Skew symmetric case is not implement for all NSTYPE");
+    ErrMsg("Skew symmetric case is not implemented for all NSTYPE");
     exit(1);
   }
   

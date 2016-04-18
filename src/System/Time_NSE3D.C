@@ -327,6 +327,8 @@ void Time_NSE3D::assemble_initial_time()
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get());
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
         rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+
+        nRhs = 3;
         break;
       case 2:
         if(blocks.size() != 7)
@@ -342,10 +344,12 @@ void Time_NSE3D::assemble_initial_time()
         nRectMatrices = 6;
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(4).get()); //first the lying B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(5).get());
-        rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(6).get());
-        rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get()); //then the standing B blocks
-        rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
-        rectMatrices[6] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(6).get());
+        rectMatrices[3] = reinterpret_cast<TMatrix3D*>(blocks.at(1).get()); //then the standing B blocks
+        rectMatrices[4] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
+        rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
+
+        nRhs = 3;
         break;
       case 3:
         if(blocks.size() != 12)
@@ -371,8 +375,10 @@ void Time_NSE3D::assemble_initial_time()
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  // standing B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+
+        nRhs = 3;
         break;
-      case 4:
+      case 4: // TODO THIS CASE GIVES A SEGMENTATION FAULT. HAS TO BE CORRECTED
         if(blocks.size() != 15)
         {
           ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
@@ -400,7 +406,7 @@ void Time_NSE3D::assemble_initial_time()
         rectMatrices[5] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
 
         // right hand side must be adapted
-        rhsArray[3] = s.rhs_.block(3); // NSE type 4 includes pressure rhs
+        rhsArray[3] = s.rhs_.block(3); // NSE type 4 includes pressure rhs_
         rhsSpaces[3] = p_space;
         nRhs = 4;
         break;
@@ -409,7 +415,7 @@ void Time_NSE3D::assemble_initial_time()
         {
           ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 16.");
         }
-        nSquareMatrices = 10;
+        nSquareMatrices = 11;
         sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
         sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
         sqMatrices[2] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
@@ -467,15 +473,17 @@ void Time_NSE3D::assemble_initial_time()
         s.u_.GetComponent(2),
         &s.p_ };
 
-//    // TODO Implement Local assembling object
-//    LocalAssembling3D la(TNSE3D, fe_functions,
-//                         this->example_.get_coeffs());
-//
-//    // TODO Implement assemble3D for TNSE3D
-//    // assemble all the matrices and right hand side
-//    Assemble3D(nFESpace, spaces, nSquareMatrices, sqMatrices,
-//               nRectMatrices, rectMatrices, nRhs, rhsArray, rhsSpaces,
-//               boundary_conditions, boundary_values.data(), la);
+    // local assembling object - used in Assemble3D
+    const LocalAssembling3D
+              localAssembling(LocalAssembling3D_type::TNSE3D_LinGAL,
+                              fe_functions,this->example_.get_coeffs());
+
+    // assemble all the matrices and right hand side
+    Assemble3D(nFESpace, spaces,
+               nSquareMatrices, sqMatrices.data(),
+               nRectMatrices, rectMatrices.data(),
+               nRhs, rhsArray.data(), rhsSpaces,
+               boundary_conditions, boundary_values.data(), localAssembling);
 
   }// end for system per grid - the last system is the finer one (front)
 

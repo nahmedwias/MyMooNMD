@@ -414,7 +414,6 @@ void NSE3D::assemble_linear_terms()
 
         nRhs = 3;
         break;
-
       case 4:
         nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
@@ -463,7 +462,6 @@ void NSE3D::assemble_linear_terms()
         //right hand side must be adapted
         nRhs = 4;
         rhsArray[3]=s.rhs_.block(3);
-
         break;
     }// endswitch nstype
 
