@@ -859,6 +859,9 @@ void NSE3D::output(int i)
   delete u1;
   delete u2;
   delete u3;
+
+  //do postprocessing step depending on what the example implements
+  example_.do_post_processing(*this);
 }
 
 TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::System_per_grid& s)

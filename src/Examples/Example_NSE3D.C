@@ -1,4 +1,5 @@
 #include <Example_NSE3D.h>
+#include <NSE3D.h>
 
 #include <FEDatabase3D.h>
 #include <Database.h>
@@ -182,6 +183,9 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        /**post processing - drag and lift calculation and output */
+        post_processing_stat = compute_drag_lift_pdiff;
+
         ExampleFile();
         break;
       }
@@ -332,4 +336,14 @@ Example_NSE3D::Example_NSE3D() : Example3D()
   }
 }
 
-      
+void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(nse3d);
+  }
+  else
+  {
+    Output::print<2>("INFO -- no post processing done for the current example.");
+  }
+}

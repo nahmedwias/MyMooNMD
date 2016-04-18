@@ -297,16 +297,24 @@ class NSE3D
     
 /********************************************************************************/
 // getters
-   const TFEVectFunct3D & get_velocity() const
+    const TFEVectFunct3D& get_velocity() const
     { return this->systems_.front().u_; }
-    TFEVectFunct3D & get_velocity()
-    { return this->systems_.front().u_; }    
+
+    TFEVectFunct3D& get_velocity()
+    { return this->systems_.front().u_; }
+
     TFEFunction3D *get_velocity_component(int i);
-    TFEFunction3D & get_pressure()
+
+    const TFEFunction3D& get_pressure() const
     { return this->systems_.front().p_; }
-    const TFESpace3D & get_velocity_space() const
+
+    TFEFunction3D& get_pressure()
+    { return this->systems_.front().p_; }
+
+    const TFESpace3D& get_velocity_space() const
     { return this->systems_.front().velocitySpace_; }
-    const TFESpace3D & get_pressure_space() const
+
+    const TFESpace3D& get_pressure_space() const
     { return this->systems_.front().pressureSpace_; }
     
     const int get_size(){return this->systems_.front().solution_.length();}
