@@ -197,9 +197,16 @@ int main(int argc, char* argv[])
       // assemble the nonlinear matrices
       tnse3d.assemble_nonlinear_term();
 
-//  for(unsigned int k=1;; k++)
-//  {
-//    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",
+      // prepare the matrices for defect computations and solvers
+      tnse3d.assemble_system();
+
+      for(unsigned int k=0; k <= 10; k++)
+      {
+//        // checking residuals
+//        if(tnse3d.stop_it(k))
+//          break;
+
+//        Output::print<1>("\nnonlinear iteration step ", setw(3), k, "\t",
 //                     nse3d.get_residuals());
 //
 //    // solve the system
@@ -207,11 +214,9 @@ int main(int argc, char* argv[])
 //
 //    nse3d.assemble_non_linear_term();
 //
-//    // checking residuals
-//    if(nse3d.stop_it(k))
-//      break;
+
 //
-//  }
+      }  // end of nonlinear loop
 //  nse3d.output();
 //
 //  Output::close_file();
@@ -220,7 +225,7 @@ int main(int argc, char* argv[])
 //  MPI_Finalize();
 //#endif
 //
-    }
-  }
+    } // end of subtime loop
+  } // end of time loop
   return 0;
 }

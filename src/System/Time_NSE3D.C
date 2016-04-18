@@ -624,26 +624,6 @@ void Time_NSE3D::assemble_rhs()
   Output::print<5>("assembled the system right hand side ");
 }
 
-///**************************************************************************** */
-//void Time_NSE3D::assemble_system()
-//{
-//  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-//  double factor = tau*TDatabase::TimeDB->THETA1;
-//
-//  for(System_per_grid& s : this->systems)
-//  {
-//    const std::vector<std::vector<size_t>>
-//      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
-//    // note: declaring the auxiliary cell_positions is needed by the compiler
-//    // to sort out the overriding of the function scale_blocks_actives(...,...)
-//    s.matrix.scale_blocks_actives(factor, cell_positions);
-//    const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
-//    s.matrix.add_matrix_actives(mass_bloks, 1.0, {{0,0}, {1,1}}, {false, false});
-//  }
-//  Output::print<5>("Assembled the system matrix which will be passed to the ",
-//                   "solver");
-//}
-
 /**************************************************************************** */
 void Time_NSE3D::assemble_nonlinear_term()
 {
@@ -721,39 +701,68 @@ void Time_NSE3D::assemble_nonlinear_term()
   Output::print<5>("Assembled the nonlinear matrix only ");
 }
 
+/**************************************************************************** */
+void Time_NSE3D::assemble_system()
+{
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double factor = tau*TDatabase::TimeDB->THETA1;
+
+  for(System_per_grid& s : this->systems_)
+  {
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {0,2},
+                        {1,0}, {1,1}, {1,2},
+                        {2,0}, {2,1}, {2,2}};
+
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix_.scale_blocks_actives(factor, cell_positions);
+
+    const FEMatrix& mass_blocks =
+        *s.massMatrix_.get_blocks().at(0).get();
+
+    s.matrix_.add_matrix_actives(mass_blocks, 1.0,
+                                 {{0,0}, {1,1}, {2,2}},
+                                 {false, false, false});
+  }
+  cout << "test" << endl;
+  Output::print<5>("Assembled the system matrix which will be passed to the ",
+                   "solver");
+}
+
 ///**************************************************************************** */
-//bool Time_NSE3D::stopIte(unsigned int it_counter)
+//bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 //{
-//  System_per_grid& s = this->systems.front();
-//  unsigned int nuDof = s.solution.length(0);
-//  unsigned int npDof = s.solution.length(2);
+//  System_per_grid& s = this->systems_.front();
+//  unsigned int nuDof = s.solution_.length(0);
+//  unsigned int npDof = s.solution_.length(2);
 //
-//  this->defect = s.rhs;
-//  s.matrix.apply_scaled_add(s.solution, defect,-1.);
+//  this->defect_ = s.rhs_;
+//  s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
 //  //
 //  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-//    IntoL20FEFunction(&defect[2*nuDof], npDof, &this->get_pressure_space(),
+//    IntoL20FEFunction(&defect_[2*nuDof], npDof, &this->get_pressure_space(),
 //                      TDatabase::ParamDB->VELOCITY_SPACE,
 //                      TDatabase::ParamDB->PRESSURE_SPACE);
-//  double residual =  Ddot(2*nuDof+npDof, &this->defect[0], &this->defect[0]);
-//  double impulse_residual = Ddot(2*nuDof, &this->defect[0],
-//         &this->defect[0]);
-//  double mass_residual    = Ddot(npDof,&this->defect[2*nuDof],
-//         &this->defect[2*nuDof]);
+//  double residual =  Ddot(2*nuDof+npDof, &this->defect_[0], &this->defect_[0]);
+//  double impulse_residual = Ddot(2*nuDof, &this->defect_[0],
+//         &this->defect_[0]);
+//  double mass_residual    = Ddot(npDof,&this->defect_[2*nuDof],
+//         &this->defect_[2*nuDof]);
 //
-//  Output::print("nonlinear step  :  " , setw(3), it_counter);
+//  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
 //  Output::print("impulse_residual:  " , setw(3), impulse_residual);
 //  Output::print("mass_residual   :  " , setw(3), mass_residual);
 //  Output::print("residual        :  " , setw(3), sqrt(residual));
 //
-//  if (it_counter>0)
+//  if (iteration_counter>0)
 //  {
-//  Output::print("rate:           :  " , setw(3), sqrt(residual)/oldResidual);
+//  Output::print("rate:           :  " , setw(3), sqrt(residual)/old_residual_);
 //  }
 //
-//  oldResidual = sqrt(residual);
-//  if(it_counter == 0)
-//    initial_residual = sqrt(residual);
+//  old_residual_ = sqrt(residual);
+//  if(iteration_counter == 0)
+//    initial_residual_ = sqrt(residual);
 //
 //  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
 //  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
@@ -764,10 +773,11 @@ void Time_NSE3D::assemble_nonlinear_term()
 //  }
 //
 //  if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
-//   && (it_counter>=TDatabase::ParamDB->SC_MINIT))
+//   && (iteration_counter>=TDatabase::ParamDB->SC_MINIT))
 //   {
-//     Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual),
-//                   " Reduction : ",  sqrt(residual)/initial_residual);
+//     Output::print("ITE : ", setw(3), iteration_counter, "  RES : ", sqrt(residual),
+//                   " Reduction : ",  sqrt(residual)/initial_residual_);
+//
 //     // descale the matrices, since only the diagonal A block will
 //     // be reassembled in the next time step
 //     this->deScaleMatrices();
@@ -776,7 +786,7 @@ void Time_NSE3D::assemble_nonlinear_term()
 //   else
 //     return false;
 //}
-//
+
 ///**************************************************************************** */
 //void Time_NSE3D::solve()
 //{
