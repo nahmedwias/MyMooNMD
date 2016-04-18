@@ -262,6 +262,11 @@ class Time_NSE3D
     */
     void assemble_rhs();
 
+//    /** TODO Implement this method.
+//     * @brief Descale matrices
+//     * This function will descale all A-blocks which were scaled
+//     * during the function call time Time_NSE3D::assemble_system().
+//     */
 //    void descale_matrices();
 
     /** @brief Assemble the nonlinear terms
@@ -274,37 +279,29 @@ class Time_NSE3D
      */
     void assemble_nonlinear_term();
 
-//    /** TODO Implement this method.
-//     * @brief Assemble the whole system matrix which will be passed
-//     * to the solvers.
-//     */
-//    void assemble_system();
-//
-//    /** TODO Implement this method.
-//     * @brief Descale matrices
-//     * This function will descale all A-blocks which were scaled
-//     * during the function call time Time_NSE3D::assemble_system().
-//     */
-//
+    /** @brief Assemble the whole system matrix which will be passed
+     * to the solvers.
+     */
+    void assemble_system();
+
 //
 //    /** TODO Implement this method.
 //    *Solve the current linear system. Nonlinear loop is outside of this class.
 //    */
 //    void solve();
-//
-//    /** TODO Implement this method.
-//     *  @brief check if one of the stopping criteria is fulfilled
-//     *
-//     * either converged, maximum number of iterations reached, or slow
-//     * convergence
-//     *
-//     * @param iteration_counter current iterate
-//     *
-//     * @note For the sequential case, this is the copy-paste NSE2D
-//     * (with exception of slightly different compute_residual methods).
-//     */
+
+    /** @brief check if one of the stopping criteria is fulfilled
+     *
+     * either converged, maximum number of iterations reached, or slow
+     * convergence
+     *
+     * @param iteration_counter current iterate
+     *
+     * @note For the sequential case, this is the copy-paste NSE2D
+     * (with exception of slightly different compute_residual methods).
+     */
 //    bool stop_it(unsigned int iteration_counter);
-//
+
 //    /** TODO Implement this method.
 //     * ! Measure errors and draw a nice VTK picture, if requested to do so.
 //    ! @param i suffix for output file name, -1 means no suffix. */
