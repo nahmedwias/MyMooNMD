@@ -161,9 +161,40 @@ int main(int argc, char* argv[])
   // added in the loops thanks to assemble_nonlinear()
   tnse3d.assemble_initial_time();
 
+  double end_time = TDatabase::TimeDB->ENDTIME;
+  int step = 0;
+  int n_substeps = GetN_SubSteps();
+
+  int image = 0;
+
+//  TODO Check if this is necessary. Done in NSE3D but not in TNSE2D
 //  nse3d.stop_it(0);
 //  // check initial residuals
-//  //======================================================================
+
+  //======================================================================
+  // time iteration
+  //======================================================================
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+    // Output::print("memory before ":, GetMemory());
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
+    {
+      // setting the time discretization parameters
+      SetTimeDiscParameters(1);
+      if( step == 1) // a few output, not very necessary
+      {
+        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+      }
+      // tau may change depending on the time discretization (adaptive time)
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+
+      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 //  for(unsigned int k=1;; k++)
 //  {
 //    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",
@@ -187,5 +218,7 @@ int main(int argc, char* argv[])
 //  MPI_Finalize();
 //#endif
 //
+    }
+  }
   return 0;
 }
