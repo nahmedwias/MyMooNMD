@@ -528,7 +528,10 @@ void Time_NSE3D::assemble_rhs()
   const TFESpace3D *p_space = &this->get_pressure_space();
 
   // TODO Implement the case NSType 4 and 14 where there's a 4th rhs block
-  double *rhsArray[3] = {s.rhs_.block(0), s.rhs_.block(1), s.rhs_.block(2)};
+  std::vector<double*> rhsArray(nRhs);
+  rhsArray[0] = s.rhs_.block(0);
+  rhsArray[1] = s.rhs_.block(1);
+  rhsArray[2] = s.rhs_.block(2);
 
   const TFESpace3D *spaces[2] = {v_space, p_space};
   const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
@@ -548,67 +551,77 @@ void Time_NSE3D::assemble_rhs()
       localAssembling(LocalAssembling3D_type::TNSE3D_Rhs,
                       fe_functions,this->example_.get_coeffs());
 
-//   Assemble3D(1, fespmat, 0, nullptr,
-//              0, nullptr, N_Rhs, rhsArray, fesprhs,
-//              boundary_conditions, non_const_bound_values.data(), localAssembling);
-//   // copy the non active to the solution vector
-//   // since the rhs vector will be passed to the solver
-//   // and is modified with matrix vector multiplication
-//   // which also uses the non-actives
-//   s.solution.copy_nonactive(s.rhs);
-//
-//  // now it is this->systems[i].rhs = f^k
-//  // scale by time step length and theta4 (only active dofs)
-//  s.rhs.scaleActive(tau*theta4);
-//  // add rhs from previous time step
-//  if(theta3 != 0)
-//  {
-//    s.rhs.addScaledActive((this->old_rhs), tau*theta3);
-//
-//    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
-//    // next we want to set old_rhs to f^k (to be used in the next time step)
-//    this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
-//    this->old_rhs.scaleActive(-theta3/theta4);
-//    this->old_rhs.copy_nonactive(s.rhs);
-//  }
-//  // FIXME FInd other solution than this submatrix method.
-//  // M u^{k-1}
-//  s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
-//  // -tau*theta2 * A u^{k-1}
-//  double factor = -tau*theta2;
-//  s.matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, factor);
-//
-//  // scale the BT blocks with time step length
-//  for(System_per_grid& s : this->systems)
-//  {
-//    if(tau != oldtau)
-//    {
-//      // TODO: change the factor to be THETA1*tau;
-//      factor = /*TDatabase::TimeDB->THETA1**/tau;
-//      if(this->oldtau != 0.0)
-//      {
-//        factor /= this->oldtau;
-//        Output::print<1>("change in tau", this->oldtau, "->", tau);
-//      }
-//      // scale the BT transposed blocks with the current time step
-//      const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
-//	s.matrix.scale_blocks(factor, cell_positions);
-//      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
-//      {
-//        const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
-//	s.matrix.scale_blocks(factor, cell_positions_t);
-//      }
-//    }
-//  }
-//  this->oldtau = tau;
-//  // copy non active from solution into rhs vector
-//  s.rhs.copy_nonactive(s.solution);
-//
-//  if(TDatabase::ParamDB->SOLVER_TYPE == GMG
-//     && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-//     this->multigrid->RestrictToAllGrids();
-//
-//  Output::print<5>("assembled the system right hand side ");
+  Assemble3D(1, spaces,
+             0, nullptr,
+             0, nullptr,
+             nRhs, rhsArray.data(), rhsSpaces,
+             boundary_conditions, boundary_values.data(), localAssembling);
+
+  // copy the non active to the solution vector
+  // since the rhs vector will be passed to the solver
+  // and is modified with matrix vector multiplication
+  // which also uses the non-actives
+  s.solution_.copy_nonactive(s.rhs_);
+
+  // now it is this->systems[i].rhs = f^k
+  // scale by time step length and theta4 (only active dofs)
+  s.rhs_.scaleActive(tau*theta4);
+
+  // add rhs from previous time step
+  if(theta3 != 0)
+  {
+    s.rhs_.addScaledActive((this->old_rhs_), tau*theta3);
+
+    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
+    // next we want to set old_rhs to f^k (to be used in the next time step)
+    this->old_rhs_.addScaledActive(s.rhs_, -1./(tau*theta3));
+    this->old_rhs_.scaleActive(-theta3/theta4);
+    this->old_rhs_.copy_nonactive(s.rhs_);
+  }
+
+  // FIXME Find other solution than this submatrix method.
+  // M u^{k-1}
+  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 2, 2, 1.0);
+  // -tau*theta2 * A u^{k-1}
+  double factor = -tau*theta2;
+  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 2, 2, factor);
+
+  // scale the BT blocks with time step length
+  for(System_per_grid& s : this->systems_)
+  {
+    if(tau != oldtau_)
+    {
+      // TODO: change the factor to be THETA1*tau;
+      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      if(this->oldtau_ != 0.0)
+      {
+        factor /= this->oldtau_;
+        Output::print<1>("change in tau", this->oldtau_, "->", tau);
+      }
+      // scale the BT transposed blocks with the current time step
+      const std::vector<std::vector<size_t>> cell_positions = {{0,3},
+                                                               {1,3},
+                                                               {2,3}};
+	s.matrix_.scale_blocks(factor, cell_positions);
+      if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
+      {
+        const std::vector<std::vector<size_t>> cell_positions_t = {{3,0},
+                                                                   {3,1},
+                                                                   {3,2}};
+	s.matrix_.scale_blocks(factor, cell_positions_t);
+      }
+    }
+  }
+
+  this->oldtau_ = tau;
+  // copy non active from solution into rhs vector
+  s.rhs_.copy_nonactive(s.solution_);
+
+  if(TDatabase::ParamDB->SOLVER_TYPE == GMG
+     && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
+     this->multigrid_->RestrictToAllGrids();
+
+  Output::print<5>("assembled the system right hand side ");
 }
 
 ///**************************************************************************** */
