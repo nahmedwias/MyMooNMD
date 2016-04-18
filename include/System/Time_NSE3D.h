@@ -252,7 +252,7 @@ class Time_NSE3D
     * This assembling occurs just once, before entering any loop. It assembles
     * linear terms only.
     */
-//    void assemble_initial_time();
+    void assemble_initial_time();
 
 //   /** TODO Implement this method.
 //    * @brief Assemble the rhs only
