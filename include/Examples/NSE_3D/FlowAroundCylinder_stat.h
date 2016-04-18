@@ -11,6 +11,7 @@
  */
 #include <math.h> //pow
 
+double KINEMATIC_VISCOSITY = 1e-3;
 
 //side effect: sets the global parameter
 void ExampleFile()
@@ -128,7 +129,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
 
-  double eps = 1e-2; // the kinematic viscosity (1e-3 in the paper cited above)
+  double eps = KINEMATIC_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
 
   for(int i=0;i<n_points;i++)
   {
@@ -180,7 +181,8 @@ void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   double *Derivatives[MaxN_QuadPoints_3D];
   MultiIndex3D NeededDerivatives[4] = { D000, D100, D010, D001 };
   TFEFunction3D *vfct;
-  double *v, nu = 1/TDatabase::ParamDB->RE_NR;
+  double *v;
+  double nu = KINEMATIC_VISCOSITY;
   double *Der, *aux;
   TJoint *joint;
   TBoundFace *boundface;
@@ -383,9 +385,17 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   const TFEVectFunct3D& u(nse3d.get_velocity());
   TFEFunction3D& p(nse3d.get_pressure()); //I want this const!!!
 
-  GetCdCl(u.GetComponent(0), u.GetComponent(1), u.GetComponent(2),
+  TFEFunction3D* u1 = u.GetComponent(0);
+  TFEFunction3D* u2 = u.GetComponent(1);
+  TFEFunction3D* u3 = u.GetComponent(2);
+
+  GetCdCl(u1, u2, u3,
           &p,
           drag,lift);
+
+  delete u1;
+  delete u2;
+  delete u3;
 
   double dP1[4];
   double dP2[4];
