@@ -40,6 +40,7 @@ enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion re
                                     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
                                     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
                                     TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
+                                    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 

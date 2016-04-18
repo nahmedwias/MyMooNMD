@@ -254,15 +254,14 @@ class Time_NSE3D
     */
     void assemble_initial_time();
 
-//   /** TODO Implement this method.
 //    * @brief Assemble the rhs only
 //    * 1. Assembling the right hand side only
 //    * 2. Scaling of the B-Blocks due to time stepping
 //    * This function will prepare the right hand side during the time
 //    * discretization but should be outside the nonlinear loop.
 //    */
-//    void assemble_rhs();
-//
+    void assemble_rhs();
+
 //    /** TODO Implement this method.
 //     * @brief Assemble the whole system matrix which will be passed
 //     * to the solvers.
