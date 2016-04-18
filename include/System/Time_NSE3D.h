@@ -254,13 +254,25 @@ class Time_NSE3D
     */
     void assemble_initial_time();
 
-//    * @brief Assemble the rhs only
-//    * 1. Assembling the right hand side only
-//    * 2. Scaling of the B-Blocks due to time stepping
-//    * This function will prepare the right hand side during the time
-//    * discretization but should be outside the nonlinear loop.
-//    */
+  /** @brief Assemble the rhs only
+    * 1. Assembling the right hand side only
+    * 2. Scaling of the B-Blocks due to time stepping
+    * This function will prepare the right hand side during the time
+    * discretization but should be outside the nonlinear loop.
+    */
     void assemble_rhs();
+
+//    void descale_matrices();
+
+    /** @brief Assemble the nonlinear terms
+     * Assemble the nonlinear terms. Need not be used when this is
+     * a Stokes problem, or once per nonlinear iteration if this
+     * is a Navier Stokes problem.
+     * The matrix blocks to which the nonlinear term contribute are reset
+     * to zero and then completely reassembled, including the linear and
+     * nonlinear terms.
+     */
+    void assemble_nonlinear_term();
 
 //    /** TODO Implement this method.
 //     * @brief Assemble the whole system matrix which will be passed
@@ -273,18 +285,7 @@ class Time_NSE3D
 //     * This function will descale all A-blocks which were scaled
 //     * during the function call time Time_NSE3D::assemble_system().
 //     */
-//    void descale_matrices();
 //
-//    /** TODO Implement this method.
-//     * @brief Assemble the nonlinear terms
-//     * Assemble the nonlinear terms. Need not be used when this is
-//     * a Stokes problem, or once per nonlinear iteration if this
-//     * is a Navier Stokes problem.
-//     * The matrix blocks to which the nonlinear term contribute are reset
-//     * to zero and then completely reassembled, including the linear and
-//     * nonlinear terms.
-//     */
-//    void assemble_nonlinear_term();
 //
 //    /** TODO Implement this method.
 //    *Solve the current linear system. Nonlinear loop is outside of this class.

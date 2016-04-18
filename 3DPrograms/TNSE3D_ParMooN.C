@@ -15,11 +15,6 @@
 
 #include <TimeDiscRout.h>
 
-// TODO Check if those 3 includes are necessary in the main program
-#include <sys/types.h>
-#include <LocalAssembling3D.h>
-#include <Example_NSE3D.h>
-
 using namespace std;
 
 #ifdef _MPI
@@ -198,6 +193,9 @@ int main(int argc, char* argv[])
 
       // prepare the right hand side vector - needed only once per time step
       tnse3d.assemble_rhs();
+
+      // assemble the nonlinear matrices
+      tnse3d.assemble_nonlinear_term();
 
 //  for(unsigned int k=1;; k++)
 //  {

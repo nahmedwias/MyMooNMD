@@ -643,71 +643,84 @@ void Time_NSE3D::assemble_rhs()
 //  Output::print<5>("Assembled the system matrix which will be passed to the ",
 //                   "solver");
 //}
-//
-///**************************************************************************** */
-//void Time_NSE3D::assemble_nonlinear_term()
-//{
-//  for(System_per_grid& s : this->systems)
-//  {
-//    const TFESpace3D *velocity_space = &s.velocity_space;
-//    size_t nFESpace = 1;
-//    const TFESpace3D *fespmat[1]={velocity_space};
-//
-//    size_t nSquareMatrices;
-//    TSquareMatrix3D* sqMatrices[2]{nullptr};
-//
-//    size_t nRectMatrices = 0;
-//    TMatrix3D** rectMatrices=nullptr;
-//
-//    BoundCondFunct3D * boundary_conditions[1]
-//       = {velocity_space->GetBoundCondition() };
-//
-//     std::array<BoundValueFunct3D*, 3> non_const_bound_values;
-//     non_const_bound_values[0] = this->example.get_bd(0);
-//     non_const_bound_values[1] = this->example.get_bd(1);
-//     non_const_bound_values[2] = this->example.get_bd(2);
-//
-//
-//    TFEFunction3D *fe_functions[3] =
-//      { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-//    LocalAssembling3D la_nonlinear(TNSE3D_NL, fe_functions,
-//                                   this->example.get_coeffs());
-//
-//
-//    std::vector<std::shared_ptr<FEMatrix>> blocks
-//         = s.matrix.get_blocks_uniquely({{0,0},{1,1}});
-//
-//    switch(TDatabase::ParamDB->NSTYPE)
-//    {
-//      case 1:
-//      case 2:
-//        nSquareMatrices = 1;
-//        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-//        break;
-//      case 3:
-//      case 4:
-//      case 14:
-//        nSquareMatrices = 2;
-//        sqMatrices[0] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-//
-//        sqMatrices[1] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-//        break;
-//      default:
-//        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-//               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
-//    }
-//    // reset matrices to zero
-//    for(size_t m=0; m<nSquareMatrices; m++)
-//      sqMatrices[m]->reset();
-//
-//    Assemble3D(nFESpace, fespmat, nSquareMatrices, sqMatrices,
-//               nRectMatrices, rectMatrices, 0, nullptr, nullptr,
-//               boundary_conditions, non_const_bound_values.data(),
-//               la_nonlinear);
-//  }
-//  Output::print<5>("Assembled the nonlinear matrix only ");
-//}
-//
+
+/**************************************************************************** */
+void Time_NSE3D::assemble_nonlinear_term()
+{
+  size_t nFESpace = 1; // space needed to assemble matrices
+  size_t nSquareMatrices = 3;  // maximum 3 square matrices to be assembled
+  size_t nRectMatrices = 0;
+  size_t nRhs = 0; // no right hand side to be assembled here
+
+  std::vector<TSquareMatrix3D*> sqMatrices(nSquareMatrices);
+  std::vector<TMatrix3D*>       rectMatrices{nullptr};
+  std::vector<double*>          rhsArray{nullptr};
+
+  const TFESpace3D **rhsSpaces{nullptr};
+
+  for(System_per_grid& s : this->systems_)
+  {
+    // spaces for matrices
+    const TFESpace3D *spaces[1]={ &s.velocitySpace_ };
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix_.get_blocks_uniquely({{0,0},{1,1},{2,2}});
+
+    switch(TDatabase::ParamDB->NSTYPE)
+    {
+      case 1:
+      case 2:
+        nSquareMatrices = 1;
+        sqMatrices.resize(nSquareMatrices);
+        sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+        break;
+      case 3:
+      case 4:
+      case 14:
+        nSquareMatrices = 3;
+        sqMatrices.at(0) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
+        sqMatrices.at(1) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
+        sqMatrices.at(2) = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
+        break;
+      default:
+        ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
+               " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
+    } // end switch nstypes
+
+    // reset matrices to zero
+    for(auto mat : sqMatrices)
+    {
+      mat->reset();
+    }
+
+    // Prepare info about boundary condition for assembling routines
+    BoundCondFunct3D *boundary_conditions[1] = {spaces[0]->getBoundCondition()};
+
+    std::array<BoundValueFunct3D*, 3> boundary_values;
+    boundary_values[0] = this->example_.get_bd(0);
+    boundary_values[1] = this->example_.get_bd(1);
+    boundary_values[2] = this->example_.get_bd(2);
+
+    TFEFunction3D *fe_functions[3] =
+      { s.u_.GetComponent(0),
+        s.u_.GetComponent(1),
+        s.u_.GetComponent(2)};
+
+    // assemble nonlinear matrices
+    LocalAssembling3D
+        localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
+                        fe_functions, this->example_.get_coeffs());
+
+    Assemble3D(nFESpace, spaces,
+               nSquareMatrices, sqMatrices.data(),
+               nRectMatrices, rectMatrices.data(),
+               nRhs, rhsArray.data(), rhsSpaces,
+               boundary_conditions, boundary_values.data(), localAssembling);
+  }
+
+  Output::print<5>("Assembled the nonlinear matrix only ");
+}
+
 ///**************************************************************************** */
 //bool Time_NSE3D::stopIte(unsigned int it_counter)
 //{
