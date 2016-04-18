@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   // TDatabase::ParamDB->EXAMPLE, e.g. 101, and construct it.
   Example_NSE3D example;
 
-  // Construct an object of the NSE3D-problem type.
+  // Construct an object of the Time_NSE3D-problem type.
 //#ifdef _MPI
 //  Time_NSE3D nse3d(domain, example, maxSubDomainPerDof);
 //#else
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
   // assemble all matrices and right hand side at start time
   // it assembles A's, B's and M's blocks. Nonlinear blocks are
   // added in the loops thanks to assemble_nonlinear()
-  tnse3d.assemble_initial_time();
+//  tnse3d.assemble_initial_time();
 
 //  nse3d.stop_it(0);
 //  // check initial residuals

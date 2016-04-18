@@ -439,6 +439,15 @@ target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### TNSE3D ###
+# Standard executable target.
+add_executable(tnse3d ${PROJECT_SOURCE_DIR}/3DPrograms/TNSE3D_ParMooN.C)
+set_target_properties(tnse3d PROPERTIES OUTPUT_NAME parMooN_tnse3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tnse3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ###############################################################################
 # building the documentation using doxygen
 find_package(Doxygen)

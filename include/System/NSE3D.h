@@ -68,8 +68,8 @@ class NSE3D
                     TCollection& coll, std::pair<int, int> order, NSE3D::Matrix type, 
                     int maxSubDomainPerDof);
 #else
-      System_per_grid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order,
-                    NSE3D::Matrix type);
+      System_per_grid(const Example_NSE3D& example, TCollection& coll,
+                      std::pair<int, int> order, NSE3D::Matrix type);
 #endif
 
       /** @brief Finite Element space for the velocity */
@@ -160,7 +160,7 @@ class NSE3D
     //!        be stopped as soon as a desired reduction is achieved
     double initial_residual_;
     
-    /** @brief Errors, held in ready to be accesed from outside the class
+    /** @brief Errors, held in ready to be accessed from outside the class
      * The array is filled during the function call NSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
      * (errors.at(0) is L2 and errors.at(1) is H1-semi)
