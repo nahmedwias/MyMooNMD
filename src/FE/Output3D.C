@@ -191,7 +191,7 @@ int TOutput3D::AddParameter(double value, const char *descr)
 static void Sort(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -976,7 +976,6 @@ int TOutput3D::WriteGMV(const char *name)
   int *VertexNumbers, *NumberVertex;
   int *IntArray;
   double *Coords, *DoubleArray;
-  Shapes ShapeType, ShapeType2;
   TBaseCell *cell;
   TVertex **Vertices, *Current, *Last;
   FE3D FE_ID;
@@ -985,7 +984,7 @@ int TOutput3D::WriteGMV(const char *name)
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions3D], *Coeffs;
   double xi, eta, zeta, value;
-  int MaxN_Comp, N_Comp, Length;
+  int N_Comp, Length;
   int Number;
   int MaxSubGridID;
 
@@ -1356,7 +1355,6 @@ int TOutput3D::WriteAmira(const char *name)
   int *VertexNumbers, *NumberVertex;
   int *IntArray;
   double *Coords, *DoubleArray;
-  Shapes ShapeType, ShapeType2;
   TBaseCell *cell;
   TVertex **Vertices, *Current, *Last;
   FE3D FE_ID;
@@ -1365,7 +1363,7 @@ int TOutput3D::WriteAmira(const char *name)
   int *GlobalNumbers, *BeginIndex, *DOF;
   double BFValues[MaxN_BaseFunctions3D], *Coeffs;
   double xi, eta, zeta, value;
-  int MaxN_Comp, N_Comp, Length;
+  int N_Comp, Length;
   int Number;
   int MaxSubGridID;
   int VariableCounter, VariableStart = 3;
@@ -1746,20 +1744,14 @@ int TOutput3D::WriteAmira(const char *name)
 
 int TOutput3D::WriteVtk(const char *name)
 {
-  int i,j,k,l,m,n,p;
-  int N_Cells, N_Vertices, N_CellVertices, N_Comps, MaxN_VerticesPerCell;
+  int i,j,k,l,m,n;
+  int N_Vertices, N_CellVertices, N_Comps;
   // *N_DOF, *N_Comp, *FESpaceNumber;
   int  N_, N_Elements, N_LocVertices;
   TVertex **Vertices, *Last, *Current;
-  TFEFunction3D *fefunction;
-  TFEVectFunct3D *fevectfunct;
-  int N_BaseFunct, N_DOF;
-  TVertex *vertex;
   TBaseCell *cell;
-  double x[4], y[4], z[4];
   int *FESpaceNumber;
   const TFESpace3D *fespace;
-  char *Comment;
   double xi, eta, zeta;
   double value;
   double *Coeffs;
@@ -1768,24 +1760,14 @@ int TOutput3D::WriteVtk(const char *name)
   double t;
   
   TBaseFunct3D *bf;
-  BaseFunct3D BaseFunct;
   FE3D FE_ID;
   double BFValues[3*MaxN_BaseFunctions3D]; // 3 for vector valued basis functions
-  double *FEValues;
-  int *GlobalNumbers, *BeginIndex, *Index, *DOF;
+  int *GlobalNumbers, *BeginIndex, *DOF;
   double *Coords;
   int *VertexNumbers;
   int *NumberVertex;
-  double LocValues[MaxN_BaseFunctions3D];
-  double s;
-  char str[15];
-  int *BaseFuncts;
   int *IntArray;
   double *DoubleArray;
-  // 12 - hexaedron
-  // 10 - tetra
-  const int CELL_TYPES_HEXA=12;
-  const int CELL_TYPES_TETRA=10;
 
  // format (x_i, y_i, z_i)
   static double HexaCoords[] =
@@ -1806,8 +1788,6 @@ int TOutput3D::WriteVtk(const char *name)
       0, 1, 0,
       0, 0, 1 };
 
-
-  MaxN_VerticesPerCell = 8; // 3D case
 
   std::ofstream dat(name);
   if (!dat)
@@ -2475,20 +2455,19 @@ int TOutput3D::Write_ParVTK(
 #endif
                                int img, char *subID)
 {
-  int i, j, k,l,m,n,p, rank, size, N_, N_Elements, N_LocVertices, N_BaseFunct, N_DOF;
-  int AnsatzSpace, N_Cells, N_Vertices, N_CellVertices, N_Comps, MaxN_VerticesPerCell;
-  int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *Index, *DOF;
-  int *VertexNumbers, *NumberVertex, *BaseFuncts, begin, ID;
+  int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
+  int N_Vertices, N_CellVertices, N_Comps;
+  int *FESpaceNumber, N_LocDOF, Length, N_Comp, *GlobalNumbers, *BeginIndex, *DOF;
+  int *VertexNumbers, *NumberVertex, begin, ID;
 
-  double xi, eta, zeta, t, value, *Coeffs, *WArray, *DoubleArray;
-  double BFValues[MaxN_BaseFunctions3D], LocValues[MaxN_BaseFunctions3D];
-  double *FEValues, *Coords, s, z;
+  double xi, eta, zeta, value, *Coeffs, *WArray, *DoubleArray;
+  double BFValues[MaxN_BaseFunctions3D];
+  double *Coords;
   static double HexaCoords[] = { -1, -1, -1, 1, -1, -1, 1,  1, -1, -1,  1, -1,
                                  -1, -1,  1, 1, -1,  1, 1,  1,  1, -1,  1,  1  };
   static double TetraCoords[] = { 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 };
 
   char *VtkBaseName, Dquot;
-  char *Comment;
 
   //get the proper path for the VTU directory (which contains the parts)
   std::string outputdir(TDatabase::ParamDB->OUTPUTDIR);
@@ -2500,19 +2479,14 @@ int TOutput3D::Write_ParVTK(
   struct tm * timeinfo;
 
   TVertex **Vertices, *Last, *Current;
-  TFEFunction3D *fefunction;
-  TFEVectFunct3D *fevectfunct;
-  TVertex *vertex;
   TBaseCell *cell;
   const TFESpace3D *fespace;
   TBaseFunct3D *bf;
-  BaseFunct3D BaseFunct;
   FE3D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
   VtkBaseName = TDatabase::ParamDB->BASENAME;
   char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
-  AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -2687,7 +2661,6 @@ int TOutput3D::Write_ParVTK(
    {
 
     // determine data for vtu file of each processor
-    MaxN_VerticesPerCell = 8; // 3D case
     FESpaceNumber = new int[N_ScalarVar+N_VectorVar];
     //cout << "N_ScalarVar: " <<  N_ScalarVar << endl;
     N_Comps = 0;
