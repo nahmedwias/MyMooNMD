@@ -140,6 +140,13 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
              ElementForShape[Tetrahedron] = D_P2_3D_T_A;
              break;
 
+             // TODO reorganize and comment this method!!!
+    case 22:
+             ElementForShape[Tetrahedron] = C_B2_3D_T_A; //P2 w face bubbles
+             ElementForShape[Brick] = C_Q2_3D_H_A;       //as in case 2 and 12
+             ElementForShape[Hexahedron] = C_Q2_3D_H_M;  //as in case 2 and 12
+             break;
+
     //========LOCALPROJECTION=============
     // Q1+bubble*P0
     case 100:
