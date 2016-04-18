@@ -1141,7 +1141,7 @@ void TNSE_MGLevel3::BraessSarazin(double *u1, double *rhs1,
   // call the algebraic solver
   // the last input parameter is only a dummy
 #ifdef __2D__
-  Solver(A11, A12, A21, A22, B1, B2, rhs1, sol, j);
+  OldSolver(A11, A12, A21, A22, B1, B2, rhs1, sol, j);
 #endif  
 #ifdef __3D__
   OutPut("Braess-Sarazin smoother not implemented !!!" << endl);

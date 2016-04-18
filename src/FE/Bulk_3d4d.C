@@ -2280,7 +2280,7 @@ void Bulk_BWE_FDM_Upwind_4D(TCollection *coll,
     {
 	t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0;
-	Solver(mat,rhs,sol);
+	OldSolver(mat,rhs,sol);
  	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
 	// no output of solver data any longer
 	TDatabase::ParamDB->SC_VERBOSE_AMG = 1;
@@ -3807,7 +3807,7 @@ void Build_4D_FEM_FCT_Matrix_Q1(TCollection *coll,
     {
 	t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0;
-	Solver(matM,rhs,sol);
+	OldSolver(matM,rhs,sol);
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
 	// no output of solver data any longer
 	TDatabase::ParamDB->SC_VERBOSE_AMG = 1;

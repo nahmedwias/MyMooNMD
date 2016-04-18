@@ -1313,7 +1313,7 @@ void TNSE_MGLevel2::BraessSarazin(double *u1, double *rhs,
     exit(-1);
   }
   else
-    Solver(A, B1T, B2T, B1, B2, rhs, sol,j);
+    OldSolver(A, B1T, B2T, B1, B2, rhs, sol,j);
 #endif  
 #ifdef __3D__
   OutPut("Braess-Sarazin smoother not implemented !!!" << endl);

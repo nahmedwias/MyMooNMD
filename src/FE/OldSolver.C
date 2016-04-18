@@ -1,5 +1,5 @@
 // =======================================================================
-// @(#)Solver.C        1.16 06/27/00
+// @(#)OldSolver.C        1.16 06/27/00
 //
 // Purpose:     solve equation system
 //
@@ -39,13 +39,13 @@ extern "C"
 
 
 /******************************************************************************/
-// Solver
+// OldSolver
 // solves linear system
 // output in sol
 // scalar problems: ns_type == 0
 /******************************************************************************/
 
-void Solver(TSquareMatrix **sqmatrices, TMatrix **matrices,
+void OldSolver(TSquareMatrix **sqmatrices, TMatrix **matrices,
 double *rhs, double *sol,
 MatVecProc *MatVect, DefectProc *Defect,
 TMultiGrid2D *MG,
@@ -100,7 +100,7 @@ int N_Unknowns, int ns_type
       switch(ns_type)
       {
         case 0:
-          Solver(A, rhs, sol);
+          OldSolver(A, rhs, sol);
           break;
       }
       break;
@@ -312,7 +312,7 @@ void SetAMGDefaults(AMG_CoarsenContext &cc, AMG_SolverContext &sc)
 /*******************************************************************/
 /*        SCALAR PROBLEMS                                          */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrix, double *rhs, double *sol)
+void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol)
 {
   AMG_CoarsenContext cc;
   AMG_SolverContext sc;
@@ -472,7 +472,7 @@ memory[0]=memory[1]=memory[2]=0.;
 /*******************************************************************/
 /*        SCALAR PROBLEMS WITH VARIOUS RIGHT HAND SIDES            */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
+void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
 {
   AMG_CoarsenContext cc;
   AMG_SolverContext sc;
@@ -638,7 +638,7 @@ void Solver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
 }
 
 
-void Solver(int what, TSquareMatrix *matrix, double *rhs, double *sol,
+void OldSolver(int what, TSquareMatrix *matrix, double *rhs, double *sol,
 int N_Rhs)
 {
   static AMG_CoarsenContext cc;
@@ -772,7 +772,7 @@ int N_Rhs)
 /*        SCALAR MORTAR PROBLEMS                                   */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrix, TMatrix *matrixmortar, double *rhs,
+void OldSolver(TSquareMatrix *matrix, TMatrix *matrixmortar, double *rhs,
 double *sol)
 {
   AMG_CoarsenContext cc;
@@ -911,7 +911,7 @@ double *sol)
 /*******************************************************************/
 /* CONNECT 2 BY 2 SYSTEM TO A SCALAR SYSTEM                        */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TMatrix *matrixa12,
 TMatrix *matrixa21, TSquareMatrix *matrixa22,
 double *rhs1, double *rhs2,
 double *sol1, double *sol2)
@@ -1170,7 +1170,7 @@ double *sol1, double *sol2)
 /*******************************************************************/
 /* CONNECT 2 BY 2 SYSTEM TO A SCALAR SYSTEM                        */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
 TSquareMatrix *matrixa21, TSquareMatrix *matrixa22,
 double *rhs1, double *rhs2,
 double *sol1, double *sol2)
@@ -1423,7 +1423,7 @@ double *sol1, double *sol2)
 /*******************************************************************/
 /* CONNECT 3 BY 3 SYSTEM TO A SCALAR SYSTEM                        */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
 TSquareMatrix *matrixa22, TSquareMatrix *matrixa23,
 TSquareMatrix *matrixa32, TSquareMatrix *matrixa33,
 double *rhs1, double *rhs2, double *rhs3,
@@ -1726,7 +1726,7 @@ double *sol1, double *sol2, double *sol3)
 /*******************************************************************/
 /* CONNECT SYSTEM FOR VMM [KL02]                                   */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TMatrix *matrixa12, TMatrix *matrixa13,
+void OldSolver(TSquareMatrix *matrixa11, TMatrix *matrixa12, TMatrix *matrixa13,
 TMatrix *matrixa21, TMatrix *matrixa31,  TSquareMatrix *matrixa22,
 double *rhs1, double *rhs2, double *rhs3,
 double *sol1, double *sol2, double *sol3)
@@ -2047,7 +2047,7 @@ double *sol1, double *sol2, double *sol3)
 /*        STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 1)              */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
 TMatrix *matrixB2, double *rhs, double *sol)
 {
   AMG_CoarsenContext cc;
@@ -2191,7 +2191,7 @@ TMatrix *matrixB2, double *rhs, double *sol)
 /*        STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 2)              */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
 TMatrix *matrixB3, TMatrix *matrixB4, double *rhs, double *sol)
 {
   AMG_CoarsenContext cc;
@@ -2365,7 +2365,7 @@ TMatrix *matrixB3, TMatrix *matrixB4, double *rhs, double *sol)
 /*        STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 3)              */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
 TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
 TMatrix *matrixB1, TMatrix *matrixB2,
 double *rhs, double *sol)
@@ -2571,7 +2571,7 @@ double *rhs, double *sol)
 /*        STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 4)              */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
 TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
 TMatrix *matrixB1, TMatrix *matrixB2,
 TMatrix *matrixB3, TMatrix *matrixB4,
@@ -2836,7 +2836,7 @@ int CheckBraessSarazinParameters()
 /* BRAESS--SARAZIN SMOOTHER (NSTYPE 1)                             */
 /*******************************************************************/
 #ifdef __2D__
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
 TMatrix *matrixB2, double *rhs, double *sol,
 int para0)
 {
@@ -2997,7 +2997,7 @@ int para0)
 /* BRAESS--SARAZIN SMOOTHER (NSTYPE 2)                             */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
 TMatrix *matrixB3, TMatrix *matrixB4, double *rhs, double *sol,
 int para0)
 {
@@ -3184,7 +3184,7 @@ int para0)
 /*******************************************************************/
 /* BRAESS--SARAZIN SMOOTHER (NSTYPE 3)                             */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
 TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
 TMatrix *matrixB1,
 TMatrix *matrixB2, double *rhs, double *sol,
@@ -3407,7 +3407,7 @@ int para0)
 /* BRAESS--SARAZIN SMOOTHER (NSTYPE 4)                             */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
 TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
 TMatrix *matrixB1, TMatrix *matrixB2,
 TMatrix *matrixB3, TMatrix *matrixB4,
@@ -3660,7 +3660,7 @@ double *rhs, double *sol, int para0)
 /*******************************************************************/
 /* STOKES TYPE SADDLE POINT PROBLEM WITH MORTAR (NSTYPE 2)         */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
 TMatrix *matrixB3, TMatrix *matrixB4, TMatrix *matrixmortar,
 double *rhs, double *sol)
 {
@@ -3853,7 +3853,7 @@ double *rhs, double *sol)
 /*  AUXILIARY PROBLEM FOR VASSILEVSKI/LAZAROV APPROACH             */
 /*******************************************************************/
 
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1, TMatrix *matrixB2,
 double *rhs, double *sol,double delta)
 {
   AMG_CoarsenContext cc;
@@ -3997,7 +3997,7 @@ double *rhs, double *sol,double delta)
 /*******************************************************************/
 /* BRAESS--SARAZIN SMOOTHER (NSTYPE 1)                             */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
 TMatrix *matrixB2, TMatrix *matrixB3,
 double *rhs, double *sol,
 int para0)
@@ -4173,7 +4173,7 @@ int para0)
 /*******************************************************************/
 /* STOKES-TYPE SYSTEM (NSTYPE 1)                                   */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
 TMatrix *matrixB2, TMatrix *matrixB3,
 double *rhs, double *sol)
 {

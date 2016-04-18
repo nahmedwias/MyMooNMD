@@ -229,9 +229,9 @@ void CD2D::solve()
     FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
     // in order for the old method 'Solver' to work we need TSquareMatrix2D
     TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), this->get_size(), 0);
+    OldSolver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
+              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+              this->multigrid.get(), this->get_size(), 0);
   }
   
   t = GetTime() - t;

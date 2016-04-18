@@ -1132,10 +1132,10 @@ void TNSE_MGLevel1::BraessSarazin(double *u1, double *rhs1,
   // call the algebraic solver
   // the last input parameter is only a dummy
 #ifdef __2D__
-  Solver(A, B1, B2, rhs1, sol, j);
+  OldSolver(A, B1, B2, rhs1, sol, j);
 #endif  
 #ifdef __3D__
-  Solver(A, B1, B2, B3, rhs1, sol, j);
+  OldSolver(A, B1, B2, B3, rhs1, sol, j);
 #endif  
 
   // update and apply damping
