@@ -617,9 +617,14 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
+    Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
                      " RES : ", normOfResidual, " Reduction : ",
                      normOfResidual/initial_residual_);
+    // The following line comes from MooNMD and shall be us a reminder to
+    // TODO count total number of linear iterations for iterative solvers
+    //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
+    //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
+
     return true;
   }
   else
