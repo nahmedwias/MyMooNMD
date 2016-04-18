@@ -541,6 +541,7 @@ void NSE3D::assemble_non_linear_term()
         sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
         break;
     }// endswitch nstype
+
     for(auto mat : sqMatrices)
     {
       mat->reset();
@@ -557,7 +558,8 @@ void NSE3D::assemble_non_linear_term()
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);    
+    feFunction[2]=s.u_.GetComponent(2);
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                          feFunction.data(), example_.get_coeffs());
