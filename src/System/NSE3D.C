@@ -83,7 +83,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #endif
 }
 
-
 NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof

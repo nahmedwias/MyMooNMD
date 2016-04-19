@@ -28,7 +28,7 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  double t_start=GetTime();
+  double t_start = GetTime();
   Output::print("<<<<< Running ParMooN: TNSE3D Main Program >>>>>");
 
   // Construct the ParMooN Databases.
@@ -218,6 +218,11 @@ int main(int argc, char* argv[])
 
     } // end of subtime loop
   } // end of time loop
+
+  // ======================================================================
+  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
+  Output::print("used time: ", GetTime() - t_start, "s");
+  // ======================================================================
 
   Output::close_file();
   /*#ifdef _MPI
