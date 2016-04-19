@@ -917,6 +917,9 @@ void Time_NSE3D::solve()
   // for the next iteration we have to descale, see assemble_system()
   this->descale_matrices();
 
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       s.p_.project_into_L20();
+
   this->old_solution_ = s.solution_;
   Output::print<5>("solver done");
 }
@@ -1150,24 +1153,22 @@ void Time_NSE3D::descale_matrices()
 /**************************************************************************** */
 void Time_NSE3D::output(int i)
 {
-//  if(!TDatabase::ParamDB->WRITE_VTK
-//    && !TDatabase::ParamDB->MEASURE_ERRORS)
-//    return;
-//
-//  System_per_grid& s = this->systems.front();
-//  TFEFunction3D * u1 = s.u.GetComponent(0);
-//  TFEFunction3D * u2 = s.u.GetComponent(1);
-//
-//  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-//       s.p.project_into_L20();
-//
-//  if(TDatabase::ParamDB->SC_VERBOSE>1)
-//  {
-//    u1->PrintMinMax();
-//    u2->PrintMinMax();
-//    s.p.PrintMinMax();
-//  }
-//
+  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+    return;
+
+  System_per_grid& s = this->systems_.front();
+  TFEFunction3D* u1 = s.u_.GetComponent(0);
+  TFEFunction3D* u2 = s.u_.GetComponent(1);
+  TFEFunction3D* u3 = s.u_.GetComponent(2);
+
+  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  {
+    u1->PrintMinMax();
+    u2->PrintMinMax();
+    u3->PrintMinMax();
+    s.p_.PrintMinMax();
+  }
+
 //  if(TDatabase::ParamDB->MEASURE_ERRORS)
 //  {
 //    double locerr[8];
@@ -1239,21 +1240,26 @@ const Residuals& Time_NSE3D::get_residuals() const
 {
   return old_residual_.back();
 }
+
 /**************************************************************************** */
 double Time_NSE3D::get_impulse_residual() const
 {
   return old_residual_.back().impulsResidual;
 }
+
 /**************************************************************************** */
 double Time_NSE3D::get_mass_residual() const
 {
   return old_residual_.back().massResidual;
 }
+
+
 /**************************************************************************** */
 double Time_NSE3D::get_full_residual() const
 {
   return old_residual_.back().fullResidual;
 }
+
 /**************************************************************************** */
 
 ///**************************************************************************** */
