@@ -174,7 +174,6 @@ int main(int argc, char* argv[])
     std::shared_ptr<TStructure> structureB(new TStructure(3, 4, 5, ColB, RowB));
     std::shared_ptr<TMatrix> matB = std::make_shared<TMatrix>(structureB);
     
-    
     //Matrix C
     int * RowC = new int[5];
     int * ColC = new int[8];
@@ -185,7 +184,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<TMatrix> matC = std::make_shared<TMatrix>(structureC);
     
     std::shared_ptr<TMatrix> matCT(matC->GetTransposed());
-    
+
     //Matrix D
     int * RowD = new int [4];
     int * ColD = new int [5];
@@ -193,7 +192,6 @@ int main(int argc, char* argv[])
     ColD[0] = 0; ColD[1] = 1; ColD[2] = 2; ColD[3] = 1; ColD[4] = 2;
     std::shared_ptr<TStructure> structureD(new TStructure(3, 3, 5, ColD, RowD));
     std::shared_ptr<TMatrix> matD = std::make_shared<TMatrix>(structureD);
-    
     
     // create a BlockMatrix
     auto blocks = {matA, matC, matB, matD};
@@ -206,7 +204,7 @@ int main(int argc, char* argv[])
       ErrThrow("total number of columns in BlockMatrix is incorrect");
     if(bm.get_n_total_entries() != 22)
       ErrThrow("total number of entries in BlockMatrix is incorrect");
-    
+
     // check if exceptions are thrown when appropriate
     try
     {
@@ -221,9 +219,10 @@ int main(int argc, char* argv[])
     {
       // correct behavior, nothing more to do
     }
-    
+
     try
     {
+      blocks = {matA, matC, matB, matD};
       BlockMatrix bm_wrong(3, 2, blocks);
       Output::print("It was possible to create a BlockMatrix where not enough ",
                     "blocks were given. This should have thrown an exception");
@@ -247,6 +246,15 @@ int main(int argc, char* argv[])
     {
       // correct behavior, nothing more to do
     }
+
+    delete[] RowA;
+    delete[] ColA;
+    delete[] RowB;
+    delete[] ColB;
+    delete[] RowC;
+    delete[] ColC;
+    delete[] RowD;
+    delete[] ColD;
   }
   
   Output::print("Test program finished.");

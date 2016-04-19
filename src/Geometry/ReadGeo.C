@@ -1117,9 +1117,9 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
   MakeSandwichGrid(DCORVG, KVERT, KNPR, N_Vertices, NVE,
                    DriftX, DriftY, DriftZ, N_Layers, Lambda);
 
-  delete DCORVG;
-  delete KVERT;
-  delete KNPR;
+  delete[] DCORVG;
+  delete[] KVERT;
+  delete[] KNPR;
 
   return 0;
 }
@@ -1566,7 +1566,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
   for (i=0;i<N_Vertices;i++)
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
 
-  delete KVEL;
+  delete[] KVEL;
 
   maxElpV++;
   KVEL = new int[maxElpV * N_Vertices];
@@ -2001,7 +2001,7 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
       }
     
       N_RootCells *= (N_Layers-1);
-      delete [] KMT; // [] added by sashi
+      delete[] KMT; // [] added by sashi
     break;
 
     case 3: // triangles in 2d mesh
@@ -2718,8 +2718,8 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
       }
     
       N_RootCells *= (N_Layers-1)*3;
-      delete KMTupper;
-      delete KMTlower;
+      delete[] KMTupper;
+      delete[] KMTlower;
     break;
 
     default:
@@ -2847,9 +2847,9 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 */
 
   // free memory
-  delete KVEL;
+  delete[] KVEL;
 
-  delete NewVertices;
+  delete[] NewVertices;
 
   // exit(-1);
   

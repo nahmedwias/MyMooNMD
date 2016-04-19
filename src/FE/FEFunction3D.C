@@ -1195,14 +1195,14 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
       values[2] += uy;
       values[3] += uz;
 
-      delete uorig;
-      delete uxorig;
-      delete uyorig;
-      delete uzorig;
-      delete uref;
-      delete uxiref;
-      delete uetaref;
-      delete uzetaref;
+      delete[] uorig;
+      delete[] uxorig;
+      delete[] uyorig;
+      delete[] uzorig;
+      delete[] uref;
+      delete[] uxiref;
+      delete[] uetaref;
+      delete[] uzetaref;
 
     } // endif
   } // endfor

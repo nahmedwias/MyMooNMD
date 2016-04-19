@@ -236,7 +236,7 @@ static void Sort(TVertex **Array, int length)
 
   } while (i<r);
 
-  delete rr;
+  delete[] rr;
 
 }
 
