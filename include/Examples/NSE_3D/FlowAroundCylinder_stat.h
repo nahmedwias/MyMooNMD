@@ -371,9 +371,9 @@ void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cd *= -500/0.41;
   cl *= -500/0.41;
 
-  delete Derivatives[0];
+  delete[] aux;
+  delete[] v;
   delete vfct;
-  delete v;
 }
 
 // this is the actual interface
