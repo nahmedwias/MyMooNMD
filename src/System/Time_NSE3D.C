@@ -177,8 +177,6 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   }
 }
 
-//
-//
 ///**************************************************************************** */
 //void Time_NSE3D::set_parameters()
 //{
@@ -507,7 +505,7 @@ void Time_NSE3D::assemble_rhs()
 {
   // TODO Should it be timesteplength or currenttimesteplength
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-  const double theta1 = TDatabase::TimeDB->THETA1;
+//  const double theta1 = TDatabase::TimeDB->THETA1;
   const double theta2 = TDatabase::TimeDB->THETA2;
   const double theta3 = TDatabase::TimeDB->THETA3;
   const double theta4 = TDatabase::TimeDB->THETA4;
@@ -591,9 +589,8 @@ void Time_NSE3D::assemble_rhs()
   {
     if(tau != oldtau_)
     {
-      // TODO: change the factor to be THETA1*tau; done but what was the
-      // problem?
-      factor = theta1*tau;
+      // TODO: change the factor to be THETA1*tau; why??
+      factor = /*theta1*/tau;
       if(this->oldtau_ != 0.0)
       {
         factor /= this->oldtau_;
@@ -1150,8 +1147,9 @@ void Time_NSE3D::descale_matrices()
 //  }
 //}
 //
+
 /**************************************************************************** */
-void Time_NSE3D::output(int i)
+void Time_NSE3D::output(int m, int &image)
 {
   if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
     return;
@@ -1167,6 +1165,32 @@ void Time_NSE3D::output(int i)
     u2->PrintMinMax();
     u3->PrintMinMax();
     s.p_.PrintMinMax();
+  }
+
+  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  {
+    if(TDatabase::ParamDB->WRITE_VTK)
+    {
+      // last argument in the following is domain but is never used in this class
+      TOutput3D output(5, 5, 2, 1, NULL);
+      output.AddFEFunction(&s.p_);
+      output.AddFEVectFunct(&s.u_);
+//#ifdef _MPI
+//    char SubID[] = "";
+//    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+//#else
+      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
+      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+      if(image<10) filename += ".0000";
+      else if(image<100) filename += ".000";
+      else if(image<1000) filename += ".00";
+      else if(image<10000) filename += ".0";
+      else filename += ".";
+      filename += std::to_string(image) + ".vtk";
+      output.WriteVtk(filename.c_str());
+      image++;
+//#endif
+    }
   }
 
 //  if(TDatabase::ParamDB->MEASURE_ERRORS)
@@ -1213,26 +1237,7 @@ void Time_NSE3D::output(int i)
 //  }
 //   delete u1;
 //   delete u2;
-//
-//  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
-//  {
-//    if(TDatabase::ParamDB->WRITE_VTK)
-//    {
-//      TOutput3D output(2, 3, 1, 0, NULL);
-//      output.AddFEFunction(&s.p);
-//      output.AddFEVectFunct(&s.u);
-//      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-//      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
-//      if(image<10) filename += ".0000";
-//      else if(image<100) filename += ".000";
-//      else if(image<1000) filename += ".00";
-//      else if(image<10000) filename += ".0";
-//      else filename += ".";
-//      filename += std::to_string(image) + ".vtk";
-//      output.WriteVtk(filename.c_str());
-//      image++;
-//    }
-//  }
+
 }
 
 /**************************************************************************** */
@@ -1261,8 +1266,6 @@ double Time_NSE3D::get_full_residual() const
 }
 
 /**************************************************************************** */
-
-///**************************************************************************** */
 //std::array< double, int(6) > Time_NSE3D::get_errors()
 //{
 //  std::array<double, int(6)> error_at_time_points;
@@ -1274,4 +1277,4 @@ double Time_NSE3D::get_full_residual() const
 //  return error_at_time_points;
 //}
 //
-///**************************************************************************** */
+/**************************************************************************** */
