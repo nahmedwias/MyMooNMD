@@ -66,7 +66,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, int reference_id)
 Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
                        int reference_id)
  : systems_(), example_(ex), multigrid_(), defect_(),
-   old_residual_(0), initial_residual_(1e10), errors_(), oldtau_()
+   old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
  // if it has to be called here or in the main program (see difference between
@@ -591,8 +591,9 @@ void Time_NSE3D::assemble_rhs()
   {
     if(tau != oldtau_)
     {
-      // TODO: change the factor to be THETA1*tau;
-      factor = /*TDatabase::TimeDB->THETA1**/tau;
+      // TODO: change the factor to be THETA1*tau; done but what was the
+      // problem?
+      factor = theta1*tau;
       if(this->oldtau_ != 0.0)
       {
         factor /= this->oldtau_;
@@ -725,113 +726,222 @@ void Time_NSE3D::assemble_system()
                                  {{0,0}, {1,1}, {2,2}},
                                  {false, false, false});
   }
-  cout << "test" << endl;
+
   Output::print<5>("Assembled the system matrix which will be passed to the ",
                    "solver");
 }
 
-///**************************************************************************** */
-//bool Time_NSE3D::stop_it(unsigned int iteration_counter)
-//{
-//  System_per_grid& s = this->systems_.front();
-//  unsigned int nuDof = s.solution_.length(0);
-//  unsigned int npDof = s.solution_.length(2);
-//
-//  this->defect_ = s.rhs_;
-//  s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
-//  //
-//  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-//    IntoL20FEFunction(&defect_[2*nuDof], npDof, &this->get_pressure_space(),
-//                      TDatabase::ParamDB->VELOCITY_SPACE,
-//                      TDatabase::ParamDB->PRESSURE_SPACE);
-//  double residual =  Ddot(2*nuDof+npDof, &this->defect_[0], &this->defect_[0]);
-//  double impulse_residual = Ddot(2*nuDof, &this->defect_[0],
-//         &this->defect_[0]);
-//  double mass_residual    = Ddot(npDof,&this->defect_[2*nuDof],
-//         &this->defect_[2*nuDof]);
-//
-//  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-//  Output::print("impulse_residual:  " , setw(3), impulse_residual);
-//  Output::print("mass_residual   :  " , setw(3), mass_residual);
-//  Output::print("residual        :  " , setw(3), sqrt(residual));
-//
-//  if (iteration_counter>0)
-//  {
-//  Output::print("rate:           :  " , setw(3), sqrt(residual)/old_residual_);
-//  }
-//
-//  old_residual_ = sqrt(residual);
-//  if(iteration_counter == 0)
-//    initial_residual_ = sqrt(residual);
-//
-//  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-//  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-//  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
-//  {
-//    limit *= sqrt(this->get_size());
-//    Output::print("stopping tolerance for nonlinear iteration ", limit);
-//  }
-//
-//  if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
-//   && (iteration_counter>=TDatabase::ParamDB->SC_MINIT))
-//   {
-//     Output::print("ITE : ", setw(3), iteration_counter, "  RES : ", sqrt(residual),
-//                   " Reduction : ",  sqrt(residual)/initial_residual_);
-//
-//     // descale the matrices, since only the diagonal A block will
-//     // be reassembled in the next time step
-//     this->deScaleMatrices();
-//     return true;
-//   }
-//   else
-//     return false;
-//}
+/**************************************************************************** */
+bool Time_NSE3D::stop_it(unsigned int iteration_counter)
+{
+  // compute, update and display defect and residuals
+  compute_residuals();
 
-///**************************************************************************** */
-//void Time_NSE3D::solve()
-//{
-//  System_per_grid& s = this->systems.front();
-//
-//  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-//    || (TDatabase::ParamDB->SOLVER_TYPE !=1 ))
+  // stores current norm of the residual. They are normed per default in
+  // the class Residuals
+  const double normOfResidual        = this->get_full_residual();
+//  const double normOfImpulseResidual = this->get_impulse_residual();
+//  const double normOfMassResidual    = this->get_mass_residual();
+//  const double oldNormOfResidual     = this->old_residual_[1].fullR;
+  // hold the residual from up to 10 iterations ago
+  const double veryOldNormOfResidual     = this->old_residual_.front().fullResidual;
+
+//  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
+//  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
+//  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
+//  Output::print("residual        :  " , setw(3), normOfResidual);
+
+  // this is the convergence ratio between actual step and last step
+  // TODO : correct oldNormOfResidual to be the residual of last step
+  // and print it out
+//  if ( iteration_counter > 0 )
 //  {
-//    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-//      ErrThrow("only the direct solver is supported currently");
-//
-//    /// @todo consider storing an object of DirectSolver in this class
-//    DirectSolver direct_solver(s.matrix,
-//                               DirectSolver::DirectSolverTypes::umfpack);
-//    direct_solver.solve(s.rhs, s.solution);
+//  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
 //  }
-//  else
-//    this->mg_solver();
-//  // Important: We have to descale the matrices, since they are scaled
-//  // before the solving process. Only A11 and A22 matrices are
-//  // reset and assembled again but the A12 and A21 are scaled, so
-//  // for the next iteration we have to descale, see assemble_system()
-//    this->deScaleMatrices();
-//
-//this->old_solution = s.solution;
-//  Output::print<5>("solver done");
-//}
-//
-///**************************************************************************** */
-//void Time_NSE3D::deScaleMatrices()
-//{
-//  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-//  double factor = tau*TDatabase::TimeDB->THETA1;
-//  for(System_per_grid& s : this->systems)
-//  {
-//    const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
-//    s.matrix.add_matrix_actives(mass_bloks, -1.0, {{0,0}, {1,1}}, {false, false});
-//    const std::vector<std::vector<size_t>>
-//      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
-//    // note: declaring the auxiliary cell_positions is needed by the compiler
-//    // to sort out the overriding of the function scale_blocks_actives(...,...)
-//    s.matrix.scale_blocks_actives(1./factor, cell_positions);
+
+  if(iteration_counter == 0)
+    initial_residual_ = normOfResidual;
+
+  // Parameters for stopping criteria (desired precision epsilon, max number
+  // of iteration, convergence rate)
+  double epsilon    = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
+  size_t max_It     = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
+  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  bool slow_conv    = false;
+
+  if ( TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE )
+  {
+    epsilon *= sqrt(this->get_size());
+    Output::print("stopping tolerance for nonlinear iteration ", epsilon);
+  }
+
+  if ( normOfResidual >= conv_speed*veryOldNormOfResidual )
+  {
+    slow_conv = true;
+  }
+
+  // Stopping criteria
+  if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
+        || (slow_conv) )
+   {
+    if(slow_conv)
+      Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);
+
+    Output::print("ITERATION : ", setw(3), iteration_counter,
+                  "\t\t", "RESIDUAL: ", normOfResidual,
+                  "\t\t", "Reduction: ", normOfResidual/initial_residual_);
+
+    // descale the matrices, since only the diagonal A block will
+    // be reassembled in the next time step
+    this->descale_matrices();
+    return true;
+   }
+   else
+    return false;
+}
+
+/**************************************************************************** */
+void Time_NSE3D::compute_residuals()
+{
+  System_per_grid& s = this->systems_.front();
+  unsigned int number_u_Dof = s.solution_.length(0);
+  unsigned int number_p_Dof = s.solution_.length(3);
+
+  // copy rhs to defect and compute defect
+  this->defect_ = s.rhs_;
+  s.matrix_.apply_scaled_add(s.solution_, defect_,-1.);
+
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+  {
+    IntoL20Vector3D(&defect_[3*number_u_Dof], number_p_Dof,
+                      TDatabase::ParamDB->PRESSURE_SPACE);
+  }
+
+  // square norms of the residual components
+//#ifdef _MPI
+//  int my_rank;
+//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+//  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
+//  //Eliminate all non-master rows in defect_m!
+//  for(int ui = 0; ui < 3; ++ui)
+//  {//velocity rows
+//    const int* masters = s.parMapperVelocity_.GetMaster();
+//    for(size_t i = 0; i<n_u_dof; ++i)
+//    {
+//      if (masters[i]!=my_rank)
+//      {
+//        defect_m[n_u_dof*ui + i]=0;
+//      }
+//    }
 //  }
-//}
+//  {//pressure row
+//    const int* masters = s.parMapperPressure_.GetMaster();
+//    for(size_t i = 0; i<n_p_dof; ++i)
+//    {
+//      if (masters[i]!=my_rank)
+//      {
+//        defect_m[n_u_dof*3 + i]=0;
+//      }
+//    }
+//  }
+//  //TODO write this nicer (std!)
+//  double impuls_Residual = Ddot(3*n_u_dof, &defect_m.at(0),&defect_m.at(0));
+//  double mass_residual = Ddot(n_p_dof, &defect_m.at(3*n_u_dof),
+//                              &defect_m.at(3*n_u_dof));
+//#else
+//  //should not BlockVector be able to do vector*vector?
+  double impulse_residual = Ddot(3*number_u_Dof,
+                                 &this->defect_[0], &this->defect_[0]);
+
+  double mass_residual    = Ddot(number_p_Dof,
+                                 &this->defect_[3*number_u_Dof],
+                                 &this->defect_[3*number_u_Dof]);
+//#endif
+
+  Residuals current_residual(impulse_residual, mass_residual);
+  old_residual_.add(current_residual);
+}
+
+/**************************************************************************** */
+void Time_NSE3D::solve()
+{
+  System_per_grid& s = this->systems_.front();
+
+  bool using_multigrid = // determine whether we make use of multigrid
+      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
+      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+
+  if(!using_multigrid)
+  { // no multigrid
+    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
+    {
+      ErrThrow("You chose a non-multigrid iterative solver."
+          "This is not supported for TNSE3D so far.");
+    }
+    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    {
+//#ifndef _MPI
+      // So far only UMFPACK is available as direct solver in sequential case.
+      // Actuate it via DirectSolver class.
+
+      /// @todo consider storing an object of DirectSolver in this class
+      DirectSolver direct_solver(s.matrix_,
+                                 DirectSolver::DirectSolverTypes::umfpack);
+      direct_solver.solve(s.rhs_, s.solution_);
+//#elif _MPI
+//      //two vectors of communicators (const for init, non-const for solving)
+//      std::vector<const TParFECommunicator3D*> par_comms_init =
+//      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+//      std::vector<TParFECommunicator3D*> par_comms_solv =
+//      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
 //
+//      //set up a MUMPS wrapper
+//      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+//
+//      //kick off the solving process
+//      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+//#endif
+    }
+  }
+  else  // multigrid preconditioned iterative solver
+  {
+    /** TODO : IMPLEMENT MULTIGRID FOR TIME_NSE3D
+  //    this->mg_solver();
+   */
+    ErrThrow("No multigrid yet");
+  }
+
+  // Important: We have to descale the matrices, since they are scaled
+  // before the solving process. Only A11, A22 and A33 matrices are
+  // reset and assembled again but the non-diagonal blocks are scaled, so
+  // for the next iteration we have to descale, see assemble_system()
+  this->descale_matrices();
+
+  this->old_solution_ = s.solution_;
+  Output::print<5>("solver done");
+}
+
+/**************************************************************************** */
+void Time_NSE3D::descale_matrices()
+{
+  double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double factor = tau*TDatabase::TimeDB->THETA1;
+  for(System_per_grid& s : this->systems_)
+  {
+    const FEMatrix& mass_blocks = *s.massMatrix_.get_blocks().at(0).get();
+    s.matrix_.add_matrix_actives(mass_blocks, -1.0,
+                                 {{0,0}, {1,1}, {2,2}},
+                                 {false, false, false});
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {0,2},
+                        {1,0}, {1,1}, {1,2},
+                        {2,0}, {2,1}, {2,2}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix_.scale_blocks_actives(1./factor, cell_positions);
+  }
+}
+
 ///**************************************************************************** */
 //TNSE_MGLevel* Time_NSE3D::mg_levels(int i, Time_NSE3D::System_per_grid& s)
 //{
@@ -1037,9 +1147,9 @@ void Time_NSE3D::assemble_system()
 //  }
 //}
 //
-///**************************************************************************** */
-//void Time_NSE3D::output(int m, int& image)
-//{
+/**************************************************************************** */
+void Time_NSE3D::output(int i)
+{
 //  if(!TDatabase::ParamDB->WRITE_VTK
 //    && !TDatabase::ParamDB->MEASURE_ERRORS)
 //    return;
@@ -1122,7 +1232,30 @@ void Time_NSE3D::assemble_system()
 //      image++;
 //    }
 //  }
-//}
+}
+
+/**************************************************************************** */
+const Residuals& Time_NSE3D::get_residuals() const
+{
+  return old_residual_.back();
+}
+/**************************************************************************** */
+double Time_NSE3D::get_impulse_residual() const
+{
+  return old_residual_.back().impulsResidual;
+}
+/**************************************************************************** */
+double Time_NSE3D::get_mass_residual() const
+{
+  return old_residual_.back().massResidual;
+}
+/**************************************************************************** */
+double Time_NSE3D::get_full_residual() const
+{
+  return old_residual_.back().fullResidual;
+}
+/**************************************************************************** */
+
 ///**************************************************************************** */
 //std::array< double, int(6) > Time_NSE3D::get_errors()
 //{
