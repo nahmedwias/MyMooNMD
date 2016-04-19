@@ -161,8 +161,8 @@ class Time_NSE3D
     //! @brief An array to store the current defect.
     BlockVector defect_;
     
-    ///@brief The norm of residual from the previous iteration
-    double old_residual_;
+    ///@brief The norm of residuals from up to 10 previous iterations
+    FixedSizeQueue<10, Residuals> old_residual_;
 
     /*! @brief The initial residual. Stored so that the nonlinear iteration can
     !        be stopped as soon as a desired reduction is achieved */
@@ -262,12 +262,11 @@ class Time_NSE3D
     */
     void assemble_rhs();
 
-//    /** TODO Implement this method.
-//     * @brief Descale matrices
-//     * This function will descale all A-blocks which were scaled
-//     * during the function call time Time_NSE3D::assemble_system().
-//     */
-//    void descale_matrices();
+    /** @brief Descale matrices
+     * This function will descale all A-blocks which were scaled
+     * during the function call time Time_NSE3D::assemble_system().
+     */
+    void descale_matrices();
 
     /** @brief Assemble the nonlinear terms
      * Assemble the nonlinear terms. Need not be used when this is
@@ -284,11 +283,10 @@ class Time_NSE3D
      */
     void assemble_system();
 
-//
-//    /** TODO Implement this method.
-//    *Solve the current linear system. Nonlinear loop is outside of this class.
-//    */
-//    void solve();
+    /** @brief Solve the current linear system. Nonlinear
+     * loop is outside of this class.
+    */
+    void solve();
 
     /** @brief check if one of the stopping criteria is fulfilled
      *
@@ -300,23 +298,22 @@ class Time_NSE3D
      * @note For the sequential case, this is the copy-paste NSE2D
      * (with exception of slightly different compute_residual methods).
      */
-//    bool stop_it(unsigned int iteration_counter);
+    bool stop_it(unsigned int iteration_counter);
 
-//    /** TODO Implement this method.
-//     * ! Measure errors and draw a nice VTK picture, if requested to do so.
-//    ! @param i suffix for output file name, -1 means no suffix. */
-//    void output(int i = -1);
-//
-//    /** TODO Implement this method.
-//     * @brief Compute the defect Ax-b, and the residuals and store it all.
-//     *
-//     * Updates defect and old_residuals.
-//     * A is the current matrix, x is the current solution and b is the
-//     * right hand side. Call this function after assembling the nonlinear
-//     * matrix with the current solution.
-//     */
-//    void compute_residuals();
-//
+    /**
+     * @brief Compute the defect Ax-b, and the residuals and store it all.
+     * This method is also the one displaying the residuals.
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
+
+    /** ! Measure errors and draw a nice VTK picture, if requested to do so.
+    ! @param i suffix for output file name, -1 means no suffix. */
+    void output(int i = -1);
+
 ///*******************************************************************************/
 //    // Declaration of special member functions - delete all but destructor.
 //    // This problem class will be used to request the whole process of
@@ -370,10 +367,10 @@ class Time_NSE3D
      { return this->systems_.front().pressureSpace_; }
 //   const BlockVector    & get_solution() const
 //     { return this->systems_.front().solution_; }
-//
-//   const int get_size() const
-//     { return this->systems_.front().solution_.length(); }
-//
+
+   const int get_size() const
+     { return this->systems_.front().solution_.length(); }
+
 //   const Example_NSE2D  & get_example()  const
 //     { return example_; }
 //
@@ -381,16 +378,16 @@ class Time_NSE3D
 ////  TFEVectFunct3D & get_velocity()
 ////    { return this->systems_.front().u_; }
 ////  TFEFunction3D *get_velocity_component(int i);
-//
-////  /// @brief Get the current residuals  (updated in compute_residuals)
-////  const Residuals& get_residuals() const;
-////  /// @brief get the current impuls residual (updated in compute_residuals)
-////  double get_impuls_residual() const;
-////  /// @brief get the current mass residual (updated in compute_residuals)
-////  double get_mass_residual() const;
-////  /// @brief get the current residual (updated in compute_residuals)
-////  double get_full_residual() const;
-//
+
+  /// @brief Get the current residuals  (updated in compute_residuals)
+  const Residuals& get_residuals() const;
+  /// @brief get the current impulse residual (updated in compute_residuals)
+  double get_impulse_residual() const;
+  /// @brief get the current mass residual (updated in compute_residuals)
+  double get_mass_residual() const;
+  /// @brief get the current residual (updated in compute_residuals)
+  double get_full_residual() const;
+
 //  /** TODO Implement this method.
 //   * @brief return the computed errors (computed in output())
 //   */
