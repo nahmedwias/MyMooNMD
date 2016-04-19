@@ -169,12 +169,13 @@ class Time_NSE3D
     double initial_residual_;
     
     /** @brief Errors, held in ready to be accessed from outside the class
-     * The array is filled during the function call NSE3D::output()
+     * The array is filled during the function call TNSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
      * (errors.at(0) is L2 and errors.at(1) is H1-semi)
      * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
+     * From 5 to 8, errors corrected with time tau*0.5
      */
-    std::array<double, int(4)> errors_;
+    std::array<double, int(8)> errors_;
 
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;

@@ -1193,50 +1193,100 @@ void Time_NSE3D::output(int m, int &image)
     }
   }
 
-//  if(TDatabase::ParamDB->MEASURE_ERRORS)
-//  {
-//    double locerr[8];
-//    MultiIndex3D allderiv[3]= {D00, D10, D01};
-//    const TFESpace3D *v_sp = &this->get_velocity_space();
-//    const TFESpace3D *p_sp = &this->get_pressure_space();
-//    TAuxParam3D aux;
-//    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+  // Measure errors to known solution
+  // if an exact solution is not known, it is usually set to be zero, so that
+  // in such a case, here only integrals of the solution are computed.
+  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  {
+    double err_u1[4];  // FIXME? Of these arrays only the 2 first entries are
+    double err_u2[4];  // used. But the evil GetErrors() will corrupt memory if
+    double err_u3[4];  // these have not at least size 4.
+    double err_p[4];
+
+    TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+    MultiIndex3D allderiv[4]= {D000, D100, D010, D001};
+    const TFESpace3D *v_space = &this->get_velocity_space();
+    const TFESpace3D *p_space = &this->get_pressure_space();
+
+    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+
+    // Errors in velocity components and pressure
+    u1 ->GetErrors(example_.get_exact(0), 4, allderiv, 2, L2H1Errors, nullptr,
+                  &aux, 1, &v_space, err_u1);
+    u2 ->GetErrors(example_.get_exact(1), 4, allderiv, 2, L2H1Errors, nullptr,
+                  &aux, 1, &v_space, err_u2);
+    u3 ->GetErrors(example_.get_exact(2), 4, allderiv, 2, L2H1Errors, nullptr,
+                  &aux, 1, &v_space, err_u3);
+    s.p_.GetErrors(example_.get_exact(3), 4, allderiv, 2, L2H1Errors, nullptr,
+                  &aux, 1, &p_space, err_p);
+
+//#ifdef _MPI  // TODO implement MPI here
+//    int my_rank;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 //
-//    u1->GetErrors(example.get_exact(0), 3, allderiv, 2, L2H1Errors,nullptr,
-//                  &aux,1, &v_sp,locerr);
+//    double err_red[8]; //memory for global (across all processes) error
+//    double err_send[8]; //fill send buffer
+//    err_send[0]=err_u1[0];
+//    err_send[1]=err_u1[1];
+//    err_send[2]=err_u2[0];
+//    err_send[3]=err_u2[1];
+//    err_send[4]=err_u3[0];
+//    err_send[5]=err_u3[1];
+//    err_send[6]=err_p[0];
+//    err_send[7]=err_p[1];
 //
-//    u2->GetErrors(example.get_exact(1), 3, allderiv, 2, L2H1Errors,nullptr,
-//                  &aux,1, &v_sp,locerr+2);
-//
-//    errors[0] += (locerr[0]*locerr[0]+locerr[2]*locerr[2]
+//    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//    for(i=0;i<8;i++)
+//    {//MPI: sqrt was skipped in GetErrors function - do it here globally!
+//      err_red[i] = sqrt(err_red[i]);
+//    }
+//    //fill the reduced errors back where they belong
+//    err_u1[0] = err_red[0];
+//    err_u1[1] = err_red[1];
+//    err_u2[0] = err_red[2];
+//    err_u2[1] = err_red[3];
+//    err_u3[0] = err_red[4];
+//    err_u3[1] = err_red[5];
+//    err_p[0] = err_red[6];
+//    err_p[1] = err_red[7];
+//#else
+    int my_rank = 0;
+//#endif
+
+    errors_[0] = err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] +
+                 err_u3[0]*err_u3[0];  // (L2-norm)^2 for u
+    errors_[1] = err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] +
+                 err_u3[1]*err_u3[1];  // (H1-semi)^2 for u
+    errors_[2] = err_p[0]*err_p[0];  // (L2-norm)^2 for p
+    errors_[3] = err_p[1]*err_p[1];  // (H1-norm)^2 for p
+
+    // TODO : CORRECT THE TIME-CORRECTED NORMS L2 AND H1 AND DISPLAY THEM
+//    errors_[4] += (locerr[0]*locerr[0]+locerr[2]*locerr[2]
+//                  + this->errors[0])*tau*0.5;
+//    errors_[5] += (locerr[1]*locerr[1]+locerr[3]*locerr[3]
 //                  + this->errors[1])*tau*0.5;
-//    errors[1] = locerr[0]*locerr[0]+locerr[2]*locerr[2];
-//    errors[2] += (locerr[1]*locerr[1]+locerr[3]*locerr[3]
-//                  + this->errors[3])*tau*0.5;
-//    errors[3] = locerr[1]*locerr[1]+locerr[3]*locerr[3];
-//
-//    Output::print<1>("L2(u) : ", setprecision(10), sqrt(this->errors[1]));
-//    Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
-//
-//    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
-//    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
-//
-//    s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors,
-//                  nullptr, &aux, 1, &p_sp, locerr);
-//
-//    Output::print<1>("L2(p) : ", setprecision(10), locerr[0]);
-//    Output::print<1>("H1-semi(p)) : " , setprecision(10), locerr[1] );
-//
-//    errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
-//    errors[5] = locerr[0]*locerr[0];
-//    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
-//
-//    errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
-//    errors[7] = locerr[1]*locerr[1];
-//    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
-//  }
-//   delete u1;
-//   delete u2;
+//    errors[6] += (locerr[0]*locerr[0] + this->errors[2])*tau*0.5;
+//    errors[7] += (locerr[1]*locerr[1] + this->errors[3])*tau*0.5;
+
+    // print errors
+    if (my_rank == 0 )
+    {
+      Output::print<1>("L2(u)      : ", setprecision(10), sqrt(this->errors_[0]));
+      Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors_[1]));
+//    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[4]));
+//    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[5]));
+      Output::print<1>("L2(p)      : ", setprecision(10), sqrt(this->errors_[2]));
+      Output::print<1>("H1-semi(p)): ", setprecision(10), sqrt(this->errors_[3]));
+//    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[6]) );
+//    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[7]) );
+    }
+  }
+   delete u1;
+   delete u2;
+   delete u3;
+
+   // do post-processing step depending on what the example implements, if needed
+//   example_.do_post_processing(*this);
 
 }
 
