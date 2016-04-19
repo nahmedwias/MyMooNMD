@@ -311,8 +311,8 @@ class Time_NSE3D
     void compute_residuals();
 
     /** ! Measure errors and draw a nice VTK picture, if requested to do so.
-    ! @param i suffix for output file name, -1 means no suffix. */
-    void output(int i = -1);
+     */
+    void output(int m, int &image);
 
 ///*******************************************************************************/
 //    // Declaration of special member functions - delete all but destructor.

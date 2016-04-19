@@ -162,10 +162,6 @@ int main(int argc, char* argv[])
 
   int image = 0;
 
-//  TODO Check if this is necessary. Done in NSE3D but not in TNSE2D
-//  nse3d.stop_it(0);
-//  // check initial residuals
-
   //======================================================================
   // time iteration
   //======================================================================
@@ -218,7 +214,7 @@ int main(int argc, char* argv[])
         tnse3d.assemble_system();
       }  // end of nonlinear loop
 
-      tnse3d.output();
+      tnse3d.output(step,image);
 
     } // end of subtime loop
   } // end of time loop
