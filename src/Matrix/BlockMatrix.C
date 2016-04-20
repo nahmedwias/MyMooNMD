@@ -257,7 +257,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
                    "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
         }
-        handle_discovery_of_vector_actives(b.active(i), i);
+        handle_discovery_of_vector_non_actives(b.length(i)-b.active(i), i);
       }
     }
 
@@ -281,7 +281,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
                    "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
         }
-        handle_discovery_of_vector_actives(x.active(j), j);
+        handle_discovery_of_vector_non_actives(x.length(j)-x.active(j), j);
       }
     }
 
@@ -1198,12 +1198,12 @@ double BlockMatrix::get(unsigned int i, unsigned int j) const
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const
+    void BlockMatrix::handle_discovery_of_vector_non_actives(
+      const int nActive, const int spaceNumber) const
     {
       if(nActive != 0)
       {
-        //maybe put to virtual method: handle_discovery_of_vector_actives
+        //maybe put to virtual method: handle_discovery_of_vector_non_actives
         // give a warning if the vector has actives - the matrix has definitely not!
         Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
                          " Did you want to use a BlockFEMatrix instead?");

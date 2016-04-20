@@ -677,8 +677,8 @@ class BlockMatrix
      *  @param nActive number of actives
      *  @param spaceNumber number of the test space to compare the actives
      */
-    virtual void handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const;
+    virtual void handle_discovery_of_vector_non_actives(
+      const int nActive, const int spaceNumber) const;
     /**
      * Check if a given index pair is the last one in the cell_grid_.
      *
