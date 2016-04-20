@@ -15,21 +15,21 @@ void InitialU1(double x, double y, double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 0*t;
+  values[0] = 0;
 }
 
 void InitialU2(double x, double y, double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 0*t;
+  values[0] = 0;
 }
 
 void InitialU3(double x, double y, double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 0*t;
+  values[0] = 0;
 }
 
 void InitialP(double x, double y, double z, double *values)
@@ -46,7 +46,7 @@ void ExactU1(double x, double y,  double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = t*0;
+  values[0] = 0;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
@@ -57,8 +57,8 @@ void ExactU2(double x, double y,  double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 0*t*x;;
-  values[1] = 0*t;
+  values[0] = 0;
+  values[1] = 0;
   values[2] = 0;
   values[3] = 0;
   values[4] = 0;
@@ -68,7 +68,7 @@ void ExactU3(double x, double y,  double z, double *values)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
 
-  values[0] = 0*t;
+  values[0] = 0;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
@@ -99,20 +99,29 @@ void ExactP(double x, double y,  double z, double *values)
 // ========================================================================
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+  if ( y == 1 )
+    cond = NEUMANN;
+  else
+    cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-  value = 0;
+    value = 0;
 }
 
 // value of boundary condition
 void U2BoundValue(double x, double y, double z, double &value)
 {
-  value = 0;
+  double t = TDatabase::TimeDB->CURRENTTIME;
+  if ( (y == 0) && (x >= 0.4) && (x <= 0.6) && (z >= 0.4) && (z <= 0.6))
+    value = 10*t;
+//  else if ( y == 1 )
+//    value = 10*t;
+  else
+    value = 0;
 }
 
 // value of boundary condition
