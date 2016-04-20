@@ -217,7 +217,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   }
 
   // 20 <= number of term in bilinear form
-  // DUE NOTE CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
+  // DO NOT CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
   aux = new double [MaxN_QuadPoints_3D*20]; 
   for(j=0;j<MaxN_QuadPoints_3D;j++)
     AuxArray[j] = aux + j*20;

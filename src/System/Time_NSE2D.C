@@ -658,14 +658,20 @@ void Time_NSE2D::solve()
     direct_solver.solve(s.rhs, s.solution);
   }
   else
+  {
     this->mg_solver();
+  }
+
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
-    this->deScaleMatrices();
+  this->deScaleMatrices();
 
-this->old_solution = s.solution;
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       s.p.project_into_L20();
+
+  this->old_solution = s.solution;
   Output::print<5>("solver done");
 }
 
@@ -901,9 +907,6 @@ void Time_NSE2D::output(int m, int& image)
   System_per_grid& s = this->systems.front();
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
-  
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       s.p.project_into_L20();
 
   if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
