@@ -115,8 +115,8 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       
       // check if the block has the correct dimensions, basically this checks if
       // all blocks in one row/column have the same number of rows/columns.
-      if(  newInfo.block_->GetN_Rows() != nRowsOfCell
-        || newInfo.block_->GetN_Columns() != nColumnsOfCell)
+      if(  newInfo.block_->GetN_Rows() != (int) nRowsOfCell
+        || newInfo.block_->GetN_Columns() != (int) nColumnsOfCell)
       {
         ErrThrow("unable to create a block matrix at entry ", i, " ", j,
                  ". The matrix block should have dimensions ", nRowsOfCell, 

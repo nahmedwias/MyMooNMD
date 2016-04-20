@@ -1095,11 +1095,16 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
   
 } // TFEFunction3D::GetErrors
 
-/** determine the value of function and its first derivatives at
-    the given point */
 
-void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
+bool TFEFunction3D::FindGradient(double x, double y, double z,
+                                 std::vector<double>& values) const
 {
+
+  if(values.size() != 4)
+  {
+    ErrThrow("TFEFunction3D::FindGradient expects vector of size 4 !=", values.size());
+  }
+
   int i,j, N_Cells;
   double xi, eta, zeta;
   TBaseCell *cell;
@@ -1117,10 +1122,10 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
   int *GlobalNumbers, *BeginIndex;
   
   N_Found = 0;
-  values[0] = 0;
-  values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
+  values.at(0) = 0;
+  values.at(1) = 0;
+  values.at(2) = 0;
+  values.at(3) = 0;
   
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
@@ -1133,7 +1138,6 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
     if(cell->PointInCell(x,y,z))
     {
       N_Found++;      
-      // cout << "point found in cell: " << i << endl;
       FE_ID = FESpace3D->GetFE3D(i, cell);
       FE_Obj = TFEDatabase3D::GetFE3D(FE_ID);
       RefTrans = FE_Obj->GetRefTransID();
@@ -1143,9 +1147,6 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
 
       // find local coordinates of the given point
       TFEDatabase3D::GetRefFromOrig(RefTrans, x, y, z, xi, eta, zeta);
-      // cout << " xi: " << xi << endl;
-      // cout << "eta: " << eta << endl;
-      // cout << "zeta: " << zeta << endl;
 
       // get base function object
       bf = FE_Obj->GetBaseFunct3D();
@@ -1184,16 +1185,12 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
         ux += uxorig[j]*val;
         uy += uyorig[j]*val;
         uz += uzorig[j]*val;
-        // cout << " uorig[j]: " << uorig[j] << endl;
-        // cout << " uxorig[j]: " << uxorig[j]  << endl;
-        // cout << " uyorig[j]: " << uyorig[j] << endl;
-        // cout << " uzorig[j]: " << uzorig[j] << endl;
       } 
 
-      values[0] += u;
-      values[1] += ux;
-      values[2] += uy;
-      values[3] += uz;
+      values.at(0) += u;
+      values.at(1) += ux;
+      values.at(2) += uy;
+      values.at(3) += uz;
 
       delete[] uorig;
       delete[] uxorig;
@@ -1209,15 +1206,13 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
 
   if(N_Found>0)
   {
-    values[0] /= N_Found;
-    values[1] /= N_Found;
-    values[2] /= N_Found;
-    values[3] /= N_Found;
-    // cout << " values[0]: " << values[0] << endl;
-    // cout << " values[1]: " << values[1] << endl;
-    // cout << " values[2]: " << values[2] << endl;
-    // cout << " values[3]: " << values[3] << endl;
-  } 
+    values.at(0) /= N_Found;
+    values.at(1) /= N_Found;
+    values.at(2) /= N_Found;
+    values.at(3) /= N_Found;
+    return true;
+  }
+  return false;
 } 
 
 void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no, 
