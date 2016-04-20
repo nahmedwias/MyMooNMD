@@ -581,6 +581,12 @@ void NSE3D::assemble_non_linear_term()
 
 bool NSE3D::stop_it(unsigned int iteration_counter)
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
   //compute and update defect and residuals
   compute_residuals();
   
@@ -606,24 +612,28 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
   {
     limit *= sqrt(this->get_size());
-    Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
+    if(my_rank==0)
+     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
   }
 
   // check if the iteration has converged, or reached the maximum number of
   // iterations or if convergence is too slow. Then return true otherwise false
   if( (normOfResidual<=limit) || (iteration_counter==max_it) || (slow_conv) )
   {
-    if(slow_conv)
+    if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual_);
-    // The following line comes from MooNMD and shall be us a reminder to
-    // TODO count total number of linear iterations for iterative solvers
-    //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
-    //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
+    if(my_rank==0)
+    {
+      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
+                       " RES : ", normOfResidual, " Reduction : ",
+                       normOfResidual/initial_residual_);
+      // The following line comes from MooNMD and shall be us a reminder to
+      // TODO count total number of linear iterations for iterative solvers
+      //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
+      //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
+    }
 
     return true;
   }
