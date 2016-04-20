@@ -165,6 +165,7 @@ int main(int argc, char* argv[])
     RowA[0] = 0; RowA[1] = 1; RowA[2] = 2; RowA[3] = 3; RowA[4] = 4;
     std::shared_ptr<TStructure> structureA(new TStructure(4, 4, ColA, RowA));
     std::shared_ptr<TMatrix> matA = std::make_shared<TMatrix>(structureA);
+    matA->GetEntries()[0] = 1.; // set just one entry for testing later
     
     //Matrix B
     int * RowB = new int[4];
@@ -206,6 +207,24 @@ int main(int argc, char* argv[])
       ErrThrow("total number of columns in BlockMatrix is incorrect");
     if(bm.get_n_total_entries() != 22)
       ErrThrow("total number of entries in BlockMatrix is incorrect");
+    // check an entry in the sparsity pattern
+    if(bm.get(0, 0) != 1.) // we set this one entry to test here
+      ErrThrow("wrong entry at position (0,0) ", bm.get(0, 0));
+    // check an entry which is not in the sparsity pattern
+    if(bm.get(4, 1) != 0.)//other entries are not set, so they are zero(default)
+      ErrThrow("wrong entry at position (0,0) ", bm.get(0, 0));
+    // check if exceptions are thrown when accessing a value which is too large
+    try
+    {
+      double a = bm.get(7, 7); // the size is 6 by 6
+      Output::print("I was able to get an entry where there should not even "
+                    "exist one: ", a);
+      return 1;
+    }
+    catch(...)
+    {
+      // correct behavior, nothing more to do
+    }
     
     // check if exceptions are thrown when appropriate
     try
