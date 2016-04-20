@@ -15,11 +15,6 @@
 
 #include <TimeDiscRout.h>
 
-// TODO Check if those 3 includes are necessary in the main program
-#include <sys/types.h>
-#include <LocalAssembling3D.h>
-#include <Example_NSE3D.h>
-
 using namespace std;
 
 #ifdef _MPI
@@ -33,7 +28,7 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  double t_start=GetTime();
+  double t_start = GetTime();
   Output::print("<<<<< Running ParMooN: TNSE3D Main Program >>>>>");
 
   // Construct the ParMooN Databases.
@@ -161,31 +156,77 @@ int main(int argc, char* argv[])
   // added in the loops thanks to assemble_nonlinear()
   tnse3d.assemble_initial_time();
 
-//  nse3d.stop_it(0);
-//  // check initial residuals
-//  //======================================================================
-//  for(unsigned int k=1;; k++)
-//  {
-//    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",
-//                     nse3d.get_residuals());
-//
-//    // solve the system
-//    nse3d.solve();
-//
-//    nse3d.assemble_non_linear_term();
-//
-//    // checking residuals
-//    if(nse3d.stop_it(k))
-//      break;
-//
-//  }
-//  nse3d.output();
-//
-//  Output::close_file();
-//
-//#ifdef _MPI
-//  MPI_Finalize();
-//#endif
-//
+  double end_time = TDatabase::TimeDB->ENDTIME;
+  int step = 0;
+  int n_substeps = GetN_SubSteps();
+
+  int image = 0;
+
+  //======================================================================
+  // time iteration
+  //======================================================================
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  {
+    step++;
+    // Output::print("memory before ":, GetMemory());
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
+    {
+      // setting the time discretization parameters
+      SetTimeDiscParameters(1);
+      if( step == 1) // a few output, not very necessary
+      {
+        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+      }
+      // tau may change depending on the time discretization (adaptive time)
+      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      TDatabase::TimeDB->CURRENTTIME += tau;
+
+      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+      // prepare the right hand side vector - needed only once per time step
+      tnse3d.assemble_rhs();
+
+      // assemble the nonlinear matrices
+      tnse3d.assemble_nonlinear_term();
+
+      // prepare the matrices for defect computations and solvers
+      tnse3d.assemble_system();
+
+      for(unsigned int k=0; ; k++)
+      {
+        // checking residuals
+        if(tnse3d.stop_it(k))
+        {
+          break;
+        }
+
+        Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+        Output::print<1>("Residuals :", tnse3d.get_residuals());
+
+        tnse3d.solve();
+
+        tnse3d.assemble_nonlinear_term();
+
+        tnse3d.assemble_system();
+      }  // end of nonlinear loop
+
+      tnse3d.output(step,image);
+
+    } // end of subtime loop
+  } // end of time loop
+
+  // ======================================================================
+  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
+  Output::print("used time: ", GetTime() - t_start, "s");
+  // ======================================================================
+
+  Output::close_file();
+  /*#ifdef _MPI
+  //  MPI_Finalize();
+  #endif*/
   return 0;
 }

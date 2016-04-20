@@ -54,6 +54,26 @@ namespace lin_space_time
 {
   #include "TNSE_3D/linear_space_time.h"  // 101
 }
+namespace AnsatzLinConst
+{
+  #include "TNSE_3D/AnsatzLinConst.h"     // 102
+}
+namespace Bsp0
+{
+  #include "TNSE_3D/Bsp0.h"   // 103
+}
+namespace Bsp1
+{
+  #include "TNSE_3D/Bsp1.h"   // 104
+}
+namespace Bsp2
+{
+ #include "TNSE_3D/Bsp2.h"    // 105
+}
+namespace Bsp3
+{
+  #include "TNSE_3D/Bsp3.h"   // 106
+}
 //========================================
 
 Example_NSE3D::Example_NSE3D() : Example3D()
@@ -330,8 +350,167 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         ExampleFile();
         break;
       }
+      case 102:
+      {
+        using namespace AnsatzLinConst;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
 
-    default:
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 103:
+      {
+        using namespace Bsp0;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 104:
+      {
+        using namespace Bsp1;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 105:
+      {
+        using namespace Bsp2;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 106:
+      {
+        using namespace Bsp3;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
 }

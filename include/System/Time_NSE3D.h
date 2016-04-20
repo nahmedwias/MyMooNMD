@@ -161,20 +161,21 @@ class Time_NSE3D
     //! @brief An array to store the current defect.
     BlockVector defect_;
     
-    ///@brief The norm of residual from the previous iteration
-    double old_residual_;
+    ///@brief The norm of residuals from up to 10 previous iterations
+    FixedSizeQueue<10, Residuals> old_residual_;
 
     /*! @brief The initial residual. Stored so that the nonlinear iteration can
     !        be stopped as soon as a desired reduction is achieved */
     double initial_residual_;
     
     /** @brief Errors, held in ready to be accessed from outside the class
-     * The array is filled during the function call NSE3D::output()
+     * The array is filled during the function call TNSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
      * (errors.at(0) is L2 and errors.at(1) is H1-semi)
      * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
+     * From 5 to 8, errors corrected with time tau*0.5
      */
-    std::array<double, int(4)> errors_;
+    std::array<double, int(8)> errors_;
 
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
@@ -254,72 +255,66 @@ class Time_NSE3D
     */
     void assemble_initial_time();
 
-//   /** TODO Implement this method.
-//    * @brief Assemble the rhs only
-//    * 1. Assembling the right hand side only
-//    * 2. Scaling of the B-Blocks due to time stepping
-//    * This function will prepare the right hand side during the time
-//    * discretization but should be outside the nonlinear loop.
-//    */
-//    void assemble_rhs();
-//
-//    /** TODO Implement this method.
-//     * @brief Assemble the whole system matrix which will be passed
-//     * to the solvers.
-//     */
-//    void assemble_system();
-//
-//    /** TODO Implement this method.
-//     * @brief Descale matrices
-//     * This function will descale all A-blocks which were scaled
-//     * during the function call time Time_NSE3D::assemble_system().
-//     */
-//    void descale_matrices();
-//
-//    /** TODO Implement this method.
-//     * @brief Assemble the nonlinear terms
-//     * Assemble the nonlinear terms. Need not be used when this is
-//     * a Stokes problem, or once per nonlinear iteration if this
-//     * is a Navier Stokes problem.
-//     * The matrix blocks to which the nonlinear term contribute are reset
-//     * to zero and then completely reassembled, including the linear and
-//     * nonlinear terms.
-//     */
-//    void assemble_nonlinear_term();
-//
-//    /** TODO Implement this method.
-//    *Solve the current linear system. Nonlinear loop is outside of this class.
-//    */
-//    void solve();
-//
-//    /** TODO Implement this method.
-//     *  @brief check if one of the stopping criteria is fulfilled
-//     *
-//     * either converged, maximum number of iterations reached, or slow
-//     * convergence
-//     *
-//     * @param iteration_counter current iterate
-//     *
-//     * @note For the sequential case, this is the copy-paste NSE2D
-//     * (with exception of slightly different compute_residual methods).
-//     */
-//    bool stop_it(unsigned int iteration_counter);
-//
-//    /** TODO Implement this method.
-//     * ! Measure errors and draw a nice VTK picture, if requested to do so.
-//    ! @param i suffix for output file name, -1 means no suffix. */
-//    void output(int i = -1);
-//
-//    /** TODO Implement this method.
-//     * @brief Compute the defect Ax-b, and the residuals and store it all.
-//     *
-//     * Updates defect and old_residuals.
-//     * A is the current matrix, x is the current solution and b is the
-//     * right hand side. Call this function after assembling the nonlinear
-//     * matrix with the current solution.
-//     */
-//    void compute_residuals();
-//
+  /** @brief Assemble the rhs only
+    * 1. Assembling the right hand side only
+    * 2. Scaling of the B-Blocks due to time stepping
+    * This function will prepare the right hand side during the time
+    * discretization but should be outside the nonlinear loop.
+    */
+    void assemble_rhs();
+
+    /** @brief Descale matrices
+     * This function will descale all A-blocks which were scaled
+     * during the function call time Time_NSE3D::assemble_system().
+     */
+    void descale_matrices();
+
+    /** @brief Assemble the nonlinear terms
+     * Assemble the nonlinear terms. Need not be used when this is
+     * a Stokes problem, or once per nonlinear iteration if this
+     * is a Navier Stokes problem.
+     * The matrix blocks to which the nonlinear term contribute are reset
+     * to zero and then completely reassembled, including the linear and
+     * nonlinear terms.
+     */
+    void assemble_nonlinear_term();
+
+    /** @brief Assemble the whole system matrix which will be passed
+     * to the solvers.
+     */
+    void assemble_system();
+
+    /** @brief Solve the current linear system. Nonlinear
+     * loop is outside of this class.
+    */
+    void solve();
+
+    /** @brief check if one of the stopping criteria is fulfilled
+     *
+     * either converged, maximum number of iterations reached, or slow
+     * convergence
+     *
+     * @param iteration_counter current iterate
+     *
+     * @note For the sequential case, this is the copy-paste NSE2D
+     * (with exception of slightly different compute_residual methods).
+     */
+    bool stop_it(unsigned int iteration_counter);
+
+    /**
+     * @brief Compute the defect Ax-b, and the residuals and store it all.
+     * This method is also the one displaying the residuals.
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
+
+    /** ! Measure errors and draw a nice VTK picture, if requested to do so.
+     */
+    void output(int m, int &image);
+
 ///*******************************************************************************/
 //    // Declaration of special member functions - delete all but destructor.
 //    // This problem class will be used to request the whole process of
@@ -373,10 +368,10 @@ class Time_NSE3D
      { return this->systems_.front().pressureSpace_; }
 //   const BlockVector    & get_solution() const
 //     { return this->systems_.front().solution_; }
-//
-//   const int get_size() const
-//     { return this->systems_.front().solution_.length(); }
-//
+
+   const int get_size() const
+     { return this->systems_.front().solution_.length(); }
+
 //   const Example_NSE2D  & get_example()  const
 //     { return example_; }
 //
@@ -384,16 +379,16 @@ class Time_NSE3D
 ////  TFEVectFunct3D & get_velocity()
 ////    { return this->systems_.front().u_; }
 ////  TFEFunction3D *get_velocity_component(int i);
-//
-////  /// @brief Get the current residuals  (updated in compute_residuals)
-////  const Residuals& get_residuals() const;
-////  /// @brief get the current impuls residual (updated in compute_residuals)
-////  double get_impuls_residual() const;
-////  /// @brief get the current mass residual (updated in compute_residuals)
-////  double get_mass_residual() const;
-////  /// @brief get the current residual (updated in compute_residuals)
-////  double get_full_residual() const;
-//
+
+  /// @brief Get the current residuals  (updated in compute_residuals)
+  const Residuals& get_residuals() const;
+  /// @brief get the current impulse residual (updated in compute_residuals)
+  double get_impulse_residual() const;
+  /// @brief get the current mass residual (updated in compute_residuals)
+  double get_mass_residual() const;
+  /// @brief get the current residual (updated in compute_residuals)
+  double get_full_residual() const;
+
 //  /** TODO Implement this method.
 //   * @brief return the computed errors (computed in output())
 //   */

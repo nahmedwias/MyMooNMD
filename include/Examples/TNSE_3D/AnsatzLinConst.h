@@ -1,110 +1,121 @@
-// Time-dependent 3D Navier-Stokes problem, Poiseuille Problem
+// time dependent Navier-Stokes problem 3D, ansatz
 // 
-// u(x,y,z) = (t*y,2*t*y,0)
-// p(x,y,z) = 0
+// u(x,y) = t*(y+z, x-z, 2*x+y)
+// p(x,y) = 0
 
 void ExampleFile()
 {
-  Output::print<1>("Example: linear_space_time.h");
+  OutPut("Example: AnsatzLinConst.h" << endl);
 }
 
 // ========================================================================
-// initial conditions
+// initial solution
 // ========================================================================
 void InitialU1(double x, double y, double z, double *values)
 {
-  values[0] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(y+z);
 }
 
 void InitialU2(double x, double y, double z, double *values)
 {
-  values[0] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(x-z);
 }
 
 void InitialU3(double x, double y, double z, double *values)
 {
-  values[0] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(2*x+y);
+
 }
 
-void InitialP(double x, double y, double z, double *values)
+void InitialP(double x, double y,  double z, double *values)
 {
   values[0] = 0;
 }
+
 
 // ========================================================================
 // exact solution
 // ========================================================================
 void ExactU1(double x, double y,  double z, double *values)
 {
-  values[0] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(y+z);
   values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
+  values[2] = t;
+  values[3] = t;
   values[4] = 0;
 }
 
 void ExactU2(double x, double y,  double z, double *values)
 {
-  values[0] = 0;
-  values[1] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(x-z);
+  values[1] = t;
   values[2] = 0;
-  values[3] = 0;
+  values[3] = -t;
   values[4] = 0;
 }
 
 void ExactU3(double x, double y,  double z, double *values)
 {
-  values[0] = 0;
-  values[1] = 0;
-  values[2] = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
+  values[0] = t*(2*x+y);
+  values[1] = 2*t;
+  values[2] = t;
   values[3] = 0;
   values[4] = 0;
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double x, double y, double z, double *values)
 {
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
   values[4] = 0;
+
 }
 
 // ========================================================================
-// kind of boundary condition (for FE space needed) and values
+// boundary conditions
 // ========================================================================
+// kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  if ( y == 1 )
-    cond = NEUMANN;
-  else
-    cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+  cond = DIRICHLET;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-    value = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  value = t*(y+z);
 }
 
 // value of boundary condition
 void U2BoundValue(double x, double y, double z, double &value)
 {
-  double t = TDatabase::TimeDB->CURRENTTIME;
-  if ( (y == 0) && (x >= 0.4) && (x <= 0.6) && (z >= 0.4) && (z <= 0.6))
-    value = 10*t;
-//  else if ( y == 1 )
-//    value = 10*t;
-  else
-    value = 0;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  value = t*(x-z);
 }
 
 // value of boundary condition
 void U3BoundValue(double x, double y, double z, double &value)
 {
-    value = 0 ;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  value = t*(2*x+y);    
 }
+
 
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
@@ -112,25 +123,23 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  const double nu = 1/TDatabase::ParamDB->RE_NR;
-  if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)
+  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  int i;
+  double t=TDatabase::TimeDB->CURRENTTIME;
+  double *coeff, x, y, z;
+
+  for(i=0;i<n_points;i++)
   {
-    for(int i = 0; i < n_points; i++)
-    {
-      coeffs[i][0] = nu;
-      coeffs[i][1] = 0; // f1
-      coeffs[i][2] = 0; // f2
-      coeffs[i][3] = 0; // f3
-    }
-  }
-  else
-  {
-    for(int i = 0; i < n_points; i++)
-    {
-      coeffs[i][0] = nu;
-      coeffs[i][1] = 0; // f1
-      coeffs[i][2] = -10; // f2
-      coeffs[i][3] = 0; // f3
-    }
-  }
+    coeff = coeffs[i];
+    
+    x = X[i];
+    y = Y[i];
+    z = Z[i];
+    coeff[0] = eps;
+    coeff[1] = (y+z) + t*t*(x-z) + t*t*(2*x+y); // f1
+    coeff[2] = (x-z) + t*t*(y+z) - t*t*(2*x+y); // f2
+    coeff[3] =  (2*x+y) + 2*t*t*(y+z) + t*t*(x-z);// f3
+  }  
 }
+
+

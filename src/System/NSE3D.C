@@ -83,7 +83,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #endif
 }
 
-
 NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
@@ -414,7 +413,6 @@ void NSE3D::assemble_linear_terms()
 
         nRhs = 3;
         break;
-
       case 4:
         nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
@@ -463,7 +461,6 @@ void NSE3D::assemble_linear_terms()
         //right hand side must be adapted
         nRhs = 4;
         rhsArray[3]=s.rhs_.block(3);
-
         break;
     }// endswitch nstype
 
@@ -543,6 +540,7 @@ void NSE3D::assemble_non_linear_term()
         sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
         break;
     }// endswitch nstype
+
     for(auto mat : sqMatrices)
     {
       mat->reset();
@@ -559,7 +557,8 @@ void NSE3D::assemble_non_linear_term()
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);    
+    feFunction[2]=s.u_.GetComponent(2);
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                          feFunction.data(), example_.get_coeffs());
