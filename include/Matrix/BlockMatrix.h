@@ -330,6 +330,11 @@ class BlockMatrix
         double scaling_factor,
         const std::vector<std::vector<size_t>>& cell_positions );
 
+    /// @brief read an individual entry
+    ///
+    /// @note this will not fail if the desired entry is not in the sparsity
+    /// structure. In that case it will simply return 0.
+    double get(unsigned int i, unsigned int j) const;
 
     // Special member functions.
 
