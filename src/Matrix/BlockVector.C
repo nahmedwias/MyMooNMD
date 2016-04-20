@@ -3,22 +3,19 @@
 #include <BlockFEMatrix.h>
 #include <stdlib.h>
 #include <Constants.h>
-#include <Database.h>
 #include <LinAlg.h>
 
 /** ************************************************************************ */
 BlockVector::BlockVector() : entries(), lengths(), actives()
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector with no arguments\n");
+  Output::print<3>("Constructor of BlockVector with no arguments");
 }
 
 /** ************************************************************************ */
 BlockVector::BlockVector(unsigned int length)
  : entries(length, 0.0), lengths(1, length), actives(1, length)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE > 2)
-    OutPut("Constructor of BlockVector with length " << length << endl);
+  Output::print<3>("Constructor of BlockVector with length ", length);
 }
 
 /** ************************************************************************ */
@@ -159,8 +156,8 @@ void BlockVector::add_scaled(const BlockVector& r, double factor)
   }
   else if(this->n_blocks() != r.n_blocks())
   {
-    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
-           "the same length but different numbers of blocks\n");
+    Output::print("WARNING: BlockVector::operator+=\n adding to BlockVectors "
+                  "with the same length but different numbers of blocks");
   }
   Daxpy(l, factor, r.get_entries(), this->get_entries());
 }
@@ -220,8 +217,8 @@ void BlockVector::copy_nonactive(const BlockVector& r)
   }
   else if(this->n_blocks() != r.n_blocks())
   {
-    OutPut("WARNING: BlockVector::operator+=\n adding to BlockVectors with " << 
-           "the same length but different numbers of blocks\n");
+    Output::print("WARNING: BlockVector::operator+=\n adding to BlockVectors "
+                  "with the same length but different numbers of blocks\n");
   }
   
   for(unsigned int b = 0, n_b = this->n_blocks(); b < n_b; ++b)
@@ -378,9 +375,9 @@ double dot(const BlockVector& a, const BlockVector& b)
   }
   else if(a.n_blocks() != b.n_blocks())
   {
-    OutPut("WARNING: dot(BlockVector a, BlockVector b)\n computing the dot " <<
-           "product of two vectors with the same length but different numbers "
-           << "of blocks\n");
+    Output::print("WARNING: dot(BlockVector a, BlockVector b)\n computing the "
+                  "dot product of two vectors with the same length but "
+                  "different numbers of blocks");
   }
   return Ddot(l, a.get_entries(), b.get_entries());
 }
