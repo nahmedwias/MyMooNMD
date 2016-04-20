@@ -11,6 +11,8 @@
  */
 #include <math.h> //pow
 
+#include <array>
+
 double KINEMATIC_VISCOSITY = 1e-3;
 
 //side effect: sets the global parameter
@@ -146,7 +148,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
 //treat this like a private method
  #include <BoundFace.h>
 /** calculate characteristic values */
-void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
+void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
              TFEFunction3D *u3fct,
              TFEFunction3D *pfct,
              double &cd, double &cl)
@@ -266,6 +268,13 @@ void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   {
     cell = Coll->GetCell(i);
 
+#ifdef _MPI
+    if(cell->IsHaloCell())
+    { //only perform the following calculations on OwnCells
+      continue;
+    }
+#endif
+
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
@@ -368,6 +377,17 @@ void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
 
   } // endfor i
 
+#ifdef _MPI
+  //communicate the values of cd and cl and sum them up
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  double sendbuf[2] = {cd, cl};
+  double recvbuf[2] = {0.0, 0.0};
+  MPI_Allreduce(sendbuf, recvbuf, 2, MPI_DOUBLE, MPI_SUM, comm);
+  cd = recvbuf[0];
+  cl = recvbuf[1];
+#endif
+
   cd *= -500/0.41;
   cl *= -500/0.41;
 
@@ -376,9 +396,75 @@ void GetCdCl(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   delete vfct;
 }
 
+/**
+ * Get the difference of pressure function p at point_A and point_B.
+ * @param point_A Point A
+ * @param point_B Point B
+ * @param p The pressure function (or any other TFEFunction3D...)
+ * @return THe difference of p's function values between points A and B.
+ */
+double get_p_diff(const std::array<double,3>& point_A,
+                  const std::array<double,3>& point_B,
+                  const TFEFunction3D& p)
+{
+  std::vector<double> dP1(4,0.0);
+  std::vector<double> dP2(4,0.0);
+
+  double pdiff = 0;
+
+#ifdef _MPI
+  {//this whole scope is only of interest in mpi case
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  MPI_Comm_rank(comm, &my_rank);
+
+    //find out two processes which contain the points of interest
+    int proc_A = p.GetFESpace3D()->GetCollection()->find_process_of_point(0.45, 0.2, 0.205);
+    int proc_B = p.GetFESpace3D()->GetCollection()->find_process_of_point(0.55, 0.2, 0.205);
+
+    //calculate value in point A
+    if(my_rank==proc_A)
+    {
+      if(!p.FindGradient(point_A[0],point_A[1],point_A[2], dP1))
+      {
+        ErrThrow("Hey! I could not find point_A on the promised process!");
+      }
+    }
+
+    //calculate value in point B
+    if (my_rank==proc_B)
+    {
+      if(!p.FindGradient(point_B[0],point_B[1],point_B[2], dP2))
+      {
+        ErrThrow("Hey! I could not find point_B on the promised process!");
+      }
+    }
+
+    // I'm using collective instead of point-to-point communication,
+    // which is slower but right now much easier to implement...
+    MPI_Bcast(&dP1.at(0), 4, MPI_DOUBLE, proc_A, comm);
+    MPI_Bcast(&dP2.at(0), 4, MPI_DOUBLE, proc_B, comm);
+    pdiff = dP1[0] - dP2[0];
+
+  }
+#else
+  p.FindGradient(point_A[0],point_A[1],point_A[2], dP1);
+  p.FindGradient(point_B[0],point_B[1],point_B[2], dP2);
+  pdiff = dP1[0] - dP2[0];
+#endif
+  return pdiff;
+}
+
 // this is the actual interface
 void compute_drag_lift_pdiff(NSE3D& nse3d)
 {
+#ifdef _MPI
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  MPI_Comm_rank(comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
   //compute drag and lift and print them
   double drag, lift;
 
@@ -389,7 +475,7 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   TFEFunction3D* u2 = u.GetComponent(1);
   TFEFunction3D* u3 = u.GetComponent(2);
 
-  GetCdCl(u1, u2, u3,
+  get_cdrag_clift(u1, u2, u3,
           &p,
           drag,lift);
 
@@ -397,18 +483,21 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   delete u2;
   delete u3;
 
-  double dP1[4];
-  double dP2[4];
+  std::array<double,3> point_A = {0.45,0.2,0.205};
+  std::array<double,3> point_B = {0.55, 0.2, 0.205};
 
-  p.FindGradient(0.45, 0.2, 0.205, dP1);
-  p.FindGradient(0.55, 0.2, 0.205, dP2);
-  double pdiff = dP1[0] - dP2[0];
+  double pdiff = get_p_diff(point_A, point_B, p);
 
   // print them reference values - f.y.i. the reference intervals:
   // drag \in [6.05,6.25], lift \in [0.008,0.01], pdiff \in [0.165,0.175]
-  Output::print(">>>>> Flow Around Cylinder (stat) 3D: Postprocessing Output <<<<<");
-  Output::print( " Drag = ",setprecision(16), drag);
-  Output::print( " Lift = ", setprecision(16), lift);
-  Output::print( " deltaP = ", setprecision(16), pdiff);
+  // note: these hold for KINEMATIC_VISCOSITY = 1e-3 and geometry
+  // as described in John 2002.
+  if(my_rank == 0)
+  {
+    Output::print(">>>>> Flow Around Cylinder (stat) 3D: Postprocessing Output <<<<<");
+    Output::print( " Drag = ",setprecision(16), drag);
+    Output::print( " Lift = ", setprecision(16), lift);
+    Output::print( " deltaP = ", setprecision(16), pdiff);
+  }
 
 }
