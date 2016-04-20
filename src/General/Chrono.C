@@ -7,6 +7,10 @@
 #include <Chrono.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 
 Chrono::Chrono()
 {
@@ -16,12 +20,21 @@ Chrono::Chrono()
 void Chrono::print_time(std::string program_part)
 {
 #ifdef _MPI
-  Output::print("WARNING -- No MPI time printing enabled yet.");
-#elif _OMP
-  Output::print("WARNING -- No OpenMP time printing enabled yet.")
-#else //sequential execution case
-  double time = get_exec_time_s() - start_time;
-  Output::print("--- time for ", program_part,": ", time, " s"  );
+  //Output::print("WARNING -- No MPI time printing enabled yet.");
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  MPI_Comm_rank(comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+  if(my_rank == 0)
+  {
+   double time = get_exec_time_s() - start_time;
+   Output::print("--- time for ", program_part,": ", time, " s (measured in root)");
+  }
+
+#if _OMP
+  Output::print("WARNING -- OpenMP time printing not checked yet.")
 #endif
 }
 

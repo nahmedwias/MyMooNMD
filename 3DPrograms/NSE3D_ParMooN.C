@@ -27,6 +27,12 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
+#ifdef _MPI
+  //Construct and initialise the default MPI communicator.
+  MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
+#endif
+
   Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
   Chrono chrono_parts;
   chrono_parts.print_time(std::string("program start"));
@@ -34,11 +40,7 @@ int main(int argc, char* argv[])
   TDatabase Database;
 
 #ifdef _MPI
-  //Construct and initialise the default MPI communicator and store it.
-  MPI_Comm comm = MPI_COMM_WORLD;
-  MPI_Init(&argc, &argv);
   TDatabase::ParamDB->Comm = comm;
-
   // Hold mpi rank and size ready, check whether the current processor
   // is responsible for output (usually root, 0).
   int my_rank, size;
@@ -151,8 +153,11 @@ int main(int argc, char* argv[])
   {
     Chrono chrono_nonlinit;
 
-    Output::print("\nNONLINEAR ITERATION ", setw(3), k-1);
-    Output::print(" residuals ",nse3d.get_residuals());
+    if(my_rank==0)
+    {
+     Output::print("\nNONLINEAR ITERATION ", setw(3), k-1);
+     Output::print(" residuals ",nse3d.get_residuals());
+    }
 
     // solve the system
     nse3d.solve();
