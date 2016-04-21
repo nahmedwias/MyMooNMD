@@ -14,7 +14,11 @@
 /**************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
-                  Time_NSE3D::Matrix type)
+                  Time_NSE3D::Matrix type
+#ifdef _MPI
+                  , int maxSubDomainPerDof
+#endif
+)
  : velocitySpace_(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
                   order.first),
    pressureSpace_(&coll, (char*)"p", (char*)"pressure space", example.get_bc(3),
@@ -27,6 +31,13 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
      solution_.length(0), 3),
    p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
      solution_.length(3))
+#ifdef _MPI
+     //default construct parallel infrastructure, will be reset in the body
+     , parMapperVelocity_(),
+     parMapperPressure_(),
+     parCommVelocity_(),
+     parCommPressure_()
+#endif
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -53,18 +64,28 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
     default:
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
+#ifdef _MPI
+  velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+  pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+
+  //Must be reset here, because feSpace needs special treatment
+  // This includes copy assignment - all because there is no good
+  // way to communicate Maximum number of subdomains per dof to FESpace...
+  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
+  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
+
+  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
+  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
+
+#endif
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, int reference_id)
-  : Time_NSE3D(domain, *(new Example_NSE3D()), reference_id)
-{
-  
-}
-
-/**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
-                       int reference_id)
+Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex
+#ifdef _MPI
+                       , int maxSubDomainPerDof
+#endif
+)
  : systems_(), example_(ex), multigrid_(), defect_(),
    old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
@@ -109,8 +130,13 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   if(!usingMultigrid)
   {
   // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
 
+  #ifdef _MPI
+  // create finite element space and function, a matrix, rhs, and solution
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                      maxSubDomainPerDof);
+  #else
   // create finite element space and function, a matrix, rhs and solution
   // all this by calling constructor of System_Per_Grid
   this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
@@ -141,6 +167,8 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
   u1->Interpolate(example_.get_initial_cond(0));
   u2->Interpolate(example_.get_initial_cond(1));
   u3->Interpolate(example_.get_initial_cond(2));
+
+#endif
   }
   else // multigrid  TODO: Multigrid in TNSE3D is not implemented yet.
     // it has to be constructed here
@@ -162,7 +190,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex,
 //  for(int i = LEVELS - 2; i >= 0; i--)
 //  {
 //    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
 //    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
 //  }
 //
@@ -731,6 +759,12 @@ void Time_NSE3D::assemble_system()
 /**************************************************************************** */
 bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
   // compute, update and display defect and residuals
   compute_residuals();
 
@@ -769,7 +803,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   if ( TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE )
   {
     epsilon *= sqrt(this->get_size());
-    Output::print("stopping tolerance for nonlinear iteration ", epsilon);
+    if (my_rank==0)
+      Output::print("stopping tolerance for nonlinear iteration ", epsilon);
   }
 
   if ( normOfResidual >= conv_speed*veryOldNormOfResidual )
@@ -781,13 +816,15 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
         || (slow_conv) )
    {
-    if(slow_conv)
+    if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);
 
-    Output::print("ITERATION : ", setw(3), iteration_counter,
-                  "\t\t", "RESIDUAL: ", normOfResidual,
+    if(my_rank==0)
+    {
+    Output::print("Last nonlinear iteration : ", setw(3), iteration_counter,
+                  "\t\t", "Residual: ", normOfResidual,
                   "\t\t", "Reduction: ", normOfResidual/initial_residual_);
-
+    }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
     this->descale_matrices();
@@ -815,37 +852,37 @@ void Time_NSE3D::compute_residuals()
   }
 
   // square norms of the residual components
-//#ifdef _MPI
-//  int my_rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-//  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
-//  //Eliminate all non-master rows in defect_m!
-//  for(int ui = 0; ui < 3; ++ui)
-//  {//velocity rows
-//    const int* masters = s.parMapperVelocity_.GetMaster();
-//    for(size_t i = 0; i<n_u_dof; ++i)
-//    {
-//      if (masters[i]!=my_rank)
-//      {
-//        defect_m[n_u_dof*ui + i]=0;
-//      }
-//    }
-//  }
-//  {//pressure row
-//    const int* masters = s.parMapperPressure_.GetMaster();
-//    for(size_t i = 0; i<n_p_dof; ++i)
-//    {
-//      if (masters[i]!=my_rank)
-//      {
-//        defect_m[n_u_dof*3 + i]=0;
-//      }
-//    }
-//  }
-//  //TODO write this nicer (std!)
-//  double impuls_Residual = Ddot(3*n_u_dof, &defect_m.at(0),&defect_m.at(0));
-//  double mass_residual = Ddot(n_p_dof, &defect_m.at(3*n_u_dof),
-//                              &defect_m.at(3*n_u_dof));
-//#else
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  std::vector<double> defect_m(defect_.get_entries_vector()); //copy of defect (entries)
+  //Eliminate all non-master rows in defect_m!
+  for(int ui = 0; ui < 3; ++ui)
+  {//velocity rows
+    const int* masters = s.parMapperVelocity_.GetMaster();
+    for(size_t i = 0; i<number_u_Dof; ++i)
+    {
+      if (masters[i]!=my_rank)
+      {
+        defect_m[number_u_Dof*ui + i]=0;
+      }
+    }
+  }
+  {//pressure row
+    const int* masters = s.parMapperPressure_.GetMaster();
+    for(size_t i = 0; i<number_p_Dof; ++i)
+    {
+      if (masters[i]!=my_rank)
+      {
+        defect_m[number_u_Dof*3 + i]=0;
+      }
+    }
+  }
+  //TODO write this nicer (std!)
+  double impulse_residual = Ddot(3*number_u_Dof, &defect_m.at(0),&defect_m.at(0));
+  double mass_residual = Ddot(number_p_Dof, &defect_m.at(3*number_u_Dof),
+                              &defect_m.at(3*number_u_Dof));
+#else
 //  //should not BlockVector be able to do vector*vector?
   double impulse_residual = Ddot(3*number_u_Dof,
                                  &this->defect_[0], &this->defect_[0]);
@@ -853,7 +890,7 @@ void Time_NSE3D::compute_residuals()
   double mass_residual    = Ddot(number_p_Dof,
                                  &this->defect_[3*number_u_Dof],
                                  &this->defect_[3*number_u_Dof]);
-//#endif
+#endif
 
   Residuals current_residual(impulse_residual, mass_residual);
   old_residual_.add(current_residual);
@@ -877,7 +914,7 @@ void Time_NSE3D::solve()
     }
     else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
     {
-//#ifndef _MPI
+#ifndef _MPI
       // So far only UMFPACK is available as direct solver in sequential case.
       // Actuate it via DirectSolver class.
 
@@ -885,19 +922,19 @@ void Time_NSE3D::solve()
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
-//#elif _MPI
-//      //two vectors of communicators (const for init, non-const for solving)
-//      std::vector<const TParFECommunicator3D*> par_comms_init =
-//      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-//      std::vector<TParFECommunicator3D*> par_comms_solv =
-//      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-//
-//      //set up a MUMPS wrapper
-//      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
-//
-//      //kick off the solving process
-//      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-//#endif
+#elif _MPI
+      //two vectors of communicators (const for init, non-const for solving)
+      std::vector<const TParFECommunicator3D*> par_comms_init =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+      std::vector<TParFECommunicator3D*> par_comms_solv =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+
+      //set up a MUMPS wrapper
+      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+
+      //kick off the solving process
+      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+#endif
     }
   }
   else  // multigrid preconditioned iterative solver
@@ -1175,10 +1212,12 @@ void Time_NSE3D::output(int m, int &image)
       TOutput3D output(5, 5, 2, 1, NULL);
       output.AddFEFunction(&s.p_);
       output.AddFEVectFunct(&s.u_);
-//#ifdef _MPI
-//    char SubID[] = "";
-//    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
-//#else
+#ifdef _MPI
+    char SubID[] = "";
+    output.Write_ParVTK(MPI_COMM_WORLD, image, SubID);
+    image++;
+#else
+    cout << "image numero " << image << endl;
       std::string filename(TDatabase::ParamDB->OUTPUTDIR);
       filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
       if(image<10) filename += ".0000";
@@ -1189,7 +1228,7 @@ void Time_NSE3D::output(int m, int &image)
       filename += std::to_string(image) + ".vtk";
       output.WriteVtk(filename.c_str());
       image++;
-//#endif
+#endif
     }
   }
 
@@ -1220,38 +1259,39 @@ void Time_NSE3D::output(int m, int &image)
     s.p_.GetErrors(example_.get_exact(3), 4, allderiv, 2, L2H1Errors, nullptr,
                   &aux, 1, &p_space, err_p);
 
-//#ifdef _MPI  // TODO implement MPI here
-//    int my_rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-//
-//    double err_red[8]; //memory for global (across all processes) error
-//    double err_send[8]; //fill send buffer
-//    err_send[0]=err_u1[0];
-//    err_send[1]=err_u1[1];
-//    err_send[2]=err_u2[0];
-//    err_send[3]=err_u2[1];
-//    err_send[4]=err_u3[0];
-//    err_send[5]=err_u3[1];
-//    err_send[6]=err_p[0];
-//    err_send[7]=err_p[1];
-//
-//    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-//    for(i=0;i<8;i++)
-//    {//MPI: sqrt was skipped in GetErrors function - do it here globally!
-//      err_red[i] = sqrt(err_red[i]);
-//    }
-//    //fill the reduced errors back where they belong
-//    err_u1[0] = err_red[0];
-//    err_u1[1] = err_red[1];
-//    err_u2[0] = err_red[2];
-//    err_u2[1] = err_red[3];
-//    err_u3[0] = err_red[4];
-//    err_u3[1] = err_red[5];
-//    err_p[0] = err_red[6];
-//    err_p[1] = err_red[7];
-//#else
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    double err_red[8]; //memory for global (across all processes) error
+    double err_send[8]; //fill send buffer
+    err_send[0]=err_u1[0];
+    err_send[1]=err_u1[1];
+    err_send[2]=err_u2[0];
+    err_send[3]=err_u2[1];
+    err_send[4]=err_u3[0];
+    err_send[5]=err_u3[1];
+    err_send[6]=err_p[0];
+    err_send[7]=err_p[1];
+
+    MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    int j;
+    for(j=0;j<8;j++)
+    {//MPI: sqrt was skipped in GetErrors function - do it here globally!
+      err_red[j] = sqrt(err_red[j]);
+    }
+    //fill the reduced errors back where they belong
+    err_u1[0] = err_red[0];
+    err_u1[1] = err_red[1];
+    err_u2[0] = err_red[2];
+    err_u2[1] = err_red[3];
+    err_u3[0] = err_red[4];
+    err_u3[1] = err_red[5];
+    err_p[0] = err_red[6];
+    err_p[1] = err_red[7];
+#else
     int my_rank = 0;
-//#endif
+#endif
 
     errors_[0] = err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] +
                  err_u3[0]*err_u3[0];  // (L2-norm)^2 for u
@@ -1307,7 +1347,6 @@ double Time_NSE3D::get_mass_residual() const
 {
   return old_residual_.back().massResidual;
 }
-
 
 /**************************************************************************** */
 double Time_NSE3D::get_full_residual() const
