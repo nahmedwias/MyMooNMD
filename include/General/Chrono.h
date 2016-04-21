@@ -40,11 +40,14 @@ class Chrono
     /** The starting time for time measurement as used in sequential (s). */
     double start_time;
 
+#ifdef _MPI
+    double mpi_start_time;
+#endif
+
     /**
      * Evaluates system time spent in user mode and in kernel mode so far.
      * Returns sum of both.
      *
-     * TODO Should not be used in MPI - what about OpenMP?
      * @return  added up time spent in user and kernel mode since start of the program
      */
     static double get_exec_time_s();
