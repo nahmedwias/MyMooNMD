@@ -33,12 +33,11 @@ int main(int argc, char* argv[])
 
   // Construct the ParMooN Databases.
   TDatabase Database;
-  TFEDatabase3D feDatabase;
 
 #ifdef _MPI
-  //Construct and initialise the default MPI communicator and store it.
-  MPI_Comm comm = MPI_COMM_WORLD;
+  //Construct and initialize the default MPI communicator and store it.
   MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
 
   // Hold mpi rank and size ready, check whether the current processor
@@ -49,6 +48,8 @@ int main(int argc, char* argv[])
 #else
   int my_rank = 0;
 #endif
+
+  TFEDatabase3D feDatabase;
 
   // =====================================================================
   // set the database values and generate mesh
@@ -145,11 +146,11 @@ int main(int argc, char* argv[])
   Example_NSE3D example;
 
   // Construct an object of the Time_NSE3D-problem type.
-//#ifdef _MPI
-//  Time_NSE3D nse3d(domain, example, maxSubDomainPerDof);
-//#else
+#ifdef _MPI
+  Time_NSE3D tnse3d(domain, example, maxSubDomainPerDof);
+#else
   Time_NSE3D tnse3d(domain, example);
-//#endif
+#endif
 
   // assemble all matrices and right hand side at start time
   // it assembles A's, B's and M's blocks. Nonlinear blocks are
@@ -174,7 +175,7 @@ int main(int argc, char* argv[])
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-      if( step == 1) // a few output, not very necessary
+      if( step == 1 && my_rank==0) // a few output, not very necessary
       {
         Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
         Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -185,7 +186,8 @@ int main(int argc, char* argv[])
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
 
-      Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+      if (my_rank==0)
+        Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
       // prepare the right hand side vector - needed only once per time step
       tnse3d.assemble_rhs();
@@ -204,8 +206,11 @@ int main(int argc, char* argv[])
           break;
         }
 
-        Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-        Output::print<1>("Residuals :", tnse3d.get_residuals());
+        if (my_rank==0)
+        {
+          Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+          Output::print<1>("Residuals :", tnse3d.get_residuals());
+        }
 
         tnse3d.solve();
 
@@ -225,8 +230,8 @@ int main(int argc, char* argv[])
   // ======================================================================
 
   Output::close_file();
-  /*#ifdef _MPI
-  //  MPI_Finalize();
-  #endif*/
+#ifdef _MPI
+  MPI_Finalize();
+#endif*/
   return 0;
 }
