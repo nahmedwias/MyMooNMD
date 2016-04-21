@@ -32,6 +32,18 @@ void Chrono::print_time(std::string program_part)
    double time = get_exec_time_s() - start_time;
    Output::print("--- time for ", program_part,": ", time, " s (measured in root)");
   }
+#ifdef _MPI
+  double time_spent = MPI_Wtime() - mpi_start_time;
+  double time_max;
+  double time_min;
+  MPI_Reduce(&time_spent, &time_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+  MPI_Reduce(&time_spent, &time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD );
+  if(my_rank == 0)
+  {
+   Output::print("--- time for ", program_part,": ", time_max, " s (max wtime in a process)");
+   Output::print("--- time for ", program_part,": ", time_min, " s (min wtime in a process)");
+  }
+#endif
 
 #if _OMP
   Output::print("WARNING -- OpenMP time printing not checked yet.")
@@ -69,6 +81,9 @@ void Chrono::reset()
   double tv_usec = (usage.ru_stime.tv_usec + usage.ru_utime.tv_usec)/(double)1000000;
 
   start_time = tv_sec + tv_usec;
+#ifdef _MPI
+  mpi_start_time = MPI_Wtime();
+#endif
 }
 
 
