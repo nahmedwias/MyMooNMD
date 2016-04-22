@@ -218,21 +218,20 @@ void CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(this->solver.get_db()["solver_type"].is(2)) // use direct solver
+  //if(this->solver.get_db()["solver_type"].is(2)) // use direct solver
   {
-    this->solver.update_matrix(s.matrix);
-    this->solver.solve(s.rhs, s.solution);
+    this->solver.solve(s.matrix, s.rhs, s.solution);
   }
-  else
-  {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    OldSolver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
-              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-              this->multigrid.get(), this->get_size(), 0);
-  }
+//   else
+//   {
+//     // the one matrix stored in this BlockMatrix
+//     FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
+//     // in order for the old method 'Solver' to work we need TSquareMatrix2D
+//     TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
+//     OldSolver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
+//               s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+//               this->multigrid.get(), this->get_size(), 0);
+//   }
   
   t = GetTime() - t;
   Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");

@@ -116,7 +116,7 @@ Parameter::Parameter(const Parameter& p)
    int_range(p.int_range), unsigned_range(p.unsigned_range), min(p.min),
    max(p.max), string_range(p.string_range)
 {
-  Output::print<3>("Parameter(const Parameter& p)");
+  Output::print<3>("Parameter(const Parameter& p)\tname: ", this->name);
 }
 
 
@@ -130,9 +130,17 @@ void Parameter::impose(const Parameter& p)
   }
   if(this->type != p.get_type())
   {
-    ErrThrow("cannot impose another parameter to this one because it has a "
-             "different type: ", type_as_string(this->type), " ", 
-             type_as_string(p.get_type()));
+    // check if we can maybe convert the type in a meaninful way.
+    if(check_type<int>(this->type) && check_type<size_t>(p.get_type()))
+    {
+      // `this` is of type int, just set int_value and int_range correctly
+      this->int_value = (size_t)p;
+      this->int_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
+    }
+    else
+      ErrThrow("cannot impose another parameter to this one (", this->name, ") "
+               "because it has a different type: ", type_as_string(this->type),
+               " ", type_as_string(p.get_type()));
   }
   // reset change_count and access_count
   this->access_count = 0;
@@ -506,11 +514,11 @@ template<> void Parameter::set(size_t new_value)
 template<> void Parameter::set(int new_value)
 {
   if(!check_type<int>(this->type) && !check_type<size_t>(this->type))
-    throw(std::runtime_error("wrong type"));
+    ErrThrow("wrong type: ", type_as_string(this->type), " != int or size_t");
   if(check_type<size_t>(this->type))
   {
     if(new_value < 0)
-      throw(std::runtime_error("wrong type"));
+      ErrThrow("wrong type: ", type_as_string(this->type), " != int");
     // setting a positive integer to a size_t parameter
     this->set<size_t>(new_value);
     return;

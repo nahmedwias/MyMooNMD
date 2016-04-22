@@ -108,7 +108,7 @@ class CD2D
      * Storing it means that for a direct solver we also store the factorization
      * which is usually not necessary.
      */
-    Solver solver;
+    Solver<BlockFEMatrix, BlockVector> solver;
     
     /** @brief set parameters in database
      * 

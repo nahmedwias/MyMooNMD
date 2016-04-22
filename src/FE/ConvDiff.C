@@ -710,7 +710,7 @@ double react, double linfb)
       exit(4711);
   }
 
-  Output::print<3>("delta ", delta);
+  Output::print<5>("delta ", delta);
   if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 120814)
   	TDatabase::ParamDB->INTERNAL_P1_Array[TDatabase::ParamDB->INTERNAL_MOMENT] = delta;
 

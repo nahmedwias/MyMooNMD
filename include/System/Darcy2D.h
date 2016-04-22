@@ -104,7 +104,7 @@ class Darcy2D
      * Storing it means that for a direct solver we also store the factorization
      * which is usually not necessary.
      */
-    Solver solver;
+    Solver<BlockMatrix, BlockVector> solver;
     
     /** @brief store the errors to access them from outside this class
      * 

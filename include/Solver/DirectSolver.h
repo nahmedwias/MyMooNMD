@@ -23,6 +23,7 @@
 
 // forward declaration
 class BlockMatrix;
+class BlockFEMatrix;
 constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
@@ -38,6 +39,7 @@ class DirectSolver
      * @param  matrix the matrix A where Ax=b
      */
     DirectSolver(const BlockMatrix& matrix, DirectSolverTypes type);
+    DirectSolver(const BlockFEMatrix& matrix, DirectSolverTypes type);
     
     /** @brief This class is not copy constructible */
     DirectSolver(const DirectSolver&) = delete;

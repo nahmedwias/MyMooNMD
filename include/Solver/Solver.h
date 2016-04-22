@@ -3,19 +3,29 @@
 
 #include <ParameterDatabase.h>
 #include <DirectSolver.h>
-#include <BlockVector.h>
-#include <BlockMatrix.h>
 #include <memory>
 
+template <class LinearOperator, class Vector>
 class Solver
 {
   public:
     
     Solver(const ParameterDatabase& param_db);
     
-    void update_matrix(const BlockMatrix& matrix);
+    void update_matrix(const LinearOperator& matrix);
     
-    void solve(const BlockVector& rhs, BlockVector& solution);
+    /// @brief solve after calling `Solver::update_matrix`
+    ///
+    /// This only makes sense for direct solvers, where the factorization is 
+    /// stored. This way you can solve many times for different right hand 
+    /// sides.
+    ///
+    /// Using iterative solvers one should use the other Solver::solve method
+    /// which also has the matrix as an argument.
+    void solve(const Vector& rhs, Vector& solution);
+    
+    void solve(const LinearOperator& matrix, const Vector& rhs,
+               Vector& solution);
     
     const ParameterDatabase& get_db();
     

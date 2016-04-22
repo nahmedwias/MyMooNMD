@@ -134,6 +134,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_direct_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(direct_solver ParMooN_test_direct_solver)
   list(APPEND parmoon_tests ParMooN_test_direct_solver)
+  
+  # iterative solver test
+  add_executable(ParMooN_test_iterative_solver iterative_solver_test.c++)
+  target_link_libraries(ParMooN_test_iterative_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(iterative_solver ParMooN_test_iterative_solver)
+  list(APPEND parmoon_tests ParMooN_test_iterative_solver)
 	
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
