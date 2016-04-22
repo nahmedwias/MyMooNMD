@@ -15,10 +15,13 @@
 #ifndef __FEFUNCTION2D__
 #define __FEFUNCTION2D__
 
-class TFEFunction2D;
+#include <stdlib.h>
+#include <vector>
 
+class TFEFunction2D;
+class TAuxParam2D;
 #include <FESpace2D.h>
-#include <AuxParam2D.h>
+//#include <AuxParam2D.h>
 
 /** a function from a finite element space */
 class TFEFunction2D
@@ -61,10 +64,10 @@ class TFEFunction2D
     { return Length; }
 
     /** return vector of data */
-    double *GetValues()
+    double *GetValues() 
     { return Values; }
     
-    const double * GetValues() const 
+    const  double * GetValues() const 
     { return Values; }
 
     /** @brief calculate errors to given function 
@@ -185,8 +188,12 @@ class TFEFunction2D
 
    /** Retun the mass, domain volume and mean values of the function - added by sashi */
    void GetMassAndMean(double *OutVal);
-   
-   
+
+    /**
+     * @brief return the values of FE function on mesh nodes 
+     */
+   void computeNodeValues(std::vector<double>& solutionAtNode) const;
+     
    /** multiply function with a scalar alpha. Only non-Dirichlet dofs are 
        multiplied! */
    TFEFunction2D& operator*=(double alpha);

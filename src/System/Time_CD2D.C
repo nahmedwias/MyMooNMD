@@ -12,6 +12,7 @@
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
+
 #include <numeric>
 
 
@@ -49,7 +50,8 @@ void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1
   //subtract the mass matrix...
   stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
   //...and descale the stiffness matrix...
-  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), {{0,0}});
+  const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), cell_positions);
 }
 
 /**************************************************************************** */
@@ -78,7 +80,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
                      int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
+  : systems(), example(ex), multigrid(nullptr), errors(5, 0.0), timeDependentOutput()
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
@@ -324,7 +326,8 @@ void Time_CD2D::assemble()
     // on time
 
     //scale  stiffness matrix...
-    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, {{0,0}});
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
     // ...and add the mass matrix
     const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
@@ -426,6 +429,9 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
+
+    /*
+    // vtk output (obsolete)
     if(TDatabase::ParamDB->WRITE_VTK)
     {
       TOutput2D Output(1, 1, 0, 0, NULL);
@@ -441,6 +447,19 @@ void Time_CD2D::output(int m, int& image)
       Output.WriteVtk(filename.c_str());
       image++;
     }
+    */
+    
+    // add the functions the first time
+    if (image==0) 
+    {
+      Output::print("  Add FE Function ", fe_function.GetName(), " to output class ");
+      timeDependentOutput.addFEFunction(&fe_function);
+    }
+    // write output
+    timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
+    image++;
+    
+    
   }
 }
 

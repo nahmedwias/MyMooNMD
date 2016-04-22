@@ -1,69 +1,128 @@
 /** ************************************************************************ 
 *
-* @class     TMesh
-* @brief     stores the information of a mesh 
-* @author    Sashikumaar Ganesan, 
-* @date      08.08.14
+* @class     Mesh
+* @brief     stores Mesh-structures (Pts, Elements)
+* @author    Alfonso Caiazzo 
+* @date      21.03.16
 * @History 
  ************************************************************************  */
+
+#include <vector>
+#include <array>
+#include <string>
+
+#include "Boundary.h"
 
 #ifndef __MESH__
 #define __MESH__
 
-#include <BaseCell.h>
-#include <Vertex.h>
-#include <Joint.h>
+struct meshNode
+{
+  double x,y,z;
+  int reference;
+};
+
+///@brief a structure for edges 
+struct meshEdge
+{
+  std::array<int,2> nodes;
+  int reference;
+};
+
+///@brief a structure for triangles
+struct meshTriangle
+{
+  std::array<int,3> nodes;
+  int reference;
+};
+
+///@brief a structure for quadrilaterals
+struct meshQuad
+{
+  std::array<int,4> nodes;
+  int reference;
+};
+
+///@brief a structure for tetrahedra
+struct meshTetrahedron
+{
+  std::array<int,4> nodes;
+  int reference;
+};
+
+///@brief a structure for hexahedra
+struct meshHexahedron
+{
+  std::array<int,8> nodes;
+  int reference;
+};
+
 
 /**  @brief mesh details */
-class TMesh : 
+class Mesh 
 {
-  protected:
-    /**  @brief number of vertices in the mesh */    
-    int N_RootVertices;
-    
-    /**  @brief number of joints (2D:edge, 3D:Face) in the mesh */    
-    int N_Joints;    
-    
-    /**  @brief number of cells in the mesh */    
-    int N_Cells;   
+ protected:
+  
+ public:
+  /** @brief dimension */
+  unsigned int dimension;
+  
+  /** @brief nodes */    
+  std::vector<meshNode> vertex;
 
-     /**  @brief cell-vetrtices index */    
-    int *CellVertices;
-    
-    /**  @brief cell-joints (2D:edge, 3D:Face) in the mesh */    
-    int *CellJoints;      
-    
-    /**  @brief array of pointers to vertices in the mesh  */
-    TVertex  **Vertices;
- 
-    /**  @brief array of pointers to joints in the mesh  */
-    TJoint **Joints;
-    
-    /**  @brief array of pointers to cells in the mesh */
-    TBaseCell **CellTree;
- 
-    /**  @brief grid level on with this cell was generated */
-    int RefLevel;
+  
+  /** @brief edges */    
+  std::vector<meshEdge> edge;
 
-  public:
-    // Constructor
-    TMesh();
+  /** @brief triangles */    
+  std::vector<meshTriangle> triangle;
 
-    TMesh(int N_RootVertices, int N_Joints, int N_Cells, int *CellVertices, int *CellJoints, TVertex  **Vertices, TJoint **Joints, TBaseCell **CellTree);
-	
-    // Destructor
-    ~TMesh();
+  /** @brief quadrilateral */    
+  std::vector<meshQuad> quad;
 
-    // Methods
- 
+  /** @brief tetrahedron */    
+  std::vector<meshTetrahedron> tetra;
 
-#ifdef __2D__
- 
-#else
- 
- 
-#endif 
- 
+  /** @brief hexahedron */    
+  std::vector<meshHexahedron> hexa;
+
+  ///@brief boundary handler class
+  Boundary boundary;
+  
+  // Constructors
+  Mesh();
+  Mesh(std::string f);
+  
+  // Destructor
+  ~Mesh(){};
+
+  /**
+     @brief read mesh from a file
+     @note supported formats: .mesh
+  */
+  void readFromFile(std::string filename);
+
+  ///@brief write mesh to a file .mesh
+  void writeToMesh(std::string filename);
+
+  /**@brief write mesh to a file .xGEO (extended ParMooN format)
+     @param filename is the output geofile
+     @param prmfile is an input prm file describing the boundary
+     @attention the prm file must be consistent with the geometry
+     @warning it works only for 2D at the moment
+  **/
+  void writeToGEO(std::string filename);
+
+  /**
+     @brief initialize the boundary reading a PRM file
+   */
+  void setBoundary(std::string PRM);
+  
+  ///@brief remove empry spaces in a string
+  void stripSpace(std::string &str);
+
+  ///@brief display some info on screen
+  void info();
 };
 
 #endif
