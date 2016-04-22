@@ -186,7 +186,12 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
     }
     this->iparm[0] = 0; /* override defaults */
     this->iparm[1] = 2; /* Metis reordering, default: minimize fill-in; 3D */
-    this->iparm[2] = 1; /* number of threads */
+#ifdef _OMP
+    Output::print<2>("FYI: omp_get_max_threads when setting up ParDiso is ",
+                     omp_get_max_threads());
+
+    this->iparm[2] = omp_get_max_threads(); //number of threads set to OMP_NUM_THREADS as recommended in the doc
+#endif
     this->iparm[3] = 0; /* precond cgs, solver type */
     this->iparm[4] = 0; /* user permute */
   }
@@ -414,10 +419,11 @@ void DirectSolver::solve(const double* rhs, double* solution)
     }
     case DirectSolverTypes::pardiso:
     {
-      // you should usually never do this!! Here we have to do it because 
-      // pardiso has a really bad interface. Let's just hope pardiso does not 
-      // write into the rhs array.
-      double * rhs_nonconst = const_cast<double*>(rhs);
+      //make a copy of rhs since pardiso wants it non-const
+      size_t length_rhs = matrix->GetN_Rows(); //this was checked in the calling method
+      double* rhs_nonconst = new double[length_rhs];
+      memcpy(rhs_nonconst, rhs, length_rhs*sizeof(double));
+
       int phase = 33; //PHASE: solve
       int n_eq = this->matrix->GetN_Rows();
       double * entries = this->matrix->GetEntries();
@@ -448,6 +454,7 @@ void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
              "Size of the matrix: ", this->matrix->GetN_Rows(), " x ", 
              this->matrix->GetN_Columns(),"\t rhs size: ", rhs.length(), 
              "\tsolution size: ", solution.length());
+
 
   solve(rhs.get_entries(), solution.get_entries());
 
