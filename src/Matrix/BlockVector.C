@@ -28,6 +28,7 @@ BlockVector::BlockVector(int length)
 
 BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
+  Output::print<3>("Constructor of BlockVector using a BlockMatrix");
   // the total length of this vector
   size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
   // number of blocks in this BlockVector

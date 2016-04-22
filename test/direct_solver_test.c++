@@ -93,9 +93,6 @@ int main(int argc, char **argv)
   // ##########################################################################
   // test the solving for this very small example
   
-  // unfortunately this is needed here, hopefully we can get rid of this soon
-  TDatabase database;
-  
   //BlockMatrix mat(2, 2, {matA, matC, matB, matD});
   BlockMatrix mat({size_t(matA->GetN_Rows()), size_t(matB->GetN_Rows())},
                          {size_t(matA->GetN_Columns()), 

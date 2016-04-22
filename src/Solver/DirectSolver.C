@@ -13,7 +13,7 @@
 #include <DirectSolver.h>
 #include <Database.h>
 #include "umfpack.h"
-#include <BlockMatrix.h>
+#include <BlockFEMatrix.h>
 
 #ifdef _OMP
 #include <omp.h>
@@ -209,6 +209,13 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(const BlockMatrix& matrix, 
+                           DirectSolver::DirectSolverTypes type)
+ : DirectSolver(matrix.get_combined_matrix(), type)
+{
+}
+
+/** ************************************************************************ */
+DirectSolver::DirectSolver(const BlockFEMatrix& matrix, 
                            DirectSolver::DirectSolverTypes type)
  : DirectSolver(matrix.get_combined_matrix(), type)
 {

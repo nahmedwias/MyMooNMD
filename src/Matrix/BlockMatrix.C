@@ -180,6 +180,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       check_vector_fits_image(y);
 
       //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
+      y.reset();
       apply_scaled_add(x, y, 1.0);
     }
 
@@ -257,7 +258,9 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
                    "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
         }
-        handle_discovery_of_vector_non_actives(b.length(i)-b.active(i), i);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(b.length(i)-b.active(i), i);
       }
     }
 
@@ -281,7 +284,9 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
                    "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
         }
-        handle_discovery_of_vector_non_actives(x.length(j)-x.active(j), j);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(x.length(j)-x.active(j), j);
       }
     }
 
@@ -1008,7 +1013,7 @@ double BlockMatrix::get(unsigned int i, unsigned int j) const
     std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block)
     {
 
-      Output::print("Called base class copy and store");
+      Output::print<5>("Called base class copy and store");
       return std::make_shared<TMatrix>(block);
     }
 
@@ -1199,9 +1204,9 @@ double BlockMatrix::get(unsigned int i, unsigned int j) const
 
     /* ************************************************************************* */
     void BlockMatrix::handle_discovery_of_vector_non_actives(
-      const int nActive, const int spaceNumber) const
+      const int n_nonActive, const int spaceNumber) const
     {
-      if(nActive != 0)
+      if(n_nonActive != 0)
       {
         //maybe put to virtual method: handle_discovery_of_vector_non_actives
         // give a warning if the vector has actives - the matrix has definitely not!

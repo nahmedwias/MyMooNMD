@@ -140,7 +140,7 @@ class CD3D
      * Storing it means that for a direct solver we also store the factorization
      * which is usually not necessary.
      */
-    Solver solver;
+    Solver<BlockMatrix, BlockVector> solver;
 
     /** @brief Errors to be accesed from outside the class
      * The array is filled during the function call CD3D::output()
