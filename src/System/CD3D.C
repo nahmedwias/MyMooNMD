@@ -299,9 +299,10 @@ void CD3D::solve()
                                DirectSolver::DirectSolverTypes::umfpack);
     direct_solver.solve(syst.rhs_, syst.solution_);
     return;
+#elif _MPI
+    ErrThrow("This is the place to interface the mumps solver!");
 #else
-    ErrThrow("Direct solver not yet implemented in parallel. Chose "
-        "SOLVER_TYPE: 1 (iterative solver).");
+    ErrThrow("No OMPONLY solver (PARDISO) interfaced yet.");
 #endif
   }
   else

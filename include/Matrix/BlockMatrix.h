@@ -758,14 +758,6 @@ class BlockMatrix
      */
     void add_scaled(const BlockMatrix &A, double factor = 1.0);
 
-
-    /** @brief return the TMatrix located in the r-th block row and c-th block
-     *         column
-     */
-    const TMatrix& block(const unsigned int r, const unsigned int c) const;
-
-
-
 };
 
 

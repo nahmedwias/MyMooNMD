@@ -121,6 +121,12 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   target_link_libraries(ParMooN_test_mumps_2_mpi ${_EXTERN_LIBRARIES})
   add_test(NAME mumps_2_mpi COMMAND mpirun -n 4 ParMooN_test_mumps_2_mpi )
   list(APPEND parmoon_tests ParMooN_test_mumps_2_mpi)
+  
+  # mumps wrapper test mpi (run with 2 processes)
+  add_executable(ParMooN_test_mumps_wrapper mumps_wrapper_test.c++)
+  target_link_libraries(ParMooN_test_mumps_wrapper parmoon_3d_MPI ${_EXTERN_LIBRARIES})
+  add_test(NAME mumps_wrapper COMMAND mpirun -n 2 ParMooN_test_mumps_wrapper )
+  list(APPEND parmoon_tests ParMooN_test_mumps_wrapper)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL)
 	
