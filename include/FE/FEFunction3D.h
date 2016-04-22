@@ -112,9 +112,25 @@ class TFEFunction3D
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
 
-    /** determine the value of function and its first derivatives at
-        the given point */
-    void FindGradient(double x, double y, double z, double *values);
+    /**
+     * Calculates value of this FEFunction at a given point and the
+     * gradient recovery (arithmetic mean of the gradient value in
+     *  all containing mesh cells).
+     *
+     * @param[in] x x value of the point at which to evaluate
+     * @param[in] y y value of the point at which to evaluate
+     * @param[in] z z value of the point at which to evaluate
+     *
+     * @param[out] values A vector of length 4 (checked)! Will be filled with
+     *            function value
+     *            gradient recovery dx
+     *            gradient recovery dy
+     *            gradient recovery dz
+     *
+     * @return True if the point was found in the mesh cell collection
+     * of this function, false if not so.
+     */
+    bool FindGradient(double x, double y, double z, std::vector<double>& values) const;
 
     /** determine the value of function and its first derivatives at
         the given point */
@@ -160,7 +176,10 @@ class TFEFunction3D
     /**
      * @brief find the integral of this function and the measure of its domain
      *
-     * @param[out] integral double value for the integral of this TFEFunction2D
+     * In MPI case it returns the global integral and measure, summed up over
+     * the own domains of all processes.
+     *
+     * @param[out] integral double value for the integral of this TFEFunction3D
      * @param[out] measure double value for the measure of its domain
      */
     void compute_integral_and_measure(double& integral, double& measure) const;

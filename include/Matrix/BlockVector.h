@@ -223,6 +223,12 @@ class BlockVector
     void print(const std::string name = "rhs", const int iB = -1) const;
     
     /**
+     * Write entire Vector into an Outfile in MatrixMarket array format.
+     * @param filename Desired filename (and path).
+     */
+    void write(std::string filename) const;
+
+    /**
      * @brief Print some information without explicitly printing values
      */
     void info();

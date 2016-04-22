@@ -122,7 +122,7 @@ void TEdge::SetAsNotCrossEdgeFor(int rank, int Neib_ID)
 
 void TEdge::SetCrossNeibInfo(TVertex *Vert_a)
 {
- int i, j, k, ID, Max, Max_Index, rank;
+ int i, j, k, ID, Max, Max_Index; // rank;
  const int *EdgeVertex;
 
  TBaseCell *NeibCell;

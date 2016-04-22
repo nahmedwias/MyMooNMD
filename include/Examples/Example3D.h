@@ -51,6 +51,9 @@ class Example3D
     std::vector <BoundValueFunct3D*> boundary_data;
     /* functions representing the coefficients of the pde */
     CoeffFct3D *problem_coefficients;
+    /* functions representing the initial conditions (only needed for time
+     * dependent problems */
+    std::vector <DoubleFunct3D*> initial_conditions;
     
     //Declaration of special member functions - rule of zero
 
@@ -92,6 +95,9 @@ class Example3D
 
     CoeffFct3D* get_coeffs() const
     { return problem_coefficients; }
+
+    DoubleFunct3D* get_initial_cond(unsigned int i)const
+        { return initial_conditions.at(i); }
 };
 
 #endif // __EXAMPLE3D__

@@ -95,7 +95,7 @@ void TNSE_MultiGrid::SetParam(int i, double a)
 void TNSE_MultiGrid::RestrictToAllGrids()
 {
   TNSE_MGLevel *CurrentLevel, *CoarserLevel; 
-  int lev, j;
+  int lev;
   double *CurrentU1, *CoarserU1, *CoarserAux;
 
   for(lev=N_Levels-1;lev>0;lev--)
@@ -115,20 +115,20 @@ void TNSE_MultiGrid::RestrictToAllGrids()
 /** one cycle on level i */
 void TNSE_MultiGrid::Cycle(int i, double &res)
 {
-  int j, N_UDOF, N_PDOF, N_DOF, maxit, smoother, NLevels=N_Levels;
-  int slc, gam, defect_calc, umfpack_flag, ii;
-  double oldres, res2, s;
+  int j, N_UDOF, N_PDOF, N_DOF, maxit, smoother; // NLevels=N_Levels;
+  int slc, defect_calc, umfpack_flag, ii;
+  double oldres; // res2, s;
   
   TNSE_MGLevel *CurrentLevel, *CoarserLevel;
-  double *CurrentU, *CurrentP;
-  double *OldU, *OldP;
+  double *CurrentU;  //*CurrentP;
+  double *OldU; // *OldP;
   double *CoarserU, *CoarserP;
   double *CoarserRhsU, *CoarserRhsP;
-  double *CurrentRhsU, *CurrentRhsP;
-  double *CurrentOldDefU, *CurrentOldDefP;
+  double *CurrentRhsU; // *CurrentRhsP;
+  double *CurrentOldDefU; // *CurrentOldDefP;
   double *CurrentDefectU, *CurrentDefectP;
   double *CurrentAux, *CurrentCounter;
-  double *defect, alpha;
+  double alpha;
   double divfactor = TDatabase::ParamDB->SC_DIV_FACTOR;
 
   CurrentLevel = MultiGridLevels[i];
@@ -136,9 +136,9 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
   N_PDOF = CurrentLevel->GetN_PDOF();
   N_DOF = GEO_DIM*N_UDOF + N_PDOF;
   CurrentLevel->GetSolutionVector(CurrentU);
-  CurrentP = CurrentU + GEO_DIM*N_UDOF; 
+//  CurrentP = CurrentU + GEO_DIM*N_UDOF;
   CurrentLevel->GetRhsVector(CurrentRhsU);
-  CurrentRhsP = CurrentRhsU + GEO_DIM*N_UDOF; 
+//  CurrentRhsP = CurrentRhsU + GEO_DIM*N_UDOF;
   CurrentDefectU = CurrentLevel->GetAuxVector(0);
   CurrentDefectP = CurrentDefectU+GEO_DIM*N_UDOF;
   CurrentAux = CurrentLevel->GetAuxVector(1);
@@ -151,10 +151,10 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
   {
     CurrentCounter = CurrentLevel->GetAuxVector(2);
     CurrentOldDefU = CurrentCounter;
-    CurrentOldDefP = CurrentOldDefU+GEO_DIM*N_UDOF;
+//    CurrentOldDefP = CurrentOldDefU+GEO_DIM*N_UDOF;
     CurrentCounter = CurrentLevel->GetAuxVector(3);
     OldU = CurrentCounter;
-    OldP = OldU+GEO_DIM*N_UDOF;
+//    OldP = OldU+GEO_DIM*N_UDOF;
   }
 
   CurrentLevel->CorrectNodes(CurrentU);
@@ -214,7 +214,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         {
            OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
         }  
-        res2 = res = oldres;
+//        res2 = res = oldres;  // not used later in this function
         divfactor *= res;
         if (slc)
         {
@@ -239,7 +239,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("mesh cell Vanka : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-          res2 = res;
+//          res2 = res;   // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
         if (TDatabase::ParamDB->SC_VERBOSE >=2)
@@ -274,7 +274,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         j = 0;
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
-        res2 = res = oldres;
+//        res2 = res = oldres;   // not used later in this function
         if (TDatabase::ParamDB->SC_VERBOSE>=2)
         {
            OutPut("smoother " << smoother <<"level 0 res before smoothing: " << oldres << endl);
@@ -306,7 +306,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("nodal Vanka : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-          res2 = res;
+//          res2 = res;  // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
         if (TDatabase::ParamDB->SC_VERBOSE >=2)
@@ -342,7 +342,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
         // cout << "residual " << j << " " << res << endl;
-        res2 = res = oldres;
+//        res2 = res = oldres;   // not used later in this function
         if (slc)
         {
           memcpy(OldU, CurrentU, N_DOF*SizeOfDouble);
@@ -367,7 +367,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("Braess-Sarazin : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-          res2 = res;
+//          res2 = res;   // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
         if (TDatabase::ParamDB->SC_VERBOSE >=2)

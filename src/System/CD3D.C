@@ -15,6 +15,10 @@
 #include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
 
+#ifdef _MPI
+#include <MumpsWrapper.h>
+#endif
+
 
 #ifdef _MPI
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
@@ -34,13 +38,11 @@
 
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
-    FEMatrix* block = matrix_.get_blocks_uniquely().at(0).get(); //the single block
 
     // Must be reset here, because feSpace needs special treatment
     // This includes copy assignment - all because there is no good
     // way to communicate Maximum number of subdomains per dof to FESpace...
-    parMapper_ = TParFEMapper3D(1, &feSpace_, block->GetRowPtr(),
-                                block->GetKCol());
+    parMapper_ = TParFEMapper3D(1, &feSpace_);
     parComm_ = TParFECommunicator3D(&parMapper_);
   }
 #else
@@ -65,7 +67,7 @@
              ,int maxSubDomainPerDof
 #endif
   )
-  : systems_(), example_(example), multigrid_(nullptr)
+  : systems_(), example_(example), multigrid_(nullptr), errors_()
   {
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
@@ -203,6 +205,8 @@ void CD3D::solve()
   //get the block for the solver
   TSquareMatrix* blocks[1] = {reinterpret_cast<TSquareMatrix*>(
       syst.matrix_.get_blocks_TERRIBLY_UNSAFE().at(0).get())};
+
+
   // FIXME we could use get_blocks_uniquely() here, but that is
   // intended for assemblers, not solvers - to mark that the basic
   // problem is still the non-const passing of matrices to the solvers,
@@ -293,15 +297,18 @@ void CD3D::solve()
   }
   else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
   { // Direct solver chosen.
-#ifdef _SEQ
+#ifndef _MPI
     /// @todo consider storing an object of DirectSolver in this class
     DirectSolver direct_solver(syst.matrix_, 
                                DirectSolver::DirectSolverTypes::umfpack);
     direct_solver.solve(syst.rhs_, syst.solution_);
     return;
-#else
-    ErrThrow("Direct solver not yet implemented in parallel. Chose "
-        "SOLVER_TYPE: 1 (iterative solver).");
+#elif _MPI
+    std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.parComm_};
+    std::vector<TParFECommunicator3D*> par_comms_solv = {&syst.parComm_};
+
+    MumpsWrapper mumps_wrapper(syst.matrix_, par_comms_init);
+    mumps_wrapper.solve(syst.rhs_, syst.solution_, par_comms_solv);
 #endif
   }
   else
@@ -313,15 +320,12 @@ void CD3D::solve()
 void CD3D::output(int i)
 {
   if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-  {
     return;
-  }
 
-  //hold a reference to the finest grid system
-    SystemPerGrid& syst = systems_.front() ;
+  SystemPerGrid& syst = systems_.front() ;
 
   // print the value of the largest and smallest entry in the FE vector
-    syst.feFunction_.PrintMinMax();
+  syst.feFunction_.PrintMinMax();
 
   // write solution to a vtk file
   if(TDatabase::ParamDB->WRITE_VTK)
@@ -350,36 +354,35 @@ void CD3D::output(int i)
     double errors[5];
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
-		const TFESpace3D* space = syst.feFunction_.GetFESpace3D();
+    const TFESpace3D* space = syst.feFunction_.GetFESpace3D();
 
     syst.feFunction_.GetErrors(example_.get_exact(0), 4, AllDerivatives,
-                   2, L2H1Errors, example_.get_coeffs(),
-                   &aux, 1, &space, errors);
-    #ifdef _MPI
-    // usual code block to gather information about this
-    // processes role in the mpi communicator
-    MPI_Comm globalComm = TDatabase::ParamDB->Comm;
-    int mpiRank, mpiSize;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-    bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
+                               2, L2H1Errors, example_.get_coeffs(),
+                               &aux, 1, &space, errors);
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     double errorsReduced[4]; //memory for global (across all processes) error
 
-    MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, globalComm);
+    MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     for(i=0;i<2;i++)
       errors[i] = sqrt(errorsReduced[i]);
-		if(iAmOutRank)
+#else
+    int my_rank =0;
+#endif
+
+    //store errors
+    errors_.at(0) = errors[0]; //L2
+    errors_.at(1) = errors[1]; //H1-semi
+
+    //print errors
+    if(my_rank == 0)
     {
       Output::print("");
-			Output::print( "L2: ", sqrt(errorsReduced[0]));
-			Output::print( "H1-semi: ", sqrt(errorsReduced[1]));
+      Output::print( "L2: ", errors_.at(0));
+      Output::print( "H1-semi: ", errors_.at(1));
     }
-    #else
-		Output::print("");
-		Output::print( "L2: ", errors[0]);
-		Output::print( "H1-semi: ", errors[1]);
-    #endif
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
 }
 
@@ -393,19 +396,23 @@ void CD3D::checkParameters()
         "for this is class CD3D.");
   }
 
-  // the only solving strategy implemented is iterative
-#ifndef _SEQ
-  if(TDatabase::ParamDB->SOLVER_TYPE != 1)
+  //an error when using ansatz order 0
+  if(TDatabase::ParamDB->ANSATZ_ORDER == 0)
   {
-    ErrThrow("Only SOLVER_TYPE: 1 (iterative solver) is implemented so far.");
+    throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
+        "reaction problems! (Vanishing convection and diffusion term).");
   }
-#endif // not sequential
+
+  // the only solving strategy implemented is iterative
+#ifdef _MPI
   // among the iterative solvers only 11 (fixed point iteration/
   // Richardson) is working
-  if(TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
+  if(TDatabase::ParamDB->SOLVER_TYPE == 1 & TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
   {
       ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
   }
+#endif // mpi
+
 
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
   // so far this strategy to treat them is only followed here, it should be unified
@@ -439,16 +446,6 @@ void CD3D::checkParameters()
     ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
         " are implemented so far.");
   }
-
-#ifdef _MPI // problems only known in MPI case
-  // the case of ANSATZ_ORDER: 1 is known to not converge
-  // (this is currently under investigation)
-  // TODO might be this works with a mg predonditioner!
-  if (TDatabase::ParamDB->ANSATZ_ORDER == 1)
-  {
-    ErrThrow("ANSATZ_ORDER: 1 is currently not working in MPI. Choose 2.");
-  }
-#endif
 }
 
 void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)

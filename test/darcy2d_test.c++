@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
     // refine grid up to the coarsest level
-    for(int i = 0; i < nRefinements; i++)
+    for(unsigned int i = 0; i < nRefinements; i++)
     {
       domain.RegRefineAll();
     }
@@ -131,38 +131,38 @@ int main(int argc, char* argv[])
     std::array<double, 5> errors;
     
     Output::print("\nstarting with RT0 on quads");
-    errors = { 0.50616706358332, 6.2926762302213, 28.267854806247, 
-               0.079978980936799, 4.4428829381584 };
+    errors = {{ 0.50616706358332, 6.2926762302213, 28.267854806247, 
+                0.079978980936799, 4.4428829381584 }};
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on quads");
-    errors = { 0.025524493858475, 0.32016058303363, 3.1653722663713, 
-               0.0040560305244671, 0.50312981240831 };
+    errors = {{ 0.025524493858475, 0.32016058303363, 3.1653722663713, 
+                0.0040560305244671, 0.50312981240831 }};
     check(domain, 1001, errors);
     
     Output::print("\nstarting with RT2 on quads");
-    errors = { 0.00084661911007719, 0.010629840538212, 0.17550885275941, 
-               0.00013465340078883, 0.027920142668719 };
+    errors = {{ 0.00084661911007719, 0.010629840538212, 0.17550885275941, 
+                0.00013465340078883, 0.027920142668719 }};
     check(domain, 1002, errors);
     
     Output::print("\nstarting with RT3 on quads");
-    errors = { 2.094182550122e-05, 0.00026303115293237, 0.0063544526017813, 
-               3.3317619753011e-06, 0.0010111221715242 };
+    errors = {{ 2.094182550122e-05, 0.00026303115293237, 0.0063544526017813, 
+                3.3317619753011e-06, 0.0010111221715242 }};
     check(domain, 1003, errors);
     
     Output::print("\nstarting with BDM1 on quads");
-    errors = { 0.12631404854406, 6.2926762302213, 7.0233297819314, 
-               0.080703320512897, 4.4428829381584 };
+    errors = {{ 0.12631404854406, 6.2926762302213, 7.0233297819314, 
+                0.080703320512897, 4.4428829381584 }};
     check(domain, 1011, errors);
     
     Output::print("\nstarting with BDM2 on quads");
-    errors = { 0.0046193106648853, 0.59661934959593, 0.54355308167768, 
-               0.0075575031515213, 0.70825254317319 };
+    errors = {{ 0.0046193106648853, 0.59661934959593, 0.54355308167768, 
+                0.00755750437127, 0.708252543173 }};
     check(domain, 1012, errors);
     
     Output::print("\nstarting with BDM3 on quads");
-    errors = { 0.00025013087012341, 0.037688202895706, 0.036176275134976, 
-               0.00047733398111123, 0.068099895638466 };
+    errors = {{ 0.00025013087012341, 0.037688202895706, 0.036176275134976, 
+                0.00047733398111123, 0.068099895638466 }};
     check(domain, 1013, errors);
   }
   
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
 
     // refine grid up to the coarsest level
-    for(int i = 0; i < nRefinements; i++)
+    for(unsigned int i = 0; i < nRefinements; i++)
     {
       domain.RegRefineAll();
     }
@@ -183,38 +183,38 @@ int main(int argc, char* argv[])
     std::array<double, 5> errors;
 
     Output::print("\nstarting with RT0 on triangles");
-    errors = {0.50408358816775, 5.1429079193159, 28.151331748344, 
-              0.065260996556179, 4.4428829381584 };
+    errors = {{ 0.50408358816775, 5.1429079193159, 28.151331748344, 
+                0.0652645752817, 4.4428829381584 }};
     check(domain, 1000, errors);
     
     Output::print("\nstarting with RT1 on triangles");
-    errors = {0.028196037109588, 0.390978706619, 3.7142101823095, 
-              0.0049554126577833, 0.63339791851833 };
+    errors = {{ 0.028196037109588, 0.390978706619, 3.7142101823095, 
+                0.0049554126577833, 0.63339791851833 }};
     check(domain, 1001, errors);
     
     Output::print("\nstarting with RT2 on triangles");
-    errors = {0.0011486412161111, 0.017485986235863, 0.2702544676034, 
-              2.7194995909334e-05, 0.055705709939193 };
+    errors = {{ 0.0011486412161111, 0.017485986235863, 0.2702544676034, 
+                2.7194995909334e-05, 0.055705709939193 }};
     check(domain, 1002, errors);
     
     Output::print("\nstarting with RT3 on triangles");
-    errors = {4.5103729086427e-05, 0.0010136026623928, 0.012803427384749, 
-              1.2004518891142e-05, 0.0035296757619195 };
+    errors = {{ 4.5103729086427e-05, 0.0010136026623928, 0.012803427384749, 
+                1.2004518891142e-05, 0.0035296757619195 }};
     check(domain, 1003, errors);
     
     Output::print("\nstarting with BDM1 on triangles");
-    errors = { 0.099862267417049, 5.1429079193159, 7.4906379811947, 
-               0.065730785418563, 4.4428829381584 };
+    errors = {{ 0.099862267417049, 5.1429079193159, 7.4906379811947,
+                0.0657343839084, 4.4428829381584 }};
     check(domain, 1011, errors);
     
     Output::print("\nstarting with BDM2 on triangles");
-    errors = { 0.0035151373346507, 0.390978706619, 0.58694587503024, 
-               0.004954555083239, 0.63428676374772 };
+    errors = {{ 0.0035151373346507, 0.390978706619, 0.58694587503024, 
+                0.004954555083239, 0.63428676374772 }};
     check(domain, 1012, errors);
     
     Output::print("\nstarting with BDM3 on triangles");
-    errors = { 0.00017651588561095, 0.017485986236131, 0.029975320141965, 
-               2.6130552218382e-05, 0.055748396623119 };
+    errors = {{ 0.00017651588561095, 0.017485986236131, 0.029975320141965, 
+                2.6130552218382e-05, 0.055748396623119 }};
     check(domain, 1013, errors);
   }
   return 0;

@@ -1241,7 +1241,7 @@ void TFESpace2D::FindUsedElements()
 
 void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
-  int i, j, k, l, m, m2, n, comp, N_Edges, NEdges;
+  int i, j, k, l, m, m2, n, comp, NEdges, N_Edges;
   int *v;
   TBaseCell *cell, *neigh, *child1, *child2;
   TJoint *joint;

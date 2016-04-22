@@ -125,7 +125,7 @@ void CoupledDefect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -257,7 +257,7 @@ void CoupledMatVect(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
         double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -377,10 +377,10 @@ void MatVect_NSE2C(TSquareMatrix **A, TMatrix **B, double *x, double *y)
 // stabilisation of full gradient (velocity or pressure)
 void UltraLocalProjection(void* A, bool ForPressure)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -390,7 +390,6 @@ void UltraLocalProjection(void* A, bool ForPressure)
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -646,10 +645,10 @@ void UltraLocalProjection(void* A, bool ForPressure)
 double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
         double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -659,7 +658,6 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -675,12 +673,9 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy;
-  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
   double s;
   int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
   double *Values;
   double error, locerror;
   double exactval[4];
@@ -863,10 +858,10 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
                        TFEFunction2D *uh2,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -876,7 +871,6 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -1116,10 +1110,10 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
                               TFEFunction2D *uh2,
                               double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -1129,7 +1123,6 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -1391,10 +1384,10 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
                        TSquareMatrix2D *A21,TSquareMatrix2D *A22,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -1404,7 +1397,6 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -1664,7 +1656,7 @@ void CoupledMatVect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                     double *x, double *y)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2,value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -1814,7 +1806,7 @@ void CoupledDefect(TSquareMatrix *A11, TSquareMatrix *A12, TSquareMatrix *A21,
                    double *x, double *b, double *r)
 {
   int N_UDOF, N_PDOF;
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, value, value1, value2, value3;
   double *u1, *u2, *p;
   double *v1, *v2, *q;
@@ -1969,10 +1961,10 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
                        DoubleFunct2D *ExactU1, DoubleFunct2D *ExactU2,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -1982,7 +1974,6 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -1998,12 +1989,9 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy;
-  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
   double s;
   int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
   double *Values1, *Values2;
   double error, locerror;
   double exactval1[4], exactval2[4];
@@ -2188,10 +2176,10 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
                        TFEFunction2D *b1, TFEFunction2D *b2,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -2201,7 +2189,6 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -2218,12 +2205,9 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy;
-  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
   double s;
   int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
   double *Values;
   double *BValues1, *BValues2;
   double error, locerror;
@@ -2416,10 +2400,10 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
                        TFEFunction2D *b1, TFEFunction2D *b2,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -2429,7 +2413,6 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   TBaseFunct2D *BF, *CoarseBF;
   BaseFunct2D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *weights;
@@ -2446,12 +2429,9 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy;
-  double LocMatrix[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
   double s;
   int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
   double *Values;
   double *BValues1, *BValues2;
   double error, locerror;
@@ -2668,10 +2648,10 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
                 TFEFunction2D *uh,
                 CoeffFct2D *Coeff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace2D *fespace;
@@ -2695,7 +2675,6 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   double **CoarseValues, *CoarseValue;
   double **ChildValuesX, *ChildValueX;
   double **ChildValuesY, *ChildValueY;
-  double **ChildValues, *ChildValue;
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy;
@@ -2707,13 +2686,12 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   int p, end, ij, N_Edges;
   const int *RowPtr, *KCol;
   double *Entries;
-  double *Values, Values1, Values2;
+  double *Values;
   double *coeffs, *params, sx, sy, crosswind_uh[MaxN_QuadPoints_2D], loc_proj;
   double BValue[MaxN_BaseFunctions2D];
   int OrderDiff;
   double lpcoeff, lpexponent, stab_coeff, norm_b, lpcoeff_crosswind, lpexponent_crosswind;
-  double vall[3];
-
+  
   if (TDatabase::ParamDB->SC_VERBOSE>1)
     OutPut("LPS streamline" << endl);
 
@@ -2944,7 +2922,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
     // get derivatives of fe functions of approximation space
     ChildValuesX = TFEDatabase2D::GetOrigElementValues(BF_ID, D10);
     ChildValuesY = TFEDatabase2D::GetOrigElementValues(BF_ID, D01);
-    ChildValues  = TFEDatabase2D::GetOrigElementValues(BF_ID, D00);
+    //double **ChildValues  = TFEDatabase2D::GetOrigElementValues(BF_ID, D00);
     // initialize array H, holds mixed products of coarse basis 
     // functions and streamline derivatives of fine basis functions
     memset(H, 0, N_CoarseDOF*N_DOF*SizeOfDouble);
@@ -3349,9 +3327,8 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
 {
   int i, j, iq, index;
   int N_Cells, N_Edges;
-  int *GlobalNumbers_fine, *BeginIndex_fine, *GlobalNumbers_coarse, *BeginIndex_coarse, *DOF;
   double sx, sy, b1, b2, area, detJK, weight_det, value;
-  double *Values_fine, *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
+  double *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
   double gauss2_x[4]=
   {
     -0.57735026918962576450914878050195746,
@@ -3367,7 +3344,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
     0.57735026918962576450914878050195746
   };
   TCollection *Coll;
-  const TFESpace2D *fespace_fine, *fespace_coarse;
+  const TFESpace2D *fespace_fine;
   TBaseCell *cell, *parent_cell, *child_cell;
 
   OutPut("compute local projection to Q0 on coarse grid"<<endl);
@@ -3376,17 +3353,17 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
   memset(params, 0, 10 * SizeOfDouble);
 
   fespace_fine = uh->GetFESpace2D();
-  fespace_coarse = uh_proj->GetFESpace2D();
+  //const TFESpace2D *fespace_coarse = uh_proj->GetFESpace2D();
   // get collection, same for fine and coarse fe space
   Coll = fespace_fine->GetCollection();
   N_Cells = Coll->GetN_Cells();
   
    // get arrays for dofs  
-  BeginIndex_fine = fespace_fine->GetBeginIndex();
-  GlobalNumbers_fine = fespace_fine->GetGlobalNumbers();
+  //int *BeginIndex_fine = fespace_fine->GetBeginIndex();
+  //int *GlobalNumbers_fine = fespace_fine->GetGlobalNumbers();
  
   // get values of fe function 
-  Values_fine = uh->GetValues();     
+  //double *Values_fine = uh->GetValues();     
   Values_coarse = uh_proj->GetValues();     
   // pw constant space
   memset(Values_coarse, 0.0, N_Cells * SizeOfDouble);
@@ -3504,7 +3481,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
   int i, j, k, iq, N_Cells, N_Edges, N_Unknowns, index, dof_index;
   int *global_numbers, *begin_index, *dof;
   double  sx, sy, b1, b2, area, detJK, weight_det, value, value1, value_proj, hK;
-  double *Values_fine, *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
+  double *coeffs, *params, *Values_coarse,  x[4], y[4], val[4];
   double *sol, *sol_copy, *proj_test, area_coarse, norm_b, stab_coeff_cw;
   double lpcoeff_crosswind = TDatabase::ParamDB->LP_CROSSWIND_COEFF;
   double gauss2_x[4]=
@@ -3737,7 +3714,7 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
   double rhs[MaxN_BaseFunctions2D];
   double Values[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
   double PCValues[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
-  double *Value, *CurrentValue, sol;
+  double *Value, sol;
   double PointValues[MaxN_PointsForNodal2D];
   double FunctionalValues[MaxN_PointsForNodal2D];
   double *W, maxbubble=-1E8, minbubble=1E8;
@@ -3749,9 +3726,8 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
   TCollection *coll;
   TFE2D *CurrentElement, *CoarseElement;
   TBaseFunct2D *BF, *CoarseBF;
-  BaseFunct2D BF_ID, CoarseBF_ID;
+  BaseFunct2D CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   FE2D CurrEleID, UsedElements[1];
   TNodalFunctional2D *nf;
 
@@ -3776,7 +3752,7 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
     CurrEleID = fespace->GetFE2D(i, cell);
     CurrentElement = TFEDatabase2D::GetFE2D(CurrEleID);
     BF = CurrentElement->GetBaseFunct2D();
-    BF_ID = BF->GetID();
+    //BaseFunct2D BF_ID = BF->GetID();
     N_DOF = BF->GetDimension();
 
     CoarseOrder = BF->GetAccuracy() - OrderDiff;
@@ -3878,12 +3854,12 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
 void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFunct,
                          double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
   int *U_GlobalNumbers, *U_BeginIndex, *U_DOF;  
   int *W_GlobalNumbers, *W_BeginIndex, *W_DOF;  
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF, N_UDOF, N_WDOF;
   TCollection *Coll;
   const TFESpace2D *fespace, *U_fespace, *W_fespace;
@@ -3894,7 +3870,6 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   BaseFunct2D BF_ID, CoarseBF_ID;
   BaseFunct2D  U_BF_ID, W_BF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   TFEFunction2D *uh1, *uh2, *wh1, *wh2;  
   
   bool SecondDer[2] = { false, false };
@@ -4270,16 +4245,16 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
                        TFEFunction3D *uh2, TFEFunction3D *uh3,
                        double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   int N_UsedElements, N_Points;  
   int i1, i2;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
 
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -4288,7 +4263,6 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
   bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
@@ -4531,16 +4505,16 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
 void UltraLocalProjection(TSquareMatrix3D* A, 
                           double lpcoeff, double lpexponent, int OrderDiff)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   int N_UsedElements, N_Points;  
   int i1, i2;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
 
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -4549,7 +4523,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
 
   double *xi, *eta, *zeta, *weights;
@@ -4565,11 +4539,11 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   double **ChildValuesZ, *ChildValueZ;  
   double **PCValues;
   double *PCValue;
-  double w, val, valx, valy, valz;
+  double w, val;  // double valx, valy, valz;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s, hK;
   double *Entries;
-  double BValue[MaxN_BaseFunctions3D];
+//  double BValue[MaxN_BaseFunctions3D];
 
   fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
@@ -5729,10 +5703,10 @@ double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
 // stabilisation of full gradient (velocity or pressure)
 void UltraLocalProjection3D(void* A, bool ForPressure)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -5742,7 +5716,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -5761,11 +5735,11 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   double w, val;
   double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
   int ActiveBound, dof;
   int p, end;
-  int *RowPtr, *KCol;
+  const int *RowPtr, *KCol;
   double *Entries;
   int OrderDiff;
   double lpcoeff, lpexponent;
@@ -6010,10 +5984,10 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
 {
   // cout << "\n start of lps error \n" << endl;
   
-  int i,j,k,l,m,n;
+  int i,j,k,l;
   int N_Cells;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  int CellOrder, CoarseOrder;
+  int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
   const TFESpace3D *fespace;
@@ -6023,7 +5997,7 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   TBaseFunct3D *BF, *CoarseBF;
   BaseFunct3D BF_ID, CoarseBF_ID;
   TBaseCell *cell;
-  Shapes shapetype;
+//  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
   double *xi, *eta, *zeta, *weights;
@@ -6040,12 +6014,12 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   double **PCValues;
   double *PCValue;
   double w, val, valx, valy, valz;
-  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
+//  double LocMatrix[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   double s;
-  int i1, i2, i3;
+  int i1, i2;
   double hK;
-  int ActiveBound, dof;
-  int p, end;
+//  int ActiveBound, dof;
+//  int p, end;
   double *Values;
   double error, locerror;
   double exactval[5];

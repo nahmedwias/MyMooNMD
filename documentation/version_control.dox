@@ -98,12 +98,114 @@ hg import --no-commit mylocalchanges_default.txt
 ~~~~~~~~~~~~~~~
 You can change the branch or merge before importing, but similar to the shelve
 extension this is not always meaningful. It's up to you to know when it makes
-sense.
+sense. Also note that the command `hg revert` creates backup copies of the files
+you want to revert. Since you already have such a backup in the file 
+`mylocalchanges_default.txt`, you can avoid those extra backup files with the 
+`-C` option.
 
 Should you discover other situations where the shelve extension is useful or dangerous, please feel free to share them.
 
- 
- 
+
+\subsection hg_strip hg strip
+The strip extension is enabled by adding the line 
+\code
+strip =
+\endcode
+under the `[extensions]` heading in your global or local hgrc file. With this 
+extension you can <b>remove commits and all of its descendants</b>. This will 
+change the history of the repository so you should use it with great care. If 
+anyone already has the commits you are trying to remove, it becomes very 
+complicated. Try to avoid such situations!
+
+Usage: You simply provide the revision number of the commit
+\code
+hg strip <REV>
+\endcode
+Be aware that this will remove the commits and you will not see them again. It 
+might be safer to call
+\code
+hg strip --keep <REV>
+\endcode
+which will leave all the changes from the removed commits as local changes. 
+This makes it possible to recombine several commits.
+
+\remark In fact `hg strip` does store a backup in `.hg/strip-backup/` which you 
+can use via `hg unbundle`. Search online for help if you need to.
+
+One common work flow is the following: Image you worked hard and made a number 
+of commits in your local repository. Now you would like others to pull from you 
+to make your changes public. Before you do that you should pull from the main 
+repository to check if you are up to date. If there are new commits, this will 
+lead to separate heads in the default branch. You usually would merge and then 
+ask others to pull. These separate heads can lead unnecessarily far away from a 
+linear history and complicates many things. So you can do the following steps 
+to keep the history neat (after you pulled from the main repository but before 
+you tried to merge):
+ - go to your first commit which is not in the main repository using `hg up`
+ - call `hg strip --keep .` to remove all your commits and keep them as local 
+   changes in the file system
+ - shelve those local changes using `hg shelve` explained above
+ - switch to the current head of the repository (there should be only the one 
+   from the main repository now)
+ - unshelve your changes
+ - commit them again
+ - ask others to pull from your repository with a really nice linear history!
+One disadvantage is that the commit massages get lost during this process. This
+is ok if you only have a few commits. Otherwise you should save those as well 
+before calling `hg strip`. 
+
+
+\subsection hg_transplant hg transplant
+This extension is enabled through adding the line
+\code
+transplant =
+\endcode
+in your local or global `hgrc` file. It enables you to <b>move commits from one 
+branch to another</b>. Check for its usage online and extend this documentation.
+It is very nice in case you accidentally committed in the wrong branch. I don't 
+know if it can be used to move commits within the same branch, which could be 
+used to make the history more linear.
+
+\subsection hg_rebase hg rebase
+This extension is enabled through adding the line
+\code
+rebase =
+\endcode
+in your local or global `hgrc` file. This seems to be the appropriate tool to 
+linearize the history in case of two heads in the same branch. Basically this 
+can replace a call to `hg merge` in some situations. 
+
+
+
+
+\section merge_issues Possible problems during merging
+
+First of all: Do not wait with your merge too long. The longer you wait the 
+harder it might be. It is easiest to merge for example the default branch 
+into your own branch every day or so. 
+
+If you do a merge make sure that the merge commit is of any use, i.e., that all 
+tests pass! That means call `make check` before you commit the merge.
+
+\subsection missing_feature_for_merge I miss a feature to successfully merge
+Image you are in the following situation. You entered `hg merge default` to 
+merge the default branch into yours, which you are currently in. For some 
+reason you miss, say, another constructor in some class in the default branch 
+to successfully complete the merge. This extra constructor should of course be 
+a separate commit. Since you already started merging you can't directly commit
+into the default branch. Here is what you can do. 
+ - Save what you already have done during the merge, e.g. saving the output of 
+   `hg diff` into some file as described in the above remark (possibly restrict 
+   the command to some files only, e.g. those in the directory `user_projects/`)
+ - undo the not yet committed merge via `hg update --clean .`
+ - return into the default branch, `hg up default`
+ - implement the new constructor, write a test for it and commit
+ - change back into your branch and restart the merge
+ - load the saved file with your work starting the merge
+ - finish the merge and commit
+
+
+
  */
 
 

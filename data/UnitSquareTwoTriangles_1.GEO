@@ -1,11 +1,11 @@
-Grobgitter
-Parametrisierung PARXC, PARYC, TMAXC
-       2    4    0    3    1         NEL NVT NMT NVE NBCT
+coarse grid, unit square [0,1]^2, two triangles
+n_elem   n_vert ignored  max_n_vert_per_elem  ignored
+  2        4       0            3               1 
 DCORVG
- 0.000000E+0000     0.000000E+0000
- 1.000000E+0000     0.000000E+0000
- 2.000000E+0000     0.000000E+0000
- 3.000000E+0000     0.000000E+0000
+ 0     0
+ 1     0
+ 2     0
+ 3     0
 KVERT
     1 2 4
     2 3 4  

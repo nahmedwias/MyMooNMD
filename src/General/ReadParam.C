@@ -3613,7 +3613,7 @@ int TDomain::ReadParam(char *ParamFile)
 int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 {
 #ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   char line[100];
@@ -3812,7 +3812,7 @@ int TDomain::ReadBdParam(std::istream& dat, int &Flag)
 int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)
 {
 #ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
   char line[100];

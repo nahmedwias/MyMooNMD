@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->BNDFILE = new char[17];
   strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
   TDatabase::ParamDB->GEOFILE = new char[21];
-  strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Geo");
+  strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
 
   // Initialize geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->BNDFILE = new char[17];
     strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
     TDatabase::ParamDB->GEOFILE = new char[21];
-    strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Geo");
+    strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
     
     // makeshift parameter check
     CD3D::checkParameters();

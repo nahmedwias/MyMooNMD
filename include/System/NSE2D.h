@@ -16,13 +16,12 @@
 #define NSE2D_H_
 
 #include <FEVectFunct2D.h>
-#include <Example_NSE2D.h>
-#include <MultiGrid2D.h>
-#include <MainUtilities.h> // FixedSizeQueue
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <Residuals.h>
 
+#include <Example_NSE2D.h>
 
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
@@ -30,7 +29,13 @@
 #include <NSE_MGLevel3.h>
 #include <NSE_MGLevel4.h>
 #include <NSE_MGLevel14.h>
+#include <MultiGrid2D.h>
+
+#include <MainUtilities.h> // FixedSizeQueue
+
 #include <utility>
+#include <array>
+
 
 class NSE2D
 {
@@ -41,7 +46,7 @@ class NSE2D
     /** @brief store a complete system on a particular grid
      * 
      * This combines a matrix, rhs, solution, spaces and functions needed to 
-     * describe one Darcy problem in 2D.
+     * describe one stationary Navier-Stokes problem in 2D.
      */
     struct System_per_grid
     {
@@ -102,50 +107,14 @@ class NSE2D
      *         needed
      */
     std::shared_ptr<TNSE_MultiGrid> multigrid;
+    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
+    /// transposed blocks are not stored explicitely...sad but true.
+    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
     
-    /** @brief an array to store defect, so that we don't have to reallocate
-     *         so often
-     */
+    //! @brief An array to store the current defect.
     BlockVector defect;
 
-    /** @brief stores the norms of the residuals of previous iterations.
-     * The default length is 10
-     */
-    std::vector<double> norms_of_residuals;
-    
-  public:
-    /**
-     * @brief a simple struct storing one set of residuals
-     * 
-     * The full residual is the \f$\ell^2\f$-norm of the vector \f$Ax-b\f$ 
-     * where \f$A\f$ is the current matrix and \f$b\f$ the right hand side. It
-     * is composed of two parts, the impuls and the residual.
-     * 
-     * If not default constructed it holds 
-     *     fullResidual*fullResidual = impulsResidual*impulsResidual
-     *                                 +massResidual*massResidual
-     */
-    struct Residuals
-    {
-      /// @brief the impuls residual
-      double impulsResidual;
-      /// @brief the mass residual
-      double massResidual;
-      /// @brief the fulf residual
-      double fullResidual;
-      ///@brief standard constructor, initialize with large numbers
-      Residuals();
-      /// @brief constructor given the \e square of the impuls and mass 
-      /// residuals
-      Residuals(double imR, double maR);
-      /// @brief write out the three numbers to a stream.
-      friend std::ostream& operator<<(std::ostream& s, const Residuals& n);
-    };
-  protected:
-    
-    /**
-     * @brief store the norms of residuals from previous iterations 
-     */
+    ///@brief The norms of residuals from up to 10 previous iterations
     FixedSizeQueue<10, Residuals> oldResiduals;
 
     /** @brief store the initial residual so that the nonlinear iteration can 
@@ -153,14 +122,12 @@ class NSE2D
      */
     double initial_residual;
     
-    /** @brief set the velocity and pressure orders
-     * 
-     * This function sets the corresponding velocity and 
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
+    /** @brief Errors to be accesed from outside the class
+     * The array is filled during the function call NSE2D::output()
+     * Currently, the errors store the L2 and H1 errors of the velocity
+     * and pressure
      */
-    void get_velocity_pressure_orders(std::pair <int,int> 
-                   &velocity_pressure_orders);
+    std::array<double, int(4)> errors;
     
     /** @brief set parameters in database
      * 
@@ -172,6 +139,15 @@ class NSE2D
      * throws an exception.
      */
     void set_parameters();
+    
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
+     */
+    void get_velocity_pressure_orders(std::pair <int,int>
+                   &velocity_pressure_orders);
     
   public:
     
@@ -249,16 +225,11 @@ class NSE2D
    * @brief initialize multigrid levels for different NSTYPE's
    */
     TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-    /**
-   * @brief multigrid solver
-   */
+
+    /** @brief multigrid solver */
     void mg_solver();
     
     // getters and setters
-//    const BlockMatrixNSE2D & get_matrix() const TODO
-//    { return this->systems.front().matrix; }
-//    BlockMatrixNSE2D & get_matrix()
-//    { return this->systems.front().matrix; }
     const BlockFEMatrix & get_matrix() const
     { return this->systems.front().matrix; }
     BlockFEMatrix & get_matrix()
@@ -299,6 +270,8 @@ class NSE2D
     double getMassResidual() const;
     /// @brief get the current residual (updated in NSE2D::normOfResidual)
     double getFullResidual() const;
+    /// @brief return the computed errors
+    std::array<double, int(4)> get_errors() const;
 };
 
 

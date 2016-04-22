@@ -23,6 +23,7 @@
 
 // forward declaration
 class BlockMatrix;
+constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
 {
@@ -70,21 +71,45 @@ class DirectSolver
     /** @brief the matrix of the linear equation A*x=b */
     std::shared_ptr<TMatrix> matrix;
     
+    /** @brief temporary variables for the matrix indices 
+     * 
+     * These are only used if the matrix size exceeds a certain threshold value
+     * and umfpack is used. In that case we call the umfpack routines which use
+     * long int instead of int. This avoids out of memory errors in umfpack.
+     * 
+     * The DirectSolver::cols and DirectSolver::rows are replacements of the 
+     * respective matrix structure members, see Structure.h.
+     * 
+     * This should not be the final solution. We need the structure to also
+     * handle long. Implementing this is quite intrusive, and up to now it is
+     * only needed for umfpack.
+     */
+    std::vector<long int> cols;
+    std::vector<long int> rows;
+    
     /** @brief storage for umfpack direct solver */
     //@{
     void* symbolic;
     void* numeric;
     //@}
     
-    /** @brief true if indices start with 1 (Fortran style, for pardiso) */
-    bool isFortranShifted;
-    
+    /** @brief storage for pardiso direct solver */
+    //@{
+    void *pt[pardiso_options_array_length]; /// memory pointers for pardiso_
+    int maxfct;    /// maximum number of numerical factorization to perform
+    int mnum;      /// number of matrices
+    int mtype;     /// type of the matrix (ref. @b PARDISO_MTYPE_*)
+    int perm;      /// User supplied permutation to apply in advance
+    int nrhs;      /// number of right-hand sides
+    int iparm[pardiso_options_array_length]; /// contains the pardiso settings
+    int msglvl;    /// message level (0 - no messages, 1 - verbose)
+    //@}
     
     /**
      * @brief compute the factorization of a matrix, ready to call solve
      * 
      * The indices are shifted to conform with Fortran in case of the Pardiso 
-     * solver. This is why this methods has to change the matrix and therefore
+     * solver. This is why this method has to change the matrix and therefore
      * does not take a const TMatrix.
      *
      * @param  matrix  the matrix A where Ax=b
@@ -102,18 +127,10 @@ class DirectSolver
     void solve(const double* rhs, double* solution);
     
     /** @brief compute symbolic factorization */
-    void symetric_factorize();
+    void symbolic_factorize();
     /** @brief compute numeric factorization (requires symbolic factorization) 
      */
     void numeric_factorize();
-    
-    /**
-     * @brief shifts back and forth the index to comply with fortran.
-     * 
-     * @Note this changes the matrix. It is not usable as usual until this is
-     * called a second time.
-     */
-    void fortranShift();
 };
 
 

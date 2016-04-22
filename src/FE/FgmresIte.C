@@ -302,7 +302,8 @@ double *rhs)
   double beta,residlast,dnorm0,end_residual;
   double eps = 1e-14;
 #ifdef _MPI  
-  int ii, rank, *MasterOfDof;  
+  const int* MasterOfDof;
+  int ii, rank;
   double  resglobal;
   
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);

@@ -155,8 +155,9 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   double res, res0, reslast, t1, t2;
 
   
-#ifdef _MPI  
-  int ii, rank, *MasterOfDof;  
+#ifdef _MPI
+  const int* MasterOfDof;
+  int ii, rank;
   double  resglobal;
   
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);

@@ -225,7 +225,7 @@ int pc_restrict_6d (AMG_GRAPH *g, AMG_GRAPH *g1,  AMG_VECTOR *fine, AMG_VECTOR *
   int b=AMG_VECTOR_B(fine);
   int nf=b*AMG_VECTOR_N(fine);
   int nc=b*AMG_VECTOR_N(coarse);
-  int i,j,lc,lf, lc2, lf2, lc3, lf3, lc4, lf4, lc5, lf5;
+  int i,j,lc,lf, lc2, lf2, lc3, lf3, lc4, lc5, lf5; //lf4;
 
   /* initialize coarse grid vector */
   for (i=0; i<nc; i++) 
@@ -237,7 +237,7 @@ int pc_restrict_6d (AMG_GRAPH *g, AMG_GRAPH *g1,  AMG_VECTOR *fine, AMG_VECTOR *
   lc2 = 2*lc;
   lf3 = 3*lf;
   lc3 = 3*lc;
-  lf4 = 4*lf;
+//  lf4 = 4*lf;
   lc4 = 4*lc;
   lf5 = 5*lf;
   lc5 = 5*lc;
@@ -263,10 +263,10 @@ int pc_restrict_saddle_2d (AMG_GRAPH *g, AMG_GRAPH *g1, AMG_VECTOR *fine, AMG_VE
   double *f=AMG_VECTOR_X(fine);
   double *c=AMG_VECTOR_X(coarse);
   int b=AMG_VECTOR_B(fine);
-  int nf=b*AMG_VECTOR_N(fine);
+//  int nf=b*AMG_VECTOR_N(fine);
   int nc=b*AMG_VECTOR_N(coarse);
   int clust_velo = g->clusters;          /* # coarse velo dof (one component) */
-  int clust_pres = g1->clusters;         /* # coarse pressure dof */
+//  int clust_pres = g1->clusters;         /* # coarse pressure dof */
   int i,n_velo,n_pres;
   
   n_velo = AMG_GRAPH_N(g)/2;               /* velocity dof on fine grid */
@@ -299,7 +299,7 @@ int pc_prolongate (AMG_GRAPH *g,AMG_GRAPH *g1, AMG_VECTOR *fine, AMG_VECTOR *coa
   double *c=AMG_VECTOR_X(coarse);
   int b=AMG_VECTOR_B(fine);
   int nf=b*AMG_VECTOR_N(fine);
-  int nc=b*AMG_VECTOR_N(coarse);
+//  int nc=b*AMG_VECTOR_N(coarse);
   int i;
   double om;
   
@@ -328,7 +328,7 @@ int pc_prolongate_auto (AMG_GRAPH *g, AMG_GRAPH *g1, AMG_VECTOR *fine, AMG_VECTO
   double *c=AMG_VECTOR_X(coarse);
   int b=AMG_VECTOR_B(fine);
   int nf=b*AMG_VECTOR_N(fine);
-  int nc=b*AMG_VECTOR_N(coarse);
+//  int nc=b*AMG_VECTOR_N(coarse);
   int i;
   double w1,w2;
   
@@ -364,10 +364,10 @@ int pc_prolongate_auto_2d (AMG_GRAPH *g,AMG_GRAPH *g1, AMG_VECTOR *fine, AMG_VEC
   int b=AMG_VECTOR_B(fine);
   int nf=b*AMG_VECTOR_N(fine);
   int nc=b*AMG_VECTOR_N(coarse);
-  int i,lc,lf;
+  int i,lf; //lc;
   double w1,w2;
   
-  lf=nf/2;lc=nc/2;
+  lf=nf/2; //lc=nc/2;
   w1=2.0-damp[0]; 
   w2=damp[0]-1;
   for (i=0; i<lf; i++) 
@@ -455,11 +455,11 @@ int pc_prolongate_auto_saddle_2d (AMG_GRAPH *g, AMG_GRAPH *g1, AMG_VECTOR *fine,
   float *da_pres=AMG_GRAPH_DA(g);             /* auto damping factor */
   double *f=AMG_VECTOR_X(fine);
   double *c=AMG_VECTOR_X(coarse);
-  int b=AMG_VECTOR_B(fine);
-  int nf=b*AMG_VECTOR_N(fine);
-  int nc=b*AMG_VECTOR_N(coarse);
+//  int b=AMG_VECTOR_B(fine);
+//  int nf=b*AMG_VECTOR_N(fine);
+//  int nc=b*AMG_VECTOR_N(coarse);
   int clust_velo = g->clusters;          /* # coarse velo dof (one component) */
-  int clust_pres = g1->clusters;         /* # coarse pressure dof */
+//  int clust_pres = g1->clusters;         /* # coarse pressure dof */
   int i,n_velo,n_pres;
   double w1,w2;
   
@@ -684,7 +684,7 @@ int ex (AMG_SolverContext *sc, int k, int depth,
         AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
 {
   double alpha;
-  int i,old_def_size=-1;
+  int old_def_size=-1;
                                                  /* defect d=b-Ax is valid on entry */
                                                  /* if step length control should be applied */
  
@@ -769,7 +769,7 @@ int ilu (AMG_SolverContext *sc, int k, int depth,
 /****************************************************************************/
 AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
 {
-  int bw,rl;
+  int bw;
   int i,n=A->n,k,start,end;
   int *ra=A->ra, *ja=A->ja;
   double *a=A->a,*lu;
@@ -931,7 +931,7 @@ int quick_split_1(int begin_index,int length, double compare,double *w, int *w_i
 
 int quick_split_0(int begin_index,int length, double compare,double *w, int *w_ind)
     {
-      int tmp,i,j,right;
+      int tmp,i,right;
       double tmp_1;
     
       right=begin_index-1;
@@ -1001,12 +1001,12 @@ int clear_ilut(AMG_MATRIX *M[AMG_MAX_LEVELS],int fine,int depth)
 AMG_MATRIX *ILUTDecomposition(AMG_SolverContext *sc, AMG_MATRIX *A)
 {
   
-  int i,j,k,l,row_start,row_end,row_start_j,row_end_j,found,p,*w_ind,ij;
-  int n=A->n,b=A->b,bb=A->bb,nonzeros=A->nonzeros;
+  int i,j,k,row_start,row_end,found,p,*w_ind;
+  int n=A->n,b=A->b,nonzeros=A->nonzeros;
   int *ra=A->ra, *ja=A->ja;
   int A_lower, A_upper, M_lower, M_upper, M_index,ilut_sort;
   int mid,left,begin_index,length,first,last,itmp;
-  double ilu_eps =1e-10,diag_ii,update,beta_ilu=sc->ilu_beta,pivot,*w, min_w,t;
+  double *w; // min_w,t;
   double compare,norm,tol_norm,drop_1,tmp;
   AMG_MATRIX *M;
   char buf[128];
