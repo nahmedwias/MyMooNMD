@@ -927,6 +927,12 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
+    if (!strcmp(line, "WRITE_CASE:"))
+    {
+      dat >> TDatabase::ParamDB->WRITE_CASE;
+      N_Param++;
+    }
+
     if (!strcmp(line, "WRITE_AMIRA:"))
     {
       dat >> TDatabase::ParamDB->WRITE_AMIRA;

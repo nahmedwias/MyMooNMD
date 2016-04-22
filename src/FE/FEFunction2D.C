@@ -2845,7 +2845,7 @@ void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
     coll->createElementLists();
     nPoints = coll->NodesReferences.size();
   }
-  cout << "  TFEFunction2D::computeNodeValues number of points: " << nPoints << endl;
+  //cout << "  TFEFunction2D::computeNodeValues number of points: " << nPoints << endl;
   solutionAtNode.resize(nPoints,0);
   std::vector<int> WArray(nPoints);
   WArray.clear();
@@ -2891,7 +2891,6 @@ void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
   
   for(int i=0;i<coll->GetN_Cells();i++) {
     
-    cout << "  TFEFunction2D::computeNodeValues --  cell: " << i << endl;
     cell = coll->GetCell(i);
     int nLocalVertices = cell->GetN_Vertices();
       

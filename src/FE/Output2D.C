@@ -274,8 +274,6 @@ int TOutput2D::Write(std::string basename, int i, double _current_time)
 
   os.seekp(std::ios::beg);
   os << basename << i << ".vtk"<<ends;
-  os.seekp(std::ios::beg);
-  os << basename << i << ".vtk"<<ends;
   if(TDatabase::ParamDB->WRITE_VTK)
   {
     cout << " Output2D:: writing " << os.str() << endl;

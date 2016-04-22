@@ -584,6 +584,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->WRITE_AMIRA = FALSE; 
   ParamDB->WRITE_VTK = FALSE; 
   ParamDB->WRITE_GNU = FALSE; 
+  ParamDB->WRITE_CASE = FALSE; 
   ParamDB->SAVE_DATA = FALSE; 
   ParamDB->READ_DATA = FALSE; 
   ParamDB->READ_GRAPE_FILE = FALSE; 
@@ -1494,6 +1495,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("WRITE_GNU: ", ParamDB->WRITE_GNU);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
   printToFile("WRITE_VTK: ", ParamDB->WRITE_VTK);
+  printToFile("WRITE_CASE: ", ParamDB->WRITE_CASE);
   printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
   printToFile("WRITE_MATLAB_MATRIX: ", ParamDB->WRITE_MATLAB_MATRIX); 
   printToFile("WRITE_MATLAB: ", ParamDB->WRITE_MATLAB);
