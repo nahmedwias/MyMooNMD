@@ -191,15 +191,12 @@ void TNSE_MGLevel3::Defect(double *u1, double *f1,  double *d1, double &res)
 /** correct Dirichlet and hanging nodes */
 void TNSE_MGLevel3::CorrectNodes(double *u1)
 {
-  int i,j,k, index;
-  double s, t, u, *u2, *u3;
-  
-  u2 = u1+N_UDOF;
+  double *u2 = u1+N_UDOF;
 #ifdef __3D__
-  u3 = u2+N_UDOF;
+  double *u3 = u2+N_UDOF;
 #endif  
   
-  i = N_Dirichlet*SizeOfDouble;
+  int i = N_Dirichlet*SizeOfDouble;
   // set Dirichlet nodes
   memset(u1+HangingNodeBound, 0, i);
   memset(u2+HangingNodeBound, 0, i);
@@ -208,6 +205,8 @@ void TNSE_MGLevel3::CorrectNodes(double *u1)
 #endif  
   
 #ifdef __2D__
+  int j,k, index;
+  double s, t;
   // set hanging nodes 
   j = ARowPtr[N_Active];
   for(i=N_Active;i<HangingNodeBound;i++)
@@ -244,12 +243,11 @@ void TNSE_MGLevel3::CellVanka(double *u1, double *rhs1, double *aux,
   TFE3D *UEle, *PEle;
   TSquareMatrix3D *sqmatrix[1];  
 #endif  
-  int i,j,k,l,m, N_Cells, N_LocalDOFs, ii, verbose;
-  int j1, j2, j3, j4, k1, k2, k3;
-  double value, value1, value2, value3;
-  double value11,value12,value13,value21,value22;
-  double value23,value31,value32,value33;
-  double *uold, *pold; 
+  int j,k,l,m, N_Cells, ii, verbose;
+  int j1, j2, j4, k1, k2;
+  double value, value1, value2;
+  double value11,value12,value21,value22;
+  double *uold; 
   TCollection *Coll;
   double System[RhsDim*RhsDim];
   double Rhs[RhsDim], sol[RhsDim];
@@ -258,13 +256,19 @@ void TNSE_MGLevel3::CellVanka(double *u1, double *rhs1, double *aux,
   int N_LocalDOF;
   int begin, end, ActiveBound, begin1, end1;
   TBaseCell *Cell;
-  double *u2, *u3, *p, *rhs2, *rhs3, *rhsp;
+  double *u2, *p, *rhs2, *rhsp;
   TItMethod *itmethod = NULL;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   MatVecProc *MatVect=MatVectFull;
   DefectProc *Defect=DefectFull;
   TSquareMatrix **matrix= (TSquareMatrix **)sqmatrix;  
+#ifdef __3D__
+  int j3, k3;
+  double value3;
+  double value13, value23,value31,value32,value33;
+  double *u3, *rhs3;
+#endif
 
   TDatabase::ParamDB->INTERNAL_LOCAL_DOF = -1;
 #ifdef __2D__
@@ -314,7 +318,7 @@ void TNSE_MGLevel3::CellVanka(double *u1, double *rhs1, double *aux,
 
   // old values
   uold = aux;
-  pold  = uold+GEO_DIM*N_UDOF;
+  //double *pold  = uold+GEO_DIM*N_UDOF;
 
   // save current solution on 'old' vectors
   memcpy(uold, u1, N_DOF*SizeOfDouble);
@@ -607,23 +611,30 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
   TSquareMatrix3D *sqmatrix[1];  
 #endif  
   int i,j,k,l,m;
-  int j1, j2, j3, j4, k1, k2, k3;
-  double value, value1, value2, value3;
-  double value11,value12,value13,value21,value22;
-  double value23,value31,value32,value33;
-  double *uold, *pold; 
+  int j1, j2, j4, k1, k2;
+  double value, value1, value2;
+  double value11,value12,value21,value22;
+  double *uold; 
   double System[SystemRhs*SystemRhs];
   double Rhs[SystemRhs], sol[SystemRhs];
   int N_LocalDOF;
   int begin, end, HangingBound, begin1, end1, verbose;
-  int UDOFs[MaxN_LocalU], UDOF, N_U, N_U2, N_UGEO;
-  double *u2, *u3, *p, *rhs2, *rhs3, *rhsp;
+  int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
+  double *u2, *p, *rhs2, *rhsp;
   TItMethod *itmethod = NULL;
   int LargestDirectSolve = TDatabase::ParamDB->SC_LARGEST_DIRECT_SOLVE;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   MatVecProc *MatVect=MatVectFull;
   DefectProc *Defect=DefectFull;
   TSquareMatrix **matrix= (TSquareMatrix **)sqmatrix;  
+  
+#ifdef __3D__
+  int j3, k3;
+  double value3;
+  double value13, value23,value31,value32,value33;
+  int N_U2;
+  double *u3, *rhs3;
+#endif
 
   HangingBound = USpace->GetHangingBound();
   TDatabase::ParamDB->INTERNAL_LOCAL_DOF = -1;
@@ -659,7 +670,7 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
 
   // old values
   uold = aux;
-  pold = uold+GEO_DIM*N_UDOF;
+  //double *pold = uold+GEO_DIM*N_UDOF;
 
   // save current solution on 'old' vectors
   memcpy(uold, u1, N_DOF*SizeOfDouble);
@@ -699,7 +710,9 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
 	     << " " << MaxN_LocalU << __FILE__ << endl);
       exit(4711);
       }*/
+#ifdef __3D__
     N_U2 = 2 * N_U; 
+#endif
     N_UGEO = GEO_DIM * N_U; 
     N_LocalDOF = N_UGEO +1;
     /*if (N_LocalDOF > SystemRhs)
@@ -933,9 +946,13 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
 void TNSE_MGLevel3::SolveExact(double *u1, double *rhs1)
 {
   double *a, *b;
-  int i,j,k,l,index, N_DOF2 = N_DOF*N_DOF, end, begin, m;
-  int N_UDOF2 = 2*N_UDOF, N_UDOFGEO = GEO_DIM *N_UDOF ;
-  double value, value1, value2, value3;
+  int i,j,k,index, N_DOF2 = N_DOF*N_DOF, end, begin, m;
+  int N_UDOFGEO = GEO_DIM *N_UDOF ;
+  double value1, value2;
+#ifdef __3D__
+  int N_UDOF2 = 2*N_UDOF;
+  double value3;
+#endif
 
   a = new double[N_DOF2];
   b = new double[N_DOF];
@@ -1059,7 +1076,7 @@ double TNSE_MGLevel3::StepLengthControl (double *u1, double *u1old,
                                          double *Parameters)
 {
   double *x,*y,omega,numerator,nominator;
-  int i,j;
+  int i;
 
   // allocate auxiliary array
   x = new double[2*N_DOF];

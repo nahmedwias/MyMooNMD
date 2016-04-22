@@ -69,6 +69,8 @@
 #include <FEMatrix.h>
 #include <FESpace.h>
 
+#include <MumpsWrapper.h> //for friend method
+
 class BlockFEMatrix : public BlockMatrix
 {
   public:
@@ -248,6 +250,117 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for CD3D problems.
      */
     static BlockFEMatrix CD3D( const TFESpace3D& space );
+    
+    
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 1.
+     * The matrix takes the block structure
+     *
+     * ( A  0  0  B1T )
+     * ( 0  A  0  B2T )
+     * ( 0  0  A  B3T )
+     * ( B1 B2 B3 0  )
+     *
+     * where B1T B2T and B3T are not explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 1.
+     */
+    static BlockFEMatrix NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 2.
+     * The matrix takes the block structure
+     *
+     * ( A  0  0  B1T )
+     * ( 0  A  0  B2T )
+     * ( 0  0  A  B3T )
+     * ( B1 B2 B3 0  )
+     *
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 2.
+     */
+    static BlockFEMatrix NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 3.
+     * The matrix takes the block structure
+     *
+     * ( A11  A12  A13  B1T )
+     * ( A21  A22  A23  B2T )
+     * ( A31  A32  A33  B3T )
+     * ( B1   B2   B3   0   )
+     *
+     * where B1T, B2T and B3T are not explicitly stored (and marked non-transposed)..
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 3.
+     */
+    static BlockFEMatrix NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 4.
+     * The matrix takes the block structure
+     *
+     * ( A11  A12  A13  B1T )
+     * ( A21  A22  A23  B2T )
+     * ( A31  A32  A33  B3T )
+     * ( B1   B2   B3   0   )
+     *
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed)..
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 4.
+     */
+    static BlockFEMatrix NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    
+    /**
+     * Named constructor for a matrix of ParMooN-specific NSE Type 14.
+     * The matrix takes the block structure
+     *
+     * ( A11  A12  A13  B1T )
+     * ( A21  A22  A23  B2T )
+     * ( A31  A32  A33  B3T )
+     * ( B1   B2   B3   C   )
+     *
+     * where B1T, B2T and B3T are explicitly stored (and marked non-transposed).
+     *
+     * How to use a named constructor? Have a look at the test file!
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE3D problems,
+     * whose block structure is of NSE Type 14.
+     */
+    static BlockFEMatrix NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure);
+
+    /**
+     * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
+     *
+     * @param velocity The velocity finite element space
+     * @return A newly constructed BlockFEMatrix for
+     * 3D NSE time dependent problems
+     */
+    static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
+
 #endif
 
 
@@ -323,13 +436,6 @@ class BlockFEMatrix : public BlockMatrix
                                 size_t sub_row, size_t sub_col,
                                 double a = 1.0) const;
 
-    /** @brief this method is used to compare the number of actives in a block vector
-     * to the number of actives in test space
-     *  @param nActive number of actives
-     *  @param spaceNumber number of the test space to compare the actives
-     */
-    virtual void handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const;
     /**
      * Used as a developmental tool to discover slicing,
      * there should be no reason to use it anymore when the class is finished.
@@ -366,6 +472,22 @@ class BlockFEMatrix : public BlockMatrix
 #elif __3D__
     const TFESpace3D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
 #endif
+
+    /**
+     * @brief Get a shared pointer to a constant version of one of the blocks.
+     * Note that the non-active rows of that block might not be what you expect
+     * and will have to be read with care.
+     *
+     * @param[in] cell_row The cell row of the desired block.
+     * @param[out] cell_col The cell column of the desired block.
+     * @param[out] is_transposed A flag which shows true if the block is stored
+     * in transposed state, false if not so.
+     *
+     * @return A shared pointer to a block.
+     */
+    std::shared_ptr<const FEMatrix> get_block(
+        size_t cell_row, size_t cell_col, bool& is_transposed) const;
+
     /**
      * This method is the main interface to ParMooN solving procedures which
      * depend on the block structure.
@@ -451,9 +573,9 @@ class BlockFEMatrix : public BlockMatrix
 
     /** @brief return this BlockMatrix as one TMatrix
      *
-     * This returns a merged version of this matix. Note that the merged
+     * This returns a merged version of this matrix. Note that the merged
      * matrix does not get stored internally, for it cannot easily be kept
-     * up to date, but recreated on every call.
+     * up to date, but is recreated on every call.
      *
      * Treats Dirichlet rows correctly and globally, regardless of
      * what the particular blocks hold in their Dirichlet rows.
@@ -511,6 +633,14 @@ class BlockFEMatrix : public BlockMatrix
     const TFESpace3D& get_test_space(size_t cell_row, size_t cell_column) const;
 #endif
 
+    /** @brief this method is used to compare the number of actives in a block vector
+     * to the number of actives in test space
+     *  @param nActive number of actives
+     *  @param spaceNumber number of the test space to compare the actives
+     */
+    virtual void handle_discovery_of_vector_actives(const int nActive,
+                                                    const int spaceNumber) const;
+
     /**
      * Overrides the method from the base class
      * and does nothing but print an error, when called. This ensures, that
@@ -554,7 +684,6 @@ class BlockFEMatrix : public BlockMatrix
     void scale_blocks_actives(
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
-
 
     // Special member functions.
 

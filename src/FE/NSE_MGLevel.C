@@ -37,9 +37,6 @@ TNSE_MGLevel::TNSE_MGLevel(int level,
              int n_aux, double *al, int velocity_space, 
              int pressure_space, TCollection *coll)
 {
-  int i;
-  double *aux;
-
   Level = level;
 
   Rhs1 = f1;
@@ -104,9 +101,6 @@ void TNSE_MGLevel::Update(double *u1, double *v1)
 /** correct Dirichlet and hanging nodes */
 void TNSE_MGLevel::CorrectNodes(double *u1)
 {
-  int i,j,k, index;
-  double s, t;
-
   memset(u1+HangingNodeBound, 0, N_Dirichlet*SizeOfDouble);
   memset(u1+N_UDOF+HangingNodeBound, 0, N_Dirichlet*SizeOfDouble);
 #ifdef __2D__
@@ -124,6 +118,7 @@ void TNSE_MGLevel::CorrectNodes(double *u1)
 /** set hanging nodes in order to satisfy coupling condition */
 void TNSE_MGLevel::SetHangingNodes(double *u1)
 {
+#ifdef __2D__
   int i, j, k;
   double value, value1, value2;
   int N_Hanging, N_Nodes;
@@ -136,8 +131,7 @@ void TNSE_MGLevel::SetHangingNodes(double *u1)
   double *u2;
 
   u2 = u1 + N_UDOF;
- 
-#ifdef __2D__
+
   N_Hanging = USpace->GetN_Hanging();
   if(N_Hanging)
   {
@@ -175,20 +169,7 @@ void TNSE_MGLevel::SetHangingNodes(double *u1)
 /** correct defect */
 void TNSE_MGLevel::CorrectDefect(double *v1)
 {
-  int i;
-  double sum;
-
-  int N_Hanging, N_Nodes;
-  THangingNode *hn, **HangingNodes;
-  HNDesc HNDescr;
-  THNDesc *HNDescr_Obj;
-  double *Coupling;
-  int *DOF;
-  int FirstHangingNodeNumber;
-  double value, value1, value2;
-  int j,k;
   double *v2;
-
   v2 = v1 + N_UDOF;
 
   /*
@@ -203,8 +184,20 @@ void TNSE_MGLevel::CorrectDefect(double *v1)
   }
   */
 
-// /*
+  // /*
 #ifdef __2D__
+
+  int i;
+  int N_Hanging, N_Nodes;
+  THangingNode *hn, **HangingNodes;
+  HNDesc HNDescr;
+  THNDesc *HNDescr_Obj;
+  double *Coupling;
+  int *DOF;
+  int FirstHangingNodeNumber;
+  double value, value1, value2;
+  int j,k;
+
   N_Hanging = USpace->GetN_Hanging();
   if(N_Hanging)
   {

@@ -222,7 +222,7 @@ void THexaIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
           double *uref, double *uxiref, double *uetaref, double *uzetaref,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
-  int i, j, k;
+  int j, k;
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -323,36 +323,24 @@ void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                double *zeta, QuadFormula3D quadformula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
   double **refvaluesD001, **origvaluesD001;
-  double **refvaluesD200, **origvaluesD200;
-  double **refvaluesD110, **origvaluesD110;
-  double **refvaluesD101, **origvaluesD101;
-  double **refvaluesD011, **origvaluesD011;
-  double **refvaluesD020, **origvaluesD020;
-  double **refvaluesD002, **origvaluesD002;
+
+
   double *refD000, *origD000;
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD020, *origD020;
-  double *refD002, *origD002;
-  double r20, r11, r02, o20, o11, o02;
+
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
+
   BaseFunct3D BaseFunct;
   int N_Functs;
   bool SecondDer;
-  int ii,ij,ik;
-  double tmp,Eye1[3][3];
+
   double dx1, dx2, dx3;
   double dy1, dy2, dy3;
   double dz1, dz2, dz3;
@@ -691,7 +679,7 @@ void THexaIsoparametric::SetCell(TBaseCell *cell)
   int i, j, k, l;
   TJoint *joint;
   JointType type;
-  double xp1, xp2, xp3, xp4, yp1, yp2, yp3, yp4, zp1, zp2, zp3, zp4;
+
   TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
   int MaxLen;
@@ -701,7 +689,7 @@ void THexaIsoparametric::SetCell(TBaseCell *cell)
   TFEDesc3D *fedesc;
   TBaseFunct3D *bf;
   double dt, ds;
-  double T, S, t[4],s[4], xm, ym, zm, xp, yp, zp;
+  double T, S, xm, ym, zm, xp, yp, zp;
   TVertex **Vertices;
   TVertex **AuxVertices;
   double x[4], y[4], z[4], factor;

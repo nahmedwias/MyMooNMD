@@ -43,44 +43,40 @@ void NSType1Galerkin3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixB1, **MatrixB2, **MatrixB3;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
+  double** MatrixA = LocMatrices[0];
+  double** MatrixB1 = LocMatrices[1];
+  double** MatrixB2 = LocMatrices[2];
+  double** MatrixB3 = LocMatrices[3];
+
+  double* Rhs1 = LocRhs[0];
+  double* Rhs2 = LocRhs[1];
+  double* Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double* Orig0 = OrigValues[0]; // u_x
+  double* Orig1 = OrigValues[1]; // u_y
+  double* Orig2 = OrigValues[2]; // u_y
+  double* Orig3 = OrigValues[3]; // u
+  double* Orig4 = OrigValues[4]; // p
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+  
   double *MatrixRow, *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3;
+  double val, val1;
   
-  MatrixA = LocMatrices[0];
-  MatrixB1 = LocMatrices[1];
-  MatrixB2 = LocMatrices[2];
-  MatrixB3 = LocMatrices[3];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u_y
-  Orig3 = OrigValues[3]; // u
-  Orig4 = OrigValues[4]; // p
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
-
-  u1 = param[0]; // u1old
-  u2 = param[1]; // u2old
-  u3 = param[2]; // u3old
     
-  for(i=0;i<N_U;i++)
+  for(int i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
     test100 = Orig0[i];
@@ -93,7 +89,7 @@ void NSType1Galerkin3D(double Mult, double *coeff,
     Rhs2[i] += val1*c2;
     Rhs3[i] += val1*c3;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -107,7 +103,7 @@ void NSType1Galerkin3D(double Mult, double *coeff,
     } // endfor j
   } // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
@@ -115,7 +111,7 @@ void NSType1Galerkin3D(double Mult, double *coeff,
 
     test000 = Orig4[i];
     val1 = Mult*test000;
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -603,49 +599,42 @@ void NSType2Galerkin3D(double Mult, double *coeff,
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, **MatrixB1, **MatrixB2,  **MatrixB3;
-  double **MatrixB1T, **MatrixB2T, **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
+{  
+  double** MatrixA = LocMatrices[0];
+  double** MatrixB1 = LocMatrices[1];
+  double** MatrixB2 = LocMatrices[2];
+  double** MatrixB3 = LocMatrices[3];
+  double** MatrixB1T = LocMatrices[4];
+  double** MatrixB2T = LocMatrices[5];
+  double** MatrixB3T = LocMatrices[6];
+
+  double* Rhs1 = LocRhs[0];
+  double* Rhs2 = LocRhs[1];
+  double* Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double* Orig0 = OrigValues[0]; // u_x
+  double* Orig1 = OrigValues[1]; // u_y
+  double* Orig2 = OrigValues[2]; // u_z
+  double* Orig3 = OrigValues[3]; // u
+  double* Orig4 = OrigValues[4]; // p
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+
   double *MatrixRow, *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3;
-
-  MatrixA = LocMatrices[0];
-  MatrixB1 = LocMatrices[1];
-  MatrixB2 = LocMatrices[2];
-  MatrixB3 = LocMatrices[3];
-  MatrixB1T = LocMatrices[4];
-  MatrixB2T = LocMatrices[5];
-  MatrixB3T = LocMatrices[6];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u_z
-  Orig3 = OrigValues[3]; // u
-  Orig4 = OrigValues[4]; // p
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
-
-  u1 = param[0]; // u1old
-  u2 = param[1]; // u2old
-  u3 = param[2]; // u3old
-
-  for(i=0;i<N_U;i++)
+  double val, val1;
+  for(int i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
     test100 = Orig0[i];
@@ -658,7 +647,7 @@ void NSType2Galerkin3D(double Mult, double *coeff,
     Rhs2[i] += val1*c2;
     Rhs3[i] += val1*c3;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -674,7 +663,7 @@ void NSType2Galerkin3D(double Mult, double *coeff,
     MatrixRow1 = MatrixB1T[i];
     MatrixRow2 = MatrixB2T[i];
     MatrixRow3 = MatrixB3T[i];
-    for(j=0;j<N_P;j++)
+    for(int j=0;j<N_P;j++)
     {
       ansatz000 = Orig4[j];
 
@@ -687,7 +676,7 @@ void NSType2Galerkin3D(double Mult, double *coeff,
     }
   } // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
@@ -696,7 +685,7 @@ void NSType2Galerkin3D(double Mult, double *coeff,
     test000 = Orig4[i];
     val1 = Mult*test000;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -724,7 +713,7 @@ void NSType2SDFEM3D(double Mult, double *coeff,
 {
   double **MatrixA, **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
+  double *Rhs1, *Rhs2, val, val1; //*Rhs3;
   double *MatrixRow, *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -750,7 +739,7 @@ void NSType2SDFEM3D(double Mult, double *coeff,
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
+//  Rhs3 = LocRhs[2];  // is set but not used in the rest of this function
 
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
@@ -1105,49 +1094,43 @@ void NSType3Galerkin3D(double Mult, double *coeff,
                        double *param, double hK, 
                        double **OrigValues, int *N_BaseFuncts,
                        double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixB1, **MatrixB2,  **MatrixB3;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
+{  
+  double** MatrixA11 = LocMatrices[0];
+  double** MatrixA22 = LocMatrices[4];
+  double** MatrixA33 = LocMatrices[8];
+  double** MatrixB1  = LocMatrices[9];
+  double** MatrixB2  = LocMatrices[10];
+  double** MatrixB3  = LocMatrices[11];
+
+  double* Rhs1 = LocRhs[0];
+  double* Rhs2 = LocRhs[1];
+  double* Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double* Orig0 = OrigValues[0]; // u_x
+  double* Orig1 = OrigValues[1]; // u_y
+  double* Orig2 = OrigValues[2]; // u_y
+  double* Orig3 = OrigValues[3]; // u
+  double* Orig4 = OrigValues[4]; // p
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+  
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3;
+  double val, val1;
 
-  MatrixA11 = LocMatrices[0];
-  MatrixA22 = LocMatrices[4];
-  MatrixA33 = LocMatrices[8];
-  MatrixB1  = LocMatrices[9];
-  MatrixB2  = LocMatrices[10];
-  MatrixB3  = LocMatrices[11];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u_y
-  Orig3 = OrigValues[3]; // u
-  Orig4 = OrigValues[4]; // p
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
-
-  u1 = param[0]; // u1old
-  u2 = param[1]; // u2old
-  u3 = param[2]; // u3old
-
-  for(i=0;i<N_U;i++)
+  for(int i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
@@ -1163,7 +1146,7 @@ void NSType3Galerkin3D(double Mult, double *coeff,
     Rhs2[i] += val1*c2;
     Rhs3[i] += val1*c3;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -1186,7 +1169,7 @@ void NSType3Galerkin3D(double Mult, double *coeff,
     } // endfor j
   } // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
@@ -1195,7 +1178,7 @@ void NSType3Galerkin3D(double Mult, double *coeff,
     test000 = Orig4[i];
     val1 = Mult*test000;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -1378,8 +1361,8 @@ void NSType3Upwind3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix11Row; // *Matrix21Row, *Matrix13Row, *Matrix12Row;
+  double *Matrix22Row; // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz100, ansatz010, ansatz001;
@@ -1629,13 +1612,13 @@ void NSType3Smagorinsky3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix11Row; // *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row; // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz100, ansatz010, ansatz001;
@@ -1647,13 +1630,13 @@ void NSType3Smagorinsky3D(double Mult, double *coeff,
   double mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];   // not used in the rest of this function
+//  MatrixA13 = LocMatrices[2];   // not used in the rest of this function
+//  MatrixA21 = LocMatrices[3];   // not used in the rest of this function
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];   // not used in the rest of this function
+//  MatrixA31 = LocMatrices[6];   // not used in the rest of this function
+//  MatrixA32 = LocMatrices[7];   // not used in the rest of this function
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];
@@ -1687,13 +1670,13 @@ void NSType3Smagorinsky3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];  // not used in the rest of this function
+//    Matrix13Row = MatrixA13[i];  // not used in the rest of this function
+//    Matrix21Row = MatrixA21[i];  // not used in the rest of this function
     Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
+//    Matrix23Row = MatrixA23[i];  // not used in the rest of this function
+//    Matrix31Row = MatrixA31[i];  // not used in the rest of this function
+//    Matrix32Row = MatrixA32[i];  // not used in the rest of this function
     Matrix33Row = MatrixA33[i];
 
     test100 = Orig0[i];
@@ -1921,71 +1904,62 @@ void NSType4Galerkin3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
-  double **MatrixA33;
-  double **MatrixB1, **MatrixB2, **MatrixB3;
-  double **MatrixB1T, **MatrixB2T, **MatrixB3T;
-  double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double** MatrixA11 = LocMatrices[0];
+//  double** MatrixA12 = LocMatrices[1];
+//  double** MatrixA13 = LocMatrices[2];
+//  double** MatrixA21 = LocMatrices[3];
+  double** MatrixA22 = LocMatrices[4];
+//  double** MatrixA23 = LocMatrices[5];
+//  double** MatrixA31 = LocMatrices[6];
+//  double** MatrixA32 = LocMatrices[7];
+  double** MatrixA33 = LocMatrices[8];
+  double** MatrixB1  = LocMatrices[9];
+  double** MatrixB2  = LocMatrices[10];
+  double** MatrixB3  = LocMatrices[11];
+  double** MatrixB1T = LocMatrices[12];
+  double** MatrixB2T = LocMatrices[13];
+  double** MatrixB3T = LocMatrices[14];
+
+  double* Rhs1 = LocRhs[0];
+  double* Rhs2 = LocRhs[1];
+  double* Rhs3 = LocRhs[2];
+
+  int N_U = N_BaseFuncts[0];
+  int N_P = N_BaseFuncts[1];
+
+  double* Orig0 = OrigValues[0]; // u_x
+  double* Orig1 = OrigValues[1]; // u_y
+  double* Orig2 = OrigValues[2]; // u_y
+  double* Orig3 = OrigValues[3]; // u
+  double* Orig4 = OrigValues[4]; // p
+
+  double c0 = coeff[0]; // nu
+  double c1 = coeff[1]; // f1
+  double c2 = coeff[2]; // f2
+  double c3 = coeff[3]; // f3
+
+  double u1 = param[0]; // u1old
+  double u2 = param[1]; // u2old
+  double u3 = param[2]; // u3old
+  
+  double *Matrix11Row;  // *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row;  // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,N_U, N_P;
-  double c0, c1, c2, c3;
-  double u1, u2, u3;
+  double val, val1;
 
-  MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
-  MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
-  MatrixA33 = LocMatrices[8];
-  MatrixB1  = LocMatrices[9];
-  MatrixB2  = LocMatrices[10];
-  MatrixB3  = LocMatrices[11];
-  MatrixB1T = LocMatrices[12];
-  MatrixB2T = LocMatrices[13];
-  MatrixB3T = LocMatrices[14];
-
-  Rhs1 = LocRhs[0];
-  Rhs2 = LocRhs[1];
-  Rhs3 = LocRhs[2];
-
-  N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
-
-  Orig0 = OrigValues[0]; // u_x
-  Orig1 = OrigValues[1]; // u_y
-  Orig2 = OrigValues[2]; // u_y
-  Orig3 = OrigValues[3]; // u
-  Orig4 = OrigValues[4]; // p
-
-  c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
-
-  u1 = param[0]; // u1old
-  u2 = param[1]; // u2old
-  u3 = param[2]; // u3old
-
-  for(i=0;i<N_U;i++)
+  for(int i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];  // not used in the rest of this function
+//    Matrix13Row = MatrixA13[i];  // not used in the rest of this function
+//    Matrix21Row = MatrixA21[i];  // not used in the rest of this function
     Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
+//    Matrix23Row = MatrixA23[i];  // not used in the rest of this function
+//    Matrix31Row = MatrixA31[i];  // not used in the rest of this function
+//    Matrix32Row = MatrixA32[i];  // not used in the rest of this function
     Matrix33Row = MatrixA33[i];
 
     test100 = Orig0[i];
@@ -1998,7 +1972,7 @@ void NSType4Galerkin3D(double Mult, double *coeff,
     Rhs2[i] += val1*c2;
     Rhs3[i] += val1*c3;
 
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -2023,7 +1997,7 @@ void NSType4Galerkin3D(double Mult, double *coeff,
     MatrixRow1 = MatrixB1T[i];
     MatrixRow2 = MatrixB2T[i];
     MatrixRow3 = MatrixB3T[i];
-    for(j=0;j<N_P;j++)
+    for(int j=0;j<N_P;j++)
     {
       ansatz000 = Orig4[j];
 
@@ -2037,7 +2011,7 @@ void NSType4Galerkin3D(double Mult, double *coeff,
 
   } // endfor i
 
-  for(i=0;i<N_P;i++)
+  for(int i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
@@ -2046,7 +2020,7 @@ void NSType4Galerkin3D(double Mult, double *coeff,
     test000 = Orig4[i];
     val1 = Mult*test000;
     
-    for(j=0;j<N_U;j++)
+    for(int j=0;j<N_U;j++)
     {
       ansatz100 = Orig0[j];
       ansatz010 = Orig1[j];
@@ -2243,14 +2217,14 @@ void NSType4SDFEM3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix11Row; // *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row; // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -2267,13 +2241,13 @@ void NSType4SDFEM3D(double Mult, double *coeff,
   double power0 = TDatabase::ParamDB->SDFEM_POWER0;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];  // not used in the rest of this function
+//  MatrixA13 = LocMatrices[2];  // not used in the rest of this function
+//  MatrixA21 = LocMatrices[3];  // not used in the rest of this function
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];  // not used in the rest of this function
+//  MatrixA31 = LocMatrices[6];  // not used in the rest of this function
+//  MatrixA32 = LocMatrices[7];  // not used in the rest of this function
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];
@@ -2319,13 +2293,13 @@ void NSType4SDFEM3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];  // not used in the rest of this function
+//    Matrix13Row = MatrixA13[i];  // not used in the rest of this function
+//    Matrix21Row = MatrixA21[i];  // not used in the rest of this function
     Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
+//    Matrix23Row = MatrixA23[i];  // not used in the rest of this function
+//    Matrix31Row = MatrixA31[i];  // not used in the rest of this function
+//    Matrix32Row = MatrixA32[i];  // not used in the rest of this function
     Matrix33Row = MatrixA33[i];
 
     test100 = Orig0[i];
@@ -2903,14 +2877,14 @@ void NSType4Smagorinsky3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix11Row; // *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row; // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -2921,13 +2895,13 @@ void NSType4Smagorinsky3D(double Mult, double *coeff,
   double u1, u2, u3, mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];    // not used in the rest of this function
+//  MatrixA13 = LocMatrices[2];    // not used in the rest of this function
+//  MatrixA21 = LocMatrices[3];    // not used in the rest of this function
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];    // not used in the rest of this function
+//  MatrixA31 = LocMatrices[6];    // not used in the rest of this function
+//  MatrixA32 = LocMatrices[7];    // not used in the rest of this function
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];
@@ -2964,13 +2938,13 @@ void NSType4Smagorinsky3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];   // not used in the rest of this function
+//    Matrix13Row = MatrixA13[i];   // not used in the rest of this function
+//    Matrix21Row = MatrixA21[i];   // not used in the rest of this function
     Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
+//    Matrix23Row = MatrixA23[i];   // not used in the rest of this function
+//    Matrix31Row = MatrixA31[i];   // not used in the rest of this function
+//    Matrix32Row = MatrixA32[i];   // not used in the rest of this function
     Matrix33Row = MatrixA33[i];
 
     test100 = Orig0[i];
@@ -3351,7 +3325,7 @@ void NSType1_2NLUpwind3D(double Mult, double *coeff,
   double **MatrixA, val, *MatrixRow;
   double ansatz100, ansatz010, ansatz001;
   double test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2 ; //*Orig3;
   int i,j, N_U;
   double c0;
   
@@ -3362,7 +3336,7 @@ void NSType1_2NLUpwind3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_y
-  Orig3 = OrigValues[3]; // u
+//  Orig3 = OrigValues[3]; // u, it is not used in the rest of this function
 
   c0 = coeff[0]; // nu
     
@@ -3804,8 +3778,8 @@ void NSType3_4NLUpwind3D(double Mult, double *coeff,
   double val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double test100, test010, test001;  //test000;
+  double *Orig0, *Orig1, *Orig2; // *Orig3;
   int i,j,N_U;
   double c0;
  
@@ -3818,7 +3792,7 @@ void NSType3_4NLUpwind3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-  Orig3 = OrigValues[3]; // u
+//  Orig3 = OrigValues[3]; // u, it is not used in the rest of this function
 
   c0 = coeff[0]; // nu
 
@@ -3830,7 +3804,7 @@ void NSType3_4NLUpwind3D(double Mult, double *coeff,
     test100 = Orig0[i];
     test010 = Orig1[i];
     test001 = Orig2[i];
-    test000 = Orig3[i];
+//    test000 = Orig3[i];  // not used in the rest of this function
 
     for(j=0;j<N_U;j++)
     {
@@ -3860,7 +3834,7 @@ void NSType3_4NLUpwindDD3D(double Mult, double *coeff,
   double val, val1, val2, val3;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
+  double test100, test010, test001;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
   double c0;
@@ -3928,12 +3902,12 @@ void NSType3_4NLSmagorinsky3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double val, val1;
-  double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
-  double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
+  double *Matrix11Row; // *Matrix12Row, *Matrix13Row, *Matrix21Row;
+  double *Matrix22Row; // *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
@@ -3943,13 +3917,13 @@ void NSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   double u1, u2, u3, mu, viscosity, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];   // not used in the rest of this function
+//  MatrixA13 = LocMatrices[2];   // not used in the rest of this function
+//  MatrixA21 = LocMatrices[3];   // not used in the rest of this function
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];    // not used in the rest of this function
+//  MatrixA31 = LocMatrices[6];    // not used in the rest of this function
+//  MatrixA32 = LocMatrices[7];    // not used in the rest of this function
   MatrixA33 = LocMatrices[8];
 
   N_U = N_BaseFuncts[0];
@@ -3972,13 +3946,13 @@ void NSType3_4NLSmagorinsky3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix13Row = MatrixA13[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];   // not used in the rest of this function
+//    Matrix13Row = MatrixA13[i];   // not used in the rest of this function
+//    Matrix21Row = MatrixA21[i];   // not used in the rest of this function
     Matrix22Row = MatrixA22[i];
-    Matrix23Row = MatrixA23[i];
-    Matrix31Row = MatrixA31[i];
-    Matrix32Row = MatrixA32[i];
+//    Matrix23Row = MatrixA23[i];   // not used in the rest of this function
+//    Matrix31Row = MatrixA31[i];   // not used in the rest of this function
+//    Matrix32Row = MatrixA32[i];   // not used in the rest of this function
     Matrix33Row = MatrixA33[i];
 
     test100 = Orig0[i];
@@ -4754,7 +4728,7 @@ void NSAuxProblem(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U;
-  double mu2, delta, mu;
+  double mu2, delta; // mu;
   double u1, u2, u3;
   double gamma = TDatabase::ParamDB->GAUSSIAN_GAMMA;
 
@@ -4781,7 +4755,7 @@ void NSAuxProblem(double Mult, double *coeff,
   // delta^2/(4 gamma)
   mu2 = 0.25*delta*delta/gamma;
 
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);
+//  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],NULL,NULL,NULL,-4711);   // not used in the rest of this function
 
   for(i=0;i<N_U;i++)
   {
@@ -4852,10 +4826,10 @@ void NSPressSep(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double *Rhs1, *Rhs2, *Rhs3, val;
+  double *Rhs1, *Rhs2, *Rhs3;
   double test000;
   double *Orig0;
-  int i,j, N_U;
+  int i, N_U;
   double c1, c2, c3;
   double p_x, p_y, p_z;
 
@@ -4893,13 +4867,13 @@ void NSPressSepAuxProb(double Mult, double *coeff,
                           double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA, *MatrixRow;
-  double *Rhs1, val;
+  double *Rhs1;
   double test100,test010,test001,ansatz100,ansatz010,ansatz001;
   double *Orig0, *Orig1, *Orig2;
   double u1, u2,u3, d1u1, d2u1,d3u1, d1u2, d2u2, d3u2, d1u3, d2u3, d3u3;
   int i,j, N_U;
   double c1, c2, c3;
-  double p_x, p_y, p_z;
+//  double p_x, p_y, p_z; // unused variables
 
   MatrixA = LocMatrices[0];
   Rhs1 = LocRhs[0];
@@ -5001,8 +4975,9 @@ void NSParamsVelo_GradVelo3D(double *in, double *out)
 }
 void NSParamsVeloExact(double *in, double *out)
 {
-  double sinx, dsinx, ddsinx, dddsinx, siny, dsiny, ddsiny, dddsiny;
-  double polyz, dpolyz, ddpolyz, dddpolyz, u1, u2, u3, x, y, z;
+//  double sinx, dsinx, ddsinx, dddsinx, siny, dsiny, ddsiny, dddsiny;  // uncomment them only if you need them
+//  double polyz, dpolyz, ddpolyz, dddpolyz;   // uncomment them only if you need them
+  double u1, u2, u3, x, y, z;
 
   x = in[0];
   y = in[1];

@@ -70,7 +70,7 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
              unsigned int reference_id)
     : systems(), example(e), multigrid(), defect(), oldResiduals(),
-      initial_residual(1e10)
+      initial_residual(1e10), errors()
 {
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -132,6 +132,8 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   if(LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
+  this->transposed_B_structures_.resize(LEVELS,nullptr);
+
   // the matrix and rhs side on the finest grid are already constructed 
   // now construct all matrices, rhs, and solutions on coarser grids
   for(int i = LEVELS - 2; i >= 0; i--)
@@ -165,11 +167,18 @@ void NSE2D::get_velocity_pressure_orders(std::pair <int,int>
   switch(velocity_order)
   {
     case 1: case 2: case 3: case 4: case 5:
-    case 12: case 13: case 14: case 15:
+    case 14: case 15:
       if(velocity_order > 10)
         order = velocity_order-10;
       else
         order = velocity_order;
+      break;
+    // P2/P1disc and P3/P2disc elements are not stable on triangles and not allowed
+    // They are transformed into P2bubbles/P1disc and P3bubbles/P2disc
+    // On quads, it will be Q2/P1disc, Q3/P2disc
+    case 12: case 13:
+      velocity_order += 10;
+      order = velocity_order;
       break;
     case -1: case -2: case -3: case -4: case -5:
     case -101:
@@ -714,17 +723,29 @@ void NSE2D::output(int i)
     // errors in second velocity component
     u2->GetErrors(example.get_exact(1), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &velocity_space, err + 2);
-    Output::print<1>("L2(u)     : ", sqrt(err[0]*err[0] + err[2]*err[2]));
-    Output::print<1>("H1-semi(u): ", sqrt(err[1]*err[1] + err[3]*err[3]));
     
+    errors.at(0) = sqrt(err[0]*err[0] + err[2]*err[2]);
+    errors.at(1) = sqrt(err[1]*err[1] + err[3]*err[3]);    
+    Output::print<1>("L2(u)     : ", setprecision(10), errors[0]);
+    Output::print<1>("H1-semi(u): ", setprecision(10),errors[1]);
     // errors in pressure
     s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 2, L2H1Errors, 
                   nullptr, &NSEaux_error, 1, &pressure_space, err);
-    Output::print<1>("L2(p)     : ", err[0]);
-    Output::print<1>("H1-semi(p): ", err[1]); 
+    
+    errors.at(2) = err[0];
+    errors.at(3) = err[1];    
+    Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
+    Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
+    
   } // if(TDatabase::ParamDB->MEASURE_ERRORS)
   delete u1;
   delete u2;
+}
+
+/** ************************************************************************ */
+std::array< double, int(4) > NSE2D::get_errors() const
+{
+  return errors;
 }
 
 /** ************************************************************************ */
@@ -767,31 +788,32 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
   TMatrix2D* B2T =        reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
   TMatrix2D* B1 =         reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
   TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-  //TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
-
+  TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
 
   switch(TDatabase::ParamDB->NSTYPE)
   {
     case 1:
-      //TODO The files are there, why should that not be supported?
-      ErrThrow("NSE2D::mg_levels: NSTYPE 1 is not supported");
-      break;
-    
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
+      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, transposed_B_structures_.back().get(),
+                               s.rhs.get_entries(), s.solution.get_entries(),
+                               n_aux, alpha, v_space_code, p_space_code,
+                               nullptr, nullptr);
+      break;    
     case 2:
       mg_l = new TNSE_MGLevel2(i, A11, B1, B2, B1T, B2T,
                                s.rhs.get_entries(), 
                                s.solution.get_entries(), 
                                n_aux, alpha, v_space_code, p_space_code, 
                                nullptr, nullptr);
-      break;
-      
+      break;      
     case 3:
-      //TODO The files are there, why should that not be supported?
-      ErrThrow("NSE2D::mg_levels: NSTYPE 3 is not supported");
-      break;
-      
+      transposed_B_structures_.push_back(B1T->GetStructure().GetTransposed());
+      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, transposed_B_structures_.back().get(),
+                               s.rhs.get_entries(), s.solution.get_entries(),
+                               n_aux, alpha, v_space_code, p_space_code,
+                               nullptr, nullptr);
+      break;      
     case 4:
-
        mg_l = new TNSE_MGLevel4(i, A11, A12, A21, A22, B1, B2, B1T, B2T,
                                 s.rhs.get_entries(), 
                                 s.solution.get_entries(), 
@@ -799,9 +821,11 @@ TNSE_MGLevel* NSE2D::mg_levels(int i, System_per_grid& s)
                                 nullptr, nullptr);
        break;
     case 14:
-      //TODO The files are there, why should that not be supported?
-      ErrThrow("NSE2D::mg_levels: NSTYPE 14 is not supported");
-
+       mg_l = new TNSE_MGLevel14(i, A11, A12, A21, A22, C, B1, B2, B1T, B2T,
+                                s.rhs.get_entries(), 
+                                s.solution.get_entries(), 
+                                n_aux, alpha, v_space_code, p_space_code, 
+                                nullptr, nullptr);
     break;
   }
   return mg_l;
@@ -836,7 +860,7 @@ void NSE2D :: mg_solver()
   TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
   TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
   TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
-  //TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
+  TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
 
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -882,8 +906,18 @@ void NSE2D :: mg_solver()
       Defect = Defect_NSE4;
       break;
     case 14:
-      //TODO The files are there, why should that not be supported?
-      ErrThrow("NSTYPE 14 is not fully supported, take NSTYPE 4");
+      sqMat[0] = A11;
+      sqMat[1] = A12;
+      sqMat[2] = A21;
+      sqMat[3] = A22;
+      sqMat[4] = C;
+      recMat[0] = B1;
+      recMat[1] = B2;
+      recMat[2] = B1T;
+      recMat[3] = B2T;
+
+      MatVect = MatVect_EquOrd_NSE4;
+      Defect = Defect_EquOrd_NSE4;
       break;
   }
 
@@ -957,7 +991,7 @@ void NSE2D :: mg_solver()
 }
 
 /** ************************************************************************ */
-const NSE2D::Residuals& NSE2D::getResiduals() const
+const Residuals& NSE2D::getResiduals() const
 {
   return this->oldResiduals.back();
 }
@@ -980,22 +1014,4 @@ double NSE2D::getFullResidual() const
   return this->oldResiduals.back().fullResidual;
 }
 
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals()
- : impulsResidual(1e10), massResidual(1e10), fullResidual(1e10)
-{}
-
-/** ************************************************************************ */
-NSE2D::Residuals::Residuals(double imR, double maR)
- : impulsResidual(sqrt(imR)), massResidual(sqrt(maR)),
-   fullResidual(sqrt(imR + maR))
-{}
-
-/** ************************************************************************ */
-std::ostream& operator<<(std::ostream& s, const NSE2D::Residuals& n)
-{
-  s << setw(14) << n.impulsResidual << "\t" << setw(14)
-    << n.massResidual << "\t" << setw(14) << n.fullResidual;
-  return s;
-}
 

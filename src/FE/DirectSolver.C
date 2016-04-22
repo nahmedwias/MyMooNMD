@@ -15,6 +15,53 @@
 #include "umfpack.h"
 #include <BlockMatrix.h>
 
+#ifdef _OMP
+#include <omp.h>
+/* Pardiso Fortran Function */
+extern "C" void pardiso_(
+    void * handle,
+    int *max_factorizations,
+    int *matrix_num,
+    int *matrix_type,
+    int *ido,
+    int *neqns,
+    double *a,
+    int *ia,
+    int *ja,
+    int *perm_user,
+    int *nb,
+    int iparam[pardiso_options_array_length],
+    int *msglvl,
+    double *b,
+    double *x,
+    int *error
+);
+#else
+void pardiso_(
+    void * handle,
+    int *max_factorizations,
+    int *matrix_num,
+    int *matrix_type,
+    int *ido,
+    int *neqns,
+    double *a,
+    int *ia,
+    int *ja,
+    int *perm_user,
+    int *nb,
+    int iparam[pardiso_options_array_length],
+    int *msglvl,
+    double *b,
+    double *x,
+    int *error
+)
+{
+  ErrThrow("you compiled without openmp, therefore pardiso does not work."
+           "Change PARMOON_PARALLEL_TYPE in your CMakeCache.txt");
+}
+#endif
+
+
 void handle_error_umfpack(int ierror)
 {
   if (ierror == UMFPACK_OK)
@@ -24,13 +71,13 @@ void handle_error_umfpack(int ierror)
   {
     //WARNINGS
     case UMFPACK_WARNING_singular_matrix:
-      Output::print<2>("umfpack Warning: Matrix is singular!");
+      Output::print<1>("umfpack Warning: Matrix is singular!");
       break;
     case UMFPACK_WARNING_determinant_underflow:
-      Output::print<2>("umfpack Warning: Determinant smaller than eps");
+      Output::print<1>("umfpack Warning: Determinant smaller than eps");
       break;
     case UMFPACK_WARNING_determinant_overflow:
-      Output::print<2>("umfpack Warning: Determinant is larger than IEEE Inf");
+      Output::print<1>("umfpack Warning: Determinant is larger than IEEE Inf");
       break;
     //ERRORS
     case UMFPACK_ERROR_out_of_memory:
@@ -72,12 +119,54 @@ void handle_error_umfpack(int ierror)
     break;
   }
 }
+void handle_error_pardiso(int ierror)
+{
+  if (ierror==0) return;
+
+  switch(ierror)
+  {
+  case -1:
+    ErrThrow("Input inconsistent."); break;
+  case -2:
+    ErrThrow("Not enough memory."); break;
+  case -3:
+    ErrThrow("Reordering problem."); break;
+  case -4:
+    ErrThrow("Zero pivot, numerical factorization or iterative refinement problem."); break;
+  case -5:
+    ErrThrow("Unclassified (internal) error."); break;
+  case -6:
+    ErrThrow("Preordering failed"); break;
+  case -7:
+    ErrThrow("Diagonal matrix problem."); break;
+  case -8:
+    ErrThrow("32-bit integer overflow problem."); break;
+  case -10:
+    ErrThrow("No license file pardiso.lic found."); break;
+  case -11:
+    ErrThrow("License is expired."); break;
+  case -12:
+    ErrThrow("Wrong user name or host name."); break;
+  case -100:
+    ErrThrow("Reached maximum number of Krylov-subspace iteration in iterative solver."); break;
+  case -101:
+    ErrThrow("No sufficient convergence in Krylov-subspace iteration within 25 iterations"); break;
+  case -102:
+    ErrThrow("Error in Krylov-subspace iteration."); break;
+  case -103:
+    ErrThrow("Break-Down in Krylov-subspace iteration."); break;
+  default:
+    ErrThrow("pardiso: unkown error. Error number ", ierror); break;
+  break;
+  }
+}
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix, 
                            DirectSolver::DirectSolverTypes type)
- : type(type), matrix(matrix), symbolic(nullptr), numeric(nullptr), 
-   isFortranShifted(false)
+ : type(type), matrix(matrix), cols(), rows(),
+   symbolic(nullptr), numeric(nullptr), pt(), maxfct(10), mnum(1), 
+   mtype(11), perm(0), nrhs(1), iparm(), msglvl(0)
 {
   Output::print<3>("constructing a DirectSolver object");
   if(!matrix->is_square())
@@ -88,10 +177,38 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
   
   if(type == DirectSolverTypes::pardiso)
   {
-    ErrThrow("Pardiso does not yet work");
+    this->matrix->fortran_shift();
+    // initialize all values to zero/nullptr
+    for(size_t i = 0; i < pardiso_options_array_length; ++i)
+    {
+      this->pt[i] = nullptr;
+      this->iparm[i] = 0;
+    }
+    this->iparm[0] = 0; /* override defaults */
+    this->iparm[1] = 2; /* Metis reordering, default: minimize fill-in; 3D */
+#ifdef _OMP
+    Output::print<2>("FYI: omp_get_max_threads when setting up ParDiso is ",
+                     omp_get_max_threads());
+
+    this->iparm[2] = omp_get_max_threads(); //number of threads set to OMP_NUM_THREADS as recommended in the doc
+#endif
+    this->iparm[3] = 0; /* precond cgs, solver type */
+    this->iparm[4] = 0; /* user permute */
+  }
+
+  // the threshold is rather small here, it should furthermore depend on the 
+  // dimension (2 or 3) and the polynomial degree (and possibly more).
+  if(this->matrix->GetN_Rows() > 1e5 && type == DirectSolverTypes::umfpack)
+  {
+    this->cols.resize(this->matrix->GetN_Entries(), 0);
+    this->rows.resize(this->matrix->GetN_Rows()+1, 0);
+    for(int i = 0; i < this->matrix->GetN_Entries(); ++i)
+      this->cols[i] = this->matrix->GetKCol()[i];
+    for(int i = 0; i < this->matrix->GetN_Rows()+1; ++i)
+      this->rows[i] = this->matrix->GetRowPtr()[i];
   }
   
-  this->symetric_factorize();
+  this->symbolic_factorize();
   this->numeric_factorize();
 }
 
@@ -104,8 +221,9 @@ DirectSolver::DirectSolver(const BlockMatrix& matrix,
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(DirectSolver&& other)
- : type(other.type), matrix(other.matrix), symbolic(other.symbolic), 
-   numeric(other.numeric), isFortranShifted(other.isFortranShifted)
+ : type(other.type), matrix(other.matrix),
+   cols(std::move(other.cols)), rows(std::move(other.rows)),
+   symbolic(other.symbolic), numeric(other.numeric)
 {
   other.symbolic = nullptr;
   other.numeric = nullptr;
@@ -119,7 +237,8 @@ class DirectSolver& DirectSolver::operator=(DirectSolver&& other)
   this->matrix = other.matrix;
   this->symbolic = other.symbolic;
   this->numeric = other.numeric;
-  this->isFortranShifted = other.isFortranShifted;
+  this->cols = std::move(other.cols);
+  this->rows = std::move(other.rows);
   other.symbolic = nullptr;
   other.numeric = nullptr;
   Output::print<4>("DirectSolver::operator=(DirectSolver&&)");
@@ -132,13 +251,36 @@ DirectSolver::~DirectSolver()
   switch(type)
   {
     case DirectSolver::DirectSolverTypes::umfpack:
-      umfpack_di_free_symbolic(&symbolic);
-      umfpack_di_free_numeric(&numeric);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        umfpack_di_free_symbolic(&symbolic);
+        umfpack_di_free_numeric(&numeric);
+      }
+      else
+      {
+        // using long for indices
+        umfpack_dl_free_symbolic(&symbolic);
+        umfpack_dl_free_numeric(&numeric);
+      }
       break;
     case DirectSolver::DirectSolverTypes::pardiso:
-      ErrThrow("Pardiso does not yet work");
+    {
+      int phase = -1; /* Release internal memory. */
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries , rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
+      this->matrix->fortran_shift();
       break;
-      default:
+    }
+    default:
       ErrThrow("unknown DirectSolverTypes ",
                static_cast<typename 
                  std::underlying_type<DirectSolverTypes>::type> (type));
@@ -147,7 +289,7 @@ DirectSolver::~DirectSolver()
 }
 
 /** ************************************************************************ */
-void DirectSolver::symetric_factorize()
+void DirectSolver::symbolic_factorize()
 {
   int n_eq = matrix->GetN_Rows();
   switch(type)
@@ -155,15 +297,37 @@ void DirectSolver::symetric_factorize()
     case DirectSolverTypes::umfpack:
     {
       // symbolic factorization
-      int error = umfpack_di_symbolic(n_eq, n_eq, matrix->GetRowPtr(), 
-                                      matrix->GetKCol(), matrix->GetEntries(), 
-                                      &symbolic, nullptr, nullptr);
-      handle_error_umfpack(error);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_symbolic(n_eq, n_eq, matrix->GetRowPtr(),
+                                        matrix->GetKCol(), matrix->GetEntries(),
+                                        &symbolic, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_symbolic(n_eq, n_eq, &this->rows[0], 
+                                        &this->cols[0], matrix->GetEntries(), 
+                                        &symbolic, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      int phase = 11; // analysing phase
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries , rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:
@@ -184,16 +348,38 @@ void DirectSolver::numeric_factorize()
       double Info[UMFPACK_INFO];
       double Control[UMFPACK_CONTROL];
       umfpack_di_defaults(Control);
-  
-      int error = umfpack_di_numeric(matrix->GetRowPtr(), matrix->GetKCol(),
-                                     matrix->GetEntries(), symbolic, &numeric,
-                                     Control, Info);
-      handle_error_umfpack(error);
+      
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_numeric(matrix->GetRowPtr(), matrix->GetKCol(),
+                                       matrix->GetEntries(), symbolic, &numeric,
+                                       Control, Info);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_numeric(&this->rows[0], &this->cols[0],
+                                       matrix->GetEntries(), symbolic, &numeric,
+                                       Control, Info);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      int phase = 22; // numerical factorization
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, &dzero, &dzero, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:
@@ -201,37 +387,6 @@ void DirectSolver::numeric_factorize()
                static_cast<typename 
                  std::underlying_type<DirectSolverTypes>::type> (type));
       break;
-  }
-}
-
-/** ************************************************************************ */
-void DirectSolver::fortranShift()
-{
-  unsigned int n_eq = this->matrix->GetN_Rows();
-  unsigned int n_en = this->matrix->GetN_Entries();
-  if (!isFortranShifted)
-  {
-    for(unsigned int i = 0; i < n_eq+1; i++)
-    {
-      this->matrix->GetRowPtr()[i] += 1;
-    }
-    for (unsigned int i = 0; i < n_en; i++)
-    {
-      this->matrix->GetKCol()[i] += 1;
-    }
-    isFortranShifted = true;
-  }
-  else
-  {
-    for(unsigned int i = 0; i < n_eq+1; i++)
-    {
-      this->matrix->GetRowPtr()[i] -= 1;
-    }
-    for (unsigned int i = 0; i < n_en; i++)
-    {
-      this->matrix->GetKCol()[i] -= 1;
-    }
-    isFortranShifted = false;
   }
 }
 
@@ -244,15 +399,42 @@ void DirectSolver::solve(const double* rhs, double* solution)
     case DirectSolverTypes::umfpack:
     {
       // symbolic factorization
-      int error = umfpack_di_solve(UMFPACK_At, matrix->GetRowPtr(), 
-                                   matrix->GetKCol(), matrix->GetEntries(),  
-                                   solution, rhs, numeric, nullptr, nullptr);
-      handle_error_umfpack(error);
+      if(this->cols.size() == 0)
+      {
+        // using int for indices
+        int error = umfpack_di_solve(UMFPACK_At, matrix->GetRowPtr(), 
+                                     matrix->GetKCol(), matrix->GetEntries(),
+                                     solution, rhs, numeric, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
+      else
+      {
+        // using long for indices
+        int error = umfpack_dl_solve(UMFPACK_At, &this->rows[0], 
+                                     &this->cols[0], matrix->GetEntries(),  
+                                     solution, rhs, numeric, nullptr, nullptr);
+        handle_error_umfpack(error);
+      }
       break;
     }
     case DirectSolverTypes::pardiso:
     {
-      ErrThrow("Pardiso does not yet work");
+      //make a copy of rhs since pardiso wants it non-const
+      size_t length_rhs = matrix->GetN_Rows(); //this was checked in the calling method
+      double* rhs_nonconst = new double[length_rhs];
+      memcpy(rhs_nonconst, rhs, length_rhs*sizeof(double));
+
+      int phase = 33; //PHASE: solve
+      int n_eq = this->matrix->GetN_Rows();
+      double * entries = this->matrix->GetEntries();
+      int * rows = this->matrix->GetRowPtr();
+      int * cols = this->matrix->GetKCol();
+//      double dzero; // ??
+      int error;
+      pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
+               &n_eq, entries, rows, cols, &this->perm, &this->nrhs,
+               this->iparm, &this->msglvl, rhs_nonconst, solution, &error);
+      handle_error_pardiso(error);
       break;
     }
     default:
@@ -266,14 +448,16 @@ void DirectSolver::solve(const double* rhs, double* solution)
 /** ************************************************************************ */
 void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 {
-  if(  rhs.length() != this->matrix->GetN_Rows() 
-    || solution.length() != this->matrix->GetN_Columns())
+  if(  (int) rhs.length() != this->matrix->GetN_Rows()
+    || (int) solution.length() != this->matrix->GetN_Columns())
     ErrThrow("solution or right hand side vector has wrong size. ",
              "Size of the matrix: ", this->matrix->GetN_Rows(), " x ", 
              this->matrix->GetN_Columns(),"\t rhs size: ", rhs.length(), 
              "\tsolution size: ", solution.length());
 
+
   solve(rhs.get_entries(), solution.get_entries());
+
 }
 
 /** ************************************************************************ */
@@ -281,9 +465,8 @@ void DirectSolver::solve(const BlockVector& rhs, BlockVector& solution)
 
 void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
 {
-  double t1, t2, t3, t4;
-  int ret, i, j, k, l, begin, end;
-  double value;
+  int ret;
+
   int N_Eqn;
   const int *Row, *KCol;
   double *Values;
@@ -303,10 +486,10 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
     matrix->reorderMatrix();
   }
  
-  t1 = GetTime();
+  //t1 = GetTime();
   ret = umfpack_di_symbolic(N_Eqn, N_Eqn, Row, KCol, Values,
     &Symbolic, NULL, NULL);
-  t2 = GetTime();
+  //t2 = GetTime();
   // error occured
   if (ret!=0)
   {
@@ -316,7 +499,7 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
   ret = umfpack_di_numeric(Row, KCol, Values, Symbolic,
     &Numeric, NULL, NULL);
   umfpack_di_free_symbolic(&Symbolic);
-  t3 = GetTime();
+  //t3 = GetTime();
   // error occured
   if (ret!=0)
   {
@@ -326,7 +509,7 @@ void DirectSolver_old(TSquareMatrix *matrix, double *rhs, double *sol)
   ret = umfpack_di_solve(UMFPACK_At, Row, KCol, Values,
     sol, rhs, Numeric, NULL, NULL);
   umfpack_di_free_numeric(&Numeric);
-  t4 = GetTime();
+  //t4 = GetTime();
   if (ret!=0)
   {
     ErrThrow("error in umfpack_di_solve ", ret);
@@ -360,8 +543,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA11,
   double value;
   int N_Active;
   double t1, t2, t3, t4, t5;
-  int verbose = TDatabase::ParamDB->SC_VERBOSE;
-  double sum = 0;
 
   if (rb_flag==4)
   {
@@ -584,7 +765,7 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   const int *KColA, *RowPtrA;
   const int *KColB, *RowPtrB;
   double *EntriesA, *EntriesB1, *EntriesB2;
-  int N_, N_U, N_P, N_B, N_Entries;
+  int N_, N_U, N_P, N_Entries;
   static double *Entries;
   static int *KCol, *RowPtr;
   double *null = (double *) NULL;
@@ -592,7 +773,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   int i, j, k, l, begin, end, ret, pos;
   double value;
   int N_Active;
-  double t1, t2, t3, t4, t5, sum;
   
   if (rb_flag==4)
   {
@@ -609,7 +789,7 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
   
   if (rb_flag==0 || rb_flag==3)
   {
-    t1 = GetTime();
+    //t1 = GetTime();
     // get information from the matrices
     // size
     N_U = sqmatrixA->GetN_Rows();
@@ -636,7 +816,6 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
     KCol = new int[N_Entries];
     RowPtr = new int[N_+1];
     RowPtr[0] = 0;
-    N_B = RowPtrB[N_P];
 
     pos = 0;
     // fill combined matrix
@@ -790,11 +969,11 @@ void DirectSolver_old(TSquareMatrix2D *sqmatrixA, TMatrix2D *matrixB1,
     umfpack_di_free_symbolic(&Symbolic);
   }
 
-  t4 = GetTime();
+  //t4 = GetTime();
   ret = umfpack_di_solve(UMFPACK_At, RowPtr, KCol, Entries,
     sol, rhs, Numeric, null, null);
   Output::print<2>("solve: ", ret);
-  t5 = GetTime();
+  //t5 = GetTime();
 
   if (rb_flag==2 || rb_flag==3)
   {
@@ -859,7 +1038,6 @@ void DirectSolver_old(TSquareMatrix3D *sqmatrixA11,
   double value;
   int N_Active;
   double t1, t2, t3, t4, t5;
-  int verbose = TDatabase::ParamDB->SC_VERBOSE;
 
   if (flag==4)
   {

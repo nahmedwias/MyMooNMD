@@ -2424,7 +2424,7 @@ double *rhs)
   double *test_value, *test_value_x, *test_value_y, *test_value_z;
   double rhs1, rhs2, rhs3, rhs1_x, rhs2_x, rhs3_x, rhs1_y, rhs2_y, rhs3_y, rhs1_z, rhs2_z, rhs3_z;
   double valU[3], gradU[9], delta, hK, mu_T, tau_K, divU;
-  double c_1 = 2, c_2 = 1;
+//  double c_1 = 2, c_2 = 1;
   TBaseCell *cell;
   TVertex *vertex;
   FE3D CurrentElement;
@@ -3069,7 +3069,7 @@ double *rhs)
   double eps = 1/TDatabase::ParamDB->RE_NR, *coeff;
   double *integral_1, *integral_2, *integral_3, xi, eta, zeta;
   double *test_value, *test_value_x, *test_value_y, *test_value_z;
-  double rhs1, rhs2, rhs3, rhs1_x, rhs2_x, rhs3_x, rhs1_y, rhs2_y, rhs3_y, rhs1_z, rhs2_z, rhs3_z;
+  double rhs1_x, rhs2_x, rhs3_x, rhs1_y, rhs2_y, rhs3_y, rhs1_z, rhs2_z, rhs3_z;
   double valU[3], gradU[9], delta, hK, mu_T;
   TBaseCell *cell;
   TVertex *vertex;
@@ -3985,36 +3985,36 @@ double *rhs)
             b[4*jj+2] << " " <<  b[4*jj+3] << endl);*/
 
           // compute values of tilde_u in the barycenter
-          rhs1 = b[0] +  b[1] * xs + b[2] * ys + b[3] * zs
-            + b[4] * xs * ys +  b[5] * xs * zs +  b[6] * ys * zs
-            + b[7] * xs * ys *zs + b[8] * xs * xs + b[9] * ys * ys + b[10] * zs * zs
-            + b[11] * xs * xs * ys + b[12] * xs * xs * zs + b[13] * xs * ys * ys
-            + b[14] * ys * ys * zs + b[15] * xs * zs * zs + b[16] * ys * zs * zs
-            + b[17] * xs * xs * ys * zs + b[18] * xs * ys * ys * zs
-            + b[19] * xs * ys * zs * zs + b[20] * xs * xs * ys * ys + b[21] * xs * xs * zs * zs
-            + b[22] * ys * ys * zs * zs + b[23] * xs * xs * ys * ys * zs
-            + b[24] * xs * xs * ys * zs * zs + b[25] * xs * ys * ys * zs * zs
-            + b[26] * xs * xs * ys * ys * zs * zs;
-          rhs2 = b[27] +  b[28] * xs + b[29] * ys + b[30] * zs
-            + b[31] * xs * ys +  b[32] * xs * zs +  b[33] * ys * zs
-            + b[34] * xs * ys *zs + b[35] * xs * xs + b[36] * ys * ys + b[37] * zs * zs
-            + b[38] * xs * xs * ys + b[39] * xs * xs * zs + b[40] * xs * ys * ys
-            + b[41] * ys * ys * zs + b[42] * xs * zs * zs + b[43] * ys * zs * zs
-            + b[44] * xs * xs * ys * zs + b[45] * xs * ys * ys * zs
-            + b[46] * xs * ys * zs * zs + b[47] * xs * xs * ys * ys + b[48] * xs * xs * zs * zs
-            + b[49] * ys * ys * zs * zs + b[50] * xs * xs * ys * ys * zs
-            + b[51] * xs * xs * ys * zs * zs + b[52] * xs * ys * ys * zs * zs
-            + b[53] * xs * xs * ys * ys * zs * zs;
-          rhs3 = b[54] +  b[55] * xs + b[56] * ys + b[57] * zs
-            + b[58] * xs * ys +  b[59] * xs * zs +  b[60] * ys * zs
-            + b[61] * xs * ys *zs + b[62] * xs * xs + b[63] * ys * ys + b[64] * zs * zs
-            + b[65] * xs * xs * ys + b[66] * xs * xs * zs + b[67] * xs * ys * ys
-            + b[68] * ys * ys * zs + b[69] * xs * zs * zs + b[70] * ys * zs * zs
-            + b[71] * xs * xs * ys * zs + b[72] * xs * ys * ys * zs
-            + b[73] * xs * ys * zs * zs + b[74] * xs * xs * ys * ys + b[75] * xs * xs * zs * zs
-            + b[76] * ys * ys * zs * zs + b[77] * xs * xs * ys * ys * zs
-            + b[78] * xs * xs * ys * zs * zs + b[79] * xs * ys * ys * zs * zs
-            + b[80] * xs * xs * ys * ys * zs * zs;
+//          rhs1 = b[0] +  b[1] * xs + b[2] * ys + b[3] * zs
+//            + b[4] * xs * ys +  b[5] * xs * zs +  b[6] * ys * zs
+//            + b[7] * xs * ys *zs + b[8] * xs * xs + b[9] * ys * ys + b[10] * zs * zs
+//            + b[11] * xs * xs * ys + b[12] * xs * xs * zs + b[13] * xs * ys * ys
+//            + b[14] * ys * ys * zs + b[15] * xs * zs * zs + b[16] * ys * zs * zs
+//            + b[17] * xs * xs * ys * zs + b[18] * xs * ys * ys * zs
+//            + b[19] * xs * ys * zs * zs + b[20] * xs * xs * ys * ys + b[21] * xs * xs * zs * zs
+//            + b[22] * ys * ys * zs * zs + b[23] * xs * xs * ys * ys * zs
+//            + b[24] * xs * xs * ys * zs * zs + b[25] * xs * ys * ys * zs * zs
+//            + b[26] * xs * xs * ys * ys * zs * zs;
+//          rhs2 = b[27] +  b[28] * xs + b[29] * ys + b[30] * zs
+//            + b[31] * xs * ys +  b[32] * xs * zs +  b[33] * ys * zs
+//            + b[34] * xs * ys *zs + b[35] * xs * xs + b[36] * ys * ys + b[37] * zs * zs
+//            + b[38] * xs * xs * ys + b[39] * xs * xs * zs + b[40] * xs * ys * ys
+//            + b[41] * ys * ys * zs + b[42] * xs * zs * zs + b[43] * ys * zs * zs
+//            + b[44] * xs * xs * ys * zs + b[45] * xs * ys * ys * zs
+//            + b[46] * xs * ys * zs * zs + b[47] * xs * xs * ys * ys + b[48] * xs * xs * zs * zs
+//            + b[49] * ys * ys * zs * zs + b[50] * xs * xs * ys * ys * zs
+//            + b[51] * xs * xs * ys * zs * zs + b[52] * xs * ys * ys * zs * zs
+//            + b[53] * xs * xs * ys * ys * zs * zs;
+//          rhs3 = b[54] +  b[55] * xs + b[56] * ys + b[57] * zs
+//            + b[58] * xs * ys +  b[59] * xs * zs +  b[60] * ys * zs
+//            + b[61] * xs * ys *zs + b[62] * xs * xs + b[63] * ys * ys + b[64] * zs * zs
+//            + b[65] * xs * xs * ys + b[66] * xs * xs * zs + b[67] * xs * ys * ys
+//            + b[68] * ys * ys * zs + b[69] * xs * zs * zs + b[70] * ys * zs * zs
+//            + b[71] * xs * xs * ys * zs + b[72] * xs * ys * ys * zs
+//            + b[73] * xs * ys * zs * zs + b[74] * xs * xs * ys * ys + b[75] * xs * xs * zs * zs
+//            + b[76] * ys * ys * zs * zs + b[77] * xs * xs * ys * ys * zs
+//            + b[78] * xs * xs * ys * zs * zs + b[79] * xs * ys * ys * zs * zs
+//            + b[80] * xs * xs * ys * ys * zs * zs;
 
           // compute gradients of tilde_u in the barycenter
           rhs1_x = b[1]+ b[4]*ys + b[5]*zs + b[7]*ys*zs + 2*b[8]*xs
@@ -5631,9 +5631,9 @@ double *old_small_scales, double *rhs)
   double delta, hK, mu_T, temp, temp1;
   double val_test[4], val_ansatz[4], xq, yq, zq, detJK;
   double rhs1[4], rhs2[4], rhs3[4], rhsp, valU[3], gradU[9];
-  double old_small_u1[27], old_small_u2[27], old_small_u3[27], old_small_p[8];
+  double old_small_u1[27], old_small_u2[27], old_small_u3[27]; // old_small_p[8];
   double coeff_old_small_u1[81], *coeff_old_small_u2, *coeff_old_small_u3;
-  double old_small_u1_qp[4], old_small_u2_qp[4], old_small_u3_qp[4], old_small_p_qp;
+  double old_small_u1_qp[4], old_small_u2_qp[4], old_small_u3_qp[4]; // old_small_p_qp;
   //double *a0, *a1, *a2, *b0, *b1, *b2;
   TBaseCell *cell;
   TVertex *vertex;
@@ -6151,7 +6151,7 @@ double *old_small_scales, double *rhs)
 	  jj = i * N_all + N_vec_u;
 	  for (ii=0; ii < 8;ii++)
 	  {
-	      old_small_p[ii] = old_small_scales[jj+ dofp[ii]];
+//	      old_small_p[ii] = old_small_scales[jj+ dofp[ii]];
 	      //OutPut(old_small_p[ii] << " ");
 	  }
 	  //OutPut(endl);
@@ -7458,7 +7458,7 @@ double *old_small_scales, double *rhs)
   double *test_value, *test_value_x, *test_value_y, *test_value_z;
   double rhs1, rhs2, rhs3, rhs1_x, rhs2_x, rhs3_x, rhs1_y, rhs2_y, rhs3_y, rhs1_z, rhs2_z, rhs3_z;
   double valU[3], gradU[9], delta, hK, mu_T, tau_K, divU;
-  double c_1 = 2, c_2 = 1;
+//  double c_1 = 2, c_2 = 1;
   double old_small_u1[8], old_small_u2[8], old_small_u3[8];
   double coeff_old_small_u1[24], *coeff_old_small_u2, *coeff_old_small_u3;
   double old_small_u1_qp[4], old_small_u2_qp[4], old_small_u3_qp[4];

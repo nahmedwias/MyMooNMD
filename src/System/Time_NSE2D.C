@@ -15,7 +15,7 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
                   Time_NSE2D::Matrix type)
  : velocity_space(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
                   order.first, nullptr),
-   pressure_space(&coll, (char*)"p", (char*)"pressure space", example.get_bc(1),
+   pressure_space(&coll, (char*)"p", (char*)"pressure space", example.get_bc(2),
                   order.second, nullptr),
    matrix({&velocity_space, &velocity_space, &pressure_space}),
    Mass_Matrix({&velocity_space, &velocity_space}),
@@ -62,7 +62,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, int reference_id)
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
                        int reference_id)
  : systems(), example(ex), multigrid(), defect(), 
-   oldResidual(0), initial_residual(1e10), errors(6,0.), oldtau(0.0)
+   oldResidual(0), initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
   this->set_parameters();
   
@@ -96,9 +96,9 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
   int nActive = this->get_velocity_space().GetN_ActiveDegrees();  
-  
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
+
   Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
   Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
   Output::print<1>("dof Velocity: ", setw(10), 2* n_u);
@@ -155,7 +155,7 @@ void Time_NSE2D::set_parameters()
   if(TDatabase::ParamDB->EXAMPLE < 101)
   {
     ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-    <<"does not supported for time dependent problem");
+    <<" is not supported for time dependent problem");
     exit(1);
   }
   
@@ -163,7 +163,7 @@ void Time_NSE2D::set_parameters()
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 
           << " does not supported");
-    throw("TIME_DISC: 0 does not supported");
+    throw("TIME_DISC: 0 is not supported");
   }  
 }
 
@@ -277,7 +277,7 @@ void Time_NSE2D::assemble_initial_time()
 
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    
+
     LocalAssembling2D la(TNSE2D, fe_functions, 
                          this->example.get_coeffs());
     std::vector<std::shared_ptr<FEMatrix>> blocks 
@@ -329,11 +329,11 @@ void Time_NSE2D::assemble_initial_time()
         sqMatrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());        
         // mass matrices
         sqMatrices[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());        
-        ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling2D routine");
+        // ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling2D routine");
         // rectangular matrices
         n_rect_matrices = 2;
-        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
-        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
+        rectMatrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //first the lying B blocks
+        rectMatrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
         break;
       case 4:
         if(blocks.size() != 8)
@@ -393,8 +393,10 @@ void Time_NSE2D::assemble_initial_time()
     Assemble2D(n_fe_spaces, fespmat, n_square_matrices, sqMatrices, 
                n_rect_matrices, rectMatrices, nRhs, RHSs, fe_rhs, 
                boundary_conditions, non_const_bound_values.data(), la);
+    // copy nonactives
+    s.solution.copy_nonactive(s.rhs);
   }
-
+  
   // copy the current right hand side vector to the old_rhs 
   this->old_rhs = this->systems.front().rhs; 
   this->old_solution = this->systems.front().solution;
@@ -449,29 +451,22 @@ void Time_NSE2D::assemble_rhs()
   // scale by time step length and theta4 (only active dofs)  
   s.rhs.scaleActive(tau*theta4);
   // add rhs from previous time step 
-  s.rhs.addScaledActive((this->old_rhs), tau*theta3);
-  
-  // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
-  // next we want to set old_rhs to f^k (to be used in the next time step)
-  this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
-  this->old_rhs.scaleActive(-theta3/theta4);
-  
-  // scale the actives in each block
-  double factor = -tau*theta2;
-  s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
-  // now the matrix becomes
-  // matrix = factor*matrix + Mass_Matrix
-  const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
-  s.matrix.add_matrix_actives(mass_bloks, 1.0, {{0,0}, {1,1}}, {false, false});
-  // multiplying matrix with the old_solution vector
+  if(theta3 != 0)
+  {    
+    s.rhs.addScaledActive((this->old_rhs), tau*theta3);
+    
+    // now it is this->systems[i].rhs = tau*theta3*f^{k-1} + tau*theta4*f^k
+    // next we want to set old_rhs to f^k (to be used in the next time step)
+    this->old_rhs.addScaledActive(s.rhs, -1./(tau*theta3));
+    this->old_rhs.scaleActive(-theta3/theta4);
+    this->old_rhs.copy_nonactive(s.rhs);
+  }  
   // FIXME FInd other solution than this submatrix method.
-  s.matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
-  
-  // restore the matrix by subtracting the Mass matrix and 
-  // scale by 1./factor
-  factor = 1./factor;
-  s.matrix.add_matrix_actives(mass_bloks, -1.0, {{0,0}, {1,1}}, {false, false});
-  s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+  // M u^{k-1}
+  s.Mass_Matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, 1.0);
+  // -tau*theta2 * A u^{k-1}
+  double factor = -tau*theta2;
+  s.matrix.apply_scaled_submatrix(old_solution, s.rhs, 2, 2, factor);
   
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems)
@@ -486,10 +481,12 @@ void Time_NSE2D::assemble_rhs()
         Output::print<1>("change in tau", this->oldtau, "->", tau);
       }
       // scale the BT transposed blocks with the current time step
-      s.matrix.scale_blocks(factor, {{0,2}, {1,2}});      
+      const std::vector<std::vector<size_t>> cell_positions = {{0,2}, {1,2}};
+	s.matrix.scale_blocks(factor, cell_positions);      
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
-        s.matrix.scale_blocks(factor, {{2,0}, {2,1}});
+        const std::vector<std::vector<size_t>> cell_positions_t = {{2,0}, {2,1}};
+	s.matrix.scale_blocks(factor, cell_positions_t);
       }
     }
   }
@@ -512,7 +509,11 @@ void Time_NSE2D::assemble_system()
   
   for(System_per_grid& s : this->systems)
   {
-    s.matrix.scale_blocks_actives(factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix.scale_blocks_actives(factor, cell_positions);
     const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass_bloks, 1.0, {{0,0}, {1,1}}, {false, false});
   }
@@ -657,14 +658,20 @@ void Time_NSE2D::solve()
     direct_solver.solve(s.rhs, s.solution);
   }
   else
+  {
     this->mg_solver();
+  }
+
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 
   // reset and assembled again but the A12 and A21 are scaled, so
   // for the next iteration we have to descale, see assemble_system()
-    this->deScaleMatrices();
+  this->deScaleMatrices();
 
-this->old_solution = s.solution;
+  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
+       s.p.project_into_L20();
+
+  this->old_solution = s.solution;
   Output::print<5>("solver done");
 }
 
@@ -677,7 +684,11 @@ void Time_NSE2D::deScaleMatrices()
   {
     const FEMatrix& mass_bloks = *s.Mass_Matrix.get_blocks().at(0).get();
     s.matrix.add_matrix_actives(mass_bloks, -1.0, {{0,0}, {1,1}}, {false, false});
-    s.matrix.scale_blocks_actives(1./factor, {{0,0}, {0,1}, {1, 0}, {1, 1}});
+    const std::vector<std::vector<size_t>>
+      cell_positions = {{0,0}, {0,1}, {1, 0}, {1, 1}};
+    // note: declaring the auxiliary cell_positions is needed by the compiler
+    // to sort out the overriding of the function scale_blocks_actives(...,...)
+    s.matrix.scale_blocks_actives(1./factor, cell_positions);
   }  
 }
 
@@ -896,9 +907,6 @@ void Time_NSE2D::output(int m, int& image)
   System_per_grid& s = this->systems.front();
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
-  
-  if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
-       s.p.project_into_L20();
 
   if(TDatabase::ParamDB->SC_VERBOSE>1)
   {
@@ -929,26 +937,30 @@ void Time_NSE2D::output(int m, int& image)
                   + this->errors[3])*tau*0.5;
     errors[3] = locerr[1]*locerr[1]+locerr[3]*locerr[3];  
 
-    Output::print<1>("L2(u) : ", sqrt(this->errors[1]));
-    Output::print<1>("H1-semi(u) : ", sqrt(this->errors[3]));
+    Output::print<1>("L2(u) : ", setprecision(10), sqrt(this->errors[1]));
+    Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors[3]));
 
-    Output::print<1>("L2(0,t,L2) : ", sqrt(this->errors[0]));
-    Output::print<1>("L2(0,t,H1) : ", sqrt(this->errors[2]));
+    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[0]));
+    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[2]));
 
     s.p.GetErrors(example.get_exact(2), 3, allderiv, 2, L2H1Errors, 
                   nullptr, &aux, 1, &p_sp, locerr);
 
-    Output::print<1>("L2(p) : ", locerr[0]);
-    Output::print<1>("H1-semi(p)) : " , locerr[1] );
+    Output::print<1>("L2(p) : ", setprecision(10), locerr[0]);
+    Output::print<1>("H1-semi(p)) : " , setprecision(10), locerr[1] );
 
     errors[4] += (locerr[0]*locerr[0] + this->errors[5])*tau*0.5;
     errors[5] = locerr[0]*locerr[0];
-    Output::print<1>("L2(0,t,L2) : ", sqrt(errors[4]) );    
+    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[4]) );
+    
+    errors[6] += (locerr[1]*locerr[1] + this->errors[7])*tau*0.5;
+    errors[7] = locerr[1]*locerr[1];
+    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[6]) );
   }
    delete u1;
    delete u2;
   
-  if((m==0) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE) )
+  if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
     if(TDatabase::ParamDB->WRITE_VTK)
     {
@@ -968,3 +980,16 @@ void Time_NSE2D::output(int m, int& image)
     }
   }
 }
+/**************************************************************************** */
+std::array< double, int(6) > Time_NSE2D::get_errors()
+{
+  std::array<double, int(6)> error_at_time_points;
+  error_at_time_points[0] = sqrt(errors[1]); // L2 velocity error
+  error_at_time_points[1] = sqrt(errors[3]); // H1 velocity error
+  error_at_time_points[2] = sqrt(errors[5]); // L2 pressure error
+  error_at_time_points[3] = sqrt(errors[7]); // H1 pressure error
+  
+  return error_at_time_points;
+}
+
+/**************************************************************************** */

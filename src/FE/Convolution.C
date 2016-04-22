@@ -53,20 +53,19 @@ double GaussianFilter(double delta, double dist_sq)
 
 void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs2D], UsedNeigh[N_FEs2D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;
+  int UsedNeigh[N_FEs2D], *N_BaseFunct;
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
+  double *weights, *xi, *eta, *xi_ref, *eta_ref;
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE2D *ele;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -74,13 +73,11 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double XNeigh[MaxN_QuadPoints_2D], YNeigh[MaxN_QuadPoints_2D];
   double AbsDetjkNeigh[MaxN_QuadPoints_2D];
   RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double FEValue_u1_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_u2_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_u1_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_u2_QuadPointNeigh[MaxN_QuadPoints_2D];
-  double *ExactVal[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig, value, value1;
   double **OrigFEValuesNeigh;
   double FEFunctValues[MaxN_BaseFunctions2D];
@@ -88,12 +85,11 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double FEFunctValuesNeigh[MaxN_BaseFunctions2D];
   double FEFunctValues1Neigh[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
   double hK,delta;
   bool *SecondDer;
   int n_fespaces = 1, N_Derivatives = 1, index;
   int N_UConv, N_DOFConv;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv;
   TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
@@ -131,7 +127,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 2*N_U;
+  //int N_DOF = 2*N_U;
    
   // # dof in the new fe space
   N_UConv = fespaceConv->GetN_DegreesOfFreedom();
@@ -542,11 +538,11 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 
 void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;
   int Used[N_FEs2D], UsedNeigh[N_FEs2D], *N_BaseFunct;
-  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
+  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
   TFE2D *Element;
@@ -554,7 +550,6 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE2D *ele;
   double *weights, *xi, *eta, *xi_ref, *eta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
@@ -563,13 +558,11 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double XNeigh[MaxN_QuadPoints_2D], YNeigh[MaxN_QuadPoints_2D];
   double AbsDetjkNeigh[MaxN_QuadPoints_2D];
   RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double FEValue_u1_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_u2_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_u1_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_u2_QuadPointNeigh[MaxN_QuadPoints_2D];
-  double *ExactVal[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig, value, value1;
   double **OrigFEValuesNeigh;
   double FEFunctValues[MaxN_BaseFunctions2D];
@@ -577,14 +570,12 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double FEFunctValuesNeigh[MaxN_BaseFunctions2D];
   double FEFunctValues1Neigh[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
   double hK, delta;
   bool *SecondDer;
   int n_fespaces = 1, N_Derivatives = 1, index;
   int N_UConv, N_DOFConv, *conv_comp;
-  double *Values, *u_conv,distance_sq,h_fine,g;
-  double *u_values, *x_conv, *y_conv;
-  TJoint *joint;
+  double *Values, *u_conv,distance_sq,g;
+  double *x_conv, *y_conv;
   TVertex *vertex0;
   double x_vertex, y_vertex;
   const TFESpace2D *fespace, *fespaceConv; 
@@ -622,7 +613,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 2*N_U;
+  //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -1064,10 +1055,10 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 // ========================================================================
 void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs2D], UsedNeigh[N_FEs2D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_U, N_DOF, N_loc_dofConv;
+  int UsedNeigh[N_FEs2D], *N_BaseFunct;
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
@@ -1076,7 +1067,6 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE2D *ele;
   double *weights, *xi, *eta, *xi_ref, *eta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
@@ -1085,7 +1075,6 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double XNeigh[MaxN_QuadPoints_2D], YNeigh[MaxN_QuadPoints_2D];
   double AbsDetjkNeigh[MaxN_QuadPoints_2D];
   RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double FEValue_D1u1_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D1u2_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPoint[MaxN_QuadPoints_2D];
@@ -1094,8 +1083,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_2D];
-  double *ExactVal[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig;
   double value, value1;
   double value11, value12, value21, value22;
@@ -1105,9 +1093,8 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEFunctValuesNeigh[MaxN_BaseFunctions2D];
   double FEFunctValues1Neigh[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
   int N_UConv, N_DOFConv, index;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
@@ -1580,10 +1567,10 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
 void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
 
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs2D], UsedNeigh[N_FEs2D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;
+  int UsedNeigh[N_FEs2D], *N_BaseFunct;
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
@@ -1592,7 +1579,6 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE2D *ele;
   double *weights, *xi, *eta, *xi_ref, *eta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
@@ -1601,7 +1587,6 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double XNeigh[MaxN_QuadPoints_2D], YNeigh[MaxN_QuadPoints_2D];
   double AbsDetjkNeigh[MaxN_QuadPoints_2D];
   RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double FEValue_D1u1_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D1u2_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPoint[MaxN_QuadPoints_2D];
@@ -1610,8 +1595,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_2D];
-  double *ExactVal[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig;
   double value, value1;
   double value11, value12, value22;
@@ -1621,9 +1605,8 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEFunctValuesNeigh[MaxN_BaseFunctions2D];
   double FEFunctValues1Neigh[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
   int N_UConv, N_DOFConv, index;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
@@ -1653,7 +1636,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 2*N_U;
+  //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -2092,11 +2075,11 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
 void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
 
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs2D], UsedNeigh[N_FEs2D], *N_BaseFunct;
-  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;
+  int UsedNeigh[N_FEs2D], *N_BaseFunct;
+  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
   TFE2D *Element;
@@ -2104,7 +2087,6 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE2D *ele;
   double *weights, *xi, *eta, *xi_ref, *eta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
@@ -2113,7 +2095,6 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double XNeigh[MaxN_QuadPoints_2D], YNeigh[MaxN_QuadPoints_2D];
   double AbsDetjkNeigh[MaxN_QuadPoints_2D];
   RefTrans2D RefTrans;
-  double *Param[MaxN_QuadPoints_2D], *aux;
   double FEValue_D1u1_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D1u2_QuadPoint[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPoint[MaxN_QuadPoints_2D];
@@ -2122,8 +2103,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_2D];
   double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_2D];
-  double *ExactVal[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig;
   double value, value1;
   double value11, value12, value22;
@@ -2133,11 +2113,9 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double FEFunctValuesNeigh[MaxN_BaseFunctions2D];
   double FEFunctValues1Neigh[MaxN_BaseFunctions2D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
   int N_UConv, N_DOFConv, index, *conv_comp;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
-  TJoint *joint;
   const TFESpace2D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex;
@@ -2167,7 +2145,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 2*N_U;
+  //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -3186,10 +3164,10 @@ double GaussianFilter3D(double delta, double dist_sq)
 
 void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements; //N_UsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs3D], UsedNeigh[N_FEs3D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv; //N_DOF;
+  int UsedNeigh[N_FEs3D], *N_BaseFunct;    //Used[N_FEs3D];
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Faces, same_dof;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement, CurrentElementConv;
   FE3D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs3D] ;
@@ -3198,7 +3176,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
@@ -3209,15 +3187,15 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double ZNeigh[MaxN_QuadPoints_3D];
   double AbsDetjkNeigh[MaxN_QuadPoints_3D];
   RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double FEValue_u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u3_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u1_QuadPointNeigh[MaxN_QuadPoints_3D];
   double FEValue_u2_QuadPointNeigh[MaxN_QuadPoints_3D];
   double FEValue_u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+//  double *ExactVal[MaxN_QuadPoints_3D];
+  int *DOF,*DOFConv, *DOFNeigh;  // ActiveBound, DirichletBound, end, last;
   double **OrigFEValues, *Orig, value, value1, value2;
   double **OrigFEValuesNeigh;
   double FEFunctValues[MaxN_BaseFunctions3D];
@@ -3227,12 +3205,12 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double FEFunctValues1Neigh[MaxN_BaseFunctions3D];
   double FEFunctValues2Neigh[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
+//  double LocError[4];
   double hK,delta;
   bool *SecondDer;
   int n_fespaces = 1, N_Derivatives = 1, index;
   int N_UConv, N_DOFConv;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq, g;   //h_fine,*u_values;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 
@@ -3272,7 +3250,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 3*N_U;
+//  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -3682,11 +3660,11 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 
 void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;  // N_UsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;  //N_DOF;
   int Used[N_FEs3D], UsedNeigh[N_FEs3D], *N_BaseFunct;
-  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
+  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh; // N_Edges, same_dof;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement, CurrentElementConv;
   FE3D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs3D] ;
   TFE3D *Element;
@@ -3694,7 +3672,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
@@ -3705,15 +3683,15 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double ZNeigh[MaxN_QuadPoints_3D];
   double AbsDetjkNeigh[MaxN_QuadPoints_3D];
   RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double FEValue_u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u3_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u1_QuadPointNeigh[MaxN_QuadPoints_3D];
   double FEValue_u2_QuadPointNeigh[MaxN_QuadPoints_3D];
   double FEValue_u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+//  double *ExactVal[MaxN_QuadPoints_3D];
+  int *DOF,*DOFConv, *DOFNeigh;   // ActiveBound, DirichletBound, end, last;
   double **OrigFEValues, *Orig, value, value1, value2;
   double **OrigFEValuesNeigh;
   double FEFunctValues[MaxN_BaseFunctions3D];
@@ -3723,14 +3701,14 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double FEFunctValues1Neigh[MaxN_BaseFunctions3D];
   double FEFunctValues2Neigh[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
+//  double LocError[4];
   double hK, delta;
   bool *SecondDer;
   int n_fespaces = 1, N_Derivatives = 1, index;
   int N_UConv, N_DOFConv, *conv_comp;
-  double *Values, *u_conv,distance_sq,h_fine,g;
-  double *u_values, *x_conv, *y_conv, *z_conv;
-  TJoint *joint;
+  double *Values, *u_conv,distance_sq, g;   //h_fine;
+  double *x_conv, *y_conv, *z_conv;
+//  TJoint *joint;
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
   const TFESpace3D *fespace, *fespaceConv; 
@@ -3769,7 +3747,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 3*N_U;
+//  N_DOF = 3*N_U;
 
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -4186,10 +4164,10 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
 
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs3D], UsedNeigh[N_FEs3D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;  //N_DOF;
+  int UsedNeigh[N_FEs3D], *N_BaseFunct;
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Faces, same_dof;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement, CurrentElementConv;
   FE3D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs3D] ;
@@ -4198,7 +4176,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
@@ -4209,7 +4187,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   double ZNeigh[MaxN_QuadPoints_3D];
   double AbsDetjkNeigh[MaxN_QuadPoints_3D];
   RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double FEValue_D1u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D1u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D1u3_QuadPoint[MaxN_QuadPoints_3D];
@@ -4219,17 +4197,17 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   double FEValue_D3u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D3u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D3u3_QuadPoint[MaxN_QuadPoints_3D];
-  double FEValue_D1u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D1u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+//  double FEValue_D1u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D1u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double *ExactVal[MaxN_QuadPoints_3D];
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig;
   double value, value1, value2;
   double value11, value12, value13, value22, value23, value33;
@@ -4241,9 +4219,9 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   double FEFunctValues1Neigh[MaxN_BaseFunctions3D];
   double FEFunctValues2Neigh[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
+//  double LocError[4];
   int N_UConv, N_DOFConv, index;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, distance_sq, g, *u_conv;
   double *x_conv, *y_conv, *z_conv, delta, hK;
   TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 
@@ -4274,7 +4252,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 3*N_U;
+//  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -4789,11 +4767,11 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
 void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
 
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs3D], UsedNeigh[N_FEs3D], *N_BaseFunct;
-  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
+  int N_Cells, N_Points, N_, N_U, N_loc_dofConv;  // N_DOF;
+  int UsedNeigh[N_FEs3D], *N_BaseFunct;
+  int neigh_i, N_Neigh, ll, lll, N_PointsNeigh; // N_Edges, same_dof;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement, CurrentElementConv;
   FE3D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs3D] ;
   TFE3D *Element;
@@ -4801,7 +4779,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
@@ -4812,7 +4790,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   double ZNeigh[MaxN_QuadPoints_3D];
   double AbsDetjkNeigh[MaxN_QuadPoints_3D];
   RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double FEValue_D1u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D1u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D1u3_QuadPoint[MaxN_QuadPoints_3D];
@@ -4822,17 +4800,17 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   double FEValue_D3u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D3u2_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_D3u3_QuadPoint[MaxN_QuadPoints_3D];
-  double FEValue_D1u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D1u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D2u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u2_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double FEValue_D3u3_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+//  double FEValue_D1u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D1u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D1u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D2u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u1_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u2_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double FEValue_D3u3_QuadPointNeigh[MaxN_QuadPoints_3D];
+//  double *ExactVal[MaxN_QuadPoints_3D];
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig;
   double value, value1, value2;
   double value11, value12, value13, value22, value23, value33;
@@ -4844,11 +4822,11 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   double FEFunctValues1Neigh[MaxN_BaseFunctions3D];
   double FEFunctValues2Neigh[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
+//  double LocError[4];
   int N_UConv, N_DOFConv, index, *conv_comp;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq, g;
   double *x_conv, *y_conv, *z_conv, delta, hK;
-  TJoint *joint;
+//  TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
@@ -4879,7 +4857,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
   N_U = u->GetLength();
-  N_DOF = 3*N_U;
+//  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();
@@ -5346,10 +5324,10 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
 // same as velocity convolution, only one component
 void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_LocalUsedElementsNeigh;
-  int N_Cells, N_Points, N_Parameters, N_, N_U, N_DOF, N_loc_dofConv;
-  int Used[N_FEs3D], UsedNeigh[N_FEs3D], *N_BaseFunct;
+  int N_Cells, N_Points, N_, N_loc_dofConv;  //N_U, N_DOF;
+  int UsedNeigh[N_FEs3D], *N_BaseFunct;
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Faces, same_dof;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement, CurrentElementConv;
   FE3D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs3D] ;
@@ -5358,7 +5336,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  TFE3D *ele;
+//  TFE3D *ele;
   double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
@@ -5369,22 +5347,22 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   double ZNeigh[MaxN_QuadPoints_3D];
   double AbsDetjkNeigh[MaxN_QuadPoints_3D];
   RefTrans3D RefTrans;
-  double *Param[MaxN_QuadPoints_3D], *aux;
+//  double *Param[MaxN_QuadPoints_3D], *aux;
   double FEValue_u1_QuadPoint[MaxN_QuadPoints_3D];
   double FEValue_u1_QuadPointNeigh[MaxN_QuadPoints_3D];
-  double *ExactVal[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last, *DOFConv, *DOFNeigh;
+//  double *ExactVal[MaxN_QuadPoints_3D];
+  int *DOF, *DOFConv, *DOFNeigh;
   double **OrigFEValues, *Orig, value;
   double **OrigFEValuesNeigh;
   double FEFunctValues[MaxN_BaseFunctions3D];
   double FEFunctValuesNeigh[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex, *GlobalNumbersConv, *BeginIndexConv;
-  double LocError[4];
+//  double LocError[4];
   double hK,delta;
   bool *SecondDer;
   int n_fespaces = 1, N_Derivatives = 1, index;
   int N_UConv, N_DOFConv;
-  double *Values, *u_conv,distance_sq,h_fine,g, *u_values;
+  double *Values, *u_conv,distance_sq, g;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
   const TFESpace3D *fespace, *fespaceConv; 
@@ -5422,8 +5400,8 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
  
   // get number of dof for one velocity component N_U
   // -> total number of dof is twice N_U
-  N_U = u->GetLength();
-  N_DOF = N_U;
+//  N_U = u->GetLength();
+//  N_DOF = N_U;
   
   // get pointer to set of mesh cells which define the fe space
   Coll = fespace->GetCollection();

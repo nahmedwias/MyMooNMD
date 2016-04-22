@@ -219,8 +219,9 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 void TJacobiIte::Defect(TSquareMatrix **A, double *sol, double *f, double *d, double &res)
 {
   ScalarDefect(A[0], sol, f, d, res);
-#ifdef _MPI  
-  int i, rank, *MasterOfDof, dof;
+#ifdef _MPI
+  const int* MasterOfDof;
+  int i, rank; // dof;
   double res_global;
   
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 

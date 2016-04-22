@@ -33,12 +33,14 @@
 #include <vector>
 #include <deque>
 #include <utility>
-
+#include <array>
 
 class Time_NSE2D
 {
   enum class Matrix{Type14, Type1, Type2, Type3, Type4};
+
   protected:
+
     /** @brief store a complete system on a paticular grid.
      * 
      * This combines a matrix, rhs, solution, spaces and functions 
@@ -97,46 +99,49 @@ class Time_NSE2D
      */
     BlockVector defect;
 
-    protected:
-      /**
-       * @brief store the square root of the residual from previous iteration
-       */
-      double oldResidual;
-      /** @brief store the initial residual so that the nonlinear iteration can 
-       *         be stopped as soon as a desired reduction is achieved
-       */
-      double initial_residual;
+    /**
+    * @brief store the square root of the residual from previous iteration
+    */
+    double oldResidual;
+
+    /** @brief store the initial residual so that the nonlinear iteration can
+    *         be stopped as soon as a desired reduction is achieved
+    */
+    double initial_residual;
+
+    /** @brief store errors  */
+    std::vector<double> errors;
+
+    /** @brief right hand side vector from previous time step (on finest mesh)*/
+    BlockVector old_rhs;
       
-      /** @brief right hand side vector from previous time step (on finest mesh)*/
-      BlockVector old_rhs;
-      
-      BlockVector old_solution;
-      
-      /** @brief store errors  */
-      std::vector<double> errors;
+    BlockVector old_solution;
     
-      /** old time step length used to scale the pressure blocks*/
-      double oldtau;
+    /** old time step length used to scale the pressure blocks*/
+    double oldtau;
       
-      /** @brief set parameters in database
-       * 
-      * This functions checks if the parameters in the database are meaningful 
-      * and resets them otherwise. The hope is that after calling this function
-      * this class is fully functional.
-      * 
-      * If some parameters are set to unsupported values, an error occurs and 
-      * throws an exception.
-      */
-      void set_parameters();
-      
-      /** @brief get velocity and pressure space*/
-      void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
+    /** @brief set parameters in database
+    *
+    * This functions checks if the parameters in the database are meaningful
+    * and resets them otherwise. The hope is that after calling this function
+    * this class is fully functional.
+    *
+    * If some parameters are set to unsupported values, an error occurs and
+    * throws an exception.
+    */
+    void set_parameters();
+
+    /** @brief get velocity and pressure space*/
+    void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
+
   public:
+
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
      * object. 
      */
     Time_NSE2D(const TDomain& domain, int reference_id = -4711);
+
     /** @brief constructor 
      * 
      * The domain must have been refined a couple of times already. On the 
@@ -176,6 +181,12 @@ class Time_NSE2D
      */
     void assemble_system();
     
+    /** descale matrices
+     * This function will descale all A-blocks which were scaled
+     * during the function call Time_NSE2D::assemble_system():
+     */
+    void deScaleMatrices();
+
     /** @brief assemble nonlinear term
      * 
      * The matrix blocks to which the nonlinear term contributes are reset to 
@@ -185,6 +196,9 @@ class Time_NSE2D
      */
     void assemble_nonlinear_term();
     
+    /** @brief solve the system */
+    void solve();
+
     /** @brief check if one of the stopping criteria is fulfilled
      * 
      * either converged, maximun number of iterations reached, or slow 
@@ -194,31 +208,25 @@ class Time_NSE2D
      */
     bool stopIte(unsigned int it_counter);
     
-    /** @brief solve the system */
-    void solve();
-    
-    /** descale matrices
-     * This function will descale all A-blocks which were scaled
-     * during the function call Time_NSE2D::assemble_system():
+    /** @brief
+     * compute errors and write solution
      */
-    void deScaleMatrices();
+    void output(int m, int &image);
+    
     /**
      * @brief initialize multigrid levels for different NSTYPE's
      */
     TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
+
     /** @brief multigrid solver */
     void mg_solver();
-    
-    /** @brief 
-     * compute errors and write solution
-     */
-    void output(int m, int &image);
     
     // getters and setters
     /*const BlockMatrixNSE2D & get_matrix() const
     { return this->systems.front().matrix; }*/
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
+
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
     // try not to use this as it is not const
@@ -237,6 +245,8 @@ class Time_NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
+    /// @brief return the computed errors at each discre time point
+    std::array<double, int(6)> get_errors();
 };
 
 #endif // __TIME_NSE2D__

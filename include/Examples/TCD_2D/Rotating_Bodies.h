@@ -112,15 +112,14 @@ double **parameters, double **coeffs)
 {
 
   double eps = 1e-20;
+
   int i;
   double *coeff;
-  double *param;
   double x, y;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    param = parameters[i];
 
     x = X[i];
     y = Y[i];
@@ -129,14 +128,8 @@ double **parameters, double **coeffs)
     coeff[0] = eps;
     // convection in x direction
     coeff[1] = 0.5 - y;
-    //CB DEBUG try the conv field from parameters
-    coeff[1] = param[0];
-    // END DEBUG
     // convection in y direction
     coeff[2] = x - 0.5;
-    //CB DEBUG try the conv field from parameters
-    coeff[2] = param[1];
-    // END DEBUG
     // reaction
     coeff[3] = 0;
     // rhs

@@ -97,6 +97,24 @@ class BlockMatrix
      */
     BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
 
+    
+    /**
+     * @brief Creates a nRows times nCols BlockMatrix filled with blocks
+     * 
+     * The blocks are given row wise. That means block (i,j) in the resulting 
+     * BlockMatrix will be the (i*nCols+j)-th block in \c blocks. In other 
+     * words this creates a BlockMatrix where each block has its own color and 
+     * is not stored as transposed.
+     * 
+     * The caller has to make sure all blocks are appropriate, otherwise this 
+     * constructor will throw an exception.
+     *
+     * @param nRows - number of blocks per column
+     * @param nCols - number of blocks per row
+     * @param blocks - the given blocks, must be of length nRows*nCols
+     */
+    BlockMatrix(int nRows, int nCols, 
+                std::vector<std::shared_ptr<TMatrix>> blocks);
 
     /**
      * Add a given TMatrix to the blocks in a bunch of given cells at once.
@@ -196,6 +214,11 @@ class BlockMatrix
      *
      * @return A shared pointer to the block matrix, merged together to
      * a TMatrix.
+     *
+     * @todo This method is performance critical when using a direct solver, but
+     * it is rather slow - profile and speed up!
+     * Make sure that zero entries are not put into the combined matrix - this
+     * might already speed things up.
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const;
 
@@ -739,14 +762,6 @@ class BlockMatrix
      * Possibly existing special matrices are not changed.
      */
     void add_scaled(const BlockMatrix &A, double factor = 1.0);
-
-
-    /** @brief return the TMatrix located in the r-th block row and c-th block
-     *         column
-     */
-    const TMatrix& block(const unsigned int r, const unsigned int c) const;
-
-
 
 };
 

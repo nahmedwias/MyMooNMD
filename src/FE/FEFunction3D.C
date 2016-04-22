@@ -62,32 +62,28 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                               int n_fespaces, const TFESpace3D **fespaces,
                               double *errors) const
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_;
   int Used[N_FEs3D], *N_BaseFunct;
-  TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE3D *ele;
   double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
   double *Param[MaxN_QuadPoints_3D], *aux;
   double *Derivatives[MaxN_QuadPoints_3D];
   double *ExactVal[MaxN_QuadPoints_3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
+  int *DOF;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex;
   double LocError[4];
   double hK;
   bool *SecondDer;
-  double loc_x, loc_y, loc_z, loc_r;
 
   
 #ifdef _MPI
@@ -137,8 +133,6 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 // ########################################################################
   Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
-  
-  TVertex *vertex;
 
   for(i=0;i<N_Cells;i++)
   {
@@ -253,30 +247,19 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 				   int n_fespaces, const TFESpace3D **fespaces,
 				   double *errors)
 {
-	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
-	int N_Cells, N_Points, N_Parameters, N_;
-	int Used[N_FEs3D], *N_BaseFunct;
-	const TFESpace3D *fespace;
+	int i,j,k,l;
+	int N_Cells, N_Parameters, N_;
+	int *N_BaseFunct;
 	FE3D LocalUsedElements[N_FEs3D], CurrentElement;
-	BaseFunct3D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
 	TBaseCell *cell;
-	TFE3D *ele;
-	double *weights, *xi, *eta;
-	double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
-	double AbsDetjk[MaxN_QuadPoints_3D];
-	RefTrans3D RefTrans;
 	double *Param[MaxN_QuadPoints_3D], *aux;
 	double *Derivatives[MaxN_QuadPoints_3D];
 	double *ExactVal[MaxN_QuadPoints_3D];
 	double *AuxArray[MaxN_QuadPoints_3D];
-	int *DOF, ActiveBound, DirichletBound, end, last;
-	double **OrigFEValues, *Orig, value;
-	double FEFunctValues[MaxN_BaseFunctions3D];
+	int *DOF;
 	int *GlobalNumbers, *BeginIndex;
 	double LocError[4];
-	double hK;
-	double *deriv, *exactval, w, t;
 	bool *SecondDer;
 	
 	TGridCell *RootCell;
@@ -302,12 +285,12 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 	double xv[8], yv[8], zv[8];
 	double param1[4], param2[4];
 	double a_x, a_y, a_z, b_x, b_y, b_z, norm;
-	double c_x, c_y, c_z, d_x, d_y, d_z, n_x, n_y, n_z;
+	double c_x, c_y, c_z, n_x, n_y, n_z;
 	double *FineVals[MaxLev];
 	double *AuxVals[MaxLev];
 	int FineDOF;
 	TAuxParam3D *FineAux;
-	int *NewDOF, *NewGlobalNumbers, *NewBeginIndex;
+	int *NewDOF;
         int N_Faces, N_Vertices;
         const int *TmpFV, *TmpLen;
         int MaxLen, first, second, third;
@@ -322,7 +305,6 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
 	Faces[4] = new TBdPlane(12345);
 	Faces[5] = new TBdPlane(12345);
   
-	BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
 	N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
 	SecondDer = new bool[n_fespaces];
@@ -369,17 +351,12 @@ void TFEFunction3D::GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
                   Error("Only tetrahedra are allowed." << endl);
                   exit(-1);
                 }
-		
-		hK = cell->GetDiameter();
 
     // ####################################################################
     // find local used elements on this cell
     // ####################################################################
-		N_LocalUsedElements = 1;
-		LocalUsedElements[0] = fespaces[0]->GetFE3D(i, cell);
-		
+
 		CurrentElement = FESpace3D->GetFE3D(i, cell);
-		BaseFunct = BaseFuncts[CurrentElement];
 		N_ = N_BaseFunct[CurrentElement];
 		
 		DOF = GlobalNumbers + BeginIndex[i];
@@ -582,25 +559,22 @@ void TFEFunction3D::GetErrorsOPTPDE(DoubleFunct3D *Exact, int N_Derivatives,
 			      int n_fespaces, const TFESpace3D **fespaces,
 			      double radius, double upper, double lower, double *errors)
 {
-	int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+	int i,j,k,l, N_LocalUsedElements;
 	int N_Cells, N_Points, N_Parameters, N_;
 	int Used[N_FEs3D], *N_BaseFunct;
-	const TFESpace3D *fespace;
 	FE3D LocalUsedElements[N_FEs3D], CurrentElement;
 	BaseFunct3D BaseFunct, *BaseFuncts;
 	TCollection *Coll;
 	TBaseCell *cell;
-	TFE3D *ele;
 	double *weights, *xi, *eta, *zeta;
 	double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
 	double Z[MaxN_QuadPoints_3D];
 	double AbsDetjk[MaxN_QuadPoints_3D];
-	RefTrans3D RefTrans;
 	double *Param[MaxN_QuadPoints_3D], *aux;
 	double *Derivatives[MaxN_QuadPoints_3D];
 	double *ExactVal[MaxN_QuadPoints_3D];
 	double *AuxArray[MaxN_QuadPoints_3D];
-	int *DOF, ActiveBound, DirichletBound, end, last;
+	int *DOF;
 	double **OrigFEValues, *Orig, value;
 	double FEFunctValues[MaxN_BaseFunctions3D];
 	int *GlobalNumbers, *BeginIndex;
@@ -971,25 +945,22 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                               int n_fespaces, const TFESpace3D **fespaces,
                               double *errors, double *cell_parameters)
 {
-  int i,j,k,l,n,m, N_UsedElements, N_LocalUsedElements;
+  int i,j,k,l, N_LocalUsedElements;
   int N_Cells, N_Points, N_Parameters, N_;
   int Used[N_FEs3D], *N_BaseFunct;
-  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  TFE3D *ele;
   double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  RefTrans3D RefTrans;
   double *Param[MaxN_QuadPoints_3D], *aux;
   double *Derivatives[MaxN_QuadPoints_3D];
   double *ExactVal[MaxN_QuadPoints_3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
+  int *DOF;
   double **OrigFEValues, *Orig, value;
   double FEFunctValues[MaxN_BaseFunctions3D];
   int *GlobalNumbers, *BeginIndex;
@@ -1124,13 +1095,18 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
   
 } // TFEFunction3D::GetErrors
 
-/** determine the value of function and its first derivatives at
-    the given point */
 
-void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
+bool TFEFunction3D::FindGradient(double x, double y, double z,
+                                 std::vector<double>& values) const
 {
-  int i,j,k, N_Cells;
-  double xv, yv, zv, xi, eta, zeta;
+
+  if(values.size() != 4)
+  {
+    ErrThrow("TFEFunction3D::FindGradient expects vector of size 4 !=", values.size());
+  }
+
+  int i,j, N_Cells;
+  double xi, eta, zeta;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FE_ID;
@@ -1146,10 +1122,10 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
   int *GlobalNumbers, *BeginIndex;
   
   N_Found = 0;
-  values[0] = 0;
-  values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
+  values.at(0) = 0;
+  values.at(1) = 0;
+  values.at(2) = 0;
+  values.at(3) = 0;
   
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
@@ -1162,7 +1138,6 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
     if(cell->PointInCell(x,y,z))
     {
       N_Found++;      
-      // cout << "point found in cell: " << i << endl;
       FE_ID = FESpace3D->GetFE3D(i, cell);
       FE_Obj = TFEDatabase3D::GetFE3D(FE_ID);
       RefTrans = FE_Obj->GetRefTransID();
@@ -1172,9 +1147,6 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
 
       // find local coordinates of the given point
       TFEDatabase3D::GetRefFromOrig(RefTrans, x, y, z, xi, eta, zeta);
-      // cout << " xi: " << xi << endl;
-      // cout << "eta: " << eta << endl;
-      // cout << "zeta: " << zeta << endl;
 
       // get base function object
       bf = FE_Obj->GetBaseFunct3D();
@@ -1213,48 +1185,42 @@ void TFEFunction3D::FindGradient(double x, double y, double z, double *values)
         ux += uxorig[j]*val;
         uy += uyorig[j]*val;
         uz += uzorig[j]*val;
-        // cout << " uorig[j]: " << uorig[j] << endl;
-        // cout << " uxorig[j]: " << uxorig[j]  << endl;
-        // cout << " uyorig[j]: " << uyorig[j] << endl;
-        // cout << " uzorig[j]: " << uzorig[j] << endl;
       } 
 
-      values[0] += u;
-      values[1] += ux;
-      values[2] += uy;
-      values[3] += uz;
+      values.at(0) += u;
+      values.at(1) += ux;
+      values.at(2) += uy;
+      values.at(3) += uz;
 
-      delete uorig;
-      delete uxorig;
-      delete uyorig;
-      delete uzorig;
-      delete uref;
-      delete uxiref;
-      delete uetaref;
-      delete uzetaref;
+      delete[] uorig;
+      delete[] uxorig;
+      delete[] uyorig;
+      delete[] uzorig;
+      delete[] uref;
+      delete[] uxiref;
+      delete[] uetaref;
+      delete[] uzetaref;
 
     } // endif
   } // endfor
 
   if(N_Found>0)
   {
-    values[0] /= N_Found;
-    values[1] /= N_Found;
-    values[2] /= N_Found;
-    values[3] /= N_Found;
-    // cout << " values[0]: " << values[0] << endl;
-    // cout << " values[1]: " << values[1] << endl;
-    // cout << " values[2]: " << values[2] << endl;
-    // cout << " values[3]: " << values[3] << endl;
-  } 
+    values.at(0) /= N_Found;
+    values.at(1) /= N_Found;
+    values.at(2) /= N_Found;
+    values.at(3) /= N_Found;
+    return true;
+  }
+  return false;
 } 
 
 void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no, 
                                       double x, double y, double z, 
                                       double *values)
 {
-  int j,k, N_Cells;
-  double xv, yv, zv, xi, eta, zeta;
+  int j;
+  double xi, eta, zeta;
   FE3D FE_ID;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
@@ -1262,7 +1228,7 @@ void TFEFunction3D::FindGradientLocal(TBaseCell *cell, int cell_no,
   int N_BaseFunct;
   double *uorig, *uxorig, *uyorig, *uzorig, *uref, *uxiref, *uetaref, *uzetaref;
   
-  int *Numbers, N_Found;
+  int *Numbers;
   double u, ux, uy, uz;
   double val;
   int *GlobalNumbers, *BeginIndex;
@@ -1346,18 +1312,13 @@ void TFEFunction3D::FindValueLocal(TBaseCell *cell, int cell_no,
                                       double x, double y, double z, 
                                       double *values)
 {
-  int j,k, N_Cells;
-  double xv, yv, zv, xi, eta, zeta;
+  double xi, eta, zeta;
   FE3D FE_ID;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
   TBaseFunct3D *bf;
   int N_BaseFunct;
   double *uorig, *uxorig, *uyorig, *uzorig, *uref, *uxiref, *uetaref, *uzetaref;
-  
-  int N_Found;
-  double u;
-  double val;
   
   TCollection *Coll;
 
@@ -1400,7 +1361,6 @@ void TFEFunction3D::FindValueLocal(TBaseCell *cell, int cell_no,
                  bf, Coll, cell,
                  uref, uxiref, uetaref, uzetaref,
                  uorig, uxorig, uyorig, uzorig);
-  u = 0;
   // for vector valued basis functions (e.g. Raviart-Thomas elements), some 
   // signs must be changed
   if(BaseVectDim>1)
@@ -1443,21 +1403,18 @@ void TFEFunction3D::FindValueLocal(TBaseCell *cell, int cell_no,
 /** calculate the interpolation of an exact function */
 void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
 {
-  int i,j,k,l;
+  int i,j;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
-  BaseFunct3D BF;
   TNodalFunctional3D *nf;
   int N_Cells;
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
-  double s, *xi, *eta, *zeta;
-  double Val[MaxN_BaseFunctions3D];
-  double OutVal[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int N_Points;
+  double *xi, *eta, *zeta;
+  int *DOF;
   RefTrans3D F_K;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
@@ -1700,21 +1657,18 @@ void TFEFunction3D::Interpolate_vector_valued_function(
 /** calculate the super-convergence interpolation of an exact function */
 void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 {
-  int i,j,k,l;
+  int i,j;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
-  BaseFunct3D BF;
   TNodalFunctional3D *nf;
   int N_Cells;
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
-  double s, *xi, *eta, *zeta;
-  double Val[MaxN_BaseFunctions3D];
-  double OutVal[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int N_Points;
+  double *xi, *eta, *zeta;
+  int *DOF;
   RefTrans3D F_K;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
@@ -1874,21 +1828,18 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 /** calculate the interpolation of an exact function */
 void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  TFEFunction3D **AuxFeFcts, DoubleFunctND *Exact)
 {
-  int i,j, jj, k,l;
+  int i,j, jj;
   TBaseCell *cell;
   TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
-  BaseFunct3D BF;
   TNodalFunctional3D *nf;
   int N_Cells, N_CoordAll;
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
-  int N_, N_Points;
-  double s, *xi, *eta, *zeta;
-  double Val[MaxN_BaseFunctions3D];
-  double OutVal[MaxN_BaseFunctions3D];
-  int *DOF, Index;
+  int N_Points;
+  double *xi, *eta, *zeta;
+  int *DOF;
   RefTrans3D F_K;
   TRefTrans3D *rt;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
@@ -2073,6 +2024,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
 void TFEFunction3D::compute_integral_and_measure(double& integral,
                                                  double& measure) const
 {
+
   TCollection *coll = FESpace3D->GetCollection();
 
   integral = 0.0; // variable to store integral value of this TFEFunction3D
@@ -2084,6 +2036,12 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
   for(int i = 0; i < n_cells; i++)
   {
     TBaseCell *cell = coll->GetCell(i); // current cell
+#ifdef _MPI // skip halo cells
+    if (cell->IsHaloCell())
+    {
+      continue;
+    }
+#endif
     FE3D feID = FESpace3D->GetFE3D(i, cell); // id of finite element
 
     // calculate values on original element (i.e. prepare reference
@@ -2123,6 +2081,16 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
       measure += w;
     } // endfor j
   }
+
+#ifdef _MPI //communicate the results and add up over all processes
+  double sendbuf[2] = {0.0, 0.0};
+  double recvbuf[2] = {0.0, 0.0};
+  sendbuf[0] = integral; //partial values
+  sendbuf[1] = measure;
+  MPI_Allreduce(sendbuf, recvbuf, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  integral = recvbuf[0]; //fill in the summed up values
+  measure = recvbuf[1];
+#endif
 }
 
 /** project function into the space L20 (having zero mean value, or in general a mean value) */
@@ -2132,9 +2100,6 @@ void TFEFunction3D::project_into_L20(double a)
   double integral, measure;
   this->compute_integral_and_measure(integral, measure);
   double new_mean = (integral - a)/measure;
-
-  //OutPut("TFEFunction2D::project_into_L20 computed mean value before " <<
-  //       integral/measure << endl);
 
   // vector of the same length as this TFEFunction3D. It represents a function
   // which has the constant value 'mean' for all nodal functionals. The last
@@ -2171,7 +2136,7 @@ void TFEFunction3D::project_into_L20(double a)
   }
 
   // the vector 'interpol' is now complete
-  // substract it from the vector of this TFEFunction2D
+  // substract it from the vector of this TFEFunction3D
   for(int i = 0; i < Length; i++)
     Values[i] -= interpol[i];
 
@@ -2199,7 +2164,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   double AbsDetjk[MaxN_PointsForNodal3D];
   double PointValues[MaxN_PointsForNodal3D];
   double FunctionalValues[MaxN_PointsForNodal3D];  
-  int PolynomialDegree, ApproxOrder;
+  int ApproxOrder;
   QuadFormula3D QuadFormula;
   bool IsIsoparametric;
   TJoint *joint;
@@ -2238,7 +2203,6 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
     
     DOF = GlobalNumbers+BeginIndex[i];
     
-    PolynomialDegree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
     ApproxOrder = TFEDatabase3D::GetAccuracyFromFE3D(FEId);
 
     RefElement = Element->GetBaseFunct3D()->GetRefElement();

@@ -10,6 +10,9 @@
 #include <NSE2D_FixPoSkew.h>// local assembling routines for 2D Navier-Stokes
 #include <NSE2D_FixPoRot.h>// local assembling routines for 2D Navier-Stokes
 
+#include <NSE2D_EquOrd_FixPo.h> // local assembling routines for equal order elements
+#include <NSE2D_Newton.h>
+
 #include <TNSE2D_FixPo.h> // local assembling routines for 2D Time dependent Navier-Stokes
 #include <TNSE2D_FixPoRot.h>
 #include <TNSE2D_ParamRout.h> 
@@ -73,6 +76,11 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
             case NSE2D_Galerkin_Nonlinear:
               return std::string("NSE2D_Galerkin_Nonlinear");
               ///////////////////////////////////////////////////////////////////////////
+    case NSE2D_SUPG:
+      return std::string("NSE2D_SUPG");
+    case NSE2D_SUPG_NL:
+      return std::string("NSE2D_SUPG_NL");
+    ///////////////////////////////////////////////////////////////////////////
               // Darcy2D: stationary Darcy problems
             case Darcy2D_Galerkin:
               return std::string("Darcy2D_Galerkin");
@@ -105,6 +113,8 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
                           return std::string("TNSE2D_RhsSUPG");
                       }
                       break;
+   case LocalAssembling2D_type::Custom:
+     return std::string("customized");
   }
   return std::string();
 }
@@ -117,8 +127,6 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
 {
   Output::print<3>("Constructor of LocalAssembling2D: using type ", name);
   
-  
-  //   !!!! Error in Mac Compiler - Sashikumaar !!!!!!!
   // the values below only matter if you need an existing finite element 
   // function during your assembly. Change them in such a case
   this->N_Parameters = 0;
@@ -126,7 +134,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   this->ParameterFct = {};
   this->N_FEValues = 0;
   this->FEValue_FctIndex = {};
-  this->FEValue_MultiIndex = {};
+this->FEValue_MultiIndex = {};
   this->BeginParameter = {};
 
   // set all member variables according to the LocalAssembling2D_type
@@ -251,8 +259,14 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
               // NSE2D: stationary Navier-Stokes problems
                 case NSE2D_Galerkin:
                 case NSE2D_Galerkin_Nonlinear:
-                  this->set_parameters_for_nse(type);
+    this->set_parameters_for_nseGalerkin(type);
                   break;
+  ///////////////////////////////////////////////////////////////////////////
+  case NSE2D_SUPG:
+  case NSE2D_SUPG_NL:
+    this->set_parameters_for_nseSUPG(type);
+    break;
+  ///////////////////////////////////////////////////////////////////////////
                 case Darcy2D_Galerkin:
                   this->N_Terms = 6;
                   this->Derivatives = { D00, D00, D10, D01, D10, D01 };
@@ -292,7 +306,7 @@ LocalAssembling2D::LocalAssembling2D(LocalAssembling2D_type type,
   }
   if(AssembleParam == NULL)
   {
-    ErrMsg("a local assembling routine was not set");
+    ErrMsg("a local assembling routine was not set!");
     exit(1);
   }
 }
@@ -379,7 +393,7 @@ LocalAssembling2D::LocalAssembling2D(
   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
   N_Matrices(myN_Matrices), N_Rhs(myN_Rhs),
   N_ParamFct(myN_ParamFct), ParameterFct(myParameterFct), BeginParameter(myBeginParameter), N_Parameters(myN_Parameters),
-  FEFunctions2D(myFEFunctions2D), N_FEValues(myN_FEValues),
+  N_FEValues(myN_FEValues), FEFunctions2D(myFEFunctions2D),
   FEValue_FctIndex(myFEValue_FctIndex), FEValue_MultiIndex(myFEValue_MultiIndex)
 
   {
@@ -390,19 +404,19 @@ LocalAssembling2D::LocalAssembling2D(
   // according to the appearance of "D20", "D11" or "D02" in "Derivatives".
   
   //Catch some things which might cause trouble.
-  if(myDerivatives.size() != N_Terms)
+  if((int)myDerivatives.size() != N_Terms)
   {
     Output::print("Error: myDerivatives.size() != N_Terms.");
   }
-  if(myFESpaceNumber.size() != N_Terms)
+  if((int)myFESpaceNumber.size() != N_Terms)
   {
     Output::print("Error: myFESpaceNumber.size() != N_Terms.");
   }
-  if(myParameterFct.size() != N_ParamFct)
+  if((int)myParameterFct.size() != N_ParamFct)
   {
     Output::print("Error: myParameterFct.size() != myN_ParamFct.");
   }
-  if(myBeginParameter.size() != N_ParamFct)
+  if((int)myBeginParameter.size() != N_ParamFct)
   {
     Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
   }
@@ -644,7 +658,7 @@ void LocalAssembling2D::GetParameters(int n_points, TCollection *Coll,
 }
 
 
-void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
+void LocalAssembling2D::set_parameters_for_nseGalerkin(LocalAssembling2D_type type)
 {
   switch(type)
   {
@@ -676,7 +690,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
               this->RhsSpace = { 0, 0 };
               this->AssembleParam = NSType1Galerkin; 
               this->Manipulate = NULL;
-              
+
               this->N_Parameters = 2;
               this->N_ParamFct = 1;
               this->ParameterFct =  { NSParamsVelo };
@@ -1243,8 +1257,9 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1304,8 +1319,7 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
         {
           if(TDatabase::ParamDB->LAPLACETYPE != 0)
           {
-            ErrMsg("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
-            exit(1);
+            ErrThrow("LAPLACETYPE must be set to 0 in case of NSTYPE 2");
           }
           switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
           {
@@ -1313,8 +1327,9 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
             {
               this->N_Terms = 3;
               this->Derivatives = { D10, D01, D00 };
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace = { 0 };
@@ -1383,8 +1398,9 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
                 {
                   this->N_Terms = 3;
                   this->Derivatives = { D10, D01, D00 };
-                  this->Needs2ndDerivatives = new bool[1];
+                  this->Needs2ndDerivatives = new bool[2];
                   this->Needs2ndDerivatives[0] = false;
+                  this->Needs2ndDerivatives[1] = false;
                   this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
                   this->N_Matrices = 2;
                   this->RowSpace = { 0, 0 };
@@ -1771,6 +1787,411 @@ void LocalAssembling2D::set_parameters_for_nse(LocalAssembling2D_type type)
   } // end switch LocalAssembling2D_type
 }
 
+void LocalAssembling2D::set_parameters_for_nseSUPG(LocalAssembling2D_type type)
+{
+  unsigned int nsType = TDatabase::ParamDB->NSTYPE;
+  unsigned int nlForm = TDatabase::ParamDB->NSE_NONLINEAR_FORM;
+  if(TDatabase::ParamDB->LAPLACETYPE==1 && (nsType !=3 || nsType !=4))
+  {
+    ErrThrow("LAPLACETYPE ", TDatabase::ParamDB->LAPLACETYPE, " is only supported for", 
+             " NSTYPE's 3, and 4");
+  }
+  
+  switch(type)
+  {
+    case NSE2D_SUPG:      
+      switch(nsType)
+      {
+        case 1:
+          this->N_Terms = 4;
+          //FIXME: Why the second derivatives are not used in the NSTYPE 1??
+          this->Derivatives = { D10, D01, D00, D00 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 3;
+          this->RowSpace = { 0, 1, 1 };
+          this->ColumnSpace = { 0, 0, 0 };
+          this->N_Rhs = 2;
+          this->RhsSpace = { 0, 0 };
+          
+          if(nlForm == 0)
+            this->AssembleParam = NSType1SDFEM; 
+          else if(nlForm == 1)
+            this->AssembleParam = NSType1SDFEMSkew; 
+          else
+            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                       " is not supported for SUPG");
+            
+          this->Manipulate = NULL;
+          
+          this->N_Parameters = 2;
+          this->N_ParamFct = 1;
+          this->ParameterFct =  { NSParamsVelo };
+          this->N_FEValues = 2;
+          this->FEValue_FctIndex = { 0, 1 };
+          this->FEValue_MultiIndex = { D00, D00 };
+          this->BeginParameter = { 0 };
+          break;
+        case 2:
+          this->N_Terms = 8;
+          this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 5;
+          this->RowSpace    = { 0, 1, 1, 0, 0 };
+          this->ColumnSpace = { 0, 0, 0, 1, 1 };
+          this->N_Rhs = 2;
+          this->RhsSpace = { 0, 0 };
+          
+          if(nlForm==0)
+            this->AssembleParam = NSType2SDFEM; 
+          else if(nlForm == 1)
+            this->AssembleParam = NSType2SDFEMSkew;
+          else
+            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                       " is not supported for SUPG");
+          
+          this->Manipulate = NULL;
+          
+          this->N_Parameters = 2;
+          this->N_ParamFct = 1;
+          this->ParameterFct =  { NSParamsVelo };
+          this->N_FEValues = 2;
+          this->FEValue_FctIndex = { 0, 1 };
+          this->FEValue_MultiIndex = { D00, D00 };
+          this->BeginParameter = { 0 };          
+          break;
+        case 3:
+          ErrThrow("NSTYPE ", nsType,  " is not implemented for SUPG method ", 
+                   "choose Type 1,2, 4, or 14");
+          break;
+        case 4:
+          switch(TDatabase::ParamDB->LAPLACETYPE)
+          {
+            case 0: // LAPLACETYPE
+              this->N_Terms = 8;
+              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = true;
+              this->Needs2ndDerivatives[1] = true;
+              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 8;
+              this->RowSpace    = { 0, 0, 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+              this->N_Rhs = 2;
+              this->RhsSpace = { 0, 0 };
+              
+              if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
+              {
+                if(nlForm==0)
+                  this->AssembleParam = NSType4SDFEM; 
+                else if(nlForm == 1)
+                  this->AssembleParam = NSType4SDFEMSkew;
+                else if(nlForm == 2)
+                  this->AssembleParam = NSType4SDFEMRot;
+                else
+                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                             " is not supported for SUPG");
+              }
+              else // newton iteration
+              {
+                this->AssembleParam = NSType4SDFEMNewton;
+              }
+              this->Manipulate = NULL;
+              
+              this->N_Parameters = 2;
+              this->N_ParamFct = 1;
+              this->ParameterFct =  { NSParamsVelo };
+              this->N_FEValues = 2;
+              this->FEValue_FctIndex = { 0, 1 };
+              this->FEValue_MultiIndex = { D00, D00 };
+              this->BeginParameter = { 0 };          
+              break;
+            case 1: // LAPLACETYPE
+              this->N_Terms = 8;
+              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = true;
+              this->Needs2ndDerivatives[1] = true;
+              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 8;
+              this->RowSpace    = { 0, 0, 0, 0, 1, 1, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
+              this->N_Rhs = 2;
+              this->RhsSpace = { 0, 0 };
+              if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
+              {
+                if(nlForm==0)
+                  this->AssembleParam = NSType4SDFEMDD; 
+                else if(nlForm == 1)
+                  this->AssembleParam = NSType4SDFEMSkewDD;
+                else if(nlForm == 2)
+                  this->AssembleParam = NSType4SDFEMRotDD;
+                else
+                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                           " is not supported for SUPG");
+              }
+              else// newton
+              {
+                this->AssembleParam = NSType4SDFEMDDNewton;
+              }
+              
+              this->Manipulate = NULL;
+              
+              this->N_Parameters = 2;
+              this->N_ParamFct = 1;
+              this->ParameterFct =  { NSParamsVelo };
+              this->N_FEValues = 2;
+              this->FEValue_FctIndex = { 0, 1 };
+              this->FEValue_MultiIndex = { D00, D00 };
+              this->BeginParameter = { 0 };       
+              break;
+          }
+          break;
+        case 14:
+          if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point
+          {
+            this->N_Terms = 8;
+            this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = true;
+            this->Needs2ndDerivatives[1] = true;
+            this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+            this->N_Matrices = 9;
+            this->RowSpace    = { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;
+            this->RhsSpace = { 0, 0, 1 };
+            
+            if(nlForm==0)
+              this->AssembleParam = NSType4SDFEMEquOrd;
+            else
+              ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                         " is not supported for SUPG");
+            
+            this->Manipulate = NULL;
+            
+            this->N_Parameters = 2;
+            this->N_ParamFct = 1;
+            this->ParameterFct =  { NSParamsVelo };
+            this->N_FEValues = 2;
+            this->FEValue_FctIndex = { 0, 1 };
+            this->FEValue_MultiIndex = { D00, D00 };
+            this->BeginParameter = { 0 };  
+          }
+          else // newton type
+          {
+            ErrThrow("Newton iteration is not supported for NSTYPE ", nsType);
+          }
+          break;
+      }
+      break;
+    case NSE2D_SUPG_NL:
+      switch(nsType)
+      {
+        case 1:
+          this->N_Terms = 3;
+          this->Derivatives = { D10, D01, D00 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
+          this->FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 1;
+          this->RowSpace = { 0 };
+          this->ColumnSpace = { 0 };
+          this->N_Rhs = 0;
+          this->RhsSpace = { };
+          
+          if(nlForm == 0)
+            this->AssembleParam = NSType1NLSDFEM; 
+          else if(nlForm == 1)
+            this->AssembleParam = NSType1NLSDFEMSkew; 
+          else
+            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                       " is not supported for SUPG");
+            
+          this->Manipulate = NULL;
+          
+          this->N_Parameters = 2;
+          this->N_ParamFct = 1;
+          this->ParameterFct =  { NSParamsVelo };
+          this->N_FEValues = 2;
+          this->FEValue_FctIndex = { 0, 1 };
+          this->FEValue_MultiIndex = { D00, D00 };
+          this->BeginParameter = { 0 };
+          break;
+        case 2:
+          this->N_Terms = 8;
+          this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+          this->Needs2ndDerivatives = new bool[2];
+          this->Needs2ndDerivatives[0] = true;
+          this->Needs2ndDerivatives[1] = true;
+          this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 3;
+          this->RowSpace    = { 0, 0, 0 };
+          this->ColumnSpace = { 0, 1, 1 };
+          this->N_Rhs = 2;
+          this->RhsSpace = { 0, 0 };
+          
+          if(nlForm==0)
+            this->AssembleParam = NSType2NLSDFEM; 
+          else if(nlForm == 1)
+            this->AssembleParam = NSType2NLSDFEMSkew;
+          else
+            ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                       " is not supported for SUPG");
+          
+          this->Manipulate = NULL;
+          
+          this->N_Parameters = 2;
+          this->N_ParamFct = 1;
+          this->ParameterFct =  { NSParamsVelo };
+          this->N_FEValues = 2;
+          this->FEValue_FctIndex = { 0, 1 };
+          this->FEValue_MultiIndex = { D00, D00 };
+          this->BeginParameter = { 0 };          
+          break;
+        case 3:
+          ErrThrow("NSTYPE ", nsType,  " is not implemented for SUPG method ", 
+                   "choose Type 1,2, 4, or 14");
+          break;
+        case 4:
+          switch(TDatabase::ParamDB->LAPLACETYPE)
+          {
+            case 0: // LAPLACETYPE
+              this->N_Terms = 8;
+              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = true;
+              this->Needs2ndDerivatives[1] = true;
+              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 4;
+              this->RowSpace    = { 0, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 1, 1 };
+              this->N_Rhs = 2;
+              this->RhsSpace = { 0, 0 };
+              
+              if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
+              {
+                if(nlForm==0)
+                  this->AssembleParam = NSType4NLSDFEM; 
+                else if(nlForm == 1)
+                  this->AssembleParam = NSType4NLSDFEMSkew;
+                else if(nlForm == 2)
+                  this->AssembleParam = NSType4NLSDFEMRot;
+                else
+                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                             " is not supported for SUPG");
+              }
+              else // newton iteration
+              {
+                this->N_Matrices = 6;
+                this->RowSpace    = { 0, 0, 0, 0, 0, 0};
+                this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
+                this->AssembleParam = NSType4NLSDFEMNewton;
+              }
+              this->Manipulate = NULL;
+              
+              this->N_Parameters = 2;
+              this->N_ParamFct = 1;
+              this->ParameterFct =  { NSParamsVelo };
+              this->N_FEValues = 2;
+              this->FEValue_FctIndex = { 0, 1 };
+              this->FEValue_MultiIndex = { D00, D00 };
+              this->BeginParameter = { 0 };          
+              break;
+            case 1: // LAPLACETYPE
+              this->N_Terms = 8;
+              this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = true;
+              this->Needs2ndDerivatives[1] = true;
+              this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 4;
+              this->RowSpace    = { 0, 0, 0, 0};
+              this->ColumnSpace = { 0, 0, 1, 1 };
+              this->N_Rhs = 2;
+              this->RhsSpace = { 0, 0 };
+              if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point iteration
+              {
+                if(nlForm==0)
+                  this->AssembleParam = NSType4NLSDFEMDD; 
+                else if(nlForm == 1)
+                  this->AssembleParam = NSType4NLSDFEMSkewDD;
+                else if(nlForm == 2)
+                  this->AssembleParam = NSType4NLSDFEMRotDD;
+                else
+                  ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                           " is not supported for SUPG");
+              }
+              else// newton
+              {
+                this->N_Matrices = 6;
+                this->RowSpace    = { 0, 0, 0, 0, 0, 0};
+                this->ColumnSpace = { 0, 0, 0, 0, 1, 1 };
+                this->AssembleParam = NSType4NLSDFEMDDNewton;
+              }
+              
+              this->Manipulate = NULL;
+              
+              this->N_Parameters = 2;
+              this->N_ParamFct = 1;
+              this->ParameterFct =  { NSParamsVelo };
+              this->N_FEValues = 2;
+              this->FEValue_FctIndex = { 0, 1 };
+              this->FEValue_MultiIndex = { D00, D00 };
+              this->BeginParameter = { 0 };       
+              break;
+          }
+          break;
+        case 14:
+          if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE == 0) // fixed point
+          {
+            this->N_Terms = 8;
+            this->Derivatives = { D10, D01, D00, D00, D20, D02, D10, D01, D00 };
+            this->Needs2ndDerivatives = new bool[2];
+            this->Needs2ndDerivatives[0] = true;
+            this->Needs2ndDerivatives[1] = true;
+            this->FESpaceNumber = { 0, 0, 0, 0, 0, 1, 1, 1 }; // 0: velocity, 1: pressure
+            this->N_Matrices = 9;
+            this->RowSpace    = { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
+            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+            this->N_Rhs = 3;
+            this->RhsSpace = { 0, 0, 1 };
+            
+            if(nlForm==0)
+              this->AssembleParam = NSType4SDFEMEquOrd;
+            else
+              ErrThrow("NSE_NONLINEAR_FORM ", TDatabase::ParamDB->NSE_NONLINEAR_FORM, 
+                         " is not supported for SUPG");
+            
+            this->Manipulate = NULL;
+            
+            this->N_Parameters = 2;
+            this->N_ParamFct = 1;
+            this->ParameterFct =  { NSParamsVelo };
+            this->N_FEValues = 2;
+            this->FEValue_FctIndex = { 0, 1 };
+            this->FEValue_MultiIndex = { D00, D00 };
+            this->BeginParameter = { 0 };  
+          }
+          else // newton type
+          {
+            ErrThrow("Newton iteration is not supported for NSTYPE ", nsType);
+          }
+          break;
+      }
+      break;
+    default:
+      ErrThrow("LocalAssembling2D type ", type, "is not supported");
+  }
+}
+
+
 void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
 {
   int nstype = TDatabase::ParamDB->NSTYPE;
@@ -1778,7 +2199,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   // few checks
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
-    ErrMsg("Newton method does not supported yet");
+    ErrMsg("Newton method is not supported yet");
     exit(1);
   }
   if(TDatabase::ParamDB->LAPLACETYPE == 1)
@@ -1792,7 +2213,7 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
   
   if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
   {
-    ErrMsg("Skew symmetric case is not implement for all NSTYPE");
+    ErrMsg("Skew symmetric case is not implemented for all NSTYPE");
     exit(1);
   }
   
@@ -1878,9 +2299,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                   }
                   break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
                     case 3:
-                      this->N_Matrices    = 8;
-                      this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
+              this->N_Matrices    = 7;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0 };
                       if(TDatabase::ParamDB->LAPLACETYPE == 0)
                       {
                         switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
@@ -1936,9 +2357,9 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                       }
                       break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
                     case 14:
-                      this->N_Matrices    = 11;
-                      this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
-                      this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Matrices    = 10;
+              this->RowSpace      = { 0, 0, 0, 0, 0, 1, 1, 0, 0, 1 };
+              this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
                       switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)
                       {
                         case 0:
@@ -1976,6 +2397,29 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                       break;// break within type TNSE2D->DISCTYPE->NSTYPE 14
               }
               break;
+        case SMAGORINSKY:  // basically, the same as Galerkin but with added turbulent viscosity
+		  switch(nstype)   // only with NSTYPE 1 at the moment
+		  {
+		    case 1:
+		      this->N_Matrices		= 4;
+		      this->RowSpace		= { 0, 0, 1, 1 };
+		      this->ColumnSpace		= { 0, 0, 0, 0 };
+		      switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
+		      {
+		        case 0:
+		          this->AssembleParam = TimeNSType1Smagorinsky;
+		    	  break;
+		      }
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+		    case 2:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+		    case 3:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+		    case 4:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+		    case 14:
+		      break; // break within type TNSE2D->DISCTYPE->NSTYPE 14
+		  }
       }
       break;// break; for the TNSE2D type
         case TNSE2D_NL:
@@ -2043,12 +2487,35 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                       break;
                   }
                   break;// break; TNSE2D_NL->SUPG
+        case SMAGORINSKY:  // basically the same as Galerkin but with added turbulent viscosity
+          switch(nstype)   // only with NSTYPE 1 at the moment
+          {
+            case 1:
+          	  this->N_Matrices	= 1;
+          	  this->RowSpace	= { 0 };
+          	  this->ColumnSpace	= { 0 };
+          	  switch(TDatabase::ParamDB->NSE_NONLINEAR_FORM)  // only NLFORM 0 at the moment
+          	  {
+          	    case 0:
+          		  this->AssembleParam = TimeNSType1_2NLSmagorinsky;
+          		  break;
+          	  }
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 1
+          	case 2:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 2
+          	case 3:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 3
+          	case 4:
+          	  break; // break within type TNSE2D->DISCTYPE->NSTYPE 4
+          }
+          break; // TNSE2D_NL->SMAGORINSKY
           }// case: TNSE2D_NL: endswitch(disc_type):
           break;
             case TNSE2D_Rhs:
               switch(disc_type)
               {
                 case GALERKIN:
+        case SMAGORINSKY:
                   this->N_Terms = 1;
                   this->Derivatives = { D00 };
                   this->Needs2ndDerivatives = new bool[1];
@@ -2070,6 +2537,8 @@ void LocalAssembling2D::set_parameters_for_tnse(LocalAssembling2D_type type)
                   exit(1);
               }
               break;
+    default:
+      ErrThrow("That's the wrong LocalAssembling2D_type ", type, " to come here.");
   }
   //=========================================================================
   

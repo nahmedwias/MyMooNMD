@@ -89,7 +89,7 @@ int TCg::Iterate (TSquareMatrix **sqmat,
 TMatrix **mat, double *sol,
 double *rhs)
 {
-  int maxite = maxit, i, j, k, verbose = TDatabase::ParamDB->SC_VERBOSE, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
+  int maxite = maxit, i, j, verbose = TDatabase::ParamDB->SC_VERBOSE, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
   double t1, t2, dnorm, dnorm0, dnormlast, rho,rho_last=1.0,alpha, beta, sp;
   int flexible = TDatabase::ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
 

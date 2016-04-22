@@ -2,8 +2,6 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 
-#include <Time_CD2D.h>
-
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,7 +27,7 @@ int main(int argc, char* argv[])
   TDomain Domain(argv[1]);  
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 2;
+    TDatabase::ParamDB->PROBLEM_TYPE = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   Database.WriteParamDB(argv[0]);
@@ -58,7 +56,7 @@ int main(int argc, char* argv[])
   Example_NSE2D example;
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, example); 
-  // assemble everythign at the start time
+  // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 
   tnse2d.assemble_initial_time();
