@@ -1,7 +1,7 @@
 // time dependent Navier-Stokes problem 3D, ansatz
 // 
-// u(x,y) = t*(y+z, x-z, 2*x+y)
-// p(x,y) = 0
+// u(t,x,y,z) = t*(y+z, x-z, 2*x+y)
+// p(t,x,y,z) = 0
 
 void ExampleFile()
 {
@@ -33,16 +33,15 @@ void InitialU3(double x, double y, double z, double *values)
 
 }
 
-void InitialP(double x, double y,  double z, double *values)
+void InitialP(double x, double y, double z, double *values)
 {
   values[0] = 0;
 }
 
-
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double x, double y, double z, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
@@ -53,7 +52,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double x, double y, double z, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
@@ -64,7 +63,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double x, double y, double z, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 

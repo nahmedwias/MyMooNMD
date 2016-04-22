@@ -161,6 +161,19 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // create finite element space and function, a matrix, rhs, and solution
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
                       maxSubDomainPerDof);
+
+  // initialize the defect of the system. It has the same structure as
+  // the rhs (and as the solution)
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+
+  // Initial velocity = interpolation of initial conditions
+  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+  u1->Interpolate(example_.get_initial_cond(0));
+  u2->Interpolate(example_.get_initial_cond(1));
+  u3->Interpolate(example_.get_initial_cond(2));
+
   #else
   // create finite element space and function, a matrix, rhs and solution
   // all this by calling constructor of System_Per_Grid
@@ -947,7 +960,8 @@ void Time_NSE3D::solve()
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI
+#endif
+#ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
       std::vector<const TParFECommunicator3D*> par_comms_init =
       {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
