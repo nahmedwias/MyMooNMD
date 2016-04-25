@@ -960,7 +960,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
     }
 
     /* ************************************************************************* */
-    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block)
+    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block) const
     {
 
       Output::print("Called base class copy and store");

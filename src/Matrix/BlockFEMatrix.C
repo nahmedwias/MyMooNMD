@@ -4,6 +4,7 @@
 #include <Database.h>
 
 #include <limits>
+#include <algorithm>
 
 /* ************************************************************************* */
 // IMPLEMENTATION OF PUBLIC METHODS
@@ -977,7 +978,77 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
   return combined_matrix;
 }
 /* ************************************************************************* */
+BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) const
+{
+  //check input
+  if(first >= n_cell_rows_ || last >= n_cell_rows_ )
+  {
+    ErrThrow("Out of bounds in get_sub_blockfematrix: ",
+             first, ", ", last, ", ", n_cell_rows_);
+  }
+  // step 1: construct a new block fematrix with correct fe spaces
+#ifdef __2D__
+    std::vector< const TFESpace2D*  > spaces;
+#elif __3D__
+    std::vector< const TFESpace3D*  > spaces;
+#endif
+  for( size_t sp = first; sp < last + 1; ++sp)
+  {
+    spaces.push_back(this->test_spaces_rowwise_.at(sp));
+  }
+  BlockFEMatrix sub_matrix(spaces); //construct empty blockfematrix!
 
+  // step 2: fill in the blocks - maintaining the correct coloring
+  std::vector< int > known_colors;
+  std::vector< std::shared_ptr<TMatrix> > known_mats; //actually FEMatrices...
+
+  for( size_t r = first; r < last + 1; ++r)
+  {
+    for( size_t c = first; c < last + 1; ++c)
+    {
+
+      int old_color = this->cell_grid_[r][c].color_;
+      auto known = std::find(known_colors.begin(), known_colors.end(), old_color);
+
+      if(known == known_colors.end())
+      {//case: this color appears for the first time
+        known_colors.push_back(old_color);
+
+        //this is actually a shared ptr to FEMatrix...
+        std::shared_ptr<TMatrix> new_mat =
+            create_block_shared_pointer(*cell_grid_[r][c].block_.get());
+
+        known_mats.push_back(new_mat);
+        //reset known
+        known = known_colors.end()-1;
+      }
+
+      size_t new_color = std::distance(known_colors.begin(), known); //position in vector
+      Output::print(new_color);
+      size_t transp = this->cell_grid_[r][c].is_transposed_;
+      size_t new_r = r-first;       // force element and color
+      size_t new_c = c-first;       // into the new sub matrix' cell grid
+      size_t old_color_sub =  sub_matrix.cell_grid_[new_r][new_c].color_;
+      sub_matrix.cell_grid_[new_r][new_c].color_ = new_color;
+      sub_matrix.cell_grid_[new_r][new_c].is_transposed_ = transp;
+      sub_matrix.cell_grid_[new_r][new_c].block_ = known_mats.at(new_color);
+      //color count
+      ++sub_matrix.color_count_.at(new_color);
+      --sub_matrix.color_count_.at(old_color_sub);
+    }
+  }
+
+  //tidy up the color count vector
+  sub_matrix.color_count_.erase(
+      std::remove( sub_matrix.color_count_.begin(),
+                   sub_matrix.color_count_.end(), 0),
+                   sub_matrix.color_count_.end()
+  );
+
+  return sub_matrix;
+}
+
+/* ************************************************************************* */
 size_t BlockFEMatrix::get_n_column_actives(size_t cell_column) const
 {
   return ansatz_spaces_columnwise_.at(cell_column)->GetN_ActiveDegrees();
@@ -1266,7 +1337,7 @@ void BlockFEMatrix::add_scaled_actives(
 }
 /* ************************************************************************* */
 
-std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatrix& block)
+std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatrix& block) const
 {
   try
   { //try to cast the given TMatrix to an FEMatrix and make an FEMatrix copy of it
