@@ -123,7 +123,7 @@ class NSE2D
      * Storing it means that for a direct solver we also store the factorization
      * which is usually not necessary.
      */
-    Solver<BlockMatrix, BlockVector> solver;
+    Solver<BlockFEMatrix, BlockVector> solver;
     
     /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
     /// transposed blocks are not stored explicitely...sad but true.
