@@ -25,11 +25,11 @@
  */
 struct Residuals
 {
-    /// @brief the impuls residual
+    /// @brief the impulse residual
     double impulsResidual;
     /// @brief the mass residual
     double massResidual;
-    /// @brief the fulf residual
+    /// @brief the full residual
     double fullResidual;
 
     ///@brief standard constructor, initialize with large numbers (1e10).

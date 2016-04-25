@@ -776,7 +776,7 @@ int time_dependent_problem)
 #endif
 {
   int sold_parameter_type = TDatabase::ParamDB->SOLD_PARAMETER_TYPE, i, N;
-  double u_x, u_y, u_z, norm_u, norm_res, sigma, res=0.0, norm_b2, value;
+  double u_x, u_y, u_z, sigma, res=0.0, norm_b2, value;
   double b1_orth, b2_orth,  b3_orth, norm_der_u2, linfb_orth, z1, z2, z3, linfz, normz;
   double alpha, beta, gamma, lambda, kappa, omega, rho, norm_b_orth;
   double epsilon= 1e-10, hK_project, y, z, u_xx, u_yy;
@@ -1546,13 +1546,13 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
                        CoeffFct2D *Coeffs, double *rhs, int time_dependent,
                        double *time_step, TFEFunction2D *old_u)
 {
-  int i, j, k, ii, N_Cells, *ColInd, *RowPtr, *GlobalNumbers, *BeginIndex;
-  int ActiveBound, *DOF, N_Edges, boundedge, locdof;
+  int i, j, ii, N_Cells, *GlobalNumbers, *BeginIndex;
+  int ActiveBound, *DOF, N_Edges, locdof; //boundedge;
   int sold_parameter_type = TDatabase::ParamDB->SOLD_PARAMETER_TYPE;
   double val[3], val_neigh[3], h, norm_t, x[3], y[3], oldval[3];
   double x0, x1, y0, y1, xs, ys, t1, t2, *coeff, jump, fac0, fac1, fac2;
   double phi0_x, phi0_y, phi1_x, phi1_y, phi2_x, phi2_y, n1, n2, maxjump;
-  double sx, sy, tmp, meas, area, rho = 2.0;
+  double sx, sy, meas, area, rho = 2.0; //tmp
   TBaseCell *cell, *neigh;
   TCollection *coll;
   FE2D CurrentElement;
@@ -1749,13 +1749,13 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
         ii =  neigh->GetClipBoard();
         //OutPut("ii " << ii << endl);
         u->FindGradientLocal(neigh, ii, xs, ys, val_neigh);
-        boundedge = 0;
+//        boundedge = 0;
       }
       else
       {
         // boundary edge
         val_neigh[0] = val_neigh[1] = val_neigh[2] = 0;
-        boundedge = 1;
+//        boundedge = 1;
       }
       //OutPut("grad_ii " << val_neigh[1] << " " << val_neigh[2] << endl);
 
@@ -1772,7 +1772,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
         fac0 = 0;
         }*/
       //OutPut("fac0 " << fac0<<endl);
-      tmp = tanh(fac0/1.0)/fac0;
+//      tmp = tanh(fac0/1.0)/fac0;
       fac0 = tanh(fac0/1.0);
       //OutPut(fac0 << endl);
       // compute nonlinear factor depending on u (Psi_K(u))

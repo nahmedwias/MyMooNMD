@@ -1621,19 +1621,19 @@ void TDomain::SetBoundBox(double boundx, double boundy, double boundz)
 
 void TDomain::TestGrid3D()
 {
-  TVertex *v[9];
-  TBoundFace *b[9];
-  TJointEqN *j1;
+//  TVertex *v[9];
+//  TBoundFace *b[9];
+//  TJointEqN *j1;
 
-  v[0] = new TVertex(0.0, 0.0, 0.0);
-  v[1] = new TVertex(1.0, 0.0, 0.0);
-  v[2] = new TVertex(1.0, 1.0, 0.0);
-  v[3] = new TVertex(0.0, 1.0, 0.0);
-  v[4] = new TVertex(0.0, 0.0, 1.0);
-  v[5] = new TVertex(1.0, 0.0, 1.0);
-  v[6] = new TVertex(1.0, 1.0, 1.0);
-  v[7] = new TVertex(0.0, 1.0, 1.0);
-  v[8] = new TVertex(1.5, 0.5, 0.5);
+//  v[0] = new TVertex(0.0, 0.0, 0.0);
+//  v[1] = new TVertex(1.0, 0.0, 0.0);
+//  v[2] = new TVertex(1.0, 1.0, 0.0);
+//  v[3] = new TVertex(0.0, 1.0, 0.0);
+//  v[4] = new TVertex(0.0, 0.0, 1.0);
+//  v[5] = new TVertex(1.0, 0.0, 1.0);
+//  v[6] = new TVertex(1.0, 1.0, 1.0);
+//  v[7] = new TVertex(0.0, 1.0, 1.0);
+//  v[8] = new TVertex(1.5, 0.5, 0.5);
          
 }
 

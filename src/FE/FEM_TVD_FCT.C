@@ -399,7 +399,7 @@ void FEM_FCT_SystemMatrix(TSquareMatrix3D *M_C, TSquareMatrix3D *A,
 double *lump_mass,int N_U)
 #endif
 {
-  const int * ColInd, *RowPtr, *ColInd_M, *RowPtr_M;
+  const int *ColInd_M, *RowPtr_M;
   int i,j,j0,j1,index;
   double *Entries,*Entries_M, cfl;
   double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -412,8 +412,8 @@ double *lump_mass,int N_U)
   Entries_M = M_C->GetEntries();
 
   // get pointers to columns, rows and entries of matrix A
-  ColInd = A->GetKCol();
-  RowPtr = A->GetRowPtr();
+//  ColInd = A->GetKCol();
+//  RowPtr = A->GetRowPtr();
   Entries = A->GetEntries();
 
   for(i=0;i<N_U;i++)

@@ -140,6 +140,13 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
              ElementForShape[Tetrahedron] = D_P2_3D_T_A;
              break;
 
+             // TODO reorganize and comment this method!!!
+    case 22:
+             ElementForShape[Tetrahedron] = C_B2_3D_T_A; //P2 w face bubbles
+             ElementForShape[Brick] = C_Q2_3D_H_A;       //as in case 2 and 12
+             ElementForShape[Hexahedron] = C_Q2_3D_H_M;  //as in case 2 and 12
+             break;
+
     //========LOCALPROJECTION=============
     // Q1+bubble*P0
     case 100:
@@ -583,8 +590,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
     if(!(FEDesc0_Obj->IsEdgeVertData_Filled()) )
      {
-       printf("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
-       MPI_Abort(MPI_COMM_WORLD,  0);  
+       ErrThrow("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
      }
 
      N_Edges=cell->GetN_Edges();      

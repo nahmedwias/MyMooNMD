@@ -75,7 +75,7 @@ void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, double *abs
 void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points, double *zeta,
                                QuadFormula1D QuadFormula, bool *Needs2ndDer)
 {
-  int i, j, k, l, N_Functs;
+  int i, j, k, N_Functs;
 
   double **refvaluesD0, **origvaluesD0;
   double *refD0, *origD0;
@@ -201,7 +201,7 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
 
 void TLineAffin::SetCell(TBaseCell *cell)
 {
-  int i;
+//  int i;
 // #ifdef __2D__
   double z0, z1;
 // #endif

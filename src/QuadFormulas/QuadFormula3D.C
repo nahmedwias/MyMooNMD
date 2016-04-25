@@ -80,12 +80,12 @@ void TQuadFormula3D::FindLocalQuadFormula3D
         (int N_LocalUsedElements, FE3D *LocalUsedElements,
          QuadFormula2D &qf1, QuadFormula3D &qf2)
 {
-  int i,j, MaxPolynomialDegree, PolynomialDegree;
+  int i, MaxPolynomialDegree, PolynomialDegree;
   BF3DRefElements RefElement;
   int *PolynomialDegreeFromFE3D;
   RefTrans3D RefTrans, *RefTransArray, CurrentRefTrans;
-  TRefTrans3D *rt;
-  BaseFunct3D BaseFuncts[N_FEs3D];
+//  TRefTrans3D *rt;
+//  BaseFunct3D BaseFuncts[N_FEs3D];
 
   // find adequate quadrature formula for all elements
   // and find needed reference transformation
@@ -98,8 +98,8 @@ void TQuadFormula3D::FindLocalQuadFormula3D
         TFEDatabase3D::GetRefElementFromFE3D(LocalUsedElements[0]);
   for(i=0;i<N_LocalUsedElements;i++)
   {
-    BaseFuncts[i] = 
-        TFEDatabase3D::GetBaseFunct3D_IDFromFE3D(LocalUsedElements[i]);
+//    BaseFuncts[i] =
+//        TFEDatabase3D::GetBaseFunct3D_IDFromFE3D(LocalUsedElements[i]);
     PolynomialDegree = PolynomialDegreeFromFE3D[LocalUsedElements[i]];
     if(PolynomialDegree > MaxPolynomialDegree) 
       MaxPolynomialDegree = PolynomialDegree;

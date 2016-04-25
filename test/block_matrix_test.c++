@@ -175,7 +175,6 @@ int main(int argc, char* argv[])
     std::shared_ptr<TStructure> structureB(new TStructure(3, 4, 5, ColB, RowB));
     std::shared_ptr<TMatrix> matB = std::make_shared<TMatrix>(structureB);
     
-    
     //Matrix C
     int * RowC = new int[5];
     int * ColC = new int[8];
@@ -186,7 +185,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<TMatrix> matC = std::make_shared<TMatrix>(structureC);
     
     std::shared_ptr<TMatrix> matCT(matC->GetTransposed());
-    
+
     //Matrix D
     int * RowD = new int [4];
     int * ColD = new int [5];
@@ -194,7 +193,6 @@ int main(int argc, char* argv[])
     ColD[0] = 0; ColD[1] = 1; ColD[2] = 2; ColD[3] = 1; ColD[4] = 2;
     std::shared_ptr<TStructure> structureD(new TStructure(3, 3, 5, ColD, RowD));
     std::shared_ptr<TMatrix> matD = std::make_shared<TMatrix>(structureD);
-    
     
     // create a BlockMatrix
     auto blocks = {matA, matC, matB, matD};
@@ -225,7 +223,7 @@ int main(int argc, char* argv[])
     {
       // correct behavior, nothing more to do
     }
-    
+
     // check if exceptions are thrown when appropriate
     try
     {
@@ -266,6 +264,32 @@ int main(int argc, char* argv[])
     {
       // correct behavior, nothing more to do
     }
+
+    {//test the sub-blockmatrix creation routine
+      BlockMatrix bm({2,2,4,6},{2,4,6});
+
+      //fill in some matrices
+      bm.replace_blocks(TMatrix(2,2) , {{1,0}},{false});
+      bm.replace_blocks(TMatrix(4,2) , {{2,0},{1,1}},{false, true});
+      bm.replace_blocks(TMatrix(4,4) , {{2,1}},{false});
+
+      BlockMatrix sub_bm;
+      sub_bm = bm.get_sub_blockmatrix({1,0}, {2,1});
+
+      sub_bm.print_and_check("sub_mb");
+
+      bm.get_combined_submatrix({0,0},{2,2})->info(3);
+
+    }
+
+    delete[] RowA;
+    delete[] ColA;
+    delete[] RowB;
+    delete[] ColB;
+    delete[] RowC;
+    delete[] ColC;
+    delete[] RowD;
+    delete[] ColD;
   }
   
   Output::print("Test program finished.");

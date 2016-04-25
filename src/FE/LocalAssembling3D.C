@@ -113,6 +113,8 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     // TNSE3D: nonstationary Navier-Stokes problems
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+      this->set_parameters_for_tnse(type);
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling3D_type case.");
@@ -836,11 +838,12 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
   unsigned int laplace_type = TDatabase::ParamDB->LAPLACETYPE;
   if(laplace_type == 1 && (nstype==1 || nstype==2))
   {
-    ErrThrow("LAPLACETYPE ", laplace_type, " is supported for NSTYPE 3 and 4");
+    ErrThrow("LAPLACETYPE ", laplace_type, " is supported only for "
+               "NSTYPE 3 and 4, not for NSTYPE 1 and 2.");
   }
   // same for all nstypes; 
   //NOTE: change according to the discretization schemes used
-  // changing needed for turbulent models and also for the newton method 
+  // changing needed for turbulent models and for the newton method
   this->N_Parameters = 3;
   this->N_ParamFct = 1;
   this->ParameterFct =  { TimeNSParamsVelo3D };
@@ -918,8 +921,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Matrices = 16;//FIXME depending on how many mass matrices assembles
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 1};
               
               if(laplace_type==0)
                 this->AssembleParam = TimeNSType4Galerkin3D;
@@ -1020,9 +1023,35 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
                    "not supported");
       }
       break;
+    // local assembling of right hand side
+    case LocalAssembling3D_type::TNSE3D_Rhs:
+      // case 0: fixed point iteration, case 1: Newton iteration
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
+      {
+        case 0:  // fixed point iteration
+          this->N_Terms = 1;
+          this->Derivatives = { D000 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
+          this->N_Matrices = 0;
+          this->RowSpace = { };
+          this->ColumnSpace = { };
+          this->N_Rhs = 3 ;
+          this->RhsSpace = {0, 0, 0};
+          this->AssembleParam =TimeNSRHS3D;
+          this->Manipulate = NULL;
+          break;
+        case 1: // Newton iteration
+          ErrThrow("Newton iteration is not supported yet.");
+          break;
+        default:
+          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ", TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
+                   " not supported.");
+      }
+      break;
     default:
       ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
   }
 }
-
 //========================================================================

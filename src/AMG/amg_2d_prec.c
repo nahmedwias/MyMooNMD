@@ -1275,16 +1275,16 @@ int schur_complement_gmres_bcgs (AMG_SolverContext *sc, int k, int depth,
         AMG_VECTOR *x[AMG_MAX_LEVELS],
         AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
 {
-  double alpha,schur_alpha,numerator,nominator,eps=1e-12,alpha_eps=0.05;
-  int m_b,n_b,iter,max_iter,i,schur_step_length_control,j,ite=0,k1;
-  int  schur_iteration_maxit,schur_inv_of_A_iterations;
+  double alpha,numerator,nominator,alpha_eps=0.05;  // eps =1e-12, schur_alpha;
+  int m_b,n_b,i,ite=0,k1; //schur_step_length_control;
+  int  schur_iteration_maxit; //schur_inv_of_A_iterations;
   double resid,beta,residlast;
 
   printf("schur -1\n");
-  schur_alpha = sc->schur_iteration_damp;          /* set parameters */   
+//  schur_alpha = sc->schur_iteration_damp;          /* set parameters */
   schur_iteration_maxit=sc->schur_iteration_maxit;
-  schur_step_length_control=sc-> schur_step_length_control; 
-  schur_inv_of_A_iterations=sc->schur_inv_of_A_maxit;
+//  schur_step_length_control=sc-> schur_step_length_control;
+//  schur_inv_of_A_iterations=sc->schur_inv_of_A_maxit;
   switch(sc->system_type)
   {
     case SADDLE_1 :
@@ -1618,7 +1618,7 @@ int braess_sarazin_smoother (AMG_SolverContext *sc, int k, int depth,
 {                                                    /* rhs of system to solve is d[k] */
                                                      /* do not change b */ 
   double alpha,sum,*help3;
-  int i,m,n_a,n_b,l,start,end;
+  int i,m,n_a,n_b;
 
   printf ("entering braess--sarazin\n");
   alpha=1.0;
@@ -2106,7 +2106,7 @@ int NewBuildDiagSchurComplement(AMG_SolverContext *sc,AMG_MATRIX *A, AMG_MATRIX 
 {
   double *A_diag;
   int *schur_row,*schur_column,schur_n,i,j,k,kj,end,endj,start,startj,nonzeros,found;
-  int row_nonzeros,tmp,startk,endk,row_k,schur_m,*columns[2],n,*start_col,*row_ind;
+  int row_nonzeros,tmp,startk,endk,schur_m,*columns[2],n,*start_col,*row_ind;
  
 
   schur_n = B[0]->m;                                /* dimension of schur complement */

@@ -36,10 +36,11 @@
  * So far there is three built-in types in 3D and one custom type.
  */
 enum class LocalAssembling3D_type { CD3D, /// Stationary convection diffusion reaction in 3D
-                                    NSE3D_Linear, /// Linear part of stationary Navier--Stokes in 3D
+                                    NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
                                     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
-                                    TNSE3D_LinGAL, 
-                                    TNSE3D_NLGAL,
+                                    TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
+                                    TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
+                                    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
                                     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 
@@ -150,7 +151,7 @@ class LocalAssembling3D
      * @param[in] type The type of problem this assembling object can be used
      *            for. Must not be "Custom" - program terminates.
      * @param fefunctions3d The fe  functions to be evaluated.
-     * @param coeffs A function poitner to the problem coefficients. These must
+     * @param coeffs A function pointer to the problem coefficients. These must
      * be hard-coded somewhere, usually in the used example file.
      *
      */

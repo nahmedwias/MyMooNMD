@@ -21,9 +21,9 @@
 void SolveGridEquation(double **Entries, double *sol, double *rhs,
                        int *KCol, int *RowPtr, int N_DOF)
 {
-  int i,j,k, col, Diognal;
+  int i,k, col, Diognal;
   double *Entries11, *Entries12, *Entries21, *Entries22;
-  double sum1, sum2, max_sum1, max_sum2;
+  double sum1, sum2; // double max_sum1, max_sum2;
   int start, end;
 
   double max_error, error=1.e-12;
@@ -105,7 +105,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   int i,j,k,l,m;
   TBaseCell *cell;
   TCollection *Coll;
-  int N_Cells, N_Vertices, N_Edges;
+  int N_Cells, N_Edges;
   TJoint *joint;
   TIsoBoundEdge *isoboundedge;
   TBoundComp *BoundComp;
@@ -114,7 +114,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   BoundCond Cond0, Cond1;
   int JointNumbers[MAXN_JOINTS], IJoint, N_IsoJoints;
   FE2D FEId;
-  TFE2D *ele;
+//  TFE2D *ele;
   RefTrans2D RefTrans;
   TRefTrans2D *F_K;
   const TFESpace2D *fespace;
@@ -131,7 +131,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   BaseFunct2D *BaseFuncts;
   double r2, r;
   const int *KCol, *RowPtr;
-  double *ValuesA11, *ValuesA12, *ValuesA21, *ValuesA22;
+  double *ValuesA11, *ValuesA22; // double *ValuesA21, *ValuesA12;
   int *BeginIndex, *GlobalNumbers, *DOF, TestDOF, AnsatzDOF;
   int index1, index2;
   double val;
@@ -152,8 +152,8 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
   KCol = A11->GetKCol();
 
   ValuesA11 = A11->GetEntries();
-  ValuesA12 = A12->GetEntries();
-  ValuesA21 = A21->GetEntries();
+//  ValuesA12 = A12->GetEntries();
+//  ValuesA21 = A21->GetEntries();
   ValuesA22 = A22->GetEntries();
 
   for(i=0;i<N_Cells;i++)
@@ -187,7 +187,7 @@ void FreeSurfInt(TSquareMatrix2D *A11, TSquareMatrix2D *A12,
     {
       // cout << "Cell " << i << " has free surface." << endl;
       FEId = fespace->GetFE2D(i, cell);
-      ele = TFEDatabase2D::GetFE2D(FEId);
+//      ele = TFEDatabase2D::GetFE2D(FEId);
       RefElement = TFEDatabase2D::GetRefElementFromFE2D(FEId);
       switch(RefElement)
       {
@@ -322,26 +322,26 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
                      TFEVectFunct2D *Velocity, double dt,
                      TFEVectFunct2D *GridVelocity)
 {
-  int i,j,k,l,m;
+  int i,j,k,l;
   int *VeloBeginIndex, *VeloGlobalNumbers;
   int *GridBeginIndex, *GridGlobalNumbers;
   int N_Cells, N_Vertices, N_Edges, N_LocalDOFs;
   int N_Levels;
   TMGLevel2D *Level;
-  int *DOF, *JointDOF;
+  int *DOF; //int *JointDOF;
   const TFESpace2D *VelocitySpace, *GridSpace;
   TCollection *Coll;
   TBaseCell *cell;
   FE2D FEId;
   TFE2D *Element;
-  TFEDesc2D *FEDesc;
+//  TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
   bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
+//  double FEValuesX[MaxN_BaseFunctions2D];
+//  double FEValuesY[MaxN_BaseFunctions2D];
   double *ValuesX, *ValuesY;
   double *ValuesVX, *ValuesVY;
   double *NewValuesX, *NewValuesY;
@@ -351,8 +351,8 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   double *Rhs, *Sol;
   int N_BoundaryNodes;
   double res, oldres;
-  TJoint *joint;
-  TVertex **Vertices;
+//  TJoint *joint;
+//  TVertex **Vertices;
   double *gridvelo;
   double *LineWeights, *zeta;
   int N_LinePoints;
@@ -994,15 +994,15 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   BaseFunct2D BF;
   TBaseFunct2D *bf;
   bool OnBoundary;
-  double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
+  double xi[4], eta[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
+//  double FEValuesX[MaxN_BaseFunctions2D];
+//  double FEValuesY[MaxN_BaseFunctions2D];
   double *ValuesX, *ValuesY;
   double *ValuesVX, *ValuesVY;
   double *NewValuesX, *NewValuesY;
   double s, t, x, y;
-  double x0, x1, y0, y1;
+//  double x0, x1, y0, y1;
   int GridLength;
   double *Rhs, *Sol;
   int N_BoundaryNodes;
@@ -1676,26 +1676,26 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
                      TFEVectFunct2D *Velocity, double dt,
                      TFEVectFunct2D *GridVelocity, int *Velo_CellNo)
 {
-  int i,j,k,l,m;
+  int i,j,k,l;
   int *VeloBeginIndex, *VeloGlobalNumbers;
   int *GridBeginIndex, *GridGlobalNumbers;
   int N_Cells, N_Vertices, N_Edges, N_LocalDOFs;
-  int N_Levels;
-  TMGLevel2D *Level;
-  int *DOF, *JointDOF;
+//  int N_Levels;
+//  TMGLevel2D *Level;
+  int *DOF; // int *JointDOF;
   const TFESpace2D *VelocitySpace, *GridSpace;
-  TCollection *Coll, *Velo_Coll;
+  TCollection *Coll; // *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
   TFE2D *Element;
-  TFEDesc2D *FEDesc;
+//  TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
   bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
+//  double FEValuesX[MaxN_BaseFunctions2D];
+//  double FEValuesY[MaxN_BaseFunctions2D];
   double *ValuesX, *ValuesY, *d;
   double *ValuesVX, *ValuesVY;
   double *NewValuesX, *NewValuesY;
@@ -1703,16 +1703,16 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
   double x0, x1, y0, y1;
   int GridLength;
   int N_BoundaryNodes;
-  double res, oldres;
-  TJoint *joint;
-  TVertex **Vertices;
+//  double res, oldres;
+//  TJoint *joint;
+//  TVertex **Vertices;
   double *gridvelo, *Nx, *Ny;
   double *LineWeights, *zeta;
   int N_LinePoints, Phase_No;
   TQuadFormula1D *qf1;
   QuadFormula1D LineQuadFormula;
   double normalx, normaly, nx, ny, tx, ty;
-  int IIso, Velo_N_Cells;
+  int IIso; //int Velo_N_Cells;
   BF2DRefElements RefElement;
   TRefTrans2D *F_K;
   RefTrans2D RefTrans;
@@ -1724,8 +1724,8 @@ void GetGridVelocity(double **Entries, double *Sol, double *Rhs,
   VeloGlobalNumbers = VelocitySpace->GetGlobalNumbers();
   ValuesVX = Velocity->GetValues();
   ValuesVY = ValuesVX + Velocity->GetLength();
-  Velo_Coll = VelocitySpace->GetCollection();
-  Velo_N_Cells = Velo_Coll->GetN_Cells();
+//  Velo_Coll = VelocitySpace->GetCollection();
+//  Velo_N_Cells = Velo_Coll->GetN_Cells();
 
 
   GridSpace = GridPos->GetFESpace2D();
@@ -2191,26 +2191,26 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
                        TFEVectFunct2D *Velocity, double dt,
                        TFEVectFunct2D *GridVelocity, int *Velo_CellNo)
 {
-  int i,j,k,l,m;
+  int i,j,k,l;
   int *VeloBeginIndex, *VeloGlobalNumbers;
   int *GridBeginIndex, *GridGlobalNumbers;
   int N_Cells, N_Vertices, N_Edges, N_LocalDOFs;
-  int N_Levels;
-  TMGLevel2D *Level;
-  int *DOF, *JointDOF;
+//  int N_Levels;
+//  TMGLevel2D *Level;
+  int *DOF; //int *JointDOF;
   const TFESpace2D *VelocitySpace, *GridSpace;
-  TCollection *Coll, *Velo_Coll;
+  TCollection *Coll; // *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
   TFE2D *Element;
-  TFEDesc2D *FEDesc;
+//  TFEDesc2D *FEDesc;
   BaseFunct2D BF;
   TBaseFunct2D *bf;
   bool OnBoundary;
   double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
+//  double FEValuesX[MaxN_BaseFunctions2D];
+//  double FEValuesY[MaxN_BaseFunctions2D];
   double *ValuesX, *ValuesY, *d;
   double *ValuesVX, *ValuesVY;
   double *NewValuesX, *NewValuesY;
@@ -2218,16 +2218,16 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
   double x0, x1, y0, y1;
   int GridLength;
   int N_BoundaryNodes;
-  double res, oldres;
-  TJoint *joint;
-  TVertex **Vertices;
+//  double res, oldres;
+//  TJoint *joint;
+//  TVertex **Vertices;
   double *gridvelo, *Nx, *Ny;
   double *LineWeights, *zeta;
   int N_LinePoints, Phase_No;
   TQuadFormula1D *qf1;
   QuadFormula1D LineQuadFormula;
   double normalx, normaly, nx, ny, tx, ty;
-  int IIso, Velo_N_Cells;
+  int IIso; //int Velo_N_Cells;
   BF2DRefElements RefElement;
   TRefTrans2D *F_K;
   RefTrans2D RefTrans;
@@ -2239,8 +2239,8 @@ void GetGridVelo_outer(double **Entries, double *Sol, double *Rhs,
   VeloGlobalNumbers = VelocitySpace->GetGlobalNumbers();
   ValuesVX = Velocity->GetValues();
   ValuesVY = ValuesVX + Velocity->GetLength();
-  Velo_Coll = VelocitySpace->GetCollection();
-  Velo_N_Cells = Velo_Coll->GetN_Cells();
+//  Velo_Coll = VelocitySpace->GetCollection();
+//  Velo_N_Cells = Velo_Coll->GetN_Cells();
 
 
   GridSpace = GridPos->GetFESpace2D();
@@ -2712,7 +2712,7 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   int N_Cells, N_Vertices, N_Edges, N_LocalDOFs;
   int *DOF, *JointDOF;
   const TFESpace2D *VelocitySpace, *GridSpace;
-  TCollection *Coll, *Velo_Coll;
+  TCollection *Coll; // *Velo_Coll;
   TBaseCell *cell;
   FE2D FEId;
   TFE2D *Element;
@@ -2720,23 +2720,23 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   BaseFunct2D BF;
   TBaseFunct2D *bf;
   bool OnBoundary;
-  double xi[4], eta[4], X[4], Y[4], VX[4], VY[4];
+  double xi[4], eta[4], VX[4], VY[4];
   double FunctValues[4][MaxN_BaseFunctions2D];
-  double FEValuesX[MaxN_BaseFunctions2D];
-  double FEValuesY[MaxN_BaseFunctions2D];
+//  double FEValuesX[MaxN_BaseFunctions2D];
+//  double FEValuesY[MaxN_BaseFunctions2D];
   double *ValuesX, *ValuesY, *d;
   double *ValuesVX, *ValuesVY;
   double *NewValuesX, *NewValuesY;
   double s, t, x, y;
-  double x0, x1, y0, y1;
+//  double x0, x1, y0, y1;
   int GridLength;
   int N_BoundaryNodes;
-  double res, oldres;
+//  double res, oldres;
   TJoint *joint;
   TIsoInterfaceJoint *isojoint;
   TVertex **Vertices;
   int IIso;
-  double *gridvelo, *Nx, *Ny;
+  double *Nx, *Ny; // double *gridvelo;
   double *LineWeights, *zeta;
   int N_LinePoints;
   TQuadFormula1D *qf1;
@@ -2745,7 +2745,7 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   BF2DRefElements RefElement;
   TRefTrans2D *F_K;
   RefTrans2D RefTrans;
-  int N_Inner, N_, Velo_N_Cells;
+  int N_Inner, N_; //int Velo_N_Cells;
   double un;
   int polydegree, Velo_i;
   QuadFormula2D QuadFormula;
@@ -2757,8 +2757,8 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
   VeloGlobalNumbers = VelocitySpace->GetGlobalNumbers();
   ValuesVX = Velocity->GetValues();
   ValuesVY = ValuesVX + Velocity->GetLength();
-  Velo_Coll = VelocitySpace->GetCollection();
-  Velo_N_Cells =  Velo_Coll->GetN_Cells();
+//  Velo_Coll = VelocitySpace->GetCollection();
+//  Velo_N_Cells =  Velo_Coll->GetN_Cells();
 
   GridSpace = GridPos->GetFESpace2D();
   GridBeginIndex = GridSpace->GetBeginIndex();
@@ -3305,10 +3305,10 @@ void MoveGrid_2Phase(double **Entries, double *Sol, double *Rhs,
 // ====================================================================
 void Getcellangle(TFESpace2D *Space, double *MinMaxAngle)
 {
- int i,j,k,l, N_Cells, N_Edges;
- int found,  N_LinePoints;
+ int i,j,k, N_Cells, N_Edges;
+// int found,  N_LinePoints;
 
- double TX[4], TY[4], hE[4], Theta, tx, ty, Test, MQI=0.;
+ double TX[4], TY[4], hE[4], Theta, tx, ty, MQI=0.;
  TBaseCell *cell;
  FE2D FEId;
  BF2DRefElements RefElement;
@@ -3416,7 +3416,7 @@ double Volume(TFESpace2D *FESpace)
   RefTrans2D RefTrans;
   TRefTrans2D *rt;
   QuadFormula2D QuadFormula;
-  TQuadFormula2D *qf2;
+//  TQuadFormula2D *qf2;
   int polydegree;
   bool IsIsoparametric;
   TJoint *joint;
@@ -3526,7 +3526,7 @@ void ReParametrize_pts(int &N_Edges, TBaseCell **cell, int *EdgeNo, double h_min
   double phi1, phi2, phi3, phi4, X, Y, T;
   double dx0, dy0, dx1, dy1, Isoteta;
   TIsoBoundEdge *isojoint;
-  TIsoInterfaceJoint *isoIntjoint;
+//  TIsoInterfaceJoint *isoIntjoint;
   TVertex **IsoVertices;
   TJoint *Joint;
   TBaseCell *Me;
@@ -3720,7 +3720,7 @@ void ReParametrize_pts(int &N_Edges, TBaseCell **cell, int *EdgeNo, double h_min
      {
      // need to set it for surface interpolation maping
      Joint = cell[j]->GetJoint(EdgeNo[j]);
-     isoIntjoint = (TIsoInterfaceJoint *)Joint;
+//     isoIntjoint = (TIsoInterfaceJoint *)Joint;
      k = isojoint->GetN_Vertices();
      IsoVertices = isojoint->GetVertices();
      Isoteta = 1./(double)(k+1);
@@ -3769,7 +3769,7 @@ void ReParametrize_pts(int &N_Edges, TBaseCell **cell, int *EdgeNo, double h_min
 
 void IntUn(TFEVectFunct2D *u, double *Nx, double *Ny)
 {
-  int i,j,k,l,m,n;
+  int i,j,k,l,m;
   TBaseCell *cell;
   TCollection *coll;
   int N_Cells, N_Edges, N_DOF;
@@ -3779,17 +3779,17 @@ void IntUn(TFEVectFunct2D *u, double *Nx, double *Ny)
   const TFESpace2D *USpace;
   TJoint *joint;
   FE2D FEId;
-  TFE2D *Element;
-  TFEDesc2D *FEDesc;
+//  TFE2D *Element;
+//  TFEDesc2D *FEDesc;
   BaseFunct2D BF;
-  TBaseFunct2D *bf;
+//  TBaseFunct2D *bf;
   TQuadFormula1D *qf1;
   QuadFormula1D LineQuadFormula;
   BF2DRefElements RefElement;
   TRefTrans2D *F_K;
   RefTrans2D RefTrans;
   double **JointValues, *Values;
-  double x0, x1, y0, y1, s, t;
+  double x0, x1, y0, y1; // double s, t;
   double un, int_un, loc_un;
   double n1, n2, t1, t2;
   double u1loc, u2loc;
@@ -3852,8 +3852,8 @@ void IntUn(TFEVectFunct2D *u, double *Nx, double *Ny)
 
         cell->GetVertex(j)->GetCoords(x0, y0);
         cell->GetVertex((j+1)%N_Edges)->GetCoords(x1, y1);
-        t = x1-x0;
-        s = y1-y0;
+//        t = x1-x0;
+//        s = y1-y0;
 
         JointValues = TFEDatabase2D::GetJointValues2D(BF, LineQuadFormula, j);
         for(k=0;k<N_LinePoints;k++)

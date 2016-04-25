@@ -17,7 +17,9 @@
 #define __EXAMPLE_NSE3D__
 
 #include<Example3D.h>
+#include <functional>
 
+class NSE3D; //forward declaration
 
 class Example_NSE3D : public Example3D
 {
@@ -36,6 +38,9 @@ class Example_NSE3D : public Example3D
                   std::vector <BoundCondFunct3D*> bc,
                   std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
       : Example3D(exact, bc, bd, coeffs) {};
+
+    /// Apply the function stored as post processing routine.
+    void do_post_processing(NSE3D& nse3d) const;
   
     //Declaration of special member functions - rule of zero
 
@@ -53,6 +58,13 @@ class Example_NSE3D : public Example3D
 
     //! Default destructor.
     ~Example_NSE3D() = default;
+
+  private:
+    /// Function doing the post processing for a stationary example.
+    /// TODO put NSE3D argument const as soon as FEFunctions can be copied properly!
+    std::function<void(NSE3D &)> post_processing_stat;
+    /// TODO Function doing the post processing for a time dependent example.
+
 };
 
 

@@ -46,7 +46,7 @@ void CalculateAllParameters()
   double T = TDatabase::ParamDB->FS_T;
   double HM = TDatabase::ParamDB->FS_HM;
   double DELTA_H = TDatabase::ParamDB->FS_DELTA_H;
-  double HT, H0, L, U;
+  double H0, L, U;
 
   L = 2*Pi/3 * sqrt(alpha/(rho*g));
   TDatabase::ParamDB->FS_L = L;
@@ -262,7 +262,7 @@ int CompareVerticesXYZ(TVertex *v0, TVertex *v1)
 void SortVerticesXYZ(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -313,7 +313,7 @@ void SortVerticesXYZ(TVertex **Array, int length)
 void SortVertices(TVertex **Array, int length)
 {
   int n=0, l=0, r=length-1, m;
-  int i, j, k, *rr, len, s;
+  int i, j, *rr, len;
   TVertex *Mid, *Temp;
   double lend = length;
 
@@ -364,7 +364,7 @@ void SortVertices(TVertex **Array, int length)
 // calculate the volume which is ocupied by all cell in Coll
 double GetVolume(TCollection *Coll)
 {
-  int i,j,k;
+  int i,j;
   int N_Cells, N_Joints;
   TBaseCell *cell;
   TJoint *joint;
@@ -515,13 +515,13 @@ void FindVectorsForSlipDOF(TFESpace3D *fespace,
         double* &FaceVectors, double* &EdgeVectors)
 {
   int i,j,k;
-  int N_Cells, N_Faces, N_SlipDOF;
+  int N_Cells, N_Faces; // N_SlipDOF;
   TCollection *coll;
   TBaseCell *cell;
   TJoint *joint;
   JointType jointtype;
   TBoundFace *bdface;
-  int comp, comp1, comp2, comp3;
+  int comp; // comp1, comp2, comp3;
   int *GlobalNumbers, *BeginIndex;
   int *DOF, *JointDOF, **JointDOFs, N_JointDOF, N, M;
   int *Bounds, SlipStart, SlipEnd, N_Slip;
@@ -787,7 +787,7 @@ void ManipulateSquareMatrices(TStructure *sqstructure,
         int *FaceDOF, int *EdgeDOF,
         double* FaceVectors, double* EdgeVectors)
 {
-  int i,j,k;
+  int i,j;
   int DOF, Begin, End;
   int *RowPtr, *KCol;
   double v1, v2, v3;
@@ -924,15 +924,15 @@ void ManipulateMatricesAndRhs(TStructure *structure,
         int *FaceDOF, int *EdgeDOF,
         double* FaceVectors, double* EdgeVectors)
 {
-  int i,j,k;
+  int i,j;
   int DOF, Begin, End;
-  int *RowPtr, *KCol;
-  double v1, v2, v3, w1, w2, w3;
+  int *RowPtr; // *KCol;
+  double v1, v2, v3, w1, w2; // w3;
   double t11, t12, t13, t21, t22, t23;
   double t1, t2, t3;
 
   RowPtr = structure->GetRowPtr();
-  KCol = structure->GetKCol();
+//  KCol = structure->GetKCol();
 
   for(i=0;i<N_FaceDOF;i++)
   {
@@ -1147,9 +1147,9 @@ void CalculateNormals(TCollection *Coll,
                      double* &len)
 {
   int i,j,k,l,m;
-  int N_Cells;
+//  int N_Cells;
   int CellNr, JointNr;
-  TCollection *coll;
+//  TCollection *coll;
   TBaseCell *cell;
   int N_DOF;
   FE3D FEId;
@@ -1350,10 +1350,10 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
                  TSquareMatrix3D *Aii,
                  double *rhs1, double *rhs2, double *rhs3)
 {
-  int i,j,k,l,m;
+  int i,k,l,m;
   int CellNr, JointNr;
   TBaseCell *cell;
-  TJoint *joint;
+//  TJoint *joint;
   double InvWe;
   int N_BaseFunct, *N_BaseFuncts;
   BaseFunct3D *BaseFuncts;
@@ -1362,11 +1362,11 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   int *RowPtr, *KCol;
   double *ValuesAii;
   FE3D FEId;
-  TFE3D *ele;
+//  TFE3D *ele;
   RefTrans3D RefTrans;
   TRefTrans3D *F_K;
   BF3DRefElements RefElement;
-  double Param1[4], Param2[4];
+//  double Param1[4], Param2[4];
   QuadFormula2D QuadFormula;
   QuadFormula3D QF3;
   TQuadFormula2D *qf;
@@ -1380,7 +1380,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   double n1, n2, n3, len, val;
   double d1, d2, d3, ngrad;
   double e1, e2, e3, ngrad2;
-  int index1, index2;
+  int index1; // index2;
 
   TCollection *CollPot;
   int N_CellsPot, CellNrPot;
@@ -1428,7 +1428,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
     CellNr = CellNumbers[i];
     JointNr = JointNumbers[i];
     cell = Coll->GetCell(CellNr);
-    joint = cell->GetJoint(JointNr);
+//    joint = cell->GetJoint(JointNr);
     // OutPut(endl << "cell: " << CellNr << " joint: " << JointNr << endl);
 
     CellNrPot = cell->GetClipBoard();
@@ -1443,7 +1443,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
       exit(-1);
     }
     
-    ele = TFEDatabase3D::GetFE3D(FEId);
+//    ele = TFEDatabase3D::GetFE3D(FEId);
     RefElement = TFEDatabase3D::GetRefElementFromFE3D(FEId);
 
     l = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
@@ -1602,7 +1602,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
         val *= Weights[k] * len;
         rhs3[TestDOF] -= val;
 
-        index2 = RowPtr[TestDOF+1];
+//        index2 = RowPtr[TestDOF+1];
         for(m=0;m<N_BaseFunct;m++)
         {
           AnsatzDOF = DOF[m];
@@ -1632,7 +1632,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
 		 TSquareMatrix3D **Aii,
 		 double *rhs1, double *rhs2, double *rhs3)
 {
-  int CellNr, JointNr, l, m, N_Points, N_JointDOF, *JointDOF;
+  int CellNr, JointNr, l, m, N_Points; // N_JointDOF, *JointDOF;
   int *N_BaseFuncts, N_BaseFunct;
   double *weights, *p1, *p2, xi, eta, zeta, X, Y, Z;
   double a1, a2, a3, b1, b2, b3;
@@ -1649,11 +1649,11 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   int *RowPtrAii;
   int *BeginIndex, *GlobalNumbers, *DOF;
   int TestDOF, AnsatzDOF, index;
-  const int *TmpFV, *TmpLen;
-  int MaxLen;
+//  const int *TmpFV, *TmpLen;
+//  int MaxLen;
   int addlhs = (int) TDatabase::ParamDB->P2;
   int sphere = (int) TDatabase::ParamDB->P3;
-  int normal_change_count=0;
+//  int normal_change_count=0;
   bool Isoparametric = FALSE;
   
   if ( sphere == 1 ) addlhs = 0;
@@ -1663,7 +1663,7 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
   const TFESpace3D *fesp;
   BF3DRefElements RefElement;
   FE3D FeID;
-  TFE3D *ele;
+//  TFE3D *ele;
   RefTrans3D RefTrans;
   TRefTrans3D *F_K;
   QuadFormula2D QuadFormula;
@@ -1725,11 +1725,11 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
     }
     
     FeID = fesp->GetFE3D(CellNr, Cell);
-    ele = TFEDatabase3D::GetFE3D(FeID);
+//    ele = TFEDatabase3D::GetFE3D(FeID);
     DOF = GlobalNumbers + BeginIndex[CellNr];
     
-    N_JointDOF = TFEDatabase3D::GetFEDesc3DFromFE3D(FeID)->GetN_JointDOF();
-    JointDOF = TFEDatabase3D::GetFEDesc3DFromFE3D(FeID)->GetJointDOF(JointNr);
+//    N_JointDOF = TFEDatabase3D::GetFEDesc3DFromFE3D(FeID)->GetN_JointDOF();
+//    JointDOF = TFEDatabase3D::GetFEDesc3DFromFE3D(FeID)->GetJointDOF(JointNr);
     
     RefElement = TFEDatabase3D::GetRefElementFromFE3D(FeID);
     
@@ -2001,25 +2001,25 @@ void FreeSurfInt(TCollection *Coll, int N_BoundFaces,
 void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int *JointNumbers,
 		     double dt, TSquareMatrix3D **Aii, double *rhs1, double *rhs2, double *rhs3)
 {
-  int CellNr, JointNr, N_QuadPoints, N_BaseFunct, N_Cells, N_Points;
+  int JointNr, N_QuadPoints, N_BaseFunct, N_Cells; // N_Points;
   int *GlobalNumbers, *BeginIndex, *DOF, TestDOF;
   double *p1, *p2, *weights, len, fact;
   double a1, a2, a3, b1, b2, b3, n1, n2, n3;
-  double **uref, *urefvalues, val;
-  double values[MaxN_BaseFunctions3D];
-  double x, y, z, *xi, *eta, *zeta;
+  double **uref,val; // *urefvalues;
+//  double values[MaxN_BaseFunctions3D];
+  double x, y, z; // *xi, *eta, *zeta;
   TBaseCell *Cell;
   const TFESpace3D *fespace;
   FE3D FeID;
   TBaseFunct3D *bf;
   TTetraAffin *F_aff;
-  TTetraIsoparametric *F_iso;
-  bool iso = FALSE;
+//  TTetraIsoparametric *F_iso;
+//  bool iso = FALSE;
   TQuadFormula2D *qf2d;
-  TNodalFunctional3D *nf;
+//  TNodalFunctional3D *nf;
   double invWe = TDatabase::ParamDB->WB_NR;
-  double t[MaxN_QuadPoints_3D], s[MaxN_QuadPoints_3D];
-  double Xi, Eta, Zeta;
+//  double t[MaxN_QuadPoints_3D], s[MaxN_QuadPoints_3D];
+//  double Xi, Eta, Zeta;
   
   invWe = 1. / invWe;
   
@@ -2066,7 +2066,7 @@ void FreeSurfInt_new(TCollection *Coll, int N_BoundFaces, int *CellNumbers, int 
       
       FeID = fespace->GetFE3D(i, Cell);
       bf = TFEDatabase3D::GetBaseFunct3DFromFE3D(FeID);
-      nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(FeID);
+//      nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(FeID);
       N_BaseFunct = bf->GetDimension();
       
       qf2d = TFEDatabase3D::GetQuadFormula2D(Degree8Tria);
@@ -2132,7 +2132,7 @@ void FreeSurfInt_Sphere(TFESpace3D *fespace, double dt,
 			double *rhs1, double *rhs2, double *rhs3)
 {
   int N_Cells, l, N_Points, *N_BaseFuncts, N_BaseFunct;
-  int TestDOF, AnsatzDOF, InnerBound, N_DOF;
+  int TestDOF; // AnsatzDOF, InnerBound, N_DOF;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double *weights, *xi, *eta, *zeta;
   double **uref, **uxiref, **uetaref, **uzetaref;
@@ -2166,8 +2166,8 @@ void FreeSurfInt_Sphere(TFESpace3D *fespace, double dt,
   Coll = fespace->GetCollection();
   N_Cells = Coll->GetN_Cells();
   
-  N_DOF = fespace->GetN_DegreesOfFreedom();
-  InnerBound = fespace->GetInnerBound();
+//  N_DOF = fespace->GetN_DegreesOfFreedom();
+//  InnerBound = fespace->GetInnerBound();
   
   BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   N_BaseFuncts = TFEDatabase3D::GetN_BaseFunctFromFE3D();

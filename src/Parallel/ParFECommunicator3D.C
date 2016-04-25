@@ -253,7 +253,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   t1=MPI_Wtime();
   
   int i,j,k,rank,size;
-  MPI_Status status;
+//  MPI_Status status;
   MPI_Comm_rank(Comm,&rank);		
   MPI_Comm_size(Comm, &size);
   

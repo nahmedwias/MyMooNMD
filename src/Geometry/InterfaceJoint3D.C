@@ -126,7 +126,7 @@ int TInterfaceJoint3D::CheckOrientation()
   int MaxLen;
   TVertex *Vert;
   double X, Y, Z, xp, yp, zp;
-  TBaseCell *Neighb2;
+//  TBaseCell *Neighb2;
 
   if (Neighb0)
   {

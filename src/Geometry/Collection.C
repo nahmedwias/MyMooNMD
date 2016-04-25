@@ -18,6 +18,10 @@
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 /** constructor */
 TCollection::TCollection(int n_cells, TBaseCell **cells)
 {
@@ -457,3 +461,46 @@ void TCollection::GenerateCellVertNeibs()
 
 
 }
+#ifdef _MPI
+int TCollection::find_process_of_point(double x, double y, double z) const
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank, size;
+  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &my_rank);
+
+  bool found_on_proc = false;
+  for (int i=0;i<N_Cells;i++)
+  {
+    TBaseCell* cell = GetCell(i);
+    if(!cell->IsHaloCell())
+    {
+      if(cell->PointInCell(x,y,z))
+      {
+        found_on_proc = true;
+        break;
+      }
+    }
+  }
+
+  // each process sends either its rank (when found) or "size",
+  // the sent values get reduced to their minimum
+  int sendbuf[1] = {size};
+  if (found_on_proc)
+    sendbuf[0] = my_rank;
+  int recvbuf[1] = {0};
+
+  MPI_Allreduce(sendbuf, recvbuf, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+
+  int containing_proc = recvbuf[0];
+
+  if(containing_proc == size)
+  {
+    ErrThrow("Point (",x,",",y,",",z,") not found on any process!");
+  }
+
+  return containing_proc;
+
+
+}
+#endif
