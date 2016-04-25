@@ -10,6 +10,7 @@
 #include <FEDatabase3D.h>
 #include <NSE3D.h>
 #include <MeshPartition.h>
+#include <Chrono.h>
 
 #include <sys/stat.h>
 
@@ -20,21 +21,26 @@ double bound = 0;
 double timeC = 0;
 #endif
 
+
+
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+#ifdef _MPI
+  //Construct and initialise the default MPI communicator.
+  MPI_Init(&argc, &argv);
+  MPI_Comm comm = MPI_COMM_WORLD;
+#endif
 
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Chrono chrono_parts;
+  chrono_parts.print_time(std::string("program start"));
   // Construct the ParMooN Databases.
   TDatabase Database;
 
 #ifdef _MPI
-  //Construct and initialise the default MPI communicator and store it.
-  MPI_Comm comm = MPI_COMM_WORLD;
-  MPI_Init(&argc, &argv);
   TDatabase::ParamDB->Comm = comm;
-
   // Hold mpi rank and size ready, check whether the current processor
   // is responsible for output (usually root, 0).
   int my_rank, size;
@@ -134,29 +140,45 @@ int main(int argc, char* argv[])
 #else
   NSE3D nse3d(domain, example);
 #endif
+
   // assemble all matrices and right hand side
   nse3d.assemble_linear_terms();
-  nse3d.stop_it(0);
-  // check initial residuals
+  nse3d.stop_it(0);  // check initial residuals
+
+  chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
+  chrono_parts.reset();
+
   //======================================================================
   for(unsigned int k=1;; k++)
   {
-    Output::print<1>("\nnonlinear iteration step ", setw(3), k-1, "\t",
-                     nse3d.get_residuals());
+    Chrono chrono_nonlinit;
+
+    if(my_rank==0)
+    {
+     Output::print("\nNONLINEAR ITERATION ", setw(3), k-1);
+     Output::print(" residuals ",nse3d.get_residuals());
+    }
 
     // solve the system
     nse3d.solve();
 
     nse3d.assemble_non_linear_term();
 
+    chrono_nonlinit.print_time(std::string("nonlinear iteration ") + std::to_string(k-1));
+
     // checking residuals
     if(nse3d.stop_it(k))
       break;
 
   }
+
+  chrono_parts.print_time(std::string("solving procedure "));
+
   nse3d.output();
 
+
   Output::close_file();
+
 
 #ifdef _MPI
   MPI_Finalize();

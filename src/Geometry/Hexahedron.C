@@ -132,7 +132,7 @@ double THexahedron::GetShortestEdge(TVertex **Verts)
 double THexahedron::GetLengthWithReferenceMap(TVertex **Verts)
 {
   double x0, x1, x3, x4, y0, y1, y3, y4, z0, z1, z3, z4;
-  double xc0, xc1, xc2, xc3, yc0, yc1, yc2, yc3, zc0, zc1, zc2, zc3;
+  double xc1, xc2, xc3, yc1, yc2, yc3, zc1, zc2, zc3;
   double detjk;
 
   Verts[0]->GetCoords(x0, y0, z0);
@@ -144,17 +144,17 @@ double THexahedron::GetLengthWithReferenceMap(TVertex **Verts)
   //y0 = -0.5; y1 = 2.3; y3 = -1.0, y4 = 1;
   //z0 = 0; z1 = -1.4; z3 = 7.2, z4 = -7.2;
 
-  xc0 = (x1 + x3 + x4 - x0) * 0.5;
+//  xc0 = (x1 + x3 + x4 - x0) * 0.5;
   xc1 = (x1 - x0) * 0.5;
   xc2 = (x3 - x0) * 0.5;
   xc3 = (x4 - x0) * 0.5;
 
-  yc0 = (y1 + y3 + y4 - y0) * 0.5;
+//  yc0 = (y1 + y3 + y4 - y0) * 0.5;
   yc1 = (y1 - y0) * 0.5;
   yc2 = (y3 - y0) * 0.5;
   yc3 = (y4 - y0) * 0.5;
 
-  zc0 = (z1 + z3 + z4 - z0) * 0.5;
+//  zc0 = (z1 + z3 + z4 - z0) * 0.5;
   zc1 = (z1 - z0) * 0.5;
   zc2 = (z3 - z0) * 0.5;
   zc3 = (z4 - z0) * 0.5;

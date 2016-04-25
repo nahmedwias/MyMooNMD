@@ -1,4 +1,5 @@
 #include <Example_NSE3D.h>
+#include <NSE3D.h>
 
 #include <FEDatabase3D.h>
 #include <Database.h>
@@ -47,7 +48,33 @@ namespace test_u_3_p_2 //-4
 #include "NSE_3D/test_u_3_p_2.h"
 }
 
-
+//========================================
+// time dependent cases
+namespace lin_space_time
+{
+  #include "TNSE_3D/linear_space_time.h"  // 101
+}
+namespace AnsatzLinConst
+{
+  #include "TNSE_3D/AnsatzLinConst.h"     // 102
+}
+namespace Bsp0
+{
+  #include "TNSE_3D/Bsp0.h"   // 103
+}
+namespace Bsp1
+{
+  #include "TNSE_3D/Bsp1.h"   // 104
+}
+namespace Bsp2
+{
+ #include "TNSE_3D/Bsp2.h"    // 105
+}
+namespace Bsp3
+{
+  #include "TNSE_3D/Bsp3.h"   // 106
+}
+//========================================
 
 Example_NSE3D::Example_NSE3D() : Example3D()
 {
@@ -176,6 +203,9 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        /**post processing - drag and lift calculation and output */
+        post_processing_stat = compute_drag_lift_pdiff;
+
         ExampleFile();
         break;
       }
@@ -288,10 +318,211 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         ExampleFile();
         break;
       }
+      case 101:
+      {
+        using namespace lin_space_time;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
 
-    default:
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 102:
+      {
+        using namespace AnsatzLinConst;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 103:
+      {
+        using namespace Bsp0;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 104:
+      {
+        using namespace Bsp1;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 105:
+      {
+        using namespace Bsp2;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      case 106:
+      {
+        using namespace Bsp3;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        ExampleFile();
+        break;
+      }
+      default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
 }
 
-      
+void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(nse3d);
+  }
+  else
+  {
+    Output::print<2>("INFO -- no post processing done for the current example.");
+  }
+}

@@ -125,12 +125,26 @@ if(_USING_MPI)
     find_package(Threads REQUIRED)
   message("==================Searching Thread Library - end===========================================")
   
+  #Include Metis
+  message("==================Including METIS - begin==================================================")
+      find_path(METIS_INCLUDE_DIR  metis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/include NO_DEFAULT_PATH)
+      find_library(METIS_LIBRARY NAMES metis PATHS ${PARMOON_EXTLIB_PATH}/Metis/${_ARCH} NO_DEFAULT_PATH)
+      
+      set(METIS_LIBRARIES ${METIS_LIBRARY} )
+      set(METIS_INCLUDE_DIRS ${METIS_INCLUDE_DIR} )
+      if(NOT (METIS_LIBRARIES AND  METIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
+	  message(FATAL_ERROR "Metis is missing from ParMooN.")
+      else()
+	  message(STATUS "Done.")
+      endif()
+      include_directories(${METIS_INCLUDE_DIRS})
+  message("==================Indcluding METIS - end====================================================")
+  
   #When using MPI we're also using Parmetis. Include it.
   message("==================Including Parmetis - begin===============================================")
-      find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-      find_library(PARMETIS_LIBRARY NAMES parmetis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-      
-      
+      find_path(PARMETIS_INCLUDE_DIR  parmetis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/include NO_DEFAULT_PATH)
+      find_library(PARMETIS_LIBRARY NAMES parmetis PATHS ${PARMOON_EXTLIB_PATH}/Metis/${_ARCH} NO_DEFAULT_PATH)
+         
       set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR})
       include_directories(BEFORE ${PARMETIS_INCLUDE_DIRS})
       
@@ -143,33 +157,33 @@ if(_USING_MPI)
     endif()
   message("==================Including Parmetis - end=================================================")
    
-  #When using MPI we're also using MUMPS solver. Include it.
-  message("==================Including MUMPS - begin==================================================")
+  #When using MPI we're also using MUMPS solver. Take the supplied dmumps, mumps_common and scalapack dependencies.
+  message("==================Including MUMPS and ScaLapack - begin====================================")
     
     find_path(MUMPS_INCLUDE_DIR  mumps_compat.h PATHS ${PARMOON_EXTLIB_PATH}/MUMPS/include NO_DEFAULT_PATH)
-    set(_MUMPS_LIBS_PATH ${PARMOON_EXTLIB_PATH}/MUMPS/lib)
+    set(_MUMPS_LIBS_PATH ${PARMOON_EXTLIB_PATH}/MUMPS/lib/${_ARCH})
     # Find mumps and its dependent libraries.
-    find_library(MUMPS_LIBRARY NAMES dmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
+    find_library(MUMPS_LIBRARY NAMES dmumps PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
     # mumps_common library
-    find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # esmumps/tesmumps
-    find_library(MUMPS_ESMUMPS_LIBRARY NAMES esmumps_TYRONE64 PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_TESMUMPS_LIBRARY NAMES ptesmumps_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    # scotch and pord libraries
-    find_library(MUMPS_PORD_LIBRARY NAMES pord_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_SCOTCH_LIBRARY NAMES scotch_${_ARCH} PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    find_library(MUMPS_SCOTCHERR_LIBRARY NAMES scotcherr_TYRONE64 PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
-    #scalapack library 
-    find_library(MUMPS_SCALAPACK_LIBRARY NAMES scalapack_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/MPIBLACS NO_DEFAULT_PATH) 
+    find_library(MUMPS_LIBRARY_COMMON NAMES mumps_common PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
+    # pord library (the sequential ordering tool which ships with mumps)
+    find_library(PORD_LIBRARY NAMES pord PATHS ${_MUMPS_LIBS_PATH} NO_DEFAULT_PATH)
+    # scalapack library 
+    find_library(SCALAPACK_LIBRARY NAMES scalapack PATHS ${PARMOON_EXTLIB_PATH}/ScaLapack/${_ARCH} NO_DEFAULT_PATH) 
      
-    set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_DMUMPS_LIBRARY} ${MUMPS_ESMUMPS_LIBRARY} ${MUMPS_TESMUMPS_LIBRARY}
-                        ${MUMPS_LIBRARY_COMMON} ${MUMPS_SCOTCH_LIBRARY} ${MUMPS_SCOTCHERR_LIBRARY} ${MUMPS_PORD_LIBRARY}
-                        ${MUMPS_SCALAPACK_LIBRARY}
-                        gfortran)
+    set(MUMPS_LIBRARIES ${MUMPS_LIBRARY}
+			${MUMPS_LIBRARY_COMMON}
+			${METIS_LIBRARIES}
+			${PARMETIS_LIBRARIES}
+			${SCALAPACK_LIBRARY}
+			${PORD_LIBRARY}
+			${LAPACK_LIBRARIES}
+			gfortran)
+			
     set(MUMPS_INCLUDE_DIRS ${MUMPS_INCLUDE_DIR})
     
     if(NOT (MUMPS_LIBRARIES AND  MUMPS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Mumps is missing from ParMooN.")
+        message(FATAL_ERROR "Mumps or one of its dependencies is missing from ParMooN - check CMakeCache.txt.")
     else()
         message(STATUS "Done.")
     endif()
@@ -178,21 +192,6 @@ if(_USING_MPI)
     
   message("==================Including MUMPS - end====================================================")
 endif(_USING_MPI)
-
-#Include Metis
-message("==================Including METIS - begin==================================================")
-    find_path(METIS_INCLUDE_DIR  metis.h PATHS ${PARMOON_EXTLIB_PATH}/Metis/Lib NO_DEFAULT_PATH)
-    find_library(METIS_LIBRARY NAMES metis_${_ARCH} PATHS ${PARMOON_EXTLIB_PATH}/Metis NO_DEFAULT_PATH)
-    
-    set(METIS_LIBRARIES ${METIS_LIBRARY} )
-    set(METIS_INCLUDE_DIRS ${METIS_INCLUDE_DIR} )
-    if(NOT (METIS_LIBRARIES AND  METIS_INCLUDE_DIRS)) #Mimic "REQUIRED" behaviour
-        message(FATAL_ERROR "Metis is missing from ParMooN.")
-    else()
-        message(STATUS "Done.")
-    endif()
-    include_directories(${METIS_INCLUDE_DIRS})
-message("==================Indcluding METIS - end====================================================")
 
 # Search and include TRIANGLE library.
 message("==================Including TRIANGLE - begin================================================")
@@ -355,9 +354,6 @@ target_compile_definitions(parmoon_3d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__3D__)
 LIST(APPEND _EXTERN_LIBRARIES ${BLAS_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${TRIANGLE_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${LAPACK_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
-LIST(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${TECPLOT_LIBRARIES})
 LIST(APPEND _EXTERN_LIBRARIES ${TETGEN_LIBRARIES})
 if(_USING_OMP)
@@ -365,6 +361,9 @@ if(_USING_OMP)
 endif(_USING_OMP)
 LIST(APPEND _EXTERN_LIBRARIES ${UMFPACK_LIBRARIES})
 if(_USING_MPI)
+    LIST(APPEND _EXTERN_LIBRARIES ${PARMETIS_LIBRARIES})
+    LIST(APPEND _EXTERN_LIBRARIES ${METIS_LIBRARIES})
+    LIST(APPEND _EXTERN_LIBRARIES ${MUMPS_LIBRARIES})
     LIST(APPEND _EXTERN_LIBRARIES ${_MPI_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif(_USING_MPI)
 
@@ -439,6 +438,15 @@ set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${PARMOON_PARAL
 target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+### TNSE3D ###
+# Standard executable target.
+add_executable(tnse3d ${PROJECT_SOURCE_DIR}/3DPrograms/TNSE3D_ParMooN.C)
+set_target_properties(tnse3d PROPERTIES OUTPUT_NAME parMooN_tnse3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tnse3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
 ###############################################################################
 # building the documentation using doxygen

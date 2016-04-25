@@ -341,16 +341,26 @@ void MumpsWrapper::set_mumps_parameters()
   id_.ICNTL(5)  = 0; // matrices in "assembled" format
   id_.ICNTL(18) = 3; // structure AND entries are distributed among processes
   id_.ICNTL(20) = 0; // dense right hand side (stored in nrhs and lrhs)
-  id_.ICNTL(21) = 0; //try centralized solution first!
+  id_.ICNTL(21) = 0; // centralized solution TODO try to build in id_.ICNTL(21) = 1 - distributed solution
 
   // parameters collected from old MumpsSolver.C
-  id_.ICNTL(1) = 1;    // standard outstream for errors
-  id_.ICNTL(2) = -1;   // no warnings output
-  id_.ICNTL(3) = -1;   // no global info output
-  id_.ICNTL(4) = 1;    // verbosity level
-  //id_.ICNTL(6) = 1;  // matrix permutation control??
-  //id_.ICNTL(7) = 5;  // matrix permutation control?
+  id_.ICNTL(1) = 6;    // standard outstream for errors
+  id_.ICNTL(2) = 0;   // no warnings output
+  id_.ICNTL(3) = 6;   // no global info output
+  id_.ICNTL(4) = 0;    // verbosity level
+
   id_.ICNTL(14)=400;   //estimated working space increase (%)
+
+  //the following block is for choice of ordering tools in analysis phase
+  // FIXME parellel ordering with parmetis is segfaulting!
+  id_.ICNTL(28)=1;//request seq(1)/par(2) ordering in analysis phase
+  //request mumps to independently choose a sequential ordering tool if id_.ICNTL(28)=1
+  // in the current setup METIS and PORD are available plus some built-in orderings
+  id_.ICNTL(7)=7;
+  // if id_.ICNTL(28)=2 ordering is done in parallel, if a tool is available
+  // FIXME in the current setup of the libraries, parmetis is segfaulting when
+  // called - that's why id_.ICNTL(28) is set to 1 (sequential ordering) so far
+  id_.ICNTL(29)=2;//request parmetis to do the ordering if id.ICNTL(28)=2
 }
 
 void MumpsWrapper::store_in_distributed_coordinate_form(

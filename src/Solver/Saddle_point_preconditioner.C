@@ -465,27 +465,27 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
       // construct matrix with pointer to structure of divergence_block but own
       // "entries" array. this is basically transposing, but with already known
       // structure
-      TMatrix divBlockModified(divergence_block->GetStructure());
-      for(int gradRow = 0; gradRow < gradient_block->GetN_Rows(); ++gradRow)
-      {
-        
-        int segmentStart = gradient_block->GetRowPtr()[gradRow];
-        int segmentEnd = gradient_block->GetRowPtr()[gradRow + 1];
-        
-        for(int index = segmentStart; index < segmentEnd; ++index)
-        {
-          //set according entry in divBlockModified
-          divBlockModified.set(gradient_block->GetKCol()[index], gradRow,
-                               gradient_block->GetEntries()[index]);
-        }
-      }
+//       TMatrix divBlockModified(divergence_block->GetStructure());
+//       for(int gradRow = 0; gradRow < gradient_block->GetN_Rows(); ++gradRow)
+//       {
+//         
+//         int segmentStart = gradient_block->GetRowPtr()[gradRow];
+//         int segmentEnd = gradient_block->GetRowPtr()[gradRow + 1];
+//         
+//         for(int index = segmentStart; index < segmentEnd; ++index)
+//         {
+//           //set according entry in divBlockModified
+//           divBlockModified.set(gradient_block->GetKCol()[index], gradRow,
+//                                gradient_block->GetEntries()[index]);
+//         }
+//       }
       
       // compute ret as B*D*B^T for B: divergence_block and D: inverse_diagonal
-      TMatrix* ret = divBlockModified.multiply_with_transpose_from_right(
-          inverse_diagonal);
+      //TMatrix* ret = divBlockModified.multiply_with_transpose_from_right(
+      //    inverse_diagonal);
       //TMatrix* ret = divergence_block->multiply_with_transpose_from_right(
       //  inverse_diagonal);
-      return std::shared_ptr<BlockMatrix>;
+      //return std::shared_ptr<BlockMatrix>;
       break;
     }
     default:

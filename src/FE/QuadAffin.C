@@ -84,9 +84,9 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
-  double **refvaluesD20, **origvaluesD20;
-  double **refvaluesD11, **origvaluesD11;
-  double **refvaluesD02, **origvaluesD02;
+  double **origvaluesD20;  // **refvaluesD20;
+  double **origvaluesD11;  // **refvaluesD11;
+  double **origvaluesD02;  // **refvaluesD02;
   double *refD00, *origD00;
   double *refD10, *origD10;
   double *refD01, *origD01;
@@ -139,7 +139,7 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D01, origvaluesD01);
   }
 
-  refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
+//  refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D20);
   origvaluesD20=TFEDatabase2D::GetOrigElementValues(BaseFunct, D20);
   if(origvaluesD20==NULL)
   {
@@ -150,7 +150,7 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D20, origvaluesD20);
   }
 
-  refvaluesD11=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D11);
+//  refvaluesD11=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D11);
   origvaluesD11=TFEDatabase2D::GetOrigElementValues(BaseFunct, D11);
   if(origvaluesD11==NULL)
   {
@@ -161,7 +161,7 @@ void TQuadAffin::GetOrigValues(BaseFunct2D BaseFunct,
     TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D11, origvaluesD11);
   }
 
-  refvaluesD02=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D02);
+//  refvaluesD02=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D02);
   origvaluesD02=TFEDatabase2D::GetOrigElementValues(BaseFunct, D02);
   if(origvaluesD02==NULL)
   {

@@ -47,7 +47,7 @@ int TMultiGridIte::Iterate (TSquareMatrix **sqmat,
                             double *rhs)
 {
   double res, *mgsol, *mgrhs;
-  int umfpack_flag;
+//  int umfpack_flag;
   
   // umfpack_flag = 0 ==> allocieren und LU-Zerlegung
   // umfpack_flag = 1 ==> nur vorw./rueckw.

@@ -32,7 +32,7 @@ int TBdWall::SetParams(double drx, double dry, double drz)
 int TBdWall::GetXYZofTS(double T, double S,
                         double &X, double &Y, double &Z)
 {
-  double x,y,z;
+  double x,y; //z;
 
   BdComp2D->GetXYofT(T, x, y);
 
@@ -53,7 +53,7 @@ int TBdWall::GetXYZandTS(int N_Points, double *LinComb,
 {
   int i;
   double t, s, v;
-  double x,y,z;
+  double x,y; //z;
 
   t = s = 0;
   for(i=0;i<N_Points;i++)

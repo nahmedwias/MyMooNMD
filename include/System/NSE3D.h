@@ -17,15 +17,17 @@
 #ifndef INCLUDE_SYSTEM_NSE3D_H_
 #define INCLUDE_SYSTEM_NSE3D_H_
 
+#include <FEVectFunct3D.h>
+#include <FEFunction3D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_NSE3D.h>
-#include <FEFunction3D.h>
-#include <FESpace3D.h>
-#include <FEVectFunct3D.h>
-#include <MainUtilities.h> // FixedSizeQueue
-#include <NSE_MultiGrid.h>
 #include <Residuals.h>
+#include <FESpace3D.h>
+#include <Example_NSE3D.h>
+
+#include <NSE_MultiGrid.h>
+
+#include <MainUtilities.h> // FixedSizeQueu
 
 #include <vector>
 #include <deque>
@@ -40,8 +42,11 @@
 
 class NSE3D
 {
+
   enum class Matrix{Type14, Type1, Type2, Type3, Type4};
- protected:
+
+  protected:
+
     /** @brief store a complete system on a particular grid
      *
      * This combines a matrix, rhs, solution, spaces and functions
@@ -63,8 +68,8 @@ class NSE3D
                     TCollection& coll, std::pair<int, int> order, NSE3D::Matrix type, 
                     int maxSubDomainPerDof);
 #else
-      System_per_grid(const Example_NSE3D& example, TCollection& coll, std::pair<int, int> order,
-                    NSE3D::Matrix type);
+      System_per_grid(const Example_NSE3D& example, TCollection& coll,
+                      std::pair<int, int> order, NSE3D::Matrix type);
 #endif
 
       /** @brief Finite Element space for the velocity */
@@ -144,19 +149,7 @@ class NSE3D
     /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
     /// transposed blocks are not stored explicitely...sad but true.
     std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
-    
-    /** @brief set the velocity and pressure orders
-     * 
-     * This function sets the corresponding velocity and 
-     * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
-     * 
-     * Tried to stay with the function GetVelocityPressureSpace3D()
-     * in the MainUtilities file.
-     */
-    void get_velocity_pressure_orders(std::pair <int,int> 
-                   &velocity_pressure_orders);
-    
+
     //! @brief An array to store the current defect.
     BlockVector defect_;
     
@@ -167,7 +160,7 @@ class NSE3D
     //!        be stopped as soon as a desired reduction is achieved
     double initial_residual_;
     
-    /** @brief Errors, held in ready to be accesed from outside the class
+    /** @brief Errors, held in ready to be accessed from outside the class
      * The array is filled during the function call NSE3D::output()
      * Currently, the errors store the L2 and H1-semi errors of the velocity
      * (errors.at(0) is L2 and errors.at(1) is H1-semi)
@@ -175,6 +168,17 @@ class NSE3D
      */
     std::array<double, int(4)> errors_;
 
+    /** @brief set the velocity and pressure orders
+     *
+     * This function sets the corresponding velocity and
+     * pressure orders. The pressure order is set if it is
+     * not specified by the readin file. Default is -4711
+     *
+     * Tried to stay with the function GetVelocityPressureSpace3D()
+     * in the MainUtilities file.
+     */
+    void get_velocity_pressure_orders(std::pair <int,int>
+                   &velocity_pressure_orders);
  public:
 
     /** @brief Standard constructor of an NSE3D problem.
@@ -229,6 +233,16 @@ class NSE3D
     //! Solve the current linear system. Nonlinear loop is outside of this class.
     void solve();
 
+    /**
+     * @brief Compute the defect Ax-b, and the residuals and store it all.
+     *
+     * Updates defect and old_residuals.
+     * A is the current matrix, x is the current solution and b is the
+     * right hand side. Call this function after assembling the nonlinear
+     * matrix with the current solution.
+     */
+    void compute_residuals();
+
     /** @brief check if one of the stopping criteria is fulfilled
      * 
      * either converged, maximun number of iterations reached, or slow 
@@ -241,18 +255,8 @@ class NSE3D
      */
     bool stop_it(unsigned int iteration_counter);
 
-    /**
-     * @brief Compute the defect Ax-b, and the residuals and store it all.
-     *
-     * Updates defect and old_residuals.
-     * A is the current matrix, x is the current solution and b is the
-     * right hand side. Call this function after assembling the nonlinear
-     * matrix with the current solution.
-     */
-    void compute_residuals();
-
-    //! Measure errors and draw a nice VTK picture, if requested to do so.
-    //! @param i suffix for output file name, -1 means no suffix.
+    /**! Measure errors and draw a nice VTK picture, if requested to do so.
+    ! @param i suffix for output file name, -1 means no suffix. */
     void output(int i = -1);
 
 /*******************************************************************************/
@@ -293,16 +297,24 @@ class NSE3D
     
 /********************************************************************************/
 // getters
-   const TFEVectFunct3D & get_velocity() const
+    const TFEVectFunct3D& get_velocity() const
     { return this->systems_.front().u_; }
-    TFEVectFunct3D & get_velocity()
-    { return this->systems_.front().u_; }    
+
+    TFEVectFunct3D& get_velocity()
+    { return this->systems_.front().u_; }
+
     TFEFunction3D *get_velocity_component(int i);
-    TFEFunction3D & get_pressure()
+
+    const TFEFunction3D& get_pressure() const
     { return this->systems_.front().p_; }
-    const TFESpace3D & get_velocity_space() const
+
+    TFEFunction3D& get_pressure()
+    { return this->systems_.front().p_; }
+
+    const TFESpace3D& get_velocity_space() const
     { return this->systems_.front().velocitySpace_; }
-    const TFESpace3D & get_pressure_space() const
+
+    const TFESpace3D& get_pressure_space() const
     { return this->systems_.front().pressureSpace_; }
     
     const int get_size(){return this->systems_.front().solution_.length();}

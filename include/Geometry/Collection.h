@@ -85,6 +85,20 @@ class TCollection
      {
       return GlobalIndex;
      }
+
+    /**
+     * Find the lowest-number process which contains the given point (x,y,z)
+     * in an OwnCell.
+     *
+     * Throws an error if the point was not found anywhere.
+     *
+     * @param x x value
+     * @param y y value
+     * @param z z value
+     * @return The lowest number process of those processes which contain
+     * the given point in an "OwnCell".
+     */
+    int find_process_of_point(double x, double y, double z) const;
 #endif
 
    void Replace_Coll(int n_cells, TBaseCell **cells)

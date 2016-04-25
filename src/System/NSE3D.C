@@ -83,7 +83,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #endif
 }
 
-
 NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
@@ -94,7 +93,7 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
-  // set the velocity and preesure spaces
+  // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
@@ -138,15 +137,16 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
     size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
     size_t nTotal = 3*nDofu + nDofp;
     size_t nActive= 3*velocity_space.GetActiveBound();
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
     
     Output::print<1>("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
     Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
     Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
     Output::print<1>("ndof Total   :  ", setw(10), nTotal );
     Output::print<1>("nActive      :  ", setw(10), nActive);
-    double hmin, hmax;
-    coll->GetHminHmax(&hmin, &hmax);
-    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);    
+
     #endif
   }
   else // multigrid
@@ -351,12 +351,13 @@ void NSE3D::assemble_linear_terms()
   for(auto &s : this->systems_)
   {
 
-    const TFESpace3D * v_space = &s.velocitySpace_;
-    const TFESpace3D * p_space = &s.pressureSpace_;
+    const TFESpace3D *v_space = &s.velocitySpace_;
+    const TFESpace3D *p_space = &s.pressureSpace_;
 
     // spaces for matrices
-    const TFESpace3D* spaces[2] = {v_space, p_space};
-    const TFESpace3D* rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+    const TFESpace3D *spaces[2] = {v_space, p_space};
+    const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
+
     // spaces for right hand side    
     s.rhs_.reset();
     rhsArray[0]=s.rhs_.block(0);
@@ -412,7 +413,6 @@ void NSE3D::assemble_linear_terms()
 
         nRhs = 3;
         break;
-
       case 4:
         nSqMatrices = 9;
         sqMatrices[0]=reinterpret_cast<TSquareMatrix3D*>(blocks[0].get());
@@ -461,7 +461,6 @@ void NSE3D::assemble_linear_terms()
         //right hand side must be adapted
         nRhs = 4;
         rhsArray[3]=s.rhs_.block(3);
-
         break;
     }// endswitch nstype
 
@@ -469,6 +468,7 @@ void NSE3D::assemble_linear_terms()
       sqMatrices[i]->reset();
     for(unsigned int i=0; i<nReMatrices;i++)
       reMatrices[i]->reset();
+
     // boundary conditions and boundary values
     BoundCondFunct3D * boundContion[4]={
       spaces[0]->getBoundCondition(), spaces[0]->getBoundCondition(),
@@ -479,11 +479,13 @@ void NSE3D::assemble_linear_terms()
     boundValues[1]=example_.get_bd()[1];
     boundValues[2]=example_.get_bd()[2];
     boundValues[3]=example_.get_bd()[3];
+
     // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
     feFunction[2]=s.u_.GetComponent(2);
     feFunction[3]=&s.p_;
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
@@ -538,6 +540,7 @@ void NSE3D::assemble_non_linear_term()
         sqMatrices.at(2)=reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());
         break;
     }// endswitch nstype
+
     for(auto mat : sqMatrices)
     {
       mat->reset();
@@ -554,7 +557,8 @@ void NSE3D::assemble_non_linear_term()
 
     feFunction[0]=s.u_.GetComponent(0);
     feFunction[1]=s.u_.GetComponent(1);
-    feFunction[2]=s.u_.GetComponent(2);    
+    feFunction[2]=s.u_.GetComponent(2);
+
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                          feFunction.data(), example_.get_coeffs());
@@ -576,6 +580,12 @@ void NSE3D::assemble_non_linear_term()
 
 bool NSE3D::stop_it(unsigned int iteration_counter)
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
   //compute and update defect and residuals
   compute_residuals();
   
@@ -601,20 +611,29 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
   {
     limit *= sqrt(this->get_size());
-    Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
+    if(my_rank==0)
+     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
   }
 
   // check if the iteration has converged, or reached the maximum number of
   // iterations or if convergence is too slow. Then return true otherwise false
   if( (normOfResidual<=limit) || (iteration_counter==max_it) || (slow_conv) )
   {
-    if(slow_conv)
+    if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual_);
+    if(my_rank==0)
+    {
+      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
+                       " RES : ", normOfResidual, " Reduction : ",
+                       normOfResidual/initial_residual_);
+      // The following line comes from MooNMD and shall be us a reminder to
+      // TODO count total number of linear iterations for iterative solvers
+      //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
+      //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
+    }
+
     return true;
   }
   else
@@ -701,10 +720,16 @@ void NSE3D::solve()
       // Actuate it via DirectSolver class.
 
       /// @todo consider storing an object of DirectSolver in this class
-      DirectSolver direct_solver(s.matrix_,
-                                 DirectSolver::DirectSolverTypes::umfpack);
+
+      DirectSolver::DirectSolverTypes solver_type =  DirectSolver::DirectSolverTypes::umfpack;
+#ifdef _OMP
+      solver_type = DirectSolver::DirectSolverTypes::pardiso;
+#endif
+
+      DirectSolver direct_solver(s.matrix_, solver_type);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI
+#endif
+#ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
       std::vector<const TParFECommunicator3D*> par_comms_init =
       {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
@@ -849,6 +874,9 @@ void NSE3D::output(int i)
   delete u1;
   delete u2;
   delete u3;
+
+  //do postprocessing step depending on what the example implements
+  example_.do_post_processing(*this);
 }
 
 TNSE_MGLevel* NSE3D::mg_levels(int level, NSE3D::System_per_grid& s)

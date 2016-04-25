@@ -493,10 +493,6 @@ int main(int argc, char* argv[])
      no_transp.replace_blocks(B,{{2,0}}, {false});
      no_transp.replace_blocks(B,{{2,1}}, {false});
 
-//     //print the combined matrices
-//     with_transp.BlockMatrix::get_combined_matrix()->PrintFull("with_transp");
-//     no_transp.BlockMatrix::get_combined_matrix()->PrintFull("no_transp");
-
      //put up BlockVectors which fit the spaces
      BlockVector preimage(with_transp, false);
      for(size_t i = 0 ; i< preimage.length() ; ++i)
@@ -514,6 +510,22 @@ int main(int argc, char* argv[])
      image_with.add_scaled(image_no,-1.0);
      if( image_with.norm() != 0)
        ErrThrow("Error in test of apply_scaled_add!");
+
+   }
+
+   {
+     //test the method which returns a sub-blockfematrix
+     BlockFEMatrix blockmat=
+         BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
+
+     BlockFEMatrix sub_velocity = blockmat.get_sub_blockfematrix(0,1);
+     sub_velocity.check_pointer_types();
+     sub_velocity.check_coloring();
+
+     BlockFEMatrix sub_1D = blockmat.get_sub_blockfematrix(1,2);
+     sub_1D.check_pointer_types();
+     sub_1D.check_coloring();
+
 
    }
 
