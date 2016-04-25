@@ -418,6 +418,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SHISHKIN_MESH = 0;
   ParamDB->SHISHKIN_DIAM = 1.0;
   ParamDB->NSTYPE = 1;
+ParamDB->BrinkmanTYPE = 1;
   ParamDB->DARCYTYPE = 1;
   ParamDB->SIGMA_PERM = 1;
   ParamDB->LAPLACETYPE = 0;
@@ -1359,6 +1360,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SHISHKIN_MESH: ", ParamDB->SHISHKIN_MESH);
   printToFile("SHISHKIN_DIAM: ", ParamDB->SHISHKIN_DIAM);
   printToFile("NSTYPE: ", ParamDB->NSTYPE);
+printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("DARCYTYPE: ", ParamDB->DARCYTYPE);
   printToFile("SIGMA_PERM: ", ParamDB->SIGMA_PERM);
   printToFile("LAPLACETYPE: ", ParamDB->LAPLACETYPE);

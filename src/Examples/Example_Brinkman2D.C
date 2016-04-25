@@ -25,31 +25,35 @@ namespace flow_around_cylinder
 {
   #include "Brinkman_2D/flow_around_cylinder.h"
 }
+namespace poiseuille_Hannukainen
+{
+#include "Brinkman_2D/Poiseuille_Hannukainen.h"
+}
 
 
 Example_Brinkman2D::Example_Brinkman2D() : Example2D()
 {
   switch( TDatabase::ParamDB->EXAMPLE ) 
   {
-    case 0:
-      /** exact_solution */
-      exact_solution.push_back( poiseuille::ExactU1 );
-      exact_solution.push_back( poiseuille::ExactU2 );
-      exact_solution.push_back( poiseuille::ExactP );
-      
-      /** boundary condition */
-      boundary_conditions.push_back( poiseuille::BoundCondition );
-      boundary_conditions.push_back( poiseuille::BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( poiseuille::U1BoundValue );
-      boundary_data.push_back( poiseuille::U2BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-      
+   case 0:
+     /** exact_solution */
+     exact_solution.push_back( poiseuille::ExactU1 );
+     exact_solution.push_back( poiseuille::ExactU2 );
+     exact_solution.push_back( poiseuille::ExactP );
+ 
+     /** boundary condition */
+     boundary_conditions.push_back( poiseuille::BoundCondition );
+     boundary_conditions.push_back( poiseuille::BoundCondition );
+     boundary_conditions.push_back( BoundConditionNoBoundCondition );
+ 
+     /** boundary values */
+     boundary_data.push_back( poiseuille::U1BoundValue );
+     boundary_data.push_back( poiseuille::U2BoundValue );
+     boundary_data.push_back( BoundaryValueHomogenous );
+  
       /** coefficients */
       problem_coefficients = poiseuille::LinCoeffs;
-      
+  
       poiseuille::ExampleFile();
       break;
     case 1:
@@ -115,6 +119,27 @@ Example_Brinkman2D::Example_Brinkman2D() : Example2D()
       
       flow_around_cylinder::ExampleFile();
       break;
+      case 4:
+          /** exact_solution */
+          exact_solution.push_back( poiseuille_Hannukainen::ExactU1 );
+          exact_solution.push_back( poiseuille_Hannukainen::ExactU2 );
+          exact_solution.push_back( poiseuille_Hannukainen::ExactP );
+          
+          /** boundary condition */
+          boundary_conditions.push_back( poiseuille_Hannukainen::BoundCondition );
+          boundary_conditions.push_back( poiseuille_Hannukainen::BoundCondition );
+          boundary_conditions.push_back( BoundConditionNoBoundCondition );
+          
+          /** boundary values */
+          boundary_data.push_back( poiseuille_Hannukainen::U1BoundValue );
+          boundary_data.push_back( poiseuille_Hannukainen::U2BoundValue );
+          boundary_data.push_back( BoundaryValueHomogenous );
+          
+          /** coefficients */
+          problem_coefficients = poiseuille_Hannukainen::LinCoeffs;
+          
+          poiseuille_Hannukainen::ExampleFile();
+          break;
     default:
       ErrThrow("Unknown Brinkman example!");
   }

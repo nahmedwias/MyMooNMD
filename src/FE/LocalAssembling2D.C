@@ -90,8 +90,17 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
       return std::string("Darcy2D_Galerkin");
     ///////////////////////////////////////////////////////////////////////////
     // Brinkman2D: Brinkman problems
-    case Brinkman2D_Galerkin:
-    return std::string("Brinkman2D_Galerkin");
+    case Brinkman2D_Galerkin1:
+          return std::string("Brinkman2D_Galerkin1");
+          
+    case Brinkman2D_Galerkin1Stab:
+          return std::string("Brinkman2D_Galerkin1Stab");
+     
+    case Brinkman2D_Galerkin1Stab2:
+          return std::string("Brinkman2D_Galerkin1Stab2");
+          
+    case Brinkman2D_Galerkin2:
+          return std::string("Brinkman2D_Galerkin2");
     ///////////////////////////////////////////////////////////////////////////
     // TNSE2D: nonstationary Navier-Stokes
     case LocalAssembling2D_type::TNSE2D:
@@ -265,36 +274,84 @@ switch(type)
   break;  //LocalAssembling2D_type::TCD2D_Mass
         ///////////////////////////////////////////////////////////////////////////
         // Brinkman2D: problems and Brinkman problem
-   
-    case Brinkman2D_Galerkin:
-        //NSType4
+
+    case LocalAssembling2D_type::Brinkman2D_Galerkin1:
+        //Matrix Type 14
         this->N_Terms = 4;
         this->Derivatives = { D10, D01, D00, D00 };
         this->Needs2ndDerivatives = new bool[2];
         this->Needs2ndDerivatives[0] = false;
         this->Needs2ndDerivatives[1] = false;
         this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-        this->N_Matrices = 8;
-        this->RowSpace = { 0, 0, 0, 0, 1, 1, 0, 0 };
-        this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 1, 1 };
-        if(TDatabase::ParamDB->NSTYPE == 14)
-        {
-            this->N_Matrices = 9;
-            this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
-            this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
-        }
+        this->N_Matrices = 9;
+        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
         this->N_Rhs = 3;
         this->RhsSpace = { 0, 0, 1 };
-        this->AssembleParam = BrinkmanType4Galerkin;
+        this->AssembleParam = BrinkmanType1Galerkin;
+        this->Manipulate = NULL;
+        break;
+        
+    case LocalAssembling2D_type::Brinkman2D_Galerkin2:
+        //Matrix Type 14
+        this->N_Terms = 6;                                      // = #(Derivatives)
+        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
+        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+        this->Needs2ndDerivatives[0] = false;
+        this->Needs2ndDerivatives[1] = false;
+        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
+        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+        // in the lower right corner
+        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+        this->N_Rhs = 3;                                        // f1, f2, g
+        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+        this->AssembleParam = BrinkmanType2Galerkin;
         this->Manipulate = NULL;
         break;
 
-  ///////////////////////////////////////////////////////////////////////////
-  // NSE2D: stationary Navier-Stokes problems and Brinkman problem
-  case NSE2D_Galerkin:
-  case NSE2D_Galerkin_Nonlinear:
-    this->set_parameters_for_nseGalerkin(type);
-    break;
+    case LocalAssembling2D_type::Brinkman2D_Galerkin1Stab:
+        //Matrix Type 14
+        this->N_Terms = 6;                                      // = #(Derivatives)
+        this->Derivatives = { D10, D01, D00, D00, D10, D01};    // u_x, u_y, u, p, p_x, p_y
+        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+        this->Needs2ndDerivatives[0] = false;
+        this->Needs2ndDerivatives[1] = false;
+        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1 };             // 0: velocity space, 1: pressure space
+        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+        // in the lower right corner
+        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+        this->N_Rhs = 3;                                        // f1, f2, g
+        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+        this->AssembleParam = BrinkmanType1GalerkinStab;
+        this->Manipulate = NULL;
+        break;
+
+    case LocalAssembling2D_type::Brinkman2D_Galerkin1Stab2:
+        //Matrix Type 14
+        this->N_Terms = 8;                                      // = #(Derivatives)
+        this->Derivatives = { D10, D01, D00, D00, D10, D01, D20, D02};    // u_x, u_y, u, p, p_x, p_y, u_xx, u_yy
+        this->Needs2ndDerivatives = new bool[2];                // usually 2nd derivatives are not needed
+        this->Needs2ndDerivatives[0] = true;
+        this->Needs2ndDerivatives[1] = true;
+        this->FESpaceNumber = { 0, 0, 0, 1, 1, 1, 0, 0 };             // 0: velocity space, 1: pressure space
+        this->N_Matrices = 9;                               // here some stabilization is allowed in the matrix C
+        // in the lower right corner
+        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+        this->N_Rhs = 3;                                        // f1, f2, g
+        this->RhsSpace = { 0, 0, 1 };                           // corresp. to velocity testspace = 0 / pressure = 1
+        this->AssembleParam = BrinkmanType1GalerkinStab2;
+        this->Manipulate = NULL;
+        break;
+        
+        ///////////////////////////////////////////////////////////////////////////
+        // NSE2D: stationary Navier-Stokes problems problem
+            case NSE2D_Galerkin:
+            case NSE2D_Galerkin_Nonlinear:
+            this->set_parameters_for_nseGalerkin(type);
+            break;
   ///////////////////////////////////////////////////////////////////////////
   case NSE2D_SUPG:
   case NSE2D_SUPG_NL:

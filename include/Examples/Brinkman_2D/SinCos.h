@@ -1,5 +1,8 @@
-// Navier-Stokes problem with sine and cosine functions
-// 
+// Brinkman problem with sine and cosine functions
+// exact solution:
+// u(x,y) = (sin(Pi*x) , -Pi*y*cos(Pi*x)) = (u1,u2)
+// p(x,y) = sin(Pi*x)*cos(Pi*y)
+
 
 void ExampleFile()
 {
@@ -13,45 +16,31 @@ void ExampleFile()
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-    values[0] = sin(Pi*x);
-    values[1] = Pi*cos(Pi*x);
-    values[2] = 0;
-    values[3] = -Pi*Pi*sin(Pi*x);
+    values[0] = sin(Pi*x);          //u1
+    values[1] = Pi*cos(Pi*x);       //u1_x
+    values[2] = 0;                  //u1_y
+    values[3] = -Pi*Pi*sin(Pi*x);   //Delta u1=u1_xx+u1_yy
 }
 
 void ExactU2(double x, double y, double *values)
 {
-    values[0] = -Pi*y*cos(Pi*x);
-    values[1] = Pi*Pi*y*sin(Pi*x);
-    values[2] = -Pi*cos(Pi*x);
-    values[3] = Pi*Pi*Pi*y*cos(Pi*x);
+    values[0] = -Pi*y*cos(Pi*x);        //u2
+    values[1] = Pi*Pi*y*sin(Pi*x);      //u2_x
+    values[2] = -Pi*cos(Pi*x);          //u2_y
+    values[3] = Pi*Pi*Pi*y*cos(Pi*x);   //Delta u2=u2_xx + u2_yy
 }
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = sin(Pi*x)*cos(Pi*y);
-  values[1] = Pi*cos(Pi*x)*cos(Pi*y);
-  values[2] = -Pi*sin(Pi*x)*sin(Pi*y);
-  values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);
+  values[0] = sin(Pi*x)*cos(Pi*y);      //p
+  values[1] = Pi*cos(Pi*x)*cos(Pi*y);   //p_x
+  values[2] = -Pi*sin(Pi*x)*sin(Pi*y);  //p_y
+  values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);     //Delta p=p_xx+p_yy
 }
 
-void InitialU1(double x, double y, double *values)
-{
-  values[0] = sin(Pi*x);
-}
-
-void InitialU2(double x, double y, double *values)
-{
-  values[0] = -Pi*y*cos(Pi*x);
-}
-
-void InitialP(double x, double y, double *values)
-{
-  values[0] = sin(Pi*x)*cos(Pi*y);
-}
 
 // ========================================================================
-// boundary conditions
+// boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 void BoundCondition(int i, double t, BoundCond &cond)
 {
@@ -165,14 +154,14 @@ void LinCoeffs(int n_points, double *X, double *Y,
     ExactU2(X[i], Y[i], val2);
     ExactP(X[i], Y[i], val3);
     
-    coeffs[i][1] = -nu*val1[3] + val3[1]; // f1
-    coeffs[i][2] = -nu*val2[3] + val3[2]; // f2
+    coeffs[i][1] = -nu*val1[3] + val3[1] + val1[0]; // f1
+    coeffs[i][2] = -nu*val2[3] + val3[2] + val2[0]; // f2
     
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
-    {
-      coeffs[i][1] += val1[0]*val1[1] + val2[0]*val1[2]; // f1
-      coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
-    }
+//    if(TDatabase::ParamDB->PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
+//    {
+//      coeffs[i][1] += val1[0]*val1[1] + val2[0]*val1[2]; // f1
+//      coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
+//    }
     coeffs[i][3] = val1[1] + val2[2]; // g (divergence)
   }
   

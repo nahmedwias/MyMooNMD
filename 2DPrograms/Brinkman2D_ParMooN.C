@@ -26,7 +26,8 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
-  
+    //for(UNIFORM_STEPS=1; UNIFORM_STEPS <= 6;++UNIFORM_STEPS)
+    //{
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
@@ -34,18 +35,20 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1]);  
   
-  //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
-    TDatabase::ParamDB->PROBLEM_TYPE = 5;
-  //open OUTFILE, this is where all output is written to (addionally to console)
+ //// //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
+ //// if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
+ ////   TDatabase::ParamDB->PROBLEM_TYPE = 5;
+  
+    //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
   
-  // possibly change parameters in the database, if they are not meaningful now
-  Database.CheckParameterConsistencyNSE();
+  //// possibly change parameters in the database, if they are not meaningful now
+  ////Database.CheckParameterConsistencyNSE();
+    
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
-  
-  /* include the mesh from a mesh generator, for a standard mesh use the 
+    
+  /* include the mesh from a mesh generator, for a standard mesh use the
    * build-in function. The GEOFILE describes the boundary of the domain. */
   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
   
@@ -60,17 +63,21 @@ int main(int argc, char* argv[])
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
+    
   Example_Brinkman2D example;
   
+
   //=========================================================================
   // create an object of the Brinkman class
+
   Brinkman2D brinkman2d(Domain, example);
   brinkman2d.assemble();
   brinkman2d.solve();
   brinkman2d.output();
+
   //=========================================================================
 
   Output::close_file();
-  return 0;
+    return 0;
+         // }
 } // end main

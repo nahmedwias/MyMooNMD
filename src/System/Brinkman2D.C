@@ -13,6 +13,7 @@
 
 
 /** ************************************************************************ */
+
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
                TCollection& coll, std::pair<int,int> velocity_pressure_orders,
                Brinkman2D::Matrix type)
@@ -31,6 +32,9 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
    p(&pressure_space, (char*)"p", (char*)"p", solution.block(2),
      solution.length(2))
 {
+    
+
+    
 // rebuild the matrix due to NSE type. We must be sure, that the rhs and solution
 // vector which we built above do fit the new matrix, too!
   switch (type)
@@ -42,14 +46,14 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
       matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
     break;
     case Brinkman2D::Matrix::Type3:
-      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+     matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
     break;
     case Brinkman2D::Matrix::Type4:
       matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
     break;
     case Brinkman2D::Matrix::Type14:
       matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
-      break;
+     break;
     default:
       ErrThrow("Unknown NSE type given to constructor of NSE2D::System_per_grid.");
   }
@@ -67,12 +71,13 @@ Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
+
 Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
              unsigned int reference_id)
     : systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10), errors()
 {
-  std::pair <int,int> 
+  std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
   // set the velocity and preesure spaces
@@ -82,30 +87,24 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-  // determine NSE TYPE from Database TODO change that handling!
-  Brinkman2D::Matrix type;
-  switch (TDatabase::ParamDB->NSTYPE)
-  {
-    case  1: type = Matrix::Type1; break;
-    case  2: type = Matrix::Type2; break;
-    case  3: type = Matrix::Type3; break;
-    case  4: type = Matrix::Type4; break;
-    case 14: type = Matrix::Type14; break;
-    default:
-      ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
-               " That NSE Block Matrix Type is unknown to class Brinkman2D.");
-  }
-  this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+
+  // we use always Matrix Type 14
+    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
-  
-  // print out some information  
+
+
+    
+
+
+  // print out some information
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
-  
+ 
+    
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
   Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
@@ -116,12 +115,15 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
   Output::print<1>("dof pressure       : ", setw(10), n_p);
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
+
   // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
+  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5
     || TDatabase::ParamDB->SOLVER_TYPE != 1)
     return;
   // else multigrid
-  
+
+
+    
   // create spaces, functions, matrices on coarser levels
   double *param = new double[2];
   param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
@@ -132,14 +134,16 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
   if(LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
+    
   // the matrix and rhs side on the finest grid are already constructed 
   // now construct all matrices, rhs, and solutions on coarser grids
   for(int i = LEVELS - 2; i >= 0; i--)
   {
     unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
     TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
   }
+
   
   // create multigrid-level-objects, must be coarsest first
   unsigned int i = 0;
@@ -156,80 +160,14 @@ Brinkman2D::~Brinkman2D()
 }
 
 /** ************************************************************************ */
+
+
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
                  &velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
   int pressure_order = velocity_pressure_orders.second;
-  int order = 0;
-  switch(velocity_order)
-  {
-    case 1: case 2: case 3: case 4: case 5:
-    case 12: case 13: case 14: case 15:
-      if(velocity_order > 10)
-        order = velocity_order-10;
-      else
-        order = velocity_order;
-      break;
-    case -1: case -2: case -3: case -4: case -5:
-    case -101:
-      order = velocity_order;
-      break;
-    // conforming fe spaces with bubbles on triangles 
-    case 22: case 23: case 24:
-      order = velocity_order;
-      break;
-      // discontinuous spaces 
-    case -11: case -12: case -13:
-      order = velocity_order*10;
-      break;
-  }
-  TDatabase::ParamDB->VELOCITY_SPACE = order;
-  velocity_pressure_orders.first = order;
-  switch(pressure_order)
-  {
-    case -4711:
-      switch(velocity_order)
-      {
-        case -1:
-        case -2:
-        case -3:
-        case -4:
-          // nonconforming pw (bi)linear velo/ pw constant pressure
-          // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
-          pressure_order = -velocity_order-1;
-          break; 
-        case 1: // discontinuous space 
-          pressure_order = 0;
-          break;
-        case 2: case 3: case 4: case 5:
-        // standard conforming velo and continuous pressure
-          pressure_order = velocity_order-1;
-          break;
-          // discontinuous pressure spaces 
-          // standard conforming velo and discontinuous pressure
-          // this is not stable on triangles !!!
-        case 12: case 13: case 14: case 15:
-          pressure_order = -(velocity_order-1)*10;
-          break;
-        case 22: case 23: case 24:
-          pressure_order = -(velocity_order-11)*10;
-          break;
-      }
-      break;
-    // continuous pressure spaces
-    case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
-      break;
-    // discontinuous spaces
-    case -11: case -12: case -13: case -14:
-      pressure_order = pressure_order*10;
-      break;
-  }
-  TDatabase::ParamDB->PRESSURE_SPACE  = pressure_order;
-  velocity_pressure_orders.second = pressure_order;
-  
-  Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
+   Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
 
@@ -243,16 +181,21 @@ void Brinkman2D::set_parameters()
 }
 
 /** ************************************************************************ */
+
+
 void Brinkman2D::assemble()
 {
+    
+   
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
 
+      
     const TFESpace2D * v_space = &s.velocity_space;
     const TFESpace2D * p_space = &s.pressure_space;
 
-    // declare the variables which Assemble2D needs and each nstype has to fill
+    // declare the variables which Assemble2D needs and each brinkmantype has to fill
     size_t N_FESpaces = 2;
 
     const TFESpace2D *fespmat[2] = {v_space, p_space};
@@ -265,7 +208,6 @@ void Brinkman2D::assemble()
     size_t N_Rhs = 2; //is 3 if NSE type is 4 or 14
     double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), nullptr}; //third place gets only filled
     const TFESpace2D *fesprhs[3] = {v_space, v_space, nullptr};  // if NSE type is 4 or 14
-
     BoundCondFunct2D * boundary_conditions[3] = {
       v_space->GetBoundCondition(), v_space->GetBoundCondition(),
       p_space->GetBoundCondition() };
@@ -277,97 +219,13 @@ void Brinkman2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(Brinkman2D_Galerkin, fe_functions,
+    LocalAssembling2D la(Brinkman2D_Galerkin1Stab2, fe_functions,
                      this->example.get_coeffs());
 
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
-
-    switch(TDatabase::ParamDB->NSTYPE)
-    {// switch over known Block Matrix types, treat each one individually,
-      // using a priori knowledge about the structure and the way it fits
-      // to the LocalAssembling2D object
-      // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
-      // we have to use reinterpret_casts because dynamic downcasting won't work here
-      // FIXME replace global switch by local checking of blockmatrix type!
-      case 1:
-        //CB DEBUG
-        if(blocks.size() != 3)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
-        n_sq_mat = 1;
-        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 2;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
-        break;
-      case 2:
-        //CB DEBUG
-        if(blocks.size() != 5)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-        n_sq_mat = 1;
-        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-
-        n_rect_mat = 4;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-
-        break;
-      case 3:
-        //CB DEBUG
-        if(blocks.size() != 6)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-        n_sq_mat = 4;
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 2;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-        break;
-
-      case 4:
-        //CB DEBUG
-        if(blocks.size() != 8)
-        {
-          ErrThrow("Wrong blocks.size() ", blocks.size());
-        }
-        //END DEBUG
-
-        n_sq_mat = 4;
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-
-        n_rect_mat = 4;
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-
-        RHSs[2] = s.rhs.block(2); // NSE type 4 includes pressure rhs
-        fesprhs[2]  = p_space;
-        N_Rhs = 3;
-
-        break;
-
-      case 14:
-        //CB DEBUG
+  
+// Note: We use only Type 14 for Brinkman (for now)
+      //CB DEBUG
         if(blocks.size() != 9)
         {
           ErrThrow("Wrong blocks.size() ", blocks.size());
@@ -390,22 +248,21 @@ void Brinkman2D::assemble()
         fesprhs[2]  = p_space;
         N_Rhs = 3;
 
-        break;
-      default:
-        ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
-            "I don't know how to pass its blocks to Assemble2D.");
-    }
-
+      
+ Output::print("assemble");
+ 
+      
     // call the assemble method with the information that has been patched together
     Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
-
+      Output::print("assemble");
+      
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
     {
-      switch(TDatabase::ParamDB->NSTYPE)
+      switch(TDatabase::ParamDB->BrinkmanTYPE)
       {
         case 1:
         case 2:
@@ -436,6 +293,8 @@ void Brinkman2D::assemble()
     //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
+      
+
   }
 }
 
@@ -484,6 +343,7 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
   else
     return false;
 }
+
 
 /** ************************************************************************ */
 void Brinkman2D::computeNormsOfResiduals()
@@ -656,7 +516,7 @@ TNSE_MGLevel* Brinkman2D::mg_levels(int i, System_per_grid& s)
   TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
 
   std::shared_ptr<TStructure> structure = B1T->GetStructure().GetTransposed();
-  switch(TDatabase::ParamDB->NSTYPE)
+  switch(TDatabase::ParamDB->BrinkmanTYPE)
   {
     case 1:
       mg_l = new TNSE_MGLevel1(i, A11, B1, B2, structure.get(),
@@ -695,6 +555,7 @@ TNSE_MGLevel* Brinkman2D::mg_levels(int i, System_per_grid& s)
   return mg_l;
 }
 
+
 /** ************************************************************************ */
 void Brinkman2D :: mg_solver()
 {
@@ -726,63 +587,34 @@ void Brinkman2D :: mg_solver()
   TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
   TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
 
-  switch(TDatabase::ParamDB->NSTYPE)
+  switch(TDatabase::ParamDB->BrinkmanTYPE)
   {
     case 1:
-      sqMat[0] = A11;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      MatVect = MatVect_NSE1;
-      Defect = Defect_NSE1;
-      break;
+          sqMat[0] = A11;
+          sqMat[1] = A12;
+          sqMat[2] = A21;
+          sqMat[3] = A22;
+          recMat[0] = B1;
+          recMat[1] = B2;
+          recMat[2] = B1T;
+          recMat[3] = B2T;
+          
+          MatVect = MatVect_NSE4;
+          Defect = Defect_NSE4;
+          break;
     case 2:
-      sqMat[0] = A11;
-      
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-      
-      MatVect = MatVect_NSE2;
-      Defect = Defect_NSE2;
-      break;
-    case 3:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      MatVect = MatVect_NSE3;
-      Defect = Defect_NSE3;
-      break;
-    case 4:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-
-      MatVect = MatVect_NSE4;
-      Defect = Defect_NSE4;
-      break;
-    case 14:
-      sqMat[0] = A11;
-      sqMat[1] = A12;
-      sqMat[2] = A21;
-      sqMat[3] = A22;
-      sqMat[4] = C;
-      recMat[0] = B1;
-      recMat[1] = B2;
-      recMat[2] = B1T;
-      recMat[3] = B2T;
-
-      MatVect = MatVect_EquOrd_NSE4;
-      Defect = Defect_EquOrd_NSE4;
-      break;
+          sqMat[0] = A11;
+          sqMat[1] = A12;
+          sqMat[2] = A21;
+          sqMat[3] = A22;
+          recMat[0] = B1;
+          recMat[1] = B2;
+          recMat[2] = B1T;
+          recMat[3] = B2T;
+          
+          MatVect = MatVect_NSE4;
+          Defect = Defect_NSE4;
+          break;
   }
 
 

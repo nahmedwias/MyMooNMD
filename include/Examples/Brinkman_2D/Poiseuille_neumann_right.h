@@ -1,4 +1,4 @@
-// Brinkman problem, Poiseuille-Problem
+// Brinkman problem, Poiseuille-Problem with neuman boundary on rhs
 // 
 // u(x,y) = (4*y*(1-y), 0) = (u1,u2)
 // p(x,y) = x-1/2
@@ -38,23 +38,37 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions (The boundary is Parametrized using Param \in [0,1])
 // ========================================================================
-void BoundCondition(int i, double Param, BoundCond &cond)
-{
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+void BoundCondition(int i, double t, BoundCond &cond)
+{ if (i == 1)
+        cond = NEUMANN;
+  else
+        cond = DIRICHLET;
+        TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
   switch(BdComp)
   {
-    case 0: value=0;
+    case 0: if (cond == neuman)
+        
+            else
+            value=0;
             break;
-    case 1: value=4*Param*(1-Param);
+    case 1: if (cond == neuman)
+          
+            else
+              value=4*Param*(1-Param);
             break;
-    case 2: value=0;
+    case 2: if (cond == neuman)
+          
+            else
+              value=0;
             break;
-    case 3: value=4*(1-Param)*(Param);
+    case 3: if (cond == neuman)
+          
+          else
+              value=4*Param*(1-Param);
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
@@ -65,13 +79,25 @@ void U2BoundValue(int BdComp, double Param, double &value)
 {
   switch(BdComp)
   {
-    case 0: value=0;
+    case 0: if (cond == neuman)
+          
+            else
+              value=0;
             break;
-    case 1: value=0;
+    case 1: if (cond == neuman)
+          
+            else
+              value=0;
             break;
-    case 2: value=0;
+    case 2: if (cond == neuman)
+          
+            else
+              value=0;
             break;
-    case 3: value=0;
+    case 3: if (cond == neuman)
+          
+            else
+              value=0;
             break;
     default: cout << "wrong boundary part number" << endl;
             break;

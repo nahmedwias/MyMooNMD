@@ -185,7 +185,7 @@ class Brinkman2D
     
     /** @brief constructor 
      * 
-     * This constructor calls the other constructor creating an Example_NSE2D
+     * This constructor calls the other constructor creating an Example_Brinkman2D
      * object for you. See there for more documentation.
      */
     Brinkman2D(const TDomain& domain, int reference_id = -4711);
@@ -302,7 +302,6 @@ class Brinkman2D
     /// @brief return the computed errors
     std::array<double, int(6)> get_errors();
 };
-
 
 
 #endif /* Brinkman2D_H_ */
