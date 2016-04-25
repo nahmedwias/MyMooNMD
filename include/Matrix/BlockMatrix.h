@@ -573,7 +573,7 @@ class BlockMatrix
      *  Is overridden in derrived class BlockFEMatrix, where a pointer cast has to
      *  be performed due to the storing of FEMatrices.
      */
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block);
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) const;
 
     /*!
      * Check if a given block fits into a given cell in the given transposed state.
