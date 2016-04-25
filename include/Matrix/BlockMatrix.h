@@ -222,6 +222,16 @@ class BlockMatrix
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const;
 
+
+    /// Combines a rectangular submatrix specified by its upper-leftmost
+    /// and lower-rightmost block into a TMatrix.
+    /// @param upper_left
+    /// @param lower_right
+    /// @return into a TMatrix.
+    virtual std::shared_ptr<TMatrix> get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const;
+
     // Getter.
 
     //! @return The number of different colors. Should be needed for testing only.
@@ -267,6 +277,17 @@ class BlockMatrix
 
     /// @brief total number of rows (added over all cells in a cell column)
     size_t  get_n_total_rows() const;
+
+    /**
+     * Spawn a new BlockMatrix which is a rectangular submatrix of this matrix.
+     *
+     * @param upper_left The upper leftmost block to include.
+     * @param lower_right The lower rightmost block to include.
+     * @return
+     */
+    BlockMatrix get_sub_blockmatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const;
 
     /**
      * Prints matrix coloring pattern and color_count_,
