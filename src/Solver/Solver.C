@@ -5,13 +5,14 @@
 #include <Iteration_gmres.h>
 #include <Iteration_jacobi.h>
 #include <Iteration_richardson.h>
+#include <Saddle_point_preconditioner.h>
 
-ParameterDatabase get_default_solver_parameters(size_t solver_type)
+ParameterDatabase get_default_solver_parameters()
 {
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
-  db.add("solver_type", solver_type,
+  db.add("solver_type", (size_t)2,
          "Determine which kind of solver should be used. This can be an "
          "iterative (1) or a direct (2) solver", (size_t)1, (size_t)2);
   
@@ -78,7 +79,8 @@ ParameterDatabase get_default_solver_parameters(size_t solver_type)
          "Determine the used preconditioner. Note that some of these are "
          "specific for some problem types.",
          {"no_preconditioner", "jacobi", "gauss_seidel", "multigrid", 
-           "least_square_commutator", "least_square_commutator_boundary"});
+          "semi_implicit_method_for_pressure_linked_equations",
+          "least_squares_commutator", "least_squares_commutator_boundary"});
   
   db.add("damping_factor", 1.0, "The damping in an iteration. A value of 1.0 "
          "means no damping while 0.0 would mean no progress. In general "
@@ -99,17 +101,10 @@ template <class LinearOperator, class Vector>
 Solver<LinearOperator, Vector>::Solver(const ParameterDatabase& param_db)
  : db("empty database to be replaced"), direct_solver()
 {
-  size_t solver_type;
-  try
-  {
-    solver_type = param_db["solver_type"];
-  }
-  catch(...)
-  {
-    solver_type = 2;
-  }
-  this->db = get_default_solver_parameters(solver_type);
+  this->db = get_default_solver_parameters();
   this->db.merge(param_db, false);
+  
+  this->db.info(true);
 }
 
 /* ************************************************************************** */
@@ -146,6 +141,7 @@ template <class LinearOperator, class Vector>
 std::shared_ptr<Preconditioner<Vector>> get_preconditioner(
   std::string preconditioner_name, const LinearOperator& matrix)
 {
+  Output::print("choosing a preconditioner, ", preconditioner_name);
   if(preconditioner_name == "no_preconditioner")
   {
     return std::make_shared<NoPreconditioner<Vector>>();
@@ -153,6 +149,22 @@ std::shared_ptr<Preconditioner<Vector>> get_preconditioner(
   else if(preconditioner_name == "jacobi")
   {
     return std::make_shared<Iteration_jacobi<LinearOperator, Vector>>(matrix);
+  }
+  else if(preconditioner_name == "least_squares_commutator")
+  {
+    return std::make_shared<Saddle_point_preconditioner>(
+      matrix, Saddle_point_preconditioner::type::lsc);
+  }
+  else if(preconditioner_name == "least_squares_commutator_boundary")
+  {
+    return std::make_shared<Saddle_point_preconditioner>(
+      matrix, Saddle_point_preconditioner::type::bd_lsc);
+  }
+  else if(preconditioner_name == 
+          "semi_implicit_method_for_pressure_linked_equations")
+  {
+    return std::make_shared<Saddle_point_preconditioner>(
+      matrix, Saddle_point_preconditioner::type::simple);
   }
   else
   {
