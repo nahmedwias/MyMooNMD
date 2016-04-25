@@ -69,6 +69,8 @@
 #include <FEMatrix.h>
 #include <FESpace.h>
 
+#include <MumpsWrapper.h> //for friend method
+
 class BlockFEMatrix : public BlockMatrix
 {
   public:
@@ -424,13 +426,6 @@ class BlockFEMatrix : public BlockMatrix
                                 size_t sub_row, size_t sub_col,
                                 double a = 1.0) const;
 
-    /** @brief this method is used to compare the number of actives in a block vector
-     * to the number of actives in test space
-     *  @param nActive number of actives
-     *  @param spaceNumber number of the test space to compare the actives
-     */
-    virtual void handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const;
     /**
      * Used as a developmental tool to discover slicing,
      * there should be no reason to use it anymore when the class is finished.
@@ -467,6 +462,22 @@ class BlockFEMatrix : public BlockMatrix
 #elif __3D__
     const TFESpace3D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
 #endif
+
+    /**
+     * @brief Get a shared pointer to a constant version of one of the blocks.
+     * Note that the non-active rows of that block might not be what you expect
+     * and will have to be read with care.
+     *
+     * @param[in] cell_row The cell row of the desired block.
+     * @param[out] cell_col The cell column of the desired block.
+     * @param[out] is_transposed A flag which shows true if the block is stored
+     * in transposed state, false if not so.
+     *
+     * @return A shared pointer to a block.
+     */
+    std::shared_ptr<const FEMatrix> get_block(
+        size_t cell_row, size_t cell_col, bool& is_transposed) const;
+
     /**
      * This method is the main interface to ParMooN solving procedures which
      * depend on the block structure.
@@ -612,6 +623,14 @@ class BlockFEMatrix : public BlockMatrix
     const TFESpace3D& get_test_space(size_t cell_row, size_t cell_column) const;
 #endif
 
+    /** @brief this method is used to compare the number of actives in a block vector
+     * to the number of actives in test space
+     *  @param nActive number of actives
+     *  @param spaceNumber number of the test space to compare the actives
+     */
+    virtual void handle_discovery_of_vector_actives(const int nActive,
+                                                    const int spaceNumber) const;
+
     /**
      * Overrides the method from the base class
      * and does nothing but print an error, when called. This ensures, that
@@ -655,7 +674,6 @@ class BlockFEMatrix : public BlockMatrix
     void scale_blocks_actives(
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
-
 
     // Special member functions.
 

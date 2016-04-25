@@ -196,7 +196,8 @@ void TMGLevel3D::Defect(double *sol, double *f, double *d, double &res)
   
   double t1,t2;
 #ifdef _MPI
-  int i, rank, *MasterOfDof, dof,numThreads= TDatabase::ParamDB->OMPNUMTHREADS;
+  const int* MasterOfDof;
+  int i, rank, dof,numThreads= TDatabase::ParamDB->OMPNUMTHREADS;
   double res_global=0,res1=0;
   
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
@@ -263,7 +264,7 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-  int *master =ParComm->GetMaster();
+  const int *master =ParComm->GetMaster();
 #endif
   
   // set Dirichlet nodes
@@ -344,7 +345,7 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-  int *master =ParComm->GetMaster();
+  const int *master =ParComm->GetMaster();
 #endif
 
   omega = Parameters[0];
@@ -451,7 +452,7 @@ void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
 #ifdef _MPI
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-  int *master =ParComm->GetMaster();
+  const int *master =ParComm->GetMaster();
 #endif
 
   //SHOULD THIS BE AFTER SETTING DRICHLET????
@@ -1098,7 +1099,7 @@ void TMGLevel3D::SOR_Re(double *sol, double *f, double *aux,
 
     //############################################# Hanging NODES ####################################################//  
       // set hanging nodes
-      int *master = ParComm->GetMaster();
+      const int *master = ParComm->GetMaster();
       for(i=N_Active;i<HangingNodeBound;i++)
       {
 	if(master[i] != rank)

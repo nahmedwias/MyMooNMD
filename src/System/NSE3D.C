@@ -18,7 +18,6 @@
 #include <MultiGridIte.h>
 
 #include <DirectSolver.h>
-#include <ParDirectSolver.h>
 #include <Output3D.h>
 
 NSE3D::SystemPerGrid::SystemPerGrid(const Example_NSE3D& example,
@@ -611,46 +610,10 @@ void NSE3D::solve()
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI//try out the Mumps interface in MPI case
-
-      // assume NSE Type 4
-      if (TDatabase::ParamDB->NSTYPE != 4)
-      {
-        ErrThrow("The old mumps interface, which is used here expects nse type 4 (or 2).")
-      }
-      // scramble together the matrices (NS_TYPE 4 assumed)
-      std::vector<std::shared_ptr<FEMatrix>> matrices = s.matrix_.get_blocks_TERRIBLY_UNSAFE();
-      TSquareMatrix3D* SQMATRICES[9];
-      TMatrix3D* MATRICES[6];
-
-      SQMATRICES[0] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(0).get());
-      SQMATRICES[1] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(1).get());
-      SQMATRICES[2] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(2).get());
-      SQMATRICES[3] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(4).get());
-      SQMATRICES[4] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(5).get());
-      SQMATRICES[5] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(6).get());
-      SQMATRICES[6] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(8).get());
-      SQMATRICES[7] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(9).get());
-      SQMATRICES[8] = reinterpret_cast<TSquareMatrix3D*>(matrices.at(10).get());
-
-      MATRICES[0] = reinterpret_cast<TMatrix3D*>(matrices.at(12).get());
-      MATRICES[1] = reinterpret_cast<TMatrix3D*>(matrices.at(13).get());
-      MATRICES[2] = reinterpret_cast<TMatrix3D*>(matrices.at(14).get());
-      MATRICES[3] = reinterpret_cast<TMatrix3D*>(matrices.at(3).get());
-      MATRICES[4] = reinterpret_cast<TMatrix3D*>(matrices.at(7).get());
-      MATRICES[5] = reinterpret_cast<TMatrix3D*>(matrices.at(11).get());
-
-      TDatabase::ParamDB->DSType = 2;
-
-      //construct a "ParDirectSolver"
-      TParDirectSolver mumps_wrapper(&s.parCommVelocity_,&s.parCommPressure_,SQMATRICES,MATRICES);
-
-      Output::print<>("I put up the solver.");
-
-      //do the solve with it
-      mumps_wrapper.Solve(s.solution_.get_entries(), s.rhs_.get_entries(), true);
-
-      Output::print<>("Yes I solved.");
+#elif _MPI
+    ErrThrow("This is the place to interface the mumps solver!");
+#else
+    ErrThrow("No OMPONLY solver (PARDISO) interfaced yet.");
 #endif
     }
   }

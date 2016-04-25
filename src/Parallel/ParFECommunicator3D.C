@@ -84,15 +84,6 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
     }
   }
 
-//  //CB DEBUG I want to see what gets sent here
-//  int mpi_rank;
-//  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-//  Output::print("Process ", mpi_rank, "\n",
-//                "Send buffer at ", Send_InfoMS, ".\n",
-//                "Sending: ", N_DofSendMS[0], " " ,N_DofSendMS[1] , " elements. ", ".\n",
-//                "Receive buffer at ", Recv_InfoMS, ".\n",
-//                "Receiving: ", N_DofRecvMS[0], " ", N_DofRecvMS[1], " elements.");
-//  //END DEBUG
   MPI_Alltoallv(Send_InfoMS,N_DofSendMS,sdisplMS,MPI_DOUBLE,Recv_InfoMS,N_DofRecvMS,rdisplMS,MPI_DOUBLE,Comm);
   
   for(i=0;i<N_InterfaceS;i++)  
@@ -343,56 +334,7 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::GatherToRoot(double *&GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root)
-{
-  int rank, size;
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-  
-  int i,j,k;
-  int *displ         = new int[size];
-  int *N_ElementsAll = new int[size];
-  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
 
-  displ[0] = 0;
-  for(i=1;i<size;i++)
-    displ[i] = displ[i-1] + N_ElementsAll[i-1];
-  
-  MPI_Gatherv(LocalArray, LocalSize, MPI_DOUBLE, GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, root, Comm);
-  
-//   if(rank == root)
-//   {
-//     printf("\nglobalSize=%d\n",GlobalSize);
-//     for(i=0;i<GlobalSize;i++)
-//     {
-//       printf("global[%d]=%lf\n",i,GlobalArray[i]);
-//     }
-//   }
-  
-  delete [] displ;		displ         = NULL;
-  delete [] N_ElementsAll;	N_ElementsAll = NULL;
-}
-
-void TParFECommunicator3D::ScatterFromRoot(double *GlobalArray, int &GlobalSize, double *LocalArray, int LocalSize, int root)
-{
-  int rank, size;
-  MPI_Comm_rank(Comm, &rank);
-  MPI_Comm_size(Comm, &size);
-  
-  int i,j,k;
-  int *displ         = new int[size];
-  int *N_ElementsAll = new int[size];
-  MPI_Allgather(&LocalSize, 1, MPI_INT, N_ElementsAll, 1, MPI_INT, Comm);
-
-  displ[0] = 0;
-  for(i=1;i<size;i++)
-    displ[i] = displ[i-1] + N_ElementsAll[i-1];
-  
-  MPI_Scatterv(GlobalArray, N_ElementsAll, displ, MPI_DOUBLE, LocalArray, LocalSize, MPI_DOUBLE, root, Comm);
-  
-  delete [] displ;		displ         = NULL;
-  delete [] N_ElementsAll;	N_ElementsAll = NULL;
-}
 
 void TParFECommunicator3D::CommUpdate(double *sol, double *rhs)
 {

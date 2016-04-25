@@ -42,10 +42,10 @@ class TParFEMapper3D
     //! Number of degrees of freedom in the process.
     int N_Dof;
     
-    //! Row Pointer of the (TStructure of the) TMatrix the mapper belongs to.
+    //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
     int* RowPtr;
 
-    //! KCol Pointer of the (TStructure of the) TMatrix the mapper belongs to.
+    //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
     int* KCol;
     
     //! The underlying fe space for which the communications are needed.
@@ -227,6 +227,18 @@ class TParFEMapper3D
     
     int* Get_Local2Global()
     { return Local2Global;}
+
+    /// Return number of dimensions the mapper is used for.
+    int get_n_dim() const
+    {
+      return N_Dim;
+    }
+
+    /// Return a pointer to the fe space this communicator belongs to.
+    const TFESpace3D* get_fe_space() const
+    {
+      return FESpace;
+    }
 
 #ifdef _HYBRID
     void Color(int &numColors, int *&ptrColors, char type);
