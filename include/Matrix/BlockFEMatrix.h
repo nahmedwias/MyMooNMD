@@ -584,6 +584,12 @@ class BlockFEMatrix : public BlockMatrix
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const override;
 
+    /// Returns a TMatrix representing a rectangular submatrix.
+    /// Contains Dirichlet handling and pressure correction - the whole shebang.
+    virtual std::shared_ptr<TMatrix> get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const override;
+
     /**
      * Spawns a new BlockFEMatrix taken from the Block diagonal of this,
      * maintaining the coloring pattern.

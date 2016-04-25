@@ -866,36 +866,56 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
 
 std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
 {
+  //delegate the business far down
+  return get_combined_submatrix({0,0},{n_cell_rows_-1, n_cell_columns_-1});
+}
+/* ************************************************************************* */
+
+std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
+    std::pair<size_t,size_t> upper_left,
+    std::pair<size_t,size_t> lower_right) const
+{
+  //let base class do as much work as possible
+  std::shared_ptr<TMatrix> sub_cmat =
+      this->BlockMatrix::get_combined_submatrix(upper_left, lower_right);
+
+  size_t r_first = upper_left.first;
+  size_t r_last  = lower_right.first;
+  size_t c_first = upper_left.second;
+  size_t c_last  = lower_right.second;
+
+
   //check for empty diagonal blocks with non-actives TODO Is there a need to fix this?
   for(size_t diag = 0; diag < n_cell_rows_; ++diag)
   {
+    bool diag_in =     (r_first <= diag) && (r_last >= diag)
+                    && (c_first <= diag) && (c_last >= diag);
+
+    if(!diag_in)
+      continue; // this diag block is not requested anyway
     if(this->cell_grid_[diag][diag].block_->GetN_Entries()==0)
     {//zero-block on diagonal
       if(get_n_row_actives(diag) != get_n_rows_in_cell(diag, diag))
       {// This is trouble, because the baseclass will not place any entries at all
-       // into the combined matrix where this empty block stands.
-       // This means, that there will be no entries on the diagonal for the
-       // BlockFEMatrix to put ones to - will result in 0 rows!
+        // into the combined matrix where this empty block stands.
+        // This means, that there will be no entries on the diagonal for the
+        // BlockFEMatrix to put ones to - will result in 0 rows!
         Output::print("Warning! Trying to get combined matrix of a BlockFEMatrix "
             "with a zero block on a diagonal with test-space non-actives.");
       }
     }
   }
 
-  //let the base class put up the combined matrix as it can
-  std::shared_ptr<TMatrix> combined_matrix = BlockMatrix::get_combined_matrix();
-
-  // ...and revise all the dirichlet rows!
-
+  // A: CORRECTIONS DUE TO DIRICHLET ROWS
   //get pointers in the matrix
-  const int* rowptr = combined_matrix->GetRowPtr();
-  int* kcolptr = combined_matrix->GetKCol();
-  double* entries = combined_matrix->GetEntries();
+  const int* rowptr = sub_cmat->GetRowPtr();
+  int* kcolptr = sub_cmat->GetKCol();
+  double* entries = sub_cmat->GetEntries();
 
   size_t row_offset = 0;
 
-  //loop through all cell rows
-  for(size_t i =0; i < this->n_cell_rows_ ;++i)
+  //loop through all relevant cell rows
+  for(size_t i = r_first; i <= r_last ;++i)
   {
     size_t n_actives = this->test_spaces_rowwise_.at(i)->GetN_ActiveDegrees();
     size_t n_non_actives = this->test_spaces_rowwise_.at(i)->GetN_Dirichlet();
@@ -919,65 +939,55 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_matrix() const
     row_offset += n_local_rows;
   }
 
+  //B: CORRECTIONS DUE TO PRESSURE PROJECTION
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {// TODO: remove database dependency
    // TODO: this entire business is still a mess!!!
    // check that its really a Navier-Stokes matrices
-    if( n_cell_rows_ == 3 && n_cell_columns_ ==3 ) //2D case
+#ifdef __2D__
+    size_t dim = 2;
+#endif
+#ifdef __3D__
+    size_t dim = 3;
+#endif
+    if( n_cell_rows_ == dim + 1 && n_cell_columns_ == dim + 1
+        && r_first <= dim && r_last >= dim  //the relevant block row is contained
+       )
     {
       // number of velocity dofs
       int n_rows = this->get_blocks().at(0)->GetN_Rows();
 
       // find the first row of the third block column
-      int begin = rowptr[2*n_rows];
-      int end   = rowptr[2*n_rows+1];
-      
-      int diagonal = end-1;
-      // set entries to zero
-      for(int j=begin;j<end;j++)
-      {
-        entries[j] = 0;
-        if(kcolptr[j] >= 2*n_rows && diagonal == end-1)
-          diagonal = j;
-      }      
-      entries[diagonal] = 1;          
-      kcolptr[diagonal] = 2*n_rows;
-      // if there was already an entry at the diagonal in this row, we use
-      // that one (usually for NSTYPE 14). Otherwise we reset the next
-      // entry (to the right) in this row: That means we change its column.
-      // That entry is set to be one. If there is no entry with a larger
-      // column, we use the last entry in this row (diagonal == end-1). 
-    }
-    if( n_cell_rows_ == 4 && n_cell_columns_ == 4 ) //3D case
-    {
-      // number of velocity dofs
-      int n_rows = this->get_blocks().at(0)->GetN_Rows();
+      size_t skipped_block_rows = r_first;
+      int begin = rowptr[(dim - skipped_block_rows )*n_rows];
+      int end   = rowptr[(dim - skipped_block_rows)*n_rows+1]; //now we have the row
 
-      // find the first row of the fourth block column
-      int begin = rowptr[3*n_rows];
-      int end   = rowptr[3*n_rows+1];
-
-      int diagonal = end-1;
-      // set entries to zero
-      for(int j=begin;j<end;j++)
+      size_t skipped_block_cols = c_first;
+      int future_diagonal = end -1;
+      int diagonal_relative = (dim-skipped_block_cols)*n_rows;
+      for(int j = begin; j<end;++j)
       {
-        entries[j] = 0;
-        if(kcolptr[j] >= 3*n_rows && diagonal == end-1)
-          diagonal = j;
+        entries[j]=0;
+        if(kcolptr[j] >= dim*diagonal_relative && future_diagonal == end-1)
+          future_diagonal = j;
       }
-      entries[diagonal] = 1;
-      kcolptr[diagonal] = 3*n_rows;
+      entries[future_diagonal] = 1;
+      kcolptr[future_diagonal] = diagonal_relative;
+
     }
   }
 
   // Remove all zero entries from the structure and the entries array
   // TODO doing this here is very slow and it should be changed,
   // but removing zeroes is important for the interface with direct solvers.
-  combined_matrix->remove_zeros(0);
+  sub_cmat->remove_zeros(0);
 
-  return combined_matrix;
+  return sub_cmat;
+
 }
+
 /* ************************************************************************* */
+
 BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) const
 {
   //check input
@@ -999,6 +1009,8 @@ BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) co
   BlockFEMatrix sub_matrix(spaces); //construct empty blockfematrix!
 
   // step 2: fill in the blocks - maintaining the correct coloring
+  // TODO this is copy-paste identical to corresp. part in
+  // BlockMatrix::get_subblockmatrix - put in private method!
   std::vector< int > known_colors;
   std::vector< std::shared_ptr<TMatrix> > known_mats; //actually FEMatrices...
 
