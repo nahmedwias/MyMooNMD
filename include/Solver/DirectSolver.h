@@ -41,6 +41,12 @@ class DirectSolver
     DirectSolver(const BlockMatrix& matrix, DirectSolverTypes type);
     DirectSolver(const BlockFEMatrix& matrix, DirectSolverTypes type);
     
+    /** @brief compute the factorization of a matrix, ready to call solve
+     * 
+     * This makes a copy of the matrix and calls the private constructor.
+     */
+    DirectSolver(const TMatrix matrix, DirectSolverTypes type);
+    
     /** @brief This class is not copy constructible */
     DirectSolver(const DirectSolver&) = delete;
 
@@ -59,12 +65,25 @@ class DirectSolver
     /**
      * @brief Solves the equation A*(solution)=rhs for solution.
      * 
-     * This calls the other (private) method solve.
+     * This calls the other method solve.
      *
      * @param rhs the right-hand side of the problem Ax=b
      * @param solution vector to store the solution into
      */
     void solve(const BlockVector& rhs, BlockVector& solution);
+    
+    /**
+     * @brief Solves the equation A*(solution)=rhs for solution.
+     * 
+     * The computed solution is stored in the provided array solution.
+     * 
+     * @note Please use the other method solve taking BlockVectors. Here it can
+     * not be checked if the pointers really point to valid arrays.
+     *
+     * @param rhs the right-hand side of the problem Ax=b
+     * @param solution vector to store the solution into
+     */
+    void solve(const double* rhs, double* solution);
     
   private:
     /** @brief type of direct solver used */
@@ -117,16 +136,6 @@ class DirectSolver
      * @param  matrix  the matrix A where Ax=b
      */
     DirectSolver(std::shared_ptr<TMatrix> matrix, DirectSolverTypes type);
-    
-    /**
-     * @brief Solves the equation A*(solution)=rhs for solution.
-     * 
-     * The computed solution is stored in the provided array solution.
-     *
-     * @param rhs the right-hand side of the problem Ax=b
-     * @param solution vector to store the solution into
-     */
-    void solve(const double* rhs, double* solution);
     
     /** @brief compute symbolic factorization */
     void symbolic_factorize();
