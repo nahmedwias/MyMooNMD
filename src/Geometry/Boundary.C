@@ -124,9 +124,11 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	if ( fabs(sqrt(vp1)+sqrt(vp2)-sqrt(p1p2))<1e-10 ) {
 	  t = sqrt(vp1/p1p2);
 	  // if t=1, the vertex shall belong to the next line (with t=0)
-	  if (t<1)
+	  if ( t<(1-1e-8)) {
 	    t = t+k;
 	    return i;
+	    }
+	  //else { cout << " --- " << t  << endl;}
 	}
 	
       } else if (parts[i][k].type == circle) {

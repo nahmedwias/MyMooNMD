@@ -106,9 +106,9 @@ class Mesh
   void writeToMesh(std::string filename);
 
   /**@brief write mesh to a file .xGEO (extended ParMooN format)
-     @param filename is the output geofile
      @param prmfile is an input prm file describing the boundary
-     @attention the prm file must be consistent with the geometry
+     @attention the Boundary object must have been initialized
+     (from a  prm file consistent with the geometry)
      @warning it works only for 2D at the moment
   **/
   void writeToGEO(std::string filename);

@@ -452,7 +452,7 @@ void Time_CD2D::output(int m, int& image)
     // add the functions the first time
     if (image==0) 
     {
-      Output::print("  Add FE Function ", fe_function.GetName(), " to output class ");
+      Output::print<1>("  Add FE Function ", fe_function.GetName(), " for output ");
       timeDependentOutput.addFEFunction(&fe_function);
     }
     // write output

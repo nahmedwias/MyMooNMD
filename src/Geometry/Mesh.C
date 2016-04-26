@@ -114,7 +114,7 @@ void Mesh::readFromFile(std::string filename)
       for (unsigned int i=0;i<numberOfTriangles;i++) {
 	for (unsigned int k=0;k<3; k++) 
 	  ifile >> triangle[i].nodes[k];
-	triangle[i].reference;
+	ifile >> triangle[i].reference;
       }
     }
     
@@ -309,11 +309,19 @@ void Mesh::writeToGEO(std::string geoFilename)
     exit(-1);
   }
 
+  // check errors
   if ((dimension==2)&(boundary.parts.size()==0)) {
     Output::print(" *** Error(Mesh::writeToGEO) I need a boundary description (PRM file) in order to write a 2D GEO file");
     exit(-1);
-  }  
+  }
 
+  //if (dimension>2) {
+  //  Output::print(" *** Error(Mesh::writeToGEO) I cannot write GEO file in dimension larger than 2");
+  //exit(-1);
+  //}
+  // ---------------------
+
+    
   // write output (x)GEO file
   Output::print(" writing mesh on ", geoFilename);
 
@@ -369,7 +377,7 @@ void Mesh::writeToGEO(std::string geoFilename)
     // check if the vertex is on the boundary
     partID = boundary.isOnComponent(vertex[i].x,vertex[i].y,localParam);
     if (partID>=0) {
-      Output::print("Vertex ",vertex[i].x," ",vertex[i].y," is on part ", partID+1, "; t = ", localParam);
+      Output::print("Vertex ",vertex[i].x," ",vertex[i].y," is on part ", partID+1, "; t = ", localParam, " --> ", localParam, " 0.0");
       geofile << localParam << " 0.000000000 " << endl;
       // note: a boundary vertex takes the reference of its boundary component+1
       vertex[i].reference = partID+1;
@@ -387,14 +395,18 @@ void Mesh::writeToGEO(std::string geoFilename)
       for (unsigned int k=0; k<nVertexPerElem; k++) {
 	geofile << triangle[i].nodes[k] << " " ;
       }
-      geofile << triangle[i].reference;
+      if (writeXgeo) {
+	geofile << triangle[i].reference;
+      }
       geofile << endl;
     } 
     if (nVertexPerElem==4) {
       for (unsigned int k=0; k<nVertexPerElem; k++) { 
 	geofile << quad[i].nodes[k] << " " ;
       }
-      geofile << quad[i].reference;
+      if (writeXgeo) {
+	geofile << quad[i].reference;
+      }
       geofile << endl;
     }
   } // for elements

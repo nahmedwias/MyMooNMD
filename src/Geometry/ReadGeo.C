@@ -212,7 +212,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
   
   delete [] KVEL;
-
   //KVEL = new int[++maxElpV * N_Vertices];
   maxElpV = maxElpV+1;
   KVEL = new int[maxElpV * N_Vertices];
@@ -227,8 +226,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       KVEL[j + KVEL[j]] = i / NVE;
     }
   }
-
-
+  
   // generate vertices
   //cout << " Domain::MakeGrid() generate " << N_Vertices << " vertices " << endl;
   NewVertices = new TVertex*[N_Vertices];
@@ -269,7 +267,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       NewVertices[i] = new TVertex(DCORVG[2*i], DCORVG[2*i+1]);
     } 
   } // for (i=0;i<N_Vertices;i++) {
-
   // set bounding box
   StartX = Xmin;
   StartY = Ymin;
@@ -320,6 +317,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     // set the index in the cell list
     CellTree[i]->SetCellIndex(i);
   }
+  cout << " Domain::MakeGrid() creating 2D grid " << endl;
   
   // initialize iterators
   TDatabase::IteratorDB[It_EQ]->SetParam(this);
@@ -341,7 +339,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   for (int i=0;i<N_RootCells;i++)
   {
     N_Edges = CellTree[i]->GetN_Edges();
-
+    cout << " Domain::MakeGrid() creating 2D grid " << i << endl;
+ 
     for (j=0;j<N_Edges;j++)
     {
       a = KVERT[NVE*i + j] - 1;
@@ -615,7 +614,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       }
     }
   } //for (i=0;i<N_RootCells;i++) {
-
+  
   // free memory
   delete [] KVEL;
   delete [] NewVertices;
@@ -2858,29 +2857,4 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 
 #endif // __2D__
 
-bool TDomain::checkIfxGEO(const char* GEO)
-  {
-      bool isXgeo{false};
-      // check if input file is an extended geo file (.xGEO)
-      int nn=0;
-      while (GEO[nn] != 0)
-      {
-        ++nn;
-      }
-
-      //check if we found the correct place in the char arary
-      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
-      {
-        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
-            "filename ends on '.GEO' or '.xGEO')" );
-      }
-
-      if (GEO[nn-4]=='x')
-      {
-        if(TDatabase::ParamDB->SC_VERBOSE>1)
-          cout << " *** reading xGEO file (with physical references) ***" << endl;
-        isXgeo = true;
-      }
-      return isXgeo;
-  }
 
