@@ -1,14 +1,28 @@
 /*!
  * @brief Main program for a system of coupled time dependent convection-
- * diffusion reaction equations, which are influenced by a time-dependent flow.
+ * diffusion reaction equations, which are influenced by a time-dependent flow
+ * and coupled to a particle distribution.
  *
- * This main program starts is life as one which adminsters a one-way coupling
- * between a (simple) Time_NSE2D obejct (flow) and a Time_CD2D object
- * (concentration). Later the Time_CD2D object will be replaced by an
- * instance of the coupled module.
+ * This will be the main program for the first simulation for my PhD Thesis
+ * and shall be used to simulate a flow crystallizer as reported by Eder et al.
+ * 2010.
+ *
+ * We aim to use
+ *    - an analytical or precomputed stationary flow field (e.g. Hagen--Poiseuille)
+ * and within a time loop
+ *    - the module for coupled Time_CD2D equations (couple temperature and one species)
+ *    - the Brush interface module for stochastic calculation of the particles
+ *
+ * Tasks:
+ *  - write example file for Eder example
+ *  - enable flow and psd to get into the coupling module
+ *  - interface Brush
+ *
+ * Questions:
+ *  - which part of the program will take care of particle growth??
  *
  * @author Clemens Bartsch
- * @date February 3, 2016
+ * @date April 22, 2016
  */
 
 #include <Domain.h>
