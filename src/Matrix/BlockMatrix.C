@@ -180,6 +180,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       check_vector_fits_image(y);
 
       //tests passed: reset all values in 'y' to 0 and delegate to apply_scaled_add
+      y.reset();
       apply_scaled_add(x, y, 1.0);
     }
 
@@ -257,7 +258,9 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", i, " is ", b.length(i),
                    "which does not fit n_rows_in_cell ", get_n_rows_in_cell(i, 0));
         }
-        handle_discovery_of_vector_actives(b.active(i), i);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(b.length(i)-b.active(i), i);
       }
     }
 
@@ -281,7 +284,9 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           ErrThrow("Length of Vector Block ", j, " is ", x.length(j),
                    "which does not fit n_columns_in_cell ", get_n_columns_in_cell(0,j));
         }
-        handle_discovery_of_vector_actives(x.active(j), j);
+        // this method is (indirectly) called from BlockFEMatrix as well, so we
+        // should not print a warning here.
+        //handle_discovery_of_vector_non_actives(x.length(j)-x.active(j), j);
       }
     }
 
@@ -618,6 +623,51 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
 
       scale_blocks(scaling_factor, input_tuples);
     }
+
+/* ************************************************************************** */
+double BlockMatrix::get(unsigned int i, unsigned int j) const
+{
+  // first find the block in which the indices are in
+  size_t block_row = 0;
+  size_t block_col = 0;
+  
+  unsigned int row = i; // local copy for a better error message
+  unsigned int col = j; // local copy for a better error message
+  
+  for(; block_row < this->n_cell_columns_ ; ++block_row)
+  {
+    if(row >= this->cell_grid_[block_row][0].n_columns_)
+      row -= this->cell_grid_[block_row][0].n_columns_;
+    else
+      // found the block
+      break;
+  }
+  if(block_row == this->n_cell_columns_)
+    ErrThrow("could not find an entry in row ", i, ". There are ",
+             this->get_n_total_rows(), " rows in this BlockMatrix");
+  for(; block_col < this->n_cell_columns_ ; ++block_col)
+  {
+    if(col >= this->cell_grid_[block_row][block_col].n_columns_)
+      col -= this->cell_grid_[block_row][block_col].n_columns_;
+    else
+      // found the block
+      break;
+  }
+  if(block_col == this->n_cell_columns_)
+    ErrThrow("could not find an entry in column ", j, ". There are ",
+             this->get_n_total_columns(), " columns in this BlockMatrix");
+  
+  auto block = this->cell_grid_[block_row][block_col].block_;
+  try
+  {
+    double ret = block->get(row, col);
+    return ret;
+  }
+  catch(...) // entry is not in the sparsity structure
+  {
+    return 0.;
+  }
+}
 
     /* ************************************************************************* */
     // IMPLEMENTATION OF SPECIAL MEMBER FUNCTIONS
@@ -1246,12 +1296,12 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::handle_discovery_of_vector_actives(const int nActive, 
-                                                    const int spaceNumber) const
+    void BlockMatrix::handle_discovery_of_vector_non_actives(
+      const int n_nonActive, const int spaceNumber) const
     {
-      if(nActive != 0)
+      if(n_nonActive != 0)
       {
-        //maybe put to virtual method: handle_discovery_of_vector_actives
+        //maybe put to virtual method: handle_discovery_of_vector_non_actives
         // give a warning if the vector has actives - the matrix has definitely not!
         Output::print<2>("Warning! The BlockVector has actives, but BlockMatrix does not."
                          " Did you want to use a BlockFEMatrix instead?");

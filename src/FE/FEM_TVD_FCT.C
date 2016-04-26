@@ -13,7 +13,7 @@
 
 #include <Database.h>
 #include <LinAlg.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
 #include <SquareMatrix2D.h>
 #include <DiscreteForm2D.h>
@@ -804,7 +804,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
       TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 100;
       solver_param_d[0] = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
       TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-15;
-      Solver(A, aux_v, tilde_u);
+      OldSolver(A, aux_v, tilde_u);
 
       // reset solver
       TDatabase::ParamDB->SC_SOLVER_SCALAR = solver_param[0];
@@ -911,7 +911,7 @@ void FEM_FCT_ForConvDiff(TSquareMatrix3D *M_C,TSquareMatrix3D *A,
           solver_param_d[0] = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
           TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-11;
 
-          Solver(M_C, R_minus, aux_v);
+          OldSolver(M_C, R_minus, aux_v);
 
           // reset solver
           TDatabase::ParamDB->SC_SOLVER_SCALAR = solver_param[0];
