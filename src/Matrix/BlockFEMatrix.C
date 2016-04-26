@@ -1036,7 +1036,6 @@ BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) co
       }
 
       size_t new_color = std::distance(known_colors.begin(), known); //position in vector
-      Output::print(new_color);
       size_t transp = this->cell_grid_[r][c].is_transposed_;
       size_t new_r = r-first;       // force element and color
       size_t new_c = c-first;       // into the new sub matrix' cell grid

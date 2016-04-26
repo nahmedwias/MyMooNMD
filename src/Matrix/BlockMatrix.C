@@ -669,6 +669,21 @@ double BlockMatrix::get(unsigned int i, unsigned int j) const
   }
 }
 
+/* ************************************************************************** */
+std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
+                                                      size_t cell_col,
+                                                      bool& is_transposed) const
+{
+  //find out the transposed state
+  const BlockMatrix::CellInfo& cell = cell_grid_.at(cell_row).at(cell_col);
+  is_transposed = cell.is_transposed_;
+
+  //cast const and FEMatrix (range check is done via "at")
+  //std::shared_ptr<const TMatrix> shared
+  //= std::dynamic_pointer_cast<const TMatrix>(cell.block_);
+  return cell.block_;
+}
+
     /* ************************************************************************* */
     // IMPLEMENTATION OF SPECIAL MEMBER FUNCTIONS
     /* ************************************************************************* */
