@@ -357,6 +357,21 @@ class BlockMatrix
     /// structure. In that case it will simply return 0.
     double get(unsigned int i, unsigned int j) const;
 
+    /**
+     * @brief Get a shared pointer to a constant version of one of the blocks.
+     * Note that the non-active rows of that block might not be what you expect
+     * and will have to be read with care.
+     *
+     * @param[in] cell_row The cell row of the desired block.
+     * @param[in] cell_col The cell column of the desired block.
+     * @param[out] is_transposed A flag which shows true if the block is stored
+     * in transposed state, false if not so.
+     *
+     * @return A shared pointer to a block.
+     */
+    std::shared_ptr<const TMatrix> get_block(
+        size_t cell_row, size_t cell_col, bool& is_transposed) const;
+    
     // Special member functions.
 
     /** @brief copy constructor

@@ -479,7 +479,7 @@ class BlockFEMatrix : public BlockMatrix
      * and will have to be read with care.
      *
      * @param[in] cell_row The cell row of the desired block.
-     * @param[out] cell_col The cell column of the desired block.
+     * @param[in] cell_col The cell column of the desired block.
      * @param[out] is_transposed A flag which shows true if the block is stored
      * in transposed state, false if not so.
      *
