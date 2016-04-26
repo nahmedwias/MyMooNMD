@@ -584,6 +584,38 @@ class BlockFEMatrix : public BlockMatrix
      */
     virtual std::shared_ptr<TMatrix> get_combined_matrix() const override;
 
+    /// Returns a TMatrix representing a rectangular submatrix.
+    /// Contains Dirichlet handling and pressure correction - the whole shebang.
+    virtual std::shared_ptr<TMatrix> get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const override;
+
+    /**
+     * Spawns a new BlockFEMatrix taken from the Block diagonal of this,
+     * maintaining the coloring pattern.
+     *
+     * E.g. if we have a block fe matrix structure like
+     *  A A A B^T
+     *  A A A B^T
+     *  A A A B^T
+     *  B B B C,
+     *  calling get_sub_blockfematrix(0,1) will give
+     *
+     *  A A
+     *  A A
+     *
+     *  and calling get_sub_blockfematrix(1,3) will give
+     *
+     *  A A B^T
+     *  A A B^T
+     *  B B C.
+     *
+     * @param first The upper-leftmost diagonal block to include.
+     * @param last The lower-rightmost diagonal block to include.
+     */
+    BlockFEMatrix get_sub_blockfematrix(
+        size_t first, size_t last) const;
+
     /**
      * This method returns the number of actives of a certain cell column's
      * ansatz-space. It is needed only for the templated constructor of
@@ -739,7 +771,7 @@ class BlockFEMatrix : public BlockMatrix
      * This quirky method is needed due to the base class storing TMatrices only,
      * but this class dealing with FEMatrices.
      */
-    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) override;
+    virtual std::shared_ptr<TMatrix> create_block_shared_pointer(const TMatrix& block) const override;
 
     /**
      * Actual implementation of the scale actives method, whose interface is given

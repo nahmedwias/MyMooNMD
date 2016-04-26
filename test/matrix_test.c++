@@ -217,9 +217,9 @@ int main(int argc, char **argv)
       ErrThrow("wrong results after multiplication with transpose from right, ",
                "matrix A");
     delete matAAT;
-    
+
     std::vector<double> scale{1.0, 2.0, -3.0};
-    TMatrix * matCCT = matC.multiply_with_transpose_from_right(scale);
+    matAAT = matC.multiply_with_transpose_from_right(scale);
     if(!equal(matAAT->get(0, 0), -143) || !equal(matAAT->get(0, 1), 63)
        || !equal(matAAT->get(0, 2), -288) || !equal(matAAT->get(0, 3), -245) )
       ErrThrow("wrong results after multiplication with transpose from right, ",
@@ -236,8 +236,8 @@ int main(int argc, char **argv)
        || !equal(matAAT->get(3, 2), -504) || !equal(matAAT->get(3, 3), -419) )
       ErrThrow("wrong results after multiplication with transpose from right, ",
                "matrix C, fourth row");
-    matCCT->PrintFull("CCT");
-    delete matCCT;
+    matAAT->PrintFull("AAT");
+    delete matAAT;
   }
   // ##########################################################################
   // ##########################################################################    

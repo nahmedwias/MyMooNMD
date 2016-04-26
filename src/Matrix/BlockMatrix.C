@@ -292,7 +292,8 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       // such thate those stored as transposed really get transposed
 
       std::vector<std::vector<std::shared_ptr<TMatrix>>> temp_block_grid
-      (n_cell_rows_, std::vector<std::shared_ptr<TMatrix>>(n_cell_rows_,nullptr));
+      (n_cell_rows_, 
+       std::vector<std::shared_ptr<TMatrix>>(n_cell_columns_,nullptr));
 
       // store smart pointers to the already treated transposed colors
       std::vector<std::shared_ptr<TMatrix>> treated_transp_colors{color_count_.size(), nullptr};
@@ -385,6 +386,15 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       return combined;
     }
 
+    std::shared_ptr<TMatrix> BlockMatrix::get_combined_submatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const
+    {
+      //delegate the work
+      BlockMatrix temp = get_sub_blockmatrix(upper_left, lower_right);
+      return temp.get_combined_matrix();
+    }
+
     /// @brief total number of columns(> n_block_columns)
     size_t BlockMatrix::get_n_total_columns() const
     { // sum the number of columns in the first block row
@@ -421,6 +431,89 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       }
       return n_total_rows;
     }
+
+    BlockMatrix BlockMatrix::get_sub_blockmatrix(
+        std::pair<size_t,size_t> upper_left,
+        std::pair<size_t,size_t> lower_right) const
+    {
+      size_t r_first = upper_left.first;
+      size_t r_last  = lower_right.first;
+      size_t c_first = upper_left.second;
+      size_t c_last  = lower_right.second;
+
+      //input check
+      if(r_first > r_last)
+        ErrThrow("upper_left.first > lower_right.first");
+      if(c_first > c_last)
+        ErrThrow("upper_left.second > lower_right.second");
+      if(r_last >= n_cell_rows_)
+        ErrThrow("lower_right.first >= this->n_cell_rows_");
+      if(c_last >= n_cell_columns_)
+        ErrThrow("lower_right.second >= n_cell_columns_");
+
+      //step 1: construct a blanco sumatrix of correct dimensions
+      std::vector<size_t> r_sizes;
+      std::vector<size_t> c_sizes;
+      for(size_t r = upper_left.first; r<=lower_right.first ; ++r)
+      {//fill r_sizes
+        r_sizes.push_back(this->cell_grid_[r][0].n_rows_);
+      }
+      for(size_t c = upper_left.second; c <= lower_right.second; ++c)
+      {
+        c_sizes.push_back(this->cell_grid_[0][c].n_columns_);
+      }
+      BlockMatrix sub_matrix(r_sizes, c_sizes);
+
+      //step 2: fill in the correctly colored blocks
+      // step 2: fill in the blocks - maintaining the correct coloring
+      std::vector< int > known_colors;
+      std::vector< std::shared_ptr<TMatrix> > known_mats; //actually FEMatrices...
+
+      for( size_t r = r_first; r < r_last + 1; ++r)
+      {
+        for( size_t c = c_first; c < c_last + 1; ++c)
+        {
+
+          int old_color = this->cell_grid_[r][c].color_;
+          auto known = std::find(known_colors.begin(), known_colors.end(), old_color);
+
+          if(known == known_colors.end())
+          {//case: this color appears for the first time
+            known_colors.push_back(old_color);
+
+            //this is actually a shared ptr to FEMatrix...
+            std::shared_ptr<TMatrix> new_mat =
+                create_block_shared_pointer(*cell_grid_[r][c].block_.get());
+
+            known_mats.push_back(new_mat);
+            //reset known
+            known = known_colors.end()-1;
+          }
+
+          size_t new_color = std::distance(known_colors.begin(), known); //position in vector
+          size_t transp = this->cell_grid_[r][c].is_transposed_;
+          size_t new_r = r - r_first;       // force element and color
+          size_t new_c = c - c_first;       // into the new sub matrix' cell grid
+          size_t old_color_sub =  sub_matrix.cell_grid_[new_r][new_c].color_;
+          sub_matrix.cell_grid_[new_r][new_c].color_ = new_color;
+          sub_matrix.cell_grid_[new_r][new_c].is_transposed_ = transp;
+          sub_matrix.cell_grid_[new_r][new_c].block_ = known_mats.at(new_color);
+          //color count
+          ++sub_matrix.color_count_.at(new_color);
+          --sub_matrix.color_count_.at(old_color_sub);
+        }
+      }
+
+      //tidy up the color count vector
+      sub_matrix.color_count_.erase(
+          std::remove( sub_matrix.color_count_.begin(),
+                       sub_matrix.color_count_.end(), 0),
+                       sub_matrix.color_count_.end()
+      );
+
+      return sub_matrix;
+    }
+
 
     /* ************************************************************************* */
     void BlockMatrix::print_and_check(std::string matrix_name) const
@@ -960,10 +1053,10 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
     }
 
     /* ************************************************************************* */
-    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block)
+    std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block) const
     {
 
-      Output::print("Called base class copy and store");
+      //Output::print("Called base class copy and store");
       return std::make_shared<TMatrix>(block);
     }
 

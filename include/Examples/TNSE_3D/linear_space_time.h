@@ -76,10 +76,10 @@ void ExactP(double x, double y,  double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   if ( y == 1 )
-    cond = NEUMANN;
+    cond = DIRICHLET;
   else
     cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // value of boundary condition
@@ -93,7 +93,7 @@ void U2BoundValue(double x, double y, double z, double &value)
 {
   double t = TDatabase::TimeDB->CURRENTTIME;
   if ( (y == 0) && (x >= 0.4) && (x <= 0.6) && (z >= 0.4) && (z <= 0.6))
-    value = 10*t;
+    value = 0*t;
 //  else if ( y == 1 )
 //    value = 10*t;
   else
