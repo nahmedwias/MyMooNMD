@@ -68,11 +68,16 @@ void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
 // Here the actual computations take place
 void check(TDomain & domain, int velocityCode, std::array<double, 5> errors)
 {
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db["problem_type"] = 0; // problem type is not needed
+  db["example"] = 0;
+  db.add("solver_type", (size_t)2, "");
+  
   TDatabase::ParamDB->VELOCITY_SPACE = velocityCode;
   // automatically choose pressure space to get inf-sup stable pair
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   
-  Darcy2D darcy2d(domain);
+  Darcy2D darcy2d(domain, db);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();

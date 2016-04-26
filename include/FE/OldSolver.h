@@ -1,5 +1,5 @@
 // =======================================================================
-// @(#)Solver.h        1.9 06/27/00
+// @(#)OldSolver.h        1.9 06/27/00
 // 
 // Purpose:     solve equation system
 //
@@ -18,22 +18,22 @@
 
 /** solve equation system */
 
-void Solver(TSquareMatrix *matrix, double *rhs, double *sol);
+void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol);
 
-void Solver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs);
+void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs);
 
-void Solver(int what, TSquareMatrix *matrix, double *rhs, double *sol,
+void OldSolver(int what, TSquareMatrix *matrix, double *rhs, double *sol,
             int N_Rhs);
 
-void Solver(TSquareMatrix *matrix, TMatrix *matrixmortar,
+void OldSolver(TSquareMatrix *matrix, TMatrix *matrixmortar,
             double *rhs, double *sol);
 
-void Solver(TSquareMatrix *matrixa11, TMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TMatrix *matrixa12,
             TMatrix *matrixa21, TSquareMatrix *matrixa22,
             double *rhs1, double *rhs2,
             double *sol1, double *sol2);
 
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
             TSquareMatrix *matrixa22, TSquareMatrix *matrixa23,
             TSquareMatrix *matrixa32, TSquareMatrix *matrixa33,
             double *rhs1, double *rhs2, double *rhs3,
@@ -42,7 +42,7 @@ void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
 /*******************************************************************/
 /* CONNECT SYSTEM FOR VMM [KL02]                                   */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TMatrix *matrixa12, TMatrix *matrixa13,
+void OldSolver(TSquareMatrix *matrixa11, TMatrix *matrixa12, TMatrix *matrixa13,
             TMatrix *matrixa21, TMatrix *matrixa31,  TSquareMatrix *matrixa22,
             double *rhs1, double *rhs2, double *rhs3,
             double *sol1, double *sol2, double *sol3);
@@ -50,92 +50,92 @@ void Solver(TSquareMatrix *matrixa11, TMatrix *matrixa12, TMatrix *matrixa13,
 /*******************************************************************/
 /* Rosenbrock                                                      */
 /*******************************************************************/
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
             TSquareMatrix *matrixa21, TSquareMatrix *matrixa22,
             double *rhs1, double *rhs2,
             double *sol1, double *sol2);
 
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12,
             TSquareMatrix *matrixa22, TSquareMatrix *matrixa23,
             TSquareMatrix *matrixa32, TSquareMatrix *matrixa33,
             double *rhs1, double *rhs2, double *rhs3,
             double *sol1, double *sol2, double *sol3);
             
-void Solver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12, TSquareMatrix *matrixa13,
+void OldSolver(TSquareMatrix *matrixa11, TSquareMatrix *matrixa12, TSquareMatrix *matrixa13,
             TSquareMatrix *matrixa21, TSquareMatrix *matrixa22, TSquareMatrix *matrixa23,
             TSquareMatrix *matrixa31, TSquareMatrix *matrixa32, TSquareMatrix *matrixa33,
             double *rhs1, double *rhs2, double *rhs3,
             double *sol1, double *sol2, double *sol3);
 
 #ifdef __2D__
-void Solver(TSquareMatrix **sqmatrices, TMatrix **matrices, double *rhs,
+void OldSolver(TSquareMatrix **sqmatrices, TMatrix **matrices, double *rhs,
             double *sol, MatVecProc *MatVect, DefectProc *Defect,
             TMultiGrid2D *MG, int N_Unknowns, int ns_type);
 
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 1) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, double *rhs, double *sol);
 
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 2) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, TMatrix *matrixB3,
             TMatrix *matrixB4, double *rhs, double *sol);
 
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 3) */
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
             TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
             TMatrix *matrixB1, TMatrix *matrixB2,
             double *rhs, double *sol);
 
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 4) */
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
             TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
             TMatrix *matrixB1, TMatrix *matrixB2,
             TMatrix *matrixB3, TMatrix *matrixB4, 
             double *rhs, double *sol);
 
 /** BRAESS--SARAZIN SMOOTHER (NSTYPE 1) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, double *rhs, double *sol,
             int para0);
 
 /** BRAESS--SARAZIN SMOOTHER (NSTYPE 2) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, TMatrix *matrixB3,
             TMatrix *matrixB4, double *rhs, double *sol,
             int para0);
 
 /** BRAESS--SARAZIN SMOOTHER (NSTYPE 3) */
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
             TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
             TMatrix *matrixB1, TMatrix *matrixB2,
             double *rhs, double *sol, int para0);
 
 /** BRAESS--SARAZIN SMOOTHER (NSTYPE 4) */
-void Solver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
+void OldSolver(TSquareMatrix *matrixA11,TSquareMatrix *matrixA12,
             TSquareMatrix *matrixA21,TSquareMatrix *matrixA22,
             TMatrix *matrixB1, TMatrix *matrixB2,
             TMatrix *matrixB3, TMatrix *matrixB4, 
             double *rhs, double *sol, int para0);
 
 /**  AUXILIARY PROBLEM FOR VASSILEVSKI/LAZAROV APPROACH */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, double *rhs, double *sol,double delta);
 
 /** STOKES TYPE SADDLE POINT PROBLEM WITH MORTAR (NSTYPE 2) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, TMatrix *matrixB3,
             TMatrix *matrixB4, TMatrix *matrixmortar,
             double *rhs, double *sol);
 #endif
 #ifdef __3D__
 /** STOKES TYPE SADDLE POINT PROBLEM (NSTYPE 1) */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, TMatrix *matrixB3, 
             double *rhs, double *sol);
 
 /** BRAESS--SARAZIN SMOOTHER (NSTYPE 1)     */
-void Solver(TSquareMatrix *matrixA, TMatrix *matrixB1,
+void OldSolver(TSquareMatrix *matrixA, TMatrix *matrixB1,
             TMatrix *matrixB2, TMatrix *matrixB3, 
             double *rhs, double *sol,
             int para0);

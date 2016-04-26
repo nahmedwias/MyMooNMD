@@ -10,7 +10,7 @@
 #include <FEFunction3D.h> 
 #include <LinAlg.h>
 #include <DirectSolver.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <FEM_TVD_FCT.h>
 #include <Bulk_3d4d.h>
 #include <Bulk.h>
