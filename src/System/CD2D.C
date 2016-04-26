@@ -55,7 +55,6 @@ CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
     
