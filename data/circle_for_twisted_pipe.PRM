@@ -1,0 +1,17 @@
+A boundary description of a simple circle. 
+NBCT
+  1
+IBCT
+  1
+NCOMP
+  1
+ITYP NSPLINE NPAR
+  2     1     3
+Radius is 0.3, middle point (0,0).
+\phi_start = -135 \deg, \phi_end = 225 \deg
+PARAMETERS
+ 0.000000E+0000    0.000000E+0000
+ 0.3    0.000000E+0000
+ -2.35619449019234492885  3.92699081698724154808
+N_HOLES
+  0
