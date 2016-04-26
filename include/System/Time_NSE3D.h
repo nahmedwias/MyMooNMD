@@ -55,7 +55,6 @@ class Time_NSE3D
      */
     struct System_per_grid
     {
-
       /** @brief Finite Element space for the velocity */
       TFESpace3D velocitySpace_;
       /** @brief Finite Element space for the pressure */
@@ -103,8 +102,7 @@ class Time_NSE3D
       TParFECommunicator3D parCommPressure_;
 #endif
 
-      /** TODO Implement the constructor used when ifdef_MPI
-       * @brief constructor in mpi case
+      /** @brief constructor in mpi case
        * @param[in] example The current example.
        * @param[in] coll The collection of mesh cells of this grid.
        * @param[in] maxSubDomainPerDof Only in MPI case! The maximal number of
@@ -112,14 +110,14 @@ class Time_NSE3D
        * main program and handed down to the FESpaces. Getting rid of this
        * construction is a TODO .
        */
-//#ifdef _MPI
-//      System_per_grid(const Example_NSE3D& example,
-//                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
-//                    int maxSubDomainPerDof);
-//#else
+#ifdef _MPI
+      System_per_grid(const Example_NSE3D& example,
+                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
+                    int maxSubDomainPerDof);
+#else
       System_per_grid(const Example_NSE3D& example, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
-//#endif
+#endif
 
       // System_per_grid is not supposed to be copied or moved
       // until underlying classes realize the rule of zero.
@@ -185,12 +183,11 @@ class Time_NSE3D
     /** old time step length used to scale the pressure blocks*/
     double oldtau_;
 
-    /** TODO Implement this method
-     * @brief set the velocity and pressure orders
+    /** @brief set the velocity and pressure orders
      *
      * This function sets the corresponding velocity and
      * pressure orders. The pressure order is set if it is
-     * not specified by the readin file. Default is -4711
+     * not specified by the reading file. Default is -4711
      *
      * Tried to stay with the function GetVelocityPressureSpace3D()
      * in the MainUtilities file.
@@ -199,14 +196,19 @@ class Time_NSE3D
                    &velocity_pressure_orders);
  public:
 
-    /** @brief constructor
-    * This constructor calls the other constructor creating an Example_NSE3D
-    * object.
-    */
-   Time_NSE3D(const TDomain& domain, int reference_id = -4711);
+//    /** @brief constructor
+//    * This constructor calls the other constructor creating an Example_NSE3D
+//    * object. It is commented because not used currently.
+//    * If you need it, outcomment it and add it in the src file.
+//    */
+//#ifdef _MPI
+//    Time_NSE3D(const TDomain& domain, int reference_id = -4711,
+//               int maxSubDomainPerDof);
+//#else
+//    Time_NSE3D(const TDomain& domain, int reference_id = -4711);
+//#endif
 
-    /** TODO Implement the constructor used when ifdef_MPI
-     * @brief Standard constructor of an NSE3D problem.
+    /** @brief Standard constructor of an NSE3D problem.
      *
      * @note The domain must have been refined a couple of times already if you want
      * to use multigrid. On the finest level the finite element spaces and
@@ -216,14 +218,12 @@ class Time_NSE3D
      * @param domain The domain this problem lives on.
      * @param example The example to perform
      */
-//#ifdef _MPI
-//    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
-//          int maxSubDomainPerDof);
-//#else
+#ifdef _MPI
     Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
-               int reference_id = -4711);
-//#endif
-    
+               int maxSubDomainPerDof);
+#else
+    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example);
+#endif
     
 // ======================================================================
      /**
@@ -362,6 +362,7 @@ class Time_NSE3D
 //
 //   const TFEFunction3D  & get_pressure() const
 //     { return this->systems_.front().p_; }
+
    const TFESpace3D     & get_velocity_space() const
      { return this->systems_.front().velocitySpace_; }
    const TFESpace3D     & get_pressure_space() const

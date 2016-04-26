@@ -247,6 +247,23 @@ int main(int argc, char* argv[])
       // correct behavior, nothing more to do
     }
 
+    {//test the sub-blockmatrix creation routine
+      BlockMatrix bm({2,2,4,6},{2,4,6});
+
+      //fill in some matrices
+      bm.replace_blocks(TMatrix(2,2) , {{1,0}},{false});
+      bm.replace_blocks(TMatrix(4,2) , {{2,0},{1,1}},{false, true});
+      bm.replace_blocks(TMatrix(4,4) , {{2,1}},{false});
+
+      BlockMatrix sub_bm;
+      sub_bm = bm.get_sub_blockmatrix({1,0}, {2,1});
+
+      sub_bm.print_and_check("sub_mb");
+
+      bm.get_combined_submatrix({0,0},{1,2})->info(3);
+
+    }
+
     delete[] RowA;
     delete[] ColA;
     delete[] RowB;

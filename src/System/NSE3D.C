@@ -720,10 +720,16 @@ void NSE3D::solve()
       // Actuate it via DirectSolver class.
 
       /// @todo consider storing an object of DirectSolver in this class
-      DirectSolver direct_solver(s.matrix_,
-                                 DirectSolver::DirectSolverTypes::umfpack);
+
+      DirectSolver::DirectSolverTypes solver_type =  DirectSolver::DirectSolverTypes::umfpack;
+#ifdef _OMP
+      solver_type = DirectSolver::DirectSolverTypes::pardiso;
+#endif
+
+      DirectSolver direct_solver(s.matrix_, solver_type);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI
+#endif
+#ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
       std::vector<const TParFECommunicator3D*> par_comms_init =
       {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};

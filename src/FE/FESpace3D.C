@@ -590,8 +590,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
     if(!(FEDesc0_Obj->IsEdgeVertData_Filled()) )
      {
-       printf("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
-       MPI_Abort(MPI_COMM_WORLD,  0);  
+       ErrThrow("Rank %d, FESpace3D Error! Edge and vertes data are not set in FEdesc3D for this FE \n", rank);
      }
 
      N_Edges=cell->GetN_Edges();      
