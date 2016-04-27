@@ -12,33 +12,30 @@ ParameterDatabase get_default_solver_parameters()
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
-  db.add("solver_type", (size_t)2,
+  db.add("solver_type", std::string("direct"),
          "Determine which kind of solver should be used. This can be an "
-         "iterative (1) or a direct (2) solver", (size_t)1, (size_t)2);
+         "iterative or a direct solver", {"direct", "iterative"});
   
-  db.add("direct_solver_type", 1,
+  db.add("direct_solver_type", std::string("umfpack"),
          "Determine which type of direct solver should be used. All of them "
-         "are implemented in external libraries. The values have the "
-         "following meanings: "
-         "1 - umfpack, "
-         "2 - pardiso, "
-         "3 - mumps.",
-         1, 3);
+         "are implemented in external libraries. ",
+         {"umfpack", "pardiso", "mumps"});
   
-  db.add<size_t>("iterative_solver_type", 1,
-                 "Determine which type of iterative solver should be used. "
-                 "The values have the following meanings: "
-                 "1 - (weighted) Jacobi iteration, "
-                 "2 - successive over-relaxation iteration (sor), "
-                 "3 - symmetric successive over-relaxation iteration (ssor), "
-                 "4 - Richardson iteration, "
-                 "5 - conjugate gradients, "
-                 "6 - conjugate gradients squared, "
-                 "7 - Biconjugate Gradient Stabilized, "
-                 "8 - left generalized minimal residuals (gmres), "
-                 "9 - right generalized minimal residuals (gmres), "
-                 "10- flexible (right) generalized minimal residuals(gmres).",
-                 1, 10);
+  db.add("iterative_solver_type", std::string("fgmres"),
+         "Determine which type of iterative solver should be used. The "
+         "following are possible: "
+         "1 - (weighted) Jacobi iteration, "
+         "2 - successive over-relaxation iteration (sor), "
+         "3 - symmetric successive over-relaxation iteration (ssor), "
+         "4 - Richardson iteration, "
+         "5 - conjugate gradients, "
+         "6 - conjugate gradients squared, "
+         "7 - Biconjugate Gradient Stabilized, "
+         "8 - left generalized minimal residuals (gmres), "
+         "9 - right generalized minimal residuals (gmres), "
+         "10- flexible (right) generalized minimal residuals (gmres).",
+         {"jacobi", "sor", "ssor", "richardson", "cg", "cgs", "bi_cgstab", 
+          "left_gmres", "right_gmres", "fgmres"});
   
   // the range is not so nice, maybe we have to store an integer interval with
   // min, max in the Parameter class 
@@ -136,39 +133,46 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
-  size_t iterative_solver_type, const L& matrix,
+  std::string iterative_solver_type, const L& matrix,
   std::shared_ptr<Preconditioner<V>> p)
 {
-  switch(iterative_solver_type)
+  std::shared_ptr<IterativeMethod<L, V>> ret;
+  if(iterative_solver_type == "jacobi")
   {
-    case 1:
-      return std::make_shared<Iteration_jacobi<L, V>>(matrix);
-      break;
-    case 4:
-      return std::make_shared<Iteration_richardson<L, V>>(p);
-      break;
-    case 5:
-      return std::make_shared<Iteration_cg<L, V>>(p);
-      break;
-    case 6:
-      return std::make_shared<Iteration_cgs<L, V>>(p);
-      break;
-    case 7:
-      return std::make_shared<Iteration_bicgstab<L, V>>(p);
-      break;
-    case 8:
-      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::left);
-      break;
-    case 9:
-      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::right);
-      break;
-    case 10:
-      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::flexible);
-      break;
-    default:
-      ErrThrow("unknown iterative_solver_type: ", iterative_solver_type);
-      break;
+    ret = std::make_shared<Iteration_jacobi<L, V>>(matrix);
   }
+  else if(iterative_solver_type == "richardson")
+  {
+    ret = std::make_shared<Iteration_richardson<L, V>>(p);
+  }
+  else if(iterative_solver_type == "cg")
+  {
+    ret = std::make_shared<Iteration_cg<L, V>>(p);
+  }
+  else if(iterative_solver_type == "cgs")
+  {
+    ret = std::make_shared<Iteration_cgs<L, V>>(p);
+  }
+  else if(iterative_solver_type == "bi_cgstab")
+  {
+    ret = std::make_shared<Iteration_bicgstab<L, V>>(p);
+  }
+  else if(iterative_solver_type == "left_gmres")
+  {
+    ret = std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::left);
+  }
+  else if(iterative_solver_type == "right_gmres")
+  {
+    ret = std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::right);
+  }
+  else if(iterative_solver_type == "fgmres")
+  {
+    ret = std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::flexible);
+  }
+  else
+    ErrThrow("unknown iterative_solver_type: ", iterative_solver_type);
+  
+  return ret;
 }
 
 /* ************************************************************************** */
@@ -186,7 +190,7 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
 template <class L, class V>
 void Solver<L, V>::update_matrix(const L& matrix)
 {
-  if(db["solver_type"].is(2)) // direct solver
+  if(db["solver_type"].is("direct")) // direct solver
   {
     this->direct_solver.reset(
       new DirectSolver(matrix, DirectSolver::DirectSolverTypes::umfpack));
@@ -194,7 +198,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
   else
   {
     // iterative solver
-    size_t ist = db["iterative_solver_type"];
+    std::string ist = db["iterative_solver_type"];
     std::string prec_name = db["preconditioner"];
     size_t max_it = db["max_n_iterations"];
     size_t min_it = db["min_n_iterations"];
@@ -235,7 +239,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
-  if(!db["solver_type"].is(2))
+  if(!db["solver_type"].is("direct"))
     ErrThrow("Calling Solver::solve without the matrix as an argument only "
              "works for direct solvers. In such a case the method "
              "Solver::update_matrix has to be called in advance. For iterative "
@@ -254,7 +258,7 @@ template <class L, class V>
 void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
 {
   this->update_matrix(matrix);
-  if(db["solver_type"].is(2))
+  if(db["solver_type"].is("direct"))
   {
     // direct solver
     this->solve(rhs, solution);

@@ -131,7 +131,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
   // done with the constructor in case we're not using multigrid
-  if(this->solver.get_db()["solver_type"].is(2) || 
+  if(this->solver.get_db()["solver_type"].is("direct") || 
      !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
@@ -665,14 +665,14 @@ void NSE2D::computeNormsOfResiduals()
 void NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  if(this->solver.get_db()["solver_type"].is(2))
+  if(this->solver.get_db()["solver_type"].is("iterative")
+    && this->solver.get_db()["preconditioner"].is("multigrid"))
   {
-    this->solver.update_matrix(s.matrix);
-    this->solver.solve(s.rhs, s.solution);
+    mg_solver();
   }
   else
-  { // multigrid preconditioned iterative solver
-    mg_solver();
+  {
+    this->solver.solve(s.matrix,s.rhs, s.solution);
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
