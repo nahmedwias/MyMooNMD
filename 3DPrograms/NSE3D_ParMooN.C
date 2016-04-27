@@ -69,9 +69,12 @@ int main(int argc, char* argv[])
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
   // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
+  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS
+      + TDatabase::ParamDB->LEVELS; i++)
   {
     domain.RegRefineAll();
+    int nCells=domain.GetCollection(It_Finest,0)->GetN_Cells();
+    Output::print<1>("no of Cells on refinement level ", i, " ", nCells);
   }
 
   // Write grid into a postscript file (before partitioning)
