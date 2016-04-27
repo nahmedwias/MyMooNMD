@@ -15,7 +15,8 @@ std::string check_name(std::string name)
   {
     if (name[i] == ' ' || name[i] == '.' || name[i] == ':')
     {
-      ErrThrow("illegal name for a Parameter. No spaces or dots allowed.");
+      ErrThrow("illegal name for a Parameter. No spaces or dots allowed. ", 
+               name);
     }
   }
   return name;
@@ -281,7 +282,7 @@ std::string Parameter::range_as_string() const
       break;
     }
     default:
-      ErrThrow("unknown parameter type");
+      ErrThrow("unknown parameter type for parameter ", this->name);
       break;
   }
   return ret;
@@ -298,7 +299,8 @@ template<>
 bool Parameter::get<bool>() const
 {
   if(!check_type<bool>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != bool");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != bool");
   access_count++;
   return this->bool_value;
 }
@@ -306,7 +308,8 @@ template<>
 int Parameter::get<int>() const
 {
   if(!check_type<int>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int");
   access_count++;
   return this->int_value;
 }
@@ -314,7 +317,8 @@ template<>
 size_t Parameter::get<size_t>() const
 {
   if(!check_type<size_t>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != size_t");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != size_t");
   access_count++;
   return this->unsigned_value;
 }
@@ -322,7 +326,8 @@ template<>
 double Parameter::get<double>() const
 {
   if(!check_type<double>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != double");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
   access_count++;
   return this->double_value;
 }
@@ -330,7 +335,8 @@ template<>
 std::string Parameter::get<std::string>() const
 {
   if(!check_type<std::string>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != std::string");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != std::string");
   access_count++;
   return this->string_value;
 }
@@ -340,7 +346,8 @@ template <typename T>
 bool Parameter::is(T value) const
 {
   if(!check_type<T>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != typename T");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != typename T");
   return this->get<T>() == value;
 }
 template bool Parameter::is(bool) const;
@@ -354,7 +361,8 @@ template<> bool Parameter::is(int value) const
   else if(check_type<size_t>(this->type) && value >= 0)
     return this->unsigned_value == (size_t)value;
   else
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int or size_t");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int or size_t");
 }
 template bool Parameter::is(size_t) const;
 template bool Parameter::is(double) const;
@@ -450,13 +458,14 @@ template<> void Parameter::get_range(size_t& min_value, size_t& max_value) const
   else
   {
     // range is not an interval and this function makes no sense
-    ErrThrow("integral range is not an interval");
+    ErrThrow("integral range is not an interval, Parameter ", this->name);
   }
 }
 template<> void Parameter::get_range(double& min_value, double& max_value) const
 {
   if(!check_type<double>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != double");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
   min_value = this->min;
   max_value = this->max;
 }
@@ -492,10 +501,11 @@ template<> void Parameter::get_range(std::set<std::string>& range) const
 template<> void Parameter::set(bool new_value)
 {
   if(!check_type<bool>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != bool");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != bool");
   // check if new_value is in the specified parameter range
   if(!not_bool_value_allowed && new_value != this->bool_value)
-    ErrThrow("new parameter value out of range");
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
   this->bool_value = new_value;
@@ -503,10 +513,11 @@ template<> void Parameter::set(bool new_value)
 template<> void Parameter::set(size_t new_value)
 {
   if(!check_type<size_t>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != size_t");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != size_t");
   // check if new_value is in the specified parameter range
   if(!check_value_in_range(new_value, this->unsigned_range))
-    ErrThrow("new parameter value out of range");
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
   this->unsigned_value = new_value;
@@ -514,18 +525,20 @@ template<> void Parameter::set(size_t new_value)
 template<> void Parameter::set(int new_value)
 {
   if(!check_type<int>(this->type) && !check_type<size_t>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int or size_t");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int or size_t");
   if(check_type<size_t>(this->type))
   {
     if(new_value < 0)
-      ErrThrow("wrong type: ", type_as_string(this->type), " != int");
+      ErrThrow("Parameter ", this->name, " has the wrong type: ",
+               type_as_string(this->type), " != int");
     // setting a positive integer to a size_t parameter
     this->set<size_t>(new_value);
     return;
   }
   // check if new_value is in the specified parameter range
   if(!check_value_in_range(new_value, this->int_range))
-    ErrThrow("new parameter value out of range");
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
   this->int_value = new_value;
@@ -533,10 +546,11 @@ template<> void Parameter::set(int new_value)
 template<> void Parameter::set(double new_value)
 {
   if(!check_type<double>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != double");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
   // check if new_value is in the specified parameter range
   if(new_value < this->min || new_value > this->max)
-    ErrThrow("new parameter value out of range");
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
   this->double_value = new_value;
@@ -544,11 +558,12 @@ template<> void Parameter::set(double new_value)
 template<> void Parameter::set(std::string new_value)
 {
   if(!check_type<std::string>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != std::string");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != std::string");
   
   // check if new_value is in the specified parameter range
   if(!check_value_in_range(new_value, this->string_range))
-    ErrThrow("new parameter value out of range");
+    ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
   this->string_value = new_value;
@@ -594,11 +609,12 @@ Parameter& Parameter::operator=(const char* new_value)
 template<> void Parameter::set_range(int min_value, int max_value)
 {
   if(!check_type<int>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int");
   if(this->int_value < min_value || this->int_value > max_value)
-    ErrThrow("current value not in specified range");
+    ErrThrow("current value not in specified range, Parameter ", this->name);
   if(max_value - min_value > 1000)
-    ErrThrow("more than 1000 parameters in range");
+    ErrThrow("more than 1000 parameters in range, Parameter ", this->name);
   this->int_range.clear();
   for(int i = min_value; i <= max_value; i++)
       this->int_range.insert(i);
@@ -606,11 +622,12 @@ template<> void Parameter::set_range(int min_value, int max_value)
 template<> void Parameter::set_range(size_t min_value, size_t max_value)
 {
   if(!check_type<size_t>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != size_t");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != size_t");
   if(this->unsigned_value < min_value || this->unsigned_value > max_value)
-    ErrThrow("current value not in specified range");
+    ErrThrow("current value not in specified range, Parameter ", this->name);
   if(max_value - min_value > 1000)
-    ErrThrow("more than 1000 parameters in range");
+    ErrThrow("more than 1000 parameters in range, Parameter ", this->name);
   this->unsigned_range.clear();
   for(size_t i = min_value; i <= max_value; i++)
       this->unsigned_range.insert(i);
@@ -618,23 +635,31 @@ template<> void Parameter::set_range(size_t min_value, size_t max_value)
 template<> void Parameter::set_range(double min_value, double max_value)
 {
   if(!check_type<double>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != double");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != double");
   if(this->double_value < min_value || this->double_value > max_value)
-    ErrThrow("current value not in specified range");
+    ErrThrow("current value not in specified range, Parameter ", this->name);
   this->min = min_value;
   this->max = max_value;
 }
 template<> void Parameter::set_range(bool min_value, bool max_value)
-{ ErrThrow("Parameter::set_range with two bool arguments makes no sense"); }
+{
+  ErrThrow("Parameter::set_range with two bool arguments makes no sense, "
+           "Parameter ", this->name);
+}
 template<> void Parameter::set_range(std::string min_value,
                                      std::string max_value)
-{ ErrThrow("Parameter::set_range with two string arguments makes no sense"); }
+{ 
+  ErrThrow("Parameter::set_range with two string arguments makes no sense, "
+           "Parameter ", this->name);
+}
 
 /* ************************************************************************** */
 template<> void Parameter::set_range(std::set<bool> new_range)
 {
   if(!check_type<bool>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != bool");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != bool");
   if(new_range.size() >= 2)
     this->not_bool_value_allowed = true;
   // check if (single element) range covers current value
@@ -645,41 +670,51 @@ template<> void Parameter::set_range(std::set<bool> new_range)
   }
   else
   {
-    ErrThrow("setting a range which does not cover the current value");
+    ErrThrow("setting a range which does not cover the current value, "
+             "Parameter ", this->name);
   }
 }
 template<> void Parameter::set_range(std::set<int> new_range)
 {
   if(!check_type<int>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != int");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int");
   // check if current value is in new range
   auto it = std::find(new_range.begin(), new_range.end(), this->int_value);
   if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value");
+    ErrThrow("setting a range which does not cover the current value, "
+             "Parameter ", this->name);
   this->int_range = new_range;
 }
 template<> void Parameter::set_range(std::set<size_t> new_range)
 {
   if(!check_type<size_t>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != size_ts");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != size_ts");
   // check if current value is in new range
   auto it = std::find(new_range.begin(), new_range.end(), this->unsigned_value);
   if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value");
+    ErrThrow("setting a range which does not cover the current value, "
+             "Parameter ", this->name);
   this->unsigned_range = new_range;
 }
 template<> void Parameter::set_range(std::set<std::string> new_range)
 {
   if(!check_type<std::string>(this->type))
-    ErrThrow("wrong type: ", type_as_string(this->type), " != std::string");
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != std::string");
   // check if current value is in new range
   auto it = std::find(new_range.begin(), new_range.end(), this->string_value);
   if(it == new_range.end())
-    ErrThrow("setting a range which does not cover the current value");
+    ErrThrow("setting a range which does not cover the current value, "
+             "Parameter ", this->name);
   this->string_range = new_range;
 }
 template<> void Parameter::set_range(std::set<double>)
-{ ErrThrow("Parameter::set_range with a set of double does not make sense"); }
+{ 
+  ErrThrow("Parameter::set_range with a set of double does not make sense, "
+           "Parameter ", this->name);
+}
 
 /* ************************************************************************** */
 void Parameter::info() const
