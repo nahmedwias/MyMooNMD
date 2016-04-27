@@ -21,7 +21,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
     lsc_strategy(0), M(&m), velocity_block(), gradient_block(nullptr),
     divergence_block(nullptr), Schur_complement(nullptr),
     velocity_solver(nullptr), Schur_solver(nullptr), inverse_diagonal(),
-    velocity_space(&m.get_row_space(0)), pressure_space(&m.get_row_space(2)),
+    velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
     damping_factor(1.0), Poisson_solver_matrix(nullptr), 
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
@@ -43,6 +43,9 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
   // number of block columns and rows
   unsigned int n_rows = this->M->get_n_cell_rows();
   unsigned int n_cols = this->M->get_n_cell_columns();
+  pressure_space = &m.get_row_space(n_rows - 1);
+  if(n_rows < 2 || n_cols != n_rows)
+    ErrThrow("can not create a Saddle_point_preconditioner with this matrix");
   if(n_rows != (dim+1) || n_cols != (dim+1))
     ErrThrow("currently we only support a BlockMatrix for Stokes/Navier-Stokes "
              "problems.");
@@ -266,13 +269,8 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
         r[i] *= this->inverse_diagonal[i];
       }
       // add du*
-      r.add(up_star.block(0), 0);
-      r.add(up_star.block(1), 1);
-      //r.add(u_star.block(0), 0);
-      //r.add(u_star.block(1), 1);
-#ifdef __3D__
-      //r.add(u_star.block(2), 2);
-#endif
+      for(unsigned int i = 0; i < n_blocks - 1; ++i)
+        r.add(up_star.block(i), i);
       
       // ----------------------------------------------------------------------
       // update r = z + omega (dp, du)
@@ -352,11 +350,8 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       
       r.reset();
       // copy u_tmp and p_star back to r
-      r.copy(u_tmp.block(0), 0);
-      r.copy(u_tmp.block(1), 1);
-#ifdef __3D__
-      r.copy(u_tmp.block(2), 2);
-#endif
+      for(unsigned int i = 0; i < n_blocks - 1; ++i)
+        r.add(u_tmp.block(i), i);
       r.copy(p_star.block(0), n_blocks-1);
        
       //IntoL20FEFunction(r.block(n_blocks-1), r.length(n_blocks-1),
