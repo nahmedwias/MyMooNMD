@@ -85,6 +85,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       solver(param_db), defect(), oldResiduals(), initial_residual(1e10), 
       errors()
 {
+  this->db.merge(param_db, false);
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
