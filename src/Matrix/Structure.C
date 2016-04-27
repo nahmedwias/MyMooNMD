@@ -504,9 +504,7 @@ TStructure::TStructure( const TFESpace2D* space )
         % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in SquareStructure2D: cell out of collection!!!"
-          << endl;
-        exit(-3);
+        ErrThrow("Error in SquareStructure2D: cell out of collection!!!");
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -543,9 +541,7 @@ TStructure::TStructure( const TFESpace2D* space )
           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure: cell out of collection!!!"
-            << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure: cell out of collection!!!")
         }
 
         indexM = CellM->GetClipBoard();
@@ -789,9 +785,7 @@ TStructure::TStructure( const TFESpace2D* space )
         % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in MatrixStructure: cell out of collection!!!"
-          << endl;
-        exit(-3);
+        ErrThrow("Error in MatrixStructure: cell out of collection!!!");
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -864,9 +858,7 @@ TStructure::TStructure( const TFESpace2D* space )
           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure: cell out of collection!!!"
-            << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure: cell out of collection!!!");
         }
 
         indexM = CellM->GetClipBoard();
@@ -1623,8 +1615,6 @@ TStructure::TStructure(const TFESpace2D* testspace,
   TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
-  int TestN_Dirichlet, AnsatzN_Dirichlet;
-  int TestN_Inner, AnsatzN_Inner;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;
   int TestSumBoundNodes, AnsatzSumBoundNodes;
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
@@ -1647,9 +1637,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
   // test if both spaces are defined on the same triangulation
   if(testspace->GetCollection() != ansatzspace->GetCollection())
   {
-    OutPut("Structure2D.C : grid for test and ansatz space is not the same !" << endl); 
-    exit(4711); 
-    return;
+    ErrThrow("Structure2D.C : grid for test and ansatz space is not the same!");
   }
 
   // get collection of mesh cells
@@ -1660,11 +1648,11 @@ TStructure::TStructure(const TFESpace2D* testspace,
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
 
-  AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
-  TestN_Dirichlet = testspace->GetN_Dirichlet();
+  //int AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
+  //int TestN_Dirichlet = testspace->GetN_Dirichlet();
 
-  AnsatzN_Inner = ansatzspace->GetN_Inner();
-  TestN_Inner = testspace->GetN_Inner();
+  //int AnsatzN_Inner = ansatzspace->GetN_Inner();
+  //int TestN_Inner = testspace->GetN_Inner();
 
   AnsatzN_BoundNodes = ansatzspace->GetN_BoundaryNodes();
   TestN_BoundNodes = testspace->GetN_BoundaryNodes();
@@ -1816,9 +1804,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
                          % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in MatrixStructure2D: cell out of collection!!!"
-             << endl;
-        exit(-3);
+        ErrThrow("Error in MatrixStructure2D: cell out of collection!!!";
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -1855,9 +1841,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
                           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure2D: cell out of collection!!!"
-               << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure2D: cell out of collection!!!");
         }
 
         indexM = CellM->GetClipBoard();
@@ -2045,9 +2029,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
                          % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in MatrixStructure2D: cell out of collection!!!"
-             << endl;
-        exit(-3);
+        ErrThrow("Error in MatrixStructure2D: cell out of collection!!!");
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -2120,9 +2102,7 @@ TStructure::TStructure(const TFESpace2D* testspace,
                           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure2D: cell out of collection!!!"
-               << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure2D: cell out of collection!!!");
         }
 
         indexM = CellM->GetClipBoard();
@@ -2344,8 +2324,6 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
-  int TestN_Dirichlet, AnsatzN_Dirichlet;
-  int TestN_Inner, AnsatzN_Inner;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;
   int TestSumBoundNodes, AnsatzSumBoundNodes;
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
@@ -2366,11 +2344,11 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
 
-  AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
-  TestN_Dirichlet = testspace->GetN_Dirichlet();
+  //int AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
+  //int TestN_Dirichlet = testspace->GetN_Dirichlet();
 
-  AnsatzN_Inner = ansatzspace->GetN_Inner();
-  TestN_Inner = testspace->GetN_Inner();
+  //int AnsatzN_Inner = ansatzspace->GetN_Inner();
+  //int TestN_Inner = testspace->GetN_Inner();
 
   AnsatzN_BoundNodes = ansatzspace->GetN_BoundaryNodes();
   TestN_BoundNodes = testspace->GetN_BoundaryNodes();
@@ -2460,9 +2438,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
                          % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in MatrixStructure3D: cell out of collection!!!"
-             << endl;
-        exit(-3);
+        ErrThrow("Error in MatrixStructure3D: cell out of collection!!!");
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -2499,9 +2475,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
                           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure3D: cell out of collection!!!"
-               << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure3D: cell out of collection!!!");
         }
 
         indexM = CellM->GetClipBoard();
@@ -2623,9 +2597,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
                          % CellNM->GetN_Vertices()), delX, delY);
       if (CellNM->GetClipBoard() == -1)
       {
-        cerr << "Error in MatrixStructure3D: cell out of collection!!!"
-             << endl;
-        exit(-3);
+        ErrThrow("Error in MatrixStructure3D: cell out of collection!!!");
       }
 
       indexNM = CellNM->GetClipBoard();
@@ -2698,9 +2670,7 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
                           delX, delY);
         if (CellM->GetClipBoard() == -1)
         {
-          cerr << "Error in MatrixStructure3D: cell out of collection!!!"
-               << endl;
-          exit(-3);
+          ErrThrow("Error in MatrixStructure3D: cell out of collection!!!");
         }
 
         indexM = CellM->GetClipBoard();
@@ -2851,8 +2821,6 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   TBaseCell *cell_parent, *cell_tmp, *cell_child_6;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
-  int TestN_Dirichlet, AnsatzN_Dirichlet;
-  int TestN_Inner, AnsatzN_Inner;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;
   int TestSumBoundNodes, AnsatzSumBoundNodes;
   int *TestGlobalNumbers, *AnsatzGlobalNumbers;
@@ -2867,8 +2835,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   level_diff = abs(test_level-ansatz_level);
   if (level_diff>6)
   {
-     OutPut("level difference greater than 5 not implemented !!!" << endl);
-     exit(4711);
+     ErrThrow("level difference greater than 5 not implemented !!!");
   }
 
   if (test_level < ansatz_level)
@@ -2888,11 +2855,11 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   AnsatzN_BoundNodeTypes = ansatzspace->GetN_DiffBoundaryNodeTypes();
   TestN_BoundNodeTypes = testspace->GetN_DiffBoundaryNodeTypes();
 
-  AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
-  TestN_Dirichlet = testspace->GetN_Dirichlet();
+  //int AnsatzN_Dirichlet = ansatzspace->GetN_Dirichlet();
+  //int TestN_Dirichlet = testspace->GetN_Dirichlet();
 
-  AnsatzN_Inner = ansatzspace->GetN_Inner();
-  TestN_Inner = testspace->GetN_Inner();
+  //int AnsatzN_Inner = ansatzspace->GetN_Inner();
+  //int TestN_Inner = testspace->GetN_Inner();
 
   AnsatzN_BoundNodes = ansatzspace->GetN_BoundaryNodes();
   TestN_BoundNodes = testspace->GetN_BoundaryNodes();
@@ -3081,7 +3048,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
         }
         else
         {
-            exit(4711);
+            ErrThrow("some error");
         }
            } // endfor j6
         }  // endfor else (j5) 
@@ -3361,7 +3328,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                         }
                         else
                         {
-                          exit(4711);
+                          ErrThrow("4711");
                         } // end else (j5)
                       } // endfor j5                                        
                     } // end else (j4)
@@ -3927,8 +3894,8 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
 
     if(N_JointDOF != n1 )
      {
-      cout<< " N_JointDOF != n1 !! Mortar space and 1DSpace must be same Fespace " <<endl;
-      exit(0);
+      ErrThrow(" N_JointDOF != n1 !! Mortar space and 1DSpace must be same "
+               "Fespace ");
      }
 
     for(j=0;j<n1;j++)
@@ -4670,13 +4637,11 @@ int TStructure::index_of_entry(const int i, const int j) const
 {
   if(i < 0 || i >= this->GetN_Rows())
   {
-    ErrMsg("row index is too large or too small");
-    exit(1);
+    ErrThrow("row index is too large or too small");
   }
   if(j < 0 || j > this->GetN_Columns())
   {
-    ErrMsg("column index is too large or too small");
-    exit(1);
+    ErrThrow("column index is too large or too small");
   }
   
   for (int m=rows[i];m < rows[i+1]; m++) 
@@ -4701,8 +4666,7 @@ std::shared_ptr<TStructure> TStructure::GetTransposed() const
 {
   if(nHangingEntries!=0)
   {
-    Error("TStructure::GetTransposed(): Hanging entries not supported! Exit\n");
-    exit(0);
+    ErrThrow("TStructure::GetTransposed(): Hanging entries not supported!");
   }
   // variables for transposed structure:
   int nRowsT = nColumns;
@@ -4760,8 +4724,7 @@ std::shared_ptr<TStructure> get_product_structure(
   
   if(n_A_cols != n_B_rows)
   {
-    ErrMsg("dimension mismatch during matrix-matrix multiplication");
-    exit(1);
+    ErrThrow("dimension mismatch during matrix-matrix multiplication");
   }
   const int * const a_rows = strucA.GetRowPtr();
   const int * const a_cols = strucA.GetKCol();
@@ -4853,7 +4816,7 @@ const
       // exploit the fact that both are sorted
       size_t index1 = 0;
       size_t index2 = 0;
-      while (index1 < row1ColSize && index2 < row2ColSize)
+      while ((int)index1 < row1ColSize && (int)index2 < row2ColSize)
       {
         if (row1ColBegin[index1] > row2ColBegin[index2])
         {
@@ -4930,7 +4893,7 @@ TStructure* TStructure::get_structure_of_product_with_transpose_from_right(
       // exploit the fact that both are sorted
       size_t index1 = 0;
       size_t index2 = 0;
-      while (index1 < row1ColSize && index2 < row2ColSize)
+      while ((int)index1 < row1ColSize && (int)index2 < row2ColSize)
       {
         if (row1ColBegin[index1] > row2ColBegin[index2])
         {
@@ -4977,14 +4940,14 @@ TStructure* TStructure::get_structure_of_product_with_transpose_from_right(
       // exploit the fact that both are sorted
       size_t index1 = 0;
       size_t index2 = 0;
-      while (index1 < row1ColSize && index2 < this->nColumns)
+      while ((int)index1 < row1ColSize && (int)index2 < this->nColumns)
       {
         //Output::print("  index1 ", index1, "  index2 ", index2);
-        if (row1ColBegin[index1] > index2)
+        if (row1ColBegin[index1] > (int)index2)
         {
           index2++;
         }
-        else if (index2 > row1ColBegin[index1])
+        else if ((int)index2 > row1ColBegin[index1])
         {
           index1++;
           // I think we should never be here (Ulrich)
@@ -5098,9 +5061,9 @@ void TStructure::draw(std::string filename) const
   out_stream << "%% n_rows " << this->nRows << ",  n_columns " 
              << this->nColumns << ",  n_entries " << this->nEntries << endl;
   out_stream << "/M {" << scale-1 << " " << scale-1 << " rectfill} def\n";
-  for(unsigned int row = 0; row < this->nRows; ++row)
+  for(int row = 0; row < this->nRows; ++row)
   {
-    for(unsigned int col = this->rows[row]; col < this->rows[row+1]; ++col)
+    for(int col = this->rows[row]; col < this->rows[row+1]; ++col)
     {
       out_stream << (offset + scale * this->columns[col]) << " " 
                  << (offset + scale * (this->nRows - row)) << " M\n";
