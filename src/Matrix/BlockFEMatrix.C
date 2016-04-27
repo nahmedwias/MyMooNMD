@@ -19,7 +19,8 @@ BlockFEMatrix::BlockFEMatrix(
 #endif
     BlockMatrix(), //base class object is default (empty) constructed
     test_spaces_rowwise_(spaces),
-    ansatz_spaces_columnwise_(spaces)
+    ansatz_spaces_columnwise_(spaces),
+    pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
@@ -950,10 +951,10 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
 #ifdef __3D__
     size_t dim = 3;
 #endif
-    if( n_cell_rows_ == dim + 1 && n_cell_columns_ == dim + 1
-        && r_first <= dim && r_last >= dim  //the relevant block row is contained
-       )
+    if( pressure_correction && n_cell_rows_ == dim + 1 
+        && n_cell_columns_ == dim + 1 && r_first <= dim && r_last >= dim)
     {
+      // the relevant block row is contained
       // number of velocity dofs
       int n_rows = this->get_blocks().at(0)->GetN_Rows();
 
@@ -968,12 +969,14 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
       for(int j = begin; j<end;++j)
       {
         entries[j]=0;
-        if(kcolptr[j] >= dim*diagonal_relative && future_diagonal == end-1)
+        if(kcolptr[j] >= (int)dim*diagonal_relative && future_diagonal == end-1)
           future_diagonal = j;
       }
-      entries[future_diagonal] = 1;
-      kcolptr[future_diagonal] = diagonal_relative;
-
+      if(diagonal_relative < sub_cmat->GetN_Columns())
+      {
+        entries[future_diagonal] = 1;
+        kcolptr[future_diagonal] = diagonal_relative;
+      }
     }
   }
 
@@ -1178,6 +1181,25 @@ void BlockFEMatrix::scale_blocks_actives(
 
   scale_blocks_actives(factor, input_tuples);
 }
+
+/* ************************************************************************* */
+void BlockFEMatrix::enable_pressure_correction() const
+{
+  this->pressure_correction = true;
+}
+
+/* ************************************************************************* */
+void BlockFEMatrix::disable_pressure_correction() const
+{
+  this->pressure_correction = false;
+}
+
+/* ************************************************************************* */
+bool BlockFEMatrix::pressure_correction_enabled() const
+{
+  return this->pressure_correction;
+}
+
 /* ************************************************************************* */
 
 /* ************************************************************************* */
