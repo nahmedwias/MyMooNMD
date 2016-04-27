@@ -54,6 +54,16 @@
  *             nodes and/or non-symmetric test- and ansatzspaces, these are the
  *             methods to changes (and of course implementing a new constructor
  *             and/or remove the "no-hanging-nodes" invariant.)
+ * 
+ * In the case of (Navier-) Stokes where the velocity space has only Dirichlet
+ * boundaries, the matrix is typically singular with the constant pressure 
+ * function being in the kernel of the matrix. Usually one restricts the 
+ * pressure space by one dimension, which is done here by setting the first
+ * pressure row to be zero, except on the diagonal (where one has an entry 1.0).
+ * This 'pressure correction' is mainly needed for direct solvers. So it is 
+ * implemented in the methods get_combined_matrix. The bool 
+ * `pressure_correction` determines if this should be done or not. We are aware
+ * of the fact that this solution is not very nice.
  *
  * @author     Clemens Bartsch
  * @date       2015/12/08
@@ -716,6 +726,13 @@ class BlockFEMatrix : public BlockMatrix
     void scale_blocks_actives(
         double factor,
         const std::vector<std::vector<size_t>>& cell_positions );
+    
+    /// @brief turn on pressure correction
+    void enable_pressure_correction() const;
+    /// @brief turn off pressure correction
+    void disable_pressure_correction() const;
+    /// @brief find out if pressure correction is currently enabled
+    bool pressure_correction_enabled() const;
 
     // Special member functions.
 
@@ -753,6 +770,18 @@ class BlockFEMatrix : public BlockMatrix
     /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
     std::vector<const TFESpace3D* > ansatz_spaces_columnwise_;
 #endif
+    
+    /// @brief modify the first pressure row for (Navier-) Stokes matrices
+    ///
+    /// This is sometimes necessary if there are only Dirichlet boundaries to
+    /// avoid a singular matrix. In the methods `get_combined_matrix` this will
+    /// change the firsrt pressure row to be zero except on the diagonal.
+    ///
+    /// It's not nice that this is mutable, but usually the call to the method
+    /// 'get_combined_matrix' is made on a const BlockFEMatrix. So the setter
+    /// methods `enable_pressure_correction`/`disable_pressure_correction` must
+    /// be const as well.
+    mutable bool pressure_correction;
 
   private:
     /**
