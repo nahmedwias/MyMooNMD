@@ -97,58 +97,18 @@ ParameterDatabase get_default_solver_parameters()
 }
 
 /* ************************************************************************** */
-template <class LinearOperator, class Vector>
-Solver<LinearOperator, Vector>::Solver(const ParameterDatabase& param_db)
- : db("empty database to be replaced"), direct_solver()
+// L - LinearOperator, V - Vector
+template <class L, class V>
+std::shared_ptr<Preconditioner<V>> get_preconditioner(
+  std::string preconditioner_name, const L& matrix)
 {
-  this->db = get_default_solver_parameters();
-  this->db.merge(param_db, false);
-  
-  this->db.info(true);
-}
-
-/* ************************************************************************** */
-template <class LinearOperator, class Vector>
-void Solver<LinearOperator, Vector>::update_matrix(const LinearOperator& matrix)
-{
-  if(db["solver_type"].is(2)) // direct solver
-  {
-    this->direct_solver.reset(
-      new DirectSolver(matrix, DirectSolver::DirectSolverTypes::umfpack));
-  }
-  //else // we just ignore this call, nothing is done
-}
-
-/* ************************************************************************** */
-template <class LinearOperator, class Vector>
-void Solver<LinearOperator, Vector>::solve(const Vector& rhs, Vector& solution)
-{
-  if(!db["solver_type"].is(2))
-    ErrThrow("Calling Solver::solve without the matrix as an argument only "
-             "works for direct solvers. In such a case the method "
-             "Solver::update_matrix has to be called in advance. For iterative "
-             "solvers you should call the method Solver::solve with a "
-             "BlockMatrix (and right hand side and solution).");
-  if(this->direct_solver)
-    this->direct_solver->solve(rhs, solution);
-  else
-    ErrThrow("Calling Solver::solve(rhs, solution) with a direct solver "
-             "requires a preceeding call to Solver::update_matrix(matrix).");
-}
-
-/* ************************************************************************** */
-template <class LinearOperator, class Vector>
-std::shared_ptr<Preconditioner<Vector>> get_preconditioner(
-  std::string preconditioner_name, const LinearOperator& matrix)
-{
-  Output::print("choosing a preconditioner, ", preconditioner_name);
   if(preconditioner_name == "no_preconditioner")
   {
-    return std::make_shared<NoPreconditioner<Vector>>();
+    return std::make_shared<NoPreconditioner<V>>();
   }
   else if(preconditioner_name == "jacobi")
   {
-    return std::make_shared<Iteration_jacobi<LinearOperator, Vector>>(matrix);
+    return std::make_shared<Iteration_jacobi<L, V>>(matrix);
   }
   else if(preconditioner_name == "least_squares_commutator")
   {
@@ -173,39 +133,37 @@ std::shared_ptr<Preconditioner<Vector>> get_preconditioner(
 }
 
 /* ************************************************************************** */
-template <class LinearOperator, class Vector>
-std::shared_ptr<IterativeMethod<LinearOperator, Vector>> get_iterative_method(
-  size_t iterative_solver_type, const LinearOperator& matrix,
-  std::shared_ptr<Preconditioner<Vector>> p)
+// L - LinearOperator, V - Vector
+template <class L, class V>
+std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
+  size_t iterative_solver_type, const L& matrix,
+  std::shared_ptr<Preconditioner<V>> p)
 {
   switch(iterative_solver_type)
   {
     case 1:
-      return std::make_shared<Iteration_jacobi<LinearOperator, Vector>>(matrix);
+      return std::make_shared<Iteration_jacobi<L, V>>(matrix);
       break;
     case 4:
-      return std::make_shared<Iteration_richardson<LinearOperator, Vector>>(p);
+      return std::make_shared<Iteration_richardson<L, V>>(p);
       break;
     case 5:
-      return std::make_shared<Iteration_cg<LinearOperator, Vector>>(p);
+      return std::make_shared<Iteration_cg<L, V>>(p);
       break;
     case 6:
-      return std::make_shared<Iteration_cgs<LinearOperator, Vector>>(p);
+      return std::make_shared<Iteration_cgs<L, V>>(p);
       break;
     case 7:
-      return std::make_shared<Iteration_bicgstab<LinearOperator, Vector>>(p);
+      return std::make_shared<Iteration_bicgstab<L, V>>(p);
       break;
     case 8:
-      return std::make_shared<Iteration_gmres<LinearOperator, Vector>>(
-        p, gmres_type::left);
+      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::left);
       break;
     case 9:
-      return std::make_shared<Iteration_gmres<LinearOperator, Vector>>(
-        p, gmres_type::right);
+      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::right);
       break;
     case 10:
-      return std::make_shared<Iteration_gmres<LinearOperator, Vector>>(
-        p, gmres_type::flexible);
+      return std::make_shared<Iteration_gmres<L, V>>(p, gmres_type::flexible);
       break;
     default:
       ErrThrow("unknown iterative_solver_type: ", iterative_solver_type);
@@ -214,17 +172,26 @@ std::shared_ptr<IterativeMethod<LinearOperator, Vector>> get_iterative_method(
 }
 
 /* ************************************************************************** */
-template <class LinearOperator, class Vector>
-void Solver<LinearOperator, Vector>::solve(const LinearOperator& matrix,
-                                           const Vector& rhs, Vector& solution)
+// L - LinearOperator, V - Vector
+template <class L, class V>
+Solver<L, V>::Solver(const ParameterDatabase& param_db)
+ : db(get_default_solver_parameters()), direct_solver(), iterative_method(),
+   preconditioner()
+{
+  this->db.merge(param_db, false);
+}
+
+/* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Solver<L, V>::update_matrix(const L& matrix)
 {
   if(db["solver_type"].is(2)) // direct solver
   {
-    this->update_matrix(matrix);
-    this->solve(rhs, solution);
-    return;
+    this->direct_solver.reset(
+      new DirectSolver(matrix, DirectSolver::DirectSolverTypes::umfpack));
   }
-  //else // iterative solver
+  // else // iterative solver
   size_t ist = db["iterative_solver_type"];
   std::string prec_name = db["preconditioner"];
   size_t max_it = db["max_n_iterations"];
@@ -234,14 +201,72 @@ void Solver<LinearOperator, Vector>::solve(const LinearOperator& matrix,
   size_t restart = db["gmres_restart"]; // only for gmres
   double damping = db["damping_factor"];
   
-  auto prec = get_preconditioner<LinearOperator, Vector>(prec_name, matrix);
-  auto it_method = get_iterative_method<LinearOperator, Vector>(ist, matrix,
-                                                                prec);
-  it_method->set_stopping_parameters(max_it, min_it, tol, reduc, 2., damping,
-                                     restart);
-  auto n_it_residual = it_method->iterate(matrix, rhs, solution);
-  Output::print<2>(it_method->get_name(), " iterations: ", n_it_residual.first,
-                   ", residual: ", n_it_residual.second);
+  // find out if a preconditioner object already exists and if it is of type 
+  // Saddle_point_preconditioner
+  bool is_saddle_point_preconditioner = this->preconditioner 
+    && ( prec_name == "least_squares_commutator" 
+         || prec_name == "least_squares_commutator_boundary"
+         || prec_name == "semi_implicit_method_for_pressure_linked_equations");
+  
+  if(!is_saddle_point_preconditioner)
+  {
+    // create a new preconditioner
+    this->preconditioner = get_preconditioner<L, V>(prec_name, matrix);
+  }
+  else
+  {
+    // only update the matrix
+    Saddle_point_preconditioner* spp = 
+      dynamic_cast<Saddle_point_preconditioner*>(this->preconditioner.get());
+    if(spp != nullptr)
+      spp->update(matrix);
+  }
+  this->iterative_method = get_iterative_method<L, V>(ist, matrix, 
+                                                      this->preconditioner);
+  this->iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc, 
+                                                  2., damping, restart);
+}
+
+/* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Solver<L, V>::solve(const V& rhs, V& solution)
+{
+  if(!db["solver_type"].is(2))
+    ErrThrow("Calling Solver::solve without the matrix as an argument only "
+             "works for direct solvers. In such a case the method "
+             "Solver::update_matrix has to be called in advance. For iterative "
+             "solvers you should call the method Solver::solve with a "
+             "BlockFEMatrix (and right hand side and solution).");
+  if(this->direct_solver)
+    this->direct_solver->solve(rhs, solution);
+  else
+    ErrThrow("Calling Solver::solve(rhs, solution) with a direct solver "
+             "requires a preceeding call to Solver::update_matrix(matrix).");
+}
+
+/* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
+{
+  this->update_matrix(matrix);
+  if(db["solver_type"].is(2))
+  {
+    // direct solver
+    this->solve(rhs, solution);
+  }
+  else
+  {
+    // iterative solver
+    auto n_it_residual = this->iterative_method->iterate(matrix, rhs, solution);
+    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
+                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
+  }
+  //compute the residual by hand again.
+  //V r(rhs);
+  //matrix.apply_scaled_add(solution, r, -1.);
+  //Output::print<2>("computed residual in Solver class: ", r.norm());
 }
 
 /* ************************************************************************** */
