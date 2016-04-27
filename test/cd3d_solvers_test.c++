@@ -122,7 +122,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 
   if (solver_name.compare("jacobi") == 0)
   {
-    db["solver_type"] = 1;
+    db["solver_type"] = "iterative";
     db["preconditioner"] = "jacobi";
     TDatabase::ParamDB->SOLVER_TYPE = 1;
     TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
@@ -133,7 +133,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   }
   else if (solver_name.compare("multigrid") == 0)
   {
-    db["solver_type"] = 1;
+    db["solver_type"] = "iterative";
     db["preconditioner"] = "multigrid";
     db["uniform_refinement_steps"] = 1;
     db.add("n_multigrid_levels", (size_t)2, "", (size_t)2, (size_t)5);
@@ -164,14 +164,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
-    db["solver_type"] = 2;
+    db["solver_type"] = "direct";
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
 #ifdef _MPI
   else if (solver_name.compare("mumps") == 0)
   {
-    db["solver_type"] = 2;
+    db["solver_type"] = "direct";
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"] = 1;
   db["uniform_refinement_steps"] = 2;
-  db.add("solver_type", (size_t)1, "", (size_t)1, (size_t)2);
+  db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   db.add("preconditioner", std::string("multigrid"), "",
          {"jacobi", "multigrid"});
   db["boundary_file"] = "Default_UnitCube";
