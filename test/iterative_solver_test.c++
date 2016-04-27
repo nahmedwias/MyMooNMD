@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
   Solver<BlockMatrix, BlockVector> dummy(ParameterDatabase("dummy database"));
   // copy the (default) database, `dummy` no longer needed then
   ParameterDatabase db(dummy.get_db());
-  db["solver_type"] = 1; // set to iterative solvers
+  db["solver_type"] = "iterative"; // set to iterative solvers
   db["residual_tolerance"] = 1.0e-11;
   db["max_n_iterations"] = 1000;
   db["preconditioner"] = "jacobi";
@@ -134,15 +134,15 @@ int main(int argc, char* argv[])
       };
   
   // a map to store all solvers to test here
-  std::map<std::string, size_t> solvers;
-  solvers["Jacobi"] = 1;
-  solvers["Richardson"] = 4;
-  solvers["cg"] = 5;
-  solvers["cgs"] = 6;
-  solvers["bi-cgstab"] = 7;
-  solvers["left gmres"] = 8;
-  solvers["right gmres"] = 9;
-  solvers["flexible gmres"] = 10;
+  std::map<std::string, std::string> solvers;
+  solvers["Jacobi"] = "jacobi";
+  solvers["Richardson"] = "richardson";
+  solvers["cg"] = "cg";
+  solvers["cgs"] = "cgs";
+  solvers["bi-cgstab"] = "bi_cgstab";
+  solvers["left gmres"] = "left_gmres";
+  solvers["right gmres"] = "right_gmres";
+  solvers["flexible gmres"] = "fgmres";
   
   for(auto & solver_info : solvers) // s is a std::pair
   {

@@ -67,7 +67,7 @@ void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"].set<size_t>(5);
-  db.add("solver_type", (size_t)2, "");
+  db.add("solver_type", std::string("direct"), "");
   
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;

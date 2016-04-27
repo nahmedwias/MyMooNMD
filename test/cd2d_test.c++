@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["problem_type"] = 1;
-    db.add("solver_type", (size_t)2, "");
+    db.add("solver_type", std::string("direct"), "");
 
     // Set Database values (this is what is usually done by the input-file)
     TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem

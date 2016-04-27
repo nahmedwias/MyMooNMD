@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   db["problem_type"] = 1;
   db["example"] = 0;
   db["uniform_refinement_steps"] = 2;
-  db.add("solver_type", (size_t)1, "");
+  db.add("solver_type", std::string("iterative"), "");
   db.add("preconditioner", std::string("jacobi"), "");
   db["boundary_file"] = "Default_UnitCube";
   db["geo_file"] = "Default_UnitCube_Hexa";
@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
     db["problem_type"] = 1;
     db["example"] = 0;
     db["uniform_refinement_steps"] = 2;
-    db.add("solver_type", (size_t)1, "");
+    db.add("solver_type", std::string("iterative"), "");
     db.add("preconditioner", std::string("multigrid"), "");
     db.add("n_multigrid_levels", (size_t)2, "", (size_t)0, (size_t)10);
     db["boundary_file"] = "Default_UnitCube";
