@@ -8,6 +8,8 @@
 
 /** @brief implement special preconditioners for saddle point problems
  * 
+ * @Note Up to now this class is not very nicely written. This needs some 
+ * refactoring.
  */
 class Saddle_point_preconditioner : public Preconditioner<BlockVector>
 {
@@ -29,7 +31,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
                                          type t = type::lsc);
     
     /** @brief destructor, delete all allocated memory */
-    ~Saddle_point_preconditioner();
+    ~Saddle_point_preconditioner() = default;
     
     /** "brief update the members in this class after a change in the matrix
      * 
@@ -40,6 +42,13 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * B*B^T.
      */
     void update(const BlockFEMatrix & m);
+    
+    /** @brief don't use this method. It is here only for compatability 
+     * in the Solver class.
+     * 
+     * @warning Do not use this method. You need a BlockFEMatrix instead.
+     */
+    void update(const BlockMatrix & m);
     
     /** @brief applying the preconditioner */
     void apply(const BlockVector &z, BlockVector &r) const;
@@ -84,9 +93,9 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * 
      * It is scaled by the 'inverse_diagonal' during the constructor
      */
-    TMatrix * gradient_block;
+    std::shared_ptr<TMatrix> gradient_block;
     /** @brief the block which represents the divergence of the pressure */
-    TMatrix * divergence_block;
+    std::shared_ptr<TMatrix> divergence_block;
     /** @brief the Schur complement matrix (possibly an approximation to it) */
     std::shared_ptr<TMatrix> Schur_complement;
     
@@ -130,6 +139,10 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * call to solve.
      */
     mutable BlockVector up_star;
+    mutable BlockVector u_star;
+    mutable BlockVector p_star;
+    mutable BlockVector u_tmp;
+    mutable BlockVector p_tmp;
     
     /* Boundary corrected LSC */
     
