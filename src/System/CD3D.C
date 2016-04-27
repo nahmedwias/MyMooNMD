@@ -88,7 +88,7 @@ ParameterDatabase get_default_CD3D_parameters()
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
     bool usingMultigrid = 
-      this->solver.get_db()["solver_type"].is(1) 
+      this->solver.get_db()["solver_type"].is("iterative") 
       && this->solver.get_db()["preconditioner"].is("multigrid");
 
     if (!usingMultigrid)
@@ -234,7 +234,7 @@ void CD3D::solve()
   #endif
 
 
-  if (this->solver.get_db()["solver_type"].is(1))
+  if (this->solver.get_db()["solver_type"].is("iterative"))
   { // Iterative solver chosen.
 
     // Hold/declare some variables which will be needed for all
@@ -310,7 +310,7 @@ void CD3D::solve()
     delete iterativeSolver;
 
   }
-  else if (this->solver.get_db()["solver_type"].is(2))
+  else if (this->solver.get_db()["solver_type"].is("direct"))
   { // Direct solver chosen.
 #ifndef _MPI
     this->solver.update_matrix(syst.matrix_);
@@ -420,7 +420,7 @@ void CD3D::checkParameters()
 #ifdef _MPI
   // among the iterative solvers only 11 (fixed point iteration/
   // Richardson) is working
-  if(this->solver.get_db()["solver_type"].is(1) 
+  if(this->solver.get_db()["solver_type"].is("iterative") 
       && TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
   {
       ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
@@ -432,7 +432,7 @@ void CD3D::checkParameters()
   // so far this strategy to treat them is only followed here, it should be unified
   // helper variable
   bool usingMultigrid = 
-    this->solver.get_db()["solver_type"].is(1) 
+    this->solver.get_db()["solver_type"].is("iterative") 
     && this->solver.get_db()["preconditioner"].is("multigrid");
   if (!usingMultigrid)
   { //case of direct solve or non-multigrid iterative solve
@@ -455,7 +455,7 @@ void CD3D::checkParameters()
   }
 
   // the only preconditioners implemented are Jacobi and multigrid
-  if(this->solver.get_db()["solver_type"].is(1) 
+  if(this->solver.get_db()["solver_type"].is("iterative") 
      && !this->solver.get_db()["preconditioner"].is("jacobi") 
      && !this->solver.get_db()["preconditioner"].is("multigrid"))
   {

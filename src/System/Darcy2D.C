@@ -189,7 +189,7 @@ void Darcy2D::assemble()
 /** ************************************************************************ */
 void Darcy2D::solve()
 {
-  if(!this->solver.get_db()["solver_type"].is(2))
+  if(!this->solver.get_db()["solver_type"].is("direct"))
     ErrThrow("only the direct solver is implemented currently");
   System_per_grid & s = this->systems.front();
   
