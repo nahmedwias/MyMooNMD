@@ -189,12 +189,11 @@ void Darcy2D::assemble()
 /** ************************************************************************ */
 void Darcy2D::solve()
 {
-  if(!this->solver.get_db()["solver_type"].is("direct"))
-    ErrThrow("only the direct solver is implemented currently");
+  //if(!this->solver.get_db()["solver_type"].is("direct"))
+  //  ErrThrow("only the direct solver is implemented currently");
   System_per_grid & s = this->systems.front();
   
-  this->solver.update_matrix(s.matrix);
-  this->solver.solve(s.rhs, s.solution);
+  this->solver.solve(s.matrix, s.rhs, s.solution);
   
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
