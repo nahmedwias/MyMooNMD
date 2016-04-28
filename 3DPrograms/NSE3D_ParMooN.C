@@ -14,10 +14,7 @@
 
 #include <sys/stat.h>
 
-namespace project
-{
-#include <twisted_pipe_flow.h>
-}
+#include <CoiledPipe.h>
 
 #ifdef _MPI
 // we need this here because for some reason (??) these are declared extern in
@@ -72,19 +69,39 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it. (Done before domain - depends on Example file in this project!)
+  // TDatabase::ParamDB->EXAMPLE and construct it.
   Example_NSE3D example;
-  project::derived_properties::set_statics();
+
+  // project specific: prepare the coiled geometry
+  size_t n_twists = 1;
+  size_t n_segments_per_twist = 20;
+  double l_inflow = 5;
+  size_t n_segments_inflow = 2;
+  double l_outflow = 20;
+  size_t n_segments_outflow = 8;
+  double tube_radius = 0.3;
+  double twist_radius = 5.9;
+  double space_between_twists = 0.3;
+
+  CoiledPipe::set_up_geoconsts(
+      n_twists,
+      n_segments_per_twist,
+      l_inflow,
+      n_segments_inflow,
+      l_outflow,
+      n_segments_outflow,
+      tube_radius,
+      twist_radius,
+      space_between_twists
+  );
   double drift_x = 0;
   double drift_y = 0;
-  double drift_z = project::derived_properties::l_tube;
-
-
+  double drift_z =CoiledPipe::GeoConsts::l_tube;
 
   // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE,
               drift_x, drift_y, drift_z,
-              project::derived_properties::segment_marks);
+              CoiledPipe::GeoConsts::segment_marks);
 
   // Do initial regular grid refinement.
   for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)

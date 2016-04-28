@@ -21,7 +21,7 @@
 #include <Output3D.h>
 
 //project specific
-#include "NSE_3D/twisted_pipe_flow.h"
+#include <CoiledPipe.h>
 
 
 NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
@@ -129,11 +129,10 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
     //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
     if(TDatabase::ParamDB->EXAMPLE == 5) //remove global dependency! names for examples!
     {
-      derived_properties::set_statics(); //CB: HAVING TO DO THIS ALL THE TIME IS A TOTAL MESS!!!!
       // ...lie down the cell collection by swapping its vertices x and z coords
-      swap_x_and_z_coordinates(coll);
+      CoiledPipe::swap_x_and_z_coordinates(coll);
       // ...and coil up the pipe by replacing the vertices' coords
-      coil_pipe_helically(coll);
+      CoiledPipe::coil_pipe_helically(coll);
     }
     //CB END MODIFICATIONS
         
@@ -716,10 +715,13 @@ void NSE3D::compute_residuals()
 
 void NSE3D::solve()
 {
-  //CB DEBUG I want to see the geometry before I am solving at all.
-  output(0);
-  exit(-1);
-  //END DEBUG
+//  //CB DEBUG I want to see the geometry before I am solving at all.
+//  output(0);
+//#ifdef _MPI
+//  MPI_Finalize();
+//#endif
+//  exit(-1);
+//  //END DEBUG
 
   System_per_grid& s = this->systems_.front();
 
