@@ -1,4 +1,4 @@
-# CMakeLists.txt for subdirectory Geometry of ParMooN project. 
+﻿# CMakeLists.txt for subdirectory Geometry of ParMooN project. 
 # Use only as subproject of ParMooN.
 # 
 # Change history:
@@ -73,6 +73,7 @@ list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BdWall.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BoundComp3D.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/BoundFace.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Brick.C")
+list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/CoiledPipe.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Edge.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Hexahedron.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/InnerEdge.C")

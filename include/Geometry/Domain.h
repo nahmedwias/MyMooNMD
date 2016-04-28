@@ -314,9 +314,11 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-    void Init(const char *PRM, const char *GEO,
-              double drift_x = 0, double drift_y=0, double drift_z=0,
+    void Init(const char *PRM, const char *GEO
+#ifdef __3D__
+              , double drift_x = 0, double drift_y=0, double drift_z=0,
               std::vector<double> segment_marks = {}
+#endif
               );
 
     /** @brief write domain boundary  into a postscript file */
