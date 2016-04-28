@@ -728,18 +728,7 @@ void NSE3D::solve()
     if(this->solver.get_db()["solver_type"].is("direct"))
     {
 #ifndef _MPI
-      // So far only UMFPACK is available as direct solver in sequential case.
-      // Actuate it via DirectSolver class.
-
-      /// @todo consider storing an object of DirectSolver in this class
-
-      DirectSolver::DirectSolverTypes solver_type =  DirectSolver::DirectSolverTypes::umfpack;
-#ifdef _OMP
-      solver_type = DirectSolver::DirectSolverTypes::pardiso;
-#endif
-
-      DirectSolver direct_solver(s.matrix_, solver_type);
-      direct_solver.solve(s.rhs_, s.solution_);
+      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
