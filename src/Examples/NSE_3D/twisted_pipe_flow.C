@@ -14,13 +14,13 @@ namespace twisted_pipe_flow{ //must be included within the same namespace as in 
 
 namespace FluidProperties
 {
-double eta = 1.11e-3;     // ( kg /(m*s) ) the dynamic viscosity, (of a Kalialaun solution, as reported by V.Wiedmeyer)
-double rho = 1100;        // ( kg / m^3  ) the density (of a Kalialaun solution, as reported by V.Wiedmeyer)
+double eta = 1.11e-5;     // ( kg /(cm*s) ) the dynamic viscosity, (of a Kalialaun solution, as reported by V.Wiedmeyer)
+double rho = 1100 * 1e-6; // ( kg / cm^3  ) the density (of a Kalialaun solution, as reported by V.Wiedmeyer)
 
-double u_infty = 0.01;    // (m/s) the characteristic velocity of the fluid
-double l_infty = 0.01;    // (m) the characteristic length scale of the tube
+double u_infty = 1;    // (cm/s) the characteristic velocity of the fluid
+double l_infty = 1;    // (cm) the characteristic length scale of the tube
 
-double vol_flux = 7.2 * 10-6; // (m^3/s) the volume flux at inflow (of the experiment, as reported by V.Wiedmeyer)
+double vol_flux = 7.2; // (cm^3/s) the volume flux at inflow (of the experiment, as reported by V.Wiedmeyer)
 
 // note: in the coefficients function the de-dimensionalized diffusion
 // coefficient will be calculated as:
@@ -39,6 +39,13 @@ void twisted_pipe_flow::ExampleFile()
   using namespace FluidProperties;
   double eps = (eta/rho) / (u_infty*l_infty);
   Output::print(" > diffusion coefficient eps = ", eps);
+
+
+  //CB DEBUG
+  double debug[5];
+  ExactU1(- CoiledPipe::GeoConsts::l_inflow, 0, 0, debug);
+  Output::print("--- FYI, center inflow velocity U1: ", debug[0]);
+  //END DEBUG
 }
 
 
@@ -61,8 +68,8 @@ void twisted_pipe_flow::ExactU1(double x, double y,  double z, double *values)
       double cross_section = Pi * tube_radius * tube_radius;
       double u_avr = vol_flux / cross_section; // reminder: u_max = 2*u_average for Hagen-Poiseuille flow
 
-      double r2 = y*y + z*z; //inflow piece aligned along x-axis!
-      double R2 = tube_radius*tube_radius;
+      double r2 = y * y + z * z ; //inflow piece aligned along x-axis!
+      double R2 = tube_radius *tube_radius;
 
       // dimensionalized flow in x direction:
       double u_1 = 2 * u_avr * ( 1 -  r2 / R2);

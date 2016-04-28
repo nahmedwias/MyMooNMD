@@ -715,14 +715,6 @@ void NSE3D::compute_residuals()
 
 void NSE3D::solve()
 {
-//  //CB DEBUG I want to see the geometry before I am solving at all.
-//  output(0);
-//#ifdef _MPI
-//  MPI_Finalize();
-//#endif
-//  exit(-1);
-//  //END DEBUG
-
   System_per_grid& s = this->systems_.front();
 
   bool using_multigrid = //determine whether we make use of multigrid
@@ -805,7 +797,7 @@ void NSE3D::output(int i)
     Output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    Output.Write_ParVTK(MPI_COMM_WORLD, i, SubID);
 #else
     std::string filename(TDatabase::ParamDB->OUTPUTDIR);
     filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
