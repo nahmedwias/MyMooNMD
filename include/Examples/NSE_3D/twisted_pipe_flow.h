@@ -1,82 +1,154 @@
-// Navier-Stokes problem, Driven cavity
-//
-// u(x,y) = unknown
-// p(x,y) = unknown
+/**
+ * @file This example file contains an upward
+ * directed (stationary) flow through a wound up pipe.
+ * A large portion of the file deals with methods which are used to
+ * transform a cylindrical sandwich geometry to a helically coiled tube
+ * geometry. These methods have to be calles onto the TCollection
+ * before the rest of the problem (FESpaces, FEFUnctions,
+ * Matrices, Parallel Communicators etc.) is set up.
+ *
+ * @date 2016/04/26
+ * @author Various, imported to ParMooN by Clemens Bartsch
+ */
+#ifndef TWISTED_PIPE_FLOW_
+#define TWISTED_PIPE_FLOW_
 
-#define __UREA__
-#define __UREA__PIPE__
+namespace TwistedPipeConstants
+{
+size_t n_twists = 5;
+size_t n_segments_per_twist = 50;
 
-#include <Urea_3d4d.h>
+double l_inflow = 10;   // (cm)length of the straight inflow part
+size_t n_segments_inflow = 2;
 
+double l_outflow = 20;  // (cm) length of the straight outflow part
+size_t n_segments_outflow = 4;
+
+double tube_radius = 0.3;  // (cm) must fit the .PRM and .GEO!!!!!!
+double twist_radius = 5.9; //5.9; // (cm) from center of tube to central axis
+double space_between_twists = 0.3; //(cm) vertical distance between two coils
+
+}
+
+namespace FluidProperties
+{
+double eta = 1.19e-3;       // the dynamic viscosity ( kg / (m*s) ) here: of Kalialaun, as reported by V.Wiedmeyer
+double rho = 1100;          // the density           ( kg /  m^3) ) here: of a Kalialaun solution, as reported by V.Wiedmeyer
+
+double u_infty = 0.01;      // the characteristic velocity of the fluid (was UREA_u_infty before)
+double l_infty = 0.01;      // the characteristic length scale of the tube (was UREA_l_infty before)
+
+// note: in the coefficients function the diffusion coefficient will
+// be calculated as:
+//      eps = (eta/rho) / (u_infty*l_infty);
+}
+
+class derived_properties
+{
+  public:
+    static double l_tube;
+
+    static double l_twisted_part;
+
+    static std::vector<double> segment_marks;
+
+    static void set_statics()
+    {
+      using namespace TwistedPipeConstants;
+
+      double PI = 3.14159265358979323846;
+      double h =  2*tube_radius +  space_between_twists; //ganghoehe der rohrmitte-helix
+      double k = h / (2*PI*twist_radius); //steigung der rohrmitte-helix
+
+      double s_1 = 2*PI*twist_radius * sqrt(1 + k*k); //Bogenlaenge einer vollen Rundung
+
+      l_twisted_part = n_twists * s_1;
+
+      //length of the tube in total (will form DRIFT_Z)
+      l_tube = l_inflow + l_twisted_part + l_outflow;
+
+      // set up the vector of segment marks
+      size_t n_segment_marks =
+          n_segments_inflow
+          + n_twists * n_segments_per_twist
+          + n_segments_outflow + 1;
+
+      segment_marks = std::vector<double>(n_segment_marks , 0.0);
+
+      double inflow_fraction = l_inflow / l_tube;
+      double twisted_fraction = l_twisted_part / l_tube;
+      double outflow_fraction = l_outflow / l_tube;
+
+      for (size_t i =0 ; i < n_segment_marks ; ++i)
+      {
+        if(i < n_segments_inflow)
+        {//inflow part
+          segment_marks.at(i) = (double) i / n_segments_inflow * inflow_fraction;
+        }
+        else if (i < n_segments_inflow + n_twists * n_segments_per_twist )
+        {//twisted part
+          size_t i_twist = i - n_segments_inflow;
+          segment_marks.at(i) = inflow_fraction + (double) i_twist / (n_twists * n_segments_per_twist) * twisted_fraction;
+        }
+        else
+        {//outflow part
+          size_t i_out = i - n_segments_inflow - n_twists * n_segments_per_twist;
+          segment_marks.at(i) = inflow_fraction + twisted_fraction
+              + (double) i_out / n_segments_outflow * outflow_fraction;
+        }
+      }
+    }
+};
+
+//init static members
+double derived_properties::l_tube = 0;
+double derived_properties::l_twisted_part = 0;
+std::vector<double> derived_properties::segment_marks = {};
+
+enum class PIPE_PIECE {INFLOW, COIL, OUTFLOW}; //TODO _PIECE and _FACE!
+
+/// Determine in which part of the pipe a certain point lies.
+/// Note that this is very coarse - it checks whether (x,y,z) is contained
+/// in a closed rectangular bounding box of either in- or outflow and if not so
+/// assume it must lie in the coiled part.
+PIPE_PIECE in_which_piece_is_this_point(double x, double y, double z)
+{
+  using namespace TwistedPipeConstants;
+
+  if(  -l_inflow <= x     && x <= 0
+    && -tube_radius <= y  && y <= tube_radius
+    && -tube_radius <= z  && z <= tube_radius) //check inflow bounding box
+  {
+    return PIPE_PIECE::INFLOW;
+  }
+  double height = (2*tube_radius +  space_between_twists)*n_twists;
+  if(  0 <= x     && x <= l_outflow
+      && -tube_radius <= y  && y <= tube_radius
+      && -tube_radius + height <= z  && z <= tube_radius + height) //check outflow bounding box
+  {
+   return PIPE_PIECE::OUTFLOW;
+  }
+  //we assume that no garbage goes in here - so everything which is neither
+  //inflow nor outflow is assumed to lie in the coil
+  return PIPE_PIECE::COIL;
+}
+
+/// This sets some parameters which are relevant for the Domain and must thus
+/// be called before Domain is initialized!
 void ExampleFile()
 {
-  OutPut("Example: Urea_pipe_nse_mult_twist.h with " << TDatabase::ParamDB->N_CELL_LAYERS  << " cell layers in flow direction"<< endl);
+  // set global parameters which are too deeply rooted in the
+  // code to be easily removed at the moment
+  TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = 1356; //FIXME Remove this from the entire code!
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 
- /* if ((TDatabase::ParamDB->N_CELL_LAYERS != 21) && (TDatabase::ParamDB->N_CELL_LAYERS != 84))
-  {
-    OutPut("no initial data for N_CELL_LAYERS: " << TDatabase::ParamDB->N_CELL_LAYERS);
-    exit(4711);
-  }*/
+  derived_properties::set_statics();
 
-  TDatabase::ParamDB->DRIFT_Z = 3380;
-  TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = 1356;
-  TDatabase::ParamDB->INTERNAL_STEADY_STATE_MATRICES_OR_RHS = 1;
-  TDatabase::ParamDB->UREA_PIPE_RADIUS = 0.3;
+  Output::print(" > Example: twisted_pipe_flow.h.");
 
-  OutPut("UREA_PIPE_RADIUS: " << TDatabase::ParamDB->UREA_PIPE_RADIUS << endl);
-  OutPut("UREA_REACTION_DISC: " << TDatabase::ParamDB->UREA_REACTION_DISC << endl);
-  OutPut("UREA_PB_DISC: " << TDatabase::ParamDB->UREA_PB_DISC << endl);
-  OutPut("UREA_PB_DISC_STAB: " << TDatabase::ParamDB->UREA_PB_DISC_STAB<<endl);
-  OutPut("UREA_SOLD_PARAMETER_TYPE: "<< TDatabase::ParamDB->UREA_SOLD_PARAMETER_TYPE <<endl);
-  OutPut("UREA_MODEL: " << TDatabase::ParamDB->UREA_MODEL << endl);
-  OutPut("UREA_CONC_TOL: " << TDatabase::ParamDB->UREA_CONC_TOL << endl);
-  OutPut("UREA_CONC_MAXIT: " << TDatabase::ParamDB->UREA_CONC_MAXIT << endl);
-
-  OutPut("UREA_AGGR_BROWNIAN: " << TDatabase::ParamDB->UREA_AGGR_BROWNIAN<< endl);
-  OutPut("UREA_AGGR_POL_ORDER: " << TDatabase::ParamDB->UREA_AGGR_POL_ORDER << endl);
-  OutPut("UREA_AGGR_BROWNIAN_TEMP: " << TDatabase::ParamDB->UREA_AGGR_BROWNIAN<< endl);
-  OutPut("UREA_AGGR_BROWNIAN_SCAL: " << TDatabase::ParamDB->UREA_AGGR_BROWNIAN_SCAL<< endl);
-  OutPut("UREA_AGGR_SHEAR_FACTOR_TYPE: " << TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE << endl);
-  OutPut("UREA_AGGR_SHEAR_FACTOR: " << TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR << endl);
-
-  OutPut("UREA_l_infty: " << TDatabase::ParamDB->UREA_l_infty <<endl);
-  OutPut("UREA_u_infty: " << TDatabase::ParamDB->UREA_u_infty <<endl);
-  OutPut("UREA_c_infty: " << TDatabase::ParamDB->UREA_c_infty <<endl);
-  OutPut("UREA_temp_infty: " << TDatabase::ParamDB->UREA_temp_infty <<endl);
-  OutPut("UREA_f_infty: " << TDatabase::ParamDB->UREA_f_infty<<endl);
-  OutPut("UREA_nu: " << TDatabase::ParamDB->UREA_nu<<endl);
-  OutPut("UREA_rho: " << TDatabase::ParamDB->UREA_rho<<endl);
-  OutPut("UREA_c_p: " << TDatabase::ParamDB->UREA_c_p<<endl);
-  OutPut("UREA_lambda: " << TDatabase::ParamDB->UREA_lambda<<endl);
-  OutPut("UREA_D_P_0: " << TDatabase::ParamDB->UREA_D_P_0<<endl);
-  OutPut("UREA_D_P_MAX: " << TDatabase::ParamDB->UREA_D_P_MAX <<endl);
-  OutPut("UREA_k_v: " << TDatabase::ParamDB->UREA_k_v<<endl);
-  OutPut("UREA_m_mol: " << TDatabase::ParamDB->UREA_m_mol<<endl);
-  OutPut("UREA_D_J: " << TDatabase::ParamDB->UREA_D_J<<endl);
-  OutPut("UREA_rho_d: " << TDatabase::ParamDB->UREA_rho_d <<endl);
-  OutPut("UREA_k_g: " << TDatabase::ParamDB->UREA_k_g<<endl);
-  OutPut("UREA_g: " << TDatabase::ParamDB->UREA_g <<endl);
-  OutPut("UREA_rho_sat_1: " << TDatabase::ParamDB->UREA_rho_sat_1 <<endl);
-  OutPut("UREA_rho_sat_2: " << TDatabase::ParamDB->UREA_rho_sat_2<<endl);
-  OutPut("UREA_beta_nuc: " << TDatabase::ParamDB->UREA_beta_nuc<<endl);
-  OutPut("UREA_alfa_nuc: " << TDatabase::ParamDB->UREA_alfa_nuc<<endl);
-  OutPut("UREA_INFLOW_SCALE: " << TDatabase::ParamDB->UREA_INFLOW_SCALE <<endl);
-  OutPut("UREA_inflow_time: " << TDatabase::ParamDB->UREA_inflow_time <<endl);
-  OutPut("PB_DISC_TYPE: " << TDatabase::ParamDB->PB_DISC_TYPE <<endl);
-  OutPut("PB_TIME_DISC: " << TDatabase::ParamDB->PB_TIME_DISC <<endl);
-  OutPut("INTERNAL_STEADY_STATE_MATRICES_OR_RHS: " << TDatabase::ParamDB->INTERNAL_STEADY_STATE_MATRICES_OR_RHS <<endl);
-
-  if(!TDatabase::ParamDB->UREA_PIPE)
-  {
-    TDatabase::ParamDB->UREA_PIPE = 1;
-    OutPut("Setting UREA_PIPE to " << TDatabase::ParamDB->UREA_PIPE  << endl);
-  }
-  else
-    OutPut("UREA_PIPE: " << TDatabase::ParamDB->UREA_PIPE << endl);
-
-  // set some parameters
-  //TDatabase::ParamDB->GRID_TYPE = 3;
-  //OutPut("GRID_TYPE set to " << TDatabase::ParamDB->GRID_TYPE << endl);
+  using namespace FluidProperties;
+  double eps = (eta/rho) / (u_infty*l_infty);
+  Output::print(" > diffusion coefficient eps = ", eps);
 }
 
 
@@ -85,41 +157,56 @@ void ExampleFile()
 // ========================================================================
 void ExactU1(double x, double y,  double z, double *values)
 {
-  // Poiseuille flow with R = 1, dp/dz = -0.1
-  // v = -1/(4 eta) (R^2-r^2) * nabla p
-  // ParamDB->UREA_INFLOW_SCALE  in ml/min !!!
-  // based on derivation 13/12/06
-  double R, R2, r2yz;
-  double l_infty = TDatabase::ParamDB->UREA_l_infty;
- 
-  R = 0.3;
-  R2=R*R;
+//  // Poiseuille flow with R = 1, dp/dz = -0.1
+//  // v = -1/(4 eta) (R^2-r^2) * nabla p
+//  // ParamDB->UREA_INFLOW_SCALE  in ml/min !!!
+//  // based on derivation 13/12/06
+//  double R, R2, r2yz;
+//  double l_infty = TDatabase::ParamDB->UREA_l_infty;
+//
+//  R = 0.3;
+//  R2=R*R;
+//
+//  //if (y > 0)
+//  //  values[0] =
+//  //    (R2-(y-R_bent)*(y-R_bent)-z*z) * V_in /(3000 * Pi * R2*R2)/TDatabase::ParamDB->UREA_u_infty;
+//  //else
+//  //  values[0] =
+//  //    -(R2-(y+R_bent)*(y+R_bent)-z*z) * V_in /(3000 * Pi * R2*R2)/TDatabase::ParamDB->UREA_u_infty;
+//  double vFlux = 7.2;
+//  r2yz = (y-5.65)*(y-5.65)+z*z;
+//
+//  // factor covering inflow from boundary, dimensionless representation, etc.
+//  double uFactor = 2. * vFlux * TDatabase::ParamDB->UREA_INFLOW_SCALE
+//      / (Pi * R2 * TDatabase::ParamDB->UREA_u_infty);
+//  values[0] = uFactor * (1-r2yz/R2);
+//  //if (TDatabase::TimeDB->CURRENTTIME < 1.0)
+//  //  values[0] *= TDatabase::TimeDB->CURRENTTIME;
+//
+//  values[1] = 0;
+//  values[2] = 0;
+//  values[3] = 0;
+//  values[4] = 0;
+//
+//  //OutPut(values[0] << " ");
+//  // if (abs(y-5.65)>0.3)
+//  //  exit(1);
+//  //OutPut(" in " << x << " "  << y << " " << z << " " << values[0] << " : ");
 
-  //if (y > 0)
-  //  values[0] =
-  //    (R2-(y-R_bent)*(y-R_bent)-z*z) * V_in /(3000 * Pi * R2*R2)/TDatabase::ParamDB->UREA_u_infty;
-  //else
-  //  values[0] =
-  //    -(R2-(y+R_bent)*(y+R_bent)-z*z) * V_in /(3000 * Pi * R2*R2)/TDatabase::ParamDB->UREA_u_infty;
-  double vFlux = 7.2;
-  r2yz = (y-5.65)*(y-5.65)+z*z; 
-
-  // factor covering inflow from boundary, dimensionless representation, etc.
-  double uFactor = 2. * vFlux * TDatabase::ParamDB->UREA_INFLOW_SCALE
-    / (Pi * R2 * TDatabase::ParamDB->UREA_u_infty);
-  values[0] = uFactor * (1-r2yz/R2);
-  //if (TDatabase::TimeDB->CURRENTTIME < 1.0)
-  //  values[0] *= TDatabase::TimeDB->CURRENTTIME; 
-  
-  values[1] = 0;
+  PIPE_PIECE piece = in_which_piece_is_this_point(x,y,z);
+  switch(piece)
+  {
+    case PIPE_PIECE::INFLOW:
+      values[0]=1; //TODO Hagen-P.!
+      break;
+    default:
+      values[0]=0;
+      break;
+  }
+  values[1] = 0; //TODO Hagen-P.!
   values[2] = 0;
   values[3] = 0;
   values[4] = 0;
-  
-  //OutPut(values[0] << " ");
- // if (abs(y-5.65)>0.3)
-  //  exit(1);
-  //OutPut(" in " << x << " "  << y << " " << z << " " << values[0] << " : ");
 }
 
 
@@ -153,19 +240,17 @@ void ExactP(double x, double y,  double z, double *values)
 }
 
 
-// ========================================================================
-// initial solution
-// ========================================================================
 
+/// Initial solution in U1 direction - Hagen-Poiseuille in inflow piece.
 void InitialU1(double x, double y, double z, double *values)
 {
   // Poiseuille flow with R = 1, dp/dz = -0.1
   // v = -1/(4 eta) (R^2-r^2) * nabla p
   double val[5];
-  
+
   ExactU1(x,y,z,val);
   //if ((x<50)&& (y > 0))
-  if (x<50)
+  if (x < 50)
   {
     values[0] = val[0];
     //OutPut(y << " " << val[0] << "::");
@@ -173,23 +258,23 @@ void InitialU1(double x, double y, double z, double *values)
   else
     values[0] = 0;
 
- values[0] = 0.0;
- //OutPut(values[0] << " ");
+  values[0] = 0.0;
+  //OutPut(values[0] << " ");
 }
 
-
+/// Initial solution in U2 direction. No flow, nowhere.
 void InitialU2(double x, double y, double z, double *values)
 {
   values[0] = 0;
 }
 
-
+/// Initial solution in U3 direction. No flow, nowhere.
 void InitialU3(double x, double y, double z, double *values)
 {
   values[0] = 0;
 }
 
-
+/// Initial pressure. No pressure, nowhere.
 void InitialP(double x, double y,  double z, double *values)
 {
   values[0] = 0;
@@ -203,54 +288,79 @@ void InitialP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  double eps = 1e-6, r2yz;
+//  double eps = 1e-6, r2yz;
+//
+//  cond = DIRICHLET;
+//
+//  r2yz =  (y-5.65)*(y-5.65)+(z-5.3333333333333325)*(z-5.3333333333333325);
+//
+//  if (x>53.75-25)
+//  {
+//    cond = NEUMANN;
+//    OutPut("neum " << x <<" " << y << " " << z << endl);
+//  }
+//  //if ((fabs(x-43.43137254901961)< eps))//&& ((0.09-r2yz) < 1e-3))
+//  //if (x>53.75)
+//  //  OutPut("bdry " <<  setprecision(16) << x <<" " << y << " " <<  setprecision(16) << z << " "  << r2yz << endl);
+//  //if ((fabs(60-x)<eps))
+//  //if (z>5.03333)
+//  // {
+//  // outflow
+//  // cond = NEUMANN;
+//  //OutPut("neum " << x <<" " << y << " " << z << endl);
+//  // TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
+//  // }
 
-  cond = DIRICHLET;
-
-  r2yz =  (y-5.65)*(y-5.65)+(z-5.3333333333333325)*(z-5.3333333333333325);
-
-  if (x>53.75-25)
+  PIPE_PIECE piece = in_which_piece_is_this_point(x,y,z);
+  switch(piece)
   {
-     cond = NEUMANN;
-     TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-     OutPut("neum " << x <<" " << y << " " << z << endl);
-  }  
-  //if ((fabs(x-43.43137254901961)< eps))//&& ((0.09-r2yz) < 1e-3))
-  //if (x>53.75)
-  //  OutPut("bdry " <<  setprecision(16) << x <<" " << y << " " <<  setprecision(16) << z << " "  << r2yz << endl);
-  //if ((fabs(60-x)<eps))
-  //if (z>5.03333)
- // {
-    // outflow
-   // cond = NEUMANN;
-    //OutPut("neum " << x <<" " << y << " " << z << endl);
-   // TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
- // }
+    case PIPE_PIECE::INFLOW:
+      cond = DIRICHLET;
+      break;
+    default:
+      cond = DIRICHLET;
+      break;
+  }
+  //TODO Add Dirichlet at inflow and Neumann at outflow here!
 }
 
 
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
-  double eps = 1e-6, val[5];
+//  double eps = 1e-6, val[5];
+//
+//  value = 0.0;
+//
+//  // inflow
+//  //if ((fabs(x)<eps)&&(y>0))
+//  if ((fabs(x)<eps))
+//  {
+//    ExactU1(x,y,z,val);
+//    value = val[0];
+//  }
+//  if (x>53.75-25)
+//  {
+//    ExactU1(0,y,z-5.3333333333333325,val);
+//    value = val[0];
+//    value = 0;
+//    OutPut("out " << x << " "  << y << " " << z << " " << value << endl);
+//  }
+//  //OutPut(value << " ");
 
-  value = 0.0;
-
-  // inflow
-  //if ((fabs(x)<eps)&&(y>0))
-  if ((fabs(x)<eps))
+  PIPE_PIECE piece = in_which_piece_is_this_point(x,y,z);
+  switch(piece)
   {
-    ExactU1(x,y,z,val);
-    value = val[0];
+    case PIPE_PIECE::INFLOW:
+      value = 1; //TODO Hagen-P.!
+      break;
+    case PIPE_PIECE::OUTFLOW:
+      value = -1;
+      break;
+    default:
+      value =0;
+      break;
   }
-  if (x>53.75-25)
-  {
-    ExactU1(0,y,z-5.3333333333333325,val);
-    value = val[0];
-    value = 0;
-    OutPut("out " << x << " "  << y << " " << z << " " << value << endl);
-  }
-  //OutPut(value << " ");
 }
 
 
@@ -272,419 +382,168 @@ void U3BoundValue(double x, double y, double z, double &value)
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
 void LinCoeffs(int n_points, double *x, double *y, double *z,
-double **parameters, double **coeffs)
+               double **parameters, double **coeffs)
 {
-  double eps;
-  int i;
-  double *coeff;
-  // reference values
-  double L_infty = TDatabase::ParamDB->UREA_l_infty;
-  double U_infty = TDatabase::ParamDB->UREA_u_infty;
-  double eta = 1.19e-3;
-  double rho = 1100;
-  double nu;
-  
-  nu = eta/rho;
+  using namespace FluidProperties;
 
-  eps =  nu/(L_infty*U_infty);
-  //OutPut(nu <<  " " <<  L_infty << " "  << U_infty << " " << 1.0/eps<< endl);
-  //eps = 1/TDatabase::ParamDB->RE_NR;
-  for(i=0;i<n_points;i++)
+  double eps =  (eta / rho) / (l_infty * u_infty);
+
+  for(int i=0; i < n_points; i++)
   {
-    coeff = coeffs[i];
+    double* coeff = coeffs[i];
 
-    coeff[0] = eps;
-    coeff[1] = 0;                                 // f1
-    coeff[2] = 0;                                 // f2
-    coeff[3] = 0;                                 // f3
+    coeff[0] = eps;       // momentum diffusion
+    coeff[1] = 0;         // f1
+    coeff[2] = 0;         // f2
+    coeff[3] = 0;         // f3
+    coeff[4] = 0;         // g
   }
 }
 
 
-// ========================================================================
-// switch of x- and z- coordinate
-// ========================================================================
-
-void SwitchCoords_xz(TCollection *coll)
+/**
+ * Traverse a collection of cells and in each of its vertices
+ * swap the x and z coordinate.
+ *
+ * As these Cartesian coordinates are only stored in the vertices,
+ * it is enough to do the swapping there in order to swap it all.
+ *
+ * THis is used to "lie down" the initially standing sandwich grid.
+ *
+ * @param coll The collection to treat in such a way.
+ */
+void swap_x_and_z_coordinates(TCollection *coll)
 {
-  int N_Cells, N_V, i, j;
-  double x, y, z, nx, ny, nz;
-  TVertex *vertex;
-  TBaseCell *cell;
 
-  N_Cells = coll->GetN_Cells();
+  int N_Cells = coll->GetN_Cells();
 
-  // initialise ClipBoard to see which vertices are still untouched
-  for(i=0 ; i<N_Cells ; i++)
+  // initialise all Vertex ClipBoards to 0
+  for(int i=0 ; i<N_Cells ; i++)
   {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
+    TBaseCell* cell = coll->GetCell(i);
+    int n_v = cell->GetN_Vertices();
 
-    for (j=0 ; j<N_V ; j++)
+    for (int j=0 ; j<n_v ; j++)
     {
-      vertex = cell->GetVertex(j);
+      TVertex* vertex = cell->GetVertex(j);
       vertex->SetClipBoard(0);
     }
   }
 
-  // switch coordinates and 'normal' coordinates if ClipBoard=0
-  for(i=0 ; i<N_Cells ; i++)
+  // swap x and z coordinates if vertex->GetClipBoard() = 0
+  for(int i=0 ; i<N_Cells ; i++)
   {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
+    TBaseCell* cell = coll->GetCell(i);
+    int n_v = cell->GetN_Vertices();
 
-    for (j=0 ; j<N_V ; j++)
+    for (int j=0 ; j<n_v ; j++)
     {
-      vertex = cell->GetVertex(j);
+      TVertex* vertex = cell->GetVertex(j);
       if (!vertex->GetClipBoard())
       {
+        double x, y, z;
         vertex->GetCoords(x, y, z);
-        vertex->GetNormalCoords(nx, ny, nz);
-        vertex->SetCoords(z, y, x);
-        vertex->SetNormal(nz, ny, nx);
+        //swithc coordinates and place the start of the coiled tube at (0,0,0)
+        vertex->SetCoords(z-TwistedPipeConstants::l_inflow, y, x);
         vertex->SetClipBoard(1);
       }
     }
   }
+
 }
 
-
-void CoordsTrafo_bentPipe(double x, double y, double &x_bent_curve, double &y_bent_curve)
+/**
+ * This method calculates the new position of a given point in a
+ * pipe coiled according to the parameters given in namespace TwistedPipeConstants.
+ *
+ * @param[in] x Old x value (in straight setup).
+ * @param[in] y Old y value (in straight setup).
+ * @param[in] z Old z value (in straight setup).
+ * @param[out] x_coiled New x value (in coiled setup).
+ * @param[out] y_coiled New y value (in coiled setup).
+ * @param[out] z_coiled New z value (in coiled setup).
+ */
+void compute_position_in_coiled_pipe(
+    double x, double y,double z,
+    double& x_coiled, double& y_coiled, double& z_coiled)
 {
-  double l_infty = TDatabase::ParamDB->UREA_l_infty;
-  double  pi = 3.1415926535897;
-  double pipe_radius = TDatabase::ParamDB->UREA_PIPE_RADIUS;
-  double bent_radius = 1;
-  double  x_start_curve = 50;
-  double  x_end_curve = 160;
+  using namespace TwistedPipeConstants;
 
-  if(x < x_start_curve)
-  {
-    x_bent_curve=x;
-    y_bent_curve=bent_radius+y;
+  // three cases - inflow piece, coil, outflow piece
+  if( x  < 0)
+  {// inflow piece - let the point untouched
+    x_coiled = x;
+    y_coiled = y;
+    z_coiled = z;
+  }
+  else if ( x < derived_properties::l_twisted_part)
+  {//coil
+    double t_of_x = x / (derived_properties::l_twisted_part / n_twists);
+    double r_of_yz = twist_radius - y;
+    double h =  2*tube_radius +  space_between_twists; //constant...
+    double c_of_yz = z;
+
+    double PI = 3.14159265358979323846; //...constant
+
+    x_coiled = r_of_yz * cos(2*PI*t_of_x - PI/2);
+    y_coiled = r_of_yz * sin(2*PI*t_of_x - PI/2);
+    z_coiled = h * t_of_x + c_of_yz;
+
+    //move the center of the coil in accordance with the fixed inflow position
+    y_coiled += twist_radius;
   }
   else
-  {
-    if(x<=x_start_curve+(x_end_curve-x_start_curve)/2)
-    {
-      x_bent_curve=x_start_curve+(bent_radius+y) *
-        sin(pi/(x_end_curve-x_start_curve)*(x-x_start_curve));
-      y_bent_curve=(bent_radius+y) *
-        cos(pi/(x_end_curve-x_start_curve)*(x-x_start_curve));
-    }
-    else
-    {
-      if(x<x_start_curve+(x_end_curve-x_start_curve))
-      {
-        x_bent_curve=x_start_curve+(bent_radius+y) *
-          cos(pi/(x_end_curve-x_start_curve)*(x-x_start_curve-(x_end_curve-x_start_curve)/2));
-        y_bent_curve=-(bent_radius+y) *
-          sin(pi/(x_end_curve-x_start_curve)
-          *(x-x_start_curve-(x_end_curve-x_start_curve)/2));
-      }
-      else
-      {
-        x_bent_curve=x_start_curve-(x-x_end_curve);
-        y_bent_curve=-(bent_radius+y);
-      }
-
-    }
+  {// outflow piece - attach the outflow to the coil
+    double h =  2*tube_radius +  space_between_twists; //constant...
+    x_coiled = x - derived_properties::l_twisted_part;
+    y_coiled = y;
+    z_coiled = z + h * n_twists;
   }
 }
 
-
-void CoordsTrafo_bentPipe_3d_old(double x, double y,double z, double &x_bent_curve, double &y_bent_curve, double &z_bent_curve)
+/**
+ * This is the second method to call from the program -
+ * it takes care of the coiling of the pipe.
+ */
+void coil_pipe_helically(TCollection *coll)
 {
-  double l_infty = TDatabase::ParamDB->UREA_l_infty;
-  double  pi = 3.1415926535897;
-  double pipe_radius = TDatabase::ParamDB->UREA_PIPE_RADIUS;
-  double bent_radius = 5.6;
-  double  x_start_curve = 30;
-  double  x_end_curve = 100;
-  double lead = 1.5;
-
-  if(x < x_start_curve)
-  {
-    x_bent_curve=x;
-    y_bent_curve=bent_radius+y;
-    z_bent_curve=z;
-  }
-  else
-  {
-    if(x<=x_start_curve+(x_end_curve-x_start_curve)/2||(x>=170&&x<=205)||(x>=310&&x<=345))
-    {
-      x_bent_curve=x_start_curve+(bent_radius+y) *
-        sin(pi/(x_end_curve-x_start_curve)*(x-x_start_curve));
-      y_bent_curve=(bent_radius+y) *
-        cos(pi/(x_end_curve-x_start_curve)*(x-x_start_curve));
-      z_bent_curve=z+lead/140*(x-x_start_curve);
-    }
-    else
-    {
-      if(x<x_start_curve+(x_end_curve-x_start_curve)||(x>=205&&x<=240)||(x>=345&&x<=380))
-      {
-        x_bent_curve=x_start_curve+(bent_radius+y) *
-          cos(pi/(x_end_curve-x_start_curve)*(x-x_start_curve-(x_end_curve-x_start_curve)/2));
-        y_bent_curve=-(bent_radius+y) *
-          sin(pi/(x_end_curve-x_start_curve)
-          *(x-x_start_curve-(x_end_curve-x_start_curve)/2));
-        z_bent_curve=z+lead/140*(x-x_start_curve);
-      }
-      else
-      {
-        if(x<170||(x>=240&&x<=310)||(x>=380&&x<=450))
-        {
-          x_bent_curve=x_start_curve-(bent_radius+y) *sin(pi/70*(x-x_end_curve));
-          y_bent_curve=-(bent_radius+y) *
-            cos(pi/(70)
-            *(x-x_end_curve));
-          z_bent_curve=z+lead/140*(x-x_start_curve);
-
-        }
-        else
-	{
-          x_bent_curve=x-420;
-          y_bent_curve=(bent_radius+y);
-          z_bent_curve=z+lead/140*(x-x_start_curve);
-        }
-      }
-    }
-  }
-}
-
-void CoordsTrafo_bentPipe_3d(double x, double y,double z, double &x_bent_curve, double &y_bent_curve, double &z_bent_curve)
-{
-  double l_infty = TDatabase::ParamDB->UREA_l_infty;
-  double pipe_radius = TDatabase::ParamDB->UREA_PIPE_RADIUS;
-  double length_pipe = TDatabase::ParamDB->DRIFT_Z;
-
-  // determined by experiment
-  // not yet used
-  int number_of_circles = 4;
-
-  double bent_radius = 5.65;
-  int number_cells_per_circle = 20; // was 32
-
-  // rounding to nearest positive integer
-  int number_inlet_cells = 1; // was 3
-
-  /*
-   * This somehow configures the distance between the circles
-   * I assume it is the ratio of 2x Wall_Thickness to pipe radius.
-   * (Here 0.4/0.3)
-   */
-  double lead = 4./3.;
-
-  // distance in cm from one sandwich cell to another
-  double delta_x = length_pipe/TDatabase::ParamDB->N_CELL_LAYERS;
-  // shorten inlet
-  double x_prime;
-
-  // outer radius
-  double radius = bent_radius+pipe_radius;
- 
-  // the inlet part is straight
-  if(x <= number_inlet_cells*delta_x)
-  {
-    x_bent_curve = x;
-    y_bent_curve = bent_radius+y;
-    z_bent_curve = z;
-  }
-  else
-  {
-	// on which circle is this x lying (counting from bottom to top)
-    int number_circle = (int)(x/delta_x - number_inlet_cells)/(number_cells_per_circle) ;
-
-    // where within that cell is x located ?
-    x_prime = (x/delta_x-number_inlet_cells) - number_circle*number_cells_per_circle;
-
-    //outlet
-    if( TDatabase::ParamDB->N_CELL_LAYERS - number_inlet_cells
-       -(number_circle+1) * number_cells_per_circle < 0 )
-    {
-      x_bent_curve = number_inlet_cells*delta_x+x_prime+10;
-      y_bent_curve = bent_radius+y;
-      z_bent_curve = z+(number_circle)*lead;
-    }
-    // helically coiled middle part
-    else
-    {
-      if( x_prime <= number_cells_per_circle )
-      {
-	    x_bent_curve = number_inlet_cells*delta_x+(bent_radius+y)
-	    		     * sin(x_prime*2*Pi/number_cells_per_circle);
-        y_bent_curve = (bent_radius+y)
-        		     * cos(x_prime*2*Pi/number_cells_per_circle);
-        z_bent_curve = z+(number_circle)*lead
-        		     + lead*x_prime/number_cells_per_circle;
-      }
-    }
-  }
-  if (x_bent_curve>1)
-    x_bent_curve -= 25;
-  if ((x_bent_curve>25)&&(x_bent_curve<26))
-    x_bent_curve = 5./4 * 14.4;
-  if ((x_bent_curve>26)&&(x_bent_curve<27))
-    x_bent_curve = 6./4 * 14.4;
-  if ((x_bent_curve>27)&&(x_bent_curve<28))
-    x_bent_curve = 7./4 * 14.4;
-  
-}
-
-void SwitchCoords_bent_pipe(TCollection *coll)
-{
-  int N_Cells, N_V, i, j;
-  double x, y, z, x_bent_curve, y_bent_curve, z_bent_curve;
-  TVertex *vertex;
-  TBaseCell *cell;
-
-  N_Cells = coll->GetN_Cells();
+  int N_Cells = coll->GetN_Cells();
 
   // initialise ClipBoard
-  for(i=0 ; i<N_Cells ; i++)
+  for(int i=0 ; i<N_Cells ; i++)
   {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
+    TBaseCell* cell = coll->GetCell(i);
+    int n_verts = cell->GetN_Vertices();
 
-    for (j=0 ; j<N_V ; j++)
+    for (int j=0 ; j<n_verts ; j++)
     {
-      vertex = cell->GetVertex(j);
+      TVertex* vertex = cell->GetVertex(j);
       vertex->SetClipBoard(0);
     }
   }
 
-  // switch coordinates and 'normal' coordinates if ClipBoard=0
-  for(i=0 ; i<N_Cells ; i++)
+  // visit each vertex, reset its coordinates to its new position
+  for(int i=0 ; i < N_Cells ; i++)
   {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
+    TBaseCell* cell = coll->GetCell(i);
+    int n_verts = cell->GetN_Vertices();
 
-    for (j=0 ; j<N_V ; j++)
+    for (int j=0 ; j < n_verts ; j++)
     {
-      vertex = cell->GetVertex(j);
+      TVertex* vertex = cell->GetVertex(j);
       if (!vertex->GetClipBoard())
       {
+        double x, y, z;
+        double x_coiled, y_coiled, z_coiled;
+
         vertex->GetCoords(x, y, z);
-        CoordsTrafo_bentPipe_3d(x, y, z, x_bent_curve, y_bent_curve,z_bent_curve );
-        vertex->SetCoords(x_bent_curve, y_bent_curve, z_bent_curve);
-        vertex->SetNormal(x_bent_curve, y_bent_curve, z_bent_curve);
+        compute_position_in_coiled_pipe(x, y, z, x_coiled, y_coiled, z_coiled);
+        vertex->SetCoords(x_coiled, y_coiled, z_coiled);
+
+        //mark this vertex as treated
         vertex->SetClipBoard(1);
       }
     }
   }
 }
-
-
-// ========================================================================
-// calculate square coordinates for given circle coordinates
-// ========================================================================
-
-void CoordsTrafo_CircleToSquare(double x, double y, double& nx, double& ny)
-{
-  double phi, r, eps=1e-8;
-
-  // calculate polar coordinates
-  r = sqrt(x*x + y*y)*0.7;
-  // case x = y = 0
-  if (fabs(r)<eps)
-  {
-    nx = 0;
-    ny = 0;
-    return;
-  }
-  else                                            //r>0
-  {
-    if (y>=0)
-      phi = acos(x/r);
-    else
-      phi = -acos(x/r);
-
-    // transformation onto square coordinates
-    if ((fabs(y) - fabs(x))<=eps && x>0 )
-    {
-      ny = phi*r*4/Pi;
-      nx = r;
-      return;
-    }
-
-    if ((fabs(y)-fabs(x))>eps && y>0)
-    {
-      nx = (Pi/2 - phi)*r*4/Pi;
-      ny = r;
-      return;
-    }
-
-    if((fabs(y)-fabs(x))<=eps && x<0)
-    {
-      if (phi<0)
-        phi = phi + 2*Pi;
-      ny = (Pi - phi)*r*4/Pi;
-      nx = -r;
-      return;
-    }
-
-    if((fabs(y)-fabs(x))>eps && y<0)
-    {
-      if (phi<0)
-        phi = phi + 2*Pi;
-      nx = (-3*Pi/2 + phi)*r*4/Pi;
-      ny = -r;
-      return;
-    }
-  }
-}
-
-
-// ========================================================================
-// save square coordinates for given circle coordinates
-// ========================================================================
-
-void SquareCoords(TCollection *coll)
-{
-  int N_Cells, N_V, i, j;
-  double x = 0, y = 0, z = 0, nx, ny;
-  TVertex *vertex;
-  TBaseCell *cell;
-
-  N_Cells = coll->GetN_Cells();
-
-  // initialise ClipBoard
-  for(i=0 ; i<N_Cells ; i++)
-  {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
-    for (j=0 ; j<N_V ; j++)
-    {
-      vertex = cell->GetVertex(j);
-      vertex->SetClipBoard(0);
-    }
-  }
-
-  // get corresponding coordinates in the square for each vertex
-  // save them in 'normal' coordinates of vertex
-  for(i=0 ; i<N_Cells ; i++)
-  {
-    cell = coll->GetCell(i);
-    N_V = cell->GetN_Vertices();
-    for (j=0 ; j<N_V ; j++)
-    {
-      vertex = cell->GetVertex(j);
-      if (!vertex->GetClipBoard())
-      {
-        vertex->GetCoords(x, y, z);
-
-        CoordsTrafo_CircleToSquare(x, y, nx, ny);
-        vertex->SetNormal(nx, ny, z);
-        vertex->SetClipBoard(1);
-      }
-    }
-  }
-}
-
-void FindValue(TFEFunction3D *u1)
-{
-  double val[4];
-  u1->FindGradient(60,6.05,4.92,val);
-  OutPut("center of outflow " << val[0] << endl);
-  //exit(1);
-}
+#endif /*TWISTED_PIPE_FLOW_*/
