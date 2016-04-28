@@ -150,11 +150,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   db.add("iterative_solver_type", std::string("fgmres"),"");
   db.add("preconditioner", std::string("no_preconditioner"), "",
          {"no_preconditioner", "least_squares_commutator", "multigrid"} );
-         
+  db.add("residual_tolerance", 1.0e-13, "");
+  
   if (solver_name.compare("lsc") == 0)
   {
     db["preconditioner"] = "least_squares_commutator";
-    ErrThrow("LSC not yet set!");
+    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-12;
+    // just to not distract 'NSE3D::check_parameters'
+    TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
   else if (solver_name.compare("multigrid") == 0)
   {
@@ -198,7 +201,9 @@ double get_tolerance(std::string solver_name)
 
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
-    return 1e-9 ;
+    return 1e-9;
+  if(solver_name.compare("lsc") == 0)
+    return 1e-9;
 #else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
