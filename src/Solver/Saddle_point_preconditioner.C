@@ -32,11 +32,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
     Output::print("WARNING: solving systems within LSC using some iterative "
                   "routine requires a flexible solver.");
   }
-#ifdef __2D__
-  unsigned int dim = 2;
-#else
-  unsigned int dim = 3;
-#endif
   bool pressure_correction_in_matrix = this->M->pressure_correction_enabled();
   this->M->disable_pressure_correction();
   
@@ -476,60 +471,90 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     // first: assemble a velocity mass matrix
     
 #ifdef __2D__
+    typedef MultiIndex2D MultiIndex;
+    MultiIndex v = D00; // value, no derivatives
+    typedef CoeffFct2D CoeffFct;
+    typedef AssembleFctParam2D AssembleFctParam;
+    typedef ManipulateFct2D ManipulateFct;
+    typedef TFEFunction2D FEFunction;
+    typedef LocalAssembling2D LocalAssembling;
+    typedef TSquareMatrix2D SqMat;
+    typedef TMatrix2D RectMat;
+    typedef TFESpace2D FESpace;
+    typedef BoundCondFunct2D BoundCondFunct;
+    typedef BoundValueFunct2D BoundValueFunct;
+#else
+    typedef MultiIndex3D MultiIndex;
+    MultiIndex v = D000; // value, no derivatives
+    typedef CoeffFct3D CoeffFct;
+    typedef AssembleFctParam3D AssembleFctParam;
+    typedef ManipulateFct3D ManipulateFct;
+    typedef TFEFunction3D FEFunction;
+    typedef LocalAssembling3D LocalAssembling;
+    typedef TSquareMatrix3D SqMat;
+    typedef TMatrix3D RectMat;
+    typedef TFESpace3D FESpace;
+    typedef BoundCondFunct3D BoundCondFunct;
+    typedef BoundValueFunct3D BoundValueFunct;
+#endif
+    
     // create an approriate LocalAssembling2D object:
     // We will assemble only one velocity block and then create a BlockMatrix
     // where this one block appears twice (three times in 3D)
     int n_terms = 1; // only 1 term (u,v)
-    std::vector<MultiIndex2D> derivatives(1, D00); // that one term is the value
+    std::vector<MultiIndex> derivatives(1, v); // that one term is the value
     std::vector<int> fe_space_numbers(1, 0); // only 1 space with index 0
     std::vector<int> row_space(1, 0); // 1 matrix 
     std::vector<int> column_space(1, 0); // 1 matrix
     std::vector<int> rhs_space(1, 0); // not needed
-    CoeffFct2D * coeff = nullptr; // no coefficients
-    AssembleFctParam2D* local_assembling_function = 
+    CoeffFct * coeff = nullptr; // no coefficients
+    AssembleFctParam* local_assembling_function = 
       local_assembling_velocity_mass;
-    ManipulateFct2D * manipulate = nullptr; // not needed
+    ManipulateFct * manipulate = nullptr; // not needed
     int n_matrices = 1; // assemble only one matrix
     int n_rhs = 0; // no right hand side
     int n_parameter = 0; // not needed
     std::vector<ParamFct*> parameter_functions; // no parameter functions
     std::vector<int> begin_parameter; // not needed
     int n_parameters = 0; // not needed
-    TFEFunction2D ** fe_functions = nullptr;
+    FEFunction ** fe_functions = nullptr;
     int n_fe_values = 0; // no other fe values are needed
     std::vector<int> fe_value_function_index; // not needed
-    std::vector<MultiIndex2D> fe_value_multi_index; // not needed
-    LocalAssembling2D la(n_terms, derivatives, fe_space_numbers, row_space, 
-                         column_space, rhs_space, coeff, 
-                         local_assembling_function, manipulate, n_matrices,
-                         n_rhs, n_parameter, parameter_functions, 
-                         begin_parameter, n_parameters, fe_functions, 
-                         n_fe_values, fe_value_function_index, 
-                         fe_value_multi_index);
+    std::vector<MultiIndex> fe_value_multi_index; // not needed
+    LocalAssembling la(n_terms, derivatives, fe_space_numbers, row_space, 
+                       column_space, rhs_space, coeff, 
+                       local_assembling_function, manipulate, n_matrices,
+                       n_rhs, n_parameter, parameter_functions, 
+                       begin_parameter, n_parameters, fe_functions, 
+                       n_fe_values, fe_value_function_index, 
+                       fe_value_multi_index);
     
     // prepare a call to Assemble2D
     int n_fe_spaces = 1;
-    TSquareMatrix2D *sq_matrices[1];
+    SqMat *sq_matrices[1];
     
-    //TFESpace2D* neumann_velocity_space = 
+    //FESpace* neumann_velocity_space = 
     //  this->velocity_space->copy_with_all_Neumann_boundary();
-    //const TFESpace2D* v_space = neumann_velocity_space;
-    const TFESpace2D* v_space = this->velocity_space;
+    //const FESpace* v_space = neumann_velocity_space;
+    const FESpace* v_space = this->velocity_space;
     
-    TSquareMatrix2D one_block_of_mass_matrix(v_space);
+    SqMat one_block_of_mass_matrix(v_space);
     
     sq_matrices[0] =  &one_block_of_mass_matrix;
     int n_rect_mat = 0; // only square matrices
-    TMatrix2D *rect_matrices[0];
+    RectMat *rect_matrices[0];
     double **rhs = nullptr; // right hand sides
-    const TFESpace2D ** fe_spaces_rhs = nullptr;
+    const FESpace ** fe_spaces_rhs = nullptr;
     // which boundary conditions are correct here? We could as well use the ones
-    // from the velocity_space
-    BoundCondFunct2D * boundary_conditions[2] = {
-      BoundConditionNoBoundCondition, BoundConditionNoBoundCondition};
-    BoundValueFunct2D* non_const_bound_values[2] = {
-      BoundaryValueHomogenous, BoundaryValueHomogenous };
-    
+    // from the velocity_space. We use three even in 2D, where two would be ok.
+    BoundCondFunct * boundary_conditions[3] = {
+      BoundConditionNoBoundCondition, BoundConditionNoBoundCondition, 
+      BoundConditionNoBoundCondition };
+    BoundValueFunct* non_const_bound_values[3] = {
+      BoundaryValueHomogenous, BoundaryValueHomogenous, 
+      BoundaryValueHomogenous };
+   
+#ifdef __2D__
     if(this->velocity_space->get_fe(0).GetBaseFunct2D()->GetBaseVectDim() != 1)
       has_vector_valued_basis_functions = true;
     else
@@ -538,10 +563,22 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     Assemble2D(n_fe_spaces, &v_space, n_matrices, sq_matrices,
                n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
                boundary_conditions, non_const_bound_values, la);
-    
     BlockFEMatrix mass_matrix({v_space, v_space});
     mass_matrix.replace_blocks(one_block_of_mass_matrix,
                                {{0,0}, {1,1}}, {false, false});
+#else
+    if(this->velocity_space->get_fe(0).GetBaseFunct3D()->GetBaseVectDim() != 1)
+      has_vector_valued_basis_functions = true;
+    else
+      has_vector_valued_basis_functions = false;
+    
+    Assemble3D(n_fe_spaces, &v_space, n_matrices, sq_matrices,
+               n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
+               boundary_conditions, non_const_bound_values, la);
+    BlockFEMatrix mass_matrix({v_space, v_space, v_space});
+    mass_matrix.replace_blocks(one_block_of_mass_matrix,
+                               {{0,0}, {1,1}, {2,2}}, {false, false, false});
+#endif
     
     //number of entries on diagonal in mass matrix
     for(unsigned int d = 0; d < n_diagonal_entries; ++d)
@@ -550,9 +587,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
       //Output::print("inverse_diagonal[", d, "] = ", inverse_diagonal[d]);
     }
     //delete neumann_velocity_space;
-#else
-    ErrThrow("not yet implemented in 3D");
-#endif
     
     Output::increaseVerbosity(1);
   }
