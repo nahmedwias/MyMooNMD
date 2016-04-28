@@ -170,10 +170,8 @@ int main(int argc, char* argv[])
 #endif
 
   // Create output directory, if not already existing.
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
+  if(parmoon_db["WRITE_VTK"].is(1))
+    mkdir(parmoon_db["output_directory"], 0777);
 
   // Choose example according to the value of
   // TDatabase::ParamDB->EXAMPLE and construct it.
