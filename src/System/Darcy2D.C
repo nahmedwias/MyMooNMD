@@ -242,11 +242,11 @@ void Darcy2D::output(int i)
                   example.get_coeffs(), &aux, 1, &pointer_to_p_space,
                   errors.data() + 3);
 
-    Output::print<1>(" L2(u):      ", errors[0]);
-    Output::print<1>(" L2(div(u)): ", errors[1]);
-    Output::print<1>(" H1-semi(u): ", errors[2]);
-    Output::print<1>(" L2(p):      ", errors[3]);
-    Output::print<1>(" H1-semi(p): ", errors[4]);
+    Output::print<1>(" L2(u):      ", setprecision(14), errors[0]);
+    Output::print<1>(" L2(div(u)): ", setprecision(14), errors[1]);
+    Output::print<1>(" H1-semi(u): ", setprecision(14), errors[2]);
+    Output::print<1>(" L2(p):      ", setprecision(14), errors[3]);
+    Output::print<1>(" H1-semi(p): ", setprecision(14), errors[4]);
     
     // copy 
     std::copy(errors.begin(), errors.end()-1, this->errors.begin());
