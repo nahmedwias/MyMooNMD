@@ -42,7 +42,7 @@ TFE3D::TFE3D(BaseFunct3D basefunct_id, NodalFunctional3D nodalfunctional_id,
 }
 
 /** check N[i](b[j]) = delta[ij] */
-void TFE3D::CheckNFandBF()
+void TFE3D::CheckNFandBF() const
 {
   int i,j,k,l, N_Points;
   double *xi, *eta, *zeta;
