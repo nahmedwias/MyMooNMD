@@ -725,7 +725,18 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
                  //find the local index of this vertex in the neib cell
                  jj=0;
-                 while(CurrVert != (coll->GetCell(N2))->GetVertex(jj)) jj++;
+                 while(CurrVert != (coll->GetCell(N2))->GetVertex(jj))
+                 {
+                   jj++;
+                   //FIXME CB: this causes serious valgrind trouble
+                   // when using a sandwich geometry!
+                   // I guess it's just no good idea to compare pointers to TVertex
+                   if(jj > coll->GetCell(N2)->GetN_Vertices())
+                   {
+                     ErrThrow("Something's terribly wrong here: "
+                         "a common vertex was not found in a neighbouring cell.")
+                   }
+                 }
                  HaloCellLocVertNo[VertNeibRanks[N]] = jj;
 
                  VertNeibRanks[N]++;

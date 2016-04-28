@@ -21,7 +21,7 @@
 // Constructors
 TGridCell::TGridCell(TRefDesc *refdesc, int reflevel) : TBaseCell(refdesc)
 {
-  Vertices = new TVertex*[RefDesc->GetN_OrigVertices()];
+  Vertices = std::vector<TVertex*>(RefDesc->GetN_OrigVertices(), nullptr);
 
   Children = NULL;
   Parent = NULL;
@@ -38,23 +38,26 @@ TGridCell::~TGridCell()
     exit (-1);
   }
 
-  delete [] Vertices;
 }
 
 // Methods
 int TGridCell::SetVertex(int Vert_i, TVertex *Vert)
 {
-  Vertices[Vert_i] = Vert;
+  Vertices.at(Vert_i) = Vert;
   return 0;
 }
 
 TVertex *TGridCell::GetVertex(int Vert_i)
 {
+  //CB DEBUG
+    if(Vert_i > Vertices.size() -1 )
+      Output::print("Beep: ", Vert_i);
+  //END DEBUG
   return Vertices[Vert_i];
 }
 const TVertex *TGridCell::GetVertex(int Vert_i) const
 {
-   return Vertices[Vert_i];
+   return Vertices.at(Vert_i);
 }
 
 int TGridCell::GetN_Children()

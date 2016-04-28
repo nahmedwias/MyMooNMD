@@ -68,20 +68,16 @@ int main(int argc, char* argv[])
   NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_NSE3D example;
-
-  // project specific: prepare the coiled geometry
-  size_t n_twists = 1;
-  size_t n_segments_per_twist = 20;
-  double l_inflow = 5;
-  size_t n_segments_inflow = 2;
-  double l_outflow = 20;
-  size_t n_segments_outflow = 8;
-  double tube_radius = 0.3;
-  double twist_radius = 5.9;
-  double space_between_twists = 0.3;
+  // project specific: prepare the coiled geometry BIG JOKE: Using these parameters.
+  size_t n_twists                 = TDatabase::ParamDB->DG_P0;
+  size_t n_segments_per_twist     = TDatabase::ParamDB->DG_P1;
+  double l_inflow                 = TDatabase::ParamDB->DG_P2;
+  size_t n_segments_inflow        = TDatabase::ParamDB->DG_P3;
+  double l_outflow                = TDatabase::ParamDB->DG_P4;
+  size_t n_segments_outflow       = TDatabase::ParamDB->DG_P5;
+  double tube_radius              = TDatabase::ParamDB->DG_P6;
+  double twist_radius             = TDatabase::ParamDB->DG_P7;
+  double space_between_twists     = TDatabase::ParamDB->DG_P8;
 
   CoiledPipe::set_up_geoconsts(
       n_twists,
@@ -97,6 +93,10 @@ int main(int argc, char* argv[])
   double drift_x = 0;
   double drift_y = 0;
   double drift_z =CoiledPipe::GeoConsts::l_tube;
+
+  // Choose example according to the value of
+  // TDatabase::ParamDB->EXAMPLE and construct it.
+  Example_NSE3D example;
 
   // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE,
@@ -182,6 +182,8 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
+    nse3d.output(k);
+
     Chrono chrono_nonlinit;
 
     if(my_rank==0)

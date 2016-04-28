@@ -6,6 +6,9 @@
  * crystallizer) and could be used as a model of how to control and
  * modify a ParMooN sandwich geometry.
  *
+ * NOTE: One length unit inthe grid is interpreted as 1 cm - this must be
+ * taken into account in any example computed on a grid treated with this.
+ *
  * @author various, rewritten by Clemens Bartsch
  * @date 2016/04/28
  */
