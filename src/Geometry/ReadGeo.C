@@ -187,6 +187,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TBaseCell *JNeib1, *JNeib2;
   Shapes CellType;
 
+
   double bd_parameter_a, bd_parameter_b;
 
   if(TDatabase::ParamDB->SC_VERBOSE>1)
@@ -317,7 +318,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     // set the index in the cell list
     CellTree[i]->SetCellIndex(i);
   }
-  cout << " Domain::MakeGrid() creating 2D grid " << endl;
   
   // initialize iterators
   TDatabase::IteratorDB[It_EQ]->SetParam(this);
@@ -339,7 +339,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   for (int i=0;i<N_RootCells;i++)
   {
     N_Edges = CellTree[i]->GetN_Edges();
-    cout << " Domain::MakeGrid() creating 2D grid " << i << endl;
  
     for (j=0;j<N_Edges;j++)
     {

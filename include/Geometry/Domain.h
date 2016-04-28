@@ -310,18 +310,21 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-      void Init(const char *PRM, const char *GEO);
+      void InitFromGEO(const char *PRM, const char *GEO);
 
       /**
        * @brief Initialize the domain starting from a boundary file and a mesh
        *
        * @param[in] PRM filepath to the boundary description
-       * @param[in] m The mesh structure
+       * @param[in] m filepath to mesh file
        */
+      void InitFromMesh(const char *PRM, std::string m);
 
-      void Init(const char *PRM, Mesh& m);
+      /** 
+       * @brief Initialize the domain starting from boundary and geometry file
+       */
+      void Init(const char *PRM, const char *GEO);
 
-      
     /** @brief write domain boundary  into a postscript file */
     int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */
