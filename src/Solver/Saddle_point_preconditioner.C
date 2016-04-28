@@ -46,9 +46,11 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
   pressure_space = &m.get_row_space(n_rows - 1);
   if(n_rows < 2 || n_cols != n_rows)
     ErrThrow("can not create a Saddle_point_preconditioner with this matrix");
-  if(n_rows != (dim+1) || n_cols != (dim+1))
-    ErrThrow("currently we only support a BlockMatrix for Stokes/Navier-Stokes "
-             "problems.");
+  if(n_rows == 2 && this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
+    ErrThrow("boundary corrected LSC only available for (Navier-) Stokes type "
+             "problems. This seems to be a Darcy type problem.\nIt is unclear "
+             "how the boundary correction has to be implemented for H(div) "
+             "elements");
   
   //velocity block K
   // take all blocks except from last row and last column
@@ -97,8 +99,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
   {
     //boundary corrected LSC
     //construct correctionMatrixBdry (anew...) and fill with ones
-    bdryCorrectionMatrix_ = std::vector<double>(
-        dim * velocity_space->GetN_DegreesOfFreedom(), 1.);
+    bdryCorrectionMatrix_ = std::vector<double>(this->inverse_diagonal.size(),
+                                                1.);
     //set up the bdryCorrectionMatrix_
     computeBdryCorrectionMatrix(m);
     //set up the poissonMatrixBdry_
@@ -391,31 +393,12 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
     case Saddle_point_preconditioner::type::lsc: // original LSC
     case Saddle_point_preconditioner::type::bd_lsc: // bdry corrected LSC
     {
-      // construct matrix with pointer to structure of divergence_block but own
-      // "entries" array. this is basically transposing, but with already known
-      // structure
-      TMatrix divBlockModified(*divergence_block);
-      for(int gradRow = 0; gradRow < gradient_block->GetN_Rows(); ++gradRow)
-      {
-        int segmentStart = gradient_block->GetRowPtr()[gradRow];
-        int segmentEnd = gradient_block->GetRowPtr()[gradRow + 1];
-        
-        for(int index = segmentStart; index < segmentEnd; ++index)
-        {
-          //set according entry in divBlockModified
-          divBlockModified.set(gradient_block->GetKCol()[index], gradRow,
-                               gradient_block->GetEntries()[index]);
-        }
-      }
-      
-      // compute ret as B*D*B^T for B: divergence_block and D: inverse_diagonal
-      //TMatrix* ret = divBlockModified.multiply_with_transpose_from_right(
-      //    inverse_diagonal);
       // get the matrix, put it into a shared_ptr, essentially this is the 
       // matrix which should be returned
       std::shared_ptr<TMatrix> 
         ret(divergence_block->multiply_with_transpose_from_right(
           inverse_diagonal));
+      
       // put the shared_ptr into a vector
       std::vector<std::shared_ptr<TMatrix>> ret_as_vector{ret};
       // create a BlockMatrix and return it
@@ -433,6 +416,7 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
 /* ************************************************************************** */
 // local assembling routine to assemble a mass velocity matrix
 // This needs to go into some assembling class!
+bool has_vector_valued_basis_functions;
 void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
                                     double hK, double **OrigValues, 
                                     int *N_BaseFuncts, double ***LocMatrices, 
@@ -441,19 +425,33 @@ void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
   // assemble (u,v) at a specific quadrature point in a specific cell
   double ** MatrixM = LocMatrices[0];
   const double * u_values = OrigValues[0]; // the values of u (and v)
-
+  
   const int N_U = N_BaseFuncts[0];
   for(int i = 0; i < N_U; i++)
   {
     double *MatrixM_row  = MatrixM[i];
     double test00 = u_values[i];
-
+    
     for(int j = 0; j < N_U; j++)
     {
       double ansatz00 = u_values[j];
-      MatrixM_row[j] += Mult*(ansatz00*test00);;
+      MatrixM_row[j] += Mult*(ansatz00*test00);
     }                            // endfor j
   }                              // endfor i
+  if(has_vector_valued_basis_functions)
+  {
+    for(int i = 0; i < N_U; i++)
+    {
+      double *MatrixM_row  = MatrixM[i];
+      double test00_y = u_values[i + N_U];
+      
+      for(int j = 0; j < N_U; j++)
+      {
+        double ansatz00_y = u_values[j+N_U];
+        MatrixM_row[j] += Mult*(ansatz00_y*test00_y);
+      }                            // endfor j
+    }                              // endfor i
+  }
 }
 
 void Saddle_point_preconditioner::fill_inverse_diagonal()
@@ -464,7 +462,8 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
   
   //mass-matrix Q and its approximation
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
-  { // SIMPLE
+  {
+    // SIMPLE
     for(unsigned int d = 0; d < n_diagonal_entries; ++d)
     {
       this->inverse_diagonal.push_back(1.0 / this->velocity_block.get(d, d));
@@ -530,6 +529,11 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
       BoundConditionNoBoundCondition, BoundConditionNoBoundCondition};
     BoundValueFunct2D* non_const_bound_values[2] = {
       BoundaryValueHomogenous, BoundaryValueHomogenous };
+    
+    if(this->velocity_space->get_fe(0).GetBaseFunct2D()->GetBaseVectDim() != 1)
+      has_vector_valued_basis_functions = true;
+    else
+      has_vector_valued_basis_functions = false;
     
     Assemble2D(n_fe_spaces, &v_space, n_matrices, sq_matrices,
                n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
@@ -639,8 +643,8 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
             //       << " put correction to " << horizontalDofsCorrectionValue
             //       << endl);
             //this is a vertical (y-direction) velo dof
-            bdryCorrectionMatrix_[velocity_space->GetN_DegreesOfFreedom()
-                + iVeloDof] = verticalDofsCorrectionValue;
+            bdryCorrectionMatrix_.at(velocity_space->GetN_DegreesOfFreedom()
+                + iVeloDof) = verticalDofsCorrectionValue;
           } //end loop over velocity dofs
         } // end if dirichlet boundary
       } //end if boundary joint
@@ -787,32 +791,10 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
 {
   if(this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
   {
-    // construct matrix with pointer to structure of divergence_block but own
-    // "entries" array
-    // this is basically transposing, but with already known structure
-    TMatrix divBlockModified(*divergence_block);
-    for(int gradRow = 0; gradRow < gradient_block->GetN_Rows(); ++gradRow)
-    {
-      
-      int segmentStart = gradient_block->GetRowPtr()[gradRow];
-      int segmentEnd = gradient_block->GetRowPtr()[gradRow + 1];
-      
-      for(int index = segmentStart; index < segmentEnd; ++index)
-      {
-        //set according entry in divBlockModified
-        divBlockModified.set(gradient_block->GetKCol()[index], gradRow,
-                             gradient_block->GetEntries()[index]);
-      }
-    }
-    
-    //a pointer to a new, heap constructed matrix B*H^{-1}*B^T
-    //TMatrix* ret = divBlockModified.multiply_with_transpose_from_right(
-    //    bdryCorrectionMatrix_, *Poisson_solver_matrix->GetStructure());
     bool transpose;
     TMatrix* ret = divergence_block->multiply_with_transpose_from_right(
       bdryCorrectionMatrix_,
       Poisson_solver_matrix->get_block(0, 0, transpose)->GetStructure());
-    
     poissonMatrixBdry_.reset(ret);
   }
   else
