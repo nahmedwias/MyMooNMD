@@ -172,6 +172,27 @@ class LocalAssembling3D
     [[ deprecated ]] LocalAssembling3D(LocalAssembling3D_type la_type,
                       TAuxParam3D& aux, TDiscreteForm3D& df);
 
+    /** @brief custom constuctor setting all variables 
+     * 
+     * Only use this if you know what you are doing. See the respective 
+     * constructor in LocalAssembling2D for more documentation.
+     */
+    LocalAssembling3D(int myN_Terms,
+                      std::vector<MultiIndex3D> myDerivatives,
+                      std::vector<int> myFESpaceNumber,
+                      std::vector<int> myRowSpace,
+                      std::vector<int> myColumnSpace,
+                      std::vector<int> myRhsSpace,
+                      CoeffFct3D* myCoeffs, 
+                      AssembleFctParam3D* myAssembleParam,
+                      ManipulateFct3D* myManipulate,
+                      int myN_Matrices, int myN_Rhs,
+                      int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
+                      std::vector<int> myBeginParameter, int myN_Parameters,
+                      TFEFunction3D** myFEFunctions3D,  int myN_FEValues,
+                      std::vector<int> myFEValue_FctIndex, 
+                      std::vector<MultiIndex3D> myFEValue_MultiIndex);
+    
     /** destructor */
     ~LocalAssembling3D();
     
