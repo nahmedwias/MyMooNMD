@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   
   // create output directory, if not already existing
   if(parmoon_db["WRITE_VTK"].is(1))
-    mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
+    mkdir(parmoon_db["output_directory"], 0777);
   
   // choose example according to the value of db["example"]
   Example_Darcy2D example;
