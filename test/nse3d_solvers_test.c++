@@ -77,15 +77,13 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   }
 }
 #ifndef _MPI
-void check(int example, const TDomain& domain,
+void check(ParameterDatabase& db, int example, const TDomain& domain,
            int velocity_order, int pressure_order,
-           int nstype,
-           std::array<double, int(4)> errors, double tol)
+           int nstype, std::array<double, int(4)> errors, double tol)
 #else
-void check(int example, const TDomain& domain, int maxSubDomainPerDof,
-           int velocity_order, int pressure_order,
-           int nstype,
-           std::array<double, int(4)> errors, double tol)
+void check(ParameterDatabase& db, int example, const TDomain& domain,
+           int maxSubDomainPerDof, int velocity_order, int pressure_order,
+           int nstype, std::array<double, int(4)> errors, double tol)
 #endif
 {
 #ifdef _MPI
@@ -102,7 +100,6 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
                   pressure_order, " ",nstype," *******");
   }
 
-
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
@@ -118,9 +115,9 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
 
   // Construct the nse3d problem object.
 #ifndef _MPI
-  NSE3D nse3d(domain, example_obj);
+  NSE3D nse3d(domain, db, example_obj);
 #else
-  NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
+  NSE3D nse3d(domain, db, example_obj, maxSubDomainPerDof);
 #endif
 
   nse3d.assemble_linear_terms();
@@ -145,31 +142,45 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
 
 // Choose the solver according to the input string and set global database
 // entries accordingly.
-void set_solver_globals(std::string solver_name)
+void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
-
+  db.add("solver_type", std::string("iterative"), "", {"direct", "iterative"});
+  db.add("direct_solver_type", std::string("umfpack"), "", 
+         {"umfpack", "pardiso", "mumps"});
+  db.add("iterative_solver_type", std::string("fgmres"),"");
+  db.add("preconditioner", std::string("no_preconditioner"), "",
+         {"no_preconditioner", "least_squares_commutator", "multigrid"} );
+         
   if (solver_name.compare("lsc") == 0)
   {
+    db["preconditioner"] = "least_squares_commutator";
     ErrThrow("LSC not yet set!");
   }
   else if (solver_name.compare("multigrid") == 0)
   {
+    db["preconditioner"] = "multigrid";
     ErrThrow("Multigrid not yet set!");
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "umfpack";
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
     TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
   {
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "pardiso";
     ErrThrow("pardiso not yet set!");
   }
 #else
   else if (solver_name.compare("mumps") == 0)
   {
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "mumps";
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
     TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -216,7 +227,10 @@ int main(int argc, char* argv[])
 #endif
 
   TFEDatabase3D FEDatabase;
-
+  
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db["problem_type"].set<size_t>(5);
+  
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
@@ -234,7 +248,7 @@ int main(int argc, char* argv[])
 
   TDatabase::ParamDB->MEASURE_ERRORS = 1;
 
-  set_solver_globals(std::string(argv[1]));
+  set_solver_globals(std::string(argv[1]), db);
 
   double tol = get_tolerance(std::string(argv[1]));
 
@@ -290,9 +304,10 @@ int main(int argc, char* argv[])
       size_t exmpl = -3;
       size_t nstype = 1;
 #ifndef _MPI
-      check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 2, -4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, 
+            errors, tol);
 #endif
     }
     {
@@ -301,9 +316,10 @@ int main(int argc, char* argv[])
       size_t exmpl = -3;
       size_t nstype = 2;
 #ifndef _MPI
-      check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 12, -4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, 
+            errors, tol);
 #endif
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
@@ -312,7 +328,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
       size_t exmpl = -4;
       size_t nstype = 3;
-      check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 3, -4711, nstype, errors, tol);
     }
 #endif
   }
@@ -355,9 +371,10 @@ int main(int argc, char* argv[])
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
 #ifndef _MPI
-      check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, 2,-4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, 
+            tol);
 #endif
     }
 #ifndef _MPI
@@ -366,7 +383,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       size_t exmpl = -4;
       size_t nstype = 4; //TODO 14
-      check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, 3,-4711, nstype, errors, tol);
     }
 #endif
   }

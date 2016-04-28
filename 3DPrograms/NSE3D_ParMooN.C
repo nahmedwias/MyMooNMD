@@ -38,6 +38,10 @@ int main(int argc, char* argv[])
   chrono_parts.print_time(std::string("program start"));
   // Construct the ParMooN Databases.
   TDatabase Database;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
 
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
@@ -56,7 +60,8 @@ int main(int argc, char* argv[])
   TDomain domain(argv[1]);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
@@ -66,16 +71,15 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
-  {
+  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
-  }
 
   // Write grid into a postscript file (before partitioning)
-  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
+  if(parmoon_db["write_ps"] && my_rank == 0)
   {
     domain.PS("Domain.ps", It_Finest, 0);
   }
@@ -125,10 +129,8 @@ int main(int argc, char* argv[])
 #endif
 
   // Create output directory, if not already existing.
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
+  if(parmoon_db["WRITE_VTK"].is(1))
+    mkdir(parmoon_db["output_directory"], 0777);
 
   // Choose example according to the value of
   // TDatabase::ParamDB->EXAMPLE and construct it.
@@ -136,9 +138,9 @@ int main(int argc, char* argv[])
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
-  NSE3D nse3d(domain, example, maxSubDomainPerDof);
+  NSE3D nse3d(domain, parmoon_db, example, maxSubDomainPerDof);
 #else
-  NSE3D nse3d(domain, example);
+  NSE3D nse3d(domain, parmoon_db, example);
 #endif
 
   // assemble all matrices and right hand side
@@ -162,6 +164,10 @@ int main(int argc, char* argv[])
     // solve the system
     nse3d.solve();
 
+    //no nonlinear iteration for Stokes problem
+    if(parmoon_db["problem_type"].is(3))
+      break;
+    
     nse3d.assemble_non_linear_term();
 
     chrono_nonlinit.print_time(std::string("nonlinear iteration ") + std::to_string(k-1));

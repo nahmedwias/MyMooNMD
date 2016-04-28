@@ -20,6 +20,17 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+ParameterDatabase get_default_NSE3D_parameters()
+{
+  Output::print<3>("creating a default NSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE3D parameter database");
+  
+  return db;
+}
+
 NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
                                     NSE3D::Matrix type
@@ -83,13 +94,16 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #endif
 }
 
-NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
+NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+             const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), multigrid_(nullptr),
-    defect_(), old_residuals_(), initial_residual_(1e10), errors_()
+) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
+    solver(param_db), multigrid_(nullptr), defect_(), old_residuals_(),
+    initial_residual_(1e10), errors_()
 {
+  this->db.merge(param_db, false);
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -116,8 +130,9 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
   
-  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5 
-                        && TDatabase::ParamDB->SOLVER_TYPE ==1);
+  bool usingMultigrid = 
+       this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
@@ -151,7 +166,7 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
   }
   else // multigrid
   {
-    size_t n_levels = TDatabase::ParamDB->LEVELS;
+    size_t n_levels = this->solver.get_db()["n_multigrid_levels"];
     std::vector<TCollection*> collections(n_levels,nullptr);
     for(size_t i =0 ; i< n_levels ; ++i)
     {
@@ -160,8 +175,8 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
     }
 
     std::vector<double> param(2);
-    param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+    param[0] = this->solver.get_db()["damping_factor"];
+    param[1] = this->solver.get_db()["damping_factor_finest_grid"];
     
     this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
     this->transposed_B_structures_.resize(n_levels,nullptr);
@@ -630,7 +645,7 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
                        normOfResidual/initial_residual_);
       // The following line comes from MooNMD and shall be us a reminder to
       // TODO count total number of linear iterations for iterative solvers
-      //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
+      //if(this->solver.get_db()["solver_type"].is("iterative"))
       //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
     }
 
@@ -703,17 +718,14 @@ void NSE3D::solve()
 {
   System_per_grid& s = this->systems_.front();
 
-  bool using_multigrid = //determine whether we make use of multigrid
-      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+  //determine whether we make use of multigrid
+  bool using_multigrid = 
+       this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
 
   if(!using_multigrid)
   {//no multigrid
-    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
-    {
-      ErrThrow("You chose a non-multigrid iterative solver. This not available for NSE3D so far.");
-    }
-    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    if(this->solver.get_db()["solver_type"].is("direct"))
     {
 #ifndef _MPI
       // So far only UMFPACK is available as direct solver in sequential case.
@@ -744,6 +756,8 @@ void NSE3D::solve()
 #endif
 
     }
+    else
+      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
   }
   else
   {//multigrid preconditioned iterative solver is used
@@ -758,7 +772,7 @@ void NSE3D::solve()
 
 void NSE3D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
     return;
   
   System_per_grid& s=this->systems_.front();
@@ -785,8 +799,8 @@ void NSE3D::output(int i)
     char SubID[] = "";
     Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
 #else
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    std::string filename = this->db["output_directory"];
+    filename += "/" + this->db["base_name"].value_as_string();
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -797,7 +811,7 @@ void NSE3D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(this->db["compute_errors"])
   {
     double err_u1[4]; // of these arrays only the two first entries are used,
     double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
@@ -870,7 +884,7 @@ void NSE3D::output(int i)
       Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));
       Output::print<1>("H1-semi(p): ", setprecision(10), errors_.at(3));
     }
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
   delete u3;
