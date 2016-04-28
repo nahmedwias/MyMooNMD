@@ -192,8 +192,15 @@ void Solver<L, V>::update_matrix(const L& matrix)
 {
   if(db["solver_type"].is("direct")) // direct solver
   {
-    this->direct_solver.reset(
-      new DirectSolver(matrix, DirectSolver::DirectSolverTypes::umfpack));
+    DirectSolver::DirectSolverTypes t;
+    if(db["direct_solver_type"].is("umfpack"))
+      t = DirectSolver::DirectSolverTypes::umfpack;
+    else if(db["direct_solver_type"].is("pardiso"))
+      t = DirectSolver::DirectSolverTypes::pardiso;
+    else //if(db["direct_solver_type"].is("mumps"))
+      ErrThrow("currently the DirectSolver class only supports umfack and "
+               "pardiso");
+    this->direct_solver.reset(new DirectSolver(matrix, t));
   }
   else
   {
