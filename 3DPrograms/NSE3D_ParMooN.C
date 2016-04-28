@@ -14,6 +14,11 @@
 
 #include <sys/stat.h>
 
+namespace project
+{
+#include <twisted_pipe_flow.h>
+}
+
 #ifdef _MPI
 // we need this here because for some reason (??) these are declared extern in
 // e.g. TParFECommunicator3D
@@ -21,7 +26,8 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-
+//project specific declaration
+struct derived_properties;
 
 // main program
 // =======================================================================
@@ -65,8 +71,20 @@ int main(int argc, char* argv[])
   NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
+  // Choose example according to the value of
+  // TDatabase::ParamDB->EXAMPLE and construct it. (Done before domain - depends on Example file in this project!)
+  Example_NSE3D example;
+  project::derived_properties::set_statics();
+  double drift_x = 0;
+  double drift_y = 0;
+  double drift_z = project::derived_properties::l_tube;
+
+
+
   // Read in geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE,
+              drift_x, drift_y, drift_z,
+              project::derived_properties::segment_marks);
 
   // Do initial regular grid refinement.
   for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
@@ -129,10 +147,6 @@ int main(int argc, char* argv[])
   {
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   }
-
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_NSE3D example;
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
