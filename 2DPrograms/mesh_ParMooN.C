@@ -1,7 +1,7 @@
 // =======================================================================
 //
-// Purpose:  main program for test the different functionalities
-//           of mesh-conversion routines
+// Purpose:  main program for testing the Mesh class and the 
+//           mesh-conversion routines
 //
 // Author:   Alfonso Caiazzo
 //
@@ -20,6 +20,7 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
+    
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
@@ -33,60 +34,61 @@ int main(int argc, char* argv[])
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
   
-  /*
-  // initialization using GEO file (grid) and PRM file (boundary description) 
-   
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
-   
-  // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS+
-    TDatabase::ParamDB->LEVELS; i++)
-    domain.RegRefineAll();
-  //=========================================================================
-  // write the current mesh (using the finest collection)
-  //TCollection *coll = domain.GetCollection(It_Finest, 0);
-  //coll->writeMesh("test.mesh");
-  //=========================================================================
-
-  */
-  
   // create output directory, if not already existing
   if(TDatabase::ParamDB->WRITE_VTK)
     mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+
+  unsigned int testType = 3;
+  if (testType==1) {
+    //=========================================================================
+    Output::print(" Test: ");
+    Output::print("   * read .PRM and .GEO file and write the corresponding .mesh");
+    Output::print("   * create a Mesh and display info");
+    Output::print("   * rewirte a new .GEO file");
+
+    // initialize domain
+    domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+
+    // write .mesh file
+    TCollection *coll = domain.GetCollection(It_Finest, 0);
+    coll->writeMesh("output/meshFromPRMandGEO.mesh");
+
+    // create mesh object and display info
+    Mesh m("output/meshFromPRMandGEO.mesh");
+    m.info();
+    
+    // set boundary description
+    m.setBoundary(TDatabase::ParamDB->BNDFILE);
+    // display boundary info
+    m.boundary.info();
+    // write new .GEO
+    m.writeToGEO("output/GEOFromMesh.xGEO");
+
+    Output::print(" ... done. Compare the new and the old .GEO files. ");
+    
+    } else if (testType==2) {
+
+    Output::print(" Test: ");
+    Output::print("   * read .PRM and the new .GEO file and write the corresponding .mesh");
+    domain.Init(TDatabase::ParamDB->BNDFILE, "output/GEOFromMesh.xGEO");
+    TCollection *coll = domain.GetCollection(It_Finest, 0);
+    coll->writeMesh("output/meshFromMesh.mesh");
+
+    Output::print(" ... done. Compare the mesh file with the one generated with testType = 1. ");
+
+     } else if (testType==3) {
+
+    Output::print(" Test: ");
+    Output::print("   * read .PRM and the .mesh to initialize the domain");
+    Output::print("   * write out the mesh file corresponding to the grid");
+    domain.Init(TDatabase::ParamDB->BNDFILE, "output/meshFromMesh.mesh"); 
+    TCollection *coll = domain.GetCollection(It_Finest, 0);
+    coll->writeMesh("output/meshFromPRMandMesh.mesh");
+
+    Output::print(" ... done. Compare now meshFromPRMandGEO.mesh and meshFromPRMandMesh.mesh");
+
+}
   
-  /*
-  //=========================================================================
-  // first test: read PRM and GEO
-  // write MESH and rewrite GEO
-  // read the .mesh from file and initialize a Mesh object
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-  TCollection *coll = domain.GetCollection(It_Finest, 0);
-  coll->writeMesh("old.mesh");
-  Mesh m("old.mesh");
-  // display mesh properties
-  m.info();
-  //=========================================================================
-  // read PRM file into a Boundary class
-  m.setBoundary(TDatabase::ParamDB->BNDFILE);
-  m.boundary.info();
-  m.writeToGEO("new.xGEO");
-  */
-  
-  /*
-  //=========================================================================
-  // second test: read PRM and GEO generated from mesh
-  domain.Init(TDatabase::ParamDB->BNDFILE, "new.xGEO");
-  TCollection *coll = domain.GetCollection(It_Finest, 0);
-  coll->writeMesh("renew.mesh");
-  */
-  
-  //=========================================================================
-  // third test: initialize domain with a mesh
-  Mesh m("old.mesh");
-  m.setBoundary(TDatabase::ParamDB->BNDFILE);
-  domain.Init(TDatabase::ParamDB->BNDFILE, m); 
-  TCollection *coll = domain.GetCollection(It_Finest, 0);
-  coll->writeMesh("rerenew.mesh");
   
   //=========================================================================
   Output::close_file();
