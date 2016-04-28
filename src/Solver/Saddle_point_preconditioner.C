@@ -466,7 +466,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
   }
   else
   {
-    Output::decreaseVerbosity(1);
     // either lsc or bd_lsc
     // first: assemble a velocity mass matrix
     
@@ -588,7 +587,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     }
     //delete neumann_velocity_space;
     
-    Output::increaseVerbosity(1);
   }
 }
 
