@@ -7,6 +7,7 @@
 #include <vector>
 #include <MooNMD_Io.h>
 #include <Iteration_jacobi.h>
+#include <BlockVector.h>
 
 int main(int argc, char* argv[])
 {
