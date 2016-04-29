@@ -12,7 +12,7 @@
 #include <FEFunction2D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <FEM_TVD_FCT.h>
 #include <Bulk_2d3d.h>
 #include <Bulk.h>
@@ -1235,7 +1235,7 @@ void Bulk_BWE_FDM_Upwind_3D(TCollection *coll,
     {
 	t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0; 
-	Solver(mat,rhs,sol);
+	OldSolver(mat,rhs,sol);
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
 	// no output of solver data any longer
 	TDatabase::ParamDB->SC_VERBOSE_AMG = 1;
@@ -2537,7 +2537,7 @@ void Build_3D_FEM_FCT_Matrix_Q1(TCollection *coll,
     {
 	t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0;
-	Solver(matM,rhs,sol);
+	OldSolver(matM,rhs,sol);
 	TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
 	// no output of solver data any longer
 	TDatabase::ParamDB->SC_VERBOSE_AMG = 1;
@@ -3076,7 +3076,7 @@ double *neum_to_diri_z)
     {
   t3 = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
   TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0;
-  Solver(matM,rhs,sol);
+  OldSolver(matM,rhs,sol);
   TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = t3;
   // no output of solver data any longer
   TDatabase::ParamDB->SC_VERBOSE_AMG = 1;

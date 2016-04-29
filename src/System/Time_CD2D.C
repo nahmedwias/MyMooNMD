@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <MultiGrid2D.h>
 #include <Output2D.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <LinAlg.h>
 #include <MainUtilities.h>
@@ -374,9 +374,9 @@ void Time_CD2D::solve()
     FEMatrix* mat = s.stiff_matrix.get_blocks_uniquely().at(0).get();
     // in order for the old method 'Solver' to work we need TSquareMatrix2D
     TSquareMatrix2D *sqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), s.solution.length(), 0);
+    OldSolver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
+              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+              this->multigrid.get(), s.solution.length(), 0);
   }
   
   t = GetTime() - t;
@@ -410,7 +410,7 @@ void Time_CD2D::output(int m, int& image)
     Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
     Output::print<1>("  L2: ", loc_e[0]);
     Output::print<1>("  H1-semi: ", loc_e[1]);
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
     errors[1] = loc_e[0]*loc_e[0];
     Output::print<1>("  L2(0,T;L2) ", sqrt(errors[0]));

@@ -20,6 +20,8 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Residuals.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
 
 #include <Example_NSE2D.h>
 
@@ -101,12 +103,30 @@ class NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_NSE2D & example;
+    const Example_NSE2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
     std::shared_ptr<TNSE_MultiGrid> multigrid;
+    
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * NSE2D::solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+    
     /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
     /// transposed blocks are not stored explicitely...sad but true.
     std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
@@ -156,20 +176,22 @@ class NSE2D
      * This constructor calls the other constructor creating an Example_NSE2D
      * object for you. See there for more documentation.
      */
-    NSE2D(const TDomain& domain, int reference_id = -4711);
+    NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+          int reference_id = -4711);
     
     /** @brief constructor 
      * 
      * The domain must have been refined a couple of times already if you want
      * to use multigrid. On the finest level the finite element spaces and 
      * functions as well as matrices, solution and right hand side vectors are 
-     * initialized. 
+     * initialized. The parameter database constrols the behavior of this class
+     * and all its members.
      * 
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    NSE2D(const TDomain & domain, const Example_NSE2D & _example,
-          unsigned int reference_id = -4711);
+    NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
+          const Example_NSE2D _example, unsigned int reference_id = -4711);
     
     /** @brief standard destructor */
     ~NSE2D();

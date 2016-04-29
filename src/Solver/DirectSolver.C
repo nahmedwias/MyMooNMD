@@ -13,7 +13,7 @@
 #include <DirectSolver.h>
 #include <Database.h>
 #include "umfpack.h"
-#include <BlockMatrix.h>
+#include <BlockFEMatrix.h>
 
 #ifdef _OMP
 #include <omp.h>
@@ -218,6 +218,22 @@ DirectSolver::DirectSolver(const BlockMatrix& matrix,
  : DirectSolver(matrix.get_combined_matrix(), type)
 {
 }
+
+/** ************************************************************************ */
+DirectSolver::DirectSolver(const BlockFEMatrix& matrix, 
+                           DirectSolver::DirectSolverTypes type)
+ : DirectSolver(matrix.get_combined_matrix(), type)
+{
+}
+
+/** ************************************************************************ */
+DirectSolver::DirectSolver(const TMatrix matrix,
+                           DirectSolver::DirectSolverTypes type)
+ : DirectSolver(std::make_shared<TMatrix>(matrix), type)
+{
+
+}
+
 
 /** ************************************************************************ */
 DirectSolver::DirectSolver(DirectSolver&& other)
@@ -429,7 +445,6 @@ void DirectSolver::solve(const double* rhs, double* solution)
       double * entries = this->matrix->GetEntries();
       int * rows = this->matrix->GetRowPtr();
       int * cols = this->matrix->GetKCol();
-//      double dzero; // ??
       int error;
       pardiso_(this->pt, &this->maxfct, &this->mnum, &this->mtype, &phase,
                &n_eq, entries, rows, cols, &this->perm, &this->nrhs,

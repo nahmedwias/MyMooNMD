@@ -19,7 +19,7 @@
 #include <NSE_MGLevel4.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <FEDatabase2D.h>
@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 #include <DirectSolver.h>
@@ -1377,7 +1376,7 @@ void TNSE_MGLevel4::BraessSarazin(double *u1, double *rhs1,
     exit(-1);
   }
   else
-    Solver(A11, A12, A21, A22, B1, B2, B1T, B2T, rhs1, sol, j);
+    OldSolver(A11, A12, A21, A22, B1, B2, B1T, B2T, rhs1, sol, j);
 #endif
 #ifdef __3D__
   OutPut("Braess-Sarazin smoother not implemented !!!" << endl);

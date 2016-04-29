@@ -431,6 +431,21 @@ FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
   return ret;
 }
 
+const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
+{
+  // find corresponding cell
+  if((int)cell_number >= this->N_Cells)
+    ErrThrow("unable to find the finite element for cell ", cell_number, 
+             ". There are only ", this->N_Cells, " cells");
+  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  // find finite element id
+  FE3D fe_id = this->GetFE3D(cell_number, cell);
+  // get the finite element from the database
+  TFE3D* fe = TFEDatabase3D::GetFE3D(fe_id);
+  return *fe;
+}
+
+
 void TFESpace3D::FindUsedElements()
 {
   TBaseCell *cell;
