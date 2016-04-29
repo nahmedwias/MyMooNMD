@@ -246,14 +246,11 @@ int main(int argc, char* argv[])
   unsigned int nRefinements = 2;
   
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
   db["problem_type"] = 0; // problem type is not needed
   db["example"] = 0;
-  db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
-  db.add("preconditioner", std::string("least_squares_commutator"), "",
-         {"semi_implicit_method_for_pressure_linked_equations", 
-           "least_squares_commutator", "least_squares_commutator_boundary"} );
-  db.add("residual_tolerance", 1.0e-13, "");
-  db.add<size_t>("max_n_iterations", 100, "", {100, 1000});
+  db["residual_tolerance"] = 1.0e-13;
+  
   
   
   Output::print("\n\n ----------- direct solver -----------\n");
