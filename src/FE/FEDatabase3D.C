@@ -37,7 +37,7 @@ void print_registered_message_3D(std::string entities)
   int my_rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
 #else
-  int my_rank == 0;
+  int my_rank = 0;
 #endif
   if(my_rank == 0)
     Output::print("INFO (FEDatabase3D): ", entities, " (3D) registered");
