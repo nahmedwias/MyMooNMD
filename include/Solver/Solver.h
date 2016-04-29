@@ -15,8 +15,8 @@
  * of the class. Typically you only need to call `solve` with a matrix, right
  * hand side and a solution vector. 
  * 
- * Currently this class is instantiated for `BlockMatrix, BlockVector` and
- * `BlockFEMatrix, BlockVector`.
+ * Currently this class is instantiated for `<BlockMatrix, BlockVector>` and
+ * `<BlockFEMatrix, BlockVector>`.
  */
 template <class LinearOperator = BlockFEMatrix, class Vector = BlockVector>
 class Solver
