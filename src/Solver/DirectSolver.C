@@ -14,6 +14,7 @@
 #include <Database.h>
 #include "umfpack.h"
 #include <BlockFEMatrix.h>
+#include <BlockVector.h>
 
 #ifdef _OMP
 #include <omp.h>

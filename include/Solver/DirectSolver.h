@@ -18,12 +18,12 @@
 #ifndef __DIRECTSOLVER__
 #define __DIRECTSOLVER__
 
-#include <BlockVector.h>
 #include <Matrix.h>
 
 // forward declaration
 class BlockMatrix;
 class BlockFEMatrix;
+class BlockVector;
 constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
