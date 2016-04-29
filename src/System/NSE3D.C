@@ -84,6 +84,9 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 
+  //print some information
+  parCommVelocity_.print_info();
+  parCommPressure_.print_info();
 #endif
 }
 
@@ -230,6 +233,13 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 
 void NSE3D::check_parameters()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank == 0;
+#endif
+
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
   // copied from CD3D, it should actually be unified
   bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
@@ -240,11 +250,15 @@ void NSE3D::check_parameters()
     {
       ErrThrow("Parameter LEVELS must be greater or equal 1.");
     }
+    if(TDatabase::ParamDB->LEVELS > 1)
+    { //TODO LEVELS and UNIFORM_STEPS still need sorting out!
     TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
     TDatabase::ParamDB->LEVELS = 1;
-    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added "
+    if(my_rank == 0)
+      Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added "
         "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
         TDatabase::ParamDB->UNIFORM_STEPS, ".");
+    }
   }
   else
   {  // iterative solve with multigrid prec
@@ -782,10 +796,10 @@ void NSE3D::output(int i)
   
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-    u1->PrintMinMax();
-    u2->PrintMinMax();
-    u3->PrintMinMax();
-    s.p_.PrintMinMax();
+    u1->PrintMinMax(std::string("u1"));
+    u2->PrintMinMax(std::string("u2"));
+    u3->PrintMinMax(std::string("u3"));
+    s.p_.PrintMinMax(std::string("p"));
   }
   
   // write solution to a vtk file
@@ -878,7 +892,7 @@ void NSE3D::output(int i)
     //print errors
     if(my_rank == 0)
     {
-      Output::print("");
+      Output::print("DATA (NSE3D): Measured errors");
       Output::print<1>("L2(u)     : ", setprecision(10), errors_.at(0));
       Output::print<1>("H1-semi(u): ", setprecision(10), errors_.at(1));
       Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));

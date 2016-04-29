@@ -34,23 +34,29 @@ int main(int argc, char* argv[])
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(my_rank==0)
+  {
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::print("INFO (NSE3D_ParMooN): MPI, using ", size, " processes");
+  }
+#else
+  int my_rank = 0;
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Output::print("INFO (NSE3D_ParMooN): SEQUENTIAL (or OMP...)");
 #endif
 
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+
+  //start a stopwatch which measures time spent in program parts
   Chrono chrono_parts;
-  chrono_parts.print_time(std::string("program start"));
+
   // Construct the ParMooN Databases.
   TDatabase Database;
 
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
-  // Hold mpi rank and size ready, check whether the current processor
-  // is responsible for output (usually root, 0).
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
 
   TFEDatabase3D feDatabase;
@@ -58,8 +64,9 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1]);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  if(my_rank ==0)
+    Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
@@ -157,6 +164,8 @@ int main(int argc, char* argv[])
                 domain.GetN_OwnCells(),
                 ". N_HaloCells: ",
                 domain.GetN_HaloCells());
+
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   // Create output directory, if not already existing.
@@ -209,9 +218,11 @@ int main(int argc, char* argv[])
 
   nse3d.output();
 
+  if(my_rank==0)
+    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-  Output::close_file();
-
+  if(my_rank ==0)
+    Output::close_file();
 
 #ifdef _MPI
   MPI_Finalize();

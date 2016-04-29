@@ -3602,9 +3602,8 @@ int TDomain::ReadParam(char *ParamFile)
 #ifdef _MPI
   if(rank==0)
 #endif
-  cout << "Parameter file version " << TDatabase::ParamDB->VERSION <<
-          " read with " << N_Param << " parameters." << endl;
-
+    Output::print("INFO (ReadParam): Parameter file version ", TDatabase::ParamDB->VERSION,
+                  " read with ", N_Param, " parameters.");
   dat.close();
 
   return 0;

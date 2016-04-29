@@ -561,6 +561,13 @@ class TDomain
    * @note This has not been tested with an actual .xGEO-file yet.
    */
   static bool checkIfxGEO(const char* GEO);
+
+  /**
+   * Prints info on this domain,
+   * to console and outfile.
+   * @param name A name for the domain.
+   */
+  void print_info(std::string name) const;
      
      
 };
