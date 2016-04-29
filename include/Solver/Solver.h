@@ -18,7 +18,7 @@
  * Currently this class is instantiated for `BlockMatrix, BlockVector` and
  * `BlockFEMatrix, BlockVector`.
  */
-template <class LinearOperator, class Vector>
+template <class LinearOperator = BlockFEMatrix, class Vector = BlockVector>
 class Solver
 {
   public:
@@ -65,6 +65,11 @@ class Solver
     /// Note that you can not change the behavior of this class after 
     /// construction. This method only lets you inspect the solver parameters
     const ParameterDatabase& get_db();
+    
+    /// @brief return a default solver parameter database
+    ///
+    /// Using the Solver class requires these parameters. 
+    static ParameterDatabase default_solver_database();
     
   protected:
     
