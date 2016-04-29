@@ -1,7 +1,6 @@
 #include <Iteration_cg.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Iteration_jacobi.h>
 #include <MooNMD_Io.h>
 
 
