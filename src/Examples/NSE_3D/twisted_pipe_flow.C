@@ -37,7 +37,7 @@ void twisted_pipe_flow::ExampleFile()
   int my_rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
 #else
-  int my_rank == 0;
+  int my_rank = 0;
 #endif
 
   // set global parameters which are too deeply rooted in the

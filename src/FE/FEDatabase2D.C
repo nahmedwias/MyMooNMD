@@ -44,7 +44,7 @@ void print_registered_message_2D(std::string entities)
   int my_rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
 #else
-  int my_rank == 0;
+  int my_rank = 0;
 #endif
   if(my_rank == 0)
     Output::print("INFO (FEDatabase2D): ", entities, " (2D) registered");

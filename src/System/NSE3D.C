@@ -237,7 +237,7 @@ void NSE3D::check_parameters()
   int my_rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
 #else
-  int my_rank == 0;
+  int my_rank = 0;
 #endif
 
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
