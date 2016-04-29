@@ -37,6 +37,19 @@
 // #define __SCOTT_VOGELIUS__
 // #define __ULTRA_LOCAL_PROJECTION__
 
+
+void print_registered_message_2D(std::string entities)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank == 0;
+#endif
+  if(my_rank == 0)
+    Output::print("INFO (FEDatabase2D): ", entities, " (2D) registered");
+}
+
 // =======================================================================
 // initialize static members
 // =======================================================================
@@ -133,10 +146,6 @@ TFEDatabase2D::TFEDatabase2D()
 
 void TFEDatabase2D::RegisterAllQuadFormulas()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   TQuadFormula1D *qf1d;
   TQuadFormulaTria *qftria;
   TQuadFormulaQuad *qfquad;
@@ -302,18 +311,12 @@ void TFEDatabase2D::RegisterAllQuadFormulas()
   qfquad->Simpson();
   RegisterQuadFormula2D(SimpsonQuad, qfquad);
 
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "quadrature formulas registered" << endl;
+  print_registered_message_2D(std::string("quadrature formulas"));
+
 }
 
 void TFEDatabase2D::RegisterAllFEDescs()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   RegisterFEDesc1D(FE_C_L_P0_1D, FE_C_L_P0_1D_Obj);
   RegisterFEDesc1D(FE_C_L_P1_1D, FE_C_L_P1_1D_Obj);
   RegisterFEDesc1D(FE_C_L_P2_1D, FE_C_L_P2_1D_Obj);
@@ -451,18 +454,12 @@ void TFEDatabase2D::RegisterAllFEDescs()
   RegisterFEDesc2D(FE_C_T_SV2_2D, FE_C_T_SV2_2D_Obj);
   RegisterFEDesc2D(FE_D_T_SV1_2D, FE_D_T_SV1_2D_Obj);
   
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "FE descriptors registered" << endl;
+
+  print_registered_message_2D(std::string("FE descriptors"));
 }
 
 void TFEDatabase2D::RegisterAllBaseFunctions()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   RegisterBaseFunct1D(BF_C_L_P0_1D, BF_C_L_P0_1D_Obj);
   RegisterBaseFunct1D(BF_C_L_P1_1D, BF_C_L_P1_1D_Obj);
   RegisterBaseFunct1D(BF_C_L_P2_1D, BF_C_L_P2_1D_Obj);
@@ -596,18 +593,11 @@ void TFEDatabase2D::RegisterAllBaseFunctions()
   RegisterBaseFunct2D(BF_C_T_SV2_2D, BF_C_T_SV2_2D_Obj);
   RegisterBaseFunct2D(BF_D_T_SV1_2D, BF_D_T_SV1_2D_Obj);
   
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "base functions registered" << endl;
+  print_registered_message_2D(std::string("base functions"));
 }
 
 void TFEDatabase2D::RegisterAllNodalFunctionals()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   RegisterNodalFunctional1D(NF_C_L_P0_1D, NF_C_L_P0_1D_Obj);
   RegisterNodalFunctional1D(NF_C_L_P1_1D, NF_C_L_P1_1D_Obj);
   RegisterNodalFunctional1D(NF_C_L_P2_1D, NF_C_L_P2_1D_Obj);
@@ -743,18 +733,11 @@ void TFEDatabase2D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional2D(NF_C_T_SV2_2D, NF_C_T_SV2_2D_Obj);
   RegisterNodalFunctional2D(NF_D_T_SV1_2D, NF_D_T_SV1_2D_Obj);
   
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "nodal functionals registered" << endl;
+  print_registered_message_2D(std::string("nodal functionals"));
 }
 
 void TFEDatabase2D::RegisterAllFEs()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   TFE1D *ele1D;
   TFE2D *ele2D;
 
@@ -1176,18 +1159,11 @@ void TFEDatabase2D::RegisterAllFEs()
   ele2D = new TFE2D(BF_C_Q_EL1_2D,NF_C_Q_EL1_2D, QuadBilinear, FE_C_Q_EL1_2D, 0);
   RegisterFE2D(C_EL1_2D_Q_M, ele2D);
   
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "finite element registered" << endl;
+  print_registered_message_2D(std::string("finite elements"));
 }
 
 void TFEDatabase2D::RegisterAllFEMappers()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
 // ========================================================================
 // regular grid, same pattern on both sides
 // ========================================================================
@@ -1573,18 +1549,11 @@ void TFEDatabase2D::RegisterAllFEMappers()
   RegisterFE2DMapper(FE_C_Q_EL1_2D,FE_C_Q_Q1_2D,C1_2_C1_2); 
   RegisterFE2DMapper(FE_C_Q_Q1_2D,FE_C_Q_EL1_2D,C1_2_C1_2);   
   
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "FE mapper registered" << endl;
+  print_registered_message_2D(std::string("FE mappers"));
 }
 
 void TFEDatabase2D::RegisterAllHangingNodes()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   RegisterHNDesc2D(HN_C_P1_2D_0, HN_C_P1_2D_0_Obj);
 
   RegisterHNDesc2D(HN_C_P2_2D_0, HN_C_P2_2D_0_Obj);
@@ -1614,18 +1583,11 @@ void TFEDatabase2D::RegisterAllHangingNodes()
   RegisterHNDesc2D(HN_N_P5_2D_0, HN_N_P5_2D_0_Obj);
 
 
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "Hanging nodes registered" << endl;
+  print_registered_message_2D(std::string("hanging nodes"));
 }
 
 void TFEDatabase2D::RegisterAllRefTrans()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   ReferenceTrans1D[LineAffin] = new TLineAffin();
   ReferenceTrans2D[TriaAffin] = new TTriaAffin();
   ReferenceTrans2D[QuadAffin] = new TQuadAffin();
@@ -1633,19 +1595,11 @@ void TFEDatabase2D::RegisterAllRefTrans()
   ReferenceTrans2D[TriaIsoparametric] = new TTriaIsoparametric();
   ReferenceTrans2D[QuadIsoparametric] = new TQuadIsoparametric();
 
-
-#ifdef _MPI
-  if(rank==out_rank)
-#endif
-  cout << "Reference Transformations registered" << endl;
+  print_registered_message_2D(std::string("reference transformations"));
 }
 
 void TFEDatabase2D::GenerateArrays()
 {
-#ifdef _MPI
-  int rank, out_rank=int(TDatabase::ParamDB->Par_P0);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
   int i;
   TFE2D *ele;
   TBaseFunct2D *bf;

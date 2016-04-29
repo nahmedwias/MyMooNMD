@@ -8,6 +8,10 @@
 #include <MooNMD_Io.h>
 #include <CoiledPipe.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 namespace twisted_pipe_flow{ //must be included within the same namespace as in Exa
   #include <twisted_pipe_flow.h>
 };
@@ -29,23 +33,32 @@ double vol_flux = 7.2; // (cm^3/s) the volume flux at inflow (of the experiment,
 
 void twisted_pipe_flow::ExampleFile()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank == 0;
+#endif
+
   // set global parameters which are too deeply rooted in the
   // code to be easily removed at the moment
   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = 1356; //FIXME Remove this from the entire code!
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 
-  Output::print(" > Example: twisted_pipe_flow.h.");
+  if(my_rank == 0)
+    Output::print(" > Example: twisted_pipe_flow.h.");
 
   using namespace FluidProperties;
+
   double eps = (eta/rho) / (u_infty*l_infty);
-  Output::print(" > diffusion coefficient eps = ", eps);
+  if(my_rank == 0)
+    Output::print(" > with diffusion coefficient eps = ", eps);
 
+  double inflow_velo[5];
+  ExactU1(- CoiledPipe::GeoConsts::l_inflow, 0, 0, inflow_velo);
+  if(my_rank == 0)
+    Output::print(" > and center inflow velocity u1: ", inflow_velo[0]);
 
-  //CB DEBUG
-  double debug[5];
-  ExactU1(- CoiledPipe::GeoConsts::l_inflow, 0, 0, debug);
-  Output::print("--- FYI, center inflow velocity U1: ", debug[0]);
-  //END DEBUG
 }
 
 

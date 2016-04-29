@@ -40,11 +40,11 @@ void Chrono::print_time_seq(const std::string& program_part) const
 {
   //rusage time
   double time_rusage = get_rusage_time() - start_time_rusage;
-  Output::print("--- time for ", program_part,": ", time_rusage, " s (sequential rusage time)");
+  Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (sequential rusage time)");
 
   //wall clock time
   double time_wall = get_wall_time() - start_time_wall;
-  Output::print("--- time for ", program_part,": ", time_wall, " s (sequential wall time)");
+  Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (sequential wall time)");
 }
 #ifdef _MPI
 void Chrono::print_time_mpi(const std::string& program_part) const
@@ -56,12 +56,12 @@ void Chrono::print_time_mpi(const std::string& program_part) const
   //rusage time in root
   double time_rusage = get_rusage_time() - start_time_rusage;
   if(my_rank==0)
-    Output::print("--- time for ", program_part,": ", time_rusage, " s (mpi root rusage time)");
+    Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (mpi root rusage time)");
 
   //wall clock time in root
   double time_wall = get_wall_time() - start_time_wall;
   if(my_rank==0)
-    Output::print("--- time for ", program_part,": ", time_wall, " s (mpi root wall time)");
+    Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (mpi root wall time)");
 
   //mpi_wtime
   double time_spent = MPI_Wtime() - start_time_mpi_wtime;
@@ -71,8 +71,8 @@ void Chrono::print_time_mpi(const std::string& program_part) const
   MPI_Reduce(&time_spent, &time_min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD );
   if(my_rank == 0)
   {
-   Output::print("--- time for ", program_part,": ", time_max, " s (max wtime in a process)");
-   Output::print("--- time for ", program_part,": ", time_min, " s (min wtime in a process)");
+   Output::print("--- TIME: time for ", program_part,": ", time_max, " s (max wtime in a process)");
+   Output::print("--- TIME: time for ", program_part,": ", time_min, " s (min wtime in a process)");
   }
   return;
 }
@@ -83,11 +83,11 @@ void Chrono::print_time_omp(const std::string& program_part) const
 {
   //rusage time
   double time_rusage = get_rusage_time() - start_time_rusage;
-  Output::print("--- time for ", program_part,": ", time_rusage, " s (openmp rusage time)");
+  Output::print("--- TIME:time for ", program_part,": ", time_rusage, " s (openmp rusage time)");
 
   //wall clock time
   double time_wall = get_wall_time() - start_time_wall;
-  Output::print("--- time for ", program_part,": ", time_wall, " s (openmp wall time)");
+  Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (openmp wall time)");
 }
 #endif
 
