@@ -72,6 +72,14 @@ int main(int argc, char* argv[])
   TDomain domain;
 
   // Set Database values (this is what is usually done by the input-file)
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db["problem_type"] = 1;
+  db["example"] = 0;
+  db["uniform_refinement_steps"] = 2;
+  db.add("solver_type", std::string("iterative"), "");
+  db.add("preconditioner", std::string("jacobi"), "");
+  db["boundary_file"] = "Default_UnitCube";
+  db["geo_file"] = "Default_UnitCube_Hexa";
 
   TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
   TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
@@ -101,13 +109,12 @@ int main(int argc, char* argv[])
   strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
 
   // Initialize geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(db["boundary_file"], db["geo_file"]);
 
   // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
-  {
+  size_t n_ref = db["uniform_refinement_steps"];
+  for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
-  }
 
   #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -134,9 +141,9 @@ int main(int argc, char* argv[])
 
   // construct the cd3d problem object
 #ifdef _MPI
-  CD3D cd3d(cellCollections, example, maxSubDomainPerDof);
+  CD3D cd3d(cellCollections, db, example, maxSubDomainPerDof);
 #else
-  CD3D cd3d(cellCollections, example);
+  CD3D cd3d(cellCollections, db, example);
 #endif
 
   //=========================================================================
@@ -239,7 +246,16 @@ int main(int argc, char* argv[])
     TDomain domain;
 
     // Set Database values (this is what is usually done by the input-file)
-
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["problem_type"] = 1;
+    db["example"] = 0;
+    db["uniform_refinement_steps"] = 2;
+    db.add("solver_type", std::string("iterative"), "");
+    db.add("preconditioner", std::string("multigrid"), "");
+    db.add("n_multigrid_levels", (size_t)2, "", (size_t)0, (size_t)10);
+    db["boundary_file"] = "Default_UnitCube";
+    db["geo_file"] = "Default_UnitCube_Hexa";
+    
     TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
     TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
@@ -281,18 +297,15 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->GEOFILE = new char[21];
     strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
     
-    // makeshift parameter check
-    CD3D::checkParameters();
-
+    
     // Initialize geometry and initialize the mesh.
-    domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-
+    domain.Init(db["boundary_file"], db["geo_file"]);
+    
     // Do initial regular grid refinement.
-    for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    {
+    size_t n_ref = db["uniform_refinement_steps"];
+    for(size_t i = 0; i < n_ref; i++)
       domain.RegRefineAll();
-    }
-
+    
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
 
@@ -333,9 +346,9 @@ int main(int argc, char* argv[])
 
   // Construct the cd3d problem object.
 #ifdef _MPI
-  CD3D cd3d(gridCollections, example, maxSubDomainPerDof);
+  CD3D cd3d(gridCollections, db, example, maxSubDomainPerDof);
 #else
-  CD3D cd3d(gridCollections, example);
+  CD3D cd3d(gridCollections, db, example);
 #endif
 
   //=========================================================================

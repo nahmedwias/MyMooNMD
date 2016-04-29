@@ -46,6 +46,10 @@ int main(int argc, char* argv[])
 {
   // Construct the ParMooN Databases.
   TDatabase Database;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
 
 #ifdef _MPI
   //Construct and initialise the default MPI communicator and store it.
@@ -66,12 +70,9 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1]);
 
-  // Do a makeshift parameter check
-  CD3D::checkParameters();
-
   // Output control
-  Output::setVerbosity(TDatabase::ParamDB->SC_VERBOSE);
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+  Output::set_outfile(parmoon_db["outfile"]);
 
   #ifdef _MPI
   if(iAmOutRank) //Only one process should do that.
@@ -79,16 +80,15 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
 
   // Read in geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
-  {
-	  domain.RegRefineAll();
-  }
+  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  for(size_t i = 0; i < n_ref; i++)
+    domain.RegRefineAll();
 
   // Write grid into a postscript file (before partitioning)
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(parmoon_db["write_ps"])
   {
 #ifdef _MPI
     if(iAmOutRank)
@@ -170,10 +170,8 @@ int main(int argc, char* argv[])
 #endif
 
   // Create output directory, if not already existing.
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
+  if(parmoon_db["WRITE_VTK"].is(1))
+    mkdir(parmoon_db["output_directory"], 0777);
 
   // Choose example according to the value of
   // TDatabase::ParamDB->EXAMPLE and construct it.
@@ -181,9 +179,9 @@ int main(int argc, char* argv[])
 
   // Construct the cd3d problem object.
 #ifdef _MPI
-  CD3D cd3d(gridCollections, example, maxSubDomainPerDof);
+  CD3D cd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
 #else
-  CD3D cd3d(gridCollections, example);
+  CD3D cd3d(gridCollections, parmoon_db, example);
 #endif
 
   //=========================================================================

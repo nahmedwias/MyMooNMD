@@ -2,8 +2,7 @@
 #include <Database.h>
 #include <Output2D.h>
 #include <LinAlg.h>
-#include <Solver.h>
-#include <DirectSolver.h>
+#include <OldSolver.h>
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
@@ -15,6 +14,16 @@
 #include <numeric>
 
 
+ParameterDatabase get_default_CD2D_parameters()
+{
+  Output::print<3>("creating a default CD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("CD2D parameter database");
+  
+  return db;
+}
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll)
@@ -40,15 +49,19 @@ TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()
 }
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, int reference_id)
- : CD2D(domain, Example_CD2D(), reference_id)
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           int reference_id)
+ : CD2D(domain, param_db, Example_CD2D(), reference_id)
 {
 }
 
 /** ************************************************************************ */
-CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
- : systems(), example(example), multigrid(nullptr)
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           const Example_CD2D& example, int reference_id)
+ : systems(), example(example), multigrid(nullptr), 
+   db(get_default_CD2D_parameters()), solver(param_db)
 {
+  this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
@@ -68,19 +81,21 @@ CD2D::CD2D(const TDomain& domain, const Example_CD2D& example, int reference_id)
   
   
   // done with the conrtuctor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
+  if(this->solver.get_db()["solver_type"].is("direct") || 
+     !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
   
   // create spaces, functions, matrices on coarser levels
   double *param = new double[2]; // memory leak
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
+  //param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
+  //param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
+  param[0] = this->solver.get_db()["damping_factor"];
+  param[1] = this->solver.get_db()["damping_factor_finest_grid"];
   this->multigrid.reset(new TMultiGrid2D(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
+  size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+  if((int)LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
   // the matrix and rhs side on the finest grid are already constructed 
@@ -203,23 +218,20 @@ void CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
+  //if(this->solver.get_db()["solver_type"].is("direct")) // use direct solver
   {
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
+    this->solver.solve(s.matrix, s.rhs, s.solution);
   }
-  else
-  {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), this->get_size(), 0);
-  }
+//   else
+//   {
+//     // the one matrix stored in this BlockMatrix
+//     FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
+//     // in order for the old method 'Solver' to work we need TSquareMatrix2D
+//     TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
+//     OldSolver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
+//               s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+//               this->multigrid.get(), this->get_size(), 0);
+//   }
   
   t = GetTime() - t;
   Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
@@ -228,7 +240,7 @@ void CD2D::solve()
 /** ************************************************************************ */
 void CD2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
     return;
   
   // print the value of the largest and smallest entry in the finite element 
@@ -242,8 +254,8 @@ void CD2D::output(int i)
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(1, 1, 0, 0, NULL);
     Output.AddFEFunction(&fe_function);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    std::string filename = this->db["output_directory"];
+    filename += "/" + this->db["base_name"].value_as_string();
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -253,7 +265,7 @@ void CD2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(this->db["compute_errors"])
   {
     double errors[5];
     TAuxParam2D aux;
@@ -268,7 +280,7 @@ void CD2D::output(int i)
     Output::print<1>("H1-semi: ", errors[1]);
     Output::print<1>("SD     : ", errors[2]);
     Output::print<1>("L_inf  : ", errors[3]);
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } 
 }
 
 /** ************************************************************************ */

@@ -194,6 +194,87 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type, TAuxParam3D& a
   }
 }
 //========================================================================
+LocalAssembling3D::LocalAssembling3D(
+  int myN_Terms, std::vector<MultiIndex3D> myDerivatives,
+  std::vector<int> myFESpaceNumber, std::vector<int> myRowSpace,
+  std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
+  CoeffFct3D* myCoeffs, AssembleFctParam3D* myAssembleParam,
+  ManipulateFct3D* myManipulate, int myN_Matrices, int myN_Rhs,
+  int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
+  std::vector<int> myBeginParameter, int myN_Parameters,
+  TFEFunction3D** myFEFunctions3D, int myN_FEValues,
+  std::vector<int> myFEValue_FctIndex,
+  std::vector<MultiIndex3D> myFEValue_MultiIndex)
+ : type{LocalAssembling3D_type::Custom}, N_Terms(myN_Terms),
+   Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
+   RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
+   Coeffs(myCoeffs), AssembleParam(myAssembleParam), Manipulate(myManipulate),
+   N_Matrices(myN_Matrices), N_Rhs(myN_Rhs), N_ParamFct(myN_ParamFct),
+   ParameterFct(myParameterFct), BeginParameter(myBeginParameter),
+   N_Parameters(myN_Parameters), N_FEValues(myN_FEValues),
+   FEFunctions3D(myFEFunctions3D), FEValue_FctIndex(myFEValue_FctIndex),
+   FEValue_MultiIndex(myFEValue_MultiIndex)
+{
+  // Some data members get an extra treatment - "name" is set to CUSTOMIZED,
+  // The auxiliary arrays (All)OrigValues are dynamically allocated with size
+  // "N_Terms". "N_Spaces" is determined by finding the max in "FESpaceNumber"
+  // (+1). "Needs2ndDerivative" is dynamically allocated to the size "N_Spaces"
+  // and then filled according to the appearance of "D200", "D020", "D002", 
+  // "D110", "D101" or "D011" in "Derivatives".
+  
+  //Catch some things which might cause trouble.
+  if((int)myDerivatives.size() != N_Terms)
+  {
+    Output::print("Error: myDerivatives.size() != N_Terms.");
+  }
+  if((int)myFESpaceNumber.size() != N_Terms)
+  {
+    Output::print("Error: myFESpaceNumber.size() != N_Terms.");
+  }
+  if((int)myParameterFct.size() != N_ParamFct)
+  {
+    Output::print("Error: myParameterFct.size() != myN_ParamFct.");
+  }
+  if((int)myBeginParameter.size() != N_ParamFct)
+  {
+    Output::print("Error: myBeginParameter.size() != myN_ParamFct.");
+  }
+
+  name = std::string("CUSTOMIZED");
+  //Inform the world of what's going on.
+  Output::print<3>("Constructor of LocalAssembling3D: using type ", name);
+
+  //Dynamically allocate space for auxiliary arrays
+  AllOrigValues = new double** [N_Terms];
+  OrigValues = new double* [N_Terms];
+
+  //CODE taken from TDiscretForm2D::TDiscreteForm2D(...)
+  // find number of spaces
+  int max = -1;
+  for(int i=0;i<N_Terms;i++)
+  {
+    int j = FESpaceNumber[i];
+    if(j > max) max = j;
+  }
+  N_Spaces = max+1;
+
+  //Fill the array Needs2ndDerivatives from the vector myNeeds2ndDerivatives
+  Needs2ndDerivatives = new bool[N_Spaces];
+  for(int i=0;i<N_Spaces;i++){
+    Needs2ndDerivatives[i] = FALSE;
+  }
+  for(int i=0;i<N_Terms;i++)
+  {
+    MultiIndex3D alpha = Derivatives[i];
+    int j = FESpaceNumber[i];
+    if(alpha == D200 || alpha == D020 || alpha == D002 || alpha == D110 
+       || alpha == D101 || alpha == D011)
+      Needs2ndDerivatives[j] = TRUE;
+  }
+}
+
+
+//========================================================================
 LocalAssembling3D::~LocalAssembling3D()
 {
   delete [] AllOrigValues;

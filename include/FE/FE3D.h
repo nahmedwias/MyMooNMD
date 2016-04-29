@@ -62,61 +62,61 @@ class TFE3D
         int info);
 
     /** return BaseFunct3D_ID */
-    BaseFunct3D GetBaseFunct3D_ID()
+    BaseFunct3D GetBaseFunct3D_ID() const
       { return BaseFunct_ID; };
 
     /** return BaseFunct3D */
-    TBaseFunct3D *GetBaseFunct3D()
+    TBaseFunct3D *GetBaseFunct3D() const
       { return BaseFunct; };
 
     /** return BaseFunct3D_ID and BaseFunct3D */
     void GetBaseFunct3D(BaseFunct3D &ID,
-                        TBaseFunct3D* &Obj)
+                        TBaseFunct3D* &Obj) const
       { ID = BaseFunct_ID; Obj = BaseFunct; };
 
     /** return NodalFunctional3D_ID */
-    NodalFunctional3D GetNodalFunctional3D_ID()
+    NodalFunctional3D GetNodalFunctional3D_ID() const
       { return NodalFunctional_ID; };
 
     /** return NodalFunctional3D */
-    TNodalFunctional3D *GetNodalFunctional3D()
+    TNodalFunctional3D *GetNodalFunctional3D() const
       { return NodalFunctional; };
 
     /** return NodalFunctional3D_ID and NodalFunctional3D */
     void GetNodalFunctional3D(NodalFunctional3D &ID,
-                              TNodalFunctional3D* &Obj)
+                              TNodalFunctional3D* &Obj) const
       { ID = NodalFunctional_ID; Obj = NodalFunctional; };
 
     /** return RefTransID */
-    RefTrans3D GetRefTransID()
+    RefTrans3D GetRefTransID() const
       { return RefTransID; };
 
     /** return FEDesc3D_ID */
-    FEDesc3D GetFEDesc3D_ID()
+    FEDesc3D GetFEDesc3D_ID() const
       { return FEDesc_ID; };
 
     /** return FEDesc3D */
-    TFEDesc3D *GetFEDesc3D()
+    TFEDesc3D *GetFEDesc3D() const
       { return FEDesc; };
 
     /** return FEDesc3D_ID and FEDesc3D */
-    void GetFEDesc3D(FEDesc3D &ID, TFEDesc3D* &Obj)
+    void GetFEDesc3D(FEDesc3D &ID, TFEDesc3D* &Obj) const
       { ID = FEDesc_ID; Obj = FEDesc; };
 
     /** return size */
-    int GetSize()
+    int GetSize() const
       { return Size; };
 
     /** return number of degrees of freedom */
-    int GetN_DOF()
+    int GetN_DOF() const
       { return N_DOF; };
 
     /** return number of info blocks */
-    int GetN_Info()
+    int GetN_Info() const
       { return N_Info; };
 
     /** check N[i](b[j]) = delta[ij] */
-    void CheckNFandBF();
+    void CheckNFandBF()  const;
 };
 
 #endif

@@ -51,15 +51,15 @@ class TBoundEdge : public TJoint
     virtual TJoint *NewInst();
 
     /** return start parameter T0 */
-    double GetStartParameter()
+    double GetStartParameter() const
     { return T_0; }
 
     /** return end paramter T1 */
-    double GetEndParameter()
+    double GetEndParameter() const
     { return T_1; }
 
     /** return parameters */
-    void GetParameters(double& t0, double& t1)
+    void GetParameters(double& t0, double& t1) const
     {
       t0 = T_0;
       t1 = T_1;

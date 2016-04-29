@@ -448,7 +448,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
 const
 {
   //check if the dimensions match
-  if(diagonalScaling.size() != structure->GetN_Columns())
+  if((int)diagonalScaling.size() != structure->GetN_Columns())
   {
     ErrThrow("Dimension mismatch! ", diagonalScaling.size(), "  ",
              structure->GetN_Columns());
@@ -467,7 +467,7 @@ const
 
   // fill the entries
   // loop over all rows in the product
-  for(int row = 0; row < nProductRows; row++)
+  for(size_t row = 0; row < nProductRows; row++)
   {
     // loop over all entries in this row in the product
     for(int iEntries = productRowPtr[row]; iEntries < productRowPtr[row + 1];
@@ -496,7 +496,7 @@ const
       //better use index for control of the loop!
       size_t index1 = 0;
       size_t index2 = 0;
-      while (index1 < row1SegmentSize && index2 < row2SegmentSize)
+      while ((int)index1 < row1SegmentSize && (int)index2 < row2SegmentSize)
       {
         if (row1ColBegin[index1] > row2ColBegin[index2])
         {
@@ -555,7 +555,7 @@ std::shared_ptr< TMatrix >
     size_t indexA = 0;
     
     double entry_in_BAT_product = 0;
-    while (indexB < row1ColSize && indexA < row2ColSize)
+    while ((int)indexB < row1ColSize && (int)indexA < row2ColSize)
     {
       if (row1ColBegin[indexB] > row2ColBegin[indexA])
       {
@@ -590,10 +590,10 @@ std::shared_ptr< TMatrix >
   // loop over all rows in the product
   for(unsigned int row=0; row<nProductRows; row++)
   {
-    int begin = productRowPtr[row];
-    int end = productRowPtr[row+1];
+    unsigned int begin = productRowPtr[row];
+    unsigned int end = productRowPtr[row+1];
     // loop over entries in "this row" in the product 
-    for(unsigned int iEntries =begin; iEntries<end; iEntries++)
+    for(unsigned int iEntries = begin; iEntries<end; iEntries++)
     {
       int rowABAT = row;
       int colABAT = productStructure->GetKCol()[iEntries];
@@ -677,12 +677,12 @@ void TMatrix::remove_zeros(double tol)
   }
   if(n_removed != 0)
   {
-    Output::print<2>("TMatrix::remove_zeros: tol ", tol, "\tn_removed ",
+    Output::print<3>("TMatrix::remove_zeros: tol ", tol, "\tn_removed ",
                      n_removed, "\tratio ", (double)n_removed/(rows[n_rows]));
     this->changeRows(new_entries);
   }
   else
-    Output::print<2>("TMatrix::remove_zeros: no removable entries");
+    Output::print<3>("TMatrix::remove_zeros: no removable entries");
 }
 
 
