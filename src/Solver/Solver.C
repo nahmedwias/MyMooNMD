@@ -7,7 +7,8 @@
 #include <Iteration_richardson.h>
 #include <Saddle_point_preconditioner.h>
 
-ParameterDatabase get_default_solver_parameters()
+template <class L, class V>
+ParameterDatabase Solver<L, V>::default_solver_database()
 {
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
@@ -179,7 +180,7 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
- : db(get_default_solver_parameters()), direct_solver(), iterative_method(),
+ : db(default_solver_database()), direct_solver(), iterative_method(),
    preconditioner()
 {
   this->db.merge(param_db, false);
