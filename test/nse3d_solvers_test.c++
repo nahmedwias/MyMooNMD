@@ -155,6 +155,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   if (solver_name.compare("lsc") == 0)
   {
     db["preconditioner"] = "least_squares_commutator";
+    TDatabase::ParamDB->LEVELS = 1;
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-12;
     // just to not distract 'NSE3D::check_parameters'
     TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
@@ -162,6 +163,10 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if (solver_name.compare("multigrid") == 0)
   {
     db["preconditioner"] = "multigrid";
+    TDatabase::ParamDB->LEVELS = 2;
+    db.add<size_t>("n_multigrid_levels", 2, "");
+    db.add("damping_factor", 1.0, "");
+    db.add("damping_factor_finest_grid", 1.0, "");
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
     TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE= 1e-11;
     TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
@@ -180,14 +185,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE= 1.0;
     TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE= 100;
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE= 0;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;
-    ErrThrow("Multigrid not yet set!");
+    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;    
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
+    TDatabase::ParamDB->LEVELS = 1;
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
     TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -203,6 +208,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
+    TDatabase::ParamDB->LEVELS = 1;
     TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
     TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
