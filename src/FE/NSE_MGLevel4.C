@@ -68,7 +68,8 @@
 
 #endif
   : TNSE_MGLevel(level, f1, u1, n_aux, al,
-                 velocity_space, pressure_space, Coll)
+                 velocity_space, pressure_space, Coll),
+    vankaSmoother_(*this, b1->GetN_Columns(),level)
 {
   int i;
   double *aux;
@@ -198,7 +199,8 @@
                                int *dw)
 #endif
   : TNSE_MGLevel(level, f1, u1, n_aux, al,
-                 velocity_space, pressure_space, Coll)
+                 velocity_space, pressure_space, Coll),
+    vankaSmoother_(*this, b1->GetN_Columns(),level) 
 {
   int i;
   double *aux;
@@ -1392,4 +1394,38 @@ void TNSE_MGLevel4::BraessSarazin(double *u1, double *rhs1,
 /** print all matrices and oth right hand sides */
 void TNSE_MGLevel4::PrintAll()
 {
+}
+
+/*********************
+ * Things belonging to new Vanka implementation.
+ *********************/
+
+//! @brief Initialize the smoother_ object.
+void TNSE_MGLevel4::initializeSmoother(){
+  // Call the vanka object to initialize itself with this level's information.
+  vankaSmoother_.initialize();
+}
+
+/*! @brief Perform one step of Vanka smoothing on the level. Call only after initializer finished.
+ *  @param[in,out] currentSolution The current global solution to be updated by the smoother.
+ *  @param[in] currentRHS The global right hand side.
+ *  @param[in,out] storeOldSolution Auxilliary, memory array to be used internally for the damping.
+ */
+void TNSE_MGLevel4::applySmoother(double *currentSolution, const double* const currentRHS,
+    double *storeOldSolution){
+
+  // save current solution in 'old' vectors
+  memcpy(storeOldSolution, currentSolution, N_DOF*SizeOfDouble);
+
+  //Puts up and solve all local systems and update currentSolution.
+  vankaSmoother_.solveLocalSystems(currentSolution, currentRHS);
+
+  // apply damping
+  for(int j=0;j<N_DOF;j++)
+    currentSolution[j] = storeOldSolution[j]+alpha*(currentSolution[j]-storeOldSolution[j]);
+  // set Dirichlet values
+  memcpy(currentSolution+HangingNodeBound, currentRHS+HangingNodeBound,
+     N_Dirichlet*SizeOfDouble);
+  memcpy(currentSolution + N_UDOF + HangingNodeBound, currentRHS+N_UDOF+HangingNodeBound,
+     N_Dirichlet*SizeOfDouble);
 }
