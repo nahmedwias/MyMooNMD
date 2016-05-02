@@ -41,6 +41,10 @@ class ParameterDatabase
     ///
     static ParameterDatabase default_time_database();
 
+    /// @brief construct a database filled with parameters which holds
+    /// controls and stopping criteria for a nonlinear iteration loop
+    static ParameterDatabase default_nonlinit_database();
+
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
     
