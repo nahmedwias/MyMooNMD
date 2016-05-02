@@ -69,8 +69,9 @@ int main(int argc, char* argv[])
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
   // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS
-      + TDatabase::ParamDB->LEVELS; i++)
+  unsigned int n_ref = TDatabase::ParamDB->UNIFORM_STEPS
+      + TDatabase::ParamDB->LEVELS - 1;
+  for(unsigned int i=0; i<n_ref; i++)
   {
     domain.RegRefineAll();
     int nCells=domain.GetCollection(It_Finest,0)->GetN_Cells();
