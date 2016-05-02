@@ -290,4 +290,31 @@ void TNSE_MGLevel::PrintAll()
 {
 }
 
+/*********************
+ * Things belonging to new Vanka smoother Implementation.
+ *********************/
+/*!
+ *  @brief Default implementation. Does nothing but print a warning.
+ *  @throws Default exception if called.
+ */
+void TNSE_MGLevel::initializeSmoother()
+{
+  //Tell the world that something's gone wrong.
+  Error('Call of default TNSE_MGLevel::initializeSmoother. Something is wrong here.' << endl);
+  Error('So far new Vanka smoothers are only implemented for NSTYPE 4!' << endl);
+  Error('So change NSTYPE to 4 or change SC_(COARSE_)SMOOTHER_SADDLE!' << endl);
+  throw;
+}
 
+/*!
+ *  @brief Default implementation. Does nothing but print a warning.
+ *  @throws Default exception if called.
+ */
+void TNSE_MGLevel::applySmoother( double *u1, const double* const rhs1, double *aux)
+{
+  //Tell the world that something's gone wrong.
+  Error('Call of default TNSE_MGLevel::applySmoother. Something is wrong here.');
+  Error('So far new Vanka smoothers are only implemented for NSTYPE 4!' << endl);
+  Error('So change NSTYPE to 4 or change SC_(COARSE_)SMOOTHER_SADDLE!' << endl);
+  throw;
+}
