@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 
       sub_bm.print_and_check("sub_mb");
 
-      bm.get_combined_submatrix({0,0},{2,2})->info(3);
+      bm.get_combined_submatrix({0,0},{1,2})->info(3);
 
     }
 

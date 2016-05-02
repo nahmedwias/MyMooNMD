@@ -1,4 +1,4 @@
-﻿# CMakeLists.txt for subdirectory System of ParMooN project. 
+# CMakeLists.txt for subdirectory System of ParMooN project. 
 # Use only as subproject of ParMooN.
 # 
 # Change history:
@@ -14,6 +14,7 @@ list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/NSE2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Darcy2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_CD2D.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Time_NSE2D.C")
+list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Brinkman2D.C")
 
 # Source files to be added to the 3D library.
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/CD3D.C")

@@ -400,6 +400,17 @@ target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+
+### Brinkman2D ###
+# Standard executable target.
+add_executable(brinkman2d ${PROJECT_SOURCE_DIR}/2DPrograms/Brinkman2D_ParMooN.C)
+set_target_properties(brinkman2d PROPERTIES OUTPUT_NAME parMooN_brinkman2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(brinkman2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+
 ### TCD2D ###
 # Standard executable target.
 add_executable(tcd2d ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ParMooN.C)
