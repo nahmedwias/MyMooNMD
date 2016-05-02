@@ -166,38 +166,39 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   else // multigrid
   {
-    size_t n_levels = this->solver.get_db()["n_multigrid_levels"];
-    std::vector<TCollection*> collections(n_levels,nullptr);
-    for(size_t i =0 ; i< n_levels ; ++i)
-    {
-      ErrThrow("This loop for multigrid NSE3D is not tested and thus most likely incorrect!");
-      collections.at(i)=domain.GetCollection(It_EQ, i, -4711);
-    }
-
+    size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+    if(LEVELS > domain.get_ref_level()+1)
+      LEVELS = domain.get_ref_level()+1;
+    
+    this->transposed_B_structures_.resize(LEVELS,nullptr);
+    
+    std::vector<TCollection*> collections(LEVELS,nullptr);
+    
     std::vector<double> param(2);
     param[0] = this->solver.get_db()["damping_factor"];
     param[1] = this->solver.get_db()["damping_factor_finest_grid"];
     
     this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
-    this->transposed_B_structures_.resize(n_levels,nullptr);
     
     // constructing systems per grid
-    for(auto it : collections)
+    // the matrix and rhs side on the finest grid are already constructed 
+    // now construct all matrices, rhs, and solutions on coarser grids
+    for(int i = LEVELS-2 ; i >=0 ; i--)
     {
+      unsigned int grid=i+domain.get_ref_level() + 1 -LEVELS;
+      TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
       #ifdef _MPI
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
-                              type, maxSubDomainPerDof);
+        systems_.emplace_back(example, *coll, velocity_pressure_orders,
+                              type,maxSubDomainPerDof);
       #else
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
+        systems_.emplace_back(example, *coll, velocity_pressure_orders, 
                               type);
-      #endif
+      #endif      
     }
     //CLEMENS: this is just for me to be sure about some information
     //You can delete it or modify somehow: b/c the same lines of code 
     // is used above in the case where multigrid is not used 
     {
-      TCollection& cellCollection = *collections.front();
-      Output::print<1>("N_Cells      :  ", setw(10), cellCollection.GetN_Cells());
       const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
       const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
       
@@ -210,12 +211,12 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
       Output::print<1>("ndof Total   :  ", setw(10), nTotal );
       Output::print<1>("nActive      :  ", setw(10), nActive);
-      double hmin, hmax;
-      cellCollection.GetHminHmax(&hmin, &hmax);
-      Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
+      // double hmin, hmax;
+      // cellCollection.GetHminHmax(&hmin, &hmax);
+      // Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
     }
     size_t level = 0;
-    //Create multigrid-level-objects and add them to the multgrid object.
+    // Create multigrid-level-objects and add them to the multgrid object.
     // Must be coarsest level first, therefore reverse order iteration.
     for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
     {
