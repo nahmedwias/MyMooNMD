@@ -144,18 +144,16 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
 // entries accordingly.
 void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
-  db.add("solver_type", std::string("iterative"), "", {"direct", "iterative"});
-  db.add("direct_solver_type", std::string("umfpack"), "", 
-         {"umfpack", "pardiso", "mumps"});
-  db.add("iterative_solver_type", std::string("fgmres"),"");
-  db.add("preconditioner", std::string("no_preconditioner"), "",
-         {"no_preconditioner", "least_squares_commutator", "multigrid"} );
-  db.add("residual_tolerance", 1.0e-13, "");
+  db["solver_type"] = std::string("iterative");
+  db["direct_solver_type"] = std::string("umfpack");
+  db["iterative_solver_type"] = std::string("fgmres");
+  db["preconditioner"] = std::string("no_preconditioner");
+  db["residual_tolerance"] = 1.0e-13;
   
   if (solver_name.compare("lsc") == 0)
   {
     db["preconditioner"] = "least_squares_commutator";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-12;
+    db["nl_iterations_residual_absolute"] = 1e-12;
     // just to not distract 'NSE3D::check_parameters'
     TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
@@ -169,8 +167,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    db["nl_iterations_residual_absolute"] = 1e-10;
+    db["nl_iterations_max_n"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
@@ -184,8 +182,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    db["nl_iterations_residual_absolute"] = 1e-15;
+    db["nl_iterations_max_n"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
@@ -234,6 +232,9 @@ int main(int argc, char* argv[])
   TFEDatabase3D FEDatabase;
   
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
   db["problem_type"].set<size_t>(5);
   
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
