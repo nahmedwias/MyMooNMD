@@ -76,6 +76,10 @@ list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/SSORIte.C")
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TimeDiscRout.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaAffin.C") 
 list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/TriaIsoparametric.C") 
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/DofBatch.C")
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/FortranStyleMatrix.C")
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VankaSmoother.C")
+list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VankaSmoother_NSE4.C")
 #list(APPEND FE_SOURCES "${PROJECT_SOURCE_DIR}/src/FE/VMS.C") 
 
 # Source files only used in 2D
