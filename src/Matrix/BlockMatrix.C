@@ -292,7 +292,8 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
       // such thate those stored as transposed really get transposed
 
       std::vector<std::vector<std::shared_ptr<TMatrix>>> temp_block_grid
-      (n_cell_rows_, std::vector<std::shared_ptr<TMatrix>>(n_cell_rows_,nullptr));
+      (n_cell_rows_, 
+       std::vector<std::shared_ptr<TMatrix>>(n_cell_columns_,nullptr));
 
       // store smart pointers to the already treated transposed colors
       std::vector<std::shared_ptr<TMatrix>> treated_transp_colors{color_count_.size(), nullptr};
@@ -490,7 +491,6 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
           }
 
           size_t new_color = std::distance(known_colors.begin(), known); //position in vector
-          Output::print(new_color);
           size_t transp = this->cell_grid_[r][c].is_transposed_;
           size_t new_r = r - r_first;       // force element and color
           size_t new_c = c - c_first;       // into the new sub matrix' cell grid
@@ -1056,7 +1056,7 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
     std::shared_ptr<TMatrix> BlockMatrix::create_block_shared_pointer(const TMatrix& block) const
     {
 
-      Output::print("Called base class copy and store");
+      //Output::print("Called base class copy and store");
       return std::make_shared<TMatrix>(block);
     }
 

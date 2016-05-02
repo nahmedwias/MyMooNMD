@@ -49,7 +49,8 @@ void Time_CD2D::System_per_grid::descale_stiff_matrix(double tau, double theta_1
   //subtract the mass matrix...
   stiff_matrix.add_matrix_actives(mass_block, -1.0, {{0,0}}, {false});
   //...and descale the stiffness matrix...
-  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), {{0,0}});
+  const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+  stiff_matrix.scale_blocks_actives(1./(tau*theta_1), cell_positions);
 }
 
 /**************************************************************************** */
@@ -324,7 +325,8 @@ void Time_CD2D::assemble()
     // on time
 
     //scale  stiffness matrix...
-    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, {{0,0}});
+    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
+    s.stiff_matrix.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
     // ...and add the mass matrix
     const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
