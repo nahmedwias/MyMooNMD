@@ -28,6 +28,23 @@ ParameterDatabase get_default_NSE3D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("NSE3D parameter database");
   
+  //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nl_iterations_max_n"] = 1;
+     }
+     else
+     {
+       db["nl_iterations_max_n"] = 1;
+     }
+  }
+
   return db;
 }
 
@@ -614,16 +631,16 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
 
 
-  size_t max_it = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  size_t max_it = db["nl_iterations_max_n"];
+  double conv_speed = db["nl_iterations_residual_divergence_factor"];
   bool slow_conv = false;
 
 
   if(normOfResidual >= conv_speed*oldNormOfResidual)
     slow_conv = true;
 
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nl_iterations_residual_absolute"];
+  if (db["nl_iterations_residual_scales_with_size"])
   {
     limit *= sqrt(this->get_size());
     if(my_rank==0)
