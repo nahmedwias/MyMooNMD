@@ -1,0 +1,93 @@
+[ ParMooN database for CD3D ]
+======================================================================
+#       input file for ParMooN
+======================================================================
+
+outfile: cd3d.out
+boundary_file: Default_UnitCube
+geo_file:      Default_UnitCube_Hexa
+#geo_file:      Default_UnitCube_Tetra
+
+example: 0
+
+uniform_refinement_steps: 2
+
+write_ps: true
+
+compute_errors: true
+
+output_directory: VTK
+base_name: cd3d
+
+problem_type: 0
+
+verbosity: 5
+
+solver_type: direct
+
+iterative_solver_type: fgmres
+max_n_iterations: 500
+residual_tolerance: 1.e-10
+gmres_restart: 10
+damping_factor: 1.
+preconditioner: jacobi
+
+
+EXAMPLE: 0
+
+WRITE_VTK: 1
+
+DRIFT_Z: 1
+----------------------------------------------------------------------
+# order of ansatz space (=k)
+#   i.e. P_k on triangles
+#        Q_k on quadrangles
+ANSATZ_ORDER: 2
+
+----------------------------------------------------------------------
+# Reynolds number eps=1/RE_NR
+RE_NR: 1
+
+----------------------------------------------------------------------
+# maximum number of levels
+LEVELS: 1
+
+
+----------------------------------------------------------------------
+# type of discretization: 
+#    1 - GALERKIN
+#    2 - SDFEM
+#    3 - UPWIND
+#    4 - Smagorinsky LES
+----------------------------------------------------------------------
+DISCTYPE:  1
+
+----------------------------------------------------------------------
+# factors for SDFEM (delta_K=h_K*DELTAi)
+#   DELTA0 for high Peclet number
+#   DELTA1 for low Peclet number
+----------------------------------------------------------------------
+DELTA0:  1.0
+DELTA1:  0.00
+
+
+# preconditioner
+# 1 Jocobi
+# 3 SSOR
+# 5 multigrid
+# -4711 no preconditioner
+SC_PRECONDITIONER_SCALAR: 1
+SC_SOLVER: 11
+
+----------------------------------------------------------------------
+# Stopping criteria:
+
+# maximum number of iterations
+SC_LIN_MAXIT_SCALAR: 10000
+# error reduction compared to initial error
+SC_LIN_RED_FACTOR_SCALAR: 0.0
+# absolute error tolerance
+SC_LIN_RES_NORM_MIN_SCALAR: 5e-5
+
+
+SC_VERBOSE: 1
