@@ -398,7 +398,15 @@ Parameter::operator std::string() const
 }
 Parameter::operator const char*() const
 {
-  return this->get<std::string>().c_str();
+  // calling 'this->get<std::string>().c_str()' will not work because the local
+  // object returned by 'this->get<std::string>()' will be destroyed when the 
+  // program leaves this function, then the c_str() will no longer be valid.
+  // So we just copy its contents here, not nice!
+  if(!check_type<std::string>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != std::string");
+  access_count++;
+  return this->string_value;
 }
 
 /* ************************************************************************** */
