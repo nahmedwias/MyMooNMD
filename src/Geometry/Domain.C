@@ -773,24 +773,6 @@ int TDomain::GenInitGrid()
 }
 
 
-/*void TDomain::Initialize(const char *PRM, const char *geometry)
-{
-   int nn=0;
-   // length of file
-   while (geometry[nn] != 0)
-     ++nn;
-     
-   if(geometry[nn-1] == 'O')
-   {
-     InitFromGEO(PRM,geometry);
-   } else if (geometry[nn-1] == 'h') {
-     InitFromMesh(PRM,geometry);
-   } else {
-     ///@todo unknown format?
-   }
-   
-   }*/
-
 void TDomain::Init(const char *PRM, const char *GEO)
 {
   int Flag;
@@ -891,7 +873,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
 }
 
 // initialize a domain from a mesh and a boundary(PRM) file
-void TDomain::InitFromMesh(const char *PRM, std::string MESHFILE)
+void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 {
   Output::print("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
   //make an input file string from the file "PRM"
@@ -909,7 +891,7 @@ void TDomain::InitFromMesh(const char *PRM, std::string MESHFILE)
 
   // read mesh
   Mesh m(MESHFILE);
-  m.setBoundary(TDatabase::ParamDB->BNDFILE);
+  m.setBoundary(PRM);
   unsigned int numberOfElements, nVertexPerElem;
   // make the ParMooN-grid
   if (m.triangle.size()) {

@@ -317,13 +317,10 @@ class TDomain
        *
        * @param[in] PRM filepath to the boundary description
        * @param[in] m filepath to mesh file
+       * @attention this function uses only strings (new convention, 05.2016)
        */
-      void InitFromMesh(const char *PRM, std::string m);
+      void InitFromMesh(std::string PRM, std::string m);
 
-      /** 
-       * @brief Initialize the domain starting from boundary and geometry file
-       */
-      //void Init(const char *PRM, const char *GEO);
 
     /** @brief write domain boundary  into a postscript file */
     int Draw(char *name, Iterators iterator, int arg);

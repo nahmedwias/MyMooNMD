@@ -11,6 +11,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Mesh.h>
+#include <ParameterDatabase.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,19 +25,24 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
-  
+
+  // read input file (new version)
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
+
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1]);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
- 
-  // write all Parameters to the OUTFILE (not to console) for later reference
-  Database.WriteParamDB(argv[0]);
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
   
+  // write all Parameters to the OUTFILE (not to console) for later reference
+  //Database.WriteParamDB(argv[0]);  
   // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  //if(TDatabase::ParamDB->WRITE_VTK)
+  //  mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
 
   unsigned int testType = 3;
   if (testType==1) {
@@ -47,7 +53,7 @@ int main(int argc, char* argv[])
     Output::print("   * rewirte a new .GEO file");
 
     // initialize domain
-    domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+    domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
     // write .mesh file
     TCollection *coll = domain.GetCollection(It_Finest, 0);
@@ -58,7 +64,7 @@ int main(int argc, char* argv[])
     m.info();
     
     // set boundary description
-    m.setBoundary(TDatabase::ParamDB->BNDFILE);
+    m.setBoundary(parmoon_db["boundary_file"]);
     // display boundary info
     m.boundary.info();
     // write new .GEO
@@ -70,7 +76,7 @@ int main(int argc, char* argv[])
 
     Output::print(" Test: ");
     Output::print("   * read .PRM and the new .GEO file and write the corresponding .mesh");
-    domain.Init(TDatabase::ParamDB->BNDFILE, "output/GEOFromMesh.xGEO");
+    domain.Init(parmoon_db["boundary_file"], "output/GEOFromMesh.xGEO");
     TCollection *coll = domain.GetCollection(It_Finest, 0);
     coll->writeMesh("output/meshFromMesh.mesh");
 
@@ -81,7 +87,8 @@ int main(int argc, char* argv[])
     Output::print(" Test: ");
     Output::print("   * read .PRM and the .mesh to initialize the domain");
     Output::print("   * write out the mesh file corresponding to the grid");
-    domain.Init(TDatabase::ParamDB->BNDFILE, "output/meshFromMesh.mesh"); 
+    domain.InitFromMesh(parmoon_db["boundary_file"],
+		"output/meshFromMesh.mesh"); 
     TCollection *coll = domain.GetCollection(It_Finest, 0);
     coll->writeMesh("output/meshFromPRMandMesh.mesh");
 
