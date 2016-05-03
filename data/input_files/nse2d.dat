@@ -35,6 +35,10 @@ residual_tolerance: 1.0e-11
 
 preconditioner: least_squares_commutator_boundary
 
+nonlinloop_epsilon: 1.0e-10
+
+nonlinloop_maxit: 10
+
 # choose the example (see also Examples/Example_NSE2D.C)
 # 0 - poiseuille flow
 # 1 - driven cavity
@@ -153,14 +157,6 @@ SC_COARSE_RED_FACTOR_SCALAR: 0.1
 # 1:
 SC_STEP_LENGTH_CONTROL_FINE_SCALAR: 0
 SC_STEP_LENGTH_CONTROL_ALL_SCALAR: 0
-
-
-
-----------------------------------------------------------------------
-# parameters for fixed point teration of the nonlinear term in NSE
-----------------------------------------------------------------------
-SC_NONLIN_RES_NORM_MIN_SADDLE: 1e-10
-SC_NONLIN_MAXIT_SADDLE: 7
  
 ----------------------------------------------------------------------
 # output controls

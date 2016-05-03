@@ -846,25 +846,25 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
   ParameterDatabase db("default ParMooN nonlinear iteration parameters database");
 
   //TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE, TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-  db.add("nl_iterations_max_n", (size_t) 100,
+  db.add("nonlinloop_maxit", (size_t) 100,
          "The maximum number of iterations to perform in a non-linear loop.",
          (size_t) 0, size_t (1000));
 
   // TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR,
-  db.add("nl_iterations_residual_absolute", 1e-10,
+  db.add("nonlinloop_epsilon", 1e-10,
          "At which absolute residual to break the nonlinear loop.",
          0. , 1. );
 
 
   //TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR
-  db.add("nl_iterations_residual_divergence_factor", (double) 1e10,
+  db.add("nonlinloop_slowfactor", (double) 1e10,
          "Determines at which reduction rate over x iterations"
          "(usually x = 10, see system classes) a convergence is interpreted"
          "as too slow and therefore the iteration is stopped.",
          0., (double) 1e10);
 
   //TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SCALAR
-  db.add("nl_iterations_residual_scales_with_size", false,
+  db.add("nonlinloop_scale_epsilon_with_size", false,
          "Whether or not to scale the absolute residual breaking criterion"
          "with the square root of the problem size.",
          {true,false});

@@ -640,9 +640,9 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   if(it_counter == 0)
     initial_residual = sqrt(residual);
   
-  size_t Max_It = db["nl_iterations_max_n"];
-  double limit = db["nl_iterations_residual_absolute"];
-  if (db["nl_iterations_residual_scales_with_size"])
+  size_t Max_It = db["nonlinloop_maxit"];
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print("stopping tolerance for nonlinear iteration ", limit);

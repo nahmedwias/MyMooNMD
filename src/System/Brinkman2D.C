@@ -328,16 +328,16 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
   // the residual from 10 iterations ago
   const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = db["nl_iterations_max_n"];
-  const double convergence_speed = db["nl_iterations_residual_divergence_factor"];
+  const unsigned int Max_It = db["nonlinloop_maxit"];
+  const double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = db["nl_iterations_residual_absolute"];
-  if ( db["nl_iterations_residual_scales_with_size"] )
+  double limit = db["nonlinloop_epsilon"];
+  if ( db["nonlinloop_scale_epsilon_with_size"] )
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);

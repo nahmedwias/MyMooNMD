@@ -814,12 +814,12 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Parameters for stopping criteria (desired precision epsilon, max number
   // of iteration, convergence rate)
-  double epsilon    = db_["nl_iterations_residual_absolute"];
-  size_t max_It     = db_["nl_iterations_max_n"];
-  double conv_speed = db_["nl_iterations_residual_divergence_factor"];
+  double epsilon    = db_["nonlinloop_epsilon"];
+  size_t max_It     = db_["nonlinloop_maxit"];
+  double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
 
-  if ( db_["nl_iterations_residual_scales_with_size"] )
+  if ( db_["nonlinloop_scale_epsilon_with_size"] )
   {
     epsilon *= sqrt(this->get_size());
     if (my_rank==0)

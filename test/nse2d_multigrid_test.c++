@@ -45,9 +45,9 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
     
-    db["nl_iterations_max_n"] = 100;
-    db["nl_iterations_residual_absolute"] = 1e-10;
-    db["nl_iterations_residual_divergence_factor"] = 1.;
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
 
     // default construct a domain object
     TDomain domain;
@@ -194,9 +194,9 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
     
-    db["nl_iterations_max_n"] = 100;
-    db["nl_iterations_residual_absolute"] = 1e-10;
-    db["nl_iterations_residual_divergence_factor"] = 1.;
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
 
     // default construct a domain object
     TDomain domain;
