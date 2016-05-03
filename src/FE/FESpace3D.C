@@ -483,14 +483,14 @@ void TFESpace3D::FindUsedElements()
 
 void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 {
-  int i, j, k, l, m, m2, n, comp, N_Faces, NFaces;
-  int *v, N_FaceEdges;
+  int i, j, k, l, m, n, N_Faces, NFaces;
+  int *v;
   TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
   TJoint *joint;
   TBoundComp3D *BoundComp;
   TBoundFace *BoundFace;
-  double t0,t1;
-  BoundCond Cond0, Cond1;
+  double t0;
+  BoundCond Cond0;
 
   TFE3DMapper *mapper;
   TFE3DMapper1Reg *mapper1reg;
@@ -508,13 +508,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   int *BoundOffset;
   int N_Slave, EMaxLen;
 
-  FE3D FEType0, FEType1, FEType2;
-  TFE3D *FE0, *FE1, *FE2;
-  TFEDesc3D *FEDesc0_Obj, *FEDesc1_Obj, *FEDesc2_Obj;
-  FEDesc3D FEDesc0, FEDesc1, FEDesc2;
+  FE3D FEType0, FEType1;
+  TFE3D *FE0, *FE1;
+  TFEDesc3D *FEDesc0_Obj, *FEDesc1_Obj;
+  FEDesc3D FEDesc0, FEDesc1;
 
   int I_K0, I_K1, I_K2, I_K3, I_K4;
-  int *J_K0, *J_K1, *J_K2, *J_K3, *J_K4;
+  int *J_K0;
   int *Indices0, *Indices1, *Indices2, *Indices3, *Indices4;
   int c1, c2, c3, c4, f1, f2, f3, f4;
   int chnum1, chnum2, chnum3, chnum4;
@@ -525,13 +525,20 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   double LinComb[4];
   const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
   int MaxLen, N_Points;
+
+
+
+
+#ifdef _MPI
+  int N_FaceEdges;
   int N_Edges, N_EdgeNeibs, N_EdgeDOF, *EdgeDof, *NeibEdgeDof;
   int N_VertDof, N_VertInCell, N_VertNeibs;
-  int owndof, neibdof, maptype, w, w0, w1, v0, v1, e;
+  int neibdof, maptype, w, w0, w1, v0, v1, e;
   TEdge *edge;
   TBaseCell **EdgeNeibs, **VertNeibs;
   TVertex *Vert;
   const int *EdgeVertex, *NeibEdgeVertex;
+#endif
 
   TInterfaceJoint3D *InterFace;
 
@@ -655,8 +662,10 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   {
     cell=Collection->GetCell(i);
     N_Faces = cell->GetN_Joints();
+#ifdef _MPI
     N_Edges=cell->GetN_Edges();
     N_VertInCell = cell->GetN_Vertices();
+#endif
     
     FEType0 = GetFE3D(i, cell);
     FE0 = TFEDatabase3D::GetFE3D(FEType0);
@@ -975,7 +984,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
     //OutPut("cell: " << i << endl);   
     
     N_Faces=cell->GetN_Joints();
+#ifdef _MPI
     N_Edges=cell->GetN_Edges();
+#endif
       
     FEType0 = GetFE3D(i, cell);
     FE0 = TFEDatabase3D::GetFE3D(FEType0);
@@ -1186,7 +1197,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   FE1 = TFEDatabase3D::GetFE3D(FEType1);
                   FE1->GetFEDesc3D(FEDesc1, FEDesc1_Obj);
                   I_K1 = BeginIndex[c1];
-                  J_K1 = GlobalNumbers + BeginIndex[c1];
                   m=TmpoFnlF[chnum1*NFaces+l];
                   Indices1 = FEDesc1_Obj->GetJointDOF(m);
                   Twist1 = TmpCTI[f1];
@@ -1199,7 +1209,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c2=child2->GetClipBoard();
                   // OutPut("child: " << 2 << " " << c2 << endl);
                   I_K2 = BeginIndex[c2];
-                  J_K2 = GlobalNumbers + BeginIndex[c2];
                   m=TmpoFnlF[chnum2*NFaces+l];
                   Indices2 = FEDesc1_Obj->GetJointDOF(m);
                   Twist2 = TmpCTI[f2];
@@ -1212,7 +1221,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c3=child3->GetClipBoard();
                   // OutPut("child: " << 3 << " " << c3 << endl);
                   I_K3 = BeginIndex[c3];
-                  J_K3 = GlobalNumbers + BeginIndex[c3];
                   m=TmpoFnlF[chnum3*NFaces+l];
                   Indices3 = FEDesc1_Obj->GetJointDOF(m);
                   Twist3 = TmpCTI[f3];
@@ -1225,7 +1233,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   c4=child4->GetClipBoard();
                   // OutPut("child: " << 4 << " " << c4 << endl);
                   I_K4 = BeginIndex[c4];
-                  J_K4 = GlobalNumbers + BeginIndex[c4];
                   m=TmpoFnlF[chnum4*NFaces+l];
                   Indices4 = FEDesc1_Obj->GetJointDOF(m);
                   Twist4 = TmpCTI[f4];
@@ -1258,7 +1265,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
                   FE1->GetFEDesc3D(FEDesc1, FEDesc1_Obj);
                   
                   I_K1 = BeginIndex[c1];
-                  J_K1 = GlobalNumbers + BeginIndex[c1];
                   m = TmpoFnlF[chnum1 * NFaces + l];
                   if(m == -1)
                   {
@@ -1333,7 +1339,6 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
               // FEDesc1_Obj = FE1->GetFEDesc3D();
               // FEDesc1_Obj = TFEDatabase3D::GetFEDesc3D(FEDesc1);
               I_K1 = BeginIndex[n];
-              J_K1 = GlobalNumbers + BeginIndex[n];
               // Indices1 = FEDesc1_Obj->GetJointDOF(l);
 
               // find the local edge of neigh on which cell is
