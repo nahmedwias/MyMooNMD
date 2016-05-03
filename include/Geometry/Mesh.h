@@ -1,10 +1,18 @@
 /** ************************************************************************ 
 *
 * @class     Mesh
-* @brief     stores Mesh-structures (Pts, Elements)
+* @brief     stores mesh arrays and allows for conversion
+*     
+*            Store the mesh using several lists
+*            (vertices, tria, quad, etc.), which are
+*            implemented as separate struct (in this file)
+*            Moreover, it contains a Boundary object that
+*            can store information about the boundary (i.e. a PRM file)
+*            Note: the Boundary must be initialized in order to
+*            write the geometry in .GEO format.
+* 
 * @author    Alfonso Caiazzo 
 * @date      21.03.16
-* @History 
  ************************************************************************  */
 
 #include <vector>
@@ -64,13 +72,18 @@ class Mesh
  protected:
   
  public:
-  /** @brief dimension */
+
+  /**
+   *   @brief dimension
+   *   @attention this is not necessarily the geometrical dimension
+   *  (a mesh file could be written in dimension 3 even if
+   * the domain lies on a plane)
+  */
   unsigned int dimension;
   
   /** @brief nodes */    
   std::vector<meshNode> vertex;
 
-  
   /** @brief edges */    
   std::vector<meshEdge> edge;
 
@@ -89,9 +102,15 @@ class Mesh
   ///@brief boundary handler class
   Boundary boundary;
   
-  // Constructors
+  /**
+   *   @brief Emtpy constructor initialize an empty mesh,
+   *   a single file initialize the mesh structures (.mesh)
+   *   while passing also a boundary file initializes also
+   *   the boundary description.
+   */
   Mesh();
   Mesh(std::string f);
+  Mesh(std::string filename,std::string filenameBoundary);
   
   // Destructor
   ~Mesh(){};
@@ -105,24 +124,44 @@ class Mesh
   ///@brief write mesh to a file .mesh
   void writeToMesh(std::string filename);
 
-  /**@brief write mesh to a file .xGEO (extended ParMooN format)
+  /**
+     @brief write mesh to a file .xGEO (extended ParMooN format)
      @param prmfile is an input prm file describing the boundary
      @attention the Boundary object must have been initialized
      (from a  prm file consistent with the geometry)
-     @warning it works only for 2D at the moment
-  **/
+     @warning it works only in 2D at the moment
+  */
   void writeToGEO(std::string filename);
 
   /**
-     @brief initialize the boundary reading a PRM file
+     @brief initialize the Boundary class reading a PRM file 
+     @warning it works only in 2D at the moment
    */
   void setBoundary(std::string PRM);
   
-  ///@brief remove empry spaces in a string
+  ///@brief remove empry spaces in a string (general utility)
   void stripSpace(std::string &str);
 
   ///@brief display some info on screen
   void info();
+
+  /**
+     @brief number of nodes in the mesh
+   */
+  unsigned int nPoints() {
+    return vertex.size();
+  };
+  
+  /**
+     @brief number of (inner) elements in the mesh
+   */
+  unsigned int nElements() {
+    if (hexa.size()+tetra.size())
+      return hexa.size()+tetra.size();
+    else
+      return triangle.size()+quad.size();
+  };
+
 };
 
 #endif
