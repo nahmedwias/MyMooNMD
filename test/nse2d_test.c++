@@ -90,12 +90,16 @@ void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"] = 5;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;
   db["preconditioner"] = "least_squares_commutator";
   
+  db["nonlinloop_maxit"] = 50;
+  db["nonlinloop_epsilon"] = 1e-10;
+
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
@@ -152,8 +156,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LEVELS =1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     // possibly parameters in the database
@@ -238,8 +240,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LEVELS =1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
         
     // possibly parameters in the database

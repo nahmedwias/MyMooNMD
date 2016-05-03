@@ -12,6 +12,17 @@
 #include<Assemble2D.h>
 
 
+ParameterDatabase get_default_Brinkman2D_parameters()
+{
+  Output::print<3>("creating a default Brinkman2D parameter database");
+
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("Brinkman2D parameter database");
+
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+}
+
 /** ************************************************************************ */
 
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
@@ -61,8 +72,10 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
 }
 
 /** ************************************************************************ */
-Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
- : Brinkman2D(domain, *(new Example_Brinkman2D()), reference_id)
+Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       int reference_id)
+ : Brinkman2D(domain, param_db,
+              *(new Example_Brinkman2D()), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -72,11 +85,13 @@ Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
 
 /** ************************************************************************ */
 
-Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
+Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
+                       const Example_Brinkman2D & e,
              unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), oldResiduals(),
+    : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10), errors()
 {
+  db.merge(param_db);
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -313,16 +328,16 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
   // the residual from 10 iterations ago
   const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  const unsigned int Max_It = db["nonlinloop_maxit"];
+  const double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if ( db["nonlinloop_scale_epsilon_with_size"] )
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);

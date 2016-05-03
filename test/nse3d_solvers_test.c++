@@ -144,33 +144,55 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
 // entries accordingly.
 void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
-  db.add("solver_type", std::string("iterative"), "", {"direct", "iterative"});
-  db.add("direct_solver_type", std::string("umfpack"), "", 
-         {"umfpack", "pardiso", "mumps"});
-  db.add("iterative_solver_type", std::string("fgmres"),"");
-  db.add("preconditioner", std::string("no_preconditioner"), "",
-         {"no_preconditioner", "least_squares_commutator", "multigrid"} );
-  db.add("residual_tolerance", 1.0e-13, "");
+  db["solver_type"] = std::string("iterative");
+  db["direct_solver_type"] = std::string("umfpack");
+  db["iterative_solver_type"] = std::string("fgmres");
+  db["preconditioner"] = std::string("no_preconditioner");
+  db["residual_tolerance"] = 1.0e-13;
   
   if (solver_name.compare("lsc") == 0)
   {
     db["preconditioner"] = "least_squares_commutator";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-12;
+    db["nonlinloop_epsilon"] = 1e-12;
+    TDatabase::ParamDB->LEVELS = 1;
     // just to not distract 'NSE3D::check_parameters'
     TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
   else if (solver_name.compare("multigrid") == 0)
   {
     db["preconditioner"] = "multigrid";
-    ErrThrow("Multigrid not yet set!");
+    TDatabase::ParamDB->LEVELS = 2;
+    db["n_multigrid_levels"] = 2;
+    db["damping_factor"] = 1.0;
+    db["damping_factor_finest_grid"] = 1.0;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
+    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE= 1e-11;
+    TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE=100;
+    TDatabase::ParamDB->SOLVER_TYPE = 1;
+    TDatabase::ParamDB->SC_MG_TYPE_SADDLE=0; // standard geometric multigrid
+    TDatabase::ParamDB->SC_MG_CYCLE_SADDLE=2;
+    TDatabase::ParamDB->SC_SMOOTHER_SADDLE=2; // cell vanka
+    TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
+    TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
+    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE=0.7;
+    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE = 0.7;
+    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE= 17; // cell vanka
+    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE= 0.1;
+    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE= 1.0;
+    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE= 1.0;
+    TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE= 100;
+    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE= 0;
+    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;    
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    TDatabase::ParamDB->LEVELS = 1;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
@@ -184,8 +206,9 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    TDatabase::ParamDB->LEVELS = 1;
+    db["nonlinloop_epsilon"] = 1e-15;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
@@ -203,6 +226,8 @@ double get_tolerance(std::string solver_name)
   if(solver_name.compare("umfpack") == 0)
     return 1e-9;
   if(solver_name.compare("lsc") == 0)
+    return 1e-9;
+  if(solver_name.compare("multigrid") == 0)
     return 1e-9;
 #else
   if(solver_name.compare("mumps") == 0)
@@ -234,6 +259,9 @@ int main(int argc, char* argv[])
   TFEDatabase3D FEDatabase;
   
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
   db["problem_type"].set<size_t>(5);
   
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
@@ -262,6 +290,11 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->BNDFILE = boundary_file;
   //TDatabase::ParamDB->GEOFILE = (char*)"not_specified_globally";
 
+  int nRef;
+  if(TDatabase::ParamDB->SOLVER_TYPE==1)
+    nRef=TDatabase::ParamDB->LEVELS+TDatabase::ParamDB->UNIFORM_STEPS;
+  else
+    nRef=TDatabase::ParamDB->UNIFORM_STEPS;
 
   //===========================================================
   if(my_rank==0)
@@ -280,7 +313,7 @@ int main(int argc, char* argv[])
     TDomain domain_hex;
     domain_hex.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Hexa");
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    for(int i=0; i<nRef; i++)
     {
       domain_hex.RegRefineAll();
     }
@@ -347,7 +380,7 @@ int main(int argc, char* argv[])
     TDomain domain_tet;
     domain_tet.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Tetra");
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    for(int i=0; i<nRef; i++)
     {
       domain_tet.RegRefineAll();
     }

@@ -9,6 +9,25 @@
 #include <Output2D.h>
 #include <DirectSolver.h>
 
+/* *************************************************************************** */
+  //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
+ParameterDatabase get_default_TNSE2D_parameters()
+{
+  Output::print<3>("creating a default TNSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TNSE3D parameter database");
+
+  //Time_NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+
+  return db;
+}
+/* *************************************************************************** */
+
 /**************************************************************************** */
 Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example, 
                   TCollection& coll, std::pair< int, int > order, 
@@ -52,18 +71,20 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
 }
 
 /**************************************************************************** */
-Time_NSE2D::Time_NSE2D(const TDomain& domain, int reference_id)
-  : Time_NSE2D(domain, *(new Example_NSE2D()), reference_id)
+Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       int reference_id)
+  : Time_NSE2D(domain, param_db, *(new Example_NSE2D()), reference_id)
 {
   
 }
 
 /**************************************************************************** */
-Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
-                       int reference_id)
- : systems(), example(ex), multigrid(), defect(), 
+Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       const Example_NSE2D& ex, int reference_id)
+ : db(get_default_TNSE2D_parameters()), systems(), example(ex), multigrid(), defect(),
    oldResidual(0), initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
+  db.merge(param_db);
   this->set_parameters();
   
   std::pair <int,int> velo_pres_order(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -587,7 +608,7 @@ void Time_NSE2D::assemble_nonlinear_term()
 
 /**************************************************************************** */
 bool Time_NSE2D::stopIte(unsigned int it_counter)
-{
+{//TODO This has no "slow convergence criterion yet!"
   System_per_grid& s = this->systems.front();
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
@@ -619,9 +640,9 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   if(it_counter == 0)
     initial_residual = sqrt(residual);
   
-  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  size_t Max_It = db["nonlinloop_maxit"];
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print("stopping tolerance for nonlinear iteration ", limit);

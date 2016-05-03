@@ -48,7 +48,8 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
 char *description, double *values, int length)
 {
-
+  Output::print<3>("Constructor of TFEFunction2D");
+  
   FESpace2D=fespace2D;
  
   Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'

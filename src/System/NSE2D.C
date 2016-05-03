@@ -20,6 +20,22 @@ ParameterDatabase get_default_NSE2D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("NSE2D parameter database");
   
+  //NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nonlinloop_maxit"] = 1;
+     }
+     else
+     {
+       db["nonlinloop_maxit"] = 1;
+     }
+  }
+
   return db;
 }
 
@@ -86,6 +102,8 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       errors()
 {
   this->db.merge(param_db, false);
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -596,23 +614,23 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   // compute the residuals with the current matrix and solution
   this->computeNormsOfResiduals();
   // the current norm of the residual
-  const double normOfResidual = this->getFullResidual();
+  double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
     initial_residual = normOfResidual;
   // the residual from 10 iterations ago
-  const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
+  double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  size_t Max_It = db["nonlinloop_maxit"];
+  double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);

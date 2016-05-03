@@ -41,6 +41,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
            fe_function(&this->fe_space, (char*)"c", (char*)"c",
                        this->solution.get_entries(), this->solution.length())
 {
+  
   matrix = BlockFEMatrix::CD2D(fe_space);
 }
 /** ************************************************************************ */
@@ -70,7 +71,8 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
-    
+  Output::print("in");
+
   // print out some information
   TFESpace2D & space = this->systems.front().fe_space;
   double h_min, h_max;

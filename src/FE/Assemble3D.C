@@ -34,11 +34,6 @@
 #include <stdlib.h>
 
 
-static int compare_int(const void *a, const void *b)
-{
-  return (*(int *)a) - (*(int *)b);
-}
-
 
 void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
                 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
@@ -54,9 +49,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij,N_Vertex;
   int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
   int N_Test, N_Ansatz, N_Joints;
-  int Used[N_FEs3D];
   int *N_BaseFunct;
-  int N_Rows;
   BaseFunct3D *BaseFuncts;
   const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
@@ -66,7 +59,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   TCollection *Coll;
   TBaseCell *cell, *neigh;
   TJoint *joint;
-  TBoundFace *boundface;
   //  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers, **BeginIndex;
   int **RhsGlobalNumbers, **RhsBeginIndex;
@@ -76,7 +68,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   TFEDesc3D *FEDesc_Obj;
   double *weights, *xi, *eta, *zeta;
   double *t, *s;
-  double x, y, z;
   double xf, yf, zf;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -90,7 +81,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   int LocN_BF[N_BaseFuncts3D];
   BaseFunct3D LocBF[N_BaseFuncts3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, begin, end, last, middle;
+  int *DOF, ActiveBound, DirichletBound, end, last;
   int *TestDOF, *AnsatzDOF;
   double *Entries;
   const int *ColInd, *RowPtr;
@@ -102,39 +93,35 @@ void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
   HNDesc HNDescr;
   THNDesc *HNDescr_Obj;
   double *Coupling, v;
-  TBoundComp3D *BoundComp;
   double t0, t1, t2;
-  int comp;
-  BoundCond Cond0, Cond1;
+  BoundCond Cond0;
   BoundCondFunct3D *BoundaryCondition;
   BoundValueFunct3D *BoundaryValue;
   TNodalFunctional3D *nf;
   RefTrans3D reftrans;
-  int N_EdgePoints;
-  double *EdgePoints;
   double PointValues[MaxN_PointsForNodal3D];
   double FunctionalValues[MaxN_BaseFunctions3D];
   int *EdgeDOF, N_EdgeDOF;
-  int N_LinePoints;
-  double *FaceWeights, *theta;
-  double x0, x1, y0, y1, z0, z1, hE;
+  double *FaceWeights;
   double **JointValues, *JointValue;
   // static bool *SecondDer = NULL;
   bool *SecondDer = NULL;
-  double Param1[4], Param2[4];
   double LinComb[4];
  
-  const int *TmpFV, *TmpLen, *EdgeVertex, *TmpFE, *ETmpLen;
-  int MaxLen, EMaxLen, N_FaceEdges;
+  const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
+  int MaxLen, EMaxLen;
   double xc1, yc1, zc1, xc2, yc2, zc2, xc3, yc3, zc3;
   double nx, ny, nz;
-  double t11,t22,time=0.0;
 
   double time1, time2, time_all, time_total;
-  int *int_ptr, N_Edges, N_VertInCell, dof;
 
+#ifdef _MPI
+  const int *EdgeVertex;
+  int N_FaceEdges;
+  int N_Edges, N_VertInCell, dof;
   TEdge *edge;
   TVertex *Vert; 
+#endif
   
   bool InnerBoundary, OuterBoundary;
 
@@ -1196,9 +1183,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements,ij,N_Vertex;
 	  int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
 	  int N_Test, N_Ansatz, N_Joints;
-	  int Used[N_FEs3D];
 	  int *N_BaseFunct;
-	  int N_Rows;
 	  BaseFunct3D *BaseFuncts;
 	  const TFESpace3D *fespace;
 	  FE3D LocalUsedElements[N_FEs3D], CurrentElement;
@@ -1208,7 +1193,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  TCollection *Coll;
 	  TBaseCell *cell, *neigh;
 	  TJoint *joint;
-	  TBoundFace *boundface;
 	  //  TIsoBoundEdge *isoboundedge;
 	  int **GlobalNumbers, **BeginIndex;
 	  int **RhsGlobalNumbers, **RhsBeginIndex;
@@ -1218,7 +1202,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  TFEDesc3D *FEDesc_Obj;
 	  double *weights, *xi, *eta, *zeta;
 	  double *t, *s;
-	  double x, y, z;
 	  double xf, yf, zf;
 	  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
 	  double Z[MaxN_QuadPoints_3D];
@@ -1232,7 +1215,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  int LocN_BF[N_BaseFuncts3D];
 	  BaseFunct3D LocBF[N_BaseFuncts3D];
 	  double *AuxArray[MaxN_QuadPoints_3D];
-	  int *DOF, ActiveBound, DirichletBound, begin, end, last, middle;
+	  int *DOF, ActiveBound, DirichletBound, end, last;
 	  int *TestDOF, *AnsatzDOF;
 	  double *Entries;
 	  const int *ColInd, *RowPtr;
@@ -1244,39 +1227,35 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  HNDesc HNDescr;
 	  THNDesc *HNDescr_Obj;
 	  double *Coupling, v;
-	  TBoundComp3D *BoundComp;
 	  double t0, t1, t2;
-	  int comp;
-	  BoundCond Cond0, Cond1;
+	  BoundCond Cond0;
 	  BoundCondFunct3D *BoundaryCondition;
 	  BoundValueFunct3D *BoundaryValue;
 	  TNodalFunctional3D *nf;
 	  RefTrans3D reftrans;
-	  int N_EdgePoints;
-	  double *EdgePoints;
 	  double PointValues[MaxN_PointsForNodal3D];
 	  double FunctionalValues[MaxN_BaseFunctions3D];
 	  int *EdgeDOF, N_EdgeDOF;
-	  int N_LinePoints;
-	  double *FaceWeights, *theta;
-	  double x0, x1, y0, y1, z0, z1, hE;
+	  double *FaceWeights;
 	  double **JointValues, *JointValue;
 	  // static bool *SecondDer = NULL;
 	  bool *SecondDer = NULL;
-	  double Param1[4], Param2[4];
 	  double LinComb[4];
 
-	  const int *TmpFV, *TmpLen, *EdgeVertex, *TmpFE, *ETmpLen;
-	  int MaxLen, EMaxLen, N_FaceEdges;
+	  const int *TmpFV, *TmpLen, *TmpFE, *ETmpLen;
+	  int MaxLen, EMaxLen;
 	  double xc1, yc1, zc1, xc2, yc2, zc2, xc3, yc3, zc3;
 	  double nx, ny, nz;
-	  double t11,t22,time=0.0;
 
 	  double time1, time2, time_all, time_total;
-	  int *int_ptr, N_Edges, N_VertInCell, dof;
 
-	  TEdge *edge;
-	  TVertex *Vert;
+#ifdef _MPI
+  const int *EdgeVertex;
+  int N_FaceEdges;
+  int N_Edges, N_VertInCell, dof;
+  TEdge *edge;
+  TVertex *Vert;
+#endif
 
 	  bool InnerBoundary, OuterBoundary;
 
@@ -2344,90 +2323,53 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
 {
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  int i,j,k,l,l1,l2,l3,n,m, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_, N_Hanging;
-  int N_Test, N_Ansatz, N_Joints;
-  int Used[N_FEs3D];
+  int i,j,l,l1,m, N_LocalUsedElements;
+  int N_Cells, N_Points, N_Parameters, N_;
+  int N_Joints;
   int *N_BaseFunct;
-  int N_Rows;
   BaseFunct3D *BaseFuncts;
   const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
-  FE3D TestElement, AnsatzElement;
   QuadFormula2D FaceQuadFormula;
   TQuadFormula2D *qf2;
   TCollection *Coll;
   TBaseCell *cell;
   TJoint *joint;
-  TBoundFace *boundface;
-  TIsoBoundEdge *isoboundedge;
-  //  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers, **BeginIndex;
   int **RhsGlobalNumbers, **RhsBeginIndex;
   int **TestGlobalNumbers, **TestBeginIndex;
   int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
   TFE3D *ele;
-  TFEDesc3D *FEDesc_Obj;
   double *weights, *xi, *eta, *zeta;
   double *t, *s;
-  double x, y, z;
   double xf, yf, zf;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double *Param[MaxN_QuadPoints_3D];
-  double *local_rhs;
   double *righthand;
   double **Matrices, *aux;
-  double **Matrix;
   double ***LocMatrices, **LocRhs;
-  int LocN_BF[N_BaseFuncts3D];
-  BaseFunct3D LocBF[N_BaseFuncts3D];
   double *AuxArray[MaxN_QuadPoints_3D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
-  int *TestDOF, *AnsatzDOF;
-  double *Entries;
-  int *ColInd, *RowPtr;
-  double *RHS, *MatrixRow;
+  int *DOF, ActiveBound;
   double **HangingEntries, **HangingRhs;
-  double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
-  THangingNode *hn, **HangingNodes;
-  HNDesc HNDescr;
-  THNDesc *HNDescr_Obj;
-  double *Coupling, v;
-  TBoundComp3D *BoundComp;
-  double t0, t1;
-  int comp;
-  BoundCond Cond0, Cond1;
+  double t0;
+  BoundCond Cond0;
   BoundCondFunct3D *BoundaryCondition;
-  BoundValueFunct3D *BoundaryValue;
   TNodalFunctional3D *nf;
-  RefTrans3D reftrans;
   int N_EdgePoints;
-  double *EdgePoints;
-  double PointValues[MaxN_PointsForNodal3D];
-  double FunctionalValues[MaxN_BaseFunctions3D];
-  int *EdgeDOF, N_EdgeDOF;
-  int N_LinePoints;
-  double *FaceWeights, *theta;
-  double x0, x1, y0, y1, z0, z1, hE;
+  double *FaceWeights;
   double **JointValues, *JointValue;
-  double Param1[4], Param2[4];
-  double LinComb[4];
   bool *SecondDer;
- 
+  double hE;
+
   const int *TmpFV, *TmpLen;
   int MaxLen;
-  double xc1, yc1, zc1, xc2, yc2, zc2, xc3, yc3, zc3;
   double nn, nx, ny, nz, t11, t12, t13, t21, t22, t23;
   double x10, y10, z10, x20, y20, z20;
   double *EdgePoints1, *EdgePoints2;
-  double *Entries1,*Entries2,*Entries3, *Entries4, *Entries5;
-  double *Entries6,*Entries7;
+  double *Entries1,*Entries2,*Entries3;
   const int *ColInd1, *RowPtr1,*ColInd2, *RowPtr2, *ColInd3, *RowPtr3;
-  const int *ColInd4, *RowPtr4, *ColInd5, *RowPtr5, *ColInd6, *RowPtr6;
-  const int *ColInd7, *RowPtr7;
   double penetration_penalty, friction_parameter;
   double friction_constant= TDatabase::ParamDB->FRICTION_CONSTANT;
   double friction_power = TDatabase::ParamDB->FRICTION_POWER;
@@ -2548,8 +2490,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     {
       CurrentElement = fespaces[j]->GetFE3D(i, cell);
       LocalUsedElements[j] = CurrentElement;
-      LocN_BF[j] = N_BaseFunct[CurrentElement];
-      LocBF[j] = BaseFuncts[CurrentElement];
     }
 
     N_LocalUsedElements = n_fespaces;
@@ -2559,7 +2499,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     // ####################################################################
 
     // SecondDer not set !!!
-    reftrans=TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements, 
+    TFEDatabase3D::GetOrig(N_LocalUsedElements, LocalUsedElements,
                                     Coll, cell, SecondDer,
                                     N_Points, xi, eta, zeta, weights,
                                     X, Y, Z, AbsDetjk);
@@ -2577,27 +2517,18 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
       // get number of basis function of current finite element
       N_ = N_BaseFunct[CurrentElement];
 
-      // get information on rhs 
-      local_rhs = righthand+j*MaxN_BaseFunctions2D;
-      RHS = rhs[j];
-      CurrentHangingRhs = HangingRhs[j];
     
       // find bounds in fe space
       ActiveBound = fespace->GetActiveBound();
-      DirichletBound = fespace->GetHangingBound();
 
       // dof of the rhs nodes connected to this cell
       DOF = RhsGlobalNumbers[j] + RhsBeginIndex[j][i];
 
       // only for faces on the boundary
       BoundaryCondition = BoundaryConditions[j];
-      BoundaryValue = BoundaryValues[j];
       ele = TFEDatabase3D::GetFE3D(CurrentElement);
       nf = ele->GetNodalFunctional3D();
       nf->GetPointsForFace(N_EdgePoints, EdgePoints1, EdgePoints2);
-
-      FEDesc_Obj = ele->GetFEDesc3D();
-      N_EdgeDOF = FEDesc_Obj->GetN_JointDOF();
 
       // find slip type bc
       N_Joints = cell->GetN_Faces();
@@ -2838,9 +2769,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                   exit(4711);
                    
               }  
-              
-              EdgeDOF = FEDesc_Obj->GetJointDOF(m);
-              
+
               // compute additional matrix entries
               // for all velo dof in the mesh cell
               // ii - test function
@@ -2874,30 +2803,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                     ColInd3 = sqmatrices[4]->GetKCol();
                   }
                   
-                  // time dependent problem and NSTYPE 4
-                  if (n_sqmatrices==18)
-                  {
-                    // M11
-                    Entries4 = sqmatrices[9]->GetEntries();
-                    RowPtr4 = sqmatrices[9]->GetRowPtr();
-                    ColInd4 = sqmatrices[9]->GetKCol();
-                    // M12
-                    Entries5 = sqmatrices[12]->GetEntries();
-                    RowPtr5 = sqmatrices[12]->GetRowPtr();
-                    ColInd5 = sqmatrices[12]->GetKCol();                      
-                    // M13
-                    Entries6 = sqmatrices[13]->GetEntries();
-                    RowPtr6 = sqmatrices[13]->GetRowPtr();
-                    ColInd6 = sqmatrices[13]->GetKCol();                      
-                  }
-                  
-                  if (n_matrices==3)
-                  {
-                    // B1T
-                    Entries7 = matrices[0]->GetEntries();
-                    RowPtr7 = matrices[0]->GetRowPtr();
-                    ColInd7 = matrices[0]->GetKCol();                      
-                  }
                 }
                 // second velocity component -> matrices A_21, A_22, A23
                 if (j==1)
@@ -2918,30 +2823,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                   RowPtr2 = sqmatrices[1]->GetRowPtr();
                   ColInd2 = sqmatrices[1]->GetKCol();
                   
-                  // time dependent problem and NSTYPE 4
-                  if (n_sqmatrices==18)
-                  {
-                    // M22
-                    Entries4 = sqmatrices[10]->GetEntries();
-                    RowPtr4 = sqmatrices[10]->GetRowPtr();
-                    ColInd4 = sqmatrices[10]->GetKCol();   
-                    // M21
-                    Entries5 = sqmatrices[14]->GetEntries();
-                    RowPtr5 = sqmatrices[14]->GetRowPtr();
-                    ColInd5 = sqmatrices[14]->GetKCol(); 
-                    // M23
-                    Entries6 = sqmatrices[15]->GetEntries();
-                    RowPtr6 = sqmatrices[15]->GetRowPtr();
-                    ColInd6 = sqmatrices[15]->GetKCol();                      
-                  }
-
-                  if (n_matrices==3)
-                  {
-                    // B2T
-                    Entries7 = matrices[1]->GetEntries();
-                    RowPtr7 = matrices[1]->GetRowPtr();
-                    ColInd7 = matrices[1]->GetKCol();                      
-                  }
                 }
                 // third velocity component -> matrices A_31, A_32, A33
                 if (j==2)
@@ -2962,30 +2843,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                   RowPtr3 = sqmatrices[2]->GetRowPtr();
                   ColInd3 = sqmatrices[2]->GetKCol();
                   
-                  // time dependent problem and NSTYPE 4
-                  if (n_sqmatrices==18)
-                  {
-                    // M33
-                    Entries4 = sqmatrices[11]->GetEntries();
-                    RowPtr4 = sqmatrices[11]->GetRowPtr();
-                    ColInd4 = sqmatrices[11]->GetKCol();   
-                    // M31
-                    Entries5 = sqmatrices[16]->GetEntries();
-                    RowPtr5 = sqmatrices[16]->GetRowPtr();
-                    ColInd5 = sqmatrices[16]->GetKCol(); 
-                    // M32
-                    Entries6 = sqmatrices[17]->GetEntries();
-                    RowPtr6 = sqmatrices[17]->GetRowPtr();
-                    ColInd6 = sqmatrices[17]->GetKCol();                      
-                  }
-
-                  if (n_matrices==3)
-                  {
-                    // B3T
-                    Entries7 = matrices[2]->GetEntries();
-                    RowPtr7 = matrices[2]->GetRowPtr();
-                    ColInd7 = matrices[2]->GetKCol();                      
-                  }
                 }
                 //OutPut("ii " << dof_ii << endl);
                 

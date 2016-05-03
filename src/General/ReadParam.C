@@ -1354,11 +1354,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_DIV_FACTOR;
       N_Param++;
     }
-    if (!strcmp(line, "SC_NONLIN_DIV_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
-      N_Param++;
-    }
     if (!strcmp(line, "SC_SMOOTHING_STEPS:"))
     {
       dat >> TDatabase::ParamDB->SC_SMOOTHING_STEPS;
@@ -1444,26 +1439,6 @@ int TDomain::ReadParam(char *ParamFile)
 
     // *********** PARAMETERS FOR SCALAR SOLVER ***********
 
-    if (!strcmp(line, "SC_NONLIN_ITE_TYPE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
     if (!strcmp(line, "SC_SOLVER_SCALAR:"))
     {
       dat >> TDatabase::ParamDB->SC_SOLVER_SCALAR;
@@ -1784,26 +1759,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE;
       N_Param++;
     }
-    if (!strcmp(line, "SC_NONLIN_MAXIT_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR_SADDLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE;
-      N_Param++;
-    }
     if (!strcmp(line, "SC_SOLVER_SADDLE:"))
     {
       dat >> TDatabase::ParamDB->SC_SOLVER_SADDLE;
@@ -1931,34 +1886,6 @@ int TDomain::ReadParam(char *ParamFile)
     }
     // *********** PARAMETERS FOR BOTH SOLVERS SOLVER ***********
 
-    if (!strcmp(line, "SC_NONLIN_ITE_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE =
-        TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE =
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR; 
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_RES_NORM_MIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE
-        = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_NONLIN_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR;
-     N_Param++;
-    }
     if (!strcmp(line, "SC_LIN_MAXIT:"))
     {
       dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;

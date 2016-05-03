@@ -145,13 +145,13 @@ class NSE3D
     /** @brief Definition of the used example. */
     const Example_NSE3D& example_;
     
-    /** @brief a local parameter database which constrols this class
+    /** @brief a local parameter database which controls this class
      * 
      * The database given to the constructor will be merged into this one. Only 
      * parameters which are of interest to this class are stored (and the 
      * default ParMooN parameters). Note that this usually does not include 
      * other parameters such as solver parameters. Those are only in the 
-     * NSE2D::solver object.
+     * Solver object.
      */
     ParameterDatabase db;
     

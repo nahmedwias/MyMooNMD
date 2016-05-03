@@ -397,12 +397,6 @@ struct TParaDB
   //======================================================================
   // ******** parameters for scalar system *********//
   //======================================================================
-  // parameters for nonlinear iteration
-  int    SC_NONLIN_ITE_TYPE_SCALAR;
-  int    SC_NONLIN_MAXIT_SCALAR;
-  double SC_NONLIN_RES_NORM_MIN_SCALAR;
-  double SC_NONLIN_DAMP_FACTOR_SCALAR;
-
   // parameters for linear iteration
   int    SC_SOLVER_SCALAR;
   int    SC_PRECONDITIONER_SCALAR;
@@ -438,12 +432,8 @@ struct TParaDB
   //======================================================================
   // ******** parameters for saddle point system *********//
   //======================================================================
-  // parameters for nonlinear iteration
+  // parameter for nonlinear iteration
   int    SC_NONLIN_ITE_TYPE_SADDLE;
-  int    SC_NONLIN_MAXIT_SADDLE;
-  double SC_NONLIN_RES_NORM_MIN_SADDLE;
-  double SC_NONLIN_DAMP_FACTOR_SADDLE;
-  int    SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE;
 
   // parameters for linear iteration
   int    SC_SOLVER_SADDLE;
@@ -517,7 +507,6 @@ struct TParaDB
   int    SC_SCHUR_STEP_LENGTH_CONTROL;
   int    SC_MIXED_BCGS_CGS_SWITCH_TOL;
   double SC_DIV_FACTOR;
-  double SC_NONLIN_DIV_FACTOR;
   int    SC_SMOOTHING_STEPS;
   int    SC_N1_PARAM;
   int    SC_N2_PARAM;
