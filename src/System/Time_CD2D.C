@@ -12,6 +12,7 @@
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
+
 #include <numeric>
 
 
@@ -79,7 +80,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
                      int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
+  : systems(), example(ex), multigrid(nullptr), errors(5, 0.0), timeDependentOutput()
 {
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
@@ -428,6 +429,9 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
+
+    /*
+    // vtk output (obsolete)
     if(TDatabase::ParamDB->WRITE_VTK)
     {
       TOutput2D Output(1, 1, 0, 0, NULL);
@@ -443,6 +447,19 @@ void Time_CD2D::output(int m, int& image)
       Output.WriteVtk(filename.c_str());
       image++;
     }
+    */
+    
+    // add the functions the first time
+    if (image==0) 
+    {
+      Output::print<1>("  Add FE Function ", fe_function.GetName(), " for output ");
+      timeDependentOutput.addFEFunction(&fe_function);
+    }
+    // write output
+    timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
+    image++;
+    
+    
   }
 }
 

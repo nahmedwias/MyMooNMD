@@ -4,6 +4,7 @@
 #include <iomanip>      // std::setw
 #include <sstream>
 #include <iterator>
+#include <vector>
 #include <MooNMD_Io.h>
 
 /// @brief Check that name is allowed (no spaces or dots), it returns the name

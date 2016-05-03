@@ -78,6 +78,7 @@ struct TParaDB
   int WRITE_VTK;
   int WRITE_MATLAB;
   int WRITE_MATLAB_MATRIX;
+  int WRITE_CASE; // write output in .case format (preferred for time dependent pbs)
   int SAVE_DATA;
   int READ_DATA;
   int READ_GRAPE_FILE;

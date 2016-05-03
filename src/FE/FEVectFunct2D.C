@@ -27,7 +27,7 @@
 #include <TriaAffin.h>
 #include <TriaIsoparametric.h>
 #include <Database.h>
-
+#include <AuxParam2D.h>
 
 #include <Joint.h>
 #include <BoundEdge.h>

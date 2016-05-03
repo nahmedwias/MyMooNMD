@@ -656,9 +656,9 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
           normalY /= norm;
           
           //those are the values to be written into the matrix
-          double horizontalDofsCorrectionValue = std::max(std::abs(normalX),
+          double horizontalDofsCorrectionValue = std::max(fabs(normalX),
                                                           epsilon);
-          double verticalDofsCorrectionValue = std::max(std::abs(normalY),
+          double verticalDofsCorrectionValue = std::max(fabs(normalY),
                                                         epsilon);
           
           //now write the relevant matrix entries
@@ -782,9 +782,9 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
           }
           
           //those are the values to be written into the matrix
-          double x_DofsCorrectionValue = std::max(std::abs(normalX), epsilon);
-          double y_DofsCorrectionValue = std::max(std::abs(normalY), epsilon);
-          double z_DofsCorrectionValue = std::max(std::abs(normalZ), epsilon);
+          double x_DofsCorrectionValue = std::max(fabs(normalX), epsilon);
+          double y_DofsCorrectionValue = std::max(fabs(normalY), epsilon);
+          double z_DofsCorrectionValue = std::max(fabs(normalZ), epsilon);
           
           //now write the relevant matrix entries
           //loop over velocity dofs belonging to cell

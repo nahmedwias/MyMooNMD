@@ -6,6 +6,7 @@
 #include <MultiGrid2D.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
+#include <PostProcessing2D.h>
 
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
@@ -13,6 +14,8 @@
 
 #include <numeric>
 
+#include <Mesh.h>
+#include <Boundary.h>
 
 ParameterDatabase get_default_CD2D_parameters()
 {
@@ -65,11 +68,9 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
-  
-  
+    
   // print out some information
   TFESpace2D & space = this->systems.front().fe_space;
   double h_min, h_max;
@@ -78,7 +79,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
   Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
   Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
-  
+
   
   // done with the conrtuctor in case we're not using multigrid
   if(this->solver.get_db()["solver_type"].is("direct") || 
@@ -249,7 +250,14 @@ void CD2D::output(int i)
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  // write solution to a vtk file
+  // write solution to a vtk file on in case-format
+  PostProcessing2D Output;
+  Output.init();
+  Output.addFEFunction(&fe_function);
+  Output.write(i,0.0);
+
+  /*
+  // implementation with the old class TOutput2D
   if(TDatabase::ParamDB->WRITE_VTK)
   {
     // last argument in the following is domain, but is never used in this class
@@ -262,7 +270,9 @@ void CD2D::output(int i)
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
+  */
   
+
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
