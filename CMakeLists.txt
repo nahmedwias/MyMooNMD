@@ -272,10 +272,10 @@ message("==================Including UMFPACK - end==============================
 # turn on all warnings
 IF(CMAKE_BUILD_TOOL MATCHES "make")
   IF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-attributes")
   ENDIF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
   IF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-attributes")
   ENDIF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
 ENDIF(CMAKE_BUILD_TOOL MATCHES "make")
 

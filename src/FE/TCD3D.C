@@ -50,12 +50,12 @@ void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, *Rhs, val, *MatrixRow;
+  double **Matrix, *Rhs, *MatrixRow;
   double ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe; 
+  double c0, c1, c2, c3, c4, c5;
   double tau, bgradv, bb;
 
   Matrix = LocMatrices[0];
@@ -244,12 +244,12 @@ void MatrixARhsAssemble(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
+  double **MatrixA, *Rhs, val, *MatrixRowA;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe; 
+  double c0, c1, c2, c3, c4, c5;
 
   MatrixA = LocMatrices[0];
   Rhs = LocRhs[0];
@@ -299,7 +299,7 @@ void MatrixAUpwindRhsAssemble(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, *Rhs, val, *MatrixRowA, *MatrixRowK;
+  double **MatrixA, *Rhs, val, *MatrixRowA;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
@@ -353,7 +353,7 @@ void RhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double *Rhs;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_;
+  int i, N_;
   double c0, c1, c2, c3, c5, Pe; 
   double tau, bgradv, bb;
 
@@ -402,7 +402,7 @@ void RhsAssemble(double Mult, double *coeff, double *param,
   double *Rhs;
   double test000;
   double *Orig0;
-  int i,j, N_;
+  int i, N_;
   double c5; 
 
   Rhs = LocRhs[0];
@@ -489,7 +489,7 @@ void MatrixGroupFEMAssemble(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-    double **MatrixC1, **MatrixC2, **MatrixC3, **MatrixR, val;
+    double **MatrixC1, **MatrixC2, **MatrixC3, **MatrixR;
     double *MatrixRowC1, *MatrixRowC2, *MatrixRowC3, *MatrixRowR, *Rhs;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, c5;
@@ -547,7 +547,7 @@ void MatrixMAssemble_Bulk3D(double Mult, double *coeff, double *param,
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, val, *MatrixRow;
+  double **Matrix, *MatrixRow;
   double ansatz000;
   double test000;
   double *Orig0;
@@ -588,8 +588,8 @@ void MatricesA_Assemble_Bulk3D(double Mult, double *coeff, double *param,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, Pe;
-  double k;
+  double c0, c4;
+
 
   MatrixA = LocMatrices[0];
  
@@ -601,9 +601,6 @@ void MatricesA_Assemble_Bulk3D(double Mult, double *coeff, double *param,
   Orig3 = OrigValues[3];
 
   c0 = coeff[0]; // eps
-  c1 = coeff[1]; // u_1
-  c2 = coeff[2]; // u_2
-  c3 = coeff[3]; // u_3
   c4 = coeff[4]; // other concentration or 0
 
   for(i=0;i<N_;i++)
@@ -681,11 +678,10 @@ void MatricesA_Assemble_SUPG_Bulk3D(double Mult, double *coeff, double *param,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_, sold_type=TDatabase::ParamDB->SOLD_TYPE;
-  double c0, c1, c2, c3, c4, c5, Pe;
-  double tau, bgradv, bb, k, c00, c11, c22, c33, c44;
+  double c0, c1, c2, c3, c4;
+  double tau, bgradv, bb, c00, c11, c22, c33, c44;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1;
-  double sigma, conc_old;
 
   MatrixA = LocMatrices[0];
   MatrixK= LocMatrices[1];
@@ -702,7 +698,6 @@ void MatricesA_Assemble_SUPG_Bulk3D(double Mult, double *coeff, double *param,
   c2 = coeff[2]; // u_2
   c3 = coeff[3]; // u_3
   c4 = coeff[4]; // other concentration or 0
-  c5 = coeff[5];
 
   c00 = c0;
   c11 = c1;
@@ -827,17 +822,14 @@ void Rhs_Assemble_SUPG_Bulk3D(double Mult, double *coeff, double *param,
 				  double **OrigValues, int *N_BaseFuncts,
 				  double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, val, *MatrixRowA, *MatrixRowK;
   double *Rhs;
-  double ansatz000, ansatz100, ansatz010, ansatz001 ;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_, sold_type=TDatabase::ParamDB->SOLD_TYPE;
-  double c0, c1, c2, c3, c4, c5, Pe;
-  double tau, bgradv, bb, k, c00, c11, c22, c33, c44;
+  int i, N_, sold_type=TDatabase::ParamDB->SOLD_TYPE;
+  double c0, c1, c2, c3, c4, c5;
+  double tau, bgradv, bb, c00, c11, c22, c33, c44;
   double theta1 = TDatabase::TimeDB->THETA1;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double sigma, conc_old;
 
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -925,7 +917,7 @@ void MatricesA_Assemble_Galerkin_Bulk3D(double Mult, double *coeff, double *para
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, Pe;
+  double c0, c1, c2, c3, c4;
 
   MatrixA = LocMatrices[0];
 
@@ -941,7 +933,6 @@ void MatricesA_Assemble_Galerkin_Bulk3D(double Mult, double *coeff, double *para
   c2 = coeff[2]; // u_2
   c3 = coeff[3]; // u_3
   c4 = coeff[4]; // other concentration or 0
-  c5 = coeff[5];
 
   for(i=0;i<N_;i++)
   {
