@@ -28,11 +28,11 @@ ParameterDatabase get_default_NSE2D_parameters()
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
-        db["nl_iterations_max_n"] = 1;
+        db["nonlinloop_maxit"] = 1;
      }
      else
      {
-       db["nl_iterations_max_n"] = 1;
+       db["nonlinloop_maxit"] = 1;
      }
   }
 
@@ -621,16 +621,16 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   // the residual from 10 iterations ago
   double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  size_t Max_It = db["nl_iterations_max_n"];
-  double convergence_speed = db["nl_iterations_residual_divergence_factor"];
+  size_t Max_It = db["nonlinloop_maxit"];
+  double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = db["nl_iterations_residual_absolute"];
-  if (db["nl_iterations_residual_scales_with_size"])
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);

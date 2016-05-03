@@ -153,7 +153,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   if (solver_name.compare("lsc") == 0)
   {
     db["preconditioner"] = "least_squares_commutator";
-    db["nl_iterations_residual_absolute"] = 1e-12;
+    db["nonlinloop_epsilon"] = 1e-12;
     // just to not distract 'NSE3D::check_parameters'
     TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
@@ -167,8 +167,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
-    db["nl_iterations_residual_absolute"] = 1e-10;
-    db["nl_iterations_max_n"] = 5;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
@@ -182,8 +182,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
-    db["nl_iterations_residual_absolute"] = 1e-15;
-    db["nl_iterations_max_n"] = 5;
+    db["nonlinloop_epsilon"] = 1e-15;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif

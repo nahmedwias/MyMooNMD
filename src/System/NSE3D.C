@@ -37,11 +37,11 @@ ParameterDatabase get_default_NSE3D_parameters()
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
-        db["nl_iterations_max_n"] = 1;
+        db["nonlinloop_maxit"] = 1;
      }
      else
      {
-       db["nl_iterations_max_n"] = 1;
+       db["nonlinloop_maxit"] = 1;
      }
   }
 
@@ -631,16 +631,16 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
 
 
-  size_t max_it = db["nl_iterations_max_n"];
-  double conv_speed = db["nl_iterations_residual_divergence_factor"];
+  size_t max_it = db["nonlinloop_maxit"];
+  double conv_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
 
 
   if(normOfResidual >= conv_speed*oldNormOfResidual)
     slow_conv = true;
 
-  double limit = db["nl_iterations_residual_absolute"];
-  if (db["nl_iterations_residual_scales_with_size"])
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     if(my_rank==0)

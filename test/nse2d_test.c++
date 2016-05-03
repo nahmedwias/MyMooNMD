@@ -97,8 +97,8 @@ void check(TDomain &domain, int velocity_order, int nstype, int laplace_type,
   db["residual_tolerance"] = 1.e-12;
   db["preconditioner"] = "least_squares_commutator";
   
-  db["nl_iterations_max_n"] = 50;
-  db["nl_iterations_residual_absolute"] = 1e-10;
+  db["nonlinloop_maxit"] = 50;
+  db["nonlinloop_epsilon"] = 1e-10;
 
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
