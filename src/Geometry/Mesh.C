@@ -27,12 +27,23 @@ Mesh::Mesh(std::string filename) {
   readFromFile(filename);
 }
 
+Mesh::Mesh(std::string filename,std::string filenameBoundary) {
+  dimension = 2;
+  vertex.resize(0);
+  edge.resize(0);
+  triangle.resize(0);
+  quad.resize(0);
+  tetra.resize(0);
+  hexa.resize(0);
+  readFromFile(filename);
+  setBoundary(filenameBoundary);
+}
+
 // read the mesh data from a file (.mesh)
 void Mesh::readFromFile(std::string filename)
 {
   std::ifstream ifile;
   ifile.open(filename.c_str());
-
   if (!ifile)
   {
     Output::print(" *** Error(Mesh::readFromFile) I could not open ",filename);
@@ -53,7 +64,6 @@ void Mesh::readFromFile(std::string filename)
   else
     ifile >> dimension; 
   Output::print("Read dimension: ",dimension);
-
 
   // read nodes
   unsigned int numberOfNodes;
@@ -199,8 +209,6 @@ void Mesh::readFromFile(std::string filename)
   ifile.clear();
   ifile.seekg(current_line_number);
 
-
-  
 }
 
 // read a PRM file into a Boundary class
