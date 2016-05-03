@@ -42,8 +42,13 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
 
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
     
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
     TDomain domain;
 
@@ -56,8 +61,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LEVELS = 3;
     
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     TDatabase::ParamDB->VELOCITY_SPACE = 2;
@@ -72,11 +75,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-11;
     TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE= 100;
-    TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR= 1;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE= 0;
-    TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE= 1.0;
     TDatabase::ParamDB->SC_MG_CYCLE_SADDLE= 0;
     TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
     TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
@@ -121,7 +119,7 @@ int main(int argc, char* argv[])
     }
     
     // nonlinear iterations     
-    for(int k=0; k<TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE; k++)
+    for(int k=0; ; k++)
     {
       nse2d.solve();
       Output::print<1>("nonlinear step " , setw(3), k, "\t",
@@ -188,14 +186,18 @@ int main(int argc, char* argv[])
   /** @brief Multigrid Test: for Q2/P1^disc elements**/
   //===================================================================================
   {
-
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
 
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
     
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
     TDomain domain;
 
@@ -207,8 +209,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->LEVELS = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     TDatabase::ParamDB->VELOCITY_SPACE = 12;
@@ -221,11 +221,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-11;
     TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE= 100;
-    TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR= 1;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE= 0;
-    TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE= 1.0;
     TDatabase::ParamDB->SC_MG_CYCLE_SADDLE= 0;
     TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
     TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;

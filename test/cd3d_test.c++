@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   // choose unit cube as test domain and a corresponding initial mesh
   TDatabase::ParamDB->BNDFILE = new char[17];
   strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-  TDatabase::ParamDB->GEOFILE = new char[21];
+  TDatabase::ParamDB->GEOFILE = new char[22];
   strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
 
   // Initialize geometry and initialize the mesh.
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
     // choose unit cube as test domain and a corresponding initial mesh
     TDatabase::ParamDB->BNDFILE = new char[17];
     strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-    TDatabase::ParamDB->GEOFILE = new char[21];
+    TDatabase::ParamDB->GEOFILE = new char[22];
     strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
     
     

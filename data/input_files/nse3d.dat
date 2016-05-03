@@ -37,6 +37,10 @@ residual_tolerance: 1.0e-11
 
 preconditioner: least_squares_commutator
 
+nonlinloop_epsilon: 1.0e-10
+
+nonlinloop_maxit: 10
+
 
 VERSION:        1
 LOGFILE:        logfile
@@ -53,7 +57,7 @@ GEOFILE: Default_UnitCube_Hexa
 # 3 - driven cavity 3d
 # -1 to -4 : test examples - 
 EXAMPLE: 2
-ELOCITY_SPACE: 2
+VELOCITY_SPACE: 2
 PRESSURE_SPACE: -4711
 
 Par_P0: 0
@@ -75,8 +79,6 @@ UPWIND_ORDER: 0
 # parameters for fixed point teration of the nonlinear term in NSE
 ----------------------------------------------------------------------
 SOLVER_TYPE: 2
-SC_NONLIN_RES_NORM_MIN_SADDLE: 1e-10
-SC_NONLIN_MAXIT_SADDLE: 10
 SC_FIRST_SOLUTION_LEVEL_SADDLE: 0
  
 ----------------------------------------------------------------------

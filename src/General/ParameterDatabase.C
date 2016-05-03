@@ -815,28 +815,59 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
 ParameterDatabase ParameterDatabase::default_time_database()
 {
   ParameterDatabase db("default ParMooN time parameters database");
-
-  db.add("start_time", 0.,
+  
+  db.add("time_start", 0.,
          "This is the start time of the simulation. The total simulated time "
-		 "interval is [start_time, end_time].", -1000.,1000.);
-
-  db.add("end_time", 1.,
+         "interval is [start_time, end_time].", -1000.,1000.);
+  
+  db.add("time_end", 1.,
          "This is the end time of the simulation. The total simulated time "
-		 "interval is [start_time, end_time].", -1000.,1000.);
-
+         "interval is [start_time, end_time].", -1000.,1000.);
+  
   db.add("time_step_length", 0.05,
          "This is the time step length. Without time adaptivity, it "
          "is the same constant value for all time steps, whereas for "
          "time adaptivity, it only corresponds to the initial value.",
-		 0., 0.5);
-
+         0., 0.5);
+  
   db.add("time_discretization", (size_t)1,
-		 "This is the time discretization scheme. The following values are "
-		 "implemented :"
-		 "0 -> Forward Euler, "
-		 "1 -> Backward Euler, "
-		 "2 -> Crank-Nicholson, "
-		 "3 -> Fractional step.", (size_t)0 , (size_t)4 );
+         "This is the time discretization scheme. The following values are "
+         "implemented :"
+         "0 -> Forward Euler, "
+         "1 -> Backward Euler, "
+         "2 -> Crank-Nicholson, "
+         "3 -> Fractional step.", (size_t)0 , (size_t)4 );
+  
+  return db;
+}
+
+ParameterDatabase ParameterDatabase::default_nonlinit_database()
+{
+  ParameterDatabase db("default ParMooN nonlinear iteration parameters database");
+
+  //TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE, TDatabase::ParamDB->SC_NONLIN_MAXIT_SCALAR;
+  db.add("nonlinloop_maxit", (size_t) 100,
+         "The maximum number of iterations to perform in a non-linear loop.",
+         (size_t) 0, size_t (1000));
+
+  // TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR,
+  db.add("nonlinloop_epsilon", 1e-10,
+         "At which absolute residual to break the nonlinear loop.",
+         0. , 1. );
+
+
+  //TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR
+  db.add("nonlinloop_slowfactor", (double) 1e10,
+         "Determines at which reduction rate over x iterations"
+         "(usually x = 10, see system classes) a convergence is interpreted"
+         "as too slow and therefore the iteration is stopped.",
+         0., (double) 1e10);
+
+  //TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SCALAR
+  db.add("nonlinloop_scale_epsilon_with_size", false,
+         "Whether or not to scale the absolute residual breaking criterion"
+         "with the square root of the problem size.",
+         {true,false});
 
   return db;
 }

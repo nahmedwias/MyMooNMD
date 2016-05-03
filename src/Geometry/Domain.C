@@ -773,7 +773,7 @@ int TDomain::GenInitGrid()
 }
 
 
-void TDomain::Init(const char *PRM, const char *geometry)
+/*void TDomain::Initialize(const char *PRM, const char *geometry)
 {
    int nn=0;
    // length of file
@@ -789,9 +789,9 @@ void TDomain::Init(const char *PRM, const char *geometry)
      ///@todo unknown format?
    }
    
-}
+   }*/
 
-void TDomain::InitFromGEO(const char *PRM, const char *GEO)
+void TDomain::Init(const char *PRM, const char *GEO)
 {
   int Flag;
 

@@ -11,7 +11,24 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 
-/**************************************************************************** */
+/* *************************************************************************** */
+  //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
+ParameterDatabase get_default_TNSE3D_parameters()
+{
+  Output::print<3>("creating a default TNSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TNSE3D parameter database");
+
+  //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  return db;
+}
+
+/* *************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE3D::Matrix type
@@ -81,19 +98,21 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex
+Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+                       const Example_NSE3D& ex
 #ifdef _MPI
                        , int maxSubDomainPerDof
 #endif
 )
  : systems_(), example_(ex), multigrid_(), defect_(),
+   db_(get_default_TNSE3D_parameters()),
    old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
  // if it has to be called here or in the main program (see difference between
  // TNSE2D and NSE3D.
 //  this->set_parameters();
-  
+  db_.merge(param_db, false);
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -795,12 +814,12 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Parameters for stopping criteria (desired precision epsilon, max number
   // of iteration, convergence rate)
-  double epsilon    = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  size_t max_It     = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  double epsilon    = db_["nonlinloop_epsilon"];
+  size_t max_It     = db_["nonlinloop_maxit"];
+  double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
 
-  if ( TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE )
+  if ( db_["nonlinloop_scale_epsilon_with_size"] )
   {
     epsilon *= sqrt(this->get_size());
     if (my_rank==0)

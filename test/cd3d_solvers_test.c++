@@ -106,8 +106,6 @@ void check(ParameterDatabase& db, int ansatz_order,
   CD3D cd3d(gridCollections, db, example_obj);
 #endif
 
-  Output::print("Made it here.");
-
   cd3d.assemble();
   cd3d.solve();
   cd3d.output();

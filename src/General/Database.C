@@ -600,12 +600,6 @@ ParamDB->BrinkmanTYPE = 1;
   // ******** parameters for scalar system *********//
   ParamDB->SOLVER_TYPE = 1; 
 
-  // parameters for nonlinear iteration
-  ParamDB->SC_NONLIN_ITE_TYPE_SCALAR = 0;
-  ParamDB->SC_NONLIN_MAXIT_SCALAR = 10000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR = 1.0;
-
   // parameters for linear iteration
   ParamDB->SC_SOLVER_SCALAR=AMG_GMRES_FLEX;
   ParamDB->SC_PRECONDITIONER_SCALAR=AMG_MGC;
@@ -644,10 +638,6 @@ ParamDB->BrinkmanTYPE = 1;
 
   // parameters for nonlinear iteration
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
-  ParamDB->SC_NONLIN_MAXIT_SADDLE = 1000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE = 0;
 
   // parameters for linear iteration
   ParamDB->SC_SOLVER_SADDLE=AMG_GMRES_FLEX;
@@ -721,7 +711,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL =0;
   ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL=100;
   ParamDB->SC_DIV_FACTOR=1e10;
-  ParamDB->SC_NONLIN_DIV_FACTOR=1e10;
   ParamDB->SC_SMOOTHING_STEPS=0;
   ParamDB->SC_N1_PARAM=1;
   ParamDB->SC_N2_PARAM=1;
@@ -1556,10 +1545,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("VORTICITY THICKNESS FOR MIXING LAYER (P8): ", ParamDB->P8);
 
   printToFile("*********** PARAMETERS FOR SCALAR SOLVER ***********");
-  printToFile("SC_NONLIN_ITE_TYPE_SCALAR: ", ParamDB->SC_NONLIN_ITE_TYPE_SCALAR);
-  printToFile("SC_NONLIN_MAXIT_SCALAR: ", ParamDB->SC_NONLIN_MAXIT_SCALAR);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SCALAR: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR);
 
   printToFile("SC_SOLVER_SCALAR: ", ParamDB->SC_SOLVER_SCALAR);
   printToFile("SC_PRECONDITIONER_SCALAR: ", ParamDB->SC_PRECONDITIONER_SCALAR);
@@ -1595,10 +1580,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
 
   printToFile("*********** PARAMETERS FOR SADDLE POINT SOLVER ***********");
   printToFile("SC_NONLIN_ITE_TYPE_SADDLE: ", ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
-  printToFile("SC_NONLIN_MAXIT_SADDLE: ", ParamDB->SC_NONLIN_MAXIT_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SADDLE: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE);
 
   printToFile("SC_SOLVER_SADDLE: ", ParamDB->SC_SOLVER_SADDLE);
   printToFile("SC_PRECONDITIONER_SADDLE: ", ParamDB->SC_PRECONDITIONER_SADDLE);
@@ -1664,7 +1645,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("SC_SCHUR_STEP_LENGTH_CONTROL: ", ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL);
   printToFile("SC_MIXED_BCGS_CGS_SWITCH_TOL: ", ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL);
   printToFile("SC_DIV_FACTOR: ", ParamDB->SC_DIV_FACTOR);
-  printToFile("SC_NONLIN_DIV_FACTOR: ", ParamDB->SC_NONLIN_DIV_FACTOR);
   printToFile("SC_SMOOTHING_STEPS: ", ParamDB->SC_SMOOTHING_STEPS);
   printToFile("SC_N1_PARAM: ", ParamDB->SC_N1_PARAM);
   printToFile("SC_N2_PARAM: ", ParamDB->SC_N2_PARAM);
@@ -1970,19 +1950,6 @@ void TDatabase::CheckParameterConsistencyNSE()
     ParamDB->SC_MG_TYPE_SADDLE=0;
   }
   
-  if (ParamDB->PROBLEM_TYPE == 3)
-  {
-     if (ParamDB->PRESSURE_SEPARATION==1)
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-     }
-     else
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 0;
-     }
-     TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;    
-  }
-
   // rotational form
   if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
   {
@@ -2102,15 +2069,6 @@ void TDatabase::CheckParameterConsistencyNSE()
         Output::print("No method for Oseen implemented for NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         exit(4711);
-    }
-    if (ParamDB->SC_NONLIN_MAXIT_SADDLE > 1)
-    {
-      ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-      Output::print("Set SC_NONLIN_MAXIT_SADDLE ",
-                    ParamDB->SC_NONLIN_MAXIT_SADDLE,
-                    " for Oseen, further assembling not implemented");
-      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-      Output::print("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0");
     }
   }
 
