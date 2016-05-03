@@ -17,6 +17,8 @@
 
 #include <NSE_MGLevel.h>
 
+#include <VankaSmoother_NSE4.h>
+
 class TNSE_MGLevel4 : public TNSE_MGLevel
 {
   protected:
@@ -282,6 +284,226 @@ TNSE_MGLevel4(int level,
 
     /** print all matrices and both right hand sides */
     virtual void PrintAll();
+    
+    /****************************************************************
+     * Getters for the matrices.
+     ****************************************************************/
+#ifdef __2D__
+ /*!
+     * @brief Return a pointer to matrix A11.
+     *
+     * @return A pointer to matrix A11 (2D case only!)
+     */
+    TSquareMatrix2D* getA11() const
+    { return A11; }
+
+    /*!
+     * @brief Return a pointer to matrix A12.
+     *
+     * @return A pointer to matrix A12 (2D case only!)
+     */
+    TSquareMatrix2D* getA12() const
+    { return A12; }
+
+    /*!
+     * @brief Return a pointer to matrix A21.
+     *
+     * @return A pointer to matrix A21 (2D case only!)
+     */
+    TSquareMatrix2D* getA21() const
+    { return A21; }
+
+    /*!
+     * @brief Return a pointer to matrix A22.
+     *
+     * @return A pointer to matrix A22 (2D case only!)
+     */
+    TSquareMatrix2D* getA22() const
+    { return A22; }
+
+    /*!
+     * @brief Return a pointer to matrix B1.
+     *
+     * @return A pointer to matrix B1 (2D case only!)
+     */
+    TMatrix2D* getB1() const
+    { return B1; }
+
+    /*!
+     * @brief Return a pointer to matrix B2.
+     *
+     * @return A pointer to matrix B2 (2D case only!)
+     */
+    TMatrix2D* getB2() const
+    { return B2; }
+
+    /*!
+     * @brief Return a pointer to matrix B1T.
+     *
+     * @return A pointer to matrix B1T (2D case only!)
+     */
+    TMatrix2D* getB1T() const
+    { return B1T; }
+
+    /*!
+     * @brief Return a pointer to matrix B2T.
+     *
+     * @return A pointer to matrix B2T (2D case only!)
+     */
+    TMatrix2D* getB2T() const
+    { return B2T; }
+
+    /*!
+     * @brief Return a pointer to matrix C.
+     *
+     * @return A pointer to matrix C (2D case only!)
+     */
+    TMatrix2D* getC() const
+    { return C; }
+#else
+/*!
+     * @brief Return a pointer to matrix A11.
+     *
+     * @return A pointer to matrix A11 (3D case only!)
+     */
+    TSquareMatrix3D* getA11() const
+    { return A11; }
+
+    /*!
+     * @brief Return a pointer to matrix A12.
+     *
+     * @return A pointer to matrix A12 (3D case only!)
+     */
+    TSquareMatrix3D* getA12() const
+    { return A12; }
+
+    /*!
+     * @brief Return a pointer to matrix A12.
+     *
+     * @return A pointer to matrix A12 (3D case only!)
+     */
+    TSquareMatrix3D* getA13() const
+    { return A13; }
+
+    /*!
+     * @brief Return a pointer to matrix A21.
+     *
+     * @return A pointer to matrix A21 (3D case only!)
+     */
+    TSquareMatrix3D* getA21() const
+    { return A21; }
+
+    /*!
+     * @brief Return a pointer to matrix A22.
+     *
+     * @return A pointer to matrix A22 (3D case only!)
+     */
+    TSquareMatrix3D* getA22() const
+    { return A22; }
+
+    /*!
+     * @brief Return a pointer to matrix A22.
+     *
+     * @return A pointer to matrix A22 (3D case only!)
+     */
+    TSquareMatrix3D* getA23() const
+    { return A23; }
+
+    /*!
+     * @brief Return a pointer to matrix A31.
+     *
+     * @return A pointer to matrix A31 (3D case only!)
+     */
+    TSquareMatrix3D* getA31() const
+    { return A31; }
+
+    /*!
+     * @brief Return a pointer to matrix A32.
+     *
+     * @return A pointer to matrix A32 (3D case only!)
+     */
+    TSquareMatrix3D* getA32() const
+    { return A32; }
+
+    /*!
+     * @brief Return a pointer to matrix A33.
+     *
+     * @return A pointer to matrix A33 (3D case only!)
+     */
+    TSquareMatrix3D* getA33() const
+    { return A33; }
+
+    /*!
+     * @brief Return a pointer to matrix B1.
+     *
+     * @return A pointer to matrix B1 (3D case only!)
+     */
+    TMatrix3D* getB1() const
+    { return B1; }
+
+    /*!
+     * @brief Return a pointer to matrix B2.
+     *
+     * @return A pointer to matrix B2 (3D case only!)
+     */
+    TMatrix3D* getB2() const
+    { return B2; }
+
+    /*!
+     * @brief Return a pointer to matrix B2.
+     *
+     * @return A pointer to matrix B2 (3D case only!)
+     */
+    TMatrix3D* getB3() const
+    { return B3; }
+
+    /*!
+     * @brief Return a pointer to matrix B1T.
+     *
+     * @return A pointer to matrix B1T (3D case only!)
+     */
+    TMatrix3D* getB1T() const
+    { return B1T; }
+
+    /*!
+     * @brief Return a pointer to matrix B2T.
+     *
+     * @return A pointer to matrix B2T (3D case only!)
+     */
+    TMatrix3D* getB2T() const
+    { return B2T; }
+
+    /*!
+     * @brief Return a pointer to matrix B2T.
+     *
+     * @return A pointer to matrix B2T (3D case only!)
+     */
+    TMatrix3D* getB3T() const
+    { return B3T; }
+
+    /*!
+     * @brief Return a pointer to matrix C.
+     *
+     * @return A pointer to matrix C (3D case only!)
+     */
+    TMatrix3D* getC() const
+    { return C; }
+#endif
+    
+private:
+  //! The Vanka smoother object used for Vanka
+  VankaSmoother_NSE4 vankaSmoother_;
+  
+public:
+  //! @brief Initialize the vankaSmoother_ object.
+  //! Call only after everything global is initialized.
+  void initializeSmoother() override;
+
+  //! @brief Perform one step of Vanka smoothing on the level.
+  //! Call only after initializer finished.
+  void applySmoother(double *currentSolution, const double* const currentRHS,
+                     double *storeOldSolution) override;
+
 
 };
 
