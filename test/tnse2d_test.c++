@@ -128,7 +128,9 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.add("refinement_n_initial_steps", (size_t) 1,"");
+
     TDatabase::ParamDB->MEASURE_ERRORS=1;
     TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
@@ -139,17 +141,18 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
-    TDatabase::ParamDB->UNIFORM_STEPS = 1;
 
     //  declaration of databases
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    for(int i=0; i< TDatabase::ParamDB->UNIFORM_STEPS; ++i)
-    domain.RegRefineAll();
     
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(int i=0; i< n_ref; ++i)
+      domain.RegRefineAll();
+
     // test here
     std::array<std::array<double, int(4)>, 4> errors;
     // errors[0], errors[1] are at first two time steps

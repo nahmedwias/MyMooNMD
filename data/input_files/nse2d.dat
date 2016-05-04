@@ -9,7 +9,7 @@ geo_file:      UnitSquare
 
 example: 2
 
-uniform_refinement_steps: 5
+refinement_n_initial_steps: 5
 
 write_ps: true
 

@@ -20,6 +20,8 @@ class TDomain;
 #include <Database.h>
 #include <Iterator.h>
 
+#include <ParameterDatabase.h>
+
 #ifdef __MORTAR__
 struct TMortarFaceStruct
        {
@@ -113,23 +115,27 @@ class TDomain
       int N_OwnCells;
 #endif
 
+      /**
+       * A Database object which holds parameters which are of a certain
+       * interest to this domain object.
+       */
+      ParameterDatabase db;
+
   public:
-    /**
-     * @brief Default constructor.
-     * Does only set RefLevel (refinement level) to 0.
-     */
-    TDomain();
+     /// Sets RefLevel (refinement level) to 0 and merges in given database.
+    TDomain(const ParameterDatabase& db);
 
     /**
      * @brief Constructor. Reads in some data.
      * @param ParamFile Path to a ParMooN parameter input textfile.
+     * @param param_db A database to be merged into the domain's own.
      *
      * Invokes a read-in function for the parameter file and the domain
      * description file afterwards.
      *
      * TODO This is messy in will be tidied up in the near future.
      */
-    TDomain(char *ParamFile);
+    TDomain(char *ParamFile, const ParameterDatabase& param_db);
     
     /** @brief destructor */
     ~TDomain();
@@ -552,6 +558,18 @@ class TDomain
    * @note This has not been tested with an actual .xGEO-file yet.
    */
   static bool checkIfxGEO(const char* GEO);
+
+  /**
+   * @return The value of parameter "refinement_n_initial_steps"
+   * stored in this object's database.
+   */
+  size_t get_n_initial_refinement_steps() const;
+
+  /**
+   * @return The value of parameter "refinement_max_n_adaptive_steps"
+   * stored in this object's database.
+   */
+  size_t get_max_n_adaptive_steps() const;
      
      
 };

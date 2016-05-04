@@ -385,8 +385,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PRESSURE_SEPARATION = 0;
   ParamDB->OMPNUMTHREADS=1;
 
-  ParamDB->LEVELS = 1000;
-  ParamDB->UNIFORM_STEPS = 1000;
   ParamDB->DRIFT_X = 0;
   ParamDB->DRIFT_Y = 0;
   ParamDB->DRIFT_Z = 0.41;
@@ -1317,9 +1315,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 
   printToFile("OMPNUMTHREADS: ", ParamDB->OMPNUMTHREADS);
 
-  printToFile("LEVELS: ", ParamDB->LEVELS);
   printToFile("N_CELL_LAYERS: ", ParamDB->N_CELL_LAYERS);
-  printToFile("UNIFORM_STEPS: ", ParamDB->UNIFORM_STEPS);
   printToFile("DRIFT_X: ", ParamDB->DRIFT_X);
   printToFile("DRIFT_Y: ", ParamDB->DRIFT_Y);
   printToFile("DRIFT_Z: ", ParamDB->DRIFT_Z);

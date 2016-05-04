@@ -32,12 +32,14 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // default construct a domain object
-  TDomain domain;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(ParameterDatabase::default_nonlinit_database());
 
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->UNIFORM_STEPS = 1;
-  TDatabase::ParamDB->LEVELS = 1;
+  db.add("refinement_n_initial_steps", (size_t) 2, "");
+  db.add("n_multigrid_levels", (size_t) 0, "");
+
+  // default construct a domain object
+  TDomain domain(db);
 
   Output::setVerbosity(1);
 
@@ -46,7 +48,8 @@ int main(int argc, char* argv[])
   domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(int i=0; i < n_ref; i++)
   {
     domain.RegRefineAll();
   }

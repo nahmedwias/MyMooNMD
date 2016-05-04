@@ -253,25 +253,6 @@ void NSE3D::check_parameters()
   // copied from CD3D, it should actually be unified
   bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
                         && TDatabase::ParamDB->SOLVER_TYPE == 1;
-  if (!usingMultigrid)
-  { //case of direct solve or non-multigrid iterative solve
-    if (TDatabase::ParamDB->LEVELS < 1)
-    {
-      ErrThrow("Parameter LEVELS must be greater or equal 1.");
-    }
-    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
-    TDatabase::ParamDB->LEVELS = 1;
-    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added "
-        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
-        TDatabase::ParamDB->UNIFORM_STEPS, ".");
-  }
-  else
-  {  // iterative solve with multigrid prec
-    if (TDatabase::ParamDB->LEVELS < 2)
-    {
-      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
-    }
-  }
 
 
   // Some implementation/testing constraints on the used discretization.

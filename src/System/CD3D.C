@@ -434,25 +434,6 @@ void CD3D::checkParameters()
   bool usingMultigrid = 
     this->solver.get_db()["solver_type"].is("iterative") 
     && this->solver.get_db()["preconditioner"].is("multigrid");
-  if (!usingMultigrid)
-  { //case of direct solve or non-multigrid iterative solve
-    if (TDatabase::ParamDB->LEVELS < 1)
-    {
-      ErrThrow("Parameter LEVELS must be greater or equal 1.");
-    }
-    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
-    TDatabase::ParamDB->LEVELS = 1;
-    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added"
-        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
-        TDatabase::ParamDB->UNIFORM_STEPS, ".");
-  }
-  else if (usingMultigrid)
-  {  // iterative solve with multigrid prec
-    if (TDatabase::ParamDB->LEVELS < 2)
-    {
-      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
-    }
-  }
 
   // the only preconditioners implemented are Jacobi and multigrid
   if(this->solver.get_db()["solver_type"].is("iterative") 

@@ -54,11 +54,23 @@ void check(ParameterDatabase& db, int ansatz_order,
 #endif
 
   // fresh domain object
-  TDomain domain;
+  TDomain domain(db);
 
   domain.Init(db["boundary_file"], db["geo_file"]);
-  size_t n_ref = db["uniform_refinement_steps"];
-  for(size_t i = 0; i < n_ref; i++)
+
+
+  // split the number of refinement steps - some have to be done before,
+  // some after the domain partitioning
+  int n_ref_total = domain.get_n_initial_refinement_steps();
+  size_t mg_levels = db["n_multigrid_levels"];
+  size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
+  size_t n_ref_before =  n_ref_total - n_ref_after;
+  if(n_ref_before < 0)
+  {
+    ErrThrow("Number of multigrid levels is greater than number of refinement "
+        "levels. Garbage in, garbage out.")
+  }
+  for(size_t i = 0; i < n_ref_before; i++)
     domain.RegRefineAll();
 
 #ifdef _MPI
@@ -84,7 +96,7 @@ void check(ParameterDatabase& db, int ansatz_order,
   gridCollections.push_front(domain.GetCollection(It_Finest, 0));
 
   // Further mesh refinement and grabbing of collections.
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
+  for(size_t level= 0; level < n_ref_after; level++)
   {
     domain.RegRefineAll();
 #ifdef _MPI
@@ -133,9 +145,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "iterative";
     db["preconditioner"] = "multigrid";
-    db["uniform_refinement_steps"] = 1;
-    db.add("n_multigrid_levels", (size_t)2, "", (size_t)2, (size_t)5);
-    TDatabase::ParamDB->LEVELS = 2;
+    db["refinement_n_initial_steps"] = 2;
+    db["n_multigrid_levels"] = 2;
     TDatabase::ParamDB->SOLVER_TYPE = 1;
     TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 5;
@@ -221,7 +232,8 @@ int main(int argc, char* argv[])
   TFEDatabase3D FEDatabase;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"] = 1;
-  db["uniform_refinement_steps"] = 2;
+  db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
+  db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
   db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   db.add("preconditioner", std::string("multigrid"), "",
          {"jacobi", "multigrid"});
@@ -229,8 +241,6 @@ int main(int argc, char* argv[])
 
   TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement steps
-  TDatabase::ParamDB->LEVELS = 1;
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
 

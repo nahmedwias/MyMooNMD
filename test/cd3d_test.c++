@@ -68,23 +68,23 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D feDatabase;
 
-  // Construct domain.
-  TDomain domain;
 
   // Set Database values (this is what is usually done by the input-file)
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"] = 1;
   db["example"] = 0;
-  db["uniform_refinement_steps"] = 2;
+  db.add("refinement_n_initial_steps", (size_t) 2, "");
   db.add("solver_type", std::string("iterative"), "");
   db.add("preconditioner", std::string("jacobi"), "");
   db["boundary_file"] = "Default_UnitCube";
   db["geo_file"] = "Default_UnitCube_Hexa";
 
+  // Construct domain.
+  TDomain domain(db);
+
   TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
   TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement steps
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->ANSATZ_ORDER=2; // ANSATZ_ORDER 1 is not working yet
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
   domain.Init(db["boundary_file"], db["geo_file"]);
 
   // Do initial regular grid refinement.
-  size_t n_ref = db["uniform_refinement_steps"];
+  size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
 
@@ -242,25 +242,23 @@ int main(int argc, char* argv[])
     MPI_Comm_size(comm, &mpiSize);
 #endif
 
-    // Construct domain.
-    TDomain domain;
-
     // Set Database values (this is what is usually done by the input-file)
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["problem_type"] = 1;
     db["example"] = 0;
-    db["uniform_refinement_steps"] = 2;
+    db.add("refinement_n_initial_steps", (size_t) 3, " ");
     db.add("solver_type", std::string("iterative"), "");
     db.add("preconditioner", std::string("multigrid"), "");
     db.add("n_multigrid_levels", (size_t)2, "", (size_t)0, (size_t)10);
     db["boundary_file"] = "Default_UnitCube";
     db["geo_file"] = "Default_UnitCube_Hexa";
     
+    // Construct domain.
+    TDomain domain(db);
+
     TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
     TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
-    TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement step  - setting this to 1 reproduces a known issue (see 3DPrograms/CD3D_ParMooN)
-    TDatabase::ParamDB->LEVELS = 2;        // 2 multigrid levels
     TDatabase::ParamDB->DRIFT_Z = 1;
     TDatabase::ParamDB->ANSATZ_ORDER = 2;
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -301,9 +299,18 @@ int main(int argc, char* argv[])
     // Initialize geometry and initialize the mesh.
     domain.Init(db["boundary_file"], db["geo_file"]);
     
-    // Do initial regular grid refinement.
-    size_t n_ref = db["uniform_refinement_steps"];
-    for(size_t i = 0; i < n_ref; i++)
+    // split the number of refinement steps - some have to be done before,
+    // some after the domain partitioning
+    int n_ref_total = domain.get_n_initial_refinement_steps();
+    size_t mg_levels = db["n_multigrid_levels"];
+    size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
+    size_t n_ref_before =  n_ref_total - n_ref_after;
+    if(n_ref_before < 0)
+    {
+      ErrThrow("Number of multigrid levels is greater than number of refinement "
+          "levels. Garbage in, garbage out.")
+    }
+    for(size_t i = 0; i < n_ref_before; i++)
       domain.RegRefineAll();
     
 #ifdef _MPI
@@ -329,7 +336,7 @@ int main(int argc, char* argv[])
   gridCollections.push_front(domain.GetCollection(It_Finest, 0));
 
   // Further mesh refinement and grabbing of collections.
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
+  for(size_t level=0; level < n_ref_after;level++)
   {
     domain.RegRefineAll();
 #ifdef _MPI

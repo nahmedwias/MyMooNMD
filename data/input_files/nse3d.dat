@@ -10,7 +10,7 @@ geo_file:      Default_UnitCube_Hexa
 
 example: 2
 
-uniform_refinement_steps: 1
+refinement_n_initial_steps: 1
 
 write_ps: true
 

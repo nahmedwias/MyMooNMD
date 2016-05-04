@@ -8,7 +8,7 @@ geo_file:      TwoTriangles
 
 example: 0
 
-uniform_refinement_steps: 4
+refinement_n_initial_steps: 4
 
 write_ps: true
 

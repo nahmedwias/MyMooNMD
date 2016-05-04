@@ -264,11 +264,12 @@ int main(int argc, char* argv[])
 
   db["problem_type"].set<size_t>(5);
   
+  db.add("refinement_n_initial_steps", (size_t) 1,"");
+  db["n_multigrid_levels"] =  1;
+
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 1; // 1 uniform refinement step
-  TDatabase::ParamDB->LEVELS = 1;
   TDatabase::ParamDB->DRIFT_Z = 1;
 
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -310,10 +311,12 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
-    TDomain domain_hex;
+    TDomain domain_hex(db);
     domain_hex.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Hexa");
-    for(int i=0; i<nRef; i++)
+
+    size_t n_ref = domain_hex.get_n_initial_refinement_steps();
+    for(int i=0; i< n_ref ; i++)
     {
       domain_hex.RegRefineAll();
     }
@@ -377,10 +380,10 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
-    TDomain domain_tet;
+    TDomain domain_tet(db);
     domain_tet.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Tetra");
-    for(int i=0; i<nRef; i++)
+    for(int i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();
     }

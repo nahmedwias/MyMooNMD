@@ -10,7 +10,7 @@ geo_file:      Default_UnitCube_Hexa
 
 example: 0
 
-uniform_refinement_steps: 2
+refinement_n_initial_steps: 2
 
 write_ps: true
 
@@ -32,6 +32,8 @@ gmres_restart: 10
 damping_factor: 1.
 preconditioner: jacobi
 
+n_multigrid_levels: 1
+
 
 EXAMPLE: 0
 
@@ -47,11 +49,6 @@ ANSATZ_ORDER: 2
 ----------------------------------------------------------------------
 # Reynolds number eps=1/RE_NR
 RE_NR: 1
-
-----------------------------------------------------------------------
-# maximum number of levels
-LEVELS: 1
-
 
 ----------------------------------------------------------------------
 # type of discretization: 

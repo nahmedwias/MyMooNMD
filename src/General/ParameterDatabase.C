@@ -761,13 +761,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "files.",
          {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
           "Default_UnitCube_Tetra"});
-  
-  db.add("uniform_refinement_steps", (size_t)0, 
-         "This is the number of refinement steps before any computation "
-         "starts. Usually the mesh is uniformly refined. In a multigrid "
-         "program, this determines the number of uniform refinements until the "
-         "finest mesh.", (size_t)0, (size_t)20);
-  
+
   db.add("write_ps", true, 
          "Draw a postscript file of the domain. This only works in two space "
          "dimensions. Usually this is used in the main program.");
@@ -806,7 +800,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "Choose which example to run. \nNote that depending on the type of "
          "problem you want to solve, different values are meaningful here. See "
          "the class 'Example' and its derived classes.", -5, 5);
-  
+
   return db;
 }
 

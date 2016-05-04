@@ -27,7 +27,7 @@ class TIt_Between : public TIt_Search
 
     // Methods
     /** initialize the iterator */
-    virtual int Init(int level);
+    virtual int Init(int level, int Levels, int Level_bottom);
 
     /** return the next cell */
     virtual TBaseCell *Next(int &info);

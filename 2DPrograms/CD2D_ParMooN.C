@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
   fs.close();
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1]);
+  TDomain domain(argv[1], parmoon_db);
 
   //set PROBLEM_TYPE to CD if not yet set
   if(parmoon_db["problem_type"].is(0))
@@ -47,8 +47,8 @@ int main(int argc, char* argv[])
    * build-in function. The GEOFILE describes the boundary of the domain. */
   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
   
-  // refine grid up to the coarsest level
-  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  // refine grid
+  size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
   
