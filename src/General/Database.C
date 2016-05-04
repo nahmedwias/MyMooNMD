@@ -1680,10 +1680,18 @@ void TDatabase::WriteTimeDB()
 
 void TDatabase::CheckParameterConsistencyNSE()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
   // Newton method
   if ((ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(ParamDB->NSTYPE<=2))
   {
     ParamDB->NSTYPE+=2;
+    if(my_rank==0)
     Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
                   " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
                   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
@@ -1697,7 +1705,8 @@ void TDatabase::CheckParameterConsistencyNSE()
         &&(ParamDB->SC_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_SMOOTHER_SADDLE+=2;
-      Output::print("SC_SMOOTHER_SADDLE changed to ",
+      if(my_rank==0)
+      Output::print("INFO (Database): SC_SMOOTHER_SADDLE changed to ",
                     ParamDB->SC_SMOOTHER_SADDLE, 
                     " because of continuous pressure");
     }
@@ -1707,7 +1716,8 @@ void TDatabase::CheckParameterConsistencyNSE()
         &&(ParamDB->SC_COARSE_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-      Output::print("SC_COARSE_SMOOTHER_SADDLE changed to ",
+      if(my_rank==0)
+      Output::print("INFO (Database): SC_COARSE_SMOOTHER_SADDLE changed to ",
                     ParamDB->SC_COARSE_SMOOTHER_SADDLE,
                     " because of continuous pressure");
     }
@@ -1717,17 +1727,20 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (ParamDB->DISCTYPE != GALERKIN)
     {
       ParamDB->DISCTYPE = GALERKIN;
+      if(my_rank==0)
       Output::print("GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
     }
     if (ParamDB->NSTYPE != 1)
     {
       //ParamDB->NSTYPE = 1;
       //Output::print("GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
+      if(my_rank==0)
       Output::print("WARNING: GROUP_FEM works properly only with NSTYPE = 1");
     }
     if (ParamDB->SC_MG_TYPE_SADDLE != 0)
     {
       ParamDB->SC_MG_TYPE_SADDLE = 0;
+      if(my_rank==0)
       Output::print("GROUP_FEM: changed SC_MG_TYPE_SADDLE to ",
                     ParamDB->SC_MG_TYPE_SADDLE);
     }
@@ -1738,24 +1751,28 @@ void TDatabase::CheckParameterConsistencyNSE()
   {
       //ParamDB->NSTYPE = 2;
       //Output::print("NSTYPE changed from 1 to 2 because of SDFEM discretization ");
+    if(my_rank==0)
       Output::print("NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
   }
 
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==3))
   {
     ParamDB->NSTYPE = 4;
+    if(my_rank==0)
     Output::print("NSTYPE changed from 3 to 4 because of SDFEM discretization ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
   {
     ParamDB->NSTYPE = 3 ;
+    if(my_rank==0)
     Output::print("NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
   {
     ParamDB->NSTYPE = 4 ;
+    if(my_rank==0)
     Output::print("NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
@@ -1765,6 +1782,7 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!(ParamDB->DISCTYPE == SDFEM))
     {
       ParamDB->DISCTYPE = SDFEM;
+      if(my_rank==0)
       Output::print("DISCTYPE changed to SDFEM !!!");
     }
 /*
@@ -1794,7 +1812,9 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (ParamDB->NSTYPE<=2)
     {
       ParamDB->NSTYPE+=2;
+      if(my_rank==0)
       Output::print("NSTYPE changed to ", ParamDB->NSTYPE);
+      if(my_rank==0)
       Output::print(" because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
     }
       // change DISCTYPE for internal reasons
@@ -1802,6 +1822,7 @@ void TDatabase::CheckParameterConsistencyNSE()
     {
       ParamDB->DISCTYPE = 4;
       TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
+      if(my_rank==0)
       Output::print("DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
     }
   }
@@ -1811,7 +1832,9 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
           (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
     {
+      if(my_rank==0)
       Output::print("TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
+      if(my_rank==0)
       Output::print("Set different TURBULENT_VISCOSITY_TYPE !!!");
       exit(4711);
     }
@@ -1825,6 +1848,7 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->LP_STREAMLINE)
       {
         ParamDB->LP_STREAMLINE = 0;
+        if(my_rank==0)
         Output::print("LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
@@ -1832,6 +1856,7 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->LP_DIVERGENCE)
       {
         ParamDB->LP_DIVERGENCE = 0;
+        if(my_rank==0)
         Output::print("LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
@@ -1842,6 +1867,7 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->NSTYPE<=2)
       {
         ParamDB->NSTYPE+=2;
+        if(my_rank==0)
         Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
                       " LP_DIVERGENCE = ", ParamDB->LP_DIVERGENCE);
       }
@@ -1894,16 +1920,19 @@ void TDatabase::CheckParameterConsistencyNSE()
     switch (TDatabase::ParamDB->NSTYPE)
     {
       case 1: 
+        if(my_rank==0)
         Output::print("Galerkin discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  1;
         break;
       case 14:
+        if(my_rank==0)
         Output::print("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  2;
         break;
       default:
+        if(my_rank==0)
         Output::print("No method for Oseen implemented for NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         exit(4711);
@@ -2094,5 +2123,4 @@ TParaDB::~TParaDB()
   delete [] FS_OUTNAME;
   delete [] MATLAB_MATRIX;
   delete [] PODFILE;
-  Output::print<2>("deleted parameter database");
 }

@@ -20,10 +20,13 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+//project specific
+#include <CoiledPipe.h>
+#include <ParameterDatabase.h>
+
+
 ParameterDatabase get_default_NSE3D_parameters()
 {
-  Output::print<3>("creating a default NSE3D parameter database");
-  // we use a parmoon default database because this way these parameters are
   // available in the default NSE3D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("NSE3D parameter database");
@@ -108,6 +111,9 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 
+  //print some information
+  parCommVelocity_.print_info();
+  parCommPressure_.print_info();
 #endif
 }
 
@@ -153,6 +159,16 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+
+    //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
+    if(TDatabase::ParamDB->EXAMPLE == 5) //remove global dependency! names for examples!
+    {
+      // ...lie down the cell collection by swapping its vertices x and z coords
+      CoiledPipe::swap_x_and_z_coordinates(coll);
+      // ...and coil up the pipe by replacing the vertices' coords
+      CoiledPipe::coil_pipe_helically(coll);
+    }
+    //CB END MODIFICATIONS
         
     #ifdef _MPI
     // create finite element space and function, a matrix, rhs, and solution
@@ -249,6 +265,13 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 void NSE3D::check_parameters()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
   // copied from CD3D, it should actually be unified
   bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
@@ -770,10 +793,10 @@ void NSE3D::output(int i)
   
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-    u1->PrintMinMax();
-    u2->PrintMinMax();
-    u3->PrintMinMax();
-    s.p_.PrintMinMax();
+    u1->PrintMinMax(std::string("u1"));
+    u2->PrintMinMax(std::string("u2"));
+    u3->PrintMinMax(std::string("u3"));
+    s.p_.PrintMinMax(std::string("p"));
   }
   
   // write solution to a vtk file
@@ -785,7 +808,7 @@ void NSE3D::output(int i)
     Output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    Output.Write_ParVTK(MPI_COMM_WORLD, i, SubID);
 #else
     std::string filename = this->db["output_directory"];
     filename += "/" + this->db["base_name"].value_as_string();
@@ -866,7 +889,7 @@ void NSE3D::output(int i)
     //print errors
     if(my_rank == 0)
     {
-      Output::print("");
+      Output::print("DATA (NSE3D): Measured errors");
       Output::print<1>("L2(u)     : ", setprecision(10), errors_.at(0));
       Output::print<1>("H1-semi(u): ", setprecision(10), errors_.at(1));
       Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));
