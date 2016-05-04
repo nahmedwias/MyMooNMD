@@ -144,16 +144,26 @@ int main(int argc, char* argv[])
   { //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db["problem_type"].set<size_t>(5);
+
+    db.add("refinement_n_initial_steps", (size_t) 2,"");
+    db.add("n_multigrid_levels", (size_t) 1,"");
+
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 2;
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LEVELS =1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
@@ -163,8 +173,9 @@ int main(int argc, char* argv[])
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
-    // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    // refine grid
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }
@@ -229,15 +240,26 @@ int main(int argc, char* argv[])
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db["problem_type"].set<size_t>(5);
+
+    db.add("refinement_n_initial_steps", (size_t) 2,"");
+    db.add("n_multigrid_levels", (size_t) 1,"");
+
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
+
     // parameters used for this test
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 2;
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->LEVELS =1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
     TDatabase::ParamDB->MEASURE_ERRORS = 1;
@@ -248,8 +270,9 @@ int main(int argc, char* argv[])
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    // refine grid
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }

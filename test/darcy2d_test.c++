@@ -85,7 +85,7 @@ void check_darcy2d(TDomain & domain, ParameterDatabase& db, int velocityCode,
 void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
-  TDomain domain;
+  TDomain domain(db);
   // the domain is initialised with default description and default
   // initial mesh
   domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
@@ -147,7 +147,7 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
 void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
-  TDomain domain;
+  TDomain domain(db);
   // the domain is initialised with default description and default
   // initial mesh
   domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");

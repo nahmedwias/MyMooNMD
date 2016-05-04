@@ -86,7 +86,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
   
-  #nse2d test
+  #nse2d multigrid test
   add_executable(ParMooN_test_nse2d_mg nse2d_multigrid_test.c++)
   target_link_libraries(ParMooN_test_nse2d_mg parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d_mg ParMooN_test_nse2d_mg)

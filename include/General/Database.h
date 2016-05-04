@@ -105,8 +105,6 @@ struct TParaDB
 
   int OMPNUMTHREADS;
 
-  int LEVELS;
-  int UNIFORM_STEPS;
   double DRIFT_X;
   double DRIFT_Y;
   double DRIFT_Z;

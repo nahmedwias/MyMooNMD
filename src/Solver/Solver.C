@@ -90,7 +90,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "The damping of an iteration in case of a multigrid preconditioner. "
          "This only affects the update on the finest grid.", 0.0, 1.0);
   
-  
   return db;
 }
 

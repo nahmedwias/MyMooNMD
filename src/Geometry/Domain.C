@@ -57,19 +57,44 @@ extern "C"
                    struct triangulateio *);
 }
 
-
-// Constructor
-TDomain::TDomain()
+ParameterDatabase get_default_domain_parameters()
 {
-  RefLevel = 0;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+
+  db.add("refinement_n_initial_steps", (size_t)0,
+         "This is the number of refinement steps before any computation "
+         "starts. Usually the mesh is uniformly refined. In a multigrid "
+         "program, this determines the number of uniform refinements until the "
+         "finest mesh.", (size_t)0, (size_t)20);
+
+  db.add("refinement_max_n_adaptive_steps", (size_t) 0,
+         "A maximum number of adaptive refinement steps"
+         "which may be applied to this domain."
+         "THIS IS UNUSED AT THE MOMENT!",
+         (size_t) 0, size_t (10));
+
+  return db;
 }
 
 
-TDomain::TDomain(char *ParamFile)
+// Constructor
+TDomain::TDomain(const ParameterDatabase& param_db) :
+    db(get_default_domain_parameters())
 {
   RefLevel = 0;
+  db.merge(param_db, false);
+}
 
+
+TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
+    db(get_default_domain_parameters())
+{
+  RefLevel = 0;
   
+  db.merge(param_db, false);
+
+  // This will be removed as soon as we got entirely rid of the
+  // global database.
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
     
@@ -3376,3 +3401,13 @@ int TDomain::GenerateEdgeInfo()
 
 
 #endif
+
+size_t TDomain::get_n_initial_refinement_steps() const
+{
+  return db["refinement_n_initial_steps"];
+}
+
+size_t TDomain::get_max_n_adaptive_steps() const
+{
+  return db["refinement_max_n_adaptive_steps"];
+}

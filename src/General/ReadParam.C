@@ -202,18 +202,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->PRESSURE_SEPARATION;
       N_Param++;
     }
-
-    if (!strcmp(line, "LEVELS:"))
-    {
-      dat >> TDatabase::ParamDB->LEVELS;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "UNIFORM_STEPS:"))
-    {
-      dat >> TDatabase::ParamDB->UNIFORM_STEPS;
-      N_Param++;
-    }
     if (!strcmp(line, "DRIFT_X:"))
     {
       dat >> TDatabase::ParamDB->DRIFT_X;

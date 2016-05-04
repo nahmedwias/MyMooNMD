@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   TFEDatabase3D feDatabase;
 
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1]);
+  TDomain domain(argv[1], parmoon_db);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
@@ -73,8 +73,8 @@ int main(int argc, char* argv[])
   // Read in geometry and initialize the mesh.
   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
-  // Do initial regular grid refinement.
-  size_t n_ref = parmoon_db["uniform_refinement_steps"];
+  // Initial domain refinement
+  size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
 

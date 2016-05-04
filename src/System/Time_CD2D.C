@@ -111,20 +111,22 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
   param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
   param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
   this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
-  }
+
+  //TODO Commented out, requires switching to Solver object.
+//  // number of refinement levels for the multigrid
+//  int LEVELS = TDatabase::ParamDB->LEVELS;
+//  if(LEVELS > domain.get_ref_level() + 1)
+//    LEVELS = domain.get_ref_level() + 1;
+//
+//
+//  // the matrix and rhs side on the finest grid are already constructed
+//  // now construct all matrices, rhs, and solutions on coarser grids
+//  for(int i = LEVELS - 2; i >= 0; i--)
+//  {
+//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    this->systems.emplace_back(example, *coll);
+//  }
   
   // create multigrid-level-objects, must be coarsest first
   unsigned int i = 0;

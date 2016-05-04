@@ -164,12 +164,14 @@ int main(int argc, char* argv[])
   //  declaration of databases
   TDatabase Database;
   TFEDatabase2D FEDatabase;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.add("refinement_n_initial_steps", (size_t) 1,"");
 
   Output::print("************************************************************");
   Output::print("\ntest with quads");
   {
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
     
     // the domain is initialised with default description and default
     // initial mesh
@@ -188,7 +190,7 @@ int main(int argc, char* argv[])
   Output::print("test with triangles");
   {
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
     
     // the domain is initialised with default description and default
     // initial mesh

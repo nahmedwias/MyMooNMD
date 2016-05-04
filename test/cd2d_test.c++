@@ -49,19 +49,20 @@ int main(int argc, char* argv[])
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-
-    // default construct a domain object
-    TDomain domain;
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["problem_type"] = 1;
     db.add("solver_type", std::string("direct"), "");
 
+    db.add("refinement_n_initial_steps", (size_t) 3,"");
+    db.add("n_multigrid_levels", (size_t) 0, "");
+
+    // default construct a domain object
+    TDomain domain(db);
+
     // Set Database values (this is what is usually done by the input-file)
     TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
     TDatabase::ParamDB->EXAMPLE = 3; //Sharp Boundary Layer Example
-    TDatabase::ParamDB->UNIFORM_STEPS = 1;
-    TDatabase::ParamDB->LEVELS = 2;
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
     TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc
@@ -82,7 +83,8 @@ int main(int argc, char* argv[])
 	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
     // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS + TDatabase::ParamDB->LEVELS; i++)
+	  size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }

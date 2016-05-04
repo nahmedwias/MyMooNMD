@@ -145,19 +145,20 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
   this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-    
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
-  }
+
+// //TODO Commented out, requires switching to Solver object.
+//  int LEVELS = TDatabase::ParamDB->LEVELS;
+//  if(LEVELS > domain.get_ref_level() + 1)
+//    LEVELS = domain.get_ref_level() + 1;
+//
+//  // the matrix and rhs side on the finest grid are already constructed
+//  // now construct all matrices, rhs, and solutions on coarser grids
+//  for(int i = LEVELS - 2; i >= 0; i--)
+//  {
+//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
+//  }
 
   
   // create multigrid-level-objects, must be coarsest first

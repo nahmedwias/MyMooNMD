@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   // set the database values and generate mesh
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(argv[1]);  
+  TDomain Domain(argv[1], parmoon_db);
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 6;
@@ -45,7 +45,8 @@ int main(int argc, char* argv[])
   Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+  size_t n_ref = Domain.get_n_initial_refinement_steps();
+  for(int i=0; n_ref; i++)
     Domain.RegRefineAll();  
 
   // write grid into an Postscript file

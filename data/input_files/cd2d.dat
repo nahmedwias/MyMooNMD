@@ -10,7 +10,7 @@ geo_file:      UnitSquare
 #example: 0
 
 # control the number of mesh refinements
-uniform_refinement_steps: 5
+refinement_n_initial_steps: 5
 
 write_ps: true
 

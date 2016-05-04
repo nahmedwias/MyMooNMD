@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   TFEDatabase3D feDatabase;
 
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1]);
+  TDomain domain(argv[1], parmoon_db);
 
   // Output control
   Output::setVerbosity(parmoon_db["verbosity"]);
@@ -82,9 +82,18 @@ int main(int argc, char* argv[])
   // Read in geometry and initialize the mesh.
   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
-  // Do initial regular grid refinement.
-  size_t n_ref = parmoon_db["uniform_refinement_steps"];
-  for(size_t i = 0; i < n_ref; i++)
+  // split the number of refinement steps - some have to be done before,
+  // some after the domain partitioning
+  int n_ref_total = domain.get_n_initial_refinement_steps();
+  size_t n_ref_after =  parmoon_db["n_multigrid_levels"];
+  int n_ref_before =  n_ref_total - n_ref_after;
+  if(n_ref_before < 0)
+  {
+    ErrThrow("Number of multigrid levels is greater than number of refinement "
+        "levels. Garbage in, garbage out.")
+  }
+
+  for(size_t i = 0; i < n_ref_before; i++)
     domain.RegRefineAll();
 
   // Write grid into a postscript file (before partitioning)
@@ -144,11 +153,7 @@ int main(int argc, char* argv[])
   std::list<TCollection* > gridCollections;
   gridCollections.push_front(domain.GetCollection(It_Finest, 0));
 
-  // Further mesh refinement and grabbing of collections,
-  // which is only performed when a multgrid solver is used.
-  // (If no multigrid is used, CD3D::checkParameters() took care of setting
-  // LEVELS to 1.)
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
+  for(int level=0; level <  n_ref_after; level++)
   {
     domain.RegRefineAll();
 #ifdef _MPI

@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     
     TDatabase::ParamDB->MEASURE_ERRORS=1;
     TDatabase::ParamDB->EXAMPLE =101;
@@ -131,7 +132,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
        
@@ -150,6 +151,7 @@ int main(int argc, char* argv[])
   { 
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     
     TDatabase::ParamDB->MEASURE_ERRORS=1;
     TDatabase::ParamDB->EXAMPLE =101;
@@ -160,7 +162,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
     // the domain is initialised with default description and default
