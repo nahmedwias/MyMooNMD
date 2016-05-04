@@ -62,7 +62,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->NSTYPE = 4;
     
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     TDatabase::ParamDB->VELOCITY_SPACE = 2;
     // if pressure space is -4711, the depending on 
@@ -211,8 +210,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
-    
+
     TDatabase::ParamDB->VELOCITY_SPACE = 12;
     // Q_2/P_1^disc
     TDatabase::ParamDB->PRESSURE_SPACE = -4711; 

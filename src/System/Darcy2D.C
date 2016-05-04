@@ -10,14 +10,20 @@
 #include <Output2D.h>
 #include <MainUtilities.h>
 
+#include <sys/stat.h>
+
 ParameterDatabase get_default_Darcy2D_parameters()
 {
   Output::print<3>("creating a default Darcy2D parameter database");
   // we use a parmoon default database because this way these parameters are
-  // available in the default CD2D database as well.
+  // available in the default Darcy2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.set_name("CD2D parameter database");
+  db.set_name("Darcy2D parameter database");
   
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
   return db;
 }
 
@@ -202,9 +208,10 @@ void Darcy2D::solve()
 /** ************************************************************************ */
 void Darcy2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
-    return;
-  
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
+
   System_per_grid & s = this->systems.front();
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
@@ -212,20 +219,24 @@ void Darcy2D::output(int i)
     s.p.PrintMinMax();
   }
   
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(2, 2, 0, 0, nullptr);
     Output.AddFEFunction(&s.u);
     Output.AddFEFunction(&s.p);
-    std::string filename = this->db["output_directory"];
-    filename += "/" + this->db["base_name"].value_as_string();
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
-  if(this->db["compute_errors"])
+  if(db["output_compute_errors"])
   {
     DoubleFunct2D *const *Exact = &(example.get_exact())[0];
     ErrorMethod2D *L2DivH1 = L2DivH1Errors;

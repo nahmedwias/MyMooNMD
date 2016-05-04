@@ -418,10 +418,11 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEVectFunct3D::WriteSol(double t)
+void TFEVectFunct3D::WriteSol(double t,
+				   std::string directory, std::string basename)
 {
   int i, N_Joints, N_Cells;
-  char *BaseName, Dquot;
+  char Dquot;
 
   #ifdef _MPI
   int rank;
@@ -438,8 +439,8 @@ void TFEVectFunct3D::WriteSol(double t)
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* BaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";

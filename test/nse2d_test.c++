@@ -147,6 +147,8 @@ int main(int argc, char* argv[])
 
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
+    db.merge(ParameterDatabase::default_output_database());
+
     db["problem_type"].set<size_t>(5);
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
@@ -166,7 +168,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
@@ -243,6 +244,7 @@ int main(int argc, char* argv[])
 
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
+    db.merge(ParameterDatabase::default_output_database());
     db["problem_type"].set<size_t>(5);
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
@@ -262,7 +264,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
         
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();

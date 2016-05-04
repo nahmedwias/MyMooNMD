@@ -45,6 +45,13 @@ class ParameterDatabase
     /// controls and stopping criteria for a nonlinear iteration loop
     static ParameterDatabase default_nonlinit_database();
 
+    /// @brief construct a database which holds all those parameters
+    /// that are typically needed in the output methods of the system
+    /// classes
+    /// TODO The more of these default databases I add here, the more I am convinced:
+    /// they are a symptom for classes which we ought to have but don't.
+    static ParameterDatabase default_output_database();
+
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
     

@@ -60,16 +60,11 @@ int main(int argc, char* argv[])
     Domain.RegRefineAll();  
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
-  
   Example_CD2D example;
-  Time_CD2D tcd(Domain, example);
+  Time_CD2D tcd(Domain, parmoon_db, example);
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();

@@ -712,34 +712,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "BASENAME:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BASENAME;
-      TDatabase::ParamDB->BASENAME = aux_char;
-      N_Param++;
-    }
-    if (!strcmp(line, "VTKBASENAME:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->VTKBASENAME;
-      TDatabase::ParamDB->VTKBASENAME = aux_char;
-      N_Param++;
-    }    
-    if (!strcmp(line, "OUTPUTDIR:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->OUTPUTDIR;
-      TDatabase::ParamDB->OUTPUTDIR = aux_char;
-      N_Param++;
-    }
-
     if (!strcmp(line, "LP_FULL_GRADIENT_ORDER_DIFFERENCE:"))
     {
       dat >> TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE;
@@ -891,12 +863,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "WRITE_PS:"))
-    {
-      dat >> TDatabase::ParamDB->WRITE_PS;
-      N_Param++;
-    }
-
     if (!strcmp(line, "WRITE_GRAPE:"))
     {
       dat >> TDatabase::ParamDB->WRITE_GRAPE;
@@ -906,12 +872,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "WRITE_GMV:"))
     {
       dat >> TDatabase::ParamDB->WRITE_GMV;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WRITE_VTK:"))
-    {
-      dat >> TDatabase::ParamDB->WRITE_VTK;
       N_Param++;
     }
 
@@ -1022,12 +982,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "WRITE_GNU:"))
     {
       dat >> TDatabase::ParamDB->WRITE_GNU;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "MEASURE_ERRORS:"))
-    {
-      dat >> TDatabase::ParamDB->MEASURE_ERRORS;
       N_Param++;
     }
 
