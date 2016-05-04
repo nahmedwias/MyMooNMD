@@ -174,7 +174,8 @@ class TFEFunction2D
                         BoundValueFunct2D *BoundaryValue);
     
    /** write the solution into a data file - written by Sashi **/
-   void WriteSol();
+   void WriteSol(std::string directory=std::string("."),
+		   std::string basename=std::string("parmoon_solution"));
 
    /** Read the solution from a given data file - written by Sashi **/
    void ReadSol(char *BaseName);

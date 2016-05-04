@@ -9,20 +9,25 @@
 #include <Output2D.h>
 #include <DirectSolver.h>
 
+#include <sys/stat.h>
+
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE2D_parameters()
 {
-  Output::print<3>("creating a default TNSE3D parameter database");
+  Output::print<3>("creating a default TNSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
-  // available in the default NSE3D database as well.
+  // available in the default TNSE2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.set_name("TNSE3D parameter database");
+  db.set_name("TNSE2D parameter database");
 
   //Time_NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
   ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
   db.merge(nl_db,true);
 
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
 
   return db;
 }
@@ -922,9 +927,9 @@ void Time_NSE2D::mg_solver()
 /**************************************************************************** */
 void Time_NSE2D::output(int m, int& image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK 
-    && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems.front();
   TFEFunction2D * u1 = s.u.GetComponent(0);
@@ -937,7 +942,7 @@ void Time_NSE2D::output(int m, int& image)
     s.p.PrintMinMax();
   }
 
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double locerr[8];
     MultiIndex2D allderiv[3]= {D00, D10, D01};
@@ -984,13 +989,17 @@ void Time_NSE2D::output(int m, int& image)
   
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db["output_write_vtk"])
     {
       TOutput2D output(2, 3, 1, 0, NULL);
       output.AddFEFunction(&s.p);
       output.AddFEVectFunct(&s.u);
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+      // Create output directory, if not already existing.
+      mkdir(db["output_vtk_directory"], 0777);
+      std::string filename = this->db["output_vtk_directory"];
+      filename += "/" + this->db["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";

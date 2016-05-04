@@ -276,8 +276,6 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
 
-  TDatabase::ParamDB->MEASURE_ERRORS = 1;
-
   set_solver_globals(std::string(argv[1]), db);
 
   double tol = get_tolerance(std::string(argv[1]));

@@ -59,12 +59,8 @@ int main(int argc, char* argv[])
     domain.RegRefineAll();
   
   // write grid into an Postscript file
-  if(parmoon_db["write_ps"])
-    domain.PS("domain.ps", It_Finest, 0);
-  
-  // create output directory, if not already existing
-  if(parmoon_db["WRITE_VTK"].is(1))
-    mkdir(parmoon_db["output_directory"].get<std::string>().c_str(), 0777);
+  if(parmoon_db["output_write_ps"])
+    domain.PS("Domain.ps", It_Finest, 0);
   
   Example_NSE2D example;
   

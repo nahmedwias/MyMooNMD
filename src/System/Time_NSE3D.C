@@ -11,6 +11,8 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 
+#include <sys/stat.h>
+
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE3D_parameters()
@@ -24,6 +26,10 @@ ParameterDatabase get_default_TNSE3D_parameters()
   //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
   ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
   db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
 
   return db;
 }
@@ -1207,8 +1213,13 @@ void Time_NSE3D::descale_matrices()
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+	bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
@@ -1225,20 +1236,25 @@ void Time_NSE3D::output(int m, int &image)
 
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db_["output_write_vtk"])
     {
       // last argument in the following is domain but is never used in this class
       TOutput3D output(5, 5, 2, 1, NULL);
       output.AddFEFunction(&s.p_);
       output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
-    char SubID[] = "";
-    output.Write_ParVTK(MPI_COMM_WORLD, image, SubID);
-    image++;
+      char SubID[] = "";
+      if(my_rank == 0)
+    	  mkdir(db_["output_vtk_directory"], 0777);
+      std::string dir = db_["output_vtk_directory"];
+      std::string base = db_["output_basename"];
+      output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    cout << "image numero " << image << endl;
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    // Create output directory, if not already existing.
+    mkdir(db_["output_vtk_directory"], 0777);
+    std::string filename = db_["output_vtk_directory"];
+    filename += "/" + db_["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";
@@ -1254,7 +1270,7 @@ void Time_NSE3D::output(int m, int &image)
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
   // in such a case, here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db_["output_compute_errors"])
   {
     double err_u1[4];  // FIXME? Of these arrays only the 2 first entries are
     double err_u2[4];  // used. But the evil GetErrors() will corrupt memory if
@@ -1279,9 +1295,6 @@ void Time_NSE3D::output(int m, int &image)
                   &aux, 1, &p_space, err_p);
 
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double err_red[8]; //memory for global (across all processes) error
     double err_send[8]; //fill send buffer
     err_send[0]=err_u1[0];

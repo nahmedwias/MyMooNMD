@@ -114,9 +114,6 @@ class TOutput3D
 
     /** add parameter into this output object */
     int AddParameter(double value, const char *descr);
-
-    /** write stored data. This calls the other Write* functions. */
-    int Write(std::string basename, int i=1, double t=0.);
     
     /** write stored data into a grape file */
     int WriteGrape(const char *name);
@@ -142,7 +139,9 @@ class TOutput3D
 #ifdef _MPI
                                 MPI_Comm comm,
 #endif
-                               int img, char *subID);
+                               int img, char *subID,
+							   std::string directory=std::string("."),
+							   std::string basename=std::string("parmoon_solution"));
 
     /** write stored data into a tecplot file **/
     int WriteBinaryPlt(const char *filename);

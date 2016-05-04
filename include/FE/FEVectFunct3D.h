@@ -57,7 +57,9 @@ class TFEVectFunct3D : public TFEFunction3D
         double *errors);
         
     /** write the solution into a data file **/
-    void WriteSol(double t);
+    void WriteSol(double t,
+    		std::string directory=std::string("."),
+    		std::string basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file **/
     void ReadSol(char *BaseName);

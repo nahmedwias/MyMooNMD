@@ -53,12 +53,8 @@ int main(int argc, char* argv[])
     domain.RegRefineAll();
   
   // write grid into an Postscript file
-  if(parmoon_db["write_ps"])
+  if(parmoon_db["output_write_ps"])
     domain.PS("Domain.ps", It_Finest, 0);
-  
-  // create output directory, if not already existing
-  if(parmoon_db["WRITE_VTK"].is(1))
-    mkdir(parmoon_db["output_directory"], 0777);
    
   //=========================================================================
   CD2D cd2d(domain, parmoon_db);
