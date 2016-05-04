@@ -164,10 +164,7 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
   //print information on the mesh partitioning
-  Output::print("Process ", my_rank, ". N_OwnCells: ",
-                domain.GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetN_HaloCells());
+  domain.print_info(std::string("coiled tube"));
 
   MPI_Barrier(MPI_COMM_WORLD);
 #endif

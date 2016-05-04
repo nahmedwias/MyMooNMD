@@ -3446,7 +3446,7 @@ void TDomain::print_info(std::string name) const
     size_t sum_cells_total = 0;
     for(int i =0; i < size ;++i)
     {
-      Output::print(" > Process", i, "\t n_own_cells: ", ns_own_cells.at(i),
+      Output::print(" > Rank", i, "\t n_own_cells: ", ns_own_cells.at(i),
                     "\t n_halo_cells: ", ns_halo_cells.at(i));
       sum_cells_total += ns_own_cells.at(i);
     }
