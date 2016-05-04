@@ -2816,76 +2816,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->BULK_C_2;
       N_Param++;
     }
-    if (!strcmp(line, "WINDTUNNEL_dynamic_viscosity:"))
-    {
-      dat >>  TDatabase::ParamDB->WINDTUNNEL_dynamic_viscosity;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_CONFIGURATION:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_CONFIGURATION;
-      N_Param++;
-    }
-    
-    if (!strcmp(line, "WINDTUNNEL_STEADY:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_STEADY;
-      N_Param++;
-    }
-    
-    if (!strcmp(line, "WINDTUNNEL_INTERPOLATION:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_INTERPOLATION;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_BROWNIAN:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_BROWNIAN;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_POL_ORDER:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_POL_ORDER;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "WINDTUNNEL_SHEAR_FACTOR_TYPE:"))
-   {
-     dat >> TDatabase::ParamDB->WINDTUNNEL_SHEAR_FACTOR_TYPE;
-     N_Param++;
-   }
-
-    if (!strcmp(line, "WINDTUNNEL_SHEAR_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SHEAR_FACTOR;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "WINDTUNNEL_QUAD_METHOD:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_QUAD_METHOD;
-      N_Param++;
-    }
-    if (!strcmp(line, "WINDTUNNEL_MEASURE_MASS:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_MEASURE_MASS;
-      N_Param++;
-    }
- 
-    if (!strcmp(line, "WINDTUNNEL_SHIFT:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SHIFT;
-      N_Param++;
-    }
-    if (!strcmp(line, "WINDTUNNEL_SUPERSAT:"))
-    {
-      dat >> TDatabase::ParamDB->WINDTUNNEL_SUPERSAT;
-      N_Param++;
-    }
-
 
     if (!strcmp(line, "SSMUM_MP_X:"))
     {
@@ -2922,102 +2852,6 @@ int TDomain::ReadParam(char *ParamFile)
 	dat >> TDatabase::ParamDB->SSMUM_INTERPOLATION;
       N_Param++;
     }
-
-    if (!strcmp(line, "UREA_INFLOW_SCALE:"))
-    {
-	dat >> TDatabase::ParamDB->UREA_INFLOW_SCALE;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "UREA_PB_DISC:"))
-    {
-	dat >> TDatabase::ParamDB->UREA_PB_DISC;
-      N_Param++;
-    }
-    
-   if (!strcmp(line, "UREA_MODEL:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_MODEL;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_CONC_MAXIT:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_CONC_MAXIT;
-      N_Param++;
-    }
-    
-   if (!strcmp(line, "UREA_inflow_time:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_inflow_time;
-      N_Param++;
-    }
-
-       
-    if (!strcmp(line, "UREA_u_infty:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_u_infty;
-      N_Param++;
-    }    
-  
-    if (!strcmp(line, "UREA_D_P_MAX:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_D_P_MAX;
-      N_Param++;
-    }    
-  
-  
-  
-
-   if (!strcmp(line, "UREA_AGGR_SPATIAL:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SPATIAL;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_BROWNIAN:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_POL_ORDER:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_POL_ORDER;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_SHEAR_FACTOR_TYPE:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE;
-      N_Param++;
-    }
-
-   if (!strcmp(line, "UREA_AGGR_SHEAR_FACTOR:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_AGGR_SHEAR_FACTOR;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_AGGR_BROWNIAN_TEMP:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN_TEMP;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_AGGR_BROWNIAN_SCAL:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_AGGR_BROWNIAN_SCAL;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_SOLD_PARAMETER_TYPE:"))
-    {
-        dat >> TDatabase::ParamDB->UREA_SOLD_PARAMETER_TYPE;
-      N_Param++;
-    }
-    if (!strcmp(line, "UREA_REACTION_DISC:"))
-    {
-      dat >> TDatabase::ParamDB->UREA_REACTION_DISC;
-      N_Param++;
-    }
     if (!strcmp(line, "PB_DISC_TYPE:"))
     {
       dat >> TDatabase::ParamDB->PB_DISC_TYPE;
@@ -3029,23 +2863,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-
-
-
-
-//     if (!strcmp(line, "UREA_D_P_MAX:"))
-//     {
-//         dat >> TDatabase::ParamDB->UREA_D_P_MAX;
-//       N_Param++;
-//     }    
-//   
-//     if (!strcmp(line, "UREA_f_infty:"))
-//     {
-//         dat >> TDatabase::ParamDB->UREA_f_infty;
-//       N_Param++;
-//     }    
-//   
-  
     if (!strcmp(line, "MATLAB_MATRIX:"))
     {
       dat >> line;

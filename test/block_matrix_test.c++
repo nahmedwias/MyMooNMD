@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     std::shared_ptr<TMatrix> matD = std::make_shared<TMatrix>(structureD);
     
     // create a BlockMatrix
-    auto blocks = {matA, matC, matB, matD};
+    std::vector<std::shared_ptr<TMatrix>> blocks = {matA, matC, matB, matD};
     BlockMatrix bm(2, 2, blocks);
     
     // do some simple tests
