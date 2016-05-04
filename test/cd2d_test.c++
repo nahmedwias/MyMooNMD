@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
     TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
     TDatabase::ParamDB->DELTA0 = 0.3;
     TDatabase::ParamDB->DELTA1 = 0.;
     TDatabase::ParamDB->SDFEM_TYPE = 0;

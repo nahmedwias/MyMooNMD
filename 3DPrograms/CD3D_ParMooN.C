@@ -63,7 +63,10 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
   bool iAmOutRank= (mpiRank == TDatabase::ParamDB->Par_P0);
+#else
+  bool iAmOutRank = true;
 #endif
+
 
   TFEDatabase3D feDatabase;
 
@@ -96,14 +99,9 @@ int main(int argc, char* argv[])
   for(size_t i = 0; i < n_ref_before; i++)
     domain.RegRefineAll();
 
-  // Write grid into a postscript file (before partitioning)
-  if(parmoon_db["write_ps"])
-  {
-#ifdef _MPI
-    if(iAmOutRank)
-#endif
-      domain.PS("Domain.ps", It_Finest, 0);
-  }
+  // write grid into an Postscript file
+  if(parmoon_db["output_write_ps"] && iAmOutRank)
+    domain.PS("Domain.ps", It_Finest, 0);
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.

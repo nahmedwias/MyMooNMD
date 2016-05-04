@@ -122,11 +122,9 @@ int main(int argc, char* argv[])
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
 
-  // Write grid into a postscript file (before partitioning)
-  if(parmoon_db["write_ps"] && my_rank == 0)
-  {
+  // write grid into an Postscript file
+  if(parmoon_db["output_write_ps"] && my_rank==0)
     domain.PS("Domain.ps", It_Finest, 0);
-  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -173,10 +171,6 @@ int main(int argc, char* argv[])
 
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-  // Create output directory, if not already existing.
-  if(parmoon_db["WRITE_VTK"].is(1))
-    mkdir(parmoon_db["output_directory"], 0777);
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI

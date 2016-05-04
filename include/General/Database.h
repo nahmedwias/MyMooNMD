@@ -54,9 +54,6 @@ struct TParaDB
 
   int SAVESOL;
   
-  char *BASENAME;
-  char *VTKBASENAME;  
-  char *OUTPUTDIR;
   char *SAVE_DATA_FILENAME;
   char *READ_DATA_FILENAME;
   char *MATLAB_MATRIX;
@@ -70,18 +67,15 @@ struct TParaDB
   //======================================================================
   int PRECOND_LS;
   int SOLVER_TYPE;
-  int WRITE_PS;
-  int WRITE_GRAPE;
+   int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
   int WRITE_AMIRA;
-  int WRITE_VTK;
   int WRITE_MATLAB;
   int WRITE_MATLAB_MATRIX;
   int SAVE_DATA;
   int READ_DATA;
   int READ_GRAPE_FILE;
-  int MEASURE_ERRORS;
   int ESTIMATE_ERRORS;
   int COMPUTE_VORTICITY_DIVERGENCE;
   

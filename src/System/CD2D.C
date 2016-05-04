@@ -13,6 +13,7 @@
 
 #include <numeric>
 
+#include <sys/stat.h>
 
 ParameterDatabase get_default_CD2D_parameters()
 {
@@ -22,6 +23,10 @@ ParameterDatabase get_default_CD2D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("CD2D parameter database");
   
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
   return db;
 }
 /** ************************************************************************ */
@@ -241,8 +246,9 @@ void CD2D::solve()
 /** ************************************************************************ */
 void CD2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
@@ -250,13 +256,17 @@ void CD2D::output(int i)
   fe_function.PrintMinMax();
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(1, 1, 0, 0, NULL);
     Output.AddFEFunction(&fe_function);
-    std::string filename = this->db["output_directory"];
-    filename += "/" + this->db["base_name"].value_as_string();
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -266,7 +276,7 @@ void CD2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(this->db["compute_errors"])
+  if(db["output_compute_errors"])
   {
     double errors[5];
     TAuxParam2D aux;

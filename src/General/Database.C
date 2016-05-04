@@ -532,15 +532,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->MIN_MAX_ADJOINT = 0;
   ParamDB->INITIAL_STEEPEST_DESCENT_ADJOINT = 0;
 
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->BASENAME = tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->VTKBASENAME = tmp;
-  tmp = new char[2];
-  strcpy(tmp,"."); // current directory
-  ParamDB->OUTPUTDIR = tmp;
   tmp = new char[40];
   strcpy(tmp,"MooN_MD_default_save_data_filename");
   ParamDB->SAVE_DATA_FILENAME=tmp;
@@ -577,16 +568,13 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->GROUP_FEM = 0;
 
   /** parameters for controling the program */
-  ParamDB->WRITE_PS = FALSE; 
   ParamDB->WRITE_GRAPE = FALSE; 
   ParamDB->WRITE_GMV = FALSE; 
   ParamDB->WRITE_AMIRA = FALSE; 
-  ParamDB->WRITE_VTK = FALSE; 
   ParamDB->WRITE_GNU = FALSE; 
   ParamDB->SAVE_DATA = FALSE; 
   ParamDB->READ_DATA = FALSE; 
   ParamDB->READ_GRAPE_FILE = FALSE; 
-  ParamDB->MEASURE_ERRORS = FALSE; 
   ParamDB->ESTIMATE_ERRORS = FALSE; 
   ParamDB->SOLVE_ADJOINT_PROBLEM = FALSE; 
   ParamDB->COMPUTE_VORTICITY_DIVERGENCE = FALSE;
@@ -1310,27 +1298,22 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("MIN_MAX_FACTOR_TWO_ADJOINT: ", ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT);
   printToFile("MIN_MAX_ADJOINT: ", ParamDB->MIN_MAX_ADJOINT);
   
-  printToFile("BASENAME: ", ParamDB->BASENAME);
-  printToFile("VTKBASENAME: ", ParamDB->VTKBASENAME);
   printToFile("SAVE_DATA_FILENAME: ", ParamDB->SAVE_DATA_FILENAME);
   printToFile("READ_DATA_FILENAME: ", ParamDB->READ_DATA_FILENAME);
   printToFile("POD_FILENAME: ", ParamDB->POD_FILENAME);
   printToFile("SNAP_FILENAME: ", ParamDB->SNAP_FILENAME);
 
   printToFile("SOLVER_TYPE: ", ParamDB->SOLVER_TYPE);
-  printToFile("WRITE_PS: ", ParamDB->WRITE_PS);
   printToFile("WRITE_GRAPE: ", ParamDB->WRITE_GRAPE);
   printToFile("WRITE_GMV: ", ParamDB->WRITE_GMV);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
   printToFile("WRITE_GNU: ", ParamDB->WRITE_GNU);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
-  printToFile("WRITE_VTK: ", ParamDB->WRITE_VTK);
   printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
   printToFile("WRITE_MATLAB_MATRIX: ", ParamDB->WRITE_MATLAB_MATRIX); 
   printToFile("WRITE_MATLAB: ", ParamDB->WRITE_MATLAB);
   printToFile("SAVE_DATA: ", ParamDB->SAVE_DATA);
   printToFile("READ_DATA: ", ParamDB->READ_DATA);
-  printToFile("MEASURE_ERRORS: ", ParamDB->MEASURE_ERRORS);
   printToFile("ESTIMATE_ERRORS: ", ParamDB->ESTIMATE_ERRORS);
   printToFile("SOLVE_ADJOINT_PROBLEM: ", ParamDB->SOLVE_ADJOINT_PROBLEM);
   printToFile("COMPUTE_VORTICITY_DIVERGENCE: ", ParamDB->COMPUTE_VORTICITY_DIVERGENCE);
@@ -2111,9 +2094,6 @@ TParaDB::~TParaDB()
   delete [] BNDFILE_INTL;
   delete [] MAPFILE;
   delete [] OUTFILE;
-  delete [] BASENAME;
-  delete [] VTKBASENAME;
-  delete [] OUTPUTDIR;
   delete [] SAVE_DATA_FILENAME;
   delete [] READ_DATA_FILENAME;
   delete [] SMESHFILE;

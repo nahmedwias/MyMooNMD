@@ -65,12 +65,8 @@ int main(int argc, char* argv[])
     Domain.RegRefineAll();  
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
-    Domain.PS("Domain.ps",It_Finest,0);
-  
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+  if(parmoon_db["output_write_ps"])
+    Domain.PS("Domain.ps", It_Finest, 0);
     
   Example_Brinkman2D example;
   

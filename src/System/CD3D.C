@@ -15,6 +15,8 @@
 #include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
 
+#include <sys/stat.h>
+
 #ifdef _MPI
 #include <MumpsWrapper.h>
 #endif
@@ -28,6 +30,10 @@ ParameterDatabase get_default_CD3D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("CD3D parameter database");
   
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
   return db;
 }
 
@@ -332,8 +338,14 @@ void CD3D::solve()
 
 void CD3D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
-    return;
+#ifdef _MPI
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
 
   SystemPerGrid& syst = systems_.front() ;
 
@@ -341,17 +353,24 @@ void CD3D::output(int i)
   syst.feFunction_.PrintMinMax();
 
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput3D Output(1, 1, 0, 0, NULL);
     Output.AddFEFunction(&syst.feFunction_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    if(my_rank == 0)
+  	  mkdir(db["output_vtk_directory"], 0777);
+    std::string dir = db["output_vtk_directory"];
+    std::string base = db["output_basename"];
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    std::string filename = this->db["output_directory"];
-    filename += "/" + this->db["base_name"].value_as_string();
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -362,7 +381,7 @@ void CD3D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(this->db["compute_errors"])
+  if(db["output_compute_errors"])
   {
     double errors[5];
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
@@ -373,9 +392,6 @@ void CD3D::output(int i)
                                2, L2H1Errors, example_.get_coeffs(),
                                &aux, 1, &space, errors);
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double errorsReduced[4]; //memory for global (across all processes) error
 
     MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

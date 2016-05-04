@@ -137,8 +137,6 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-
     TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
@@ -148,7 +146,7 @@ int main(int argc, char* argv[])
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
 
-    Time_CD2D tcd(domain);
+    Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
   }
 }

@@ -262,24 +262,6 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
   return m;
 }
 
-/** write stored data into a .vtk-file*/
-int TOutput3D::Write(std::string basename, int i, double t)
-{
-  std::ostringstream os;
-  os.seekp(std::ios::beg);
-  os << basename << i << ".vtk"<<ends;
-  
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    cout << " Output3D:: writing " << os.str() << endl;
-    this->WriteVtk(os.str().c_str());
-  }
-  
-  return 0;
-  // put more here if needed
-}
-
-
 /** write stored data into a grape file */
 int TOutput3D::WriteGrape(const char *name)
 {
@@ -2453,7 +2435,9 @@ int TOutput3D::Write_ParVTK(
 #ifdef _MPI
                                 MPI_Comm comm,
 #endif
-                               int img, char *subID)
+                               int img, char *subID,
+							   std::string directory,
+							   std::string basename)
 {
   int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
   int N_Vertices, N_CellVertices, N_Comps;
@@ -2467,7 +2451,7 @@ int TOutput3D::Write_ParVTK(
                                  -1, -1,  1, 1, -1,  1, 1,  1,  1, -1,  1,  1  };
   static double TetraCoords[] = { 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 };
 
-  char *VtkBaseName, Dquot;
+  char Dquot;
 
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
@@ -2477,7 +2461,7 @@ int TOutput3D::Write_ParVTK(
   size =1;
 #endif
 
-  std::string outputdir(TDatabase::ParamDB->OUTPUTDIR);
+  std::string outputdir(directory);
   std::string vtu("VTU/");
   std::string vtudir = outputdir + std::string("/") + vtu;
 
@@ -2497,8 +2481,8 @@ int TOutput3D::Write_ParVTK(
   FE3D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
-  VtkBaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* VtkBaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   if(rank==0)
    {
