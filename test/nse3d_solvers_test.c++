@@ -154,15 +154,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["preconditioner"] = "least_squares_commutator";
     db["nonlinloop_epsilon"] = 1e-12;
-    TDatabase::ParamDB->LEVELS = 1;
     // just to not distract 'NSE3D::check_parameters'
     TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
   else if (solver_name.compare("multigrid") == 0)
   {
     db["preconditioner"] = "multigrid";
-    TDatabase::ParamDB->LEVELS = 2;
     db["n_multigrid_levels"] = 2;
+    db["refinement_n_initial_steps"] = 2;
     db["damping_factor"] = 1.0;
     db["damping_factor_finest_grid"] = 1.0;
     db["nonlinloop_epsilon"] = 1e-10;
@@ -190,7 +189,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
-    TDatabase::ParamDB->LEVELS = 1;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -206,7 +204,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
-    TDatabase::ParamDB->LEVELS = 1;
     db["nonlinloop_epsilon"] = 1e-15;
     db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -264,8 +261,7 @@ int main(int argc, char* argv[])
 
   db["problem_type"].set<size_t>(5);
   
-  db.add("refinement_n_initial_steps", (size_t) 1,"");
-  db["n_multigrid_levels"] =  1;
+  db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
@@ -291,11 +287,6 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->BNDFILE = boundary_file;
   //TDatabase::ParamDB->GEOFILE = (char*)"not_specified_globally";
 
-  int nRef;
-  if(TDatabase::ParamDB->SOLVER_TYPE==1)
-    nRef=TDatabase::ParamDB->LEVELS+TDatabase::ParamDB->UNIFORM_STEPS;
-  else
-    nRef=TDatabase::ParamDB->UNIFORM_STEPS;
 
   //===========================================================
   if(my_rank==0)
@@ -316,7 +307,7 @@ int main(int argc, char* argv[])
                     "Default_UnitCube_Hexa");
 
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
-    for(int i=0; i< n_ref ; i++)
+    for(size_t i=0; i< n_ref ; i++)
     {
       domain_hex.RegRefineAll();
     }
@@ -383,7 +374,7 @@ int main(int argc, char* argv[])
     TDomain domain_tet(db);
     domain_tet.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Tetra");
-    for(int i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
+    for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();
     }
