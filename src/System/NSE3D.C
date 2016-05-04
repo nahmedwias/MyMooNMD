@@ -20,6 +20,8 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+#include <sys/stat.h>
+
 ParameterDatabase get_default_NSE3D_parameters()
 {
   Output::print<3>("creating a default NSE3D parameter database");
@@ -31,6 +33,10 @@ ParameterDatabase get_default_NSE3D_parameters()
   //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
   ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
   db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
@@ -760,7 +766,13 @@ void NSE3D::solve()
 
 void NSE3D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
+#ifdef _MPI
+   int my_rank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(no_output)
     return;
   
   System_per_grid& s=this->systems_.front();
@@ -777,7 +789,7 @@ void NSE3D::output(int i)
   }
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput3D Output(5, 5, 2, 1, NULL);
@@ -785,10 +797,17 @@ void NSE3D::output(int i)
     Output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    if(my_rank == 0)
+  	  mkdir(db["output_vtk_directory"], 0777);
+    std::string dir = db["output_vtk_directory"];
+    std::string base = db["output_basename"];
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    std::string filename = this->db["output_directory"];
-    filename += "/" + this->db["base_name"].value_as_string();
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -799,7 +818,7 @@ void NSE3D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(this->db["compute_errors"])
+  if(db["output_compute_errors"])
   {
     double err_u1[4]; // of these arrays only the two first entries are used,
     double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
@@ -826,9 +845,6 @@ void NSE3D::output(int i)
                    nullptr, &aux, 1, &pressure_space, err_p);
     
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double err_red[8]; //memory for global (across all processes) error
     double err_send[8]; //fill send buffer
     err_send[0]=err_u1[0];

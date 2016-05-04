@@ -12,8 +12,29 @@
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
+#include <sys/stat.h>
+
 #include <numeric>
 
+/**************************************************************************** */
+ParameterDatabase get_default_TCD2D_parameters()
+{
+  Output::print<3>("creating a default TCD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default TCD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TCD2D parameter database");
+
+  //TCD2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
 
 /**************************************************************************** */
 Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
@@ -70,18 +91,21 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
- : Time_CD2D(domain, Example_CD2D(), reference_id)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		int reference_id)
+ : Time_CD2D(domain, param_db, Example_CD2D(), reference_id)
 {
   
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
-                     int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		const Example_CD2D& ex, int reference_id)
+ : db(get_default_TCD2D_parameters()), systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
 {
+  db.merge(param_db);
   this->set_parameters();
+
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   // create finite element space and function, a matrix, rhs, and solution
@@ -392,13 +416,13 @@ void Time_CD2D::solve()
 /**************************************************************************** */
 void Time_CD2D::output(int m, int& image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
-  
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double loc_e[5];
     TAuxParam2D aux;
@@ -430,12 +454,16 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db["output_write_vtk"])
     {
       TOutput2D Output(1, 1, 0, 0, NULL);
       Output.AddFEFunction(&fe_function);
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+      // Create output directory, if not already existing.
+      mkdir(db["output_vtk_directory"], 0777);
+      std::string filename = this->db["output_vtk_directory"];
+      filename += "/" + this->db["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";

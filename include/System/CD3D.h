@@ -206,10 +206,6 @@ class CD3D
      * 
      * The current errors will be printed out. If desired, further output, e.g.,
      * vtk files are created.
-     * Whether this method calculates and prints errors is determined by
-     *  TDatabase::ParamDB->MEASURE_ERRORS ,
-     * whether it produces VTK files by
-     *  TDatabase::ParamDB->WRITE_VTK .
      *
      * @param i Integer suffix for output file name. -1 means no suffix.
      */

@@ -129,9 +129,12 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_output_database());
+
+    db["output_compute_errors"] = true;
+
     db.add("refinement_n_initial_steps", (size_t) 1,"");
 
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
     TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;

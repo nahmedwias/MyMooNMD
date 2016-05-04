@@ -11,17 +11,23 @@
 
 #include<Assemble2D.h>
 
+#include <sys/stat.h>
+
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
   Output::print<3>("creating a default NSE2D parameter database");
   // we use a parmoon default database because this way these parameters are
-  // available in the default CD2D database as well.
+  // available in the default NSE2D database as well.
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("NSE2D parameter database");
   
   //NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
   db.merge(ParameterDatabase::default_nonlinit_database());
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
   if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
@@ -699,8 +705,9 @@ void NSE2D::solve()
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !this->db["compute_errors"])
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
@@ -716,14 +723,18 @@ void NSE2D::output(int i)
   }
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(2, 3, 1, 0, NULL);
     Output.AddFEFunction(&s.p);
     Output.AddFEVectFunct(&s.u);
-    std::string filename = this->db["output_directory"];
-    filename += "/" + this->db["base_name"].value_as_string();
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -733,7 +744,7 @@ void NSE2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(this->db["compute_errors"])
+  if(db["output_compute_errors"])
   {
     double err[4];
     TAuxParam2D NSEaux_error;

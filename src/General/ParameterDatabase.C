@@ -762,26 +762,6 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
           "Default_UnitCube_Tetra"});
 
-  db.add("write_ps", true, 
-         "Draw a postscript file of the domain. This only works in two space "
-         "dimensions. Usually this is used in the main program.");
-  
-  db.add("compute_errors", true,
-         "Do or do not compute errors after computing a solution. This makes "
-         "much sense if an analytical solution is known. If not then it is "
-         "often simply set to zero and computing errors then means computing "
-         "norms, e.g. the L^2-norm of the solution.");
-  
-  db.add("output_directory", std::string("."),
-         "This directory is where much of the output is written. Most "
-         "importantly this includes solution(s) in e.g. vtk format. This "
-         "directory will be created, if it does not exist already. Files in "
-         "this directory will be overwritten without any warning.");
-  
-  db.add("base_name", std::string("parmoon"),
-         "This string is prepended to most files written by ParMooN. "
-         "Especially this includes vtk-files ");
-  
   db.add("problem_type", (size_t)0, 
          "Determine which kind of problem you want to solve. A value of 0 "
          "means not set. Other values have the following meanings: "
@@ -864,4 +844,37 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
          {true,false});
 
   return db;
+}
+
+ParameterDatabase ParameterDatabase::default_output_database()
+{
+	  ParameterDatabase db("default ParMooN output control parameters database");
+
+	  db.add("output_write_vtk", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce VTK output or not.",
+			  {true,false});
+
+	  db.add("output_write_ps", false,
+	         "Draw a postscript file of the domain. This only works in two space "
+	         "dimensions. Usually this is used in the main program.",
+			 {true,false});
+
+	  db.add("output_compute_errors", true,
+	         "Do or do not compute errors after computing a solution. This makes "
+	         "much sense if an analytical solution is known. If not then it is "
+	         "often simply set to zero and computing errors then means computing "
+	         "norms, e.g. the L^2-norm of the solution.",
+			 {true,false});
+
+	  db.add("output_vtk_directory", std::string("."),
+	         "This directory is where the VTK output is written. This "
+	         "directory will be created, if it does not exist already. Files in "
+	         "this directory will be overwritten without any warning.");
+
+	  db.add("output_basename", std::string("parmoon"),
+	         "This string is prepended to most files written by ParMooN. "
+	         "Especially this includes vtk-files ");
+
+	  return db;
 }

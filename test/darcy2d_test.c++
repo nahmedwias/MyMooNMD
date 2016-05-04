@@ -235,10 +235,8 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->VELOCITY_SPACE = 1000;
   // automatically choose pressure space to get inf-sup stable pair
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-  TDatabase::ParamDB->MEASURE_ERRORS = 1; // compute errors
-  // high order quadrature for computing errors 
+    // high order quadrature for computing errors
   TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
-  TDatabase::ParamDB->WRITE_VTK = 0; // do not write vtk files
   TDatabase::ParamDB->SIGMA_PERM = 1.; // permeability
   TDatabase::ParamDB->SC_VERBOSE = 0; // supress solver output
   TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
@@ -247,11 +245,12 @@ int main(int argc, char* argv[])
   
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_output_database());
   db["problem_type"] = 0; // problem type is not needed
   db["example"] = 0;
   db["residual_tolerance"] = 1.0e-13;
   
-  
+  db["output_compute_errors"] = true;
   
   Output::print("\n\n ----------- direct solver -----------\n");
   db["solver_type"] = "direct";
