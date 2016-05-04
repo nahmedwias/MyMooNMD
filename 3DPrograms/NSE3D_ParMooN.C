@@ -82,16 +82,16 @@ int main(int argc, char* argv[])
   NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
-  // project specific: prepare the coiled geometry BIG JOKE: Using these parameters.
-  size_t n_twists                 = TDatabase::ParamDB->DG_P0;
-  size_t n_segments_per_twist     = TDatabase::ParamDB->DG_P1;
-  double l_inflow                 = TDatabase::ParamDB->DG_P2;
-  size_t n_segments_inflow        = TDatabase::ParamDB->DG_P3;
-  double l_outflow                = TDatabase::ParamDB->DG_P4;
-  size_t n_segments_outflow       = TDatabase::ParamDB->DG_P5;
-  double tube_radius              = TDatabase::ParamDB->DG_P6;
-  double twist_radius             = TDatabase::ParamDB->DG_P7;
-  double space_between_twists     = TDatabase::ParamDB->DG_P8;
+  // project specific: prepare the coiled geometry
+  size_t n_twists                 = parmoon_db["twisted_pipe_n_twists"];
+  size_t n_segments_per_twist     = parmoon_db["twisted_pipe_n_segments_per_twist"];
+  double l_inflow                 = parmoon_db["twisted_pipe_l_inflow"];
+  size_t n_segments_inflow        = parmoon_db["twisted_pipe_n_segments_inflow"];
+  double l_outflow                = parmoon_db["twisted_pipe_l_outflow"];
+  size_t n_segments_outflow       = parmoon_db["twisted_pipe_n_segments_outflow"];
+  double tube_radius              = parmoon_db["twisted_pipe_tube_radius"];
+  double twist_radius             = parmoon_db["twisted_pipe_twist_radius"];
+  double space_between_twists     = parmoon_db["twisted_pipe_space_between_twists"];
 
   CoiledPipe::set_up_geoconsts(
       n_twists,
