@@ -29,6 +29,11 @@ namespace flow_around_cylinder_stat
 {
 #include "NSE_3D/FlowAroundCylinder_stat.h"
 }
+//project: twisted pipe flow
+namespace twisted_pipe_flow
+{
+#include "NSE_3D/twisted_pipe_flow.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -205,6 +210,37 @@ Example_NSE3D::Example_NSE3D() : Example3D()
 
         /**post processing - drag and lift calculation and output */
         post_processing_stat = compute_drag_lift_pdiff;
+
+        ExampleFile();
+        break;
+      }
+
+      case 5:
+      {
+        using namespace twisted_pipe_flow;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /**post processing */
+        //post_processing_stat = ;
 
         ExampleFile();
         break;
@@ -523,6 +559,11 @@ void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
   }
   else
   {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
     Output::print<2>("INFO -- no post processing done for the current example.");
   }
 }

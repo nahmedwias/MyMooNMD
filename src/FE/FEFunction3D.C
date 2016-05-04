@@ -2409,18 +2409,37 @@ void TFEFunction3D::MinMax(double & min, double & max) const
 
 void TFEFunction3D::PrintMinMax(std::string name) const
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
   double min, max;
   this->MinMax(min, max);
-  if( min <= max )
+
+#ifdef _MPI
+  // reduce min and max in root
+  double sendbuf_min = min;
+  double sendbuf_max = max;
+  MPI_Reduce(&sendbuf_min, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD );
+  MPI_Reduce(&sendbuf_max, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+#endif
+
+  if(my_rank ==0) //only root has results - only root prints
   {
-    if(name.empty())
-      Output::print<1>(this->Name, " min ", min, ", max ", max);
+    if( min <= max )
+    {
+      if(name.empty())
+        Output::print<1>(this->Name, " min ", min, ", max ", max);
+      else
+        Output::print<1>(name, " min ", min, ", max ", max);
+    }
     else
-      Output::print<1>(name, " min ", min, ", max ", max);
-  }
-  else
-  {
-    Output::print<1>("WARNING: TFEFunction3D::MinMax was not successful!");
+    {
+        Output::print<1>("WARNING: TFEFunction3D::MinMax was not successful!");
+    }
   }
 }
 

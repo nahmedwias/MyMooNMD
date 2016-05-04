@@ -27,6 +27,7 @@
 #include "mpi.h"
 
 #include <ParFEMapper3D.h>
+#include <string>
 
 class TParFECommunicator3D
 {
@@ -71,6 +72,10 @@ class TParFECommunicator3D
     //TODO Comment the usage of this!
     TParFECommunicator3D();
     
+    /// Gather information about this communicator in root and print it
+    /// to console and output file.
+    void print_info() const;
+
     //TODO Comment the usage of this!
     void CommUpdateMS(double *sol);
     

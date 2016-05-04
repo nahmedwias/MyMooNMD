@@ -14,6 +14,8 @@
 
 #include <sys/stat.h>
 
+#include <CoiledPipe.h>
+
 #ifdef _MPI
 // we need this here because for some reason (??) these are declared extern in
 // e.g. TParFECommunicator3D
@@ -21,7 +23,8 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-
+//project specific declaration
+struct derived_properties;
 
 // main program
 // =======================================================================
@@ -31,11 +34,24 @@ int main(int argc, char* argv[])
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(my_rank==0)
+  {
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::print("INFO (NSE3D_ParMooN): MPI, using ", size, " processes");
+  }
+#else
+  int my_rank = 0;
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Output::print("INFO (NSE3D_ParMooN): SEQUENTIAL (or OMP...)");
 #endif
 
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+
+  //start a stopwatch which measures time spent in program parts
   Chrono chrono_parts;
-  chrono_parts.print_time(std::string("program start"));
+
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -45,13 +61,6 @@ int main(int argc, char* argv[])
 
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
-  // Hold mpi rank and size ready, check whether the current processor
-  // is responsible for output (usually root, 0).
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
 
   TFEDatabase3D feDatabase;
@@ -59,9 +68,12 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1], parmoon_db);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  if(my_rank ==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+    Output::setVerbosity(parmoon_db["verbosity"]);
+  }
 
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
@@ -70,8 +82,40 @@ int main(int argc, char* argv[])
   NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
+  // project specific: prepare the coiled geometry BIG JOKE: Using these parameters.
+  size_t n_twists                 = TDatabase::ParamDB->DG_P0;
+  size_t n_segments_per_twist     = TDatabase::ParamDB->DG_P1;
+  double l_inflow                 = TDatabase::ParamDB->DG_P2;
+  size_t n_segments_inflow        = TDatabase::ParamDB->DG_P3;
+  double l_outflow                = TDatabase::ParamDB->DG_P4;
+  size_t n_segments_outflow       = TDatabase::ParamDB->DG_P5;
+  double tube_radius              = TDatabase::ParamDB->DG_P6;
+  double twist_radius             = TDatabase::ParamDB->DG_P7;
+  double space_between_twists     = TDatabase::ParamDB->DG_P8;
+
+  CoiledPipe::set_up_geoconsts(
+      n_twists,
+      n_segments_per_twist,
+      l_inflow,
+      n_segments_inflow,
+      l_outflow,
+      n_segments_outflow,
+      tube_radius,
+      twist_radius,
+      space_between_twists
+  );
+  double drift_x = 0;
+  double drift_y = 0;
+  double drift_z =CoiledPipe::GeoConsts::l_tube;
+
+  // Choose example according to the value of
+  // TDatabase::ParamDB->EXAMPLE and construct it.
+  Example_NSE3D example;
+
   // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
+              drift_x, drift_y, drift_z,
+              CoiledPipe::GeoConsts::segment_marks);
 
   // Initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -126,15 +170,13 @@ int main(int argc, char* argv[])
                 domain.GetN_OwnCells(),
                 ". N_HaloCells: ",
                 domain.GetN_HaloCells());
+
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
   // Create output directory, if not already existing.
   if(parmoon_db["WRITE_VTK"].is(1))
     mkdir(parmoon_db["output_directory"], 0777);
-
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_NSE3D example;
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
@@ -153,6 +195,8 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
+    nse3d.output(k);
+
     Chrono chrono_nonlinit;
 
     if(my_rank==0)
@@ -182,9 +226,11 @@ int main(int argc, char* argv[])
 
   nse3d.output();
 
+  if(my_rank==0)
+    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-  Output::close_file();
-
+  if(my_rank ==0)
+    Output::close_file();
 
 #ifdef _MPI
   MPI_Finalize();

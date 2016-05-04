@@ -980,13 +980,15 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 }
 
 #else
-int TDomain::ReadSandwichGeo(std::istream& dat)
+int TDomain::ReadSandwichGeo(std::istream& dat,
+                             double DriftX, double DriftY, double DriftZ,
+                             std::vector<double> segment_marks)
 {
   char line[100];
   int i, j, N_Vertices, NVpF, NVE, NBCT;
   double *DCORVG;
   int *KVERT, *KNPR;
-  double DriftX, DriftY, DriftZ, *Lambda;
+  double *Lambda;
   int N_Layers, grid_type;
 
   grid_type = TDatabase::ParamDB->GRID_TYPE;
@@ -1024,10 +1026,6 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
   for (i=0;i<N_Vertices;i++)
     dat >> KNPR[i];
 
-  DriftX = TDatabase::ParamDB->DRIFT_X;
-  DriftY = TDatabase::ParamDB->DRIFT_Y;
-  DriftZ = TDatabase::ParamDB->DRIFT_Z;
-
   if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1234)
    {
     TDatabase::ParamDB->N_CELL_LAYERS = 3;
@@ -1038,24 +1036,15 @@ int TDomain::ReadSandwichGeo(std::istream& dat)
     Lambda[2] = 15.32/20.32;
     Lambda[3] = 1.0;
    }
-/*  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1356)
-   {
-    N_Layers = TDatabase::ParamDB->N_CELL_LAYERS+1;     
-    Lambda = new double[N_Layers];     
-    double tmp [] = { 0, 0.0119047619, 0.02380952381, 0.03571428571, 0.04761904762,
-                 0.05952380952, 0.07142857143, 0.08333333333, 0.09523809524, 0.10714285714,
-                 0.11904761905, 0.13333333333, 0.14761904762, 0.16666666667, 0.18571428571, 
-                 0.20952380952, 0.23333333333, 0.2619047619, 0.29523809524, 0.33333333333, 
-                 0.38095238095, 0.42857142857, 0.47619047619, 0.52380952381, 0.57142857143, 
-                 0.61904761905, 0.66666666667, 0.71428571429, 0.7619047619, 0.80952380952, 
-                 0.85714285714, 0.90476190476, 0.95238095238, 1  };
-                 
+  else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 1356)
+  {// this identifies the twisted pipe problem FIXME This global dependency need be removed!
+    N_Layers = segment_marks.size();
+    Lambda = new double[N_Layers];
+
     for(i=0;i<N_Layers; i++)     
-     Lambda[i] = tmp[i];
-                 
-//      MPI_Finalize();
-//      exit(0);
-   }  */   
+     Lambda[i] = segment_marks.at(i); //use the input segment marks
+
+   }
   else if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)
   {
     // turbulent channel flow for Re_tau = 180, IMPORTANT !!!
