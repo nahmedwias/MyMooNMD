@@ -157,6 +157,18 @@ namespace Output
   template<unsigned int verbosity = 1, typename ... Arguments>
   void print(Arguments const& ... rest);
   
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void warn(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void stat(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void info(std::string context, Arguments const& ... rest);
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void dash(Arguments const& ... rest);
+
   /// @brief print only to the outfile depending on verbosity
   ///
   /// This method behaves like the corresponding print, but does not print to
@@ -242,6 +254,30 @@ namespace Output
     }
   }
   
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void warn(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("WARNING (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void stat(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("STATS (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void info(std::string context, Arguments const& ... rest)
+  {
+	  print<verbosity>("INFO (",context,"): ", rest ...);
+  }
+
+  template<unsigned int verbosity = 1, typename ... Arguments>
+  void dash(Arguments const& ... rest)
+  {
+	  print<verbosity>(" > ", rest ...);
+  }
+
   // implementation of the printToFile method
   template<unsigned int verbosity, typename ... Arguments>
   void printToFile(Arguments const& ... args)
