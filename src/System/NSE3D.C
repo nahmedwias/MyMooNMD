@@ -114,6 +114,10 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 
+  //print some information
+  parCommVelocity_.print_info();
+  parCommPressure_.print_info();
+
 #endif
 }
 
@@ -178,12 +182,13 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
     
-    Output::print<1>("N_Cells      :  ", setw(10), coll->GetN_Cells());
-    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
-    Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
-    Output::print<1>("ndof Total   :  ", setw(10), nTotal );
-    Output::print<1>("nActive      :  ", setw(10), nActive);
+    Output::stat("NSE3D", "Mesh data and problem size");
+    Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
+    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof Pressure:  ", setw(10), nDofp);
+    Output::dash("ndof Total   :  ", setw(10), nTotal );
+    Output::dash("nActive      :  ", setw(10), nActive);
 
     #endif
   }
@@ -255,11 +260,6 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 void NSE3D::check_parameters()
 {
-  // this has to do with the relation of UNIFORM_STEPS and LEVELS
-  // copied from CD3D, it should actually be unified
-  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
-                        && TDatabase::ParamDB->SOLVER_TYPE == 1;
-
 
   // Some implementation/testing constraints on the used discretization.
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
@@ -325,7 +325,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
           break; 
         case 1: // discontinuous space 
           pressure_order = 0;
-          Output::print<1>("Warning: The P1/P0 element pair (Q1/Q0 on hexa) is "
+          Output::warn("NSE3D", "The P1/P0 element pair (Q1/Q0 on hexa) is "
               " not stable. Make sure to use stabilization!");
           break;
         case 2: case 3: case 4: case 5:
@@ -782,10 +782,10 @@ void NSE3D::output(int i)
   
   if(TDatabase::ParamDB->SC_VERBOSE > 1)
   {
-    u1->PrintMinMax();
-    u2->PrintMinMax();
-    u3->PrintMinMax();
-    s.p_.PrintMinMax();
+    u1->PrintMinMax(std::string("u1"));
+    u2->PrintMinMax(std::string("u2"));
+    u3->PrintMinMax(std::string("u3"));
+    s.p_.PrintMinMax(std::string("p"));
   }
   
   // write solution to a vtk file
@@ -882,11 +882,11 @@ void NSE3D::output(int i)
     //print errors
     if(my_rank == 0)
     {
-      Output::print("");
-      Output::print<1>("L2(u)     : ", setprecision(10), errors_.at(0));
-      Output::print<1>("H1-semi(u): ", setprecision(10), errors_.at(1));
-      Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));
-      Output::print<1>("H1-semi(p): ", setprecision(10), errors_.at(3));
+      Output::stat("NSE3D", "Measured errors");
+      Output::dash("L2(u)     : ", setprecision(10), errors_.at(0));
+      Output::dash("H1-semi(u): ", setprecision(10), errors_.at(1));
+      Output::dash("L2(p)     : ", setprecision(10), errors_.at(2));
+      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(3));
     }
   } // if(this->db["compute_errors"])
   delete u1;

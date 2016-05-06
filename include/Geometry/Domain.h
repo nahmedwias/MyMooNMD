@@ -570,6 +570,14 @@ class TDomain
    * stored in this object's database.
    */
   size_t get_max_n_adaptive_steps() const;
+
+
+  /**
+   * Prints info on this domain,
+   * to console and outfile.
+   * @param name A name for the domain.
+   */
+  void print_info(std::string name) const;
      
      
 };
