@@ -31,11 +31,23 @@ int main(int argc, char* argv[])
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(my_rank==0)
+  {
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::info("NSE3D", "MPI, using ", size, " processes");
+  }
+#else
+  int my_rank = 0;
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Output::info("NSE3D", "SEQUENTIAL (or OMP...)");
 #endif
 
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  //start a stopwatch which measures time spent in program parts
   Chrono chrono_parts;
-  chrono_parts.print_time(std::string("program start"));
+
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -45,13 +57,6 @@ int main(int argc, char* argv[])
 
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
-  // Hold mpi rank and size ready, check whether the current processor
-  // is responsible for output (usually root, 0).
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-  int my_rank = 0;
 #endif
 
   TFEDatabase3D feDatabase;
@@ -60,7 +65,10 @@ int main(int argc, char* argv[])
   TDomain domain(argv[1], parmoon_db);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+  }
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
@@ -151,8 +159,8 @@ int main(int argc, char* argv[])
 
     if(my_rank==0)
     {
-     Output::print("\nNONLINEAR ITERATION ", setw(3), k-1);
-     Output::print(" residuals ",nse3d.get_residuals());
+     Output::info("NONLINEAR ITERATION ", setw(3), k-1);
+     Output::dash(" residuals ",nse3d.get_residuals());
     }
 
     // solve the system
@@ -176,8 +184,11 @@ int main(int argc, char* argv[])
 
   nse3d.output();
 
+  if(my_rank==0)
+    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-  Output::close_file();
+  if(my_rank == 0)
+    Output::close_file();
 
 
 #ifdef _MPI

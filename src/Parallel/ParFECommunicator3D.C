@@ -62,6 +62,38 @@ TParFECommunicator3D::TParFECommunicator3D()
 
 }
 
+void TParFECommunicator3D::print_info() const
+{
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int root = 0;
+  //TODO this method is open for extension and enhancement in every direction
+
+  //1) get number of master dofs per process
+  std::vector<int> ns_masters(size, 0);
+  {
+   int sendbuf = Mapper->GetN_Master();
+   MPI_Gather(&sendbuf, 1, MPI_INT, 		 //send
+              &ns_masters.at(0), 1, MPI_INT, //receive
+              root, MPI_COMM_WORLD);         //control
+  }
+
+  //only root does the printing
+  if(my_rank == 0)
+  {
+    Output::stat("ParFECommunicator3D of FESpace ",
+                  Mapper->get_fe_space()->GetName());
+    int n_m_total = 0;
+    for( int i=0 ; i<size ; ++i )
+    {
+      Output::dash("Rank ", i, "\t n_masters: ", ns_masters.at(i)); //TODO further fille this output line
+      n_m_total += ns_masters.at(i);
+    }
+    Output::dash("Total number of dofs in the communicator: ", n_m_total);
+  }
+}
+
 void TParFECommunicator3D::CommUpdateMS(double *sol)
 {
   if(!Mapper)

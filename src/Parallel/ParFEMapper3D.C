@@ -1199,20 +1199,21 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   N_Halo = N_Halo1 + N_Halo2;
   N_Dept = N_Dept1 + N_Dept2;// + N_Dept3;
   
-  //DEBUG
-  if(size<9)
-  for(aa=0;aa<size;aa++){
-     if(rank==aa){
-          printf("\nRank::%d\n",rank);
-	  printf("N_Dof               = %d\t N_OwnDof           = %d\t N_Active           = %d\n", N_Dof, N_OwnDof,N_Active);
-	  printf("N_Master(Total)     = %d\t N_Slave(Total)     = %d\n", N_Master, N_Slave);
-	  printf("N_Master(Interface) = %d\t N_Slave(Interface) = %d\n", N_InterfaceM, N_InterfaceS);
-	  printf("N_Halo              = %d\t N_Halo1            = %d\t   N_Halo2  = %d\n",N_Halo,N_Halo1,N_Halo2);
-	  printf("N_Depndt            = %d\t N_Dept1            = %d\t   N_Dept2  = %d\n",N_Dept,N_Dept1,N_Dept2);
-	  printf("N_Indpdt            = %d\n",N_Int); 
-     }
-     MPI_Barrier(MPI_COMM_WORLD);
-  }//verified
+//  //DEBUG TODO Rewrite that output, e.g. gather in root!
+//  if(size<9)
+//  for(aa=0;aa<size;aa++){
+//     if(rank==aa){
+//          printf("\nRank::%d\n",rank);
+//	  printf("N_Dof               = %d\t N_OwnDof           = %d\t N_Active           = %d\n", N_Dof, N_OwnDof,N_Active);
+//	  printf("N_Master(Total)     = %d\t N_Slave(Total)     = %d\n", N_Master, N_Slave);
+//	  printf("N_Master(Interface) = %d\t N_Slave(Interface) = %d\n", N_InterfaceM, N_InterfaceS);
+//	  printf("N_Halo              = %d\t N_Halo1            = %d\t   N_Halo2  = %d\n",N_Halo,N_Halo1,N_Halo2);
+//	  printf("N_Depndt            = %d\t N_Dept1            = %d\t   N_Dept2  = %d\n",N_Dept,N_Dept1,N_Dept2);
+//	  printf("N_Indpdt            = %d\n",N_Int);
+//     }
+//     MPI_Barrier(MPI_COMM_WORLD);
+//  }//verified
+
   
   rdispl[0] = 0; sdispl[0] = 0; 
   sdisplMS  = new int[size];   sdisplMS[0] = 0;  
