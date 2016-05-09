@@ -2699,8 +2699,7 @@ int TOutput2D::WriteGMV(const char *name)
   dat.write(endgmv, 8);
   dat.close();
 
-  if(TDatabase::ParamDB->SC_VERBOSE > 0)
-    OutPut("wrote output into file: " << name << endl);
+  Output::print("wrote output into file: ", name);
 
   return 0;
 }
@@ -2768,7 +2767,6 @@ int TOutput2D::Write_ParVTK(
 // write the master pvtu file
   if(rank==0)
    {
-//    if( TDatabase::ParamDB->SC_VERBOSE > 0 )
     OutPut("writing output into "<< output_directory << "/" << VtkBaseName 
            <<subID << "*." <<img<< " xml vtk file"<< endl);
     os.seekp(std::ios::beg);

@@ -701,8 +701,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SC_N2_PARAM=1;
   ParamDB->SC_MINIT=0;
   ParamDB->SC_VAS_LAZ_DELTA=1.0;
-  ParamDB->SC_VERBOSE=1;
-  ParamDB->SC_VERBOSE_AMG=1;
   ParamDB->SC_ROW_EQUILIBRATION = 0;
 
   ParamDB->SC_BRAESS_SARAZIN_MATRIX = 2;
@@ -1474,8 +1472,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("SC_ROW_EQUILIBRATION: ", ParamDB->SC_ROW_EQUILIBRATION);
   printToFile("SC_BRAESS_SARAZIN_MATRIX: ", ParamDB->SC_BRAESS_SARAZIN_MATRIX);
   printToFile("SC_BRAESS_SARAZIN_ALPHA: ", ParamDB->SC_BRAESS_SARAZIN_ALPHA);
-  printToFile("SC_VERBOSE: ", ParamDB->SC_VERBOSE);
-  printToFile("SC_VERBOSE_AMG: ", ParamDB->SC_VERBOSE_AMG);
 
   printToFile("CHAR_L0: ", ParamDB->CHAR_L0);
   printToFile("D_VISCOSITY: ", ParamDB->D_VISCOSITY);

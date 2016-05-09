@@ -801,8 +801,7 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
 
   if (Additional==NULL)
   {
-    if (TDatabase::ParamDB->SC_VERBOSE>1)    
-      OutPut("do ILU decomposition" << endl);
+    Output::print<2>("do ILU decomposition");
     ILUDecomposition();
   }
 

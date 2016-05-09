@@ -6201,7 +6201,7 @@ TAuxParam2D *Parameters)
 #ifdef __3D__
   double z0, z1;
 #endif
-  out =  TDatabase::ParamDB->SC_VERBOSE;
+  out =  3; //todo hardcoded verbosity
   if(out>2)OutPut("DG "<<endl);
 
   // ########################################################################
@@ -7703,9 +7703,9 @@ TAuxParam2D *Parameters)
   double z0, z1;
 #endif
 
-  out=1;
+  out=2;
   
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if(out > 1)
     OutPut("CIP " << TDatabase::TimeDB->CURRENTTIME << endl);
   weak = TDatabase::ParamDB->WEAK_BC;
   if (weak>=1)

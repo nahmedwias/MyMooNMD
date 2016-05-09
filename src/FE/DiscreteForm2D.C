@@ -80,17 +80,13 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
   #endif 
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
-  {
-    cout << "---------------------" << endl;
-    cout << "number of spaces: " << N_Spaces << endl;
+	Output::print("---------------------");
+    Output::print("number of spaces: ", N_Spaces );
     for(i=0;i<N_Spaces;i++)
-      cout << i << " " << Needs2ndDerivatives[i] << endl;
-    cout << "---------------------" << endl;
-  }
-
+    	Output::print(i," ",Needs2ndDerivatives[i]);
+    Output::print("---------------------");
 }
 
 /** constructor with assembling using parameters */
@@ -149,20 +145,17 @@ TDiscreteForm2D::TDiscreteForm2D(char *name, char *description,
       Needs2ndDerivatives[j] = TRUE;
   }
 
-  #ifdef _MPI
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#ifdef _MPI
+int rank;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
-  #endif 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-  {
-    cout << "---------------------" << endl;
-    cout << "number of spaces: " << N_Spaces << endl;
-    for(i=0;i<N_Spaces;i++)
-      cout << i << " " << Needs2ndDerivatives[i] << endl;
-    cout << "---------------------" << endl;
-  }
+if(rank==0)
+#endif
+  Output::print("---------------------");
+  Output::print("number of spaces: ", N_Spaces );
+  for(i=0;i<N_Spaces;i++)
+  	Output::print(i," ",Needs2ndDerivatives[i]);
+  Output::print("---------------------");
 }
 
 TDiscreteForm2D::~TDiscreteForm2D()

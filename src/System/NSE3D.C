@@ -780,7 +780,7 @@ void NSE3D::output(int i)
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
   
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax(std::string("u1"));
     u2->PrintMinMax(std::string("u2"));
