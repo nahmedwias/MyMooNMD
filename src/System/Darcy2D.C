@@ -213,7 +213,7 @@ void Darcy2D::output(int i)
 		return;
 
   System_per_grid & s = this->systems.front();
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     s.u.PrintMinMax();
     s.p.PrintMinMax();

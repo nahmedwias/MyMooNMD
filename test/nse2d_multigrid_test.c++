@@ -89,7 +89,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_SMOOTHER_SADDLE= 4;
     TDatabase::ParamDB->SC_MG_TYPE_SADDLE= 0;
     TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE = 17;
-    TDatabase::ParamDB->SC_VERBOSE = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
@@ -235,7 +234,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_SMOOTHER_SADDLE= 2;
     TDatabase::ParamDB->SC_MG_TYPE_SADDLE= 0;
     TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE = 17;
-    TDatabase::ParamDB->SC_VERBOSE = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();

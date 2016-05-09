@@ -682,7 +682,7 @@ int TDomain::GenInitGrid()
 
 
      #ifdef _MPI
-     if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+     if(rank==0)
      #endif
       {
       if (BdParts[part]->GetBdComp(comp)->GetTofXY(
@@ -1041,8 +1041,7 @@ int TDomain::PS(const char *name, TCollection *Coll)
     return -1;
   }
 
-  if(TDatabase::ParamDB->SC_VERBOSE)
-    OutPut(" Generating postscript file " << name << endl);
+  Output::info("PS","Generating postscript file ", name);
 
   N_ = Coll->GetN_Cells();
   
@@ -1318,17 +1317,14 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
         reftol*=decrease_reftol_factor;
         coarsetol *=increase_coarsetol_factor;
       }
-      if(TDatabase::ParamDB->SC_VERBOSE > 1)
-        OutPut("total " << N_ << " changed " <<  changed << endl);
+      Output::print<2>("total ", N_, " changed ",  changed);
       it++;
     }
     if (ConfClosure)
     {
-      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
-        cout << " before " << endl;
+      Output::print<3>(" before ");
       MakeConfClosure();
-      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
-        cout << " after " << endl;
+      Output::print<3>(" after ");
       
       return 0;
     }
@@ -1370,10 +1366,8 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
           ;
         }
       }
-      if(TDatabase::ParamDB->SC_VERBOSE > 1)
-        OutPut("total " << N_ << " changed " <<  changed << " global error "
-               << eta << " error of refined cells " << sqrt(sum_local_errors)
-               << endl);
+      Output::stat<2>("total ", N_ , " changed ",  changed, " global error "
+                  , eta, " error of refined cells ", sqrt(sum_local_errors));
       if ((changed< min_changed)||(sqrt(sum_local_errors) <=
            fraction_of_error * eta))
       {                  // criteria not fulfilled, change tolerances
@@ -2066,8 +2060,7 @@ int TDomain::ConvertQuadToTri(int type)
 */
 TCollection *TDomain::GetCollection(TCollection *coll, int reference)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << " Domain::GetCollection with reference: " << reference << endl;
+  Output::info<2>("GetCollection", " Domain::GetCollection with reference: ", reference);
   int n_cells;
   TBaseCell **cells, *CurrCell;
   TCollection *subcoll;
@@ -2094,8 +2087,7 @@ TCollection *TDomain::GetCollection(TCollection *coll, int reference)
       j++;
     }
   }
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << "TDomain::GetCollection() creating collection, n_cells = " << n_cells << endl;
+  Output::print<2>("TDomain::GetCollection() creating collection, n_cells = ", n_cells);
   // create collection from an array of cells
   subcoll = new TCollection(n_cells, cells);
   
@@ -3393,9 +3385,9 @@ int TDomain::GenerateEdgeInfo()
    delete [] PointNeighb;
 
 #ifdef _MPI
-   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+   if(rank==0)
 #endif
-    OutPut("3D Mesh Edges Generated "<<endl);
+    Output::info("Domain.C","3D Mesh Edges Generated ");
 
   return 0;
 }

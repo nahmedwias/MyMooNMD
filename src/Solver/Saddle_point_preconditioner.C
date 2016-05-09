@@ -867,7 +867,7 @@ void Saddle_point_preconditioner::solve_velocity_block(const double* rhs,
 //       }
 //       else // a possible way to do the same without the amg library
 //       {
-//         bool suppress_output = true;//TDatabase::ParamDB->SC_VERBOSE < 3;
+//         bool suppress_output = true;
 //         std::ofstream * lStream;
 //         std::streambuf * lBufferOld;
 //         if(suppress_output)

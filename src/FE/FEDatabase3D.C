@@ -1156,7 +1156,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
         if (TDatabase::ParamDB->INTERNAL_QUAD_HEXA<N_terms*MaxPolynomialDegree)
         {
 #ifdef _MPI
-        if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+        if(rank==0)
 #endif
          {
           switch(N_terms*MaxPolynomialDegree)
@@ -1212,7 +1212,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
       if (TDatabase::ParamDB->INTERNAL_QUAD_TETRA<N_terms*MaxPolynomialDegree)
       {
 #ifdef _MPI
-      if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+      if(rank==0)
 #endif
        {
         switch(N_terms*MaxPolynomialDegree)

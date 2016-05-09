@@ -2504,9 +2504,8 @@ int TOutput3D::Write_ParVTK(
 // write the master pvtu file
   if(rank==0)
    {
-   if( TDatabase::ParamDB->SC_VERBOSE > 0 )
-    OutPut("writing output into "<< output_directory << "/" << VtkBaseName 
-           <<subID << "*." <<img<< " xml vtk file"<< endl);
+    Output::print("writing output into ", output_directory, "/", VtkBaseName
+           , subID, "*.", img, " xml vtk file");
     os.seekp(std::ios::beg);
     os << output_directory << "/" << VtkBaseName << subID;
     if(img<10) os << ".0000"<<img<<".pvtu" << ends;

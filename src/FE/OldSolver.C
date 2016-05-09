@@ -305,7 +305,7 @@ void SetAMGDefaults(AMG_CoarsenContext &cc, AMG_SolverContext &sc)
   sc.row_equilibration=TDatabase::ParamDB->SC_ROW_EQUILIBRATION;
   sc.braess_sarazin_matrix=TDatabase::ParamDB->SC_BRAESS_SARAZIN_MATRIX;
   sc.braess_sarazin_alpha=TDatabase::ParamDB->SC_BRAESS_SARAZIN_ALPHA;
-  sc.verbose=TDatabase::ParamDB->SC_VERBOSE_AMG;
+  sc.verbose=0;
 }
 
 
@@ -314,6 +314,8 @@ void SetAMGDefaults(AMG_CoarsenContext &cc, AMG_SolverContext &sc)
 /*******************************************************************/
 void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol)
 {
+
+	int verbosity = 0;
   AMG_CoarsenContext cc;
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[2];
@@ -374,7 +376,7 @@ memory[0]=memory[1]=memory[2]=0.;
   if (TDatabase::ParamDB->INTERNAL_SORT_AMG)
   {
       // sort matrix, diagonal entry
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       OutPut("AMG solver - reordering matrix structure, diagonal first"<< endl);
       changes = new int[n];
       for (i=0;i<n;i++)
@@ -435,7 +437,7 @@ memory[0]=memory[1]=memory[2]=0.;
   // redo reordering of the matrix, default
   if (TDatabase::ParamDB->INTERNAL_SORT_AMG)
   {
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       OutPut("AMG solver - reordering matrix structure redone"<< endl);
       for (i=0;i<n;i++)
       {                              // first entry in row
@@ -474,6 +476,9 @@ memory[0]=memory[1]=memory[2]=0.;
 /*******************************************************************/
 void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
 {
+	int verbosity = 0;
+	Output::warn("OldSolver", "Use any of the new solvers instead!");
+
   AMG_CoarsenContext cc;
   AMG_SolverContext sc;
   AMG_MATRIX *A0,*B[2];
@@ -548,7 +553,7 @@ void OldSolver(TSquareMatrix *matrix, double *rhs, double *sol, int N_Rhs)
   B[1] = B[0];
 
   // sort matrix, diagonal entry
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
   OutPut("AMG solver - reordering matrix structure, diagonal first"<< endl);
   changes = new int[n];
 

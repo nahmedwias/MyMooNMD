@@ -504,8 +504,6 @@ struct TParaDB
   int    SC_MINIT;
   double SC_VAS_LAZ_DELTA;
   int    SC_ROW_EQUILIBRATION;
-  int    SC_VERBOSE;
-  int    SC_VERBOSE_AMG;
 
   int    SC_BRAESS_SARAZIN_MATRIX;
   double SC_BRAESS_SARAZIN_ALPHA;

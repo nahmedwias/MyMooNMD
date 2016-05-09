@@ -165,6 +165,9 @@ int PointInCell(TBaseCell *cell, double x_coord, double y_coord)
 void SwapEdges(const char *name, TCollection *coll,
 TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
 {
+
+	int verbosity = 3; //hardcoded verbosity
+
   int i, ii, j, jj, k, ijk, N_Cells, N_Edges, found, common_ver;
   int common_vert0[2], common_vert1[2], not_common_0, not_common_1;
   int index0, index1, N_Edges_n, N_Edges_nn, me_found;
@@ -255,7 +258,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
     if ((ver_below_strip)&&(ver_above_strip))
     {
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       {
         OutPut(found << " " << i << " cell: (" << x[0] <<","<<y[0]<<"), ("
           << x[1] <<","<<y[1]<< "), ("
@@ -279,21 +282,21 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     refdesc=cell->GetRefDesc();                   // get refinement descriptor
     refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
     N_Edges = cell->GetN_Edges();
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
       OutPut("cell " << i);
     for (j=0;j<N_Edges; j++)
     {
       ver[j] = cell->GetVertex(j);
       x[j] = ver[j]->GetX();
       y[j] = ver[j]->GetY();
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(" ; " << x[j] << " " << y[j]);
                                                   // neighbour cell
       cell_n=cell->GetJoint(j)->GetNeighbour(cell);
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(" neigh " << cell_n->GetClipBoard());
     }
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
     {
       OutPut(endl);
       for (j=0;j<N_Edges; j++)
@@ -331,14 +334,14 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       // found mesh cell with two common vertices
       if (common_ver == 2)
       {
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" common ");
         // compute coordinates of vertices
         for (j=0;j<N_Edges; j++)
         {
           x_n[j] = ver_n[j]->GetX();
           y_n[j] = ver_n[j]->GetY();
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut(" ; " << x_n[j] << " " << y_n[j]);
         }
         // find the vertices which are not common
@@ -358,7 +361,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             break;
           }
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" " << not_common_0 << " " << not_common_1);
         // check if this is the correct pair
         r = (x[not_common_0] - mp_x)*(x[not_common_0] - mp_x)+
@@ -368,19 +371,19 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         r_n = (x[(not_common_0+1)%3] - mp_x)*(x[(not_common_0+1)%3] - mp_x)+
           (y[(not_common_0+1)%3] - mp_y)*(y[(not_common_0+1)%3] - mp_y);
         r_n = sqrt(r_n);
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
           OutPut(" r " << r << " " << r_n << endl);
         // wrong pair
         //if (fabs(r-r_n)>1e-6)
         if (((r<av_rad) && (r_n>=av_rad)) || ((r>=av_rad) && (r_n<av_rad)))
         {
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut("wrong "  << r << " " << r_n << endl);
           continue;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut("Pair " <<  cell->GetClipBoard()
               << " " << cell_n->GetClipBoard() <<
               " not common " << not_common_0 <<
@@ -522,7 +525,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           if (((r>=av_rad)&&(r_n>=av_rad)) || ((r<av_rad)&&(r_n<av_rad)))
           {
             index0 = j;
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
               OutPut(r << " "  << not_common_0 << " "  << r_n << " "<< j << endl);
             break;
           }
@@ -548,14 +551,14 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             break;
           }
         }
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut("index " << index0 << " " << index1 << endl);
         }
         // set new coordinates to vertices
         cell->SetVertex(index0, ver_n[not_common_1]);
         cell_n->SetVertex(index1, ver[not_common_0]);
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           for (j=0;j<N_Edges; j++)
           {
@@ -634,7 +637,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
         cell_n= joint->GetNeighbour(cell);
         if (cell_n == NULL)
           continue;
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut(i <<  " my neigh " << j << " is " <<  -cell_n->GetClipBoard()-1 <<
             " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<
@@ -653,7 +656,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           cell_nn = joint_n->GetNeighbour(cell_n);
           if (cell_nn == NULL)
             continue;
-          if (TDatabase::ParamDB->SC_VERBOSE>1)
+          if (verbosity>1)
             OutPut(" " << k << " : " <<  -cell_nn->GetClipBoard()-1 << " ");
           // this is the original joint
           if (cell_nn == cell)
@@ -665,7 +668,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             x_n[1] = cell_n->GetVertex(TmpEdVer_n[2*k+1])->GetX();
             y_n[1] = cell_n->GetVertex(TmpEdVer_n[2*k+1])->GetY();
 
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
             {
               OutPut(i << " " << j << " " << k << " neigh found " << x[0] << " " << x_n[0]  << " "
                 << x[1] << " " << x_n[1] << " "  << y[0] << " " << y_n[0]  << " "
@@ -685,7 +688,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
           // original mesh cell is not found
           if (((cell_nn == cell)&&(!found))||((k==N_Edges_n-1)&&(! me_found)))
           {
-            if (TDatabase::ParamDB->SC_VERBOSE>1)
+            if (verbosity>1)
               OutPut("cell " << i << " does not posses correct neighbour at joint " << j <<
                 " neigh " << -cell_n->GetClipBoard()-1 << " not at joint " << k <<
                 " " << me_found << endl);
@@ -739,7 +742,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
                   OutPut("max_joint_changes too small !!!" <<endl);
                   exit(4711);
                 }
-                if (TDatabase::ParamDB->SC_VERBOSE>1)
+                if (verbosity>1)
                   OutPut(i << " " << j << "  correct neighbour is cell " <<
                     -cell_nn->GetClipBoard()-1 << " joint " << jj << " " <<
                     -cell->GetJoint(j)->GetNeighbour(cell)->GetClipBoard()-1 << endl);
@@ -759,7 +762,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
             exit(4711);
             }*/
 
-        if (TDatabase::ParamDB->SC_VERBOSE>1)
+        if (verbosity>1)
         {
           OutPut(i <<  " my neigh after " << j << " is " <<
             " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<
@@ -769,7 +772,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
   //WriteGridGnu(name,coll);
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
     OutPut(endl);
 
   // condense the information to the changes of the joints
@@ -793,7 +796,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
   {
     for (i=0;i<N_joint_changes;i++)
     {
@@ -827,7 +830,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     }
   }
 
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
+  if (verbosity>1)
   {
     for (i=0;i<N_joint_changes_1;i++)
     {
@@ -859,7 +862,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     {
       joints[ii] = joint;
       ii++;
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
         OutPut(ii);
     }
     joint = coll->GetCell(joint_changes[i][2])->GetJoint(joint_changes[i][3]);
@@ -876,7 +879,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       continue;
     joints[ii] = joint;
     ii++;
-    if (TDatabase::ParamDB->SC_VERBOSE>1)
+    if (verbosity>1)
       OutPut(ii);
   }
 
@@ -913,7 +916,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
       cell_n= joint->GetNeighbour(cell);
       if (cell_n == NULL)
         continue;
-      if (TDatabase::ParamDB->SC_VERBOSE>1)
+      if (verbosity>1)
       {
         OutPut(i <<  " my neigh " << j << " is " <<  -cell_n->GetClipBoard()-1 <<
           " " << -joint->GetNeighbour(0)->GetClipBoard()-1 <<

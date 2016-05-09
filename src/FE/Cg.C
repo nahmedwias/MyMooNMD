@@ -89,7 +89,11 @@ int TCg::Iterate (TSquareMatrix **sqmat,
 TMatrix **mat, double *sol,
 double *rhs)
 {
-  int maxite = maxit, i, j, verbose = TDatabase::ParamDB->SC_VERBOSE, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
+  Output::warn("TCg::Iterate", "Use new FGMRES implementation instead.");
+
+  int verbose =2;
+
+  int maxite = maxit, i, j, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
   double t1, t2, dnorm, dnorm0, dnormlast, rho,rho_last=1.0,alpha, beta, sp;
   int flexible = TDatabase::ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
 
@@ -98,8 +102,7 @@ double *rhs)
   int version = 0;
 
   t1 = GetTime();
-  if (verbose>1)
-    OutPut("Entering cg" << endl);
+  Output::print("Entering cg");
 
   matvecdefect(sqmat, mat, sol, rhs, r);
   /* norm of residual */
@@ -118,8 +121,7 @@ double *rhs)
     }
   }
 
-  if (verbose>0)
-    OutPut("cg Iteration " << 0 << " " << dnorm << endl);
+  Output::print("cg Iteration ", 0, " ", dnorm);
 
   //CG-Algorithm out of the Book of Saad
   if(version)
