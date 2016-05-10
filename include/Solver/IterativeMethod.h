@@ -3,6 +3,7 @@
 
 #include <utility> // std::pair
 #include <memory> // std::shared_ptr
+#include <string>
 #include <Preconditioner.h>
 
 /** @brief an abstract base class to describe iterative methods for solving

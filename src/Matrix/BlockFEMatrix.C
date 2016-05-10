@@ -22,6 +22,7 @@ BlockFEMatrix::BlockFEMatrix(
     ansatz_spaces_columnwise_(spaces),
     pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
+  Output::print<3>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
   for(auto sp : spaces)
@@ -876,6 +877,9 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
     std::pair<size_t,size_t> upper_left,
     std::pair<size_t,size_t> lower_right) const
 {
+  for (unsigned int i=0; i<test_spaces_rowwise_.size(); i++){
+    Output::print(" space ", i, " ",test_spaces_rowwise_[i]->GetN_ActiveDegrees());
+  }
   //let base class do as much work as possible
   std::shared_ptr<TMatrix> sub_cmat =
       this->BlockMatrix::get_combined_submatrix(upper_left, lower_right);

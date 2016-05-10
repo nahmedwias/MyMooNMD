@@ -75,8 +75,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
     TDatabase::ParamDB->SC_VERBOSE = 0; // supress solver output
     TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
-
-
+    
     // the domain is initialised with default description and default
     // initial mesh
 	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");

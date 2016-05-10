@@ -45,8 +45,8 @@ int main(int argc, char* argv[])
 
   // the domain is initialised with default description and default
   // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-
+  domain.Init("Default_UnitSquare", "UnitSquare");
+  
   // refine grid up to the coarsest level
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(int i=0; i < n_ref; i++)
@@ -56,7 +56,6 @@ int main(int argc, char* argv[])
 
   //collection from finest cell level
   TCollection *coll = domain.GetCollection(It_EQ, 0);
-
   // Create FeSpaces2D to fiddle around with
 
   size_t first_ansatz_order = 2;
@@ -66,7 +65,7 @@ int main(int argc, char* argv[])
   TFESpace2D first_fe_space(coll, (char*)"first_fe_space",
                             (char*)"first_fe_space", //may act as velo space dummy
                             BoundConditionNSE, first_ansatz_order, nullptr);
-
+  
   TFESpace2D second_fe_space(coll, (char*)"second_fe_space",
                              (char*)"second_fe_space", //may act as pressure space dummy
                              BoundCondition_FEM_FCT, second_ansatz_order, nullptr);
@@ -74,15 +73,12 @@ int main(int argc, char* argv[])
   TFESpace2D third_fe_space(coll, (char*)"third_fe_space",
                             (char*)"third_fe_space", //yet another space
                             BoundConditionNSE, third_ansatz_order, nullptr);
-
   {
     //test default constructor
     BlockFEMatrix zero_matrix;
     zero_matrix.check_coloring();
     zero_matrix.check_pointer_types();
   }
-
-
   { // test standard methods with custom-made 2x2 FEMatrix, including
     // one transposed storage and one transposed-storage memory hack
 
