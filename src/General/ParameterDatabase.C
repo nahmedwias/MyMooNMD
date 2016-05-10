@@ -770,7 +770,12 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "Stokes,  5: stationary Navier-Stokes,  6: time-dependent "
          "Navier-Stokes.",
          (size_t)0, (size_t)6);
-  
+
+  db.add("output_write_ps", false,
+	 "Draw a postscript file of the domain. This only works in two space "
+	 "dimensions. Usually this is used in the main program.",
+	 {true,false});
+
   db.add("verbosity", (size_t)1,
          "Set the verbosity of ParMooN. The higher the number, the more will "
          "output you will get. Such output will be written to console and the "
@@ -855,10 +860,10 @@ ParameterDatabase ParameterDatabase::default_output_database()
 			  "of a system class will produce VTK output or not.",
 			  {true,false});
 
-	  db.add("output_write_ps", false,
-	         "Draw a postscript file of the domain. This only works in two space "
-	         "dimensions. Usually this is used in the main program.",
-			 {true,false});
+	  db.add("output_write_case", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce CASE output or not.",
+			  {true,false});
 
 	  db.add("output_compute_errors", true,
 	         "Do or do not compute errors after computing a solution. This makes "
@@ -867,14 +872,18 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "norms, e.g. the L^2-norm of the solution.",
 			 {true,false});
 
-	  db.add("output_vtk_directory", std::string("."),
-	         "This directory is where the VTK output is written. This "
+	  db.add("output_directory", std::string("."),
+	         "This directory is where the output is written. This "
 	         "directory will be created, if it does not exist already. Files in "
 	         "this directory will be overwritten without any warning.");
 
 	  db.add("output_basename", std::string("parmoon"),
 	         "This string is prepended to most files written by ParMooN. "
-	         "Especially this includes vtk-files ");
+	         "This includes also vtk- and case-files");
+
+	  db.add("steps_per_output", 1,
+	         "This integer specifies how many (time) steps are performed "
+		 "before writing the results ");
 
 	  return db;
 }

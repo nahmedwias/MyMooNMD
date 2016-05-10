@@ -12,10 +12,10 @@
 #ifndef __POSTPROC2D__
 #define __POSTPROC2D__
 
-#include <FEVectFunct2D.h>
-#include <Vertex.h>
 #include <vector>
 
+#include <FEVectFunct2D.h>
+#include <Vertex.h>
 #include <ParameterDatabase.h>
 
 class PostProcessing2D
@@ -27,6 +27,9 @@ class PostProcessing2D
   ///@brief base name of output files
   std::string testcaseName;
 
+  ///@brief verbosity level
+  unsigned int verbosity;
+  
   ///@brief file formats option
   bool writeVTK;
   bool writeCASE;
@@ -64,7 +67,7 @@ class PostProcessing2D
   
  public:
   ///@brief default constructor: parameter are copied from Database
-  PostProcessing2D();
+  PostProcessing2D(const ParameterDatabase& param_db);
 
   /** @todo constructor that allows to specify the basename
       This is useful to create to output objects in the

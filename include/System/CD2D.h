@@ -26,6 +26,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <PostProcessing2D.h>
 
 class CD2D
 {
@@ -102,7 +103,10 @@ class CD2D
      * CD2D::solver object.
      */
     ParameterDatabase db;
-    
+
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
+
     /** @brief a solver object which will solve the linear system
      * 
      * Storing it means that for a direct solver we also store the factorization

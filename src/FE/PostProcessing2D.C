@@ -1,5 +1,4 @@
 #include <Database.h>
-#include <MainUtilities.h>
 #include <FEDatabase2D.h>
 #include <PostProcessing2D.h>
 #include <QuadAffin.h>
@@ -8,8 +7,8 @@
 
 using namespace std;
 
-PostProcessing2D::PostProcessing2D(){
-  //  init(param_db);
+PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db){
+  init(param_db);
 };
 
 // Possible variant for handling more output objects in a single problem
@@ -22,20 +21,26 @@ PostProcessing2D::PostProcessing2D(){
 
 void PostProcessing2D::init(const ParameterDatabase& param_db)
 {
-  writeVTK = param_db["write_vtk"];
-  writeCASE = TDatabase::ParamDB->WRITE_CASE;
+  ParameterDatabase db = ParameterDatabase::default_output_database();
+  db.merge(param_db,false);
+  
+  writeVTK = db["output_write_vtk"];
+  writeCASE = db["output_write_case"];;
 
-  string tfile = param_db["base_name"];
+  string tfile = db["output_basename"];
   testcaseName=tfile;
-  string tdir = param_db["output_directory"];
+  string tdir = db["output_directory"];
   testcaseDir=tdir;
 
+  period = 1;//db["steps_per_output"];
+  
   Coll=NULL;
-    
+
+  ParameterDatabase tdb = ParameterDatabase::default_time_database();
+  tdb.merge(param_db,false);
   // for time dependent problems
-  dt = param_db["time_step_length"];
-  t0 = param_db["time_start"];
-  period = TDatabase::TimeDB->STEPS_PER_IMAGE;
+  dt = tdb["time_step_length"];
+  t0 = tdb["time_start"];
   timeValues.clear();
   
 }
@@ -310,7 +315,7 @@ void PostProcessing2D::writeVtk(const char *name)
 
   dat << "# vtk DataFile Version 4.2" << endl;
   dat << "file created by ParMooN"
-      << " Time < " << TDatabase::TimeDB->CURRENTTIME <<" >" << " L < " << TDatabase::ParamDB->REACTOR_P29 <<" >" <<endl;
+      << " Time < " << TDatabase::TimeDB->CURRENTTIME <<" >" << endl;
 
   dat << "ASCII" << endl;
   dat << "DATASET UNSTRUCTURED_GRID" << endl;
@@ -681,9 +686,6 @@ void PostProcessing2D::writeVtk(const char *name)
   delete [] Coords;
 
   dat.close();
-  //   cout << endl;
-  if( TDatabase::ParamDB->SC_VERBOSE > 0 )
-    OutPut("wrote output into vtk file: " << name << endl);
 
 
 }
@@ -1079,7 +1081,6 @@ void PostProcessing2D::writeCaseVars(int iter)
 
   string ensight_type;
   int nParts = 1;
-  int nVE = Coll->GetCell(0)->GetN_Vertices();
   int n;
   ///@todo do not recreate lists if they exist already
   Coll->createElementLists();
@@ -1171,7 +1172,7 @@ void PostProcessing2D::writeCaseVars(int iter)
 	
 	z = 0.;
 	if (nComp>2) {
-	  double z = uP1vect[2][k];
+	  z = uP1vect[2][k];
 	}
 	vctf.setf(ios_base::scientific);	
 	vctf.precision(5);	
