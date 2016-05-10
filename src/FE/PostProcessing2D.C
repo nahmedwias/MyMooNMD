@@ -9,7 +9,7 @@
 using namespace std;
 
 PostProcessing2D::PostProcessing2D(){
-  init();
+  //  init(param_db);
 };
 
 // Possible variant for handling more output objects in a single problem
@@ -20,14 +20,14 @@ PostProcessing2D::PostProcessing2D(){
 //};
 
 
-void PostProcessing2D::init()
+void PostProcessing2D::init(const ParameterDatabase& param_db)
 {
   writeVTK = TDatabase::ParamDB->WRITE_VTK;
   writeCASE = TDatabase::ParamDB->WRITE_CASE;
 
-  string tfile(TDatabase::ParamDB->BASENAME);
+  string tfile = param_db["base_name"];
   testcaseName=tfile;
-  string tdir(TDatabase::ParamDB->OUTPUTDIR);
+  string tdir = param_db["output_directory"];
   testcaseDir=tdir;
 
   Coll=NULL;

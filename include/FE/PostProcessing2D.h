@@ -16,6 +16,8 @@
 #include <Vertex.h>
 #include <vector>
 
+#include <ParameterDatabase.h>
+
 class PostProcessing2D
 {
  protected:
@@ -73,7 +75,7 @@ class PostProcessing2D
   ~PostProcessing2D(){};
   
   ///@brief initialize the class parameters from the Database
-  void init(); 
+  void init(const ParameterDatabase& param_db); 
 
   ///@brief set a different testcase name (e.g. to use multiple ouput sets)
   void setTestcaseName(std::string basename);
