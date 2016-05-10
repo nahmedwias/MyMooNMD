@@ -102,7 +102,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_CD2D& ex, int reference_id)
  : db(get_default_TCD2D_parameters()), systems(), example(ex), 
- multigrid(nullptr), errors(5, 0.0),timeDependentOutput()
+ multigrid(nullptr), errors(5, 0.0),timeDependentOutput(param_db)
 {
   db.merge(param_db);
   this->set_parameters();

@@ -68,7 +68,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            const Example_CD2D& example, int reference_id)
  : systems(), example(example), multigrid(nullptr), 
-   db(get_default_CD2D_parameters()), solver(param_db)
+   db(get_default_CD2D_parameters()), solver(param_db), outputWriter(param_db)
 {
   this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();
@@ -248,9 +248,6 @@ void CD2D::solve()
 /** ************************************************************************ */
 void CD2D::output(int i)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-	if(no_output)
-		return;
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
@@ -258,10 +255,8 @@ void CD2D::output(int i)
   fe_function.PrintMinMax();
   
   // write solution to a vtk file on in case-format
-  PostProcessing2D Output;
-  Output.init(this->db);
-  Output.addFEFunction(&fe_function);
-  Output.write(i,0.0);
+  outputWriter.addFEFunction(&fe_function);
+  outputWriter.write(i,0.0);
 
   /*
   // implementation with the old class TOutput2D
@@ -286,7 +281,7 @@ void CD2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(this->db["compute_errors"])
+  if(this->db["output_compute_errors"])
   {
     double errors[5];
     TAuxParam2D aux;
