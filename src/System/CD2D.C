@@ -254,7 +254,7 @@ void CD2D::output(int i)
   
   // write solution to a vtk file on in case-format
   PostProcessing2D Output;
-  Output.init();
+  Output.init(this->db);
   Output.addFEFunction(&fe_function);
   Output.write(i,0.0);
 
