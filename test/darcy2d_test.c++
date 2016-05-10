@@ -36,7 +36,7 @@
 // the array
 void compareErrors(const Darcy2D& darcy2d, std::array<double, 5> errors)
 {
-  const double eps = 1e-9;
+  const double eps = 2e-9;
   
   // check the errors
   if( fabs(darcy2d.getL2VelocityError() - errors[0]) > eps )

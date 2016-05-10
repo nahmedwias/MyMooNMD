@@ -22,6 +22,7 @@
 #include <NodalFunctional2D.h>
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
+#include <AuxParam2D.h>
 
 #include <InterfaceJoint.h>
 #include <IsoBoundEdge.h>
@@ -30,7 +31,6 @@
 
 #include <string.h>
 #include <fstream>
-#include <stdlib.h>
 #include <sstream>
 #include <MooNMD_Io.h>
 // #include <malloc.h>
@@ -48,7 +48,8 @@ void OnlyDirichlet(int i, double t, BoundCond &cond)
 TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, char *name,
 char *description, double *values, int length)
 {
-
+  Output::print<3>("Constructor of TFEFunction2D");
+  
   FESpace2D=fespace2D;
  
   Name=strdup(name); // this calls malloc, so call 'free' instead of 'delete'
@@ -2836,6 +2837,111 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
 
 
 
+void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
+{
+  TCollection* coll = FESpace2D->GetCollection();
+  int nPoints = coll->NodesReferences.size();
+  if (nPoints==0)
+  {
+    coll->createElementLists();
+    nPoints = coll->NodesReferences.size();
+  }
+  //cout << "  TFEFunction2D::computeNodeValues number of points: " << nPoints << endl;
+  solutionAtNode.resize(nPoints,0);
+  std::vector<int> WArray(nPoints);
+  WArray.clear();
+  
+  // coordinates of reference element (2D)
+  double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
+  double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
+
+  int *GlobalNumbers, *BeginIndex, *DOF;
+  GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  BeginIndex = FESpace2D->GetBeginIndex();
+
+  // compute FE type on first cell
+  ///@todo remove this?
+  TBaseCell *cell = coll->GetCell(0);
+  FE2D FE_ID;
+  FE_ID = FESpace2D->GetFE2D(0, cell);
+  TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+  int N_LocDOF;
+  double BFValues[MaxN_BaseFunctions2D];
+
+
+  // create a list with all local vertices
+  /**
+   *  @todo this is needed to assign to each local vertex a global DOF
+   * it should be done in a better way 
+   * (e.g. adding a vector of global DOF to each cell, 
+   * or adding the localVertices list to the Collection class)
+  */
+  std::vector<TVertex*> localVertices;
+  localVertices.resize(0);
+  for(int i=0;i<coll->GetN_Cells();i++) {
+    int k = coll->GetCell(i)->GetN_Vertices();
+    for(int j=0; j<k; j++) {
+      localVertices.push_back(coll->GetCell(i)->GetVertex(j));
+    }
+  }
+  std::sort(localVertices.begin(),localVertices.end());
+  // remove duplicate
+  auto it = std::unique(localVertices.begin(), localVertices.end());
+  localVertices.resize(std::distance(localVertices.begin(), it));
+
+  
+  for(int i=0;i<coll->GetN_Cells();i++) {
+    
+    cell = coll->GetCell(i);
+    int nLocalVertices = cell->GetN_Vertices();
+      
+    FE_ID = FESpace2D->GetFE2D(i, cell);
+    bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+    N_LocDOF = bf->GetDimension();
+    DOF = GlobalNumbers+BeginIndex[i];
+    
+    for(int j=0; j<nLocalVertices; j++) {
+
+      double xi, eta;
+      // compute coordinates of reference element
+      /// @attention it works only for tria and quads in 2D
+      switch(nLocalVertices) {
+      case 3: 
+	xi = TriaCoords[2*j];
+	eta = TriaCoords[2*j+1];
+	break;
+      case 4:
+	xi = QuadCoords[2*j];
+	eta = QuadCoords[2*j+1];
+	break;
+      }
+      
+      bf->GetDerivatives(D00, xi, eta, BFValues);
+
+      // compute nodal value of FE function
+      double value = 0;
+      for(int l=0;l<N_LocDOF;l++) {
+	value += BFValues[l] * Values[DOF[l]];
+      }
+      TVertex *current = cell->GetVertex(j);
+      for (unsigned int s=0; s<localVertices.size(); s++) {
+	if(current == localVertices[s]) {
+	  solutionAtNode[s] += value;
+	  WArray[s]++;
+	  break;
+	}
+      }
+
+    } // for j
+  }  // for(i=0;i<nelements;i++) {
+  
+  for(unsigned int i=0;i<nPoints;i++) {
+    if(WArray[i]!=0.) {
+      solutionAtNode[i] /= WArray[i];
+    }
+  }
+
+}
 
 
 
