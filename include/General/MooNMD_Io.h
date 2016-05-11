@@ -254,25 +254,25 @@ namespace Output
     }
   }
   
-  template<unsigned int verbosity = 1, typename ... Arguments>
+  template<unsigned int verbosity, typename ... Arguments>
   void warn(std::string context, Arguments const& ... rest)
   {
 	  print<verbosity>("WARNING (",context,"): ", rest ...);
   }
 
-  template<unsigned int verbosity = 1, typename ... Arguments>
+  template<unsigned int verbosity, typename ... Arguments>
   void stat(std::string context, Arguments const& ... rest)
   {
 	  print<verbosity>("STATS (",context,"): ", rest ...);
   }
 
-  template<unsigned int verbosity = 1, typename ... Arguments>
+  template<unsigned int verbosity, typename ... Arguments>
   void info(std::string context, Arguments const& ... rest)
   {
 	  print<verbosity>("INFO (",context,"): ", rest ...);
   }
 
-  template<unsigned int verbosity = 1, typename ... Arguments>
+  template<unsigned int verbosity, typename ... Arguments>
   void dash(Arguments const& ... rest)
   {
 	  print<verbosity>(" > ", rest ...);
