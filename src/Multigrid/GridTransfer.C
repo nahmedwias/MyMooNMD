@@ -25,8 +25,9 @@
 /** prolongate */
 void GridTransfer::Prolongate(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    const std::vector<double>& CoarseFunction,
-    std::vector<double>& FineFunction)
+    const double* CoarseFunction, size_t n_coarse_dofs,
+    double* FineFunction, size_t n_fine_dofs
+)
 {
   int i,j,k,l;
   TBaseCell *cell, *parent;
@@ -64,12 +65,12 @@ void GridTransfer::Prolongate(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if ((int)CoarseFunction.size() != N_CoarseDOFs)
+  if ((int)n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", N_CoarseDOFs);
-  if ((int)FineFunction.size() != N_FineDOFs)
+             n_coarse_dofs, " != ", N_CoarseDOFs);
+  if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", N_FineDOFs);
+             n_fine_dofs, " != ", N_FineDOFs);
 
   //cout << "N_FineCells: " << N_FineCells << endl;
   //cout << "N_CoarseCells: " << N_CoarseCells << endl;
@@ -77,7 +78,7 @@ void GridTransfer::Prolongate(
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
 
-  std::fill(FineFunction.begin(), FineFunction.end(), 0.0);
+  memset(FineFunction, 0, SizeOfDouble*N_FineDOFs);
 
   // set fine grid clipboard to -1
   for(i=0;i<N_FineCells;i++)
@@ -246,8 +247,8 @@ void GridTransfer::Prolongate(
 /** defect restriction from level+1 to level */
 void GridTransfer::DefectRestriction(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction)
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
   TBaseCell *cell, *parent;
@@ -284,22 +285,24 @@ void GridTransfer::DefectRestriction(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if ((int)CoarseFunction.size() != N_CoarseDOFs)
+  if ((int)n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", N_CoarseDOFs);
-  if ((int)FineFunction.size() != N_FineDOFs)
+             n_coarse_dofs, " != ", N_CoarseDOFs);
+  if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", N_FineDOFs);
+             n_fine_dofs, " != ", N_FineDOFs);
 
   //Make a working copy of FineFunction
-  std::vector<double> FineFunction_copy(FineFunction);
+  std::vector<double> FineFunction_copy(N_FineDOFs);
+  std::copy(FineFunction, FineFunction+N_FineDOFs, FineFunction_copy.begin());
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   //cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
-  std::fill(CoarseFunction.begin(), CoarseFunction.end(), 0.0);
+
+  memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
 
   // set fine grid clipboard to -1
   for(i=0;i<N_FineCells;i++)
@@ -475,8 +478,8 @@ void GridTransfer::DefectRestriction(
 /** function restriction from level+1 to level */
 void GridTransfer::RestrictFunction(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction)
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
   TBaseCell *cell, *parent;
@@ -512,19 +515,20 @@ void GridTransfer::RestrictFunction(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if ((int)CoarseFunction.size() != N_CoarseDOFs)
+  if ((int)n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", N_CoarseDOFs);
-  if ((int)FineFunction.size() != N_FineDOFs)
+             n_coarse_dofs, " != ", N_CoarseDOFs);
+  if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", N_FineDOFs);
+             n_fine_dofs, " != ", N_FineDOFs);
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   // cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_CoarseDOFs];
   memset(aux, 0, SizeOfDouble*N_CoarseDOFs);
-  std::fill(CoarseFunction.begin(), CoarseFunction.end(), 0.0);
+
+  memset(CoarseFunction, 0, SizeOfDouble*n_coarse_dofs);
 
   // set fine grid clipboard to -1
   for(i=0;i<N_FineCells;i++)
@@ -709,8 +713,8 @@ void GridTransfer::RestrictFunction(
 /** prolongate */
 void GridTransfer::Prolongate(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    const std::vector<double>& CoarseFunction,
-    std::vector<double>& FineFunction)
+    const double* CoarseFunction, size_t n_coarse_dofs,
+    double* FineFunction, size_t n_fine_dofs)
 
 {
   int i,j,k,l;
@@ -748,12 +752,12 @@ void GridTransfer::Prolongate(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if (CoarseFunction.size() != CoarseSpace.GetN_DegreesOfFreedom())
+  if (n_coarse_dofs != CoarseSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", CoarseSpace.GetN_DegreesOfFreedom());
-  if (FineFunction.size() != N_FineDOFs)
+             n_coarse_dofs, " != ", CoarseSpace.GetN_DegreesOfFreedom());
+  if (n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", N_FineDOFs);
+             n_fine_dofs, " != ", N_FineDOFs);
 
   //cout << "N_FineCells: " << N_FineCells << endl;
   //cout << "N_CoarseCells: " << N_CoarseCells << endl;
@@ -761,7 +765,7 @@ void GridTransfer::Prolongate(
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
 
-  std::fill(FineFunction.begin(), FineFunction.end(), 0.0);
+  memset(FineFunction, 0, SizeOfDouble*N_FineDOFs);
 
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i,j,k,l,cell,DOF,FineId,FineElement,FineBF,N_Fine, \
@@ -986,8 +990,8 @@ void GridTransfer::Prolongate(
 
 void GridTransfer::DefectRestriction(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction)
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
   TBaseCell *cell, *parent;
@@ -1025,24 +1029,24 @@ void GridTransfer::DefectRestriction(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if (CoarseFunction.size() != N_CoarseDOFs)
+  if (n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", N_CoarseDOFs);
-  if (FineFunction.size() != N_FineDOFs)
+             n_coarse_dofs, " != ", N_CoarseDOFs);
+  if (n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", N_FineDOFs);
+             n_fine_dofs, " != ", N_FineDOFs);
 
   //Make a working copy of FineFunction
-  std::vector<double> FineFunction_copy(FineFunction);
+  std::vector<double> FineFunction_copy(N_FineDOFs);
+  std::copy(FineFunction, FineFunction+N_FineDOFs, FineFunction_copy.begin());
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   //cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
-  std::fill(CoarseFunction.begin(), CoarseFunction.end(), 0.0);
 
-
+  memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
 
 
 #ifdef _HYBRID
@@ -1262,8 +1266,8 @@ void GridTransfer::DefectRestriction(
 
 void GridTransfer::RestrictFunction(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction)
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
   TBaseCell *cell, *parent;
@@ -1302,19 +1306,20 @@ void GridTransfer::RestrictFunction(
 
 
   //Check if the dimensions fit the vector lengths.
-  if (CoarseFunction.size() != N_CoarseDOFs)
+  if (n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
-             CoarseFunction.size(), " != ", N_CoarseDOFs);
-  if (FineFunction.size() != FineSpace.GetN_DegreesOfFreedom())
+             n_coarse_dofs, " != ", N_CoarseDOFs);
+  if (n_fine_dofs != FineSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of FineFunction: ",
-             FineFunction.size(), " != ", FineSpace.GetN_DegreesOfFreedom());
+             n_fine_dofs, " != ", FineSpace.GetN_DegreesOfFreedom());
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   // cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_CoarseDOFs];
   memset(aux, 0, SizeOfDouble*N_CoarseDOFs);
-  std::fill(CoarseFunction.begin(), CoarseFunction.end(), 0.0);
+
+  memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
 
 #ifdef _HYBRID
 #pragma omp parallel default(shared) private(i,cell,k)

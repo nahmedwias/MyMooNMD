@@ -13,6 +13,7 @@
 #define INCLUDE_MULTIGRID_GRIDTRANSFER_H_
 
 #include <vector>
+#include <cstddef>
 
 //forward declarations
 class TFESpace2D;
@@ -25,19 +26,19 @@ namespace GridTransfer
 
 void Prolongate(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    const std::vector<double>& CoarseFunction,
-    std::vector<double>& FineFunction);
+    const double* CoarseFunction, size_t n_coarse_dofs,
+    double* FineFunction, size_t n_fine_dofs);
 
 void DefectRestriction(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction);
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs);
 
 /** function restriction from level+1 to level */
 void RestrictFunction(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction);
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs);
 
 #endif
 #ifdef __3D__
@@ -45,20 +46,20 @@ void RestrictFunction(
 /** prolongate */
 void Prolongate(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    const std::vector<double>& CoarseFunction,
-    std::vector<double>& FineFunction);
+    const double* CoarseFunction, size_t n_coarse_dofs,
+    double* FineFunction, size_t n_fine_dofs);
 
 /** defect restriction from level+1 to level */
 void DefectRestriction(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction);
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs);
 
 /** function restriction from level+1 to level */
 void RestrictFunction(
     const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    std::vector<double>& CoarseFunction,
-    const std::vector<double>& FineFunction);
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs);
 
 #endif
 }
