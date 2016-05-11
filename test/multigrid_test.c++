@@ -97,7 +97,8 @@ int main(int argc, char* argv[])
   //Prolongation
   GridTransfer::Prolongate(
       space_coarse, space_fine,
-      function_coarse, function_fine);
+      &function_coarse[0],  function_coarse.size(),
+      &function_fine[0], function_fine.size());
 
   Output::print("Coarse function");
   for(auto c : function_coarse)
@@ -113,7 +114,8 @@ int main(int argc, char* argv[])
 
   GridTransfer::RestrictFunction(
       space_coarse, space_fine,
-      function_coarse, function_fine);
+      &function_coarse[0],  function_coarse.size(),
+      &function_fine[0], function_fine.size());
 
   Output::print("Coarse function");
   for(auto c : function_coarse)
@@ -129,7 +131,8 @@ int main(int argc, char* argv[])
 
   GridTransfer::DefectRestriction(
       space_coarse, space_fine,
-      function_coarse, function_fine);
+      &function_coarse[0],  function_coarse.size(),
+      &function_fine[0], function_fine.size());
 
   Output::print("Coarse function");
   for(auto c : function_coarse)
