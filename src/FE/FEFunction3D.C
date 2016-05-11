@@ -1558,7 +1558,9 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
     DOF = GlobalNumbers+BeginIndex[i];
 
     for(j=0;j<N_LocalDOFs;j++)
+    {
       Values[DOF[j]] = FunctionalValues[j];
+    }
   }
 }
 
