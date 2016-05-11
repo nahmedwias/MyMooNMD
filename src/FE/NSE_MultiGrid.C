@@ -115,7 +115,7 @@ void TNSE_MultiGrid::RestrictToAllGrids()
 /** one cycle on level i */
 void TNSE_MultiGrid::Cycle(int i, double &res)
 {
-  int verbosity = 2;
+  int verbosity = 1;
 
   int j, N_UDOF, N_PDOF, N_DOF, maxit, smoother; // NLevels=N_Levels;
   int slc, defect_calc, umfpack_flag, ii;

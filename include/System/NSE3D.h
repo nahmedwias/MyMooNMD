@@ -139,6 +139,7 @@ class NSE3D
      *
      * Note that the size of this double ended queue is at least one and
      * larger only when a multgrid preconditioner is used.
+     * systems_.at(0) holds the finest grid.
      */
     std::deque<System_per_grid> systems_;
 
@@ -169,6 +170,10 @@ class NSE3D
     /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
     /// transposed blocks are not stored explicitely...sad but true.
     std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
+
+    /// An object of the new multigrid class. This will entirely replace the old
+    /// multigrid_ object in time.
+    std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
     BlockVector defect_;
@@ -351,6 +356,9 @@ class NSE3D
     
     /// @brief return the computed errors (computed in output())
     std::array<double, int(4)> get_errors() const;
+
+ private:
+    void output_problem_size_info() const;
 
 };
 

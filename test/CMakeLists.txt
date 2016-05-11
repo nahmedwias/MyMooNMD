@@ -18,7 +18,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   
   ###################################################
   ### A function with which to register tests in  ###   
-  ### the "check" target for sequential build     ###
+  ### the "check" target for 3D sequential build  ###
   ###################################################
   function(register_executable exec_name file_name)
     
@@ -27,6 +27,18 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
     set(parmoon_tests ${parmoon_tests} ${exec_name} PARENT_SCOPE)
     
   endfunction(register_executable)
+  
+  ###################################################
+  ### A function with which to register tests in  ###   
+  ### the "check" target for 2D sequential build  ###
+  ###################################################
+  function(register_2D_executable exec_name file_name)
+    
+    add_executable(${exec_name} ${file_name})
+    target_link_libraries(${exec_name} parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+    set(parmoon_tests ${parmoon_tests} ${exec_name} PARENT_SCOPE)
+    
+  endfunction(register_2D_executable)
 
   ###################################################
   ####### Tests for parallel type: SEQUENTIAL #######
@@ -144,12 +156,23 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_iterative_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(iterative_solver ParMooN_test_iterative_solver)
   list(APPEND parmoon_tests ParMooN_test_iterative_solver)
+  
+  #multigrid tests
+  set(_EXEC_NAME ParMooN_test_multigrid_2d)
+  set(_FILE_NAME multigrid_test.c++)
+  register_2D_executable(${_EXEC_NAME} ${_FILE_NAME})
+  set(_EXEC_NAME ParMooN_test_multigrid_3d)
+  set(_FILE_NAME multigrid_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #test 1
+  add_test(NAME multigrid_2d COMMAND ParMooN_test_multigrid_2d)
+  add_test(NAME multigrid_3d COMMAND ParMooN_test_multigrid_3d)
 	
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
   #####################################################
   ### A function with which to register executables ###   
-  ### in the "check" target for mpi build              ###
+  ### in the "check" target for mpi build           ###
   #####################################################
   function(register_executable exec_name file_name)
     

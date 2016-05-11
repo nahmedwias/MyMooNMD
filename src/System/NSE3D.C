@@ -20,6 +20,8 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+#include <Multigrid.h>
+
 #include <sys/stat.h>
 
 ParameterDatabase get_default_NSE3D_parameters()
@@ -121,13 +123,38 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 #endif
 }
 
+void NSE3D::output_problem_size_info() const
+{
+    const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
+    const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
+
+    size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
+    size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
+    size_t nTotal = 3*nDofu + nDofp;
+    size_t nActive= 3*velocity_space.GetActiveBound();
+
+    TCollection* coll = velocity_space.GetCollection();
+
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
+
+    Output::stat("NSE3D", "Mesh data and problem size");
+    Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
+    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof Pressure:  ", setw(10), nDofp);
+    Output::dash("ndof Total   :  ", setw(10), nTotal );
+    Output::dash("nActive      :  ", setw(10), nActive);
+}
+
 NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
              const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
 ) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
-    solver(param_db), multigrid_(nullptr), defect_(), old_residuals_(),
+    solver(param_db), multigrid_(nullptr), mg_(nullptr),
+    defect_(), old_residuals_(),
     initial_residual_(1e10), errors_()
 {
   this->db.merge(param_db, false);
@@ -138,7 +165,6 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
-  // start with only non-multigrid case
 
   NSE3D::Matrix type;
   switch(TDatabase::ParamDB->NSTYPE)
@@ -171,91 +197,62 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     #else
     // create finite element space and function, a matrix, rhs, and solution
     systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-    
-    const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
-    const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
-    
-    size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
-    size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
-    size_t nTotal = 3*nDofu + nDofp;
-    size_t nActive= 3*velocity_space.GetActiveBound();
-    double hmin, hmax;
-    coll->GetHminHmax(&hmin, &hmax);
-    
-    Output::stat("NSE3D", "Mesh data and problem size");
-    Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
-    Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
-    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::dash("ndof Pressure:  ", setw(10), nDofp);
-    Output::dash("ndof Total   :  ", setw(10), nTotal );
-    Output::dash("nActive      :  ", setw(10), nActive);
-
     #endif
+
   }
   else // multigrid
   {
-    size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
-    if(LEVELS > domain.get_ref_level()+1)
-      LEVELS = domain.get_ref_level()+1;
-    
-    this->transposed_B_structures_.resize(LEVELS,nullptr);
-    
-    std::vector<TCollection*> collections(LEVELS,nullptr);
-    
-    std::vector<double> param(2);
-    param[0] = this->solver.get_db()["damping_factor"];
-    param[1] = this->solver.get_db()["damping_factor_finest_grid"];
-    
-    this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
-    
-    // constructing systems per grid
-    // the matrix and rhs side on the finest grid are already constructed 
-    // now construct all matrices, rhs, and solutions on coarser grids
-    for(int i = LEVELS-2 ; i >=0 ; i--)
-    {
-      unsigned int grid=i+domain.get_ref_level() + 1 -LEVELS;
-      TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
-      #ifdef _MPI
-        systems_.emplace_back(example, *coll, velocity_pressure_orders,
-                              type,maxSubDomainPerDof);
-      #else
-        systems_.emplace_back(example, *coll, velocity_pressure_orders, 
-                              type);
-      #endif      
-    }
-    //CLEMENS: this is just for me to be sure about some information
-    //You can delete it or modify somehow: b/c the same lines of code 
-    // is used above in the case where multigrid is not used 
-    {
-      const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
-      const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
-      
-      size_t nDofu  = velocity_space.GetN_DegreesOfFreedom();
-      size_t nDofp  = pressure_space.GetN_DegreesOfFreedom();
-      size_t nTotal = 3*nDofu + nDofp;
-      size_t nActive= 3*velocity_space.GetActiveBound();
-      
-      Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
-      Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
-      Output::print<1>("ndof Total   :  ", setw(10), nTotal );
-      Output::print<1>("nActive      :  ", setw(10), nActive);
-      // double hmin, hmax;
-      // cellCollection.GetHminHmax(&hmin, &hmax);
-      // Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
-    }
-    size_t level = 0;
-    // Create multigrid-level-objects and add them to the multgrid object.
-    // Must be coarsest level first, therefore reverse order iteration.
-    for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
-    {
-      #ifdef _MPI
-        ErrThrow("There is no multigrid in MPI!");
-      #else
-        multigrid_->AddLevel(this->mg_levels(level, *system));
-      #endif
-      level++;      
-    }
+#ifdef _MPI
+  ErrThrow("There is no multigrid for NSE3D in MPI yet!");
+#endif
+
+  ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+  database_mg.merge(param_db, false);
+
+  size_t n_levels = database_mg["multigrid_n_levels"];
+
+  // Construct systems per grid and store them, finest level first
+  std::list<BlockFEMatrix*> matrices;
+  for (int grid_no = ((int) n_levels ) - 1; grid_no >= 0; --grid_no)
+  {
+    TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+    systems_.emplace_back(example, *coll, velocity_pressure_orders,
+        type);
+    //prepare input argument for multigrid object
+    matrices.push_front(&systems_.back().matrix_);
   }
+
+  // Construct multigrid object
+  mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+
+//    transposed_B_structures_.resize(n_levels,nullptr);
+//
+//    std::vector<double> param(2);
+//    param[0] = solver.get_db()["damping_factor"];
+//    param[1] = solver.get_db()["damping_factor_finest_grid"];
+//
+//    multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
+//
+//    // constructing systems per grid and store them, finest level first
+//    for (int grid_no = ((int) n_levels ) - 1; grid_no >= 0; --grid_no)
+//    {
+//    	TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+//    	systems_.emplace_back(example, *coll, velocity_pressure_orders,
+//    			type);
+//    }
+//
+//    size_t level = 0;
+//    // Create multigrid-level-objects and add them to the multgrid object.
+//    // Must be coarsest level first, therefore reverse order iteration.
+//    for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
+//    {
+//      multigrid_->AddLevel(this->mg_levels(level, *system));
+//      level++;
+//    }
+  }
+
+  output_problem_size_info();
+
 }
 
 void NSE3D::check_parameters()
@@ -755,7 +752,12 @@ void NSE3D::solve()
   }
   else
   {//multigrid preconditioned iterative solver is used
-    mg_solver();
+
+    // All matrices which mg_'s levels point to must be ready!
+    solver.solve(s.matrix_, s.rhs_, s.solution_, *mg_.get());
+
+    exit(0);
+   //mg_solver();
   }
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)

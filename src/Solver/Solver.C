@@ -4,6 +4,7 @@
 #include <Iteration_cgs.h>
 #include <Iteration_gmres.h>
 #include <Iteration_jacobi.h>
+#include <Iteration_multigrid.h>
 #include <Iteration_richardson.h>
 #include <Saddle_point_preconditioner.h>
 
@@ -281,6 +282,41 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
   //V r(rhs);
   //matrix.apply_scaled_add(solution, r, -1.);
   //Output::print<2>("computed residual in Solver class: ", r.norm());
+}
+
+/*TODO this implementation is partly copy-and-paste from update_matrix,
+ * partly from another solve...bad! */
+template <class L, class V>
+void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
+                         const Multigrid& mg)
+{
+    if(db["solver_type"].is("direct"))
+    {
+      ErrThrow("Solver::solve with multigrid object called for Direct Solver!")
+    }
+
+    preconditioner = std::make_shared<Iteration_multigrid<L, V>>(mg);
+
+    // iterative solver
+    std::string ist = db["iterative_solver_type"];
+    std::string prec_name = db["preconditioner"];
+    size_t max_it = db["max_n_iterations"];
+    size_t min_it = db["min_n_iterations"];
+    double tol = db["residual_tolerance"];
+    double reduc = db["residual_reduction"];
+    size_t restart = db["gmres_restart"]; // only for gmres
+    double damping = db["damping_factor"];
+
+    iterative_method = get_iterative_method<L, V>(ist, matrix,
+                                                        this->preconditioner);
+    iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc,
+                                                    2., damping, restart);
+
+
+    // iterative solver
+    auto n_it_residual = this->iterative_method->iterate(matrix, rhs, solution);
+    Output::print<2>(this->iterative_method->get_name(), " iterations: ",
+                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
 }
 
 /* ************************************************************************** */

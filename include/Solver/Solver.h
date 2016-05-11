@@ -7,6 +7,8 @@
 #include <Preconditioner.h>
 #include <memory>
 
+class Multigrid;
+
 /** @brief Solve a linear system
  * 
  * This class can solve linear systems of the \f$Ax=b\f$. How exactly it is 
@@ -60,6 +62,21 @@ class Solver
     void solve(const LinearOperator& matrix, const Vector& rhs,
                Vector& solution);
     
+    ///
+    /// When solving iteratively with a multigrid preconditioner, the following
+    /// method must be called - passing a complete multigrid object to the
+    /// solver, which will be used to set up the preconditioner.
+    ///
+    /// TODO One way out would be to let the class "Multigrid" fulfil the
+    /// requirements of a linear operator.
+    ///
+    /// @param matrix
+    /// @param rhs
+    /// @param solution
+    /// @param mg
+    void solve(const LinearOperator& matrix, const Vector& rhs,
+               Vector& solution, const Multigrid& mg);
+
     /// @brief return a constant reference to the local ParameterDatabase
     ///
     /// Note that you can not change the behavior of this class after 
