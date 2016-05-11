@@ -1,0 +1,37 @@
+/** 
+ * \mainpage ParMooN - Parallel Mathematics and object oriented Numerics
+ *
+ * \section intro_sec Introduction
+ *
+ * This is the introduction.
+ * 
+ * \subsection quickstart Quick start with ParMooN
+ You are eager to get started and have no no time to read any verbose documentation?\n
+ This is the minimal out-of-source build instruction.\n
+ * Write the following into a shell 
+ *  > mkdir ParMooN \n
+ *  > cd ParMooN \n
+ *  > hg clone ssh://username\@gate.wias-berlin.de//Home/guests/wilbrand/software/ParMooN/ParMooN . \n
+ *  > cd .. \n
+ *  > mkdir build \n
+ *  > cd build/ \n 
+ *  > cmake ../ParMooN \n
+ *  > make check doc -j \n
+ The '-j' for using all available cores is optional.
+ 
+ * \subsection information More Information on ParMooN
+ There is some additional information on ParMooN available. If you plan to contribute to the project you should get familiar with those.
+   - \ref page_branching , a guide to the workflow when contributing to ParMooN
+   - \ref page_build_system , a guide to the CMake build system
+   - \ref external_libraries , how to use external libraries with ParMooN
+   - \ref page_rules to stick to when coding in ParMooN
+   - \ref page_unit_testing, a guide on unit testing in ParMooN 
+   - \ref page_version_control , some information on hg mercurial, the used version control system
+   - \ref page_rule_of_five , some notes on the assertion of the Rule Of Five in ParMooN
+
+  
+  \subsection forum The ParMooN Q & A Forum
+  We set up a wordpress forum, which is the right place for all questions, answers and discussions which are ParMooN related. \n
+  Follow the link to the <a href="https://blog.wias-berlin.de/wias-numath/qa/">ParMooN Forum</a>!
+ 
+ */

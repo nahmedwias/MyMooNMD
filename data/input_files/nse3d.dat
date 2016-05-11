@@ -1,0 +1,82 @@
+[ ParMooN database for NSE3D ]
+======================================================================
+#  ParMooN - input file for NSE3D 
+======================================================================
+
+
+outfile: nse3d.out
+boundary_file: Default_UnitCube
+geo_file:      Default_UnitCube_Hexa
+
+example: 2
+
+refinement_n_initial_steps: 1
+
+write_ps: true
+
+compute_errors: true
+
+output_directory: VTK
+
+base_name: unitcube
+
+problem_type: 5
+
+verbosity: 2
+
+solver_type: iterative
+direct_solver_type: umfpack
+iterative_solver_type: fgmres
+max_n_iterations: 60
+residual_tolerance: 1.0e-11
+
+# semi_implicit_method_for_pressure_linked_equations
+# no_preconditioner
+# least_squares_commutator
+# least_squares_commutator_boundary
+
+preconditioner: least_squares_commutator
+
+nonlinloop_epsilon: 1.0e-10
+
+nonlinloop_maxit: 10
+
+
+VERSION:        1
+LOGFILE:        logfile
+
+BNDFILE: Default_UnitCube
+GEOFILE: Default_UnitCube_Hexa
+#GEOFILE: Default_UnitCube_Tetra
+
+
+# choose the example (see also Examples/Example_NSE3D.C)
+# 0 - linear velocity, constant pressure example
+# 1 - quadratic velocity, linear pressure example
+# 2 - simple cosine sine
+# 3 - driven cavity 3d
+# -1 to -4 : test examples - 
+EXAMPLE: 2
+VELOCITY_SPACE: 2
+PRESSURE_SPACE: -4711
+
+Par_P0: 0
+Par_P3: 1
+
+# choose type of problem
+# 3 - Stokes
+# 5 - NSE
+FLOW_PROBLEM_TYPE: 5
+PROBLEM_TYPE: 5
+
+DISCTYPE:  1
+NSTYPE: 1
+LAPLACETYPE: 0
+NSE_NONLINEAR_FORM: 0
+UPWIND_ORDER: 0
+
+----------------------------------------------------------------------
+# parameters for fixed point teration of the nonlinear term in NSE
+----------------------------------------------------------------------
+SOLVER_TYPE: 2
+SC_FIRST_SOLUTION_LEVEL_SADDLE: 0
