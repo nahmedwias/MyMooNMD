@@ -57,7 +57,7 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 }
 
 BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
-: BlockVector(static_cast<BlockMatrix>(mat))
+: BlockVector(static_cast<const BlockMatrix&>(mat), result)
 {
   //now set actives correctly
   for(size_t b = 0; b < n_blocks(); ++b)
