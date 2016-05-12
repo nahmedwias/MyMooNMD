@@ -1233,6 +1233,7 @@ BlockFEMatrix::BlockFEMatrix(const BlockFEMatrix& other)
     }
   }
 
+  this->pressure_correction = other.pressure_correction;
 }
 
 BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
@@ -1261,6 +1262,7 @@ BlockFEMatrix::BlockFEMatrix(BlockFEMatrix&& other)
       }
     }
   }
+  this->pressure_correction = other.pressure_correction;
 }
 
 /* ************************************************************************* */
@@ -1274,6 +1276,7 @@ void swap(BlockFEMatrix& first, BlockFEMatrix& second)
   std::swap(first.color_count_, second.color_count_);
   std::swap(first.ansatz_spaces_columnwise_, second.ansatz_spaces_columnwise_);
   std::swap(first.test_spaces_rowwise_, second.test_spaces_rowwise_);
+  std::swap(first.pressure_correction, second.pressure_correction);
 }
 
 /* ************************************************************************* */
