@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 
   // assemble all matrices and right hand side at start time
   // it assembles A's, B's and M's blocks. Nonlinear blocks are
-  // added in the loops thanks to assemble_nonlinear()
+  // added in the loops thanks to assemble_nonlinear_term()
   tnse3d.assemble_initial_time();
 
   double end_time = TDatabase::TimeDB->ENDTIME;
@@ -176,13 +176,13 @@ int main(int argc, char* argv[])
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-      if( step == 1 && my_rank==0) // a few output, not very necessary
-      {
-        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-      }
+//      if( step == 1 && my_rank==0) // a few output, not very necessary
+//      {
+//        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+//        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+//        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+//        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+//      }
       // tau may change depending on the time discretization (adaptive time)
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
@@ -204,6 +204,11 @@ int main(int argc, char* argv[])
         // checking residuals
         if(tnse3d.stop_it(k))
         {
+          if (my_rank==0)
+          {
+            Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
+            Output::print<1>("Residuals :", tnse3d.get_residuals());
+          }
           break;
         }
 
@@ -212,7 +217,7 @@ int main(int argc, char* argv[])
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
           Output::print<1>("Residuals :", tnse3d.get_residuals());
         }
-
+//        break;
         tnse3d.solve();
 
         tnse3d.assemble_nonlinear_term();
@@ -233,6 +238,6 @@ int main(int argc, char* argv[])
   Output::close_file();
 #ifdef _MPI
   MPI_Finalize();
-#endif*/
+#endif
   return 0;
 }
