@@ -268,23 +268,23 @@ void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
                                QuadFormula2D formula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j,k;
   double **refvaluesD00, **origvaluesD00;
   double **refvaluesD10, **origvaluesD10;
   double **refvaluesD01, **origvaluesD01;
-  double **refvaluesD20, **origvaluesD20;
-  double **refvaluesD11, **origvaluesD11;
-  double **refvaluesD02, **origvaluesD02;
+  double **origvaluesD20; //**refvaluesD20;
+  double **origvaluesD11; //**refvaluesD11;
+  double **origvaluesD02; //**refvaluesD02;
   double *refD00, *origD00;
   double *refD10, *origD10;
   double *refD01, *origD01;
-  double *refD20, *origD20;
-  double *refD11, *origD11;
-  double *refD02, *origD02;
-  double r20, r11, r02, o20, o11, o02;
+//  double *refD20, *origD20;
+//  double *refD11, *origD11;
+//  double *refD02, *origD02;
+//  double r20, r11, r02, o20, o11, o02;
   double *aux;
-  double GeoData[3][3];
-  double Eye[3][3];
+//  double GeoData[3][3];
+//  double Eye[3][3];
   BaseFunct2D BaseFunct;
   int N_Functs;
   bool SecondDer;
@@ -348,8 +348,8 @@ void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     {
       SecondDer = TRUE;
 
-      refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct, 
-                                        formula, D20);
+//      refvaluesD20=TFEDatabase2D::GetRefElementValues(BaseFunct,
+//                                        formula, D20);
       origvaluesD20=TFEDatabase2D::GetOrigElementValues(BaseFunct, D20);
       if(origvaluesD20==NULL)
       {
@@ -360,8 +360,8 @@ void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D20, origvaluesD20);
       }
     
-      refvaluesD11=TFEDatabase2D::GetRefElementValues(BaseFunct, 
-                                        formula, D11);
+//      refvaluesD11=TFEDatabase2D::GetRefElementValues(BaseFunct,
+//                                        formula, D11);
       origvaluesD11=TFEDatabase2D::GetOrigElementValues(BaseFunct, D11);
       if(origvaluesD11==NULL)
       {
@@ -372,8 +372,8 @@ void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
         TFEDatabase2D::RegisterOrigElementValues(BaseFunct, D11, origvaluesD11);
       }
     
-      refvaluesD02=TFEDatabase2D::GetRefElementValues(BaseFunct, 
-                                        formula, D02);
+//      refvaluesD02=TFEDatabase2D::GetRefElementValues(BaseFunct,
+//                                        formula, D02);
       origvaluesD02=TFEDatabase2D::GetOrigElementValues(BaseFunct, D02);
       if(origvaluesD02==NULL)
       {
@@ -541,29 +541,28 @@ void TTriaIsoparametric::GetOrigValues(int joint, double zeta,
             double *uref, double *uxiref, double *uetaref,
             double *uorig, double *uxorig, double *uyorig)
 {
-  int i, j, k;
+  int i, k;
   double a11, a12, a21, a22, rec_detjk;
-  double xi, eta;
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
   double valxi[MaxN_BaseFunctions2D];
   double valeta[MaxN_BaseFunctions2D];
   double *values[1];
 
-  switch(joint)
-  {
-    case 0:
-      xi = 0.5*(1+zeta); eta = 0;
-    break;
-
-    case 1:
-      xi = 0.5*(1-zeta); eta = 0.5*(1+zeta);
-    break;
-
-    case 2:
-      xi = 0; eta = 0.5*(1-zeta);
-    break;
-  }
+//  switch(joint)
+//  {
+//    case 0:
+//      xi = 0.5*(1+zeta); eta = 0;
+//    break;
+//
+//    case 1:
+//      xi = 0.5*(1-zeta); eta = 0.5*(1+zeta);
+//    break;
+//
+//    case 2:
+//      xi = 0; eta = 0.5*(1-zeta);
+//    break;
+//  }
 
   a11 = xc1;
   a21 = xc2;
@@ -599,7 +598,7 @@ void TTriaIsoparametric::GetOrigValues(int joint, double zeta,
 
 void TTriaIsoparametric::SetCell(TBaseCell *cell)
 {
-  int i, j, k, N_;
+  int i, j;
   TJoint *joint;
   TBoundEdge *boundedge;
   TBoundComp2D *comp;
@@ -607,7 +606,7 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
   JointType type;
   double t0, t1, t, dt;
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
-  int compid;
+//  int compid;
   TBaseFunct2D *bf;
   TFEDesc2D *fedesc;
   int *JointDOF;
@@ -661,14 +660,14 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
       {
         boundedge = (TBoundEdge *)(joint);
         comp = boundedge->GetBoundComp();
-        compid = comp->GetID();
+//        compid = comp->GetID();
         boundedge->GetParameters(t0, t1);
       }
       else
       {
         interface = (TInterfaceJoint *)(joint);
         comp = interface->GetBoundComp();
-        compid = comp->GetID();
+//        compid = comp->GetID();
 
         if(Cell == interface->GetNeighbour(0))
           interface->GetParameters(t0, t1); // correct order
@@ -831,7 +830,6 @@ void TTriaIsoparametric::GetTangent(int j, double zeta,
 {
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
-  double xi, eta;
   double valx[MaxN_BaseFunctions2D];
   double valy[MaxN_BaseFunctions2D];
   double *values[1];
@@ -891,15 +889,15 @@ double TTriaIsoparametric::GetVolume()
 {
   double locvol;
 
-  int i, j, k;
-  double Xi, Eta, a11, a12, a21, a22;
+  int i, k;
+  double a11, a12, a21, a22;   //Xi, Eta;
   double absdetjk;
 
   locvol = 0;
   for(i=0;i<N_QuadPoints;i++)
   {
-    Xi = XI[i];
-    Eta = ETA[i];
+//    Xi = XI[i];
+//    Eta = ETA[i];
 
     a11 = xc1;
     a21 = xc2;
