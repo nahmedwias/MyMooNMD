@@ -875,8 +875,8 @@ int TOutput2D::WriteVtk(const char *name)
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
 
-  char var1[2] = {'r', 'z'};
-  char var2[2] = {'1', '2'};  
+//  char var1[2] = {'r', 'z'};
+//  char var2[2] = {'1', '2'};
 
   time_t rawtime;
   struct tm * timeinfo;
