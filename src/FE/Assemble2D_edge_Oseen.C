@@ -45,80 +45,47 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
 {
   const int MaxN_BaseFunctions2D_Ersatz =100;
 
-  double hk,nu,w,integrant,tau_par,tau_par2,tau_par3;
+  double hk,w,integrant,tau_par,tau_par2,tau_par3;
   int N_AllMatrices = n_sqmatrices+n_matrices,verbose;
-  int i,j,k,l,l1,l2,l3,n,n_neigh,m,r,q,dummy,N_UsedElements,N_LocalUsedElements,ii,jj,ll,l_test,l_ansatz;
-  int N_Cells, N_Points, N_Parameters, N_Points1D, N_Edges, N_, N_Hanging,N_Rows;
-  int N_Test, N_Ansatz, N_Joints, N_TestNeighbour, N_AnsatzNeighbour;
+  int i,j,k,l,n,m,r,q,dummy,N_UsedElements,ii,jj,ll;
+  int N_Cells, N_Points, N_Parameters, N_Points1D, N_Edges, N_, N_Rows;
   int Used[N_FEs2D];
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
   const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
-  FE2D TestElement, AnsatzElement, TestElementNeighbour, AnsatzElementNeighbour;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1D;
-  BaseFunct2D BaseFunctCell, TestFunctCell, AnsatzFunctCell, TestFunctNeigh, AnsatzFunctNeighbour;
+  BaseFunct2D BaseFunctCell;
   TCollection *Coll;
   TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers, **BeginIndex;
-  int **RhsGlobalNumbers, **RhsBeginIndex;
   int **TestGlobalNumbers, **TestBeginIndex;
   int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
-  TFE2D *ele;
-  TFEDesc2D *FEDesc_Obj;
   BF2DRefElements bf2Drefelements;
-  double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh, *weights1D_neigh;
+  double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
-  double *local_rhs;
-  double *righthand;
-  double **Matrices, *aux, *aux2, *aux3, *aux4 ;
-  double **Matrix;
-  double ***LocMatrices, **LocRhs;
-  int LocN_BF[N_BaseFuncts2D];
-  BaseFunct2D LocBF[N_BaseFuncts2D];
+  double **Matrices, *aux, *aux2, *aux4 ;
+  double ***LocMatrices;
+//  int LocN_BF[N_BaseFuncts2D];
+//  BaseFunct2D LocBF[N_BaseFuncts2D];
   double *Coeffs[MaxN_QuadPoints_2D];
-  int *DOF, ActiveBound, DirichletBound, end, last;
-  int *TestDOF, *AnsatzDOF, *TestDOF_neigh, *AnsatzDOF_neigh;
-  double **SqEntries,**Entries;
-  const int **SqColInd, **ColInd, **SqRowPtr, **RowPtr;
-  double *RHS, *MatrixRow;
-  double **HangingEntries, **HangingRhs;
-  double *CurrentHangingEntries, *CurrentHangingRhs;
-  int *HangingRowPtr, *HangingColInd;
-  THangingNode *hn, **HangingNodes;
-  HNDesc HNDescr;
-  THNDesc *HNDescr_Obj;
-  double *Coupling, v;
-  TBoundComp *BoundComp;
-  double t0, t1, t, s,integral;
-  int comp, dof_ii,dof_jj, found;
-  BoundCond Cond0, Cond1;
-  BoundCondFunct2D *BoundaryCondition;
-  BoundValueFunct2D *BoundaryValue;
-  TNodalFunctional2D *nf;
-  int N_EdgePoints;
-  double *EdgePoints;
-  double PointValues[MaxN_PointsForNodal2D];
-  double FunctionalValues[MaxN_BaseFunctions2D_Ersatz];
-  int *EdgeDOF, N_EdgeDOF;
-  int N_LinePoints;
-  double *LineWeights, *zeta;
-  double x0, x1, y0, y1, hE, nx, ny, tx, ty, x, y, val, eps=1e-12;
-  double penetration_penalty, friction_parameter;
-  double **JointValues, *JointValue, u1_values[3], u2_values[3];
-  double delta;
+  int *DOF, ActiveBound, end;
+  double **SqEntries;
+  const int **SqColInd, **SqRowPtr;
+  double **HangingEntries;
+  double integral;
+  int dof_ii,dof_jj, found;
+  double *zeta;
+  double x0, x1, y0, y1, hE, nx, ny; // tx, ty;
   bool *SecondDer;
-  double max_b,dummy3,Re,Re_K;
+  double max_b,dummy3,Re;
   double max_nb;
   double *Coefficients1D[MaxN_QuadPoints_2D];
-  double *Parameters1D[MaxN_QuadPoints_2D];
+//  double *Parameters1D[MaxN_QuadPoints_2D];
 
   double xi1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D], eta1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D];
   //double xietaval_ref1D[N_BaseFuncts2D][4][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
@@ -140,8 +107,6 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
 
   double *X1D[4], *Y1D[4], *X1D_neigh[4], *Y1D_neigh[4];
   RefTrans2D RefTrans;
-  int N_DOF;
-  double *Values;
   //double value_basefunct_ref1D[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz],value_basefunct_ori[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz];
   //double xderiv_basefunct_ref1D[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz],xderiv_basefunct_ori[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz];
   //double yderiv_basefunct_ref1D[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz],yderiv_basefunct_ori[N_BaseFuncts2D][6][MaxN_BaseFunctions2D_Ersatz];
@@ -164,49 +129,29 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
 
   int ref_n;
   int neigh_edge;
-  int neigh_N_,N_Neigh;
-  double absdet1D_neigh[MaxN_QuadPoints_2D];
-  double xi1DNeigh[N_BaseFuncts2D][MaxN_QuadPoints_1D], eta1DNeigh[N_BaseFuncts2D][MaxN_QuadPoints_1D];
-  double *X1DNeigh,*Y1DNeigh;
+  int N_Neigh;
   TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
-  QuadFormula2D QuadFormulaNeigh;
-  TQuadFormula2D *qfNeigh;
-  QuadFormula1D LineQuadFormulaNeigh;
-  TQuadFormula1D *qf1DNeigh;
-  int LocN_BF_neigh[N_BaseFuncts2D];
-  BaseFunct2D LocBF_neigh[N_BaseFuncts2D];
-  int N_Points1DNeigh,N_PointsNeigh;
-  double *weights1DNeigh,*zetaNeigh,*weightsNeigh,*xiNeigh,*etaNeigh;
+//  int LocN_BF_neigh[N_BaseFuncts2D];
+//  BaseFunct2D LocBF_neigh[N_BaseFuncts2D];
   TFE2D *eleNeigh;
   RefTrans2D RefTransNeigh;
-  BF2DRefElements bf2DrefelementsNeigh;
   int *DOF_neigh;
-  double xietaval_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
-  double xideriv_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
-  double etaderiv_refNeigh1D[N_BaseFuncts2D][MaxN_QuadPoints_1D][MaxN_BaseFunctions2D_Ersatz];
 
   double *xyval_refNeigh1D[MaxN_QuadPoints_1D];
   double *xderiv_refNeigh1D[MaxN_QuadPoints_1D];
   double *yderiv_refNeigh1D[MaxN_QuadPoints_1D];
-  double *xyval_refNeigh1D_test[MaxN_QuadPoints_1D];
-  double *xderiv_refNeigh1D_test[MaxN_QuadPoints_1D];
-  double *yderiv_refNeigh1D_test[MaxN_QuadPoints_1D];
-  double *xyval_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
-  double *xderiv_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
-  double *yderiv_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
-  double *xderiv_Neigh1D, *yderiv_Neigh1D, *xyval_Neigh1D;
+//  double *xyval_refNeigh1D_test[MaxN_QuadPoints_1D];
+//  double *xderiv_refNeigh1D_test[MaxN_QuadPoints_1D];
+//  double *yderiv_refNeigh1D_test[MaxN_QuadPoints_1D];
+//  double *xyval_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
+//  double *xderiv_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
+//  double *yderiv_refNeigh1D_ansatz[MaxN_QuadPoints_1D];
 
   double jump_xyval[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
   double jump_xderiv[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
   double jump_yderiv[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_xyval_test[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_xderiv_test[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_yderiv_test[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_xyval_ansatz[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_xderiv_ansatz[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
-  double jump_yderiv_ansatz[MaxN_QuadPoints_1D][2*N_BaseFuncts2D];
 
   OutPut("egde integrals "<<endl);
 
@@ -562,12 +507,12 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
     xyval_refNeigh1D[j] = new double[MaxN_BaseFunctions2D_Ersatz];
     xderiv_refNeigh1D[j] = new double[MaxN_BaseFunctions2D_Ersatz];
     yderiv_refNeigh1D[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    xyval_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    xderiv_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    yderiv_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    xyval_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    xderiv_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
-    yderiv_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    xyval_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    xderiv_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    yderiv_refNeigh1D_test[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    xyval_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    xderiv_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
+//    yderiv_refNeigh1D_ansatz[j] = new double[MaxN_BaseFunctions2D_Ersatz];
   }
 
   // ########################################################################
@@ -584,9 +529,9 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
   for(j=0;j<MaxN_QuadPoints_2D;j++)
     Coeffs[j] = aux2 + j*20;
 
-  aux3 = new double [MaxN_QuadPoints_2D*N_Parameters];
-  for(j=0;j<MaxN_QuadPoints_2D;j++)
-    Parameters1D[j] = aux3 + j*N_Parameters;
+//  aux3 = new double [MaxN_QuadPoints_2D*N_Parameters];
+//  for(j=0;j<MaxN_QuadPoints_2D;j++)
+//    Parameters1D[j] = aux3 + j*N_Parameters;
 
   aux4 = new double [MaxN_QuadPoints_2D*20];
   for(j=0;j<MaxN_QuadPoints_2D;j++)
@@ -637,8 +582,8 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
       DOF = GlobalNumbers[n] + BeginIndex[n][i];  // dof of current mesh cell
 
       LocalUsedElements[0] = CurrentElement;
-      LocN_BF[0] = N_BaseFunct[CurrentElement];   // local basis functions
-      LocBF[0] = BaseFuncts[CurrentElement];
+//      LocN_BF[0] = N_BaseFunct[CurrentElement];   // local basis functions
+//      LocBF[0] = BaseFuncts[CurrentElement];
       SecondDer[0] = FALSE;
       RefTrans = TFEDatabase2D::GetOrig(1, LocalUsedElements,
 					Coll, cell, SecondDer,
@@ -794,8 +739,8 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
 
             LocalUsedElements_neigh[0] = CurrEleNeigh;
                                                   // local basis functions
-            LocN_BF_neigh[0] = N_BaseFunct[CurrEleNeigh];
-            LocBF_neigh[0] = BaseFuncts[CurrEleNeigh];
+//            LocN_BF_neigh[0] = N_BaseFunct[CurrEleNeigh];
+//            LocBF_neigh[0] = BaseFuncts[CurrEleNeigh];
 
             RefTransNeigh = TFEDatabase2D::GetOrig(1, LocalUsedElements_neigh,
               Coll, neigh, SecondDer,
@@ -1009,8 +954,8 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
             ny = (x0-x1)/hE;
             if(verbose ==1) OutPut("nx: " << nx << " ny: "<< ny<<endl);
             // tangential normal vector to this boundary (normalized)
-            tx = (x1-x0)/hE;
-            ty = (y1-y0)/hE;
+//            tx = (x1-x0)/hE;
+//            ty = (y1-y0)/hE;
             tau_par = TDatabase::ParamDB->TAU;
             tau_par2 = TDatabase::ParamDB->TAU2;
             tau_par3 = TDatabase::ParamDB->TAU3;

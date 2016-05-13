@@ -129,7 +129,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double xcoords[4], ycoords[4];
   double sx, sy, t, phi;
   double nx, ny;
-  double nxs[4], nys[4];
+
   double *coeffs, *params;
   const int *ColInd, *RowPtr;
   double *Entries;
@@ -1196,8 +1196,8 @@ BoundCondFunct2D *BoundaryCondition)
   int ActiveBound, DirichletBound, end;
   double *coeff = new double[6];// *param = new double[1];
   FE2D CurrentElement;
-  BaseFunct2D *BaseFuncts;// LocBF;
-  int *N_BaseFunct;// LocN_BF;
+//  BaseFunct2D *BaseFuncts;// LocBF;
+//  int *N_BaseFunct;// LocN_BF;
 
   // get pointers to columns, rows and entries of matrix A
   ColInd = sqmatrix->GetKCol();
@@ -1214,8 +1214,8 @@ BoundCondFunct2D *BoundaryCondition)
   DirichletBound = fespace->GetHangingBound();
 
   // information on the base functions
-  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
-  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+//  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+//  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
   // get collection and number of cells
   coll = fespace->GetCollection();
