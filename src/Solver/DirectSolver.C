@@ -72,13 +72,13 @@ void handle_error_umfpack(int ierror)
   {
     //WARNINGS
     case UMFPACK_WARNING_singular_matrix:
-      Output::print<1>("umfpack Warning: Matrix is singular!");
+      Output::warn("UMFPACK", "Matrix is singular!");
       break;
     case UMFPACK_WARNING_determinant_underflow:
-      Output::print<1>("umfpack Warning: Determinant smaller than eps");
+      Output::warn("UMFPACK", "Determinant smaller than eps");
       break;
     case UMFPACK_WARNING_determinant_overflow:
-      Output::print<1>("umfpack Warning: Determinant is larger than IEEE Inf");
+      Output::warn("UMFPACK", "Determinant is larger than IEEE Inf");
       break;
     //ERRORS
     case UMFPACK_ERROR_out_of_memory:
