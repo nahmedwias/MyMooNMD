@@ -105,7 +105,7 @@ TDomain::~TDomain()
 {
   delete [] StartBdCompID;
   delete [] Interfaces;
-  for(unsigned int i = 0; i < N_BoundParts; ++i)
+  for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
   delete [] CellTree;

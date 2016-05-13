@@ -124,7 +124,7 @@ void Prolongate(const TFESpace2D *CoarseSpace,
   BaseFunct2D CoarseBF, FineBF;
   TBaseFunct2D *BaseFunctions;
   int N_CoarseCells, N_FineCells, N_Children;
-  int N_FineDOFs, N_CoarseDOFs;
+  int N_FineDOFs;// N_CoarseDOFs;
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
@@ -143,7 +143,7 @@ void Prolongate(const TFESpace2D *CoarseSpace,
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace->GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace->GetGlobalNumbers();
-  N_CoarseDOFs = CoarseSpace->GetN_DegreesOfFreedom();
+//  N_CoarseDOFs = CoarseSpace->GetN_DegreesOfFreedom();
   
   FineColl = FineSpace->GetCollection();
   N_FineCells = FineColl->GetN_Cells();
@@ -1024,7 +1024,7 @@ void RestrictFunction(const TFESpace2D *CoarseSpace,
   BaseFunct2D CoarseBF, FineBF;
   TBaseFunct2D *BaseFunctions;
   int N_CoarseCells, N_FineCells, N_Children;
-  int N_FineDOFs, N_CoarseDOFs;
+  int N_CoarseDOFs; // N_FineDOFs;
   int *CoarseBeginIndex, *FineBeginIndex;
   int *CoarseGlobalNumbers, *FineGlobalNumbers;
   int FineNumber, CoarseNumber;
@@ -1047,7 +1047,7 @@ void RestrictFunction(const TFESpace2D *CoarseSpace,
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace->GetBeginIndex();
   FineGlobalNumbers = FineSpace->GetGlobalNumbers();
-  N_FineDOFs = FineSpace->GetN_DegreesOfFreedom();
+//  N_FineDOFs = FineSpace->GetN_DegreesOfFreedom();
 
   // cout << "N_FineCells: " << N_FineCells << endl;
   // cout << "N_CoarseCells: " << N_CoarseCells << endl;

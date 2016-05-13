@@ -42,7 +42,7 @@ TTetGenMeshLoader::TTetGenMeshLoader()
 
 TTetGenMeshLoader::TTetGenMeshLoader(const char *FileName)
 {
-  int n, status;
+  int n;
 
   // count string length
   n=0;
@@ -154,7 +154,7 @@ int TTetGenMeshLoader::AllocRootCells(TBaseCell **&CellTree, int &N_RootCells)
 {
   TMacroCell *Cell;
   TVertex *Vertex;
-  int index, orient;
+  int index;
 
   N_RootCells = mTetOut.numberoftetrahedra;
 
@@ -635,7 +635,7 @@ int TTetGenMeshLoader::AllocJoints(TBaseCell **CellTree)
 {
   int left, right;
   int bdcomp;
-  double param1[4], param2[4], x, y, z;
+//  double param1[4], param2[4], x, y, z;
 
   TBoundComp3D *BoundComp;
 
@@ -937,9 +937,8 @@ int TTetGenMeshLoader::CreateAdjacency()
 
 void TTetGenMeshLoader::HashTrifaces()
 {
-  int left, right, N_BoundComp=0;
   int a, b, c, hash;
-  int n_trifaces = mTetOut.numberoftrifaces;
+//  int n_trifaces = mTetOut.numberoftrifaces;
   int n_points = mTetOut.numberofpoints;
 
   mTrifaceHash = new int* [3*n_points];
@@ -1052,7 +1051,7 @@ int &N_BoundComps, int *&StartBdCompID, int *&Interfaces)
 
 int TTetGenMeshLoader::DistributeJoints(TBaseCell **CellTree)
 {
-  int trifaces[4];
+//  int trifaces[4];
   const int *TmpFV, *TmpLen;
   int MaxLen, triface;
   TShapeDesc *ShapeDesc;

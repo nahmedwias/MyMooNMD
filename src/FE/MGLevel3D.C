@@ -255,7 +255,7 @@ tD +=(t2-t1);
 void TMGLevel3D::SOR(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
-  int ii, i,j,k,l,index;
+  int ii, i,j,k,index;
   double s, t, diag;
   double omega;
 
@@ -338,7 +338,7 @@ void TMGLevel3D::SOR(double *sol, double *f, double *aux,
 void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
-  int i,j,k,l,index;
+  int i,j,k,index;
   double s, t, diag;
   double omega;
   
@@ -444,7 +444,7 @@ void TMGLevel3D::SSOR(double *sol, double *f, double *aux,
 void TMGLevel3D::Jacobi(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
-  int i,j,k,l,index;
+  int i,j,k,index;
   double t, s, diag, omega;
 
   omega = Parameters[0];
@@ -615,11 +615,11 @@ void TMGLevel3D::CorrectDefect(double *vect)
 void TMGLevel3D::Block2x2(double *sol, double *f, double *aux,
         int N_Parameters, double *Parameters)
 {
-  int i,j,k,l,index,maxindex;
-  double s1, s2, t, mt, m11, m12, m21, m22, max;
-  double omega;
+  int i,j,k,index,maxindex;
+  double s1, s2, t, m11, m12, m21, m22, max;
+//  double omega;
 
-  omega = Parameters[0];
+//  omega = Parameters[0];
 
   // set Dirichlet nodes
   memcpy(sol+HangingNodeBound, f+HangingNodeBound, 
@@ -839,7 +839,7 @@ void TMGLevel3D::ILU(double *sol, double *f, double *aux,
 void TMGLevel3D::SolveExact(double *u1, double *rhs1)
 {  
   double *a, *b;
-  int i,j,k,l,index, N_DOF2 = N_DOF*N_DOF, end, begin, m;
+  int i,j,k,index, N_DOF2 = N_DOF*N_DOF;
   double value;
 
   // arrays for matrix and one vector

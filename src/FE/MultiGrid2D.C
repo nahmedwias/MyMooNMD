@@ -53,9 +53,9 @@ void TMultiGrid2D::AddLevel(TMGLevel2D *MGLevel)
 /** add new level as finest */
 void TMultiGrid2D::ReplaceLevel(int i,TMGLevel2D *MGLevel)
 {
-  TMGLevel2D *ret;
+//  TMGLevel2D *ret;
 
-  ret = MultiGridLevels[i];
+//  ret = MultiGridLevels[i];
   MultiGridLevels[i] = MGLevel;
 
 //  MultiGridLevels[N_Levels] = MGLevel;
@@ -69,10 +69,10 @@ void TMultiGrid2D::ReplaceLevel(int i,TMGLevel2D *MGLevel)
 /** restrict solution from finest grid to all coarser grids */
 void TMultiGrid2D::RestrictToAllGrids()
 {
-  int lev, j;
+  int lev;
   TMGLevel2D *CurrentLevel, *CoarserLevel;
-  double *X1, *R1;
-  double *X2, *R2, *Aux;
+  double *X1;
+  double *X2, *Aux;
 
   for(lev=N_Levels-1;lev>0;lev--)
   {
@@ -258,14 +258,12 @@ void TMultiGrid2D::RestrictToAllGrids()
 /** one cycle on level i */
 void TMultiGrid2D::Cycle(int i, double &res)
 {
-  double s;
-  
   TMGLevel2D *CurrentLevel, *CoarserLevel;
   double *CurrentSol, *CoarserSol, *CoarserRhs;
   double *CurrentRhs, *CurrentDefect, *CurrentAux;
-  double *CurrentAux2, *OldSol, *OldDefect, res_global;
+  double *CurrentAux2, *OldSol, *OldDefect;
   double oldres,reduction, alpha;
-  int j, N_DOF, maxit, it, slc,gam;
+  int j, N_DOF, maxit, it, slc;
 
   CurrentLevel = MultiGridLevels[i];
   CurrentDefect = CurrentLevel->GetAuxVector(0);
