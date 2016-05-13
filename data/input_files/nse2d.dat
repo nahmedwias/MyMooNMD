@@ -1,0 +1,159 @@
+[ ParMooN database for NSE2D ]
+======================================================================
+#       input file for ParMooN
+======================================================================
+
+outfile: nse2d.out
+boundary_file: Default_UnitSquare
+geo_file:      UnitSquare
+
+example: 2
+
+refinement_n_initial_steps: 5
+
+write_ps: true
+
+compute_errors: true
+
+output_directory: VTK
+
+base_name: unitsquare
+
+problem_type: 5
+
+verbosity: 2
+
+solver_type: iterative
+iterative_solver_type: fgmres
+max_n_iterations: 6000
+residual_tolerance: 1.0e-11
+
+# semi_implicit_method_for_pressure_linked_equations
+# no_preconditioner
+# least_squares_commutator
+# least_squares_commutator_boundary
+
+preconditioner: least_squares_commutator_boundary
+
+nonlinloop_epsilon: 1.0e-10
+
+nonlinloop_maxit: 10
+
+# choose the example (see also Examples/Example_NSE2D.C)
+# 0 - poiseuille flow
+# 1 - driven cavity
+# 2 - sine cosine
+# 3 - flow around cylinder
+EXAMPLE: 1
+ 
+----------------------------------------------------------------------
+# order of ansatz space (=k)
+#   i.e. P_k/P_{k-1} on triangles,  Q_k/Q_{k-1} on quadrangles
+# -1 : use lowest order nonconforming elements
+# -2 : use Q2/P1 discont on quadrilaterals
+# -3 : use Q3/P2 discont on quadrilaterals
+----------------------------------------------------------------------
+VELOCITY_SPACE: 2
+PRESSURE_SPACE: 1
+
+----------------------------------------------------------------------
+# Reynolds number eps=1/RE_NR
+RE_NR:  1.0e-3
+
+----------------------------------------------------------------------
+# type of discretization: 
+#    1 - GALERKIN
+#    2 - SDFEM
+#    3 - UPWIND
+#    4 - LAYTON96
+#    5 - SMAGORINSKY 
+#    6 - COLETTI
+#    7 - GL98Conv
+#    8 - GL98AuxProb
+----------------------------------------------------------------------
+DISCTYPE:  1
+
+----------------------------------------------------------------------
+# type of Navier-Stokes system
+#
+----------------------------------------------------------------------
+NSTYPE: 14
+
+----------------------------------------------------------------------
+# Laplace type
+----------------------------------------------------------------------
+LAPLACETYPE: 0
+
+---------------------------------------------------------------------
+# change the representation of the nonlinear form (default: 0)
+# 0:  convective form ( (u . nabla) u, v)
+# 1:  skew symmetric form (1/2) [ ((u . nabla) u, v) - ((u . nabla) v, u) ]
+# 2:  rotational form 
+NSE_NONLINEAR_FORM: 0
+
+----------------------------------------------------------------------
+# order of upwind scheme
+#    0 - sharp upwind
+#    1 - Samarskij upwind
+----------------------------------------------------------------------
+UPWIND_ORDER: 0
+
+----------------------------------------------------------------------
+# factors for SDFEM (delta_K=h_K*DELTAi)
+#   DELTA0 for high Peclet number
+#   DELTA1 for low Peclet number
+----------------------------------------------------------------------
+DELTA0:  0.25
+DELTA1:  0.00
+
+----------------------------------------------------------------------
+# parameters for slip with friction boundary condition
+----------------------------------------------------------------------
+INTERNAL_SLIP_WITH_FRICTION: 0
+FRICTION_TYPE: 0
+FRICTION_POWER: 0
+FRICTION_CONSTANT: 1
+PENETRATION_CONSTANT: 0
+PENETRATION_POWER: 0
+
+
+
+# some multigrid parameters:
+
+# multigrid cycle
+# 0 
+# 1 
+# 2
+SC_MG_CYCLE_SCALAR: 1
+
+# number of pre and post smoothing
+SC_PRE_SMOOTH_SCALAR: 2
+SC_POST_SMOOTH_SCALAR: 2
+
+# choose type of pre and post smoothing
+# 1: Jacobi
+# 2: SOR
+# 3: SSOR
+# 4: ILU
+SC_SMOOTHER_SCALAR: 3
+
+# choose type of smoothing on coarsest level
+# 1: Jacobi
+# 2: SOR
+# 3: SSOR
+# 4: ILU
+# 17: Gauss Elimination (LAPACK)
+SC_COARSE_SMOOTHER_SCALAR: 17
+
+# if one uses iterative schemes then, on the coarsest mesh, this is the 
+# maximum number of iterations
+SC_COARSE_MAXIT_SCALAR: 10 
+
+#  the residual stopping criterion
+SC_COARSE_RED_FACTOR_SCALAR: 0.1
+
+# step length conrol parameters
+# 0:
+# 1:
+SC_STEP_LENGTH_CONTROL_FINE_SCALAR: 0
+SC_STEP_LENGTH_CONTROL_ALL_SCALAR: 0

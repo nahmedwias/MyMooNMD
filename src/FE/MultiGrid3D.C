@@ -201,20 +201,17 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 #ifdef _MPI  
   int rank;
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
-#endif  
+#else
+  int rank = 0;
+#endif
     double res;
     int it = 0;
     int maxit =  TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
     
     Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
-     if(TDatabase::ParamDB->SC_VERBOSE>=2 
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif  
-     )
-     {
+    if(rank == 0)
       Output::print<3>("residual before on coarse ", res);
-     }
+
      
     double reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
   
@@ -300,11 +297,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
           
        Level->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
        it++;
-       if(TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif
-        )
+       if(rank == 0)
          Output::print<3>("itr no. :: ", it-1, "        res on coarse: ", res);
     }//endwhile
     oldres = res;
@@ -456,7 +449,9 @@ void TMultiGrid3D::Cycle(int i, double &res)
    ParComm = CurrentLevel->GetParComm();  
 
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
-#endif  
+#else
+   int rank =0;
+#endif
  // OutPut("Norm of B rhs in cycle " <<  sqrt(Ddot(N_DOF,CurrentRhs,CurrentRhs)) <<"i is:"<<i <<endl); 
   
   if(i==0)
@@ -468,7 +463,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 //     it = 0;
 //     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
     
-//    if(TDatabase::ParamDB->SC_VERBOSE>=2 
+//    if(true
 // #ifdef _MPI  
 //         && rank==TDatabase::ParamDB->Par_P0
 // #endif  
@@ -493,7 +488,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
      
 //       CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
 //       it++;
-//       if(TDatabase::ParamDB->SC_VERBOSE>=2
+//       if(true
 // #ifdef _MPI  
 //         && rank==TDatabase::ParamDB->Par_P0
 // #endif
@@ -523,14 +518,8 @@ void TMultiGrid3D::Cycle(int i, double &res)
     firstres = initres = oldres;  
     normsol = sqrt(Ddot(N_DOF, CurrentSol, CurrentSol));
   
-    if(TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif   
-      )
-      {
+    if(rank == 0)
         Output::print<3>("level ", i, " res before presmoothing: ", oldres);
-      }
 
     if (slc)
     {
@@ -551,17 +540,12 @@ void TMultiGrid3D::Cycle(int i, double &res)
     // calculate defect
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
     
-    if (TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif 
-       )
-      {
+    if(rank == 0)
          Output::print<3>("normsol: ", normsol, " oldres: ", oldres);
          Output::print<3>("level ", i, " res after presmoothing: ", oldres);
          Output::print<3>("Smoothing (", i, "): ", oldres/normsol);
-      }
-    // restrict defect
+
+         // restrict defect
 //     exit(0);
 #ifdef _MPI  
         ParComm->CommUpdate(CurrentDefect);
@@ -618,14 +602,9 @@ void TMultiGrid3D::Cycle(int i, double &res)
     initres = oldres;
     normsol = sqrt(Ddot(N_DOF, CurrentSol, CurrentSol));
     
-    if (TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif  
-       )
-      {
+    if(rank == 0)
         Output::print<3>("level ", i, " res before postsmoothing: ", oldres);
-      }
+
 //        exit(0);
     // smoothing
 #ifdef _MPI
@@ -651,15 +630,9 @@ void TMultiGrid3D::Cycle(int i, double &res)
 
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
     
-    if (TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif  
-    )
-      {
+    if(rank == 0)
       Output::print<3>("level ", i, " res after postsmoothing: ", res, " rate: ", res/firstres);
-        // OutPut("Smoothing2 (" << i << "): " << initres/normsol << endl);
-      }
+
   }
 }
 

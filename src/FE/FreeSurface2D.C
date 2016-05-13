@@ -874,18 +874,11 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   while(res>TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR && j<100)
   {
     GridMG->Cycle(N_Levels-1, res);
-    if(TDatabase::ParamDB->SC_VERBOSE > 1)
-    {
-      OutPut("residual after iteration " << j << ": " << res);
+      Output::print<2>("residual after iteration ", j, ": ", res);
       if(j>0)
       {
-        OutPut(" rate: " << res/oldres << endl);
+    	  Output::print<2>(" rate: ", res/oldres);
       }
-      else
-      {
-        OutPut(endl);
-      }
-    } // SC_VERBOSE
 
     oldres = res;
     j++;
@@ -908,18 +901,11 @@ void GetGridVelocity(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   while(res>TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR && j<100)
   {
     GridMG->Cycle(N_Levels-1, res);
-    if(TDatabase::ParamDB->SC_VERBOSE > 1)
+    Output::print<2>("residual after iteration ", j, ": ", res);
+    if(j>0)
     {
-      OutPut("residual after iteration " << j << ": " << res);
-      if(j>0)
-      {
-        OutPut(" rate: " << res/oldres << endl);
-      }
-      else
-      {
-        OutPut(endl);
-      }
-    } // SC_VERBOSE
+  	  Output::print<2>(" rate: ", res/oldres);
+    }
 
     oldres = res;
     j++;
@@ -1527,18 +1513,11 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   while(res>TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR && j<100)
   {
     GridMG->Cycle(N_Levels-1, res);
-    if(TDatabase::ParamDB->SC_VERBOSE > 1)
+    Output::print<2>("residual after iteration ", j, ": ", res);
+    if(j>0)
     {
-      OutPut("residual after iteration " << j << ": " << res);
-      if(j>0)
-      {
-        OutPut(" rate: " << res/oldres << endl);
-      }
-      else
-      {
-        OutPut(endl);
-      }
-    } // SC_VERBOSE
+  	  Output::print<2>(" rate: ", res/oldres);
+    }
 
     oldres = res;
     j++;
@@ -1561,18 +1540,13 @@ void MoveGrid(TMultiGrid2D *GridMG, TFEVectFunct2D *GridPos,
   while(res>TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR && j<100)
   {
     GridMG->Cycle(N_Levels-1, res);
-    if(TDatabase::ParamDB->SC_VERBOSE > 1)
+
+    Output::print<2>("residual after iteration ", j, ": ", res);
+    if(j>0)
     {
-      OutPut("residual after iteration " << j << ": " << res);
-      if(j>0)
-      {
-        OutPut(" rate: " << res/oldres << endl);
-      }
-      else
-      {
-        OutPut(endl);
-      }
-    } // SC_VERBOSE
+  	  Output::print<2>(" rate: ", res/oldres);
+    }
+
     oldres = res;
     j++;
   }

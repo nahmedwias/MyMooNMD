@@ -11,7 +11,30 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 
-/**************************************************************************** */
+#include <sys/stat.h>
+
+/* *************************************************************************** */
+  //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
+ParameterDatabase get_default_TNSE3D_parameters()
+{
+  Output::print<3>("creating a default TNSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TNSE3D parameter database");
+
+  //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
+
+/* *************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE3D::Matrix type
@@ -81,19 +104,21 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(const TDomain& domain, const Example_NSE3D& ex
+Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+                       const Example_NSE3D& ex
 #ifdef _MPI
                        , int maxSubDomainPerDof
 #endif
 )
  : systems_(), example_(ex), multigrid_(), defect_(),
+   db_(get_default_TNSE3D_parameters()),
    old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
  // if it has to be called here or in the main program (see difference between
  // TNSE2D and NSE3D.
 //  this->set_parameters();
-  
+  db_.merge(param_db, false);
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -795,12 +820,12 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Parameters for stopping criteria (desired precision epsilon, max number
   // of iteration, convergence rate)
-  double epsilon    = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  size_t max_It     = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  double epsilon    = db_["nonlinloop_epsilon"];
+  size_t max_It     = db_["nonlinloop_maxit"];
+  double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
 
-  if ( TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE )
+  if ( db_["nonlinloop_scale_epsilon_with_size"] )
   {
     epsilon *= sqrt(this->get_size());
     if (my_rank==0)
@@ -1188,15 +1213,20 @@ void Time_NSE3D::descale_matrices()
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+	bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
 
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db_["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -1206,20 +1236,25 @@ void Time_NSE3D::output(int m, int &image)
 
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db_["output_write_vtk"])
     {
       // last argument in the following is domain but is never used in this class
       TOutput3D output(5, 5, 2, 1, NULL);
       output.AddFEFunction(&s.p_);
       output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
-    char SubID[] = "";
-    output.Write_ParVTK(MPI_COMM_WORLD, image, SubID);
-    image++;
+      char SubID[] = "";
+      if(my_rank == 0)
+    	  mkdir(db_["output_vtk_directory"], 0777);
+      std::string dir = db_["output_vtk_directory"];
+      std::string base = db_["output_basename"];
+      output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    cout << "image numero " << image << endl;
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    // Create output directory, if not already existing.
+    mkdir(db_["output_vtk_directory"], 0777);
+    std::string filename = db_["output_vtk_directory"];
+    filename += "/" + db_["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";
@@ -1235,7 +1270,7 @@ void Time_NSE3D::output(int m, int &image)
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
   // in such a case, here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db_["output_compute_errors"])
   {
     double err_u1[4];  // FIXME? Of these arrays only the 2 first entries are
     double err_u2[4];  // used. But the evil GetErrors() will corrupt memory if
@@ -1260,9 +1295,6 @@ void Time_NSE3D::output(int m, int &image)
                   &aux, 1, &p_space, err_p);
 
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double err_red[8]; //memory for global (across all processes) error
     double err_send[8]; //fill send buffer
     err_send[0]=err_u1[0];

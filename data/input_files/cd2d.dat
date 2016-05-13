@@ -1,0 +1,185 @@
+[ ParMooN database for CD2D ]
+======================================================================
+#       input file for ParMooN
+======================================================================
+outfile: cd2d.out
+boundary_file: Default_UnitSquare
+geo_file:      UnitSquare
+
+# not yet used
+#example: 0
+
+# control the number of mesh refinements
+refinement_n_initial_steps: 5
+
+write_ps: true
+
+compute_errors: true
+
+output_directory: VTK
+base_name: unitsquare
+
+problem_type: 0
+
+verbosity: 4
+
+solver_type: iterative
+
+
+iterative_solver_type: fgmres
+max_n_iterations: 500
+residual_tolerance: 1.e-10
+gmres_restart: 10
+damping_factor: 1.
+preconditioner: jacobi
+
+VERSION: 1
+LOGFILE: logfile
+OUTFILE: cd2d.out
+
+# choose the example (see also Examples/Example_CD2D.C)
+# 0 - sine laplace (on unit square)
+# 1 - two interior layers (on unit square)
+# 2 - Hemker 1996 (on rectangle with a hole)
+EXAMPLE: 0
+ 
+
+
+
+----------------------------------------------------------------------
+# control the discretization
+
+# Peclet number eps=1/PE_NR (diffusion coefficient)
+PE_NR:  1.e1
+
+# order of ansatz space (=k)
+#   i.e. P_k on triangles
+#        Q_k on quadrangles
+ANSATZ_ORDER: 1
+
+# type of discretization: 
+#   1 - GALERKIN
+#   2 - SDFEM/SUPG (streamline diffusion FEM/ streamline upwind Petrov-Galerkin)
+#   3 - UPWIND (unsupported)
+#   4 - CIP (continuous interior penalty)
+#   5 - DG (discontinuous Galerkin)
+#   6 - GLS (Galerkin least squares)
+#  14 - LPS (local projection stabilization)
+DISCTYPE: 1
+
+----------------------------------------------------------------------
+
+# change how the SUPG parameter is computed
+SDFEM_TYPE: 0
+
+# factors for SDFEM (delta_K=h_K*DELTAi)
+#   DELTA0 for high Peclet number
+#   DELTA1 for low Peclet number
+DELTA0:  0.3
+DELTA1:  0.0
+
+# LPS, stabilization parameters
+# choose ANSATZ_ORDER 100, 201, 302, 403, 504,... 
+LP_FULL_GRADIENT: 1
+LP_FULL_GRADIENT_COEFF: 0.5
+LP_FULL_GRADIENT_EXPONENT: 1
+LP_FULL_GRADIENT_ORDER_DIFFERENCE: 1
+
+LP_STREAMLINE: 0
+LP_STREAMLINE_COEFF: 0.1
+LP_STREAMLINE_EXPONENT: 1
+LP_STREAMLINE_ORDER_DIFFERENCE: 1
+Axial3D: 0
+
+----------------------------------------------------------------------
+# controling adaptive refinement
+
+# estimate error used for adaptive grid refinement
+# 0 implies global uniform refinement
+# 1 do adaptive refinement (derefinement does not work)
+ESTIMATE_ERRORS: 0
+
+# strategy for choosing cells for reﬁnement and dereﬁnement
+#  0 - compare to the maximal estimated local error
+#  1 - find set of cells whose sum of estimated local errors is a 
+#      prescribed part of the estimated global error, the cells in this 
+#      set are reﬁned
+# default: 0
+REFINE_STRATEGY: 0
+
+# tolerance for refinement in [0,1], default: 0.5
+# larger values mean fewer refined cells, zero means global uniform refinement
+# if you set large values, that value will internally be decreased such that a
+# minimum number of cells are refined. This avoids the case where only very few 
+# cells are refined.
+REFTOL: 0.5
+
+# we only adaptively refine the cells, if the fraction of the cells to be 
+# refined over the total number of cells is larger than the following factor.
+# Smaller values mean that during one refinement step possibly only few cells
+# are indeed refined. (default: 0.25)
+MIN_FRACTION_TO_CHANGE: 0.25
+
+# if the program could not find enough cells to be refined (determined by
+# MIN_FRACTION_TO_CHANGE), the tolerance (see REFTOL) is decreased by the 
+# following factor. Larger values mean fewer cells refined.
+DECREASE_REFTOL_FACTOR: 0.8
+
+# 0 with hanging nodes
+# 1 without hanging nodes (should use triangles)
+GRID_TYPE: 1
+
+# determine local error estimtor/indicator (see documentation)
+#   0 - gradient indicator
+#   1 - residual estimator H1
+#   2 - residual estimator L2
+#   3 - residual estimator energy quasi robust     (default)
+ADAPTIVE_REFINEMENT_CRITERION: 3
+
+
+
+# some multigrid parameters:
+
+# multigrid cycle
+# 0 
+# 1 
+# 2
+SC_MG_CYCLE_SCALAR: 1
+
+# number of pre and post smoothing
+SC_PRE_SMOOTH_SCALAR: 2
+SC_POST_SMOOTH_SCALAR: 2
+
+# choose type of pre and post smoothing
+# 1: Jacobi
+# 2: SOR
+# 3: SSOR
+# 4: ILU
+SC_SMOOTHER_SCALAR: 1
+
+# choose type of smoothing on coarsest level
+# 1: Jacobi
+# 2: SOR
+# 3: SSOR
+# 4: ILU
+# 17: Gauss Elimination (LAPACK)
+SC_COARSE_SMOOTHER_SCALAR: 17
+
+# if one uses iterative schemes then, on the coarsest mesh, this is the 
+# maximum number of iterations
+SC_COARSE_MAXIT_SCALAR: 10 
+
+#  the residual stopping criterion
+SC_COARSE_RED_FACTOR_SCALAR: 0.1
+
+# step length conrol parameters
+# 0:
+# 1:
+SC_STEP_LENGTH_CONTROL_FINE_SCALAR: 0
+SC_STEP_LENGTH_CONTROL_ALL_SCALAR: 0
+
+
+# INPUT_QUAD_RULE is used to determine the quadrature formula during 
+# the computation of errors. Set it to 99 (or so) to get the highest 
+# order quadrature formula available
+INPUT_QUAD_RULE: 99

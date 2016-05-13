@@ -175,7 +175,7 @@ class TNSE_MGLevel
     { return Aux; }
 
     /** return number of velocity degrees of freedom */
-    int GetN_UDOF()
+    int GetN_UDOF() const
     { return N_UDOF; }
 
     /** return number of pressure degrees of freedom */
@@ -218,21 +218,21 @@ class TNSE_MGLevel
 
 #ifdef __2D__
     /** return FE space for velocity u*/
-    const TFESpace2D *GetUSpace()
+    const TFESpace2D *GetUSpace() const
     { return USpace; }
 
     /** return FE space for pressure p*/
-    const TFESpace2D *GetPSpace()
+    const TFESpace2D *GetPSpace() const
     { return PSpace; }
 #endif  
 
 #ifdef __3D__
     /** return FE space for velocity u*/
-    const TFESpace3D *GetUSpace()
+    const TFESpace3D *GetUSpace() const
     { return USpace; }
 
     /** return FE space for pressure p*/
-    const TFESpace3D *GetPSpace()
+    const TFESpace3D *GetPSpace() const
     { return PSpace; }
 #endif  
 
@@ -270,6 +270,22 @@ class TNSE_MGLevel
     /** return Type */
     int GetType()
     { return Type; }
+    /*********************
+     * Things belonging to new Vanka smoother Implementation.
+     ********************
+     */
+    public:
+    //! @brief Initialize the smoother_ object.
+    // Call after everything global is initialized.
+    virtual void initializeSmoother();
+
+    //! Perform one step of Vanka smoothing on the level.
+    //! Call only after initializer finished.
+    virtual void applySmoother(double *currentSolution, const double* const currentRHS,
+        double *storeOldSolution);
+
+    int getLevel() const
+    { return Level; }
 
 };
 

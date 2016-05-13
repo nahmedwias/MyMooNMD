@@ -86,8 +86,9 @@ int TBcgs::Iterate (TSquareMatrix **sqmat,
 TMatrix **mat, double *sol,
 double *rhs)
 {
+  Output::warn("TBcgs::Iterate", "Use new FGMRES implementation instead.");
 
-  int maxite = maxit, i, j, verbose = TDatabase::ParamDB->SC_VERBOSE, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
+  int maxite = maxit, i, j, ex_maxit = TDatabase::ParamDB->SC_EX_MAXIT;
 //  double t1, t2;
   double dnorm, dnorm0, dnormlast, rho,rho_last=1.0,alpha, beta, omega, delta;
 
@@ -96,8 +97,7 @@ double *rhs)
   int flexible = 0;
 
 //  t1 = GetTime();
-  if (verbose>1)
-    OutPut("Entering bcgs" << endl);
+  Output::print<2>("Entering bcgs");
 
   if(flexible)
   {
@@ -126,8 +126,7 @@ double *rhs)
     }
   }
 
-  if (verbose>0)
-    OutPut("bcgs Iteration " << 0 << " " << dnorm << endl);
+  Output::print("bcgs Iteration ", 0, " ", dnorm);
 
   for(i=0; i<maxite; i++)
   {
@@ -202,10 +201,7 @@ double *rhs)
     dnorm=sqrt(Ddot(N_DOF, r, r));
     if ( (dnorm<dnorm0*red_factor || dnorm<res_norm_min) && !ex_maxit )
     {
-      if (verbose>0)
-      {
-        OutPut("BCGS Iteration " << i+1 << " res " << dnorm << " " << dnorm/dnormlast << endl);
-      }
+        Output::print("BCGS Iteration ", i+1, " res ", dnorm, " ", dnorm/dnormlast);
       break;
     }
     //y=Ks=Kr
@@ -249,10 +245,7 @@ double *rhs)
     //s=r=r-omega*t
     Daxpy(N_DOF, -omega, t, r);
     dnorm=sqrt(Ddot(N_DOF, r, r));
-    if (verbose>0)
-    {
-      OutPut("BCGS Iteration " << i+1 << " dnorm " << dnorm << " " << " dnorm/dnormlast " << dnorm/dnormlast << endl);
-    }
+    Output::print("BCGS Iteration ", i+1, " dnorm ", dnorm, " dnorm/dnormlast ", dnorm/dnormlast);
     dnormlast=dnorm;
     if (i<minit) continue;
     if (ex_maxit) continue;

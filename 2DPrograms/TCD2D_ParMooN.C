@@ -31,11 +31,16 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
+
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(argv[1]);  
+  TDomain Domain(argv[1], parmoon_db);
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 2;
@@ -50,21 +55,16 @@ int main(int argc, char* argv[])
   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
 
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR
-         + TDatabase::ParamDB->LEVELS; i++)
+  size_t n_ref = Domain.get_n_initial_refinement_steps();
+  for(int i=0; n_ref; i++)
     Domain.RegRefineAll();  
   
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  
-  
   Example_CD2D example;
-  Time_CD2D tcd(Domain, example);
+  Time_CD2D tcd(Domain, parmoon_db, example);
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();

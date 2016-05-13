@@ -15,20 +15,38 @@
 #include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
 
+#include <sys/stat.h>
+
 #ifdef _MPI
 #include <MumpsWrapper.h>
 #endif
 
 
+ParameterDatabase get_default_CD3D_parameters()
+{
+  Output::print<3>("creating a default CD3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("CD3D parameter database");
+  
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
+
 #ifdef _MPI
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
-                                         TCollection& coll, int maxSubDomainPerDof)
+                                     TCollection& coll, int maxSubDomainPerDof)
    : feSpace_(&coll, (char*)"space", (char*)"cd3d fe_space", example.get_bc(0),
               TDatabase::ParamDB->ANSATZ_ORDER),
      matrix_({&feSpace_}), //system block matrix
      rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
      solution_(matrix_, false), // suitable solution vector filled with zeroes
-     feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(), solution_.length()),
+     feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(),
+                 solution_.length()),
      parMapper_(), // will be reset shortly
      parComm_() // will be reset shortly
 
@@ -46,9 +64,9 @@
     parComm_ = TParFECommunicator3D(&parMapper_);
   }
 #else
-  /** ************************************************************************ */
+  /* ************************************************************************ */
   CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example,
-                                         TCollection& coll)
+                                     TCollection& coll)
    : feSpace_(&coll, (char*)"space", (char*)"cd3d fe_space", example.get_bc(0),
               TDatabase::ParamDB->ANSATZ_ORDER),
      matrix_({&feSpace_}), //system block matrix
@@ -62,19 +80,22 @@
 #endif
 
   /** ************************************************************************ */
-  CD3D::CD3D(std::list<TCollection* > collections, const Example_CD3D& example
+  CD3D::CD3D(std::list<TCollection*> collections,
+             const ParameterDatabase& param_db, const Example_CD3D& example
 #ifdef _MPI
              ,int maxSubDomainPerDof
 #endif
   )
-  : systems_(), example_(example), multigrid_(nullptr), errors_()
+  : systems_(), example_(example), multigrid_(nullptr),
+    db(get_default_CD3D_parameters()), solver(param_db), errors_()
   {
+    this->db.merge(param_db, false); // update this database with given values
+    this->checkParameters();
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
-    bool usingMultigrid =
-        ( TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5 &&
-          TDatabase::ParamDB->SOLVER_TYPE == 1
-        );
+    bool usingMultigrid = 
+      this->solver.get_db()["solver_type"].is("iterative") 
+      && this->solver.get_db()["preconditioner"].is("multigrid");
 
     if (!usingMultigrid)
     {
@@ -108,7 +129,7 @@
     {// we are using multigrid
 
       // number of refinement levels for the multigrid
-      size_t nMgLevels = TDatabase::ParamDB->LEVELS;
+      size_t nMgLevels = this->solver.get_db()["n_multigrid_levels"];
 
       // check if we have as many collections as expected multigrid levels
       if(collections.size() != nMgLevels )
@@ -119,8 +140,8 @@
 
       // Create multigrid object.
       double *param = new double[2]; // memory leak
-      param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
+      param[0] = this->solver.get_db()["damping_factor"];
+      param[1] = this->solver.get_db()["damping_factor_finest_grid"];
       multigrid_.reset(new TMultiGrid3D(1, 2, param));
 
       // Construct all System(s)PerGrid and store them.
@@ -219,7 +240,7 @@ void CD3D::solve()
   #endif
 
 
-  if (TDatabase::ParamDB->SOLVER_TYPE == 1)
+  if (this->solver.get_db()["solver_type"].is("iterative"))
   { // Iterative solver chosen.
 
     // Hold/declare some variables which will be needed for all
@@ -295,13 +316,11 @@ void CD3D::solve()
     delete iterativeSolver;
 
   }
-  else if (TDatabase::ParamDB->SOLVER_TYPE == 2)
+  else if (this->solver.get_db()["solver_type"].is("direct"))
   { // Direct solver chosen.
 #ifndef _MPI
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(syst.matrix_, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(syst.rhs_, syst.solution_);
+    this->solver.update_matrix(syst.matrix_);
+    this->solver.solve(syst.rhs_, syst.solution_);
     return;
 #elif _MPI
     std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.parComm_};
@@ -319,8 +338,14 @@ void CD3D::solve()
 
 void CD3D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+#ifdef _MPI
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
 
   SystemPerGrid& syst = systems_.front() ;
 
@@ -328,17 +353,24 @@ void CD3D::output(int i)
   syst.feFunction_.PrintMinMax();
 
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput3D Output(1, 1, 0, 0, NULL);
     Output.AddFEFunction(&syst.feFunction_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    if(my_rank == 0)
+  	  mkdir(db["output_vtk_directory"], 0777);
+    std::string dir = db["output_vtk_directory"];
+    std::string base = db["output_basename"];
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -349,7 +381,7 @@ void CD3D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double errors[5];
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
@@ -360,9 +392,6 @@ void CD3D::output(int i)
                                2, L2H1Errors, example_.get_coeffs(),
                                &aux, 1, &space, errors);
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double errorsReduced[4]; //memory for global (across all processes) error
 
     MPI_Allreduce(errors, errorsReduced, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -383,17 +412,17 @@ void CD3D::output(int i)
       Output::print( "L2: ", errors_.at(0));
       Output::print( "H1-semi: ", errors_.at(1));
     }
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"]S)
 }
 
 void CD3D::checkParameters()
 {
   //check if the correct problem type is set, change eventually
-  if (TDatabase::ParamDB->PROBLEM_TYPE != 1)
+  if (!this->db["problem_type"].is(1))
   {
-    TDatabase::ParamDB->PROBLEM_TYPE = 1; //set correct problem type
+    this->db["problem_type"] = 1; //set correct problem type
     Output::print("PROBLEM_TYPE set to 1 (convection-diffusion-reaction), "
-        "for this is class CD3D.");
+                  "for this is class CD3D.");
   }
 
   //an error when using ansatz order 0
@@ -407,7 +436,8 @@ void CD3D::checkParameters()
 #ifdef _MPI
   // among the iterative solvers only 11 (fixed point iteration/
   // Richardson) is working
-  if(TDatabase::ParamDB->SOLVER_TYPE == 1 & TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
+  if(this->solver.get_db()["solver_type"].is("iterative") 
+      && TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
   {
       ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
   }
@@ -417,31 +447,14 @@ void CD3D::checkParameters()
   // this has to do with the relation of UNIFORM_STEPS and LEVELS
   // so far this strategy to treat them is only followed here, it should be unified
   // helper variable
-  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5
-                        && TDatabase::ParamDB->SOLVER_TYPE == 1;
-  if (!usingMultigrid)
-  { //case of direct solve or non-multigrid iterative solve
-    if (TDatabase::ParamDB->LEVELS < 1)
-    {
-      ErrThrow("Parameter LEVELS must be greater or equal 1.");
-    }
-    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
-    TDatabase::ParamDB->LEVELS = 1;
-    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added"
-        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
-        TDatabase::ParamDB->UNIFORM_STEPS, ".");
-  }
-  else if (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-  {  // iterative solve with multigrid prec
-    if (TDatabase::ParamDB->LEVELS < 2)
-    {
-      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
-    }
-  }
+  bool usingMultigrid = 
+    this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
 
   // the only preconditioners implemented are Jacobi and multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 1 &&
-     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5)
+  if(this->solver.get_db()["solver_type"].is("iterative") 
+     && !this->solver.get_db()["preconditioner"].is("jacobi") 
+     && !this->solver.get_db()["preconditioner"].is("multigrid"))
   {
     ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
         " are implemented so far.");

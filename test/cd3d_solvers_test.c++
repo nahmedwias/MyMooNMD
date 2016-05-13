@@ -40,11 +40,11 @@ void compare(const CD3D& cd3d, std::array<double, int(2)> errors, double tol)
   }
 }
 
-void check(int example, int ansatz_order, int geo,
+void check(ParameterDatabase& db, int ansatz_order,
            std::array<double, int(2)> errors, double tol)
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
-  TDatabase::ParamDB->EXAMPLE = example;
+  TDatabase::ParamDB->EXAMPLE = db["example"];
 #ifdef _MPI
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -54,21 +54,24 @@ void check(int example, int ansatz_order, int geo,
 #endif
 
   // fresh domain object
-  TDomain domain;
+  TDomain domain(db);
 
-  if(geo == 6)
-    domain.Init(std::string("Default_UnitCube").c_str(),
-                std::string("Default_UnitCube_Hexa").c_str());
-  else if(geo == 4)
-    domain.Init(std::string("Default_UnitCube").c_str(),
-                std::string("Default_UnitCube_Tetra").c_str());
-  else
-    ErrThrow("Chose geo = 6 (hexahedra) or 4 (tets) for this test.");
+  domain.Init(db["boundary_file"], db["geo_file"]);
 
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+
+  // split the number of refinement steps - some have to be done before,
+  // some after the domain partitioning
+  int n_ref_total = domain.get_n_initial_refinement_steps();
+  size_t mg_levels = db["n_multigrid_levels"];
+  size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
+  size_t n_ref_before =  n_ref_total - n_ref_after;
+  if(n_ref_before < 0)
   {
-    domain.RegRefineAll();
+    ErrThrow("Number of multigrid levels is greater than number of refinement "
+        "levels. Garbage in, garbage out.")
   }
+  for(size_t i = 0; i < n_ref_before; i++)
+    domain.RegRefineAll();
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -93,7 +96,7 @@ void check(int example, int ansatz_order, int geo,
   gridCollections.push_front(domain.GetCollection(It_Finest, 0));
 
   // Further mesh refinement and grabbing of collections.
-  for(int level=1;level<TDatabase::ParamDB->LEVELS;level++)
+  for(size_t level= 0; level < n_ref_after; level++)
   {
     domain.RegRefineAll();
 #ifdef _MPI
@@ -110,12 +113,10 @@ void check(int example, int ansatz_order, int geo,
 
   // Construct the cd3d problem object.
 #ifdef _MPI
-  CD3D cd3d(gridCollections, example_obj, maxSubDomainPerDof);
+  CD3D cd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
 #else
-  CD3D cd3d(gridCollections, example_obj);
+  CD3D cd3d(gridCollections, db, example_obj);
 #endif
-
-  Output::print("Made it here.");
 
   cd3d.assemble();
   cd3d.solve();
@@ -126,11 +127,13 @@ void check(int example, int ansatz_order, int geo,
 
 // Choose the solver according to the input string and set global database
 // entries accordingly.
-void set_solver_globals(std::string solver_name)
+void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
 
   if (solver_name.compare("jacobi") == 0)
   {
+    db["solver_type"] = "iterative";
+    db["preconditioner"] = "jacobi";
     TDatabase::ParamDB->SOLVER_TYPE = 1;
     TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 1;
@@ -140,6 +143,10 @@ void set_solver_globals(std::string solver_name)
   }
   else if (solver_name.compare("multigrid") == 0)
   {
+    db["solver_type"] = "iterative";
+    db["preconditioner"] = "multigrid";
+    db["refinement_n_initial_steps"] = 2;
+    db["n_multigrid_levels"] = 2;
     TDatabase::ParamDB->SOLVER_TYPE = 1;
     TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 5;
@@ -166,12 +173,14 @@ void set_solver_globals(std::string solver_name)
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
+    db["solver_type"] = "direct";
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
 #ifdef _MPI
   else if (solver_name.compare("mumps") == 0)
   {
+    db["solver_type"] = "direct";
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
@@ -221,54 +230,62 @@ int main(int argc, char* argv[])
 #endif
 
   TFEDatabase3D FEDatabase;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db["problem_type"] = 1;
+  db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
+  db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
+  db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
+  db.add("preconditioner", std::string("multigrid"), "",
+         {"jacobi", "multigrid"});
+  db["boundary_file"] = "Default_UnitCube";
 
   TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 2; // 2 uniform refinement steps
-  TDatabase::ParamDB->LEVELS = 1;
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
 
-  TDatabase::ParamDB->MEASURE_ERRORS = 1;
-
-
-
-  set_solver_globals(std::string(argv[1]));
+  set_solver_globals(std::string(argv[1]), db);
 
   double tol = get_tolerance(std::string(argv[1]));
 
   //===========================================================
   if(my_rank==0)
-    Output::print<1>("Starting computations with solver: "
-        , std::string(argv[1]), ".");
+    Output::print<1>("Starting computations with solver: ",
+                     std::string(argv[1]), ".");
   //===========================================================
   std::array<double, int(2)> errors;
   errors = {{0.0, 0.0}};
-  size_t geo;
+  
   if(my_rank==0)
     Output::print<1>("Hexahedra grid.");
-  geo = 6;
-  // Example -1: constant solution, order 1 elements
-  check(-1, 1, geo, errors, tol);
-  // Example -2: linear solution, order 1 elements
-  check(-2, 1, geo, errors, tol);
-  // Example -3: quadratic solution, order 2 elements
-  check(-3, 2, geo, errors, tol);
+  db["geo_file"] = "Default_UnitCube_Hexa";
+  
+  db["example"] = -1; // Example -1: constant solution, order 1 elements
+  check(db, 1, errors, tol);
+  
+  db["example"] = -2; // Example -2: linear solution, order 1 elements
+  check(db, 1, errors, tol);
+  
+  db["example"] = -3; // Example -3: quadratic solution, order 2 elements
+  check(db, 2, errors, tol);
 
   if (std::string(argv[1]).compare("jacobi") != 0)//Jacobi simply fails on this grid (mpi and sequential).
   {
     if(my_rank==0)
       Output::print<1>("Tetrahedra grid.");
-    geo = 4;
-    // Example -1: constant solution, order 1 elements
-    check(-1, 1, geo, errors, tol);
-    // Example -2: linear solution, order 1 elements
-    check(-2, 1, geo, errors, tol);
-    // Example -3: quadratic solution, order 2 elements
-    check(-3, 2, geo, errors, tol);
+    db["geo_file"] = "Default_UnitCube_Tetra";
+    
+    db["example"] = -1; // Example -1: constant solution, order 1 elements
+    check(db, 1, errors, tol);
+    
+    db["example"] = -2; // Example -2: linear solution, order 1 elements
+    check(db, 1, errors, tol);
+    
+    db["example"] = -3; // Example -3: quadratic solution, order 2 elements
+    check(db, 2, errors, tol);
   }
 #ifdef _MPI
   MPI_Finalize();

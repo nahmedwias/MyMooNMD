@@ -54,9 +54,6 @@ struct TParaDB
 
   int SAVESOL;
   
-  char *BASENAME;
-  char *VTKBASENAME;  
-  char *OUTPUTDIR;
   char *SAVE_DATA_FILENAME;
   char *READ_DATA_FILENAME;
   char *MATLAB_MATRIX;
@@ -70,18 +67,15 @@ struct TParaDB
   //======================================================================
   int PRECOND_LS;
   int SOLVER_TYPE;
-  int WRITE_PS;
-  int WRITE_GRAPE;
+   int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
   int WRITE_AMIRA;
-  int WRITE_VTK;
   int WRITE_MATLAB;
   int WRITE_MATLAB_MATRIX;
   int SAVE_DATA;
   int READ_DATA;
   int READ_GRAPE_FILE;
-  int MEASURE_ERRORS;
   int ESTIMATE_ERRORS;
   int COMPUTE_VORTICITY_DIVERGENCE;
   
@@ -105,8 +99,6 @@ struct TParaDB
 
   int OMPNUMTHREADS;
 
-  int LEVELS;
-  int UNIFORM_STEPS;
   double DRIFT_X;
   double DRIFT_Y;
   double DRIFT_Z;
@@ -396,12 +388,6 @@ struct TParaDB
   //======================================================================
   // ******** parameters for scalar system *********//
   //======================================================================
-  // parameters for nonlinear iteration
-  int    SC_NONLIN_ITE_TYPE_SCALAR;
-  int    SC_NONLIN_MAXIT_SCALAR;
-  double SC_NONLIN_RES_NORM_MIN_SCALAR;
-  double SC_NONLIN_DAMP_FACTOR_SCALAR;
-
   // parameters for linear iteration
   int    SC_SOLVER_SCALAR;
   int    SC_PRECONDITIONER_SCALAR;
@@ -437,12 +423,8 @@ struct TParaDB
   //======================================================================
   // ******** parameters for saddle point system *********//
   //======================================================================
-  // parameters for nonlinear iteration
+  // parameter for nonlinear iteration
   int    SC_NONLIN_ITE_TYPE_SADDLE;
-  int    SC_NONLIN_MAXIT_SADDLE;
-  double SC_NONLIN_RES_NORM_MIN_SADDLE;
-  double SC_NONLIN_DAMP_FACTOR_SADDLE;
-  int    SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE;
 
   // parameters for linear iteration
   int    SC_SOLVER_SADDLE;
@@ -516,15 +498,12 @@ struct TParaDB
   int    SC_SCHUR_STEP_LENGTH_CONTROL;
   int    SC_MIXED_BCGS_CGS_SWITCH_TOL;
   double SC_DIV_FACTOR;
-  double SC_NONLIN_DIV_FACTOR;
   int    SC_SMOOTHING_STEPS;
   int    SC_N1_PARAM;
   int    SC_N2_PARAM;
   int    SC_MINIT;
   double SC_VAS_LAZ_DELTA;
   int    SC_ROW_EQUILIBRATION;
-  int    SC_VERBOSE;
-  int    SC_VERBOSE_AMG;
 
   int    SC_BRAESS_SARAZIN_MATRIX;
   double SC_BRAESS_SARAZIN_ALPHA;
@@ -669,134 +648,9 @@ struct TParaDB
   int SSMUM_MAX_CELLS_LAYERS;  
   int SSMUM_INTERPOLATION;
 
-  //======================================================================
-  /** parameters for WINDTUNNEL computations */
-  //======================================================================
-  double WINDTUNNEL_SHIFT; 
-  int WINDTUNNEL_CONFIGURATION; 
-  int WINDTUNNEL_INTERPOLATION;
-  int WINDTUNNEL_STEADY;
-  int WINDTUNNEL_SPATIAL;
-  double WINDTUNNEL_BROWNIAN ;
-  int WINDTUNNEL_POL_ORDER;
-  int WINDTUNNEL_SHEAR_FACTOR_TYPE;
-  double  WINDTUNNEL_SHEAR_FACTOR;
-  int WINDTUNNEL_QUAD_METHOD;
-  int WINDTUNNEL_MEASURE_MASS;
-  int WINDTUNNEL_LAYER_NUMBER_X;
-  int WINDTUNNEL_DIM_Y;
-  int WINDTUNNEL_DIM_Z;
-  int WINDTUNNEL_DIM_R;
-  //double WINDTUNNEL_Y[WINDTUNNEL_DIM_Y_CONST];
-  //double WINDTUNNEL_Z[WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_BOUND_VAL[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][2];
-  double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_DROP_VELO[WINDTUNNEL_LAYER_NUMBER_X_CONST][WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-  double WINDTUNNEL_BOUND_VAL_DROPS[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST][WINDTUNNEL_DIM_R_CONST][2];
-  double WINDTUNNEL_ENVIR_COND;
-  double WINDTUNNEL_SUPERSAT;
-  double WINDTUNNEL_U_INFTY;
-  double WINDTUNNEL_L_INFTY;
-  double WINDTUNNEL_R_MIN;
-  double WINDTUNNEL_R_INFTY;
-  double WINDTUNNEL_R_INFTY_EXPERIMENT;
-  double WINDTUNNEL_F_INFTY;
-  double WINDTUNNEL_kinematic_viscosity;
-  double WINDTUNNEL_dynamic_viscosity;
-  double WINDTUNNEL_density; 
-  //double WINDTUNNEL_BOUND_KOEFF[WINDTUNNEL_DIM_Y_CONST][WINDTUNNEL_DIM_Z_CONST];
-
-  //======================================================================
-  /** parameters for urea synthesis computations */
-  //======================================================================
-  int UREA_REACTION_DISC;
-  int UREA_PB_DISC;
-  int UREA_MODEL;
-  int UREA_PB_DISC_STAB;
-  int UREA_SOLD_PARAMETER_TYPE;
-  int UREA_PIPE;
-  int UREA_CONC_MAXIT;
-  double UREA_inflow_time;
-
-  double UREA_l_infty;
-  double UREA_u_infty;
-  double UREA_c_infty;
-  double UREA_temp_infty;
-  double UREA_nu;
-  double UREA_rho;
-  double UREA_c_p;
-  double UREA_lambda;
-  double UREA_D_P_0;
-  double UREA_D_P_MAX;
-  double UREA_k_v;
-  double UREA_f_infty;
-  double UREA_m_mol;
-  double UREA_D_J;
-  double UREA_rho_d;
-  double UREA_k_g;
-  double UREA_delta_h_cryst;
-  double UREA_g;
-  double UREA_rho_sat_1;
-  double UREA_rho_sat_2;
-  double UREA_alfa_nuc;
-  double UREA_beta_nuc;
-  double UREA_INFLOW_SCALE;
-  double UREA_CONC_TOL;
-
-  double UREA_AGGR_SPATIAL;
-  double UREA_AGGR_BROWNIAN;
-  double UREA_AGGR_POL_ORDER;
-  double UREA_AGGR_SHEAR_FACTOR_TYPE;
-  double UREA_AGGR_SHEAR_FACTOR;
-  double UREA_AGGR_BROWNIAN_TEMP;
-  double UREA_AGGR_BROWNIAN_SCAL;
-  double UREA_PIPE_RADIUS;
   int PB_DISC_TYPE;
   int PB_TIME_DISC;
-  
-  //======================================================================
-  /** parameters for kdp synthesis computations */
-  //======================================================================
-  
-  int KDP_MODEL;
-  double KDP_D_P_0_2;
-  double KDP_D_P_MAX_2;
-  double KDP_l_infty;
-  double KDP_u_infty;
-  double KDP_c_infty;
-  double KDP_temp_infty;
-  double KDP_nu;
-  double KDP_rho;
-  double KDP_rho_water;
-  double KDP_c_p;
-  double KDP_lambda;
-  double KDP_D_P_0;
-  double KDP_D_P_MAX;
-  double KDP_f_infty;
-  double KDP_m_mol;
-  double KDP_D_J;
-  double KDP_rho_d;
-  double KDP_k_g_1;
-  double KDP_k_g_2;
-  double KDP_k_b;
-  double KDP_delta_h_cryst;
-  double KDP_g_1;
-  double KDP_g_2;
-  double KDP_b;
-  double KDP_w_sat_1;
-  double KDP_w_sat_2;
-  double KDP_w_sat_3;
-  double KDP_w_sat_1_Ma;
-  double KDP_w_sat_2_Ma;
-  double KDP_w_sat_3_Ma;
-  double KDP_INFLOW_SCALE;
-  double KDP_CONC_TOL;
-  double KDP_INTERNAL_NUC_A;
-  double KDP_INTERNAL_NUC_B;
 
-  int KDP_CONC_MAXIT;
-  double KDP_inflow_time;
-  
   //======================================================================
   /** parameters for Stokes--Darcy (StoDa) coupling */
   //======================================================================

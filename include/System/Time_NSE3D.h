@@ -25,6 +25,8 @@
 #include <FESpace3D.h>
 #include <Example_NSE3D.h>
 
+#include <ParameterDatabase.h>
+
 #include <NSE_MultiGrid.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
@@ -138,6 +140,16 @@ class Time_NSE3D
       ~System_per_grid() = default;
     };
 
+    /** @brief a local parameter database which controls this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * default ParMooN parameters). Note that this usually does not include
+     * other parameters such as solver parameters. Those are only in the
+     * Solver object.
+     */
+    ParameterDatabase db_;
+
     /** @brief A complete system on each involved grid.
      *
      * Note that the size of this double ended queue is at least one and
@@ -219,10 +231,12 @@ class Time_NSE3D
      * @param example The example to perform
      */
 #ifdef _MPI
-    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example,
+    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+               const Example_NSE3D& example,
                int maxSubDomainPerDof);
 #else
-    Time_NSE3D(const TDomain& domain, const Example_NSE3D& example);
+    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+               const Example_NSE3D& example);
 #endif
     
 // ======================================================================

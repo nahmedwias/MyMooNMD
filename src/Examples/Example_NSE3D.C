@@ -523,6 +523,11 @@ void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
   }
   else
   {
-    Output::print<2>("INFO -- no post processing done for the current example.");
+#ifdef _MPI
+	  int my_rank;
+	  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	  if (my_rank == 0)
+#endif
+	    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
   }
 }

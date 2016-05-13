@@ -20,7 +20,7 @@
 #include <NSE_MGLevel2.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <FEDatabase2D.h>
@@ -34,7 +34,6 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 
@@ -356,7 +355,7 @@ void TNSE_MGLevel2::CellVanka(double *u1, double *rhs1, double *aux,
   double Rhs[RhsDim], sol[RhsDim];
   int *UGlobalNumbers, *UBeginIndex, *UDOFs, UDOF, N_U;
   int *PGlobalNumbers, *PBeginIndex, *PDOFs, PDOF, N_P;
-  int N_LocalDOF, verbose;
+  int N_LocalDOF;
   int begin, end;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   TBaseCell *Cell;
@@ -646,10 +645,7 @@ void TNSE_MGLevel2::CellVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -728,7 +724,7 @@ void TNSE_MGLevel2::NodalVanka(double *u1, double *rhs1, double *aux,
   double *uold; 
   double System[SystemRhs*SystemRhs];
   double Rhs[SystemRhs], sol[SystemRhs];
-  int N_LocalDOF, verbose;
+  int N_LocalDOF;
   int begin, end, HangingBound;
   double *u2, *p, *rhs2, *rhsp;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
@@ -967,10 +963,7 @@ void TNSE_MGLevel2::NodalVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -1172,11 +1165,8 @@ double TNSE_MGLevel2::StepLengthControl (double *u1, double *u1old,
   }
 
   delete x;
-   
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-  {
-    OutPut("step length control " << omega << endl);
-  }
+
+  Output::print<2>("step length control ",omega);
   return(omega);
 }
 
@@ -1314,7 +1304,7 @@ void TNSE_MGLevel2::BraessSarazin(double *u1, double *rhs,
     exit(-1);
   }
   else
-    Solver(A, B1T, B2T, B1, B2, rhs, sol,j);
+    OldSolver(A, B1T, B2T, B1, B2, rhs, sol,j);
 #endif  
 #ifdef __3D__
   OutPut("Braess-Sarazin smoother not implemented !!!" << endl);

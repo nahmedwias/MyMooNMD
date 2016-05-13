@@ -20,7 +20,7 @@
 #include <NSE_MGLevel3.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <FEDatabase2D.h>
@@ -34,7 +34,6 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 
@@ -243,7 +242,7 @@ void TNSE_MGLevel3::CellVanka(double *u1, double *rhs1, double *aux,
   TFE3D *UEle, *PEle;
   TSquareMatrix3D *sqmatrix[1];  
 #endif  
-  int j,k,l,m, N_Cells, ii, verbose;
+  int j,k,l,m, N_Cells, ii;
   int j1, j2, j4, k1, k2;
   double value, value1, value2;
   double value11,value12,value21,value22;
@@ -545,10 +544,7 @@ void TNSE_MGLevel3::CellVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       { 
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -618,7 +614,7 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
   double System[SystemRhs*SystemRhs];
   double Rhs[SystemRhs], sol[SystemRhs];
   int N_LocalDOF;
-  int begin, end, HangingBound, begin1, end1, verbose;
+  int begin, end, HangingBound, begin1, end1;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
   double *u2, *p, *rhs2, *rhsp;
   TItMethod *itmethod = NULL;
@@ -895,10 +891,7 @@ void TNSE_MGLevel3::NodalVanka(double *u1, double *rhs1, double *aux,
         //OutPut(i << " local dof " << N_LocalDOF << endl);
          //for (ii=0;ii<10;ii++)
         //  cout << ii << " " << System[ii] << endl;
-        verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         //SolveLinearSystem(System, Rhs, N_LocalDOF, N_LocalDOF);
         //norm =0 ;
         //for (ii=0;ii<N_LocalDOF;ii++)
@@ -1116,8 +1109,7 @@ double TNSE_MGLevel3::StepLengthControl (double *u1, double *u1old,
         omega = 0.9;
     }     
   delete x;
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-    OutPut("step length control " << omega << endl);
+  Output::print<2>("step length control ", omega);
   return(omega); 
 }
 
@@ -1142,7 +1134,7 @@ void TNSE_MGLevel3::BraessSarazin(double *u1, double *rhs1,
   // call the algebraic solver
   // the last input parameter is only a dummy
 #ifdef __2D__
-  Solver(A11, A12, A21, A22, B1, B2, rhs1, sol, j);
+  OldSolver(A11, A12, A21, A22, B1, B2, rhs1, sol, j);
 #endif  
 #ifdef __3D__
   OutPut("Braess-Sarazin smoother not implemented !!!" << endl);

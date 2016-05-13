@@ -385,8 +385,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->PRESSURE_SEPARATION = 0;
   ParamDB->OMPNUMTHREADS=1;
 
-  ParamDB->LEVELS = 1000;
-  ParamDB->UNIFORM_STEPS = 1000;
   ParamDB->DRIFT_X = 0;
   ParamDB->DRIFT_Y = 0;
   ParamDB->DRIFT_Z = 0.41;
@@ -534,15 +532,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->MIN_MAX_ADJOINT = 0;
   ParamDB->INITIAL_STEEPEST_DESCENT_ADJOINT = 0;
 
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->BASENAME = tmp;
-  tmp = new char[30];
-  strcpy(tmp,"MooN_MD_default_basefile");
-  ParamDB->VTKBASENAME = tmp;
-  tmp = new char[2];
-  strcpy(tmp,"."); // current directory
-  ParamDB->OUTPUTDIR = tmp;
   tmp = new char[40];
   strcpy(tmp,"MooN_MD_default_save_data_filename");
   ParamDB->SAVE_DATA_FILENAME=tmp;
@@ -579,16 +568,13 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->GROUP_FEM = 0;
 
   /** parameters for controling the program */
-  ParamDB->WRITE_PS = FALSE; 
   ParamDB->WRITE_GRAPE = FALSE; 
   ParamDB->WRITE_GMV = FALSE; 
   ParamDB->WRITE_AMIRA = FALSE; 
-  ParamDB->WRITE_VTK = FALSE; 
   ParamDB->WRITE_GNU = FALSE; 
   ParamDB->SAVE_DATA = FALSE; 
   ParamDB->READ_DATA = FALSE; 
   ParamDB->READ_GRAPE_FILE = FALSE; 
-  ParamDB->MEASURE_ERRORS = FALSE; 
   ParamDB->ESTIMATE_ERRORS = FALSE; 
   ParamDB->SOLVE_ADJOINT_PROBLEM = FALSE; 
   ParamDB->COMPUTE_VORTICITY_DIVERGENCE = FALSE;
@@ -598,12 +584,6 @@ ParamDB->BrinkmanTYPE = 1;
 
   // ******** parameters for scalar system *********//
   ParamDB->SOLVER_TYPE = 1; 
-
-  // parameters for nonlinear iteration
-  ParamDB->SC_NONLIN_ITE_TYPE_SCALAR = 0;
-  ParamDB->SC_NONLIN_MAXIT_SCALAR = 10000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR = 1.0;
 
   // parameters for linear iteration
   ParamDB->SC_SOLVER_SCALAR=AMG_GMRES_FLEX;
@@ -643,10 +623,6 @@ ParamDB->BrinkmanTYPE = 1;
 
   // parameters for nonlinear iteration
   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
-  ParamDB->SC_NONLIN_MAXIT_SADDLE = 1000;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-  ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-  ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE = 0;
 
   // parameters for linear iteration
   ParamDB->SC_SOLVER_SADDLE=AMG_GMRES_FLEX;
@@ -720,14 +696,11 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL =0;
   ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL=100;
   ParamDB->SC_DIV_FACTOR=1e10;
-  ParamDB->SC_NONLIN_DIV_FACTOR=1e10;
   ParamDB->SC_SMOOTHING_STEPS=0;
   ParamDB->SC_N1_PARAM=1;
   ParamDB->SC_N2_PARAM=1;
   ParamDB->SC_MINIT=0;
   ParamDB->SC_VAS_LAZ_DELTA=1.0;
-  ParamDB->SC_VERBOSE=1;
-  ParamDB->SC_VERBOSE_AMG=1;
   ParamDB->SC_ROW_EQUILIBRATION = 0;
 
   ParamDB->SC_BRAESS_SARAZIN_MATRIX = 2;
@@ -979,42 +952,6 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->CYLINDER_22000_YPLUS_SIDES = 1500;
   ParamDB->CYLINDER_22000_YPLUS_FRONT = 2300;
   ParamDB->CYLINDER_22000_YPLUS_BACK  = 1000;
-  
-// parameters for BULK computations
-  ParamDB->BULK_REACTION_DISC = 1;
-  ParamDB->BULK_PB_DISC = 3;
-  ParamDB->BULK_PB_DISC_STAB = 1;
-  ParamDB->BULK_PB_DISC_FCT_GROUP = 1;
-  ParamDB->BULK_COUPLING = 1;
-  ParamDB->BULK_GROWTH_RATE = 1;
-  ParamDB->BULK_REACTION_MASS_LUMPING = 0;
-  ParamDB->BULK_REACTION_C_CUT = 6;
-  ParamDB->BULK_METHODS_OF_MOMENTS = 0;
-  ParamDB->BULK_MOM_DISC = 2;
-  ParamDB->BULK_SOLD_PARAMETER_TYPE = 51;
-  ParamDB->N_CELL_LAYERS_PSD = 16;
-  ParamDB->N_CELL_LAYERS_PSD_2 = 16;
-  ParamDB->OUTPUT_NODE_LAYER_PSD = 1;
-
-// coefficients for the fluid
-  ParamDB->BULK_density = 1000;
-  ParamDB->BULK_dynamic_viscosity = 1e-3;  
-
-  ParamDB->BULK_l_infty = 1;
-  ParamDB->BULK_u_infty = 1e-3;
-  ParamDB->BULK_c_infty = 1;
-  ParamDB->BULK_c_C_infty_sat = 1.37e-4;
-
-  ParamDB->BULK_C_g = 45.98;
-  ParamDB->BULK_C_nuc = 15.33;
-  ParamDB->BULK_C_sat = 1.37e-4;
-  ParamDB->BULK_C_2 = 7.2e-9;
-  ParamDB->BULK_D_A = 1.5e-9;
-  ParamDB->BULK_D_P_0 = 1e-9;
-  ParamDB->BULK_D_P_MAX = 1e-3;
-  ParamDB->BULK_k_g = 1e-7;
-  ParamDB->BULK_k_nuc = 1e24;
-  ParamDB->BULK_k_r = 1e-2;
 
 // parameters for shear slip mesh update method computations
   ParamDB->SSMUM_MP_X = 0.5;
@@ -1026,127 +963,7 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->SSMUM_MAX_CELLS_LAYERS = 1024;
   ParamDB->SSMUM_INTERPOLATION = 0;
 
-  // parameters for WINDTUNNEL computations 
-  ParamDB->WINDTUNNEL_CONFIGURATION = 1;
-  ParamDB->WINDTUNNEL_INTERPOLATION = 0;
-  ParamDB->WINDTUNNEL_STEADY = 0;
-  ParamDB->WINDTUNNEL_SPATIAL = 3;
-  ParamDB->WINDTUNNEL_BROWNIAN = 0;
-  ParamDB->WINDTUNNEL_POL_ORDER = 0;
-  ParamDB->WINDTUNNEL_SHEAR_FACTOR_TYPE = 0;
-  ParamDB->WINDTUNNEL_SHEAR_FACTOR = 0.05;
-  ParamDB->WINDTUNNEL_QUAD_METHOD=0;
-  ParamDB->WINDTUNNEL_MEASURE_MASS=0;
-  ParamDB->WINDTUNNEL_SHIFT=0.;
-  
-  ParamDB->WINDTUNNEL_LAYER_NUMBER_X = WINDTUNNEL_LAYER_NUMBER_X_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_Y = WINDTUNNEL_DIM_Y_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_Z = WINDTUNNEL_DIM_Z_CONST-1;
-  ParamDB->WINDTUNNEL_DIM_R = WINDTUNNEL_DIM_R_CONST-1;
-  ParamDB->WINDTUNNEL_ENVIR_COND = 5.0613e-10;
-  ParamDB->WINDTUNNEL_SUPERSAT = 0.01 ; //test normally supersaturation =0.01
-  ParamDB->WINDTUNNEL_U_INFTY = 1; // m/s
-  ParamDB->WINDTUNNEL_L_INFTY = 1; // m
-  ParamDB->WINDTUNNEL_R_MIN = 0e-6; // = r_min in m
-  ParamDB->WINDTUNNEL_R_INFTY = 175e-6;  // log -normal250e-6; // = r_max in m
-  ParamDB->WINDTUNNEL_F_INFTY = 1e12; // #/m^4
-  //ParamDB->WINDTUNNEL_kinematic_viscosity = 15.68e-6;
-  ParamDB->WINDTUNNEL_dynamic_viscosity = 18.15e-6;  // air (Rogers, Yau p. 103)
-  ParamDB->WINDTUNNEL_density = 1.2041;   // air
-  // ParamDB->WINDTUNNEL_BOUND_KOEFF=0;
 
-
-  ParamDB->UREA_REACTION_DISC = 1;
-  ParamDB->UREA_PB_DISC = 3;
-  ParamDB->UREA_MODEL = 0;
-  ParamDB->UREA_PB_DISC_STAB = 1;
-  ParamDB->UREA_SOLD_PARAMETER_TYPE = 51;
-  ParamDB->UREA_PIPE = 0;
-
-  ParamDB->UREA_l_infty = 0.01;
-  ParamDB->UREA_u_infty = 0.01;
-  ParamDB->UREA_c_infty = 1000;
-  ParamDB->UREA_temp_infty = 1;
-  ParamDB->UREA_f_infty = 1e13;
-  ParamDB->UREA_nu = 1.3612e-6;
-  ParamDB->UREA_rho = 789;
-  ParamDB->UREA_c_p =  2441.3;
-  ParamDB->UREA_lambda = 0.167;
-  ParamDB->UREA_D_P_0 = 2.5e-6;
-  ParamDB->UREA_D_P_MAX = 5000e-6;
-  ParamDB->UREA_k_v = Pi/6.0;
-  ParamDB->UREA_m_mol = 60.06e-3;
-  ParamDB->UREA_D_J = 1.35e-9;
-  ParamDB->UREA_rho_d = 1323;
-  ParamDB->UREA_delta_h_cryst = 0.21645e3;
-  ParamDB->UREA_k_g = 1e-7;
-  //ParamDB->UREA_k_g = 0.;
-  ParamDB->UREA_g = 0.5;
-  ParamDB->UREA_rho_sat_1 = 35.364;
-  ParamDB->UREA_rho_sat_2 = 1.305;
-  ParamDB->UREA_beta_nuc = 0.166667e-5;
-  //with nucleation
-  ParamDB->UREA_alfa_nuc = 1.e8;
-  //without nucleation
-  //ParamDB->UREA_alfa_nuc = 0.;
-  ParamDB->UREA_INFLOW_SCALE = 4.5e-2; // centimeter
-  ParamDB->UREA_CONC_TOL = 1e-6;
-  ParamDB->UREA_CONC_MAXIT = 1;
-  ParamDB->UREA_inflow_time = 5;
-
-  ParamDB->UREA_AGGR_SPATIAL = 3;              //spatial dimension
-  ParamDB->UREA_AGGR_BROWNIAN = 0.;            //include brownian kernel
-  ParamDB->UREA_AGGR_BROWNIAN_TEMP = 0;        //include temp in brownian kernel
-  ParamDB->UREA_AGGR_BROWNIAN_SCAL = 0.;       //scal for brownian kernel
-  ParamDB->UREA_AGGR_POL_ORDER = 0.;           //degree of the polynomial basis (at the moment 0 (constant) or 1 (linear))
-  ParamDB->UREA_AGGR_SHEAR_FACTOR_TYPE = 0.;   //shear induced kernel factor type (0 - constant factor, 1 - depends on the velocity)
-  ParamDB->UREA_AGGR_SHEAR_FACTOR = 0.05;      //the factor itself
-
-  //Param KDP model
-
-  ParamDB->KDP_MODEL = 0;
-  ParamDB->KDP_l_infty = 0.01;
-  ParamDB->KDP_u_infty = 0.01;
-  ParamDB->KDP_c_infty = 1;
-  ParamDB->KDP_temp_infty = 1;
-  ParamDB->KDP_f_infty = 1e13;
-  ParamDB->KDP_nu = 1.2931e-6;
-  ParamDB->KDP_rho = 1160;
-  ParamDB->KDP_c_p =  4181.3;
-  ParamDB->KDP_lambda = 0.602;
-  ParamDB->KDP_D_P_0 = 0.0;//1.25e-6;//2.5e-6;
-  ParamDB->KDP_D_P_0_2 =0.0;//1.25e-6;//2.5e-6;
-  // ParamDB->KDP_D_P_MAX = 2500e-6;
-  ParamDB->KDP_D_P_MAX = 1e-3;
-  //ParamDB->KDP_D_P_MAX_2 = 5000e-6;
-  ParamDB->KDP_D_P_MAX_2 = 1e-3;
-  ParamDB->KDP_m_mol = 136.08e-3;
-  ParamDB->KDP_D_J = 5.5e-10;
-  ParamDB->KDP_rho_d = 2338;
-  ParamDB->KDP_delta_h_cryst = 0.119e3;
-  // ParamDB->KDP_delta_h_cryst = 119e3;
-  ParamDB->KDP_k_g_1 = 1.221e-5;
-  ParamDB->KDP_k_g_2 = 10.075e-5;
-  //nach christian
-  ParamDB->KDP_k_b = 7.875e9;//7.49e10;
-  //ParamDB->KDP_k_b = 3.75e13;
-  ParamDB->KDP_g_1 = 1.48;
-  ParamDB->KDP_g_2 = 1.74;
-  ParamDB->KDP_b = 2.04;
-  ParamDB->KDP_w_sat_1 = 5.5843e-5;
-  ParamDB->KDP_w_sat_1_Ma = 9.3027e-5;
-  ParamDB->KDP_w_sat_2 = 2.8159e-2;
-  ParamDB->KDP_w_sat_2_Ma = 9.7629e-5;
-  ParamDB->KDP_w_sat_3 = 3.6832;
-  ParamDB->KDP_w_sat_3_Ma = 0.2087;
-  ParamDB->KDP_INTERNAL_NUC_A =0.0;
-  ParamDB->KDP_INTERNAL_NUC_B =0.0;
-  ParamDB->KDP_INFLOW_SCALE = 4.5e-2; // centimeter
-  ParamDB->KDP_CONC_TOL = 1e-6;
-  ParamDB->KDP_CONC_MAXIT = 1;
-  ParamDB->KDP_inflow_time = 10;
-    
-    
   //======================================================================
   /** parameters for Stokes--Darcy (StoDa) coupling */
   //======================================================================
@@ -1328,9 +1145,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
 
   printToFile("OMPNUMTHREADS: ", ParamDB->OMPNUMTHREADS);
 
-  printToFile("LEVELS: ", ParamDB->LEVELS);
   printToFile("N_CELL_LAYERS: ", ParamDB->N_CELL_LAYERS);
-  printToFile("UNIFORM_STEPS: ", ParamDB->UNIFORM_STEPS);
   printToFile("DRIFT_X: ", ParamDB->DRIFT_X);
   printToFile("DRIFT_Y: ", ParamDB->DRIFT_Y);
   printToFile("DRIFT_Z: ", ParamDB->DRIFT_Z);
@@ -1481,27 +1296,22 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("MIN_MAX_FACTOR_TWO_ADJOINT: ", ParamDB->MIN_MAX_FACTOR_TWO_ADJOINT);
   printToFile("MIN_MAX_ADJOINT: ", ParamDB->MIN_MAX_ADJOINT);
   
-  printToFile("BASENAME: ", ParamDB->BASENAME);
-  printToFile("VTKBASENAME: ", ParamDB->VTKBASENAME);
   printToFile("SAVE_DATA_FILENAME: ", ParamDB->SAVE_DATA_FILENAME);
   printToFile("READ_DATA_FILENAME: ", ParamDB->READ_DATA_FILENAME);
   printToFile("POD_FILENAME: ", ParamDB->POD_FILENAME);
   printToFile("SNAP_FILENAME: ", ParamDB->SNAP_FILENAME);
 
   printToFile("SOLVER_TYPE: ", ParamDB->SOLVER_TYPE);
-  printToFile("WRITE_PS: ", ParamDB->WRITE_PS);
   printToFile("WRITE_GRAPE: ", ParamDB->WRITE_GRAPE);
   printToFile("WRITE_GMV: ", ParamDB->WRITE_GMV);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
   printToFile("WRITE_GNU: ", ParamDB->WRITE_GNU);
   printToFile("WRITE_AMIRA: ", ParamDB->WRITE_AMIRA);
-  printToFile("WRITE_VTK: ", ParamDB->WRITE_VTK);
   printToFile("WRITE_SNAPSHOTS: ", ParamDB->WRITE_SNAPSHOTS);
   printToFile("WRITE_MATLAB_MATRIX: ", ParamDB->WRITE_MATLAB_MATRIX); 
   printToFile("WRITE_MATLAB: ", ParamDB->WRITE_MATLAB);
   printToFile("SAVE_DATA: ", ParamDB->SAVE_DATA);
   printToFile("READ_DATA: ", ParamDB->READ_DATA);
-  printToFile("MEASURE_ERRORS: ", ParamDB->MEASURE_ERRORS);
   printToFile("ESTIMATE_ERRORS: ", ParamDB->ESTIMATE_ERRORS);
   printToFile("SOLVE_ADJOINT_PROBLEM: ", ParamDB->SOLVE_ADJOINT_PROBLEM);
   printToFile("COMPUTE_VORTICITY_DIVERGENCE: ", ParamDB->COMPUTE_VORTICITY_DIVERGENCE);
@@ -1554,10 +1364,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("VORTICITY THICKNESS FOR MIXING LAYER (P8): ", ParamDB->P8);
 
   printToFile("*********** PARAMETERS FOR SCALAR SOLVER ***********");
-  printToFile("SC_NONLIN_ITE_TYPE_SCALAR: ", ParamDB->SC_NONLIN_ITE_TYPE_SCALAR);
-  printToFile("SC_NONLIN_MAXIT_SCALAR: ", ParamDB->SC_NONLIN_MAXIT_SCALAR);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALAR: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SCALAR: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SCALAR);
 
   printToFile("SC_SOLVER_SCALAR: ", ParamDB->SC_SOLVER_SCALAR);
   printToFile("SC_PRECONDITIONER_SCALAR: ", ParamDB->SC_PRECONDITIONER_SCALAR);
@@ -1593,10 +1399,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
 
   printToFile("*********** PARAMETERS FOR SADDLE POINT SOLVER ***********");
   printToFile("SC_NONLIN_ITE_TYPE_SADDLE: ", ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
-  printToFile("SC_NONLIN_MAXIT_SADDLE: ", ParamDB->SC_NONLIN_MAXIT_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE);
-  printToFile("SC_NONLIN_DAMP_FACTOR_SADDLE: ", ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE);
-  printToFile("SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE: ", ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE);
 
   printToFile("SC_SOLVER_SADDLE: ", ParamDB->SC_SOLVER_SADDLE);
   printToFile("SC_PRECONDITIONER_SADDLE: ", ParamDB->SC_PRECONDITIONER_SADDLE);
@@ -1662,7 +1464,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("SC_SCHUR_STEP_LENGTH_CONTROL: ", ParamDB->SC_SCHUR_STEP_LENGTH_CONTROL);
   printToFile("SC_MIXED_BCGS_CGS_SWITCH_TOL: ", ParamDB->SC_MIXED_BCGS_CGS_SWITCH_TOL);
   printToFile("SC_DIV_FACTOR: ", ParamDB->SC_DIV_FACTOR);
-  printToFile("SC_NONLIN_DIV_FACTOR: ", ParamDB->SC_NONLIN_DIV_FACTOR);
   printToFile("SC_SMOOTHING_STEPS: ", ParamDB->SC_SMOOTHING_STEPS);
   printToFile("SC_N1_PARAM: ", ParamDB->SC_N1_PARAM);
   printToFile("SC_N2_PARAM: ", ParamDB->SC_N2_PARAM);
@@ -1671,8 +1472,6 @@ printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("SC_ROW_EQUILIBRATION: ", ParamDB->SC_ROW_EQUILIBRATION);
   printToFile("SC_BRAESS_SARAZIN_MATRIX: ", ParamDB->SC_BRAESS_SARAZIN_MATRIX);
   printToFile("SC_BRAESS_SARAZIN_ALPHA: ", ParamDB->SC_BRAESS_SARAZIN_ALPHA);
-  printToFile("SC_VERBOSE: ", ParamDB->SC_VERBOSE);
-  printToFile("SC_VERBOSE_AMG: ", ParamDB->SC_VERBOSE_AMG);
 
   printToFile("CHAR_L0: ", ParamDB->CHAR_L0);
   printToFile("D_VISCOSITY: ", ParamDB->D_VISCOSITY);
@@ -1860,11 +1659,19 @@ void TDatabase::WriteTimeDB()
 
 void TDatabase::CheckParameterConsistencyNSE()
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
   // Newton method
   if ((ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(ParamDB->NSTYPE<=2))
   {
     ParamDB->NSTYPE+=2;
-    Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
                   " because of SC_NONLIN_ITE_TYPE_SADDLE  = ",
                   ParamDB->SC_NONLIN_ITE_TYPE_SADDLE);
   }
@@ -1877,7 +1684,8 @@ void TDatabase::CheckParameterConsistencyNSE()
         &&(ParamDB->SC_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_SMOOTHER_SADDLE+=2;
-      Output::print("SC_SMOOTHER_SADDLE changed to ",
+      if(my_rank==0)
+      Output::info("NSE Parameter Consistency","SC_SMOOTHER_SADDLE changed to ",
                     ParamDB->SC_SMOOTHER_SADDLE, 
                     " because of continuous pressure");
     }
@@ -1887,7 +1695,8 @@ void TDatabase::CheckParameterConsistencyNSE()
         &&(ParamDB->SC_COARSE_SMOOTHER_SADDLE<3))
     {
       ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-      Output::print("SC_COARSE_SMOOTHER_SADDLE changed to ",
+      if(my_rank==0)
+      Output::info("NSE Parameter Consistency","SC_COARSE_SMOOTHER_SADDLE changed to ",
                     ParamDB->SC_COARSE_SMOOTHER_SADDLE,
                     " because of continuous pressure");
     }
@@ -1897,18 +1706,21 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (ParamDB->DISCTYPE != GALERKIN)
     {
       ParamDB->DISCTYPE = GALERKIN;
-      Output::print("GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
+      if(my_rank==0)
+      Output::info("NSE Parameter Consistency","GROUP_FEM: changed DISCTYPE to ", ParamDB->DISCTYPE);
     }
     if (ParamDB->NSTYPE != 1)
     {
       //ParamDB->NSTYPE = 1;
-      //Output::print("GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
-      Output::print("WARNING: GROUP_FEM works properly only with NSTYPE = 1");
+      //Output::info("NSE Parameter Consistency","GROUP_FEM: changed NSTYPE to ", ParamDB->NSTYPE);
+      if(my_rank==0)
+        Output::warn("NSE Parameter Consistency","GROUP_FEM works properly only with NSTYPE = 1");
     }
     if (ParamDB->SC_MG_TYPE_SADDLE != 0)
     {
       ParamDB->SC_MG_TYPE_SADDLE = 0;
-      Output::print("GROUP_FEM: changed SC_MG_TYPE_SADDLE to ",
+      if(my_rank==0)
+        Output::info("NSE Parameter Consistency","GROUP_FEM: changed SC_MG_TYPE_SADDLE to ",
                     ParamDB->SC_MG_TYPE_SADDLE);
     }
   }
@@ -1917,26 +1729,30 @@ void TDatabase::CheckParameterConsistencyNSE()
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==1))
   {
       //ParamDB->NSTYPE = 2;
-      //Output::print("NSTYPE changed from 1 to 2 because of SDFEM discretization ");
-      Output::print("NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
+      //Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 2 because of SDFEM discretization ");
+	  if(my_rank==0)
+        Output::info("NSE Parameter Consistency","NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
   }
 
   if ((ParamDB->DISCTYPE == SDFEM) && (ParamDB->NSTYPE==3))
   {
     ParamDB->NSTYPE = 4;
-    Output::print("NSTYPE changed from 3 to 4 because of SDFEM discretization ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 3 to 4 because of SDFEM discretization ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==1))
   {
     ParamDB->NSTYPE = 3 ;
-    Output::print("NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 3 because of LAPLACETYPE ");
   }
 
   if ((ParamDB->LAPLACETYPE == 1) && (ParamDB->NSTYPE ==2))
   {
     ParamDB->NSTYPE = 4 ;
-    Output::print("NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
+    if(my_rank==0)
+      Output::info("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
   // equal order
@@ -1945,7 +1761,8 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!(ParamDB->DISCTYPE == SDFEM))
     {
       ParamDB->DISCTYPE = SDFEM;
-      Output::print("DISCTYPE changed to SDFEM !!!");
+      if(my_rank==0)
+        Output::info("NSE Parameter Consistency","DISCTYPE changed to SDFEM !!!");
     }
 /*
       if (ParamDB->SC_SMOOTHER_SADDLE<3)
@@ -1968,34 +1785,25 @@ void TDatabase::CheckParameterConsistencyNSE()
     ParamDB->SC_MG_TYPE_SADDLE=0;
   }
   
-  if (ParamDB->PROBLEM_TYPE == 3)
-  {
-     if (ParamDB->PRESSURE_SEPARATION==1)
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-     }
-     else
-     {
-        TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 0;
-     }
-     TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;    
-  }
-
   // rotational form
   if (ParamDB->NSE_NONLINEAR_FORM==2||(ParamDB->NSE_NONLINEAR_FORM==4))
   {
     if (ParamDB->NSTYPE<=2)
     {
       ParamDB->NSTYPE+=2;
-      Output::print("NSTYPE changed to ", ParamDB->NSTYPE);
-      Output::print(" because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
+      if(my_rank==0)
+      {
+        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE);
+        Output::info("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", ParamDB->NSE_NONLINEAR_FORM);
+      }
     }
       // change DISCTYPE for internal reasons
     if (ParamDB->DISCTYPE == 1)
     {
       ParamDB->DISCTYPE = 4;
       TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-      Output::print("DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
+      if(my_rank==0)
+        Output::info("NSE Parameter Consistency","DISCTYPE changed to 4 for internal reasons, turbulent viscosity is switched off.");
     }
   }
 
@@ -2004,9 +1812,12 @@ void TDatabase::CheckParameterConsistencyNSE()
     if (!((TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION)||
           (TDatabase::ParamDB->DISCTYPE == VMS_PROJECTION_EXPL)))
     {
-      Output::print("TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
-      Output::print("Set different TURBULENT_VISCOSITY_TYPE !!!");
-      exit(4711);
+      if(my_rank==0)
+      {
+        Output::info("NSE Parameter Consistency","TURBULENT_VISCOSITY_TYPE = 5 only defined for projection-based VMS methods");
+        Output::info("NSE Parameter Consistency","Set different TURBULENT_VISCOSITY_TYPE !!!");
+        ErrThrow("BOOM!");
+      }
     }
   }
 
@@ -2018,14 +1829,16 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->LP_STREAMLINE)
       {
         ParamDB->LP_STREAMLINE = 0;
-        Output::print("LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","LP_STREAMLINE changed to ", ParamDB->LP_STREAMLINE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
 
       if (ParamDB->LP_DIVERGENCE)
       {
         ParamDB->LP_DIVERGENCE = 0;
-        Output::print("LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","LP_DIVERGENCE changed to ", ParamDB->LP_DIVERGENCE,
                       " due to LP_FULL_GRADIENT = ", ParamDB->LP_FULL_GRADIENT);
       }
     } // end LP_FULL_GRADIENT
@@ -2035,7 +1848,8 @@ void TDatabase::CheckParameterConsistencyNSE()
       if (ParamDB->NSTYPE<=2)
       {
         ParamDB->NSTYPE+=2;
-        Output::print("NSTYPE changed to ", ParamDB->NSTYPE,
+        if(my_rank==0)
+        Output::info("NSE Parameter Consistency","NSTYPE changed to ", ParamDB->NSTYPE,
                       " LP_DIVERGENCE = ", ParamDB->LP_DIVERGENCE);
       }
     }
@@ -2087,28 +1901,22 @@ void TDatabase::CheckParameterConsistencyNSE()
     switch (TDatabase::ParamDB->NSTYPE)
     {
       case 1: 
-        Output::print("Galerkin discretization for Oseen because of NSTYPE ",
+    	  if(my_rank==0)
+            Output::info("NSE Parameter Consistency","Galerkin discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  1;
         break;
       case 14:
-        Output::print("SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
+    	if(my_rank==0)
+          Output::info("NSE Parameter Consistency","SUPG/PSPG/grad-div discretization for Oseen because of NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         TDatabase::ParamDB->DISCTYPE =  2;
         break;
       default:
-        Output::print("No method for Oseen implemented for NSTYPE ",
+    	if(my_rank==0)
+          Output::info("NSE Parameter Consistency","No method for Oseen implemented for NSTYPE ",
                       TDatabase::ParamDB->NSTYPE);
         exit(4711);
-    }
-    if (ParamDB->SC_NONLIN_MAXIT_SADDLE > 1)
-    {
-      ParamDB->SC_NONLIN_MAXIT_SADDLE = 1;
-      Output::print("Set SC_NONLIN_MAXIT_SADDLE ",
-                    ParamDB->SC_NONLIN_MAXIT_SADDLE,
-                    " for Oseen, further assembling not implemented");
-      TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE = 1.0;
-      Output::print("Set TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE to 1.0");
     }
   }
 
@@ -2284,9 +2092,6 @@ TParaDB::~TParaDB()
   delete [] BNDFILE_INTL;
   delete [] MAPFILE;
   delete [] OUTFILE;
-  delete [] BASENAME;
-  delete [] VTKBASENAME;
-  delete [] OUTPUTDIR;
   delete [] SAVE_DATA_FILENAME;
   delete [] READ_DATA_FILENAME;
   delete [] SMESHFILE;

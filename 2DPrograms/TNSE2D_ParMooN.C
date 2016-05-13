@@ -20,34 +20,38 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase2D;
   
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
+
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(argv[1]);  
+  TDomain Domain(argv[1], parmoon_db);
   
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 6;
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   
   /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
   // standard mesh  
-  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // refine grid up to the coarsest level
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+  size_t n_ref = Domain.get_n_initial_refinement_steps();
+  for(int i=0; n_ref; i++)
     Domain.RegRefineAll();  
 
   // write grid into an Postscript file
-  if(TDatabase::ParamDB->WRITE_PS)
+  if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
-
-  // create output directory, if not already existing
-  if(TDatabase::ParamDB->WRITE_VTK)
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
   
   // set some parameters for time stepping 
   //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
@@ -55,7 +59,7 @@ int main(int argc, char* argv[])
 
   Example_NSE2D example;
   // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, example); 
+  Time_NSE2D tnse2d(Domain, parmoon_db, example);
   // assemble everything at the start time
   // this includes assembling of all A's, B's
   // and M's blocks that are necessary 

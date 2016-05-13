@@ -5136,8 +5136,8 @@ void TimeNSType3_4NLUpwind3D(double Mult, double *coeff,
   double val;
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double test100, test010, test001;
+  double *Orig0, *Orig1, *Orig2;
   int i,j, N_U;
   double c0;
 
@@ -5150,7 +5150,6 @@ void TimeNSType3_4NLUpwind3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-  Orig3 = OrigValues[3]; // u
 
   c0 = coeff[0]; // nu
 
@@ -5162,7 +5161,6 @@ void TimeNSType3_4NLUpwind3D(double Mult, double *coeff,
     test100 = Orig0[i];
     test010 = Orig1[i];
     test001 = Orig2[i];
-    test000 = Orig3[i];
 
     for(j=0;j<N_U;j++)
     {
@@ -5193,7 +5191,7 @@ void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff,
   double *Matrix11Row, *Matrix22Row,  *Matrix33Row;
   double ansatz100, ansatz010, ansatz001;
   double test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2;
   int i,j, N_U;
   double c0;
 
@@ -5206,7 +5204,6 @@ void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-  Orig3 = OrigValues[3]; // u
 
   c0 = coeff[0]; // nu
 
@@ -6054,11 +6051,10 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
   double *MatrixB1Row, *MatrixB2Row, *MatrixB3Row;
   double *MatrixBT1Row, *MatrixBT2Row, *MatrixBT3Row;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  double ansatz200, ansatz020, ansatz002;
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
   double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, sh3, m1, m2, ah2, bh1;  // double temp1, norm_u;
+  double sh1, sh2, ah, bth1, h1, m1, m2, ah2, bh1;  // double temp1, norm_u;
   //OutPut("supg");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
@@ -6066,9 +6062,6 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
   double u1, u2, u3; // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
   double supg_params[2];
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -6157,18 +6150,6 @@ void TimeNSType14VMS_SUPGDD3D(double Mult, double *coeff,
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
-
-
-
   
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
@@ -6424,7 +6405,6 @@ supg_params[1] = 0.0;
       sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
       
       //for laplace term in S
-      sh3 = ansatz200 + ansatz020 + ansatz002;
       bh1 = time_step*supg_params[0]*((1./time_step)*ansatz000+sh1);
       
       // matrices Bi
@@ -6493,11 +6473,10 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
   double *MatrixB1Row, *MatrixB2Row, *MatrixB3Row;
   double *MatrixBT1Row, *MatrixBT2Row, *MatrixBT3Row;
   double ansatz000, ansatz100, ansatz010, ansatz001;
-  double ansatz200, ansatz020, ansatz002;
   //double ansatz200, ansatz020, ansatz002;
   double test000, test100, test010, test001;
   double tautest001, tautest100, tautest010;
-  double sh1, sh2, ah, bth1, h1, sh3, m2, ah2, bh1; // double norm_u;
+  double sh1, sh2, ah, bth1, h1, m2, ah2, bh1; // double norm_u;
   //OutPut("supg");
   double *Orig0, *Orig1, *Orig2;
   double *Orig3, *Orig4, *Orig5;
@@ -6505,9 +6484,6 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
   double u1, u2, u3;   // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
   double supg_params[2]   ;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -6586,15 +6562,6 @@ void TimeNSType14NLVMS_SUPGDD3D(double Mult, double *coeff,
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
   
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
@@ -6824,7 +6791,6 @@ supg_params[1] = 0.0;
       sh1 = u1*ansatz100+u2*ansatz010+u3*ansatz001;
       
       //for laplace term in S
-      sh3 = ansatz200 + ansatz020 + ansatz002;
       bh1 = time_step*supg_params[0]*((1./time_step)*ansatz000+sh1);
       
       // matrices Bi
@@ -6896,9 +6862,6 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
   double u1, u2, u3; //  double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
   double supg_params[2], ugradu;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -6973,15 +6936,6 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
   
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
@@ -7214,9 +7168,6 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
   double u3_x, u3_y, u3_z;
-  double u1_xx, u1_yy, u1_zz;
-  double u2_xx, u2_yy, u2_zz;
-  double u3_xx, u3_yy, u3_zz;
   double supg_params[2], ugradu;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -7299,9 +7250,6 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
 
-  u1_xx = u1_yy = u1_zz = 0;
-  u2_xx = u2_yy = u2_zz = 0;
-  u3_xx = u3_yy = u3_zz = 0;
 
   //SUPG parameter   
   // supg_params[0] -> for momentum balance tau_m
@@ -7513,18 +7461,13 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
   double *Rhs1, *Rhs2, *Rhs3; // double val, val1, val2;
   //double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
-  double test000, test100, test010, test001;
+  double test000;
   //double tautest001, tautest100, tautest010;
   //OutPut("supg_rhs");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
-  int i,N_U, N_P;
-  double c0, c1, c2, c3;
+  double *Orig3;
+  int i,N_U;
+  double c1, c2, c3;
   double u1, u2, u3;  // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
   double supg_params[2];
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -7544,18 +7487,9 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
   Rhs3 = LocRhs[2];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u_z
   Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
 
-  c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
   c3 = coeff[3];                 // f3
@@ -7563,15 +7497,7 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
+
 
   //SUPG parameter   
   // supg_params[0] -> for momentum balance tau_m
@@ -7582,9 +7508,6 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
   // assembling for velocity test functions
   for(i=0;i<N_U;i++)
   {
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
     test000 = Orig3[i];
 	
     // rhs, this is part of the term which will be multiplied with theta4
@@ -7609,7 +7532,7 @@ void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
   double *Orig3, *Orig4, *Orig5;
   double *Orig6;
   int i,N_U, N_P;
-  double c0, c1, c2, c3, c4, c5, c6;
+  double c1, c2, c3, c4, c5, c6;
   double u1, u2, u3;  // double px, py, pz;
   double u1_x, u1_y, u1_z;
   double u2_x, u2_y, u2_z;
@@ -7644,7 +7567,6 @@ void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
   Orig5 = OrigValues[5];         // p_y
   Orig6 = OrigValues[6];         // p_z
 
-  c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
   c2 = coeff[2];                 // f2
   c3 = coeff[3];                 // f3
@@ -7736,14 +7658,9 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double tautest001, tautest100, tautest010;
   //OutPut("supg");
-  double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
-  double *Orig6, *Orig7;
-  int i,j,N_U, N_P;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j,N_U;
   double c0, u1, u2, u3;   // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
   double supg_params[2], ugradu;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -7781,31 +7698,18 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
   MatrixS33 = LocMatrices[21]; 
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+
 
   Orig0 = OrigValues[0];         // u_x
   Orig1 = OrigValues[1];         // u_y
   Orig2 = OrigValues[2];         // u_z
   Orig3 = OrigValues[3];         // u
-  Orig4 = OrigValues[4];         // p_x
-  Orig5 = OrigValues[5];         // p_y
-  Orig6 = OrigValues[6];         // p_z
-  Orig7 = OrigValues[7];         // p
 
   c0 = coeff[0];                 // nu
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
   
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
@@ -7947,7 +7851,6 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33, **MatrixK, **MatrixC;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
   double val, val1;
@@ -7955,7 +7858,6 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row, *MatrixKRow;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3, *MatrixRowC;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   //double ansatz200, ansatz020, ansatz002;
@@ -7966,14 +7868,8 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   double *Orig3, *Orig4, *Orig5;
   double *Orig6, *Orig7; // double *Orig8, *Orig9, *Orig10;
   int i,j,N_U, N_P;
-  double c0, c1, c2, c3, c4, c5, c6;
+  double c0;
   double u1, u2, u3;  // double px, py, pz;
-  double u1_x, u1_y, u1_z;
-  double u2_x, u2_y, u2_z;
-  double u3_x, u3_y, u3_z;
-  double u1_xx, u1_yy, u1_zz;
-  double u2_xx, u2_yy, u2_zz;
-  double u3_xx, u3_yy, u3_zz;
   double supg_params[2], ugradu;
 
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
@@ -7997,10 +7893,7 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   MatrixA31 = LocMatrices[6];
   MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8]; 
-  // mass matrix
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
+
   // matrix for PSPG
   MatrixC = LocMatrices[12];
   // matrix for SUPG
@@ -8027,32 +7920,14 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
   Orig7 = OrigValues[7];         // p
 
   c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
-  c3 = coeff[3];                 // f3
-  c4 = coeff[4];                 // f1_old
-  c5 = coeff[5];                 // f2_old
-  c6 = coeff[6];                 // f3_old
 
   u1 = param[0];                 // u1old
   u2 = param[1];                 // u2old
   u3 = param[2];                 // u3old
-  u1_x = param[3];             // u1old_x
-  u2_x = param[4];             // u2old_x
-  u3_x = param[5];             // u3old_x
-  u1_y = param[6];             // u1old_y
-  u2_y = param[7];             // u2old_y
-  u3_y = param[8];             // u3old_y
-  u1_z = param[9];             // u1old_z
-  u2_z = param[10];            // u2old_z
-  u3_z = param[11];            // u3old_z
+
   
   // second order derivatives in the residual will be neglected
   // method is for flows with small viscosity
-
-  u1_xx = u1_yy = u1_zz = 0;
-  u2_xx = u2_yy = u2_zz = 0;
-  u3_xx = u3_yy = u3_zz = 0;
 
   //SUPG parameter   
   // supg_params[0] -> for momentum balance tau_m
@@ -8072,9 +7947,6 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
     Matrix31Row = MatrixA31[i];
     Matrix32Row = MatrixA32[i];
     Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
     MatrixKRow  = MatrixK[i];
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -8250,7 +8122,7 @@ void TimeNSType1GalerkinJ3D(double Mult, double *coeff,
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U;  // int N_P;
-  double c0, c1, c2;
+  double c0;
   double u1, u2, u3;
   
   MatrixA = LocMatrices[0];
@@ -8264,8 +8136,6 @@ void TimeNSType1GalerkinJ3D(double Mult, double *coeff,
   Orig3 = OrigValues[3]; // u
      
   c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
   
   u1 = param[0]; // u1old
   u2 = param[1]; // u2old
@@ -8497,7 +8367,6 @@ void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
   double test100, test010, test001;
   double *Orig0, *Orig1, *Orig2;
   int i, N_U;
-  double c1, c2, c3;
 
   double delta, val1, mu1;
   double D1u1, D2u1, D3u1, D1u2, D2u2, D3u2, D1u3, D2u3, D3u3;
@@ -8513,10 +8382,6 @@ void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u_z
-
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
-  c3 = coeff[3]; // f3
 
   D1u1 = param[3]; // D1u1
   D1u2 = param[4]; // D1u2;

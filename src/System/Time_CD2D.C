@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <MultiGrid2D.h>
 #include <Output2D.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <LinAlg.h>
 #include <MainUtilities.h>
@@ -12,8 +12,29 @@
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
+#include <sys/stat.h>
+
 #include <numeric>
 
+/**************************************************************************** */
+ParameterDatabase get_default_TCD2D_parameters()
+{
+  Output::print<3>("creating a default TCD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default TCD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TCD2D parameter database");
+
+  //TCD2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
 
 /**************************************************************************** */
 Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
@@ -70,18 +91,21 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, int reference_id)
- : Time_CD2D(domain, Example_CD2D(), reference_id)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		int reference_id)
+ : Time_CD2D(domain, param_db, Example_CD2D(), reference_id)
 {
   
 }
 
 /**************************************************************************** */
-Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
-                     int reference_id)
- : systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
+Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+		const Example_CD2D& ex, int reference_id)
+ : db(get_default_TCD2D_parameters()), systems(), example(ex), multigrid(nullptr), errors(5, 0.0)
 {
+  db.merge(param_db);
   this->set_parameters();
+
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   // create finite element space and function, a matrix, rhs, and solution
@@ -111,20 +135,22 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const Example_CD2D& ex,
   param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
   param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
   this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-  // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
-  }
+
+  //TODO Commented out, requires switching to Solver object.
+//  // number of refinement levels for the multigrid
+//  int LEVELS = TDatabase::ParamDB->LEVELS;
+//  if(LEVELS > domain.get_ref_level() + 1)
+//    LEVELS = domain.get_ref_level() + 1;
+//
+//
+//  // the matrix and rhs side on the finest grid are already constructed
+//  // now construct all matrices, rhs, and solutions on coarser grids
+//  for(int i = LEVELS - 2; i >= 0; i--)
+//  {
+//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    this->systems.emplace_back(example, *coll);
+//  }
   
   // create multigrid-level-objects, must be coarsest first
   unsigned int i = 0;
@@ -374,9 +400,9 @@ void Time_CD2D::solve()
     FEMatrix* mat = s.stiff_matrix.get_blocks_uniquely().at(0).get();
     // in order for the old method 'Solver' to work we need TSquareMatrix2D
     TSquareMatrix2D *sqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    Solver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-           s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-           this->multigrid.get(), s.solution.length(), 0);
+    OldSolver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
+              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
+              this->multigrid.get(), s.solution.length(), 0);
   }
   
   t = GetTime() - t;
@@ -390,13 +416,13 @@ void Time_CD2D::solve()
 /**************************************************************************** */
 void Time_CD2D::output(int m, int& image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
-  
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double loc_e[5];
     TAuxParam2D aux;
@@ -410,7 +436,7 @@ void Time_CD2D::output(int m, int& image)
     Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
     Output::print<1>("  L2: ", loc_e[0]);
     Output::print<1>("  H1-semi: ", loc_e[1]);
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     errors[0] += (loc_e[0]*loc_e[0] + errors[1])*tau*0.5;
     errors[1] = loc_e[0]*loc_e[0];
     Output::print<1>("  L2(0,T;L2) ", sqrt(errors[0]));
@@ -428,12 +454,16 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db["output_write_vtk"])
     {
       TOutput2D Output(1, 1, 0, 0, NULL);
       Output.AddFEFunction(&fe_function);
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+      // Create output directory, if not already existing.
+      mkdir(db["output_vtk_directory"], 0777);
+      std::string filename = this->db["output_vtk_directory"];
+      filename += "/" + this->db["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";

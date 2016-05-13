@@ -32,6 +32,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   ####### Tests for parallel type: SEQUENTIAL #######
   ###################################################
   
+  #parameter database test
+  add_executable(ParMooN_test_parameter_database parameter_database_test.c++)
+  target_link_libraries(ParMooN_test_parameter_database parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(parameter_database ParMooN_test_parameter_database)
+  list(APPEND parmoon_tests ParMooN_test_parameter_database)
+  
   #matrix test
   add_executable(ParMooN_test_matrix matrix_test.c++)
   target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -80,7 +86,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
   
-  #nse2d test
+  #nse2d multigrid test
   add_executable(ParMooN_test_nse2d_mg nse2d_multigrid_test.c++)
   target_link_libraries(ParMooN_test_nse2d_mg parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d_mg ParMooN_test_nse2d_mg)
@@ -121,6 +127,10 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
   add_test(NAME nse3d_seq_umfpack COMMAND ParMooN_test_nse3d_solver_seq umfpack)
+  #multigrid
+  add_test(NAME nse3d_seq_mg COMMAND ParMooN_test_nse3d_solver_seq multigrid)
+  #lsc
+  add_test(NAME nse3d_seq_lsc COMMAND ParMooN_test_nse3d_solver_seq lsc)
 
   
   # direct solver test
@@ -128,6 +138,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_direct_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(direct_solver ParMooN_test_direct_solver)
   list(APPEND parmoon_tests ParMooN_test_direct_solver)
+  
+  # iterative solver test
+  add_executable(ParMooN_test_iterative_solver iterative_solver_test.c++)
+  target_link_libraries(ParMooN_test_iterative_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(iterative_solver ParMooN_test_iterative_solver)
+  list(APPEND parmoon_tests ParMooN_test_iterative_solver)
 	
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
@@ -177,18 +193,18 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   set(_FILE_NAME cd3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   # mumps
-  add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 4 ParMooN_test_cd3d_solver_mpi mumps)
+  add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi mumps)
   #jacobi - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
-  add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 4 ParMooN_test_cd3d_solver_mpi jacobi)
+  add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
   #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
-  add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 4 ParMooN_test_cd3d_solver_mpi multigrid)
+  add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi multigrid)
   
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_mpi)
   set(_FILE_NAME nse3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
-  add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 4 ParMooN_test_nse3d_solver_mpi mumps)
+  add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
 
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
@@ -199,6 +215,6 @@ endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} S
 #   running all tests corresponding to the current #
 #   parallel type. Use it excessively!             #
 ####################################################
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${parmoon_tests})
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure DEPENDS ${parmoon_tests})
 
 
