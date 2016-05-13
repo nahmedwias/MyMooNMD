@@ -2692,8 +2692,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   int OrderDiff;
   double lpcoeff, lpexponent, stab_coeff, norm_b, lpcoeff_crosswind, lpexponent_crosswind;
   
-  if (TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("LPS streamline" << endl);
+  Output::print<2>("LPS streamline");
 
   coeffs = new double[20];
   params = new double[10];
@@ -3309,8 +3308,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   } // endfor i
   delete params;
   delete coeffs;
- if (TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("LPS streamline done" << endl);
+  Output::print<2>("LPS streamline done");
 } // UltraLocalProjectionStreamlinePLaplacian
 
 

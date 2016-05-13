@@ -160,12 +160,9 @@ void TFESpace1D::FindUsedElements()
       j++;
     }
 
-  if(TDatabase::ParamDB->SC_VERBOSE>3)
-   {
-    cout << "N_UsedElements: " << N_UsedElements << endl;
-    for(i=0;i<N_UsedElements;i++)
-     cout << "UsedElement[" << i << "]: " << UsedElements[i] << endl;
-   }
+  Output::print<3>("N_UsedElements: ", N_UsedElements);
+  for(i=0;i<N_UsedElements;i++)
+  	Output::print<3>("UsedElement[",i,"]: ", UsedElements[i]);
 }
 
 void TFESpace1D::ConstructSpace()

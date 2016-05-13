@@ -240,7 +240,7 @@ void Brinkman2D::assemble()
     //same for all: the local asembling object
     TFEFunction2D *fe_functions[3] =
       { s.u.GetComponent(0), s.u.GetComponent(1), &s.p };
-    LocalAssembling2D la(Brinkman2D_Galerkin1Stab2, fe_functions,
+    LocalAssembling2D la(Brinkman2D_Galerkin1, fe_functions,
                      this->example.get_coeffs());
 
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
@@ -432,7 +432,7 @@ void Brinkman2D::output(int i)
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();

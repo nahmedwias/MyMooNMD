@@ -183,7 +183,3 @@ SC_STEP_LENGTH_CONTROL_ALL_SCALAR: 0
 # the computation of errors. Set it to 99 (or so) to get the highest 
 # order quadrature formula available
 INPUT_QUAD_RULE: 99
-
-WRITE_VTK: 1
-
-SC_VERBOSE: 2

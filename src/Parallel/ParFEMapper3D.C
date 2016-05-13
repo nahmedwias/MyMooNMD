@@ -1541,7 +1541,6 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   if(rank == 0)
     printf("Total Time Taken for mapping the dofs = %lf\n",end_time-temp_time);
   
-  //if(TDatabase::ParamDB->SC_VERBOSE>2)
     if(rank==TDatabase::ParamDB->Par_P0)
       printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
   
@@ -1892,7 +1891,6 @@ void TParFEMapper3D::ConstructDofMap()
       DofSend[i] = temp;  
     }
   
-  //  if(TDatabase::ParamDB->SC_VERBOSE>1)   
 	//printf(" Rank %d ------ NUMBER OF DOF's to be sent = %d -------- NUMBER OF DOF's to be recv = %d\n",rank,N_SendDof,N_Slave); 
     for(i=0;i<2;i++)
     {
@@ -1920,8 +1918,7 @@ void TParFEMapper3D::ConstructDofMap()
   if(N_Slave>0)
    Recv_Info = new double[N_Slave*N_Dim];
     
-    if(TDatabase::ParamDB->SC_VERBOSE>2)
-      if(rank==TDatabase::ParamDB->Par_P0)
+  if(rank==TDatabase::ParamDB->Par_P0)
 	printf("ConstructDofMap done !!!\n");
       
        //DEBUG

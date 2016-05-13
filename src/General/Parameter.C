@@ -6,6 +6,7 @@
 #include <iterator>
 #include <vector>
 #include <MooNMD_Io.h>
+#include <vector>
 
 /// @brief Check that name is allowed (no spaces or dots), it returns the name
 /// without any changes, or throws

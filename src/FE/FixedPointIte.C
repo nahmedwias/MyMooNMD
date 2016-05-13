@@ -185,11 +185,9 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
   res=res0=reslast=sqrt(Ddot(N_DOF,defect,defect));     
 #endif  
 
-   if (TDatabase::ParamDB->SC_VERBOSE>0     
 #ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
+   if ( rank==TDatabase::ParamDB->Par_P0 )
 #endif      
-       )   
      Output::print<2>("Fixed Point Iteration 0: ", res);
   
   // residual small enough before iteration
@@ -232,11 +230,9 @@ int TFixedPointIte::Iterate (TSquareMatrix **sqmat,
    res = sqrt(Ddot(N_DOF,defect,defect));     
 #endif 
  
-   if (TDatabase::ParamDB->SC_VERBOSE>0     
 #ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
+        if ( rank==TDatabase::ParamDB->Par_P0)
 #endif        
-        ) 
        //printf("Fixed Point Iteration %d res %e rate: %e\n", i, res, res/reslast);    
        Output::print<2>("Fixed Point Iteration ", i, " res ", res, " rate ",
                         res/reslast);

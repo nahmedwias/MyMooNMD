@@ -296,7 +296,9 @@ int TFgmresIte::Iterate (TSquareMatrix **sqmat,
 TMatrix **mat, double *sol,
 double *rhs)
 {
-  int i=0, j,k,l, verbose = TDatabase::ParamDB->SC_VERBOSE;
+  Output::warn("TFgmresIte::Iterate", "Use new FGMRES implementation instead.");
+  int verbose = 2;
+  int i=0, j,k,l;
   int maxite;
   double res, res0, reslast, t1, t2, temp,tempGlobal;
   double beta,residlast,dnorm0,end_residual;

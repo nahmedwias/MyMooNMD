@@ -139,9 +139,6 @@ TStructure::TStructure( const TFESpace1D * space )
   */
 // exit(0);
 
-  if(TDatabase::ParamDB->SC_VERBOSE)
-    cout << "Upper bound: " << AuxPtr[nRows] << endl;
-
   // get memory for KColAux array, initialize it with -1
   l=AuxPtr[nRows];                               // upper bound for number of matrix entries
   KColAux=new int[l];
@@ -3415,7 +3412,7 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+  if(rank==0)
 #endif 
   { 
   cout << "Number of matrix entries: ";
@@ -3959,8 +3956,6 @@ TStructure::TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace, int **ans
 exit(0);
   */
 
-  // if(TDatabase::ParamDB->SC_VERBOSE)
-    // cout << "Upper bound: " << AuxPtr[nRows] << endl;
 
   // get memory for KColAux array, initialize it with -1
   l=AuxPtr[nRows]; // upper bound for number of matrix entries

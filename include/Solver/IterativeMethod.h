@@ -6,6 +6,7 @@
 #include <string>
 #include <Preconditioner.h>
 
+
 /** @brief an abstract base class to describe iterative methods for solving
  */
 template <class LinearOperator, class Vector>

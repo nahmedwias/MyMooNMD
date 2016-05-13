@@ -211,7 +211,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D *Coeff,int n_fespaces, TFESpace2D **fespac
   OutPut("egde integrals "<<endl);
 
   //Ouput instruction
-  verbose=TDatabase::ParamDB->SC_VERBOSE_AMG;
+  verbose=2; //TODO hardcoded verbosity
 
 #ifdef __3D__
   double z0, z1;

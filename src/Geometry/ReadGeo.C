@@ -190,7 +190,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 
   double bd_parameter_a, bd_parameter_b;
 
-  Output::print<2>(" Domain::MakeGrid() creating 2D grid ");
+  Output::info<2>("Domain::MakeGrid()", "Creating 2D grid.");
  
   // generate vertices, edges and cells
   // search neighbours
@@ -2856,5 +2856,4 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 }
 
 #endif // __2D__
-
 
