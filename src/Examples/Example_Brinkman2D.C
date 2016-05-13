@@ -25,9 +25,9 @@ namespace flow_around_cylinder
 {
   #include "Brinkman_2D/flow_around_cylinder.h"
 }
-namespace poiseuille_Hannukainen
+namespace hannukainen
 {
-#include "Brinkman_2D/Poiseuille_Hannukainen.h"
+#include "Brinkman_2D/hannukainen.h"
 }
 
 
@@ -121,24 +121,24 @@ Example_Brinkman2D::Example_Brinkman2D() : Example2D()
       break;
       case 4:
           /** exact_solution */
-          exact_solution.push_back( poiseuille_Hannukainen::ExactU1 );
-          exact_solution.push_back( poiseuille_Hannukainen::ExactU2 );
-          exact_solution.push_back( poiseuille_Hannukainen::ExactP );
+          exact_solution.push_back( hannukainen::ExactU1 );
+          exact_solution.push_back( hannukainen::ExactU2 );
+          exact_solution.push_back( hannukainen::ExactP );
           
           /** boundary condition */
-          boundary_conditions.push_back( poiseuille_Hannukainen::BoundCondition );
-          boundary_conditions.push_back( poiseuille_Hannukainen::BoundCondition );
+          boundary_conditions.push_back( hannukainen::BoundCondition );
+          boundary_conditions.push_back( hannukainen::BoundCondition );
           boundary_conditions.push_back( BoundConditionNoBoundCondition );
           
           /** boundary values */
-          boundary_data.push_back( poiseuille_Hannukainen::U1BoundValue );
-          boundary_data.push_back( poiseuille_Hannukainen::U2BoundValue );
+          boundary_data.push_back( hannukainen::U1BoundValue );
+          boundary_data.push_back( hannukainen::U2BoundValue );
           boundary_data.push_back( BoundaryValueHomogenous );
           
           /** coefficients */
-          problem_coefficients = poiseuille_Hannukainen::LinCoeffs;
+          problem_coefficients = hannukainen::LinCoeffs;
           
-          poiseuille_Hannukainen::ExampleFile();
+          hannukainen::ExampleFile();
           break;
     default:
       ErrThrow("Unknown Brinkman example!");
