@@ -78,7 +78,6 @@ void TBaseFunct3D::GetDerivatives(MultiIndex3D MultiIndex,
                         TQuadFormula3D *formula, double **values)
 {
   int i, N_;
-  int j;
   double *w, *xi, *eta, *zeta;
 
   formula->GetFormulaData(N_, w, xi, eta, zeta);

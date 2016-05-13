@@ -674,8 +674,8 @@ void NSType3SmagorinskyNewton3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11;  // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22;  // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val, val1;
@@ -695,13 +695,13 @@ void NSType3SmagorinskyNewton3D(double Mult, double *coeff,
   exit(4711);
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA13 = LocMatrices[2];
+//  MatrixA21 = LocMatrices[3];
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];
+//  MatrixA31 = LocMatrices[6];
+//  MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];
@@ -1342,8 +1342,8 @@ void NSType4SDFEMNewton3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
@@ -1369,13 +1369,13 @@ void NSType4SDFEMNewton3D(double Mult, double *coeff,
   exit(4711);
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA13 = LocMatrices[2];
+//  MatrixA21 = LocMatrices[3];
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];
+//  MatrixA31 = LocMatrices[6];
+//  MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];
@@ -2084,8 +2084,8 @@ void NSType4SmagorinskyNewton3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
-  double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
+  double **MatrixA11; // **MatrixA12, **MatrixA13, **MatrixA21;
+  double **MatrixA22; // **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
@@ -2105,13 +2105,13 @@ void NSType4SmagorinskyNewton3D(double Mult, double *coeff,
   exit(4711);
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA13 = LocMatrices[2];
-  MatrixA21 = LocMatrices[3];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA13 = LocMatrices[2];
+//  MatrixA21 = LocMatrices[3];
   MatrixA22 = LocMatrices[4];
-  MatrixA23 = LocMatrices[5];
-  MatrixA31 = LocMatrices[6];
-  MatrixA32 = LocMatrices[7];
+//  MatrixA23 = LocMatrices[5];
+//  MatrixA31 = LocMatrices[6];
+//  MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
   MatrixB1  = LocMatrices[9];
   MatrixB2  = LocMatrices[10];

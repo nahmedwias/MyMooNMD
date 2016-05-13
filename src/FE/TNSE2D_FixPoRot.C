@@ -151,7 +151,7 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
-  double u1, u2, mu, viscosity, delta;
+  double u1, u2, mu, delta;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -183,7 +183,7 @@ double ***LocMatrices, double **LocRhs)
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity(delta,&param[2],&param[0],&param[0]);
   mu = mu/2.0;
-  viscosity = c0+mu;
+//  viscosity = c0+mu;
 
   for(i=0;i<N_U;i++)
   {
@@ -608,7 +608,7 @@ double ***LocMatrices, double **LocRhs)
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
-  double c0, viscosity, delta;
+  double c0, delta;
   double u1, u2, mu;
   // cout << "Sma" << endl;
   MatrixA11 = LocMatrices[0];
@@ -630,7 +630,7 @@ double ***LocMatrices, double **LocRhs)
   delta =  CharacteristicFilterWidth(hK);
   mu = TurbulentViscosity(delta,&param[2],&param[0],&param[6]);
   mu = mu/2.0;
-  viscosity = mu+c0;
+//  viscosity = mu+c0;
 
   for(i=0;i<N_U;i++)
   {
@@ -1752,16 +1752,16 @@ double ***LocMatrices, double **LocRhs)
   double *Orig0 = OrigValues[0];                          // u_x
   double *Orig1 = OrigValues[1];                          // u_y
   double *Orig2 = OrigValues[2];                          // u
-  double *Orig3 = OrigValues[3];                          // u_xx
-  double *Orig4 = OrigValues[4];                          // u_yy
+//  double *Orig3 = OrigValues[3];                          // u_xx
+//  double *Orig4 = OrigValues[4];                          // u_yy
   double *Orig5 = OrigValues[5];                          // p_x
   double *Orig6 = OrigValues[6];                          // p_y
   double *Orig7 = OrigValues[7];                          // p
   double *Rhs3 = LocRhs[2];
 
   double c0 = coeff[0];                 // nu
-  double c1 = coeff[1];                 // f1
-  double c2 = coeff[2];                 // f2
+//  double c1 = coeff[1];                 // f1
+//  double c2 = coeff[2];                 // f2
   double c3 =  TDatabase::ParamDB->OSEEN_ZERO_ORDER_COEFF; 
   double u1 = param[0];                                  // u1old (previous time)
   double u2 = param[1];                                  // u2old (previous time)
@@ -1769,7 +1769,7 @@ double ***LocMatrices, double **LocRhs)
   // grad-div parameter
   double mu = TDatabase::ParamDB->DIV_DIV_STAB_C1 * pow(hK,TDatabase::ParamDB->DIV_DIV_STAB_C2);
 
-  double *Matrix11Row, *Matrix12Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01, val;
   
@@ -1827,18 +1827,10 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-  double **MatrixM11, **MatrixM22, **MatrixC;
-  double **MatrixB1, **MatrixB2;
-  double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, *Rhs3, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixRowC;
-  double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5, *Orig6, *Orig7;
-  int i,j, N_U, N_P;
+  double *Orig2, *Orig5, *Orig6, *Orig7;
+  int i,N_U, N_P;
   double c0, c1, c2, c3, delta, u1, u2;
   double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double implicit_version = TDatabase::ParamDB->P9;
@@ -1855,11 +1847,11 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];                          // u_x
-  Orig1 = OrigValues[1];                          // u_y
+//  Orig0 = OrigValues[0];                          // u_x
+//  Orig1 = OrigValues[1];                          // u_y
   Orig2 = OrigValues[2];                          // u
-  Orig3 = OrigValues[3];                          // u_xx
-  Orig4 = OrigValues[4];                          // u_yy
+//  Orig3 = OrigValues[3];                          // u_xx
+//  Orig4 = OrigValues[4];                          // u_yy
   Orig5 = OrigValues[5];                          // p_x
   Orig6 = OrigValues[6];                          // p_y
   Orig7 = OrigValues[7];                          // p

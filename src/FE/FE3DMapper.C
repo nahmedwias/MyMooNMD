@@ -48,7 +48,7 @@ void TFE3DMapper::Map(int Type,
                     std::vector<THangingNode *> *vect,
                     std::vector<int> *numbers)
 {
-  static int i, v, w;
+  static int i;
   int *CurrentPairs;
 
   CurrentPairs = Pairs[Type];
@@ -137,7 +137,6 @@ void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
 {
   int v0, v1, w0, w1;
   int w,e;
-  int i,j, N_;
 
   w0=dof0;
   while( (v0=Global[w0]) > -1 )
@@ -337,7 +336,7 @@ void TFE3DMapper::MapBoundVert(int *Global, int I_K, int Index,
                                std::vector<THangingNode *> *vect,
                                std::vector<int> *numbers)
 {
-  static int i,j, dof, v, w;
+  static int j, dof, v, w;
   int N_;
 
     j=Index;

@@ -26,7 +26,7 @@ void NSType3GalerkinRot(double Mult, double *coeff,
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U, N_P;
@@ -75,7 +75,7 @@ void NSType3GalerkinRot(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -128,7 +128,7 @@ void NSType3GalerkinRotDD(double Mult, double *coeff,
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
@@ -177,7 +177,7 @@ void NSType3GalerkinRotDD(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -242,7 +242,7 @@ void NSType3SmagorinskyRot(double Mult, double *coeff,
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
@@ -295,7 +295,7 @@ void NSType3SmagorinskyRot(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = (c0+mu)*(test10*ansatz10+test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -349,13 +349,13 @@ void NSType3SmagorinskyRotDD(double Mult, double *coeff,
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
-  double mu, ngu, delta;
+  double mu, delta;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -403,7 +403,7 @@ void NSType3SmagorinskyRotDD(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = 2*(c0+mu)*(test10*ansatz10+0.5*test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -1242,10 +1242,10 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j, N_U, N_P;
+  int i,j, N_U; // N_P;
   double c0;
   double u1, u2;
   
@@ -1255,7 +1255,7 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
@@ -1280,7 +1280,7 @@ void NSType3_4NLGalerkinRot(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = c0*(test10*ansatz10+test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -1310,7 +1310,7 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
@@ -1347,7 +1347,7 @@ void NSType3_4NLGalerkinRotDD(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += u2*ansatz01*test00;
@@ -1384,10 +1384,10 @@ void NSType3_4NLSmagorinskyRot(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U, N_P;
+  int i,j,N_U; // N_P;
   double c0;
   double u1, u2;
   double mu, delta;
@@ -1398,7 +1398,7 @@ void NSType3_4NLSmagorinskyRot(double Mult, double *coeff,
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
@@ -1458,7 +1458,7 @@ void NSType3_4NLSmagorinskyRotDD(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
@@ -1874,7 +1874,7 @@ double ***LocMatrices, double **LocRhs)
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U, N_P;
+  int i,j,N_U; //N_P;
   double c0;
   double u1y, u2x, rotu;
 
@@ -1884,7 +1884,7 @@ double ***LocMatrices, double **LocRhs)
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0];                          // u_x
   Orig1 = OrigValues[1];                          // u_y

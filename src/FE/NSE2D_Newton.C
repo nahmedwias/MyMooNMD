@@ -1852,7 +1852,7 @@ void NSType3NLGalerkinDDNewton(double Mult, double *coeff,
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
+  double *Orig0, *Orig1, *Orig2;
   int i,j,N_U;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
@@ -2100,7 +2100,7 @@ void NSType3NLSmagorinskyNewton(double Mult, double *coeff,
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U, N_P;
+  int i,j,N_U; // N_P;
   double c0, c1, c2;
   double u1, u2, du1x, du1y, du2x, du2y;
   double mu, delta;
@@ -2114,7 +2114,7 @@ void NSType3NLSmagorinskyNewton(double Mult, double *coeff,
   Rhs2 = LocRhs[1];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y

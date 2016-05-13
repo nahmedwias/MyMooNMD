@@ -37,13 +37,10 @@
 
 int WriteGridGnu(const char *name, TCollection *coll)
 {
-  int i, ii, j, jj, N_Cells, N_Edges, found, ver_on_strip, common_ver;
-  int common_vert0[2], common_vert1[2], not_common_0, not_common_1;
-  double x[3], y[3], r;
-  const int *TmpEdVer;
-  TBaseCell *cell, *cell_n;
-  TVertex *ver[3], *ver_n[3];
-  TRefDesc *refdesc;
+  int i, j, N_Cells, N_Edges;
+  double x[3], y[3];
+  TBaseCell *cell;
+  TVertex *ver[3];
 
   std::ofstream dat(name);
   if (!dat)
@@ -116,7 +113,7 @@ double CheckOrientation(double *x, double *y)
 
 int PointInCell(TBaseCell *cell, double x_coord, double y_coord)
 {
-  int N_Cells,found,j,N_Vertices;
+  int found,j,N_Vertices;
   double x[3], y[3], v_1x, v_1y, v_0x, v_0y, v_2x, v_2y, det, s, t;
   TVertex *ver[3];
 
@@ -176,7 +173,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   int joint_changes[max_joint_changes][4], N_joint_changes=0, N_joint_changes_1=0;
   double x[3], y[3], r, x_n[3], y_n[3], r_n, x_nn[2], y_nn[2], eps=1e-8, av_rad;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
-  double x_m, y_m, v_1x, v_1y, v_2x,v_2y,s,t,det,v_0x,v_0y;
+  double x_m, y_m, v_0x,v_0y;
   double L, tx, ty, val[3], I, I_1, I_2, I_3, I_4[2], r1;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   double inner_radius = TDatabase::ParamDB->SSMUM_INNER_RADIUS;
@@ -185,7 +182,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   TBaseCell *cell, *cell_n, *cell_nn;
   TVertex *ver[3], *ver_n[3];
   TRefDesc *refdesc, *refdesc_n, *refdesc_nn;
-  TJoint *joint, *joint_n, *joint_nn, *joints[max_joint_changes];
+  TJoint *joint, *joint_n, *joints[max_joint_changes];
 
   N_Cells = coll->GetN_Cells();
   // average radius of strip
@@ -709,7 +706,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
               for (jj=0;jj<N_Edges_nn; jj++)
               {
                 found = 0;
-                joint_nn = cell_nn->GetJoint(jj);
+//                joint_nn = cell_nn->GetJoint(jj);
                 // coordinates of face jj
                 x_nn[0] = cell_nn->GetVertex(TmpEdVer_nn[2*jj])->GetX();
                 y_nn[0] = cell_nn->GetVertex(TmpEdVer_nn[2*jj])->GetY();
@@ -1003,18 +1000,16 @@ int RotateGrid(const char *name, TCollection *coll, double swap_rotation, double
 double *uoldx, double *uoldy, double *uold1, double *uold2,
 TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
 {
-  int i, j, jj, k, kk, N_Cells, N_V, swapped=0, count, found;
+  int i, j, k, N_Cells, N_V, swapped=0, count;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, index, N_U;
   double x, y, phi, r, phi_plus, t0, t1;
-  double val[1], *sol, xp[3], yp[3];
+  double val[1], *sol;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
-  TBaseCell *cell, *cell1, *cell_n, *cell_nk;
-  TVertex *vertex, *Vertices[4];
+  TBaseCell *cell;
+  TVertex *vertex;  // *Vertices[4];
   TJoint *joint;
-  TBoundComp *BoundComp;
   TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   const TFESpace2D *velo_space;
   OutPut("rotate" << endl);
 
@@ -1235,7 +1230,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
     N_V = cell->GetN_Vertices();
     for (k=0;k<N_V;k++)
     {
-      Vertices[k] = cell->GetVertex(k);
+//      Vertices[k] = cell->GetVertex(k);
     }
     for (k=0;k<N_V;k++)
     {
@@ -1279,18 +1274,14 @@ int VelocityAtNewPositions(TCollection *coll,
 TFEFunction2D *u1, TFEFunction2D *u2,
 double *values)
 {
-  int i, j, jj, k, kk, N_Cells, N_V, swapped=0, count, found;
+  int j, jj, k, kk, N_Cells, N_V;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, index, N_U;
-  double x, y, phi, r, phi_plus, t0, t1;
-  double val[1], *sol, xp[3], yp[3];
+  double x, y, phi, r, phi_plus;
+  double val[1], xp[3], yp[3];
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   TBaseCell *cell, *cell1, *cell_n, *cell_nk;
-  TVertex *vertex, *Vertices[4];
-  TJoint *joint;
-  TBoundComp *BoundComp;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
+  TVertex *vertex;
   const TFESpace2D *velo_space;
 
   phi_plus = 2*Pi * TDatabase::TimeDB->TIMESTEPLENGTH * TDatabase::ParamDB->SSMUM_ROT_PER_SECOND;
@@ -1300,7 +1291,7 @@ double *values)
   // number of velocity unknowns
   N_U = u1->GetLength();
   // vector for velocity
-  sol = u1->GetValues();
+//  sol = u1->GetValues();
   // information to the degrees of freedom for the velocity
   GlobalNumbers_velo = velo_space->GetGlobalNumbers();
   BeginIndex_velo = velo_space->GetBeginIndex();
@@ -1460,9 +1451,8 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   int cell_number;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, *DOF_n;
   double x, y, xx[3], yy[3], eps=1e-8, *sol, val1, val2, x_m,y_m;
-  double L,n_x,n_y,T_1,T_2,T_3,I_0,I_1,I_2, t_x, t_y,l,det,P,Q;
+  double L,n_x,n_y,T_1,T_2,T_3,I_0,t_x, t_y,l,det,P,Q;
   double tangential_value, tangential_value0, r, r_n;
-  double u1_unb, u2_unb;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
   TBaseCell *cell, *cell_n;
@@ -2106,12 +2096,12 @@ void MakeBubblesDivFree(TCollection *coll,
     TFEFunction2D *p,
     TMatrix2D *B1, TMatrix2D *B2)
   {
-    int i, ii, j, N_Cells, N_U, N_P, index, index1, row;
+    int i, ii, j, N_Cells, N_U, index, index1, row;
     int *GlobalNumbers_velo, *BeginIndex_velo, *DOF_velo;
     int *GlobalNumbers_press, *BeginIndex_press, *DOF_press;
     const int *RowPtr, *KCol;
     double *sol, loc_rhs[2], loc_a[2][2], *Entries, det, bub1, bub2;
-    TBaseCell *cell;
+//    TBaseCell *cell;
     const TFESpace2D *velo_space, *press_space;
 
     // number of cells
@@ -2128,7 +2118,7 @@ void MakeBubblesDivFree(TCollection *coll,
     // pressure space
     press_space = p->GetFESpace2D();
     // number of pressure unknowns
-    N_P = p->GetLength();
+//    N_P = p->GetLength();
     // information to the degrees of freedom for the pressure
     GlobalNumbers_press = press_space->GetGlobalNumbers();
     BeginIndex_press = press_space->GetBeginIndex();
@@ -2137,7 +2127,7 @@ void MakeBubblesDivFree(TCollection *coll,
     for (j=0;j<N_Cells;j++)
     {
       // get cell
-      cell = coll->GetCell(j);
+//      cell = coll->GetCell(j);
       // dof belonging to this mesh cell
       DOF_velo =  GlobalNumbers_velo + BeginIndex_velo[j];
       DOF_press =  GlobalNumbers_press + BeginIndex_press[j];

@@ -26,10 +26,10 @@ void TimeMassAssemble_PDAE2(double Mult, double *coeff, double hK,
   double **Matrix21, **Matrix22;
   double *MatrixRow11, *MatrixRow12;
   double *MatrixRow21, *MatrixRow22;
-  double ansatz00, ansatz10, ansatz01, val;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  double ansatz00;
+  double test00;
+  double *Orig0;
+  int i,j,N_;
   double c0, c1, c2, c3;
 
   Matrix11 = LocMatrices[0];
@@ -79,7 +79,7 @@ void TimeBilinearAssemble_PDAE2(double Mult, double *coeff, double *param, doubl
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   
   Matrix11 = LocMatrices[0];
   Matrix21 = LocMatrices[1];
@@ -162,7 +162,7 @@ void TimeBilinearAssembleC_PDAE2(double Mult, double *coeff, double *param, doub
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   
   Matrix11 = LocMatrices[0];
   Matrix21 = LocMatrices[1];
@@ -241,7 +241,7 @@ void TimeBilinearAssembleJ_PDAE2(double Mult, double *coeff, double *param, doub
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   
   Matrix11 = LocMatrices[0];
   Matrix21 = LocMatrices[1];
@@ -312,10 +312,9 @@ void TimeRhsAssemble_PDAE2(double Mult, double *coeff, double *param,
                     double ***LocMatrices, double **LocRhs)
 {
   double *Rhs1, *Rhs2;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  double test00;
+  double *Orig2;
+  int i, N_;
   double c1, c2;
 
   Rhs1 = LocRhs[0];
@@ -323,8 +322,8 @@ void TimeRhsAssemble_PDAE2(double Mult, double *coeff, double *param,
   
   N_ = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
+//  Orig0 = OrigValues[0];
+//  Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
 
   c1 = coeff[24]; // Q

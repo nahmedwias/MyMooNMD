@@ -196,7 +196,7 @@ void MatrixMAssemble_Bulk(double Mult, double *coeff, double *param,
                           double **OrigValues, int *N_BaseFuncts,
                           double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, val, *MatrixRow;
+  double **Matrix, *MatrixRow;
   double ansatz00;
   double test00;
   double *Orig0;
@@ -241,8 +241,7 @@ void MatricesA_Assemble_Bulk(double Mult, double *coeff, double *param,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4, Pe; 
-  double k;
+  double c0, c3;
 
   MatrixA = LocMatrices[0];
  
@@ -253,8 +252,8 @@ void MatricesA_Assemble_Bulk(double Mult, double *coeff, double *param,
   Orig2 = OrigValues[2];
 
   c0 = coeff[0]; // eps
-  c1 = coeff[1]; // u_1
-  c2 = coeff[2]; // u_2
+//  c1 = coeff[1]; // u_1
+//  c2 = coeff[2]; // u_2
   c3 = coeff[3]; // other concentration
 
   for(i=0;i<N_;i++)
@@ -335,8 +334,8 @@ void MatricesA_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_, sold_type=TDatabase::ParamDB->SOLD_TYPE;
   int sold_parameter_type = TDatabase::ParamDB->SOLD_PARAMETER_TYPE;
-  double c0, c1, c2, c3, c4, Pe; 
-  double tau, bgradv, bb, k, c00, c11, c22, c33, c44, param_sold[5];
+  double c0, c1, c2, c3, c4;
+  double tau, bgradv, bb, c00, c11, c22, c33, c44, param_sold[5];
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1, theta2;
   double sigma, conc_old, reaction_old, conc_old_x, conc_old_y;
@@ -485,17 +484,14 @@ void Rhs_Assemble_SUPG_Bulk(double Mult, double *coeff, double *param,
 				  double **OrigValues, int *N_BaseFuncts,
 				  double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA, **MatrixK, val, *MatrixRowA, *MatrixRowK;
   double *Rhs;
-  double ansatz00, ansatz10, ansatz01 ;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j, N_, sold_type=TDatabase::ParamDB->SOLD_TYPE;
-  double c0, c1, c2, c3, c4, Pe; 
-  double tau, bgradv, bb, k, c00, c11, c22, c33;
+  int i,N_;
+  double c0, c1, c2, c3, c4;
+  double tau, bgradv, bb, c00, c11, c22, c33;
   double theta1 = TDatabase::TimeDB->THETA1;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double sigma, conc_old;
  
   Rhs = LocRhs[0];
   N_ = N_BaseFuncts[0];
@@ -548,7 +544,7 @@ void MatricesA_Assemble_Galerkin_Bulk(double Mult, double *coeff, double *param,
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j, N_;
-  double c0, c1, c2, c3, c4;
+  double c0, c1, c2, c3; //c4;
 
   MatrixA = LocMatrices[0];
 
@@ -562,7 +558,7 @@ void MatricesA_Assemble_Galerkin_Bulk(double Mult, double *coeff, double *param,
   c1 = coeff[1]; // u_1
   c2 = coeff[2]; // u_2
   c3 = coeff[3]; // other concentration
-  c4 = coeff[4];
+//  c4 = coeff[4];
 
   for(i=0;i<N_;i++)
   {
@@ -787,33 +783,24 @@ TFEFunction2D *u,
 BoundCondFunct2D *BoundaryConditions,
 double *sold_param)
 {
-  int i, j, k, ii, N_Cells, *ColInd, *RowPtr, *GlobalNumbers, *BeginIndex;
-  int ActiveBound, *DOF, *DOF_n, N_Edges, boundedge, locdof, found;
-  int com00, com01, com10, com11, com20, com21, com_other0, com_other1;
-  int loc_vert_n, comp;
-  double val[3], val_neigh[3], h, norm_t, x[3], y[3], oldval[3];
-  double x_n[3], y_n[3], eps = 1e-6;
-  double x0, x1, y0, y1, xs, ys, t1, t2, *coeff, jump, fac0, fac1, fac2;
-  double phi0_x, phi0_y, phi1_x, phi1_y, phi2_x, phi2_y, n1, n2, maxjump;
-  double phi0_n_x, phi0_n_y, phi1_n_x, phi1_n_y, phi2_n_x, phi2_n_y;
-  double phi_n_other_x, phi_n_other_y, p0, p1;
-  double sx, sy, tmp, meas, area, rho = 2.0, ansatz, test, area_n, meas_n;
-  double integral, norm_grad_u, ave, integral_ave;
+  int i, j, ii, N_Cells;
+  int N_Edges;
+  double val[3], val_neigh[3], norm_t, x[3], y[3];
+  double x0, x1, y0, y1, xs, ys, t1, t2, jump;
+  double n1, n2;
+  double sx, sy;
+  double integral, ave, integral_ave;
   TBaseCell *cell, *neigh;
   TCollection *coll;
   FE2D CurrentElement;
   TJoint *joint;
   TRefDesc *refdesc;
   TVertex *ver0,*ver1;
-  BoundCond BdCond;
-  TBoundComp *BdComp;
-  TBoundEdge *bound_edge;
-  TIsoBoundEdge *isobound_edge;
   const int *TmpEdVer;
 
   // get arrays with the numbering of the dof
-  GlobalNumbers = fespace->GetGlobalNumbers();
-  BeginIndex = fespace->GetBeginIndex();
+//  GlobalNumbers = fespace->GetGlobalNumbers();
+//  BeginIndex = fespace->GetBeginIndex();
 
   // get collection and number of cells
   coll = fespace->GetCollection();
@@ -832,7 +819,7 @@ double *sold_param)
     integral = integral_ave = 0;
     // next cell
     cell = coll->GetCell(i);
-    h = cell->GetDiameter();
+//    h = cell->GetDiameter();
     //meas = cell->GetMeasure();
     // pointer to global indices of dof connected with this cell
     //DOF = GlobalNumbers + BeginIndex[i];
@@ -863,7 +850,7 @@ double *sold_param)
     sx /= N_Edges;
     sy /= N_Edges;
     u->FindGradientLocal(cell, i, sx, sy, val);
-    norm_grad_u = sqrt(val[1]*val[1]+val[2]*val[2]);
+//    norm_grad_u = sqrt(val[1]*val[1]+val[2]*val[2]);
 
     // get refinement descriptor
     refdesc=cell->GetRefDesc();

@@ -19,11 +19,11 @@ void NSType4GalerkinAxialSymm3D(double Mult, double *coeff,
                           double **OrigValues, int *N_BaseFuncts,
                           double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;  // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -33,8 +33,8 @@ void NSType4GalerkinAxialSymm3D(double Mult, double *coeff,
   double r, u1,u2,y;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -69,8 +69,8 @@ void NSType4GalerkinAxialSymm3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i]*sign;
@@ -261,11 +261,11 @@ void NSType4SDFEMAxialSymm3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
@@ -281,8 +281,8 @@ void NSType4SDFEMAxialSymm3D(double Mult, double *coeff,
   static double delta1 = TDatabase::ParamDB->DELTA1;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -319,8 +319,8 @@ void NSType4SDFEMAxialSymm3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -552,11 +552,11 @@ void NSType4UpwindAxialSymm3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **Matrix122;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -566,8 +566,8 @@ void NSType4UpwindAxialSymm3D(double Mult, double *coeff,
   double r, y;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -600,8 +600,8 @@ void NSType4UpwindAxialSymm3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i]*sign;
@@ -784,11 +784,11 @@ void NSType4SmagorinskyAxialSymm3D(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -799,8 +799,8 @@ void NSType4SmagorinskyAxialSymm3D(double Mult, double *coeff,
   double mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -831,8 +831,8 @@ void NSType4SmagorinskyAxialSymm3D(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1032,7 +1032,7 @@ void NSType3_4NLGalerkinAxialSymm3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01, ansatz00;
+  double ansatz10, ansatz01; // ansatz00;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U, sign;
@@ -1072,7 +1072,7 @@ void NSType3_4NLGalerkinAxialSymm3D(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j]*sign;
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val  = c0*r*(test10*ansatz10+test01*ansatz01);
       val += r*(u1*ansatz10+u2*ansatz01)*test00;
@@ -1159,7 +1159,7 @@ void NSType3_4NLUpwindAxialSymm3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix22Row;
-  double ansatz10, ansatz01, ansatz00;
+  double ansatz10, ansatz01;// ansatz00;
   double test10, test01, test00;
   double *Orig0, *Orig1, *Orig2;
   int i,j,N_U,sign;
@@ -1197,7 +1197,7 @@ void NSType3_4NLUpwindAxialSymm3D(double Mult, double *coeff,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j]*sign;
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
 
       val  = c0*r*(test10*ansatz10+test01*ansatz01);
       Matrix11Row[j] += Mult * val;
@@ -1276,7 +1276,7 @@ void NSType3_4NLSmagorinskyAxialSymm3D(double Mult, double *coeff,
   double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U, N_P;
+  int i,j,N_U; // N_P;
   double c0;
   double u1, u2;
   double mu, delta;
@@ -1287,7 +1287,7 @@ void NSType3_4NLSmagorinskyAxialSymm3D(double Mult, double *coeff,
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
@@ -1637,21 +1637,21 @@ void NSType3_4NLGalerkinAxialSymm3D_Duese(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1T, **MatrixB2T;
-  double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double val;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j,N_U, N_P,sign;
-  double c0, c1, c2;
+  double c0; // c2; // c1;
   double r, u1,u2,y,mu,delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1T = LocMatrices[4];
   MatrixB2T = LocMatrices[5];
@@ -1665,8 +1665,8 @@ void NSType3_4NLGalerkinAxialSymm3D_Duese(double Mult, double *coeff,
   Orig3 = OrigValues[3]; // p
 
   c0 = coeff[0]; // nu
-  c1 = coeff[1]; // f1
-  c2 = coeff[2]; // f2
+//  c1 = coeff[1]; // f1
+//  c2 = coeff[2]; /// f2
   
   y  = param[0]; // y
   u1 = param[1]; // u1old
@@ -1684,8 +1684,8 @@ void NSType3_4NLGalerkinAxialSymm3D_Duese(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i]*sign;
