@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 #include <DirectSolver.h>
@@ -239,7 +239,7 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
   double Rhs[RhsDim], sol[RhsDim];
   int *UGlobalNumbers, *UBeginIndex, *UDOFs, UDOF, N_U;
   int *PGlobalNumbers, *PBeginIndex, *PDOFs, PDOF, N_P;
-  int N_LocalDOF, verbose;
+  int N_LocalDOF;
   int begin, end, ActiveBound, begin1, end1;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   TBaseCell *Cell;
@@ -265,8 +265,6 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
 #endif  
 
   // reset parameters for the use of GMRES for the local systems
-  verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-  TDatabase::ParamDB->SC_VERBOSE = -1;
 
   if(VankaColl)
     Coll = VankaColl;
@@ -563,8 +561,6 @@ void TNSE_MGLevel1::CellVanka(double *u1, double *rhs1,
     delete itmethod;
   }
 
-  // reset parameters for the use of GMRES for the local systems
-  TDatabase::ParamDB->SC_VERBOSE = verbose;
 } // end Vanka
 
 /** nodal Vanka smoother, GAUSS-SEIDEL type */
@@ -588,7 +584,7 @@ void TNSE_MGLevel1::NodalVanka(double *u1, double *rhs1, double *aux,
   double System[SystemRhs*SystemRhs];
   double Rhs[SystemRhs], sol[SystemRhs];
   int N_LocalDOF;
-  int begin, end, HangingBound, begin1, end1, verbose;
+  int begin, end, HangingBound, begin1, end1;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
   double *u2, *p, *rhs2, *rhsp;
   TItMethod *itmethod = NULL;
@@ -857,10 +853,7 @@ void TNSE_MGLevel1::NodalVanka(double *u1, double *rhs1, double *aux,
         //OutPut(i << " local dof " << N_LocalDOF << endl);
          //for (ii=0;ii<10;ii++)
         //  cout << ii << " " << System[ii] << endl;
-        verbose =  TDatabase::ParamDB->SC_VERBOSE; 
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         //SolveLinearSystem(System, Rhs, N_LocalDOF, N_LocalDOF);
         //norm =0 ;
         //for (ii=0;ii<N_LocalDOF;ii++)
@@ -1102,8 +1095,7 @@ double TNSE_MGLevel1::StepLengthControl (double *u1, double *u1old,
   delete x;
   if (fabs(omega)<0.1)
       omega = 0.1;
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-    OutPut("step length control " << omega << endl);
+  Output::print<2>("step length control ", omega);
   return(omega); 
 }
 
@@ -1132,10 +1124,10 @@ void TNSE_MGLevel1::BraessSarazin(double *u1, double *rhs1,
   // call the algebraic solver
   // the last input parameter is only a dummy
 #ifdef __2D__
-  Solver(A, B1, B2, rhs1, sol, j);
+  OldSolver(A, B1, B2, rhs1, sol, j);
 #endif  
 #ifdef __3D__
-  Solver(A, B1, B2, B3, rhs1, sol, j);
+  OldSolver(A, B1, B2, B3, rhs1, sol, j);
 #endif  
 
   // update and apply damping

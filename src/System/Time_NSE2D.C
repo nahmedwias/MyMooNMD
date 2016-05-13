@@ -9,6 +9,30 @@
 #include <Output2D.h>
 #include <DirectSolver.h>
 
+#include <sys/stat.h>
+
+/* *************************************************************************** */
+  //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
+ParameterDatabase get_default_TNSE2D_parameters()
+{
+  Output::print<3>("creating a default TNSE2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default TNSE2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("TNSE2D parameter database");
+
+  //Time_NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
+/* *************************************************************************** */
+
 /**************************************************************************** */
 Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example, 
                   TCollection& coll, std::pair< int, int > order, 
@@ -52,18 +76,20 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
 }
 
 /**************************************************************************** */
-Time_NSE2D::Time_NSE2D(const TDomain& domain, int reference_id)
-  : Time_NSE2D(domain, *(new Example_NSE2D()), reference_id)
+Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       int reference_id)
+  : Time_NSE2D(domain, param_db, *(new Example_NSE2D()), reference_id)
 {
   
 }
 
 /**************************************************************************** */
-Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex, 
-                       int reference_id)
- : systems(), example(ex), multigrid(), defect(), 
+Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       const Example_NSE2D& ex, int reference_id)
+ : db(get_default_TNSE2D_parameters()), systems(), example(ex), multigrid(), defect(),
    oldResidual(0), initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
+  db.merge(param_db);
   this->set_parameters();
   
   std::pair <int,int> velo_pres_order(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -126,18 +152,19 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const Example_NSE2D& ex,
   param[9] = 0;
   this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velo_pres_order, type);
-  }
+//TODO Commented out, requires switching to Solver object.
+//  int LEVELS = TDatabase::ParamDB->LEVELS;
+//  if(LEVELS > domain.get_ref_level() + 1)
+//    LEVELS = domain.get_ref_level() + 1;
+//
+//  // the matrix and rhs side on the finest grid are already constructed
+//  // now construct all matrices, rhs, and solutions on coarser grids
+//  for(int i = LEVELS - 2; i >= 0; i--)
+//  {
+//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    this->systems.emplace_back(example, *coll, velo_pres_order, type);
+//  }
   
   // create multigrid-level-objects, must be coarsest first
   unsigned int i = 0;
@@ -587,7 +614,7 @@ void Time_NSE2D::assemble_nonlinear_term()
 
 /**************************************************************************** */
 bool Time_NSE2D::stopIte(unsigned int it_counter)
-{
+{//TODO This has no "slow convergence criterion yet!"
   System_per_grid& s = this->systems.front();
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
@@ -619,9 +646,9 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   if(it_counter == 0)
     initial_residual = sqrt(residual);
   
-  int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  size_t Max_It = db["nonlinloop_maxit"];
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print("stopping tolerance for nonlinear iteration ", limit);
@@ -900,22 +927,22 @@ void Time_NSE2D::mg_solver()
 /**************************************************************************** */
 void Time_NSE2D::output(int m, int& image)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK 
-    && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
 
   System_per_grid& s = this->systems.front();
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
     s.p.PrintMinMax();
   }
 
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double locerr[8];
     MultiIndex2D allderiv[3]= {D00, D10, D01};
@@ -962,13 +989,17 @@ void Time_NSE2D::output(int m, int& image)
   
   if((m==0) || (m/TDatabase::TimeDB->STEPS_PER_IMAGE) )
   {
-    if(TDatabase::ParamDB->WRITE_VTK)
+    if(db["output_write_vtk"])
     {
       TOutput2D output(2, 3, 1, 0, NULL);
       output.AddFEFunction(&s.p);
       output.AddFEVectFunct(&s.u);
-      std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-      filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+      // Create output directory, if not already existing.
+      mkdir(db["output_vtk_directory"], 0777);
+      std::string filename = this->db["output_vtk_directory"];
+      filename += "/" + this->db["output_basename"].value_as_string();
+
       if(image<10) filename += ".0000";
       else if(image<100) filename += ".000";
       else if(image<1000) filename += ".00";

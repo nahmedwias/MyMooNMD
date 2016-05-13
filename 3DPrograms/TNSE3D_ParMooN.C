@@ -76,8 +76,9 @@ int main(int argc, char* argv[])
   // Read in geometry and initialize the mesh.
   domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
 
-  // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
+  // Do initial domain refinement
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(size_t i = 0; i < n_ref; i++)
   {
     domain.RegRefineAll();
   }

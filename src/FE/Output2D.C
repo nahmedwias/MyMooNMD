@@ -267,32 +267,6 @@ static int GetIndex(TVertex **Array, int Length, TVertex *Element)
   return m;
 }
 
- /** write stored data into a .vtk-file*/
-int TOutput2D::Write(std::string basename, int i, double _current_time)
-{
-  std::ostringstream os;
-
-  os.seekp(std::ios::beg);
-  os << basename << i << ".vtk"<<ends;
-  os.seekp(std::ios::beg);
-  os << basename << i << ".vtk"<<ends;
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    cout << " Output2D:: writing " << os.str() << endl;
-    WriteVtk(os.str().c_str());
-  }
-  
-  os.seekp(std::ios::beg);
-  os << basename << i << ".gnu"<<ends;
-  if(TDatabase::ParamDB->WRITE_GNU) 
-  {
-    cout << " Output2D:: writing " << os.str() << endl;
-    WriteGnuplot(os.str().c_str());
-  }
-  // add more here if needed
-  return 0;
-}
-
 /** write stored data into a grape file */
 int TOutput2D::WriteGrape(const char *name)
 {
@@ -870,7 +844,6 @@ int TOutput2D::WriteGnuplot(const char *name)
 }
 
 
-
 /** write stored data into a VTK file */
 /** start of implementation by Piotr Skrzypacz 24.03.04 */
 /** modified by Sashi  26.09.09 **/
@@ -902,15 +875,9 @@ int TOutput2D::WriteVtk(const char *name)
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
 
-  char *variable;
   char var1[2] = {'r', 'z'};
   char var2[2] = {'1', '2'};  
-  
-  if(TDatabase::ParamDB->Axial3D)
-   { variable = var1;}
-  else
-   { variable = var2;}
-  
+
   time_t rawtime;
   struct tm * timeinfo;
   
@@ -2732,8 +2699,7 @@ int TOutput2D::WriteGMV(const char *name)
   dat.write(endgmv, 8);
   dat.close();
 
-  if(TDatabase::ParamDB->SC_VERBOSE > 0)
-    OutPut("wrote output into file: " << name << endl);
+  Output::print("wrote output into file: ", name);
 
   return 0;
 }
@@ -2744,7 +2710,9 @@ int TOutput2D::Write_ParVTK(
 #ifdef _MPI
                                 MPI_Comm comm,
 #endif
-                               int img, char *subID)
+                               int img, char *subID,
+							   std::string directory,
+							   std::string basename)
 {
   int i, j, k,l,m,n, rank, size, N_, N_Elements, N_LocVertices;
   int N_Vertices, N_CellVertices, N_Comps;
@@ -2759,7 +2727,7 @@ int TOutput2D::Write_ParVTK(
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0, 0, 1};
 
-  char *VtkBaseName, Dquot;
+  char Dquot;
   const char vtudir[] = "VTU";
   time_t rawtime;
   struct tm * timeinfo;
@@ -2771,8 +2739,8 @@ int TOutput2D::Write_ParVTK(
   FE2D FE_ID;
 
   Dquot = 34; //  see ASCII Chart
-  VtkBaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* VtkBaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
   // int AnsatzSpace = int(TDatabase::ParamDB->ANSATZ_ORDER);
 #ifdef _MPI
   MPI_Comm_rank(comm, &rank);
@@ -2799,7 +2767,6 @@ int TOutput2D::Write_ParVTK(
 // write the master pvtu file
   if(rank==0)
    {
-//    if( TDatabase::ParamDB->SC_VERBOSE > 0 )
     OutPut("writing output into "<< output_directory << "/" << VtkBaseName 
            <<subID << "*." <<img<< " xml vtk file"<< endl);
     os.seekp(std::ios::beg);

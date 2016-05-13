@@ -1992,11 +1992,11 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEFunction2D::WriteSol()
+void TFEFunction2D::WriteSol(std::string directory, std::string basename)
 {
   int i, N_Joints, N_Cells;
   static int img=0;
-  char *BaseName, Dquot;
+  char Dquot;
 
   TCollection *Coll;
   TBaseCell *cell;
@@ -2008,8 +2008,8 @@ void TFEFunction2D::WriteSol()
   i=0;
   cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
-  BaseName = TDatabase::ParamDB->BASENAME;
-  char *output_directory = TDatabase::ParamDB->OUTPUTDIR;
+  const char* BaseName = basename.c_str();
+  const char* output_directory = directory.c_str();
 
   std::ostringstream os;
   os << " ";

@@ -49,6 +49,7 @@
 #endif
 
 #include <string.h>
+#include <vector>
 
 extern "C"
 {
@@ -57,19 +58,44 @@ extern "C"
                    struct triangulateio *);
 }
 
-
-// Constructor
-TDomain::TDomain()
+ParameterDatabase get_default_domain_parameters()
 {
-  RefLevel = 0;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+
+  db.add("refinement_n_initial_steps", (size_t)0,
+         "This is the number of refinement steps before any computation "
+         "starts. Usually the mesh is uniformly refined. In a multigrid "
+         "program, this determines the number of uniform refinements until the "
+         "finest mesh.", (size_t)0, (size_t)20);
+
+  db.add("refinement_max_n_adaptive_steps", (size_t) 0,
+         "A maximum number of adaptive refinement steps"
+         "which may be applied to this domain."
+         "THIS IS UNUSED AT THE MOMENT!",
+         (size_t) 0, size_t (10));
+
+  return db;
 }
 
 
-TDomain::TDomain(char *ParamFile)
+// Constructor
+TDomain::TDomain(const ParameterDatabase& param_db) :
+    db(get_default_domain_parameters())
 {
   RefLevel = 0;
+  db.merge(param_db, false);
+}
 
+
+TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
+    db(get_default_domain_parameters())
+{
+  RefLevel = 0;
   
+  db.merge(param_db, false);
+
+  // This will be removed as soon as we got entirely rid of the
+  // global database.
   /** set variables' value in TDatabase using ParamFile */
   this->ReadParam(ParamFile);
     
@@ -656,7 +682,7 @@ int TDomain::GenInitGrid()
 
 
      #ifdef _MPI
-     if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+     if(rank==0)
      #endif
       {
       if (BdParts[part]->GetBdComp(comp)->GetTofXY(
@@ -1015,8 +1041,7 @@ int TDomain::PS(const char *name, TCollection *Coll)
     return -1;
   }
 
-  if(TDatabase::ParamDB->SC_VERBOSE)
-    OutPut(" Generating postscript file " << name << endl);
+  Output::info("PS","Generating postscript file ", name);
 
   N_ = Coll->GetN_Cells();
   
@@ -1292,17 +1317,14 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
         reftol*=decrease_reftol_factor;
         coarsetol *=increase_coarsetol_factor;
       }
-      if(TDatabase::ParamDB->SC_VERBOSE > 1)
-        OutPut("total " << N_ << " changed " <<  changed << endl);
+      Output::print<2>("total ", N_, " changed ",  changed);
       it++;
     }
     if (ConfClosure)
     {
-      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
-        cout << " before " << endl;
+      Output::print<3>(" before ");
       MakeConfClosure();
-      if(TDatabase::ParamDB->SC_VERBOSE > 2) 
-        cout << " after " << endl;
+      Output::print<3>(" after ");
       
       return 0;
     }
@@ -1344,10 +1366,8 @@ int TDomain::RefineByErrorEstimator(TCollection *Collection,
           ;
         }
       }
-      if(TDatabase::ParamDB->SC_VERBOSE > 1)
-        OutPut("total " << N_ << " changed " <<  changed << " global error "
-               << eta << " error of refined cells " << sqrt(sum_local_errors)
-               << endl);
+      Output::stat<2>("total ", N_ , " changed ",  changed, " global error "
+                  , eta, " error of refined cells ", sqrt(sum_local_errors));
       if ((changed< min_changed)||(sqrt(sum_local_errors) <=
            fraction_of_error * eta))
       {                  // criteria not fulfilled, change tolerances
@@ -2040,8 +2060,7 @@ int TDomain::ConvertQuadToTri(int type)
 */
 TCollection *TDomain::GetCollection(TCollection *coll, int reference)
 {
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << " Domain::GetCollection with reference: " << reference << endl;
+  Output::info<2>("GetCollection", " Domain::GetCollection with reference: ", reference);
   int n_cells;
   TBaseCell **cells, *CurrCell;
   TCollection *subcoll;
@@ -2068,8 +2087,7 @@ TCollection *TDomain::GetCollection(TCollection *coll, int reference)
       j++;
     }
   }
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << "TDomain::GetCollection() creating collection, n_cells = " << n_cells << endl;
+  Output::print<2>("TDomain::GetCollection() creating collection, n_cells = ", n_cells);
   // create collection from an array of cells
   subcoll = new TCollection(n_cells, cells);
   
@@ -3367,12 +3385,65 @@ int TDomain::GenerateEdgeInfo()
    delete [] PointNeighb;
 
 #ifdef _MPI
-   if(rank==0 && TDatabase::ParamDB->SC_VERBOSE>0)
+   if(rank==0)
 #endif
-    OutPut("3D Mesh Edges Generated "<<endl);
+    Output::info("Domain.C","3D Mesh Edges Generated ");
 
   return 0;
 }
 
 
 #endif
+
+size_t TDomain::get_n_initial_refinement_steps() const
+{
+  return db["refinement_n_initial_steps"];
+}
+
+size_t TDomain::get_max_n_adaptive_steps() const
+{
+  return db["refinement_max_n_adaptive_steps"];
+}
+
+void TDomain::print_info(std::string name) const
+{
+#ifdef _MPI
+  int my_rank, size;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+  MPI_Comm_size(TDatabase::ParamDB->Comm, &size);
+
+  int sbuf_own = N_OwnCells;
+  int sbuf_halo = N_RootCells - N_OwnCells;
+
+  std::vector<int> ns_own_cells(size,0);
+  std::vector<int> ns_halo_cells(size,0);
+
+  {
+    MPI_Gather(
+      &sbuf_own, 1, MPI_INT,            //send
+      &ns_own_cells.at(0), 1, MPI_INT,  //receive
+      0, MPI_COMM_WORLD);               //control
+    MPI_Gather(
+      &sbuf_halo, 1, MPI_INT,            //send
+      &ns_halo_cells.at(0), 1, MPI_INT,  //receive
+      0, MPI_COMM_WORLD);               //control
+  }
+  if(my_rank == 0)
+  {
+    Output::stat("Domain", name);
+    size_t sum_cells_total = 0;
+    for(int i =0; i < size ;++i)
+    {
+      Output::dash("Process", i, "\t n_own_cells: ", ns_own_cells.at(i),
+                    "\t n_halo_cells: ", ns_halo_cells.at(i));
+      sum_cells_total += ns_own_cells.at(i);
+    }
+    Output::dash("Total number of cells: ", sum_cells_total);
+
+  }
+
+#else
+  Output::stat("Domain ", name);
+  Output::dash("No domain statistics printout in non-MPI case so far.");
+#endif
+}

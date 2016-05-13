@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
     TDatabase::ParamDB->EXAMPLE =104;
     TDatabase::ParamDB->RE_NR = 1e-20;
@@ -136,9 +137,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
-
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
     // the domain is initialised with default description and default
@@ -147,7 +146,7 @@ int main(int argc, char* argv[])
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
 
-    Time_CD2D tcd(domain);
+    Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
   }
 }

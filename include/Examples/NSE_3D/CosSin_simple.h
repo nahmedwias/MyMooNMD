@@ -18,6 +18,7 @@ void ExampleFile()
     ErrThrow(">>>>> This example is designed for "
         " BNDFILE: Default_UnitCube. Choose that geometry!");
   }
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
 // exact solution

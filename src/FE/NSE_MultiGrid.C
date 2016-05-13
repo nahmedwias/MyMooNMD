@@ -115,6 +115,8 @@ void TNSE_MultiGrid::RestrictToAllGrids()
 /** one cycle on level i */
 void TNSE_MultiGrid::Cycle(int i, double &res)
 {
+  int verbosity = 2;
+
   int j, N_UDOF, N_PDOF, N_DOF, maxit, smoother; // NLevels=N_Levels;
   int slc, defect_calc, umfpack_flag, ii;
   double oldres; // res2, s;
@@ -168,33 +170,30 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       case 17 : 
         CurrentLevel->SolveExact(CurrentU, CurrentRhsU);
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
-	{
-	    if (res>1e-12)
-	    {
-		OutPut("MESSAGE: residual not zero !! ("<<res); 
-		OutPut(") Check boundary conditions !! "<< endl);
-	    }
-	}
-      break;
-      
+        if (verbosity=2)
+        {
+          if (res>1e-12)
+          {
+            OutPut("MESSAGE: residual not zero !! ("<<res);
+            OutPut(") Check boundary conditions !! "<< endl);
+          }
+        }
+        break;
       case 18 : // Direct Solver with UMFPACK
         //OutPut("This should be done by UMFPACK in the future" << endl);
-
-	  umfpack_flag = (int) Parameters[9];
+        umfpack_flag = (int) Parameters[9];
         CurrentLevel->SolveExactUMFPACK(CurrentU, CurrentRhsU, umfpack_flag);
-	Parameters[9] = umfpack_flag;
+        Parameters[9] = umfpack_flag;
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
-	{
-	    if (res>1e-12)
-	    {
-		OutPut("MESSAGE: residual not zero !! ("<<res); 
-		OutPut(") Check boundary conditions !! "<< endl);
-	    }
-	}
-      break;
-
+        if (verbosity>=2)
+        {
+          if (res>1e-12)
+          {
+            OutPut("MESSAGE: residual not zero !! ("<<res);
+            OutPut(") Check boundary conditions !! "<< endl);
+          }
+        }
+        break;
       case 1 :
       case 2 :
         slc = 0;
@@ -210,15 +209,15 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
 
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        if (verbosity>=2)
         {
-           OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
-        }  
-//        res2 = res = oldres;  // not used later in this function
+          OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
+        }
+        // res2 = res = oldres;  // not used later in this function
         divfactor *= res;
         if (slc)
         {
-	    ii = N_DOF*SizeOfDouble;
+          ii = N_DOF*SizeOfDouble;
           memcpy(OldU, CurrentU, ii);
           memcpy(CurrentOldDefU, CurrentDefectU, ii);
         }
@@ -239,10 +238,9 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("mesh cell Vanka : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-//          res2 = res;   // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -252,32 +250,31 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         if (slc)
         { 
           alpha = CurrentLevel->
-            StepLengthControl(CurrentU, OldU, CurrentOldDefU,
-                              N_Parameters,Parameters);       
-      
+          StepLengthControl(CurrentU, OldU, CurrentOldDefU,
+                            N_Parameters,Parameters);
           for (j=0;j<N_DOF;j++)
             CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
         }
-      break;
-
-      case 3 :
-      case 4 :
+        break;
+	
+      case 3:
+      case 4:
         slc =0;
         if (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
           slc = 1;
         else
           if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE)
-                 &&(i==N_Levels-1))
-            slc = 1;
+            &&(i==N_Levels-1))
+          slc = 1;
             
         maxit = TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE; // max # of iterations
         j = 0;
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
-//        res2 = res = oldres;   // not used later in this function
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        // res2 = res = oldres;   // not used later in this function
+        if (verbosity>=2)
         {
-           OutPut("smoother " << smoother <<"level 0 res before smoothing: " << oldres << endl);
+          OutPut("smoother " << smoother <<"level 0 res before smoothing: " << oldres << endl);
         }
         if (slc)
         {
@@ -296,7 +293,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           if(j>=maxit) break;
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-          if (TDatabase::ParamDB->SC_VERBOSE >=2)
+          if (verbosity >=2)
           {
             OutPut("level 0: Vanka ite: " << j << " " << res << endl);
           }
@@ -306,15 +303,15 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("nodal Vanka : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-//          res2 = res;  // not used later in this function
+          // res2 = res;  // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
           OutPut("smoother " << smoother <<"level 0 res after smoothing: "<< res 
-		 << " reduction " <<  res/oldres );
+          << " reduction " <<  res/oldres );
           OutPut(" number of Vanka iters: " << j << endl);
         }
         if (slc)
@@ -326,9 +323,9 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           for (j=0;j<N_DOF;j++)
             CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
         }
-      break;
+        break;
 
-      case 11 :
+      case 11:
         slc =0;
         if (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
           slc = 1;
@@ -342,7 +339,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
         // cout << "residual " << j << " " << res << endl;
-//        res2 = res = oldres;   // not used later in this function
+        // res2 = res = oldres;   // not used later in this function
         if (slc)
         {
           memcpy(OldU, CurrentU, N_DOF*SizeOfDouble);
@@ -367,10 +364,9 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             OutPut("Braess-Sarazin : coarse grid solver diverged " <<  res  << endl);
             exit(4711);
           }
-//          res2 = res;   // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -378,16 +374,77 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         }
         if (slc)
         { 
-          alpha = CurrentLevel->StepLengthControl(CurrentU, 
-                                                  OldU, CurrentOldDefU,
-                                                  N_Parameters,Parameters);       
+          alpha = CurrentLevel->StepLengthControl(CurrentU, OldU, CurrentOldDefU,
+                                                  N_Parameters,Parameters);
       
           for (j=0;j<N_DOF;j++)
             CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
         }
-      break;
-
-      default :
+        break;
+      case 20:
+      case 21:
+      case 22:
+      case 30:
+      case 31:
+      case 32: //new vanka implementations, code is copied from case 1, case 2.
+        slc = 0;
+        if (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
+          slc = 1;
+        else
+          if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE)
+            &&(i==N_Levels-1))
+	        slc = 1;
+        maxit = TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE; // max # of iterations
+        j = 0;
+        // compute defect
+        CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
+        
+        if (verbosity >= 2)
+        {
+          OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
+        }
+        divfactor *= res;
+        if (slc)
+        {
+          ii = N_DOF*SizeOfDouble;
+          memcpy(OldU, CurrentU, ii);
+          memcpy(CurrentOldDefU, CurrentDefectU, ii);
+        }
+        // iterate, do at least one iteration
+        while (((res>TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE*oldres)
+          || (j==0)))
+        {
+          // apply smother
+          CurrentLevel->applySmoother(CurrentU, CurrentRhsU, CurrentAux);
+          j++;
+          // maxit reached
+          if(j>=maxit) break;
+          // compute defect
+          CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
+          if (res > divfactor)
+          {
+            OutPut("mesh cell Vanka : coarse grid solver diverged " <<  res  << endl);
+            exit(4711);
+          }          
+        }
+        if (verbosity >=2)
+        {
+          // compute defect
+          CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
+          OutPut("smoother " << smoother <<", level 0 res after smoothing: "<< res << " reduction " <<  res/oldres );
+          OutPut(" number of Vanka iters: " << j << endl);
+        }
+        if (slc)
+        {
+          alpha = CurrentLevel->StepLengthControl(CurrentU, OldU, CurrentOldDefU,
+                                                  N_Parameters,Parameters);
+          
+          for (j=0;j<N_DOF;j++)
+            CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
+        }
+        break;
+        
+      default:
         OutPut("coarse smoother not found !! Set SC_COARSE_SMOOTHER properly !! " << smoother);
         OutPut(endl);
         exit(4711);
@@ -422,7 +479,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       memcpy(OldU, CurrentU, ii);
       memcpy(CurrentOldDefU, CurrentDefectU, ii);
     }
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       if (!defect_calc)
       {
@@ -467,6 +524,15 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
         }
         break;
+      case 20:
+      case 21:
+      case 22:
+      case 30:
+      case 31:
+      case 32:
+        for(j=0;j<TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE;j++)
+          CurrentLevel->applySmoother(CurrentU, CurrentRhsU, CurrentAux);
+        break;
       default :
         OutPut("smoother not found !! Set SC_SMOOTHER properly !!"<< endl);
         Error("smoother not found !! Set SC_SMOOTHER properly !!"<< endl);
@@ -476,7 +542,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
     // calculate defect
     CurrentLevel->CorrectNodes(CurrentU);
     if (!slc)
-	CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
+      CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
     else
     {
       alpha = CurrentLevel->StepLengthControl(CurrentU, OldU, 
@@ -491,7 +557,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       memcpy(CurrentOldDefU, CurrentDefectU, ii);
     }
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
         OutPut("level " << i << " ");
         OutPut("res after presmoothing: " <<  
@@ -573,7 +639,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
 
     defect_calc = 0;
  
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       // compute defect
       CurrentLevel->CorrectNodes(CurrentU);
@@ -615,6 +681,15 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
         }
         break;
+      case 20:
+      case 21:
+      case 22:
+      case 30:
+      case 31:
+      case 32:
+        for(j=0;j<TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE;j++)
+          CurrentLevel->applySmoother(CurrentU, CurrentRhsU, CurrentAux);
+        break;
       default :
         OutPut("smoother not found !! Set SC_SMOOTHER properly !!"<< endl);
         Error("smoother not found !! Set SC_SMOOTHER properly !!"<< endl);
@@ -632,7 +707,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
     }
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       // compute defect
       CurrentLevel->CorrectNodes(CurrentU);

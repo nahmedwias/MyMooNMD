@@ -30,6 +30,19 @@
 
 #include <stdlib.h>
 
+//helper method for printing "registered something" infos
+void print_registered_message_3D(std::string entities)
+{
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+  if(my_rank == 0)
+    Output::info<2>("FEDatabase3D", entities, " registered");
+}
+
 // =======================================================================
 // initialize static members
 // =======================================================================
@@ -366,13 +379,8 @@ void TFEDatabase3D::RegisterAllQuadFormulas()
   qftetra = new TQuadFormulaTetra();
   qftetra->P8Exact();
   RegisterQuadFormula3D(P8Tetra, qftetra);
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "quadrature formulas registered" << endl;
+  print_registered_message_3D(std::string("Quadrature formulas"));
 }
 
 void TFEDatabase3D::RegisterAllFEDescs()
@@ -435,13 +443,7 @@ void TFEDatabase3D::RegisterAllFEDescs()
   RegisterFEDesc3D(FE_N_H_BDDF2_3D, FE_N_H_BDDF2_3D_Obj);
   RegisterFEDesc3D(FE_N_H_BDDF3_3D, FE_N_H_BDDF3_3D_Obj);
   
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "FE descriptors registered" << endl;  
+  print_registered_message_3D(std::string("FE descriptors"));
 }
 
 void TFEDatabase3D::RegisterAllBaseFunctions()
@@ -504,13 +506,7 @@ void TFEDatabase3D::RegisterAllBaseFunctions()
   RegisterBaseFunct3D(BF_N_H_BDDF2_3D, BF_N_H_BDDF2_3D_Obj);
   RegisterBaseFunct3D(BF_N_H_BDDF3_3D, BF_N_H_BDDF3_3D_Obj);
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "base functions registered" << endl;  
+  print_registered_message_3D(std::string("Base functions"));
 }
 
 void TFEDatabase3D::RegisterAllNodalFunctionals()
@@ -575,13 +571,7 @@ void TFEDatabase3D::RegisterAllNodalFunctionals()
   RegisterNodalFunctional3D(NF_N_H_BDDF2_3D, NF_N_H_BDDF2_3D_Obj);
   RegisterNodalFunctional3D(NF_N_H_BDDF3_3D, NF_N_H_BDDF3_3D_Obj);
 
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "nodal functionals registered" << endl;
+  print_registered_message_3D(std::string("Nodal functionals"));
 }
 
 void TFEDatabase3D::RegisterAllFEs()
@@ -781,14 +771,7 @@ void TFEDatabase3D::RegisterAllFEs()
   RegisterFE3D(N_BDDF3_3D_H_A, ele3D);
   ele3D->CheckNFandBF();
 
-  
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "finite element registered" << endl;
+    print_registered_message_3D(std::string("Finite elements"));
 }
 
 void TFEDatabase3D::RegisterAllFEMappers()
@@ -914,13 +897,7 @@ void TFEDatabase3D::RegisterAllFEMappers()
   RegisterFE3DMapper1Reg(FE_C_H_UL1_3D, FE_C_H_Q1_3D, Q1_Q1_1Reg);
   RegisterFE3DMapper1Reg(FE_C_H_Q1_3D, FE_C_H_UL1_3D, Q1_Q1_1Reg);
       
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
-
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "FE mapper registered" << endl;
+  print_registered_message_3D(std::string("FE mappers"));
 }
 
 void TFEDatabase3D::RegisterAllHangingNodes()
@@ -952,13 +929,8 @@ void TFEDatabase3D::RegisterAllHangingNodes()
   RegisterHNDesc3D(HN_N_P2_3D_0, HN_N_P2_3D_0_Obj);
   RegisterHNDesc3D(HN_N_P2_3D_1, HN_N_P2_3D_1_Obj);
   RegisterHNDesc3D(HN_N_P2_3D_2, HN_N_P2_3D_2_Obj);
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "Hanging nodes registered" << endl;
+  print_registered_message_3D(std::string("Hanging nodes"));
 }
 
 void TFEDatabase3D::RegisterAllRefTrans()
@@ -968,13 +940,8 @@ void TFEDatabase3D::RegisterAllRefTrans()
   ReferenceTrans3D[HexaAffin] = new THexaAffin();
   ReferenceTrans3D[HexaTrilinear] = new THexaTrilinear();
   ReferenceTrans3D[HexaIsoparametric] = new THexaIsoparametric();
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 
-  if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
-#endif 
-  cout << "Reference Transformations registered" << endl;
+  print_registered_message_3D(std::string("Reference transformations"));
 }
 
 void TFEDatabase3D::GenerateArrays()
@@ -1189,7 +1156,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
         if (TDatabase::ParamDB->INTERNAL_QUAD_HEXA<N_terms*MaxPolynomialDegree)
         {
 #ifdef _MPI
-        if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+        if(rank==0)
 #endif
          {
           switch(N_terms*MaxPolynomialDegree)
@@ -1245,7 +1212,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
       if (TDatabase::ParamDB->INTERNAL_QUAD_TETRA<N_terms*MaxPolynomialDegree)
       {
 #ifdef _MPI
-      if(rank==TDatabase::ParamDB->Par_P0 && TDatabase::ParamDB->SC_VERBOSE>0)
+      if(rank==0)
 #endif
        {
         switch(N_terms*MaxPolynomialDegree)

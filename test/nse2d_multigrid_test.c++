@@ -41,21 +41,27 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
 
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db["problem_type"].set<size_t>(5);
+    
+    db.add("refinement_n_initial_steps", (size_t) 4, "");
+    db.add("n_multigrid_levels", (size_t) 3, "");
+
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 1;
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LEVELS = 3;
     
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
     
     TDatabase::ParamDB->VELOCITY_SPACE = 2;
     // if pressure space is -4711, the depending on 
@@ -69,11 +75,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-11;
     TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE= 100;
-    TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR= 1;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE= 0;
-    TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE= 1.0;
     TDatabase::ParamDB->SC_MG_CYCLE_SADDLE= 0;
     TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
     TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
@@ -88,7 +89,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_SMOOTHER_SADDLE= 4;
     TDatabase::ParamDB->SC_MG_TYPE_SADDLE= 0;
     TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE = 17;
-    TDatabase::ParamDB->SC_VERBOSE = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
@@ -96,15 +96,15 @@ int main(int argc, char* argv[])
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
     // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS 
-      + TDatabase::ParamDB->LEVELS; i++)
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(size_t i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }
 
     //=========================================================================
     // creat an object 
-    NSE2D nse2d(domain);
+    NSE2D nse2d(domain, db);
     // assemble all 
     nse2d.assemble();
     // check stopping criterion
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     }
     
     // nonlinear iterations     
-    for(int k=0; k<TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE; k++)
+    for(int k=0; ; k++)
     {
       nse2d.solve();
       Output::print<1>("nonlinear step " , setw(3), k, "\t",
@@ -185,26 +185,31 @@ int main(int argc, char* argv[])
   /** @brief Multigrid Test: for Q2/P1^disc elements**/
   //===================================================================================
   {
-
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
 
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_nonlinit_database());
+    db["problem_type"].set<size_t>(5);
+    
+    db["nonlinloop_maxit"] = 100;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_slowfactor"] = 1.;
+
+    db.add("refinement_n_initial_steps", (size_t) 4, "");
+    db.add("n_multigrid_levels", (size_t) 2, "");
+
     // default construct a domain object
-    TDomain domain;
+    TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->EXAMPLE = 2; 
-    TDatabase::ParamDB->UNIFORM_STEPS = 2;
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
-    TDatabase::ParamDB->LEVELS = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE=50;
-    TDatabase::ParamDB->MEASURE_ERRORS = 1;
-    
+
     TDatabase::ParamDB->VELOCITY_SPACE = 12;
     // Q_2/P_1^disc
     TDatabase::ParamDB->PRESSURE_SPACE = -4711; 
@@ -215,11 +220,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE = 1e-11;
     TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE = 0.0;
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE= 100;
-    TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR= 1;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE= 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE= 0;
-    TDatabase::ParamDB->SC_NONLIN_DAMP_FACTOR_SADDLE= 1.0;
     TDatabase::ParamDB->SC_MG_CYCLE_SADDLE= 0;
     TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
     TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
@@ -234,7 +234,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_SMOOTHER_SADDLE= 2;
     TDatabase::ParamDB->SC_MG_TYPE_SADDLE= 0;
     TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE = 17;
-    TDatabase::ParamDB->SC_VERBOSE = 1;
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
@@ -242,16 +241,16 @@ int main(int argc, char* argv[])
     // the domain is initialised with default description and default
     // initial mesh
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-    // refine grid up to the coarsest level
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS
-      + TDatabase::ParamDB->LEVELS; i++)
+    // refine grid
+    size_t n_ref = domain.get_n_initial_refinement_steps();
+    for(size_t i=0; i< n_ref; i++)
     {
       domain.RegRefineAll();
     }
 
     //=========================================================================
     // creat an object 
-    NSE2D nse2d(domain);
+    NSE2D nse2d(domain, db);
     // assemble all 
     nse2d.assemble();
     // check stopping criterion

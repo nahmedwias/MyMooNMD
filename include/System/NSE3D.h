@@ -27,6 +27,9 @@
 
 #include <NSE_MultiGrid.h>
 
+#include <ParameterDatabase.h>
+#include <Solver.h>
+
 #include <MainUtilities.h> // FixedSizeQueu
 
 #include <vector>
@@ -141,6 +144,23 @@ class NSE3D
 
     /** @brief Definition of the used example. */
     const Example_NSE3D& example_;
+    
+    /** @brief a local parameter database which controls this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * default ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * Solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief A multigrid object which is set to nullptr in case it is not
      *         needed.
@@ -192,10 +212,11 @@ class NSE3D
      * @param example The example to perform
      */
 #ifdef _MPI
-    NSE3D(const TDomain& domain, const Example_NSE3D& example,
-          int maxSubDomainPerDof);
+    NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+          const Example_NSE3D& example, int maxSubDomainPerDof);
 #else
-    NSE3D(const TDomain& domain, const Example_NSE3D& example);
+    NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+          const Example_NSE3D& example);
 #endif
 
     /**

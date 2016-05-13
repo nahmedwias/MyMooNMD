@@ -4,10 +4,9 @@
  * @brief      store everything needed to solve a convection-diffusion-reaction
  *             (cdr) problem
  *
- *             Store matrix, right hand side, FE spaces, FE functions and 
- *             the solution vector of a convection-diffusion problem. This 
- *             wraps up everything which is necessary to solve a convection 
- *             diffusion problem in 2D.
+ * Store matrix, right hand side, FE spaces, FE functions and the solution 
+ * vector of a convection-diffusion problem. This wraps up everything which is 
+ * necessary to solve a convection diffusion problem in 2D.
  *
  * @author     Ulrich Wilbrandt
  * @date       06.09.13
@@ -25,6 +24,8 @@
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <ParameterDatabase.h>
+#include <Solver.h>
 
 class CD2D
 {
@@ -92,6 +93,23 @@ class CD2D
      */
     std::shared_ptr<TMultiGrid2D> multigrid;
     
+    /** @brief a local parameter database which constrols this class
+     * 
+     * The database given to the constructor will be merged into this one. Only 
+     * parameters which are of interest to this class are stored (and the 
+     * defualt ParMooN parameters). Note that this usually does not include 
+     * other parameters such as solver parameters. Those are only in the 
+     * CD2D::solver object.
+     */
+    ParameterDatabase db;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+    
     /** @brief set parameters in database
      * 
      * This functions checks if the parameters in the database are meaningful 
@@ -112,12 +130,14 @@ class CD2D
      *
      * @param[in] domain The readily treated (refined/partitioned...) domain 
      *                   object. Must not go out of scope before CD2D does!
-     *
+     * @param[in] param_db A parameter database with parameters concerning this
+     *                     class or any of its members (fe space, solver,
+     *                     assemble,...)
      * @param[in] reference_id The cell reference id, of which cells to create
      *                         the TCollection.
-     *
      */
-    CD2D(const TDomain& domain, int reference_id = -4711);
+    CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+         int reference_id = -4711);
     
     /** @brief constructor 
      * 
@@ -131,15 +151,16 @@ class CD2D
      *
      * @param[in] domain The readily treated (refined/partitioned...) domain
      *                   object. Must not go out of scope before CD2D does!
-     *
+     * @param[in] param_db A parameter database with parameters concerning this
+     *                     class or any of its members (fe space, solver,
+     *                     assemble,...)
      * @param[in] example a description of the example to be used, this is 
      *                    copied into a local member.
-     *
      * @param[in] reference_id The cell reference id, of which cells to create
      *                         the TCollection.
      */
-    CD2D(const TDomain& domain, const Example_CD2D& example,
-         int reference_id = -4711);
+    CD2D(const TDomain& domain, const ParameterDatabase& param_db, 
+         const Example_CD2D& example, int reference_id = -4711);
     
     /** @brief assemble matrix, 
      * 

@@ -22,6 +22,7 @@
 #include <MeshPartition.h>
 #include <MainUtilities.h>
 #include <ParFECommunicator3D.h>
+#include <ParameterDatabase.h>
 
 #include <mpi.h>
 #include <string>
@@ -50,12 +51,11 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D FEDatabase;
 
-  // default construct a domain object
-  TDomain domain;
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->UNIFORM_STEPS = 1;
-  TDatabase::ParamDB->LEVELS = 1;
+  // default construct a domain object
+  TDomain domain(db);
+
 
   // the domain is initialised with default description and default
   // initial mesh

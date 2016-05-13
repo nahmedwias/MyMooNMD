@@ -120,8 +120,8 @@ int main(int argc, char* argv[])
   {
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+
     TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
        
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
     domain.RegRefineAll();
     TDatabase::ParamDB->SOLVER_TYPE=2;
     
-    Time_CD2D tcd(domain);
+    Time_CD2D tcd(domain, db);
     // direct SOLVER_TYPE = 2
     time_integration(2,tcd);
   }
@@ -150,8 +150,9 @@ int main(int argc, char* argv[])
   { 
     TDatabase Database;
     TFEDatabase2D FEDatabase;
-    
-    TDatabase::ParamDB->MEASURE_ERRORS=1;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(ParameterDatabase::default_output_database());
+
     TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
@@ -160,7 +161,7 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
-    TDomain domain;
+    TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
     // the domain is initialised with default description and default
@@ -185,7 +186,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
     TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR=0.1;
     
-    Time_CD2D tcd(domain);
+    Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
   }
   Output::print<1>("TEST SUCCESFULL: ");

@@ -1206,6 +1206,21 @@ FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell) const
   return ret;
 }
 
+const TFE2D& TFESpace2D::get_fe(unsigned int cell_number) const
+{
+  // find corresponding cell
+  if((int)cell_number >= this->N_Cells)
+    ErrThrow("unable to find the finite element for cell ", cell_number, 
+             ". There are only ", this->N_Cells, " cells");
+  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  // find finite element id
+  FE2D fe_id = this->GetFE2D(cell_number, cell);
+  // get the finite element from the database
+  TFE2D* fe = TFEDatabase2D::GetFE2D(fe_id);
+  return *fe;
+}
+
+
 void TFESpace2D::FindUsedElements()
 {
   TBaseCell *cell;
@@ -1271,7 +1286,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
   FEDesc2D FEDesc0, FEDesc1, FEDesc2;
 
   int I_K0, I_K1, I_K2;
-  int *J_K0, *J_K1, *J_K2;
+  int *J_K0;
   int *Indices0, *Indices1, *Indices2;
   int c1, c2, e1, e2, chnum1, chnum2;
   double eps=1e-6;
@@ -1650,7 +1665,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
                   // FEDesc1_Obj = FE1->GetFEDesc2D();
                   // FEDesc1_Obj = TFEDatabase2D::GetFEDesc2D(FEDesc1);
                   I_K1 = BeginIndex[c1];
-                  J_K1 = GlobalNumbers + BeginIndex[c1];
+                  //int *J_K1 = GlobalNumbers + BeginIndex[c1];
   
                   m=TmpoEnlE[chnum1*NEdges+l];
                   Indices1 = FEDesc1_Obj->GetJointDOF(m);
@@ -1692,7 +1707,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
                     // FEDesc1_Obj = FE1->GetFEDesc2D();
                     // FEDesc1_Obj = TFEDatabase2D::GetFEDesc2D(FEDesc1);
                     I_K1 = BeginIndex[c1];
-                    J_K1 = GlobalNumbers + BeginIndex[c1];
+                    //int *J_K1 = GlobalNumbers + BeginIndex[c1];
                     m=TmpoEnlE[chnum1*NEdges+l];
                     
                     Indices1 = FEDesc1_Obj->GetJointDOF(m);
@@ -1704,7 +1719,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
                     // FEDesc2_Obj = FE2->GetFEDesc2D();
                     // FEDesc2_Obj = TFEDatabase2D::GetFEDesc2D(FEDesc2);
                     I_K2 = BeginIndex[c2];
-                    J_K2 = GlobalNumbers + BeginIndex[c2];
+                    //int *J_K2 = GlobalNumbers + BeginIndex[c2];
                     m2=TmpoEnlE[chnum2*NEdges+l];
     
                     Indices2 = FEDesc2_Obj->GetJointDOF(m2);
@@ -1759,7 +1774,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
               // FEDesc1_Obj = FE1->GetFEDesc2D();
               // FEDesc1_Obj = TFEDatabase2D::GetFEDesc2D(FEDesc1);
               I_K1 = BeginIndex[n];
-              J_K1 = GlobalNumbers + BeginIndex[n];
+              //int *J_K1 = GlobalNumbers + BeginIndex[n];
 
               // find the local edge of neigh on which cell is
               l=0;
@@ -2515,14 +2530,14 @@ void TFESpace2D::info() const
   using namespace Output;
   print<2>("2D finite element space with ", this->GetN_DegreesOfFreedom(),
            " degerees of freedom on ", this->GetN_Cells(), " cells");
-  for(unsigned int c = 0; c < this->GetN_Cells(); ++c)
+  for(int c = 0; c < this->GetN_Cells(); ++c)
   {
     int * localDofs = this->GetGlobalDOF(c);
     int nLocalDof = 
      TFEDatabase2D::GetFE2D(this->GetFE2D(c, this->Collection->GetCell(c)))
        ->GetN_DOF();
     std::stringstream dofsInCell;
-    for(unsigned int ld = 0; ld < nLocalDof; ++ld)
+    for(int ld = 0; ld < nLocalDof; ++ld)
     {
       dofsInCell << "  " << localDofs[ld];
     }

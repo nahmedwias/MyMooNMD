@@ -11,6 +11,22 @@
 
 #include<Assemble2D.h>
 
+#include <sys/stat.h>
+
+ParameterDatabase get_default_Brinkman2D_parameters()
+{
+  Output::print<3>("creating a default Brinkman2D parameter database");
+
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("Brinkman2D parameter database");
+
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+}
 
 /** ************************************************************************ */
 
@@ -61,8 +77,10 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
 }
 
 /** ************************************************************************ */
-Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
- : Brinkman2D(domain, *(new Example_Brinkman2D()), reference_id)
+Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
+                       int reference_id)
+ : Brinkman2D(domain, param_db,
+              *(new Example_Brinkman2D()), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -72,11 +90,13 @@ Brinkman2D::Brinkman2D(const TDomain& domain, int reference_id)
 
 /** ************************************************************************ */
 
-Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
+Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
+                       const Example_Brinkman2D & e,
              unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), oldResiduals(),
+    : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10), errors()
 {
+  db.merge(param_db);
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -130,19 +150,20 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const Example_Brinkman2D & e,
   param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
   this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-    
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
-  }
+
+// //TODO Commented out, requires switching to Solver object.
+//  int LEVELS = TDatabase::ParamDB->LEVELS;
+//  if(LEVELS > domain.get_ref_level() + 1)
+//    LEVELS = domain.get_ref_level() + 1;
+//
+//  // the matrix and rhs side on the finest grid are already constructed
+//  // now construct all matrices, rhs, and solutions on coarser grids
+//  for(int i = LEVELS - 2; i >= 0; i--)
+//  {
+//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+//    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
+//  }
 
   
   // create multigrid-level-objects, must be coarsest first
@@ -313,16 +334,16 @@ bool Brinkman2D::stopIt(unsigned int iteration_counter)
   // the residual from 10 iterations ago
   const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  const unsigned int Max_It = db["nonlinloop_maxit"];
+  const double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if ( db["nonlinloop_scale_epsilon_with_size"] )
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
@@ -400,16 +421,18 @@ void Brinkman2D::solve()
 /** ************************************************************************ */
 void Brinkman2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
-  
+
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
+
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
   TFEFunction2D* u2 = s.u.GetComponent(1);
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -417,14 +440,18 @@ void Brinkman2D::output(int i)
   }
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(2, 3, 1, 0, NULL);
     Output.AddFEFunction(&s.p);
     Output.AddFEVectFunct(&s.u);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -434,7 +461,7 @@ void Brinkman2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double err[4];
     TAuxParam2D NSEaux_error;

@@ -20,6 +20,40 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+#include <sys/stat.h>
+
+ParameterDatabase get_default_NSE3D_parameters()
+{
+  Output::print<3>("creating a default NSE3D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE3D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE3D parameter database");
+  
+  //NSE3D requires a nonlinear iteration, set up a nonlinit_database and merge
+  ParameterDatabase nl_db = ParameterDatabase::default_nonlinit_database();
+  db.merge(nl_db,true);
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nonlinloop_maxit"] = 1;
+     }
+     else
+     {
+       db["nonlinloop_maxit"] = 1;
+     }
+  }
+
+  return db;
+}
+
 NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
                                     NSE3D::Matrix type
@@ -80,16 +114,23 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 
+  //print some information
+  parCommVelocity_.print_info();
+  parCommPressure_.print_info();
+
 #endif
 }
 
-NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
+NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+             const Example_NSE3D& example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
-) : systems_(), example_(example), multigrid_(nullptr),
-    defect_(), old_residuals_(), initial_residual_(1e10), errors_()
+) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
+    solver(param_db), multigrid_(nullptr), defect_(), old_residuals_(),
+    initial_residual_(1e10), errors_()
 {
+  this->db.merge(param_db, false);
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -116,8 +157,9 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
   
-  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5 
-                        && TDatabase::ParamDB->SOLVER_TYPE ==1);
+  bool usingMultigrid = 
+       this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
@@ -140,49 +182,51 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
     double hmin, hmax;
     coll->GetHminHmax(&hmin, &hmax);
     
-    Output::print<1>("N_Cells      :  ", setw(10), coll->GetN_Cells());
-    Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
-    Output::print<1>("ndof Velocity:  ", setw(10), 3*nDofu );
-    Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
-    Output::print<1>("ndof Total   :  ", setw(10), nTotal );
-    Output::print<1>("nActive      :  ", setw(10), nActive);
+    Output::stat("NSE3D", "Mesh data and problem size");
+    Output::dash("N_Cells      :  ", setw(10), coll->GetN_Cells());
+    Output::dash("h(min, max)  :  ", setw(10), hmin, setw(10), " ", hmax);
+    Output::dash("ndof Velocity:  ", setw(10), 3*nDofu );
+    Output::dash("ndof Pressure:  ", setw(10), nDofp);
+    Output::dash("ndof Total   :  ", setw(10), nTotal );
+    Output::dash("nActive      :  ", setw(10), nActive);
 
     #endif
   }
   else // multigrid
   {
-    size_t n_levels = TDatabase::ParamDB->LEVELS;
-    std::vector<TCollection*> collections(n_levels,nullptr);
-    for(size_t i =0 ; i< n_levels ; ++i)
-    {
-      ErrThrow("This loop for multigrid NSE3D is not tested and thus most likely incorrect!");
-      collections.at(i)=domain.GetCollection(It_EQ, i, -4711);
-    }
-
+    size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+    if(LEVELS > domain.get_ref_level()+1)
+      LEVELS = domain.get_ref_level()+1;
+    
+    this->transposed_B_structures_.resize(LEVELS,nullptr);
+    
+    std::vector<TCollection*> collections(LEVELS,nullptr);
+    
     std::vector<double> param(2);
-    param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+    param[0] = this->solver.get_db()["damping_factor"];
+    param[1] = this->solver.get_db()["damping_factor_finest_grid"];
     
     this->multigrid_.reset(new TNSE_MultiGrid(1, 2, param.data()));
-    this->transposed_B_structures_.resize(n_levels,nullptr);
     
     // constructing systems per grid
-    for(auto it : collections)
+    // the matrix and rhs side on the finest grid are already constructed 
+    // now construct all matrices, rhs, and solutions on coarser grids
+    for(int i = LEVELS-2 ; i >=0 ; i--)
     {
+      unsigned int grid=i+domain.get_ref_level() + 1 -LEVELS;
+      TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
       #ifdef _MPI
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
-                              type, maxSubDomainPerDof);
+        systems_.emplace_back(example, *coll, velocity_pressure_orders,
+                              type,maxSubDomainPerDof);
       #else
-        systems_.emplace_back(example, *it, velocity_pressure_orders, 
+        systems_.emplace_back(example, *coll, velocity_pressure_orders, 
                               type);
-      #endif
+      #endif      
     }
     //CLEMENS: this is just for me to be sure about some information
     //You can delete it or modify somehow: b/c the same lines of code 
     // is used above in the case where multigrid is not used 
     {
-      TCollection& cellCollection = *collections.front();
-      Output::print<1>("N_Cells      :  ", setw(10), cellCollection.GetN_Cells());
       const TFESpace3D & velocity_space = this->systems_.front().velocitySpace_;
       const TFESpace3D & pressure_space = this->systems_.front().pressureSpace_;
       
@@ -195,12 +239,12 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
       Output::print<1>("ndof Pressure:  ", setw(10), nDofp);
       Output::print<1>("ndof Total   :  ", setw(10), nTotal );
       Output::print<1>("nActive      :  ", setw(10), nActive);
-      double hmin, hmax;
-      cellCollection.GetHminHmax(&hmin, &hmax);
-      Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
+      // double hmin, hmax;
+      // cellCollection.GetHminHmax(&hmin, &hmax);
+      // Output::print<1>("h(min, max)  :  ",setw(10), hmin, setw(10), " ", hmax);
     }
     size_t level = 0;
-    //Create multigrid-level-objects and add them to the multgrid object.
+    // Create multigrid-level-objects and add them to the multgrid object.
     // Must be coarsest level first, therefore reverse order iteration.
     for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
     {
@@ -216,30 +260,6 @@ NSE3D::NSE3D(const TDomain& domain, const Example_NSE3D& example
 
 void NSE3D::check_parameters()
 {
-  // this has to do with the relation of UNIFORM_STEPS and LEVELS
-  // copied from CD3D, it should actually be unified
-  bool usingMultigrid = TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
-                        && TDatabase::ParamDB->SOLVER_TYPE == 1;
-  if (!usingMultigrid)
-  { //case of direct solve or non-multigrid iterative solve
-    if (TDatabase::ParamDB->LEVELS < 1)
-    {
-      ErrThrow("Parameter LEVELS must be greater or equal 1.");
-    }
-    TDatabase::ParamDB->UNIFORM_STEPS += TDatabase::ParamDB->LEVELS -1;
-    TDatabase::ParamDB->LEVELS = 1;
-    Output::print("Non-multigrid solver chosen. Therefore LEVELS -1 was added "
-        "to UNIFORM_STEPS and LEVELS set to 1. \n Now: UNIFORM_STEPS = ",
-        TDatabase::ParamDB->UNIFORM_STEPS, ".");
-  }
-  else
-  {  // iterative solve with multigrid prec
-    if (TDatabase::ParamDB->LEVELS < 2)
-    {
-      ErrThrow("Parameter LEVELS must be at least 2 for multigrid.");
-    }
-  }
-
 
   // Some implementation/testing constraints on the used discretization.
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
@@ -305,7 +325,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
           break; 
         case 1: // discontinuous space 
           pressure_order = 0;
-          Output::print<1>("Warning: The P1/P0 element pair (Q1/Q0 on hexa) is "
+          Output::warn("NSE3D", "The P1/P0 element pair (Q1/Q0 on hexa) is "
               " not stable. Make sure to use stabilization!");
           break;
         case 2: case 3: case 4: case 5:
@@ -599,16 +619,16 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
   const double oldNormOfResidual = this->old_residuals_.front().fullResidual;
 
 
-  size_t max_it = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  double conv_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  size_t max_it = db["nonlinloop_maxit"];
+  double conv_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
 
 
   if(normOfResidual >= conv_speed*oldNormOfResidual)
     slow_conv = true;
 
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     if(my_rank==0)
@@ -630,7 +650,7 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
                        normOfResidual/initial_residual_);
       // The following line comes from MooNMD and shall be us a reminder to
       // TODO count total number of linear iterations for iterative solvers
-      //if(TDatabase::ParamDB->SOLVER_TYPE != 2) // not using direct solver
+      //if(this->solver.get_db()["solver_type"].is("iterative"))
       //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
     }
 
@@ -703,31 +723,17 @@ void NSE3D::solve()
 {
   System_per_grid& s = this->systems_.front();
 
-  bool using_multigrid = //determine whether we make use of multigrid
-      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+  //determine whether we make use of multigrid
+  bool using_multigrid = 
+       this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
 
   if(!using_multigrid)
   {//no multigrid
-    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
-    {
-      ErrThrow("You chose a non-multigrid iterative solver. This not available for NSE3D so far.");
-    }
-    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    if(this->solver.get_db()["solver_type"].is("direct"))
     {
 #ifndef _MPI
-      // So far only UMFPACK is available as direct solver in sequential case.
-      // Actuate it via DirectSolver class.
-
-      /// @todo consider storing an object of DirectSolver in this class
-
-      DirectSolver::DirectSolverTypes solver_type =  DirectSolver::DirectSolverTypes::umfpack;
-#ifdef _OMP
-      solver_type = DirectSolver::DirectSolverTypes::pardiso;
-#endif
-
-      DirectSolver direct_solver(s.matrix_, solver_type);
-      direct_solver.solve(s.rhs_, s.solution_);
+      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
@@ -744,6 +750,8 @@ void NSE3D::solve()
 #endif
 
     }
+    else
+      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
   }
   else
   {//multigrid preconditioned iterative solver is used
@@ -758,7 +766,13 @@ void NSE3D::solve()
 
 void NSE3D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
+#ifdef _MPI
+   int my_rank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(no_output)
     return;
   
   System_per_grid& s=this->systems_.front();
@@ -766,16 +780,16 @@ void NSE3D::output(int i)
   TFEFunction3D* u2 = s.u_.GetComponent(1);
   TFEFunction3D* u3 = s.u_.GetComponent(2);
   
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
-    u1->PrintMinMax();
-    u2->PrintMinMax();
-    u3->PrintMinMax();
-    s.p_.PrintMinMax();
+    u1->PrintMinMax(std::string("u1"));
+    u2->PrintMinMax(std::string("u2"));
+    u3->PrintMinMax(std::string("u3"));
+    s.p_.PrintMinMax(std::string("p"));
   }
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput3D Output(5, 5, 2, 1, NULL);
@@ -783,10 +797,17 @@ void NSE3D::output(int i)
     Output.AddFEVectFunct(&s.u_);
 #ifdef _MPI
     char SubID[] = "";
-    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID);
+    if(my_rank == 0)
+  	  mkdir(db["output_vtk_directory"], 0777);
+    std::string dir = db["output_vtk_directory"];
+    std::string base = db["output_basename"];
+    Output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
 #else
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -797,7 +818,7 @@ void NSE3D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double err_u1[4]; // of these arrays only the two first entries are used,
     double err_u2[4]; // but the evil GetErrors() will corrupt memory if these
@@ -824,9 +845,6 @@ void NSE3D::output(int i)
                    nullptr, &aux, 1, &pressure_space, err_p);
     
 #ifdef _MPI
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     double err_red[8]; //memory for global (across all processes) error
     double err_send[8]; //fill send buffer
     err_send[0]=err_u1[0];
@@ -864,13 +882,13 @@ void NSE3D::output(int i)
     //print errors
     if(my_rank == 0)
     {
-      Output::print("");
-      Output::print<1>("L2(u)     : ", setprecision(10), errors_.at(0));
-      Output::print<1>("H1-semi(u): ", setprecision(10), errors_.at(1));
-      Output::print<1>("L2(p)     : ", setprecision(10), errors_.at(2));
-      Output::print<1>("H1-semi(p): ", setprecision(10), errors_.at(3));
+      Output::stat("NSE3D", "Measured errors");
+      Output::dash("L2(u)     : ", setprecision(10), errors_.at(0));
+      Output::dash("H1-semi(u): ", setprecision(10), errors_.at(1));
+      Output::dash("L2(p)     : ", setprecision(10), errors_.at(2));
+      Output::dash("H1-semi(p): ", setprecision(10), errors_.at(3));
     }
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
   delete u3;

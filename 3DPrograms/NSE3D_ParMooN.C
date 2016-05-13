@@ -31,32 +31,45 @@ int main(int argc, char* argv[])
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
-#endif
-
-  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
-  Chrono chrono_parts;
-  chrono_parts.print_time(std::string("program start"));
-  // Construct the ParMooN Databases.
-  TDatabase Database;
-
-#ifdef _MPI
-  TDatabase::ParamDB->Comm = comm;
-  // Hold mpi rank and size ready, check whether the current processor
-  // is responsible for output (usually root, 0).
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if(my_rank==0)
+  {
+    Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+    Output::info("NSE3D", "MPI, using ", size, " processes");
+  }
 #else
   int my_rank = 0;
+  Output::print("<<<<< Running ParMooN: NSE3D Main Program >>>>>");
+  Output::info("NSE3D", "SEQUENTIAL (or OMP...)");
+#endif
+
+  //start a stopwatch which measures time spent in program parts
+  Chrono chrono_parts;
+
+  // Construct the ParMooN Databases.
+  TDatabase Database;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
+
+#ifdef _MPI
+  TDatabase::ParamDB->Comm = comm;
 #endif
 
   TFEDatabase3D feDatabase;
 
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1]);
+  TDomain domain(argv[1], parmoon_db);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
@@ -66,19 +79,16 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
-  // Do initial regular grid refinement.
-  for(int i = 0; i < TDatabase::ParamDB->UNIFORM_STEPS; i++)
-  {
+  // Initial domain refinement
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
-  }
 
-  // Write grid into a postscript file (before partitioning)
-  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-  {
+  // write grid into an Postscript file
+  if(parmoon_db["output_write_ps"] && my_rank==0)
     domain.PS("Domain.ps", It_Finest, 0);
-  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -124,21 +134,15 @@ int main(int argc, char* argv[])
                 domain.GetN_HaloCells());
 #endif
 
-  // Create output directory, if not already existing.
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
-
   // Choose example according to the value of
   // TDatabase::ParamDB->EXAMPLE and construct it.
   Example_NSE3D example;
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI
-  NSE3D nse3d(domain, example, maxSubDomainPerDof);
+  NSE3D nse3d(domain, parmoon_db, example, maxSubDomainPerDof);
 #else
-  NSE3D nse3d(domain, example);
+  NSE3D nse3d(domain, parmoon_db, example);
 #endif
 
   // assemble all matrices and right hand side
@@ -155,13 +159,17 @@ int main(int argc, char* argv[])
 
     if(my_rank==0)
     {
-     Output::print("\nNONLINEAR ITERATION ", setw(3), k-1);
-     Output::print(" residuals ",nse3d.get_residuals());
+     Output::info("NONLINEAR ITERATION ", setw(3), k-1);
+     Output::dash(" residuals ",nse3d.get_residuals());
     }
 
     // solve the system
     nse3d.solve();
 
+    //no nonlinear iteration for Stokes problem
+    if(parmoon_db["problem_type"].is(3))
+      break;
+    
     nse3d.assemble_non_linear_term();
 
     chrono_nonlinit.print_time(std::string("nonlinear iteration ") + std::to_string(k-1));
@@ -176,8 +184,11 @@ int main(int argc, char* argv[])
 
   nse3d.output();
 
+  if(my_rank==0)
+    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
 
-  Output::close_file();
+  if(my_rank == 0)
+    Output::close_file();
 
 
 #ifdef _MPI

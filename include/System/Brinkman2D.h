@@ -23,6 +23,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 
+#include <ParameterDatabase.h>
 
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
@@ -89,6 +90,16 @@ class Brinkman2D
       ~System_per_grid() = default;
     };
     
+    /** @brief a local parameter database which constrols this class
+     *
+     * The database given to the constructor will be merged into this one. Only
+     * parameters which are of interest to this class are stored (and the
+     * defualt ParMooN parameters). Note that this usually does not include
+     * other parameters such as solver parameters. Those are only in the
+     * Solver object.
+     */
+    ParameterDatabase db;
+
     /** @brief a complete system on each grid 
      * 
      * Note that the size of this deque is at least one and larger only in case
@@ -188,7 +199,8 @@ class Brinkman2D
      * This constructor calls the other constructor creating an Example_Brinkman2D
      * object for you. See there for more documentation.
      */
-    Brinkman2D(const TDomain& domain, int reference_id = -4711);
+    Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
+               int reference_id = -4711);
     
     /** @brief constructor 
      * 
@@ -200,8 +212,9 @@ class Brinkman2D
      * The reference_id can be used if only the cells with the give reference_id
      * should be used. The default implies all cells.
      */
-    Brinkman2D(const TDomain & domain, const Example_Brinkman2D & _example,
-          unsigned int reference_id = -4711);
+    Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
+               const Example_Brinkman2D & _example,
+               unsigned int reference_id = -4711);
     
     /** @brief standard destructor */
     ~Brinkman2D();

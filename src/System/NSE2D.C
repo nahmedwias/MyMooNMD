@@ -11,6 +11,39 @@
 
 #include<Assemble2D.h>
 
+#include <sys/stat.h>
+
+
+ParameterDatabase get_default_NSE2D_parameters()
+{
+  Output::print<3>("creating a default NSE2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default NSE2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("NSE2D parameter database");
+  
+  //NSE2D requires a nonlinear iteration, set up a nonlinit_database and merge
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  //stokes case - reduce no nonlin its TODO remove global database dependency
+  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  {
+     if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
+     {
+        db["nonlinloop_maxit"] = 1;
+     }
+     else
+     {
+       db["nonlinloop_maxit"] = 1;
+     }
+  }
+
+  return db;
+}
 
 /** ************************************************************************ */
 NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
@@ -57,8 +90,9 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain& domain, int reference_id)
- : NSE2D(domain, *(new Example_NSE2D()), reference_id)
+NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
+             int reference_id)
+ : NSE2D(domain, param_db, Example_NSE2D(), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -67,11 +101,15 @@ NSE2D::NSE2D(const TDomain& domain, int reference_id)
 }
 
 /** ************************************************************************ */
-NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
-             unsigned int reference_id)
-    : systems(), example(e), multigrid(), defect(), oldResiduals(),
-      initial_residual(1e10), errors()
+NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
+             const Example_NSE2D e, unsigned int reference_id)
+    : systems(), example(e), multigrid(), db(get_default_NSE2D_parameters()),
+      solver(param_db), defect(), oldResiduals(), initial_residual(1e10), 
+      errors()
 {
+  this->db.merge(param_db, false);
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -117,19 +155,19 @@ NSE2D::NSE2D(const TDomain & domain, const Example_NSE2D & e,
   Output::print<1>("dof all            : ", setw(10), n_dof);
   
   // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
+  if(this->solver.get_db()["solver_type"].is("direct") || 
+     !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
   
   // create spaces, functions, matrices on coarser levels
   double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
+  param[0] = this->solver.get_db()["damping_factor"];
+  param[1] = this->solver.get_db()["damping_factor_finest_grid"];
   this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
   // number of refinement levels for the multigrid
-  int LEVELS = TDatabase::ParamDB->LEVELS;
-  if(LEVELS > domain.get_ref_level() + 1)
+  size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+  if((int)LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   
   this->transposed_B_structures_.resize(LEVELS,nullptr);
@@ -412,7 +450,7 @@ void NSE2D::assemble()
 
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+       && !(this->db["problem_type"].is(3)))
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -533,7 +571,7 @@ void NSE2D::assemble_nonlinear_term()
 
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-        && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+        && !(this->db["problem_type"].is(3)))
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -582,23 +620,23 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
   // compute the residuals with the current matrix and solution
   this->computeNormsOfResiduals();
   // the current norm of the residual
-  const double normOfResidual = this->getFullResidual();
+  double normOfResidual = this->getFullResidual();
   // store initial residual, so later we can print the overall reduction
   if(iteration_counter == 0)
     initial_residual = normOfResidual;
   // the residual from 10 iterations ago
-  const double oldNormOfResidual = this->oldResiduals.front().fullResidual;
+  double oldNormOfResidual = this->oldResiduals.front().fullResidual;
   
-  const unsigned int Max_It = TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE;
-  const double convergence_speed = TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR;
+  size_t Max_It = db["nonlinloop_maxit"];
+  double convergence_speed = db["nonlinloop_slowfactor"];
   bool slow_conv = false;
   
   
   if(normOfResidual >= convergence_speed*oldNormOfResidual)
     slow_conv = true;
   
-  double limit = TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE;
-  if (TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALE_SADDLE)
+  double limit = db["nonlinloop_epsilon"];
+  if (db["nonlinloop_scale_epsilon_with_size"])
   {
     limit *= sqrt(this->get_size());
     Output::print<1>("stopping tolerance for nonlinear iteration ", limit);
@@ -651,32 +689,25 @@ void NSE2D::computeNormsOfResiduals()
 void NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
-  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
+  if(this->solver.get_db()["solver_type"].is("iterative")
+    && this->solver.get_db()["preconditioner"].is("multigrid"))
   {
-    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-      ErrThrow("only the direct solver is supported currently");
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
+    mg_solver();
   }
   else
-  { // multigrid preconditioned iterative solver
-    mg_solver();
+  {
+    this->solver.solve(s.matrix,s.rhs, s.solution);
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
-
-
 }
 
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
-  if(!TDatabase::ParamDB->WRITE_VTK && !TDatabase::ParamDB->MEASURE_ERRORS)
-    return;
+	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+	if(no_output)
+		return;
   
   System_per_grid& s = this->systems.front();
   TFEFunction2D* u1 = s.u.GetComponent(0);
@@ -684,7 +715,7 @@ void NSE2D::output(int i)
   
   // print the value of the largest and smallest entry in the finite element 
   // vector
-  if(TDatabase::ParamDB->SC_VERBOSE > 1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();
@@ -692,14 +723,18 @@ void NSE2D::output(int i)
   }
   
   // write solution to a vtk file
-  if(TDatabase::ParamDB->WRITE_VTK)
+  if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
     TOutput2D Output(2, 3, 1, 0, NULL);
     Output.AddFEFunction(&s.p);
     Output.AddFEVectFunct(&s.u);
-    std::string filename(TDatabase::ParamDB->OUTPUTDIR);
-    filename += "/" + std::string(TDatabase::ParamDB->BASENAME);
+
+    // Create output directory, if not already existing.
+    mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = this->db["output_vtk_directory"];
+    filename += "/" + this->db["output_basename"].value_as_string();
+
     if(i >= 0)
       filename += "_" + std::to_string(i);
     filename += ".vtk";
@@ -709,7 +744,7 @@ void NSE2D::output(int i)
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
-  if(TDatabase::ParamDB->MEASURE_ERRORS)
+  if(db["output_compute_errors"])
   {
     double err[4];
     TAuxParam2D NSEaux_error;
@@ -737,7 +772,7 @@ void NSE2D::output(int i)
     Output::print<1>("L2(p)     : ", setprecision(10), errors[2]);
     Output::print<1>("H1-semi(p): ", setprecision(10), errors[3]);    
     
-  } // if(TDatabase::ParamDB->MEASURE_ERRORS)
+  } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
 }

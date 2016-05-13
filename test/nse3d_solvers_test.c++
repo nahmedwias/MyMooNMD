@@ -77,15 +77,13 @@ void compare(const NSE3D& nse3d, std::array<double, int(4)> errors, double tol)
   }
 }
 #ifndef _MPI
-void check(int example, const TDomain& domain,
+void check(ParameterDatabase& db, int example, const TDomain& domain,
            int velocity_order, int pressure_order,
-           int nstype,
-           std::array<double, int(4)> errors, double tol)
+           int nstype, std::array<double, int(4)> errors, double tol)
 #else
-void check(int example, const TDomain& domain, int maxSubDomainPerDof,
-           int velocity_order, int pressure_order,
-           int nstype,
-           std::array<double, int(4)> errors, double tol)
+void check(ParameterDatabase& db, int example, const TDomain& domain,
+           int maxSubDomainPerDof, int velocity_order, int pressure_order,
+           int nstype, std::array<double, int(4)> errors, double tol)
 #endif
 {
 #ifdef _MPI
@@ -102,7 +100,6 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
                   pressure_order, " ",nstype," *******");
   }
 
-
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
@@ -118,9 +115,9 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
 
   // Construct the nse3d problem object.
 #ifndef _MPI
-  NSE3D nse3d(domain, example_obj);
+  NSE3D nse3d(domain, db, example_obj);
 #else
-  NSE3D nse3d(domain, example_obj, maxSubDomainPerDof);
+  NSE3D nse3d(domain, db, example_obj, maxSubDomainPerDof);
 #endif
 
   nse3d.assemble_linear_terms();
@@ -145,33 +142,70 @@ void check(int example, const TDomain& domain, int maxSubDomainPerDof,
 
 // Choose the solver according to the input string and set global database
 // entries accordingly.
-void set_solver_globals(std::string solver_name)
+void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 {
-
+  db["solver_type"] = std::string("iterative");
+  db["direct_solver_type"] = std::string("umfpack");
+  db["iterative_solver_type"] = std::string("fgmres");
+  db["preconditioner"] = std::string("no_preconditioner");
+  db["residual_tolerance"] = 1.0e-13;
+  
   if (solver_name.compare("lsc") == 0)
   {
-    ErrThrow("LSC not yet set!");
+    db["preconditioner"] = "least_squares_commutator";
+    db["nonlinloop_epsilon"] = 1e-12;
+    // just to not distract 'NSE3D::check_parameters'
+    TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
   else if (solver_name.compare("multigrid") == 0)
   {
-    ErrThrow("Multigrid not yet set!");
+    db["preconditioner"] = "multigrid";
+    db["n_multigrid_levels"] = 2;
+    db["refinement_n_initial_steps"] = 2;
+    db["damping_factor"] = 1.0;
+    db["damping_factor_finest_grid"] = 1.0;
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
+    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE= 1e-11;
+    TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE=100;
+    TDatabase::ParamDB->SOLVER_TYPE = 1;
+    TDatabase::ParamDB->SC_MG_TYPE_SADDLE=0; // standard geometric multigrid
+    TDatabase::ParamDB->SC_MG_CYCLE_SADDLE=2;
+    TDatabase::ParamDB->SC_SMOOTHER_SADDLE=2; // cell vanka
+    TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
+    TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
+    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE=0.7;
+    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE = 0.7;
+    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE= 17; // cell vanka
+    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE= 0.1;
+    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE= 1.0;
+    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE= 1.0;
+    TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE= 100;
+    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE= 0;
+    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;    
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-10;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "umfpack";
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
   else if(solver_name.compare("pardiso") == 0)
   {
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "pardiso";
     ErrThrow("pardiso not yet set!");
   }
 #else
   else if (solver_name.compare("mumps") == 0)
   {
-    TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE = 1e-15;
-    TDatabase::ParamDB->SC_NONLIN_MAXIT_SADDLE = 5;
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "mumps";
+    db["nonlinloop_epsilon"] = 1e-15;
+    db["nonlinloop_maxit"] = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
@@ -187,7 +221,11 @@ double get_tolerance(std::string solver_name)
 
 #ifndef _MPI
   if(solver_name.compare("umfpack") == 0)
-    return 1e-9 ;
+    return 1e-9;
+  if(solver_name.compare("lsc") == 0)
+    return 1e-9;
+  if(solver_name.compare("multigrid") == 0)
+    return 1e-9;
 #else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
@@ -216,12 +254,18 @@ int main(int argc, char* argv[])
 #endif
 
   TFEDatabase3D FEDatabase;
+  
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+
+  db["problem_type"].set<size_t>(5);
+  
+  db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
-  TDatabase::ParamDB->UNIFORM_STEPS = 1; // 1 uniform refinement step
-  TDatabase::ParamDB->LEVELS = 1;
   TDatabase::ParamDB->DRIFT_Z = 1;
 
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -232,9 +276,7 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
 
-  TDatabase::ParamDB->MEASURE_ERRORS = 1;
-
-  set_solver_globals(std::string(argv[1]));
+  set_solver_globals(std::string(argv[1]), db);
 
   double tol = get_tolerance(std::string(argv[1]));
 
@@ -258,10 +300,12 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
-    TDomain domain_hex;
+    TDomain domain_hex(db);
     domain_hex.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Hexa");
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+
+    size_t n_ref = domain_hex.get_n_initial_refinement_steps();
+    for(size_t i=0; i< n_ref ; i++)
     {
       domain_hex.RegRefineAll();
     }
@@ -290,9 +334,10 @@ int main(int argc, char* argv[])
       size_t exmpl = -3;
       size_t nstype = 1;
 #ifndef _MPI
-      check(exmpl, domain_hex, 2, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 2, -4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, 
+            errors, tol);
 #endif
     }
     {
@@ -301,9 +346,10 @@ int main(int argc, char* argv[])
       size_t exmpl = -3;
       size_t nstype = 2;
 #ifndef _MPI
-      check(exmpl, domain_hex, 12, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 12, -4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, 
+            errors, tol);
 #endif
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
@@ -312,7 +358,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
       size_t exmpl = -4;
       size_t nstype = 3;
-      check(exmpl, domain_hex, 3, -4711, nstype, errors, tol);
+      check(db, exmpl, domain_hex, 3, -4711, nstype, errors, tol);
     }
 #endif
   }
@@ -323,10 +369,10 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
-    TDomain domain_tet;
+    TDomain domain_tet(db);
     domain_tet.Init(TDatabase::ParamDB->BNDFILE,
                     "Default_UnitCube_Tetra");
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
+    for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();
     }
@@ -355,9 +401,10 @@ int main(int argc, char* argv[])
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
 #ifndef _MPI
-      check(exmpl, domain_tet, 2,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, 2,-4711, nstype, errors, tol);
 #else
-      check(exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, maxSubDomainPerDof, 2,-4711, nstype, errors, 
+            tol);
 #endif
     }
 #ifndef _MPI
@@ -366,7 +413,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       size_t exmpl = -4;
       size_t nstype = 4; //TODO 14
-      check(exmpl, domain_tet, 3,-4711, nstype, errors, tol);
+      check(db, exmpl, domain_tet, 3,-4711, nstype, errors, tol);
     }
 #endif
   }

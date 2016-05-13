@@ -189,8 +189,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 
   double bd_parameter_a, bd_parameter_b;
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << " Domain::MakeGrid() creating 2D grid " << endl;
+  Output::info<2>("Domain::MakeGrid()", "Creating 2D grid.");
  
   // generate vertices, edges and cells
   // search neighbours
@@ -2877,8 +2876,7 @@ bool TDomain::checkIfxGEO(const char* GEO)
 
       if (GEO[nn-4]=='x')
       {
-        if(TDatabase::ParamDB->SC_VERBOSE>1)
-          cout << " *** reading xGEO file (with physical references) ***" << endl;
+          Output::info<2>("checkIfxGEO"," *** reading xGEO file (with physical references) ***");
         isXgeo = true;
       }
       return isXgeo;

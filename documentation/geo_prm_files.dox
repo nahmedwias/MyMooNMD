@@ -206,8 +206,8 @@
  * 
  * \subsection subsec_example_prm_geo1 Two triangles on the unit square
  * The domain is \f$ [0,1]^2 \f$ and it should be made up of two triangles. The
- * PRM file is located at your_ParMooN_folder/data/UnitSquare.PRM and
- * looks like
+ * PRM file is located at your_ParMooN_folder/data/geo_and_prm/UnitSquare.PRM 
+ * and looks like
  * \includelineno UnitSquare.PRM
  * It consists of one boundary part with four boundary components which are all
  * of type 1 (line). The parameters can be understood as follows. Starting at 
@@ -219,7 +219,8 @@
  * \f$ (0,0) \f$.
  *
  * The GEO file is located at
- * your_ParMooN_folder/data/UnitSquareTwoTriangles_1.GEO and looks like
+ * your_ParMooN_folder/data/geo_and_prm/UnitSquareTwoTriangles_1.GEO and looks 
+like
  * \includelineno UnitSquareTwoTriangles_1.GEO
  * It specifies 2 elements, 4 vertices and 3 vertices per element (i.e.,
  * triangles) in the third line. All vertices are specified using the boundary
@@ -245,7 +246,7 @@
  * \subsection subsec_example_prm_geo2 A rectangle with a hole
  * This is example is used for a flow around a cylinder example in two space
  * dimensions. The PRM file is located at
- * your_ParMooN_folder/data/Benchmark.PRM and looks like
+ * your_ParMooN_folder/data/geo_and_prm/Benchmark.PRM and looks like
  * \includelineno Benchmark.PRM
  * The boundary consists of two boundary parts. The first describes the outer
  * boundary and has four components. The second describes the hole and has one
@@ -260,7 +261,7 @@
  * generator \em triangle is called. We need to check this!
  *
  * The GEO file is located at
- * your_ParMooN_folder/data/bench_quad_comp.GEO and starts like
+ * your_ParMooN_folder/data/geo_and_prm/bench_quad_comp.GEO and starts like
  * \dontinclude bench_quad_comp.GEO
  * \until DCORVG
  * There are 208 elements (quadrilaterals), 250 vertices, 4 vertices per 
@@ -271,13 +272,14 @@
  * \image latex flow_around_cylinder_quads.eps
  *
  * Note that for this PRM file there is also a triangular mesh at
- * your_ParMooN_folder/data/bench_tria_comp.GEO.
+ * your_ParMooN_folder/data/geo_and_prm/bench_tria_comp.GEO.
  *
  * \subsection subsec_example_prm_geo3 An example with two different reference ids.
  * This example is used for the coupling of Stokes and Darcy equations. The two
  * subdomains differ in their id, i.e. Stokes elements have a different id than
  * the Darcy elements. The PRM file is located at
- * your_ParMooN_folder/data/doubleRiverbed.PRM and looks like
+ * your_ParMooN_folder/data/geo_and_prm/geo_and_prm/doubleRiverbed.PRM and looks
+ * like
  * \includelineno doubleRiverbed.PRM
  * The is one boundary part with six boundary components of type 1 (line). The
  * first three will be for the Darcy subdomain outer boundary and the second
@@ -286,7 +288,7 @@
  * components follow counterclockwise.
  *
  * The GEO file is located at
- * your_ParMooN_folder/data/doubleRiverbed1.xGEO
+ * your_ParMooN_folder/data/geo_and_prm/geo_and_prm/doubleRiverbed1.xGEO
  * Note that this file has the extension xGEO which tells ParMooN to look for
  * another number for each element which will be the reference id of that
  * element. The interface is then implicitly defined to consist of all edges

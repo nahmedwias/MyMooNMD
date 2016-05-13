@@ -19,7 +19,7 @@
 #include <NSE_MGLevel14.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
-#include <Solver.h>
+#include <OldSolver.h>
 #ifdef __2D__
   #include <FESpace2D.h>
   #include <FEDatabase2D.h>
@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include <LinAlg.h>
-#include <Solver.h>
 #include <ItMethod.h>
 #include <FgmresIte.h>
 
@@ -592,10 +591,7 @@ void TNSE_MGLevel14::CellVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       {
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        verbose =  TDatabase::ParamDB->SC_VERBOSE;
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -964,10 +960,7 @@ void TNSE_MGLevel14::NodalVanka(double *u1, double *rhs1, double *aux,
       if (N_LocalDOF > LargestDirectSolve)
       {
         memset(sol,0,N_LocalDOF*SizeOfDouble);
-        verbose =  TDatabase::ParamDB->SC_VERBOSE;
-        TDatabase::ParamDB->SC_VERBOSE = -1;
         itmethod->Iterate(matrix,NULL,sol,Rhs);
-        TDatabase::ParamDB->SC_VERBOSE = verbose;
         memcpy(Rhs, sol, N_LocalDOF*SizeOfDouble);
       }
       else
@@ -1175,8 +1168,7 @@ double TNSE_MGLevel14::StepLengthControl (double *u1, double *u1old,
         omega = 0.9;
     }     
   delete x;
-  if (TDatabase::ParamDB->SC_VERBOSE>=2)
-    OutPut("step length control " << omega << endl);
+  Output::print("step length control ", omega);
   return(omega); 
 }
 
