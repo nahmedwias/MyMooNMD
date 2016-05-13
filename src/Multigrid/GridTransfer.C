@@ -708,6 +708,7 @@ void GridTransfer::RestrictFunction(
 */
 
 } // RestrictFunction
+
 #endif
 #ifdef __3D__
 /** prolongate */
@@ -1542,3 +1543,42 @@ void GridTransfer::RestrictFunction(
 } // RestrictFunction
 
 #endif
+
+
+void GridTransfer::RestrictFunctionRepeatedly(
+#ifdef __2D__
+  std::vector<const TFESpace2D*> space_hierarchy,
+#elif __3D__
+  std::vector<const TFESpace3D*> space_hierarchy,
+#endif
+  std::vector<double*> function_entries,
+  std::vector<size_t> function_n_dofs)
+{
+  size_t n_levels =space_hierarchy.size();
+  if (n_levels < 2)
+    ErrThrow("At least 2 levels needed to perform a grid restriction!");
+  if(function_entries.size() != n_levels || function_n_dofs.size() != n_levels)
+    ErrThrow("Number of functions does not match number of spaces!");
+
+  for(size_t i =0; i < n_levels - 1; ++i)
+  {
+#ifdef __2D__
+    const TFESpace2D& coarse_space = *space_hierarchy.at(i+1);
+    const TFESpace2D& fine_space = *space_hierarchy.at(i);
+#elif __3D__
+    const TFESpace3D& coarse_space = *space_hierarchy.at(i+1);
+    const TFESpace3D& fine_space = *space_hierarchy.at(i);
+#endif
+    double* coarse_function = function_entries.at(i+1);
+    size_t coarse_n_dofs = function_n_dofs.at(i+1);
+
+
+    const double* fine_function = function_entries.at(i);
+    size_t fine_n_dofs = function_n_dofs.at(i);
+
+    //do the restriction
+    RestrictFunction(coarse_space, fine_space,
+                     coarse_function, coarse_n_dofs,
+                     fine_function, fine_n_dofs);
+  }
+}
