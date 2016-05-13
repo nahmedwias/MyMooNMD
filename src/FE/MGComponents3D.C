@@ -1827,7 +1827,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
   double *interpol;
   TNodalFunctional3D *nf;
   double PointValues[MaxN_PointsForNodal3D];
-  double FunctionalValues[MaxN_PointsForNodal3D], temp;
+  double FunctionalValues[MaxN_PointsForNodal3D];
 
 // #ifdef _MPI
 //   int rank, ID;
@@ -1903,6 +1903,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
   } // endfor i
 
 #ifdef _MPI
+  double temp;
   temp = error0;
   MPI_Allreduce(&temp, &error0, 1, MPI_DOUBLE, MPI_SUM, TDatabase::ParamDB->Comm);
   temp = error1;

@@ -779,7 +779,7 @@ int time_dependent_problem)
   double u_x, u_y, u_z, sigma, res=0.0, norm_b2, value;
   double b1_orth, b2_orth,  b3_orth, norm_der_u2, linfb_orth, z1, z2, z3, linfz, normz;
   double alpha, beta, gamma, lambda, kappa, omega, rho, norm_b_orth;
-  double epsilon= 1e-10, hK_project, y, z, u_xx, u_yy;
+  double epsilon= 1e-10, hK_project, y, z, u_xx=0., u_yy=0.;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   double theta1 = TDatabase::TimeDB->THETA1;
 #ifdef __2D__

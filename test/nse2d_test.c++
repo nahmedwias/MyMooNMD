@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(int i=0; i < n_ref; i++)
+    for(unsigned int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(int i=0; i < n_ref; i++)
+    for(unsigned int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();
     }

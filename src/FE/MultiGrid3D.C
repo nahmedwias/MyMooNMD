@@ -53,9 +53,9 @@ void TMultiGrid3D::AddLevel(TMGLevel3D *MGLevel)
 /** add new level as finest */
 void TMultiGrid3D::ReplaceLevel(int i,TMGLevel3D *MGLevel)
 { 
-  TMGLevel3D *ret;
+//  TMGLevel3D *ret;
 
-  ret = MultiGridLevels[i];
+//  ret = MultiGridLevels[i];
   MultiGridLevels[i] = MGLevel;
 
 //  MultiGridLevels[N_Levels] = MGLevel;
@@ -69,10 +69,10 @@ void TMultiGrid3D::ReplaceLevel(int i,TMGLevel3D *MGLevel)
 /** restrict solution from finest grid to all coarser grids */
 void TMultiGrid3D::RestrictToAllGrids()
 {
-  int lev, j;
+  int lev;
   TMGLevel3D *CurrentLevel, *CoarserLevel;
-  double *X1, *R1;
-  double *X2, *R2, *Aux;
+  double *X1;
+  double *X2, *Aux;
 
   for(lev=N_Levels-1;lev>0;lev--)
   {
@@ -94,7 +94,7 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 #endif
 			  double &oldres)
 {
-  int i,j,k;
+  int j;
   double *CurrentSol, *CurrentRhs, *CurrentDefect, *CurrentAux;
 #ifdef _HYBRID
   bool firstTime, LastTime;
@@ -415,14 +415,14 @@ void TMultiGrid3D::Smooth(int smoother_type, TMGLevel3D *Level,
 /** one cycle on level i */
 void TMultiGrid3D::Cycle(int i, double &res)
 {
-  double s,t1,t2;
+  double t1,t2;
   
   TMGLevel3D *CurrentLevel, *CoarserLevel;
   double *CurrentSol, *CoarserSol, *CoarserRhs;
   double *CurrentRhs, *CurrentDefect, *CurrentAux;
   double *CurrentAux2, *OldSol, *OldDefect;
-  double oldres,reduction, alpha;
-  int j, N_DOF, maxit, it, slc,gam;
+  double oldres,alpha;
+  int j, N_DOF, slc;
   double initres, normsol, firstres;
 
   CurrentLevel = MultiGridLevels[i];

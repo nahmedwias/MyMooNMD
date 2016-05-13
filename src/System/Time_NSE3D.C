@@ -1344,7 +1344,7 @@ void Time_NSE3D::output(int m, int &image)
     const TFESpace3D *v_space = &this->get_velocity_space();
     const TFESpace3D *p_space = &this->get_pressure_space();
 
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+//    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 
     // Errors in velocity components and pressure
     u1 ->GetErrors(example_.get_exact(0), 4, allderiv, 2, L2H1Errors, nullptr,
