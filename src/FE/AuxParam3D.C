@@ -103,8 +103,7 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
                               double **Parameters)
 {
   int i, j, k, l, n;
-  double xi, *param, *currparam, s;
-  double *locvalues;
+  double *param, *currparam, s;
   const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   FE3D FE_Id;
