@@ -45,7 +45,22 @@ int main(int argc, char* argv[])
   //  mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
 
   unsigned int testType = 3;
-  if (testType==1) {
+  if (testType==0) {
+    Output::print(" Test: ");
+    Output::print("   * read .PRM and .GEO file and write the corresponding .mesh");
+
+    // initialize domain
+    domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+
+    // write .mesh file
+    TCollection *coll = domain.GetCollection(It_Finest, 0);
+    coll->writeMesh(parmoon_db["mesh_file"]);
+
+    // create mesh object and display info
+    Mesh m(parmoon_db["mesh_file"]);
+    m.info();
+    
+  } else if (testType==1) {
     //=========================================================================
     Output::print(" Test: ");
     Output::print("   * read .PRM and .GEO file and write the corresponding .mesh");
@@ -94,7 +109,7 @@ int main(int argc, char* argv[])
 
     Output::print(" ... done. Compare now meshFromPRMandGEO.mesh and meshFromPRMandMesh.mesh");
 
-}
+  }
   
   
   //=========================================================================

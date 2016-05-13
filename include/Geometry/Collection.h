@@ -115,7 +115,8 @@ class TCollection
    int createElementLists();
    std::vector<double> NodesCoords;
    std::vector<int> NodesReferences;
-   std::vector<int> ElementNodes, ElementReferences;
+   std::vector< std::vector<int> > ElementNodes;
+   std::vector<int> ElementReferences;
    std::vector<int> BdFacesNodes;
    std::vector<int> BdFacesReferences;
    std::vector<int> DomainVertexNumbers;

@@ -190,8 +190,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
 
   double bd_parameter_a, bd_parameter_b;
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    cout << " Domain::MakeGrid() creating 2D grid " << endl;
+  Output::print<2>(" Domain::MakeGrid() creating 2D grid ");
  
   // generate vertices, edges and cells
   // search neighbours
@@ -200,6 +199,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   memset(KVEL, 0, N_Vertices * SizeOfInt);
   
   //KVEL(j) = how many times vertices j appears in the list
+  // Note: KVERT[i] can be = 0, in case of mixed (tria+quad meshes). In this
+  // case, the vertex does not exist.
   for (int i=0;i<NVE*N_RootCells;i++)
   {
     if (KVERT[i])

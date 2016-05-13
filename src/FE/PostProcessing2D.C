@@ -11,16 +11,10 @@ PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db){
   init(param_db);
 };
 
-// Possible variant for handling more output objects in a single problem
-// e.g. Stokes-Darcy
-//void PostProcessing2D::PostProcessing2D(string basename){
-//  init();
-//  testcaseName = basename;
-//};
-
 
 void PostProcessing2D::init(const ParameterDatabase& param_db)
 {
+  // set the variables depending on input parameters
   ParameterDatabase db = ParameterDatabase::default_output_database();
   db.merge(param_db,false);
   
@@ -31,18 +25,13 @@ void PostProcessing2D::init(const ParameterDatabase& param_db)
   testcaseName=tfile;
   string tdir = db["output_directory"];
   testcaseDir=tdir;
-
   period = 1;//db["steps_per_output"];
-  
-  Coll=NULL;
 
-  ParameterDatabase tdb = ParameterDatabase::default_time_database();
-  tdb.merge(param_db,false);
-  // for time dependent problems
-  dt = tdb["time_step_length"];
-  t0 = tdb["time_start"];
+  // initialize the rest
+  Coll=NULL;
   timeValues.clear();
-  
+  FEFunctionArray.clear();
+  FEVectFunctArray.clear();
 }
 
 
@@ -57,26 +46,26 @@ void PostProcessing2D::addFEFunction(const TFEFunction2D* fefunction)
     Coll = fefunction->GetFESpace2D()->GetCollection();
   } else {
     if (Coll != fefunction->GetFESpace2D()->GetCollection()) {
-      OutPut(" ** WARNING ** in file : " << __FILE__ 
-	     << ", line " << __LINE__ 
-	     << " new FE function might have a different collection " << endl);
+      Output::print(" ** WARNING ** in file : ", __FILE__,
+		    ", line ", __LINE__ ,
+		    " new FE function might have a different collection ");
     }
   }
-
+  
 }
 /** add a FEVectFunct into this output object */
 void PostProcessing2D::addFEVectFunct(const TFEVectFunct2D* fevectfunction)
 {
   FEVectFunctArray.push_back(fevectfunction);
-
+  
   // check that FE functions have the same collection
   if (Coll==NULL) {
     Coll = fevectfunction->GetFESpace2D()->GetCollection();
   } else {
     if (Coll != fevectfunction->GetFESpace2D()->GetCollection()) {
-      OutPut(" ** WARNING ** in file : " << __FILE__ 
-	     << ", line " << __LINE__ 
-	     << " new FE function might have a different collection " << endl);
+      Output::print(" ** WARNING ** in file : ", __FILE__,
+		    ", line ", __LINE__ ,
+		    " new FE function might have a different collection ");
     }
   }
 }
@@ -103,16 +92,8 @@ void PostProcessing2D::write(int i,double _current_time)
     writeVtk(os.str().c_str());
   }
 
-  if(TDatabase::ParamDB->WRITE_GNU)
-  {
-    os.seekp(std::ios::beg);
-    os << testcaseDir << "/" << testcaseName << i << ".gnu"<<ends;
-    cout << " Output2D:: writing " << os.str() << endl;
-    writeGnuplot(os.str().c_str());
-  }
-
   if(writeCASE) {
-    // note: i<0 is used to avoid suffix in vtk output.
+    // note: i<0 is used to avoid suffix in vtk output in steady problems
     // it shall be disregarded for case output
     if (i<0) i=0;
     // store new time step value
@@ -140,47 +121,24 @@ void PostProcessing2D::write(string basename, int i,double _current_time)
     writeVtk(os.str().c_str());
   }
 
-  if(TDatabase::ParamDB->WRITE_GNU)
-  {
-    os.seekp(std::ios::beg);
-    os << basename << i << ".gnu"<<ends;
-    cout << " Output2D:: writing " << os.str() << endl;
-    writeGnuplot(os.str().c_str());
-  }
-
   if(writeCASE) {
-    cout << " --- WARNING: the basename of output files is set during the initialization of Postprocessing2D --- " 
-	 << endl;
-    // store new time step value
-    timeValues.push_back(_current_time);
-    if (i==0) {
-      // write geometry only in the first iteration
-      writeCaseGeo();
-    }
-    writeCaseVars(i);
-    writeCaseFile();
-
+    Output::print("** WARNING: The function write(string, int, double)",
+		  " does not support .case output.",
+		  " I am using write(int, double) instead");
+    write(i, _current_time);
   }
-
 }
 
 
 
   
 
-
-/** write stored data into a gunplot file */
-void PostProcessing2D::writeGnuplot(const char *name)
-{
-  cout << " void PostProcessing2D::writeGnuplot(const char *name) not yet implemented " << endl;
-  cout << " in File: " << __FILE__ << " line: " << __LINE__ << endl;
-  exit(1);
-
-}
-
-
-/** write stored data into a VTK file */
-///@todo this functions can be simplified using the new features of Collection class
+/**
+   @brief write stored data into a VTK file (old  version)
+   This function writes the mesh and the solution into a vtk file
+   Note: it uses an old-fashion way to compute the P1 solution
+   The new implementation should be used eventually.
+*/
 void PostProcessing2D::writeVtk(const char *name)
 {
   
@@ -1030,9 +988,17 @@ void PostProcessing2D::writeCaseGeo()
     f.width(8);
     f << Coll->GetN_Cells() << endl;
     for(int k=0;k<Coll->GetN_Cells();k++){
+
+      // @warning we cannot write yet .case output with mixed meshes.
+      if (Coll->GetCell(k)->GetN_Vertices()!=nVE) {
+	Output::print(" **ERROR: CASE output with mixed (tria and quad) meshes ",
+		      " not supported yet. Use VTK instead.");
+	exit(1);
+      }
+      
       for(int i=0;i<nVE;i++){
 	f.width(8);
-	f << Coll->ElementNodes[nVE*k+i];
+	f << Coll->ElementNodes[k][i];
       }
       f << endl;
     }// k
