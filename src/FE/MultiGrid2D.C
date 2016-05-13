@@ -303,16 +303,7 @@ void TMultiGrid2D::Cycle(int i, double &res)
            
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
            
-    if (TDatabase::ParamDB->SC_VERBOSE>=2      
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-    {
-//        OutPut("rank: " <<rank <<" level 0 res before smoothing: " << res << endl);
-            printf("level 0 res before smoothing: %e\n",  res);    
-//          printf("Multigrid rank %d \n", rank);
-    }
+    Output::print<2>("level 0 res before smoothing: ",  res);
     
     
     reduction = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR*res;
@@ -354,15 +345,8 @@ void TMultiGrid2D::Cycle(int i, double &res)
       CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
      
       it++;
-      if (TDatabase::ParamDB->SC_VERBOSE>=2      
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-      {
-//          OutPut("No. Itr " << it << "  level 0 res after smoothing: " << res << endl);
-        printf("No. Itr %d level 0 res after smoothing: %e\n", it, res);    
-      }   
+
+      Output::print<2>("No. Itr ", it ,"level 0 res after smoothing: ", res);
      
     }
 /*    
@@ -391,15 +375,9 @@ exit(0);    */
     // smoothing
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2      
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-    {
-       OutPut("level " << i << " ");
-       OutPut("res before presmoothing : " << oldres << endl);
-    }
+    Output::print<2>("level ", i, " ");
+    Output::print<2>("res before presmoothing : ", oldres);
+
     if (slc)
     {
       memcpy(OldSol, CurrentSol, N_DOF*SizeOfDouble);
@@ -457,16 +435,8 @@ exit(0);    */
     // calculate defect
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
 
-    
-    if (TDatabase::ParamDB->SC_VERBOSE>=2      
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-      {
-        OutPut("level " << i << " ");
-        OutPut("res after presmoothing: " << oldres << endl);
-      }
+    Output::print<2>("level ", i, " ");
+    Output::print<2>("res after presmoothing : ", oldres);
       
 /* int ii;
 for(ii=0;ii<N_DOF;ii++)
@@ -537,16 +507,7 @@ for(ii=0;ii<N_DOF;ii++)
 
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, oldres);
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-      {
-        OutPut("level " << i << " ");
-//         OutPut("res before postsmoothing: " << oldres << endl);
-        printf("level %d, res before postsmoothing: %e \n",  i, oldres);	
-      }
+    Output::print<2>("level ", i ," res before postsmoothing: ", oldres);
 
     // smoothing
     switch(TDatabase::ParamDB->SC_SMOOTHER_SCALAR)
@@ -614,17 +575,8 @@ for(ii=0;ii<N_DOF;ii++)
     }
 
     CurrentLevel->Defect(CurrentSol, CurrentRhs, CurrentDefect, res);
-     
-    if (TDatabase::ParamDB->SC_VERBOSE>=2      
-#ifdef _MPI  
-        && rank==TDatabase::ParamDB->Par_P0
-#endif        
-       )
-      {
-//         OutPut("level " << i << " ");
-//         OutPut("res after postsmoothing: " << res << endl);
-        printf("level %d, res after postsmoothing: %e \n",  i, res);	
-      }
+
+    Output::print<2>("level ", i ," res after postsmoothing: ", res);
       
 /*//          if(rank==TDatabase::ParamDB->Par_P0   )    
 // printf("mg_recursions %d, Multigrid rank %d \n",  i, rank);

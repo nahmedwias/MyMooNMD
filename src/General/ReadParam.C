@@ -1326,17 +1326,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_ROW_EQUILIBRATION;
       N_Param++;
     }
-    if (!strcmp(line, "SC_VERBOSE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_VERBOSE;
-      Output::setVerbosity(TDatabase::ParamDB->SC_VERBOSE);
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_VERBOSE_AMG:"))
-    {
-      dat >> TDatabase::ParamDB->SC_VERBOSE_AMG;
-      N_Param++;
-    }
 
     if (!strcmp(line, "SC_BRAESS_SARAZIN_MATRIX:"))
     {

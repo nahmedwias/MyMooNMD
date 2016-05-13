@@ -1451,8 +1451,7 @@ double EstimateCoercivityConstant(TCollection *Coll,
   }
 
   delete coeff;
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
-    OutPut("coercivity constant (assuming div-free convection): " << coerc << endl);
+  Output::print("coercivity constant (assuming div-free convection): ", coerc);
   return(coerc);
 }
 

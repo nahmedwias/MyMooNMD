@@ -86,5 +86,3 @@ SC_LIN_RED_FACTOR_SCALAR: 0.0
 # absolute error tolerance
 SC_LIN_RES_NORM_MIN_SCALAR: 5e-5
 
-
-SC_VERBOSE: 1

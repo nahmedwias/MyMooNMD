@@ -935,7 +935,7 @@ void Time_NSE2D::output(int m, int& image)
   TFEFunction2D * u1 = s.u.GetComponent(0);
   TFEFunction2D * u2 = s.u.GetComponent(1);
 
-  if(TDatabase::ParamDB->SC_VERBOSE>1)
+  if((size_t)db["verbosity"]> 1)
   {
     u1->PrintMinMax();
     u2->PrintMinMax();

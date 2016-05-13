@@ -115,6 +115,8 @@ void TNSE_MultiGrid::RestrictToAllGrids()
 /** one cycle on level i */
 void TNSE_MultiGrid::Cycle(int i, double &res)
 {
+  int verbosity = 2;
+
   int j, N_UDOF, N_PDOF, N_DOF, maxit, smoother; // NLevels=N_Levels;
   int slc, defect_calc, umfpack_flag, ii;
   double oldres; // res2, s;
@@ -168,11 +170,11 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       case 17 : 
         CurrentLevel->SolveExact(CurrentU, CurrentRhsU);
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        if (verbosity=2)
         {
           if (res>1e-12)
           {
-            OutPut("MESSAGE: residual not zero !! ("<<res); 
+            OutPut("MESSAGE: residual not zero !! ("<<res);
             OutPut(") Check boundary conditions !! "<< endl);
           }
         }
@@ -183,11 +185,11 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         CurrentLevel->SolveExactUMFPACK(CurrentU, CurrentRhsU, umfpack_flag);
         Parameters[9] = umfpack_flag;
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        if (verbosity>=2)
         {
           if (res>1e-12)
           {
-            OutPut("MESSAGE: residual not zero !! ("<<res); 
+            OutPut("MESSAGE: residual not zero !! ("<<res);
             OutPut(") Check boundary conditions !! "<< endl);
           }
         }
@@ -207,10 +209,10 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
 
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        if (verbosity>=2)
         {
           OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
-        }  
+        }
         // res2 = res = oldres;  // not used later in this function
         divfactor *= res;
         if (slc)
@@ -238,7 +240,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           }
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -270,7 +272,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         // compute defect 
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
         // res2 = res = oldres;   // not used later in this function
-        if (TDatabase::ParamDB->SC_VERBOSE>=2)
+        if (verbosity>=2)
         {
           OutPut("smoother " << smoother <<"level 0 res before smoothing: " << oldres << endl);
         }
@@ -291,7 +293,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           if(j>=maxit) break;
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-          if (TDatabase::ParamDB->SC_VERBOSE >=2)
+          if (verbosity >=2)
           {
             OutPut("level 0: Vanka ite: " << j << " " << res << endl);
           }
@@ -304,7 +306,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           // res2 = res;  // not used later in this function
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -364,7 +366,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
           }
           // cout << "residual " << j << " " << res << endl;
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -397,7 +399,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         // compute defect
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, oldres);
         
-        if (TDatabase::ParamDB->SC_VERBOSE >= 2)
+        if (verbosity >= 2)
         {
           OutPut("smoother " <<smoother <<" , level 0 res before smoothing: " << oldres << endl);
         }
@@ -425,7 +427,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
             exit(4711);
           }          
         }
-        if (TDatabase::ParamDB->SC_VERBOSE >=2)
+        if (verbosity >=2)
         {
           // compute defect
           CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
@@ -477,7 +479,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       memcpy(OldU, CurrentU, ii);
       memcpy(CurrentOldDefU, CurrentDefectU, ii);
     }
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       if (!defect_calc)
       {
@@ -555,7 +557,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       memcpy(CurrentOldDefU, CurrentDefectU, ii);
     }
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
         OutPut("level " << i << " ");
         OutPut("res after presmoothing: " <<  
@@ -637,7 +639,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
 
     defect_calc = 0;
  
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       // compute defect
       CurrentLevel->CorrectNodes(CurrentU);
@@ -705,7 +707,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
         CurrentU[j] = OldU[j] + alpha *( CurrentU[j]-OldU[j]);
     }
 
-    if (TDatabase::ParamDB->SC_VERBOSE>=2)
+    if (verbosity>=2)
     {
       // compute defect
       CurrentLevel->CorrectNodes(CurrentU);

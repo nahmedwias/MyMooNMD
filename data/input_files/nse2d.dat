@@ -157,10 +157,3 @@ SC_COARSE_RED_FACTOR_SCALAR: 0.1
 # 1:
 SC_STEP_LENGTH_CONTROL_FINE_SCALAR: 0
 SC_STEP_LENGTH_CONTROL_ALL_SCALAR: 0
- 
-----------------------------------------------------------------------
-# output controls
-----------------------------------------------------------------------
-WRITE_VTK: 1
-
-SC_VERBOSE: 1
