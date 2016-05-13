@@ -93,6 +93,12 @@ class Mesh
   /** @brief quadrilateral */    
   std::vector<meshQuad> quad;
 
+  /** 
+      @brief flag for the case of two dimensional mesh with both
+      triangles and quadrilaterals
+  */    
+  bool hasBothTriaAndQuads;
+  
   /** @brief tetrahedron */    
   std::vector<meshTetrahedron> tetra;
 

@@ -17,6 +17,7 @@
 #include <JointCollection.h>   
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
+#include <array>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -473,7 +474,7 @@ int TCollection::createElementLists()
   // if arrays have been created before
   // free and recreate (to handle multigrid levels)
   if (ElementNodes.size()) {
-    ElementNodes.resize(0);
+    ElementNodes.clear();
   }
   if (NodesCoords.size()) {
     NodesCoords.resize(0);
@@ -514,27 +515,28 @@ int TCollection::createElementLists()
   }
   
   ///@attention numbering starts from 1, i.e. first (see 'VERTEX OFFEST' below)
-  int nVertexPerElement = Cells[0]->GetN_Vertices();
+
   
   // elements array
-  ElementNodes.resize(nVertexPerElement*N_Cells);
-  ElementReferences.resize(nVertexPerElement*N_Cells);
+  ElementNodes.resize(N_Cells);
+  ElementReferences.resize(N_Cells);
   
   for(int i=0;i<N_Cells;i++){
     ElementReferences[i]=Cells[i]->GetReference_ID();
+    ElementNodes[i].resize(Cells[i]->GetN_Vertices());
 
-    for (int j=0; j<nVertexPerElement;j++) {
+    for (int j=0; j<Cells[i]->GetN_Vertices();j++) {
       TVertex *current = Cells[i]->GetVertex(j);
       for (unsigned int s=0; s<localVertices.size(); s++) {
 	if(current == localVertices[s]) {
-	  ElementNodes[nVertexPerElement*i+j] = s+1; // VERTEX OFFSET
+	  ElementNodes[i][j] = s+1; // VERTEX OFFSET
 	  break;
 	}
       }
     }
+    
   }
-  //cout << "Collection::createElementLists() Total number of volume elements: " << N_Cells << endl;
-
+ 
   
   int nVertexPerFace;
   if (dim==2) {
@@ -959,19 +961,55 @@ int TCollection::writeMesh(const char *meshFileName)
     }
     MESHfile << endl;
     
-    // write cells
-    if (nVertexPerElement == 3) {
-      MESHfile << "Triangles" << endl;
-    } else {
-      MESHfile << "Quadrilaterals" << endl;
-    }
-    MESHfile << N_Cells << endl;
+    // write cells:
+    // In order to support mixed (tria+quad) meshes
+    // we need to store trias and quads in two tmp
+    // separate lists, then write them on the file
+    std::vector<int> nodesTria;
+    std::vector<int> nodesQuad;
+    
+    // Note: we store nodes (3 or 4) + reference
     for (int i=0; i<N_Cells; i++) {
-      for (int j=0;j<nVertexPerElement;j++) {
-	MESHfile << ElementNodes[i*nVertexPerElement+j] << "  ";
+      if (Cells[i]->GetN_Vertices() == 3) {
+
+	for (int j=0;j<3;j++) 
+	  nodesTria.push_back(ElementNodes[i][j]);
+	nodesTria.push_back(ElementReferences[i]);
+	
+      } else if (Cells[i]->GetN_Vertices() == 4) {
+	
+	for (int j=0;j<4;j++) 
+	  nodesQuad.push_back(ElementNodes[i][j]);
+	nodesQuad.push_back(ElementReferences[i]);
       }
-      MESHfile << ElementReferences[i] << endl;
-    } // for (int i=0; i<nElements; i++) {
+    }
+    unsigned int nTrias = nodesTria.size()/4;
+    unsigned int nQuads = nodesQuad.size()/5;
+    cout << " I found " << nTrias << " and " << nQuads << " quads " << endl;
+    // now we write the list of triangles
+    if (nodesTria.size()) {
+      MESHfile << "Triangles" << endl;
+      MESHfile << nTrias << endl;
+      for (unsigned int i=0; i<nTrias; i++) {
+	for (int j=0;j<4;j++) {
+	  MESHfile << nodesTria[i*4+j] << "  ";
+	}
+	MESHfile << endl;
+      } 
+    }
+
+    if (nodesQuad.size()) {
+      MESHfile << "Quadrilaterals" << endl;
+      MESHfile << nQuads << endl;
+      for (unsigned int i=0; i<nQuads; i++) {
+	for (int j=0;j<5;j++) {
+	  MESHfile << nodesQuad[i*5+j] << "  ";
+	}
+	MESHfile << endl;
+      } 
+    }
+    
+
     MESHfile << endl;
     MESHfile << "End" << endl;
     
@@ -1001,7 +1039,7 @@ int TCollection::writeMesh(const char *meshFileName)
     MESHfile << N_Cells << endl;
     for (int i=0; i<N_Cells ; i++) {
       for (int j=0;j<nVertexPerElement;j++) {
-	MESHfile << ElementNodes[i*nVertexPerElement+j] << "  ";
+	MESHfile << ElementNodes[i][j] << "  ";
       }
       MESHfile << ElementReferences[i] << endl;
     } // for (int i=0; i<nElements; i++) {

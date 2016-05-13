@@ -882,6 +882,8 @@ void TDomain::Init(const char *PRM, const char *GEO)
   }
   else
   {
+    Output::print("** WARNING: the (x)GEO files will be no longer supported. Use .mesh instead **");
+
     // "GEO" interpreted as file path to GEO-file.
     // check if it actually is an .xGEO-file
     bool isxGEO = isExtendedGEO(GEO);
@@ -918,25 +920,18 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
   // read mesh
   Mesh m(MESHFILE);
   m.setBoundary(PRM);
-  unsigned int numberOfElements, nVertexPerElem;
+  unsigned int numberOfElements = m.triangle.size() + m.quad.size();
+  unsigned int maxNVertexPerElem = 3;
   // make the ParMooN-grid
-  if (m.triangle.size()) {
-    numberOfElements = m.triangle.size();
-    nVertexPerElem = 3;
-    if (m.quad.size()) {
-      Output::print(" ** Error(Domain::Init) I cannot work with mixed (triangular+quadrilater) meshes");
-      exit(-1);
-    }
-  } else  if (m.quad.size()) {
-    numberOfElements = m.quad.size();
-    nVertexPerElem = 4;
-  } else {
+  if (m.quad.size()) {
+    maxNVertexPerElem = 4;
+  }
+  if (numberOfElements==0) {
     Output::print(" ** Error(Domain::Init) the mesh has no elements");
     exit(-1);
   }
 
   // vertices data
-  
   double *DCORVG;
   int *KNPR;
   unsigned int n_vertices = m.vertex.size();
@@ -960,25 +955,34 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
     }  
   }
   int *KVERT,*ELEMSREF;
-  KVERT = new int[nVertexPerElem * numberOfElements];
+  KVERT = new int[maxNVertexPerElem * numberOfElements];
   ELEMSREF = new int[numberOfElements];
-  N_RootCells = numberOfElements;
-  for (int i=0;i<N_RootCells;i++)
+
+  // store triangles (+ 0 when using a mixed mesh)
+  for (unsigned int i=0;i<m.triangle.size();i++)
   {
-    for (unsigned int  j=0; j<nVertexPerElem; j++) {
-      switch (nVertexPerElem) {
-      case 3:
-	KVERT[3*i + j] = m.triangle[i].nodes[j];
-	ELEMSREF[i] = m.triangle[i].reference;
-	break;
-      case 4:
-	KVERT[4*i + j] = m.quad[i].nodes[j];
-	ELEMSREF[i] = m.quad[i].reference;
-	break;
-      }
-    }
+    for (unsigned int  j=0; j<3; j++) 
+      KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
+    
+    if (maxNVertexPerElem==4) KVERT[maxNVertexPerElem*i + 3] = 0;
+    
+    ELEMSREF[i] = m.triangle[i].reference;
+    
   }
-  MakeGrid(DCORVG,KVERT,KNPR,ELEMSREF,m.vertex.size(),nVertexPerElem);
+
+  // store quadrilaterals
+  for (unsigned int i=0;i<m.quad.size();i++)
+  {
+    for (unsigned int  j=0; j<4; j++) 
+      KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
+
+    ELEMSREF[m.triangle.size()+i] = m.quad[i].reference;
+    
+  }
+  // N_RootCells is an internal Domain variable used in other functions
+  N_RootCells = numberOfElements;
+  
+  MakeGrid(DCORVG,KVERT,KNPR,ELEMSREF,m.vertex.size(),maxNVertexPerElem);
   delete [] DCORVG;
   delete [] KVERT;
   delete [] KNPR;
