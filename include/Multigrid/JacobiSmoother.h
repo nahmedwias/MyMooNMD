@@ -17,17 +17,29 @@ class BlockVector;
 class BlockFEMatrix;
 template <class LinearOperator, class Vector> class Iteration_jacobi;
 
+/**
+ * To use the Jacobi iteration as a smoother in multigrid framework, this
+ * class wraps up an "Iteration_jacobi" object as a smoother.
+ * Note that it will throw if you try to use it with a matrix with zeroes on
+ * the diagonals.
+ */
 class JacobiSmoother : public Smoother
 {
   public:
 
+    /// Apply one step of Jacobi iteration with the stored operator
+    /// to the iterate "solution"
     void smooth(const BlockVector& rhs, BlockVector& solution) override;
 
+    /// Reset the stored Iteration_jacobi object. TODO As soon as system classes
+    /// storeshared pointers to their BlockFEMatrices, so should the Jacobi_iteration
+    /// class!
     void update(const BlockFEMatrix& matrix) override;
 
     /* ************* *
-     * Special member functions
+     * Special member functions. Declared, but not defined yet.
      * ************* */
+    //! Default constructor.
     JacobiSmoother();
 
     //! Copy constructor.
@@ -46,6 +58,7 @@ class JacobiSmoother : public Smoother
 
 
   private:
+    /// The iterative method one step of which is applied in "smooth".
     std::shared_ptr<Iteration_jacobi<BlockFEMatrix, BlockVector>> jacobi;
 };
 

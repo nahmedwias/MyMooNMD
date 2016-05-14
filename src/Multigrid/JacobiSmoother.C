@@ -19,10 +19,9 @@ JacobiSmoother::JacobiSmoother()
 
 void JacobiSmoother::smooth(const BlockVector& rhs, BlockVector& solution)
 {
-  //Apply one step of a jacobi iteration with the matrix stored therein.
-  BlockVector defect = rhs; //copy
+  // Calculate current defect.
+  BlockVector defect = rhs;
   jacobi->get_operator().apply_scaled_add(solution, defect, -1.0);
-
 
   jacobi->apply(defect, defect);
   solution.add_scaled(defect, 1.0);
@@ -30,7 +29,7 @@ void JacobiSmoother::smooth(const BlockVector& rhs, BlockVector& solution)
 
 void JacobiSmoother::update(const BlockFEMatrix& matrix)
 {
-  //Reset the diagonal matrix stored in the jacobi object
+  //Reset the jacobi object.
   jacobi.reset(new Iteration_jacobi<BlockFEMatrix, BlockVector>(matrix));
 }
 

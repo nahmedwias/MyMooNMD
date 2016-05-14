@@ -11,6 +11,9 @@
 class BlockVector;
 class BlockFEMatrix;
 
+/**
+ * Pure virtual base class for multigrid smoothers.
+ */
 class Smoother
 {
   public:

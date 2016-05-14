@@ -14,19 +14,25 @@
 #include <memory>
 
 /**
- * A direct solver object wrapped up as a Smoother. Should be used on
- * the coarsest grid of a multigrid method. If used on a finer grid the method
- * might become pretty slow.
+ * A direct solver object wrapped up as a Smoother. Use only on the coarsest
+ * grid - if this is enforced on a fine grid everything which happens on a
+ * coarser grid is entirely useless, as the direct solver erases the
+ * solution - instead of using the prolongated coarse grid solution as an initial
+ * iterate, as a proper smoother does.
  */
 class DirectSmoother : public Smoother
 {
   public:
+    // Solve the system Ax=b with the stored matrix and direct solver.
     virtual void smooth(const BlockVector& rhs, BlockVector& solution ) override;
 
+    // Reset the stored "DirectSolver" object. Must be called whenever the
+    // matrix with which to solve has changed.
     virtual void update(const BlockFEMatrix&) override;
 
     /* ************* *
-     * Special member functions
+     * Special member functions. Declared but not defined, since it
+     * is not clear whether to shallow or deep copy here.
      * ************* */
     //! Default constructor.
     DirectSmoother();
@@ -42,7 +48,6 @@ class DirectSmoother : public Smoother
 
     //! Move assignment operator.
     DirectSmoother& operator=( DirectSmoother&& );
-
 
     ~DirectSmoother() = default;
 

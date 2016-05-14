@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   //set PROBLEM_TYPE to CD if not yet set
   if(parmoon_db["problem_type"].is(0))
     parmoon_db["problem_type"] = 1;
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   

@@ -16,17 +16,42 @@
 
 class Smoother;
 
-enum class SmootherCode{DIRECT_SOLVE, JACOBI, NODAL_VANKA, CELL_VANKA, BATCH_VANKA,
-NO_SMOOTHER};
+enum class SmootherCode{DIRECT_SOLVE, JACOBI, NODAL_VANKA, CELL_VANKA, BATCH_VANKA};
 
+/**
+ * The multigrid level class. Its members are private, except for copy and move,
+ * since its contents are entirely managed by the Multigrid class.
+ *
+ * FIXME It follows its matrix with a raw pointer. This should be changed to
+ * a weak_ptr as soon as the system classes hold their matrices as shared_ptr.
+ */
 class MultigridLevel
 {
-    //make Multigrid, which manages data transfer between levels, a good friend
     friend class Multigrid;
-
   public:
+    /* ************* *
+     * Special member functions. Will perform shallow copies.
+     * ************* */
+    //! Copy constructor.
+    MultigridLevel( const MultigridLevel& ) = default;
+
+    //! Move constructor.
+    MultigridLevel( MultigridLevel&& ) = default;
+
+    //! Copy assignment operator.
+    MultigridLevel& operator=( const MultigridLevel& ) = default;
+
+    //! Move assignment operator.
+    MultigridLevel& operator=( MultigridLevel&& ) = default;
+
+    ~MultigridLevel() = default;
+
+  private:
+    /// Constructor which takes a pointer to a BlockFEMatrix and a SmootherCode,
+    /// that determines which smoother will be applied on this here level.
     MultigridLevel(BlockFEMatrix* matrix, SmootherCode sm);
 
+    /// Call the stored smoother ones - this should mean one smoothing step.
     void apply_smoother();
 
     /// Ask the level to compute and store its current defect and residual.
@@ -37,8 +62,6 @@ class MultigridLevel
     /// has changed. The update method of the multigrid object does this for
     /// all its levels.
     void update_smoother();
-
-  private:
 
     BlockFEMatrix* matrix_; // TODO This is a dangerous pointer so far -
                             // TODO change to weak_ptr as soon as the system classes store shared pointers to the matrices

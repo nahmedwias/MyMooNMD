@@ -26,8 +26,6 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::CELL_VANKA;
   else if(code == std::string("batch_vanka"))
     return SmootherCode::BATCH_VANKA;
-  else if(code == std::string("no_smoother"))
-    return SmootherCode::NO_SMOOTHER;
   else
   {
     Output::warn("SmootherCode", "The string ", code,

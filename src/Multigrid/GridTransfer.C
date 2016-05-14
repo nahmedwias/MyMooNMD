@@ -22,7 +22,6 @@
 
 #ifdef __2D__
 
-/** prolongate */
 void GridTransfer::Prolongate(
     const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
     const double* CoarseFunction, size_t n_coarse_dofs,
@@ -71,9 +70,6 @@ void GridTransfer::Prolongate(
   if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", N_FineDOFs);
-
-  //cout << "N_FineCells: " << N_FineCells << endl;
-  //cout << "N_CoarseCells: " << N_CoarseCells << endl;
 
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
@@ -148,12 +144,6 @@ void GridTransfer::Prolongate(
         N_Fine = TFEDatabase2D::GetBaseFunct2D(FineBF)->GetDimension();
 
         // do prolongation
-/*
-        cout << "CoarseId: " << CoarseId << endl;
-        cout << "Ref: " << Ref << endl;
-        cout << "FineId: " << FineId << endl;
-        cout << "j: " << j << endl;
-*/
         QQ = TFEDatabase2D::GetProlongationMatrix2D
                 (CoarseId, Ref, FineId, j);
 
@@ -167,7 +157,6 @@ void GridTransfer::Prolongate(
           {
             // s += QQ[k*MaxN_BaseFunctions2D+l]*Val[l];
             s += entry[l] * Val[l];
-            // cout << k << " " << l << " " << entry[l] << endl;
           } // endfor l
           Val2[k] = s;
         } // endfor k
@@ -296,9 +285,6 @@ void GridTransfer::DefectRestriction(
   std::vector<double> FineFunction_copy(N_FineDOFs);
   std::copy(FineFunction, FineFunction+N_FineDOFs, FineFunction_copy.begin());
 
-  // cout << "N_FineCells: " << N_FineCells << endl;
-  //cout << "N_CoarseCells: " << N_CoarseCells << endl;
-
   double* aux = new double[N_FineDOFs];
   memset(aux, 0, SizeOfDouble*N_FineDOFs);
 
@@ -377,12 +363,6 @@ void GridTransfer::DefectRestriction(
         N_Fine = TFEDatabase2D::GetBaseFunct2D(FineBF)->GetDimension();
 
         // do restriction
-/*
-        cout << "CoarseId: " << CoarseId << endl;
-        cout << "Ref: " << Ref << endl;
-        cout << "FineId: " << FineId << endl;
-        cout << "j: " << j << endl;
-*/
         QQ = TFEDatabase2D::GetProlongationMatrix2D
                 (CoarseId, Ref, FineId, j);
 
@@ -435,13 +415,6 @@ void GridTransfer::DefectRestriction(
       Ref = NoRef;
 
       // do restriction
-/*
-      cout << "CoarseId: " << CoarseId << endl;
-      cout << "Ref: " << Ref << endl;
-      cout << "FineId: " << FineId << endl;
-      cout << "j: " << j << endl;
-      cout << endl;
-*/
       QQ = TFEDatabase2D::GetProlongationMatrix2D
               (CoarseId, Ref, FineId, 0);
 
@@ -522,9 +495,6 @@ void GridTransfer::RestrictFunction(
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", N_FineDOFs);
 
-  // cout << "N_FineCells: " << N_FineCells << endl;
-  // cout << "N_CoarseCells: " << N_CoarseCells << endl;
-
   double* aux = new double[N_CoarseDOFs];
   memset(aux, 0, SizeOfDouble*N_CoarseDOFs);
 
@@ -594,12 +564,6 @@ void GridTransfer::RestrictFunction(
         N_Fine = TFEDatabase2D::GetBaseFunct2D(FineBF)->GetDimension();
 
         // do restriction
-/*
-        cout << "CoarseId: " << CoarseId << endl;
-        cout << "Ref: " << Ref << endl;
-        cout << "FineId: " << FineId << endl;
-        cout << "j: " << j << endl;
-*/
         QQ = TFEDatabase2D::GetRestrictionMatrix2D
                 (CoarseId, Ref, FineId, j);
 
@@ -653,13 +617,6 @@ void GridTransfer::RestrictFunction(
       Ref = NoRef;
 
       // do restriction
-/*
-      cout << "CoarseId: " << CoarseId << endl;
-      cout << "Ref: " << Ref << endl;
-      cout << "FineId: " << FineId << endl;
-      cout << "j: " << j << endl;
-      cout << endl;
-*/
       QQ = TFEDatabase2D::GetRestrictionMatrix2D
               (CoarseId, Ref, FineId, 0);
 
@@ -698,15 +655,6 @@ void GridTransfer::RestrictFunction(
     CoarseFunction[i] /= aux[i];
 
   delete[] aux;
-
-/*
-  for(i=0;i<N_CoarseDOFs;i++)
-    cout << "CoarseFunction[" << i << "]: " << CoarseFunction[i] << endl;
-
-  for(i=0;i<N_FineDOFs;i++)
-    cout << "FineFunction[" << i << "]: " << FineFunction[i] << endl;
-*/
-
 } // RestrictFunction
 
 #endif
@@ -753,10 +701,10 @@ void GridTransfer::Prolongate(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if (n_coarse_dofs != CoarseSpace.GetN_DegreesOfFreedom())
+  if ((int)n_coarse_dofs != CoarseSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of CoarseFunction: ",
              n_coarse_dofs, " != ", CoarseSpace.GetN_DegreesOfFreedom());
-  if (n_fine_dofs != N_FineDOFs)
+  if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", N_FineDOFs);
 
@@ -1030,10 +978,10 @@ void GridTransfer::DefectRestriction(
   N_FineDOFs = FineSpace.GetN_DegreesOfFreedom();
 
   //Check if the dimensions fit the vector lengths.
-  if (n_coarse_dofs != N_CoarseDOFs)
+  if ((int)n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
              n_coarse_dofs, " != ", N_CoarseDOFs);
-  if (n_fine_dofs != N_FineDOFs)
+  if ((int)n_fine_dofs != N_FineDOFs)
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", N_FineDOFs);
 
@@ -1307,10 +1255,10 @@ void GridTransfer::RestrictFunction(
 
 
   //Check if the dimensions fit the vector lengths.
-  if (n_coarse_dofs != N_CoarseDOFs)
+  if ((int)n_coarse_dofs != N_CoarseDOFs)
     ErrThrow("Incorrect length of CoarseFunction: ",
              n_coarse_dofs, " != ", N_CoarseDOFs);
-  if (n_fine_dofs != FineSpace.GetN_DegreesOfFreedom())
+  if ((int)n_fine_dofs != FineSpace.GetN_DegreesOfFreedom())
     ErrThrow("Incorrect length of FineFunction: ",
              n_fine_dofs, " != ", FineSpace.GetN_DegreesOfFreedom());
 

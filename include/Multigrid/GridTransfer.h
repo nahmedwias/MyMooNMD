@@ -15,58 +15,43 @@
 #include <vector>
 #include <cstddef>
 
+// Experimental Macro to avoid double code.
+#ifdef __2D__
+#define TFESpaceXD TFESpace2D
+#elif __3D__
+#define TFESpaceXD TFESpace3D
+#endif
+
 //forward declarations
 class TFESpace2D;
 class TFESpace3D;
 
 namespace GridTransfer
 {
-
-#ifdef __2D__
-
+/**
+ * Prolongate a function from finer to coarser level.
+ *
+ * @note No checks whether the spaces actually form the correct hierarchy are
+ * performed - we rely on "garbage in, garbage out" here.
+ */
 void Prolongate(
-    const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
+    const TFESpaceXD& CoarseSpace, const TFESpaceXD& FineSpace,
     const double* CoarseFunction, size_t n_coarse_dofs,
     double* FineFunction, size_t n_fine_dofs);
 
 /**
- * Restrict defect from fine function to coarse function -
- * maps into dual space. For an in-depth explanation see lecture notes
- * of Volker John.
+ * Restrict function from fine function to coarse function -
+ * maps into dual space. Used for restricting the defect from fine grid to
+ * coarse grid (where it will form the right hand side).
+ * For an in-depth explanation see lecture notes of Volker John.
+ *
+ * @note No checks whether the spaces actually form the correct hierarchy are
+ * performed - we rely on "garbage in, garbage out" here.
  */
 void DefectRestriction(
-    const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
+    const TFESpaceXD& CoarseSpace, const TFESpaceXD& FineSpace,
     double* CoarseFunction, size_t n_coarse_dofs,
     const double* FineFunction, size_t n_fine_dofs);
-
-/** function restriction from level+1 to level */
-void RestrictFunction(
-    const TFESpace2D& CoarseSpace, const TFESpace2D& FineSpace,
-    double* CoarseFunction, size_t n_coarse_dofs,
-    const double* FineFunction, size_t n_fine_dofs);
-
-#endif
-#ifdef __3D__
-
-/** prolongate */
-void Prolongate(
-    const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    const double* CoarseFunction, size_t n_coarse_dofs,
-    double* FineFunction, size_t n_fine_dofs);
-
-/** defect restriction from level+1 to level */
-void DefectRestriction(
-    const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    double* CoarseFunction, size_t n_coarse_dofs,
-    const double* FineFunction, size_t n_fine_dofs);
-
-/** function restriction from level+1 to level */
-void RestrictFunction(
-    const TFESpace3D& CoarseSpace, const TFESpace3D& FineSpace,
-    double* CoarseFunction, size_t n_coarse_dofs,
-    const double* FineFunction, size_t n_fine_dofs);
-
-#endif
 
 /**
  * Restricts the function on the finest grid to all other grids
@@ -82,13 +67,18 @@ void RestrictFunction(
  * TODO First function should be const.
  */
 void RestrictFunctionRepeatedly(
-#ifdef __2D__
-  std::vector<const TFESpace2D*> space_hierarchy,
-#elif __3D__
-  std::vector<const TFESpace3D*> space_hierarchy,
-#endif
+  std::vector<const TFESpaceXD*> space_hierarchy,
   std::vector<double*> function_entries,
   std::vector<size_t> function_n_dofs);
-}
 
+
+/** Restrict a function from coarse to fine level.
+ * @note No checks whether the spaces actually form the correct hierarchy are
+ * performed - we rely on "garbage in, garbage out" here.*/
+void RestrictFunction(
+    const TFESpaceXD& CoarseSpace, const TFESpaceXD& FineSpace,
+    double* CoarseFunction, size_t n_coarse_dofs,
+    const double* FineFunction, size_t n_fine_dofs);
+}
+#undef TFESpaceXD
 #endif /* INCLUDE_MULTIGRID_GRIDTRANSFER_H_ */
