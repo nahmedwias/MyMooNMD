@@ -2,8 +2,7 @@
 #include <Database.h>
 #include <Output2D.h>
 #include <LinAlg.h>
-#include <OldSolver.h>
-#include <MultiGrid2D.h>
+#include <Multigrid.h>
 #include <MainUtilities.h> // L2H1Errors
 #include <AlgebraicFluxCorrection.h>
 
@@ -63,7 +62,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            const Example_CD2D& example, int reference_id)
- : systems(), example(example), multigrid(nullptr), 
+ : systems(), example(example), mg(nullptr),
    db(get_default_CD2D_parameters()), solver(param_db)
 {
   this->db.merge(param_db, false); // update this database with given values
@@ -85,47 +84,30 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
   
   
-  // done with the conrtuctor in case we're not using multigrid
+  // done with the constructor in case we're not using multigrid
   if(this->solver.get_db()["solver_type"].is("direct") || 
      !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
   
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2]; // memory leak
-  //param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  //param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  param[0] = this->solver.get_db()["damping_factor"];
-  param[1] = this->solver.get_db()["damping_factor_finest_grid"];
-  this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-  // number of refinement levels for the multigrid
-  size_t LEVELS = this->solver.get_db()["multigrid_n_levels"];
-  if((int)LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
+  ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+  database_mg.merge(param_db, false);
   
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
+  // Construct systems per grid and store them, finest level first
+  std::list<BlockFEMatrix*> matrices;
+  size_t n_levels = database_mg["multigrid_n_levels"];
+  int finest = domain.get_ref_level();
+  int coarsest = finest - n_levels + 1;
+  for (int grid_no = finest; grid_no >= coarsest; --grid_no)
   {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll);
+    TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+    systems.emplace_back(example, *coll);
+    //prepare input argument for multigrid object
+    matrices.push_front(&systems.back().matrix);
   }
   
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-  {
-    //get a non-const pointer to the one block that "matrix" stores
-    // TODO must be changed to const as soon as multigrid allows that
-    TSquareMatrix2D* one_block = it->get_matrix_pointer();
-
-    TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, one_block, it->rhs.get_entries(),
-      it->solution.get_entries(), 2, NULL);
-    i++;
-    this->multigrid->AddLevel(multigrid_level);
-  }
+  // Construct multigrid object
+  mg = std::make_shared<Multigrid>(database_mg, matrices);
 }
 
 /** ************************************************************************ */
@@ -229,14 +211,8 @@ void CD2D::solve()
     this->solver.solve(s.matrix, s.rhs, s.solution);
   }
   else
-  {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *SqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    OldSolver((TSquareMatrix **)SqMat, NULL, s.rhs.get_entries(), 
-              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-              this->multigrid.get(), this->get_size(), 0);
+  {//multigrid preconditioned iterative solver is used
+    solver.solve(s.matrix, s.rhs, s.solution, mg);
   }
   
   t = GetTime() - t;

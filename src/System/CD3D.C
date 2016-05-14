@@ -23,7 +23,7 @@
 #include <MumpsWrapper.h>
 #endif
 
-  bool use_new_solver_debug = true;
+  bool use_new_solver_debug = false;
 
 ParameterDatabase get_default_CD3D_parameters()
 {
@@ -280,7 +280,7 @@ void CD3D::solve()
     else
     {//multigrid preconditioned iterative solver is used
       // All matrices which mg_'s levels point to must be ready!
-      solver.solve(s.matrix_, s.rhs_, s.solution_, mg_.get());
+      solver.solve(s.matrix_, s.rhs_, s.solution_, mg_);
     }
   }
   else
