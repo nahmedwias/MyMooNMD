@@ -50,12 +50,6 @@ class CD2D
       /** @brief Finite Element function */
       TFEFunction2D fe_function;
       
-      /**
-       * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
-       */
-      TSquareMatrix2D* get_matrix_pointer();
-
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll );
 

@@ -44,13 +44,6 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 {
   matrix = BlockFEMatrix::CD2D(fe_space);
 }
-/** ************************************************************************ */
-TSquareMatrix2D* CD2D::System_per_grid::get_matrix_pointer()
-{
-  std::vector<std::shared_ptr<FEMatrix>> blocks =
-      matrix.get_blocks_TERRIBLY_UNSAFE();
-  return reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-}
 
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
@@ -273,7 +266,7 @@ void CD2D::output(int i)
 /** ************************************************************************ */
 void CD2D::do_algebraic_flux_correction()
 {
-  for(auto & s : this->systems) // do it on all levels - TODO untested for multigrid!
+  for(auto & s : this->systems) // do it on all levels.
   {
     //determine which kind of afc to use
     switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)

@@ -10,7 +10,6 @@
 #include <JacobiSmoother.h>
 #include <MooNMD_Io.h>
 #include <MultigridLevel.h>
-#include <NoSmoother.h>
 
 MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
                                SmootherCode sm)
@@ -39,9 +38,6 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
     case SmootherCode::BATCH_VANKA:
       Output::info("MultigridLevel", "Dummy: BATCH_VANKA smoother");
       break;
-    case SmootherCode::NO_SMOOTHER:
-      smoother_ = std::make_shared<NoSmoother>();
-      break;
     default:
       ErrThrow("Unknown SmootherCode!");
   }
@@ -55,8 +51,9 @@ void MultigridLevel::apply_smoother()
 
 void MultigridLevel::calculate_defect()
 {
-  defect_ = rhs_; //copy
+  defect_ = rhs_;
   matrix_->apply_scaled_add(solution_, defect_, -1.0);
+
   residual_ = sqrt(dot(defect_,defect_));
 }
 
