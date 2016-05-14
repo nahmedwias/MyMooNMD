@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 3, " ");
     db.add("solver_type", std::string("iterative"), "");
     db.add("preconditioner", std::string("multigrid"), "");
-    db.add("n_multigrid_levels", (size_t)2, "", (size_t)0, (size_t)10);
+    db.add("multigrid_n_levels", (size_t)2, "", (size_t)0, (size_t)10);
     db["boundary_file"] = "Default_UnitCube";
     db["geo_file"] = "Default_UnitCube_Hexa";
     
@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
     // split the number of refinement steps - some have to be done before,
     // some after the domain partitioning
     int n_ref_total = domain.get_n_initial_refinement_steps();
-    size_t mg_levels = db["n_multigrid_levels"];
+    size_t mg_levels = db["multigrid_n_levels"];
     size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
     size_t n_ref_before =  n_ref_total - n_ref_after;
     if(n_ref_before < 0)

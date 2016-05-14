@@ -62,7 +62,7 @@ void check(ParameterDatabase& db, int ansatz_order,
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning
   int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t mg_levels = db["n_multigrid_levels"];
+  size_t mg_levels = db["multigrid_n_levels"];
   size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
   size_t n_ref_before =  n_ref_total - n_ref_after;
   if(n_ref_before < 0)
@@ -146,7 +146,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["solver_type"] = "iterative";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
-    db["n_multigrid_levels"] = 2;
+    db["multigrid_n_levels"] = 2;
     TDatabase::ParamDB->SOLVER_TYPE = 1;
     TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
     TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 5;
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
-  db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
+  db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
   db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   db.add("preconditioner", std::string("multigrid"), "",
          {"jacobi", "multigrid"});

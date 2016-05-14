@@ -160,7 +160,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if (solver_name.compare("multigrid") == 0)
   {
     db["preconditioner"] = "multigrid";
-    db["n_multigrid_levels"] = 2;
+    db["multigrid_n_levels"] = 2;
     db["refinement_n_initial_steps"] = 2;
     db["damping_factor"] = 1.0;
     db["damping_factor_finest_grid"] = 1.0;

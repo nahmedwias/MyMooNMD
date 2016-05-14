@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     db.add("solver_type", std::string("direct"), "");
 
     db.add("refinement_n_initial_steps", (size_t) 3,"");
-    db.add("n_multigrid_levels", (size_t) 0, "");
+    db.add("multigrid_n_levels", (size_t) 0, "");
 
     // default construct a domain object
     TDomain domain(db);

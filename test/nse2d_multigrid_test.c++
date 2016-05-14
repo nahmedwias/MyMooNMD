@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     db["problem_type"].set<size_t>(5);
     
     db.add("refinement_n_initial_steps", (size_t) 4, "");
-    db.add("n_multigrid_levels", (size_t) 3, "");
+    db.add("multigrid_n_levels", (size_t) 3, "");
 
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
     db["nonlinloop_slowfactor"] = 1.;
 
     db.add("refinement_n_initial_steps", (size_t) 4, "");
-    db.add("n_multigrid_levels", (size_t) 2, "");
+    db.add("multigrid_n_levels", (size_t) 2, "");
 
     // default construct a domain object
     TDomain domain(db);
