@@ -15,12 +15,15 @@
 #include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
 
+#include <Multigrid.h>
+
 #include <sys/stat.h>
 
 #ifdef _MPI
 #include <MumpsWrapper.h>
 #endif
 
+  bool use_new_solver_debug = true;
 
 ParameterDatabase get_default_CD3D_parameters()
 {
@@ -94,8 +97,8 @@ ParameterDatabase get_default_CD3D_parameters()
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
     bool usingMultigrid = 
-      this->solver.get_db()["solver_type"].is("iterative") 
-      && this->solver.get_db()["preconditioner"].is("multigrid");
+        this->solver.get_db()["solver_type"].is("iterative")
+        && this->solver.get_db()["preconditioner"].is("multigrid");
 
     if (!usingMultigrid)
     {
@@ -127,70 +130,93 @@ ParameterDatabase get_default_CD3D_parameters()
     }
     else
     {// we are using multigrid
+      if(use_new_solver_debug)
+      {// TEST NEW MULTIGRID
+        size_t n_levels = collections.size();
+        if(!param_db["multigrid_n_levels"].is(n_levels))
+           ErrThrow("Number of collection does not equal number of multigrid levels!");
 
-      // number of refinement levels for the multigrid
-      size_t nMgLevels = this->solver.get_db()["n_multigrid_levels"];
+        ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+        database_mg.merge(param_db, false);
 
-      // check if we have as many collections as expected multigrid levels
-      if(collections.size() != nMgLevels )
-      {
-        ErrThrow("Multigrid: Expected ", nMgLevels, " collections, "
-                 , collections.size(), " provided.");
-      }
-
-      // Create multigrid object.
-      double *param = new double[2]; // memory leak
-      param[0] = this->solver.get_db()["damping_factor"];
-      param[1] = this->solver.get_db()["damping_factor_finest_grid"];
-      multigrid_.reset(new TMultiGrid3D(1, 2, param));
-
-      // Construct all System(s)PerGrid and store them.
-      for(auto it : collections)
-      {
-#ifdef _MPI
-        systems_.emplace_back(example_, *it, maxSubDomainPerDof);
-#else
-        systems_.emplace_back(example_, *it);
-#endif
-      }
-
-      // Create multigrid-level-objects and add them to the multgrid object.
-      // Must be coarsest level first, therefore reverse order iteration.
-      size_t level = 0;
-      for(auto system = systems_.rbegin(); system != systems_.rend(); ++system)
-      {
-        // determine number of auxiliary arrays (cryptic thing needed by Multigrid constructor)
-        // (code taken from old ParMooN)
-        size_t nAuxArrays = 2;
-        if ( (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR)
-            || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR) )
-        { // seems this must be 4 when step length control happens
-          nAuxArrays= 4;
+        // Construct systems per grid and store them, finest level first
+        std::list<BlockFEMatrix*> matrices;
+        for (auto coll : collections)
+        {
+          systems_.emplace_back(example, *coll);
+          //prepare input argument for multigrid object
+          matrices.push_front(&systems_.back().matrix_);
         }
 
-        //the single block
-        TSquareMatrix3D* block = reinterpret_cast<TSquareMatrix3D*>(
-            system->matrix_.get_blocks_uniquely().at(0).get());
+        // Construct multigrid object
+        mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+      }
+      else
+      { //THIS IS OLD MULTIGRID
+        // number of refinement levels for the multigrid
+        size_t nMgLevels = param_db["multigrid_n_levels"];
+
+        // check if we have as many collections as expected multigrid levels
+        if(collections.size() != nMgLevels )
+        {
+          ErrThrow("Multigrid: Expected ", nMgLevels, " collections, "
+                   , collections.size(), " provided.");
+        }
+
+        // Create multigrid object.
+        double *param = new double[2]; // memory leak
+        param[0] = this->solver.get_db()["damping_factor"];
+        param[1] = this->solver.get_db()["damping_factor_finest_grid"];
+        multigrid_.reset(new TMultiGrid3D(1, 2, param));
+
+        // Construct all System(s)PerGrid and store them.
+        for(auto it : collections)
+        {
+#ifdef _MPI
+          systems_.emplace_back(example_, *it, maxSubDomainPerDof);
+#else
+          systems_.emplace_back(example_, *it);
+#endif
+        }
+
+        // Create multigrid-level-objects and add them to the multgrid object.
+        // Must be coarsest level first, therefore reverse order iteration.
+        size_t level = 0;
+        for(auto system = systems_.rbegin(); system != systems_.rend(); ++system)
+        {
+          // determine number of auxiliary arrays (cryptic thing needed by Multigrid constructor)
+          // (code taken from old ParMooN)
+          size_t nAuxArrays = 2;
+          if ( (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR)
+              || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR) )
+          { // seems this must be 4 when step length control happens
+            nAuxArrays= 4;
+          }
+
+          //the single block
+          TSquareMatrix3D* block = reinterpret_cast<TSquareMatrix3D*>(
+              system->matrix_.get_blocks_uniquely().at(0).get());
 
 #ifdef _MPI
-        TMGLevel3D* multigridLevel = new TMGLevel3D
-            (
-                level, block, system->rhs_.get_entries(),
-                system->solution_.get_entries(),
-                &system->parComm_, &system->parMapper_,
-                nAuxArrays, NULL
-            );
+          TMGLevel3D* multigridLevel = new TMGLevel3D
+              (
+                  level, block, system->rhs_.get_entries(),
+                  system->solution_.get_entries(),
+                  &system->parComm_, &system->parMapper_,
+                  nAuxArrays, NULL
+              );
 #else
-        TMGLevel3D* multigridLevel = new TMGLevel3D
-            (
-                level, block, system->rhs_.get_entries(),
-                system->solution_.get_entries(),
-                nAuxArrays, NULL
-            );
+          TMGLevel3D* multigridLevel = new TMGLevel3D
+              (
+                  level, block, system->rhs_.get_entries(),
+                  system->solution_.get_entries(),
+                  nAuxArrays, NULL
+              );
 #endif
-        multigrid_->AddLevel(multigridLevel);
-        level++;
-      } //end constructing and adding multigrid levels
+          multigrid_->AddLevel(multigridLevel);
+          level++;
+        } //end constructing and adding multigrid levels
+      }
     }//end multigrid case
   }
 
@@ -217,123 +243,166 @@ void CD3D::assemble()
 /** ************************************************************************ */
 void CD3D::solve()
 {
-  // Hold a reference to the system on the finest grid.
-  SystemPerGrid& syst = systems_.front();
+  if(use_new_solver_debug)
+  {
+    SystemPerGrid& s = this->systems_.front();
 
-  // Hold some variable which will be needed in
-  // all solver variants.
+    //determine whether we make use of multigrid
+    bool using_multigrid =
+        this->solver.get_db()["solver_type"].is("iterative")
+        && this->solver.get_db()["preconditioner"].is("multigrid");
 
-  //get the block for the solver
-  TSquareMatrix* blocks[1] = {reinterpret_cast<TSquareMatrix*>(
-      syst.matrix_.get_blocks_TERRIBLY_UNSAFE().at(0).get())};
-
-
-  // FIXME we could use get_blocks_uniquely() here, but that is
-  // intended for assemblers, not solvers - to mark that the basic
-  // problem is still the non-const passing of matrices to the solvers,
-  // we use the deprecated get_blocks_TERRIBLY_UNSAFE() here on purpose
-
-  double* solutionEntries = syst.solution_.get_entries();
-  double* rhsEntries =syst.rhs_.get_entries();
-  #ifdef _MPI
-  TParFECommunicator3D* parComm = &syst.parComm_;
-  #endif
-
-
-  if (this->solver.get_db()["solver_type"].is("iterative"))
-  { // Iterative solver chosen.
-
-    // Hold/declare some variables which will be needed for all
-    // iterative solvers.
-    int nDof = syst.feSpace_.GetN_DegreesOfFreedom();
-    TItMethod* preconditioner;
-    TItMethod* iterativeSolver;
-
-    // Determine and build preconditioner.
-    switch (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
-    {
-      case 1: //Jacobi Iteration
+    if(!using_multigrid)
+    {//no multigrid
+      if(this->solver.get_db()["solver_type"].is("direct"))
       {
-#ifdef _MPI
-        preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 1, parComm);
-#else
-        preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 1);
+#ifndef _MPI
+        this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
-        break;
-      }
-      case 5: //TMultiGridScaIte (multgrid iteration)
-        preconditioner = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar,
-                                              NULL, 0, nDof, multigrid_.get() , 1);
-        break;
-
-      default:
-        ErrMsg("Unknown SC_PRECONDITIONER_SCALAR: " << TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR);
-    } //end building preconditioner
-
-    // Determine and build solver.
-    switch (TDatabase::ParamDB->SC_SOLVER_SCALAR)
-    {
-      case 11: //fixed point iteration
-      {
 #ifdef _MPI
-        iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner, 0, nDof, 1, parComm);
-#else
-        iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner, 0, nDof, 1);
+        //two vectors of communicators (const for init, non-const for solving)
+        std::vector<const TParFECommunicator3D*> par_comms_init =
+        {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+        std::vector<TParFECommunicator3D*> par_comms_solv =
+        {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+
+        //set up a MUMPS wrapper
+        MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+
+        //kick off the solving process
+        mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
 #endif
-        break;
+
       }
-      case 16:
-        ErrThrow("SC_SOLVER_SCALAR: ", TDatabase::ParamDB->SC_SOLVER_SCALAR,
-                 " (FGMRES) has to be implemented.");
-        break;
-      default:
-        ErrThrow("Unknown solver !!!");
-    }
-    //call the solver
-    if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-    { //using multgrid
-      // \todo The multgrid object and the iterative solver work on different copies of the solution and rhs. Is this necessary?
-
-      //make copies on which the iterative solver may work
-      double* iterativeSol = new double[nDof];
-      double* iterativeRhs = new double[nDof];
-      memcpy(iterativeSol, solutionEntries, nDof*SizeOfDouble);
-      memcpy(iterativeRhs, rhsEntries, nDof*SizeOfDouble);
-
-      //call the solver
-      iterativeSolver->Iterate(blocks, nullptr, iterativeSol, iterativeRhs);
-
-      //copy back & tidy up
-      memcpy(solutionEntries, iterativeSol, nDof*SizeOfDouble);
-      memcpy(rhsEntries, iterativeRhs, nDof*SizeOfDouble);
-      delete[] iterativeSol;
-      delete[] iterativeRhs;
+      else
+        this->solver.solve(s.matrix_, s.rhs_, s.solution_);
     }
     else
-    {
-      iterativeSolver->Iterate(blocks, nullptr, solutionEntries, rhsEntries);
+    {//multigrid preconditioned iterative solver is used
+      // All matrices which mg_'s levels point to must be ready!
+      solver.solve(s.matrix_, s.rhs_, s.solution_, mg_.get());
     }
-    delete preconditioner;
-    delete iterativeSolver;
-
-  }
-  else if (this->solver.get_db()["solver_type"].is("direct"))
-  { // Direct solver chosen.
-#ifndef _MPI
-    this->solver.update_matrix(syst.matrix_);
-    this->solver.solve(syst.rhs_, syst.solution_);
-    return;
-#elif _MPI
-    std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.parComm_};
-    std::vector<TParFECommunicator3D*> par_comms_solv = {&syst.parComm_};
-
-    MumpsWrapper mumps_wrapper(syst.matrix_, par_comms_init);
-    mumps_wrapper.solve(syst.rhs_, syst.solution_, par_comms_solv);
-#endif
   }
   else
   {
-    ErrThrow("Unknown SOLVER_TYPE. Choose either 1 (iterative) or 2 (direct).");
+    // Hold a reference to the system on the finest grid.
+    SystemPerGrid& syst = systems_.front();
+
+    // Hold some variable which will be needed in
+    // all solver variants.
+
+    //get the block for the solver
+    TSquareMatrix* blocks[1] = {reinterpret_cast<TSquareMatrix*>(
+        syst.matrix_.get_blocks_TERRIBLY_UNSAFE().at(0).get())};
+
+
+    // FIXME we could use get_blocks_uniquely() here, but that is
+    // intended for assemblers, not solvers - to mark that the basic
+    // problem is still the non-const passing of matrices to the solvers,
+    // we use the deprecated get_blocks_TERRIBLY_UNSAFE() here on purpose
+
+    double* solutionEntries = syst.solution_.get_entries();
+    double* rhsEntries =syst.rhs_.get_entries();
+#ifdef _MPI
+    TParFECommunicator3D* parComm = &syst.parComm_;
+#endif
+
+
+    if (this->solver.get_db()["solver_type"].is("iterative"))
+    { // Iterative solver chosen.
+
+      // Hold/declare some variables which will be needed for all
+      // iterative solvers.
+      int nDof = syst.feSpace_.GetN_DegreesOfFreedom();
+      TItMethod* preconditioner;
+      TItMethod* iterativeSolver;
+
+      // Determine and build preconditioner.
+      switch (TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
+      {
+        case 1: //Jacobi Iteration
+        {
+#ifdef _MPI
+          preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 1, parComm);
+#else
+          preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 1);
+#endif
+          break;
+        }
+        case 5: //TMultiGridScaIte (multgrid iteration)
+          preconditioner = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar,
+                                                NULL, 0, nDof, multigrid_.get() , 1);
+          break;
+
+        default:
+          ErrMsg("Unknown SC_PRECONDITIONER_SCALAR: " << TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR);
+      } //end building preconditioner
+
+      // Determine and build solver.
+      switch (TDatabase::ParamDB->SC_SOLVER_SCALAR)
+      {
+        case 11: //fixed point iteration
+        {
+#ifdef _MPI
+          iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner, 0, nDof, 1, parComm);
+#else
+          iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner, 0, nDof, 1);
+#endif
+          break;
+        }
+        case 16:
+        ErrThrow("SC_SOLVER_SCALAR: ", TDatabase::ParamDB->SC_SOLVER_SCALAR,
+                 " (FGMRES) has to be implemented.");
+          break;
+        default:
+        ErrThrow("Unknown solver !!!");
+      }
+      //call the solver
+      if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
+      { //using multgrid
+        // \todo The multgrid object and the iterative solver work on different copies of the solution and rhs. Is this necessary?
+
+        //make copies on which the iterative solver may work
+        double* iterativeSol = new double[nDof];
+        double* iterativeRhs = new double[nDof];
+        memcpy(iterativeSol, solutionEntries, nDof*SizeOfDouble);
+        memcpy(iterativeRhs, rhsEntries, nDof*SizeOfDouble);
+
+        //call the solver
+        iterativeSolver->Iterate(blocks, nullptr, iterativeSol, iterativeRhs);
+
+        //copy back & tidy up
+        memcpy(solutionEntries, iterativeSol, nDof*SizeOfDouble);
+        memcpy(rhsEntries, iterativeRhs, nDof*SizeOfDouble);
+        delete[] iterativeSol;
+        delete[] iterativeRhs;
+      }
+      else
+      {
+        iterativeSolver->Iterate(blocks, nullptr, solutionEntries, rhsEntries);
+      }
+      delete preconditioner;
+      delete iterativeSolver;
+
+    }
+    else if (this->solver.get_db()["solver_type"].is("direct"))
+    { // Direct solver chosen.
+#ifndef _MPI
+      this->solver.update_matrix(syst.matrix_);
+      this->solver.solve(syst.rhs_, syst.solution_);
+      return;
+#elif _MPI
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.parComm_};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&syst.parComm_};
+
+      MumpsWrapper mumps_wrapper(syst.matrix_, par_comms_init);
+      mumps_wrapper.solve(syst.rhs_, syst.solution_, par_comms_solv);
+#endif
+    }
+    else
+    {
+      ErrThrow("Unknown SOLVER_TYPE. Choose either 1 (iterative) or 2 (direct).");
+    }
   }
 }
 
@@ -444,22 +513,6 @@ void CD3D::checkParameters()
   }
 #endif // mpi
 
-
-  // this has to do with the relation of UNIFORM_STEPS and LEVELS
-  // so far this strategy to treat them is only followed here, it should be unified
-  // helper variable
-  bool usingMultigrid = 
-    this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
-
-  // the only preconditioners implemented are Jacobi and multigrid
-  if(this->solver.get_db()["solver_type"].is("iterative") 
-     && !this->solver.get_db()["preconditioner"].is("jacobi") 
-     && !this->solver.get_db()["preconditioner"].is("multigrid"))
-  {
-    ErrThrow("Only SC_PRECONDITIONER_SCALAR: 1 (Jacobi) and 5 (multigrid)"
-        " are implemented so far.");
-  }
 }
 
 void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)

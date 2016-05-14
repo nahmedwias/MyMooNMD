@@ -26,7 +26,7 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
      * @param mg A fully set up multigrid object which will be copied into here.
      * TODO maybe change the params needed for construction
      */
-    Iteration_multigrid(const Multigrid& mg);
+    Iteration_multigrid(Multigrid* mg);
 
     /**
      * For usage as preconditioner: do just one multigrid cycle.
@@ -49,7 +49,7 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
 
   private:
     //The multigrid object which holds necessary grid information.
-    mutable Multigrid mg_;
+    mutable Multigrid* mg_;
 
 };
 

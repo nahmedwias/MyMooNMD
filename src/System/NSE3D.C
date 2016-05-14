@@ -20,6 +20,7 @@
 #include <DirectSolver.h>
 #include <Output3D.h>
 
+#include <GridTransfer.h>
 #include <Multigrid.h>
 
 #include <sys/stat.h>
@@ -209,11 +210,12 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   ParameterDatabase database_mg = Multigrid::default_multigrid_database();
   database_mg.merge(param_db, false);
 
-  size_t n_levels = database_mg["multigrid_n_levels"];
-
   // Construct systems per grid and store them, finest level first
   std::list<BlockFEMatrix*> matrices;
-  for (int grid_no = ((int) n_levels ) - 1; grid_no >= 0; --grid_no)
+  size_t n_levels = database_mg["multigrid_n_levels"];
+  int finest = domain.get_ref_level();
+  int coarsest = finest - n_levels + 1;
+  for (int grid_no = finest; grid_no >= coarsest; --grid_no)
   {
     TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
     systems_.emplace_back(example, *coll, velocity_pressure_orders,
@@ -517,6 +519,7 @@ void NSE3D::assemble_linear_terms()
 
   //copy non-actives from rhs to solution on finest grid
   this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+  //TODO restrict solution to all grids
 
 }
 
@@ -532,7 +535,24 @@ void NSE3D::assemble_non_linear_term()
   std::vector<TFEFunction3D*> feFunction(3);
   const TFESpace3D** rhsSpaces{nullptr};
   
-  
+  //Nonlinear assembling requires an approximate velocity solution on every grid!
+  if(systems_.size() > 1)
+  {
+    for( int block = 0; block < 3 ;++block)
+    {
+      std::vector<const TFESpace3D*> spaces;
+      std::vector<double*> u_entries;
+      std::vector<size_t> u_ns_dofs;
+      for(auto &s : systems_ )
+      {
+        spaces.push_back(&s.velocitySpace_);
+        u_entries.push_back(s.solution_.block(block));
+        u_ns_dofs.push_back(s.solution_.length(block));
+      }
+      GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
+    }
+  }
+
   for(auto &s : this->systems_)
   {
     // spaces for matrices
@@ -754,9 +774,7 @@ void NSE3D::solve()
   {//multigrid preconditioned iterative solver is used
 
     // All matrices which mg_'s levels point to must be ready!
-    solver.solve(s.matrix_, s.rhs_, s.solution_, *mg_.get());
-
-    exit(0);
+    solver.solve(s.matrix_, s.rhs_, s.solution_, mg_.get());
    //mg_solver();
   }
 

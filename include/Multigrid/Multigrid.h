@@ -2,7 +2,20 @@
  * @file New declaration of a multigrid object, which holds the necessary
  * grid information for executing a multigrid iteration.
  *
- * TODO Can't do anything so far, this is only a dummy.
+ * @note When using multigrid you must take care of the matrices being
+ * correctly assembled on all levels before calling "cycle()". This might,
+ * should some nonlinearity or time-dependency be included
+ * include a call like former RestrictToAllGrids which informs every grid about
+ * a current approximate solution.
+ *
+ * TODO Write own little class for cycle control.
+ * TODO Implement and enable construction and usage of smoothers
+ * (esp.: keep a "no smoother" for debugging purpose.)
+ * TODO Make MultigridLevel store a weak_ptr instead of a raw pointer.
+ * TODO Complete comments.
+ * TODO Reenable step length control.
+ * TODO How about parallelization?
+ *
  *
  * @date 2016/05/10
  * @author Clemens Bartsch
@@ -20,8 +33,8 @@
 class ParameterDatabase;
 class BlockVector;
 
-enum class MGCycle{F, V, W};
-enum class MGDirection{Down, Up, End};
+enum class MGCycle{V, W, F};
+enum class MGDirection{Down, Up, End, Dummy};
 
 class Multigrid
 {
@@ -40,17 +53,19 @@ class Multigrid
     Multigrid(const ParameterDatabase& db,
               std::list<BlockFEMatrix*> matrices);
 
-    //void update_all_rhs(const BlockVector& bv);
+    /// @brief Apply one complete multigrid cycle.
+    void cycle();
 
-    void set_finest_sol(const BlockVector& bv);
+    const BlockVector& get_finest_sol();
 
     void set_finest_rhs(const BlockVector& bv);
 
-    //Apply one multigrid cycle.
-    void cycle();
+    void set_finest_sol(const BlockVector& bv);
 
-    // Copy solution into solution output.
-    const BlockVector& get_finest_sol();
+    /// Calling this method is the sign for updating the smoothers on all levels.
+    /// It must be called before every solve which was preceded by a change in
+    /// the matrices (e.g. assembling).
+    void update();
 
     static ParameterDatabase default_multigrid_database();
 
@@ -58,18 +73,35 @@ class Multigrid
 
     /// A list of the participating levels, ordered from coarsest (0)
     /// to finest level.
-    std::list<MultigridLevel> levels_;
+    std::vector<MultigridLevel> levels_;
 
     std::vector<double> damp_factors_;
 
-    //TODO Cycle control into own little class
+    size_t n_pre_smooths_;
 
-    //Let's hardcode the control parameters, but pick 'em from a database (for a start)
+    size_t coarse_n_maxit;
+
+    double coarse_epsilon;
+
+    size_t n_post_smooths_;
+
+    int cycle_step(size_t step, size_t level);
+
+    /// Restrict defect on level lvl and store it as rhs in the next coarsest level.
+    void update_rhs_in_coarser_grid(size_t lvl);
+
+    /// Prolongate solution on level lvl and add it (damped!) to solution on the
+    /// next finest level.
+    void update_solution_in_finer_grid(size_t lvl);
+
+    /// Nuke the solution on the next coarsest grid. This is done in order
+    /// to ensure a zero start iterate when smoothing.
+    void set_solution_in_coarser_grid_to_zero(size_t lvl);
+
+    //TODO Put cycle control into its own little class
     MGCycle cycle_;
 
     void set_cycle_control();
-
-    void cycle_step(size_t step);
 
     void fill_recursively(std::vector<int>& mg_recursions, int level);
 
