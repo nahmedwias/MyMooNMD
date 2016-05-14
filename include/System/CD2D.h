@@ -17,7 +17,6 @@
 #define __CD2D_H__
 
 #include <Example_CD2D.h>
-#include <MultiGrid2D.h>
 #include <FEFunction2D.h>
 #include <Domain.h>
 #include <deque>
@@ -26,6 +25,8 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
+
+class Multigrid;
 
 class CD2D
 {
@@ -88,10 +89,8 @@ class CD2D
     /** @brief Definition of the used example */
     const Example_CD2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    ///Multigrid object, set to shared nullptr if it is not needed.
+    std::shared_ptr<Multigrid> mg;
     
     /** @brief a local parameter database which constrols this class
      * 

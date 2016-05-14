@@ -67,20 +67,12 @@ class Solver
     /// method must be called - passing a complete multigrid object to the
     /// solver, which will be used to set up the preconditioner.
     ///
-    /// The multigrid is updated within the method - all its levels and their
-    /// smoothers get actualized. This behaviour is based on the assumption, that
-    /// at the time this method is called all matrices on all levels have been
-    /// reassembled.
-    ///
-    /// TODO One way out would be to let the class "Multigrid" fulfil the
-    /// requirements of a linear operator.
-    ///
-    /// @param matrix
-    /// @param rhs
-    /// @param solution
-    /// @param mg
+    /// The multigrid object is updated within the method - all its levels
+    /// and their smoothers get actualized. This behaviour is based on the
+    /// assumption, that at the time this method is called
+    /// all matrices on all levels have been reassembled.
     void solve(const LinearOperator& matrix, const Vector& rhs,
-               Vector& solution, Multigrid* mg);
+               Vector& solution, std::shared_ptr<Multigrid> mg);
 
     /// @brief return a constant reference to the local ParameterDatabase
     ///

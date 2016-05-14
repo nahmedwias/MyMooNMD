@@ -171,24 +171,8 @@ int Multigrid::cycle_step(size_t step, size_t level)
     if(coming_from_below)
     {
       Output::info<4>("POST SMOOTH", "Level ", level);
-//      //CB DEBUG
-//      Output::print(">>>>>>>>> RHS BEFORE POST", level);
-//      levels_.at(level).rhs_.print("rhs");
-//      Output::print(">>>>>>>>> SOLUTION BEFORE POST", level);
-//      levels_.at(level).solution_.print("sol");
-//      Output::print(">>>>>>>>> DEFECT BEFORE POST", level);
-//      levels_.at(level).defect_.print("def");
-//      //END DEBUG
       for(size_t i = 0; i < n_post_smooths_; ++i)
         levels_.at(level).apply_smoother(); //post smoothing
-//      //CB DEBUG
-//      Output::print(">>>>>>>>> RHS AFTER POST", level);
-//      levels_.at(level).rhs_.print("rhs");
-//      Output::print(">>>>>>>>> SOLUTION AFTER POST", level);
-//      levels_.at(level).solution_.print("sol");
-//      Output::print(">>>>>>>>> DEFECT AFTER POST", level);
-//      levels_.at(level).defect_.print("def");
-//      //END DEBUG
     }
     if(going_down)
     {
@@ -208,15 +192,6 @@ int Multigrid::cycle_step(size_t step, size_t level)
     else
     {//this is the last step - just return!
       Output::info<4>("Multigrid", "Cycle finished");
-      //CB DEBUG
-//      Output::print(">>>>>>>>> RHS END", level);
-//      levels_.at(level).rhs_.print("rhs");
-//      Output::print(">>>>>>>>> SOLUTION END", level);
-//      levels_.at(level).solution_.print("sol");
-//      Output::print(">>>>>>>>> DEFECT END", level);
-//      levels_.at(level).defect_.print("def");
-//      exit(2);
-//      //END DEBUG
       return -1;
     }
 

@@ -23,10 +23,9 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
   public:
     /**
      * Constructor.
-     * @param mg A fully set up multigrid object which will be copied into here.
-     * TODO maybe change the params needed for construction
+     * @param mg A multigrid object with all matrices ready.
      */
-    Iteration_multigrid(Multigrid* mg);
+    Iteration_multigrid(std::shared_ptr<Multigrid> mg);
 
     /**
      * For usage as preconditioner: do just one multigrid cycle.
@@ -49,7 +48,7 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
 
   private:
     //The multigrid object which holds necessary grid information.
-    mutable Multigrid* mg_;
+    mutable std::shared_ptr<Multigrid> mg_;
 
 };
 

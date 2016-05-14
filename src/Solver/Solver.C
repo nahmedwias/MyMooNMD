@@ -294,7 +294,7 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
  * partly from another solve...bad! */
 template <class L, class V>
 void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
-                         const Multigrid& mg)
+                         std::shared_ptr<Multigrid> mg)
 {
     if(db["solver_type"].is("direct"))
     {
@@ -302,6 +302,7 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
     }
 
     preconditioner = std::make_shared<Iteration_multigrid<L, V>>(mg);
+    mg->update();
 
     // iterative solver
     std::string ist = db["iterative_solver_type"];

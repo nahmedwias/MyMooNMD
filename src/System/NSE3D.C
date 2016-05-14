@@ -774,7 +774,7 @@ void NSE3D::solve()
   {//multigrid preconditioned iterative solver is used
 
     // All matrices which mg_'s levels point to must be ready!
-    solver.solve(s.matrix_, s.rhs_, s.solution_, mg_.get());
+    solver.solve(s.matrix_, s.rhs_, s.solution_, mg_);
    //mg_solver();
   }
 
