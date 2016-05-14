@@ -99,6 +99,14 @@ void Iteration_jacobi<L, V>::apply(const V & z, V & r) const
 }
 
 /* ************************************************************************** */
+// L - LinearOperator
+template <class L, class V>
+const L& Iteration_jacobi<L, V>::get_operator() const
+{
+    return linear_operator;
+}
+
+/* ************************************************************************** */
 // explicit instantiations
 template class Iteration_jacobi<BlockFEMatrix, BlockVector>;
 template class Iteration_jacobi<BlockMatrix,   BlockVector>;
