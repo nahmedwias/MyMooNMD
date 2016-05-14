@@ -579,7 +579,8 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
 {
   //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
   double valuable_entry;
-  if(pressure_correction)
+  //if(pressure_correction) FIXME When to do this - when not?
+  if(false)
   {
     int first_pressure_row = -1;
     if(get_n_cell_rows() == 3)
@@ -622,7 +623,8 @@ void BlockFEMatrix::apply_scaled_add_actives(const BlockVector & x, BlockVector 
     }
 
     //Correction due to pressure projection! //TODO THIS! IS! SUCH! A! MESS!
-    if(pressure_correction)
+    //if(pressure_correction) FIXME When to do this - when not?
+    if(false)
     {
       size_t first_pressure_row;
       if(get_n_cell_rows() == 3)
