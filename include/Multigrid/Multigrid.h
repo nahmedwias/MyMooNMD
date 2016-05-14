@@ -9,10 +9,6 @@
  * a current approximate solution.
  *
  * TODO Write own little class for cycle control.
- * TODO Implement and enable construction and usage of smoothers
- * (esp.: keep a "no smoother" for debugging purpose.)
- * TODO Make MultigridLevel store a weak_ptr instead of a raw pointer.
- * TODO Complete comments.
  * TODO Reenable step length control.
  * TODO How about parallelization?
  *
@@ -24,6 +20,7 @@
 #ifndef INCLUDE_MULTIGRID_MULTIGRID_H_
 #define INCLUDE_MULTIGRID_MULTIGRID_H_
 
+#include <CycleControl.h>
 #include <MultigridLevel.h>
 
 #include <list>
@@ -32,9 +29,6 @@
 //Forward declaration.
 class ParameterDatabase;
 class BlockVector;
-
-enum class MGCycle{V, W, F};
-enum class MGDirection{Down, Up, End, Dummy};
 
 class Multigrid
 {
@@ -85,7 +79,7 @@ class Multigrid
 
     size_t n_post_smooths_;
 
-    int cycle_step(size_t step, size_t level);
+    CycleControl control_;
 
     /// Restrict defect on level lvl and store it as rhs in the next coarsest level.
     void update_rhs_in_coarser_grid(size_t lvl);
@@ -98,17 +92,9 @@ class Multigrid
     /// to ensure a zero start iterate when smoothing.
     void set_solution_in_coarser_grid_to_zero(size_t lvl);
 
-    //TODO Put cycle control into its own little class
-    MGCycle cycle_;
+    int cycle_step(size_t step, size_t level);
 
-    void set_cycle_control();
 
-    void fill_recursively(std::vector<int>& mg_recursions, int level);
-
-    void print_cycle_control() const;
-
-    /// This vector visibly controls moving up and down in the grid hierarchy.
-    std::vector<MGDirection> cycle_control_;
 
 
 

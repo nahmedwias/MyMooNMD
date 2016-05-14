@@ -5,6 +5,7 @@
 # Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/Multigrid")
 
+list(APPEND MULTIGRID_SOURCES "${PROJECT_SOURCE_DIR}/src/Multigrid/CycleControl.C")
 list(APPEND MULTIGRID_SOURCES "${PROJECT_SOURCE_DIR}/src/Multigrid/DirectSmoother.C")
 list(APPEND MULTIGRID_SOURCES "${PROJECT_SOURCE_DIR}/src/Multigrid/GridTransfer.C")
 list(APPEND MULTIGRID_SOURCES "${PROJECT_SOURCE_DIR}/src/Multigrid/JacobiSmoother.C")
