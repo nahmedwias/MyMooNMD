@@ -8,21 +8,27 @@
 #ifndef INCLUDE_MULTIGRID_SMOOTHER_H_
 #define INCLUDE_MULTIGRID_SMOOTHER_H_
 
+class BlockVector;
+class BlockFEMatrix;
+
 class Smoother
 {
   public:
     /**
-     * Constructor, takes the BlockFEMatrix which is supposed to be smoothed
-     * by this smoother.
-     */
-    Smoother(const BlockFEMatrix&);
-
-    /**
      * Pure virtual smooth method - applies the smoother once.
-     * @param rhs
-     * @param solution
+     * @param rhs[in] The right hand side of the system to be smoothed.
+     * @param solution[in, out]  The solution of the system to be smoothed.
      */
     virtual void smooth(const BlockVector& rhs, BlockVector& solution ) = 0;
+
+    /**
+     * Pure virtual update method.
+     * Update the smoother. Should happen whenever the matrix of the system
+     * to be smoothed has changed.
+     *
+     * TODO I'm not sure whether this tiny interface will suffice for all smoothers!
+     */
+    virtual void update(const BlockFEMatrix&) = 0;
 
     /// Default destructor - class does not manage resources.
     virtual ~Smoother() = default;

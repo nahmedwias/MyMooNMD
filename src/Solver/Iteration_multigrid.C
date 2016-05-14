@@ -11,29 +11,28 @@
 
 
 template <class L, class V>
-Iteration_multigrid<L,V>::Iteration_multigrid(const Multigrid& mg)
+Iteration_multigrid<L,V>::Iteration_multigrid(Multigrid* mg)
 :  IterativeMethod<L, V>(std::make_shared<NoPreconditioner<V>>(), "Multigrid"),
-   Preconditioner<V>(),
-   mg_(mg)
+   Preconditioner<V>()
 {
-  Output::info<1>("Iteration_multigrid", "Iteration_multigrid object constructed.");
+  mg_ = mg;
+  Output::info<4>("Iteration_multigrid", "Iteration_multigrid object constructed.");
 }
 
 template <class L, class V>
 void Iteration_multigrid<L,V>::apply(const V & z, V & r) const
 {
-  Output::info<1>("Iteration_multigrid", "Iteration_multigrid apply.");
+  Output::info<4>("Iteration_multigrid", "Iteration_multigrid apply.");
 
-  //Update right hand side on all levels and solution on finest.
-  mg_.set_finest_rhs(z);
-  mg_.set_finest_sol(r);
+  //Ser right hand side and solution on finest level.
+  mg_->set_finest_rhs(z);
+  mg_->set_finest_sol(r);
 
   //Apply one multigrid cycle.
-  mg_.cycle();
+  mg_->cycle();
 
   // Copy solution into solution output.
-  r = mg_.get_finest_sol();
-
+  r = mg_->get_finest_sol();
 }
 
 template <class L, class V>

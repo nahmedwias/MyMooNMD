@@ -43,6 +43,7 @@
 
 class LocalAssembling3D; //forward declaration
 class Example_CD3D;
+class Multigrid;
 
 class CD3D
 {
@@ -125,6 +126,10 @@ class CD3D
      */
     std::shared_ptr<TMultiGrid3D> multigrid_;
     
+    /// An object of the new multigrid class. This will entirely replace the old
+    /// multigrid_ object in time.
+    std::shared_ptr<Multigrid> mg_;
+
     /** @brief a local parameter database which constrols this class
      * 
      * The database given to the constructor will be merged into this one. Only 

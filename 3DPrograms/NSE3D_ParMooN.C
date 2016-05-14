@@ -22,9 +22,6 @@ double timeC = 0;
 #endif
 
 
-
-// main program
-// =======================================================================
 int main(int argc, char* argv[])
 {
 #ifdef _MPI

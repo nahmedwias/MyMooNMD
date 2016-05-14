@@ -67,6 +67,11 @@ class Solver
     /// method must be called - passing a complete multigrid object to the
     /// solver, which will be used to set up the preconditioner.
     ///
+    /// The multigrid is updated within the method - all its levels and their
+    /// smoothers get actualized. This behaviour is based on the assumption, that
+    /// at the time this method is called all matrices on all levels have been
+    /// reassembled.
+    ///
     /// TODO One way out would be to let the class "Multigrid" fulfil the
     /// requirements of a linear operator.
     ///
@@ -75,7 +80,7 @@ class Solver
     /// @param solution
     /// @param mg
     void solve(const LinearOperator& matrix, const Vector& rhs,
-               Vector& solution, const Multigrid& mg);
+               Vector& solution, Multigrid* mg);
 
     /// @brief return a constant reference to the local ParameterDatabase
     ///

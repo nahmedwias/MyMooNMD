@@ -14,31 +14,82 @@
 #include <MooNMD_Io.h>
 #include <ParameterDatabase.h>
 
+SmootherCode string_to_smoother_code(std::string code)
+{
+  if(code == std::string("direct_solve"))
+    return SmootherCode::DIRECT_SOLVE;
+  if(code == std::string("jacobi"))
+    return SmootherCode::JACOBI;
+  else if(code == std::string("nodal_vanka"))
+    return SmootherCode::NODAL_VANKA;
+  else if(code == std::string("cell_vanka"))
+    return SmootherCode::CELL_VANKA;
+  else if(code == std::string("batch_vanka"))
+    return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("no_smoother"))
+    return SmootherCode::NO_SMOOTHER;
+  else
+  {
+    Output::warn("SmootherCode", "The string ", code,
+                 " does not equal a smoother code. "
+                 "Defaulting to DIRECT_SOLVE");
+    return SmootherCode::DIRECT_SOLVE;
+  }
+
+}
+
+MGCycle string_to_cycle_code(std::string code)
+{
+  if(code == std::string("V"))
+    return MGCycle::V;
+  else if(code == std::string("W"))
+    return MGCycle::W;
+  else if(code == std::string("F"))
+    return MGCycle::F;
+  else
+  {
+    Output::warn("SmootherCode", "The string ", code,
+                 " does not equal a MGCycle code. "
+                 "Defaulting to V cycle.");
+    return MGCycle::V;
+  }
+
+}
 
 Multigrid::Multigrid(const ParameterDatabase& db,
                      std::list<BlockFEMatrix*> matrices)
 {
+  //Create the levels and collect them in a list
+  auto coarsest = matrices.front();
   for(auto mat : matrices)
   {
-    double beta = 1; //TODO from db
-    SmootherCode sm = SmootherCode::DIRECT_SOLVE; //TODO from db
+    SmootherCode sm;
+    if(mat == coarsest)
+      sm = string_to_smoother_code(db["multigrid_smoother_coarse"]);
+    else
+      sm = string_to_smoother_code(db["multigrid_smoother"]);
 
-    levels_.push_back(MultigridLevel(mat, beta, sm));
+    levels_.push_back(MultigridLevel(mat, sm));
   }
 
+  // Store the between-level damping parameters.
   size_t n_levels = levels_.size();
 
-  for(size_t i =0; i<n_levels ;++i)
-    damp_factors_.push_back(1); //TODO from db
+  for(size_t i = 0; i < n_levels ;++i)
+    damp_factors_.push_back(db["multigrid_correction_damp_factor"]); //TODO this will be too long by 1 entry that way!
 
-  cycle_ = MGCycle::F; //TODO from db
-
+  // Set up the cycle control.
+  cycle_ = string_to_cycle_code(db["multigrid_cycle_type"]);
   set_cycle_control();
 
-  //CB DEBUG
-  print_cycle_control();
-  Output::print("Dummy Multigrid object constructed.");
-  //END DEBUG
+  n_pre_smooths_ = db["multigrid_n_pre_smooth"];
+
+  coarse_n_maxit = db["multigrid_coarse_max_n_iterations"];
+
+  coarse_epsilon = db["multigrid_coarse_residual"];
+
+  n_post_smooths_ = db["multigrid_n_post_smooth"];
+
 }
 
 void Multigrid::set_finest_sol(const BlockVector& bv)
@@ -46,22 +97,224 @@ void Multigrid::set_finest_sol(const BlockVector& bv)
   //TODO Eventually here a call to "RestrictToAllGrids" is necessary
   // - so that for step length control or Braess-Sarazin an initial
   // residual can be calculated on each level
-  ;
+  levels_.back().solution_ = bv;
 }
 
 void Multigrid::set_finest_rhs(const BlockVector& bv)
 {
-  ;
+  levels_.back().rhs_ = bv;
+}
+
+
+
+const BlockVector& Multigrid::get_finest_sol()
+{
+  return levels_.back().solution_;
 }
 
 void Multigrid::cycle()
 {
-  ;
+  Output::info<4>("Multigrid", "Starting multigrid cycle of type ", (int) cycle_);
+
+  size_t n_steps = cycle_control_.size() - 1;
+  size_t finest = levels_.size() - 1;
+
+  //Start with 0 solution
+  levels_.at(finest).solution_ = 0.0;
+  //CB DEBUG
+  levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
+  //END DEBUG
+
+  int next_level = finest;
+  for(size_t i = 1; i <= n_steps; ++i)
+  {
+    next_level = cycle_step(i, next_level);
+  }
+
 }
 
-const BlockVector& Multigrid::get_finest_sol()
+void Multigrid::update()
 {
-  ;
+  for( auto lvl : levels_)
+  {
+    lvl.update_smoother();
+  }
+}
+
+int Multigrid::cycle_step(size_t step, size_t level)
+{
+  Output::info<4>("Multigrid", "Doing cycle step no ", step, " on level ", level);
+
+  //catch the coarsest level case
+  size_t coarsest = 0;
+  if(level == coarsest)
+  {//we're on coarsest level
+    Output::info<4>("COARSE SOLVE", "Level ", level);
+    double res = 1e10;
+    for(size_t i = 0; i < this->coarse_n_maxit && res > coarse_epsilon ; ++i)
+    {
+      levels_.at(coarsest).apply_smoother();
+      levels_.at(coarsest).calculate_defect();
+      res = levels_.at(coarsest).residual_;
+      Output::dash<4>("Coarse Grid Iteration ", i, " res: ", res);
+    }
+    update_solution_in_finer_grid(level);
+    return level + 1;
+  }
+  else
+  {
+    //TODO special values for start and end step, start with step 1!
+    bool coming_from_below = (cycle_control_.at(step-1) == MGDirection::Up);
+    bool going_up = (cycle_control_.at(step) == MGDirection::Up);
+    bool going_down = (cycle_control_.at(step) == MGDirection::Down);
+
+    if(coming_from_below)
+    {
+      Output::info<4>("POST SMOOTH", "Level ", level);
+//      //CB DEBUG
+//      Output::print(">>>>>>>>> RHS BEFORE POST", level);
+//      levels_.at(level).rhs_.print("rhs");
+//      Output::print(">>>>>>>>> SOLUTION BEFORE POST", level);
+//      levels_.at(level).solution_.print("sol");
+//      Output::print(">>>>>>>>> DEFECT BEFORE POST", level);
+//      levels_.at(level).defect_.print("def");
+//      //END DEBUG
+      for(size_t i = 0; i < n_post_smooths_; ++i)
+        levels_.at(level).apply_smoother(); //post smoothing
+//      //CB DEBUG
+//      Output::print(">>>>>>>>> RHS AFTER POST", level);
+//      levels_.at(level).rhs_.print("rhs");
+//      Output::print(">>>>>>>>> SOLUTION AFTER POST", level);
+//      levels_.at(level).solution_.print("sol");
+//      Output::print(">>>>>>>>> DEFECT AFTER POST", level);
+//      levels_.at(level).defect_.print("def");
+//      //END DEBUG
+    }
+    if(going_down)
+    {
+      Output::info<4>("PRE SMOOTH", "Level ", level);
+      for(size_t i = 0; i < n_pre_smooths_; ++i)
+        levels_.at(level).apply_smoother(); //pre smoothing
+      levels_.at(level).calculate_defect(); //defect calculation
+      set_solution_in_coarser_grid_to_zero(level); //set start iterate on coarser level to 0
+      update_rhs_in_coarser_grid(level);
+      return level - 1;
+    }
+    else if(going_up)
+    {
+      update_solution_in_finer_grid(level);
+      return level + 1;
+    }
+    else
+    {//this is the last step - just return!
+      Output::info<4>("Multigrid", "Cycle finished");
+      //CB DEBUG
+//      Output::print(">>>>>>>>> RHS END", level);
+//      levels_.at(level).rhs_.print("rhs");
+//      Output::print(">>>>>>>>> SOLUTION END", level);
+//      levels_.at(level).solution_.print("sol");
+//      Output::print(">>>>>>>>> DEFECT END", level);
+//      levels_.at(level).defect_.print("def");
+//      exit(2);
+//      //END DEBUG
+      return -1;
+    }
+
+  }
+}
+
+void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
+{
+  MultigridLevel& level_current = levels_.at(lvl);
+  MultigridLevel& level_coarse = levels_.at(lvl - 1);
+
+  const BlockFEMatrix& matrix_current = *level_current.matrix_;
+  const BlockVector& defect_current = level_current.defect_;
+
+  const BlockFEMatrix& matrix_coarse = *level_coarse.matrix_;
+  BlockVector& rhs_coarse = level_coarse.rhs_;
+
+  for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
+  {
+#ifdef __2D__
+    const TFESpace2D& space_current = matrix_current.get_row_space(i);
+    const TFESpace2D& space_coarse = matrix_coarse.get_row_space(i);
+
+#endif
+#ifdef __3D__
+    const TFESpace3D& space_current = matrix_current.get_row_space(i);
+    const TFESpace3D& space_coarse = matrix_coarse.get_row_space(i);
+#endif
+    const double* defect_current_entries = defect_current.block(i);
+    int size_current_defect = defect_current.length(i);
+
+    double* rhs_coarse_entries = rhs_coarse.block(i);
+    int size_coarse_rhs = rhs_coarse.length(i);
+
+    // Restrict current level's defect to coarser grid and write
+    // that restriction into coarser level's right hand side.
+    GridTransfer::DefectRestriction(space_coarse, space_current,
+                                    rhs_coarse_entries, size_coarse_rhs,
+                                    defect_current_entries, size_current_defect);
+  }
+
+  // Nuke all non-actives.
+  level_coarse.rhs_.ResetNonActive();
+}
+
+void Multigrid::update_solution_in_finer_grid(size_t lvl)
+{
+  MultigridLevel& level_fine = levels_.at(lvl + 1);
+  MultigridLevel& level_current = levels_.at(lvl);
+
+  const BlockFEMatrix& matrix_fine = *level_fine.matrix_;
+  BlockVector& solution_fine = level_fine.solution_;
+
+  const BlockFEMatrix& matrix_current = *level_current.matrix_;
+  const BlockVector& solution_current = level_current.solution_;
+
+  BlockVector copy_sol_fine = solution_fine; //working copy!
+
+  for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
+  {
+#ifdef __2D__
+    const TFESpace2D& space_fine = matrix_fine.get_row_space(i);
+    const TFESpace2D& space_current = matrix_current.get_row_space(i);
+#endif
+#ifdef __3D__
+    const TFESpace3D& space_fine = matrix_fine.get_row_space(i);
+    const TFESpace3D& space_current = matrix_current.get_row_space(i);
+#endif
+
+    double* solution_prolongation = copy_sol_fine.block(i);
+    int size_solution_prolongation = copy_sol_fine.length(i);
+
+    const double* sol_cur_entries = solution_current.block(i);
+    int size_sol_cur = solution_current.length(i);
+
+    //Do the prolongation and write its result into sol_fine_copy_entries
+    GridTransfer::Prolongate(
+        space_current, space_fine,
+        sol_cur_entries, size_sol_cur,
+        solution_prolongation, size_solution_prolongation);
+
+    //Update the actual solution_fine_entries by damped addition
+    double* sol_fine_entries = solution_fine.block(i);
+    double damp = this->damp_factors_[lvl]; //TODO or another place than lvl??
+
+    int n_non_actives = solution_fine.n_non_actives(i);
+    for( int j=0 ; j < size_solution_prolongation - n_non_actives; ++j )
+    {
+      sol_fine_entries[j] += damp * solution_prolongation[j];
+    }
+
+  }
+
+}
+
+void Multigrid::set_solution_in_coarser_grid_to_zero(size_t lvl)
+{
+  levels_.at(lvl-1).solution_ = 0.0;
 }
 
 void Multigrid::set_cycle_control()
@@ -84,14 +337,14 @@ void Multigrid::set_cycle_control()
   }
   mg_recursions[n_levels-1] = 1;
 
+  cycle_control_.push_back(MGDirection::Dummy); //start with a dummy
+
   fill_recursively(mg_recursions, n_levels-1);
 
 }
 
 void Multigrid::fill_recursively(std::vector<int>& mg_recursions, int level)
 {
-  Output::print("Level ", level);
-
   int coarsest_level = 0;
   int finest_level = levels_.size() - 1;
 
@@ -132,9 +385,10 @@ void Multigrid::print_cycle_control() const
       Output::print("Down");
     if(cc == MGDirection::End)
       Output::print("End");
+    if(cc == MGDirection::Dummy)
+      Output::print("Dummy");
   }
 }
-
 
 ParameterDatabase Multigrid::default_multigrid_database()
 {
@@ -149,19 +403,19 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "So far the three standard cycle V, W and F are implemented."
          , {"V", "W", "F"});
 
-  db.add("multigrid_smoother", std::string("direct_solve"),
+  db.add("multigrid_smoother", std::string("nodal_vanka"),
          "The smoother to use on all but the coarsest level."
          "You should take care, that the smoother you chose fits"
          "your problem type, e.g. Vanka smoothers are best fitted"
          "for saddle point problems.",
-         {"direct_solve", "nodal_vanka", "cell_vanka", "batch_vanka"});
+         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", std::string("direct_solve"),
          "The smoother to use on the coarsest level."
          "You should take care, that the smoother you chose fits"
          "your problem type, e.g. Vanka smoothers are best fitted"
          "for saddle point problems.",
-         {"direct_solve", "nodal_vanka", "cell_vanka", "batch_vanka"});
+         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
          "The damping factor which is used when applying the coarse"
@@ -186,20 +440,11 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "continue on the next finest level.",
          1.0e-20, 1.0);
 
+  db.add<size_t>("multigrid_coarse_max_n_iterations", 10,
+         "The maximal number of solver/smoother iterations "
+         "to be performed whenever working on the coarsest level.",
+         1, 100);
+
 
   return db;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
