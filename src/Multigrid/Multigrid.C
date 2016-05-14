@@ -36,23 +36,6 @@ SmootherCode string_to_smoother_code(std::string code)
 
 }
 
-MGCycle string_to_cycle_code(std::string code)
-{
-  if(code == std::string("V"))
-    return MGCycle::V;
-  else if(code == std::string("W"))
-    return MGCycle::W;
-  else if(code == std::string("F"))
-    return MGCycle::F;
-  else
-  {
-    Output::warn("SmootherCode", "The string ", code,
-                 " does not equal a MGCycle code. "
-                 "Defaulting to V cycle.");
-    return MGCycle::V;
-  }
-
-}
 
 Multigrid::Multigrid(const ParameterDatabase& db,
                      std::list<BlockFEMatrix*> matrices)
@@ -72,13 +55,17 @@ Multigrid::Multigrid(const ParameterDatabase& db,
 
   // Store the between-level damping parameters.
   size_t n_levels = levels_.size();
+  Output::print(n_levels);
+
 
   for(size_t i = 0; i < n_levels ;++i)
     damp_factors_.push_back(db["multigrid_correction_damp_factor"]); //TODO this will be too long by 1 entry that way!
 
   // Set up the cycle control.
-  cycle_ = string_to_cycle_code(db["multigrid_cycle_type"]);
-  set_cycle_control();
+  std::string cycle_str = db["multigrid_cycle_type"];
+  control_ = CycleControl(cycle_str, n_levels);
+
+  control_.print_cycle_control();
 
   n_pre_smooths_ = db["multigrid_n_pre_smooth"];
 
@@ -103,8 +90,6 @@ void Multigrid::set_finest_rhs(const BlockVector& bv)
   levels_.back().rhs_ = bv;
 }
 
-
-
 const BlockVector& Multigrid::get_finest_sol()
 {
   return levels_.back().solution_;
@@ -112,9 +97,9 @@ const BlockVector& Multigrid::get_finest_sol()
 
 void Multigrid::cycle()
 {
-  Output::info<4>("Multigrid", "Starting multigrid cycle of type ", (int) cycle_);
+  Output::info<4>("Multigrid", "Starting multigrid cycle of type ", (int) control_.get_type());
 
-  size_t n_steps = cycle_control_.size() - 1;
+  size_t n_steps = control_.get_n_steps();
   size_t finest = levels_.size() - 1;
 
   //Start with 0 solution
@@ -161,10 +146,9 @@ int Multigrid::cycle_step(size_t step, size_t level)
   }
   else
   {
-    //TODO special values for start and end step, start with step 1!
-    bool coming_from_below = (cycle_control_.at(step-1) == MGDirection::Up);
-    bool going_up = (cycle_control_.at(step) == MGDirection::Up);
-    bool going_down = (cycle_control_.at(step) == MGDirection::Down);
+    bool coming_from_below = (control_.get_direction(step-1) == MGDirection::Up);
+    bool going_up = (control_.get_direction(step) == MGDirection::Up);
+    bool going_down = (control_.get_direction(step) == MGDirection::Down);
 
     if(coming_from_below)
     {
@@ -288,79 +272,6 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 void Multigrid::set_solution_in_coarser_grid_to_zero(size_t lvl)
 {
   levels_.at(lvl-1).solution_ = 0.0;
-}
-
-void Multigrid::set_cycle_control()
-{
-  size_t n_levels = levels_.size();
-
-  std::vector<int> mg_recursions(n_levels);
-  // coarsest grid
-  if (cycle_ == MGCycle::V)
-  {
-    std::fill(mg_recursions.begin(), mg_recursions.end(), 1);
-  }
-  else if (cycle_ == MGCycle::W)
-  {
-    std::fill(mg_recursions.begin(), mg_recursions.end(), 2);
-  }
-  else if (cycle_ == MGCycle::F)
-  {
-    std::fill(mg_recursions.begin(), mg_recursions.end(), 2);
-  }
-  mg_recursions[n_levels-1] = 1;
-
-  cycle_control_.push_back(MGDirection::Dummy); //start with a dummy
-
-  fill_recursively(mg_recursions, n_levels-1);
-
-}
-
-void Multigrid::fill_recursively(std::vector<int>& mg_recursions, int level)
-{
-  int coarsest_level = 0;
-  int finest_level = levels_.size() - 1;
-
-  if(level == coarsest_level)
-  {
-    cycle_control_.push_back(MGDirection::Up);
-    return;
-  }
-
-  for(int j=0;j<mg_recursions[level];j++)
-  {
-    cycle_control_.push_back(MGDirection::Down);
-    fill_recursively(mg_recursions, level-1);
-  }
-
-  if (cycle_ == MGCycle::F)
-    mg_recursions[level] = 1;
-
-  if(level == finest_level) //finest level
-  {
-    cycle_control_.push_back(MGDirection::End);
-  }
-  else //other levels
-  {
-    cycle_control_.push_back(MGDirection::Up);
-  }
-
-}
-
-void Multigrid::print_cycle_control() const
-{
-  Output::print("Look at that cycle_control_ !");
-  for(auto cc : cycle_control_)
-  {
-    if(cc == MGDirection::Up)
-      Output::print("Up");
-    if(cc == MGDirection::Down)
-      Output::print("Down");
-    if(cc == MGDirection::End)
-      Output::print("End");
-    if(cc == MGDirection::Dummy)
-      Output::print("Dummy");
-  }
 }
 
 ParameterDatabase Multigrid::default_multigrid_database()
