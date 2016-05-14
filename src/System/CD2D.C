@@ -99,7 +99,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   param[1] = this->solver.get_db()["damping_factor_finest_grid"];
   this->multigrid.reset(new TMultiGrid2D(1, 2, param));
   // number of refinement levels for the multigrid
-  size_t LEVELS = this->solver.get_db()["n_multigrid_levels"];
+  size_t LEVELS = this->solver.get_db()["multigrid_n_levels"];
   if((int)LEVELS > domain.get_ref_level() + 1)
     LEVELS = domain.get_ref_level() + 1;
   

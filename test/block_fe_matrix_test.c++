@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   db.merge(ParameterDatabase::default_nonlinit_database());
 
   db.add("refinement_n_initial_steps", (size_t) 2, "");
-  db.add("n_multigrid_levels", (size_t) 0, "");
+  db.add("multigrid_n_levels", (size_t) 0, "");
 
   // default construct a domain object
   TDomain domain(db);

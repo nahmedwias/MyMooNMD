@@ -14,6 +14,12 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
+  // more than 20 multigrid meshes is probably an error
+  //FIXME That parameter must move to the new multigrid implementation!
+  db.add("multigrid_n_levels", (size_t)3,
+         "The number of different multigrid meshes.",
+         (size_t)0, (size_t)20);
+
   db.add("solver_type", std::string("direct"),
          "Determine which kind of solver should be used. This can be an "
          "iterative or a direct solver", {"direct", "iterative"});
