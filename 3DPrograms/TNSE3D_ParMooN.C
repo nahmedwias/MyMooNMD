@@ -33,6 +33,10 @@ int main(int argc, char* argv[])
 
   // Construct the ParMooN Databases.
   TDatabase Database;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
 
 #ifdef _MPI
   //Construct and initialize the default MPI communicator and store it.
@@ -55,12 +59,19 @@ int main(int argc, char* argv[])
   // set the database values and generate mesh
   // =====================================================================
   // Construct domain, thereby read in controls from the input file.
-  TDomain domain(argv[1]);
+  TDomain domain(argv[1],parmoon_db);
 
   //open OUTFILE, this is where all output is written to (additionally to console)
   if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
     TDatabase::ParamDB->PROBLEM_TYPE = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+
+  //open OUTFILE, this is where all output is written to (addionally to console)
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
     {
@@ -74,7 +85,8 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+//  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -84,10 +96,10 @@ int main(int argc, char* argv[])
   }
 
   // Write grid into a postscript file (before partitioning)
-  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-  {
-    domain.PS("Domain.ps", It_Finest, 0);
-  }
+//  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
+//  {
+//    domain.PS("Domain.ps", It_Finest, 0);
+//  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -134,10 +146,10 @@ int main(int argc, char* argv[])
 #endif
 
   // Create output directory, if not already existing.
-  if(TDatabase::ParamDB->WRITE_VTK)
-  {
-    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  }
+//  if(TDatabase::ParamDB->WRITE_VTK)
+//  {
+//    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
+//  }
 
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
@@ -148,9 +160,9 @@ int main(int argc, char* argv[])
 
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
-  Time_NSE3D tnse3d(domain, example, maxSubDomainPerDof);
+  Time_NSE3D tnse3d(domain, parmoon_db, example, maxSubDomainPerDof);
 #else
-  Time_NSE3D tnse3d(domain, example);
+  Time_NSE3D tnse3d(domain, parmoon_db, example);
 #endif
 
   // assemble all matrices and right hand side at start time
