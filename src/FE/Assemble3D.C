@@ -1338,7 +1338,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  }
 
 	  // 20 <= number of term in bilinear form
-	  // DUE NOTE CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
+	  // DO NOT CHANGE 20 SINCE THE ENTRY 19 IS USED IN GetLocalForms
 	  aux = new double [MaxN_QuadPoints_3D*20];
 	  for(j=0;j<MaxN_QuadPoints_3D;j++)
 	    AuxArray[j] = aux + j*20;
@@ -1907,7 +1907,9 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	                    t0 *= FaceWeights[l]*t2;
 	                    for(k=0;k<N_;k++)
 	                      if((l3 = DOF[k])<ActiveBound)
+	                      {
 	                        RHS[l3] += t0*JointValue[k];
+	                      }
 	                  } // endfor l
 	                break;
 

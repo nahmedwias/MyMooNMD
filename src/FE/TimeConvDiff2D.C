@@ -14,7 +14,7 @@ void TimeBilinearAssemble(double Mult, double *coeff, double hK,
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   double c0, c1, c2, c3, c4; 
 
   Matrix = LocMatrices[0];
@@ -62,11 +62,11 @@ void TimeMassAssemble(double Mult, double *coeff, double hK,
                     double **OrigValues, int *N_BaseFuncts,
                     double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  double **Matrix, *MatrixRow;
+  double ansatz00;
+  double test00;
+  double *Orig0;
+  int i,j, N_;
 
   Matrix = LocMatrices[0];
 
@@ -96,12 +96,10 @@ void TimeBilinearAssemble_SD(double Mult, double *coeff, double hK,
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j,k,l, N_;
-  double c0, c1, c2, c3, c4, c5; 
+  int i,j, N_;
+  double c0, c1, c2, c3, c4; // c5;
   double delta, bgradv;
   static double delta0 = TDatabase::ParamDB->DELTA0;
-
-  double bound = TDatabase::ParamDB->P8;
 
   Matrix = LocMatrices[0];
   Rhs = LocRhs[0];
@@ -119,7 +117,7 @@ void TimeBilinearAssemble_SD(double Mult, double *coeff, double hK,
   c2 = coeff[2];
   c3 = coeff[3];
   c4 = coeff[4];
-  c5 = coeff[5];
+//  c5 = coeff[5];
 
 /*
   // normal delta
@@ -194,7 +192,7 @@ void TimeBilinearAssembleRB(double Mult, double *coeff, double hK,
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   double c0, c1, c2, c3, c4,c5; 
 
   Matrix = LocMatrices[0];
@@ -252,8 +250,8 @@ void TimeBilinearAssembleRB1(double Mult, double *coeff, double hK,
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
-  double c0, c1, c2, c3, c4,c5; 
+  int i,j, N_;
+  double c0, c1, c2, c3, c5;
 
   Matrix = LocMatrices[0];
   N_ = N_BaseFuncts[0];
@@ -266,7 +264,7 @@ void TimeBilinearAssembleRB1(double Mult, double *coeff, double hK,
   c1 = coeff[1]; // b_1
   c2 = coeff[2]; // b_2
   c3 = coeff[3]; // c
-  c4 = coeff[4]; // Q
+//  c4 = coeff[4]; // Q
   c5 = coeff[5]; // dQ/du
 
   for(i=0;i<N_;i++)
@@ -302,18 +300,17 @@ void TimeRhsAssembleRB(double Mult, double *coeff, double hK,
                     double ***LocMatrices, double **LocRhs)
 {
   double *Rhs;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
-  double c0, c1, c2, c3, c4, c5; 
+  double test00;
+  double *Orig2;
+  int i, N_;
+  double c4;
 
   Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
+//  Orig0 = OrigValues[0];
+//  Orig1 = OrigValues[1];
   Orig2 = OrigValues[2];
 
   c4 = coeff[4]; // Q
@@ -339,7 +336,7 @@ void MatrixMARhsAssemble_Axial3D(double Mult, double *coeff, double *param,
   double **MatrixA, **MatrixM, *Rhs;
   double *Orig0, *Orig1, *Orig2;  
   double *MatrixARow, *MatrixMRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01, val;
   
   MatrixA = LocMatrices[0];
@@ -417,7 +414,7 @@ void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
   double **MatrixA, **MatrixM, *Rhs;
   double *Orig0, *Orig1, *Orig2;  
   double *MatrixARow, *MatrixMRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01, val;
   
   MatrixA = LocMatrices[0];
@@ -495,11 +492,8 @@ void MatrixMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01, val, val1;
   double c00, c11, c22, c33;
-  double tau, bgradv, bb, res, sigma, norm_b;
+  double tau, bgradv, bb;
   double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
   double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
   
   MatrixA = LocMatrices[0];
@@ -610,10 +604,10 @@ void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param,
                                  double ***LocMatrices, double **LocRhs)
 {
   double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01;
+  double ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
+  int i,j, N_;
   double c1, c2, c3, c4, c5, c6, c7, fact; 
 
   Matrix = LocMatrices[0];
@@ -653,7 +647,7 @@ void MatrixARhsAssembleHeatLine(double Mult, double *coeff, double *param,
     {
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+//      ansatz00 = Orig2[j];
       
       val = Mult*(test10*ansatz10+test01*ansatz01);
       MatrixRow[j] += val;
@@ -667,32 +661,32 @@ void MatrixARhsAssembleHeatLine_Axial3D(double Mult, double *coeff, double *para
                     double **OrigValues, int *N_BaseFuncts,
                     double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
-  int i,j,k,l, N_;
-  double c1, c2, c3, c4, c5, c6, c7, fact, x, r; 
+  double **Matrix, val, *MatrixRow;
+  double ansatz10, ansatz01;
+  double test10, test01;
+  double *Orig0, *Orig1;
+  int i,j, N_;
+  double x,r;  //c1, c2, c3, c4, c5, c6, c7;
 
   Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
+//  Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
 
   Orig0 = OrigValues[0];
   Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
+//  Orig2 = OrigValues[2];
 
 
    
-  c1 = param[0]; // T
-  c2 = param[1]; // T_x
-  c3 = param[2]; // T_y
-  c4 = param[3]; // u1-w1
-  c5 = param[4]; // u2-w2
-  c6 = param[5]; // u1y-w1y
-  c7 = param[6]; // u2x-w2x
-  fact = c5*c2 + c1*c7 - c4*c3 -c1*c6; 
+//  c1 = param[0]; // T
+//  c2 = param[1]; // T_x
+//  c3 = param[2]; // T_y
+//  c4 = param[3]; // u1-w1
+//  c5 = param[4]; // u2-w2
+//  c6 = param[5]; // u1y-w1y
+//  c7 = param[6]; // u2x-w2x
+//  fact = c5*c2 + c1*c7 - c4*c3 -c1*c6;
   
   x  = param[7]; // x
   r  = fabs(x);  
@@ -711,7 +705,7 @@ void MatrixARhsAssembleHeatLine_Axial3D(double Mult, double *coeff, double *para
     MatrixRow = Matrix[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
-    test00 = Orig2[i];
+//    test00 = Orig2[i];
 
 //     Rhs[i] += Mult*test00*fact;
 

@@ -2,7 +2,7 @@
 static char N2_2_N1_2_1Reg_Name[] = "N2_2_N1_2_1Reg";
 static char N2_2_N1_2_1Reg_Desc[] = "nonconforming P2 or Q2 element, one regular grid";
 static int N2_2_N1_2_1Reg_N0 = 2;
-static int N2_2_N1_2_1Reg_N1 = 1;
+//static int N2_2_N1_2_1Reg_N1 = 1;
 static int N2_2_N1_2_1Reg_N2 = 1;
 static int N2_2_N1_2_1Reg_NMid = 0;
 static int *N2_2_N1_2_1Reg_Mid = NULL;

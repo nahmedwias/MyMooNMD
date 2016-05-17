@@ -946,8 +946,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             {
               this->N_Terms = 5;
               this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 5;
               this->RowSpace    = { 0, 0, 1, 1, 1 };
@@ -962,8 +963,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             {
               this->N_Terms = 5;
               this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 8;
               this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
@@ -977,8 +979,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             case 3:
               this->N_Terms = 5;
               this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 13;//FIXME depending on how many mass matrices assembles
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
@@ -996,8 +999,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             case 4:
               this->N_Terms = 5;
               this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
               this->N_Matrices = 16;//FIXME depending on how many mass matrices assembles
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
@@ -1050,8 +1054,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             case 2:
               this->N_Terms = 4;
               this->Derivatives = {D100, D010, D001, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 1;
               this->RowSpace    = { 0};
@@ -1065,8 +1070,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
             case 4:
               this->N_Terms = 4;
               this->Derivatives = {D100, D010, D001, D000};
-              this->Needs2ndDerivatives = new bool[1];
+              this->Needs2ndDerivatives = new bool[2];
               this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
               this->N_Matrices = 3;
               this->RowSpace    = { 0, 0, 0};
@@ -1112,8 +1118,9 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
         case 0:  // fixed point iteration
           this->N_Terms = 1;
           this->Derivatives = { D000 };
-          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives = new bool[2];
           this->Needs2ndDerivatives[0] = false;
+          this->Needs2ndDerivatives[1] = false;
           this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
           this->N_Matrices = 0;
           this->RowSpace = { };

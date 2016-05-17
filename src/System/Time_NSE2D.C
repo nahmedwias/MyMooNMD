@@ -618,6 +618,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   System_per_grid& s = this->systems.front();
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
+  unsigned int sc_minit = TDatabase::ParamDB->SC_MINIT;
   
   this->defect = s.rhs; 
   s.matrix.apply_scaled_add(s.solution, defect,-1.);
@@ -655,7 +656,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   }
   
   if ((((sqrt(residual)<=limit)||(it_counter==Max_It)))
-   && (it_counter>=TDatabase::ParamDB->SC_MINIT))
+   && (it_counter>=sc_minit))
    {
      Output::print("ITE : ", setw(3), it_counter, "  RES : ", sqrt(residual), 
                    " Reduction : ",  sqrt(residual)/initial_residual);

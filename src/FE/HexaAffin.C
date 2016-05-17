@@ -97,30 +97,24 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
                                int N_Points, double *xi, double *eta, double *zeta,
                                int N_Functs, QuadFormula3D QuadFormula)
 {
-  int i,j,k;
+  int i,j;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
   double **refvaluesD001, **origvaluesD001;
-  double **refvaluesD200, **origvaluesD200;
-  double **refvaluesD110, **origvaluesD110;
-  double **refvaluesD020, **origvaluesD020;
-  double **refvaluesD101, **origvaluesD101;
-  double **refvaluesD011, **origvaluesD011;
-  double **refvaluesD002, **origvaluesD002;
+  double **origvaluesD200;
+  double **origvaluesD110;
+  double **origvaluesD020;
+  double **origvaluesD101; //**refvaluesD101,
+  double **origvaluesD011; //**refvaluesD011;
+  double **origvaluesD002; //**refvaluesD002;
   double *refD000, *origD000;
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD020, *origD020;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD002, *origD002;
   double *aux;
-  double AllData[MaxN_BaseFunctions3D][5];
-  double GeoData[5][5];
+//  double AllData[MaxN_BaseFunctions3D][5];
+//  double GeoData[5][5];
   
   {
     TBaseFunct3D* bf = TFEDatabase3D::GetBaseFunct3D(BaseFunct);
@@ -182,7 +176,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D001, origvaluesD001);
     } 
   
-  refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
+//  refvaluesD200=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D200);
   origvaluesD200=TFEDatabase3D::GetOrigElementValues(BaseFunct, D200);
   if(origvaluesD200==NULL)
     { 
@@ -193,7 +187,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D200, origvaluesD200);
     } 
   
-  refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
+//  refvaluesD110=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D110);
   origvaluesD110=TFEDatabase3D::GetOrigElementValues(BaseFunct, D110);
   if(origvaluesD110==NULL)
     { 
@@ -204,7 +198,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D110, origvaluesD110);
     } 
   
-  refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
+//  refvaluesD101=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D101);
   origvaluesD101=TFEDatabase3D::GetOrigElementValues(BaseFunct, D101);
   if(origvaluesD101==NULL)
     { 
@@ -215,7 +209,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D101, origvaluesD101);
     } 
   
-  refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
+//  refvaluesD011=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D011);
   origvaluesD011=TFEDatabase3D::GetOrigElementValues(BaseFunct, D011);
   if(origvaluesD011==NULL)
     { 
@@ -226,7 +220,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D011, origvaluesD011);
     } 
   
-  refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
+//  refvaluesD020=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D020);
   origvaluesD020=TFEDatabase3D::GetOrigElementValues(BaseFunct, D020);
   if(origvaluesD020==NULL)
     {
@@ -237,7 +231,7 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
       TFEDatabase3D::RegisterOrigElementValues(BaseFunct, D020, origvaluesD020);
     } 
   
-  refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
+//  refvaluesD002=TFEDatabase3D::GetRefElementValues(BaseFunct, QuadFormula, D002);
   origvaluesD002=TFEDatabase3D::GetOrigElementValues(BaseFunct, D002);
   if(origvaluesD002==NULL)
     {
@@ -358,7 +352,7 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                QuadFormula3D QuadFormula,
                                bool *Needs2ndDer)
 {
-  int i,j,k,N_, start, end;
+  int i,j;
   double **refvaluesD000, **origvaluesD000;
   double **refvaluesD100, **origvaluesD100;
   double **refvaluesD010, **origvaluesD010;
@@ -373,19 +367,10 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
   double *refD100, *origD100;
   double *refD010, *origD010;
   double *refD001, *origD001;
-  double *refD200, *origD200;
-  double *refD110, *origD110;
-  double *refD101, *origD101;
-  double *refD011, *origD011;
-  double *refD020, *origD020;
-  double *refD002, *origD002;
-  double r20, r11, r02, o20, o11, o02;
   double *aux;
   BaseFunct3D BaseFunct;
   int N_Functs;
   bool SecondDer;
-  int ii,ij,ik;
-  double tmp,Eye1[3][3];
   
   SecondDer = false;
   for(i=0;i<N_Sets;i++)
@@ -864,7 +849,6 @@ void THexaAffin::GetOrigValues(double xi, double eta, double zeta,
 
 void THexaAffin::SetCell(TBaseCell *cell)
 {
-  int i;
 
   Cell = cell;
 

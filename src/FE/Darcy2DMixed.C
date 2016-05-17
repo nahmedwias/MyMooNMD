@@ -142,7 +142,7 @@ void BilinearAssembleDarcyGalerkin(double Mult, double *coeff, double *param,
   // ( B2 C  )   ( 3 1 )
   
   double **MatrixA = LocMatrices[0];
-  double **MatrixC = LocMatrices[1];
+//  double **MatrixC = LocMatrices[1];
   double **MatrixB1 = LocMatrices[2];
   double **MatrixB2 = LocMatrices[3];
   

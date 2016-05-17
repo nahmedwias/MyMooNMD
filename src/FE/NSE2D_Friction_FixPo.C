@@ -249,10 +249,10 @@ void NSType3UpwindFriction(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz10, ansatz01, ansatz00;
   double test00, test10, test01;
@@ -262,8 +262,8 @@ void NSType3UpwindFriction(double Mult, double *coeff,
   double u1, u2, u;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1  = LocMatrices[4];
   MatrixB2  = LocMatrices[5];
@@ -292,8 +292,8 @@ void NSType3UpwindFriction(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -355,11 +355,11 @@ void NSType4SDFEMFriction(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
@@ -375,8 +375,8 @@ void NSType4SDFEMFriction(double Mult, double *coeff,
   static double delta1 = TDatabase::ParamDB->DELTA1;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -416,8 +416,8 @@ void NSType4SDFEMFriction(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -504,11 +504,11 @@ void NSType4SDFEMFrictionRST(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22;  // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row;  // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
@@ -524,8 +524,8 @@ void NSType4SDFEMFrictionRST(double Mult, double *coeff,
   static double delta1 = TDatabase::ParamDB->DELTA1;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -565,8 +565,8 @@ void NSType4SDFEMFrictionRST(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1388,10 +1388,10 @@ void NSType4NLSDFEMDDFriction(double Mult, double *coeff,
   double *Rhs1, *Rhs2, val;
   double *Matrix11Row, *Matrix22Row;
   double *MatrixRow1, *MatrixRow2;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
+  double ansatz00, ansatz10, ansatz01;  // ansatz20, ansatz02;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  double *Orig3, *Orig4, *Orig5;
+  double *Orig5;   // *Orig4, *Orig3;
   double *Orig6, *Orig7;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
@@ -1415,8 +1415,8 @@ void NSType4NLSDFEMDDFriction(double Mult, double *coeff,
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y
   Orig2 = OrigValues[2]; // u
-  Orig3 = OrigValues[3]; // u_xx
-  Orig4 = OrigValues[4]; // u_yy
+//  Orig3 = OrigValues[3]; // u_xx
+//  Orig4 = OrigValues[4]; // u_yy
   Orig5 = OrigValues[5]; // p_x
   Orig6 = OrigValues[6]; // p_y
   Orig7 = OrigValues[7]; // p
@@ -1453,8 +1453,8 @@ void NSType4NLSDFEMDDFriction(double Mult, double *coeff,
       ansatz10 = Orig0[j];
       ansatz01 = Orig1[j];
       ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
+//      ansatz20 = Orig3[j];
+//      ansatz02 = Orig4[j];
       
       val  = 2*c0*(test10*ansatz10+0.5*test01*ansatz01);
       val += (u1*ansatz10+u2*ansatz01+c3*u*ansatz00)*test00;
