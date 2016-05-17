@@ -470,6 +470,9 @@ if(DOXYGEN_FOUND)
                     ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     COMMENT "Generating documentation with Doxygen" VERBATIM)
+else()
+  add_custom_target(doc 
+                    COMMENT "It seems cmake could not find a doxygen executable. Therefore no documentation is created!" VERBATIM)
 endif(DOXYGEN_FOUND)
 
 
