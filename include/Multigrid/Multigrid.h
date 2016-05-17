@@ -8,9 +8,12 @@
  * include a call like former RestrictToAllGrids which informs every grid about
  * a current approximate solution.
  *
- * TODO Write own little class for cycle control.
- * TODO Reenable step length control.
- * TODO How about parallelization?
+ * Here are the (bigger) tasks and functionalities to regain. Most of the work
+ * necessary will not amass in this class but elsewhere.
+ *
+ * @todo TODO Reenable step length control (work in VankaSmootherNew).
+ * @todo TODO Reenable MDML (work in system classes )
+ * @todo TODO Parallelize (work here and in different smoothers)
  *
  *
  * @date 2016/05/10
@@ -26,9 +29,10 @@
 #include <list>
 #include <vector>
 
-//Forward declaration.
-class ParameterDatabase;
+//Forward declarations.
 class BlockVector;
+class ParameterDatabase;
+
 
 class Multigrid
 {
@@ -47,20 +51,36 @@ class Multigrid
     Multigrid(const ParameterDatabase& db,
               std::list<BlockFEMatrix*> matrices);
 
-    /// @brief Apply one complete multigrid cycle.
+    /// @brief Apply one complete multigrid cycle. Which kind of cycle that is
+    /// is determined at the time of construction via a parameter. So far V,W
+    /// and F cycle are implemented.
     void cycle();
 
+    /// Get the solution on the finest grid. Call this after a cycle is complete
+    /// to get the result.
     const BlockVector& get_finest_sol();
 
+    /// Set the right hand side on the finest grid. It must of course fit the
+    /// matrix stored on the finest grid.
+    /// When right hand side and (initial) solution are set on the finest grid,
+    /// and a call of "update" was made since the last change of the matrices,
+    /// the multigrid object is ready for a cycle.
     void set_finest_rhs(const BlockVector& bv);
 
+    /// Set the (initial) solution on the finest grid. It must of course fit the
+    /// matrix stored on the finest grid.
+    /// When right hand side and (initial) solution are set on the finest grid,
+    /// and a call of "update" was made since the last change of the matrices,
+    /// the multigrid object is ready for a cycle.
     void set_finest_sol(const BlockVector& bv);
 
     /// Calling this method is the sign for updating the smoothers on all levels.
-    /// It must be called before every solve which was preceded by a change in
+    /// It must be called before every cycle which was preceded by a change in
     /// the matrices (e.g. assembling).
     void update();
 
+    /// Set up a database which contains default values of all control parameters
+    /// necessary to control a multigrid cycle.
     static ParameterDatabase default_multigrid_database();
 
   private:
@@ -69,16 +89,26 @@ class Multigrid
     /// to finest level.
     std::vector<MultigridLevel> levels_;
 
+    /// A list of damping factors which are used when updating the solution
+    /// on a finer level by adding a coarser level's solution.
     std::vector<double> damp_factors_;
 
+    /// The number of pre-smoothing steps to perform per level before
+    /// descending to the next coarser level.
     size_t n_pre_smooths_;
 
+    /// Maximal number of smoother iteration on the coarsest level.
     size_t coarse_n_maxit;
 
+    /// The residual to reach in the coarsest level's equation by smoothing
+    /// on the coarsest level.
     double coarse_epsilon;
 
+    /// The number of pre-smoothing steps to perform per level after
+    /// ascending from the next coarser level.
     size_t n_post_smooths_;
 
+    /// An object taking care of the order of ascends and descends between the levels.
     CycleControl control_;
 
     /// Restrict defect on level lvl and store it as rhs in the next coarsest level.
@@ -92,6 +122,7 @@ class Multigrid
     /// to ensure a zero start iterate when smoothing.
     void set_solution_in_coarser_grid_to_zero(size_t lvl);
 
+    /// Perform the operations necessary on one grid.
     int cycle_step(size_t step, size_t level);
 
 

@@ -49,6 +49,8 @@ void VankaSmootherNew::update(const BlockFEMatrix& matrix)
   //pressure (when pressure space has changed)
   if(last_space != pressure_space_)
   {
+    //TODO Check that cell vanka and continuous space are not used together!
+    // Trouble is: Space does not know whether it holds discontinuous elements.
     pressure_space_ = last_space;
     set_up_pressure_batches(*pressure_space_);
   }

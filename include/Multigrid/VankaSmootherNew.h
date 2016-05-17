@@ -21,11 +21,16 @@ enum class VankaType {NODAL, CELL, BATCH};
 class VankaSmootherNew : public Smoother
 {
   public:
-    //! Default constructor.
+    /** Default constructor.
+     * @param type The Vanka type to use. Currently nodal, cell and batch
+     * Vanke are available.
+     */
     VankaSmootherNew(VankaType type, double damp_factor);
 
+    /// Perform one step of Vanka smoothing (solve all local systems).
     void smooth(const BlockVector& rhs, BlockVector& solution ) override;
 
+    /// Update the local matrices. Must be called whenever the global matrix has changed.
     void update(const BlockFEMatrix&) override;
 
     /* ************* *
@@ -50,16 +55,22 @@ class VankaSmootherNew : public Smoother
     ~VankaSmootherNew() = default;
 
   private:
+    /// The type of Vanka smoother (nodal, cell, batch)
     VankaType type_;
 
+    /// The dimension of the velocity equation (usually 2 or 3).
     size_t dimension_;
 
+    /// Damping factor to be used int the local-to-global updates.
     double damp_factor_;
 
+    /// The corresponding global matrix.
     std::shared_ptr<TMatrix> matrix_global_;
 
+    /// The collection of pressure dofs for the local systems.
     std::vector<DofBatch> press_dofs_local_;
 
+    /// The collection of velocity dofs for the local systems.
     std::vector<DofBatch> velo_dofs_local_;
 
 // TODO Change these to weak pointers as soon as FESpaces are stored in a
