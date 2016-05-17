@@ -189,8 +189,8 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
   {
     for(i=0;i<N_Points;i++)
     {
-      refD00 = refvaluesD00[j];
-      origD00 = origvaluesD00[j];
+      refD00 = refvaluesD00[i];
+      origD00 = origvaluesD00[i];
       this->PiolaMapOrigFromRef(N_Functs, refD00, origD00);
     }
   }
