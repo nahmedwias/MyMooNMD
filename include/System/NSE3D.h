@@ -163,16 +163,7 @@ class NSE3D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
 
-    /** @brief A multigrid object which is set to nullptr in case it is not
-     *         needed.
-     */
-    std::shared_ptr<TNSE_MultiGrid> multigrid_;
-    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
-    /// transposed blocks are not stored explicitely...sad but true.
-    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
-
-    /// An object of the new multigrid class. This will entirely replace the old
-    /// multigrid_ object in time.
+    /// An object of the new multigrid class. Stays nullptr if not needed.
     std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
@@ -305,21 +296,6 @@ class NSE3D
 
     //! Default destructor. Does most likely cause memory leaks.
     ~NSE3D() = default;
-
-/*******************************************************************************/
-    /**
-     * @brief initialize multigrid levels for different NSTYPE's
-     * 
-     * @param: level
-     * @param: grid to be added
-     */
-    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
-    
-    /**
-     * @brief multigrid solver
-     * preparing the stuff used to call multigrid solver
-     */
-    void mg_solver();
     
 /********************************************************************************/
 // getters
