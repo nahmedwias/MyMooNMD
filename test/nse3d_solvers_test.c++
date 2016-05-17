@@ -399,6 +399,10 @@ int main(int argc, char* argv[])
 #ifndef _MPI
     {
       //FIXME This test does currently not converge for multigrid! Investigate!
+      // Update: It seems in the old version, it did not run either - the old
+      // multigrid test just used an fgmres preconditioned with a direct solver
+      // - switching the smoothers to actual nodal vanka in the old implementation
+      // leads to no convergence!
       if(std::string(argv[1]) == std::string("multigrid"))
         return 0;
       if(my_rank==0)
