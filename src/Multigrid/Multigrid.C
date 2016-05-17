@@ -67,8 +67,6 @@ Multigrid::Multigrid(const ParameterDatabase& db,
   std::string cycle_str = db["multigrid_cycle_type"];
   control_ = CycleControl(cycle_str, n_levels);
 
-  control_.print_cycle_control();
-
   n_pre_smooths_ = db["multigrid_n_pre_smooth"];
 
   coarse_n_maxit = db["multigrid_coarse_max_n_iterations"];
@@ -106,9 +104,8 @@ void Multigrid::cycle()
 
   //Start with 0 solution
   levels_.at(finest).solution_ = 0.0;
-  //CB DEBUG
+  //...but copy non-actives
   levels_.at(finest).solution_.copy_nonactive(levels_.at(finest).rhs_);
-  //END DEBUG
 
   int next_level = finest;
   for(size_t i = 1; i <= n_steps; ++i)
