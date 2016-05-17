@@ -284,10 +284,11 @@ void CD3D::solve()
         break;
       }
       case 16:
-        ErrMsg("SC_SOLVER_SCALAR: " << TDatabase::ParamDB->SC_SOLVER_SCALAR << " (FGMRES) has to be implemented." << endl);
+        ErrThrow("SC_SOLVER_SCALAR: ", TDatabase::ParamDB->SC_SOLVER_SCALAR,
+                 " (FGMRES) has to be implemented.");
         break;
       default:
-        ErrMsg("Unknown solver !!!" << endl);
+        ErrThrow("Unknown solver !!!");
     }
     //call the solver
     if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)

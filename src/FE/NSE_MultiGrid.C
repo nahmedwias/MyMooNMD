@@ -170,7 +170,7 @@ void TNSE_MultiGrid::Cycle(int i, double &res)
       case 17 : 
         CurrentLevel->SolveExact(CurrentU, CurrentRhsU);
         CurrentLevel->Defect(CurrentU, CurrentRhsU, CurrentDefectU, res);
-        if (verbosity=2)
+        if (verbosity==2)
         {
           if (res>1e-12)
           {

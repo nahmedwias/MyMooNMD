@@ -168,9 +168,9 @@ void FortranStyleMatrix::decomposeLU(){
 
 void FortranStyleMatrix::print() const{
 	OutPut("FortranStyleMatrix = " << endl);
-	for (int i = 0; i < nRows_ ;++i){
+	for (unsigned int i = 0; i < nRows_ ;++i){
 		OutPut("Row " << i << " ");
-		for(int j =0; j < nColumns_; ++j){
+		for(unsigned int j =0; j < nColumns_; ++j){
 			OutPut(getEntry(i,j) << " ");
 		}
 		OutPut(endl);

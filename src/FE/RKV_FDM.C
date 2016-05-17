@@ -643,12 +643,12 @@ BoundCondFunct2D *BoundConditionPressureLaplace,
 BoundValueFunct2D *PressureBoundValueLaplace,
 int N_x, int N_y, double *x_coord, double *y_coord)
 {
-  int i, j, N_Unknowns, N_Entries, N2, N_x1, begin, end, bdr_number;
+  int i, j, N_Entries, N2, N_x1, begin, end;
   const int *Row, *KCol;
   double h_i, h_i1, *values;
   
   // get data of the sparse matrix
-  N_Unknowns = SqmatrixPres->GetN_Columns();
+//  N_Unknowns = SqmatrixPres->GetN_Columns();
   Row = SqmatrixPres->GetRowPtr();
   KCol = SqmatrixPres->GetKCol();
   N_Entries = SqmatrixPres->GetN_Entries();
@@ -1352,12 +1352,10 @@ BoundValueFunct2D *bound_val,
 double *sol, double **stages, int current_stage, int N_x, int N_y,
 int *dof_conversion, double *x_coord, double *y_coord)
 {
-  int i, j, N_x1, N_y1, N2, N1_[2];
-  double tau, hx_i, hx_i1, hy_i, hy_i1, valx, valy, valz, val[6], coord[6], value;
-  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm, *sol_help;
+  int i, j, N_x1, N_y1, N2;
+  double tau, valx, valy, valz, val[6], coord[6], value;
+  double *sol_curr, coeff_array[20], *coeff, *current_stage_fdm;
   double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;
-  double *coordinates[2];
-  int *offset_ = NULL, *offset1_;
   BoundCond cond;
 
   // set time of the stage, in main already new time level
@@ -4881,8 +4879,8 @@ int *dof_conversion, double *x_coord, double *y_coord, double *z_coord)
 void ComputeSolutionInNextTime_FDM2D(double *sol, double *sol_e, double **stages, int N_stages,
 int N_x, int N_y, int N_z)
 {
-  int i, N2, j;
-  double tau, errors[2];
+  int i, N2;
+  double tau;
 
   tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 #ifdef __2D__
@@ -5013,7 +5011,7 @@ double *sol, int N_x, int N_y,
 int *dof_conversion,
 double *x_coord, double *y_coord)
 {
-  int i, j, N2;
+  int i,N2;
   BoundCond cond;
 
   N2 = (N_x+1)*(N_y+1);
@@ -5099,7 +5097,7 @@ double *y_coord, int N_x, int N_y)
 void WriteVTKFDM(const char *name, double *sol, double *x_coord,
 double *y_coord, int N_x, int N_y)
 {
-  int i, j, k, N2, index;
+  int i, j, N2, index;
   FILE* out = fopen(name,"w");
   if (out==NULL)
   {
@@ -5210,7 +5208,7 @@ void ConvectiveTermFDM(int dim, int i,
 double *coeff, double *sol_curr, double *current_stage_fdm,
 double **coordinates, int *offset_, int *offset1_)
 {
-  int j, k, l, offset, offset1, off1;
+  int j, k, offset, offset1, off1;
   int offsetp2, offsetm2, offsetp1, offsetm1, offsetp3, offsetm3;
   double val[6], coord[6], value, valx, valy, valz;
   double d1, d2, d3, d4, uhx[3], omega[3], alpha[3], d[3], beta[3], av[5], c_e = 1e-6;

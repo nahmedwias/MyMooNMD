@@ -161,6 +161,19 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // create finite element space and function, a matrix, rhs, and solution
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
                       maxSubDomainPerDof);
+
+  // initialize the defect of the system. It has the same structure as
+  // the rhs (and as the solution)
+  this->defect_.copy_structure(this->systems_.front().rhs_);
+
+  // Initial velocity = interpolation of initial conditions
+  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+  u1->Interpolate(example_.get_initial_cond(0));
+  u2->Interpolate(example_.get_initial_cond(1));
+  u3->Interpolate(example_.get_initial_cond(2));
+
   #else
   // create finite element space and function, a matrix, rhs and solution
   // all this by calling constructor of System_Per_Grid
@@ -546,7 +559,31 @@ void Time_NSE3D::assemble_initial_time()
   * TODO: CHECK WHAT IS THE DIFFERENCE BETWEEN doing this on every grid
   * and doing it only on the finest grid!
   * **/
-  this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+  this->systems_.front().solution_.copy_nonactive(this->systems_.front().rhs_);
+
+  /** After copy_nonactive, the solution vectors needs to be Comm-updated
+   * in MPI-case in order to be consistently saved. It is necessary that
+   * the vector is consistently saved because it is the only way to
+   * ensure that its multiplication with an inconsistently saved matrix
+   * (multiplication which appears in the defect and rhs computations)
+   * give the correct results.
+   * When we call copy_nonactive in MPI-case, we have to remember the following:
+   * it can happen that some slave ACTTIVE DoFs are placed in the block of
+   * NON-ACTIVE DoFs (because they are at the interface between processors).
+   * Doing copy_nonactive changes then the value of these DOFs,although they are
+   * actually active.
+   * That's why we have to update the values so that the vector becomes consistent again.
+   */
+  #ifdef _MPI
+    double *u1  = this->systems_.front().solution_.block(0);
+    double *u2  = this->systems_.front().solution_.block(1);
+    double *u3  = this->systems_.front().solution_.block(2);
+    double *p   = this->systems_.front().solution_.block(3);
+    this->systems_.front().parCommVelocity_.CommUpdate(u1);
+    this->systems_.front().parCommVelocity_.CommUpdate(u2);
+    this->systems_.front().parCommVelocity_.CommUpdate(u3);
+    this->systems_.front().parCommPressure_.CommUpdate(p);
+  #endif
 
   // copy the last right hand side and solution vectors to the old ones
   this->old_rhs_      = this->systems_.front().rhs_;
@@ -614,6 +651,30 @@ void Time_NSE3D::assemble_rhs()
   // which also uses the non-actives
   s.solution_.copy_nonactive(s.rhs_);
 
+  /** After copy_nonactive, the solution vectors needs to be Comm-updated
+     * in MPI-case in order to be consistently saved. It is necessary that
+     * the vector is consistently saved because it is the only way to
+     * ensure that its multiplication with an inconsistently saved matrix
+     * (multiplication which appears in the defect and rhs computations)
+     * give the correct results.
+     * When we call copy_nonactive in MPI-case, we have to remember the following:
+     * it can happen that some slave ACTTIVE DoFs are placed in the block of
+     * NON-ACTIVE DoFs (because they are at the interface between processors).
+     * Doing copy_nonactive changes then the value of these DOFs,although they are
+     * actually active.
+     * That's why we have to update the values so that the vector becomes consistent again.
+     */
+  #ifdef _MPI
+    double *u1 = this->systems_.front().solution_.block(0);
+    double *u2 = this->systems_.front().solution_.block(1);
+    double *u3 = this->systems_.front().solution_.block(2);
+    double *p  = this->systems_.front().solution_.block(3);
+    this->systems_.front().parCommVelocity_.CommUpdate(u1);
+    this->systems_.front().parCommVelocity_.CommUpdate(u2);
+    this->systems_.front().parCommVelocity_.CommUpdate(u3);
+    this->systems_.front().parCommPressure_.CommUpdate(p);
+  #endif
+
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)
   s.rhs_.scaleActive(tau*theta4);
@@ -653,13 +714,13 @@ void Time_NSE3D::assemble_rhs()
       const std::vector<std::vector<size_t>> cell_positions = {{0,3},
                                                                {1,3},
                                                                {2,3}};
-	s.matrix_.scale_blocks(factor, cell_positions);
+      s.matrix_.scale_blocks(factor, cell_positions);
       if(TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT > 0)
       {
         const std::vector<std::vector<size_t>> cell_positions_t = {{3,0},
                                                                    {3,1},
                                                                    {3,2}};
-	s.matrix_.scale_blocks(factor, cell_positions_t);
+        s.matrix_.scale_blocks(factor, cell_positions_t);
       }
     }
   }
@@ -947,7 +1008,8 @@ void Time_NSE3D::solve()
       DirectSolver direct_solver(s.matrix_,
                                  DirectSolver::DirectSolverTypes::umfpack);
       direct_solver.solve(s.rhs_, s.solution_);
-#elif _MPI
+#endif
+#ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
       std::vector<const TParFECommunicator3D*> par_comms_init =
       {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
@@ -1282,7 +1344,7 @@ void Time_NSE3D::output(int m, int &image)
     const TFESpace3D *v_space = &this->get_velocity_space();
     const TFESpace3D *p_space = &this->get_pressure_space();
 
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+//    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 
     // Errors in velocity components and pressure
     u1 ->GetErrors(example_.get_exact(0), 4, allderiv, 2, L2H1Errors, nullptr,

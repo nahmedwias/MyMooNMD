@@ -418,9 +418,9 @@ void TMGLevel2D::Block2x2(double *sol, double *f, double *aux,
 {
   int i,j,k,index,maxindex;
   double s1, s2, t,  m11, m12, m21, m22, max;
-  double omega;
+//  double omega;
 
-  omega = Parameters[0];
+//  omega = Parameters[0];
 
   // set Dirichlet nodes
   memcpy(sol+HangingNodeBound, f+HangingNodeBound, 

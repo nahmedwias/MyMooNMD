@@ -875,8 +875,8 @@ int TOutput2D::WriteVtk(const char *name)
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
 
-  char var1[2] = {'r', 'z'};
-  char var2[2] = {'1', '2'};  
+//  char var1[2] = {'r', 'z'};
+//  char var2[2] = {'1', '2'};
 
   time_t rawtime;
   struct tm * timeinfo;
@@ -1567,6 +1567,8 @@ int N_LocVertices, TVertex **Vertices)
         N_CellVertices=current_cell->GetN_Vertices();
         for(j=0;j<N_CellVertices;j++)
         {
+          x=0;  //initializations, just to avoid compiler warnings
+          y=0;
           #ifdef __2D__
           current_cell->GetVertex(j)->GetCoords(x,y);
           #endif
@@ -3835,6 +3837,8 @@ void TOutput2D::ComputeFEValues()
   // coordinates
   for(int i=0;i<Data->N_Nodes;i++)
   {
+    x=0;  //initializations, just to avoid compiler warnings
+    y=0;
 #ifdef __2D__
     Data->Nodes[i]->GetCoords(x,y);
 #endif

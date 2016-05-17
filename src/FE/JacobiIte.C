@@ -116,9 +116,8 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 #endif
                                                               )
 {
-  int i, j, k, l,Diagonal,iter=0,rank;
+  int i, j, k, l,Diagonal,iter=0;
   double *AEntries,*d,sum,res=1.0,error=1.e-3;
-  double tstrt=0,tend=0,tcomp=0,tcomm=0,comp,comm;
   
   const int * ARowPtr = sqmat[0]->GetRowPtr();
   const int * AKCol = sqmat[0]->GetKCol();
@@ -153,10 +152,13 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 #endif
     {
 #ifdef _MPI
+      double tstrt=0;
       tstrt = MPI_Wtime();
 #endif
      Defect(sqmat,sol,rhs,d,res);
-#ifdef _MPI   
+#ifdef _MPI
+     int rank;
+     double tend=0,tcomm=0;
      MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank); 
      
      ParComm->CommUpdate(sol);
@@ -171,6 +173,7 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
    
     
 #ifdef _MPI
+    double tstrt=0;
     tstrt = MPI_Wtime();
 #endif
     
@@ -192,6 +195,7 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
       sol[i]+=sum/AEntries[Diagonal];
      }
 #ifdef _MPI
+     double tend=0,tcomp=0;
      tend = MPI_Wtime();
      tcomp+=(tend-tstrt);
 #endif
@@ -204,6 +208,9 @@ void TJacobiIte::Iterate_p(TSquareMatrix **sqmat, TMatrix **mat, double *sol, do
 #endif  
 
 #ifdef _MPI
+   int rank;
+   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
+   double tcomp=0,tcomm=0,comp,comm;
    tcomp=tcomp/iter; tcomm=tcomm/iter;
    MPI_Allreduce (&tcomp,&comp,1,MPI_DOUBLE,MPI_MAX,TDatabase::ParamDB->Comm);
    MPI_Allreduce (&tcomm,&comm,1,MPI_DOUBLE,MPI_MAX,TDatabase::ParamDB->Comm);

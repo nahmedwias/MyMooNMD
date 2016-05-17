@@ -300,13 +300,13 @@ double *rhs)
   int verbose = 2;
   int i=0, j,k,l;
   int maxite;
-  double res, res0, reslast, t1, t2, temp,tempGlobal;
-  double beta,residlast,dnorm0,end_residual;
-  double eps = 1e-14;
+  double res, res0, reslast, t1, t2; //temp,tempGlobal;
+  double beta,residlast,dnorm0; //end_residual;
+//  double eps = 1e-14;
 #ifdef _MPI  
   const int* MasterOfDof;
   int ii, rank;
-  double  resglobal;
+  double  resglobal,temp,tempGlobal;
   
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
    MasterOfDof = ParComm->GetMaster();
@@ -365,7 +365,7 @@ double *rhs)
         if (verbose>0)
           OutPut("(no) fgmres iteration " << 0 << " " << beta << endl);
         // iteration_cnt=0;
-        end_residual=res;
+//        end_residual=res;
         return(0);
       }
       else
@@ -658,7 +658,7 @@ double *rhs)
       if (verbose>0)
       {
         OutPut("GMRES Iteration 0 " << beta << endl);
-        end_residual=resid;
+//        end_residual=resid;
       }
       return(0);
     }
@@ -748,7 +748,7 @@ double *rhs)
           {
             OutPut("GMRES (right) : iterations " << j << " residual " <<resid << endl);
           }
-          end_residual=resid;
+//          end_residual=resid;
           return(j);
         }
         if (verbose>0)
@@ -805,7 +805,7 @@ double *rhs)
     {
       OutPut("GMRES (right) : (maximal) iterations " << maxit << " residual " << resid << endl);
     }
-    end_residual=resid;
+//    end_residual=resid;
     return(j);
   }
 }

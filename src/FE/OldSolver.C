@@ -2061,7 +2061,7 @@ TMatrix *matrixB2, double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4];
   
 #ifdef _MALLOC_MALLOC_H_
@@ -2079,7 +2079,7 @@ TMatrix *matrixB2, double *rhs, double *sol)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -2205,7 +2205,7 @@ TMatrix *matrixB3, TMatrix *matrixB4, double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -2222,7 +2222,7 @@ TMatrix *matrixB3, TMatrix *matrixB4, double *rhs, double *sol)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB3->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -2381,7 +2381,7 @@ double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -2398,7 +2398,7 @@ double *rhs, double *sol)
   N_U = matrixA11->GetN_Rows();
   N_EntriesA = matrixA11->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -2588,7 +2588,7 @@ double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -2605,7 +2605,7 @@ double *rhs, double *sol)
   N_U = matrixA11->GetN_Rows();
   N_EntriesA = matrixA11->GetN_Entries();
   N_P = matrixB3->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -2851,7 +2851,7 @@ int para0)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4], alpha_change;
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -2869,7 +2869,7 @@ int para0)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -3012,8 +3012,8 @@ int para0)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
-  int memory[4], alpha_change;
+  int N_U, N_P, N_EntriesA,N_P_regular;
+  int memory[4]; //alpha_change;
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
  info = mstats();
@@ -3029,7 +3029,7 @@ int para0)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB3->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -3136,7 +3136,7 @@ int para0)
 
   if (TDatabase::ParamDB->SC_BRAESS_SARAZIN_ALPHA<=0)
   {
-    alpha_change = 1;
+//    alpha_change = 1;
     tmp = 0.0;
     for (i=0;i<N_U;i++)
     {
@@ -3201,7 +3201,7 @@ int para0)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4], alpha_change;
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -3219,7 +3219,7 @@ int para0)
   N_U = matrixA11->GetN_Rows();
   N_EntriesA = matrixA11->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -3424,7 +3424,7 @@ double *rhs, double *sol, int para0)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4], alpha_change;
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -3442,7 +3442,7 @@ double *rhs, double *sol, int para0)
   N_U = matrixA11->GetN_Rows();
   N_EntriesA = matrixA11->GetN_Entries();
   N_P = matrixB3->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -3675,7 +3675,7 @@ double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular, N_Mortar;
+  int N_U, N_P, N_EntriesA, N_P_regular, N_Mortar;
   int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -3692,7 +3692,7 @@ double *rhs, double *sol)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB3->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
   N_Mortar = matrixmortar->GetN_Rows();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
@@ -3867,7 +3867,7 @@ double *rhs, double *sol,double delta)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB;
+  int N_U, N_P, N_EntriesA;
   int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -3884,7 +3884,7 @@ double *rhs, double *sol,double delta)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -4013,7 +4013,7 @@ int para0)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
+  int N_U, N_P, N_EntriesA, N_P_regular;
   int memory[4], alpha_change;
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
@@ -4031,7 +4031,7 @@ int para0)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure
@@ -4188,8 +4188,8 @@ double *rhs, double *sol)
   AMG_VECTOR *x,*b;
   int i,j;
   double tmp;
-  int N_U, N_P, N_EntriesA, N_EntriesB, N_P_regular;
-  int memory[4], alpha_change;
+  int N_U, N_P, N_EntriesA, N_P_regular;
+  int memory[4];
 #ifdef _MALLOC_MALLOC_H_
  struct mstats info;  
  info = mstats();
@@ -4205,7 +4205,7 @@ double *rhs, double *sol)
   N_U = matrixA->GetN_Rows();
   N_EntriesA = matrixA->GetN_Entries();
   N_P = matrixB1->GetN_Rows();
-  N_EntriesB = matrixB1->GetN_Entries();
+//  N_EntriesB = matrixB1->GetN_Entries();
 
   A0 = new AMG_MATRIX;           // allocate matrix structure
   B[0] = new AMG_MATRIX;         // allocate matrix structure

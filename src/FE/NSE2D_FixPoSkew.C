@@ -629,10 +629,10 @@ void NSType3GalerkinSkew(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA22;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -642,8 +642,8 @@ void NSType3GalerkinSkew(double Mult, double *coeff,
   double u1, u2;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1  = LocMatrices[4];
   MatrixB2  = LocMatrices[5];
@@ -669,8 +669,8 @@ void NSType3GalerkinSkew(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -848,10 +848,10 @@ void NSType3SmagorinskySkew(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -862,8 +862,8 @@ void NSType3SmagorinskySkew(double Mult, double *coeff,
   double mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1  = LocMatrices[4];
   MatrixB2  = LocMatrices[5];
@@ -892,8 +892,8 @@ void NSType3SmagorinskySkew(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -968,7 +968,7 @@ void NSType3SmagorinskySkewDD(double Mult, double *coeff,
   int i,j, N_U, N_P;
   double c0, c1, c2;
   double u1, u2;
-  double mu, ngu, delta;
+  double mu, delta;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -1067,11 +1067,11 @@ void NSType4GalerkinSkew(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -1081,8 +1081,8 @@ void NSType4GalerkinSkew(double Mult, double *coeff,
   double u1,u2;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -1110,8 +1110,8 @@ void NSType4GalerkinSkew(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1309,11 +1309,11 @@ void NSType4SDFEMSkew(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
   double test00, test10, test01;
@@ -1329,8 +1329,8 @@ void NSType4SDFEMSkew(double Mult, double *coeff,
   static double delta1 = TDatabase::ParamDB->DELTA1;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -1367,8 +1367,8 @@ void NSType4SDFEMSkew(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -1609,11 +1609,11 @@ void NSType4SmagorinskySkew(double Mult, double *coeff,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA21;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
@@ -1624,8 +1624,8 @@ void NSType4SmagorinskySkew(double Mult, double *coeff,
   double mu, delta;
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixB1 = LocMatrices[4];
   MatrixB2 = LocMatrices[5];
@@ -1656,8 +1656,8 @@ void NSType4SmagorinskySkew(double Mult, double *coeff,
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     test10 = Orig0[i];
     test01 = Orig1[i];
@@ -2274,7 +2274,7 @@ void NSType3_4NLSmagorinskySkew(double Mult, double *coeff,
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
   double *Orig0, *Orig1, *Orig2;
-  int i,j,N_U, N_P;
+  int i,j,N_U; // N_P;
   double c0;
   double u1, u2;
   double mu, delta;
@@ -2285,7 +2285,7 @@ void NSType3_4NLSmagorinskySkew(double Mult, double *coeff,
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0]; // u_x
   Orig1 = OrigValues[1]; // u_y

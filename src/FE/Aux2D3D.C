@@ -41,11 +41,11 @@ TAux2D3D::TAux2D3D(int *cellnumbers, int *jointnumbers,
 void TAux2D3D::GetGradient(int num, int N_Points, double *t1, double *t2,
                            double **Param)
 {
-  int i,j,k;
+  int i,j;
   int CellNumber, JointNumber;
   TBaseCell *Cell;
   FE3D FEID;
-  TFE3D *ele;
+//  TFE3D *ele;
   TBaseFunct3D *bf;
   int Dim;
   RefTrans3D RefTrans;
@@ -67,7 +67,7 @@ void TAux2D3D::GetGradient(int num, int N_Points, double *t1, double *t2,
   // OutPut("in GetGradient: " << CellNumber << " " << JointNumber << endl);
 
   FEID = FESpace->GetFE3D(CellNumber, Cell);
-  ele = TFEDatabase3D::GetFE3D(FEID);
+//  ele = TFEDatabase3D::GetFE3D(FEID);
   bf = TFEDatabase3D::GetBaseFunct3DFromFE3D(FEID);
   Dim = bf->GetDimension();
 

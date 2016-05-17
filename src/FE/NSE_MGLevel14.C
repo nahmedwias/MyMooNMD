@@ -269,7 +269,7 @@ void TNSE_MGLevel14::CellVanka(double *u1, double *rhs1, double *aux,
   double Rhs[RhsDim], sol[RhsDim];
   int *UGlobalNumbers, *UBeginIndex, *UDOFs, UDOF, N_U;
   int *PGlobalNumbers, *PBeginIndex, *PDOFs, PDOF, N_P;
-  int N_LocalDOF, verbose;
+  int N_LocalDOF;
   int begin, end, ActiveBound;
   double damp = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
   TBaseCell *Cell;
@@ -680,7 +680,7 @@ void TNSE_MGLevel14::NodalVanka(double *u1, double *rhs1, double *aux,
   double System[SystemRhs*SystemRhs];
   double Rhs[SystemRhs], sol[SystemRhs];
   int N_LocalDOF;
-  int begin, end, HangingBound, verbose;
+  int begin, end, HangingBound;
   int UDOFs[MaxN_LocalU], UDOF, N_U, N_UGEO;
   double *u2, *p, *rhs2, *rhsp;
   TItMethod *itmethod = NULL;

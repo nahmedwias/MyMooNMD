@@ -206,7 +206,6 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *AuxMatrixRow, **AuxMatrix;;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
@@ -343,9 +342,9 @@ double ***LocMatrices, double **LocRhs)
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double ansatz00, ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_U, N_P;
-  double c0, c1, c2;
+  double *Orig0, *Orig1, *Orig2;
+  int i,j, N_U; // N_P;
+  double c0;
   double u1, u2, omega, r[2], rad, x, y;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
@@ -358,7 +357,7 @@ double ***LocMatrices, double **LocRhs)
   MatrixA22 = LocMatrices[3];
 
   N_U = N_BaseFuncts[0];
-  N_P = N_BaseFuncts[1];
+//  N_P = N_BaseFuncts[1];
 
   Orig0 = OrigValues[0];         // u_x
   Orig1 = OrigValues[1];         // u_y
@@ -568,7 +567,7 @@ double ***LocMatrices, double **LocRhs)
   double test00;
   double *Orig0;
   int i, N_U;
-  double c1, c2, val;
+  double val;
   double omega, r[2], rad, x, y;
   double mp_x = TDatabase::ParamDB->SSMUM_MP_X;
   double mp_y = TDatabase::ParamDB->SSMUM_MP_Y;
@@ -583,8 +582,8 @@ double ***LocMatrices, double **LocRhs)
 
   Orig0 = OrigValues[0];         // u
 
-  c1 = coeff[1];                 // f1
-  c2 = coeff[2];                 // f2
+//  c1 = coeff[1];                 // f1
+//  c2 = coeff[2];                 // f2
 
   x = param[0];                  // x
   y = param[1];                  // y
@@ -644,12 +643,12 @@ double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
-  double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+  double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
   double **MatrixM11, **MatrixM22;
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+  double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
   double ansatz00, ansatz10, ansatz01;
@@ -664,8 +663,8 @@ double ***LocMatrices, double **LocRhs)
   double outer_radius = TDatabase::ParamDB->SSMUM_OUTER_RADIUS; 
 
   MatrixA11 = LocMatrices[0];
-  MatrixA12 = LocMatrices[1];
-  MatrixA21 = LocMatrices[2];
+//  MatrixA12 = LocMatrices[1];
+//  MatrixA21 = LocMatrices[2];
   MatrixA22 = LocMatrices[3];
   MatrixM11 = LocMatrices[4];
   MatrixM22 = LocMatrices[5];
@@ -725,8 +724,8 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
-    Matrix12Row = MatrixA12[i];
-    Matrix21Row = MatrixA21[i];
+//    Matrix12Row = MatrixA12[i];
+//    Matrix21Row = MatrixA21[i];
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
@@ -814,7 +813,6 @@ double ***LocMatrices, double **LocRhs)
   double **MatrixB1, **MatrixB2;
   double **MatrixB1T, **MatrixB2T;
   double *Rhs1, *Rhs2, val;
-  double *AuxMatrixRow, **AuxMatrix;;
   double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
   double *MatrixM11Row, *MatrixM22Row;
   double *MatrixRow1, *MatrixRow2;
