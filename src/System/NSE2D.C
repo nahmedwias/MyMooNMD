@@ -8,11 +8,13 @@
 #include <FgmresIte.h>
 #include <DirectSolver.h>
 #include <Upwind.h>
+#include <Multigrid.h>
 
 #include<Assemble2D.h>
 
 #include <sys/stat.h>
 
+bool use_new_solver_debug = true;
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -117,9 +119,10 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   // this function returns a pair which consists of 
   // velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
+
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
+
   // determine NSE TYPE from Database TODO change that handling!
   NSE2D::Matrix type;
   switch (TDatabase::ParamDB->NSTYPE)
@@ -133,6 +136,33 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class NSE2D.");
   }
+
+  //CB DEBUG Here we find the new multigrid.
+  bool using_new_multigrid = use_new_solver_debug;
+  if(using_new_multigrid) //TODO won't be enough on the long run
+  {
+    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+    database_mg.merge(param_db, false);
+
+    // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    size_t n_levels = database_mg["multigrid_n_levels"];
+    int finest = domain.get_ref_level();
+    int coarsest = finest - n_levels + 1;
+    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+      systems.emplace_back(example, *coll, velocity_pressure_orders,
+                            type);
+      //prepare input argument for multigrid object
+      matrices.push_front(&systems.back().matrix);
+    }
+    // Construct multigrid object
+    mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+    return;
+  }
+  //END DEBUG
+  
   this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
   
   // the defect has the same structure as the rhs (and as the solution)
@@ -159,35 +189,34 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
      !this->solver.get_db()["preconditioner"].is("multigrid"))
     return;
   // else multigrid
-  
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2];
-  param[0] = this->solver.get_db()["damping_factor"];
-  param[1] = this->solver.get_db()["damping_factor_finest_grid"];
-  this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
-  // number of refinement levels for the multigrid
-  size_t LEVELS = this->solver.get_db()["multigrid_n_levels"];
-  if((int)LEVELS > domain.get_ref_level() + 1)
-    LEVELS = domain.get_ref_level() + 1;
-  
-  this->transposed_B_structures_.resize(LEVELS,nullptr);
+    // create spaces, functions, matrices on coarser levels
+    double *param = new double[2];
+    param[0] = this->solver.get_db()["damping_factor"];
+    param[1] = this->solver.get_db()["damping_factor_finest_grid"];
+    this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
+    // number of refinement levels for the multigrid
+    size_t LEVELS = this->solver.get_db()["multigrid_n_levels"];
+    if((int)LEVELS > domain.get_ref_level() + 1)
+      LEVELS = domain.get_ref_level() + 1;
 
-  // the matrix and rhs side on the finest grid are already constructed 
-  // now construct all matrices, rhs, and solutions on coarser grids
-  for(int i = LEVELS - 2; i >= 0; i--)
-  {
-    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
-  }
-  
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-  {
-    this->multigrid->AddLevel(this->mg_levels(i, *it));
-    i++;
-  }
+    this->transposed_B_structures_.resize(LEVELS,nullptr);
+
+    // the matrix and rhs side on the finest grid are already constructed
+    // now construct all matrices, rhs, and solutions on coarser grids
+    for(int i = LEVELS - 2; i >= 0; i--)
+    {
+      unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
+      TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
+      this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+    }
+
+    // create multigrid-level-objects, must be coarsest first
+    unsigned int i = 0;
+    for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
+    {
+      this->multigrid->AddLevel(this->mg_levels(i, *it));
+      i++;
+    }
 }
 
 /** ************************************************************************ */
@@ -692,7 +721,10 @@ void NSE2D::solve()
   if(this->solver.get_db()["solver_type"].is("iterative")
     && this->solver.get_db()["preconditioner"].is("multigrid"))
   {
-    mg_solver();
+    if(use_new_solver_debug)
+      solver.solve(s.matrix, s.rhs, s.solution, mg_);
+    else
+      mg_solver();
   }
   else
   {

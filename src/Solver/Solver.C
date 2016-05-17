@@ -75,11 +75,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
                  "consumption, smaller numbers typically mean more "
                  "iterations.", 1, 1e3);
   
-  // more than 20 multigrid meshes is probably an error
-  db.add("n_multigrid_levels", (size_t)3,
-         "The number of different multigrid meshes.",
-         (size_t)0, (size_t)20);
-  
   db.add("preconditioner", std::string("no_preconditioner"),
          "Determine the used preconditioner. Note that some of these are "
          "specific for some problem types.",

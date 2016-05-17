@@ -32,7 +32,7 @@ class DirectSmoother : public Smoother
 
     /* ************* *
      * Special member functions. Declared but not defined, since it
-     * is not clear whether to shallow or deep copy here.
+     * is not yet clear whether to shallow or deep copy here.
      * ************* */
     //! Default constructor.
     DirectSmoother();

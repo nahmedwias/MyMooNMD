@@ -1,8 +1,6 @@
 /**
- * @file New declaration of a multigrid object, which holds the necessary
+ * @file New implementation of a multigrid object, which holds the necessary
  * grid information for executing a multigrid iteration.
- *
- * TODO Can't do anything so far, this is only a dummy.
  *
  * @date 2016/05/10
  * @author Clemens Bartsch
@@ -50,7 +48,11 @@ Multigrid::Multigrid(const ParameterDatabase& db,
     else
       sm = string_to_smoother_code(db["multigrid_smoother"]);
 
-    levels_.push_back(MultigridLevel(mat, sm));
+    // A database, can be filled with parameters the level might need.
+    ParameterDatabase level_db(std::string("multigrid level database"));
+    level_db.add(Parameter(db["multigrid_vanka_damp_factor"]));
+
+    levels_.push_back(MultigridLevel(mat, sm, level_db));
   }
 
   // Store the between-level damping parameters.
@@ -59,7 +61,7 @@ Multigrid::Multigrid(const ParameterDatabase& db,
 
 
   for(size_t i = 0; i < n_levels ;++i)
-    damp_factors_.push_back(db["multigrid_correction_damp_factor"]); //TODO this will be too long by 1 entry that way!
+    damp_factors_.push_back(db["multigrid_correction_damp_factor"]);
 
   // Set up the cycle control.
   std::string cycle_str = db["multigrid_cycle_type"];
@@ -257,7 +259,7 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
 
     //Update the actual solution_fine_entries by damped addition
     double* sol_fine_entries = solution_fine.block(i);
-    double damp = this->damp_factors_[lvl]; //TODO or another place than lvl??
+    double damp = this->damp_factors_[lvl];
 
     int n_non_actives = solution_fine.n_non_actives(i);
     for( int j=0 ; j < size_solution_prolongation - n_non_actives; ++j )
@@ -329,6 +331,13 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "to be performed whenever working on the coarsest level.",
          1, 100);
 
+  db.add<double>("multigrid_vanka_damp_factor", 1.0,
+                 "A damping factor relevant for Vanka type smoothers only."
+                 " It is responsible for a damping when adding the solution"
+                 " of the local defect equation onto the global solution."
+                 " Vanka smoothers tend to be quite responsive to this value."
+                 " Although it defaults to 1.0 (no damping), a value of 0.8"
+                 " is often a good start.", 0.0, 1.0);
 
   return db;
 }

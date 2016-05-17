@@ -14,6 +14,7 @@
 
 #include <memory>
 
+class ParameterDatabase;
 class Smoother;
 
 enum class SmootherCode{DIRECT_SOLVE, JACOBI, NODAL_VANKA, CELL_VANKA, BATCH_VANKA};
@@ -49,7 +50,7 @@ class MultigridLevel
   private:
     /// Constructor which takes a pointer to a BlockFEMatrix and a SmootherCode,
     /// that determines which smoother will be applied on this here level.
-    MultigridLevel(BlockFEMatrix* matrix, SmootherCode sm);
+    MultigridLevel(BlockFEMatrix* matrix, SmootherCode sm, const ParameterDatabase& db);
 
     /// Call the stored smoother ones - this should mean one smoothing step.
     void apply_smoother();
