@@ -41,6 +41,7 @@
 
 #include <Database.h>
 #include <FEDatabase3D.h>
+#include <Multigrid.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -104,8 +105,6 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-
-
   TDatabase::ParamDB->EXAMPLE = example;
   Example_NSE3D example_obj;
 
@@ -159,30 +158,42 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   }
   else if (solver_name.compare("multigrid") == 0)
   {
+    db.merge(Multigrid::default_multigrid_database());
     db["preconditioner"] = "multigrid";
-    db["multigrid_n_levels"] = 2;
-    db["refinement_n_initial_steps"] = 2;
-    db["damping_factor"] = 1.0;
-    db["damping_factor_finest_grid"] = 1.0;
+    db["refinement_n_initial_steps"] = 1;
+    db["damping_factor"] = 1.0; //TODO Is this used?
+    db["damping_factor_finest_grid"] = 1.0; //TODO Is this used?
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_maxit"] = 5;
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE= 1e-11;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE=100;
-    TDatabase::ParamDB->SOLVER_TYPE = 1;
-    TDatabase::ParamDB->SC_MG_TYPE_SADDLE=0; // standard geometric multigrid
-    TDatabase::ParamDB->SC_MG_CYCLE_SADDLE=2;
-    TDatabase::ParamDB->SC_SMOOTHER_SADDLE=2; // cell vanka
-    TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
-    TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE=0.7;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE = 0.7;
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE= 17; // cell vanka
-    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE= 0.1;
-    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE= 1.0;
-    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE= 1.0;
-    TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE= 100;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE= 0;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;    
+    // New multigrid parameters
+    db["multigrid_n_levels"] = 2;
+    db["multigrid_cycle_type"] = "V";
+    db["multigrid_smoother"] = "nodal_vanka";
+    db["multigrid_smoother_coarse"] = "nodal_vanka";
+    db["multigrid_correction_damp_factor"] = 1.0;
+    db["multigrid_n_pre_smooth"] = 2;
+    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_coarse_residual"] = 1.0e-1;
+    db["multigrid_coarse_max_n_iterations"] = 100;
+
+//    // Old parameters
+//    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE= 1e-11;
+//    TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE=100;
+//    TDatabase::ParamDB->SOLVER_TYPE = 1;
+//    TDatabase::ParamDB->SC_MG_TYPE_SADDLE=0; // standard geometric multigrid
+//    TDatabase::ParamDB->SC_MG_CYCLE_SADDLE=2;
+//    TDatabase::ParamDB->SC_SMOOTHER_SADDLE=2; // cell vanka
+//    TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE= 2;
+//    TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE= 2;
+//    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE=0.7;
+//    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE = 0.7;
+//    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE= 17; // cell vanka
+//    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE= 0.1;
+//    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE= 1.0;
+//    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE= 1.0;
+//    TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE= 100;
+//    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE= 0;
+//    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE= 0;
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
@@ -336,7 +347,7 @@ int main(int argc, char* argv[])
 #ifndef _MPI
       check(db, exmpl, domain_hex, 2, -4711, nstype, errors, tol);
 #else
-      check(db, exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype, 
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 2, -4711, nstype,
             errors, tol);
 #endif
     }
@@ -348,7 +359,7 @@ int main(int argc, char* argv[])
 #ifndef _MPI
       check(db, exmpl, domain_hex, 12, -4711, nstype, errors, tol);
 #else
-      check(db, exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype, 
+      check(db, exmpl, domain_hex, maxSubDomainPerDof, 12, -4711, nstype,
             errors, tol);
 #endif
     }

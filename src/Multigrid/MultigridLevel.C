@@ -10,9 +10,12 @@
 #include <JacobiSmoother.h>
 #include <MooNMD_Io.h>
 #include <MultigridLevel.h>
+#include <ParameterDatabase.h>
+#include <VankaSmootherNew.h>
 
 MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
-                               SmootherCode sm)
+                               SmootherCode sm,
+                               const ParameterDatabase& db)
 :  matrix_(matrix),
    defect_(*matrix, true), residual_(1e10),
    rhs_(*matrix,true), solution_(*matrix, false),
@@ -30,14 +33,23 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
       smoother_ = std::make_shared<JacobiSmoother>();
       break;
     case SmootherCode::NODAL_VANKA:
-      Output::info("MultigridLevel", "Dummy: NODAL_VANKA smoother");
+    {
+      double damp = db["multigrid_vanka_damp_factor"];
+      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::NODAL, damp);
       break;
+    }
     case SmootherCode::CELL_VANKA:
-      Output::info("MultigridLevel", "Dummy: CELL_VANKA smoother");
+    {
+      double damp = db["multigrid_vanka_damp_factor"];
+      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::CELL, damp);
       break;
+    }
     case SmootherCode::BATCH_VANKA:
-      Output::info("MultigridLevel", "Dummy: BATCH_VANKA smoother");
+    {
+      double damp = db["multigrid_vanka_damp_factor"];
+      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::BATCH, damp);
       break;
+    }
     default:
       ErrThrow("Unknown SmootherCode!");
   }

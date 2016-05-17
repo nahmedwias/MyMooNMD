@@ -534,7 +534,7 @@ double *rhs)
           }
           return(j);
         }
-        if (verbose>0 && j%5==0
+        if (verbose>0
 #ifdef _MPI
           && rank==0
 #endif
