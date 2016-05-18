@@ -143,7 +143,11 @@ ParameterDatabase get_default_CD3D_parameters()
         std::list<BlockFEMatrix*> matrices;
         for (auto coll : collections)
         {
+#ifdef _MPI
+          systems_.emplace_back(example, *coll, maxSubDomainPerDof);
+#else
           systems_.emplace_back(example, *coll);
+#endif
           //prepare input argument for multigrid object
           matrices.push_front(&systems_.back().matrix_);
         }
@@ -261,10 +265,8 @@ void CD3D::solve()
 #endif
 #ifdef _MPI
         //two vectors of communicators (const for init, non-const for solving)
-        std::vector<const TParFECommunicator3D*> par_comms_init =
-        {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-        std::vector<TParFECommunicator3D*> par_comms_solv =
-        {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+        std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
+        std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
 
         //set up a MUMPS wrapper
         MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
