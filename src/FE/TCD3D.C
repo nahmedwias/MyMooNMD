@@ -8,57 +8,23 @@
 #include <stdlib.h>
 #include <Enumerations.h>
 
-void MatrixMRhsAssemble(double Mult, double *coeff, double *param,
+// ======================================================================
+// GALERKIN: MATRICES A, M and Rhs
+// ======================================================================
+void MatrixMARhsAssemble(double Mult, double *coeff, double *param,
                            double hK, 
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
-  double **Matrix, *Rhs, *MatrixRow;
-  double ansatz000;
-  double test000;
-  double *Orig0;
-  int i,j, N_;
-  double c5; 
-
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-
-  c5 = coeff[5]; // f
-
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test000 = Orig0[i];
-
-    Rhs[i] += Mult*test000*c5;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz000 = Orig0[j];
-
-      MatrixRow[j] += Mult*ansatz000*test000;
-    } // endfor j
-  } // endfor i
-}
-
-void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, *MatrixRow;
-  double ansatz000;
+  double **MatrixA, **MatrixM, *Rhs, val, *MatrixRowA, *MatrixRowM;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3;
   int i,j, N_;
   double c0, c1, c2, c3, c4, c5;
-  double tau, bgradv, bb;
 
-  Matrix = LocMatrices[0];
+  MatrixA = LocMatrices[0];
+  MatrixM = LocMatrices[1];
   Rhs = LocRhs[0];
 
   N_ = N_BaseFuncts[0];
@@ -75,31 +41,189 @@ void MatrixMRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   c4 = coeff[4]; // c
   c5 = coeff[5]; // f
   
-  bb  = sqrt(c1*c1+c2*c2+c3*c3);
-  tau  = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, bb);
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    MatrixRowM = MatrixM[i];
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    Rhs[i] += Mult*test000*c5;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
+      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
+      val += c4*ansatz000*test000;
+
+      MatrixRowA[j] += Mult * val;
+      MatrixRowM[j] += Mult * ansatz000 *test000;
+    } // endfor j
+  } // endfor i
+}
+// ======================================================================
+// GALERKIN: Matrix A and Rhs; which are used within the time step loop
+// ======================================================================
+void MatrixARhsAssemble(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, *Rhs, val, *MatrixRowA;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_;
+  double c0, c1, c2, c3, c4, c5;
+
+  MatrixA = LocMatrices[0];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+  Orig3 = OrigValues[3];
+
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // b_3
+  c4 = coeff[4]; // c
+  c5 = coeff[5]; // f
+  
+  for(i=0;i<N_;i++)
+  {
+    MatrixRowA = MatrixA[i];
+    test100 = Orig0[i];
+    test010 = Orig1[i];
+    test001 = Orig2[i];
+    test000 = Orig3[i];
+
+    Rhs[i] += Mult*test000*c5;
+
+    for(j=0;j<N_;j++)
+    {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
+      ansatz000 = Orig3[j];
+
+      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
+      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
+      val += c4*ansatz000*test000;
+
+      MatrixRowA[j] += Mult * val;
+                
+    } // endfor j
+  } // endfor i
+}
+// ======================================================================
+// SUPG: MATRICES A, M and Rhs; M includes the contribution of time
+// discretization from the SUPG method, i.e M = (u, v + delta * bgrav)
+// ======================================================================
+
+void MatricesMARhsAssemble_SUPG(double Mult, double *coeff, double *param,
+                            double hK, 
+                            double **OrigValues, int *N_BaseFuncts,
+                            double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA, **MatrixK, *Rhs, *MatrixRowA, *MatrixRowK;
+  double ansatz000, ansatz100, ansatz010, ansatz001;
+  double test000, test100, test010, test001;
+  double val, val1;
+  double *Orig0, *Orig1, *Orig2, *Orig3;
+  int i,j, N_;
+  double c0, c1, c2, c3, c4, c5, c00, c11, c22, c33, c44;
+  double delta, bgradv, bb;
+  double theta1 = TDatabase::TimeDB->THETA1;
+  double time_step = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+
+  MatrixA = LocMatrices[0];
+  MatrixK = LocMatrices[1];
+  Rhs = LocRhs[0];
+
+  N_ = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];
+  Orig1 = OrigValues[1];
+  Orig2 = OrigValues[2];
+  Orig3 = OrigValues[3];
+
+  c0 = coeff[0]; // eps
+  c1 = coeff[1]; // b_1
+  c2 = coeff[2]; // b_2
+  c3 = coeff[3]; // b_3
+  c4 = coeff[4]; // c
+  c5 = coeff[5]; // f
+  
+  val = theta1 * time_step;
+  c00 = val * c0;
+  c11 = val * c1;
+  c22 = val * c2;
+  c33 = val * c3;
+  // reactive coefficient, inclusive term from the temporal derivative
+  c44 = 1.0 + val * c4;
+  bb = fabs(c11);
+  if (fabs(c22)>bb)
+      bb = fabs(c22);
+  if (fabs(c33)>bb)
+      bb = fabs(c33);
+
+  // this is \tilde tau
+  delta = Compute_SDFEM_delta(hK, c00, c11, c22, c33, c44, bb);
+  
+  // scale appropriately, after it is used for the SOLD scheme
+  delta *= val;
 
   for(i=0;i<N_;i++)
   {
-    MatrixRow = Matrix[i];
+    MatrixRowA = MatrixA[i];
+    MatrixRowK = MatrixK[i];
+    
     test100 = Orig0[i];
     test010 = Orig1[i];
     test001 = Orig2[i];
     test000 = Orig3[i];
 
     bgradv = c1*test100+c2*test010+c3*test001;
+    bgradv *= delta;
+    // CHANGE TEST000 !
+    test000 += bgradv;
+    Rhs[i] += Mult*test000*c5;
 
-    Rhs[i] += Mult*(test000+tau*bgradv)*c5;
 
     for(j=0;j<N_;j++)
     {
+      ansatz100 = Orig0[j];
+      ansatz010 = Orig1[j];
+      ansatz001 = Orig2[j];
       ansatz000 = Orig3[j];
 
-      MatrixRow[j] += Mult * ansatz000*test000;
+      val1 = c1*ansatz100+c2*ansatz010+c3*ansatz001;
+      val1 +=  c4*ansatz000;
+
+      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
+      val += val1* test000;
+
+      MatrixRowA[j] += Mult * val;
+      MatrixRowK[j] += Mult * (ansatz000 * test000 + ansatz000 * bgradv);
     } // endfor j
   } // endfor i
 }
 
-void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
+// ======================================================================
+
+
+void MatricesAKSRhsAssemble_SUPG(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
@@ -239,61 +363,7 @@ void MatricesAKRhsAssemble_SUPG(double Mult, double *coeff, double *param,
   } // endfor i
 }
 
-void MatrixARhsAssemble(double Mult, double *coeff, double *param,
-                            double hK, 
-                            double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
-{
-  double **MatrixA, *Rhs, val, *MatrixRowA;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5;
 
-  MatrixA = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-
-  c0 = coeff[0]; // eps
-  c1 = coeff[1]; // b_1
-  c2 = coeff[2]; // b_2
-  c3 = coeff[3]; // b_3
-  c4 = coeff[4]; // c
-  c5 = coeff[5]; // f
-  
-  for(i=0;i<N_;i++)
-  {
-    MatrixRowA = MatrixA[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-
-    Rhs[i] += Mult*test000*c5;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
-      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
-      val += c4*ansatz000*test000;
-
-      MatrixRowA[j] += Mult * val;
-                
-    } // endfor j
-  } // endfor i
-}
 void MatrixAUpwindRhsAssemble(double Mult, double *coeff, double *param,
                             double hK, 
                             double **OrigValues, int *N_BaseFuncts,
