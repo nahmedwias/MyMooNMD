@@ -1309,7 +1309,8 @@ void Time_NSE3D::output(int m, int &image)
     	  mkdir(db_["output_vtk_directory"], 0777);
       std::string dir = db_["output_vtk_directory"];
       std::string base = db_["output_basename"];
-      output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
+      output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
+      image++;
 #else
     // Create output directory, if not already existing.
     mkdir(db_["output_vtk_directory"], 0777);
