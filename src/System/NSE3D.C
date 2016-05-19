@@ -218,8 +218,14 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-      systems_.emplace_back(example, *coll, velocity_pressure_orders,
-                            type);
+#ifdef _MPI
+// create finite element space and function, a matrix, rhs, and solution
+systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                      maxSubDomainPerDof);
+#else
+// create finite element space and function, a matrix, rhs, and solution
+systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+#endif
       //prepare input argument for multigrid object
       matrices.push_front(&systems_.back().matrix_);
     }
