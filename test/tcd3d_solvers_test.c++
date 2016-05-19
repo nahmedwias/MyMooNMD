@@ -17,6 +17,7 @@
 #include <FEDatabase3D.h>
 #include <Domain.h>
 #include <TimeDiscRout.h>
+#include <Multigrid.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -66,7 +67,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   domain.Init(db["boundary_file"], db["geo_file"]);
   
   int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t mg_levels = db["n_multigrid_levels"];
+  size_t mg_levels = db["multigrid_n_levels"];
   size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
   size_t n_ref_before =  n_ref_total - n_ref_after;
   
@@ -152,12 +153,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["solver_type"] = "iterative";
     db["preconditioner"] = "jacobi";
-    TDatabase::ParamDB->SOLVER_TYPE = 1;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 1;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 500;  //Jacobi needs a lot of iterations
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-13;
+    db["residual_tolerance"] = 1e-13;
     // Output::setVerbosity(2);
   }
   else if(solver_name.compare("multigrid") ==0)
@@ -165,26 +161,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["solver_type"] = "iterative";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
-    db["n_multigrid_levels"] = 2;
-    TDatabase::ParamDB->SOLVER_TYPE = 1;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 5;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 100; //mg needs fewer iterations
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-12; //measures L2only
-
-    // specific multigrid parameters
-    TDatabase::ParamDB->SC_MG_TYPE_SCALAR = 0; // geometric multigrid
-    TDatabase::ParamDB->SC_MG_CYCLE_SCALAR = 1;
-    TDatabase::ParamDB->SC_SMOOTHER_SCALAR = 3; // SSOR smoother
-    TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR = 3;
-    TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR = 3;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR = 1.0;
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR = 3; // SSOR smoother
-    TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR = 10;
-    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR = 0.1;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR = 0; // no slc
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 0;  // no slc
+    db["multigrid_n_levels"] = 2;
+    db["multigrid_cycle_type"] = "V";
+    db["multigrid_smoother"] = "jacobi";
+    db["residual_tolerance"] = 1e-13;
+    db["multigrid_coarse_max_n_iterations"] = 5;
+    db["damping_factor"] = 0.7;
+    db["damping_factor_finest_grid"] = 0.7;
+    
 
     Output::setVerbosity(2);
   }
@@ -244,11 +228,14 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D FEDatabase;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database(), true);
+  db.merge(Multigrid::default_multigrid_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
-  db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
-  db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
-  db.add("preconditioner", std::string("multigrid"), "",{"jacobi", "multigrid"});
+  db["multigrid_n_levels"] = 1;
+  // db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
+  // db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
+  // db.add("preconditioner", std::string("multigrid"), "",{"jacobi", "multigrid"});
   db["boundary_file"] = "Default_UnitCube";
   // db["output_write_vtk"] = false;
   

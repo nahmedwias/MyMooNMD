@@ -9,6 +9,7 @@
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <Multigrid.h>
+#include <Output3D.h>
 
 #include <MainUtilities.h>
 
@@ -115,18 +116,16 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   }
   else
   {
-    size_t nMgLevels = this->solver.get_db()["n_multigrid_levels"];
+    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+    database_mg.merge(param_db, false);
+    
+    size_t nMgLevels = database_mg["multigrid_n_levels"];
     if(collections.size() != nMgLevels)
     {
       ErrThrow("Multigrid: expected ", nMgLevels, " collections ", 
 	       collections.size(), "provided.");
     }
-    // creating multigrid object
-    std::vector<double> param(2);
-    param[0] = this->solver.get_db()["damping_factor"];
-    param[1] = this->solver.get_db()["damping_factor_finest_grid"];
-    multigrid_.reset(new TMultiGrid3D(1,2,param.data()));
-    
+        std::list<BlockFEMatrix*> matrices;
     // construct all SystemPerGrid and store them
     for(auto it : collections)
     {
@@ -136,37 +135,9 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
       systems_.emplace_back(example_, *it);
 #endif
       systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
+      matrices.push_front(&systems_.back().stiffMatrix_);
     }
-    // TODO Temporary, one have to change the implementation when
-    // the multigrid class is finished (CLEMENS)
-    // Coarsest level must be the first, therefore the iteration order is reversed
-    size_t level=0;
-    for(auto system=systems_.rbegin(); system != systems_.rend(); ++system)
-    {
-      size_t nAuxArrays = 2;
-      if( (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR)
-	|| (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR) )
-      {
-	nAuxArrays = 4;
-      }
-      
-      TSquareMatrix3D* block 
-      = reinterpret_cast<TSquareMatrix3D*>(system->stiffMatrix_.get_blocks_uniquely().at(0).get());
-#ifdef _MPI
-      TMGLevel3D* multigridLevel = new TMGLevel3D(
-        level, block, system->rhs_.get_entries(), 
-        system->solution_.get_entries(), 
-        &system->parComm_, &system->parMapper_,
-	nAuxArrays, NULL);
-#else
-      TMGLevel3D* multigridLevel = new TMGLevel3D(
-	level, block, system->rhs_.get_entries(),
-	system->solution_.get_entries(), 
-	nAuxArrays, NULL);
-#endif
-      multigrid_->AddLevel(multigridLevel);
-      level++;
-    }// end preparing multigrid levels
+    multigrid_=std::make_shared<Multigrid>(database_mg, matrices);
   }// multigrid case
 }
 
@@ -207,13 +178,6 @@ void Time_CD3D::checkParameters()
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
   }
-#ifdef _MPI
-  if(this->solver.get_db()["solver_type"].is("iterative")
-     && TDatabase::ParamDB->SC_SOLVER_SCALAR !=11)
-  {
-    ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
-  }
-#endif
   // the only preconditioners implemented are Jacobi and multigrid
   if(this->solver.get_db()["solver_type"].is("iterative")
     && !this->solver.get_db()["preconditioner"].is("jacobi")
@@ -324,144 +288,103 @@ void Time_CD3D::assemble()
     
     const FEMatrix& mass_block = *s.massMatrix_.get_blocks().at(0).get();
     s.stiffMatrix_.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
-  }
+  }  
 }
 
 //==============================================================================
 void Time_CD3D::solve()
 {
-  SystemPerGrid &s = this->systems_.front();
-  TSquareMatrix * blocks[1] = {reinterpret_cast<TSquareMatrix*>(
-    s.stiffMatrix_.get_blocks_TERRIBLY_UNSAFE().at(0).get()) };
-    
-#ifdef _MPI
-  TParFECommunicator3D* parComm = &s.parComm_;
-#endif
-  if(this->solver.get_db()["solver_type"].is("iterative"))
+  SystemPerGrid& s=this->systems_.front();
+  //determine whether we make use of multigrid
+  bool using_multigrid = 
+       this->solver.get_db()["solver_type"].is("iterative") 
+    && this->solver.get_db()["preconditioner"].is("multigrid");
+  
+  if(!using_multigrid)
   {
-    // iterative solver
-    int nDof = s.feSpace_.GetN_DegreesOfFreedom();
-    TItMethod* preconditioner;
-    TItMethod* iterativeSolver;
-    
-    int zeroStart;
-    switch(TDatabase::ParamDB->SC_SOLVER_SCALAR)
+    if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
     {
-      case 11:
-	zeroStart = 1;
-	break;
-      case 16:
-	zeroStart = 0;
-	break;
-    }
-    
-    switch(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR)
-    {
-      case 1: // Jacobi iteration
-#ifdef _MPI
-	preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 
-					1, parComm);
-#else
-	preconditioner = new TJacobiIte(MatVect_Scalar, Defect_Scalar, NULL, 0, nDof, 1);
-#endif
-	break;	
-      case 5:
-	preconditioner = new TMultiGridScaIte(MatVect_Scalar, Defect_Scalar, NULL, 0, 
-					      nDof, multigrid_.get(), zeroStart);
-	break;
-      default:
-	ErrMsg("unknown SC_PRECONDITIONER_SCALAR: " 
-	<< TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR);
-    }
-    
-    // preparing solver 
-    switch(TDatabase::ParamDB->SC_SOLVER_SCALAR)
-    {
-      case 11:	
-#ifdef _MPI
-	iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner,
-					     0, nDof, 1, parComm);
-#else
-	iterativeSolver = new TFixedPointIte(MatVect_Scalar, Defect_Scalar, preconditioner,
-					     0, nDof, 1);
-#endif
-	break; // case 11
-      case 16:
-#ifdef _MPI
-	iterativeSolver = new TFgmresIte(MatVect_Scalar, Defect_Scalar, preconditioner, 
-					 0, nDof, 1, parComm);
-#else
-	iterativeSolver = new TFgmresIte(MatVect_Scalar, Defect_Scalar, preconditioner,
-					 0, nDof, 1);
-#endif
-	break;
-      default:
-	ErrMsg("unknown solver !!!" << endl);
-    }
-    
-    // solve
-    if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR == 5)
-    {
-      std::vector<double> iterativeSol; // = s.solution_.get_entries();
-      std::vector<double> iterativeRhs;
-      iterativeSol.resize(nDof);
-      iterativeRhs.resize(nDof);
-      memcpy(iterativeSol.data(), s.solution_.get_entries(), nDof*SizeOfDouble);
-      memcpy(iterativeRhs.data(), s.rhs_.get_entries(), nDof*SizeOfDouble);
-      
-      iterativeSolver->Iterate(blocks, nullptr, iterativeSol.data(), iterativeRhs.data());
-      
-      memcpy(s.solution_.get_entries(), iterativeSol.data(), nDof*SizeOfDouble);
-      memcpy(s.rhs_.get_entries(), iterativeRhs.data(), nDof*SizeOfDouble);
-    }
-    else
-    {
-      iterativeSolver->Iterate(blocks, nullptr, s.solution_.get_entries(), s.rhs_.get_entries());
-    }
-  }
-  else if(this->solver.get_db()["solver_type"].is("direct"))
-  {
 #ifndef _MPI
-    this->solver.update_matrix(s.stiffMatrix_);
-    this->solver.solve(s.rhs_, s.solution_);
-    return;
-#elif _MPI
-    std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-    std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
-
-    MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+      this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential 
+      return;
 #endif
+#ifdef _MPI // parallel
+      // TParFECommunicator3D* parComm = &s.parComm_;
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
+
+      MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
+      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+#endif
+    }
+    
+    if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
+    {
+#ifdef _MPI // parallel
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
+
+      MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
+      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+#else      
+      this->solver.solve(s.stiffMatrix_, s.rhs_, s.solution_); // sequential
+#endif
+    }
   }
-  else
+  else // multigrid solver
   {
-    ErrThrow("unknown SOLVER_TYPE: Choose either 1 (iterative) or 2 (direct) " );
+    this->solver.solve(s.stiffMatrix_, s.rhs_, s.solution_, multigrid_);
   }
 }
 
 //==============================================================================
-void Time_CD3D::output(int m, int& imgage)
+void Time_CD3D::output(int m, int& image)
 {
 #ifdef _MPI
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
   // nothing to do if no error computation or no vtk filess
-  // bool noOutput = !db["output_write_vtk"] && !db["output_compute_errors"];
-  // if(noOutput)
-  //  return;
+  bool noOutput = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(noOutput)
+    return;
   SystemPerGrid &s = this->systems_.front();
   s.feFunction_.PrintMinMax();
   
   //write solution for visualization
-   if(db["output_write_vtk"])
+   if(m==0 || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
    {
-    //TODO
+     if(db["output_write_vtk"])
+     {
+       TOutput3D output(1, 1, 0, 0, NULL);
+       output.AddFEFunction(&s.feFunction_);
+#ifdef _MPI
+       char SubID[] = "";
+       if(my_rank==0)
+	 mkdir(db["output_vtk_directory"], 0777);
+       std::string dir = db["output_vtk_directory"];
+       std::string base = db["output_basename"];
+       output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);       
+#else
+       mkdir(db["output_vtk_directory"], 0777);
+    std::string filename = db["output_vtk_directory"];
+    filename += "/" + db["output_basename"].value_as_string();
+
+      if(image<10) filename += ".0000";
+      else if(image<100) filename += ".000";
+      else if(image<1000) filename += ".00";
+      else if(image<10000) filename += ".0";
+      else filename += ".";
+      filename += std::to_string(image) + ".vtk";
+      output.WriteVtk(filename.c_str());
+      image++;
+#endif      
+     }
    }
   
   // compute errors 
-//  if(db["output_compute_errors"])
-//  {
+  if(db["output_compute_errors"])
+  {
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
     TAuxParam3D aux(1, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, NULL);
     std::vector<double> locError; 
@@ -504,7 +427,7 @@ void Time_CD3D::output(int m, int& imgage)
       Output::print<1>("  L2(0,T;H1)   : ", sqrt(errors_.at(2)));
       Output::print<1>("  Linft(0,T,L2): " , errors_.at(4));
     }
-  //}
+  }
 }
 
 //==============================================================================
