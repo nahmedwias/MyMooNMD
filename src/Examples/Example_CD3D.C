@@ -39,6 +39,11 @@ namespace quad_space_time
 {
 #include "TCD_3D/quadratic_space_time.h"
 }
+
+namespace concentration
+{
+#include "TCD_3D/concentrationOfSpecies_3d.h"
+}
 //=========================================================================
 
 Example_CD3D::Example_CD3D() : Example3D()
@@ -118,6 +123,15 @@ Example_CD3D::Example_CD3D() : Example3D()
       ExampleFile();
     }
     break;
+    case 101:
+      using namespace concentration;
+      exact_solution.push_back(Exact);
+      boundary_conditions.push_back(BoundCondition);
+      boundary_data.push_back(BoundValue);
+      problem_coefficients = BilinearCoeffs;
+      initial_conditions.push_back(InitialCondition);
+      ExampleFile();
+      break;
     default:
       ErrThrow("Unknown name of the convection-diffusion-reaction example CD3D or Time_CD3D!");
   }
