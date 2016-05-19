@@ -61,6 +61,7 @@ class Time_CD3D
        *the one matrix of this grid.
        */
       TParFEMapper3D parMapper_;
+      
       /** @brief A parallel FE communicator taking care for the 
        * MPI communication on this grid. 
        */
@@ -133,15 +134,10 @@ class Time_CD3D
     /** @brief Definition of the used example */
     const Example_CD3D example_;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<TMultiGrid3D> multigrid_;
-    
     /** a multigrid object from new multigrid class;
      * it stays nullptr if not used
      */
-    std::shared_ptr<Multigrid>  mg_;
+    std::shared_ptr<Multigrid>  multigrid_;
             
     /** @brief a local parameter database which controls this class
      *
@@ -252,7 +248,7 @@ class Time_CD3D
     /** @brief measure errors and write solution
      * 
      */
-    void output(int m, int& imgage);
+    void output(int m, int& image);
     
     /**
      * @brief Check whether the program will be working with the
