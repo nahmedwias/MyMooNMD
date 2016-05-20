@@ -4640,8 +4640,8 @@ void TStructure::reset_n_entries()
             "TStructure::reset_n_entries will not yet reset their "
             "number and arrays correctly.");
 
-  //reset number of entries to last entry of row ptr minus one
-  this->nEntries = this->rows.back() - 1;
+  //reset number of entries to last entry of row ptr
+  this->nEntries = this->rows.back();
 
   //columns array must be resized  to nEntries - everything behind that is erased
   this->columns.resize(this->nEntries);

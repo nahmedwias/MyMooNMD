@@ -683,7 +683,7 @@ void TMatrix::remove_zeros(double tol)
 
     for(int j = row_begin_old; j < row_end_old; ++j)
     {
-      if(!(fabs(entries.at(j) - 0) < tol)) //entry does not count as zero
+      if(fabs(entries.at(j) - 0) > tol) //entry does not count as zero
       {
         kcol_part_new.push_back(kcol[j]);
         entries_part_new.push_back(entries.at(j));
@@ -707,6 +707,7 @@ void TMatrix::remove_zeros(double tol)
   structure->reset_n_entries();
   //Re-fit the entries array (throw out all trailing (nearly) zeroes)
   entries.resize(structure->GetN_Entries());
+
 
 }
 

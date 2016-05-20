@@ -79,7 +79,7 @@ int GetMemory()
 #endif
 }
 
-//CB DEBUG: Print all memory information available through mallinfo.
+//Print all memory information available through mallinfo.
 void display_mallinfo(const std::string& program_part)
 {
     struct mallinfo mi;
