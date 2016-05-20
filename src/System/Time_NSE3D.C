@@ -432,7 +432,6 @@ void Time_NSE3D::assemble_initial_time()
         sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
         // mass matrices
         sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-//        ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling3D routine");
 
         // rectangular matrices
         nRectMatrices = 3;
