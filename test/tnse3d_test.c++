@@ -255,8 +255,7 @@ double get_tolerance(std::string solver_name)
     return 1e-7;
 #else
   if(solver_name.compare("mumps") == 0)
-    return 1e-7;  // the errors are compared to the reference ones, which come
-                  // from SEQUENTIAL computation... so a larger tolerance is allowed
+    return 1e-7;
 #endif
     throw std::runtime_error("Unknown solver for NSE3D problem!");
 
@@ -363,9 +362,18 @@ void set_errors(int example, int velocity_order, int nstype,
       {
         if (velocity_order == 2) // P2/P1 (same for nstype 1 & 2 and MPI)
         {
-          errors[0] = {{0.08836346477, 1.140013604, 1.847807582, 13.98103265}};
-          errors[1] = {{0.04898861353, 0.6860144758, 0.6194369832, 3.000215757}};
-          errors[2] = {{0.07788446985, 0.7202402969, 8.224538274, 31.07583098}};
+          if (solver_name.compare("umfpack") == 0)
+          {
+            errors[0] = {{0.08836346477, 1.140013604, 1.847807582, 13.98103265}};
+            errors[1] = {{0.04898861353, 0.6860144758, 0.6194369832, 3.000215757}};
+            errors[2] = {{0.07788446985, 0.7202402969, 8.224538274, 31.07583098}};
+          }
+          else if (solver_name.compare("mumps") == 0)
+          {
+            errors[0] = {{0.08836346477, 1.140013604, 1.847807582, 13.98103265}};
+            errors[1] = {{0.04898861353, 0.6860144758, 0.6194369832, 3.000215757}};
+            errors[2] = {{0.07788493955, 0.7202294816, 8.224555523, 31.07600556}};
+          }
         }
         else if (velocity_order == 3) // P3/P2 (same for nstype 1 & 2)
         {
