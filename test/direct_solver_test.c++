@@ -1,9 +1,7 @@
 #include <DirectSolver.h>
 #include <BlockMatrix.h>
 #include <BlockVector.h>
-#include <Database.h>
 #include <MooNMD_Io.h>
-#include <cmath>
 
 bool equal(const double a, const double b)
 {

@@ -110,9 +110,8 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                        , int maxSubDomainPerDof
 #endif
 )
- : systems_(), example_(ex), multigrid_(), defect_(),
-   db_(get_default_TNSE3D_parameters()),
-   old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
+ : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex), multigrid_(),
+   defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
  // if it has to be called here or in the main program (see difference between
