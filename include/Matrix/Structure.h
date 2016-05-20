@@ -290,6 +290,14 @@ class TStructure
     { return &HangingRows[0]; }
     
     /**
+     * Resets the number of entries to fit the row and column array. Will check
+     * if the size values are in accordance. Must be called after the row array
+     * was changed from the external.
+     *
+     */
+    void reset_n_entries();
+
+    /**
      * @brief find the index of a given entry
      * 
      * If the (i,j)-th entry is not in the sparsity pattern, -1 is returned. 
