@@ -935,6 +935,8 @@ void GridTransfer::Prolongate(
 #ifdef _HYBRID
 }
 #endif
+
+  delete[] aux;
 }
 
 void GridTransfer::DefectRestriction(
@@ -1210,7 +1212,7 @@ void GridTransfer::DefectRestriction(
 #ifdef _HYBRID
 }
 #endif
-
+  delete[] aux;
 }
 
 void GridTransfer::RestrictFunction(
@@ -1488,6 +1490,7 @@ void GridTransfer::RestrictFunction(
     cout << "FineFunction[" << i << "]: " << FineFunction[i] << endl;
 */
 
+  delete[] aux;
 } // RestrictFunction
 
 #endif
