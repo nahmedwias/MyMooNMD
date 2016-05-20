@@ -2792,14 +2792,14 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
   MatrixA22 = LocMatrices[4];
   MatrixA33 = LocMatrices[8];
   MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
-  MatrixB1T  = LocMatrices[15];
-  MatrixB2T  = LocMatrices[16];
-  MatrixB3T  = LocMatrices[17];
+//  MatrixM22 = LocMatrices[10];
+//  MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T  = LocMatrices[13];
+  MatrixB2T  = LocMatrices[14];
+  MatrixB3T  = LocMatrices[15];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2829,8 +2829,8 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+//    MatrixM22Row  = MatrixM22[i];
+//    MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -2857,8 +2857,8 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+//      MatrixM22Row[j] += val;
+//      MatrixM33Row[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];
