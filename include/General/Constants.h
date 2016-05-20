@@ -271,6 +271,10 @@ typedef void EvaluateSolutionFunct2D(TFEFunction2D **, TFEVectFunct2D **,
 double GetTime();
 int GetMemory();
 
+//CB DEBUG
+#include <string>
+void display_mallinfo(const std::string& program_part);
+
 #define AMG_SOLVE 0
 #define GMG 1
 #define DIRECT 2
