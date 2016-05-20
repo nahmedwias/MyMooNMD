@@ -779,7 +779,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   db.add("example", 0,
          "Choose which example to run. \nNote that depending on the type of "
          "problem you want to solve, different values are meaningful here. See "
-         "the class 'Example' and its derived classes.", -5, 5);
+         "the class 'Example' and its derived classes.", -5, 200);
 
   return db;
 }

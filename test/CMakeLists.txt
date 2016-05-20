@@ -168,6 +168,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(iterative_solver ParMooN_test_iterative_solver)
   list(APPEND parmoon_tests ParMooN_test_iterative_solver)
   
+  #tnse3d tests
+  set(_EXEC_NAME ParMooN_test_tnse3d_seq)
+  set(_FILE_NAME tnse3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d umfpack)
+  
   #multigrid tests
   set(_EXEC_NAME ParMooN_test_multigrid_2d)
   set(_FILE_NAME multigrid_test.c++)
@@ -250,7 +257,13 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
-
+  
+  #tnse3d tests
+  set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
+  set(_FILE_NAME tnse3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #mumps
+  add_test(NAME tnse3d_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_tnse3d_mpi mumps)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 	
