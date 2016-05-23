@@ -173,7 +173,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   set(_FILE_NAME tnse3d_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
-  add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d umfpack)
+  add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d_seq umfpack)
   
   #multigrid tests
   set(_EXEC_NAME ParMooN_test_multigrid_2d)
