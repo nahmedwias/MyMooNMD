@@ -231,7 +231,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<2>("left gmres iteration ", j, " ", resid);
+      Output::print<4>("left gmres iteration ", j, " ", resid);
       if(this->converged(resid, resid0, j))
       {
         Update(solution, i, H, s, v);
@@ -335,7 +335,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<2>("right gmres iteration ", j, " ", resid);
+      Output::print<4>("right gmres iteration ", j, " ", resid);
       if(this->converged(resid, resid0, j)) 
       {
         w = 0.0; // reuse w for update of solution
@@ -455,7 +455,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<2>("flexible gmres iteration ", j, " ", resid);
+      Output::print<4>("flexible gmres iteration ", j, " ", resid);
       if(this->converged(resid, resid0, j))
       {
         //use r as auxiliary here
