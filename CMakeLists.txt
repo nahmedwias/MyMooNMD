@@ -431,6 +431,24 @@ target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 
+### MESH ###
+# Standard executable target.
+add_executable(mesh ${PROJECT_SOURCE_DIR}/2DPrograms/mesh_ParMooN.C)
+set_target_properties(mesh PROPERTIES OUTPUT_NAME parMooN_mesh_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(mesh PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(mesh parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+### MESH2GEO(2D) ###
+# Standard executable target.
+add_executable(geo2mesh2d ${PROJECT_SOURCE_DIR}/2DPrograms/geo2mesh2d_ParMooN.C)
+set_target_properties(geo2mesh2d PROPERTIES OUTPUT_NAME parMooN_geo2mesh2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(geo2mesh2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(geo2mesh2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
 ### Standard 3D Programs ###
 
 ### CD3D ###

@@ -4,6 +4,7 @@
 #include <iomanip>      // std::setw
 #include <sstream>
 #include <iterator>
+#include <vector>
 #include <MooNMD_Io.h>
 #include <vector>
 

@@ -22,6 +22,7 @@
 #include <BaseFunct2D.h>
 #include <Database.h>
 #include <MooNMD_Io.h>
+#include <AuxParam2D.h>
 
 #include <math.h>
 #include <string.h>

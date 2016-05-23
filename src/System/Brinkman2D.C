@@ -10,7 +10,7 @@
 #include <Upwind.h>
 
 #include<Assemble2D.h>
-
+#include <BoundaryAssembling2D.h>
 #include <sys/stat.h>
 
 ParameterDatabase get_default_Brinkman2D_parameters()
@@ -270,7 +270,7 @@ void Brinkman2D::assemble()
         N_Rhs = 3;
 
       
- Output::print("assemble");
+	Output::print("assemble");
  
       
     // call the assemble method with the information that has been patched together
@@ -278,33 +278,14 @@ void Brinkman2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
       Output::print("assemble");
-      
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
-    {
-      switch(TDatabase::ParamDB->BrinkmanTYPE)
-      {
-        case 1:
-        case 2:
-          // do upwinding with one matrix
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
-          break;
-        case 3:
-        case 4:
-        case 14:
-          // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          break;
-      } // endswitch
-    } // endif
 
+      BoundaryAssemble_on_rhs_g_v_n(RHSs, 
+				    v_space, 
+				    NULL, // p = 1
+				    2, // boundary component
+				       0); // mult
+      
+    
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
 

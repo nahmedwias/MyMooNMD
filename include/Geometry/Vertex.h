@@ -134,7 +134,8 @@ class TVertex
       
      bool IsBoundVert() const
      { return BoundVert; }
-    
+
+     
 #ifdef _MPI
 
     /** Note ! this info only set for dependent cells !!!!!! */

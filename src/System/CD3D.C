@@ -6,6 +6,7 @@
 #include <LinAlg.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
+//#include <PostProcessing3D.h>
 
 #include <FixedPointIte.h>
 #include <JacobiIte.h>
@@ -424,6 +425,20 @@ void CD3D::output(int i)
   // print the value of the largest and smallest entry in the FE vector
   syst.feFunction_.PrintMinMax();
 
+  /*
+  // write output
+  TOutput3D Output;
+  //Output.init();
+  Output.addFEFunction(&syst.feFunction_);
+  ///@todo parallel output implementation
+  #ifdef _MPI
+  #else
+  Output.write(i,0.0);
+  #endif
+  */
+  
+  
+  // implementation with the old class TOutput2D
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
@@ -449,7 +464,9 @@ void CD3D::output(int i)
     Output.WriteVtk(filename.c_str());
 #endif
   }
+  
 
+  
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
