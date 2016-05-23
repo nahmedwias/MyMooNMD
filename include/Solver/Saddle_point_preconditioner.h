@@ -4,6 +4,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <DirectSolver.h>
+#include <Solver.h>
 #include <Preconditioner.h>
 
 /** @brief implement special preconditioners for saddle point problems
@@ -21,14 +22,16 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     
     /** @brief constructor for a given system matrix */
     explicit Saddle_point_preconditioner(const BlockFEMatrix & m,
-                                         type t = type::lsc);
+                                         type t = type::lsc, 
+                                         bool direct_velocity_solve = true);
     /** @brief don't use this constuctor. It is here only for compatability 
      * in the Solver class.
      * 
      * @warning Do not use this constructor. You need a BlockFEMatrix instead.
      */
     explicit Saddle_point_preconditioner(const BlockMatrix & m,
-                                         type t = type::lsc);
+                                         type t = type::lsc, 
+                                         bool direct_velocity_solve = true);
     
     /** @brief destructor, delete all allocated memory */
     ~Saddle_point_preconditioner() = default;
@@ -91,18 +94,15 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     BlockFEMatrix velocity_block;
     /** @brief the block which represents the gradient of the pressure 
      * 
-     * It is scaled by the 'inverse_diagonal' during the constructor
+     * It is scaled by the 'inverse_diagonal' during the constructor in case of
+     * this->type == Saddle_point_preconditioner::type::simple.
      */
     std::shared_ptr<TMatrix> gradient_block;
     /** @brief the block which represents the divergence of the pressure */
     std::shared_ptr<TMatrix> divergence_block;
-    /** @brief the Schur complement matrix (possibly an approximation to it) */
-    std::shared_ptr<TMatrix> Schur_complement;
     
     /** @brief storing a factorization for the 'velocity_block' */
-    std::shared_ptr<DirectSolver> velocity_solver;
-    /** @brief storing a factorization for the 'Schur_complement' */
-    std::shared_ptr<DirectSolver> Schur_solver;
+    std::shared_ptr<Solver<BlockFEMatrix, BlockVector>> velocity_solver;
     
     /** @brief the inverse of the diagonal of the system matrix */
     std::vector<double> inverse_diagonal;
@@ -152,12 +152,13 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      */
     std::vector<double> bdryCorrectionMatrix_;
     
-    /** The Poisson solver matrix which contains the boundary correction. We store
-     * B*H^{-1}B^T, where H^{-1} is just bdryCorrectionMatrix_.
+    /** The Poisson solver matrix which contains the boundary correction. We
+     * store B*H^{-1}B^T, where H^{-1} is just bdryCorrectionMatrix_.
      */
     std::shared_ptr<TMatrix> poissonMatrixBdry_;
     
-    /** Stores a factorization for the extra Poisson solver matrix poissonMatrixBdry_.
+    /** Stores a factorization for the extra Poisson solver matrix 
+     * poissonMatrixBdry_.
      *
      * @note Seems this can only be done via pointer, for DirectSolver causes
      * trouble when using default constructor and setMatrix(..) later */
@@ -165,9 +166,6 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     
     
     // methods
-    
-    /** @brief return an approximation to the Schur complement matrix */
-    std::shared_ptr<TMatrix> compute_Schur_complement_approximation() const;
     
     /** @brief return an approximation to the Poisson solver matrix */
     std::shared_ptr<BlockMatrix> compute_Poisson_solver_matrix() const;
@@ -189,12 +187,6 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * Call only after Poisson_solver_matrix has been constructed, work with a copy of its structure
      */
     void computePoissonMatrixBdry();
-    
-    /** @brief solve the system involving only the velocity block 
-     * 
-     * Use LSC_STRATEGY to change the way how this is solved
-     */
-    void solve_velocity_block(const double* rhs, double* solution) const;
 };
 
 
