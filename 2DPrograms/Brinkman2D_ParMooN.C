@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
  ////   TDatabase::ParamDB->PROBLEM_TYPE = 5;
   
     //open OUTFILE, this is where all output is written to (addionally to console)
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
+  Output::set_outfile(parmoon_db["outfile"]);
   
   //// possibly change parameters in the database, if they are not meaningful now
   ////Database.CheckParameterConsistencyNSE();
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     
   /* include the mesh from a mesh generator, for a standard mesh use the
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
+  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]); // call mesh generator
   
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();
@@ -69,11 +69,10 @@ int main(int argc, char* argv[])
     Domain.PS("Domain.ps", It_Finest, 0);
     
   Example_Brinkman2D example;
-  
-
+    
   //=========================================================================
   // create an object of the Brinkman class
-
+    
   Brinkman2D brinkman2d(Domain, parmoon_db, example);
   brinkman2d.assemble();
   brinkman2d.solve();

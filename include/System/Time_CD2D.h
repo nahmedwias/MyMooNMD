@@ -19,6 +19,7 @@
 #include <Example_CD2D.h>
 #include <MultiGrid2D.h>
 #include <Domain.h>
+#include <PostProcessing2D.h>
 
 #include <vector>
 #include <deque>
@@ -142,6 +143,9 @@ class Time_CD2D
     
     /** @brief store the errors to compute accumulated error norms */
     std::vector<double> errors;
+
+    /// @brief class for handling (time dependent) output 
+    PostProcessing2D timeDependentOutput;
     
   public:
     /** @brief constructor

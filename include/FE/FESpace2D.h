@@ -82,6 +82,8 @@ class TFESpace2D : public TFESpace
                BoundCondFunct2D *BoundaryCondition,
                FE2D *fes, TCollection *mortarcoll);
 
+    TFESpace2D(const  TFESpace2D&)=delete;
+    TFESpace2D& operator=(TFESpace2D) = delete;
     /** destructor */
     ~TFESpace2D();
 

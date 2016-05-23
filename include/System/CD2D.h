@@ -25,6 +25,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <PostProcessing2D.h>
 
 class Multigrid;
 
@@ -95,7 +96,10 @@ class CD2D
      * CD2D::solver object.
      */
     ParameterDatabase db;
-    
+
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
+
     /** @brief a solver object which will solve the linear system
      * 
      * Storing it means that for a direct solver we also store the factorization
@@ -170,9 +174,9 @@ class CD2D
      * @brief measure errors and write pictures 
      * 
      * The current errors will be printed out. If desired, further output, e.g.,
-     * vtk files are created.
+     * vtk or case files are created.
      * 
-     * @param i suffix for output file name, -1 means no suffix
+     * @param i suffix for vtk output file name, -1 means no suffix
      */
     void output(int i = -1);
     

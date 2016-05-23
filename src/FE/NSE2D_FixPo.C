@@ -234,7 +234,7 @@ double ***LocMatrices, double **LocRhs)
       MatrixRow[j] += Mult * val;
     }                            // endfor j
   }                              // endfor i
-
+ 
   for(i=0;i<N_P;i++)
   {
     MatrixRow1 = MatrixB1[i];

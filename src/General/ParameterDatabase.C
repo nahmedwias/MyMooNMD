@@ -706,15 +706,15 @@ void ParameterDatabase::read(std::istream& is)
 void ParameterDatabase::merge(const ParameterDatabase &other,
                               bool create_new_parameters)
 {
-  for(const Parameter & p : other.parameters)
-  {
-    if(this->contains(p.get_name()))
-    {
-      this->operator[](p.get_name()).impose(p);
-    }
-    else if(create_new_parameters)
-      this->add(Parameter(p)); // add a copy of the parameter p
-  }
+     for(const Parameter & p : other.parameters)
+        {
+         if(this->contains(p.get_name()))
+           {
+            this->operator[](p.get_name()).impose(p);
+           }
+         else if(create_new_parameters)
+                 this->add(Parameter(p)); // add a copy of the parameter p
+        }
 }
 
 /* ************************************************************************** */
@@ -754,13 +754,17 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          {"Default_UnitSquare", "Default_UnitCube"}
         );
   
-  db.add("geo_file", std::string("UnitSquare"),
+   db.add("geo_file", std::string("UnitSquare"),
          "This files describes the computational mesh. You probably want to "
          "adjust this to be the path to some file which typically has the "
          "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
          "files.",
          {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
           "Default_UnitCube_Tetra"});
+
+  db.add("mesh_file", std::string("__nofile__"),
+         "This files describes the computational mesh in .mesh format. "
+         "Set this to the path of your desired mesh file.");
 
   db.add("problem_type", (size_t)0, 
          "Determine which kind of problem you want to solve. A value of 0 "
@@ -770,7 +774,12 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "Stokes,  5: stationary Navier-Stokes,  6: time-dependent "
          "Navier-Stokes.",
          (size_t)0, (size_t)6);
-  
+
+  db.add("output_write_ps", false,
+	 "Draw a postscript file of the domain. This only works in two space "
+	 "dimensions. Usually this is used in the main program.",
+	 {true,false});
+
   db.add("verbosity", (size_t)1,
          "Set the verbosity of ParMooN. The higher the number, the more will "
          "output you will get. Such output will be written to console and the "
@@ -855,10 +864,10 @@ ParameterDatabase ParameterDatabase::default_output_database()
 			  "of a system class will produce VTK output or not.",
 			  {true,false});
 
-	  db.add("output_write_ps", false,
-	         "Draw a postscript file of the domain. This only works in two space "
-	         "dimensions. Usually this is used in the main program.",
-			 {true,false});
+	  db.add("output_write_case", false,
+			  "This parameter can control, whether an output method"
+			  "of a system class will produce CASE output or not.",
+			  {true,false});
 
 	  db.add("output_compute_errors", true,
 	         "Do or do not compute errors after computing a solution. This makes "
@@ -867,14 +876,18 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "norms, e.g. the L^2-norm of the solution.",
 			 {true,false});
 
-	  db.add("output_vtk_directory", std::string("."),
-	         "This directory is where the VTK output is written. This "
+	  db.add("output_directory", std::string("."),
+	         "This directory is where the output is written. This "
 	         "directory will be created, if it does not exist already. Files in "
 	         "this directory will be overwritten without any warning.");
 
 	  db.add("output_basename", std::string("parmoon"),
 	         "This string is prepended to most files written by ParMooN. "
-	         "Especially this includes vtk-files ");
+	         "This includes also vtk- and case-files");
+
+	  db.add("steps_per_output", 1,
+	         "This integer specifies how many (time) steps are performed "
+		 "before writing the results ");
 
 	  return db;
 }

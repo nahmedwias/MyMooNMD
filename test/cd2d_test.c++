@@ -71,8 +71,7 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LP_FULL_GRADIENT = 1;
     TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
     TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
-
-
+    
     // the domain is initialised with default description and default
     // initial mesh
 	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
