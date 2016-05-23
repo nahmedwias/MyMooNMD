@@ -19,7 +19,7 @@ class TDomain;
 #include <Collection.h>
 #include <Database.h>
 #include <Iterator.h>
-
+#include <Mesh.h>
 #include <ParameterDatabase.h>
 
 #ifdef __MORTAR__
@@ -272,7 +272,7 @@ class TDomain
                            int N_Vertices, int NVE,
                            double DriftX, double DriftY, double DriftZ,
                            int N_Layers, double *Lambda);
-    #endif
+     #endif
 
     /**
       * @brief Chooses in what way to construct the domain's geometry
@@ -316,7 +316,17 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-    void Init(const char *PRM, const char *GEO);
+      void Init(const char *PRM, const char *GEO);
+
+      /**
+       * @brief Initialize the domain starting from a boundary file and a mesh
+       *
+       * @param[in] PRM filepath to the boundary description
+       * @param[in] m filepath to mesh file
+       * @attention this function uses only strings (new convention, 05.2016)
+       */
+      void InitFromMesh(std::string PRM, std::string m);
+
 
     /** @brief write domain boundary  into a postscript file */
     int Draw(char *name, Iterators iterator, int arg);
@@ -557,7 +567,7 @@ class TDomain
    *
    * @note This has not been tested with an actual .xGEO-file yet.
    */
-  static bool checkIfxGEO(const char* GEO);
+  static bool isExtendedGEO(const char* GEO);
 
   /**
    * @return The value of parameter "refinement_n_initial_steps"

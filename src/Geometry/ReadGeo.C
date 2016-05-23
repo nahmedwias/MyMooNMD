@@ -187,6 +187,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   TBaseCell *JNeib1, *JNeib2;
   Shapes CellType;
 
+
   double bd_parameter_a, bd_parameter_b;
 
   Output::info<2>("Domain::MakeGrid()", "Creating 2D grid.");
@@ -198,6 +199,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   memset(KVEL, 0, N_Vertices * SizeOfInt);
   
   //KVEL(j) = how many times vertices j appears in the list
+  // Note: KVERT[i] can be = 0, in case of mixed (tria+quad meshes). In this
+  // case, the vertex does not exist.
   for (int i=0;i<NVE*N_RootCells;i++)
   {
     if (KVERT[i])
@@ -211,7 +214,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
     if (KVEL[i] > maxElpV) maxElpV = KVEL[i];
   
   delete [] KVEL;
-
   //KVEL = new int[++maxElpV * N_Vertices];
   maxElpV = maxElpV+1;
   KVEL = new int[maxElpV * N_Vertices];
@@ -226,8 +228,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       KVEL[j + KVEL[j]] = i / NVE;
     }
   }
-
-
+  
   // generate vertices
   //cout << " Domain::MakeGrid() generate " << N_Vertices << " vertices " << endl;
   NewVertices = new TVertex*[N_Vertices];
@@ -268,7 +269,6 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       NewVertices[i] = new TVertex(DCORVG[2*i], DCORVG[2*i+1]);
     } 
   } // for (i=0;i<N_Vertices;i++) {
-
   // set bounding box
   StartX = Xmin;
   StartY = Ymin;
@@ -340,7 +340,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
   for (int i=0;i<N_RootCells;i++)
   {
     N_Edges = CellTree[i]->GetN_Edges();
-
+ 
     for (j=0;j<N_Edges;j++)
     {
       a = KVERT[NVE*i + j] - 1;
@@ -614,7 +614,7 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
       }
     }
   } //for (i=0;i<N_RootCells;i++) {
-
+  
   // free memory
   delete [] KVEL;
   delete [] NewVertices;
@@ -2856,29 +2856,4 @@ int TDomain::MakeSandwichGrid(double *DCORVG, int *KVERT, int *KNPR,
 }
 
 #endif // __2D__
-
-bool TDomain::checkIfxGEO(const char* GEO)
-  {
-      bool isXgeo{false};
-      // check if input file is an extended geo file (.xGEO)
-      int nn=0;
-      while (GEO[nn] != 0)
-      {
-        ++nn;
-      }
-
-      //check if we found the correct place in the char arary
-      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
-      {
-        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
-            "filename ends on '.GEO' or '.xGEO')" );
-      }
-
-      if (GEO[nn-4]=='x')
-      {
-          Output::info<2>("checkIfxGEO"," *** reading xGEO file (with physical references) ***");
-        isXgeo = true;
-      }
-      return isXgeo;
-  }
 

@@ -798,6 +798,7 @@ int TDomain::GenInitGrid()
   return 0;
 }
 
+
 void TDomain::Init(const char *PRM, const char *GEO)
 {
   int Flag;
@@ -881,9 +882,11 @@ void TDomain::Init(const char *PRM, const char *GEO)
   }
   else
   {
+    Output::print("** WARNING: the (x)GEO files will be no longer supported. Use .mesh instead **");
+
     // "GEO" interpreted as file path to GEO-file.
     // check if it actually is an .xGEO-file
-    bool isxGEO = checkIfxGEO(GEO);
+    bool isxGEO = isExtendedGEO(GEO);
 
     // make an input file string from the file "GEO"
     std::ifstream bdryStream(GEO);
@@ -896,6 +899,98 @@ void TDomain::Init(const char *PRM, const char *GEO)
     ReadGeo(bdryStream,isxGEO);
   }
 }
+
+// initialize a domain from a mesh and a boundary(PRM) file
+void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
+{
+  Output::print("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
+  //make an input file string from the file "PRM"
+  std::ifstream bdryStream(PRM);
+  if (!bdryStream)
+    {
+      Output::print(" ** Error(TDomain::Init) cannot open PRM file ", PRM);
+      exit(-1);
+    }
+  //do the actual read in
+  int Flag;
+  ReadBdParam(bdryStream, Flag);
+  //close the stream
+  bdryStream.close();
+
+  // read mesh
+  Mesh m(MESHFILE);
+  m.setBoundary(PRM);
+  unsigned int numberOfElements = m.triangle.size() + m.quad.size();
+  unsigned int maxNVertexPerElem = 3;
+  // make the ParMooN-grid
+  if (m.quad.size()) {
+    maxNVertexPerElem = 4;
+  }
+  if (numberOfElements==0) {
+    Output::print(" ** Error(Domain::Init) the mesh has no elements");
+    exit(-1);
+  }
+
+  // vertices data
+  double *DCORVG;
+  int *KNPR;
+  unsigned int n_vertices = m.vertex.size();
+  KNPR = new int[n_vertices];
+  DCORVG =  new double[2*n_vertices];
+
+  // fill the DCORVG array with GEO-like coordinates of two-dimensional points
+  for (unsigned int i=0; i<n_vertices; i++) {
+
+    // check if the vertex is on the boundary
+    double localParam;
+    int partID = m.boundary.isOnComponent(m.vertex[i].x,m.vertex[i].y,localParam);
+    if (partID>=0) {
+      DCORVG[2*i] = localParam;
+      DCORVG[2*i+1] = 0.;
+      KNPR[i] = partID+1;
+    } else {
+      DCORVG[2*i] = m.vertex[i].x;
+      DCORVG[2*i+1] = m.vertex[i].y;
+      KNPR[i] = 0;
+    }  
+  }
+  int *KVERT,*ELEMSREF;
+  KVERT = new int[maxNVertexPerElem * numberOfElements];
+  ELEMSREF = new int[numberOfElements];
+
+  // store triangles (+ 0 when using a mixed mesh)
+  for (unsigned int i=0;i<m.triangle.size();i++)
+  {
+    for (unsigned int  j=0; j<3; j++) 
+      KVERT[maxNVertexPerElem*i + j] = m.triangle[i].nodes[j];
+    
+    if (maxNVertexPerElem==4) KVERT[maxNVertexPerElem*i + 3] = 0;
+    
+    ELEMSREF[i] = m.triangle[i].reference;
+    
+  }
+
+  // store quadrilaterals
+  for (unsigned int i=0;i<m.quad.size();i++)
+  {
+    for (unsigned int  j=0; j<4; j++) 
+      KVERT[maxNVertexPerElem* (m.triangle.size() + i) + j] = m.quad[i].nodes[j];
+
+    ELEMSREF[m.triangle.size()+i] = m.quad[i].reference;
+    
+  }
+  // N_RootCells is an internal Domain variable used in other functions
+  N_RootCells = numberOfElements;
+  
+  MakeGrid(DCORVG,KVERT,KNPR,ELEMSREF,m.vertex.size(),maxNVertexPerElem);
+  delete [] DCORVG;
+  delete [] KVERT;
+  delete [] KNPR;
+  delete [] ELEMSREF;
+  
+}
+
+
 #else // 3D
 void TDomain::Init(const char *PRM, const char *GEO)
 {
@@ -944,7 +1039,7 @@ void TDomain::Init(const char *PRM, const char *GEO)
     {
       // "GEO" interpreted as file path to GEO-file.
       // check if it actually is an .xGEO-file
-      bool isxGEO = checkIfxGEO(GEO);
+      bool isxGEO = isExtendedGEO(GEO);
       // make an input file string from the file "GEO"
       std::ifstream bdryStream(GEO);
       if (!bdryStream)
@@ -3046,6 +3141,33 @@ int TDomain::RefineallxDirection()
 	
 	return 0;
 }
+
+bool TDomain::isExtendedGEO(const char* GEO)
+  {
+      bool isXgeo{false};
+      // check if input file is an extended geo file (.xGEO)
+      int nn=0;
+      while (GEO[nn] != 0)
+      {
+        ++nn;
+      }
+
+      //check if we found the correct place in the char arary
+      if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
+      {
+          Output::print("geo_file: ",GEO);
+          ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
+            "filename ends on '.GEO' or '.xGEO')" );
+      }
+
+      if (GEO[nn-4]=='x')
+      {
+        Output::print<2>(" *** reading xGEO file (with physical references) ***");
+        isXgeo = true;
+      }
+      return isXgeo;
+  }
+
 
 #ifdef __3D__
 // int TDomain::Tetgen(const char *FileName)
