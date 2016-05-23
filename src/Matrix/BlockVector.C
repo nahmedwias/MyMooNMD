@@ -54,11 +54,14 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool result)
    // all entries are active
     actives[b] = lengths[b];
   }
+  Output::print<3>("(end) Constructor of BlockVector using a BlockMatrix");
+  Output::print<3>("entries: ", this->entries.size(), " ",this->length());
 }
 
 BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
 : BlockVector(static_cast<const BlockMatrix&>(mat), result)
 {
+
   //now set actives correctly
   for(size_t b = 0; b < n_blocks(); ++b)
   {//go thorugh all blocks of the vector
