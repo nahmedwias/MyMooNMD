@@ -706,15 +706,15 @@ void ParameterDatabase::read(std::istream& is)
 void ParameterDatabase::merge(const ParameterDatabase &other,
                               bool create_new_parameters)
 {
-  for(const Parameter & p : other.parameters)
-  {
-    if(this->contains(p.get_name()))
-    {
-      this->operator[](p.get_name()).impose(p);
-    }
-    else if(create_new_parameters)
-      this->add(Parameter(p)); // add a copy of the parameter p
-  }
+     for(const Parameter & p : other.parameters)
+        {
+         if(this->contains(p.get_name()))
+           {
+            this->operator[](p.get_name()).impose(p);
+           }
+         else if(create_new_parameters)
+                 this->add(Parameter(p)); // add a copy of the parameter p
+        }
 }
 
 /* ************************************************************************** */

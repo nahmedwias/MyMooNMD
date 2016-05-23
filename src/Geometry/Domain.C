@@ -3155,13 +3155,14 @@ bool TDomain::isExtendedGEO(const char* GEO)
       //check if we found the correct place in the char arary
       if(GEO[nn-3] != 'G' || GEO[nn-2] != 'E' || GEO[nn-1] != 'O')
       {
-        ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
+          Output::print("geo_file: ",GEO);
+          ErrThrow("Incorrect read-in of .(x)GEO-filename! (Make sure the "
             "filename ends on '.GEO' or '.xGEO')" );
       }
 
       if (GEO[nn-4]=='x')
       {
-	Output::print<2>(" *** reading xGEO file (with physical references) ***");
+        Output::print<2>(" *** reading xGEO file (with physical references) ***");
         isXgeo = true;
       }
       return isXgeo;
