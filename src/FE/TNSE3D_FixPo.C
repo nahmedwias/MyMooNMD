@@ -1607,12 +1607,12 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM11; // **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row; // *MatrixM22Row, *MatrixM33Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
@@ -2774,13 +2774,13 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM11; // **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row; // *MatrixM22Row, *MatrixM33Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
