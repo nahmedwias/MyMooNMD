@@ -110,9 +110,8 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                        , int maxSubDomainPerDof
 #endif
 )
- : systems_(), example_(ex), multigrid_(), defect_(),
-   db_(get_default_TNSE3D_parameters()),
-   old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
+ : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex), multigrid_(),
+   defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
  // if it has to be called here or in the main program (see difference between
@@ -191,12 +190,12 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
 
-  Output::print<1>("N_Cells     : ", setw(10), coll->GetN_Cells());
-  Output::print<1>("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
-  Output::print<1>("dof Velocity: ", setw(10), 3* n_u);
-  Output::print<1>("dof Pressure: ", setw(10), n_p   );
-  Output::print<1>("dof all     : ", setw(10), n_dof );
-  Output::print<1>("active dof  : ", setw(10), 3*nActive);
+  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
+  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
+  Output::print("dof Velocity: ", setw(10), 3* n_u);
+  Output::print("dof Pressure: ", setw(10), n_p   );
+  Output::print("dof all     : ", setw(10), n_dof );
+  Output::print("active dof  : ", setw(10), 3*nActive);
 
   // Initial velocity = interpolation of initial conditions
   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
@@ -211,6 +210,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   else // multigrid  TODO: Multigrid in TNSE3D is not implemented yet.
     // it has to be constructed here
   {
+    ErrThrow("No multigrid yet");
 //  // create spaces, functions, matrices on coarser levels
 //  double *param = new double[10];
 //  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
@@ -432,13 +432,12 @@ void Time_NSE3D::assemble_initial_time()
         sqMatrices[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(10).get());
         // mass matrices
         sqMatrices[9] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get());
-        ErrThrow("not tested yet!!!, kindly remove one mass matrix from the LocalAssembling3D routine");
 
         // rectangular matrices
         nRectMatrices = 3;
         rectMatrices[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());  // standing B blocks
         rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-        rectMatrices[1] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
+        rectMatrices[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());
 
         nRhs = 3;
         break;
@@ -1310,7 +1309,8 @@ void Time_NSE3D::output(int m, int &image)
     	  mkdir(db_["output_vtk_directory"], 0777);
       std::string dir = db_["output_vtk_directory"];
       std::string base = db_["output_basename"];
-      output.Write_ParVTK(MPI_COMM_WORLD, 0, SubID, dir, base);
+      output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
+      image++;
 #else
     // Create output directory, if not already existing.
     mkdir(db_["output_vtk_directory"], 0777);
@@ -1449,15 +1449,15 @@ double Time_NSE3D::get_full_residual() const
 }
 
 /**************************************************************************** */
-//std::array< double, int(6) > Time_NSE3D::get_errors()
-//{
-//  std::array<double, int(6)> error_at_time_points;
-//  error_at_time_points[0] = sqrt(errors[1]); // L2 velocity error
-//  error_at_time_points[1] = sqrt(errors[3]); // H1 velocity error
-//  error_at_time_points[2] = sqrt(errors[5]); // L2 pressure error
-//  error_at_time_points[3] = sqrt(errors[7]); // H1 pressure error
-//
-//  return error_at_time_points;
-//}
-//
+std::array< double, int(6) > Time_NSE3D::get_errors() const
+{
+  std::array<double, int(6)> error_at_time_points;
+  error_at_time_points[0] = sqrt(this->errors_[0]); // L2 velocity error
+  error_at_time_points[1] = sqrt(this->errors_[1]); // H1 velocity error
+  error_at_time_points[2] = sqrt(this->errors_[2]); // L2 pressure error
+  error_at_time_points[3] = sqrt(this->errors_[3]); // H1 pressure error
+
+  return error_at_time_points;
+}
+
 /**************************************************************************** */

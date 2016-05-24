@@ -82,6 +82,13 @@ ParameterDatabase Solver<L, V>::default_solver_database()
           "semi_implicit_method_for_pressure_linked_equations",
           "least_squares_commutator", "least_squares_commutator_boundary"});
   
+  db.add("saddle_point_preconditioner_direct_velocity_solve", true, 
+         "During the application of a Saddle_point_preconditioner one has to "
+         "solve a system involving only the velocity part of the matrix. Set "
+         "this parameter to true if you want to solve this with a direct "
+         "solver, otherwise some iterative scheme is used. Check out the class "
+         "Saddle_point_preconditioner.");
+  
   db.add("damping_factor", 1.0, "The damping in an iteration. A value of 1.0 "
          "means no damping while 0.0 would mean no progress. In general "
          "smaller values make iterations slower. This can still be necessary "
@@ -99,7 +106,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<Preconditioner<V>> get_preconditioner(
-  std::string preconditioner_name, const L& matrix)
+  std::string preconditioner_name, const L& matrix, const ParameterDatabase& db)
 {
   if(preconditioner_name == "no_preconditioner")
   {
@@ -112,18 +119,21 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
   else if(preconditioner_name == "least_squares_commutator")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::lsc);
+      matrix, Saddle_point_preconditioner::type::lsc,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else if(preconditioner_name == "least_squares_commutator_boundary")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::bd_lsc);
+      matrix, Saddle_point_preconditioner::type::bd_lsc,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else if(preconditioner_name == 
           "semi_implicit_method_for_pressure_linked_equations")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::simple);
+      matrix, Saddle_point_preconditioner::type::simple,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else
   {
@@ -181,8 +191,8 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
- : db(default_solver_database()), direct_solver(), iterative_method(),
-   preconditioner()
+ : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
+   iterative_method(), preconditioner()
 {
   this->db.merge(param_db, false);
 }
@@ -192,6 +202,7 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
 template <class L, class V>
 void Solver<L, V>::update_matrix(const L& matrix)
 {
+  this->linear_operator = &matrix;
   if(db["solver_type"].is("direct")) // direct solver
   {
     DirectSolver::DirectSolverTypes t;
@@ -226,7 +237,8 @@ void Solver<L, V>::update_matrix(const L& matrix)
     if(!is_saddle_point_preconditioner)
     {
       // create a new preconditioner
-      this->preconditioner = get_preconditioner<L, V>(prec_name, matrix);
+      this->preconditioner = get_preconditioner<L, V>(prec_name, matrix, 
+                                                      this->db);
     }
     else
     {
@@ -248,17 +260,25 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
-  if(!db["solver_type"].is("direct"))
-    ErrThrow("Calling Solver::solve without the matrix as an argument only "
-             "works for direct solvers. In such a case the method "
-             "Solver::update_matrix has to be called in advance. For iterative "
-             "solvers you should call the method Solver::solve with a "
-             "BlockFEMatrix (and right hand side and solution).");
-  if(this->direct_solver)
+  if(this->linear_operator == nullptr)
+    ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
+             "Solver::update_matrix first. Otherwise it's not clear which "
+             "system is supposed to be solved");
+  if(db["solver_type"].is("direct"))
+  {
     this->direct_solver->solve(rhs, solution);
+  }
   else
-    ErrThrow("Calling Solver::solve(rhs, solution) with a direct solver "
-             "requires a preceeding call to Solver::update_matrix(matrix).");
+  {
+    auto n_it_residual = this->iterative_method->iterate(
+      *this->linear_operator, rhs, solution);
+    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
+                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
+  }
+  //compute the residual by hand again.
+  //V r(rhs);
+  //linear_operator->apply_scaled_add(solution, r, -1.);
+  //Output::print<2>("computed residual in Solver class: ", r.norm());
 }
 
 /* ************************************************************************** */
@@ -267,22 +287,7 @@ template <class L, class V>
 void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
 {
   this->update_matrix(matrix);
-  if(db["solver_type"].is("direct"))
-  {
-    // direct solver
-    this->solve(rhs, solution);
-  }
-  else
-  {
-    // iterative solver
-    auto n_it_residual = this->iterative_method->iterate(matrix, rhs, solution);
-    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
-                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
-  }
-  //compute the residual by hand again.
-  //V r(rhs);
-  //matrix.apply_scaled_add(solution, r, -1.);
-  //Output::print<2>("computed residual in Solver class: ", r.norm());
+  this->solve(rhs, solution);
 }
 
 /*TODO this implementation is partly copy-and-paste from update_matrix,
