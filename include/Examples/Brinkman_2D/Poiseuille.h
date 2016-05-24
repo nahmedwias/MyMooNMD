@@ -42,6 +42,10 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 {
   cond = DIRICHLET;
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+  if (i==2) {
+    cond = NEUMANN;
+    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0 ;
+  }
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
