@@ -157,8 +157,8 @@ int main(int argc, char **argv)
        || !equal(y[3], 0.))
       ErrThrow("C and CT seem to be not transposed to each other");
     
-    delete x; x = nullptr;
-    delete y; y = nullptr;
+    delete [] x; x = nullptr;
+    delete [] y; y = nullptr;
   }
   // ##########################################################################
   // ##########################################################################
@@ -184,6 +184,8 @@ int main(int argc, char **argv)
        || !equal(matB_copy(1, 2), -30)  || !equal(matB_copy(2, 1), -36)
        || !equal(matB_copy(2, 3), -12))
       ErrThrow("wrong results after scaling with vector, matrix B");
+    
+    delete [] x;
   }
   // ##########################################################################
   // ##########################################################################
