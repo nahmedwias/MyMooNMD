@@ -165,21 +165,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   }
   
   // print out some information  
-  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
-  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
-  
-  double h_min, h_max;
-  TCollection * coll = this->get_velocity_space().GetCollection();
-  coll->GetHminHmax(&h_min, &h_max);
-  Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
-  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12),
-                   h_max);
-  Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
-  Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
-  Output::print<1>("dof pressure       : ", setw(10), n_p);
-  Output::print<1>("dof all            : ", setw(10), n_dof);
+  this->output_problem_size_info();
 }
 
 /** ************************************************************************ */
@@ -786,6 +772,26 @@ void NSE2D::output(int i)
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
+}
+
+/** ************************************************************************ */
+void NSE2D::output_problem_size_info() const
+{
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
+  
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+  Output::stat("NSE2D", "Mesh data and problem size");
+  Output::dash("cells              :  ", setw(10), coll->GetN_Cells());
+  Output::dash("h (min, max)       :  ", setw(10), h_min, setw(10), " ", h_max);
+  Output::dash("dof velocity       :  ", setw(10), 2*n_u );
+  Output::dash("dof velocity active:  ", setw(10), 2*n_u_active);
+  Output::dash("dof pressure       :  ", setw(10), n_p);
+  Output::dash("dof all            :  ", setw(10), n_dof);
 }
 
 /** ************************************************************************ */

@@ -160,6 +160,9 @@ class NSE2D
     void get_velocity_pressure_orders(std::pair <int,int>
                    &velocity_pressure_orders);
     
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
+    
   public:
     
     /** @brief constructor 
