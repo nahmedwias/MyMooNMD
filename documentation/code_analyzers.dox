@@ -169,7 +169,18 @@ precise especially on small examples. But they do serve as a hint.
 
 
 \subsection valgrind_massif massif - a heap profiler
-to be written
+The massif tool provides information about memory allocated on the heap. It
+enables you to see which parts of your program result in memory peaks and also
+makes it possible to visually discover the severe memory leaks.
+you can start it with 
+  valgrind --tool=massif ./nse2d nse2d.dat
+but be prepared! It will take quite some time to come through. It by default 
+produces a file named "massif.out.<process_number>" which then can be examined
+using e.g. the massif visualizer tool found here:
+http://kde-apps.org/content/show.php?content=122409
+It will work for Linux with KDE only, if you are on a different platform try
+to find another gui or just use the massif terminal view tool "ms_print" to examine
+the output file.
 
 \subsection valgrind_cachgrind cachegrind - a cache and branch-prediction profiler
 to be written
