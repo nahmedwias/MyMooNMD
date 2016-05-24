@@ -121,7 +121,10 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     const TFESpace3D * pressure_space;
     #endif
     
-    /** @brief damping factor, zero means no preconditioner is used */
+    /** @brief damping factor, zero means no preconditioner is used 
+     * 
+     * Currently this is always 1.0, i.e., no damping.
+     */
     double damping_factor;
     
     /* LSC === */

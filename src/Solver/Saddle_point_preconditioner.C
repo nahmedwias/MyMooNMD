@@ -209,7 +209,6 @@ void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
 void Saddle_point_preconditioner::apply(const BlockVector &z,
                                         BlockVector &r) const
 {
-  r = z;
   Output::print<5>("Saddle_point_preconditioner::solve");
   if(r.n_blocks() == 0)
   {
@@ -343,6 +342,12 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
         r.add(u_tmp.block(i), i);
       r.copy(p_star.block(0), n_blocks-1);
       /// TODO damping? this->damping_factor
+      
+      if(this->damping_factor != 1.0)
+      {
+        r.scale(this->damping_factor);
+        r.add_scaled(z, 1 - this->damping_factor);
+      }
        
       //IntoL20FEFunction(r.block(n_blocks-1), r.length(n_blocks-1),
       //                  pressure_space,
