@@ -67,12 +67,18 @@ class MultigridLevel
     BlockFEMatrix* matrix_; // TODO This is a dangerous pointer so far -
                             // TODO change to weak_ptr as soon as the system classes store shared pointers to the matrices
 
+    /// The defect of the equation solved (smoothed) on this level.
+    /// Gets updated by calling calculate_defect.
     BlockVector defect_;
 
+    /// The defect of the equation solved (or better: smoothed) on this level.
+    /// Gets updated by calling calculate_defect.
     double residual_;
 
+    /// The right hand side of the equation to solve (or rather: smooth) on this level.
     BlockVector rhs_;
 
+    /// The solution of the equation to solve (or rather: smooth) on this level.
     BlockVector solution_;
 
     /// The smoother object. Since Smoother is an abstract base class,
