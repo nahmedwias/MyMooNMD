@@ -1,0 +1,294 @@
+#include <CD2D.h>
+#include <Database.h>
+#include <Output2D.h>
+#include <LinAlg.h>
+#include <Multigrid.h>
+#include <MainUtilities.h> // L2H1Errors
+#include <AlgebraicFluxCorrection.h>
+#include <PostProcessing2D.h>
+
+#include <LocalAssembling2D.h>
+#include <Assemble2D.h>
+#include <LocalProjection.h>
+
+#include <numeric>
+
+#include <Mesh.h>
+#include <sys/stat.h>
+#include <Boundary.h>
+
+ParameterDatabase get_default_CD2D_parameters()
+{
+  Output::print<3>("creating a default CD2D parameter database");
+  // we use a parmoon default database because this way these parameters are
+  // available in the default CD2D database as well.
+  ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.set_name("CD2D parameter database");
+  
+  // a default output database - needed here as long as there's no class handling the output
+  ParameterDatabase out_db = ParameterDatabase::default_output_database();
+  db.merge(out_db, true);
+
+  return db;
+}
+/** ************************************************************************ */
+CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
+                                       TCollection& coll)
+: fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
+           TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+           // TODO CB: Building the matrix here and rebuilding later is due to the
+           // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
+           // which do neither provide default constructors nor working copy assignments.)
+           matrix({&fe_space}),
+           rhs(this->matrix, true),
+           solution(this->matrix, false),
+           fe_function(&this->fe_space, (char*)"c", (char*)"c",
+                       this->solution.get_entries(), this->solution.length())
+{
+  
+  matrix = BlockFEMatrix::CD2D(fe_space);
+}
+
+/** ************************************************************************ */
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           int reference_id)
+ : CD2D(domain, param_db, Example_CD2D(param_db["example"]), reference_id)
+{
+}
+
+/** ************************************************************************ */
+CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
+           const Example_CD2D& example, int reference_id)
+ : systems(), example(example), mg(nullptr),
+   db(get_default_CD2D_parameters()), outputWriter(param_db), solver(param_db)
+{
+  this->db.merge(param_db, false); // update this database with given values
+  this->set_parameters();
+  // create the collection of cells from the domain (finest grid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+  // create finite element space and function, a matrix, rhs, and solution
+  this->systems.emplace_back(this->example, *coll);
+
+  outputWriter.add_fe_function(&this->get_function());
+  
+
+  // print out some information
+  TFESpace2D & space = this->systems.front().fe_space;
+  double h_min, h_max;
+  coll->GetHminHmax(&h_min, &h_max);
+  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+  Output::print<2>("h (min,max): ", setw(12), h_min, " ", setw(12), h_max);
+  Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
+  Output::print<2>("dof active : ", setw(12), space.GetN_ActiveDegrees());
+
+  
+  // done with the constructor in case we're not using multigrid
+  if(this->solver.get_db()["solver_type"].is("direct") || 
+     !this->solver.get_db()["preconditioner"].is("multigrid"))
+    return;
+  // else multigrid
+  
+  ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+  database_mg.merge(param_db, false);
+  
+  // Construct systems per grid and store them, finest level first
+  std::list<BlockFEMatrix*> matrices;
+  size_t n_levels = database_mg["multigrid_n_levels"];
+  int finest = domain.get_ref_level();
+  int coarsest = finest - n_levels + 1;
+  for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+  {
+    TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
+    systems.emplace_back(example, *coll);
+    //prepare input argument for multigrid object
+    matrices.push_front(&systems.back().matrix);
+  }
+  
+  // Construct multigrid object
+  mg = std::make_shared<Multigrid>(database_mg, matrices);
+}
+
+/** ************************************************************************ */
+CD2D::~CD2D()
+{
+  // delete the collections created during the contructor
+  for(auto & s : this->systems)
+    delete s.fe_space.GetCollection();
+}
+
+/** ************************************************************************ */
+void CD2D::set_parameters()
+{
+  //////////////// Algebraic flux correction ////////////
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
+  {//some kind of afc enabled
+    //make sure that galerkin discretization is used
+    if (TDatabase::ParamDB->DISCTYPE !=	1)
+    {//some other disctype than galerkin
+      TDatabase::ParamDB->DISCTYPE = 1;
+      Output::print("DISCTYPE changed to 1 (GALERKIN) because Algebraic Flux ",
+                    "Correction is enabled.");
+    }
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+  }
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION > 1)
+  {
+    ErrThrow("For CD2D only algebraic flux correction of FEM-TVD is implemented"
+        "(ALGEBRAIC_FLUX_CORRECTION: 1).")
+  }
+
+}
+
+/** ************************************************************************ */
+void CD2D::assemble()
+{
+  LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+
+  // this loop has more than one iteration only in case of multigrid
+  for(auto & s : this->systems)
+  {
+    TFEFunction2D * pointer_to_function = &s.fe_function;
+    // create a local assembling object which is needed to assemble the matrix
+    LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs());
+
+    // assemble the system matrix with given local assembling, solution and rhs
+    const TFESpace2D * fe_space = &s.fe_space;
+    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+    int N_Matrices = 1;
+    double * rhs_entries = s.rhs.get_entries();
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+
+    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
+
+      // reset right hand side and matrix to zero (just in case)
+      s.rhs.reset();
+      matrix->reset();
+
+      // assemble
+      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+                 &fe_space, &boundary_conditions, non_const_bound_value, la);
+
+      // apply local projection stabilization method
+      if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
+         && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
+      {
+        if(TDatabase::ParamDB->LP_FULL_GRADIENT==1)
+        {
+          UltraLocalProjection((void *)&matrix, false);
+        }
+        else
+        {
+          ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
+        }
+      }
+
+      // copy Dirichlet values from rhs to solution vector (this is not really
+      // necessary in case of a direct solver)
+      s.solution.copy_nonactive(s.rhs);
+  }
+
+  // when using afc, do it now
+  if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
+  {
+    do_algebraic_flux_correction();
+  }
+
+}
+
+/** ************************************************************************ */
+void CD2D::solve()
+{
+  double t = GetTime();
+  System_per_grid& s = this->systems.front();
+  if(this->solver.get_db()["solver_type"].is("direct") || 
+     !this->solver.get_db()["preconditioner"].is("multigrid"))
+  {
+    this->solver.solve(s.matrix, s.rhs, s.solution);
+  }
+  else
+  {//multigrid preconditioned iterative solver is used
+    solver.solve(s.matrix, s.rhs, s.solution, mg);
+  }
+  
+  t = GetTime() - t;
+  Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");
+}
+
+/** ************************************************************************ */
+void CD2D::output(int i)
+{
+  // print the value of the largest and smallest entry in the finite element 
+  // vector
+  TFEFunction2D & fe_function = this->systems.front().fe_function;
+  fe_function.PrintMinMax();
+  
+  // write solution to a vtk file or in case-format
+  outputWriter.write(i,0.0);
+  
+  // measure errors to known solution
+  // If an exact solution is not known, it is usually set to be zero, so that
+  // in such a case here only integrals of the solution are computed.
+  if(this->db["output_compute_errors"])
+  {
+    double errors[5];
+    TAuxParam2D aux;
+    MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
+    const TFESpace2D* space = fe_function.GetFESpace2D();
+    
+    fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
+                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
+                          &space, errors);
+    
+    Output::print<1>("L2     : ", errors[0]);
+    Output::print<1>("H1-semi: ", errors[1]);
+    Output::print<1>("SD     : ", errors[2]);
+    Output::print<1>("L_inf  : ", errors[3]);
+  } 
+}
+
+/** ************************************************************************ */
+void CD2D::do_algebraic_flux_correction()
+{
+  for(auto & s : this->systems) // do it on all levels.
+  {
+    //determine which kind of afc to use
+    switch (TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION)
+    {
+      case 1: //FEM-TVD
+      {
+        //get pointers/references to the relevant objects
+        TFESpace2D& feSpace = s.fe_space;
+        FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
+        const std::vector<double>& solEntries = s.solution.get_entries_vector();
+        std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
+
+        // fill a vector "neumannToDirichlet" with those rows that got
+        // internally treated as Neumann although they are Dirichlet
+        int firstDiriDof = feSpace.GetActiveBound();
+        int nDiri = feSpace.GetN_Dirichlet();
+
+        std::vector<int> neumToDiri(nDiri, 0);
+        std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
+
+        // apply FEM-TVD
+        AlgebraicFluxCorrection::fem_tvd_algorithm(
+            one_block,
+            solEntries,rhsEntries,
+            neumToDiri);
+
+        //...and finally correct the entries in the Dirchlet rows
+        AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
+        //...and in the right hand side, too, assum correct in solution vector
+        s.rhs.copy_nonactive(s.solution);
+        break;
+      }
+      default:
+      {
+        ErrThrow("The chosen ALGEBRAIC_FLUX_CORRECTION scheme is unknown to class CD2D.");
+      }
+    }
+  }
+}
