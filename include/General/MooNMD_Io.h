@@ -102,6 +102,8 @@ namespace Output
   void decreaseVerbosity(unsigned int i = 1);
   /// @brief set the verbosity to a given level (must be between 1 and 5)
   void setVerbosity(unsigned int i);
+  /// @brief get the verbosity, typically to reset it to this value later again
+  unsigned int getVerbosity();
   /// @brief suppress all output to std::cout and the outfile
   ///
   /// Only calls to Output::print are suppressed. Direct calls to std::cout are

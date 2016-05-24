@@ -132,6 +132,17 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME cd3d_seq_jacobi COMMAND ParMooN_test_cd3d_solver_seq jacobi)
   #richardson iteration with multigrid
   add_test(NAME cd3d_seq_mg COMMAND ParMooN_test_cd3d_solver_seq multigrid)
+  
+  #tcd3d solver tests
+  set(_EXEC_NAME ParMooN_test_tcd3d_solver_seq)
+  set(_FILE_NAME tcd3d_solvers_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME tcd3d_seq_umfpack COMMAND ParMooN_test_tcd3d_solver_seq umfpack)
+  #richardson iteration with jacobi
+  add_test(NAME tcd3d_seq_jacobi COMMAND ParMooN_test_tcd3d_solver_seq jacobi)
+  #richardson iteration with multigrid
+  add_test(NAME tcd3d_seq_mg COMMAND ParMooN_test_tcd3d_solver_seq multigrid)  
 
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_seq)
@@ -156,6 +167,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_iterative_solver parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(iterative_solver ParMooN_test_iterative_solver)
   list(APPEND parmoon_tests ParMooN_test_iterative_solver)
+  
+  #tnse3d tests
+  set(_EXEC_NAME ParMooN_test_tnse3d_seq)
+  set(_FILE_NAME tnse3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #umfpack
+  add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d_seq umfpack)
   
   #multigrid tests
   set(_EXEC_NAME ParMooN_test_multigrid_2d)
@@ -222,13 +240,30 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi multigrid)
   
+  #tcd3d solver tests 
+  set(_EXEC_NAME ParMooN_test_tcd3d_solver_mpi)
+  set(_FILE_NAME tcd3d_solvers_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  # mumps
+  add_test(NAME tcd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi mumps)
+  #jacobi - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
+  add_test(NAME tcd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi jacobi)
+  #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
+  add_test(NAME tcd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_tcd3d_solver_mpi multigrid)
+  
   #nse3d solver tests
   set(_EXEC_NAME ParMooN_test_nse3d_solver_mpi)
   set(_FILE_NAME nse3d_solvers_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME nse3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_nse3d_solver_mpi mumps)
-
+  
+  #tnse3d tests
+  set(_EXEC_NAME ParMooN_test_tnse3d_mpi)
+  set(_FILE_NAME tnse3d_test.c++)
+  register_executable(${_EXEC_NAME} ${_FILE_NAME})
+  #mumps
+  add_test(NAME tnse3d_mpi_mumps COMMAND mpirun -n 2 ParMooN_test_tnse3d_mpi mumps)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 	
