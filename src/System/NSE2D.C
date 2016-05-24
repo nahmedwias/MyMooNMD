@@ -163,6 +163,23 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     // Construct multigrid object
     mg_ = std::make_shared<Multigrid>(database_mg, matrices);
   }
+  
+  // print out some information  
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
+  
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+  Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
+  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12),
+                   h_max);
+  Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
+  Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
+  Output::print<1>("dof pressure       : ", setw(10), n_p);
+  Output::print<1>("dof all            : ", setw(10), n_dof);
 }
 
 /** ************************************************************************ */
