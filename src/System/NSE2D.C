@@ -135,7 +135,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     && this->solver.get_db()["preconditioner"].is("multigrid");
   if(!usingMultigrid)
   {
-    TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
     // create finite element space and function, a matrix, rhs, and solution
     systems.emplace_back(e, *coll, velocity_pressure_orders, type);
 
@@ -152,7 +152,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     int coarsest = finest - n_levels + 1;
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
       systems.emplace_back(example, *coll, velocity_pressure_orders,
                             type);
       //prepare input argument for multigrid object
