@@ -321,6 +321,9 @@ class NSE3D
     
     const int get_size(){return this->systems_.front().solution_.length();}
 
+    const ParameterDatabase & get_db() const
+    { return db; }
+    
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impuls residual (updated in compute_residuals)

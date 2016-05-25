@@ -285,7 +285,9 @@ class Time_CD3D
     { return this->systems_.front().solution_; }
     const TFESpace3D & get_space() const
     { return this->systems_.front().feSpace_; }
-   
+    const ParameterDatabase & get_db() const
+    { return db; }
+    
    /**
     * @brief return the computed errors at each discre time point
     * 
