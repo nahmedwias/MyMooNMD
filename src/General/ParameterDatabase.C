@@ -181,9 +181,9 @@ void ParameterDatabase::write(std::ostream& os, size_t verbose) const
   {
     if(verbose == 1 || verbose == 2) // verbose != 0
     {
-      p.print_description(os, "# ", 60, "");
+      p.print_description(os, "## ", 60, "");
     }
-    os << p.get_name() << ": " << p.value_as_string() << "   " 
+    os << p.get_name() << ": " << p << "   " 
        << p.range_as_string() << "\n\n";
   }
 }
@@ -277,7 +277,8 @@ Parameter::types get_parameter_and_type(std::string value_string,
     bool_ret = false;
     return Parameter::types::_bool;
   }
-  else if(value_string.find('.') != std::string::npos)
+  else if(value_string.find('.') != std::string::npos 
+         || value_string.find(std::string("e-")) != std::string::npos)
   {
     try // this could be a double
     {
@@ -539,9 +540,6 @@ void add_range_to_parameter(Parameter& p,
 Parameter create_parameter(std::string name, std::string value_string, 
                            std::string description, std::string range_string)
 {
-  if(description.empty())
-    description = "empty description";
-  
   bool bool_val;
   int int_val;
   size_t size_t_val;
@@ -669,8 +667,13 @@ void ParameterDatabase::read(std::istream& is)
       // documentation for a parameter on this line
       std::string des = line.substr(1);
       remove_leading_whitespace(des);
-      // add this line to the descripion
-      description += des + " ";
+      // if there were two '#' at the beginning, then interpret this as a 
+      // comment which should not become part of the description
+      if(des.length() != 0 && des.at(0) == '#')
+        description.clear();
+      else
+        // add this line to the descripion
+        description += des + " ";
       continue; // go to next line
     }
     
@@ -685,10 +688,6 @@ void ParameterDatabase::read(std::istream& is)
     {
       description.clear();
       continue;
-    }
-    if(description.empty())
-    {
-      description = "custom parameter without documentation";
     }
     
     tmp.add(create_parameter(param_name, value_string, description,
