@@ -828,7 +828,13 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
   db.add("nonlinloop_epsilon", 1e-10,
          "At which absolute residual to break the nonlinear loop.",
          0. , 1. );
-
+  
+  db.add("nonlinloop_damping_factor", 1.0,
+         "Damping factor 'w' for the nonlinear iteration. The solution of the "
+         "k-th iterate will be scaled by 'w'. Then The previous solution, "
+         "scaled by '1-w', will be added. Setting to it to zero makes no "
+         "sense.", 
+         0., 1.);
 
   //TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR
   db.add("nonlinloop_slowfactor", (double) 1e10,
