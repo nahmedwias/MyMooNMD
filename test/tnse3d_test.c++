@@ -293,7 +293,7 @@ void set_errors(int example, int velocity_order, int nstype,
             {
               errors[0] = {{0.0, 0.0, 0, 0}};
               errors[1] = {{0.005604111453, 0.04479579571, 0.4418614059, 1.554021517}};
-              errors[2] = {{0.09371981676, 0.7480756469, 8.154330677, 28.71070521}};
+              errors[2] = {{0.09371981676, 0.7480757573/*0.7480756469*/, 8.154330677, 28.71070498}};
             }
             else if (solver_name.compare("mumps") == 0)
             {
@@ -425,6 +425,7 @@ int main(int argc, char* argv[])
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"].set<size_t>(6);
+  db["nonlinloop_slowfactor"]=1.;
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6; // flow problem type
   TDatabase::ParamDB->PROBLEM_TYPE = 6; // to be on the safe side...
