@@ -93,7 +93,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   int coarsest = finest - n_levels + 1;
   for (int grid_no = finest; grid_no >= coarsest; --grid_no)
   {
-    TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+    TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
     systems.emplace_back(example, *coll);
     //prepare input argument for multigrid object
     matrices.push_front(&systems.back().matrix);
