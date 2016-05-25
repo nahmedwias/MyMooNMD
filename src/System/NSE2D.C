@@ -107,8 +107,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       errors()
 {
   this->db.merge(param_db, false);
-  db.merge(ParameterDatabase::default_nonlinit_database());
-
+  
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
