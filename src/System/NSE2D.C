@@ -685,6 +685,13 @@ void NSE2D::computeNormsOfResiduals()
 void NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
+  double damping = this->db["nonlinloop_damping_factor"];
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution);
+  
   if(this->solver.get_db()["solver_type"].is("iterative")
     && this->solver.get_db()["preconditioner"].is("multigrid"))
   {
@@ -696,6 +703,12 @@ void NSE2D::solve()
   }
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
+  
+  if(damping != 1.0)
+  {
+    s.solution.scale(damping);
+    s.solution.add_scaled(*old_solution, damping);
+  }
 }
 
 /** ************************************************************************ */

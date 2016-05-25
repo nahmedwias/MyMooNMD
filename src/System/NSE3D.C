@@ -718,7 +718,13 @@ void NSE3D::compute_residuals()
 void NSE3D::solve()
 {
   System_per_grid& s = this->systems_.front();
-
+  double damping = this->db["nonlinloop_damping_factor"];
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution_);
+  
   //determine whether we make use of multigrid
   bool using_multigrid = 
        this->solver.get_db()["solver_type"].is("iterative") 
@@ -732,6 +738,8 @@ void NSE3D::solve()
       this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
+      if(damping != 1.0)
+        Output::warn("NSE3D::solve", "damping in an MPI context is not tested")
       //two vectors of communicators (const for init, non-const for solving)
       std::vector<const TParFECommunicator3D*> par_comms_init =
       {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
@@ -757,6 +765,12 @@ void NSE3D::solve()
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
    s.p_.project_into_L20();
+  }
+  
+  if(damping != 1.0)
+  {
+    s.solution_.scale(damping);
+    s.solution_.add_scaled(*old_solution, damping);
   }
 }
 
