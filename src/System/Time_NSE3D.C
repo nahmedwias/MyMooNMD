@@ -441,7 +441,7 @@ void Time_NSE3D::assemble_initial_time()
 
         nRhs = 3;
         break;
-      case 4: // TODO THIS CASE GIVES A SEGMENTATION FAULT. HAS TO BE CORRECTED
+      case 4:
         if(blocks.size() != 15)
         {
           ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 15.");
@@ -473,7 +473,7 @@ void Time_NSE3D::assemble_initial_time()
         rhsSpaces[3] = p_space;
         nRhs = 4;
         break;
-      case 14:
+      case 14: // TODO: NSType14 has still to be implemented
         if(blocks.size() != 16)
         {
           ErrThrow("Wrong blocks.size() ", blocks.size(), " instead of 16.");
@@ -692,10 +692,10 @@ void Time_NSE3D::assemble_rhs()
 
   // FIXME Find other solution than this submatrix method.
   // M u^{k-1}
-  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 2, 2, 1.0);
+  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
   // -tau*theta2 * A u^{k-1}
   double factor = -tau*theta2;
-  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 2, 2, factor);
+  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, factor);
 
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems_)
