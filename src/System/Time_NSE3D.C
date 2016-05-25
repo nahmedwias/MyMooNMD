@@ -732,6 +732,11 @@ void Time_NSE3D::assemble_rhs()
      && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
      this->multigrid_->RestrictToAllGrids();
 
+  // Reset old_residual_ for this time step iteration
+  // otherwise, ones compares with the old_residual_ from
+  // the previous time iteration, which is not correct.
+  this->old_residual_ = FixedSizeQueue<10,Residuals>();
+
   Output::print<5>("assembled the system right hand side ");
 }
 
