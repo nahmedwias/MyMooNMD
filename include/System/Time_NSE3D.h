@@ -387,6 +387,9 @@ class Time_NSE3D
 
    const int get_size() const
      { return this->systems_.front().solution_.length(); }
+     
+    const ParameterDatabase & get_db() const
+    { return db_; }
 
 //   const Example_NSE2D  & get_example()  const
 //     { return example_; }

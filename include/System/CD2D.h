@@ -197,6 +197,8 @@ class CD2D
     { return this->systems.front().solution.length(); }
     const Example_CD2D& get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
 
     // Special member functions. Disable copy/move, set destructor to default.
     // Will be changed only when the underlying classes follow rule of 0/5.

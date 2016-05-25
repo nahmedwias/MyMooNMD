@@ -290,6 +290,10 @@ class CD3D
     {
       return example_;
     }
+    const ParameterDatabase & get_db() const
+    {
+      return db;
+    }
 
     /** ************************************************************************ */
     std::array< double, int(2) > get_errors() const
