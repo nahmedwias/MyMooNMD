@@ -183,6 +183,14 @@ class Parameter
     Parameter& operator=(const char*);
     //@}
     
+    /// @brief write the value of this parameter into a stream
+    ///
+    /// This is not the same as calling Parameter::info(). This only uses the 
+    /// value of the given Parameter. This function is meant to provide a simple
+    /// way to write the parameter into a stream, a call to 
+    /// Parameter::value_as_string() produces the same result.
+    friend std::ostream& operator << (std::ostream& os, const Parameter& p);
+    
     /// @brief print some information on this parameter
     void info() const;
     

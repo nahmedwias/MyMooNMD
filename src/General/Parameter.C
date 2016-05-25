@@ -726,6 +726,31 @@ template<> void Parameter::set_range(std::set<double>)
 }
 
 /* ************************************************************************** */
+std::ostream& operator << (std::ostream& os, const Parameter& p)
+{
+  switch(p.type)
+  {
+    case Parameter::types::_bool:
+      return os << (p.bool_value ? "true" : "false");
+      break;
+    case Parameter::types::_int:
+      return os << p.int_value;
+      break;
+    case Parameter::types::_size_t:
+      return os << p.unsigned_value;
+      break;
+    case Parameter::types::_double:
+      return os << p.double_value;
+      break;
+    case Parameter::types::_string:
+      return os << p.string_value;
+      break;
+    default:
+      ErrThrow("unknown type: ", type_as_string(p.type));
+  }
+}
+
+/* ************************************************************************** */
 void Parameter::info() const
 {
   std::ostringstream os;
