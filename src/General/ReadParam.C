@@ -44,7 +44,7 @@ int TDomain::ReadParam(char *ParamFile)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  char line[100], *aux_char;
+  char line[200], *aux_char;
   int N_Param = 0, flag[7];
   std::ifstream dat(ParamFile);
 
@@ -3239,7 +3239,7 @@ int TDomain::ReadParam(char *ParamFile)
     
  
    // read until end of line
-    dat.getline (line, 99);
+    dat.getline (line, 199);
   }
 
   if (!flag[0])
