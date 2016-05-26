@@ -282,59 +282,55 @@ ParameterDatabase Multigrid::default_multigrid_database()
          "Determine how many levels the multigrid cycle consists of.", 0, 5);
 
   db.add("multigrid_cycle_type", std::string("V"),
-         "The recursion type how to traverse the multigrid levels."
+         "The recursion type how to traverse the multigrid levels. "
          "So far the three standard cycle V, W and F are implemented."
          , {"V", "W", "F"});
 
   db.add("multigrid_smoother", std::string("nodal_vanka"),
-         "The smoother to use on all but the coarsest level."
-         "You should take care, that the smoother you chose fits"
-         "your problem type, e.g. Vanka smoothers are best fitted"
-         "for saddle point problems.",
+         "The smoother to use on all but the coarsest level. You should take "
+         "care, that the smoother you chose fits your problem type, e.g. Vanka "
+         "smoothers are best fitted for saddle point problems.",
          {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
 
   db.add("multigrid_smoother_coarse", std::string("direct_solve"),
-         "The smoother to use on the coarsest level."
-         "You should take care, that the smoother you chose fits"
-         "your problem type, e.g. Vanka smoothers are best fitted"
-         "for saddle point problems.",
+         "The smoother to use on the coarsest level. You should take care, "
+         "that the smoother you chose fits your problem type, e.g. Vanka "
+         "smoothers are best fitted for saddle point problems.",
          {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
-         "The damping factor which is used when applying the coarse"
-         "grid correction to a finer grid. A factor of 1.0 means:"
-         "no damping, a factor of 0.0: nothing changes.",
+         "The damping factor which is used when applying the coarse grid "
+         "correction to a finer grid. A factor of 1.0 means no damping, a "
+         "factor of 0.0 means nothing changes.",
          0.0,1.0);
 
   db.add<size_t>("multigrid_n_pre_smooth", 1,
-                 "The number of smoothing steps to apply per level"
-                 "before going down to the next coarsest level.",
+                 "The number of smoothing steps to apply per level before "
+                 "going down to the next coarsest level.",
                  1, 10);
 
   db.add<size_t>("multigrid_n_post_smooth", 1,
-                 "The number of smoothing steps to apply per level"
-                 "after coming up from the next coarsest level.",
+                 "The number of smoothing steps to apply per level after "
+                 "coming up from the next coarsest level.",
                  1, 10);
 
   db.add("multigrid_coarse_residual", 1.0e-1,
-         "The target residual on the coarsest grid."
-         "When this residual is reached on the coarsest grid by solving"
-         "or smoothing, the coarse level will return and the process"
-         "continue on the next finest level.",
-         1.0e-20, 1.0);
+         "The target residual on the coarsest grid. When this residual is "
+         "reached on the coarsest grid by solving or smoothing, the coarse "
+         "level will return and the process continue on the next finest level.",
+         0.0, 1.0);
 
   db.add<size_t>("multigrid_coarse_max_n_iterations", 10,
-         "The maximal number of solver/smoother iterations "
-         "to be performed whenever working on the coarsest level.",
+         "The maximal number of solver/smoother iterations to be performed "
+         "whenever working on the coarsest level.",
          1, 100);
 
-  db.add<double>("multigrid_vanka_damp_factor", 1.0,
-                 "A damping factor relevant for Vanka type smoothers only."
-                 " It is responsible for a damping when adding the solution"
-                 " of the local defect equation onto the global solution."
-                 " Vanka smoothers tend to be quite responsive to this value."
-                 " Although it defaults to 1.0 (no damping), a value of 0.8"
-                 " is often a good start.", 0.0, 1.0);
+  db.add("multigrid_vanka_damp_factor", 1.0,
+         "A damping factor relevant for Vanka type smoothers only. It is "
+         "responsible for a damping when adding the solution of the local "
+         "defect equation onto the global solution. Vanka smoothers tend to be "
+         "quite responsive to this value. Although it defaults to 1.0 (no "
+         "damping), a value of 0.8 is often a good start.", 0.0, 1.0);
 
   return db;
 }
