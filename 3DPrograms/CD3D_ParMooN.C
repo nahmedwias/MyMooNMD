@@ -79,8 +79,9 @@ int main(int argc, char* argv[])
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning
   int n_ref_total = domain.get_n_initial_refinement_steps();
-  size_t n_ref_after =  parmoon_db["multigrid_n_levels"];
-  n_ref_after -= 1;
+  size_t n_ref_after = parmoon_db["multigrid_n_levels"];
+  if(n_ref_after != 0)
+    n_ref_after -= 1;
   int n_ref_before =  n_ref_total - n_ref_after;
   if(n_ref_before < 0)
   {
