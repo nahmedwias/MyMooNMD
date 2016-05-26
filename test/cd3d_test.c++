@@ -102,12 +102,6 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0; //relative error breaking criterion (not reached)
   TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-12; //absolute error breaking criterion (not reached)
 
-  // choose unit cube as test domain and a corresponding initial mesh
-  TDatabase::ParamDB->BNDFILE = new char[17];
-  strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-  TDatabase::ParamDB->GEOFILE = new char[22];
-  strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
-
   // Initialize geometry and initialize the mesh.
   domain.Init(db["boundary_file"], db["geo_file"]);
 
@@ -289,12 +283,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR = 0; // no slc
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 0;  // no slc
 
-    // choose unit cube as test domain and a corresponding initial mesh
-    TDatabase::ParamDB->BNDFILE = new char[17];
-    strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-    TDatabase::ParamDB->GEOFILE = new char[22];
-    strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
-    
     
     // Initialize geometry and initialize the mesh.
     domain.Init(db["boundary_file"], db["geo_file"]);

@@ -11,13 +11,7 @@ void ExampleFile()
 {
   Output::print<1>("Example: Simple example with sin and cos solution and p=0");
 
-  // check if the expected geometry is used
-  // FIXME at the moment I see no other possibility than to refer to global scope
-  if(!(strcmp("Default_UnitCube",TDatabase::ParamDB->BNDFILE) == 0))
-  {
-    ErrThrow(">>>>> This example is designed for "
-        " BNDFILE: Default_UnitCube. Choose that geometry!");
-  }
+  // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
 }
 
