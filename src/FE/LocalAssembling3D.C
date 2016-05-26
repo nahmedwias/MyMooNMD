@@ -1046,8 +1046,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Matrices = 5;
               this->RowSpace    = { 0, 0, 1, 1, 1 };
               this->ColumnSpace = { 0, 0, 0, 0, 0 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType1Galerkin3D;
               this->Manipulate = NULL;              
             }
@@ -1063,8 +1063,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Matrices = 8;
               this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType2Galerkin3D;
               this->Manipulate = NULL;
             }
@@ -1076,11 +1076,11 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 13;//FIXME depending on how many mass matrices assembles
+              this->N_Matrices = 13;
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               
               if(laplace_type==0)
                 this->AssembleParam = TimeNSType3Galerkin3D;
@@ -1096,7 +1096,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 16;//FIXME depending on how many mass matrices assembles
+              this->N_Matrices = 16;
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
@@ -1218,8 +1218,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
           this->N_Matrices = 0;
           this->RowSpace = { };
           this->ColumnSpace = { };
-          this->N_Rhs = 3 ;
-          this->RhsSpace = {0, 0, 0};
+          this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
+          this->RhsSpace = {0, 0, 0, 0};
           this->AssembleParam =TimeNSRHS3D;
           this->Manipulate = NULL;
           break;

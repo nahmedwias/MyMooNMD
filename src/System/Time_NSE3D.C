@@ -610,7 +610,7 @@ void Time_NSE3D::assemble_rhs()
     s.u_.GetComponent(2),
     &s.p_ };
 
-  int nRhs = 3;  // number of rhs blocks - TODO for NSType 4 and 14, it is 4
+  int nRhs = 4;  // number of rhs blocks - TODO for NSType 4 and 14, it is 4
   const TFESpace3D *v_space = &this->get_velocity_space();
   const TFESpace3D *p_space = &this->get_pressure_space();
 
@@ -619,6 +619,7 @@ void Time_NSE3D::assemble_rhs()
   rhsArray[0] = s.rhs_.block(0);
   rhsArray[1] = s.rhs_.block(1);
   rhsArray[2] = s.rhs_.block(2);
+  rhsArray[3] = s.rhs_.block(3);
 
   const TFESpace3D *spaces[2] = {v_space, p_space};
   const TFESpace3D *rhsSpaces[4] = {v_space, v_space, v_space, p_space};
