@@ -298,10 +298,15 @@ Parameter::types get_parameter_and_type(std::string value_string,
       if(value < 0) // this is an int not a size_t
       {
         int_ret = value;
+        double_ret = (double)value;
         return Parameter::types::_int;
       }
       // this is an unsigned parameter
       size_t_ret = (size_t)value; // safe, because value >= 0
+      // we set int_ret and double_ret as well because maybe this parameter 
+      // turns out to be of those types really, then we need these numbers
+      int_ret = value;
+      double_ret = (double)value;
       return Parameter::types::_size_t;
     }
     catch(...)
@@ -562,35 +567,24 @@ Parameter create_parameter(std::string name, std::string value_string,
   switch(type)
   {
     case Parameter::types::_bool:
-      if(value_string == "True" || value_string == "true")
-      {
-        p.reset(new Parameter(name, true, description));
-      }
-      else
-      {
-        p.reset(new Parameter(name, false, description));
-      }
+      p.reset(new Parameter(name, bool_val, description));
       break;
     case Parameter::types::_int:
-      // stoi should not throw here, because we know it is an int already
-      p.reset(new Parameter(name, stoi(value_string), description));
+      p.reset(new Parameter(name, int_val, description));
       break;
     case Parameter::types::_size_t:
-      // stoi should not throw here, because we know it is an int already
-      p.reset(new Parameter(name, size_t(stoi(value_string)), description));
+      p.reset(new Parameter(name, size_t_val, description));
       break;
     case Parameter::types::_double:
-      // stod should not throw here, because we know it is a double already
-      p.reset(new Parameter(name, stod(value_string), description));
+      p.reset(new Parameter(name, double_val, description));
       break;
     case Parameter::types::_string:
-      p.reset(new Parameter(name, value_string, description));
+      p.reset(new Parameter(name, string_val, description));
       break;
     default:
       ErrThrow("unknown type");
       break;
   }
-  
   add_range_to_parameter(*p, range_list);
   return std::move(*p);
 }

@@ -163,7 +163,8 @@ class ParameterDatabase
     /// size_t either braces ('{}') or brackets ('[]') are ok, one indicating a
     /// set of individual entries and the other an interval. For double 
     /// parameters only brackets (e.g. '[-2.5, 5.7]') are possible, indicating
-    /// an interval.
+    /// an interval. There has to be a space (' ') between the value and the 
+    /// range.
     ///
     /// It is possible to read documentation for each parameter which will then
     /// become its Parameter::description. All lines directly before the line 
