@@ -271,10 +271,6 @@ int main(int argc, char* argv[])
 
   double tol = get_tolerance(std::string(argv[1]));
 
-  // the TDatabase::ParamDB will delete this char*, so we should call new before
-  char* boundary_file = new char[20]; strcpy(boundary_file,"Default_UnitCube");
-  TDatabase::ParamDB->BNDFILE = boundary_file;
-
   //===========================================================
   if(my_rank==0)
     Output::print<1>(">>>>> Starting computations with solver: <<<<<"
@@ -290,8 +286,7 @@ int main(int argc, char* argv[])
   {
     //do the domain thingy
     TDomain domain_hex(db);
-    domain_hex.Init(TDatabase::ParamDB->BNDFILE,
-                    "Default_UnitCube_Hexa");
+    domain_hex.Init("Default_UnitCube", "Default_UnitCube_Hexa");
 
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
@@ -359,8 +354,7 @@ int main(int argc, char* argv[])
   {
     //do the domain thingy
     TDomain domain_tet(db);
-    domain_tet.Init(TDatabase::ParamDB->BNDFILE,
-                    "Default_UnitCube_Tetra");
+    domain_tet.Init("Default_UnitCube", "Default_UnitCube_Tetra");
     for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();

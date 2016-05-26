@@ -330,21 +330,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->VERSION = 1;
 
   tmp = new char[12];
-  strcpy(tmp,"NO_GEO_FILE");
-  ParamDB->GEOFILE=tmp;
-  tmp = new char[17];
-  strcpy(tmp,"NO_GEO_FILE_INTL");
-  ParamDB->GEOFILE_INTL=tmp;
-  
-  tmp = new char[12];
-  strcpy(tmp,"NO_BND_FILE");
-  ParamDB->BNDFILE=tmp;
-    
-  tmp = new char[17];
-  strcpy(tmp,"NO_BND_FILE_INTL");
-  ParamDB->BNDFILE_INTL=tmp;
-  
-  tmp = new char[12];
   strcpy(tmp,"NO_MAP_FILE");
   ParamDB->MAPFILE=tmp;
   tmp = new char[25];
@@ -1123,8 +1108,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("HOSTNAME: ", buf, " started on ", asctime (timeinfo));
   printToFile("EXECUTED FILE: ", ExecutedFile);
   printToFile("VERSION: ", ParamDB->VERSION);
-  printToFile("GEOFILE: ", ParamDB->GEOFILE);
-  printToFile("BNDFILE: ", ParamDB->BNDFILE);
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
   printToFile("OUTFILE: ", ParamDB->OUTFILE);
   printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
@@ -2086,10 +2069,6 @@ TParaDB::~TParaDB()
 {
   // call delete on all char* which were created in 
   // TDatabase::SetDefaultParameters()
-  delete [] GEOFILE;
-  delete [] GEOFILE_INTL;
-  delete [] BNDFILE;
-  delete [] BNDFILE_INTL;
   delete [] MAPFILE;
   delete [] OUTFILE;
   delete [] SAVE_DATA_FILENAME;

@@ -79,45 +79,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "GEOFILE:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->GEOFILE;
-      TDatabase::ParamDB->GEOFILE = aux_char;
-      N_Param++;
-    }
-        if (!strcmp(line, "GEOFILE_INTL:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->GEOFILE_INTL;
-      TDatabase::ParamDB->GEOFILE_INTL = aux_char;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "BNDFILE:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BNDFILE;
-      TDatabase::ParamDB->BNDFILE = aux_char;
-      N_Param++;
-    }
-
-        if (!strcmp(line, "BNDFILE_INTL:"))
-    {
-      dat >> line;
-      aux_char = new char[strlen(line) + 1];
-      strcpy(aux_char, line);
-      delete [] TDatabase::ParamDB->BNDFILE_INTL;
-      TDatabase::ParamDB->BNDFILE_INTL = aux_char;
-      N_Param++;
-    }
-    
     if (!strcmp(line, "MAPFILE:"))
     {
       dat >> line;
