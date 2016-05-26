@@ -14,12 +14,6 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
-  // more than 20 multigrid meshes is probably an error
-  //FIXME That parameter must move to the new multigrid implementation!
-  db.add("multigrid_n_levels", (size_t)3,
-         "The number of different multigrid meshes.",
-         (size_t)0, (size_t)20);
-
   db.add("solver_type", std::string("direct"),
          "Determine which kind of solver should be used. This can be an "
          "iterative or a direct solver", {"direct", "iterative"});
@@ -30,18 +24,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          {"umfpack", "pardiso", "mumps"});
   
   db.add("iterative_solver_type", std::string("fgmres"),
-         "Determine which type of iterative solver should be used. The "
-         "following are possible: "
-         "1 - (weighted) Jacobi iteration, "
-         "2 - successive over-relaxation iteration (sor), "
-         "3 - symmetric successive over-relaxation iteration (ssor), "
-         "4 - Richardson iteration, "
-         "5 - conjugate gradients, "
-         "6 - conjugate gradients squared, "
-         "7 - Biconjugate Gradient Stabilized, "
-         "8 - left generalized minimal residuals (gmres), "
-         "9 - right generalized minimal residuals (gmres), "
-         "10- flexible (right) generalized minimal residuals (gmres).",
+         "Determine which type of iterative solver should be used.",
          {"jacobi", "sor", "ssor", "richardson", "cg", "cgs", "bi_cgstab", 
           "left_gmres", "right_gmres", "fgmres"});
   
