@@ -124,7 +124,11 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   old_rhs.copy_structure(this->systems[0].rhs);
   
   // interpolate the initial data
-  this->systems.front().fe_function.Interpolate(example.get_initial_cond(0));
+  TFEFunction2D & fe_function = this->systems.front().fe_function;
+  fe_function.Interpolate(example.get_initial_cond(0));
+  // add the fe function to the output object. 
+  timeDependentOutput.add_fe_function(&fe_function);
+  
   
   // done with the constructor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
@@ -455,12 +459,6 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
-    // add the functions the first time
-    if (image==0) 
-    {
-      Output::print<1>("  Add FE Function ", fe_function.GetName(), " for output ");
-      timeDependentOutput.addFEFunction(&fe_function);
-    }
     // write output
     timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
     image++;

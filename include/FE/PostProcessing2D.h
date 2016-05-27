@@ -41,7 +41,7 @@ class PostProcessing2D
   bool writeCASE;
 
   ///@brief number of iterations between two outputs 
-  int period;
+  size_t period;
 
   // -------------------------------------------------------------------------
 
@@ -74,45 +74,31 @@ class PostProcessing2D
   ///@brief default constructor: parameter are copied from Database
   PostProcessing2D(const ParameterDatabase& param_db);
   
-  ///@brief initialize the class parameters from the Database
-  void init(const ParameterDatabase& param_db); 
-
-  ///@brief set a different testcase name (e.g. to use multiple ouput sets)
-  void setTestcaseName(std::string basename);
-
   /// @brief add a FEFunction into this output object
-  void addFEFunction(const TFEFunction2D *fefunction);
+  void add_fe_function(const TFEFunction2D *fefunction);
 
   /// @brief add a FEVectFunct into this output object
-  void addFEVectFunct(const TFEVectFunct2D *fevectfunct);
+  void add_fe_vector_function(const TFEVectFunct2D *fevectfunct);
   
   /**
-     @brief write data: we need multiple variants of this function for now
-     This is done to support the different version used in the old code.
-     @param[in] name: allows to specify the filename
+     @brief write data to files.
+     You need to have added at least one fe function or fe vector function.
      @param[in] i: an integer used to identify the time step
      @param[in] t: the physical time
   */
-  void write(const char *name, int i=1, double t=0.);
-  void write(std::string basename, int i=1, double t=0);
   void write(int i=1, double t=0);
   
   // -------------------------------------------------------------------------
-  /**
-   @brief VTK output
-  */
-  void writeVtk(const char *name);
+ protected:
+  /// @brief VTK output
+  void writeVtk(std::string name);
   
-
-
   ///@brief writes an extra vtk-file for (scalar) discontinuous functions
-  void writeVtkDiscontinuous(const char *fileName, 
-			     int N_LocVertices, 
-			     TVertex **Vertices);
+  void writeVtkDiscontinuous(std::string fileName, int N_LocVertices,
+                             TVertex** Vertices);
 
   // -------------------------------------------------------------------------
-  /** 
-      @brief: .case output, suitable for time-depending problems.
+  /** @brief: .case output, suitable for time-depending problems.
       This format write the output onto multiple files:
       - The geometry is stored on a basename.[timestep].geo file
       - The results are stored on basename_fct.timestep.{scl,vct} files,
