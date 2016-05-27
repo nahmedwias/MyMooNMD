@@ -66,58 +66,88 @@ std::string type_as_string(const Parameter::types t)
   }
 }
 
+/* ************************************************************************** */
+void Parameter::set_defaults(std::string key, std::string description)
+{
+  this->bool_value = true;
+  this->int_value = 0;
+  this->unsigned_value = 0;
+  this->double_value = 0.0;
+  this->string_value = "";
+  this->access_count = 0;
+  this->change_count = 0;
+  this->name = check_name(key);
+  this->description = description;
+  this->range_is_an_interval = false;
+  this->not_bool_value_allowed = true;
+  this->int_range = std::set<int>();
+  this->int_min = 0;
+  this->int_max = 0;
+  this->unsigned_range = std::set<size_t>();
+  this->unsigned_min = 0;
+  this->unsigned_max = 0;
+  this->double_min = 0.0;
+  this->double_max = 0.0;
+  this->string_range = std::set<std::string>();
+}
 
 /* ************************************************************************** */
 Parameter::Parameter(std::string key, bool new_value, std::string description)
- : type(types::_bool), bool_value(new_value), int_value(), unsigned_value(), 
-   double_value(), string_value(), access_count(0), change_count(0),
-   name(check_name(key)), description(description), 
-   not_bool_value_allowed(true), int_range(), unsigned_range(), min(), max(),
-   string_range()
+ : type(Parameter::types::_bool)
 {
+  this->set_defaults(key, description);
+  this->bool_value = new_value;
+  this->not_bool_value_allowed = true; // allow both 'true' and 'false'
 }
 
 //template <typename T>
 Parameter::Parameter(std::string key, int new_value, std::string description)
- : type(types::_int), bool_value(), int_value(new_value), unsigned_value(), 
-   double_value(), string_value(), access_count(0), change_count(0),
-   name(check_name(key)), description(description), not_bool_value_allowed(),
-   int_range({new_value}), unsigned_range(), min(), max(), string_range()
+ : type(Parameter::types::_int)
 {
+  this->set_defaults(key, description);
+  this->int_value = new_value;
+  this->range_is_an_interval = false;
+  this->int_range = {new_value};
 }
 
 Parameter::Parameter(std::string key, size_t new_value, std::string description)
- : type(types::_size_t), bool_value(), int_value(), unsigned_value(new_value), 
-   double_value(), string_value(), access_count(0), change_count(0),
-   name(check_name(key)), description(description), not_bool_value_allowed(),
-   int_range(), unsigned_range({new_value}), min(), max(), string_range()
+ : type(Parameter::types::_size_t)
 {
+  this->set_defaults(key, description);
+  this->unsigned_value = new_value;
+  this->range_is_an_interval = false;
+  this->unsigned_range = {new_value};
 }
 
 Parameter::Parameter(std::string key, double new_value, std::string description)
- : type(types::_double), bool_value(), int_value(), unsigned_value(), 
-   double_value(new_value), string_value(), access_count(0), change_count(0),
-   name(check_name(key)), description(description), not_bool_value_allowed(),
-   int_range(), unsigned_range(), min(new_value), max(new_value), string_range()
+ : type(Parameter::types::_double)
 {
+  this->set_defaults(key, description);
+  this->double_value = new_value;
+  this->range_is_an_interval = true;
+  this->double_min = new_value;
+  this->double_max = new_value;
 }
 
-Parameter::Parameter(std::string key, std::string new_value, std::string description)
- : type(types::_string), bool_value(), int_value(), unsigned_value(), 
-   double_value(), string_value(new_value), access_count(0),
-   change_count(0), name(check_name(key)), description(description),
-   not_bool_value_allowed(), int_range(), unsigned_range(), min(), max(),
-   string_range({new_value})
+Parameter::Parameter(std::string key, std::string new_value, 
+                     std::string description)
+ : type(Parameter::types::_string)
 {
+  this->set_defaults(key, description);
+  this->string_value = new_value;
+  this->string_range = {new_value};
 }
 
 Parameter::Parameter(const Parameter& p)
  : type(p.type), bool_value(p.bool_value), int_value(p.int_value),
    unsigned_value(p.unsigned_value), double_value(p.double_value),
    string_value(p.string_value), access_count(0), change_count(0), name(p.name),
-   description(p.description), not_bool_value_allowed(p.not_bool_value_allowed),
-   int_range(p.int_range), unsigned_range(p.unsigned_range), min(p.min),
-   max(p.max), string_range(p.string_range)
+   description(p.description), range_is_an_interval(p.range_is_an_interval),
+   not_bool_value_allowed(p.not_bool_value_allowed), int_range(p.int_range),
+   int_min(p.int_min), int_max(p.int_max), unsigned_range(p.unsigned_range), 
+   unsigned_min(p.unsigned_min), unsigned_max(p.unsigned_max),
+   double_min(p.double_min), double_max(p.double_max),
+   string_range(p.string_range)
 {
   Output::print<3>("Parameter(const Parameter& p)\tname: ", this->name);
 }
@@ -130,20 +160,6 @@ void Parameter::impose(const Parameter& p)
   {
     ErrThrow("cannot impose another parameter to this one because it has a "
              "different name: ", this->name, " ", p.get_name());
-  }
-  if(this->type != p.get_type())
-  {
-    // check if we can maybe convert the type in a meaninful way.
-    if(check_type<int>(this->type) && check_type<size_t>(p.get_type()))
-    {
-      // `this` is of type int, just set int_value and int_range correctly
-      this->int_value = (size_t)p;
-      this->int_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
-    }
-    else
-      ErrThrow("cannot impose another parameter to this one (", this->name, ") "
-               "because it has a different type: ", type_as_string(this->type),
-               " ", type_as_string(p.get_type()));
   }
   // reset change_count and access_count
   this->access_count = 0;
@@ -165,9 +181,13 @@ void Parameter::impose(const Parameter& p)
   // handle the range (it will be at least as large as that of p)
   this->not_bool_value_allowed |= p.not_bool_value_allowed; // logical or
   this->int_range.insert(p.int_range.begin(), p.int_range.end());
+  this->int_min = std::min(this->int_min, p.int_min);
+  this->int_max = std::max(this->int_max, p.int_max);
   this->unsigned_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
-  this->min = std::min(this->min, p.min);
-  this->max = std::max(this->max, p.max);
+  this->unsigned_min = std::min(this->unsigned_min, p.unsigned_min);
+  this->unsigned_max = std::max(this->unsigned_max, p.unsigned_max);
+  this->double_min = std::min(this->double_min, p.double_min);
+  this->double_max = std::max(this->double_max, p.double_max);
   this->string_range.insert(p.string_range.begin(), p.string_range.end());
   
   // handle the value
@@ -179,6 +199,58 @@ void Parameter::impose(const Parameter& p)
   this->unsigned_value = p.unsigned_value;
   this->double_value = p.double_value;
   this->string_value = p.string_value;
+  
+  // if the types do not match, there are some combinations which are allowed
+  if(this->type != p.get_type())
+  {
+    bool p_is_int = check_type<int>(p.get_type());
+    bool p_is_size_t = check_type<size_t>(p.get_type());
+    // check if we can maybe convert the type in a meaninful way.
+    if(check_type<int>(this->type) && p_is_size_t)
+    {
+      // `this` is of type int, just set int_value and int_range correctly
+      this->int_value = (size_t)p;
+      this->int_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
+      this->int_min = p.unsigned_min;
+      this->int_max = p.unsigned_max;
+    }
+    else if(check_type<double>(this->type) && p_is_int)
+    {
+      // 'this' is of type double, p is 'int'
+      if(p.range_is_an_interval)
+      {
+        // this is double and p is an integer parameter with an inteval range
+        this->double_min = (double) p.int_min;
+        this->double_max = (double) p.int_max;
+        this->double_value = (double) p.int_value;
+      }
+      else
+        ErrThrow("cannot impose an integer parameter to a double parameter "
+                 "because the int_range is not an interval. Parameter name: ",
+                 this->name);
+    }
+    else if(check_type<double>(this->type) && p_is_size_t)
+    {
+      // 'this' is of type double, p is 'size_t'
+      if(p.range_is_an_interval)
+      {
+        // this is double and p is a size_t parameter with an inteval range
+        this->double_min = (double) p.unsigned_min;
+        this->double_max = (double) p.unsigned_max;
+        this->double_value = (double) p.unsigned_value;
+      }
+      else
+        ErrThrow("cannot impose a size_t parameter to a double parameter "
+                 "because the unsigned_range is not an interval. "
+                 "Parameter name: ", this->name);
+    }
+    else
+    {
+      ErrThrow("cannot impose another parameter to this one (", this->name,
+               ") because it has a different type: ", 
+               type_as_string(this->type), " ", type_as_string(p.get_type()));
+    }
+  }
 }
 
 /* ************************************************************************** */
@@ -221,14 +293,10 @@ std::string Parameter::range_as_string() const
       break;
     case types::_int: // almost equal to the size_t case
     {
-      int n_param = this->int_range.size();
-      auto minmax = std::minmax_element(this->int_range.begin(),
-                                        this->int_range.end());
-      bool range_is_interval = (n_param == (*minmax.second - *minmax.first + 1));
-      if(range_is_interval)
+      if(this->range_is_an_interval)
       {
-        ret += "[ " + std::to_string(*minmax.first) + ", ";
-        ret += std::to_string(*minmax.second) + " ]";
+        ret += "[ " + std::to_string(this->int_min) + ", ";
+        ret += std::to_string(this->int_max) + " ]";
       }
       else
       {
@@ -245,14 +313,10 @@ std::string Parameter::range_as_string() const
     }
     case types::_size_t: // almost equal to the int case
     {
-      size_t n_param = this->unsigned_range.size();
-      auto minmax = std::minmax_element(this->unsigned_range.begin(),
-                                        this->unsigned_range.end());
-      bool range_is_interval = (n_param == (*minmax.second - *minmax.first + 1));
-      if(range_is_interval)
+      if(range_is_an_interval)
       {
-        ret += "[ " + std::to_string(*minmax.first) + ", ";
-        ret += std::to_string(*minmax.second) + " ]";
+        ret += "[ " + std::to_string(this->unsigned_min) + ", ";
+        ret += std::to_string(this->unsigned_max) + " ]";
       }
       else
       {
@@ -268,8 +332,8 @@ std::string Parameter::range_as_string() const
       break;
     }
     case types::_double:
-      ret += "[ " + convert_to_string(this->min) + ", ";
-      ret += convert_to_string(this->max) + " ]";
+      ret += "[ " + convert_to_string(this->double_min) + ", ";
+      ret += convert_to_string(this->double_max) + " ]";
       break;
     case types::_string:
     {
@@ -426,6 +490,10 @@ std::string Parameter::value_as_string() const
       return convert_to_string(this->unsigned_value);
       break;
     case Parameter::types::_double:
+      // it would be nice to ensure that a '.' is written here. This method is
+      // used from ParameterDatabase::write. In order to write a file which 
+      // then can be read again, a dot would help, because it is used as an 
+      // indication for type double.
       return convert_to_string(this->double_value);
       break;
     case Parameter::types::_string:
@@ -439,14 +507,13 @@ std::string Parameter::value_as_string() const
 /* ************************************************************************** */
 template<> void Parameter::get_range(int& min_value, int& max_value) const
 {
-  int n_param = this->int_range.size();
-  auto minmax = std::minmax_element(this->int_range.begin(),
-                                    this->int_range.end());
-  bool range_is_interval = (n_param == (*minmax.second - *minmax.first + 1));
-  if(range_is_interval)
+  if(!check_type<int>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != int");
+  if(this->range_is_an_interval)
   {
-    min_value = *minmax.first;
-    max_value = *minmax.second;
+    min_value = int_min;
+    max_value = int_max;
   }
   else
   {
@@ -456,14 +523,13 @@ template<> void Parameter::get_range(int& min_value, int& max_value) const
 }
 template<> void Parameter::get_range(size_t& min_value, size_t& max_value) const
 {
-  size_t n_param = this->unsigned_range.size();
-  auto minmax = std::minmax_element(this->unsigned_range.begin(),
-                                    this->unsigned_range.end());
-  bool range_is_interval = (n_param == (*minmax.second - *minmax.first + 1));
-  if(range_is_interval)
+  if(!check_type<size_t>(this->type))
+    ErrThrow("Parameter ", this->name, " has the wrong type: ",
+             type_as_string(this->type), " != size_t");
+  if(this->range_is_an_interval)
   {
-    min_value = *minmax.first;
-    max_value = *minmax.second;
+    min_value = unsigned_min;
+    max_value = unsigned_max;
   }
   else
   {
@@ -476,18 +542,32 @@ template<> void Parameter::get_range(double& min_value, double& max_value) const
   if(!check_type<double>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != double");
-  min_value = this->min;
-  max_value = this->max;
+  min_value = this->double_min;
+  max_value = this->double_max;
 }
 
 /* ************************************************************************** */
 template<> void Parameter::get_range(std::set<int>& range) const
 {
-  range = this->int_range;
+  if(!this->range_is_an_interval)
+    range = this->int_range;
+  else
+  {
+    range.clear();
+    for(int i = int_min; i <= int_max; ++i)
+      range.insert(i);
+  }
 }
 template<> void Parameter::get_range(std::set<size_t>& range) const
 {
-  range = this->unsigned_range;
+  if(!this->range_is_an_interval)
+    range = this->unsigned_range;
+  else
+  {
+    range.clear();
+    for(size_t i = unsigned_min; i <= unsigned_max; ++i)
+      range.insert(i);
+  }
 }
 template<> void Parameter::get_range(std::set<bool>& range) const
 {
@@ -500,7 +580,7 @@ template<> void Parameter::get_range(std::set<bool>& range) const
 }
 template<> void Parameter::get_range(std::set<double>& range) const
 {
-  range = std::set<double>({this->min, this->max});
+  range = std::set<double>({this->double_min, this->double_max});
 }
 template<> void Parameter::get_range(std::set<std::string>& range) const
 {
@@ -526,8 +606,17 @@ template<> void Parameter::set(size_t new_value)
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != size_t");
   // check if new_value is in the specified parameter range
-  if(!check_value_in_range(new_value, this->unsigned_range))
+  if(  !this->range_is_an_interval 
+    && !check_value_in_range(new_value, this->unsigned_range))
+  {
     ErrThrow("new parameter value out of range, Parameter ", this->name);
+  }
+  else if( this->range_is_an_interval 
+        && (new_value < unsigned_min || new_value > unsigned_max))
+  {
+    ErrThrow("new parameter value out of range, Parameter ", this->name,
+             "The range is the interval ", this->range_as_string());
+  }
   
   this->change_count++;
   this->unsigned_value = new_value;
@@ -547,8 +636,17 @@ template<> void Parameter::set(int new_value)
     return;
   }
   // check if new_value is in the specified parameter range
-  if(!check_value_in_range(new_value, this->int_range))
+  if(  !this->range_is_an_interval 
+    && !check_value_in_range(new_value, this->int_range))
+  {
     ErrThrow("new parameter value out of range, Parameter ", this->name);
+  }
+  else if( this->range_is_an_interval 
+        && (new_value < int_min || new_value > int_max))
+  {
+    ErrThrow("new parameter value out of range, Parameter ", this->name,
+             "The range is the interval ", this->range_as_string());
+  }
   
   this->change_count++;
   this->int_value = new_value;
@@ -559,7 +657,7 @@ template<> void Parameter::set(double new_value)
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != double");
   // check if new_value is in the specified parameter range
-  if(new_value < this->min || new_value > this->max)
+  if(new_value < this->double_min || new_value > this->double_max)
     ErrThrow("new parameter value out of range, Parameter ", this->name);
   
   this->change_count++;
@@ -623,11 +721,10 @@ template<> void Parameter::set_range(int min_value, int max_value)
              type_as_string(this->type), " != int");
   if(this->int_value < min_value || this->int_value > max_value)
     ErrThrow("current value not in specified range, Parameter ", this->name);
-  if(max_value - min_value > 1000)
-    ErrThrow("more than 1000 parameters in range, Parameter ", this->name);
-  this->int_range.clear();
-  for(int i = min_value; i <= max_value; i++)
-      this->int_range.insert(i);
+  this->range_is_an_interval = true;
+  this->int_min = min_value;
+  this->int_max = max_value;
+  this->int_range.clear(); // not used
 }
 template<> void Parameter::set_range(size_t min_value, size_t max_value)
 {
@@ -636,11 +733,10 @@ template<> void Parameter::set_range(size_t min_value, size_t max_value)
              type_as_string(this->type), " != size_t");
   if(this->unsigned_value < min_value || this->unsigned_value > max_value)
     ErrThrow("current value not in specified range, Parameter ", this->name);
-  if(max_value - min_value > 1000)
-    ErrThrow("more than 1000 parameters in range, Parameter ", this->name);
-  this->unsigned_range.clear();
-  for(size_t i = min_value; i <= max_value; i++)
-      this->unsigned_range.insert(i);
+  this->range_is_an_interval = true;
+  this->unsigned_min = min_value;
+  this->unsigned_max = max_value;
+  this->unsigned_range.clear(); // not used
 }
 template<> void Parameter::set_range(double min_value, double max_value)
 {
@@ -649,8 +745,8 @@ template<> void Parameter::set_range(double min_value, double max_value)
              type_as_string(this->type), " != double");
   if(this->double_value < min_value || this->double_value > max_value)
     ErrThrow("current value not in specified range, Parameter ", this->name);
-  this->min = min_value;
-  this->max = max_value;
+  this->double_min = min_value;
+  this->double_max = max_value;
 }
 template<> void Parameter::set_range(bool min_value, bool max_value)
 {
@@ -694,6 +790,7 @@ template<> void Parameter::set_range(std::set<int> new_range)
   if(it == new_range.end())
     ErrThrow("setting a range which does not cover the current value, "
              "Parameter ", this->name);
+  this->range_is_an_interval = false;
   this->int_range = new_range;
 }
 template<> void Parameter::set_range(std::set<size_t> new_range)
@@ -706,6 +803,7 @@ template<> void Parameter::set_range(std::set<size_t> new_range)
   if(it == new_range.end())
     ErrThrow("setting a range which does not cover the current value, "
              "Parameter ", this->name);
+  this->range_is_an_interval = false;
   this->unsigned_range = new_range;
 }
 template<> void Parameter::set_range(std::set<std::string> new_range)
@@ -724,6 +822,12 @@ template<> void Parameter::set_range(std::set<double>)
 { 
   ErrThrow("Parameter::set_range with a set of double does not make sense, "
            "Parameter ", this->name);
+}
+
+/* ************************************************************************** */
+std::ostream& operator << (std::ostream& os, const Parameter& p)
+{
+  return os << p.value_as_string();
 }
 
 /* ************************************************************************** */
@@ -771,5 +875,7 @@ void Parameter::print_description(std::ostream& os, std::string prepend,
     os << s << " ";
     length += s.length();
   }
+  if(words.size() == 0)
+    os << "custom parameter without a description";
   os << "\n";
  }

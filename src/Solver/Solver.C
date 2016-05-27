@@ -4,6 +4,7 @@
 #include <Iteration_cgs.h>
 #include <Iteration_gmres.h>
 #include <Iteration_jacobi.h>
+#include <Iteration_multigrid.h>
 #include <Iteration_richardson.h>
 #include <Saddle_point_preconditioner.h>
 
@@ -23,18 +24,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          {"umfpack", "pardiso", "mumps"});
   
   db.add("iterative_solver_type", std::string("fgmres"),
-         "Determine which type of iterative solver should be used. The "
-         "following are possible: "
-         "1 - (weighted) Jacobi iteration, "
-         "2 - successive over-relaxation iteration (sor), "
-         "3 - symmetric successive over-relaxation iteration (ssor), "
-         "4 - Richardson iteration, "
-         "5 - conjugate gradients, "
-         "6 - conjugate gradients squared, "
-         "7 - Biconjugate Gradient Stabilized, "
-         "8 - left generalized minimal residuals (gmres), "
-         "9 - right generalized minimal residuals (gmres), "
-         "10- flexible (right) generalized minimal residuals (gmres).",
+         "Determine which type of iterative solver should be used.",
          {"jacobi", "sor", "ssor", "richardson", "cg", "cgs", "bi_cgstab", 
           "left_gmres", "right_gmres", "fgmres"});
   
@@ -68,17 +58,19 @@ ParameterDatabase Solver<L, V>::default_solver_database()
                  "consumption, smaller numbers typically mean more "
                  "iterations.", 1, 1e3);
   
-  // more than 20 multigrid meshes is probably an error
-  db.add("n_multigrid_levels", (size_t)3,
-         "The number of different multigrid meshes.",
-         (size_t)0, (size_t)20);
-  
   db.add("preconditioner", std::string("no_preconditioner"),
          "Determine the used preconditioner. Note that some of these are "
          "specific for some problem types.",
          {"no_preconditioner", "jacobi", "gauss_seidel", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
           "least_squares_commutator", "least_squares_commutator_boundary"});
+  
+  db.add("saddle_point_preconditioner_direct_velocity_solve", true, 
+         "During the application of a Saddle_point_preconditioner one has to "
+         "solve a system involving only the velocity part of the matrix. Set "
+         "this parameter to true if you want to solve this with a direct "
+         "solver, otherwise some iterative scheme is used. Check out the class "
+         "Saddle_point_preconditioner.");
   
   db.add("damping_factor", 1.0, "The damping in an iteration. A value of 1.0 "
          "means no damping while 0.0 would mean no progress. In general "
@@ -97,7 +89,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<Preconditioner<V>> get_preconditioner(
-  std::string preconditioner_name, const L& matrix)
+  std::string preconditioner_name, const L& matrix, const ParameterDatabase& db)
 {
   if(preconditioner_name == "no_preconditioner")
   {
@@ -110,18 +102,21 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
   else if(preconditioner_name == "least_squares_commutator")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::lsc);
+      matrix, Saddle_point_preconditioner::type::lsc,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else if(preconditioner_name == "least_squares_commutator_boundary")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::bd_lsc);
+      matrix, Saddle_point_preconditioner::type::bd_lsc,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else if(preconditioner_name == 
           "semi_implicit_method_for_pressure_linked_equations")
   {
     return std::make_shared<Saddle_point_preconditioner>(
-      matrix, Saddle_point_preconditioner::type::simple);
+      matrix, Saddle_point_preconditioner::type::simple,
+      db["saddle_point_preconditioner_direct_velocity_solve"]);
   }
   else
   {
@@ -179,8 +174,8 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
- : db(default_solver_database()), direct_solver(), iterative_method(),
-   preconditioner()
+ : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
+   iterative_method(), preconditioner()
 {
   this->db.merge(param_db, false);
 }
@@ -190,6 +185,7 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
 template <class L, class V>
 void Solver<L, V>::update_matrix(const L& matrix)
 {
+  this->linear_operator = &matrix;
   if(db["solver_type"].is("direct")) // direct solver
   {
     DirectSolver::DirectSolverTypes t;
@@ -224,7 +220,8 @@ void Solver<L, V>::update_matrix(const L& matrix)
     if(!is_saddle_point_preconditioner)
     {
       // create a new preconditioner
-      this->preconditioner = get_preconditioner<L, V>(prec_name, matrix);
+      this->preconditioner = get_preconditioner<L, V>(prec_name, matrix, 
+                                                      this->db);
     }
     else
     {
@@ -246,17 +243,25 @@ void Solver<L, V>::update_matrix(const L& matrix)
 template <class L, class V>
 void Solver<L, V>::solve(const V& rhs, V& solution)
 {
-  if(!db["solver_type"].is("direct"))
-    ErrThrow("Calling Solver::solve without the matrix as an argument only "
-             "works for direct solvers. In such a case the method "
-             "Solver::update_matrix has to be called in advance. For iterative "
-             "solvers you should call the method Solver::solve with a "
-             "BlockFEMatrix (and right hand side and solution).");
-  if(this->direct_solver)
+  if(this->linear_operator == nullptr)
+    ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
+             "Solver::update_matrix first. Otherwise it's not clear which "
+             "system is supposed to be solved");
+  if(db["solver_type"].is("direct"))
+  {
     this->direct_solver->solve(rhs, solution);
+  }
   else
-    ErrThrow("Calling Solver::solve(rhs, solution) with a direct solver "
-             "requires a preceeding call to Solver::update_matrix(matrix).");
+  {
+    auto n_it_residual = this->iterative_method->iterate(
+      *this->linear_operator, rhs, solution);
+    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
+                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
+  }
+  //compute the residual by hand again.
+  //V r(rhs);
+  //linear_operator->apply_scaled_add(solution, r, -1.);
+  //Output::print<2>("computed residual in Solver class: ", r.norm());
 }
 
 /* ************************************************************************** */
@@ -265,22 +270,43 @@ template <class L, class V>
 void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
 {
   this->update_matrix(matrix);
-  if(db["solver_type"].is("direct"))
-  {
-    // direct solver
-    this->solve(rhs, solution);
-  }
-  else
-  {
+  this->solve(rhs, solution);
+}
+
+/*TODO this implementation is partly copy-and-paste from update_matrix,
+ * partly from another solve...bad! */
+template <class L, class V>
+void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
+                         std::shared_ptr<Multigrid> mg)
+{
+    if(db["solver_type"].is("direct"))
+    {
+      ErrThrow("Solver::solve with multigrid object called for Direct Solver!")
+    }
+
+    preconditioner = std::make_shared<Iteration_multigrid<L, V>>(mg);
+    mg->update();
+
+    // iterative solver
+    std::string ist = db["iterative_solver_type"];
+    std::string prec_name = db["preconditioner"];
+    size_t max_it = db["max_n_iterations"];
+    size_t min_it = db["min_n_iterations"];
+    double tol = db["residual_tolerance"];
+    double reduc = db["residual_reduction"];
+    size_t restart = db["gmres_restart"]; // only for gmres
+    double damping = db["damping_factor"];
+
+    iterative_method = get_iterative_method<L, V>(ist, matrix,
+                                                        this->preconditioner);
+    iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc,
+                                                    2., damping, restart);
+
+
     // iterative solver
     auto n_it_residual = this->iterative_method->iterate(matrix, rhs, solution);
-    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
+    Output::print<2>(this->iterative_method->get_name(), " iterations: ",
                      n_it_residual.first, "\tresidual: ", n_it_residual.second);
-  }
-  //compute the residual by hand again.
-  //V r(rhs);
-  //matrix.apply_scaled_add(solution, r, -1.);
-  //Output::print<2>("computed residual in Solver class: ", r.norm());
 }
 
 /* ************************************************************************** */

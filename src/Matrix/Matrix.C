@@ -656,33 +656,59 @@ TMatrix* TMatrix::GetTransposed() const
 
 void TMatrix::remove_zeros(double tol)
 {
+  if(!this->structure.unique()) //could be adapted in time: work on a copy
+    ErrThrow("Cannot remove zeroes in a structure shared by multiple matrices!");
+
+  if(this->structure->GetHangingN_Entries() != 0) //if you need hanging nodes, fix this
+    ErrThrow("Matrix structure has hanging node entries. "
+        "TMatrix::remove_zeros will not yet reset their number and arrays correctly.");
+
   if(tol < 0)
     tol = this->GetNorm(0) * 1e-15; // largest (in magnitude) entry
-  // we want to call this->changeRows(new_entries, true)
-  std::map<int,std::map<int,double> > new_entries;
-  const int *rows = structure->GetRowPtr();
-  const int *cols = structure->GetKCol();
+
+  int *row_ptr = structure->GetRowPtr();
   int n_rows = structure->GetN_Rows();
-  int n_removed = 0; // number of entries to be removed
-  // loop over all rows of this matrix
-  for(int row=0; row<n_rows; row++)
+  int* kcol = structure->GetKCol();
+  //"entries" will be treated as the std::vector it is
+
+  int row_begin_old = row_ptr[0];
+
+  for(int i = 0 ; i<n_rows ; ++i)
   {
-    new_entries[row]; // empty row
-    for(int col = rows[row]; col < rows[row + 1]; col++)
+    int row_end_old = row_ptr[i+1];
+    std::vector<int> kcol_part_new;
+    std::vector<double> entries_part_new;
+    kcol_part_new.reserve( row_end_old -row_begin_old );
+    entries_part_new.reserve( row_end_old -row_begin_old );
+
+    for(int j = row_begin_old; j < row_end_old; ++j)
     {
-      if(fabs(entries[col]) > tol)
-        (new_entries[row])[cols[col]] = entries[col];
+      if(fabs(entries.at(j) - 0) > tol) //entry does not count as zero
+      {
+        kcol_part_new.push_back(kcol[j]);
+        entries_part_new.push_back(entries.at(j));
+      }
+    } //new kcol and entries part for row i are filled
+
+    //copy new parts into old arrays
+    int row_begin_new = row_ptr[i]; //was updated in loop step i-1
+    size_t n_entries_row_new = kcol_part_new.size();
+    if(n_entries_row_new != 0) //this is not a zero row
+    {
+      memcpy(&kcol[row_begin_new], &kcol_part_new.at(0), n_entries_row_new*SizeOfInt);
+      memcpy(&entries.at(row_begin_new), &entries_part_new.at(0), n_entries_row_new*SizeOfDouble); //stl here!!
     }
-    n_removed += rows[row + 1] - rows[row] - new_entries[row].size();
+    //update row_ptr
+    row_begin_old = row_ptr[i+1];
+    row_ptr[i+1] = row_begin_new + n_entries_row_new;
   }
-  if(n_removed != 0)
-  {
-    Output::print<3>("TMatrix::remove_zeros: tol ", tol, "\tn_removed ",
-                     n_removed, "\tratio ", (double)n_removed/(rows[n_rows]));
-    this->changeRows(new_entries);
-  }
-  else
-    Output::print<3>("TMatrix::remove_zeros: no removable entries");
+
+  //Re-fit the TStructure (nEntries and columns array)
+  structure->reset_n_entries();
+  //Re-fit the entries array (throw out all trailing (nearly) zeroes)
+  entries.resize(structure->GetN_Entries());
+
+
 }
 
 
@@ -768,84 +794,6 @@ void TMatrix::reorderMatrix()
       }
     }
   }
-}
-
-void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
-{
-  if(entries.size() == 0)
-    return; // nothing needs to be done
-  
-  const int *oldRows = structure->GetRowPtr();
-  const int *oldCols = structure->GetKCol();
-  
-  // find out how many entries there are after all changes are applied, i.e. 
-  // how many entries are deleted/created
-  int offset = 0;
-  for(std::map<int,std::map<int,double> >::iterator it=entries.begin(); 
-       it!=entries.end(); ++it)
-  {
-    int row = it->first;
-    offset -= oldRows[row+1]-oldRows[row];// number of entries in old structure
-    offset += (it->second).size();        // number of entries in new structure
-  }
-  
-  int n_rows = structure->GetN_Rows();// new number of rows = old number of rows
-  // new number of columns = old number of columns
-  int n_cols = structure->GetN_Columns(); 
-  int n_entries = structure->GetN_Entries() + offset; // new number of entries
-  int n_active = structure->GetActiveBound();
-  int *columns = new int[n_entries];  // new pointer to columns
-  int *rows = new int[n_rows+1];      // new row pointer
-  rows[0] = 0;
-  
-  // create new array to store the entries
-  std::vector<double> new_entries(n_entries);
-  
-  // fill the arrays 'rows', 'columns' and 'new_entries'
-  for(int row=0; row<n_rows; row++)
-  {
-    std::map<int,std::map<int,double> >::iterator it = entries.find(row);
-    if(it == entries.end())
-    {
-      // this row stays unchanged
-      // number of (old) entries in this row
-      unsigned int n_old_entries = oldRows[row+1] - oldRows[row];
-      // copy pointer to columns in this row
-      memcpy(columns+rows[row], oldCols+oldRows[row], n_old_entries*SizeOfInt);
-      // update row pointer
-      rows[row+1] = rows[row] + n_old_entries;
-      // copy entries
-      memcpy(&new_entries[0]+rows[row], this->GetEntries()+oldRows[row],
-             n_old_entries*SizeOfDouble);
-    }
-    else
-    {
-      // this row will be replaced
-      std::map<int,double> newRow = it->second;
-      // loop over all new entries in this row
-      int columnIndex=0;
-      for(std::map<int,double>::iterator it2 = newRow.begin(); 
-          it2 != newRow.end(); ++it2)
-      {
-        int colInd = it2->first; // column index of new entry
-        double entry = it2->second; // value of new entry
-        columns[columnIndex+rows[row]] = colInd;
-        new_entries[columnIndex+rows[row]] = entry;
-        columnIndex++;
-      }
-      rows[row+1] = rows[row] + newRow.size();
-      //if(newRow.size() != columnIndex)
-      //  OutPut("ERROR: wrong number of columns in this row "<< newRow.size()
-      //      << "\t" << columnIndex << "\t" << row << endl);
-    }
-  }
-  
-  // change Structure of this matrix
-  this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_active,
-                                                 n_entries, columns, rows);
-  delete [] columns;
-  delete [] rows;
-  this->entries = new_entries;
 }
 
 /** ************************************************************************* */

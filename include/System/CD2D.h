@@ -17,7 +17,6 @@
 #define __CD2D_H__
 
 #include <Example_CD2D.h>
-#include <MultiGrid2D.h>
 #include <FEFunction2D.h>
 #include <Domain.h>
 #include <deque>
@@ -27,6 +26,8 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <PostProcessing2D.h>
+
+class Multigrid;
 
 class CD2D
 {
@@ -50,12 +51,6 @@ class CD2D
       /** @brief Finite Element function */
       TFEFunction2D fe_function;
       
-      /**
-       * Gives a non-const pointer to the one block which is stored
-       * by matrix. FIXME Is terribly unsafe and must be replaced soon.
-       */
-      TSquareMatrix2D* get_matrix_pointer();
-
       /** @brief constructor */
       System_per_grid( const Example_CD2D& example, TCollection& coll );
 
@@ -89,10 +84,8 @@ class CD2D
     /** @brief Definition of the used example */
     const Example_CD2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    ///Multigrid object, set to shared nullptr if it is not needed.
+    std::shared_ptr<Multigrid> mg;
     
     /** @brief a local parameter database which constrols this class
      * 
@@ -208,6 +201,8 @@ class CD2D
     { return this->systems.front().solution.length(); }
     const Example_CD2D& get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
 
     // Special member functions. Disable copy/move, set destructor to default.
     // Will be changed only when the underlying classes follow rule of 0/5.

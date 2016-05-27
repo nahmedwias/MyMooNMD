@@ -10,6 +10,10 @@
  * If those are not approximated well enough (or something in the process goes wrong)
  * the test fails.
  *
+ * @todo FIXME This test seems to test a direct solver, although it is named a
+ * multigrid test. I suppose the reason is that it was not correctly transferred
+ * to using the new Database. Fix this!
+ *
  * @author Naveed, Ulrich, Clemens
  *
  */
@@ -31,6 +35,8 @@
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  ErrThrow("This test is named multigrid but actually tests a direct solver!"
+      "Please set up a new (NSE2D) multigrid test in a better framework.")
   // test 1;
   //===================================================================================
   /** @brief Multigrid Test: for P2/P1 elements**/
@@ -46,7 +52,7 @@ int main(int argc, char* argv[])
     db["problem_type"].set<size_t>(5);
     
     db.add("refinement_n_initial_steps", (size_t) 4, "");
-    db.add("n_multigrid_levels", (size_t) 3, "");
+    db.add("multigrid_n_levels", (size_t) 3, "");
 
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
@@ -65,7 +71,7 @@ int main(int argc, char* argv[])
     
     TDatabase::ParamDB->VELOCITY_SPACE = 2;
     // if pressure space is -4711, the depending on 
-    // velcoity space, the pressure space is auto chosen in
+    // velocity space, the pressure space is auto chosen in
     // the NSE2D class or set to 1 for triangles
     TDatabase::ParamDB->PRESSURE_SPACE = -4711; 
     
@@ -198,7 +204,7 @@ int main(int argc, char* argv[])
     db["nonlinloop_slowfactor"] = 1.;
 
     db.add("refinement_n_initial_steps", (size_t) 4, "");
-    db.add("n_multigrid_levels", (size_t) 2, "");
+    db.add("multigrid_n_levels", (size_t) 2, "");
 
     // default construct a domain object
     TDomain domain(db);

@@ -10,6 +10,8 @@
 #include <NSE3D_Param.h>
 #include <NSE3D_ParamRout.h>
 
+#include <TCD3D.h> // local routines for time convection-diffusion-reaction
+
 #include <TNSE3D_FixPo.h>
 #include <TNSE3D_ParamRout.h>
 
@@ -45,6 +47,27 @@ std::string LocalAssembling3D_type_to_string(LocalAssembling3D_type type)
         case GALERKIN:
           return std::string("CD3D_Galerkin");
           break;
+      }
+      break;
+    //////////////////////////////////////////////////
+    case LocalAssembling3D_type::TCD3DStiffRhs:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  return std::string("TCD3D_Stiff_Rhs");	  
+	  break;
+	case SUPG:
+	  return std::string("TCD3D_Stiff_Rhs_SUPG");
+	  break;
+      }
+      break;
+    case LocalAssembling3D_type::TCD3D:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  return std::string("TCD3D_AllGalerkin");
+	case SUPG:
+	  return std::string("TCD3D_AllSUPG");
       }
       break;
     default:
@@ -103,6 +126,76 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
                " is not supported by the class CD3D");
       }// endswitch TDatabase::ParamDB->DISCTYPE
       break; // break for the type LocalAssembling3D_type::CD3D 
+    ///////////////////////////////////////////////////////////////////////////
+    // TCD3D: nonstationary convection-diffusion-reaction problems
+    case LocalAssembling3D_type::TCD3D:
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  this->N_Terms = 4;
+          this->Derivatives = { D100, D010, D001, D000 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0, 0};
+          this->N_Matrices = 2; // Mass and Stiffness Matrices
+          this->RowSpace = { 0, 0 };
+          this->ColumnSpace = { 0, 0 };
+          this->N_Rhs = 1;
+          this->RhsSpace = { 0 };
+          this->AssembleParam = MatrixMARhsAssemble;
+          this->Manipulate = NULL;
+	  break;
+	case SUPG:
+	  this->N_Terms = 4;
+          this->Derivatives = { D100, D010, D001, D000 };
+          this->Needs2ndDerivatives = new bool[1];
+          this->Needs2ndDerivatives[0] = false;
+          this->FESpaceNumber = { 0, 0, 0, 0};
+          this->N_Matrices = 2; // Mass and Stiffness matrices, NOTE: M = (u, v + delta * bgradv)
+          this->RowSpace = { 0, 0 };
+          this->ColumnSpace = { 0, 0 };
+          this->N_Rhs = 1;
+          this->RhsSpace = { 0 };
+          this->AssembleParam = MatricesMARhsAssemble_SUPG; 
+          this->Manipulate = NULL;
+	  break;
+      }
+      break;
+    case LocalAssembling3D_type::TCD3DStiffRhs:      
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+	case GALERKIN:
+	  this->N_Terms = 4;
+	  this->Derivatives = { D100, D010, D001, D000 };
+	  this->Needs2ndDerivatives = new bool[1];
+	  this->Needs2ndDerivatives[0] = false;
+	  this->FESpaceNumber = { 0, 0, 0, 0 };
+	  this->N_Matrices = 1;
+	  this->RowSpace = { 0 };
+	  this->ColumnSpace = { 0 };
+	  this->N_Rhs = 1;
+	  this->RhsSpace = { 0 };
+	  this->Manipulate = NULL;
+	  this->Manipulate = NULL;
+	  this->AssembleParam = MatrixARhsAssemble;
+	  break;
+	case SUPG:
+	  this->N_Terms = 4;
+	  this->Derivatives = { D100, D010, D001, D000 };
+	  this->Needs2ndDerivatives = new bool[1];
+	  this->Needs2ndDerivatives[0] = false;
+	  this->FESpaceNumber = { 0, 0, 0, 0 };
+	  this->N_Matrices = 2;
+	  this->RowSpace = { 0, 0 };
+	  this->ColumnSpace = { 0, 0 };
+	  this->N_Rhs = 1;
+	  this->RhsSpace = { 0 };
+	  this->Manipulate = NULL;
+	  this->Manipulate = NULL;
+	  this->AssembleParam = MatricesMARhsAssemble_SUPG;
+	  break;
+      }
+      break;
     ///////////////////////////////////////////////////////////////////////////
     // NSE3D: stationary Navier-Stokes problems
     case LocalAssembling3D_type :: NSE3D_Linear:
@@ -953,8 +1046,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Matrices = 5;
               this->RowSpace    = { 0, 0, 1, 1, 1 };
               this->ColumnSpace = { 0, 0, 0, 0, 0 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType1Galerkin3D;
               this->Manipulate = NULL;              
             }
@@ -970,8 +1063,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->N_Matrices = 8;
               this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               this->AssembleParam = TimeNSType2Galerkin3D;
               this->Manipulate = NULL;
             }
@@ -983,11 +1076,11 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 13;//FIXME depending on how many mass matrices assembles
+              this->N_Matrices = 13;
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-              this->N_Rhs = 3;
-              this->RhsSpace = { 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
               
               if(laplace_type==0)
                 this->AssembleParam = TimeNSType3Galerkin3D;
@@ -1003,7 +1096,7 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
               this->Needs2ndDerivatives[0] = false;
               this->Needs2ndDerivatives[1] = false;
               this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 16;//FIXME depending on how many mass matrices assembles
+              this->N_Matrices = 16;
               this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
               this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
               this->N_Rhs = 4;
@@ -1125,8 +1218,8 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
           this->N_Matrices = 0;
           this->RowSpace = { };
           this->ColumnSpace = { };
-          this->N_Rhs = 3 ;
-          this->RhsSpace = {0, 0, 0};
+          this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
+          this->RhsSpace = {0, 0, 0, 0};
           this->AssembleParam =TimeNSRHS3D;
           this->Manipulate = NULL;
           break;

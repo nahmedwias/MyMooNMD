@@ -183,6 +183,14 @@ class Parameter
     Parameter& operator=(const char*);
     //@}
     
+    /// @brief write the value of this parameter into a stream
+    ///
+    /// This is not the same as calling Parameter::info(). This only uses the 
+    /// value of the given Parameter. This function is meant to provide a simple
+    /// way to write the parameter into a stream, a call to 
+    /// Parameter::value_as_string() produces the same result.
+    friend std::ostream& operator << (std::ostream& os, const Parameter& p);
+    
     /// @brief print some information on this parameter
     void info() const;
     
@@ -228,10 +236,18 @@ class Parameter
     /// @brief Parameter description
     std::string description;
     
+    /// @brief find out if the range is an interval
+    /// 
+    /// For 'bool' and 'std::string' type values this makes no sense is left
+    /// unused. For 'double' it is always true. For 'int' and 'size_t' it may
+    /// or may not be set. If set, the respective std::set (int_range or 
+    /// unsigned_range) is unused and instead the respective min/max are used.
+    bool range_is_an_interval;
+    
     /// @name describing the range (valid values) of this parameter
     /// @brief Parameter range describing all valid parameter values
     ///
-    /// Exactly one is actually used (int case of a Parameter of type `double`,
+    /// Exactly one is actually used (in case of a Parameter of type `double`,
     /// it is `min` and `max`). The others are meaningless and are not set or 
     /// used.
     //@{
@@ -241,17 +257,31 @@ class Parameter
     ///
     /// Even if the range is an interval, here all numbers are listed
     std::set<int> int_range;
+    /// @brief the range is the interval [int_min, int_max]
+    int int_min;
+    /// @brief the range is the interval [int_min, int_max]
+    int int_max;
     /// @brief set of all possible `size_t`s for this parameter
     ///
     /// Even if the range is an interval, here all numbers are listed
     std::set<size_t> unsigned_range;
+    /// @brief the range is the interval [unsigned_min, unsigned_max]
+    int unsigned_min;
+    /// @brief the range is the interval [unsigned_min, unsigned_max]
+    int unsigned_max;
     /// @brief the range is the interval [min, max]
-    double min;
+    double double_min;
     /// @brief the range is the interval [min, max]
-    double max;
+    double double_max;
     /// @brief set of all possible strings for this parameter
     std::set<std::string> string_range;
     //@}
+    
+    /// @brief set all members (except type) to some default values
+    /// 
+    /// This is called from the other constructors and produces less code. That
+    /// is basically the reason for this constructor.
+    void set_defaults(std::string name, std::string description);
 };
 
 #endif // __PARAMETER__

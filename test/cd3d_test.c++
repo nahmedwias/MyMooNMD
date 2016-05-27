@@ -102,12 +102,6 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0; //relative error breaking criterion (not reached)
   TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-12; //absolute error breaking criterion (not reached)
 
-  // choose unit cube as test domain and a corresponding initial mesh
-  TDatabase::ParamDB->BNDFILE = new char[17];
-  strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-  TDatabase::ParamDB->GEOFILE = new char[22];
-  strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
-
   // Initialize geometry and initialize the mesh.
   domain.Init(db["boundary_file"], db["geo_file"]);
 
@@ -249,7 +243,7 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 3, " ");
     db.add("solver_type", std::string("iterative"), "");
     db.add("preconditioner", std::string("multigrid"), "");
-    db.add("n_multigrid_levels", (size_t)2, "", (size_t)0, (size_t)10);
+    db.add("multigrid_n_levels", (size_t)2, "", (size_t)0, (size_t)10);
     db["boundary_file"] = "Default_UnitCube";
     db["geo_file"] = "Default_UnitCube_Hexa";
     
@@ -289,12 +283,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR = 0; // no slc
     TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 0;  // no slc
 
-    // choose unit cube as test domain and a corresponding initial mesh
-    TDatabase::ParamDB->BNDFILE = new char[17];
-    strcpy(TDatabase::ParamDB->BNDFILE, "Default_UnitCube");
-    TDatabase::ParamDB->GEOFILE = new char[22];
-    strcpy(TDatabase::ParamDB->GEOFILE, "Default_UnitCube_Hexa");
-    
     
     // Initialize geometry and initialize the mesh.
     domain.Init(db["boundary_file"], db["geo_file"]);
@@ -302,7 +290,7 @@ int main(int argc, char* argv[])
     // split the number of refinement steps - some have to be done before,
     // some after the domain partitioning
     int n_ref_total = domain.get_n_initial_refinement_steps();
-    size_t mg_levels = db["n_multigrid_levels"];
+    size_t mg_levels = db["multigrid_n_levels"];
     size_t n_ref_after = mg_levels > 1 ? mg_levels - 1: 0;
     size_t n_ref_before =  n_ref_total - n_ref_after;
     if(n_ref_before < 0)

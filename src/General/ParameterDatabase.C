@@ -181,9 +181,9 @@ void ParameterDatabase::write(std::ostream& os, size_t verbose) const
   {
     if(verbose == 1 || verbose == 2) // verbose != 0
     {
-      p.print_description(os, "# ", 60, "");
+      p.print_description(os, "## ", 60, "");
     }
-    os << p.get_name() << ": " << p.value_as_string() << "   " 
+    os << p.get_name() << ": " << p << "   " 
        << p.range_as_string() << "\n\n";
   }
 }
@@ -277,7 +277,8 @@ Parameter::types get_parameter_and_type(std::string value_string,
     bool_ret = false;
     return Parameter::types::_bool;
   }
-  else if(value_string.find('.') != std::string::npos)
+  else if(value_string.find('.') != std::string::npos 
+         || value_string.find(std::string("e-")) != std::string::npos)
   {
     try // this could be a double
     {
@@ -297,10 +298,15 @@ Parameter::types get_parameter_and_type(std::string value_string,
       if(value < 0) // this is an int not a size_t
       {
         int_ret = value;
+        double_ret = (double)value;
         return Parameter::types::_int;
       }
       // this is an unsigned parameter
       size_t_ret = (size_t)value; // safe, because value >= 0
+      // we set int_ret and double_ret as well because maybe this parameter 
+      // turns out to be of those types really, then we need these numbers
+      int_ret = value;
+      double_ret = (double)value;
       return Parameter::types::_size_t;
     }
     catch(...)
@@ -539,9 +545,6 @@ void add_range_to_parameter(Parameter& p,
 Parameter create_parameter(std::string name, std::string value_string, 
                            std::string description, std::string range_string)
 {
-  if(description.empty())
-    description = "empty description";
-  
   bool bool_val;
   int int_val;
   size_t size_t_val;
@@ -564,35 +567,24 @@ Parameter create_parameter(std::string name, std::string value_string,
   switch(type)
   {
     case Parameter::types::_bool:
-      if(value_string == "True" || value_string == "true")
-      {
-        p.reset(new Parameter(name, true, description));
-      }
-      else
-      {
-        p.reset(new Parameter(name, false, description));
-      }
+      p.reset(new Parameter(name, bool_val, description));
       break;
     case Parameter::types::_int:
-      // stoi should not throw here, because we know it is an int already
-      p.reset(new Parameter(name, stoi(value_string), description));
+      p.reset(new Parameter(name, int_val, description));
       break;
     case Parameter::types::_size_t:
-      // stoi should not throw here, because we know it is an int already
-      p.reset(new Parameter(name, size_t(stoi(value_string)), description));
+      p.reset(new Parameter(name, size_t_val, description));
       break;
     case Parameter::types::_double:
-      // stod should not throw here, because we know it is a double already
-      p.reset(new Parameter(name, stod(value_string), description));
+      p.reset(new Parameter(name, double_val, description));
       break;
     case Parameter::types::_string:
-      p.reset(new Parameter(name, value_string, description));
+      p.reset(new Parameter(name, string_val, description));
       break;
     default:
       ErrThrow("unknown type");
       break;
   }
-  
   add_range_to_parameter(*p, range_list);
   return std::move(*p);
 }
@@ -669,8 +661,13 @@ void ParameterDatabase::read(std::istream& is)
       // documentation for a parameter on this line
       std::string des = line.substr(1);
       remove_leading_whitespace(des);
-      // add this line to the descripion
-      description += des + " ";
+      // if there were two '#' at the beginning, then interpret this as a 
+      // comment which should not become part of the description
+      if(des.length() != 0 && des.at(0) == '#')
+        description.clear();
+      else
+        // add this line to the descripion
+        description += des + " ";
       continue; // go to next line
     }
     
@@ -685,10 +682,6 @@ void ParameterDatabase::read(std::istream& is)
     {
       description.clear();
       continue;
-    }
-    if(description.empty())
-    {
-      description = "custom parameter without documentation";
     }
     
     tmp.add(create_parameter(param_name, value_string, description,
@@ -788,7 +781,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   db.add("example", 0,
          "Choose which example to run. \nNote that depending on the type of "
          "problem you want to solve, different values are meaningful here. See "
-         "the class 'Example' and its derived classes.", -5, 5);
+         "the class 'Example' and its derived classes.", -5, 200);
 
   return db;
 }
@@ -837,7 +830,13 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
   db.add("nonlinloop_epsilon", 1e-10,
          "At which absolute residual to break the nonlinear loop.",
          0. , 1. );
-
+  
+  db.add("nonlinloop_damping_factor", 1.0,
+         "Damping factor 'w' for the nonlinear iteration. The solution of the "
+         "k-th iterate will be scaled by 'w'. Then The previous solution, "
+         "scaled by '1-w', will be added. Setting to it to zero makes no "
+         "sense.", 
+         0., 1.);
 
   //TDatabase::ParamDB->SC_NONLIN_DIV_FACTOR
   db.add("nonlinloop_slowfactor", (double) 1e10,

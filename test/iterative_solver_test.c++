@@ -1,12 +1,9 @@
 /*
  * Unit testing of a few iterative solver classes.
  */
-
 #include <BlockMatrix.h>
 #include <Solver.h>
-#include <vector>
 #include <MooNMD_Io.h>
-#include <Iteration_jacobi.h>
 #include <BlockVector.h>
 
 int main(int argc, char* argv[])
@@ -153,7 +150,7 @@ int main(int argc, char* argv[])
     
     // some (not optimal) damping parameter
     if(solver_info.first == "Richardson"
-       && s_db["preconditioner"] == "no_preconditioner")
+       && s_db["preconditioner"].is("no_preconditioner"))
       s_db["damping_factor"] = 1./50.;
     
     Solver<BlockMatrix, BlockVector> s(s_db);

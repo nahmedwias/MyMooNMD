@@ -24,10 +24,13 @@
 class BlockMatrix;
 class BlockFEMatrix;
 class BlockVector;
+class VankaSmootherNew;
 constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver
 {
+    friend VankaSmootherNew; //VankaSmootherNew wants access to the constructor taking a shared_ptr
+
   public:
     enum class DirectSolverTypes {umfpack, pardiso};
     /**

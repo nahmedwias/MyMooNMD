@@ -4628,6 +4628,25 @@ void TStructure::Sort()
   } // endfor i
 }
 
+void TStructure::reset_n_entries()
+{
+  //throw if number of rows changed
+  if (this->rows.size() - 1 != this->nRows)
+    ErrThrow("TStructure: nRows != rows.size() - 1 ",nRows, " != ", rows.size() + 1);
+
+  //throw if there are hanging entries
+  if(this->nHangingEntries != 0)
+    ErrThrow("TStructure has hanging node entries. "
+            "TStructure::reset_n_entries will not yet reset their "
+            "number and arrays correctly.");
+
+  //reset number of entries to last entry of row ptr
+  this->nEntries = this->rows.back();
+
+  //columns array must be resized  to nEntries - everything behind that is erased
+  this->columns.resize(this->nEntries);
+}
+
 int TStructure::index_of_entry(const int i, const int j) const
 {
   if(i < 0 || i >= this->GetN_Rows())

@@ -43,10 +43,6 @@ struct TParaDB
   //======================================================================
   /** parameters data output and input files                            */
   //======================================================================
-  char *GEOFILE;
-  char *BNDFILE;
-  char *GEOFILE_INTL;
-  char *BNDFILE_INTL;
   char *MAPFILE;
   char *OUTFILE;
   char *PODFILE;

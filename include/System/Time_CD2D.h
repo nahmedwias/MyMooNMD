@@ -225,6 +225,8 @@ class Time_CD2D
     { return this->systems.front().solution; }
     const TFESpace2D & get_space() const
     { return this->systems.front().fe_space; }
+    const ParameterDatabase & get_db() const
+    { return db; }
 
 
   private:

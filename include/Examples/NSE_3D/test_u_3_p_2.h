@@ -13,13 +13,7 @@
 void ExampleFile()
 {
   OutPut("Example: test_u_3_p_2.");
-  // check if the expected geometry is used
-  // FIXME at the moment I see no other possibility than to refer to global scope
-  if(!(strcmp("Default_UnitCube",TDatabase::ParamDB->BNDFILE) == 0))
-  {
-    ErrThrow(">>>>> This example has its pressure solution adapted to "
-        " BNDFILE: Default_UnitCube. Choose that geometry!");
-  }
+  // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 

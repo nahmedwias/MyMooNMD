@@ -15,14 +15,13 @@
 #include <BoundFace.h>
 
 /* ************************************************************************** */
-Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
-                                                         type t)
-  : spp_type(t),
-    lsc_strategy(0), M(&m), velocity_block(), gradient_block(nullptr),
-    divergence_block(nullptr), Schur_complement(nullptr),
-    velocity_solver(nullptr), Schur_solver(nullptr), inverse_diagonal(),
+Saddle_point_preconditioner::Saddle_point_preconditioner(
+  const BlockFEMatrix& m, type t,  bool direct_velocity_solve)
+  : spp_type(t), lsc_strategy(direct_velocity_solve ? 0 : 1), M(&m),
+    velocity_block(), gradient_block(nullptr), divergence_block(nullptr),
+    velocity_solver(nullptr), inverse_diagonal(), 
     velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
-    damping_factor(1.0), Poisson_solver_matrix(nullptr), 
+    damping_factor(1.0), Poisson_solver_matrix(nullptr),
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
@@ -52,11 +51,28 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   this->fill_inverse_diagonal();
   
-  if(lsc_strategy == 0)
   {
-    this->velocity_solver.reset(
-      new DirectSolver(this->velocity_block,
-                       DirectSolver::DirectSolverTypes::umfpack));
+    // velocity solver database
+    ParameterDatabase vs_db = Solver<>::default_solver_database();
+    if(lsc_strategy == 0)
+    {
+      // use umfpack direct solver
+      vs_db["solver_type"] = "direct";
+      vs_db["direct_solver_type"] = "umfpack";
+    }
+    else
+    {
+      vs_db["solver_type"] = "iterative";
+      vs_db["iterative_solver_type"] = "fgmres";
+      vs_db["preconditioner"] = "jacobi";
+      vs_db["max_n_iterations"] = 100;
+      vs_db["residual_tolerance"] = 1.0e-15; // hardly ever reached
+      vs_db["residual_reduction"] = 0.01;    // the actual stopping criterion
+      vs_db["gmres_restart"] = 10;
+      vs_db["damping_factor"] = 1.0; // no damping
+    }
+    this->velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
+    this->velocity_solver->update_matrix(this->velocity_block);
   }
   
   //gradient block B^T
@@ -68,27 +84,18 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
                                                            {n_rows-1,n_cols-2});
   
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
-  { // SIMPLE
-    //scale the gradient block B^T with the approximation of the mass-matrix
+  {
+    // scale the gradient block B^T with the approximation of the mass-matrix
     this->gradient_block->scale(&inverse_diagonal[0], true);
-    // construct an approximation to the Schur complement matrix
-    this->Schur_complement = this->compute_Schur_complement_approximation();
-    this->Schur_solver.reset(
-      new DirectSolver(*this->Schur_complement,
-                       DirectSolver::DirectSolverTypes::umfpack));
   }
-  else
-  { // original LSC (bdry corrected LSC treated the same here)
-    //construct an approximation to the Poisson solve matrix
-    this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
-    this->Poisson_solver.reset(
-      new DirectSolver(*this->Poisson_solver_matrix,
-                       DirectSolver::DirectSolverTypes::umfpack));
-    u_star = BlockVector(velocity_block);
-    p_star = BlockVector(*this->Poisson_solver_matrix);
-    u_tmp = BlockVector(u_star);
-    p_tmp = BlockVector(p_star);
-  }
+  // construct an approximation to the Schur complement matrix
+  this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
+  this->Poisson_solver.reset(new DirectSolver(*this->Poisson_solver_matrix,
+                             DirectSolver::DirectSolverTypes::umfpack));
+  u_star = BlockVector(velocity_block);
+  p_star = BlockVector(*this->Poisson_solver_matrix);
+  u_tmp = BlockVector(u_star);
+  p_tmp = BlockVector(p_star);
   
   if(this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
   {
@@ -112,8 +119,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockFEMatrix& m,
 }
 
 /* ************************************************************************** */
-Saddle_point_preconditioner::Saddle_point_preconditioner(const BlockMatrix& m,
-                                                         type t)
+Saddle_point_preconditioner::Saddle_point_preconditioner(
+  const BlockMatrix& m, type t,  bool direct_velocity_solve)
 {
   ErrThrow("Creating a Saddle_point_preconditioner with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");
@@ -137,19 +144,7 @@ void Saddle_point_preconditioner::update(const BlockFEMatrix & m)
   // take all blocks except from last row and last column
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   
-  if(lsc_strategy == 0)
-  {
-    try
-    {
-      this->velocity_solver.reset(
-        new DirectSolver(this->velocity_block, 
-                         DirectSolver::DirectSolverTypes::umfpack));
-    }
-    catch(...)
-    {
-      ErrThrow("something is wrong with the velocity matrix");
-    }
-  }
+  this->velocity_solver->update_matrix(this->velocity_block);
   
   // we assume the blocks involving pressure did not change
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
@@ -165,21 +160,16 @@ void Saddle_point_preconditioner::update(const BlockFEMatrix & m)
       this->inverse_diagonal[d] = 1.0 / this->inverse_diagonal[d];
     this->gradient_block->scale(&inverse_diagonal[0], true);
     
-    for(unsigned int d = 0; d < n_diagonal_entries; ++d)
-    {
-      this->inverse_diagonal[d] = 1.0 / this->velocity_block.get(d, d);
-    }
+    // recompute the inverse_diagonal (of velocity_block)
+    this->fill_inverse_diagonal();
     
-    // delete old objects which are no longer valid 
-    this->Schur_complement.reset();
-    this->Schur_solver.reset();
-    
-    //scale the gradient block B^T with the approximation of the mass-matrix
+    //scale the gradient block B^T with the inverse_diagonal
     this->gradient_block->scale(&inverse_diagonal[0], true);
-    // construct an approximation to the Schur complement matrix
-    this->Schur_complement = this->compute_Schur_complement_approximation();
-    this->Schur_solver.reset(
-      new DirectSolver(*this->Schur_complement,
+    
+    //recompute the Poisson_solver_matrix and then create new Poisson_solver
+    this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
+    this->Poisson_solver.reset(
+      new DirectSolver(*this->Poisson_solver_matrix,
                        DirectSolver::DirectSolverTypes::umfpack));
   }
   else if(this->spp_type == Saddle_point_preconditioner::type::lsc 
@@ -199,17 +189,26 @@ void Saddle_point_preconditioner::update(const BlockFEMatrix & m)
 /* ************************************************************************** */
 void Saddle_point_preconditioner::update(const BlockMatrix& m)
 {
-  ErrThrow("Updateing a Saddle_point_preconditioner with a BlockMatrix is not "
+  ErrThrow("Updating a Saddle_point_preconditioner with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");
   // otherwise the get_combined_matrix methods are possibly not giving the 
   // correct behavior.
 }
 
 /* ************************************************************************** */
+void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver, 
+                    const BlockVector& rhs, BlockVector& sol)
+{
+  unsigned int verbosity = Output::getVerbosity();
+  Output::setVerbosity(1);
+  velocity_solver->solve(rhs, sol);
+  Output::setVerbosity(verbosity);
+}
+
+/* ************************************************************************** */
 void Saddle_point_preconditioner::apply(const BlockVector &z,
                                         BlockVector &r) const
 {
-  r = z;
   Output::print<5>("Saddle_point_preconditioner::solve");
   if(r.n_blocks() == 0)
   {
@@ -230,36 +229,28 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       // up_star includes du* and dp*
       // ----------------------------------------------------------------------
       // solve A du* = r_u
-      this->solve_velocity_block(z.get_entries(), up_star.block(0));
-      //u_tmp = z.get_entries();
-      //this->velocity_solver->solve(u_tmp, u_star);
+      u_tmp = z.get_entries();
+      solve_velocity(this->velocity_solver, u_tmp, u_star);
       
       // ----------------------------------------------------------------------
       // solve ^S dp* = r_p - B du*
       // use BlockVector r to store the right hand side for the system 
       // involving the Schur approximation
       unsigned int n_blocks = z.n_blocks();
-      r.copy(z.block(n_blocks - 1), n_blocks - 1); // copy last block, i.e. r_p
-      //p_tmp = z.block(n_blocks - 1);
+      p_tmp = z.block(n_blocks - 1);
       // do r_p += -B * du*
-      this->divergence_block->multiply(up_star.block(0), r.block(n_blocks - 1),
-                                       -1.);
-      this->Schur_solver->solve(r.block(n_blocks - 1),
-                               up_star.block(n_blocks - 1));
-      //this->divergence_block->multiply(u_star.get_entries(), 
-      //                                 p_tmp.get_entries(), -1.);
-      //this->Schur_solver->solve(p_tmp, p_star);
       
+      this->divergence_block->multiply(u_star.get_entries(), 
+                                       p_tmp.get_entries(), -1.);
+      this->Poisson_solver->solve(p_tmp, p_star);
       
       // ----------------------------------------------------------------------
       // dp = dp*
-      r.copy(up_star.block(n_blocks - 1), n_blocks - 1);
-      //r.copy(p_star.get_entries(), n_blocks - 1);
+      r.copy(p_star.get_entries(), n_blocks - 1);
       // du = du* - D^-1 B^T dp*
       // there are zeros in the u-block of r currently
       // store the result of -B^T dp* in u-block of r
-      gradient_block->multiply(up_star.block(n_blocks - 1), r.block(0), -1.);
-      //gradient_block->multiply(p_star.get_entries(), r.get_entries(), -1.);
+      gradient_block->multiply(p_star.get_entries(), r.get_entries(), -1.);
       // scale with D^-1, loop over all velocity entries
       for(unsigned int i = 0, n_v = gradient_block->GetN_Rows(); i < n_v; ++i)
       {
@@ -267,7 +258,7 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       }
       // add du*
       for(unsigned int i = 0; i < n_blocks - 1; ++i)
-        r.add(up_star.block(i), i);
+        r.add(u_star.block(i), i);
       
       // ----------------------------------------------------------------------
       // update r = z + omega (dp, du)
@@ -343,13 +334,20 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
       gradient_block->multiply(p_star.get_entries(), u_star.get_entries(), -1.);
       
       //Step 5. Solve K u_tmp = u_star
-      this->velocity_solver->solve(u_star, u_tmp);
+      solve_velocity(this->velocity_solver, u_star, u_tmp);
       
       r.reset();
       // copy u_tmp and p_star back to r
       for(unsigned int i = 0; i < n_blocks - 1; ++i)
         r.add(u_tmp.block(i), i);
       r.copy(p_star.block(0), n_blocks-1);
+      /// TODO damping? this->damping_factor
+      
+      if(this->damping_factor != 1.0)
+      {
+        r.scale(this->damping_factor);
+        r.add_scaled(z, 1 - this->damping_factor);
+      }
        
       //IntoL20FEFunction(r.block(n_blocks-1), r.length(n_blocks-1),
       //                  pressure_space,
@@ -364,47 +362,32 @@ void Saddle_point_preconditioner::apply(const BlockVector &z,
 }
 
 /* ************************************************************************** */
-std::shared_ptr<TMatrix>
-Saddle_point_preconditioner::compute_Schur_complement_approximation() const
-{
-  switch(this->spp_type)
-  {
-    case Saddle_point_preconditioner::type::simple:
-      return std::shared_ptr<TMatrix>(
-        this->divergence_block->multiply(this->gradient_block.get(), 1.));
-    default:
-      ErrThrow("unknown preconditioner for saddle point problems ");
-  }
-  return nullptr;
-}
-
-/* ************************************************************************** */
 /* LSC === */
 std::shared_ptr<BlockMatrix> 
 Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
 {
+  std::shared_ptr<TMatrix> ret(nullptr);
+  // get the matrix, put it into a shared_ptr, essentially this is the matrix
+  // which should be returned
   switch(this->spp_type)
   {
+    case Saddle_point_preconditioner::type::simple:
+      ret.reset(this->divergence_block->multiply(this->gradient_block.get(),
+                                                 1.));
+      break;
     case Saddle_point_preconditioner::type::lsc: // original LSC
     case Saddle_point_preconditioner::type::bd_lsc: // bdry corrected LSC
-    {
-      // get the matrix, put it into a shared_ptr, essentially this is the 
-      // matrix which should be returned
-      std::shared_ptr<TMatrix> 
-        ret(divergence_block->multiply_with_transpose_from_right(
-          inverse_diagonal));
-      
-      // put the shared_ptr into a vector
-      std::vector<std::shared_ptr<TMatrix>> ret_as_vector{ret};
-      // create a BlockMatrix and return it
-      return std::make_shared<BlockMatrix>(1, 1, ret_as_vector);
+      ret.reset(
+        divergence_block->multiply_with_transpose_from_right(inverse_diagonal));
       break;
-    }
     default:
       ErrThrow("unknown preconditioner for saddle point problems ");
       break;
   }
-  return nullptr;
+  // put the shared_ptr into a vector
+  std::vector<std::shared_ptr<TMatrix>> ret_as_vector{ret};
+  // create a BlockMatrix and return it
+  return std::make_shared<BlockMatrix>(1, 1, ret_as_vector);
 }
 /* === LSC */
 
@@ -453,7 +436,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
 {
   // number of entries on diagonal in velocity_block
   size_t n_diagonal_entries = this->velocity_block.get_n_total_rows();
-  this->inverse_diagonal.reserve(n_diagonal_entries);
+  this->inverse_diagonal.resize(n_diagonal_entries, 0.);
   
   //mass-matrix Q and its approximation
   if(this->spp_type == Saddle_point_preconditioner::type::simple)
@@ -461,7 +444,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     // SIMPLE
     for(unsigned int d = 0; d < n_diagonal_entries; ++d)
     {
-      this->inverse_diagonal.push_back(1.0 / this->velocity_block.get(d, d));
+      this->inverse_diagonal[d] = 1.0 / this->velocity_block.get(d, d);
     }
   }
   else
@@ -582,11 +565,9 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     //number of entries on diagonal in mass matrix
     for(unsigned int d = 0; d < n_diagonal_entries; ++d)
     {
-      this->inverse_diagonal.push_back(1.0 / mass_matrix.get(d, d));
-      //Output::print("inverse_diagonal[", d, "] = ", inverse_diagonal[d]);
+      this->inverse_diagonal[d] = 1.0 / mass_matrix.get(d, d);
     }
     //delete neumann_velocity_space;
-    
   }
 }
 
@@ -836,74 +817,3 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
 
 /* End extra methods for boundary corrected LSC */
 
-/* ************************************************************************** */
-void Saddle_point_preconditioner::solve_velocity_block(const double* rhs,
-                                                       double * solution) const
-{
-  switch(this->lsc_strategy)
-  {
-    case 0: // umfpack
-      this->velocity_solver->solve(rhs, solution);
-      break;
-    case 1:
-    case 2:
-//     {
-//       TSquareMatrix * mat = new TSquareMatrix(
-//           new TSquareStructure(this->velocity_block->GetN_Rows(),
-//                                this->velocity_block->GetN_Entries(),
-//                                this->velocity_block->GetKCol(),
-//                                this->velocity_block->GetRowPtr()),
-//           this->velocity_block->GetEntries());
-//       
-//       if(0)
-//       {
-//         // call AMG library to be able to use different solvers and 
-//         // preconditioners
-//         // this produces a lot of output
-//         TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 3;//AMG_SSOR, reset later
-//         TDatabase::ParamDB->SC_SMOOTHER_SCALAR = 3; // AMG_SSOR, not reset
-//         Solver(mat, rhs, solution);
-//         TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 20;
-//       }
-//       else // a possible way to do the same without the amg library
-//       {
-//         bool suppress_output = true;
-//         std::ofstream * lStream;
-//         std::streambuf * lBufferOld;
-//         if(suppress_output)
-//         {
-//           lStream = new std::ofstream("/dev/null");
-//           lBufferOld = std::cout.rdbuf();
-//           std::cout.rdbuf(lStream->rdbuf());
-//         }
-//         
-//         OutPut("velocity solver\n");
-//         TItMethod * prec;
-//         // solve velocity equation using FGMRES preconditioned with SSOR or BCGS
-//         if(this->lsc_strategy == 1)
-//           prec = new TSSORIte(MatVect_Scalar, Defect_Scalar, NULL, 0,
-//                               this->velocity_block->GetN_Rows(), 1);
-//         else
-//           prec = new TBcgs(MatVect_Scalar, Defect_Scalar, NULL, 0,
-//                            this->velocity_block->GetN_Rows(), 1);
-//         
-//         TFgmresIte vel_solver(MatVect_Scalar, Defect_Scalar, prec, 0,
-//                               this->velocity_block->GetN_Rows(), 1);
-//         //vel_solver.SetRedFactor(1e-2);
-//         vel_solver.SetMaxit(100);
-//         int n_it = vel_solver.Iterate(&mat, NULL, solution, rhs);
-//         delete prec;
-//         if(suppress_output)
-//         {
-//           std::cout.rdbuf( lBufferOld );
-//           delete lStream;
-//         }
-//         OutPut("  number of iterations for velocity solve " << n_it << endl);
-//       }
-//       break;
-//     }
-    default:
-      ErrThrow("unknown value for lsc_strategy ", this->lsc_strategy);
-      break;
-  }
-}

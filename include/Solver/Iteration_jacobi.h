@@ -22,6 +22,8 @@ class Iteration_jacobi : public IterativeMethod<LinearOperator, Vector>,
                                             const Vector & rhs,
                                             Vector & solution);
     
+    const LinearOperator& get_operator() const;
+
   protected:
     // the diagonal entries
     std::vector<double> diagonal_entries;

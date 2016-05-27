@@ -45,17 +45,16 @@ int main(int argc, char* argv[])
    *  fem-tvd-type algebraic flux correction.
    */
   {
-
     //  declaration of databases
     TDatabase Database;
     TFEDatabase2D FEDatabase;
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["problem_type"] = 1;
-    db.add("solver_type", std::string("direct"), "");
 
+    db.add("solver_type", std::string("direct"), "");
     db.add("refinement_n_initial_steps", (size_t) 3,"");
-    db.add("n_multigrid_levels", (size_t) 0, "");
+    db.add("multigrid_n_levels", (size_t) 0, "");
 
     // default construct a domain object
     TDomain domain(db);
@@ -72,8 +71,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LP_FULL_GRADIENT = 1;
     TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
     TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
-    TDatabase::ParamDB->LP_FULL_GRADIENT_ORDER_DIFFERENCE = 1;
-    TDatabase::ParamDB->SOLVER_TYPE = 2; // use direct solver
     
     // the domain is initialised with default description and default
     // initial mesh

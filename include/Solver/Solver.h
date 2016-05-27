@@ -7,6 +7,8 @@
 #include <Preconditioner.h>
 #include <memory>
 
+class Multigrid;
+
 /** @brief Solve a linear system
  * 
  * This class can solve linear systems of the \f$Ax=b\f$. How exactly it is 
@@ -46,20 +48,33 @@ class Solver
     
     /// @brief solve after calling `Solver::update_matrix`
     ///
-    /// This only makes sense for direct solvers, where the factorization is 
-    /// stored. This way you can solve many times for different right hand 
-    /// sides.
+    /// You need to call update matrix, to use this method. How exactly this is 
+    //// solved is determined by the ParameterDatabase.
     ///
-    /// Using iterative solvers one should use the other Solver::solve method
-    /// which also has the matrix as an argument.
+    /// For direct solvers, where the factorization is stored, you can solve
+    /// many times for different right hand sides.
     void solve(const Vector& rhs, Vector& solution);
     
     /// @brief solve the sytem matrix*solution = rhs
     ///
-    /// How exactly this is solved is determined by the ParameterDatabase.
+    /// This is only a wrapper for 
+    ///     update_matrix(matrix);
+    ///     solve(rhs, solution);
     void solve(const LinearOperator& matrix, const Vector& rhs,
                Vector& solution);
     
+    ///
+    /// When solving iteratively with a multigrid preconditioner, the following
+    /// method must be called - passing a complete multigrid object to the
+    /// solver, which will be used to set up the preconditioner.
+    ///
+    /// The multigrid object is updated within the method - all its levels
+    /// and their smoothers get actualized. This behaviour is based on the
+    /// assumption, that at the time this method is called
+    /// all matrices on all levels have been reassembled.
+    void solve(const LinearOperator& matrix, const Vector& rhs,
+               Vector& solution, std::shared_ptr<Multigrid> mg);
+
     /// @brief return a constant reference to the local ParameterDatabase
     ///
     /// Note that you can not change the behavior of this class after 
@@ -75,6 +90,12 @@ class Solver
     
     /// @brief the ParameterDatabase which controls the entire solving process
     ParameterDatabase db;
+    
+    /// @brief a pointer to the linear operator
+    ///
+    /// This is changed in the method update_matrix. Note that this is only a
+    /// pointer, so there is no way to check if the object itself changed.
+    const LinearOperator* linear_operator;
     
     /// @brief this object is only created if needed.
     std::unique_ptr<DirectSolver> direct_solver;

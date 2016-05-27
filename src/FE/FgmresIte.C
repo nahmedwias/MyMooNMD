@@ -297,7 +297,7 @@ TMatrix **mat, double *sol,
 double *rhs)
 {
   Output::warn("TFgmresIte::Iterate", "Use new FGMRES implementation instead.");
-  int verbose = 2;
+  int verbose = 1;
   int i=0, j,k,l;
   int maxite;
   double res, res0, reslast, t1, t2; //temp,tempGlobal;
@@ -534,7 +534,7 @@ double *rhs)
           }
           return(j);
         }
-        if (verbose>0 && j%5==0
+        if (verbose>0
 #ifdef _MPI
           && rank==0
 #endif
