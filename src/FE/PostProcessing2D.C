@@ -8,37 +8,31 @@
 using namespace std;
 
 PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
-{
-  init(param_db);
-};
-
-
-void PostProcessing2D::init(const ParameterDatabase& param_db)
+ : testcaseDir(), testcaseName(), period(1), FEFunctionArray(), 
+   FEVectFunctArray(), Coll(nullptr), timeValues()
 {
   // set the variables depending on input parameters
   ParameterDatabase db = ParameterDatabase::default_output_database();
   db.merge(param_db,false);
   
   writeVTK = db["output_write_vtk"];
-  writeCASE = db["output_write_case"];;
+  writeCASE = db["output_write_case"];
+  if(writeCASE)
+  {
+    Output::warn("PostProcessing2D", "case output is not working currently. ",
+                 "I will use vtk instead.");
+    writeCASE = false;
+    writeVTK = true;
+  }
 
   testcaseName = db["output_basename"].get<std::string>();
   testcaseDir = db["output_directory"].get<std::string>();
-  period = 1;//db["steps_per_output"];
-
-  // initialize the rest
-  Coll = nullptr;
-  timeValues.clear();
-  FEFunctionArray.clear();
-  FEVectFunctArray.clear();
-}
+  //period = db["steps_per_output"];
+};
 
 
-
-/** add a FEFunction into this output object */
-void PostProcessing2D::addFEFunction(const TFEFunction2D* fefunction)
+void PostProcessing2D::add_fe_function(const TFEFunction2D* fefunction)
 {
-  FEFunctionArray.push_back(fefunction);
   // check that FE functions have the same collection
   if(this->Coll == nullptr)
   {
@@ -48,14 +42,17 @@ void PostProcessing2D::addFEFunction(const TFEFunction2D* fefunction)
   {
     if(this->Coll != fefunction->GetFESpace2D()->GetCollection())
     {
+      // we could also just refuse to add this fe function and return without an
+      // exception.
       ErrThrow("new FE function has a different collection");
     }
   }
+  FEFunctionArray.push_back(fefunction);
 }
-/** add a FEVectFunct into this output object */
-void PostProcessing2D::addFEVectFunct(const TFEVectFunct2D* fevectfunction)
+
+void PostProcessing2D::add_fe_vector_function(const TFEVectFunct2D* 
+fevectfunction)
 {
-  FEVectFunctArray.push_back(fevectfunction);
   // check that FE functions have the same collection
   if(this->Coll == nullptr)
   {
@@ -65,81 +62,47 @@ void PostProcessing2D::addFEVectFunct(const TFEVectFunct2D* fevectfunction)
   {
     if(this->Coll != fevectfunction->GetFESpace2D()->GetCollection())
     {
-      ErrThrow("new FE function has a different collection");
+      // we could also just refuse to add this fe function and return without an
+      // exception.
+      ErrThrow("new FE vector function has a different collection");
     }
   }
+  FEVectFunctArray.push_back(fevectfunction);
 }
 
 
-void PostProcessing2D::write(const char *name, int i, double _current_time)
+void PostProcessing2D::write(int i, double current_time)
 {
-  write((string)name, i, _current_time);
-}
-
-
-void PostProcessing2D::write(int i,double _current_time)
-{
-  std::ostringstream os;
-
+  std::string name;
   if(writeVTK)
   {
-    os.seekp(std::ios::beg);
-    if (i>=0)
+    name += testcaseDir + "/" + testcaseName;
+    if(i>=0)
     {
-      os << testcaseDir << "/" << testcaseName << i << ".vtk"<< ends;
+      name += std::to_string(i);
     }
-    else
-    {
-      os << testcaseDir << "/" << testcaseName << ".vtk"<< ends;
-    }
-    Output::print<2>(" PostProcessing2D:: writing ", os);
-    writeVtk(os.str().c_str());
+    name += ".vtk";
+    Output::print<2>(" PostProcessing2D:: writing ", name);
+    writeVtk(name);
   }
 
   if(writeCASE)
   {
     // note: i<0 is used to avoid suffix in vtk output in steady problems
     // it shall be disregarded for case output
-    if (i<0) i=0;
+    if(i<0) i=0;
     // store new time step value
-    timeValues.push_back(_current_time);
-    if (i==0)
+    timeValues.push_back(current_time);
+    if(i == 0)
     {
       // write geometry only in the first iteration
       writeCaseGeo();
     }
     writeCaseVars(i);
     writeCaseFile();
-
-  }
-
-}
-
-
-void PostProcessing2D::write(string basename, int i,double _current_time)
-{
-  std::ostringstream os;
-
-  if(writeVTK)
-  {
-    os.seekp(std::ios::beg);
-    os << basename << i << ".vtk"<< ends;
-    cout << " PostProcessing2D:: writing " << os.str() << endl;
-    writeVtk(os.str().c_str());
-  }
-
-  if(writeCASE)
-  {
-    Output::print("** WARNING: The function write(string, int, double) ",
-                  "does not support .case output. I am using ",
-                  "write(int, double) instead");
-    write(i, _current_time);
   }
 }
 
-
-
-  
 
 /**
    @brief write stored data into a VTK file (old  version)
@@ -147,62 +110,34 @@ void PostProcessing2D::write(string basename, int i,double _current_time)
    Note: it uses an old-fashion way to compute the P1 solution
    The new implementation should be used eventually.
 */
-void PostProcessing2D::writeVtk(const char *name)
+void PostProcessing2D::writeVtk(std::string name)
 {
-  int l,m;
-  int edge, nsign;
-  int N_Vertices, N_CellVertices, MaxN_VerticesPerCell;
-  int  N_, N_Elements, N_LocVertices;
-  int N_LocDOF, Length, N_Comp;
-  int *GlobalNumbers, *BeginIndex, *DOF;
-  int *VertexNumbers, *NumberVertex;
-
-  double xi, eta, value, t;
-  const double *Coeffs;
-  double value_y;
   double BFValues[MaxN_BaseFunctions2D];
-  double *Coords;
-  //this is needed to hanlde vector fields approximated
-   //  with vector FE (scalar unknown postprocessed as vectors)
-   
   double BFValuesOrig[MaxN_BaseFunctions2D];
-  bool VectOutput = false;
-  BF2DRefElements RefElement;
-  RefTrans2D RefTrans;
-  TRefTrans2D *F_K;
-
   double QuadCoords[] = { -1, -1, 1, -1, 1, 1, -1, 1};
   double TriaCoords[] = { 0, 0, 1, 0,  0, 1};
-
-  const TFESpace2D *fespace;
-  TBaseFunct2D *bf;
-  FE2D FE_ID;
-  int BaseVectDim;
-
-  MaxN_VerticesPerCell = 4;                       // 2D case
 
   std::ofstream dat(name);
   if (!dat)
   {
-    cerr << " *** ERROR, file: " << __FILE__ << ", line: " << __LINE__ << ": cannot open file for output" << endl;
-    exit(1);
+    ErrThrow("cannot open file for output. ", name);
   }
   dat.setf(std::ios::fixed);
-  dat << setprecision(9);
+  dat << setprecision(12);
 
 
   // determine data for vtk file
-  N_Elements=Coll->GetN_Cells();
-  //
-  N_LocVertices=0;
+  int N_Elements = Coll->GetN_Cells();
+  // number of vertices, counting each vertex n times where n is the number of 
+  // cells this vertex belongs to.
+  int N_LocVertices = 0;
   for(int i=0;i<N_Elements;i++)
   {
     TBaseCell *cell = Coll->GetCell(i);
     N_LocVertices += cell->GetN_Vertices();
   }
   TVertex **Vertices =new TVertex*[N_LocVertices];
-  N_=0;
-
+  int N_=0;
   for(int i=0;i<N_Elements;i++)
   {
     TBaseCell *cell = Coll->GetCell(i);
@@ -229,7 +164,7 @@ void PostProcessing2D::writeVtk(const char *name)
   TVertex *Last, *Current;
 
   Last=NULL;
-  N_Vertices=0;
+  int N_Vertices=0;
   for(int i=0;i<N_LocVertices;i++)
     if((Current=Vertices[i])!=Last)
   {
@@ -237,9 +172,9 @@ void PostProcessing2D::writeVtk(const char *name)
     Last=Current;
   }
 
-  Coords=new double[2*N_Vertices];
-  VertexNumbers=new int[N_LocVertices];
-  NumberVertex=new int[N_LocVertices];
+  std::vector<double> Coords(2*N_Vertices);
+  std::vector<int> VertexNumbers(N_LocVertices);
+  std::vector<int> NumberVertex(N_LocVertices);
   Last=NULL;
   N_=0; 
   int k1=-1;
@@ -262,15 +197,14 @@ void PostProcessing2D::writeVtk(const char *name)
     NumberVertex[i]=k1;
   }
 
-  m=0;
-  for(int i=0;i<N_Elements;i++)
+  for(int i = 0, m = 0; i < N_Elements; i++)
   {
     TBaseCell *cell = Coll->GetCell(i);
     for(int j=0;j<cell->GetN_Vertices(); j++)
     {
       Current=cell->GetVertex(j);
       // cout << (int)(Current) << endl;
-      l=getIndex(Vertices, N_LocVertices, Current);
+      int l=getIndex(Vertices, N_LocVertices, Current);
       VertexNumbers[m]=NumberVertex[l];
       m++;
     }                                             // endfor j
@@ -294,10 +228,9 @@ void PostProcessing2D::writeVtk(const char *name)
   }
   dat << endl;
   dat << "CELLS " << N_Elements << " " <<  N_Elements+N_LocVertices << endl;
-  l=0;
-  for(int i=0;i<N_Elements;i++)
+  for(int i = 0, l = 0; i < N_Elements; i++)
   {
-    N_CellVertices=Coll->GetCell(i)->GetN_Vertices();
+    int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
     dat <<  N_CellVertices << " ";
     for(int j=0;j<N_CellVertices;j++)
     {
@@ -310,7 +243,7 @@ void PostProcessing2D::writeVtk(const char *name)
   dat << "CELL_TYPES " << N_Elements << endl;
   for(int i=0;i<N_Elements;i++)
   {
-    N_CellVertices=Coll->GetCell(i)->GetN_Vertices();
+    int N_CellVertices = Coll->GetCell(i)->GetN_Vertices();
     switch(N_CellVertices)
     {
       case 4: dat << 9 << " ";
@@ -329,39 +262,39 @@ void PostProcessing2D::writeVtk(const char *name)
   // write scalar variables into file
   for(unsigned int k=0;k<FEFunctionArray.size();k++)
   {
-    fespace = FEFunctionArray[k]->GetFESpace2D();
-    Coeffs = FEFunctionArray[k]->GetValues();
-    GlobalNumbers = fespace->GetGlobalNumbers();
-    BeginIndex = fespace->GetBeginIndex();
+    const TFESpace2D *fespace = FEFunctionArray[k]->GetFESpace2D();
+    const double *Coeffs = FEFunctionArray[k]->GetValues();
+    const int *GlobalNumbers = fespace->GetGlobalNumbers();
+    const int *BeginIndex = fespace->GetBeginIndex();
 
     // get dimension of basis functions
     TBaseCell *cell = Coll->GetCell(0);
-    FE_ID = fespace->GetFE2D(0, cell);
-    bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-    BaseVectDim = bf->GetBaseVectDim();
-    N_Comp = BaseVectDim;
+    FE2D FE_ID = fespace->GetFE2D(0, cell);
+    TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+    //this is needed to handle vector fields approximated with vector FE 
+    // (scalar unknown postprocessed as vectors)
+    int BaseVectDim = bf->GetBaseVectDim();
+    int N_Comp = BaseVectDim;
 
     std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
     std::fill(WArray.begin(), WArray.end(), 0.0);
-    m = 0;
 
     // set to TRUE if basis functions are vectors
-    if (BaseVectDim>1)  VectOutput = true;
-    else VectOutput = false;
-
-    for(int i=0;i<N_Elements;i++)
+    bool VectOutput = false;
+    if (BaseVectDim>1) VectOutput = true;
+    
+    for(int i = 0, m = 0; i < N_Elements; i++)
     {
       TBaseCell *cell = Coll->GetCell(i);
       N_ = cell->GetN_Vertices();
 
       // find FE data for this element
-      FE_ID = fespace->GetFE2D(i, cell);
-      bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-      DOF = GlobalNumbers+BeginIndex[i];
-      N_LocDOF = bf->GetDimension();
-      RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FE_ID);
-      RefElement = TFEDatabase2D::GetRefElementFromFE2D(FE_ID);
-      F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
+      FE2D FE_ID = fespace->GetFE2D(i, cell);
+      TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+      const int *DOF = GlobalNumbers+BeginIndex[i];
+      int N_LocDOF = bf->GetDimension();
+      RefTrans2D RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FE_ID);
+      TRefTrans2D *F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
       switch(RefTrans)
       {
         case TriaAffin:
@@ -374,13 +307,13 @@ void PostProcessing2D::writeVtk(const char *name)
           ((TQuadBilinear*)F_K)->SetCell(cell);
           break;
         default: 
-          cout << "Output2D():: no such reference transformation allowed" 
-               << endl;
+          ErrThrow("no such reference transformation allowed ", RefTrans);
           break;
       }                                           // endswitch
 
       for(int j=0;j<N_;j++)
       {
+        double xi, eta;
         switch(cell->GetN_Vertices())
         {
           case 3:
@@ -395,8 +328,8 @@ void PostProcessing2D::writeVtk(const char *name)
         }
         bf->GetDerivatives(D00, xi, eta, BFValues);
 
-        value = 0;
-        value_y = 0;
+        double value = 0;
+        double value_y = 0;
         if (VectOutput)
         {
           // apply Piola transform 
@@ -416,25 +349,25 @@ void PostProcessing2D::writeVtk(const char *name)
               cout << "Output2D():: no such reference transformation allowed" 
                << endl;
           }
-          for(l=0;l<N_LocDOF;l++)
+          for(int l=0;l<N_LocDOF;l++)
           {
             // change sign of basis functions according to global normal
-            edge=TFEDatabase2D::GetFE2D(FE_ID)->GetFEDesc2D()->GetJointOfThisDOF(l);
-            if (edge != -1)
+            int edge = 
+             TFEDatabase2D::GetFE2D(FE_ID)->GetFEDesc2D()->GetJointOfThisDOF(l);
+            int nsign = 1;
+            if(edge != -1)
             {
               nsign = cell->GetNormalOrientation(edge);
             }
-            else
-              nsign=1;
-
             value += BFValuesOrig[l] * Coeffs[DOF[l]]*nsign;
             value_y += BFValuesOrig[N_LocDOF+l] * Coeffs[DOF[l]]*nsign;
           }
           DoubleArray[N_Comp*VertexNumbers[m] + 0] += value;
           DoubleArray[N_Comp*VertexNumbers[m] + 1] += value_y;
-        } else
+        }
+        else
         {                                         // standard
-          for(l=0;l<N_LocDOF;l++)
+          for(int l=0;l<N_LocDOF;l++)
           {
             value += BFValues[l] * Coeffs[DOF[l]];
           }
@@ -448,8 +381,7 @@ void PostProcessing2D::writeVtk(const char *name)
     // non conforming
     if (VectOutput)
     {
-      l = 0;
-      for(int i=0;i<N_Vertices;i++)
+      for(int i = 0, l = 0; i < N_Vertices; i++)
       {
         for(int j=0;j<N_Comp;j++)
         {
@@ -458,7 +390,8 @@ void PostProcessing2D::writeVtk(const char *name)
           l++;
         }
       }                                           // endfor i
-    } else
+    }
+    else
     {
       for(int i=0;i<N_Vertices;i++)
       {
@@ -503,10 +436,9 @@ void PostProcessing2D::writeVtk(const char *name)
       dat << "SCALARS " << "|" << FEFunctionArray[k]->GetName() << "|";
       dat << " float"<< endl;
       dat << "LOOKUP_TABLE " << "default" << endl;
-      l=0;
-      for(int i=0;i<N_Vertices;i++)
+      for(int i = 0, l = 0; i < N_Vertices; i++)
       {
-        t=0;
+        double t=0;
         for(int j=0;j<N_Comp;j++)
         {
           t+=DoubleArray[l]*DoubleArray[l];
@@ -519,8 +451,7 @@ void PostProcessing2D::writeVtk(const char *name)
       dat << "VECTORS " << FEFunctionArray[k]->GetName();
       dat << " float"<< endl;
 
-      l=0;
-      for(int i=0;i<N_Vertices;i++)
+      for(int i = 0; i < N_Vertices; i++)
       {
         for(int j=0;j<N_Comp;j++)
         {
@@ -532,49 +463,51 @@ void PostProcessing2D::writeVtk(const char *name)
 
       VectOutput = false;
     }
-
   }                                               // endfor k
 
-  for(unsigned int k=0;k<FEVectFunctArray.size();k++) {
-    fespace = FEVectFunctArray[k]->GetFESpace2D();
-    N_Comp = FEVectFunctArray[k]->GetN_Components();
-    Length = FEVectFunctArray[k]->GetLength();
-    Coeffs = FEVectFunctArray[k]->GetValues();
-    GlobalNumbers = fespace->GetGlobalNumbers();
-    BeginIndex = fespace->GetBeginIndex();
+  for(unsigned int k=0;k<FEVectFunctArray.size();k++)
+  {
+    const TFESpace2D *fespace = FEVectFunctArray[k]->GetFESpace2D();
+    int N_Comp = FEVectFunctArray[k]->GetN_Components();
+    int Length = FEVectFunctArray[k]->GetLength();
+    const double * Coeffs = FEVectFunctArray[k]->GetValues();
+    const int * GlobalNumbers = fespace->GetGlobalNumbers();
+    const int * BeginIndex = fespace->GetBeginIndex();
 
     // cout << "N_Comp  " << N_Comp << endl;
     std::fill(DoubleArray.begin(), DoubleArray.end(), 0.0);
     std::fill(WArray.begin(), WArray.end(), 0.0);
-    m = 0;
-
-    for(int i=0;i<N_Elements;i++) {
+    
+    for(int i = 0, m = 0; i < N_Elements; i++)
+    {
       TBaseCell *cell = Coll->GetCell(i);
       N_ = cell->GetN_Vertices();
 
       // find FE data for this element
-      FE_ID = fespace->GetFE2D(i, cell);
-      bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
-      DOF = GlobalNumbers+BeginIndex[i];
-      N_LocDOF = bf->GetDimension();
+      FE2D FE_ID = fespace->GetFE2D(i, cell);
+      TBaseFunct2D *bf = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D();
+      const int * DOF = GlobalNumbers+BeginIndex[i];
+      int N_LocDOF = bf->GetDimension();
       for(int j=0;j<N_;j++)
       {
-        switch(cell->GetN_Vertices()) {
-	case 3:
-	  xi = TriaCoords[2*j];
-	  eta = TriaCoords[2*j+1];
-	  break;
-	  
-	case 4:
-	  xi = QuadCoords[2*j];
-	  eta = QuadCoords[2*j+1];
-	  break;
+        double xi, eta;
+        switch(cell->GetN_Vertices())
+        {
+          case 3:
+            xi = TriaCoords[2*j];
+            eta = TriaCoords[2*j+1];
+            break;
+          case 4:
+            xi = QuadCoords[2*j];
+            eta = QuadCoords[2*j+1];
+            break;
         }
         bf->GetDerivatives(D00, xi, eta, BFValues);
 
-        for(int n=0;n<N_Comp;n++) {
-          value = 0;
-          for(l=0;l<N_LocDOF;l++)
+        for(int n=0;n<N_Comp;n++)
+        {
+          double value = 0;
+          for(int l = 0; l < N_LocDOF; l++)
             value += BFValues[l] * Coeffs[DOF[l]+n*Length];
           DoubleArray[N_Comp*VertexNumbers[m] + n] += value;
         }
@@ -584,15 +517,14 @@ void PostProcessing2D::writeVtk(const char *name)
     }                                             // endfor i
 
     // mean value
-
-    l = 0;
-    for(int i=0;i<N_Vertices;i++) {
+    for(int i = 0, l = 0; i < N_Vertices; i++)
+    {
       for(int j=0;j<N_Comp;j++)
-	{
-	  if(WArray[i]!=0.)
-	    DoubleArray[l] /= WArray[i];
-	  l++;
-	}
+      {
+        if(WArray[i]!=0.)
+          DoubleArray[l] /= WArray[i];
+        l++;
+      }
     }                                             // endfor l
 
     for(int j=0;j<N_Comp;j++)
@@ -613,10 +545,11 @@ void PostProcessing2D::writeVtk(const char *name)
     dat << "SCALARS " << "|" << FEVectFunctArray[k]->GetName() << "|";
     dat << " float"<< endl;
     dat << "LOOKUP_TABLE " << "default" << endl;
-    l=0;
-    for(int i=0;i<N_Vertices;i++) {
-      t=0;
-      for(int j=0;j<N_Comp;j++) {
+    for(int i = 0, l = 0; i < N_Vertices; i++)
+    {
+      double t=0;
+      for(int j=0;j<N_Comp;j++)
+      {
         t+=DoubleArray[l]*DoubleArray[l];
         l++;
       }
@@ -629,27 +562,20 @@ void PostProcessing2D::writeVtk(const char *name)
     // ***************
     dat << "VECTORS " << FEVectFunctArray[k]->GetName();
     dat << " float"<< endl;
-
-    l=0;
-    for(int i=0;i<N_Vertices;i++) {
-      for(int j=0;j<N_Comp;j++) {
+    for(int i = 0; i < N_Vertices; i++)
+    {
+      for(int j=0;j<N_Comp;j++)
+      {
         dat << DoubleArray[N_Comp*i+j] << " ";
       }
       dat << double(0) << " " << endl;
     }
     dat << endl;
   }                                               // endfor k
-
   dat << endl;
-
-  delete [] NumberVertex;
-  delete [] VertexNumbers;
+  
   delete [] Vertices;
-  delete [] Coords;
-
   dat.close();
-
-
 }
 
 
@@ -684,7 +610,7 @@ void PostProcessing2D::writeVtk(const char *name)
     }
     }
     
-    as is done in writeVtk(cont char *name).
+    as is done in writeVtk(std::string name).
     Also note that in each element the function is projected onto P1/Q1.
     @warning This destroys the topology of the mesh. 
     @warning Some filters in ParaView might work incorrectly. 
@@ -693,7 +619,7 @@ void PostProcessing2D::writeVtk(const char *name)
     solution.
     
 */
-void PostProcessing2D::writeVtkDiscontinuous(const char *fileName,
+void PostProcessing2D::writeVtkDiscontinuous(std::string fileName,
 int N_LocVertices, TVertex **Vertices)
 {
   double x,y;                // coordinates of a vertex
@@ -872,7 +798,7 @@ void PostProcessing2D::writeCaseFile()
 {
   ofstream casf;
   string filename = testcaseDir + "/" + testcaseName;
-  string casename= filename + ".case";
+  string casename = filename + ".case";
   Output::print<2>(" ** PostProcessing2D::writeCaseFile - write ", casename);
   casf.open(casename);
   
@@ -1051,10 +977,10 @@ void PostProcessing2D::writeCaseGeo()
 
 void PostProcessing2D::writeCaseVars(int iter)
 {
-  string filename = testcaseDir+"/"+testcaseName;
+  std::string filename = testcaseDir+"/"+testcaseName;
   char numstr[4];
   sprintf(numstr,"%d",iter);
-  string number = "000"+string(numstr);
+  std::string number = "000"+string(numstr);
   if (iter>9)
     number = "00" + string(numstr);
   if (iter>99)
@@ -1062,120 +988,130 @@ void PostProcessing2D::writeCaseVars(int iter)
   if (iter>999)
     number = string(numstr);
 
-  string ensight_type;
+  std::string ensight_type;
   int nParts = 1;
   int n;
   ///@todo do not recreate lists if they exist already
-  Coll->createElementLists();
+  this->Coll->createElementLists();
 
   // scalars
-  for (unsigned int i=0;i<FEFunctionArray.size(); i++){
-   vector<double> uP1;
-   FEFunctionArray[i]-> computeNodeValues(uP1);
+  for (unsigned int i=0;i<FEFunctionArray.size(); i++)
+  {
+   std::vector<double> uP1;
+   FEFunctionArray[i]->computeNodeValues(uP1);
 
     // write scalars
-    ofstream sclf;
-    ostringstream sclname;
-    sclname << filename << "_" << FEFunctionArray[i]->GetName()
-				     <<  "." << number << ".scl";
-    string fname = sclname.str();
+    std::ofstream sclf;
+    std::ostringstream sclname;
+    sclname << filename << "_" << FEFunctionArray[i]->GetName() <<  "."
+            << number << ".scl";
+    std::string fname = sclname.str();
     cout << " ** PostProcessing2D::write File - write " << sclname.str() << endl;
-    sclf.open(fname.c_str());
+    sclf.open(fname);
     sclf << FEFunctionArray[i]->GetName() << " step = " << iter << endl; 
   
-    for(int ifig=1;ifig<=nParts;ifig++){
-     n = 0;
-     for(unsigned int k=0;k< Coll->NodesReferences.size(); k++){
-       double x = uP1[k];
-       sclf.setf(ios_base::scientific);	
-       sclf.precision(5);	
-       sclf.width(12);
-       if (fabs(x)<1e-18) x = 0.;
-       sclf << x;
-       ++n;
-       if ( n == 6 ) {
-	 sclf << std::endl;
-	 n=0;
-       }	
-     }// k
+    for(int ifig=1;ifig<=nParts;ifig++)
+    {
+      n = 0;
+      for(unsigned int k=0;k< Coll->NodesReferences.size(); k++)
+      {
+        double x = uP1[k];
+        sclf.setf(ios_base::scientific);	
+        sclf.precision(5);	
+        sclf.width(12);
+        if(fabs(x)<1e-18)
+          x = 0.;
+        sclf << x;
+        ++n;
+        if( n == 6 )
+        {
+          sclf << std::endl;
+          n=0;
+        }
+      }// k
      
      sclf << endl;
     }//ifig
-    
   }
 
   // vectors
-  for(unsigned int i=0;i<FEVectFunctArray.size();i++) {
+  for(unsigned int i=0;i<FEVectFunctArray.size();i++)
+  {
     int nComp = FEVectFunctArray[i]->GetN_Components();
-    vector< vector<double> > uP1vect;
-    uP1vect.resize(nComp);
-    for(int j=0;j<nComp;j++) {
+    std::vector< std::vector<double> > uP1vect(nComp);
+    for(int j=0;j<nComp;j++)
+    {
       FEVectFunctArray[i]->GetComponent(j)->computeNodeValues(uP1vect[j]);
     }
     
-    ofstream vctf;
-    ostringstream vctname;
+    std::ofstream vctf;
+    std::ostringstream vctname;
     vctname << filename << "_" << FEVectFunctArray[i]->GetName()
-				     <<  "." << number << ".vct";
-    string fname = vctname.str();
-    cout << " ** PostProcessing2D::write File - write " << vctname.str() << endl;
+            <<  "." << number << ".vct";
+    std::string fname = vctname.str();
+    Output::print<2>(" ** PostProcessing2D::write File - write ", vctname);
     vctf.open(fname.c_str());
     vctf <<  FEVectFunctArray[i]->GetName() << " step = " << iter << endl; 
   
-    for(int ifig=1;ifig<=nParts;ifig++){
+    for(int ifig=1;ifig<=nParts;ifig++)
+    {
       n = 0;
-      for(int k=0;k<Coll->NodesReferences.size();k++){
-	double x,y,z;
-	x = uP1vect[0][k];
-	vctf.setf(ios_base::scientific);	
-	vctf.precision(5);	
-	vctf.width(12);
-	if (fabs(x)<1e-18) x = 0.;
-	vctf << x;
-	++n;
-	if ( n == 6 ) {
-	  vctf << std::endl;
-	  n=0;
-	}	
-	
-	y = 0.;
-	if (nComp>1) {
-	  y = uP1vect[1][k];
-	}
-	vctf.setf(ios_base::scientific);	
-	vctf.precision(5);	
-	vctf.width(12);
-	if (fabs(y)<1e-18) y = 0.;
-	vctf << y;
-	++n;
-	if ( n == 6 ) {
-	  vctf << std::endl;
-	  n=0;
-	}	
-	
-	z = 0.;
-	if (nComp>2) {
-	  z = uP1vect[2][k];
-	}
-	vctf.setf(ios_base::scientific);	
-	vctf.precision(5);	
-	vctf.width(12);
-	if (fabs(z)<1e-18) z = 0.;
-	vctf << z;
-	++n;
-	if ( n == 6 ) {
-	  vctf << std::endl;
-	  n=0;
-	}	
-	
-	
+      for(int k=0;k<Coll->NodesReferences.size();k++)
+      {
+        double x,y,z;
+        x = uP1vect[0][k];
+        vctf.setf(ios_base::scientific);	
+        vctf.precision(5);	
+        vctf.width(12);
+        if(fabs(x)<1e-18)
+          x = 0.;
+        vctf << x;
+        ++n;
+        if( n == 6 )
+        {
+          vctf << std::endl;
+          n=0;
+        }
+        
+        y = 0.;
+        if (nComp>1)
+        {
+          y = uP1vect[1][k];
+        }
+        vctf.setf(ios_base::scientific);	
+        vctf.precision(5);	
+        vctf.width(12);
+        if(fabs(y)<1e-18)
+          y = 0.;
+        vctf << y;
+        ++n;
+        if( n == 6 )
+        {
+          vctf << std::endl;
+          n=0;
+        }
+        
+        z = 0.;
+        if(nComp>2)
+        {
+          z = uP1vect[2][k];
+        }
+        vctf.setf(ios_base::scientific);	
+        vctf.precision(5);	
+        vctf.width(12);
+        if(fabs(z) < 1e-18)
+          z = 0.;
+        vctf << z;
+        ++n;
+        if( n == 6 )
+        {
+          vctf << std::endl;
+          n=0;
+        }
       }// k
-      
       vctf << endl;
     }//ifig
-   
   }
-
 }
 
 

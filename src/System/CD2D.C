@@ -76,6 +76,9 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
+  
+  outputWriter.add_fe_function(&this->get_function());
+  
 
   // print out some information
   TFESpace2D & space = this->systems.front().fe_space;
@@ -248,36 +251,14 @@ void CD2D::solve()
 /** ************************************************************************ */
 void CD2D::output(int i)
 {
-  
   // print the value of the largest and smallest entry in the finite element 
   // vector
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
   // write solution to a vtk file on in case-format
-  outputWriter.addFEFunction(&fe_function);
   outputWriter.write(i,0.0);
-
-  /*
-  // implementation with the old class TOutput2D
-  {
-    // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(1, 1, 0, 0, NULL);
-    Output.AddFEFunction(&fe_function);
-
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
-  }
-  */
   
-
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
