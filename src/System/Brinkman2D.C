@@ -26,6 +26,8 @@ ParameterDatabase get_default_Brinkman2D_parameters()
 
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+
+  return db;
 }
 
 /** ************************************************************************ */
@@ -96,7 +98,8 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
     : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(),
       initial_residual(1e10), errors()
 {
-  db.merge(param_db);
+  db.merge(param_db,false);
+  
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -107,15 +110,13 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
-
+ 
   // we use always Matrix Type 14
     this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
 
-
-    
 
 
   // print out some information
