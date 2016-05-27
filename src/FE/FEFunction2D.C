@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <algorithm>
 
 void OnlyDirichlet(int i, double t, BoundCond &cond)
 {
