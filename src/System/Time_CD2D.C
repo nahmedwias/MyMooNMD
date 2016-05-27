@@ -421,9 +421,9 @@ void Time_CD2D::solve()
 /**************************************************************************** */
 void Time_CD2D::output(int m, int& image)
 {
-	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
-	if(no_output)
-		return;
+  bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
+  if(no_output)
+    return;
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   

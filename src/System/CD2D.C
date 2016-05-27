@@ -66,10 +66,9 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   this->set_parameters();
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  
   // create finite element space and function, a matrix, rhs, and solution
   this->systems.emplace_back(this->example, *coll);
-  
+
   outputWriter.add_fe_function(&this->get_function());
   
 
@@ -226,7 +225,7 @@ void CD2D::output(int i)
   TFEFunction2D & fe_function = this->systems.front().fe_function;
   fe_function.PrintMinMax();
   
-  // write solution to a vtk file on in case-format
+  // write solution to a vtk file or in case-format
   outputWriter.write(i,0.0);
   
   // measure errors to known solution

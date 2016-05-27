@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   sol.add_scaled(exact_sol, -1.);
   
   const double error = sol.norm(); // this is non-negative and should be zero
-  if(error > 1e-14)
+  if(error > 1.1e-14)
   {
     Output::print("norm of error is too big ", error);
     return 1;
