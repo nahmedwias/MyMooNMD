@@ -139,6 +139,7 @@ class NSE3D
      *
      * Note that the size of this double ended queue is at least one and
      * larger only when a multgrid preconditioner is used.
+     * systems_.at(0) holds the finest grid.
      */
     std::deque<System_per_grid> systems_;
 
@@ -162,13 +163,8 @@ class NSE3D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
 
-    /** @brief A multigrid object which is set to nullptr in case it is not
-     *         needed.
-     */
-    std::shared_ptr<TNSE_MultiGrid> multigrid_;
-    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
-    /// transposed blocks are not stored explicitely...sad but true.
-    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
+    /// An object of the new multigrid class. Stays nullptr if not needed.
+    std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
     BlockVector defect_;
@@ -300,21 +296,6 @@ class NSE3D
 
     //! Default destructor. Does most likely cause memory leaks.
     ~NSE3D() = default;
-
-/*******************************************************************************/
-    /**
-     * @brief initialize multigrid levels for different NSTYPE's
-     * 
-     * @param: level
-     * @param: grid to be added
-     */
-    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
-    
-    /**
-     * @brief multigrid solver
-     * preparing the stuff used to call multigrid solver
-     */
-    void mg_solver();
     
 /********************************************************************************/
 // getters
@@ -340,6 +321,9 @@ class NSE3D
     
     const int get_size(){return this->systems_.front().solution_.length();}
 
+    const ParameterDatabase & get_db() const
+    { return db; }
+    
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impuls residual (updated in compute_residuals)
@@ -351,6 +335,9 @@ class NSE3D
     
     /// @brief return the computed errors (computed in output())
     std::array<double, int(4)> get_errors() const;
+
+ private:
+    void output_problem_size_info() const;
 
 };
 

@@ -1607,12 +1607,12 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM11; // **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row; // *MatrixM22Row, *MatrixM33Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
@@ -1624,11 +1624,11 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
   MatrixA22 = LocMatrices[4];
   MatrixA33 = LocMatrices[8];
   MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
+//  MatrixM22 = LocMatrices[10];
+//  MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -1658,8 +1658,8 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+//    MatrixM22Row  = MatrixM22[i];
+//    MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -1687,8 +1687,8 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+//      MatrixM22Row[j] += val;
+//      MatrixM33Row[j] += val;
     } // endfor j
   } // endfor i
 
@@ -2774,13 +2774,13 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM11; // **MatrixM22, **MatrixM33;
   double **MatrixB1, **MatrixB2, **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row; // *MatrixM22Row, *MatrixM33Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
@@ -2792,14 +2792,14 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
   MatrixA22 = LocMatrices[4];
   MatrixA33 = LocMatrices[8];
   MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
-  MatrixB1T  = LocMatrices[15];
-  MatrixB2T  = LocMatrices[16];
-  MatrixB3T  = LocMatrices[17];
+//  MatrixM22 = LocMatrices[10];
+//  MatrixM33 = LocMatrices[11];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T  = LocMatrices[13];
+  MatrixB2T  = LocMatrices[14];
+  MatrixB3T  = LocMatrices[15];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2829,8 +2829,8 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
     MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+//    MatrixM22Row  = MatrixM22[i];
+//    MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -2857,8 +2857,8 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+//      MatrixM22Row[j] += val;
+//      MatrixM33Row[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];

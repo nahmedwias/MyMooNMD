@@ -259,6 +259,8 @@ class Time_NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
     /// @brief return the computed errors at each discre time point
     std::array<double, int(6)> get_errors();
 };

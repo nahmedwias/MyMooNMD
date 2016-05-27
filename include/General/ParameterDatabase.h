@@ -149,6 +149,7 @@ class ParameterDatabase
     /// Each parameter must be on one line. Empty lines and lines without a 
     /// colon (':') are ignored. Parameters must not have spaces in their names.
     /// The general form is one of the following
+    ///     parameter_name: value
     ///     parameter_name: value [ range_min, range_max ]
     ///     parameter_name: value { range_1, range_2, range_3 }
     ///
@@ -162,13 +163,17 @@ class ParameterDatabase
     /// size_t either braces ('{}') or brackets ('[]') are ok, one indicating a
     /// set of individual entries and the other an interval. For double 
     /// parameters only brackets (e.g. '[-2.5, 5.7]') are possible, indicating
-    /// an interval.
+    /// an interval. There has to be a space (' ') between the value and the 
+    /// range.
     ///
     /// It is possible to read documentation for each parameter which will then
     /// become its Parameter::description. All lines directly before the line 
     /// with the parameter which start with a '#' are considered. The line 
     /// before the documentation should be either empty, some other parameter, 
-    /// or consist of anything but a colon (':').
+    /// or consist of anything but a colon (':'). If you want to document the
+    /// Parameters in your input stream, but don't want that to be read, use 
+    /// two '#' instead of just one. This is how the default documentation in
+    /// ParMooN can be kept inside the Parameter objects.
     ///
     /// If the input stream `is` is read until the end (this happens if there is
     /// no second name found), the `operator bool()` on `is` will return false.

@@ -23,7 +23,8 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-  Vector z;
+
+  Vector z(A, false);
   
   double normb = norm(rhs);
   if (normb == 0.0)

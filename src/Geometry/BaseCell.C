@@ -93,7 +93,7 @@ TBaseCell::~TBaseCell()
     }
   }
 
-  delete Joints;
+  delete[] Joints;
 }
 
 double TBaseCell::Get_hK(int cell_measure)

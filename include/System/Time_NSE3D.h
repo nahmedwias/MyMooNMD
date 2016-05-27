@@ -25,9 +25,10 @@
 #include <FESpace3D.h>
 #include <Example_NSE3D.h>
 
-#include <ParameterDatabase.h>
-
 #include <NSE_MultiGrid.h>
+
+#include <ParameterDatabase.h>
+#include <Solver.h>
 
 #include <MainUtilities.h> // FixedSizeQueu
 
@@ -386,6 +387,9 @@ class Time_NSE3D
 
    const int get_size() const
      { return this->systems_.front().solution_.length(); }
+     
+    const ParameterDatabase & get_db() const
+    { return db_; }
 
 //   const Example_NSE2D  & get_example()  const
 //     { return example_; }
@@ -404,10 +408,9 @@ class Time_NSE3D
   /// @brief get the current residual (updated in compute_residuals)
   double get_full_residual() const;
 
-//  /** TODO Implement this method.
-//   * @brief return the computed errors (computed in output())
-//   */
-//  std::array<double, int(4)> get_errors() const;
+  /** @brief return the computed errors (computed in output())
+   */
+  std::array<double, int(6)> get_errors() const;
 };
 
 

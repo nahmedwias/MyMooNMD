@@ -238,6 +238,8 @@ class Darcy2D
     { return this->systems.front().solution.length(); }
     const Example_Darcy2D& get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
 };
 
 #endif // __SYSTEMMATDARCY2D__

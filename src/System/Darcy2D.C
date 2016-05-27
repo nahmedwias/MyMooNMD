@@ -133,11 +133,10 @@ void Darcy2D::set_parameters()
         break;
     }
   }
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5 
-    && TDatabase::ParamDB->SOLVER_TYPE == 1)
+  if(this->solver.get_db()["solver_type"].is("iterative") && 
+     this->solver.get_db()["preconditioner"].is("multigrid"))
   {
-     ErrMsg("multigrid not yet implemented for Darcy2D");
-     throw(std::runtime_error("multigrid not yet implemented for Darcy2D"));
+    ErrThrow("multigrid not yet implemented for Darcy2D");
   }
 }
 
@@ -195,14 +194,16 @@ void Darcy2D::assemble()
 /** ************************************************************************ */
 void Darcy2D::solve()
 {
-  //if(!this->solver.get_db()["solver_type"].is("direct"))
-  //  ErrThrow("only the direct solver is implemented currently");
-  System_per_grid & s = this->systems.front();
+  double t = GetTime();
+  System_per_grid& s = this->systems.front();
   
   this->solver.solve(s.matrix, s.rhs, s.solution);
   
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
+  
+  t = GetTime() - t;
+  Output::print<2>(" solving of a Darcy2D problem done in ", t, " seconds");
 }
 
 /** ************************************************************************ */

@@ -304,6 +304,8 @@ class Brinkman2D
     { return this->systems.front().solution.length(); }
     const Example_Brinkman2D & get_example() const
     { return example; }
+    const ParameterDatabase & get_db() const
+    { return db; }
     /// @brief get the current residuals  (updated in NSE2D::normOfResidual)
     const Residuals& getResiduals() const;
     /// @brief get the current impuls residual (updated in NSE2D::normOfResidual)
