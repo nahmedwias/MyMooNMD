@@ -68,7 +68,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            const Example_CD2D& example, int reference_id)
  : systems(), example(example), multigrid(nullptr), 
-   db(get_default_CD2D_parameters()), solver(param_db), outputWriter(param_db)
+   db(get_default_CD2D_parameters()), outputWriter(param_db), solver(param_db)
 {
   this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();

@@ -102,7 +102,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_CD2D& ex, int reference_id)
  : db(get_default_TCD2D_parameters()), systems(), example(ex), 
- multigrid(nullptr), errors(5, 0.0),timeDependentOutput(param_db)
+ multigrid(nullptr), errors(5, 0.0), timeDependentOutput(param_db)
 {
   db.merge(param_db);
   this->set_parameters();
@@ -455,30 +455,6 @@ void Time_CD2D::output(int m, int& image)
 
   if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
   {
-    /*
-    // vtk output (obsolete)
-    if(db["output_write_vtk"])
-
-    {
-      TOutput2D Output(1, 1, 0, 0, NULL);
-      Output.AddFEFunction(&fe_function);
-
-      // Create output directory, if not already existing.
-      mkdir(db["output_vtk_directory"], 0777);
-      std::string filename = this->db["output_vtk_directory"];
-      filename += "/" + this->db["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      Output.WriteVtk(filename.c_str());
-      image++;
-    }
-    */
-    
     // add the functions the first time
     if (image==0) 
     {
@@ -488,8 +464,6 @@ void Time_CD2D::output(int m, int& image)
     // write output
     timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
     image++;
-    
-    
   }
 }
 

@@ -73,8 +73,6 @@ class PostProcessing2D
  public:
   ///@brief default constructor: parameter are copied from Database
   PostProcessing2D(const ParameterDatabase& param_db);
-
-  ~PostProcessing2D(){};
   
   ///@brief initialize the class parameters from the Database
   void init(const ParameterDatabase& param_db); 
