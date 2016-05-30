@@ -14,9 +14,11 @@ use to call these tools.
 
 \section astyle astyle
 
-You can use astyle as a formating tool with the given options file as follows.
-
-    astyle --options=data/code_formatting/astyle_preferences.options "src/*.C" "include/*.h" "test/*.c++" "2DPrograms/*.C" "3DPrograms/*.C"
+You can use astyle as a formating tool with the given options file as follows 
+(one line)
+\code{.sh}
+astyle --options=data/code_formatting/astyle_preferences.options "src/*.C" "include/*.h" "test/*.c++" "2DPrograms/*.C" "3DPrograms/*.C"
+\endcode
 
 
 Note that this assumes, you are in the base directory of ParMooN. Also you need
@@ -27,10 +29,10 @@ you need the quotation marks).
 
 To use clang-format you have to specify an options file. For some reason this 
 file must be in the current directory. So you have to call this tool from 
-within ParMooN/data/code_formating. 
-
-    clang-format -style=file -i ../../src/*/*.C ../../include/*/*.h ../../test/*.c++ ../../2DPrograms/*.C ../../3DPrograms/*.C
-
+within `ParMooN/data/code_formating`: (one line)
+\code{.sh}
+clang-format -style=file -i ../../src/*/*.C ../../include/*/*.h ../../test/*.c++ ../../2DPrograms/*.C ../../3DPrograms/*.C
+\endcode
 ParMooN developers should call this before every commit. The option 
 `-style=file` tells *clang-format* to use a file where all the options are in. 
 This file has to have a certain name ('_clang_format') which is why this can 
