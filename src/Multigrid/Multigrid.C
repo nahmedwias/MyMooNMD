@@ -34,9 +34,26 @@ SmootherCode string_to_smoother_code(std::string code)
 
 }
 
+MultigridType string_to_multigrid_type(std::string code)
+{
+  if(code == std::string("standard"))
+      return MultigridType::STANDARD;
+  else if(code == std::string("mdml"))
+      return MultigridType::MDML;
+  else
+  {
+    Output::warn("MultigridType", "The string ", code,
+                   " does not equal a multigrid type. "
+                   "Defaulting to STANDARD");
+    return MultigridType::STANDARD;
+  }
+}
+
 
 Multigrid::Multigrid(const ParameterDatabase& db,
-                     std::list<BlockFEMatrix*> matrices)
+                     std::list<BlockFEMatrix*> matrices,
+                     MultigridType type)
+: type_(type)
 {
   //Create the levels and collect them in a list
   auto coarsest = matrices.front();
@@ -280,6 +297,13 @@ ParameterDatabase Multigrid::default_multigrid_database()
 
   db.add<size_t>("multigrid_n_levels", 2,
          "Determine how many levels the multigrid cycle consists of.", 0, 5);
+
+  db.add("multigrid_type", std::string("standard"),
+         "The type of multigrid algorithm to apply. Besides "
+         "the standard approach a 'multiple discretization multilevel'"
+         " approach is available (for those systems where it is "
+         "already implemented). See e.g. John et al. 2002. ",
+         {"standard", "mdml"});
 
   db.add("multigrid_cycle_type", std::string("V"),
          "The recursion type how to traverse the multigrid levels. "

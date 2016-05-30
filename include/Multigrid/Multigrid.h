@@ -33,6 +33,8 @@
 class BlockVector;
 class ParameterDatabase;
 
+enum class MultigridType{ STANDARD , MDML };
+MultigridType string_to_multigrid_type(std::string code);
 
 class Multigrid
 {
@@ -47,9 +49,11 @@ class Multigrid
      * @param db A database object containing control parameters.
      * @param matrices A vector of the matrices per level, ordered from coarsest
      * (0) to finest level.
+     * @param type The type of the multigrid approach used - standard or mdml.
      */
     Multigrid(const ParameterDatabase& db,
-              std::list<BlockFEMatrix*> matrices);
+              std::list<BlockFEMatrix*> matrices,
+              MultigridType type = MultigridType::STANDARD);
 
     /// @brief Apply one complete multigrid cycle. Which kind of cycle that is
     /// is determined at the time of construction via a parameter. So far V,W
@@ -59,6 +63,8 @@ class Multigrid
     /// Get the solution on the finest grid. Call this after a cycle is complete
     /// to get the result.
     const BlockVector& get_finest_sol();
+
+    MultigridType get_type() const { return type_; }
 
     /// Set the right hand side on the finest grid. It must of course fit the
     /// matrix stored on the finest grid.
@@ -111,6 +117,9 @@ class Multigrid
     /// An object taking care of the order of ascends and descends between the levels.
     CycleControl control_;
 
+    /// the object knows whether it is of standard or MDML type.
+    MultigridType type_;
+
     /// Restrict defect on level lvl and store it as rhs in the next coarsest level.
     void update_rhs_in_coarser_grid(size_t lvl);
 
@@ -124,9 +133,6 @@ class Multigrid
 
     /// Perform the operations necessary on one grid.
     int cycle_step(size_t step, size_t level);
-
-
-
 
 
 };
