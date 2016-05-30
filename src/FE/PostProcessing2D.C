@@ -26,7 +26,7 @@ PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
   }
 
   testcaseName = db["output_basename"].get<std::string>();
-  testcaseDir = db["output_directory"].get<std::string>();
+  testcaseDir = db["output_vtk_directory"].get<std::string>();
   //period = db["steps_per_output"];
 };
 
