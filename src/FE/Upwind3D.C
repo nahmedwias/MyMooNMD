@@ -47,12 +47,17 @@ void GetUpwindValue(double UPWIND_ORDER,double t,double *phi)
 // do upwind assembling for first order nonconforming elements
 // =======================================================================
 void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
-                             TFEFunction3D *u2, TFEFunction3D *u3)
+                             TFEFunction3D *u2, TFEFunction3D *u3,
+                             double one_over_nu,
+                             int upwind_order,
+                             double upwind_flux_damp,
+                             int upwind_application
+                             )
 {
-  double RE=TDatabase::ParamDB->RE_NR;
-  double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
-  double UPWIND_FLUX_DAMP=TDatabase::ParamDB->UPWIND_FLUX_DAMP;
-  int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
+  double RE=one_over_nu;
+  double UPWIND_ORDER=upwind_order;
+  double UPWIND_FLUX_DAMP=upwind_flux_damp;
+  int  UPW_APPL = upwind_application;
   TBaseCell *cell;
   TCollection *coll;
   int i,j,k,l,m,n,m1, N_Cells, N_Edges, N_Faces, N_Vertices;

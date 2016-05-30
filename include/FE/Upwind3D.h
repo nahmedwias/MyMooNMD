@@ -12,8 +12,18 @@
 #ifndef __UPWIND3D__
 #define __UPWIND3D__
 
+/// Do upwinding for Navier--Stokes. TODO Understand and comment this.
+/// The method was freed form its global database dependency by setting the
+/// four needed values as input values, three of them with defaults (same as
+/// in old DB). Trouble is: we do not yet know what these parameters do.
 void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
-                             TFEFunction3D *u2, TFEFunction3D *u3);
+                             TFEFunction3D *u2, TFEFunction3D *u3,
+                             double one_over_nu, // that is former TDatabase::ParamDB->RE_NR,
+                                                  // but I found naming this "Reynolds number"
+                                                  // somewhat misleading (and the database dependency not good)
+                             int upwind_order = 1,
+                             double upwind_flux_damp = 1,
+                             int upwind_application = 0);
 
 void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
                        TFESpace3D *fespace, TDiscreteForm3D
