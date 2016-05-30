@@ -603,7 +603,10 @@ void NSE3D::assemble_non_linear_term()
 
     //decide wether to assemble by upwinding or not
     bool finest_grid = (&s == &systems_.at(0));
-    bool upwinding = mg_->get_type() == MultigridType::MDML && !finest_grid;
+
+    bool upwinding = false;
+    if(mg_)
+      upwinding = mg_->get_type() == MultigridType::MDML && !finest_grid;
 
     if(!upwinding)
     {
