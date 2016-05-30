@@ -131,9 +131,8 @@ int main(int argc, char* argv[])
                 domain.GetN_HaloCells());
 #endif
 
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_NSE3D example;
+  // Choose and construct example.
+  Example_NSE3D example(parmoon_db["example"]);
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI

@@ -337,7 +337,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->OUTFILE=tmp;
   
   ParamDB->PROBLEM_TYPE = 0;
-  ParamDB->EXAMPLE = -1; // has to be set to some number >=0
   
   ParamDB->timeprofiling = 0; //time profiling
   ParamDB->MapperType = 1;
@@ -1112,7 +1111,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
   printToFile("OUTFILE: ", ParamDB->OUTFILE);
   printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
-  printToFile("EXAMPLE: ", ParamDB->EXAMPLE);
   printToFile("profiling: ", ParamDB->timeprofiling);
   printToFile("MapperType: ", ParamDB->MapperType);
   printToFile("DSType: ", ParamDB->DSType);

@@ -3,7 +3,7 @@
 * @class Example_CD2D
 * @brief store all functions needed to describe a convection--diffusion example 
 * 
-* Depending on the value of TDatabase::ParamDB->EXAMPLE, the standard 
+* The standard
 * constructor of this class will fill the vectors (in Example2D) with pointers
 * to the functions needed to fully describe a particular example.
 * 
@@ -40,9 +40,9 @@ class Example_CD2D : public Example2D
     /** @brief default constructor
      * 
      * This intializes a convection-diffusion example in 2D. It is chosen 
-     * according to TDatabase::ParamDB->EXAMPLE.
+     * according to example_code.
      */
-    Example_CD2D();
+    Example_CD2D(int example_code);
     
     /** @brief initialize your own example
      * 

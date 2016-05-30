@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
   
   // choose example according to the value of db["example"]
-  Example_Darcy2D example;
+  Example_Darcy2D example(parmoon_db["example"]);
   
   //=========================================================================
   Darcy2D darcy2d(domain, parmoon_db, example);

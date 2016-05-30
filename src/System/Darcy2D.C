@@ -53,7 +53,7 @@ Darcy2D::System_per_grid::System_per_grid(const Example_Darcy2D& example,
 /** ************************************************************************ */
 Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db, 
                  int reference_id)
- : Darcy2D(domain, param_db, Example_Darcy2D(), reference_id)
+ : Darcy2D(domain, param_db, Example_Darcy2D(param_db["example"]), reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.

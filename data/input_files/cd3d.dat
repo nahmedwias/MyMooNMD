@@ -38,8 +38,6 @@ verbosity: 1   [ 1, 5 ]
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
 ## See the class 'Example' and its derived classes. 
-# Currently this parameter is not used. It will be in the future. Until then
-# you should use EXAMPLE (all capitals).
 example: 0
 
 ## This parameter can control, whether an output methodof a system 
@@ -161,9 +159,6 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## be quite responsive to this value. Although it defaults to 1.0 (no 
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 1   [ 0, 1 ]
-
-
-EXAMPLE: 0
 
 DRIFT_Z: 1
 ----------------------------------------------------------------------

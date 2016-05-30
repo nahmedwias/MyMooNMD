@@ -44,7 +44,6 @@ void check(ParameterDatabase& db, int ansatz_order,
            std::array<double, int(2)> errors, double tol)
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
-  TDatabase::ParamDB->EXAMPLE = db["example"];
 #ifdef _MPI
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -107,9 +106,8 @@ void check(ParameterDatabase& db, int ansatz_order,
     gridCollections.push_front(domain.GetCollection(It_Finest, 0));
   }
 
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_CD3D example_obj;
+  // Choose and construct example.
+  Example_CD3D example_obj(db["example"]);
 
   // Construct the cd3d problem object.
 #ifdef _MPI

@@ -39,9 +39,9 @@ namespace lin_space_time
 }
 //=========================================
 
-Example_NSE2D::Example_NSE2D() : Example2D()
+Example_NSE2D::Example_NSE2D(int example_code) : Example2D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code )
   {
     case 0:
       /** exact_solution */

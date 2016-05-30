@@ -102,7 +102,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   SetTimeDiscParameters(0);
 
   // Construct example object
-  Example_NSE3D example;
+  Example_NSE3D example(db["example"]);
   // Construct Time_NSE3D object
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);
@@ -161,7 +161,6 @@ void check(ParameterDatabase& db, int example, TDomain& domain,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
-  TDatabase::ParamDB->EXAMPLE = example;
   db["example"].set<int>(example);
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlineartype;
   TDatabase::ParamDB->LAPLACETYPE = laplacetype;

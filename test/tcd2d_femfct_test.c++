@@ -122,8 +122,8 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["example"] = 104;
 
-    TDatabase::ParamDB->EXAMPLE =104;
     TDatabase::ParamDB->RE_NR = 1e-20;
 
     TDatabase::ParamDB->DISCTYPE=1;

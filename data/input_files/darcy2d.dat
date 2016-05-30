@@ -37,9 +37,14 @@ verbosity: 1   [ 1, 5 ]
 
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
-## See the class 'Example' and its derived classes. 
-# Currently this parameter is not used. It will be in the future. Until then
-# you should use EXAMPLE (all capitals).
+## See the class 'Example' and its derived classes.
+## 0 -- with known sin and cos solution (e.g. to study convergence rates)
+## 1 -- simple benchmark with known solution (linear velocity, zero pressure)
+## 2 -- simple benchmark with known solution (cubic velocity, quartic pressure)
+## 3 -- obstacle with ten times lower conductivity. 
+##      Set P0 for various obstacles, see Examples/Darcy_2D/Obstacle.h.
+## 4 -- 5-spot problem, see Arif Masud, Thomas J.R. Hughes: "A stabilized mixed 
+##      finite element method for Darcy flow", chapter 4.2
 example: 0
 
 ## This parameter can control, whether an output methodof a system 
@@ -118,17 +123,6 @@ saddle_point_preconditioner_direct_velocity_solve: true   { true, false }
 ## iterations does not converge at all with larger values. 
 damping_factor: 1   [ 0, 1 ]
 
-
-# choose example
-# 0 -- with known sin and cos solution (e.g. to study convergence rates)
-# 1 -- simple benchmark with known solution (linear velocity, zero pressure)
-# 2 -- simple benchmark with known solution (cubic velocity, quartic pressure)
-# 3 -- obstacle with ten times lower conductivity. 
-#      Set P0 for various obstacles, see Examples/Darcy_2D/Obstacle.h.
-# 4 -- 5-spot problem, see Arif Masud, Thomas J.R. Hughes: "A stabilized mixed 
-#      finite element method for Darcy flow", chapter 4.2
-EXAMPLE: 0
- 
 
 # Raviart-Thomas space RT_k
 # use one of the four pairs for (VELOCITY_SPACE, PRESSURE_SPACE)

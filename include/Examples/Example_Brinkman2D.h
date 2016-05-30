@@ -3,9 +3,9 @@
 * @class Example_Brinkman2D
 * @brief store all functions needed to describe a Brinkman example
 * 
-* Depending on the value of TDatabase::ParamDB->EXAMPLE, the standard 
-* constructor of this class will fill the vectors (in Example2D) with pointers
-* to the functions needed to fully describe a particular example.
+* The standard constructor of this class will fill the vectors
+* (in Example2D) with pointers to the functions needed to fully
+* describe a particular example.
 * 
 * @author    Ulrich Wilbrandt, 
 * @date      14.03.15
@@ -26,9 +26,10 @@ class Example_Brinkman2D : public Example2D
     /** @brief default constructor
      * 
      * This intializes a Brinkman example in 2D. It is chosen according
-     * to TDatabase::ParamDB->EXAMPLE.
+     * to example_code.
      */
-    Example_Brinkman2D();
+    Example_Brinkman2D(int example_code);
+
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.

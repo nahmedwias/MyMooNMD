@@ -46,7 +46,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
            std::array<double, int(3)> errors, double tol)
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
-  TDatabase::ParamDB->EXAMPLE = db["example"];
   TDatabase::TimeDB->TIME_DISC = time_disc;
   TDatabase::TimeDB->STARTTIME=0;
   TDatabase::TimeDB->TIMESTEPLENGTH = 0.1;
@@ -112,7 +111,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   }
   
   // example object
-  Example_CD3D example_obj;
+  Example_CD3D example_obj(db["example"]);
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
 #else

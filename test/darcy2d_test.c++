@@ -222,7 +222,6 @@ int main(int argc, char* argv[])
   
   // Set Database values (this is what is usually done by the input-file)
   TDatabase::ParamDB->PROBLEM_TYPE = 0; // problem type is not needed
-  TDatabase::ParamDB->EXAMPLE = 0; // known sin-cos solution
   // velocity space code for Raviart-Thomas (RT) and 
   // Brezzi-Douglas-Marini(BDM) elements:
   // 1000    RT_0
@@ -246,7 +245,7 @@ int main(int argc, char* argv[])
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_output_database());
   db["problem_type"] = 0; // problem type is not needed
-  db["example"] = 0;
+  db["example"] = 0; // known sin-cos solution
   db["residual_tolerance"] = 1.0e-13;
   
   db["output_compute_errors"] = true;

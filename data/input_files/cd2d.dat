@@ -37,9 +37,10 @@ verbosity: 1   [ 1, 5 ]
 
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
-## See the class 'Example' and its derived classes. 
-# Currently this parameter is not used. It will be in the future. Until then
-# you should use EXAMPLE (all capitals).
+## See the class 'Example' and its derived classes.
+## 0 - sine laplace (on unit square)
+## 1 - two interior layers (on unit square)
+## 2 - Hemker 1996 (on rectangle with a hole)
 example: 0   [ -5, 200 ]
 
 ## This parameter can control, whether an output methodof a system 
@@ -161,14 +162,6 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## be quite responsive to this value. Although it defaults to 1.0 (no 
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 1   [ 0, 1 ]
-
-
-
-# choose the example (see also Examples/Example_CD2D.C)
-# 0 - sine laplace (on unit square)
-# 1 - two interior layers (on unit square)
-# 2 - Hemker 1996 (on rectangle with a hole)
-EXAMPLE: 0
 
 ----------------------------------------------------------------------
 # control the discretization

@@ -76,13 +76,13 @@ namespace Bsp3
 }
 //========================================
 
-Example_NSE3D::Example_NSE3D() : Example3D()
+Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
 {
   //Set kinematic viscosity to zero, example switch is responsible for returning
   // and resetting it.
   nu = -1;
 
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code )
   {
     case 0:
       /** exact_solution */

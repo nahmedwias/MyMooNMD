@@ -51,6 +51,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"] = 5;
+  db["example"] = 101;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;
@@ -135,7 +136,6 @@ int main(int argc, char* argv[])
 
     db.add("refinement_n_initial_steps", (size_t) 1,"");
 
-    TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;

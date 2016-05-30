@@ -58,9 +58,9 @@ namespace rotating_bodies_1
 #include "TCD_2D/Rotating_Bodies.h"
 }
 
-Example_CD2D::Example_CD2D() : Example2D()
+Example_CD2D::Example_CD2D(int example_code) : Example2D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code)
   {
     case 0:
       /** exact_solution */
@@ -196,7 +196,7 @@ Example_CD2D::Example_CD2D() : Example2D()
       break;
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
-               TDatabase::ParamDB->EXAMPLE);
+               example_code);
   }
 }
 
