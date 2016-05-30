@@ -22,6 +22,7 @@
 
 #include <GridTransfer.h>
 #include <Multigrid.h>
+#include <Upwind3D.h>
 
 #include <sys/stat.h>
 
@@ -213,25 +214,50 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     size_t n_levels = database_mg["multigrid_n_levels"];
-    int finest = domain.get_ref_level();
-    int coarsest = finest - n_levels + 1;
+
+    std::string mgtype_str = database_mg["multigrid_type"];
+    MultigridType mgtype = string_to_multigrid_type(mgtype_str);
+
+    int finest = 0;
+    int coarsest = 0;
+    if(mgtype == MultigridType::STANDARD)
+    {
+      finest = domain.get_ref_level();
+      coarsest = finest - n_levels + 1;
+    }
+    else
+    if(mgtype == MultigridType::MDML)
+    {
+      finest = domain.get_ref_level();
+      coarsest = finest - n_levels + 2;
+      //do the finest algebraic grid in advance
+      TCollection *coll = domain.GetCollection(It_EQ, finest, -4711);
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+      matrices.push_front(&systems_.back().matrix_);
+      // set velo/pressure orders to lowest order nonconforming
+      velocity_pressure_orders = {-1, 0};
+    }
+    if(coarsest < 0)
+      ErrThrow("More multigrid levels (",n_levels,") than possible due to "
+          "refinement and multigrid type requested.");
+
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
 #ifdef _MPI
-// create finite element space and function, a matrix, rhs, and solution
-systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                      maxSubDomainPerDof);
+      // create finite element space and function, a matrix, rhs, and solution
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                            maxSubDomainPerDof);
 #else
-// create finite element space and function, a matrix, rhs, and solution
-systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+      // create finite element space and function, a matrix, rhs, and solution
+      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
 #endif
       //prepare input argument for multigrid object
       matrices.push_front(&systems_.back().matrix_);
     }
 
     // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+    mg_ = std::make_shared<Multigrid>(database_mg, matrices, mgtype);
   }
 
   output_problem_size_info();
@@ -575,6 +601,12 @@ void NSE3D::assemble_non_linear_term()
     feFunction[1]=s.u_.GetComponent(1);
     feFunction[2]=s.u_.GetComponent(2);
 
+    //decide wether to assemble by upwinding or not
+    bool finest_grid = (&s == &systems_.at(0));
+    bool upwinding = mg_->get_type() == MultigridType::MDML && !finest_grid;
+
+    if(!upwinding)
+    {
     // local assembling object    
     const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
                          feFunction.data(), example_.get_coeffs());
@@ -585,8 +617,17 @@ void NSE3D::assemble_non_linear_term()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundCondition, boundValues.data(), la);
+    }
+    else
+    {
+      double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
+      for(auto mat : sqMatrices)
+      {
+        UpwindForNavierStokes3D(
+        mat, feFunction[0],feFunction[1],feFunction[2], one_over_nu);
+      }
+    }
 
-    //TODO: UPWINDING??
     //TODO: Copying non-actives??
 
   }// endfor auto grid
