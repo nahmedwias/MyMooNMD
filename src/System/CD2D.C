@@ -52,7 +52,7 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            int reference_id)
- : CD2D(domain, param_db, Example_CD2D(), reference_id)
+ : CD2D(domain, param_db, Example_CD2D(param_db["example"]), reference_id)
 {
 }
 

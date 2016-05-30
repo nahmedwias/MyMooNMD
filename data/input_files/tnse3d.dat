@@ -30,7 +30,6 @@ GEOFILE: Default_UnitCube_Hexa
 # 106 - Bsp3 (actually, it is exactly the same as Bsp1)
 -------------------------------------------------------------------------
 example: 105
-EXAMPLE: 105
 
 ---------------------------------------------------------------------
 # number of uniform refinement steps at beginning

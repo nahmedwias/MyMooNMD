@@ -3,7 +3,7 @@
 * @class Example_CD3D
 * @brief store all functions needed to describe a convection--diffusion example 
 * 
-* Depending on the value of TDatabase::ParamDB->EXAMPLE, the standard 
+* Depending on an integer example code, the standard
 * constructor of this class will fill the vectors (in Example3D) with pointers
 * to the functions needed to fully describe a particular example.
 * 
@@ -26,10 +26,10 @@ class Example_CD3D : public Example3D
   public:
     /** @brief default constructor
      * 
-     * This intializes a convection-diffusion example in 3D. It is chosen 
-     * according to TDatabase::ParamDB->EXAMPLE.
+     * This intializes a convection-diffusion example in 3D.
+     * It is chosen according to the given example_code.
      */
-    Example_CD3D();
+    Example_CD3D(int example_code);
     
     /** @brief initialize your own example
      * 

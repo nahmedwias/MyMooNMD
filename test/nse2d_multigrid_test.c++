@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
     
     db.add("refinement_n_initial_steps", (size_t) 4, "");
     db.add("multigrid_n_levels", (size_t) 3, "");
@@ -62,7 +63,6 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -198,6 +198,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_nonlinit_database());
     db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
     
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
@@ -210,7 +211,6 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;

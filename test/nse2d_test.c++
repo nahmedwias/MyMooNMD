@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_output_database());
 
     db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
     db.add("multigrid_n_levels", (size_t) 1,"");
@@ -163,7 +164,6 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -247,6 +247,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db["problem_type"].set<size_t>(5);
+    db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
     db.add("multigrid_n_levels", (size_t) 1,"");
@@ -260,7 +261,6 @@ int main(int argc, char* argv[])
 
     // parameters used for this test
     TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
-    TDatabase::ParamDB->EXAMPLE = 2; 
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;

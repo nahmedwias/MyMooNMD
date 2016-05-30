@@ -37,9 +37,12 @@ verbosity: 1   [ 1, 5 ]
 
 ## Choose which example to run. Note that depending on the type of 
 ## problem you want to solve, different values are meaningful here. 
-## See the class 'Example' and its derived classes. 
-# Currently this parameter is not used. It will be in the future. Until then
-# you should use EXAMPLE (all capitals).
+## See the class 'Example' and its derived classes.
+## 0 - linear velocity, constant pressure example
+## 1 - quadratic velocity, linear pressure example
+## 2 - simple cosine sine
+## 3 - driven cavity 3d
+## -1 to -4 : test examples - 
 example: 0
 
 ## This parameter can control, whether an output methodof a system 
@@ -190,14 +193,6 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 
-
-# choose the example (see also Examples/Example_NSE3D.C)
-# 0 - linear velocity, constant pressure example
-# 1 - quadratic velocity, linear pressure example
-# 2 - simple cosine sine
-# 3 - driven cavity 3d
-# -1 to -4 : test examples - 
-EXAMPLE: 2
 VELOCITY_SPACE: 2
 PRESSURE_SPACE: -4711
 

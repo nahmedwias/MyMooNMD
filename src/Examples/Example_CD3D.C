@@ -46,9 +46,9 @@ namespace concentration
 }
 //=========================================================================
 
-Example_CD3D::Example_CD3D() : Example3D()
+Example_CD3D::Example_CD3D(int example_code) : Example3D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code )
   {
     //steady-state problems
     case 0:

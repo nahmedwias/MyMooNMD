@@ -93,7 +93,7 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		int reference_id)
- : Time_CD2D(domain, param_db, Example_CD2D(), reference_id)
+ : Time_CD2D(domain, param_db, Example_CD2D(param_db["example"]), reference_id)
 {
   
 }
@@ -174,13 +174,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 void Time_CD2D::set_parameters()
 {
-  if(TDatabase::ParamDB->EXAMPLE < 101)
-  {
-    ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-           << "is not supported for time dependent problem");
-    exit(1);
-  }
-  
+
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 

@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   // Set Database values (this is what is usually done by the input-file)
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db["problem_type"] = 1;
-  db["example"] = 0;
+  db["example"] = 0; //simple sine laplace example
   db.add("refinement_n_initial_steps", (size_t) 2, "");
   db.add("solver_type", std::string("iterative"), "");
   db.add("preconditioner", std::string("jacobi"), "");
@@ -83,7 +83,6 @@ int main(int argc, char* argv[])
   TDomain domain(db);
 
   TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
-  TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->ANSATZ_ORDER=2; // ANSATZ_ORDER 1 is not working yet
@@ -125,8 +124,7 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
   #endif
 
-  // choose example according to the value of TDatabase::ParamDB->EXAMPLE and construct it
-  Example_CD3D example;
+  Example_CD3D example(db["example"]);
 
 
   // extract the finest level collection from the domain
@@ -251,7 +249,6 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
-    TDatabase::ParamDB->EXAMPLE = 0; //simple sine laplace example
 
     TDatabase::ParamDB->DRIFT_Z = 1;
     TDatabase::ParamDB->ANSATZ_ORDER = 2;
@@ -335,9 +332,8 @@ int main(int argc, char* argv[])
     gridCollections.push_front(domain.GetCollection(It_Finest, 0));
   }
 
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_CD3D example;
+  // Choose example.
+  Example_CD3D example(db["example"]);
 
   // Construct the cd3d problem object.
 #ifdef _MPI

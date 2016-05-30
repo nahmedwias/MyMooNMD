@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
     TDatabase Database;
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db["example"] = 101;
 
-    TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
@@ -152,8 +152,8 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_output_database());
+    db["example"] = 101;
 
-    TDatabase::ParamDB->EXAMPLE =101;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;

@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["problem_type"] = 1;
+    db["example"] = 3; //Sharp Boundary Layer Example
 
     db.add("solver_type", std::string("direct"), "");
     db.add("refinement_n_initial_steps", (size_t) 3,"");
@@ -61,7 +62,7 @@ int main(int argc, char* argv[])
 
     // Set Database values (this is what is usually done by the input-file)
     TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
-    TDatabase::ParamDB->EXAMPLE = 3; //Sharp Boundary Layer Example
+
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
     TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 1; //FEM-TVD type afc

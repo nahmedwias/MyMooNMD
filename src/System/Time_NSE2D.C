@@ -78,7 +78,7 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        int reference_id)
-  : Time_NSE2D(domain, param_db, *(new Example_NSE2D()), reference_id)
+  : Time_NSE2D(domain, param_db, Example_NSE2D(param_db["example"]), reference_id)
 {
   
 }
@@ -179,13 +179,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 void Time_NSE2D::set_parameters()
 {
-  if(TDatabase::ParamDB->EXAMPLE < 101)
-  {
-    ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE 
-    <<" is not supported for time dependent problem");
-    exit(1);
-  }
-  
+
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 

@@ -79,7 +79,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
 			      , int maxSubDomainPerDof
 #endif
 	   )
-: systems_(), example_(), multigrid_(nullptr), db(get_default_TCD3D_parameters()),
+: systems_(), example_(param_db["example"]), multigrid_(nullptr), db(get_default_TCD3D_parameters()),
   solver(param_db), errors_(5,0.0)
 {
   this->db.merge(param_db,false); // update this database with given values

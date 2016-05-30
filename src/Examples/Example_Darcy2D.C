@@ -30,9 +30,9 @@ namespace five_spot
 
 
 
-Example_Darcy2D::Example_Darcy2D() : Example2D()
+Example_Darcy2D::Example_Darcy2D(int example_code) : Example2D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code )
   {
     case 0:
       /** exact_solution */

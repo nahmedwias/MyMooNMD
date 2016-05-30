@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   domain.GenerateEdgeInfo();
 
   // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
+  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
 #endif
 
@@ -159,9 +159,8 @@ int main(int argc, char* argv[])
   //print information on the mesh partition on the finest grid
   domain.print_info("cd3d domain");
 
-  // Choose example according to the value of
-  // TDatabase::ParamDB->EXAMPLE and construct it.
-  Example_CD3D example;
+  // Choose and construct example.
+  Example_CD3D example(parmoon_db["example"]);
 
   // Construct the cd3d problem object.
 #ifdef _MPI

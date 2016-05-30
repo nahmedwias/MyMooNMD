@@ -3,7 +3,7 @@
 * @class Example_NSE2D
 * @brief store all functions needed to describe a (Navier-)Stokes example 
 * 
-* Depending on the value of TDatabase::ParamDB->EXAMPLE, the standard 
+* The standard
 * constructor of this class will fill the vectors (in Example2D) with pointers
 * to the functions needed to fully describe a particular example.
 * 
@@ -26,9 +26,9 @@ class Example_NSE2D : public Example2D
     /** @brief default constructor
      * 
      * This intializes a (Navier-)Stokes example in 2D. It is chosen according
-     * to TDatabase::ParamDB->EXAMPLE.
+     * to example_code.
      */
-    Example_NSE2D();
+    Example_NSE2D(int example_code);
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.

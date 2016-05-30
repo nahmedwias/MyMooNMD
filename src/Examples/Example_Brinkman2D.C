@@ -31,9 +31,9 @@ namespace hannukainen
 }
 
 
-Example_Brinkman2D::Example_Brinkman2D() : Example2D()
+Example_Brinkman2D::Example_Brinkman2D(int example_code) : Example2D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE ) 
+  switch( example_code )
   {
    case 0:
      /** exact_solution */
