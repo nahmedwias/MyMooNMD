@@ -37,7 +37,9 @@ other tools. Here we introduce 'valgrind'.
 \section cppcheck cppcheck
 The static analyzer cppcheck is easy to use and finds many different kinds of
 errors. You can call it from within your ParMooN directory
-    cppcheck –enable=all include/*/*.h src/*/*.C test/*.c++ [23]DPrograms/*.C 2&> cppcheck.txt
+\code{.sh}
+cppcheck –enable=all include/*/*.h src/*/*.C test/*.c++ [23]DPrograms/*.C 2&> cppcheck.txt
+\endcode
 This will create a file 'cppcheck.txt' which you can inspect. Every file is 
 checked with each possible combinations of preprocessor defines. Therefore some
 false positives might occur.
@@ -52,17 +54,17 @@ Check out more options of this tool if you like.
 For clang-check to work a special file is needed which basically consists of 
 information on how to compile ParMooN. Fortunately cmake will create this file
 for you
-
-    cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON relative/path/to/ParMooN
-
+\code{.sh}
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON relative/path/to/ParMooN
+\endcode
 This creates the file 'compile_commands.json' in the current directory (the 
 build directory). Of course you can add more options to cmake as usual or 
 change the value of 'CMAKE_EXPORT_COMPILE_COMMANDS' in your CMakeCache.txt file.
 Let's assume 'relative/path/to/ParMooN' is '../ParMooN'. Then you can run 
 'clang-check' as follows
-
-    clang-check ../ParMooN/src/*/*.C ../ParMooN/test/*.c++ ../ParMooN/[23]DPrograms/*.C 2&> clang_check.txt
-
+\code{.sh}
+clang-check ../ParMooN/src/*/*.C ../ParMooN/test/*.c++ ../ParMooN/[23]DPrograms/*.C 2&> clang_check.txt
+\endcode
 This tool and the clang compiler give similar messages.
 
 
@@ -75,20 +77,20 @@ basically replaces the compiler by its own one which, among other things, calls
 a regular compiler. So 'scan-build' changes the way ParMooN is built. It takes
 considerably longer to build. First you have to locate the program 
 'ccc-analyzer', which acts as the compiler wrapper:
-
-    locate ccc-analyzer
-
+\code{.sh}
+locate ccc-analyzer
+\endcode
 For me this is in '/usr/bin/ccc-analyzer'. Then one has to replace the compiler
 to this one:
-
-    cmake -D CMAKE_CXX_COMPILER=/usr/bin/ccc-analyzer -D CMAKE_C_COMPILER=/usr/bin/ccc-analyzer -D CMAKE_BUILD_TYPE=Debug ../ParMooN
-
+\code{.sh}
+cmake -D CMAKE_CXX_COMPILER=/usr/bin/ccc-analyzer -D CMAKE_C_COMPILER=/usr/bin/ccc-analyzer -D CMAKE_BUILD_TYPE=Debug ../ParMooN
+\endcode
 Make sure you enable the 'Debug' mode. Next you can build. For that one has to
 precede the call to 'make' by 'scan-build'. The option '-o' sets an output 
 directory.
-
-    scan-build -o scan_build make parmoon_2d_SEQUENTIAL
-
+\code{.sh}
+scan-build -o scan_build make parmoon_2d_SEQUENTIAL
+\endcode
 This will take longer than it usually does. You can do parallel builds as well
 (-j). Unfortunately I was not able to get the linker working correctly. There
 are always linking errors. I assume I simply don't use the tools correctly. 
@@ -98,9 +100,9 @@ the output can be inspected with 'scan-view'. Running 'scan-build' as above
 will print information to the console, mainly the same as running the compiler
 alone. In the last line it will tell you which directory to open. This is
 partly random (I think), I could call scan-view like this:
-
-    scan-view scan-build/2016-05-23-143620-3965-1
-
+\code{.sh}
+scan-view scan-build/2016-05-23-143620-3965-1
+\endcode
 This will open your browser with a summary and a list of all errors found. Click
 on them to see more information.
 
@@ -114,9 +116,9 @@ In contrast to the tools introduced above, 'valgrind' does its checks during
 runtime, not during compile time. Therefore you need a running program to start
 with. Also you have to compile with debug symbols, 'CMAKE_BUILD_TYPE=Debug'.
 Assume you usually run your program as
-
-    ./nse2d nsed2d.dat
-
+\code{.sh}
+./nse2d nsed2d.dat
+\endcode
 'valgrind' has a number of very useful tools/options which will be presented in
 the following. In all cases using valgrind slows down the program a lot, e.g. 
 20 to 30 times slower! Therefore it is advisable to run these checks on small 
@@ -131,19 +133,19 @@ are not discussed here. Check them out if your interested.
 \subsection valgrind_memcheck memcheck - finding memory errors
 The default tool of valgrind is called memcheck, a memory error detector. Call
 it in its default behavior as
-
-    valgrind ./nse2d nse2d.dat 2&> valgrind.txt
-
+\code{.sh}
+valgrind ./nse2d nse2d.dat 2&> valgrind.txt
+\endcode
 This will already give you a lot of information (if errors occur at all). One 
 option to valgrind proved especially useful in this context, namely 
-
-    --leak-check=full
-
+\code{.sh}
+--leak-check=full
+\endcode
 This will make the run even slower, but helps to track the origin of memory 
 errors. Another useful option is then
-
-    --show-leak-kinds=all
-
+\code{.sh}
+--show-leak-kinds=all
+\endcode
 to see all memory which has not been deleted. This gives a lot of output.
 
 
@@ -151,16 +153,16 @@ to see all memory which has not been deleted. This gives a lot of output.
 The tool 'callgrind' can help you understanding the call graph of a program, 
 i.e., which function is called from where. Also it can tell you how often each
 function has been called and how long it took to execute. Run
-
-    valgrind --tool=callgrind ./nse2d nse2d.dat 
-
+\code{.sh}
+valgrind --tool=callgrind ./nse2d nse2d.dat 
+\endcode
 This produces a file starting with 'callgrind.out.<pid>', where 'pid' is the 
 process id. This file can be opened by an external program called 'kcachegrind'.
 It is also possible to run a command line tool called 'callgrind_annotate', but
 I would recommend the graphical presentation of 'kcachegrind'. So call 
-
-    kcachegrind callgrind.out.<pid>
-
+\code{.sh}
+kcachegrind callgrind.out.<pid>
+\endcode
 and browse through the call graph. Note that the time measurements are not very
 precise especially on small examples. But they do serve as a hint.
 
