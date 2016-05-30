@@ -41,6 +41,9 @@ class Example_NSE3D : public Example3D
 
     /// Apply the function stored as post processing routine.
     void do_post_processing(NSE3D& nse3d) const;
+
+    /// Return kinematic viscosity, if set.
+    double get_nu() const;
   
     //Declaration of special member functions - rule of zero
 
@@ -65,6 +68,9 @@ class Example_NSE3D : public Example3D
     std::function<void(NSE3D &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 
+    // Diffusion coefficient = kinematic viscosity. Should replace
+    // former global parameter 1/RE_NR.
+    double nu;
 };
 
 

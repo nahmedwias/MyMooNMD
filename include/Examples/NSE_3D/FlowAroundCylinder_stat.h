@@ -22,6 +22,11 @@ void ExampleFile()
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
+double get_nu()
+{
+  return KINEMATIC_VISCOSITY;
+}
+
 // ========================================================================
 // initial condition
 // ========================================================================

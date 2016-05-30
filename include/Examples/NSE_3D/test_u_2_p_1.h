@@ -17,6 +17,11 @@ void ExampleFile()
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
 }
 
+double get_nu()
+{
+  return 1;
+}
+
 // exact solution
 void ExactU1(double x, double y,  double z, double *values)
 {
@@ -83,7 +88,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = 1;
+  const double eps = get_nu();
   std::vector<double> u1(5,0.0);
   std::vector<double> u2(5,0.0);
   std::vector<double> u3(5,0.0);

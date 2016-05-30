@@ -78,6 +78,10 @@ namespace Bsp3
 
 Example_NSE3D::Example_NSE3D() : Example3D()
 {
+  //Set kinematic viscosity to zero, example switch is responsible for returning
+  // and resetting it.
+  nu = -1;
+
   switch( TDatabase::ParamDB->EXAMPLE ) 
   {
     case 0:
@@ -206,6 +210,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /**post processing - drag and lift calculation and output */
         post_processing_stat = compute_drag_lift_pdiff;
 
+        nu = flow_around_cylinder_stat::get_nu();
         ExampleFile();
         break;
       }
@@ -234,6 +239,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        nu = test_u_0_p_0::get_nu();
         ExampleFile();
         break;
       }
@@ -261,6 +267,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        nu = test_u_1_p_0::get_nu();
         ExampleFile();
         break;
       }
@@ -288,6 +295,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        nu = test_u_2_p_1::get_nu();
         ExampleFile();
         break;
       }
@@ -315,6 +323,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        nu = test_u_3_p_2::get_nu();
         ExampleFile();
         break;
       }
@@ -513,6 +522,7 @@ Example_NSE3D::Example_NSE3D() : Example3D()
       default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
+
 }
 
 void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
@@ -530,4 +540,11 @@ void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
 #endif
 	    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
   }
+}
+
+double Example_NSE3D::get_nu() const
+{
+  if (nu == -1)
+    ErrThrow("Kinematic viscosity seems unset in this example!");
+  return nu;
 }

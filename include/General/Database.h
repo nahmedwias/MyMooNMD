@@ -301,7 +301,7 @@ struct TParaDB
   //======================================================================
 
   /** general parameters */
-  double RE_NR;
+  double RE_NR; //FIXME This parameter must really be removed from global scope!
   double RA_NR;
   double ROSSBY_NR;
   double START_RE_NR;
