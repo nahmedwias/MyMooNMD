@@ -103,8 +103,8 @@ NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
              const Example_NSE2D e, unsigned int reference_id)
     : systems(), example(e), db(get_default_NSE2D_parameters()),
-      solver(param_db), defect(), oldResiduals(), initial_residual(1e10), 
-      errors()
+      outputWriter(param_db), solver(param_db),
+      defect(), oldResiduals(), initial_residual(1e10),errors()
 {
   this->db.merge(param_db, false);
   db.merge(ParameterDatabase::default_nonlinit_database());
@@ -715,7 +715,12 @@ void NSE2D::output(int i)
     u2->PrintMinMax();
     s.p.PrintMinMax();
   }
+
+  outputWriter.addFEFunction(&s.p);
+  outputWriter.addFEVectFunct(&s.u);
+  outputWriter.write(i,0.0);
   
+  /*
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
@@ -734,7 +739,8 @@ void NSE2D::output(int i)
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
-  
+  */
+    
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
