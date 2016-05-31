@@ -21,6 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
+#include <vector>
 
 #ifdef __MORTAR__
 struct TMortarFaceStruct
@@ -164,7 +165,9 @@ class TDomain
      *
      * @return Integer O on success, other numbers otherwise.
      */
-    int ReadSandwichGeo(std::istream& dat);
+    int ReadSandwichGeo(std::istream& dat,
+                        double drift_x, double drift_y, double drift_z,
+                        std::vector<double> segment_marks);
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
@@ -316,7 +319,12 @@ class TDomain
       * is neither checked nor tested. So use them carefully and be prepared for the worst!
       *
       */
-      void Init(const char *PRM, const char *GEO);
+    void Init(const char *PRM, const char *GEO
+#ifdef __3D__
+              , double drift_x = 0, double drift_y=0, double drift_z=0,
+              std::vector<double> segment_marks = {}
+#endif
+              );
 
       /**
        * @brief Initialize the domain starting from a boundary file and a mesh

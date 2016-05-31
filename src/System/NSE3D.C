@@ -24,7 +24,13 @@
 #include <Multigrid.h>
 #include <Upwind3D.h>
 
+//project specific
+#include <CoiledPipe.h>
+
 #include <sys/stat.h>
+
+#include <ParameterDatabase.h>
+
 
 ParameterDatabase get_default_NSE3D_parameters()
 {
@@ -191,6 +197,16 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+
+    //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
+    if(TDatabase::ParamDB->EXAMPLE == 5) //remove global dependency! names for examples!
+    {
+      // ...lie down the cell collection by swapping its vertices x and z coords
+      CoiledPipe::swap_x_and_z_coordinates(coll);
+      // ...and coil up the pipe by replacing the vertices' coords
+      CoiledPipe::coil_pipe_helically(coll);
+    }
+    //CB END MODIFICATIONS
         
     #ifdef _MPI
     // create finite element space and function, a matrix, rhs, and solution

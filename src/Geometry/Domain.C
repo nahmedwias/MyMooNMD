@@ -992,7 +992,12 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 
 
 #else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(
+    const char *PRM, const char *GEO,
+    //from here it's params with default values, relevant only for sandwich geo
+    double drift_x, double drift_y, double drift_z,
+    std::vector<double> segment_marks
+)
 {
   int IsSandwich = 0;
 
@@ -1058,7 +1063,20 @@ void TDomain::Init(const char *PRM, const char *GEO)
       ErrThrow("cannot open GEO file");
     }
     // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
+    if(drift_x || drift_y || drift_z)
+    {//any drift parameter is given non-zero
+      ReadSandwichGeo(bdryStream, drift_x, drift_y, drift_z, segment_marks);
+    }
+    else
+    {
+      double DriftX = TDatabase::ParamDB->DRIFT_X;
+      double DriftY = TDatabase::ParamDB->DRIFT_Y;
+      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
+      ReadSandwichGeo(bdryStream, DriftX, DriftY, DriftZ, segment_marks);
+    }
+
+
+
   }
 }
 #endif // __2D__
@@ -3512,6 +3530,49 @@ int TDomain::GenerateEdgeInfo()
     Output::info("Domain.C","3D Mesh Edges Generated ");
 
   return 0;
+}
+
+void TDomain::print_info(std::string name) const
+{
+#ifdef _MPI
+  int my_rank, size;
+  MPI_Comm_rank(TDatabase::ParamDB->Comm, &my_rank);
+  MPI_Comm_size(TDatabase::ParamDB->Comm, &size);
+
+  int sbuf_own = N_OwnCells;
+  int sbuf_halo = N_RootCells - N_OwnCells;
+
+  std::vector<int> ns_own_cells(size,0);
+  std::vector<int> ns_halo_cells(size,0);
+
+  {
+    MPI_Gather(
+      &sbuf_own, 1, MPI_INT,            //send
+      &ns_own_cells.at(0), 1, MPI_INT,  //receive
+      0, MPI_COMM_WORLD);               //control
+    MPI_Gather(
+      &sbuf_halo, 1, MPI_INT,            //send
+      &ns_halo_cells.at(0), 1, MPI_INT,  //receive
+      0, MPI_COMM_WORLD);               //control
+  }
+  if(my_rank == 0)
+  {
+    Output::print("STAT (Domain): Domain ", name);
+    size_t sum_cells_total = 0;
+    for(int i =0; i < size ;++i)
+    {
+      Output::print(" > Rank", i, "\t n_own_cells: ", ns_own_cells.at(i),
+                    "\t n_halo_cells: ", ns_halo_cells.at(i));
+      sum_cells_total += ns_own_cells.at(i);
+    }
+    Output::print(" > Total number of cells: ", sum_cells_total);
+
+  }
+
+#else
+  Output::print("STAT (Domain): Domain ", name);
+  Output::print(" > No domain statistics printout in non-MPI case so far.");
+#endif
 }
 
 
