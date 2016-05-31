@@ -26,6 +26,7 @@
 #include <Example_NSE2D.h>
 
 #include <MainUtilities.h> // FixedSizeQueue
+#include <PostProcessing2D.h>
 
 #include <utility>
 #include <array>
@@ -110,6 +111,9 @@ class NSE2D
      * NSE2D::solver object.
      */
     ParameterDatabase db;
+
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
