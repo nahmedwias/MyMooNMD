@@ -20,3 +20,9 @@
 #    make project
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
+
+# Then you can create an executable as follows
+add_executable(twisted_pipe ${PROJECT_SOURCE_DIR}/3DPrograms/NSE3D_ParMooN)
+set_target_properties(twisted_pipe PROPERTIES OUTPUT_NAME parMooN_twisted_pipe_stat_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(twisted_pipe PUBLIC -D__3D__)
+target_link_libraries(twisted_pipe parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
