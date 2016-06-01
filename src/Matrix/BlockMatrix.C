@@ -1495,7 +1495,7 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
     /* ************************************************************************* */
     void BlockMatrix::split_color(size_t color_to_split)
     {
-      Output::print<2>("A color of this BlockMatrix had to be split."
+      Output::warn("A color of this BlockMatrix had to be split."
           " Is that what you intended?");
 
       // a new color is going to appear - start with 0 count
