@@ -356,6 +356,9 @@ class BlockMatrix
     /// @note this will not fail if the desired entry is not in the sparsity
     /// structure. In that case it will simply return 0.
     double get(unsigned int i, unsigned int j) const;
+    
+    /// @brief return the diagonal entries of this BlockMatrix
+    std::vector<double> get_diagonal() const;
 
     /**
      * @brief Get a shared pointer to a constant version of one of the blocks.
