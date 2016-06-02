@@ -279,11 +279,12 @@ void Brinkman2D::assemble()
                boundary_conditions, non_const_bound_values.data(), la);
       Output::print("assemble");
 
-      BoundaryAssemble_on_rhs_g_v_n(RHSs, 
+      BoundaryAssembling2D bi;
+      bi.BoundaryAssemble_on_rhs_g_v_n(RHSs,
 				    v_space, 
 				    NULL, // p = 1
-				    2, // boundary component
-				       0); // mult
+				    1, // boundary component
+				       10); // mult
       
     
     // copy Dirichlet values from right hand side into solution

@@ -21,7 +21,10 @@
 #include <TriaAffin.h>
 #include <QuadAffin.h>
 
-void  BoundaryAssemble_on_rhs_g_v_n(double **rhs, 
+#include <BoundEdge.h>
+
+
+void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
 				    const TFESpace2D *U_Space, 
 				    TFEFunction2D *given_data,
 				    int boundary_component_id,
@@ -76,157 +79,204 @@ void  BoundaryAssemble_on_rhs_g_v_n(double **rhs,
 	  TBoundEdge *boundedge = (TBoundEdge *)joint;
 	  TBoundComp *BoundComp = boundedge->GetBoundComp();
 	  if (BoundComp->GetID() == boundary_component_id) {
-	    jointsOnComponent.push_back(j);
+          
+//START
+          //int FEId,nQuadpoints;
+          double t0, t1, x0, x1, y0, y1, joint_length, nx, ny;
+          //double  quadPoints, quadWeights;
+          //QuadFormula1D LineQuadFormula;
+          
+          boundedge->GetParameters(t0, t1);
+          boundedge->GetVertices(t0, t1, x0,  y0, x1, y1);
+          
+          // compute length of the edge
+          boundedge->GetJointLength(joint_length, x0, y0, x1, y1);
+          
+          // normal vector to this boundary (normalized)
+          boundedge->GetJointNormal(nx, ny, joint_length, x0, y0, x1, y1);
+          
+          int joint_id= j;
+//      jointsOnComponent.push_back(j);
+          
+          
+          
+          //boundedge->GetQuadFormulaData(FEId, nQuadpoints, LineQuadFormula, quadPoints, quadWeights);
+//END
+          
+          // ---------------------------------------------------------------
+          ///@todo GetFormulaData(FEId,quadWeights, quadPoints)
+          // get a quadrature formula good enough for the velocity FE space
+          int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+          // get the type of required quadrature (include/FE/Enumerations.h)
+          QuadFormula1D LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+          // initialize points and weights of quadrature
+          TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+          
+          ///@todo rewrite the GetFormulaData using (e.g.) vector<> class
+          int nQuadPoints;
+          double *quadWeights, *quadPoints;
+          qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
+          TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(LineQuadFormula);
+          // ---------------------------------------------------------------
+
+          // -------------------------------------------
+          // quadrature
+          for(int k=0;k<nQuadPoints;k++)
+          {
+              
+              // ----------------------------
+              // for each quadrature point, get values and derivatives of basis functions
+              // according to selected quadrature formula
+              ///@todo write something like:
+              // GetQuadratureValues(..., uorig, uxorig, uyorig)?
+              // needs:
+              // BaseFuncts[FEId],LineQuadFormula,joint_id, cell
+              // RefElement, quadPoints[k], N_BaseFunct
+              double **reference_values = TFEDatabase2D::GetJointValues2D(BaseFuncts[FEId],
+                                                                          LineQuadFormula, joint_id);
+              double **derivative_xi = TFEDatabase2D::GetJointDerivatives2D(BaseFuncts[FEId],
+                                                                            LineQuadFormula,
+                                                                            joint_id, D10);
+              double **derivative_eta = TFEDatabase2D::GetJointDerivatives2D(BaseFuncts[FEId],
+                                                                             LineQuadFormula,
+                                                                             joint_id, D01);
+              
+              
+              double uorig[MaxN_BaseFunctions2D], uxorig[MaxN_BaseFunctions2D];
+              double uyorig[MaxN_BaseFunctions2D];
+              
+              RefTrans2D RefTrans;
+              TRefTrans2D *F_K;
+              switch(RefElement)
+              {
+                  case BFUnitTriangle:
+                      RefTrans = TriaAffin;
+                      F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
+                      ((TTriaAffin*)F_K)->SetCell(cell);
+                      ((TTriaAffin*)F_K)->GetOrigValues(joint_id,  quadPoints[k],N_BaseFunct,
+                                                        reference_values[k],
+                                                        derivative_xi[k], derivative_eta[k],
+                                                        uorig, uxorig, uyorig,
+                                                        BaseVectDim);
+                      
+                      break;
+                      
+                  case BFUnitSquare:
+                      RefTrans = QuadAffin;
+                      F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
+                      ((TQuadAffin*)F_K)->SetCell(cell);
+                      ((TQuadAffin*)F_K)->GetOrigValues(joint_id, quadPoints[k],N_BaseFunct,
+                                                        reference_values[k], derivative_xi[k],
+                                                        derivative_eta[k],
+                                                        uorig, uxorig, uyorig,
+                                                        BaseVectDim );
+                      break;
+                      
+                  default:
+                      Output::print("Unknown reference element in BoundaryAssembling2D.C");
+                      exit(0);
+                      break;
+              } // endswitch
+              // ----------------------------
+              
+              ///@attention in 1D the reference joint is [-1,1] => length = 2
+              double reference_joint_length = 2;
+              double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
+              double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
+              // given_data_value[0] = G(x,y),
+              // given_data_value[1] = dG/dx, given_data_value[2] = dG/dy
+              double given_data_value[3];
+              // get the value of rhs
+              if(given_data)
+                  given_data->FindGradientLocal(cell,i,x, y, given_data_value);
+              else
+              {
+                  given_data_value[0] = 1.0;
+                  given_data_value[1] = 0.0;
+                  given_data_value[2] = 0.0;
+              }
+              // mapping from local(cell) DOF to global DOF
+              int *DOF = GlobalNumbers + BeginIndex[i];
+              
+              for(int l=0;l<N_BaseFunct;l++)
+              {
+                  int global_dof_from_local = DOF[l];
+                  
+                  // if the DOF is Dirichlet, continue
+                  if(global_dof_from_local >= ActiveBound)
+                      continue;
+                  
+                  // updating rhs: int_gamma rhsval v \cdot n
+                  double vtest = uorig[l]; // value of test function (vtest = vx = vy)
+                  // add for both components
+                  rhs[0][global_dof_from_local] +=
+                  mult * quadWeights[k] * given_data_value[0] * (vtest*nx) *
+                  (joint_length/reference_joint_length);
+                  //rhs[0][global_dof_from_local+N_U] +=
+                  rhs[1][global_dof_from_local] +=
+                  mult * quadWeights[k] * given_data_value[0] * (vtest*ny) *
+                  (joint_length/reference_joint_length);
+                  
+                  
+              } //for(l=0;l<N_BaseFunct;l++)
+          }
+          
 	  }
 	} // endif
     }//  for(j=0;j<N_Edges;j++)
     // ---------------------------------------------------------------
-    
+      //  for(k=0;k<N_LinePoints;k++
+  } // for j=0,..joint.size()
+} //  for(i=0;i<N_Cells;i++)
+
+
+
     // quadrature over the joints on the selected boundary
-    for(unsigned int j=0;j<jointsOnComponent.size();j++) {
+//    for(unsigned int j=0;j<jointsOnComponent.size();j++) {
 
-      int joint_id = jointsOnComponent[j];
+//      int joint_id = jointsOnComponent[j];
+        
 
-      // get geometrical properties of the boundary joint
-      ///@todo GetJointData(Joint)
-      double x0,x1,y0,y1;
-      double nx,ny;
-      double joint_length;
-      
-      x0 = cell->GetVertex(joint_id)->GetX();
-      x1 = cell->GetVertex((joint_id+1)%nEdges)->GetX();
-      y0 = cell->GetVertex(joint_id)->GetY();
-      y1 = cell->GetVertex((joint_id+1)%nEdges)->GetY();
-      
-      // compute length of the edge
-      joint_length = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+        
 
-      // normal vector to this boundary (normalized)
-      nx = (y1-y0)/joint_length;
-      ny = (x0-x1)/joint_length;
+        
 
-      // ---------------------------------------------------------------
-      ///@todo GetFormulaData(FEId,quadWeights, quadPoints)
-      // get a quadrature formula good enough for the velocity FE space
-      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
-      // get the type of required quadrature (include/FE/Enumerations.h)
-      QuadFormula1D LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
-      // initialize points and weights of quadrature
-      TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+//      // get geometrical properties of the boundary joint
+//      ///@todo GetJointData(Joint)
+//      double x0,x1,y0,y1;
+//      double nx,ny;
+//      double joint_length;
+//        
+//      x0 = cell->GetVertex(joint_id)->GetX();
+//      x1 = cell->GetVertex((joint_id+1)%nEdges)->GetX();
+//      y0 = cell->GetVertex(joint_id)->GetY();
+//      y1 = cell->GetVertex((joint_id+1)%nEdges)->GetY();
+//      
+//      // compute length of the edge
+//      joint_length = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+//
+//      // normal vector to this boundary (normalized)
+//      nx = (y1-y0)/joint_length;
+//      ny = (x0-x1)/joint_length;
 
-      ///@todo rewrite the GetFormulaData using (e.g.) vector<> class
-      int nQuadPoints;
-      double *quadWeights, *quadPoints;
-      qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
-      TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(LineQuadFormula);
-      // ---------------------------------------------------------------
-      
+//      // ---------------------------------------------------------------
+//      ///@todo GetFormulaData(FEId,quadWeights, quadPoints)
+//      // get a quadrature formula good enough for the velocity FE space
+//      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+//      // get the type of required quadrature (include/FE/Enumerations.h)
+//      QuadFormula1D LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+//      // initialize points and weights of quadrature
+//      TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+//
+//      ///@todo rewrite the GetFormulaData using (e.g.) vector<> class
+//      int nQuadPoints;
+//      double *quadWeights, *quadPoints;
+//      qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
+//      TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(LineQuadFormula);
+//      // ---------------------------------------------------------------
+//      
 
-      // -------------------------------------------
-      // quadrature
-      for(int k=0;k<nQuadPoints;k++)
-      {
-
-	// ----------------------------
-	// for each quadrature point, get values and derivatives of basis functions
-	// according to selected quadrature formula
-	///@todo write something like:
-	// GetQuadratureValues(..., uorig, uxorig, uyorig)?
-	// needs:
-	// BaseFuncts[FEId],LineQuadFormula,joint_id, cell
-	// RefElement, quadPoints[k], N_BaseFunct
-	double **reference_values = TFEDatabase2D::GetJointValues2D(BaseFuncts[FEId], 
-                                               LineQuadFormula, joint_id);
-        double **derivative_xi = TFEDatabase2D::GetJointDerivatives2D(BaseFuncts[FEId], 
-                                                      LineQuadFormula, 
-                                                      joint_id, D10);
-        double **derivative_eta = TFEDatabase2D::GetJointDerivatives2D(BaseFuncts[FEId], 
-                                                        LineQuadFormula, 
-                                                        joint_id, D01);
-
-	
-	double uorig[MaxN_BaseFunctions2D], uxorig[MaxN_BaseFunctions2D];
-	double uyorig[MaxN_BaseFunctions2D];
-
-	RefTrans2D RefTrans;
-	TRefTrans2D *F_K;
-        switch(RefElement)
-	  {
-	  case BFUnitTriangle:
-            RefTrans = TriaAffin;
-            F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
-            ((TTriaAffin*)F_K)->SetCell(cell);
-            ((TTriaAffin*)F_K)->GetOrigValues(joint_id,  quadPoints[k],N_BaseFunct, 
-                                              reference_values[k],
-					      derivative_xi[k], derivative_eta[k],
-                                              uorig, uxorig, uyorig, 
-                                              BaseVectDim);
-	    
-            break;
-            
-	  case BFUnitSquare:
-            RefTrans = QuadAffin;
-            F_K = TFEDatabase2D::GetRefTrans2D(RefTrans);
-            ((TQuadAffin*)F_K)->SetCell(cell);
-            ((TQuadAffin*)F_K)->GetOrigValues(joint_id, quadPoints[k],N_BaseFunct, 
-                                              reference_values[k], derivative_xi[k],
-					      derivative_eta[k],
-                                              uorig, uxorig, uyorig,
-                                              BaseVectDim );
-            break;
-            
-          default:
-	    Output::print("Unknown reference element in BoundaryAssembling2D.C");
-            exit(0);
-            break;
-	  } // endswitch
-	// ----------------------------
-
-	///@attention in 1D the reference joint is [-1,1] => length = 2
-        double reference_joint_length = 2;
-        double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
-        double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
-	// given_data_value[0] = G(x,y),
-	// given_data_value[1] = dG/dx, given_data_value[2] = dG/dy
-	double given_data_value[3];
-        // get the value of rhs
-        if(given_data)
-          given_data->FindGradientLocal(cell,i,x, y, given_data_value);
-        else
-          {
-	    given_data_value[0] = 1.0;
-	    given_data_value[1] = 0.0;
-	    given_data_value[2] = 0.0;
-	  }
-	// mapping from local(cell) DOF to global DOF
-	int *DOF = GlobalNumbers + BeginIndex[i];
-
-        for(int l=0;l<N_BaseFunct;l++)
-        {
-          int global_dof_from_local = DOF[l];
-
-	  // if the DOF is Dirichlet, continue
-          if(global_dof_from_local >= ActiveBound)
-            continue;
-	  
-          // updating rhs: int_gamma rhsval v \cdot n
-          double vtest = uorig[l]; // value of test function (vtest = vx = vy)
-          // add for both components
-          rhs[0][global_dof_from_local] +=
-	    mult * quadWeights[k] * given_data_value[0] * (vtest*nx) *
-	    (joint_length/reference_joint_length);
-          //rhs[0][global_dof_from_local+N_U] +=
-	  rhs[1][global_dof_from_local] +=
-	    mult * quadWeights[k] * given_data_value[0] * (vtest*ny) *
-	    (joint_length/reference_joint_length);
-
-	  
-        } //for(l=0;l<N_BaseFunct;l++)
-      } //  for(k=0;k<N_LinePoints;k++
-    } // for j=0,..joint.size()
-  } //  for(i=0;i<N_Cells;i++)
-}
-
+//}
 
 /*
 // assemble
