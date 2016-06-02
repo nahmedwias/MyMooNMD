@@ -41,10 +41,9 @@ void ExactP(double x, double y, double *values)
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
   cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-  if (i==2) {
+  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0 ;
+  if (i==1 || i==3) {
     cond = NEUMANN;
-    TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0 ;
   }
 }
 
@@ -54,11 +53,11 @@ void U1BoundValue(int BdComp, double Param, double &value)
   {
     case 0: value=0;
             break;
-    case 1: value=4*Param*(1-Param);
+      case 1: value=0;//4*Param*(1-Param);
             break;
     case 2: value=0;
             break;
-    case 3: value=4*(1-Param)*(Param);
+      case 3: value=0;//4*(1-Param)*(Param);
             break;
     default: cout << "wrong boundary part number" << endl;
             break;
@@ -99,7 +98,7 @@ void LinCoeffs(int n_points, double *x, double *y,
 
     coeff[0] = eps;                             //WAS IST DAS?
     //coeff[1] = 1 + 8*eps + 4*y*(1-y);
-    coeff[1] = 1 + 8*eps + 4*y[i]*(1-y[i]);     // f1 (lhs of Brinkman problem for u1)
+    coeff[1] = 0;//1 + 8*eps + 4*y[i]*(1-y[i]);     // f1 (lhs of Brinkman problem for u1)
     coeff[2] = 0;                               // f2 (lhs of Brinkman problem for u2)
     coeff[3] = 0;                               // g (divergence term=u1_x+u2_y)
 
