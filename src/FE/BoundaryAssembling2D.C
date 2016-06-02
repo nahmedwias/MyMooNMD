@@ -71,42 +71,30 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
 
     int nEdges = cell->GetN_Edges();
     // ---------------------------------------------------------------
-      for(int j=0;j<nEdges;j++)
+      for(int joint_id=0; joint_id<nEdges; joint_id++)
     {
-      if(!(cell->GetJoint(j)->InnerJoint())) 
+      if(!(cell->GetJoint(joint_id)->InnerJoint())) 
 	{
-	  TJoint *joint = cell->GetJoint(j);
+	  TJoint *joint = cell->GetJoint(joint_id);
 	  TBoundEdge *boundedge = (TBoundEdge *)joint;
 	  TBoundComp *BoundComp = boundedge->GetBoundComp();
 	  if (BoundComp->GetID() == boundary_component_id) {
           
-//START
-          //int FEId,nQuadpoints;
-          double t0, t1, x0, x1, y0, y1, joint_length, nx, ny;
-          //double  quadPoints, quadWeights;
-          //QuadFormula1D LineQuadFormula;
-          
-          boundedge->GetParameters(t0, t1);
-          boundedge->GetVertices(t0, t1, x0,  y0, x1, y1);
-          
+          double x0, x1, y0, y1;
+          boundedge->GetVertices(x0,  y0, x1, y1);          
           // compute length of the edge
-          boundedge->GetJointLength(joint_length, x0, y0, x1, y1);
-          
+          double joint_length = boundedge->GetLength();
           // normal vector to this boundary (normalized)
-          boundedge->GetJointNormal(nx, ny, joint_length, x0, y0, x1, y1);
+	  double nx,ny;
+          boundedge->GetNormal(nx, ny);
           
-          int joint_id= j;
-//      jointsOnComponent.push_back(j);
-          
-          
-          
-          //boundedge->GetQuadFormulaData(FEId, nQuadpoints, LineQuadFormula, quadPoints, quadWeights);
-//END
-          
-          // ---------------------------------------------------------------
-          ///@todo GetFormulaData(FEId,quadWeights, quadPoints)
-          // get a quadrature formula good enough for the velocity FE space
-          int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+         
+	  // get a quadrature formula good enough for the velocity FE space
+	  int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+	  this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+          std::vector<double> quadWeights,quadPoints;
+	  GetQuadFormulaData(fe_degree,quadPoints,quadWeights);
+	  /*int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
           // get the type of required quadrature (include/FE/Enumerations.h)
           QuadFormula1D LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
           // initialize points and weights of quadrature
@@ -116,12 +104,14 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
           int nQuadPoints;
           double *quadWeights, *quadPoints;
           qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
-          TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(LineQuadFormula);
-          // ---------------------------------------------------------------
+          */
 
+	  TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);  
+  
+	  
           // -------------------------------------------
           // quadrature
-          for(int k=0;k<nQuadPoints;k++)
+          for(int k=0;k<quadPoints.size();k++)
           {
               
               // ----------------------------
@@ -229,6 +219,28 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
   } // for j=0,..joint.size()
 } //  for(i=0;i<N_Cells;i++)
 
+
+
+void BoundaryAssembling2D::GetQuadFormulaData(int fe_degree,
+					      std::vector<double> &P,
+					      std::vector<double> &W)
+{
+  // get the type of required quadrature (include/FE/Enumerations.h)
+  // initialize points and weights of quadrature
+  ///@attention LineQuadFormula must be set before calling the function GetQuadFormulaData
+  TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(this->LineQuadFormula);
+  
+  int nQuadPoints;
+  double *quadWeights, *quadPoints;
+  qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
+  P.resize(nQuadPoints);
+  W.resize(nQuadPoints);
+  
+  for (unsigned int i=0; i<nQuadPoints; i++){
+    P[i]=quadPoints[i];
+    W[i]=quadWeights[i];
+  }
+}
 
 
     // quadrature over the joints on the selected boundary
@@ -437,3 +449,6 @@ void  Assemble_RHS_v_n_u_n(double *rhs,
 }
 
 */
+
+
+
