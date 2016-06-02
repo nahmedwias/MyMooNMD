@@ -829,7 +829,15 @@ struct TParaDB
   
   int DEPENDENT_BASIS;
   int DEPENDENT_BASIS_Q1;
-  int DEPENDENT_BASIS_Q2;  
+  int DEPENDENT_BASIS_Q2;
+    
+  //======================================================================
+  /** parameters for weakly imposing boundary/interface conditions */
+  //======================================================================
+    
+   ///int bdNeumannComponent;
+   ///double bdNeumannValue;
+
   
   #ifdef _MPI
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/

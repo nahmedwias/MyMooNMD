@@ -58,7 +58,7 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     double c0 = coeff[0];                   // nu bzw eps (viscosity)
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double K = 1.;                          // permeability
+    double K = coeff[4];                          // viscosity/permeability
 
     
     double val;
@@ -79,11 +79,11 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
             ansatz01 = Orig1[j];
             ansatz00 = Orig2[j];
             
-            val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_x)
+            val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
             val += K*(ansatz00*test00);                       // K*(u * v)
             MatrixA11[i][j] += Mult * val;
             
-            val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_x)
+            val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
             val += K*(ansatz00*test00);                       // K*(u * v)
             MatrixA22[i][j] += Mult * val;
             
@@ -111,10 +111,10 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
             ansatz10 = Orig0[j];
             ansatz01 = Orig1[j];
             
-            val = Mult*test00*ansatz10;                       // -Mult*q*u_x
+            val = Mult*test00*ansatz10;                       // Mult*q*u_x
             MatrixB1[i][j] += val;
             
-            val = Mult*test00*ansatz01;                       // -Mult*q*u_y
+            val = Mult*test00*ansatz01;                       // Mult*q*u_y
             MatrixB2[i][j] += val;
         }                            // endfor j
         
@@ -176,7 +176,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
     c0 = coeff[0];                 // nu
     c1 = coeff[1];                 // f1
     c2 = coeff[2];                 // f2
-    int K = 1.;
+    double K = coeff[4];                          // viscosity/permeability
     
     
     for(i=0;i<N_U;i++)
@@ -308,7 +308,7 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
     double c3 = coeff[3];
-    double K = 1.;
+    double K = coeff[4];                          // viscosity/permeability
     double alpha = 0.4;//1.;
     double PSPGStab = alpha*(hK*hK)/(c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
     
@@ -477,7 +477,7 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
     double c1 = coeff[1];                           // f1
     double c2 = coeff[2];                           // f2
     double c3 = coeff[3];                           // f3 (the rhs of incompressibility constraint)
-    double K = 1.;                                  // Permeability
+    double K = coeff[4];                          // viscosity/permeability
     double alpha = 0.01;                            // PSPG Stabilization Parameter
     double PSPGStab = -alpha*(hK*hK)/(c0*c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK)
     
