@@ -1086,6 +1086,10 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->DEPENDENT_BASIS = 0;
   ParamDB->DEPENDENT_BASIS_Q1 = 0;
   ParamDB->DEPENDENT_BASIS_Q2 = 0;
+    
+  ////** parameters for weakly imposing boundary/interface conditions */
+  ///ParamDB->bdNeumannComponent = 0;
+  ///ParamDB->bdNeumannValue = 0;
   
   #ifdef _MPI
   ParamDB->Comm = MPI_COMM_WORLD;    

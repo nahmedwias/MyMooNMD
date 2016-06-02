@@ -62,7 +62,10 @@ int main(int argc, char* argv[])
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();
   for(size_t i=0; i< n_ref; i++)
-    Domain.RegRefineAll();  
+  {
+      Output::print("Refinement",i);
+      Domain.RegRefineAll();
+  }
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
