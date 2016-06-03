@@ -81,6 +81,10 @@ class Solver
     /// construction. This method only lets you inspect the solver parameters
     const ParameterDatabase& get_db();
     
+    /// Return true if multigrid is expected as preconditioner.
+    bool is_using_multigrid();
+
+
     /// @brief return a default solver parameter database
     ///
     /// Using the Solver class requires these parameters. 
