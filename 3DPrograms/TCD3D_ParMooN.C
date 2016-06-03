@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   SetTimeDiscParameters(0);
   
   // Choose example according to the value of
-  Example_CD3D example;  
+  Example_CD3D example(parmoon_db["example"]);  
   
   // create an object of the class Time_CD3D
 #ifdef _MPI
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 #else
   Time_CD3D tcd3d(gridCollections, parmoon_db, example);
 #endif
-exit(0);
+
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
   int step = 0, image=0;
