@@ -244,6 +244,11 @@ Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
         /** coefficients */
         problem_coefficients = LinCoeffs;
 
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
         /**post processing */
         //post_processing_stat = ;
 
