@@ -455,8 +455,22 @@ void Time_CD2D::output(int m, int& image)
   {
     // write output
     timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
+
     image++;
   }
+  
+    
+    // add the functions the first time
+    if (image==0) 
+    {
+      Output::print<1>("  Add FE Function ", fe_function.GetName(), " for output ");
+      timeDependentOutput.add_fe_function(&fe_function);
+    }
+    // write output
+    timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
+    image++;
+    
+    
 }
 
 /**************************************************************************** */

@@ -10,7 +10,7 @@
 #include <Upwind.h>
 
 #include<Assemble2D.h>
-
+#include <BoundaryAssembling2D.h>
 #include <sys/stat.h>
 
 ParameterDatabase get_default_Brinkman2D_parameters()
@@ -93,57 +93,55 @@ Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
 
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
                        const Example_Brinkman2D & e,
-             unsigned int reference_id)
-    : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(),
-      initial_residual(1e10), errors()
+                       unsigned int reference_id)
+    : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(), outputWriter(param_db), initial_residual(1e10), errors()
 {
   db.merge(param_db,false);
-  
-  std::pair <int,int>
-      velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
-                               TDatabase::ParamDB->PRESSURE_SPACE);
+  db.info(false);
+    
+  std::pair <int,int> velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
+                                               TDatabase::ParamDB->PRESSURE_SPACE);
+    
   // set the velocity and preesure spaces
-  // this function returns a pair which consists of 
-  // velocity and pressure order
+  // this function returns a pair which consists of velocity and pressure order
   this->get_velocity_pressure_orders(velocity_pressure_orders);
+    
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   
- 
-  // we use always Matrix Type 14
+  // we always use Matrix Type 14
     this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
   
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
 
-
-
-  // print out some information
+  // print some information
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
   int n_dof = 2 * n_u + n_p; // total number of degrees of freedom
- 
     
   double h_min, h_max;
   coll->GetHminHmax(&h_min, &h_max);
   Output::print<1>("N_Cells            : ", setw(10), coll->GetN_Cells());
-  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12),
-                   h_max);
+  Output::print<1>("h (min,max)        : ", setw(10), h_min, " ", setw(12), h_max);
   Output::print<1>("dof velocity       : ", setw(10), 2* n_u);
   Output::print<1>("dof velocity active: ", setw(10), 2* n_u_active);
   Output::print<1>("dof pressure       : ", setw(10), n_p);
   Output::print<1>("dof all            : ", setw(10), n_dof);
-  
 
+
+
+ ///  double *bdNeumannValues = new double[get_size().get_range(TDatabase::ParamDB->bdNeumannValue)];
+ ///  int *bdNeumannComponents = new int[get_size().get_range(TDatabase::ParamDB->bdNeumannComponent)];
+
+    //raus
   // done with the constructor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE != 5
     || TDatabase::ParamDB->SOLVER_TYPE != 1)
     return;
   // else multigrid
 
-
-    
   // create spaces, functions, matrices on coarser levels
   double *param = new double[2];
   param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
@@ -164,6 +162,7 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
 //    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
 //    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
 //  }
+  
 
   
   // create multigrid-level-objects, must be coarsest first
@@ -173,18 +172,19 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
     this->multigrid->AddLevel(this->mg_levels(i, *it));
     i++;
   }
+    //raus
 }
 
 /** ************************************************************************ */
+
 Brinkman2D::~Brinkman2D()
 {
 }
 
 /** ************************************************************************ */
 
-
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
-                 &velocity_pressure_orders)
+                                              &velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
   int pressure_order = velocity_pressure_orders.second;
@@ -270,7 +270,7 @@ void Brinkman2D::assemble()
         N_Rhs = 3;
 
       
- Output::print("assemble");
+	Output::print("assemble");
  
       
     // call the assemble method with the information that has been patched together
@@ -278,33 +278,15 @@ void Brinkman2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
       Output::print("assemble");
-      
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
-    {
-      switch(TDatabase::ParamDB->BrinkmanTYPE)
-      {
-        case 1:
-        case 2:
-          // do upwinding with one matrix
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
-          break;
-        case 3:
-        case 4:
-        case 14:
-          // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          break;
-      } // endswitch
-    } // endif
 
+      BoundaryAssembling2D bi;
+      bi.BoundaryAssemble_on_rhs_g_v_n(RHSs,
+				    v_space, 
+				    NULL, // p = 1
+				    1, // boundary component
+				       10); // mult
+      
+    
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
 
@@ -380,7 +362,7 @@ void Brinkman2D::computeNormsOfResiduals()
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
     IntoL20FEFunction(&defect[2*n_u_dof], n_p_dof, &this->get_pressure_space(),
-                      TDatabase::ParamDB->VELOCITY_SPACE, 
+                      TDatabase::ParamDB->VELOCITY_SPACE,
                       TDatabase::ParamDB->PRESSURE_SPACE);
   }
   
@@ -439,7 +421,11 @@ void Brinkman2D::output(int i)
     s.p.PrintMinMax();
   }
   
-  // write solution to a vtk file
+    
+    outputWriter.add_fe_function(&s.p);
+    outputWriter.add_fe_vector_function(&s.u);
+    outputWriter.write(i,0.0);
+/*  // write solution to a vtk file
   if(db["output_write_vtk"])
   {
     // last argument in the following is domain, but is never used in this class
@@ -457,7 +443,8 @@ void Brinkman2D::output(int i)
     filename += ".vtk";
     Output.WriteVtk(filename.c_str());
   }
-  
+  */
+ 
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.

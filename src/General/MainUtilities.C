@@ -82,10 +82,14 @@ int GetMemory()
 //Print all memory information available through mallinfo.
 void display_mallinfo(const std::string& program_part)
 {
-    struct mallinfo mi;
+  Output::print("Memory usage info called in program part: ", program_part);
+#ifdef _MALLOC_MALLOC_H_
+  Output::print("Total memory ",GetMemory());
+#else
+   
+   struct mallinfo mi;
 
     mi = mallinfo();
-    Output::print("Memory usage info called in program part: ", program_part);
     Output::print("Total non-mmapped bytes (arena):       ",mi.arena);
     Output::print("# of free chunks (ordblks):            ",mi.ordblks);
     Output::print("# of free fastbin blocks (smblks):     ",mi.smblks);
@@ -96,6 +100,7 @@ void display_mallinfo(const std::string& program_part)
     Output::print("Total allocated space (uordblks):      ",mi.uordblks);
     Output::print("Total free space (fordblks):           ",mi.fordblks);
     Output::print("Topmost releasable block (keepcost):   ",mi.keepcost);
+#endif
 }
 
 #ifdef __2D__
