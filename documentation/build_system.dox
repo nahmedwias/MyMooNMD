@@ -160,9 +160,53 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
  "ParMooN.kdev4" and a directory ".kdev4" in the root ParMooN directory which
  is not desirable. Currently we can not avoid this. These files are added to 
  the .hgignore file in order to not interfere too much with the version control.
- 
- 
- 
+
+
+
+
+
+
+ \section Xcodeintegration Integrating ParMooN into Xcode
+
+  Xcode is a develeopment environment for Mac OS X.
+  The following steps are based on an out-of-source build and have been tested for Xcode Version 7.2 (7C68).
+
+
+
+ The first step is to create a new folder which is going to contain all the build related stuff corresponding to Xcode and switch into that directory.
+ Therefore use the commands
+
+ \code
+ mkdir Build_Xcode
+ cd Build_Xcode
+ \endcode
+
+ Now cmake is used to generate the build files in the current folder ("Build_Xcode") via
+
+ \code
+ cmake -G Xcode ../ParMooN
+ \endcode
+
+ where the path, here "../ParMooN", points into the directory that contains the entire ParMooN code under hg version control.
+
+ Next start Xcode and choose the option "Open another Product".
+ Here, in Xcode one can interpret "product" as "project".
+ The file which has to be chosen is in the folder "Build_Xcode" and has the ending ".xcodeproj".
+
+ In order to use the build and run option Xcode supplies, you first have to chose a scheme and, in case your program needs one, hand in an input/data file.
+ In the header corresponding to Xcode chose the feature "Product --> Scheme".
+ Here, the desired scheme, e.g., "brinkman2d" should be marked and one should use the "Edit Scheme..." option as follows:
+
+ At "Run --> Info" the "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
+ At "Run --> Arguments" one has to add the input file, e.g. brinkman2d.dat, as "Argument Passed On Launch" "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
+ Make sure that at "Run --> Options" the "Working Directory" is "costum" and the path is the right one, e.g., /Users/blank/ParMooN/Tests/Brinkman2D.
+
+ That's it!
+
+
+
+
+
  \section presetvariables Changing build variables
  
  \subsection idealbuildprocess An ideal cmake build process

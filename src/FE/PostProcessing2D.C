@@ -1049,7 +1049,7 @@ void PostProcessing2D::writeCaseVars(int iter)
     vctname << filename << "_" << FEVectFunctArray[i]->GetName()
             <<  "." << number << ".vct";
     std::string fname = vctname.str();
-    Output::print<2>(" ** PostProcessing2D::write File - write ", vctname);
+    Output::print<2>(" ** PostProcessing2D::write File - write ", vctname.str());
     vctf.open(fname.c_str());
     vctf <<  FEVectFunctArray[i]->GetName() << " step = " << iter << endl; 
   
