@@ -110,7 +110,8 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                        , int maxSubDomainPerDof
 #endif
 )
- : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex), multigrid_(),
+ : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+   solver_(param_db), mg_(nullptr),
    defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
@@ -148,9 +149,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
 
-  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
-                        && TDatabase::ParamDB->SOLVER_TYPE == 1 );
-
+  bool usingMultigrid = solver_.is_using_multigrid();
   if(!usingMultigrid)
   {
   // create the collection of cells from the domain (finest grid)
@@ -207,39 +206,9 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 #endif
   }
-  else // multigrid  TODO: Multigrid in TNSE3D is not implemented yet.
-    // it has to be constructed here
+  else
   {
-    ErrThrow("No multigrid yet");
-//  // create spaces, functions, matrices on coarser levels
-//  double *param = new double[10];
-//  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-//  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-//  param[2] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-//  param[9] = 0;
-//  this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
-//  // number of refinement levels for the multigrid
-//  int LEVELS = TDatabase::ParamDB->LEVELS;
-//  if(LEVELS > domain.get_ref_level() + 1)
-//    LEVELS = domain.get_ref_level() + 1;
-//
-//  // the matrix and rhs side on the finest grid are already constructed
-//  // now construct all matrices, rhs, and solutions on coarser grids
-//  for(int i = LEVELS - 2; i >= 0; i--)
-//  {
-//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-//    TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
-//    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
-//  }
-//
-//  // create multigrid-level-objects, must be coarsest first
-//  unsigned int i = 0;
-//  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-//  {
-//    ErrThrow("NSE3D-multigrid needs to be checked");
-//    this->multigrid->AddLevel(this->mg_levels(i, *it));
-//    i++;
-//  }
+    ErrThrow("No multigrid yet. When implementing, stick e.g. to NSE3D.");
   }
 }
 
@@ -729,10 +698,6 @@ void Time_NSE3D::assemble_rhs()
   // copy non active from solution into rhs vector
   s.rhs_.copy_nonactive(s.solution_);
 
-  if(TDatabase::ParamDB->SOLVER_TYPE == GMG
-     && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-     this->multigrid_->RestrictToAllGrids();
-
   // Reset old_residual_ for this time step iteration
   // otherwise, ones compares with the old_residual_ from
   // the previous time iteration, which is not correct.
@@ -992,9 +957,7 @@ void Time_NSE3D::solve()
 {
   System_per_grid& s = this->systems_.front();
 
-  bool using_multigrid = // determine whether we make use of multigrid
-      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+  bool using_multigrid = solver_.is_using_multigrid();
 
   if(!using_multigrid)
   { // no multigrid

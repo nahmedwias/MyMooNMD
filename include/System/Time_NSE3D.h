@@ -161,13 +161,15 @@ class Time_NSE3D
     /** @brief Definition of the used example. */
     const Example_NSE3D& example_;
 
-    /** @brief A multigrid object which is set to nullptr in case it is not
-     *         needed.
+    /** @brief a solver object which will solve the linear system
+     *
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
      */
-    std::shared_ptr<TNSE_MultiGrid> multigrid_;
-    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
-    /// transposed blocks are not stored explicitely...sad but true.
-    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
+    Solver<BlockFEMatrix, BlockVector> solver_;
+
+    /// An object of the new multigrid class. Stays nullptr if not needed.
+    std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
     BlockVector defect_;
