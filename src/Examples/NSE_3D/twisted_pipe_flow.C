@@ -89,6 +89,17 @@ void twisted_pipe_flow::ExactU1(double x, double y,  double z, double *values)
       double u_1_y = -2 * 2 * u_avr * y / R2; //y derivative
       double u_1_z = -2 * 2 * u_avr * z / R2;; //z derivative
 
+      if(true) //TODO Only for time-dependent case - find a way to find out, if its time-dependent or not!
+      {
+        double t = TDatabase::TimeDB->CURRENTTIME;
+        if(t < 1.0) //within first second of the simulated time
+        {//multiply inflow with t ("anstroemen")
+          u_1   *=t;
+          u_1_y *=t;
+          u_1_z *=t;
+        }
+      }
+
       // ...dedimensionalize and assign the results
       values[0] = u_1 / u_infty;
       values[1] = 0;
@@ -144,7 +155,7 @@ void twisted_pipe_flow::ExactP(double x, double y,  double z, double *values)
 /// Initial solution in U1 direction - Hagen-Poiseuille in inflow piece.
 void twisted_pipe_flow::InitialU1(double x, double y, double z, double *values)
 {
-  ExactU1(x, y, z, values); //TODO Valgrind this, when it's used!
+  ExactU1(x, y, z, values);
 }
 
 /// Initial solution in U2 direction. No flow, nowhere.
