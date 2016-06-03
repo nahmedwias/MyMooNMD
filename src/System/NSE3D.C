@@ -531,6 +531,25 @@ void NSE3D::assemble_linear_terms()
 
   //copy non-actives from rhs to solution on finest grid
   this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+
+/** When we call copy_nonactive in MPI-case, we have to remember the following:
+   * it can happen that some slave ACTTIVE DoFs are placed in the block of
+   * NON-ACTIVE DoFs (because they are at the interface between processors).
+   * Doing copy_nonactive changes then the value of these DOFs,although they are
+   * actually active.
+   * That's why we have to update the values so that the vector becomes consistent again.
+   * This is done here.
+   */
+#ifdef _MPI
+  double *u1 = this->systems_.front().solution_.block(0);
+  double *u2 = this->systems_.front().solution_.block(1);
+  double *u3 = this->systems_.front().solution_.block(2);
+  double *p  = this->systems_.front().solution_.block(3);
+  this->systems_.front().parCommVelocity_.CommUpdate(u1);
+  this->systems_.front().parCommVelocity_.CommUpdate(u2);
+  this->systems_.front().parCommVelocity_.CommUpdate(u3);
+  this->systems_.front().parCommPressure_.CommUpdate(p);
+#endif
 }
 
 void NSE3D::assemble_non_linear_term()
