@@ -113,6 +113,11 @@ int main(int argc, char* argv[])
   double drift_y = 0;
   double drift_z =CoiledPipe::GeoConsts::l_tube;
 
+  // Choose and construct example - in this project, this has to be done before
+  // initiing the Domain, as the example itself inluences the geometry by setting
+  // a global parameter (which is awful).
+  Example_NSE3D example(parmoon_db["example"]);
+
   // Read in geometry and initialize the mesh.
   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
               drift_x, drift_y, drift_z,
@@ -175,17 +180,8 @@ int main(int argc, char* argv[])
                 domain.GetN_HaloCells());
 #endif
 
-  // Create output directory, if not already existing.
-  //  if(TDatabase::ParamDB->WRITE_VTK)
-  //  {
-  //    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-  //  }
-
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
-
-  // Choose and construct example.
-  Example_NSE3D example(parmoon_db["example"]);
 
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
