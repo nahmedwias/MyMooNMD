@@ -106,6 +106,8 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 {
   db.merge(param_db);
   this->set_parameters();
+  // this is the L^inf(L^2(Omega)) error, initialize with some large number
+  errors[4] = 1.e10; 
 
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
@@ -413,7 +415,7 @@ void Time_CD2D::solve()
 }
 
 /**************************************************************************** */
-void Time_CD2D::output(int m, int& image)
+void Time_CD2D::output()
 {
   bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
   if(no_output)
@@ -443,20 +445,13 @@ void Time_CD2D::output(int m, int& image)
     errors[3] = loc_e[1]*loc_e[1];
     Output::print<1>("  L2(0,T;H1) ", sqrt(errors[2]));
     
-    if(m==0)
-      errors[4]= loc_e[0];
-    
     if(errors[4] < loc_e[0])
       errors[4] = loc_e[0];
     Output::print<1>("  Linfty(0,T;L2) ", errors[4]);
   }
 
-  if((m==1) || (m%TDatabase::TimeDB->STEPS_PER_IMAGE == 0))
-  {
-    // write output
-    timeDependentOutput.write(image,TDatabase::TimeDB->CURRENTTIME);
-    image++;
-  }
+  // write output
+  timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
 }
 
 /**************************************************************************** */

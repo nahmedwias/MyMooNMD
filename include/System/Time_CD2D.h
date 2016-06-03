@@ -204,10 +204,8 @@ class Time_CD2D
      */
     void solve();
     
-    /** @brief measure errors and write solution
-     * 
-     */
-    void output(int m, int& imgage);
+    /// @brief measure errors and write solution
+    void output();
      // getters and setters
     const Example_CD2D& get_example() const
     { return example; }

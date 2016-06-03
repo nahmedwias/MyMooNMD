@@ -226,7 +226,7 @@ void CD2D::output(int i)
   fe_function.PrintMinMax();
   
   // write solution to a vtk file or in case-format
-  outputWriter.write(i,0.0);
+  outputWriter.write(i);
   
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
