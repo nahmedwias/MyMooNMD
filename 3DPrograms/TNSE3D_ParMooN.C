@@ -114,8 +114,11 @@ int main(int argc, char* argv[])
   double drift_z =CoiledPipe::GeoConsts::l_tube;
 
   // Choose and construct example - in this project, this has to be done before
-  // initiing the Domain, as the example itself inluences the geometry by setting
+  // initiing the Domain, as the example itself influences the geometry by setting
   // a global parameter (which is awful).
+  // AWFUL WORKAROUND: we use this global parameter to signal to the
+  // twisted pipe example that it is time dependent:
+  TDatabase::TimeDB->T9 = 1.0;
   Example_NSE3D example(parmoon_db["example"]);
 
   // Read in geometry and initialize the mesh.
@@ -174,10 +177,8 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
   //print information on the mesh partitioning
-  Output::print("Process ", my_rank, ". N_OwnCells: ",
-                domain.GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetN_HaloCells());
+  domain.print_info(std::string("coiled tube"));
+
 #endif
 
   // set some parameters for time stepping
