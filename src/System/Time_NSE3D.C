@@ -955,27 +955,16 @@ void Time_NSE3D::compute_residuals()
 /**************************************************************************** */
 void Time_NSE3D::solve()
 {
-  System_per_grid& s = this->systems_.front();
+  System_per_grid& s = systems_.front();
 
   bool using_multigrid = solver_.is_using_multigrid();
 
   if(!using_multigrid)
   { // no multigrid
-    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
-    {
-      ErrThrow("You chose a non-multigrid iterative solver."
-          "This is not supported for TNSE3D so far.");
-    }
-    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    if(solver_.get_db()["solver_type"].is("direct"))
     {
 #ifndef _MPI
-      // So far only UMFPACK is available as direct solver in sequential case.
-      // Actuate it via DirectSolver class.
-
-      /// @todo consider storing an object of DirectSolver in this class
-      DirectSolver direct_solver(s.matrix_,
-                                 DirectSolver::DirectSolverTypes::umfpack);
-      direct_solver.solve(s.rhs_, s.solution_);
+      solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
@@ -991,6 +980,8 @@ void Time_NSE3D::solve()
       mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
 #endif
     }
+    else
+      solver_.solve(s.matrix_, s.rhs_, s.solution_);
   }
   else  // multigrid preconditioned iterative solver
   {
@@ -1007,7 +998,6 @@ void Time_NSE3D::solve()
        s.p_.project_into_L20();
 
   this->old_solution_ = s.solution_;
-  Output::print<5>("solver done");
 }
 
 /**************************************************************************** */
