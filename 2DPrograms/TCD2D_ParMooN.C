@@ -76,9 +76,7 @@ int main(int argc, char* argv[])
   int step = 0;
   int n_substeps = GetN_SubSteps();
     
-  int image=0;
-
-  tcd.output(0,image);
+  tcd.output();
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -108,7 +106,8 @@ int main(int argc, char* argv[])
       
       tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
 
-      tcd.output(step, image);
+      if((step-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+        tcd.output();
     }
     // OutPut("mem after: " << GetMemory()<<endl);
   }
