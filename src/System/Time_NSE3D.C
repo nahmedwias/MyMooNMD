@@ -104,6 +104,10 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
   parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
   parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
 
+  //print some information
+  parCommVelocity_.print_info();
+  parCommPressure_.print_info();
+
 #endif
 }
 

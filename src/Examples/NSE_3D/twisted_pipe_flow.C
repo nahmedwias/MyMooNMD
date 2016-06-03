@@ -50,6 +50,11 @@ void twisted_pipe_flow::ExampleFile()
 
   using namespace FluidProperties;
 
+  if(TDatabase::TimeDB->T9 != 1.0 ) //TODO That's the gobal signal for NON time-dependent problem...awful workaround...
+  {
+    vol_flux = 0.72;
+  }
+
   double eps = (eta/rho) / (u_infty*l_infty);
   if(my_rank == 0)
     Output::print(" > with diffusion coefficient eps = ", eps);
@@ -89,7 +94,7 @@ void twisted_pipe_flow::ExactU1(double x, double y,  double z, double *values)
       double u_1_y = -2 * 2 * u_avr * y / R2; //y derivative
       double u_1_z = -2 * 2 * u_avr * z / R2;; //z derivative
 
-      if(true) //TODO Only for time-dependent case - find a way to find out, if its time-dependent or not!
+      if(TDatabase::TimeDB->T9 == 1.0 ) //TODO That's the gobal signal for time-dependent problem...awful workaround...
       {
         double t = TDatabase::TimeDB->CURRENTTIME;
         if(t < 1.0) //within first second of the simulated time
