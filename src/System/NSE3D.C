@@ -693,10 +693,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
                        " RES : ", normOfResidual, " Reduction : ",
                        normOfResidual/initial_residual_);
-      // The following line comes from MooNMD and shall be us a reminder to
-      // TODO count total number of linear iterations for iterative solvers
-      //if(this->solver.get_db()["solver_type"].is("iterative"))
-      //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
     }
 
     return true;
