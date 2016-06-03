@@ -2,19 +2,16 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <MooNMD_Io.h>
+#include <algorithm>
 
 template <class L>
 void extract_diagonal_entries(std::vector<double> & diag_entries, const L & mat)
 {
-  diag_entries.resize(mat.get_n_total_rows(), 0.);
-  for(size_t i = 0, n_entries = diag_entries.size(); i < n_entries; ++i)
-  {
-    diag_entries[i] = mat.get(i, i);
-    if(diag_entries[i] == 0.0)
-    {
-      ErrThrow("zero entry on the diagonal using Jacobi solver/preconditioner");
-    }
-  }
+  diag_entries = mat.get_diagonal();
+  // make sure there are no zeros on the diagonal
+  if(std::find_if(diag_entries.begin(), diag_entries.end(), 
+                 [](const double& d){return d == 0.;}) != diag_entries.end())
+    ErrThrow("zero entry on the diagonal using Jacobi solver/preconditioner");
 }
 
 // L - LinearOperator, V - Vector

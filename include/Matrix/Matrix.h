@@ -153,6 +153,12 @@ class TMatrix
     double *GetEntries()
     { return &entries[0]; }
     
+    /// @brief get a vector of the diagonal entries of this matrix.
+    /// This will work even if the structure does not have entries on the
+    /// diagonal. In that case it will have a zero there. The length of this
+    /// vector is the minimum of the number of rows and columns.
+    std::vector<double> get_diagonal() const;
+    
     /** @brief return the norm of the matrix 
      * 
      * The parameter \p p determines which norm to compute. Choose \p as  
@@ -340,6 +346,15 @@ class TMatrix
     std::shared_ptr< TMatrix > multiply_with_transpose_from_right( 
                    const TMatrix& B) const;
     
+    
+    /// @brief perform one successive overrelaxation (sor) sweep.
+    /// The flag can be either 0(forward sweep), 1(backward sweep), or 
+    /// 2(forward followed by backward sweep). 
+    /// @param[in] b right hand side
+    /// @param[in,out] x solution (this is updated)
+    /// @param[in] omega relaxation parameter
+    /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
+    void sor_sweep(const double* b, double* x, double omega, size_t flag);
     
     /** @brief adding a scaled matrix to this matrix
      * 

@@ -669,6 +669,33 @@ double BlockMatrix::get(unsigned int i, unsigned int j) const
   }
 }
 
+std::vector<double> BlockMatrix::get_diagonal() const
+{
+  size_t n_diag_entries = std::min(this->get_n_total_rows(),
+                                   this->get_n_total_columns());
+  std::vector<double> ret(n_diag_entries); // to be returned
+  size_t n_diag_blocks = std::min(this->get_n_cell_rows(),
+                                  this->get_n_cell_columns());
+  size_t offset = 0;
+  // loop over all diagonal blocks
+  for(size_t d_block = 0; d_block < n_diag_blocks; ++d_block)
+  {
+    bool transposed; // flag saying if the block is stored as the transposed
+    auto diag_block = this->get_block(d_block, d_block, transposed);
+    if(!diag_block->is_square())
+      ErrThrow("getting the diagonal of a BlockMatrix with non-square block "
+               "on the diagonal. I am not sure if this works as expected");
+    // note that this is not a great way to do this, because it creates these
+    // additional vectors, instead of writing the diagonal entries directly into
+    // the vector 'ret'.
+    std::vector<double> block_diagonal = diag_block->get_diagonal();
+    std::copy(block_diagonal.begin(), block_diagonal.end(), ret.begin()+offset);
+    offset += block_diagonal.size();
+  }
+  return ret;
+}
+
+
 /* ************************************************************************** */
 std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
                                                       size_t cell_col,
@@ -1495,7 +1522,7 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
     /* ************************************************************************* */
     void BlockMatrix::split_color(size_t color_to_split)
     {
-      Output::print<2>("A color of this BlockMatrix had to be split."
+      Output::warn("A color of this BlockMatrix had to be split."
           " Is that what you intended?");
 
       // a new color is going to appear - start with 0 count
