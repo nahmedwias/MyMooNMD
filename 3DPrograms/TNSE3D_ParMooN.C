@@ -10,6 +10,7 @@
 #include <FEDatabase3D.h>
 #include <Time_NSE3D.h>
 #include <MeshPartition.h>
+#include <Chrono.h>
 
 #include <sys/stat.h>
 
@@ -33,6 +34,9 @@ int main(int argc, char* argv[])
 {
   double t_start = GetTime();
   Output::print("<<<<< Running ParMooN: TNSE3D Main Program >>>>>");
+
+  //start a stopwatch which measures time spent in program parts
+  Chrono chrono_parts;
 
   // Construct the ParMooN Databases.
   TDatabase Database;
@@ -202,11 +206,16 @@ int main(int argc, char* argv[])
 
   int image = 0;
 
+  chrono_parts.print_time(std::string("setting up spaces, matrices and initial assembling"));
+  chrono_parts.reset();
+
   //======================================================================
   // time iteration
   //======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
+    Chrono chrono_timeit;
+
     step++;
     // Output::print("memory before ":, GetMemory());
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
@@ -250,6 +259,8 @@ int main(int argc, char* argv[])
           break;
         }
 
+        Chrono chrono_nonlinit;
+
         if (my_rank==0)
         {
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
@@ -261,12 +272,18 @@ int main(int argc, char* argv[])
         tnse3d.assemble_nonlinear_term();
 
         tnse3d.assemble_system();
+
+        chrono_nonlinit.print_time(std::string("solving and reassembling in the nonlinear iteration ") + std::to_string(k));
       }  // end of nonlinear loop
+
+      chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
       tnse3d.output(step,image);
 
     } // end of subtime loop
   } // end of time loop
+
+  chrono_parts.print_time(std::string("whole solving procedure "));
 
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");

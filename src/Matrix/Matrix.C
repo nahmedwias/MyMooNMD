@@ -19,6 +19,7 @@
 
 #include <MooNMD_Io.h>
 #include <fstream>
+#include <algorithm>
 
 TMatrix::TMatrix(std::shared_ptr<TStructure> structure)
  : structure(structure), entries(this->structure->GetN_Entries(), 0.)
@@ -214,6 +215,23 @@ double & TMatrix::operator()(const int i, const int j)
 const double & TMatrix::operator()(const int i, const int j) const
 {
   return this->get(i, j);
+}
+
+std::vector<double> TMatrix::get_diagonal() const
+{
+  size_t n_diag = std::min(this->GetN_Rows(), this->GetN_Columns());
+  std::vector<double> ret(n_diag, 0.0);
+  // loop over all diagonal entries
+  for(size_t d = 0; d < n_diag; ++d)
+  {
+    // this is basically this->get but we write a 0 into the vector in case the
+    // diagonal is not in the sparsity structure
+    int index = this->structure->index_of_entry(d, d);
+    if(index >= 0 )
+      ret[d] = this->entries[index];
+    // else just leave the value to be zero
+  }
+  return ret;
 }
 
 double TMatrix::GetNorm(int p) const
@@ -709,6 +727,64 @@ void TMatrix::remove_zeros(double tol)
   entries.resize(structure->GetN_Entries());
 
 
+}
+
+
+void TMatrix::sor_sweep(const double* b, double* x, double omega, size_t flag)
+{
+  if(flag > 2)
+    ErrThrow("TMatrix::sor_sweep with flag not 0,1, or 2.");
+  if(!this->is_square())
+    ErrThrow("TMatrix::sor_sweep for non-square matrix is not tested");
+  bool forward_sweep = flag == 0 || flag == 2;
+  bool backward_sweep = flag == 1 || flag == 2;
+  
+  size_t n_rows = this->GetN_Rows();
+  int * row_ptr = this->structure->GetRowPtr();
+  int * col_ptr = this->structure->GetKCol();
+  
+  // make sure all diagonal entries are non-zero
+  std::vector<double> diagonal = this->get_diagonal();
+  if(std::find_if(diagonal.begin(), diagonal.end(), 
+                 [](const double& d){return d == 0.;}) != diagonal.end())
+    ErrThrow("There is a zero on the diagonal. You can not use `sor` in this "
+             "case");
+  
+  if(forward_sweep)
+  {
+    for(size_t row = 0; row < n_rows; ++row)
+    {
+      // multiply sol with the current row of this matrix
+      double sol_x_row = 0.0;
+      size_t row_begin = row_ptr[row];
+      size_t row_end   = row_ptr[row+1];
+      // loop over all entries in this row (index is the index in the entries 
+      // vector)
+      for(size_t index = row_begin; index < row_end; ++index)
+      {
+        sol_x_row += this->entries[index] * x[col_ptr[index]];
+      }
+      x[row] = x[row] + omega*(b[row] - sol_x_row)/diagonal[row];
+    }
+  }
+  if(backward_sweep)
+  {
+    for(size_t r_row = 0; r_row < n_rows; ++r_row) // reverse row
+    {
+      size_t row = n_rows - 1 - r_row; 
+      // multiply sol with the current row of this matrix
+      double sol_x_row = 0.0;
+      size_t row_begin = row_ptr[row];
+      size_t row_end   = row_ptr[row+1];
+      // loop over all entries in this row (index is the index in the entries 
+      // vector)
+      for(size_t index = row_begin; index < row_end; ++index)
+      {
+        sol_x_row += this->entries[index] * x[col_ptr[index]];
+      }
+      x[row] = x[row] + omega*(b[row] - sol_x_row)/diagonal[row];
+    }
+  }
 }
 
 
