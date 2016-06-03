@@ -185,9 +185,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
   
-  bool usingMultigrid = 
-       this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
@@ -771,10 +769,7 @@ void NSE3D::solve()
     old_solution = std::make_shared<BlockVector>(s.solution_);
   
   //determine whether we make use of multigrid
-  bool using_multigrid = 
-       this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
-
+  bool using_multigrid = solver.is_using_multigrid();
   if(!using_multigrid)
   {//no multigrid
     if(this->solver.get_db()["solver_type"].is("direct"))
