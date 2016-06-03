@@ -317,6 +317,13 @@ const ParameterDatabase& Solver<LinearOperator, Vector>::get_db()
 }
 /* ************************************************************************** */
 
+template <class L, class V>
+bool Solver<L, V>::is_using_multigrid()
+{
+    return db["solver_type"].is("iterative") && db["preconditioner"].is("multigrid");
+}
+/* ************************************************************************** */
+
 // explicit instantiations
 template class Solver<BlockMatrix, BlockVector>;
 template class Solver<BlockFEMatrix, BlockVector>;
