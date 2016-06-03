@@ -11,6 +11,10 @@
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 
+//project specific
+#include <CoiledPipe.h>
+
+
 #include <sys/stat.h>
 
 /* *************************************************************************** */
@@ -154,6 +158,16 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   {
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+
+  //CB HERE DO MODIFICATIONS TO COLLECTION DUE TO TWIST!
+  if(true) //FIXME! only for twisted pipe example!!
+  {
+    // ...lie down the cell collection by swapping its vertices x and z coords
+    CoiledPipe::swap_x_and_z_coordinates(coll);
+    // ...and coil up the pipe by replacing the vertices' coords
+    CoiledPipe::coil_pipe_helically(coll);
+  }
+  //CB END MODIFICATIONS
 
   #ifdef _MPI
   // create finite element space and function, a matrix, rhs, and solution
