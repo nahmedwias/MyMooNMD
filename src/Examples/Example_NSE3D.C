@@ -29,6 +29,11 @@ namespace flow_around_cylinder_stat
 {
 #include "NSE_3D/FlowAroundCylinder_stat.h"
 }
+//project: twisted pipe flow
+namespace twisted_pipe_flow
+{
+#include "NSE_3D/twisted_pipe_flow.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -211,6 +216,42 @@ Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
         post_processing_stat = compute_drag_lift_pdiff;
 
         nu = flow_around_cylinder_stat::get_nu();
+        ExampleFile();
+        break;
+      }
+
+      case 5:
+      {
+        using namespace twisted_pipe_flow;
+        /** exact_solution */
+        exact_solution.push_back( ExactU1 );
+        exact_solution.push_back( ExactU2 );
+        exact_solution.push_back( ExactU3 );
+        exact_solution.push_back( ExactP );
+
+        /** boundary condition */
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundCondition );
+        boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+        /** boundary values */
+        boundary_data.push_back( U1BoundValue );
+        boundary_data.push_back( U2BoundValue );
+        boundary_data.push_back( U3BoundValue );
+        boundary_data.push_back( BoundaryValueHomogenous );
+
+        /** coefficients */
+        problem_coefficients = LinCoeffs;
+
+        /** initial conditions */
+        initial_conditions.push_back( InitialU1 );
+        initial_conditions.push_back( InitialU2 );
+        initial_conditions.push_back( InitialU3 );
+
+        /**post processing */
+        //post_processing_stat = ;
+
         ExampleFile();
         break;
       }
@@ -534,11 +575,11 @@ void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
   else
   {
 #ifdef _MPI
-	  int my_rank;
-	  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	  if (my_rank == 0)
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
 #endif
-	    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
+    Output::info<2>("Example_NSE3D","No post processing done for the current example.");
   }
 }
 

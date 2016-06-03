@@ -14,6 +14,9 @@
 
 #include <sys/stat.h>
 
+//project specific
+#include <CoiledPipe.h>
+
 #ifdef _MPI
 // we need this here because for some reason (??) these are declared extern in
 // e.g. TParFECommunicator3D
@@ -21,7 +24,8 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-
+//project specific declaration
+struct derived_properties;
 int main(int argc, char* argv[])
 {
 #ifdef _MPI
@@ -61,7 +65,7 @@ int main(int argc, char* argv[])
   // Construct domain, thereby read in controls from the input file.
   TDomain domain(argv[1], parmoon_db);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   if(my_rank==0)
   {
     Output::set_outfile(parmoon_db["outfile"]);
@@ -75,8 +79,36 @@ int main(int argc, char* argv[])
   NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
+  // project specific: prepare the coiled geometry
+  size_t n_twists                 = parmoon_db["twisted_pipe_n_twists"];
+  size_t n_segments_per_twist     = parmoon_db["twisted_pipe_n_segments_per_twist"];
+  double l_inflow                 = parmoon_db["twisted_pipe_l_inflow"];
+  size_t n_segments_inflow        = parmoon_db["twisted_pipe_n_segments_inflow"];
+  double l_outflow                = parmoon_db["twisted_pipe_l_outflow"];
+  size_t n_segments_outflow       = parmoon_db["twisted_pipe_n_segments_outflow"];
+  double tube_radius              = parmoon_db["twisted_pipe_tube_radius"];
+  double twist_radius             = parmoon_db["twisted_pipe_twist_radius"];
+  double space_between_twists     = parmoon_db["twisted_pipe_space_between_twists"];
+
+  CoiledPipe::set_up_geoconsts(
+      n_twists,
+      n_segments_per_twist,
+      l_inflow,
+      n_segments_inflow,
+      l_outflow,
+      n_segments_outflow,
+      tube_radius,
+      twist_radius,
+      space_between_twists
+  );
+  double drift_x = 0;
+  double drift_y = 0;
+  double drift_z =CoiledPipe::GeoConsts::l_tube;
+  
   // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
+              drift_x, drift_y, drift_z,
+              CoiledPipe::GeoConsts::segment_marks);
 
   // Initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -125,12 +157,10 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
   //print information on the mesh partitioning
-  Output::print("Process ", my_rank, ". N_OwnCells: ",
-                domain.GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetN_HaloCells());
-#endif
+  domain.print_info(std::string("coiled tube"));
 
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
   // Choose and construct example.
   Example_NSE3D example(parmoon_db["example"]);
 
@@ -151,6 +181,8 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
+    nse3d.output(k);
+
     Chrono chrono_nonlinit;
 
     if(my_rank==0)

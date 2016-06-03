@@ -345,8 +345,8 @@ void MumpsWrapper::set_mumps_parameters()
 
   // parameters collected from old MumpsSolver.C
   id_.ICNTL(1) = 6;    // standard outstream for errors
-  id_.ICNTL(2) = 6;   // no warnings output
-  id_.ICNTL(3) = 6;   // no global info output
+  id_.ICNTL(2) = 6;    // standard outstream for diagnostics and warnings
+  id_.ICNTL(3) = 6;    // standard outstream for global info
   id_.ICNTL(4) = 1;    // verbosity level
 
   id_.ICNTL(14)=400;   //estimated working space increase (%)
