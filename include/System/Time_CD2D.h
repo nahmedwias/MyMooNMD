@@ -18,8 +18,10 @@
 #include <BlockVector.h>
 #include <Example_TimeCD2D.h>
 #include <MultiGrid2D.h>
+#include <Multigrid.h>
 #include <Domain.h>
 #include <PostProcessing2D.h>
+#include <Solver.h>
 
 #include <vector>
 #include <deque>
@@ -106,6 +108,12 @@ class Time_CD2D
      * Solver object.
      */
     ParameterDatabase db;
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief a complete system on each grid 
      * 
@@ -121,7 +129,7 @@ class Time_CD2D
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    std::shared_ptr<Multigrid> multigrid;
     
     /** @brief set parameters in database
      * 
@@ -225,6 +233,12 @@ class Time_CD2D
     { return this->systems.front().fe_space; }
     const ParameterDatabase & get_db() const
     { return db; }
+    
+    /**
+    * @brief return the computed errors at each discre time point
+    * 
+    */
+    std::array<double, int(3)> get_errors() const;
 
 
   private:

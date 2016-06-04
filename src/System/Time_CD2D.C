@@ -95,75 +95,59 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex, int reference_id)
- : db(get_default_TCD2D_parameters()), systems(), example(ex), 
- multigrid(nullptr), errors(5, 0.0), timeDependentOutput(param_db)
+ : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex), multigrid(nullptr),
+   errors(5, 0.0), timeDependentOutput(param_db)
 {
   db.merge(param_db);
   this->set_parameters();
   // this is the L^inf(L^2(Omega)) error, initialize with some large number
   errors[4] = 1.e10; 
-
-  // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-  // create finite element space and function, a matrix, rhs, and solution
-  this->systems.emplace_back(this->example, *coll);
   
-  TFESpace2D& space = this->systems.front().fe_space;
-  double hmin, hmax;
-  coll->GetHminHmax(&hmin, &hmax);
-  Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
-  Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
-  Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
-  Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
-  
-  // old right hand side
-  old_rhs.copy_structure(this->systems[0].rhs);
-  
-  // interpolate the initial data
-  TFEFunction2D & fe_function = this->systems.front().fe_function;
-  fe_function.Interpolate(example.get_initial_cond(0));
-  // add the fe function to the output object. 
-  timeDependentOutput.add_fe_function(&fe_function);
-  
-  
-  // done with the constructor in case we're not using multigrid
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR != 5 
-    || TDatabase::ParamDB->SOLVER_TYPE != 1)
-    return;
-  // else multigrid
-  
-  double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-  this->multigrid.reset(new TMultiGrid2D(1, 2, param));
-
-  //TODO Commented out, requires switching to Solver object.
-//  // number of refinement levels for the multigrid
-//  int LEVELS = TDatabase::ParamDB->LEVELS;
-//  if(LEVELS > domain.get_ref_level() + 1)
-//    LEVELS = domain.get_ref_level() + 1;
-//
-//
-//  // the matrix and rhs side on the finest grid are already constructed
-//  // now construct all matrices, rhs, and solutions on coarser grids
-//  for(int i = LEVELS - 2; i >= 0; i--)
-//  {
-//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-//    this->systems.emplace_back(example, *coll);
-//  }
-  
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
+  bool usingMultigrid = this->solver.get_db()["solver_type"].is("iterative")
+                        && this->solver.get_db()["preconditioner"].is("multigrid");
+  if(!usingMultigrid)
   {
-    TSquareMatrix2D* stiff_block = it->get_stiff_matrix_pointer();
-
-    TMGLevel2D *multigrid_level = new TMGLevel2D(
-      i, stiff_block, it->rhs.get_entries(),
-      it->solution.get_entries(), 2, NULL);
-    i++;
-    this->multigrid->AddLevel(multigrid_level);
+    // create the collection of cells from the domain (finest grid)
+    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+    // create finite element space and function, a matrix, rhs, and solution
+    this->systems.emplace_back(this->example, *coll);
+    
+    TFESpace2D& space = this->systems.front().fe_space;
+    double hmin, hmax;
+    coll->GetHminHmax(&hmin, &hmax);
+    Output::print<1>("N_Cells    : ", setw(12), coll->GetN_Cells());
+    Output::print<1>("h(min,max) : ", setw(12), hmin, " ", setw(12), hmax);
+    Output::print<1>("dof        : ", setw(12), space.GetN_DegreesOfFreedom());
+    Output::print<1>("active dof : ", setw(12), space.GetN_ActiveDegrees());
+    
+    // old right hand side
+    old_rhs.copy_structure(this->systems[0].rhs);
+    
+    // interpolate the initial data
+    TFEFunction2D & fe_function = this->systems.front().fe_function;
+    fe_function.Interpolate(example.get_initial_cond(0));
+    // add the fe function to the output object. 
+    timeDependentOutput.add_fe_function(&fe_function);
+  }
+  else
+  {
+    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+    database_mg.merge(param_db,false);
+    
+    size_t nMGLevel = database_mg["multigrid_n_levels"];
+    int finest = domain.get_ref_level();
+    int coarsest = finest-nMGLevel+1;
+    
+    std::list<BlockFEMatrix*> matrices;
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+      systems.emplace_back(example, *coll);
+      
+      systems.front().fe_function.Interpolate(example.get_initial_cond(0));
+      matrices.push_front(&systems.back().stiff_matrix);
+    }
+    multigrid=std::make_shared<Multigrid>(database_mg, matrices);    
   }
 }
 
@@ -382,24 +366,26 @@ void Time_CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(TDatabase::ParamDB->SOLVER_TYPE == 2) // use direct solver
+  
+  bool using_multigrid = 
+             this->solver.get_db()["solver_type"].is("iterative") 
+             && this->solver.get_db()["preconditioner"].is("multigrid");
+  if(!using_multigrid)
   {
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.stiff_matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
+    if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
+    {
+      this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
+      return;
+    }
+    if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
+    {
+      this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
+    }
   }
   else
   {
-    // the one matrix stored in this BlockMatrix
-    FEMatrix* mat = s.stiff_matrix.get_blocks_uniquely().at(0).get();
-    // in order for the old method 'Solver' to work we need TSquareMatrix2D
-    TSquareMatrix2D *sqMat[1] = { reinterpret_cast<TSquareMatrix2D*>(mat) };
-    OldSolver((TSquareMatrix **)sqMat, NULL, s.rhs.get_entries(), 
-              s.solution.get_entries(), MatVect_Scalar, Defect_Scalar, 
-              this->multigrid.get(), s.solution.length(), 0);
+    this->solver.solve(s.stiff_matrix, s.rhs, s.solution, multigrid);
   }
-  
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);
   Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
@@ -446,6 +432,16 @@ void Time_CD2D::output()
 
   // write output
   timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
+}
+
+/**************************************************************************** */
+std::array< double, int(3) > Time_CD2D::get_errors() const
+{
+  std::array<double, int(3)> error_at_time_points;
+  error_at_time_points.at(0) = sqrt(errors.at(0));
+  error_at_time_points.at(1) = sqrt(errors.at(2));
+  error_at_time_points.at(2) = sqrt(errors.at(4));
+  return error_at_time_points;
 }
 
 /**************************************************************************** */
