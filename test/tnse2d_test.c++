@@ -50,7 +50,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"] = 5;
-  db["example"] = 101;
+  db["example"] = 0;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;

@@ -16,7 +16,7 @@
 #include <FEFunction2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_CD2D.h>
+#include <Example_TimeCD2D.h>
 #include <MultiGrid2D.h>
 #include <Domain.h>
 #include <PostProcessing2D.h>
@@ -53,7 +53,7 @@ class Time_CD2D
       TFEFunction2D fe_function;
 
       /** @brief constructor*/
-      System_per_grid(const Example_CD2D& example, TCollection& coll);
+      System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
       /**
        * Gives a non-const pointer to the one block which is stored
@@ -116,7 +116,7 @@ class Time_CD2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D example;
+    const Example_TimeCD2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -165,7 +165,7 @@ class Time_CD2D
      * should be used. The default implies all cells.
      */
     Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-    		const Example_CD2D& ex, int reference_id = -4711);
+    		const Example_TimeCD2D& ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices before the time iterations
      * 
@@ -207,7 +207,7 @@ class Time_CD2D
     /// @brief measure errors and write solution
     void output();
      // getters and setters
-    const Example_CD2D& get_example() const
+    const Example_TimeCD2D& get_example() const
     { return example; }
     const TFEFunction2D & get_function() const
     { return this->systems.front().fe_function; }

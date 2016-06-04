@@ -43,8 +43,7 @@ class Example2D
     Example2D(std::vector <DoubleFunct2D*> exact,
               std::vector <BoundCondFunct2D*> bc,
               std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D *coeffs,
-              std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
+              CoeffFct2D *coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;
@@ -54,10 +53,6 @@ class Example2D
     std::vector <BoundValueFunct2D*> boundary_data;
     /* functions representing the coefficients of the pde */
     CoeffFct2D *problem_coefficients;
-    /* functions representing the initial conditions (only needed for time 
-     * dependent problems */
-    std::vector <DoubleFunct2D*> initial_conditions;
-    
     //void *example_info();
 
     //Declaration of special member functions - rule of zero
@@ -100,9 +95,6 @@ class Example2D
 
     CoeffFct2D* get_coeffs() const
     { return problem_coefficients; }
-    
-    DoubleFunct2D* get_initial_cond(unsigned int i)const
-    { return initial_conditions.at(i); }  
 };
 
 #endif // __EXAMPLE2D__

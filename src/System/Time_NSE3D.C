@@ -35,7 +35,7 @@ ParameterDatabase get_default_TNSE3D_parameters()
 }
 
 /* *************************************************************************** */
-Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
+Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE3D::Matrix type
 #ifdef _MPI
@@ -105,7 +105,7 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 
 /**************************************************************************** */
 Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-                       const Example_NSE3D& ex
+                       const Example_TimeNSE3D& ex
 #ifdef _MPI
                        , int maxSubDomainPerDof
 #endif
