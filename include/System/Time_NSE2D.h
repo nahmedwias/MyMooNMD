@@ -21,17 +21,12 @@
 #include <FESpace2D.h>
 #include <Example_TimeNSE2D.h>
 
-#include <NSE_MultiGrid.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
+#include <Multigrid.h>
+#include <Solver.h>
 
 #include <MainUtilities.h>
 
 #include <ParameterDatabase.h>
-#include <Solver.h>
 #include <PostProcessing2D.h>
 
 #include <vector>
@@ -109,7 +104,14 @@ class Time_NSE2D
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    std::shared_ptr<TNSE_MultiGrid> multigrid;
+    std::shared_ptr<Multigrid> multigrid;
+    
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
     
     /** @brief an array to store defect, so that we don't have to reallocate
      *         so often
@@ -150,11 +152,14 @@ class Time_NSE2D
 
     /** @brief get velocity and pressure space*/
     void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
 
   public:
 
     /** @brief constructor
-     * This constructor calls the other constructor creating an Example_CD2D
+     * This constructor calls the other constructor creating an Example_TimeNSE2D
      * object. 
      */
     Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
@@ -230,14 +235,6 @@ class Time_NSE2D
      * compute errors and write solution
      */
     void output(int m);
-    
-    /**
-     * @brief initialize multigrid levels for different NSTYPE's
-     */
-    TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-
-    /** @brief multigrid solver */
-    void mg_solver();
     
     // getters and setters
     /*const BlockMatrixNSE2D & get_matrix() const
