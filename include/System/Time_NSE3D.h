@@ -23,7 +23,7 @@
 #include <BlockVector.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
-#include <Example_NSE3D.h>
+#include <Example_TimeNSE3D.h>
 
 #include <NSE_MultiGrid.h>
 
@@ -114,11 +114,11 @@ class Time_NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      System_per_grid(const Example_NSE3D& example,
+      System_per_grid(const Example_TimeNSE3D& example,
                     TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
                     int maxSubDomainPerDof);
 #else
-      System_per_grid(const Example_NSE3D& example, TCollection& coll,
+      System_per_grid(const Example_TimeNSE3D& example, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
 #endif
 
@@ -159,7 +159,7 @@ class Time_NSE3D
     std::deque<System_per_grid> systems_;
 
     /** @brief Definition of the used example. */
-    const Example_NSE3D& example_;
+    const Example_TimeNSE3D& example_;
 
     /** @brief a solver object which will solve the linear system
      *
@@ -235,11 +235,11 @@ class Time_NSE3D
      */
 #ifdef _MPI
     Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_NSE3D& example,
+               const Example_TimeNSE3D& example,
                int maxSubDomainPerDof);
 #else
     Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_NSE3D& example);
+               const Example_TimeNSE3D& example);
 #endif
     
 // ======================================================================
@@ -373,6 +373,7 @@ class Time_NSE3D
     const ParameterDatabase & get_db() const
     { return db_; }
 
+//   const Example_TimeNSE3D  & get_example()  const
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impulse residual (updated in compute_residuals)

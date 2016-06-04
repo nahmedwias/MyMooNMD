@@ -16,7 +16,7 @@
 #include <FEFunction3D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_CD3D.h>
+#include <Example_TimeCD3D.h>
 #include <MultiGrid3D.h>
 #include <Solver.h>
 
@@ -76,10 +76,10 @@ class Time_CD3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      SystemPerGrid(const Example_CD3D& example, TCollection& coll, 
+      SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll, 
 		      int maxSubDomainPerDof);
 #else
-      SystemPerGrid(const Example_CD3D& example, TCollection& coll);
+      SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll);
 #endif
 
       /**
@@ -132,7 +132,7 @@ class Time_CD3D
     std::deque<SystemPerGrid> systems_;
     
     /** @brief Definition of the used example */
-    const Example_CD3D example_;
+    const Example_TimeCD3D example_;
     
     /** a multigrid object from new multigrid class;
      * it stays nullptr if not used
@@ -211,7 +211,7 @@ class Time_CD3D
 	      const Example_CD3D& _example, int maxSubDomainPerDof);
 #else
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_CD3D& _example);
+	      const Example_TimeCD3D& _example);
 #endif    
     /** @brief Assemble all the matrices before the time iterations
      * 
@@ -269,7 +269,7 @@ class Time_CD3D
     void checkParameters();
     
      // getters and setters
-    const Example_CD3D& get_example() const
+    const Example_TimeCD3D& get_example() const
     { return example_; }
     const TFEFunction3D & get_function() const
     { return this->systems_.front().feFunction_; }

@@ -32,7 +32,7 @@ ParameterDatabase get_default_TCD3D_parameters()
 }
 //==============================================================================
 #ifdef _MPI
-Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example, TCollection& coll, 
+Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll, 
                                              int maxSubDomainPerDof)
 : feSpace_(&coll, (char*)"space", (char*)"TCD3D feSpace", example.get_bc(0), 
            TDatabase::ParamDB->ANSATZ_ORDER),
@@ -55,7 +55,7 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example, TCollection
   parComm_ = TParFECommunicator3D(&parMapper_);
 }
 #else /* ***********************************************************************/
-Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example, TCollection& coll)
+Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll)
 : feSpace_(&coll, (char*)"space", (char*)"TCD3D feSpace", example.get_bc(0), 
            TDatabase::ParamDB->ANSATZ_ORDER),
   stiffMatrix_({&feSpace_}),
@@ -74,7 +74,7 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_CD3D& example, TCollection
 //==============================================================================
 Time_CD3D::Time_CD3D(std::list<TCollection* >collections, 
 			      const ParameterDatabase &param_db,
-			      const Example_CD3D& _example
+			      const Example_TimeCD3D& _example
 #ifdef _MPI
 			      , int maxSubDomainPerDof
 #endif

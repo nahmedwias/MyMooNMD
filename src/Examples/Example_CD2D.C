@@ -31,33 +31,6 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
-
-//===========================================================
-// examples for time dependent convection-diffusion-reaction
-// problems
-//===========================================================
-namespace exp_sin_cos
-{
-#include "TCD_2D/exp.h"
-}
-
-namespace sin_sin_sin
-{
-#include "TCD_2D/Sin3.h"
-}
-
-namespace sin_cos
-{
-#include "TCD_2D/SinCos1.h"
-}
-
-// test two example files from MooNMD, which claim to contain the well
-// knwon rotating bodies example
-namespace rotating_bodies_1
-{
-#include "TCD_2D/Rotating_Bodies.h"
-}
-
 Example_CD2D::Example_CD2D(int example_code) : Example2D()
 {
   switch( example_code)
@@ -124,76 +97,6 @@ Example_CD2D::Example_CD2D(int example_code) : Example2D()
       sharp_boundary_layer::ExampleFile();
       break;
 
-    // starting from 101 the examples for time dependent problems
-    case 101:
-      /**Exact solution"**/
-       exact_solution.push_back(exp_sin_cos::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( exp_sin_cos::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( exp_sin_cos::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = exp_sin_cos::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(exp_sin_cos::InitialCondition);
-      exp_sin_cos::ExampleFile();
-      break;
-    case 102:
-      /**Exact solution"**/
-       exact_solution.push_back(sin_sin_sin::Exact);
-      /** boundary condition */
-      boundary_conditions.push_back( sin_sin_sin::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( sin_sin_sin::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = sin_sin_sin::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(sin_sin_sin::InitialCondition);
-      sin_sin_sin::ExampleFile();
-      break;
-    case 103:
-      /**Exact solution"**/
-      exact_solution.push_back(sin_cos::Exact);
-
-      /** boundary condition */
-      boundary_conditions.push_back( sin_cos::BoundCondition );
-      
-      /** boundary values */
-      boundary_data.push_back( sin_cos::BoundValue );
-      
-      /** coefficients */
-      problem_coefficients = sin_cos::BilinearCoeffs;
-      
-      /** Initial condition*/
-      initial_conditions.push_back(sin_cos::InitialCondition);
-      sin_cos::ExampleFile();
-      break;
-    case 104:
-      /**Exact solution"**/
-      exact_solution.push_back(rotating_bodies_1::Exact);
-
-      /** boundary condition */
-      boundary_conditions.push_back( rotating_bodies_1::BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( rotating_bodies_1::BoundValue );
-
-      /** coefficients */
-      problem_coefficients = rotating_bodies_1::BilinearCoeffs;
-
-      /** Initial condition*/
-      initial_conditions.push_back(rotating_bodies_1::InitialCondition);
-
-      // Print some example specific information.
-      rotating_bodies_1::ExampleFile();
-
-      break;
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
                example_code);

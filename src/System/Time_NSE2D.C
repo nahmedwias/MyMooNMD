@@ -31,7 +31,7 @@ ParameterDatabase get_default_TNSE2D_parameters()
 /* *************************************************************************** */
 
 /**************************************************************************** */
-Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example, 
+Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example, 
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE2D::Matrix type)
  : velocity_space(&coll, (char*)"u", (char*)"velocity space",  example.get_bc(0),
@@ -75,14 +75,14 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_NSE2D& example,
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        int reference_id)
-  : Time_NSE2D(domain, param_db, Example_NSE2D(param_db["example"]), reference_id)
+  : Time_NSE2D(domain, param_db, Example_TimeNSE2D(param_db["example"]), reference_id)
 {
   
 }
 
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
-                       const Example_NSE2D& ex, int reference_id)
+                       const Example_TimeNSE2D& ex, int reference_id)
  : db(get_default_TNSE2D_parameters()), outputWriter(param_db), systems(),
    example(ex), multigrid(), defect(), oldResidual(0), initial_residual(1e10),
    errors(10,0.), oldtau(0.0)

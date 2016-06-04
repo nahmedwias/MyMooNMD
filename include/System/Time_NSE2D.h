@@ -19,7 +19,7 @@
 #include <BlockVector.h>
 
 #include <FESpace2D.h>
-#include <Example_NSE2D.h>
+#include <Example_TimeNSE2D.h>
 
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
@@ -79,7 +79,7 @@ class Time_NSE2D
       TFEFunction2D p;
       
       /** @brief constructor*/
-      System_per_grid(const Example_NSE2D& example, TCollection& coll, 
+      System_per_grid(const Example_TimeNSE2D& example, TCollection& coll, 
                       std::pair<int,int> order, Time_NSE2D::Matrix type);
     };
     
@@ -104,7 +104,7 @@ class Time_NSE2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    Example_NSE2D example;
+    Example_TimeNSE2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
@@ -170,7 +170,7 @@ class Time_NSE2D
      * should be used. The default implies all cells.
      */
     Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_NSE2D& ex, int reference_id = -4711);
+               const Example_TimeNSE2D& ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices and rhs before the time iterations
      * 
@@ -261,7 +261,7 @@ class Time_NSE2D
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_NSE2D & get_example() const
+    const Example_TimeNSE2D & get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
     { return db; }

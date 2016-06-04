@@ -31,7 +31,7 @@ ParameterDatabase get_default_TCD2D_parameters()
 }
 
 /**************************************************************************** */
-Time_CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
+Time_CD2D::System_per_grid::System_per_grid(const Example_TimeCD2D& example,
                                             TCollection& coll)
 : fe_space(&coll, (char*)"space", (char*)"time_cd2d space", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
@@ -87,14 +87,14 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		int reference_id)
- : Time_CD2D(domain, param_db, Example_CD2D(param_db["example"]), reference_id)
+ : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db["example"]), reference_id)
 {
   
 }
 
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-		const Example_CD2D& ex, int reference_id)
+		const Example_TimeCD2D& ex, int reference_id)
  : db(get_default_TCD2D_parameters()), systems(), example(ex), 
  multigrid(nullptr), errors(5, 0.0), timeDependentOutput(param_db)
 {
