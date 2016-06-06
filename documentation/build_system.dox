@@ -5,7 +5,8 @@
  \brief Here we collect some information on the build system
  
  \tableofcontents
- 
+
+//-------------------------------------------------------------------------------------
  \section preface Preface
  ParMooN uses cmake as a build system generator. Cmake stands for cross-platform make and aims at maximum portability.\n
   This page is no replacement for a profound introduction to cmake but rather collects solutions and thoughts on 
@@ -13,6 +14,7 @@
  <a href="http://www.wias-berlin.de/people/fuhrmann/2014-10-30-cmake.html">link</a> to Juergen Fuhrmann's homepage, who wrote a little
  motivation-and-further-reading-stuff for cmake.
 
+//-------------------------------------------------------------------------------------
  \section eclipseintegration Integrating ParMooN into Eclipse
  Integrating any cmake project into Eclipse has one severe drawback. It works best with in-source-builds.
  So no nice "build" directory where you can dump all the build related stuff. In-source builds are a bit messy,
@@ -123,8 +125,7 @@ and check the only offered project (named ParMooN_build). All other boxes stay u
 Then I click "Finish" and Eclipse takes over. Great, I can start working!
  
  
- 
- 
+//-------------------------------------------------------------------------------------
  \section kdevelopintegration Integrating ParMooN into KDevelop
  KDevelop allows for an out-of-source build cmake integration, which is very
  desirable in order to separate the code from all the files created during the
@@ -162,18 +163,15 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
  the .hgignore file in order to not interfere too much with the version control.
 
 
-
-
-
-
+//-------------------------------------------------------------------------------------
  \section Xcodeintegration Integrating ParMooN into Xcode
 
-  Xcode is a develeopment environment for Mac OS X.
-  The following steps are based on an out-of-source build and have been tested for Xcode Version 7.2 (7C68).
+ Xcode is a develeopment environment for Mac OS X.
+ The following steps are based on an out-of-source build and have been tested for
+ Xcode Version 7.2 (7C68).
 
-
-
- The first step is to create a new folder which is going to contain all the build related stuff corresponding to Xcode and switch into that directory.
+ The first step is to create a new folder which is going to contain all the build
+ related stuff corresponding to Xcode (e.g., "Build_XCode") and switch into that directory.
  Therefore use the commands
 
  \code
@@ -187,26 +185,32 @@ Then I click "Finish" and Eclipse takes over. Great, I can start working!
  cmake -G Xcode ../ParMooN
  \endcode
 
- where the path, here "../ParMooN", points into the directory that contains the entire ParMooN code under hg version control.
+ where the path, here "../ParMooN", points into the directory that contains the entire
+ ParMooN code under hg version control.
 
- Next start Xcode and choose the option "Open another Product".
+ Next, start Xcode and choose the option "Open another Product".
+ \image html Xcode1.png
  Here, in Xcode one can interpret "product" as "project".
  The file which has to be chosen is in the folder "Build_Xcode" and has the ending ".xcodeproj".
 
- In order to use the build and run option Xcode supplies, you first have to chose a scheme and, in case your program needs one, hand in an input/data file.
+ In order to use the build and run option Xcode supplies, you first have to chose a scheme
+ and, in case your program needs one, hand in an input/data file.
  In the header corresponding to Xcode chose the feature "Product --> Scheme".
- Here, the desired scheme, e.g., "brinkman2d" should be marked and one should use the "Edit Scheme..." option as follows:
-
+ \image html Xcode2.png
+ Here, the desired scheme, e.g., "brinkman2d" should be marked and one should edit the scheme via "Edit Scheme..."
+ \image html Xcode3.png
+ option as follows:
+ \image html Xcode4.png
  At "Run --> Info" the "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
- At "Run --> Arguments" one has to add the input file, e.g. brinkman2d.dat, as "Argument Passed On Launch" "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
- Make sure that at "Run --> Options" the "Working Directory" is "costum" and the path is the right one, e.g., /Users/blank/ParMooN/Tests/Brinkman2D.
+ At "Run --> Arguments" one has to add the input file, e.g. brinkman2d.dat, as "Argument Passed On Launch"
+ "Executable" should be chosen, e.g., "parMooN_brinkman2d_SEQUENTIAL".
+ Make sure that at "Run --> Options" the "Working Directory" is "costum" and the path is the right one,
+ e.g., /Users/blank/ParMooN/Tests/Brinkman2D.
 
  That's it!
 
 
-
-
-
+//-------------------------------------------------------------------------------------
  \section presetvariables Changing build variables
  
  \subsection idealbuildprocess An ideal cmake build process
