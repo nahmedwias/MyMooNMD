@@ -82,7 +82,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        const Example_TimeNSE2D& ex, int reference_id)
  : db(get_default_TNSE2D_parameters()), outputWriter(param_db), systems(),
-   example(ex), multigrid(), defect(), oldResidual(0), initial_residual(1e10),
+   example(ex), multigrid(), solver(param_db), defect(), oldResidual(0), initial_residual(1e10),
    errors(10,0.), oldtau(0.0)
 {
   db.merge(param_db);
