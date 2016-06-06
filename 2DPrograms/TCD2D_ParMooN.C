@@ -19,7 +19,7 @@
 #include <sys/types.h>
 
 #include <LocalAssembling2D.h>
-#include <Example_CD2D.h>
+#include <Example_TimeCD2D.h>
 #include <TimeDiscRout.h>
 
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_CD2D example( parmoon_db["example"] );
+  Example_TimeCD2D example( parmoon_db["example"] );
   Time_CD2D tcd(Domain, parmoon_db, example);
   // ======================================================================
   // assemble matrices and right hand side at start time  
