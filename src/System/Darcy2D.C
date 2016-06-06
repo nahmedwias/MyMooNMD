@@ -6,11 +6,8 @@
 #include <Database.h>
 #include <Darcy2D.h>
 #include <Assemble2D.h>
-#include <DirectSolver.h>
-#include <Output2D.h>
 #include <MainUtilities.h>
 
-#include <sys/stat.h>
 
 ParameterDatabase get_default_Darcy2D_parameters()
 {
@@ -63,7 +60,8 @@ Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
 Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
                  const Example_Darcy2D ex, int reference_id)
  : systems(), example(ex), multigrid(nullptr), 
-   db(get_default_Darcy2D_parameters()), solver(param_db), errors()
+   db(get_default_Darcy2D_parameters()), outputWriter(param_db),
+   solver(param_db), errors()
 {
   // get the parameters to control the behavior of this class
   this->db.merge(param_db, false);
@@ -76,6 +74,9 @@ Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
   
   // create finite element spaces and functions, a matrix, rhs, and solution
   this->systems.emplace_back(example, *coll);
+  
+  outputWriter.add_fe_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // print out some information on the finite element space
   const TFESpace2D& v_space = this->systems.front().velocity_space;
@@ -222,20 +223,7 @@ void Darcy2D::output(int i)
   
   if(db["output_write_vtk"])
   {
-    // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(2, 2, 0, 0, nullptr);
-    Output.AddFEFunction(&s.u);
-    Output.AddFEFunction(&s.p);
-
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
+    outputWriter.write(i);
   }
   if(db["output_compute_errors"])
   {

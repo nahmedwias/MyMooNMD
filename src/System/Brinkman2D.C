@@ -1,7 +1,6 @@
 #include <Brinkman2D.h>
 #include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
-#include <Output2D.h>
 #include <LinAlg.h> // DDot
 #include <MultiGridIte.h>
 #include <FixedPointIte.h>
@@ -11,8 +10,6 @@
 
 #include<Assemble2D.h>
 #include <BoundaryAssembling2D.h>
-#include <sys/stat.h>
-
 ParameterDatabase get_default_Brinkman2D_parameters()
 {
   Output::print<3>("creating a default Brinkman2D parameter database");
@@ -94,7 +91,9 @@ Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
 Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db,
                        const Example_Brinkman2D & e,
                        unsigned int reference_id)
-    : db(get_default_Brinkman2D_parameters()), systems(), example(e), multigrid(), defect(), oldResiduals(), outputWriter(param_db), initial_residual(1e10), errors()
+    : db(get_default_Brinkman2D_parameters()), outputWriter(param_db),
+      systems(), example(e), multigrid(), defect(), oldResiduals(),
+      initial_residual(1e10), errors()
 {
   db.merge(param_db,false);
   db.info(false);
@@ -115,7 +114,10 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
 
-  // print some information
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
+
+  // print out some information
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
   int n_u_active = this->get_velocity_space().GetN_ActiveDegrees();
   int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
@@ -424,24 +426,11 @@ void Brinkman2D::output(int i)
     
     outputWriter.add_fe_function(&s.p);
     outputWriter.add_fe_vector_function(&s.u);
-    outputWriter.write(i,0.0);
+    outputWriter.write();
 /*  // write solution to a vtk file
   if(db["output_write_vtk"])
   {
-    // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(2, 3, 1, 0, NULL);
-    Output.AddFEFunction(&s.p);
-    Output.AddFEVectFunct(&s.u);
-
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
+    outputWriter.write(i);
   }
   */
  

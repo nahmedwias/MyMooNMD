@@ -8,7 +8,7 @@
 using namespace std;
 
 PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
- : testcaseDir(), testcaseName(), period(1), FEFunctionArray(), 
+ : testcaseDir(), testcaseName(), period(1), FEFunctionArray(),
    FEVectFunctArray(), Coll(nullptr), timeValues()
 {
   // set the variables depending on input parameters
@@ -19,10 +19,8 @@ PostProcessing2D::PostProcessing2D(const ParameterDatabase& param_db)
   writeCASE = db["output_write_case"];
   if(writeCASE)
   {
-    Output::warn("PostProcessing2D", "case output is not working currently. ",
-                 "I will use vtk instead.");
-    writeCASE = false;
-    writeVTK = true;
+    Output::warn("PostProcessing2D", "case output is not working with older ",
+                 "versions of ParaView on Linux. Try (at least) version 5.0");
   }
 
   testcaseName = db["output_basename"].get<std::string>();
@@ -50,8 +48,8 @@ void PostProcessing2D::add_fe_function(const TFEFunction2D* fefunction)
   FEFunctionArray.push_back(fefunction);
 }
 
-void PostProcessing2D::add_fe_vector_function(const TFEVectFunct2D* 
-fevectfunction)
+void PostProcessing2D::add_fe_vector_function(
+  const TFEVectFunct2D* fevectfunction)
 {
   // check that FE functions have the same collection
   if(this->Coll == nullptr)
@@ -70,12 +68,41 @@ fevectfunction)
   FEVectFunctArray.push_back(fevectfunction);
 }
 
-
-void PostProcessing2D::write(int i, double current_time)
+void PostProcessing2D::write(double current_time)
 {
-  std::string name;
+  timeValues.push_back(current_time);
   if(writeVTK)
   {
+    std::string name;
+    name += testcaseDir + "/" + testcaseName;
+    name += std::to_string(timeValues.size());
+    name += ".vtk";
+    Output::print<2>(" PostProcessing2D:: writing ", name);
+    writeVtk(name);
+  }
+  if(writeCASE)
+  {
+    if(timeValues.size() == 1) // first call to this method
+    {
+      // write geometry only in the first iteration
+      writeCaseGeo();
+    }
+    writeCaseVars(timeValues.size()-1);
+    writeCaseFile();
+  }
+}
+
+void PostProcessing2D::write(int i)
+{
+  if(!timeValues.empty())
+    Output::warn<1>("PostProcessing2D::write(int i)", "it seems you have "
+                    "called PostProcessing2D::write(double) before, which is "
+                    "used for time dependent problems.\nThis method is "
+                    "typically for stationary problems. I am not sure if this "
+                    "works");
+  if(writeVTK)
+  {
+    std::string name;
     name += testcaseDir + "/" + testcaseName;
     if(i>=0)
     {
@@ -90,9 +117,8 @@ void PostProcessing2D::write(int i, double current_time)
   {
     // note: i<0 is used to avoid suffix in vtk output in steady problems
     // it shall be disregarded for case output
-    if(i<0) i=0;
-    // store new time step value
-    timeValues.push_back(current_time);
+    if(i < 0) 
+      i = 0;
     if(i == 0)
     {
       // write geometry only in the first iteration
@@ -212,7 +238,7 @@ void PostProcessing2D::writeVtk(std::string name)
 
 
 
-  dat << "# vtk DataFile Version 4.2" << endl;
+  dat << "# vtk DataFile Version 4.0" << endl;
   dat << "file created by ParMooN"
       << " Time < " << TDatabase::TimeDB->CURRENTTIME <<" >" << endl;
 
@@ -645,7 +671,7 @@ int N_LocVertices, TVertex **Vertices)
   dat.setf(std::ios::fixed);
   dat << setprecision(9);
 
-  dat << "# vtk DataFile Version 4.2" << endl;
+  dat << "# vtk DataFile Version 4.0" << endl;
   dat << "file created by ParMooN." << endl;
 
   dat << "ASCII" << endl;
@@ -826,7 +852,7 @@ void PostProcessing2D::writeCaseFile()
   unsigned int n_time_steps = timeValues.size();
   casf << "TIME\n";
   casf << "time set: 1\n";
-  casf << "number of steps: " << n_time_steps << endl;
+  casf << "number of steps: " << std::max(1U, n_time_steps) << endl;
   casf << "filename start number: 0\n";
   casf << "filename increment: " << period << "\n";  
   casf << "time values:\n";
@@ -839,6 +865,8 @@ void PostProcessing2D::writeCaseFile()
        casf << endl;
     else casf << " ";
   }
+  if(n_time_steps == 0) // this is the case for stationary problems
+    casf << 0.0;
   casf.close();
 }
 
@@ -1049,7 +1077,8 @@ void PostProcessing2D::writeCaseVars(int iter)
     vctname << filename << "_" << FEVectFunctArray[i]->GetName()
             <<  "." << number << ".vct";
     std::string fname = vctname.str();
-    Output::print<2>(" ** PostProcessing2D::write File - write ", vctname.str());
+    Output::print<2>(" ** PostProcessing2D::write File - write ",
+                     vctname.str());
     vctf.open(fname.c_str());
     vctf <<  FEVectFunctArray[i]->GetName() << " step = " << iter << endl; 
   

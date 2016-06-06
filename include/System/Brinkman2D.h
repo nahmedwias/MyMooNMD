@@ -24,7 +24,7 @@
 #include <BlockVector.h>
 
 #include <ParameterDatabase.h>
-
+#include <PostProcessing2D.h>
 #include <NSE_MultiGrid.h>
 #include <NSE_MGLevel1.h>
 #include <NSE_MGLevel2.h>
@@ -102,7 +102,7 @@ class Brinkman2D
      */
     ParameterDatabase db;
     
-    /* Output Writer--brief class for output handling */
+    /** @brief class for output handling (vtk and case files) */
     PostProcessing2D outputWriter;
 
     /** @brief a complete system on each grid 

@@ -185,9 +185,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
   
-  bool usingMultigrid = 
-       this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
@@ -531,6 +529,25 @@ void NSE3D::assemble_linear_terms()
 
   //copy non-actives from rhs to solution on finest grid
   this->systems_.front().solution_.copy_nonactive(systems_.front().rhs_);
+
+/** When we call copy_nonactive in MPI-case, we have to remember the following:
+   * it can happen that some slave ACTTIVE DoFs are placed in the block of
+   * NON-ACTIVE DoFs (because they are at the interface between processors).
+   * Doing copy_nonactive changes then the value of these DOFs,although they are
+   * actually active.
+   * That's why we have to update the values so that the vector becomes consistent again.
+   * This is done here.
+   */
+#ifdef _MPI
+  double *u1 = this->systems_.front().solution_.block(0);
+  double *u2 = this->systems_.front().solution_.block(1);
+  double *u3 = this->systems_.front().solution_.block(2);
+  double *p  = this->systems_.front().solution_.block(3);
+  this->systems_.front().parCommVelocity_.CommUpdate(u1);
+  this->systems_.front().parCommVelocity_.CommUpdate(u2);
+  this->systems_.front().parCommVelocity_.CommUpdate(u3);
+  this->systems_.front().parCommPressure_.CommUpdate(p);
+#endif
 }
 
 void NSE3D::assemble_non_linear_term()
@@ -693,10 +710,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
                        " RES : ", normOfResidual, " Reduction : ",
                        normOfResidual/initial_residual_);
-      // The following line comes from MooNMD and shall be us a reminder to
-      // TODO count total number of linear iterations for iterative solvers
-      //if(this->solver.get_db()["solver_type"].is("iterative"))
-      //  OutPut(" Linear Iterations Total: " << this->n_linear_iterations);
     }
 
     return true;
@@ -775,10 +788,7 @@ void NSE3D::solve()
     old_solution = std::make_shared<BlockVector>(s.solution_);
   
   //determine whether we make use of multigrid
-  bool using_multigrid = 
-       this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
-
+  bool using_multigrid = solver.is_using_multigrid();
   if(!using_multigrid)
   {//no multigrid
     if(this->solver.get_db()["solver_type"].is("direct"))

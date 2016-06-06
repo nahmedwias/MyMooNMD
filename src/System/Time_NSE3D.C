@@ -35,7 +35,7 @@ ParameterDatabase get_default_TNSE3D_parameters()
 }
 
 /* *************************************************************************** */
-Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
+Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
                   Time_NSE3D::Matrix type
 #ifdef _MPI
@@ -105,12 +105,13 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
 
 /**************************************************************************** */
 Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-                       const Example_NSE3D& ex
+                       const Example_TimeNSE3D& ex
 #ifdef _MPI
                        , int maxSubDomainPerDof
 #endif
 )
- : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex), multigrid_(),
+ : db_(get_default_TNSE3D_parameters()), systems_(), example_(ex),
+   solver_(param_db), mg_(nullptr),
    defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
  // TODO Implement the method "set_parameters" or "Check_parameters". Check
@@ -148,9 +149,7 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
 
-  bool usingMultigrid = (TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5
-                        && TDatabase::ParamDB->SOLVER_TYPE == 1 );
-
+  bool usingMultigrid = solver_.is_using_multigrid();
   if(!usingMultigrid)
   {
   // create the collection of cells from the domain (finest grid)
@@ -165,10 +164,26 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
 
+  // print out some information about number of DoFs and mesh size
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
+  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
+  double h_min, h_max;
+  coll->GetHminHmax(&h_min, &h_max);
+
+  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
+  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
+  Output::print("dof Velocity: ", setw(10), 3* n_u);
+  Output::print("dof Pressure: ", setw(10), n_p   );
+  Output::print("dof all     : ", setw(10), n_dof );
+  Output::print("active dof  : ", setw(10), 3*nActive);
+
   // Initial velocity = interpolation of initial conditions
   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+
   u1->Interpolate(example_.get_initial_cond(0));
   u2->Interpolate(example_.get_initial_cond(1));
   u3->Interpolate(example_.get_initial_cond(2));
@@ -207,39 +222,9 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 #endif
   }
-  else // multigrid  TODO: Multigrid in TNSE3D is not implemented yet.
-    // it has to be constructed here
+  else
   {
-    ErrThrow("No multigrid yet");
-//  // create spaces, functions, matrices on coarser levels
-//  double *param = new double[10];
-//  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-//  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-//  param[2] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-//  param[9] = 0;
-//  this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
-//  // number of refinement levels for the multigrid
-//  int LEVELS = TDatabase::ParamDB->LEVELS;
-//  if(LEVELS > domain.get_ref_level() + 1)
-//    LEVELS = domain.get_ref_level() + 1;
-//
-//  // the matrix and rhs side on the finest grid are already constructed
-//  // now construct all matrices, rhs, and solutions on coarser grids
-//  for(int i = LEVELS - 2; i >= 0; i--)
-//  {
-//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-//    TCollection *coll = domain.GetCollection(It_EQ, grid, -4711);
-//    this->systems.emplace_back(example, *coll, velocity_pressure_orders, type);
-//  }
-//
-//  // create multigrid-level-objects, must be coarsest first
-//  unsigned int i = 0;
-//  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-//  {
-//    ErrThrow("NSE3D-multigrid needs to be checked");
-//    this->multigrid->AddLevel(this->mg_levels(i, *it));
-//    i++;
-//  }
+    ErrThrow("No multigrid yet. When implementing, stick e.g. to NSE3D.");
   }
 }
 
@@ -729,10 +714,6 @@ void Time_NSE3D::assemble_rhs()
   // copy non active from solution into rhs vector
   s.rhs_.copy_nonactive(s.solution_);
 
-  if(TDatabase::ParamDB->SOLVER_TYPE == GMG
-     && TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-     this->multigrid_->RestrictToAllGrids();
-
   // Reset old_residual_ for this time step iteration
   // otherwise, ones compares with the old_residual_ from
   // the previous time iteration, which is not correct.
@@ -990,29 +971,16 @@ void Time_NSE3D::compute_residuals()
 /**************************************************************************** */
 void Time_NSE3D::solve()
 {
-  System_per_grid& s = this->systems_.front();
+  System_per_grid& s = systems_.front();
 
-  bool using_multigrid = // determine whether we make use of multigrid
-      TDatabase::ParamDB->SOLVER_TYPE == 1 &&
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5;
+  bool using_multigrid = solver_.is_using_multigrid();
 
   if(!using_multigrid)
   { // no multigrid
-    if(TDatabase::ParamDB->SOLVER_TYPE == 1)
-    {
-      ErrThrow("You chose a non-multigrid iterative solver."
-          "This is not supported for TNSE3D so far.");
-    }
-    else if(TDatabase::ParamDB->SOLVER_TYPE == 2)
+    if(solver_.get_db()["solver_type"].is("direct"))
     {
 #ifndef _MPI
-      // So far only UMFPACK is available as direct solver in sequential case.
-      // Actuate it via DirectSolver class.
-
-      /// @todo consider storing an object of DirectSolver in this class
-      DirectSolver direct_solver(s.matrix_,
-                                 DirectSolver::DirectSolverTypes::umfpack);
-      direct_solver.solve(s.rhs_, s.solution_);
+      solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
       //two vectors of communicators (const for init, non-const for solving)
@@ -1028,13 +996,12 @@ void Time_NSE3D::solve()
       mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
 #endif
     }
+    else
+      solver_.solve(s.matrix_, s.rhs_, s.solution_);
   }
   else  // multigrid preconditioned iterative solver
   {
-    /** TODO : IMPLEMENT MULTIGRID FOR TIME_NSE3D
-  //    this->mg_solver();
-   */
-    ErrThrow("No multigrid yet");
+    ErrThrow("No multigrid yet"); //TODO
   }
 
   // Important: We have to descale the matrices, since they are scaled
@@ -1047,7 +1014,6 @@ void Time_NSE3D::solve()
        s.p_.project_into_L20();
 
   this->old_solution_ = s.solution_;
-  Output::print<5>("solver done");
 }
 
 /**************************************************************************** */
@@ -1070,212 +1036,6 @@ void Time_NSE3D::descale_matrices()
     s.matrix_.scale_blocks_actives(1./factor, cell_positions);
   }
 }
-
-///**************************************************************************** */
-//TNSE_MGLevel* Time_NSE3D::mg_levels(int i, Time_NSE3D::System_per_grid& s)
-//{
-//  TNSE_MGLevel *mg_l;
-//  int n_aux;
-//  double alpha[2];
-//
-//  int v_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-//  int p_space_code = TDatabase::ParamDB->PRESSURE_SPACE;
-//
-//  if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
-//        || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
-//     n_aux=4;
-//  else
-//     n_aux=2;
-//
-//  if (i==0)
-//  {
-//    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-//    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-//  }
-//  else
-//  {
-//    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-//    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-//  }
-//
-//  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-//  switch(TDatabase::ParamDB->NSTYPE)
-//  {
-//    case 1:
-//      ErrThrow("NSE3D::mg_levels: NSTYPE 1 is not supported");
-//      break;
-//
-//    case 2:
-//      mg_l = new TNSE_MGLevel2(i,
-//                               reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()),
-//                               reinterpret_cast<TMatrix3D*>(blocks.at(3).get()), // B blocks
-//                               reinterpret_cast<TMatrix3D*>(blocks.at(4).get()),
-//                               reinterpret_cast<TMatrix3D*>(blocks.at(1).get()), // transposed B blocks
-//                               reinterpret_cast<TMatrix3D*>(blocks.at(2).get()),
-//                               s.rhs.get_entries(),
-//                               s.solution.get_entries(),
-//                               n_aux, alpha, v_space_code, p_space_code,
-//                               nullptr, nullptr);
-//      break;
-//
-//    case 3:
-//      ErrThrow("NSE3D::mg_levels: NSTYPE 3 is not supported");
-//      break;
-//
-//    case 4:
-//       mg_l = new TNSE_MGLevel4(i,
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(6).get()),   // B blocks
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(7).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(2).get()),  // transposed B-blocks
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(5).get()),
-//                                s.rhs.get_entries(),
-//                                s.solution.get_entries(),
-//                                n_aux, alpha, v_space_code, p_space_code,
-//                                nullptr, nullptr);
-//    break;
-//    case 14:
-//      mg_l = new TNSE_MGLevel14(i,
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get()),
-//                                reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(6).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(7).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(2).get()),
-//                                reinterpret_cast<TMatrix3D*>(blocks.at(5).get()),
-//                                s.rhs.get_entries(),
-//                                s.solution.get_entries(),
-//                                n_aux, alpha, v_space_code, p_space_code,
-//                                nullptr, nullptr);
-//    break;
-//  }
-//  return mg_l;
-//}
-//
-///**************************************************************************** */
-//void Time_NSE3D::mg_solver()
-//{
-//  System_per_grid& s = this->systems.front();
-//  TSquareMatrix3D *sqMat[5];
-//  TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
-//  TMatrix3D *recMat[4];
-//  TMatrix **matrices = (TMatrix **)recMat;
-//  MatVecProc *MatVect;
-//  DefectProc *Defect;
-//  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-//  switch(TDatabase::ParamDB->NSTYPE)
-//  {
-//    case 1:
-//      ErrThrow("multigrid solver for the nstype 1 is not supported yet");
-//      MatVect = MatVect_NSE1;
-//      Defect = Defect_NSE1;
-//      break;
-//    case 2:
-//      sqMat[0]  = reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-//      recMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get());
-//      recMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(4).get());
-//      recMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
-//      recMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(5).get());
-//      MatVect = MatVect_NSE2;
-//      Defect = Defect_NSE2;
-//      break;
-//    case 3:
-//      ErrThrow("multigrid solver for the nstype 3 is not supported yet");
-//      MatVect = MatVect_NSE3;
-//      Defect = Defect_NSE3;
-//      break;
-//    case 4:
-//      sqMat[0]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get());
-//      sqMat[1]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());
-//      sqMat[2]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(3).get());
-//      sqMat[3]=reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());
-//
-//      recMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(6).get());
-//      recMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get());
-//      recMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(2).get());
-//      recMat[3] = reinterpret_cast<TMatrix3D*>(blocks.at(5).get());
-//      MatVect = MatVect_NSE4;
-//      Defect = Defect_NSE4;
-//      break;
-//  }
-//
-//  int zero_start;
-//  int nDof = this->get_size();
-//  double *itmethod_rhs, *itmethod_sol;
-//  TItMethod *itmethod, *prec;
-//  if(TDatabase::ParamDB->SOLVER_TYPE ==1)
-//  {
-//    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-//    {
-//      case 11:
-//        zero_start = 1;
-//        break;
-//      case 16:
-//        zero_start = 0;
-//        break;
-//    }
-//    switch(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
-//    {
-//      case 5:
-//        prec = new TMultiGridIte(MatVect, Defect, nullptr, 0, nDof,
-//                                 this->multigrid.get(), zero_start);
-//        break;
-//      default:
-//        ErrThrow("Unknown preconditioner !!!");
-//    }
-//
-//    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-//    {
-//      itmethod_sol = new double[nDof];
-//      itmethod_rhs = new double[nDof];
-//
-//      memcpy(itmethod_sol, s.solution.get_entries(), nDof*SizeOfDouble);
-//      memcpy(itmethod_rhs, s.rhs.get_entries(), nDof*SizeOfDouble);
-//    }
-//    else
-//    {
-//      itmethod_sol = s.solution.get_entries();
-//      itmethod_rhs = s.rhs.get_entries();
-//    }
-//
-//    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-//    {
-//      case 11:
-//        itmethod = new TFixedPointIte(MatVect, Defect, prec, 0, nDof, 0);
-//        break;
-//      case 16:
-//        itmethod = new TFgmresIte(MatVect, Defect, prec, 0, nDof, 0);
-//        break;
-//      default:
-//        ErrThrow("Unknown preconditioner !!!");
-//    }
-//  }
-//
-//  switch(TDatabase::ParamDB->SOLVER_TYPE)
-//  {
-//    case 1:
-//      itmethod->Iterate(sqmatrices,matrices,itmethod_sol,itmethod_rhs);
-//      break;
-//    case 2:
-//      break;
-//  }
-//
-//  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-//  {
-//    memcpy(s.solution.get_entries(), itmethod_sol, nDof*SizeOfDouble);
-//    memcpy(s.rhs.get_entries(), itmethod_rhs, nDof*SizeOfDouble);
-//
-//    delete itmethod; delete prec;
-//    delete [] itmethod_rhs;
-//    delete [] itmethod_sol;
-//  }
-//}
-//
 
 /**************************************************************************** */
 void Time_NSE3D::output(int m, int &image)

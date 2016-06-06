@@ -9,7 +9,6 @@
 #include <Convolution.h>
 #include <Database.h>
 #include <TNSE2D_Routines.h>
-#include <Output2D.h>
 
 // ======================================================================
 // Type 3, Standard Galerkin with friction, D(u):D(v)

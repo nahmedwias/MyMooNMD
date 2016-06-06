@@ -81,12 +81,21 @@ class PostProcessing2D
   void add_fe_vector_function(const TFEVectFunct2D *fevectfunct);
   
   /**
-     @brief write data to files.
+     @brief write data to files during time dependent problems.
      You need to have added at least one fe function or fe vector function.
-     @param[in] i: an integer used to identify the time step
      @param[in] t: the physical time
   */
-  void write(int i=1, double t=0);
+  void write(double t);
+  /**
+     @brief write data a file (mainly for stationary problems).
+     You need to have added at least one fe function or fe vector function.
+     If i is negative, it will not be used for the filename.
+     
+     If you want to write more than one case file with this function, I am not 
+     sure if it works correctly.
+     @param[in] i: an integer used for the naming of the file
+  */
+  void write(int i=-1);
   
   // -------------------------------------------------------------------------
  protected:
@@ -106,6 +115,9 @@ class PostProcessing2D
       stays for 'scalar', vct for 'vector'
       - The 'controller' file is a .case (text) file, which is used by Paraview
       to display the results.
+      
+      The case file will be rewritten every time this function is called. That 
+      enables us to view this file during a time consuming simulation.
    */
   void writeCaseFile();
   void writeCaseGeo();
