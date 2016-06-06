@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   SetTimeDiscParameters(0);
   
   // Choose example according to the value of
-  Example_CD3D example(parmoon_db["example"]);  
+  Example_TimeCD3D example(parmoon_db["example"]);  
   
   // create an object of the class Time_CD3D
 #ifdef _MPI
