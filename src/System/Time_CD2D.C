@@ -4,10 +4,15 @@
 #include <OldSolver.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
+
 #include <AlgebraicFluxCorrection.h>
+#include <FEFunctionInterpolator.h>
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <LocalProjection.h>
+
+#include <NSE2D_FixPo.h> //we need that include for a single "in-out function"
+                         // (NSParamsVelo), maybe hard code the same thing here
 
 
 /**************************************************************************** */
@@ -205,21 +210,36 @@ void Time_CD2D::set_parameters()
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble_initial_time()
+void Time_CD2D::assemble_initial_time(const TFEVectFunct2D* velocity_field)
 {
+
+  //check the velocity field input
+  check_velocity_field(velocity_field);
+
+  // chose the types for the local assembling objects
   LocalAssembling2D_type mass = LocalAssembling2D_type::TCD2D_Mass;
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;
 
   for(auto &s : this->systems)
   {
     // assemble mass matrix, stiffness matrix and rhs
-    TFEFunction2D* fe_funct[1] = {&s.fe_function}; //wrap up as '**'
+    TFEFunction2D* fe_funct[1];
+    fe_funct[0] = &s.fe_function;
+
     LocalAssembling2D la_mass(mass, fe_funct,
                               this->example.get_coeffs());
     LocalAssembling2D la_a_rhs(stiff_rhs, fe_funct,
                                this->example.get_coeffs());
 
-    call_assembling_routine(s, la_a_rhs, la_mass , true);
+    if (velocity_field)
+    { // modify the local assembling object for the stiffness matrix,
+      // should a velocity field be given
+      modify_and_call_assembling_routine(s, la_a_rhs, la_mass , true, velocity_field);
+    }
+    else
+    {//no modifications necessary
+      call_assembling_routine(s, la_a_rhs, la_mass , true);
+    }
 
     // apply local projection stabilization method on stiffness matrix only!
     if(TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION
@@ -249,8 +269,11 @@ void Time_CD2D::assemble_initial_time()
 }
 
 /**************************************************************************** */
-void Time_CD2D::assemble()
+void Time_CD2D::assemble(const TFEVectFunct2D* velocity_field)
 {
+  //check the velocity field input
+  check_velocity_field(velocity_field);
+
   LocalAssembling2D_type stiff_rhs = LocalAssembling2D_type::TCD2D;  
   
   for(auto &s : this->systems)
@@ -270,12 +293,29 @@ void Time_CD2D::assemble()
       LocalAssembling2D la_m_supg(mass_supg, &pointer_to_function,
                                this->example.get_coeffs());
 
-      //call assembling, including mass matrix (SUPG!)
-      call_assembling_routine(s, la_a_rhs, la_m_supg , true);
+      if(velocity_field) //TODO thisn on-sepeartion of modification and call leads to spaghetti code!
+      { // modify the local assembling object for the stiffness matrix,
+        // should a velocity field be given
+        modify_and_call_assembling_routine(s, la_a_rhs, la_m_supg , true, velocity_field);
+      }
+      else
+      {
+        //call assembling, including mass matrix (SUPG!)
+        call_assembling_routine(s, la_a_rhs, la_m_supg , true);
+      }
     }
-    else
+    else //non SUPG
     {//call assembling, ignoring mass matrix part (third argument is not relevant)
-      call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
+      if(velocity_field)
+      {
+        // modify the local assembling object for the stiffness matrix,
+        // should a velocity field be given
+        modify_and_call_assembling_routine(s, la_a_rhs, la_a_rhs , false, velocity_field);
+      }
+      else
+      {
+        call_assembling_routine(s, la_a_rhs, la_a_rhs , false);
+      }
     }
   }
   
@@ -336,7 +376,6 @@ void Time_CD2D::assemble()
     const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
     s.stiff_matrix.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
   }  
-  //this->systems[0].rhs.copy_nonactive(this->systems[0].solution);
   systems[0].solution.copy_nonactive(systems[0].rhs);
 }
 
@@ -406,7 +445,10 @@ void Time_CD2D::output()
   if(db["output_compute_errors"])
   {
     double loc_e[5];
-    TAuxParam2D aux;
+    TAuxParam2D aux; // NOTE: this is hjust a default constructed "aux" object
+                     // TODO If an actual aux object is involved (meaning: another fe function
+                     // enters the computation of coefficients, it must get here somehow!)
+
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
@@ -555,5 +597,91 @@ void Time_CD2D::call_assembling_routine(
     mass_block[0]->reset();
     Assemble2D(1, &fe_space, N_Matrices, mass_block, 0, NULL, 0, NULL,
                NULL, &boundary_conditions, non_const_bound_value, la_mass);
+  }
+}
+
+void Time_CD2D::modify_and_call_assembling_routine(
+    System_per_grid& s,
+    LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
+    bool assemble_both,
+    const TFEVectFunct2D* velocity_field)
+{
+  // step 1 - transform the given Function to our FESpace (project? interpolate?)
+  const TFESpace2D& space = s.fe_space;
+  size_t n_dofs = space.GetN_DegreesOfFreedom();
+  std::string name("interpolated velo space");
+  std::string description("interpolated velo space");
+  std::vector<double> interp_funct_values(n_dofs,0.0);
+
+  // set up an interpolator object  (ptr will be shared later)
+  const TFESpace2D* into_space = &s.fe_space;
+  FEFunctionInterpolator interpolator(into_space);
+
+  // length of the values array of the interpolated velo must equal length of the
+  // concentration fe function
+  size_t length_interpolated = s.fe_function.GetLength();
+
+  std::vector<double> entries_velo_x(length_interpolated, 0.0);
+  std::vector<double> entries_velo_y(length_interpolated, 0.0);
+
+  // this awful call is due to the way a TFEVectFunct2D creates new dynamically
+  // allocated TFEFunction2D objects
+  TFEFunction2D* rough_velo_x = velocity_field->GetComponent(0);
+  TFEFunction2D* rough_velo_y = velocity_field->GetComponent(1);
+
+  TFEFunction2D interpolated_velo_x =
+      interpolator.interpolate(*rough_velo_x, entries_velo_x);
+
+  TFEFunction2D interpolated_velo_y =
+      interpolator.interpolate(*rough_velo_y, entries_velo_y);
+
+  delete rough_velo_x; // call to GetComponent dynamically created fe functs
+  delete rough_velo_y;
+
+  //velocity_interpolated.Interpolate(velocity_field);
+  // step 2 - set all the 'parameter'-related values in la_a_rhs accordingly
+
+  // set up the input...
+  std::vector<int> beginParameter = {0};
+
+  TFEFunction2D* fe_funct[3]; //fill up the new fe function array
+  fe_funct[0] = &s.fe_function;
+  fe_funct[1] = &interpolated_velo_x;
+  fe_funct[2] = &interpolated_velo_y;
+
+  std::vector<int> feValueFctIndex = {1,2}; // to produce first fe value use fe function 1,
+                                             // for second fe value use function 2
+  std::vector<MultiIndex2D> feValueMultiIndex = {D00, D00}; // to produce first fe value use 0th derivative,
+                                                            // for second fe value as well
+  int N_parameters = 2; // two parameters...
+  int N_feValues = 2;   //..both of which stem from the evaluation of fe fcts
+  int N_paramFct = 1;   // dealing with them is performed by 1 ParamFct
+
+  // chose the parameter function ("in-out function") which shears away
+  // the first to "in" values (x,y) and passes only u_x and u_y
+  std::vector<ParamFct*> parameterFct = {NSParamsVelo};
+
+  // ...and call the corresponding setters
+  la_stiff.setBeginParameter(beginParameter);
+  la_stiff.setFeFunctions2D(fe_funct); //reset - now velo comp included
+  la_stiff.setFeValueFctIndex(feValueFctIndex);
+  la_stiff.setFeValueMultiIndex(feValueMultiIndex);
+  la_stiff.setN_Parameters(N_parameters);
+  la_stiff.setN_FeValues(N_feValues);
+  la_stiff.setN_ParamFct(N_paramFct);
+  la_stiff.setParameterFct(parameterFct);
+  //...I expect that to do the trick.
+
+  // step 3 - the assembling must be done before the velo functions
+  // run out of scope
+  call_assembling_routine(s, la_stiff, la_mass , assemble_both);
+}
+
+
+void Time_CD2D::check_velocity_field(const TFEFunction2D* velocity_field) const
+{
+  if (velocity_field)
+  {
+
   }
 }
