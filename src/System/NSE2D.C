@@ -1,17 +1,11 @@
 #include <NSE2D.h>
 #include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
-#include <Output2D.h>
-#include <LinAlg.h> // DDot
-#include <DirectSolver.h>
+#include <LinAlg.h> // Ddot, IntoL20FEFunction
 #include <Upwind.h>
-
 #include <GridTransfer.h>
 #include <Multigrid.h>
-
 #include<Assemble2D.h>
-
-#include <sys/stat.h>
 
 ParameterDatabase get_default_NSE2D_parameters()
 {
@@ -102,9 +96,9 @@ NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
              const Example_NSE2D e, unsigned int reference_id)
-    : systems(), example(e), db(get_default_NSE2D_parameters()),
-      outputWriter(param_db), solver(param_db),
-      defect(), oldResiduals(), initial_residual(1e10),errors()
+    : systems(), example(e), db(get_default_NSE2D_parameters()), 
+      outputWriter(param_db), solver(param_db), defect(), oldResiduals(), 
+      initial_residual(1e10), errors()
 {
   this->db.merge(param_db, false);
   
@@ -162,6 +156,9 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
     // Construct multigrid object
     mg_ = std::make_shared<Multigrid>(database_mg, matrices);
   }
+  
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // print out some information  
   this->output_problem_size_info();
@@ -733,26 +730,13 @@ void NSE2D::output(int i)
 
   outputWriter.add_fe_function(&s.p);
   outputWriter.add_fe_vector_function(&s.u);
-  outputWriter.write(i,0.0);
+  outputWriter.write();
   
   /*
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
-    // last argument in the following is domain, but is never used in this class
-    TOutput2D Output(2, 3, 1, 0, NULL);
-    Output.AddFEFunction(&s.p);
-    Output.AddFEVectFunct(&s.u);
-
-    // Create output directory, if not already existing.
-    mkdir(db["output_vtk_directory"], 0777);
-    std::string filename = this->db["output_vtk_directory"];
-    filename += "/" + this->db["output_basename"].value_as_string();
-
-    if(i >= 0)
-      filename += "_" + std::to_string(i);
-    filename += ".vtk";
-    Output.WriteVtk(filename.c_str());
+    outputWriter.write(i);
   }
   */
     

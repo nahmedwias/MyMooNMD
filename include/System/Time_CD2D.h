@@ -16,10 +16,12 @@
 #include <FEFunction2D.h>
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-#include <Example_CD2D.h>
+#include <Example_TimeCD2D.h>
 #include <MultiGrid2D.h>
+#include <Multigrid.h>
 #include <Domain.h>
 #include <PostProcessing2D.h>
+#include <Solver.h>
 
 #include <vector>
 #include <deque>
@@ -53,7 +55,7 @@ class Time_CD2D
       TFEFunction2D fe_function;
 
       /** @brief constructor*/
-      System_per_grid(const Example_CD2D& example, TCollection& coll);
+      System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
 
       /**
        * Gives a non-const pointer to the one block which is stored
@@ -106,6 +108,12 @@ class Time_CD2D
      * Solver object.
      */
     ParameterDatabase db;
+    /** @brief a solver object which will solve the linear system
+     * 
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief a complete system on each grid 
      * 
@@ -116,12 +124,12 @@ class Time_CD2D
     std::deque<System_per_grid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D example;
+    const Example_TimeCD2D example;
     
     /** @brief a multigrid object which is set to nullptr in case it is not 
      *         needed
      */
-    std::shared_ptr<TMultiGrid2D> multigrid;
+    std::shared_ptr<Multigrid> multigrid;
     
     /** @brief set parameters in database
      * 
@@ -165,7 +173,7 @@ class Time_CD2D
      * should be used. The default implies all cells.
      */
     Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-    		const Example_CD2D& ex, int reference_id = -4711);
+    		const Example_TimeCD2D& ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices before the time iterations
      * 
@@ -204,12 +212,10 @@ class Time_CD2D
      */
     void solve();
     
-    /** @brief measure errors and write solution
-     * 
-     */
-    void output(int m, int& imgage);
+    /// @brief measure errors and write solution
+    void output();
      // getters and setters
-    const Example_CD2D& get_example() const
+    const Example_TimeCD2D& get_example() const
     { return example; }
     const TFEFunction2D & get_function() const
     { return this->systems.front().fe_function; }
@@ -227,6 +233,12 @@ class Time_CD2D
     { return this->systems.front().fe_space; }
     const ParameterDatabase & get_db() const
     { return db; }
+    
+    /**
+    * @brief return the computed errors at each discre time point
+    * 
+    */
+    std::array<double, int(3)> get_errors() const;
 
 
   private:

@@ -23,7 +23,7 @@
 #include <BlockVector.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
-#include <Example_NSE3D.h>
+#include <Example_TimeNSE3D.h>
 
 #include <NSE_MultiGrid.h>
 
@@ -114,11 +114,11 @@ class Time_NSE3D
        * construction is a TODO .
        */
 #ifdef _MPI
-      System_per_grid(const Example_NSE3D& example,
+      System_per_grid(const Example_TimeNSE3D& example,
                     TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
                     int maxSubDomainPerDof);
 #else
-      System_per_grid(const Example_NSE3D& example, TCollection& coll,
+      System_per_grid(const Example_TimeNSE3D& example, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
 #endif
 
@@ -159,15 +159,17 @@ class Time_NSE3D
     std::deque<System_per_grid> systems_;
 
     /** @brief Definition of the used example. */
-    const Example_NSE3D& example_;
+    const Example_TimeNSE3D& example_;
 
-    /** @brief A multigrid object which is set to nullptr in case it is not
-     *         needed.
+    /** @brief a solver object which will solve the linear system
+     *
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
      */
-    std::shared_ptr<TNSE_MultiGrid> multigrid_;
-    /// This sorry thing is needed for multigrid with NSTypes 1 or 3, where
-    /// transposed blocks are not stored explicitely...sad but true.
-    std::vector<std::shared_ptr<TStructure>> transposed_B_structures_;
+    Solver<BlockFEMatrix, BlockVector> solver_;
+
+    /// An object of the new multigrid class. Stays nullptr if not needed.
+    std::shared_ptr<Multigrid> mg_;
 
     //! @brief An array to store the current defect.
     BlockVector defect_;
@@ -233,11 +235,11 @@ class Time_NSE3D
      */
 #ifdef _MPI
     Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_NSE3D& example,
+               const Example_TimeNSE3D& example,
                int maxSubDomainPerDof);
 #else
     Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
-               const Example_NSE3D& example);
+               const Example_TimeNSE3D& example);
 #endif
     
 // ======================================================================
@@ -330,83 +332,56 @@ class Time_NSE3D
      */
     void output(int m, int &image);
 
-///*******************************************************************************/
-//    // Declaration of special member functions - delete all but destructor.
-//    // This problem class will be used to request the whole process of
-//    // putting up and solving a single flow problem. It is, due to
-//    // its procedural nature, not supposed to be copied.
-//
-//    //! Delete copy constructor. No copies allowed.
-//    Time_NSE3D(const Time_NSE3D&) = delete;
-//
-//    //! Delete move constructor. No moves allowed.
-//    Time_NSE3D(Time_NSE3D&&) = delete;
-//
-//    //! Delete copy assignment operator. No copies allowed.
-//    Time_NSE3D& operator=(const Time_NSE3D&) = delete;
-//
-//    //! Default move assignment operator. No moves allowed.
-//    Time_NSE3D& operator=(Time_NSE3D&&) = delete;
-//
-//    //! Default destructor. Does most likely cause memory leaks.
-//    ~Time_NSE3D() = default;
-//
-///*******************************************************************************/
-//    /**
-//     * @brief initialize multigrid levels for different NSTYPE's
-//     *
-//     * @param: level
-//     * @param: grid to be added
-//     */
-//    TNSE_MGLevel* mg_levels(int level, System_per_grid& s);
-//
-//    /**
-//     * TODO Implement this method.
-//     * @brief multigrid solver
-//     * preparing the stuff used to call multigrid solver
-//     */
-//    void mg_solver();
-//
-///********************************************************************************/
-//// getters
-//   const BlockVector    & get_rhs()      const
-//    { return this->systems_.front().rhs_; }
-//
-//   const TFEVectFunct3D & get_velocity() const
-//    { return this->systems_.front().u_; }
-//
-//   const TFEFunction3D  & get_pressure() const
-//     { return this->systems_.front().p_; }
+/* ******************************************************************************/
+    // Declaration of special member functions - delete all but destructor.
+    // This problem class will be used to request the whole process of
+    // putting up and solving a single flow problem. It is, due to
+    // its procedural nature, not supposed to be copied.
 
-   const TFESpace3D     & get_velocity_space() const
-     { return this->systems_.front().velocitySpace_; }
-   const TFESpace3D     & get_pressure_space() const
-     { return this->systems_.front().pressureSpace_; }
-//   const BlockVector    & get_solution() const
-//     { return this->systems_.front().solution_; }
+    //! Delete copy constructor. No copies allowed.
+    Time_NSE3D(const Time_NSE3D&) = delete;
 
-   const int get_size() const
-     { return this->systems_.front().solution_.length(); }
-     
+    //! Delete move constructor. No moves allowed.
+    Time_NSE3D(Time_NSE3D&&) = delete;
+
+    //! Delete copy assignment operator. No copies allowed.
+    Time_NSE3D& operator=(const Time_NSE3D&) = delete;
+
+    //! Default move assignment operator. No moves allowed.
+    Time_NSE3D& operator=(Time_NSE3D&&) = delete;
+
+    //! Default destructor. Does most likely cause memory leaks.
+    ~Time_NSE3D() = default;
+
+/* *******************************************************************************/
+
+    //// getters
+
+    /// Get the velocity space.
+    const TFESpace3D     & get_velocity_space() const
+    { return this->systems_.front().velocitySpace_; }
+
+    /// Get the pressure space.
+    const TFESpace3D     & get_pressure_space() const
+    { return this->systems_.front().pressureSpace_; }
+
+    /// Get number of degrees of freedom.
+    const int get_size() const
+    { return this->systems_.front().solution_.length(); }
+
+    /// Get the stored database.
     const ParameterDatabase & get_db() const
     { return db_; }
 
-//   const Example_NSE2D  & get_example()  const
-//     { return example_; }
-//
-////  // try not to use the below methods which are not const
-////  TFEVectFunct3D & get_velocity()
-////    { return this->systems_.front().u_; }
-////  TFEFunction3D *get_velocity_component(int i);
-
-  /// @brief Get the current residuals  (updated in compute_residuals)
-  const Residuals& get_residuals() const;
-  /// @brief get the current impulse residual (updated in compute_residuals)
-  double get_impulse_residual() const;
-  /// @brief get the current mass residual (updated in compute_residuals)
-  double get_mass_residual() const;
-  /// @brief get the current residual (updated in compute_residuals)
-  double get_full_residual() const;
+//   const Example_TimeNSE3D  & get_example()  const
+    /// @brief Get the current residuals  (updated in compute_residuals)
+    const Residuals& get_residuals() const;
+    /// @brief get the current impulse residual (updated in compute_residuals)
+    double get_impulse_residual() const;
+    /// @brief get the current mass residual (updated in compute_residuals)
+    double get_mass_residual() const;
+    /// @brief get the current residual (updated in compute_residuals)
+    double get_full_residual() const;
 
   /** @brief return the computed errors (computed in output())
    */

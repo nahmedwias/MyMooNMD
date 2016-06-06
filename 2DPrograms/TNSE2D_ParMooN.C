@@ -8,7 +8,7 @@
 
 #include <LocalAssembling2D.h>
 
-#include <Example_NSE2D.h>
+#include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
 
@@ -46,8 +46,8 @@ int main(int argc, char* argv[])
 
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(int i=0; n_ref; i++)
-    Domain.RegRefineAll();  
+  for(size_t i = 0; i < n_ref; i++)
+    Domain.RegRefineAll();
 
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   SetTimeDiscParameters(0);
 
-  Example_NSE2D example( parmoon_db["example"] );
+  Example_TimeNSE2D example( parmoon_db["example"] );
   // create an object of Time_NSE2D class
   Time_NSE2D tnse2d(Domain, parmoon_db, example);
   // assemble everything at the start time
@@ -69,8 +69,6 @@ int main(int argc, char* argv[])
   int step = 0;
   int n_substeps = GetN_SubSteps();
     
-  int image=0;
-
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -115,7 +113,7 @@ int main(int argc, char* argv[])
        }
        // post processing: error computations
        // and solutions for visualization
-       tnse2d.output(step,image);
+       tnse2d.output(step);
      }
    }
   // ======================================================================

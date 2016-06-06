@@ -16,18 +16,15 @@
 #define NSE2D_H_
 
 #include <FEVectFunct2D.h>
-
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Residuals.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
-
 #include <Example_NSE2D.h>
-
+#include <PostProcessing2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
 #include <PostProcessing2D.h>
-
 #include <utility>
 #include <array>
 
@@ -111,8 +108,8 @@ class NSE2D
      * NSE2D::solver object.
      */
     ParameterDatabase db;
-
-    /** @brief class for output handling */
+    
+    /** @brief class for output handling (vtk and case files) */
     PostProcessing2D outputWriter;
     
     /** @brief a solver object which will solve the linear system

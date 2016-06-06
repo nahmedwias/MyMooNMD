@@ -12,7 +12,6 @@
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
 #include <FEFunction2D.h>
-#include <list>
 
 
 void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors)
@@ -51,7 +50,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"] = 5;
-  db["example"] = 101;
+  db["example"] = 0;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
   db["residual_tolerance"] = 1.e-12;
@@ -75,7 +74,6 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   tnse.assemble_initial_time();
   
   int step=0;
-  int image=0;
   
   while(TDatabase::TimeDB->CURRENTTIME < 
     TDatabase::TimeDB->ENDTIME-1e-10)
@@ -110,7 +108,7 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
       tnse.assemble_system();         
     }
     // post processing: error computations
-    tnse.output(step,image);
+    tnse.output(step);
     // check the errors
     if(step==1)
       compare(tnse, errors[0]);
