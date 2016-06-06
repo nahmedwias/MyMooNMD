@@ -51,10 +51,8 @@ class Example_CD2D : public Example2D
     Example_CD2D(std::vector <DoubleFunct2D*> exact,
                   std::vector <BoundCondFunct2D*> bc,
                   std::vector <BoundValueFunct2D*> bd,
-                  CoeffFct2D *coeffs,
-                  std::vector <DoubleFunct2D*> init_cond =
-                      std::vector<DoubleFunct2D*>())
-    : Example2D(exact, bc, bd, coeffs, init_cond) {};
+                  CoeffFct2D *coeffs)
+    : Example2D(exact, bc, bd, coeffs) {};
 
     //Declaration of special member functions - rule of zero
 

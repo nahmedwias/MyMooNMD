@@ -7,25 +7,21 @@
  *****************************************************************************/
 
 #include <AuxParam2D.h>
-//#include <MainUtilities.h>
 #include <LinAlg.h>
 
-//#include <ItMethod.h>
-//#include <MultiGridIte.h>
-//#include <FixedPointIte.h>
-//#include <FgmresIte.h>
-//#include <LocalProjection.h>
 #include <Database.h>
 
 #include <CD2D.h>
 
 #include <CoupledCDR_2D.h>
 #include <Example_CoupledCDR2D.h>
+#include <ParameterDatabase.h>
 #include <ReactionCoupling.h>
 
 /*! @brief Standard constructor.*/
-CoupledCDR_2D::CoupledCDR_2D(const TDomain& domain, const Example_CoupledCDR2D& exam,
-		SolvingStrategy strat) :
+CoupledCDR_2D::CoupledCDR_2D(
+    const TDomain& domain, const ParameterDatabase& db,
+    const Example_CoupledCDR2D& exam, SolvingStrategy strat) :
 		example_(exam), strategy_(strat)
 {
 	/********** Preparation ********************/
@@ -46,7 +42,15 @@ CoupledCDR_2D::CoupledCDR_2D(const TDomain& domain, const Example_CoupledCDR2D& 
 		//loop over all equations
 		for(size_t index = 0; index<nEquations_;++index){
 			//Construct a CD2D problem from the current CD part...
-			std::shared_ptr<CD2D> currProblemCD(new CD2D(domain,example_.getDecoupledExample(index)));
+		  ParameterDatabase cd2d_db = ParameterDatabase::parmoon_default_database();
+		  cd2d_db.merge(db, false);
+
+		  cd2d_db["output_basename"] = cd2d_db["output_basename"].get<std::string>() + std::string("_species_" + index);
+
+
+			std::shared_ptr<CD2D> currProblemCD(
+			    new CD2D(domain, cd2d_db, example_.getDecoupledExample(index)));
+
 			//...and attach it to the list.
 			cdProblems_.push_back(currProblemCD);
 

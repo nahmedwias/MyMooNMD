@@ -47,52 +47,54 @@
 
 int main(int argc, char* argv[])
 {
-  // TODO it might be a problem that we have no global "problem type" defined
-  // - on the other hand this is good, because that urges us to find out
-  // whether we can remove that global parameter entirely
-
-  // PART 1: USUAL PARMOON SETUP //////////////////////////////////////////////
-
-  // Put up domain and databases.
-  // These are the usual ParMooN-initialisation steps.
+  //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
 
-  // set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);
+  /** set variables' value in TDatabase using argv[1] (*.dat file) */
+  TDomain domain(argv[1], parmoon_db);
 
-  //===========================================================================
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
-  OutFile.setf(std::ios::scientific);
+  //set PROBLEM_TYPE to CD if not yet set
+  if(parmoon_db["problem_type"].is(0))
+    parmoon_db["problem_type"] = 1;
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+
+  // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
 
-  //===========================================================================
   /* include the mesh from a mesh generator, for a standard mesh use the
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   //===========================================================================
   // do initial refinements of the domain
-  for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-    Domain.RegRefineAll();
+  size_t n_ref = domain.get_n_initial_refinement_steps();
+  for(size_t i=0; i<n_ref; i++)
+    domain.RegRefineAll();
 
   // PART 2: SET UP SPECIFIC PROBLEM OBJECTS ///////////////////////////////////
-
-  // TODO Here is where the work begins.
 
   //set global parameters which are to be used for NSE construction here...
   TDatabase::ParamDB->VELOCITY_SPACE = 2;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  parmoon_db["output_basename"] = parmoon_db["output_basename_flow"].get<std::string>();
 
-  TDatabase::ParamDB->EXAMPLE = 0; //global example variable for nse
-  NSE2D flow_object(Domain, Example_NSE2D());
+  Example_NSE2D example_flow(parmoon_db["example_flow"]); //should be 0 for test...
+  NSE2D flow_object(domain, parmoon_db, example_flow);
 
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
+  parmoon_db["output_basename"] = parmoon_db["output_basename_conc"].get<std::string>();
 
-  TDatabase::ParamDB->EXAMPLE = 104; //global example variable for tcd2d
-  Time_CD2D conc_object(Domain, Example_CD2D());
+  Example_TimeCD2D example_conc(parmoon_db["example_conc"]); //should be 104 or equivalent for test
+  Time_CD2D conc_object(domain, parmoon_db, example_conc);
 
   // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
 
@@ -107,30 +109,16 @@ int main(int argc, char* argv[])
                      flow_object.getResiduals());
     flow_object.solve();
 
-    //no nonlinear iteration for Stokes problem
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
-      break;
-
     flow_object.assemble_nonlinear_term();
 
     if(flow_object.stopIt(k))
       break;
   } // end for k
 
-    // Have a look at the precomputed velocity field - do we like it?
-    TDatabase::ParamDB->WRITE_VTK = 1; //write a VTK
-    TDatabase::ParamDB->MEASURE_ERRORS = 0; //error measuring is evil (i.e. unsafe methods, incorrect aux object...)
-    flow_object.output();
+  flow_object.output();
 
 
   // PART 5: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
-  //change problem type...globally...
-  TDatabase::ParamDB->PROBLEM_TYPE = 2;
-
-
-  //change the outfile...globally...
-  TDatabase::ParamDB->BASENAME = (char*)"conc";
-  TDatabase::ParamDB->VTKBASENAME = (char*)"conc";
 
   //get the velocity field of the precomputed velo object
   const TFEVectFunct2D& velo_field = flow_object.get_velocity();
@@ -143,10 +131,8 @@ int main(int argc, char* argv[])
   int step = 0;
   int n_substeps = GetN_SubSteps();
 
-  int image=0;
 
-  conc_object.output(0,image);
-
+  conc_object.output();
   // time iteration
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
@@ -172,10 +158,9 @@ int main(int argc, char* argv[])
 
       conc_object.solve();
 
-      conc_object.output(step, image);
+      conc_object.output();
     }
   }
-
 
 
   Output::close_file();

@@ -16,11 +16,12 @@
 #ifndef USER_PROJECTS_INC_COUPLED_TIME_CDR_2D_H_
 #define USER_PROJECTS_INC_COUPLED_TIME_CDR_2D_H_
 
-#include <Example_CoupledCDR2D.h>
+#include <Example_TimeCoupledCDR2D.h>
 #include <CoupledCDR_2D.h>
 
 // forward declarations
 class Time_CD2D;
+class ParameterDatabase;
 class ReactionCoupling;
 
 /*!
@@ -41,8 +42,8 @@ class Coupled_Time_CDR_2D {
      * @param domain The domain to compute on.
      * @param example The example to be executed.
      */
-    Coupled_Time_CDR_2D(const TDomain& domain,
-                        const Example_CoupledCDR2D& example);
+    Coupled_Time_CDR_2D(const TDomain& domain,  const ParameterDatabase& db,
+                        const Example_TimeCoupledCDR2D& example);
 
     /**
      * Assemble all matrices and rhs at the 0th time step.
@@ -64,10 +65,8 @@ class Coupled_Time_CDR_2D {
 
     /**
      * Produce some output.
-     * @param[in] image The number of the image, will be used for the naming
-     * of the pictures.
      */
-    void output(int& image);
+    void output();
 
     //Deletion of special member functions.
     //! Delete copy constructor.
@@ -98,7 +97,7 @@ class Coupled_Time_CDR_2D {
     std::vector<std::shared_ptr<ReactionCoupling>> coupledParts_;
 
     /*! @brief The used example. */
-    Example_CoupledCDR2D example_;
+    Example_TimeCoupledCDR2D example_;
 
 };
 
