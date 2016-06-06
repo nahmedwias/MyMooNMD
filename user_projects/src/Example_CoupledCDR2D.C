@@ -1,7 +1,5 @@
 #include <Example_CoupledCDR2D.h>
 
-#include <FEDatabase2D.h>
-#include <Database.h>
 #include <MainUtilities.h>
 
 
@@ -17,9 +15,9 @@ namespace test_time
 }
 
 // Implementation of member methods
-Example_CoupledCDR2D::Example_CoupledCDR2D() : Example2D()
+Example_CoupledCDR2D::Example_CoupledCDR2D(size_t example_code) : Example2D()
 {
-  switch( TDatabase::ParamDB->EXAMPLE )
+  switch( example_code )
   {
     case 0: //Constant function example.
     {
@@ -48,45 +46,6 @@ Example_CoupledCDR2D::Example_CoupledCDR2D() : Example2D()
       /** parameter functions */
       parameterFunctions_.push_back(ParameterFunction);
       parameterFunctions_.push_back(ParameterFunction);
-
-      /** number of equations */
-      nEquations_ = 2;
-
-      ExampleFile();
-      break;
-    }
-      //time dependent examples
-    case 100: //cobbled together test example
-    {
-      using namespace test_time;
-
-      /** exact_solution */
-      exact_solution.push_back( ExactC1 );
-      exact_solution.push_back( ExactC2 );
-
-      /** boundary condition - here it's twice the same*/
-      boundary_conditions.push_back( BoundCondition );
-      boundary_conditions.push_back( BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( BoundValueC1 );
-      boundary_data.push_back( BoundValueC2 );
-
-      /** coefficient functions */
-      bilinCoeffs_.push_back(BilinearCoeffsC1);
-      bilinCoeffs_.push_back(BilinearCoeffsC2);
-
-      /** assembling functions */
-      rhsAssemblingFunctions_.push_back(AssemblingFunctionC1);
-      rhsAssemblingFunctions_.push_back(AssemblingFunctionC2);
-
-      /** parameter function - twice the same*/
-      parameterFunctions_.push_back(ParameterFunction);
-      parameterFunctions_.push_back(ParameterFunction);
-
-      /** initial conditions */
-      initial_conditions.push_back(InitialConditionC1);
-      initial_conditions.push_back(InitialConditionC2);
 
       /** number of equations */
       nEquations_ = 2;
@@ -151,25 +110,11 @@ void Example_CoupledCDR2D::generateDecoupledExamples() {
     bc_coupled.push_back(boundary_conditions.at(n));
     bd_coupled.push_back(boundary_data.at(n));
 
-    //Initial conditions or none the like
-    try
-    {//this in time dependent case
-      init_cond.push_back(initial_conditions.at(n));
-    }
-    catch (std::out_of_range& e)
-    {//this in stationary case
-      //TODO maybe there is a nicer way to inform the example, whether
-      // it is time dependent or stationary
-      Output::print<1>("Standard exception caught, which occurs whenever "
-          "generateDecoupledExamples is applied to a stationary example.");
-    }
-
-
 
     //Construct the example and push back a copy of it.
     decoupledExamples_.push_back(
         Example_CD2D(exact_coupled, bc_coupled, bd_coupled,
-                     bilinCoeffs_.at(n), init_cond ));
+                     bilinCoeffs_.at(n)));
   }
 }
 

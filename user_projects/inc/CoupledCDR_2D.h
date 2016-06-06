@@ -18,11 +18,10 @@
 #include <memory>
 
 //Forward declarations.
+class ParameterDatabase;
 class ReactionCoupling;
 class CD2D;
 class TDomain;
-
-
 
 
 /*!
@@ -59,7 +58,8 @@ class CoupledCDR_2D {
      *  @param[in] exam The used example.
      *  @param[in] strat The desired solving strategy. Defaults to 'none'.
      */
-    CoupledCDR_2D(const TDomain& domain, const Example_CoupledCDR2D& exam,
+    CoupledCDR_2D(const TDomain& domain, const ParameterDatabase& db,
+                  const Example_CoupledCDR2D& exam,
                   SolvingStrategy strat = SolvingStrategy::none);
 
     /*! @brief assemble matrix,

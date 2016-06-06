@@ -4,12 +4,14 @@
 
 #include <Coupled_Time_CDR_2D.h>
 #include <CoupledCDR_2D.h> //for SolvingStrategy type
+#include <ParameterDatabase.h>
 #include <ReactionCoupling.h>
 #include <Time_CD2D.h>
 
 
 Coupled_Time_CDR_2D::Coupled_Time_CDR_2D(
-    const TDomain& domain, const Example_CoupledCDR2D& example)
+    const TDomain& domain, const ParameterDatabase& db,
+    const Example_TimeCoupledCDR2D& example)
 : example_(example)
 {
   nEquations_ = example_.getNEquations();
@@ -20,7 +22,12 @@ Coupled_Time_CDR_2D::Coupled_Time_CDR_2D(
   // for each equation build a decoupled example and store it
   for(size_t index = 0; index<nEquations_;++index)
   {
-    auto tcd_obj = std::make_shared<Time_CD2D>(domain,example_.getDecoupledExample(index));
+    ParameterDatabase tcd2d_db = ParameterDatabase::parmoon_default_database();
+    tcd2d_db.merge(db, false);
+
+    tcd2d_db["output_basename"] = tcd2d_db["output_basename"].get<std::string>() + std::string("_species_" + index);
+
+    auto tcd_obj = std::make_shared<Time_CD2D>(domain, tcd2d_db, example_.getDecoupledExample(index));
     cdProblems_.push_back(tcd_obj);
 
   }
@@ -117,10 +124,9 @@ void Coupled_Time_CDR_2D::couple_and_solve()
     // ///////////////// END COPY & PASTE FROM STATIONARY ///////////////////////////
 }
 
-void Coupled_Time_CDR_2D::output(int& image){
+void Coupled_Time_CDR_2D::output(){
   //Let the work be done by the Time_CD objects for now.
-  for (int equation = 0; equation<nEquations_;++equation){
-//  TODO give meaningful names to the different pictures
-    cdProblems_[equation]->output(equation, image);
+  for (size_t equation = 0; equation<nEquations_;++equation){
+    cdProblems_[equation]->output();
   }
 }

@@ -13,63 +13,62 @@
 #include <FEDatabase2D.h>
 #include <Output2D.h>
 #include <Coupled_Time_CDR_2D.h>
-#include <Example_CoupledCDR2D.h>
+#include <Example_TimeCoupledCDR2D.h>
 
 #include <TimeDiscRout.h>
 
 int main(int argc, char* argv[])
 {
-  //take the starting time.
-  double t_start = GetTime();
-
-  // Put up domain and databases
-
-  //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain Domain(argv[1]);
+  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  std::ifstream fs(argv[1]);
+  parmoon_db.read(fs);
+  fs.close();
 
-  //===========================================================================
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
-  OutFile.setf(std::ios::scientific);
+  // ======================================================================
+  // set the database values and generate mesh
+  // ======================================================================
+  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
+  TDomain Domain(argv[1], parmoon_db);
+
+  Output::set_outfile(parmoon_db["outfile"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
 
-  //===========================================================================
-  /* include the mesh from a mesh generator, for a standard mesh use the
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-   Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  //Domain creation
+  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
-  //===========================================================================
-  // do initial refinements of the domain
-    for(int i=0; i<TDatabase::ParamDB->UNIFORM_STEPS; i++)
-      Domain.RegRefineAll();
+  // refine grid up to the coarsest level
+  size_t n_ref = Domain.get_n_initial_refinement_steps();
+  for(size_t i=0; i<n_ref; i++){
+    Domain.RegRefineAll();
+  }
+  // write grid into an Postscript file
+  if(parmoon_db["output_write_ps"])
+    Domain.PS("Domain.ps", It_Finest, 0);
 
-    // ======================================================================
-    // Here the calls to Coupled_Time_CDR_2D start.
-    // ======================================================================
+  // ======================================================================
+  // Here the calls to Coupled_Time_CDR_2D start.
+  // ======================================================================
 
-    // Construct the CoupledCDR_2D object
-    // Which example gets constructed is determined by the input file.
-    // 100 - test_time dependent example
-    // else - Error
-    Example_CoupledCDR2D example;
-    Coupled_Time_CDR_2D tcdr_system(Domain, example);
+  // Construct the CoupledCDR_2D object
+  Example_TimeCoupledCDR2D example(parmoon_db["example"]);
+  Coupled_Time_CDR_2D tcdr_system(Domain, parmoon_db, example);
 
-    // ======================================================================
-    // assemble matrices and right hand side at start time
-    tcdr_system.assemble_initial_time();
-    // ======================================================================
+  // ======================================================================
+  // assemble matrices and right hand side at start time
+  tcdr_system.assemble_initial_time();
+  // ======================================================================
 
-    double end_time = TDatabase::TimeDB->ENDTIME;
-    int step = 0;
-    int n_substeps = GetN_SubSteps();
+  double end_time = TDatabase::TimeDB->ENDTIME;
+  int step = 0;
+  int n_substeps = GetN_SubSteps();
 
-    int image=0;
-
-    tcdr_system.output(image);
+  tcdr_system.output();
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -97,14 +96,11 @@ int main(int argc, char* argv[])
 
       tcdr_system.couple_and_solve();
 
-      tcdr_system.output(step);
+      tcdr_system.output();
     }
-    // OutPut("mem after: " << GetMemory()<<endl);
+
   }
-  // ======================================================================
-  Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
-  Output::print("used time: ", GetTime() - t_start, "s");
-  // ======================================================================
+
   Output::close_file();
 
   return 0;
