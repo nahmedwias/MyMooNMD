@@ -164,10 +164,26 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   // the rhs (and as the solution)
   this->defect_.copy_structure(this->systems_.front().rhs_);
 
+  // print out some information about number of DoFs and mesh size
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
+  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
+  double h_min, h_max;
+  coll->GetHminHmax(&h_min, &h_max);
+
+  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
+  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
+  Output::print("dof Velocity: ", setw(10), 3* n_u);
+  Output::print("dof Pressure: ", setw(10), n_p   );
+  Output::print("dof all     : ", setw(10), n_dof );
+  Output::print("active dof  : ", setw(10), 3*nActive);
+
   // Initial velocity = interpolation of initial conditions
   TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
   TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
   TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+
   u1->Interpolate(example_.get_initial_cond(0));
   u2->Interpolate(example_.get_initial_cond(1));
   u3->Interpolate(example_.get_initial_cond(2));
