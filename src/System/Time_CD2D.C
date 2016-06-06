@@ -1,20 +1,14 @@
 #include <Time_CD2D.h>
 #include <Database.h>
 #include <MultiGrid2D.h>
-#include <Output2D.h>
 #include <OldSolver.h>
 #include <DirectSolver.h>
-#include <LinAlg.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
-
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 
-#include <sys/stat.h>
-
-#include <numeric>
 
 /**************************************************************************** */
 ParameterDatabase get_default_TCD2D_parameters()

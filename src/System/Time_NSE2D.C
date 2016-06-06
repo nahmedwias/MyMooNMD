@@ -6,10 +6,7 @@
 #include <MultiGridIte.h>
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
-#include <Output2D.h>
 #include <DirectSolver.h>
-
-#include <sys/stat.h>
 
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
@@ -86,8 +83,9 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        const Example_NSE2D& ex, int reference_id)
- : db(get_default_TNSE2D_parameters()), systems(), example(ex), multigrid(), defect(),
-   oldResidual(0), initial_residual(1e10), errors(10,0.), oldtau(0.0)
+ : db(get_default_TNSE2D_parameters()), outputWriter(param_db), systems(),
+   example(ex), multigrid(), defect(), oldResidual(0), initial_residual(1e10),
+   errors(10,0.), oldtau(0.0)
 {
   db.merge(param_db);
   this->set_parameters();
@@ -137,6 +135,9 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   
   u1->Interpolate(example.get_initial_cond(0));
   u2->Interpolate(example.get_initial_cond(1));
+  
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // done with the conrtuctor in case we're not using multigrid
   if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE!= 5 
@@ -920,7 +921,7 @@ void Time_NSE2D::mg_solver()
 }
 
 /**************************************************************************** */
-void Time_NSE2D::output(int m, int& image)
+void Time_NSE2D::output(int m)
 {
 	bool no_output = !db["output_write_vtk"] && !db["output_compute_errors"];
 	if(no_output)
@@ -986,23 +987,7 @@ void Time_NSE2D::output(int m, int& image)
   {
     if(db["output_write_vtk"])
     {
-      TOutput2D output(2, 3, 1, 0, NULL);
-      output.AddFEFunction(&s.p);
-      output.AddFEVectFunct(&s.u);
-
-      // Create output directory, if not already existing.
-      mkdir(db["output_vtk_directory"], 0777);
-      std::string filename = this->db["output_vtk_directory"];
-      filename += "/" + this->db["output_basename"].value_as_string();
-
-      if(image<10) filename += ".0000";
-      else if(image<100) filename += ".000";
-      else if(image<1000) filename += ".00";
-      else if(image<10000) filename += ".0";
-      else filename += ".";
-      filename += std::to_string(image) + ".vtk";
-      output.WriteVtk(filename.c_str());
-      image++;
+      outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
     }
   }
 }
