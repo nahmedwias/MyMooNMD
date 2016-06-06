@@ -32,6 +32,7 @@
 
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <PostProcessing2D.h>
 
 #include <vector>
 #include <deque>
@@ -92,6 +93,9 @@ class Time_NSE2D
      */
     ParameterDatabase db;
 
+    /** @brief class for output handling */
+    PostProcessing2D outputWriter;
+    
     /** @brief a complete system on each grid 
      * 
      * Note that the size of this deque is at least one and larger only in case
@@ -225,7 +229,7 @@ class Time_NSE2D
     /** @brief
      * compute errors and write solution
      */
-    void output(int m, int &image);
+    void output(int m);
     
     /**
      * @brief initialize multigrid levels for different NSTYPE's

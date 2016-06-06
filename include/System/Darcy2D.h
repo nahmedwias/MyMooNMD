@@ -19,6 +19,7 @@
 #include <BlockVector.h>
 #include <ParameterDatabase.h>
 #include <Solver.h>
+#include <PostProcessing2D.h>
 
 #include <deque>
 #include <array>
@@ -98,6 +99,12 @@ class Darcy2D
      * Darcy2D::solver object.
      */
     ParameterDatabase db;
+    
+    /** @brief class for output handling
+     * 
+     * @warning case output for vector valued functions is not correctly working
+     */
+    PostProcessing2D outputWriter;
     
     /** @brief a solver object which will solve the linear system
      * 
