@@ -286,7 +286,7 @@ void Brinkman2D::assemble()
 				    v_space, 
 				    NULL, // p = 1
 				    1, // boundary component
-				       10); // mult
+				       -1000); // mult
       
     
     // copy Dirichlet values from right hand side into solution
