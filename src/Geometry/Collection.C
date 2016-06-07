@@ -1056,6 +1056,32 @@ int TCollection::writeMesh(const char *meshFileName)
   return 0;
   
 }
+
+void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &edges)
+{
+  edges.clear();
+  for(int i=0;i<this->N_Cells; i++)
+    {
+      TBaseCell *cell = this->Cells[i];
+      for(int j=0;  j < cell->GetN_Joints(); j++)
+        {
+	  TJoint *joint= cell->GetJoint(j);
+	  if (joint->GetType()==BoundaryEdge)
+            {
+	      TBoundEdge *boundedge = (TBoundEdge *)joint;
+	      TBoundComp *BoundComp = boundedge->GetBoundComp();
+	      if (BoundComp->GetID() == id)
+                {
+		  ///@todo set the boundedge properties in the function MakeGrid
+		  boundedge->SetNeighbour(cell);
+		  boundedge->set_index_in_neighbour(cell,j);
+		  edges.push_back(boundedge);                 
+                }
+            }
+        }
+    }
+}
+
 #ifdef _MPI
 int TCollection::find_process_of_point(double x, double y, double z) const
 {
@@ -1099,39 +1125,6 @@ int TCollection::find_process_of_point(double x, double y, double z) const
 
 }
 
-////std::vector<TBoundEdge*> TCollection::get_boundary_edge_list(const TCollection *coll,int boundary_component_id, & std::vector<TBoundEdge*> boundaryEdgeList)
-void TCollection::get_boundary_edge_list(int boundary_component_id, std::vector<TBoundEdge*> &boundaryEdgeList)
-{
-    
-  ////  std::vector<TBoundEdge*> boundaryEdgeList;
-   //// boundaryEdgeList.clear();
-    for(int i=0;i<N_Cells(); i++)
-    {
-        // get cell from Joint (not from i)
-       // TBaseCell *cell = coll->GetCell(i);
-        
-        int N_Joints=Cells[i]->GetN_Joints();
-        for(int local_joint_id=0;  local_joint_id < N_Joints; local_joint_id++)
-        {
-            TJoint *joint= Cells[i]->GetJoint(local_joint_id);
-            if ((joint->GetType()==BoundaryEdge))
-                //if(!(cell->GetJoint(joint_id)->InnerJoint()))
-            {
-                TJoint *joint = Cells[i]->GetJoint(local_joint_id);
-                TBoundEdge *boundedge = (TBoundEdge *)joint;
-                TBoundComp *BoundComp = boundedge->GetBoundComp();
-                if (BoundComp->GetID() == boundary_component_id)
-                {
-                    ///@todo The neighbour for boundary edges must be set in the function MakeGrid
-                    boundedge->SetNeighbour(Cells[i]);
-                    boundedge->set_index_in_neighbour(Cells[i], local_joint_id);
-                    boundaryEdgeList.push_back(boundedge);
-                    
-                }
-            }
-        }
-    }
-   //// return boundaryEdgeList;
-}
+
 
 #endif
