@@ -288,6 +288,10 @@ void Brinkman2D::assemble()
 				    1, // boundary component
 				       -1000); // mult
       
+      //std::vector<TBoundEdge*> boundaryEdgeList = v_space->GetCollection()->get_boundary_edge_list_on_component(1;
+      //BoundaryAssemble_on_rhs_g_v_n(RHSs,v_Space,NULL,boundaryEdgeList,-1000);
+      
+
     
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);

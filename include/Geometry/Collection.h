@@ -14,6 +14,7 @@
 #include <vector>
 #include <BaseCell.h>
 #include <JointCollection.h>
+#include <BoundEdge.h>
 
 /** @brief store cells in an array, used by cell iterators */
 class TCollection
@@ -125,6 +126,9 @@ class TCollection
    ///@brief Write the geometry in .mesh format
    int writeMesh(const char *meshFileName);
     
+   ///@brief Write a list of boundary edges
+   ////std::vector<TBoundEdge*> get_boundary_edge_list(const TCollection *coll, int boundary_component_id);
+   void get_boundary_edge_list(int boundary_component_id, std::vector<TBoundEdge*> &boundaryEdgeList);
    // ------------------------------------------------
 
  private:
