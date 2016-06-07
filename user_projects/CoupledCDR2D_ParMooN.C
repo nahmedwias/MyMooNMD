@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 	// Which example gets constructed is determined by the input file.
 	// 0 - constant_function example
 	// else - Error
-	Example_CoupledCDR2D example;
+	Example_CoupledCDR2D example(parmoon_db["example"]);
 	CoupledCDR_2D cdrsysObject(Domain, parmoon_db,
 	                           example, CoupledCDR_2D::SolvingStrategy::linear_decoupled);
 	// Assemble whatever matrices and vectors are necessary.
