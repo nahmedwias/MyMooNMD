@@ -219,6 +219,63 @@ BlockMatrix::BlockMatrix(int nRows, int nCols,
     }
 
 
+/* ************************************************************************* */
+void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                            size_t flag) const
+{
+  if(flag > 2)
+    ErrThrow("BlockMatrix::sor_sweep with flag not 0,1, or 2.");
+  
+  size_t n_diag_blocks = this->get_n_cell_rows();
+  if(this->get_n_cell_columns() != n_diag_blocks)
+    ErrThrow("BlockMatrix::sor_sweep not tested for non square block "
+             "structure");
+  
+  // only for ssor we do two sweeps, first forward then backward.
+  size_t n_sweeps = (flag == 2) ? 2 : 1;
+  for(size_t sweep = 0; sweep < n_sweeps; ++sweep)
+  {
+    // do either a forward or a backward sweep
+    //bool forward_sweep = flag == 0 || (flag == 2 && sweep == 0);
+    bool backward_sweep = flag == 1 || (flag == 2 && sweep == 1);
+    // loop over all diagonal blocks
+    for(size_t i = 0; i < n_diag_blocks; ++i)
+    {
+      size_t d = i; // block on the diagonal
+      if(backward_sweep)
+        d = n_diag_blocks - 1 - i; // this is positive
+      bool transposed;
+      auto diag_block = this->get_block(d, d, transposed);
+      if(transposed)
+        ErrThrow("can't to handle transposed blocks in BlockMatrix::sor_sweep");
+      if(!diag_block->is_square())
+        ErrThrow("unable to handle non-square diagonal block in "
+                 "BlockMatrix::sor_sweep");
+      size_t block_size = diag_block->GetN_Rows();
+      std::vector<double> modified_rhs(block_size, 0.0);
+      std::copy(b.block(d), b.block(d)+block_size, modified_rhs.begin());
+      // multiply solution with non-diagonal blocks in this block row.
+      for(size_t row_block = 0; row_block < n_diag_blocks; ++row_block)
+      {
+        if(row_block == d)
+          continue; // skip diagonal block
+        auto non_diagonal_block = this->get_block(d, row_block, transposed);
+        if(!transposed)
+          non_diagonal_block->multiply(x.block(row_block), &modified_rhs[0],
+                                       -1. );
+        else
+          non_diagonal_block->transpose_multiply(x.block(row_block),
+                                                 &modified_rhs[0], -1.);
+      }
+      // do the sor sweep
+      if(backward_sweep)
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 1);
+      else
+        diag_block->sor_sweep(&modified_rhs[0], x.block(d), omega, 0);
+    }
+  }
+}
+
     /* ************************************************************************* */
     void BlockMatrix::check_coloring() const
     {
