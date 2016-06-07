@@ -13,6 +13,7 @@ list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_gmres.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_jacobi.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_multigrid.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_richardson.C")
+list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Iteration_sor.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Saddle_point_preconditioner.C")
 list(APPEND SOLVER_SOURCES "${PROJECT_SOURCE_DIR}/src/Solver/Solver.C")
 
