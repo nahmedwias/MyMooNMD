@@ -367,7 +367,7 @@ int main(int argc, char **argv)
       Output::print("L1-error: ", i, ": ", vector_equal(sol, sol_copy));
     }
     if(vector_equal(sol, sol_copy) > 1e-14)
-      ErrThrow("TMatrix::sor_sweep changed the solution when it shouldn't");
+      ErrThrow("TMatrix::sor_sweep could not compute the correct solution");
   }
   
   delete matCT;
