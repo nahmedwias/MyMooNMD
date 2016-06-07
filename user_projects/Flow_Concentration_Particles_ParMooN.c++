@@ -50,20 +50,27 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
-  ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+
+  // read all input parameters
+  ParameterDatabase general_database("General Database");
+  ParameterDatabase flow_database("Flow Database");
+  ParameterDatabase conc_database("Conc Database");
+
   std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
+  general_database.read(fs);
+  flow_database.read(fs);
+  conc_database.read(fs);
   fs.close();
 
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(argv[1], parmoon_db);
+  Output::print(">>>>>>", "Starting ParMooN Program: Flow, Concentration, Particles (2D).");
 
-  //set PROBLEM_TYPE to CD if not yet set
-  if(parmoon_db["problem_type"].is(0))
-    parmoon_db["problem_type"] = 1;
+  /** set variables' value in TDatabase using argv[1] (*.dat file) */
+  TDomain domain(argv[1], general_database);
+
   //open OUTFILE, this is where all output is written to (additionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
+  Output::set_outfile(general_database["outfile"]);
+  Output::setVerbosity(general_database["verbosity"]);
+
 
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
@@ -71,7 +78,7 @@ int main(int argc, char* argv[])
 
   /* include the mesh from a mesh generator, for a standard mesh use the
    * build-in function. The GEOFILE describes the boundary of the domain. */
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+  domain.InitFromMesh(general_database["boundary_file"], general_database["mesh_file"]);
 
   //===========================================================================
   // do initial refinements of the domain
@@ -84,20 +91,18 @@ int main(int argc, char* argv[])
   //set global parameters which are to be used for NSE construction here...
   TDatabase::ParamDB->VELOCITY_SPACE = 2;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
-  parmoon_db["output_basename"] = parmoon_db["output_basename_flow"].get<std::string>();
 
-  Example_NSE2D example_flow(parmoon_db["example_flow"]); //should be 0 for test...
-  NSE2D flow_object(domain, parmoon_db, example_flow);
+  Example_NSE2D example_flow(flow_database["example"]); //should be 0 for test...
+  NSE2D flow_object(domain, flow_database, example_flow);
 
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
-  parmoon_db["output_basename"] = parmoon_db["output_basename_conc"].get<std::string>();
 
-  Example_TimeCD2D example_conc(parmoon_db["example_conc"]); //should be 104 or equivalent for test
-  Time_CD2D conc_object(domain, parmoon_db, example_conc);
+  Example_TimeCD2D example_conc(conc_database["example"]); //should be 104 or equivalent for test
+  Time_CD2D conc_object(domain, conc_database, example_conc);
 
   // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
-
+  Output::info("PROGRAM PART", "Precomputing velocity.");
   flow_object.assemble();
   flow_object.stopIt(0);
 
@@ -105,8 +110,6 @@ int main(int argc, char* argv[])
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t",
-                     flow_object.getResiduals());
     flow_object.solve();
 
     flow_object.assemble_nonlinear_term();
@@ -119,7 +122,7 @@ int main(int argc, char* argv[])
 
 
   // PART 5: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
-
+  Output::info("PROGRAM PART", "Solving the coupled system.");
   //get the velocity field of the precomputed velo object
   const TFEVectFunct2D& velo_field = flow_object.get_velocity();
 
