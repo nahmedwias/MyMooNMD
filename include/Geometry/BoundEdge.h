@@ -91,7 +91,8 @@ class TBoundEdge : public TJoint
     }
     
     
-
+    void set_index_in_neighbour(TBaseCell *neigh, int index);
+    int get_index_in_neighbour(const TBaseCell*const neigh) const;
     //END
     
     
