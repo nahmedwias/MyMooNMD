@@ -730,61 +730,54 @@ void TMatrix::remove_zeros(double tol)
 }
 
 
-void TMatrix::sor_sweep(const double* b, double* x, double omega, size_t flag)
+void TMatrix::sor_sweep(const double* b, double* x, double omega, size_t flag) 
+const
 {
   if(flag > 2)
     ErrThrow("TMatrix::sor_sweep with flag not 0,1, or 2.");
   if(!this->is_square())
     ErrThrow("TMatrix::sor_sweep for non-square matrix is not tested");
-  bool forward_sweep = flag == 0 || flag == 2;
-  bool backward_sweep = flag == 1 || flag == 2;
-  
+  // make sure all diagonal entries are non-zero
+  const std::vector<double> diagonal = this->get_diagonal();
+  if(std::find_if(diagonal.begin(), diagonal.end(), 
+                 [](const double& d){return d == 0.;}) != diagonal.end())
+  {
+    ErrThrow("There is a zero on the diagonal. You can not use `sor` in this "
+             "case");
+  }
   size_t n_rows = this->GetN_Rows();
   int * row_ptr = this->structure->GetRowPtr();
   int * col_ptr = this->structure->GetKCol();
   
-  // make sure all diagonal entries are non-zero
-  std::vector<double> diagonal = this->get_diagonal();
-  if(std::find_if(diagonal.begin(), diagonal.end(), 
-                 [](const double& d){return d == 0.;}) != diagonal.end())
-    ErrThrow("There is a zero on the diagonal. You can not use `sor` in this "
-             "case");
-  
-  if(forward_sweep)
+  // a lambda function doing a forward or backward solve. Note that in case 
+  // both steps are done, one could find a better implementation which is not 
+  // twice as long (in flops) as two individual solves. It would require more
+  // memory though.
+  auto do_sweep = [&](bool backward)
   {
-    for(size_t row = 0; row < n_rows; ++row)
+    for(size_t r = 0; r < n_rows; ++r)
     {
+      size_t row = r;
+      if(backward)
+        row = n_rows - 1 - r; 
       // multiply sol with the current row of this matrix
-      double sol_x_row = 0.0;
+      double sol_x_row = b[row];
       size_t row_begin = row_ptr[row];
       size_t row_end   = row_ptr[row+1];
       // loop over all entries in this row (index is the index in the entries 
       // vector)
       for(size_t index = row_begin; index < row_end; ++index)
       {
-        sol_x_row += this->entries[index] * x[col_ptr[index]];
+        sol_x_row -= this->entries[index] * x[col_ptr[index]];
       }
-      x[row] = x[row] + omega*(b[row] - sol_x_row)/diagonal[row];
+      x[row] = x[row] + omega * sol_x_row / diagonal[row];
     }
-  }
-  if(backward_sweep)
-  {
-    for(size_t r_row = 0; r_row < n_rows; ++r_row) // reverse row
-    {
-      size_t row = n_rows - 1 - r_row; 
-      // multiply sol with the current row of this matrix
-      double sol_x_row = 0.0;
-      size_t row_begin = row_ptr[row];
-      size_t row_end   = row_ptr[row+1];
-      // loop over all entries in this row (index is the index in the entries 
-      // vector)
-      for(size_t index = row_begin; index < row_end; ++index)
-      {
-        sol_x_row += this->entries[index] * x[col_ptr[index]];
-      }
-      x[row] = x[row] + omega*(b[row] - sol_x_row)/diagonal[row];
-    }
-  }
+  };
+  // do the actual solving step(s)
+  if(flag == 0 || flag == 2) // forward_sweep
+    do_sweep(false);
+  if(flag == 1 || flag == 2) // backward_sweep
+    do_sweep(true);
 }
 
 
