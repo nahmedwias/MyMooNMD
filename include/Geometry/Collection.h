@@ -127,8 +127,9 @@ class TCollection
    int writeMesh(const char *meshFileName);
     
    ///@brief Write a list of boundary edges
-   ////std::vector<TBoundEdge*> get_boundary_edge_list(const TCollection *coll, int boundary_component_id);
-   void get_boundary_edge_list(int boundary_component_id, std::vector<TBoundEdge*> &boundaryEdgeList);
+   void get_edge_list_on_component(int i,std::vector<TBoundEdge*> &edges);
+   ///@todo it is better to return the vector?
+   // std::vector<TBoundEdge*> get_edge_list_on_component(int i);
    // ------------------------------------------------
 
  private:

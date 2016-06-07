@@ -32,10 +32,11 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
                                                          double mult
                                                          )
 {
-    //std::vector<TBoundEdge*> boundaryEdgeList = U_Space->GetCollection()->get_boundary_edge_list_on_component(boundary_component_id);
+
     std::vector<TBoundEdge*> boundaryEdgeList;
-   // TCollection coll= *U_Space->GetCollection();
-    U_Space->GetCollection()->get_boundary_edge_list(boundary_component_id, boundaryEdgeList);
+    TCollection *coll= U_Space->GetCollection();
+    coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
+    
     BoundaryAssemble_on_rhs_g_v_n(rhs,U_Space,given_data,boundaryEdgeList,mult);
     
 }
