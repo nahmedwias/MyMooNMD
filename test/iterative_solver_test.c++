@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
   Output::increaseVerbosity(1);
   /**
    * A = [ 5.5, 0,    0,  0  ; B = [ 4, 0, 0, 1; C = B^T
-   *       0,   75.3, 0,  0  ;       0, 0, 5, 0;
+   *       0,   7.53, 0,  0  ;       0, 0, 5, 0;
    *       0,   0,    10, 0  ;       0, 6, 0, 1 ]
    *       0,   0,    0,  15 ]
    *
@@ -105,13 +105,16 @@ int main(int argc, char* argv[])
   db["solver_type"] = "iterative"; // set to iterative solvers
   db["residual_tolerance"] = 1.0e-11;
   db["max_n_iterations"] = 1000;
-  db["preconditioner"] = "jacobi";
+  // cg requires a symmetric preconditioner
+  db["preconditioner"] = "ssor"; // "jacobi" also ok
+  db["sor_omega"] = 1.25;
   
   // lambda function to do the solving and to check the error
   auto solve_and_check
     = [&mat, &rhs, &sol, &exact_sol]
       (Solver<BlockMatrix, BlockVector>& solver) -> bool
       {
+        sol.reset(); // start with same solution for every method
         solver.solve(mat, rhs, sol);
         // substract exact solution sol =  A^{-1}*rhs - exact_sol
         sol.add_scaled(exact_sol, -1.);
@@ -134,6 +137,8 @@ int main(int argc, char* argv[])
   // a map to store all solvers to test here
   std::map<std::string, std::string> solvers;
   solvers["Jacobi"] = "jacobi";
+  solvers["SOR"] = "sor";
+  solvers["SSOR"] = "ssor";
   solvers["Richardson"] = "richardson";
   solvers["cg"] = "cg";
   solvers["cgs"] = "cgs";
@@ -145,15 +150,9 @@ int main(int argc, char* argv[])
   for(auto & solver_info : solvers) // s is a std::pair
   {
     Output::print<1>("\ntesting ", solver_info.first, " iteration");
-    ParameterDatabase s_db(db); // copy the database
-    s_db["iterative_solver_type"] = solver_info.second;
+    db["iterative_solver_type"] = solver_info.second;
     
-    // some (not optimal) damping parameter
-    if(solver_info.first == "Richardson"
-       && s_db["preconditioner"].is("no_preconditioner"))
-      s_db["damping_factor"] = 1./50.;
-    
-    Solver<BlockMatrix, BlockVector> s(s_db);
+    Solver<BlockMatrix, BlockVector> s(db);
     if(!solve_and_check(s))
     {
       Output::print<1>(solver_info.first, " iteration failed");

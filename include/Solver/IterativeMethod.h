@@ -74,7 +74,7 @@ class IterativeMethod
                     std::string name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
         residual_reduction(0.), divergence_factor(1.5), max_n_iterations(100),
-        min_n_iterations(0), restart(10)
+        min_n_iterations(0), restart(10), damping(1.0)
     {
     }
     
