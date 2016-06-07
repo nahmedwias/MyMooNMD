@@ -63,7 +63,7 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
       r[j] *= this->damping / this->diagonal_entries[j];
     // now: r = w D^{-1}(rhs - A*solution)
     r += solution;
-    // now: r = D^{-1}(rhs - A*solution) + solution
+    // now: r = w D^{-1}(rhs - A*solution) + solution
     std::swap(solution, r); // solution is now the new solution
     
     // compute residual

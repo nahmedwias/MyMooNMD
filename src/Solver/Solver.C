@@ -6,6 +6,7 @@
 #include <Iteration_jacobi.h>
 #include <Iteration_multigrid.h>
 #include <Iteration_richardson.h>
+#include <Iteration_sor.h>
 #include <Saddle_point_preconditioner.h>
 
 template <class L, class V>
@@ -61,9 +62,13 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   db.add("preconditioner", std::string("no_preconditioner"),
          "Determine the used preconditioner. Note that some of these are "
          "specific for some problem types.",
-         {"no_preconditioner", "jacobi", "gauss_seidel", "multigrid", 
+         {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
           "least_squares_commutator", "least_squares_commutator_boundary"});
+  
+  db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
+         "omega). This is only used for the (symmetric) successive "
+         "overrelaxation method.", 0., 2.);
   
   db.add("saddle_point_preconditioner_direct_velocity_solve", true, 
          "During the application of a Saddle_point_preconditioner one has to "
@@ -99,6 +104,14 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
   {
     return std::make_shared<Iteration_jacobi<L, V>>(matrix);
   }
+  else if(preconditioner_name == "sor")
+  {
+    return std::make_shared<Iteration_sor<L, V>>(matrix, 0, db["sor_omega"]);
+  }
+  else if(preconditioner_name == "ssor")
+  {
+    return std::make_shared<Iteration_sor<L, V>>(matrix, 2, db["sor_omega"]);
+  }
   else if(preconditioner_name == "least_squares_commutator")
   {
     return std::make_shared<Saddle_point_preconditioner>(
@@ -128,13 +141,21 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
-  std::string iterative_solver_type, const L& matrix,
-  std::shared_ptr<Preconditioner<V>> p)
+  std::string iterative_solver_type, const ParameterDatabase& db,
+  const L& matrix, std::shared_ptr<Preconditioner<V>> p)
 {
   std::shared_ptr<IterativeMethod<L, V>> ret;
   if(iterative_solver_type == "jacobi")
   {
     ret = std::make_shared<Iteration_jacobi<L, V>>(matrix);
+  }
+  else if(iterative_solver_type == "sor")
+  {
+    ret = std::make_shared<Iteration_sor<L, V>>(matrix, 0, db["sor_omega"]);
+  }
+  else if(iterative_solver_type == "ssor")
+  {
+    ret = std::make_shared<Iteration_sor<L, V>>(matrix, 2, db["sor_omega"]);
   }
   else if(iterative_solver_type == "richardson")
   {
@@ -231,7 +252,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
       if(spp != nullptr)
         spp->update(matrix);
     }
-    this->iterative_method = get_iterative_method<L, V>(ist, matrix, 
+    this->iterative_method = get_iterative_method<L, V>(ist, this->db, matrix, 
                                                         this->preconditioner);
     this->iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc, 
                                                     2., damping, restart);
@@ -297,8 +318,8 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
     size_t restart = db["gmres_restart"]; // only for gmres
     double damping = db["damping_factor"];
 
-    iterative_method = get_iterative_method<L, V>(ist, matrix,
-                                                        this->preconditioner);
+    iterative_method = get_iterative_method<L, V>(ist, this->db, matrix,
+                                                  this->preconditioner);
     iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc,
                                                     2., damping, restart);
 
