@@ -173,7 +173,9 @@ The massif tool provides information about memory allocated on the heap. It
 enables you to see which parts of your program result in memory peaks and also
 makes it possible to visually discover the severe memory leaks.
 you can start it with 
-  valgrind --tool=massif ./nse2d nse2d.dat
+\code{.sh}
+valgrind --tool=massif ./nse2d nse2d.dat
+\endcode
 but be prepared! It will take quite some time to come through. It by default 
 produces a file named "massif.out.<process_number>" which then can be examined
 using e.g. the massif visualizer tool found here:
