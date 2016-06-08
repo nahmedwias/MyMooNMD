@@ -411,7 +411,9 @@ class BlockMatrix
 
     /// @brief Default destructor. Tidies up nice and clean.
     virtual ~BlockMatrix() = default;
-
+    
+    /// @brief Set all submatrices to zero
+    void reset();
 
   protected:
 
@@ -797,12 +799,6 @@ class BlockMatrix
     // not yet adapted members of BlockMatrix - serves as a TODO list
 
   public:
-
-    /** @brief Set all submatrices to zero
-     *
-     * Possibly existing special matrices are not changed.
-     */
-    void reset();
 
     /**
      * @brief adding a scaled matrix to this matrix

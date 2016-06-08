@@ -1667,3 +1667,9 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
       } //endwhile
 
     }
+
+/* ************************************************************************* */
+void BlockMatrix::reset()
+{
+  this->scale(0.0);
+}
