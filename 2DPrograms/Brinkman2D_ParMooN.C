@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1], parmoon_db);
-  
+
  //// //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
  //// if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
  ////   TDatabase::ParamDB->PROBLEM_TYPE = 5;

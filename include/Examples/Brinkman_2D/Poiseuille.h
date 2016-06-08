@@ -40,11 +40,20 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 void BoundCondition(int i, double Param, BoundCond &cond)
 {
-  cond = DIRICHLET;
-  TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0 ;
-  if (i==1 || i==3) {
-    cond = NEUMANN;
-  }
+    cond = DIRICHLET; // boundary component i has Dirichlet BC (DOF at the end of matrix)
+    
+    if (TDatabase::ParamDB->n_neumann_boundary==0)
+    {TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1; // = 1 if BC are only Dirichlet (for pressure average-->uniqueness)
+    }
+    else
+    {TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0 ; // =  0 if some non-Dirichlet BC
+        for (int j=0; j<TDatabase::ParamDB->n_neumann_boundary; j++)
+        {
+            if (i==TDatabase::ParamDB->neumann_boundary_id[j])
+            {cond = NEUMANN;
+            }
+        }
+    }
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)

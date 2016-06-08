@@ -15,6 +15,7 @@
 #include <FEFunction2D.h>
 #include <BoundEdge.h>
 #include <Collection.h>
+#include <Database.h>
 
 class BoundaryAssembling2D
 {

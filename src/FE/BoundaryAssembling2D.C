@@ -21,6 +21,7 @@
 #include <BoundaryAssembling2D.h>
 #include <BoundEdge.h>
 #include <Collection.h>
+#include <Database.h>
 
 
 
@@ -46,14 +47,11 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
                                                          const TFESpace2D *U_Space,
                                                          TFEFunction2D *given_data,
                                                          std::vector<TBoundEdge*> &boundaryEdgeList,
-                                                         double mult
-                                                         )
-{    
-    // =========================================
+                                                         double mult)
+{   // =========================================
     int *BeginIndex = U_Space->GetBeginIndex();
     int *GlobalNumbers = U_Space->GetGlobalNumbers();
     int ActiveBound = U_Space->GetActiveBound();
-    
     
     for(int m=0;m< boundaryEdgeList.size(); m++)
     {
@@ -63,19 +61,14 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
         FE2D FEId = U_Space->GetFE2D(0,cell );
         
         int BaseVectDim = 1; // we assume only scalar FE
-        
-        
         // ---------------------------------------------------------------
-        
         int joint_id = boundedge->get_index_in_neighbour(cell);
-        
         
         // get a quadrature formula good enough for the velocity FE space
         int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
         this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
         std::vector<double> quadWeights,quadPoints;
         get_quadrature_formula_data(fe_degree,quadPoints,quadWeights);
-        
         
         //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
         
@@ -91,7 +84,6 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
         double nx,ny;
         boundedge->get_normal(nx, ny);
         
-        
         // -------------------------------------------
         // quadrature
         for(unsigned int k=0;k<quadPoints.size();k++)
@@ -100,8 +92,6 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
             //double uorig[N_BaseFunct], uxorig[N_BaseFunct];
             //double uyorig[N_BaseFunct];
             //get_original_values(FEId, joint_id, cell, quadPoints[k],BaseVectDim, uorig,uxorig,uyorig);
-            
-            
             // ----------------------------
             
             ///@attention in 1D the reference joint is [-1,1] => length = 2
@@ -141,11 +131,7 @@ void BoundaryAssembling2D::BoundaryAssemble_on_rhs_g_v_n(double **rhs,
                 rhs[1][global_dof_from_local] +=
                 mult * quadWeights[k] * given_data_value[0] * (vtest*ny) *
                 (joint_length/reference_joint_length);
-                
-                
-            } //for(l=0;l<N_BaseFunct;l++)
-            
-            
+            } //for(l=0;l<N_BaseFunct;l++) 
         }
     } // endif
 }

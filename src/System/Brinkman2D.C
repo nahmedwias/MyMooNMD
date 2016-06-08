@@ -23,6 +23,7 @@ ParameterDatabase get_default_Brinkman2D_parameters()
 
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
+  
 
   return db;
 }
@@ -281,17 +282,16 @@ void Brinkman2D::assemble()
                boundary_conditions, non_const_bound_values.data(), la);
       Output::print("assemble");
 
-      BoundaryAssembling2D bi;
-      bi.BoundaryAssemble_on_rhs_g_v_n(RHSs,
-				    v_space, 
-				    NULL, // p = 1
-				    1, // boundary component
-				       -1000); // mult
       
-      //std::vector<TBoundEdge*> boundaryEdgeList = v_space->GetCollection()->get_boundary_edge_list_on_component(1;
-      //BoundaryAssemble_on_rhs_g_v_n(RHSs,v_Space,NULL,boundaryEdgeList,-1000);
-      
-
+      for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+      {
+          BoundaryAssembling2D bi;
+          bi.BoundaryAssemble_on_rhs_g_v_n(RHSs,
+                                           v_space,
+                                           NULL, // p = 1
+                                           TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
+                                           -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
+      }
     
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
