@@ -37,12 +37,8 @@
 #include <Example_NSE2D.h>
 
 //for the time cd2d object
-#include <Time_CD2D.h>
-#include <Example_CD2D.h>
-
-
-//the interpolator
-#include <FEFunctionInterpolator.h>
+#include <Coupled_Time_CDR_2D.h>
+#include <Example_TimeCD2D.h>
 
 
 int main(int argc, char* argv[])
@@ -51,10 +47,12 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
 
-  // read all input parameters
+  // read all input parameters in three different databases
   ParameterDatabase general_database("General Database");
   ParameterDatabase flow_database("Flow Database");
   ParameterDatabase conc_database("Conc Database");
+  flow_database.merge(general_database, true);
+  conc_database.merge(general_database, true);
 
   std::ifstream fs(argv[1]);
   general_database.read(fs);
@@ -92,14 +90,14 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->VELOCITY_SPACE = 2;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
 
-  Example_NSE2D example_flow(flow_database["example"]); //should be 0 for test...
+  Example_NSE2D example_flow(flow_database["example"]);
   NSE2D flow_object(domain, flow_database, example_flow);
 
   //set global parameters which are to be used for Time_CD2D construction here...
   TDatabase::ParamDB->ANSATZ_ORDER = 1;
 
-  Example_TimeCD2D example_conc(conc_database["example"]); //should be 104 or equivalent for test
-  Time_CD2D conc_object(domain, conc_database, example_conc);
+  Example_TimeCoupledCDR2D example_conc(conc_database["example"]);
+  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
 
   // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
   Output::info("PROGRAM PART", "Precomputing velocity.");
@@ -121,8 +119,9 @@ int main(int argc, char* argv[])
   flow_object.output();
 
 
-  // PART 5: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
+  // PART 4: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
   Output::info("PROGRAM PART", "Solving the coupled system.");
+
   //get the velocity field of the precomputed velo object
   const TFEVectFunct2D& velo_field = flow_object.get_velocity();
 
@@ -134,32 +133,26 @@ int main(int argc, char* argv[])
   int step = 0;
   int n_substeps = GetN_SubSteps();
 
-
   conc_object.output();
+
   // time iteration
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     step++;
-    // Output::print("mem before: ", GetMemory());
+
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j=0; j < n_substeps; ++j)
     {
       SetTimeDiscParameters(1);
-      if(step==1)
-      {
-        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-      }
+
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
 
       Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-      conc_object.assemble(&velo_field);
+      conc_object.assemble_uncoupled_part(&velo_field);
 
-      conc_object.solve();
+      conc_object.couple_and_solve(&velo_field);
 
       conc_object.output();
     }
