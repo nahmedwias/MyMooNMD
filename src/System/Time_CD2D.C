@@ -185,12 +185,6 @@ void Time_CD2D::set_parameters()
           "linear elements. Change ANSATZ_ORDER to 1!");
     }
 
-    // so far only direct solver
-    if (TDatabase::ParamDB->SOLVER_TYPE != 2)
-    {
-      ErrThrow("With AFC only direct solver is working so far!");
-    }
-
     //make sure that galerkin discretization is used
     if (TDatabase::ParamDB->DISCTYPE != 1)
     {//some other disctype than galerkin

@@ -142,18 +142,10 @@ int main(int argc, char* argv[])
   // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
-  //print information on the mesh partitioning
-  Output::print("Process ", my_rank, ". N_OwnCells: ",
-                domain.GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetN_HaloCells());
 #endif
 
-  // Create output directory, if not already existing.
-//  if(TDatabase::ParamDB->WRITE_VTK)
-//  {
-//    mkdir(TDatabase::ParamDB->OUTPUTDIR, 0777);
-//  }
+  //print information on the mesh partition on the finest grid
+  domain.print_info("TNSE3D domain");
 
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
