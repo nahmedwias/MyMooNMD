@@ -208,7 +208,7 @@ class Time_CD3D
      */
 #ifdef _MPI
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_CD3D& _example, int maxSubDomainPerDof);
+	      const Example_TimeCD3D& _example, int maxSubDomainPerDof);
 #else
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
 	      const Example_TimeCD3D& _example);

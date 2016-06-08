@@ -116,9 +116,6 @@ int main(int argc, char *argv[])
   // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
   
-  // print information on the mesh partitioning
-  Output::print("Process ", my_rank, ", N_OwnCell: " domain.GetN_OwnCells(), 
-		" N_HaloCells: ", domain.GetN_HaloCells());
 #endif
   
   
@@ -145,6 +142,9 @@ int main(int argc, char *argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
   
+  //print information on the mesh partition on the finest grid
+  domain.print_info("TCD3D domain");
+
   // Choose example according to the value of
   Example_TimeCD3D example(parmoon_db["example"]);  
   

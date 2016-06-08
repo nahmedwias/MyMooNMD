@@ -124,12 +124,11 @@ int main(int argc, char* argv[])
   // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
-  //print information on the mesh partitioning
-  Output::print("Process ", my_rank, ". N_OwnCells: ",
-                domain.GetN_OwnCells(),
-                ". N_HaloCells: ",
-                domain.GetN_HaloCells());
 #endif
+
+
+  //print information on the mesh partition on the finest grid
+  domain.print_info("NSE3D domain");
 
   // Choose and construct example.
   Example_NSE3D example(parmoon_db["example"]);
