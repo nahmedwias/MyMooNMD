@@ -74,7 +74,6 @@ Multigrid::Multigrid(const ParameterDatabase& db,
 
   // Store the between-level damping parameters.
   size_t n_levels = levels_.size();
-  Output::print(n_levels);
 
 
   for(size_t i = 0; i < n_levels ;++i)
