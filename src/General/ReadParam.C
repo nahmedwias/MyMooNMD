@@ -3176,12 +3176,43 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
     
-    if (!strcmp(line, ":"))
+    if (!strcmp(line, ""))
     {
       dat >> TDatabase::ParamDB->DEPENDENT_BASIS_Q2;
       N_Param++;
     }
     
+      if (!strcmp(line, "n_neumann_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_neumann_boundary;
+          Output::print("number is ", TDatabase::ParamDB->n_neumann_boundary);
+          N_Param++;
+          TDatabase::ParamDB->neumann_boundary_id.resize(TDatabase::ParamDB->n_neumann_boundary);
+          TDatabase::ParamDB->neumann_boundary_value.resize(TDatabase::ParamDB->n_neumann_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->neumann_boundary_id.begin(),
+                    TDatabase::ParamDB->neumann_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->neumann_boundary_value.begin(),
+                    TDatabase::ParamDB->neumann_boundary_value.end(), 0.);
+      }
+      
+
+      
+      if (!strcmp(line, "neumann_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_id[ib];
+              Output::print("id is ", TDatabase::ParamDB->neumann_boundary_id[ib]);
+          }
+      }
+      
+      if (!strcmp(line, "neumann_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_neumann_boundary; ib++) {
+              dat >> TDatabase::ParamDB->neumann_boundary_value[ib];
+           Output::print("mult is ", TDatabase::ParamDB->neumann_boundary_value[ib]);
+          }
+      }
+      
     if (!strcmp(line, "timeprofiling:"))
     {
       dat >> TDatabase::ParamDB->timeprofiling;
