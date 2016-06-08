@@ -50,6 +50,7 @@ class Coupled_Time_CDR_2D {
      */
     void assemble_initial_time();
 
+
     /**
      * Assembles the decoupled equations for the current time step.
      * Note that the assembling and adding of the coupled parts is done in the
@@ -57,11 +58,26 @@ class Coupled_Time_CDR_2D {
      */
     void assemble_uncoupled_part();
 
+
+
     /**
      * Solve the system. Contains a loop in which the coupled part is assembled,
      * put to the right hand side and the resulting equations is solved.
      */
     void couple_and_solve();
+
+    /**
+     * Assembling functions for the case of coupling with a velocity field
+     * (and a population balance equation).
+     */
+    void assemble_initial_time(const TFEVectFunct2D* velocity_field,
+                               const TFEVectFunct2D* population_balance = nullptr);
+
+    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field,
+                                 const TFEVectFunct2D* population_balance = nullptr);
+
+    void couple_and_solve(const TFEVectFunct2D* velocity_field,
+                          const TFEVectFunct2D* population_balance = nullptr);
 
     /**
      * Produce some output.
