@@ -886,7 +886,7 @@ ParameterDatabase ParameterDatabase::default_output_database()
 
 	  db.add("steps_per_output", 1,
 	         "This integer specifies how many (time) steps are performed "
-		 "before writing the results ");
+	         "before writing the results ");
 
 	  return db;
 }
