@@ -27,6 +27,11 @@ namespace Bsp3
 {
   #include "TNSE_3D/Bsp3.h"   // 5
 }
+//project: twisted pipe flow
+namespace twisted_pipe_flow //10
+{
+#include "NSE_3D/twisted_pipe_flow.h"
+}
 
 //=========================================================
 Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
@@ -58,9 +63,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -90,9 +95,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -122,9 +127,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -154,9 +159,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -186,9 +191,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -218,11 +223,43 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
 
       ExampleFile();
+      break;
+    }
+    case 10:
+    {
+      using namespace twisted_pipe_flow;
+      /** exact_solution */
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = LinCoeffs;
+
+      /** initial conditions */
+      initialCondition.push_back( InitialU1 );
+      initialCondition.push_back( InitialU2 );
+      initialCondition.push_back( InitialU3 );
+
+      ExampleFile(true);
       break;
     }
     default:

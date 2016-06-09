@@ -12,6 +12,8 @@
 #include <mpi.h>
 #endif
 
+bool TIME_DEPENDENT = false;
+
 namespace twisted_pipe_flow{ //must be included within the same namespace as in Exa
   #include <twisted_pipe_flow.h>
 };
@@ -31,7 +33,7 @@ double vol_flux = 7.2; // (cm^3/s) the volume flux at inflow (of the experiment,
 //      eps = (eta/rho) / (u_infty*l_infty);
 }
 
-void twisted_pipe_flow::ExampleFile()
+void twisted_pipe_flow::ExampleFile(bool time_dependent)
 {
 #ifdef _MPI
   int my_rank;
@@ -45,12 +47,17 @@ void twisted_pipe_flow::ExampleFile()
   TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY = 1356; //FIXME Remove this from the entire code!
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 
+  if( time_dependent )
+  {
+    TIME_DEPENDENT = true;
+  }
+
   if(my_rank == 0)
     Output::print(" > Example: twisted_pipe_flow.h.");
 
   using namespace FluidProperties;
 
-  if(TDatabase::TimeDB->T9 != 1.0 ) //TODO That's the gobal signal for NON time-dependent problem...awful workaround...
+  if( TIME_DEPENDENT )
   {
     vol_flux = 0.72;
   }
@@ -94,7 +101,7 @@ void twisted_pipe_flow::ExactU1(double x, double y,  double z, double *values)
       double u_1_y = -2 * 2 * u_avr * y / R2; //y derivative
       double u_1_z = -2 * 2 * u_avr * z / R2;; //z derivative
 
-      if(TDatabase::TimeDB->T9 == 1.0 ) //TODO That's the gobal signal for time-dependent problem...awful workaround...
+      if( TIME_DEPENDENT )
       {
         double t = TDatabase::TimeDB->CURRENTTIME;
         if(t < 1.0) //within first second of the simulated time

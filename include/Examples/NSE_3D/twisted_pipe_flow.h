@@ -13,7 +13,7 @@
 #ifndef TWISTED_PIPE_FLOW_
 #define TWISTED_PIPE_FLOW_
 
-void ExampleFile();
+void ExampleFile(bool time_dependent);
 
 void ExactU1(double x, double y,  double z, double *values);
 
