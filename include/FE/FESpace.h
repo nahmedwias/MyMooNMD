@@ -112,7 +112,7 @@ class TFESpace
     TFESpace(TCollection *coll, char *name, char *description);
 
     /** destrcutor */
-    ~TFESpace();
+    virtual ~TFESpace();
 
     /** return name */
     char *GetName() const
