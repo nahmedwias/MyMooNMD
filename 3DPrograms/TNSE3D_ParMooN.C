@@ -122,8 +122,7 @@ int main(int argc, char* argv[])
   // a global parameter (which is awful).
   // AWFUL WORKAROUND: we use this global parameter to signal to the
   // twisted pipe example that it is time dependent:
-  TDatabase::TimeDB->T9 = 1.0;
-  Example_NSE3D example(parmoon_db["example"]);
+  Example_TimeNSE3D example(parmoon_db["example"]);
 
   // Read in geometry and initialize the mesh.
   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
@@ -179,7 +178,7 @@ int main(int argc, char* argv[])
 
   // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
-
+#endif //_MPI
 
 
   //print information on the mesh partition on the finest grid
@@ -188,8 +187,6 @@ int main(int argc, char* argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db["example"]);
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, parmoon_db, example, maxSubDomainPerDof);
