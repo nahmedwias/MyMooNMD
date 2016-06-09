@@ -70,7 +70,7 @@ class Example2D
     Example2D& operator=(Example2D&&) = default;
 
     //! Default destructor.
-    ~Example2D() = default;
+    virtual ~Example2D() = default;
 
 
     // Getter functions
@@ -93,8 +93,7 @@ class Example2D
     BoundValueFunct2D* get_bd(unsigned int i) const
     { return boundary_data.at(i); }
 
-    CoeffFct2D* get_coeffs() const
-    { return problem_coefficients; }
+    virtual CoeffFct2D* get_coeffs() const;
 };
 
 #endif // __EXAMPLE2D__
