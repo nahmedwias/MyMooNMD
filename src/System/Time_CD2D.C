@@ -199,7 +199,7 @@ void Time_CD2D::set_parameters()
     }
 
     // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1; //FIXME THIS IS DANGEROUS, does not go well with BlockFEMatrix!
   }
 }
 

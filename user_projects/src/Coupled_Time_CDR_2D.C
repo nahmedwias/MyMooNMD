@@ -117,8 +117,6 @@ void Coupled_Time_CDR_2D::couple_and_solve()
     //loop over the equations
     for (size_t equation = 0; equation<nEquations_;++equation){
 
-      Output::info("TCDRE SYSTEM SOLVE", "Step ", step, " Equation ", equation);
-
       // assemble the coupling term
       coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
 
@@ -130,7 +128,7 @@ void Coupled_Time_CDR_2D::couple_and_solve()
 
     }//end loop over equations
 
-    // Check whether any stopping criterion is matched.
+    // Check whether any stopping criterion is matched. FIXME This is at the wrong place - iteration is Gauss--Seidel style!
     bool break_it = break_iteration(step);
 
     // Set back to uncoupled rhs.
