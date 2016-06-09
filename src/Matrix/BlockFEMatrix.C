@@ -569,7 +569,24 @@ void BlockFEMatrix::apply_scaled_add(const BlockVector & x,
   apply_scaled_add_actives(x,y,a);
 
   //and then update the non-active rows.
-  y.addScaledNonActive(x,a);
+  if (!TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE)
+    y.addScaledNonActive(x,a);
+
+  /// FIXME It is an awful hack to refer to INTERNAL_FULL_MATRIX_STRUCTURE.
+  /// Sometimes TStructures are assembled as if there were no non-actives
+  /// (especially when using algebraic flux correction). In that case, the method
+  /// apply_scaled_add_actives will think, that all rows of a stored FEMatrix
+  /// are active, if then additionally addScaledNonActive is called this will
+  /// produce wrong results. Two big design problems get apparent here
+  ///
+  /// 1) Referring to global scope for such a localized issue is a no-no.
+  /// 2) The handling of non-actives is still a mess and must be fixed
+  ///    in the whole programm, in the process of restructuring the Assembling.
+  ///    Especially there may not be multiple classes which care for the
+  ///    non-active issue (as now FESpace, TStructure AND BlockFEMatrix).
+  ///    I'd like to entirely remove the information from TStructure and FEMatrix,
+  ///    and place it in FESpace, while leaving the handling to the BlockFEMatrix.
+  ///
 
 }
 
