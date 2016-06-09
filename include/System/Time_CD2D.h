@@ -258,6 +258,11 @@ class Time_CD2D
     const ParameterDatabase & get_db() const
     { return db; }
     
+    /// Return discrete reisdual of the currently stored system.
+    // ASsumes that stiff_matrix is the matrix to be solved.
+    /// TODO This method could definitely go into a superclass, if there was one.
+    double get_discrete_residual() const;
+
     /**
     * @brief return the computed errors at each discre time point
     * 

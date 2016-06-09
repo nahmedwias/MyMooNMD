@@ -476,7 +476,18 @@ void Time_CD2D::output()
   timeDependentOutput.write(TDatabase::TimeDB->CURRENTTIME);
 }
 
-/**************************************************************************** */
+/* *************************************************************************** */
+double Time_CD2D::get_discrete_residual() const
+{
+  const System_per_grid& s = systems.front();
+
+  BlockVector defect = s.rhs;
+  s.stiff_matrix.apply_scaled_add(s.solution, defect, -1.0);
+
+  return defect.norm();
+}
+
+/* *************************************************************************** */
 std::array< double, int(3) > Time_CD2D::get_errors() const
 {
   std::array<double, int(3)> error_at_time_points;
