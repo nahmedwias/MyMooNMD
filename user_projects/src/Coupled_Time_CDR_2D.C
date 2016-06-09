@@ -8,12 +8,29 @@
 #include <ReactionCoupling.h>
 #include <Time_CD2D.h>
 
+#include <algorithm>
+
+ParameterDatabase get_default_Coupled_Time_CDR_2D_parameters()
+{
+  ParameterDatabase db("TCDRE System Database");
+
+  db.add("tcdre_system_solve_maxit", (size_t) 5,
+         "Maximum n of iterations in solve loop.", (size_t) 0, (size_t) 20);
+
+  db.add("tcdre_system_solve_epsilon", 1e-10,
+         "Target residual to break solver loop. "
+         "Maximum over all equations.", 0.0, 1.0);
+
+  return db;
+}
+
 
 Coupled_Time_CDR_2D::Coupled_Time_CDR_2D(
-    const TDomain& domain, const ParameterDatabase& db,
+    const TDomain& domain, const ParameterDatabase& input_db,
     const Example_TimeCoupledCDR2D& example)
-: example_(example)
+: example_(example), db_(get_default_Coupled_Time_CDR_2D_parameters())
 {
+  db_.merge(input_db, false);
   nEquations_ = example_.getNEquations();
 
   /* ********* The list of Time_CD2D problems.  ********************/
@@ -23,7 +40,7 @@ Coupled_Time_CDR_2D::Coupled_Time_CDR_2D(
   for(size_t index = 0; index<nEquations_;++index)
   {
     ParameterDatabase tcd2d_db = ParameterDatabase::parmoon_default_database();
-    tcd2d_db.merge(db, true);
+    tcd2d_db.merge(input_db, true);
     //TODO this is awful about the new Database!
     tcd2d_db["output_basename"].set_range<std::string>(
         { tcd2d_db["output_basename"].get<std::string>()
@@ -79,53 +96,62 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part()
 
 void Coupled_Time_CDR_2D::couple_and_solve()
 {
-  // ///////////////// COPY & PASTE FROM STATIONARY ///////////////////////////
-    // Put up an array of pointers to the solutions of previous iteration
-    TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
+  // Put up an array of pointers to the solutions of previous iteration
+  TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
 
-    // Store the original right hand sides of the CDR Equations without coupling.
-    std::vector<BlockVector> originalRightHandSides;
+  // Store the original right hand sides of the CDR Equations without coupling.
+  std::vector<BlockVector> originalRightHandSides;
+  for (size_t equation = 0; equation<nEquations_;++equation){
+    BlockVector vector(cdProblems_[equation]->get_rhs());
+    originalRightHandSides.push_back(vector);
+  }
+
+
+  for (size_t step = 0 ; true ; ++step){
+
+    //Fill pointers to available solutions into previousSolutions array
+    for(size_t i =0;i<nEquations_;++i){
+      previousSolutions[i]=&cdProblems_[i]->get_function();
+    }
+
+    //loop over the equations
     for (size_t equation = 0; equation<nEquations_;++equation){
-      BlockVector vector(cdProblems_[equation]->get_rhs());
-      originalRightHandSides.push_back(vector);
+
+      Output::info("TCDRE SYSTEM SOLVE", "Step ", step, " Equation ", equation);
+
+      // assemble the coupling term
+      coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
+
+      // add coupled rhs to rhs of the uncoupled equation
+      cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);
+
+      // solve equation with the new right hand side
+      cdProblems_[equation]->solve();
+
+    }//end loop over equations
+
+    // Check whether any stopping criterion is matched.
+    bool break_it = break_iteration(step);
+
+    // Set back to uncoupled rhs.
+    for (size_t equation = 0; equation<nEquations_;++equation){
+      cdProblems_[equation]->get_rhs().copy(originalRightHandSides.at(equation).get_entries());
     }
 
-    // while(Abbruchbedingung nicht erfuellt) - beginne einfach mit einer festen Anzahl Iterationen.
-    for (size_t steps = 0; steps<5;steps++){
-      //Fill pointers to available solutions into previousSolutions array
-      for(size_t i =0;i<nEquations_;++i){
-        previousSolutions[i]=&cdProblems_[i]->get_function();
-      }
-      //loop over the equations
-      for (size_t equation = 0; equation<nEquations_;++equation){
-        Output::print("Step ", steps, " Equation ", equation);
+    //If break, then break
+    if (break_it)
+      break;
 
-        // assemble the coupling term
-        coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
+  }//endwhile bzw. endfor
 
-        // add coupled rhs to rhs of the uncoupled equation
-        cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);
+  //descale the stiffness matrices of the problems, which also updates old_Au
+  for (auto cd : cdProblems_){
+    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    double theta_1 = TDatabase::TimeDB->THETA1;
+    cd->descale_stiffness(tau, theta_1);
+  }
 
-        // solve equation with the new right hand side
-        cdProblems_[equation]->solve();
-
-        // Set back to original rhs.
-        cdProblems_[equation]->get_rhs().copy(originalRightHandSides.at(equation).get_entries());
-
-      }//end loop over equations
-
-    }//endwhile bzw. endfor
-
-    //descale the stiffness matrices of the problems, which also updates old_Au
-    for (auto cd : cdProblems_){
-      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-      double theta_1 = TDatabase::TimeDB->THETA1;
-      cd->descale_stiffness(tau, theta_1);
-    }
-
-    delete[] previousSolutions; //just delete the pointers array
-
-    // ///////////////// END COPY & PASTE FROM STATIONARY ///////////////////////////
+  delete[] previousSolutions; //just delete the pointers array
 }
 
 void Coupled_Time_CDR_2D::assemble_initial_time(
@@ -167,3 +193,52 @@ void Coupled_Time_CDR_2D::output(){
     cdProblems_[equation]->output();
   }
 }
+
+bool Coupled_Time_CDR_2D::break_iteration(size_t step)
+{
+  size_t max_it = db_["tcdre_system_solve_maxit"];
+  double epsilon = db_["tcdre_system_solve_epsilon"];
+
+
+  // Calculate residuals.
+  std::vector<double> residuals(this->nEquations_, 0.0);
+  for(size_t p = 0 ; p < nEquations_; ++p)
+  {
+    residuals[p] = cdProblems_[p]->get_discrete_residual();
+  }
+  double max_res = *std::max_element(residuals.begin(), residuals.end());
+
+  // Check whether target epsilon is hit.
+  if(max_res < epsilon)
+  {
+    Output::stat("TCDRE SYSTEM SOLVE", "Target epsilon hit (", epsilon, ")");
+    for(size_t p = 0 ; p < nEquations_; ++p)
+      Output::dash("eq ", p ," discrete residual: ", residuals[p]);
+    return true;
+  }
+
+  // Check whether number of maximum iterations is hit.
+  if(step >= max_it)
+  {
+    Output::stat("TCDRE SYSTEM SOLVE", "Number of maximum iterations hit (", step, ")");
+    for(size_t p = 0 ; p < nEquations_; ++p)
+      Output::dash("eq ", p ," discrete residual: ", residuals[p]);
+    return true;
+  }
+
+  return false;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

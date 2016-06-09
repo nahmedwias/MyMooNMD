@@ -16,12 +16,13 @@
 #ifndef USER_PROJECTS_INC_COUPLED_TIME_CDR_2D_H_
 #define USER_PROJECTS_INC_COUPLED_TIME_CDR_2D_H_
 
-#include <Example_TimeCoupledCDR2D.h>
+
 #include <CoupledCDR_2D.h>
+#include <Example_TimeCoupledCDR2D.h>
+#include <ParameterDatabase.h>
 
 // forward declarations
 class Time_CD2D;
-class ParameterDatabase;
 class ReactionCoupling;
 
 /*!
@@ -101,7 +102,7 @@ class Coupled_Time_CDR_2D {
     ~Coupled_Time_CDR_2D() = default;
 
 
-  protected:
+  private:
 
     /*! @brief The number of CDR equations forming the system.*/
     size_t nEquations_;
@@ -112,8 +113,14 @@ class Coupled_Time_CDR_2D {
     /*! @brief The reaction parts which belong to the equation and involve the coupling.*/
     std::vector<std::shared_ptr<ReactionCoupling>> coupledParts_;
 
+    /** A database object holding parameters for controlling the object. */
+    ParameterDatabase db_;
+
     /*! @brief The used example. */
     Example_TimeCoupledCDR2D example_;
+
+    /// Decide whether stopping criterion is hit and solve loop can be broken.
+    bool break_iteration(size_t step);
 
 };
 
