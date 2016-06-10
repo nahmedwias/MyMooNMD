@@ -49,7 +49,7 @@ class ReactionCoupling {
      * */
     void assembleLinearDecoupled(
         TFEFunction2D** latestSolutions,
-        std::vector<const TFEFunction2D*> further_functions = {});
+        std::vector<TFEFunction2D*> further_functions = {});
 
 
     //Declaration of special member functions - rule of zero

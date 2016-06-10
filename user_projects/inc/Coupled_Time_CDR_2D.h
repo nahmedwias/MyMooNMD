@@ -69,7 +69,7 @@ class Coupled_Time_CDR_2D {
      */
     void couple_and_solve(
         const TFEVectFunct2D* velocity_field,
-        std::vector<const TFEFunction2D*> further_functions = {});
+        std::vector<TFEFunction2D*> further_functions = {});
 
     /**
      * Assembling functions for the case of coupling with a velocity field

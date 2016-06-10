@@ -38,9 +38,20 @@ ReactionCoupling::ReactionCoupling(CoupledCDR_2D::SolvingStrategy strategy, Asse
 // Assembling routine for the "linearized_decoupled" solution strategy.
 void ReactionCoupling::assembleLinearDecoupled(
     TFEFunction2D** latestSolutions,
-    std::vector<const TFEFunction2D*> further_functions){
+    std::vector<TFEFunction2D*> further_functions){
 
-  //TODO Include further_functions into assembling.
+  size_t n_further_functions = further_functions.size();
+  size_t n_incoming_functions = nCoupled_ + n_further_functions;
+  TFEFunction2D* incoming_functions[n_incoming_functions];
+
+  for(size_t i = 0; i < n_incoming_functions; ++i)
+  {
+    if(i < nCoupled_)
+      incoming_functions[i] = latestSolutions[i];
+    else
+      incoming_functions[i] = further_functions[i-nCoupled_];
+  }
+
 
 	// ****** Start constructing the LocalAssembling2D object ******
 	int myN_Terms = 1; //only 1 term to assemble
@@ -60,13 +71,13 @@ void ReactionCoupling::assembleLinearDecoupled(
 	int myN_ParamFct = 1; //use only one parameter function
 	std::vector<ParamFct*> myParameterFct({paramFunction_}); //The static parameter function.
 	std::vector<int> myBeginParameter({0}); //The 1 parameter function begins working at 0.
-	int myN_Parameters = nCoupled_; //the number of parameters equals the number of functions in the coupling
-	TFEFunction2D **myFEFunctions2D = latestSolutions; //The FE functions to be evaluated are the latest solutions
-	int myN_FEValues = nCoupled_; //here all parameters are FE values, and their number equals nCoupled_
+	int myN_Parameters = n_incoming_functions; //the number of parameters
+	TFEFunction2D **myFEFunctions2D = incoming_functions; //The FE functions to be evaluated are the latest solutions
+	int myN_FEValues = n_incoming_functions; //here all parameters are FE values, and their number equals n_incoming_functions
 	std::vector<int> myFEValue_FctIndex(myN_FEValues);
-	for (size_t i =0; i < nCoupled_;++i) myFEValue_FctIndex[i]=i; //each FE_Value[i] comes from FE_Function[i]
+	for (size_t i =0; i < myN_FEValues;++i) myFEValue_FctIndex[i]=i; //each FE_Value[i] comes from FE_Function[i]
 	std::vector<MultiIndex2D> myFEValue_MultiIndex(myN_FEValues);
-	for (size_t i =0; i < nCoupled_;++i) myFEValue_MultiIndex[i]=D00;  //which is to say, from its "underived" version
+	for (size_t i =0; i < myN_FEValues;++i) myFEValue_MultiIndex[i]=D00;  //which is to say, from its "underived" version
 
 	//Construct the LocalAssembling2D object from the above values.
 	LocalAssembling2D localAssembler(

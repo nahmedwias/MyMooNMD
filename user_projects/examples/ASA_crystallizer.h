@@ -79,7 +79,8 @@ double couplingTerm_T( const double* const params ) //must contain all that is n
   //term responsible for the coupling on the right hand side in temperature equation
   double T = params[0];
   double c = params[1];
-  double F = 1e5;//FIXME Should come from param,too!
+  double F = params[2]; //parameter functions takes care of that
+  F = 1e4;//FIXME Take value from param, instead!
 
   double constant = Physics::delta_h_cryst / (Physics::rho_E * Physics::C_E);
 
@@ -90,7 +91,8 @@ double couplingTerm_C_ASA( const double* const params ) //must contain all that 
 {
   double T = params[0];
   double c = params[1];
-  double F = 1e4;//FIXME Should come from param,too!
+  double F = params[2]; //parameter functions takes care of that
+  F = 1e4;//FIXME Take value from param, instead!
 
   double constant = 1 / Physics::M_ASA;
 
@@ -200,8 +202,9 @@ void InitialCondition_C_ASA(double x,  double y, double *values)
 
 void ParameterFunction(double* in, double* out){
   // Just skip the first two entries - this is where TAuxParam2D->GetParameters() places the x and y value,
-  // and pass on as many values as nCoupled_ - for this example that would be 2.
-  for (size_t i = 0; i<2 ; ++i){
+  // and pass on as many values as nCoupled_ + number of further_functions.
+  // - for this example that would be 2 + 1 = 3.
+  for (size_t i = 0; i<3 ; ++i){
     out[i] = in [i+2];
   }
 }
@@ -220,7 +223,7 @@ void RhsAssemblingFunction_C_ASA(
   // This relies on the correct interaction with the ParameterFunction and the
   // input order of fe functions to the aux object.
 
-  double coupledTerm= couplingTerm_C_ASA(param);
+  double coupledTerm = couplingTerm_C_ASA(param);
 
   //Loop over all local base functions.
   for(int i=0;i<N_BaseFuncts[0];i++)
