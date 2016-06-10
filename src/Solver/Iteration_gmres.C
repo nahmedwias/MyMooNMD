@@ -154,9 +154,7 @@ void Update(Vector &x, const int k, const Matrix &h, std::vector<double> y,
   for (int j = 0; j <= k; j++)
   {
     //x += v[j] * y[j];
-    v[j] *= y[j];
-    x += v[j];
-    v[j] *= 1.0 / y[j];
+    x.add_scaled(v[j], y[j]);
   }
 }
 
@@ -424,12 +422,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
       {
         H(k, i) = dot(r, v[k]);
         //r -= H(k, i) * v[k];
-        if(H(k, i) != 0.0)
-        {
-          v[k] *= H(k, i);
-          r -= v[k];
-          v[k] *= 1.0 / H(k,i);
-        }
+        r.add_scaled(v[k], -H(k,i));
       }
       H(i+1, i) = norm(r);
       
