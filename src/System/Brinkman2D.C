@@ -285,20 +285,26 @@ void Brinkman2D::assemble()
       
 // weakly imposing boundary conditions
 // --------------------------------------------------------------
-      for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
-      {
-          BoundaryAssembling2D bi;
-          bi.BoundaryAssemble_on_rhs_g_v_n(RHSs,
-                                           v_space,
-                                           NULL, // p = 1
-                                           TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
-                                           -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
+       BoundaryAssembling2D bi;
+       for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+       {
+         
+          bi.rhs_g_v_n(RHSs,
+		       v_space,
+		       NULL, // p = 1
+		       TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
+		       -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
+
+	  
       }
+
+       // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
+	  bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
       
-      for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+      /*for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
       {
           BoundaryAssembling2D bi;
-          bi.BoundaryAssemble_on_Matrix_u_n_v_n(sq_matrices[0],
+          bi.BoundaryAssemble_on_Matrix_v_n_v_n(sq_matrices[0],
                                                 sq_matrices[1],
                                                 sq_matrices[2],
                                                 sq_matrices[3],
@@ -307,7 +313,7 @@ void Brinkman2D::assemble()
                                                 -TDatabase::ParamDB->unvn_boundary_value[k]
                                                 );
           
-      }
+						}*/
       
     
       
