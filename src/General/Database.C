@@ -663,6 +663,10 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->neumann_boundary_id.clear();
   ParamDB->neumann_boundary_value.clear();
     
+  ParamDB-> n_unvn_boundary = 0.;
+  ParamDB-> unvn_boundary_id.clear();
+  ParamDB->unvn_boundary_value.clear();
+    
   
   // THESE ARE THE DEFAULTS, DO NOT CHANGE 
   // solver context 

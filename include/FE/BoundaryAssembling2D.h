@@ -33,6 +33,23 @@ public:
                                        double mult
                                        );
     
+    void BoundaryAssemble_on_Matrix_u_n_v_n(TMatrix2D **MatrixA11,
+                                            TMatrix2D **MatrixA12,
+                                            TMatrix2D **MatrixA21,
+                                            TMatrix2D **MatrixA22,
+                                            const TFESpace2D *U_Space,
+                                            int boundary_component_id,
+                                            double mult
+                                            );
+    
+    void BoundaryAssemble_on_Matrix_u_n_v_n(TMatrix2D **MatrixA11,
+                                            TMatrix2D **MatrixA12,
+                                            TMatrix2D **MatrixA21,
+                                            TMatrix2D **MatrixA22,
+                                            const TFESpace2D *U_Space,
+                                            std::vector<TBoundEdge*> &boundaryEdgeList,
+                                            double mult);
+    
     //    void GetQuadFormulaData(int FEId, int &nQuadPoints, QuadFormula1D &LineQuadFormula,double &quadPoints, double &quadWeights)
     //    {
     //        // get a quadrature formula good enough for the velocity FE space

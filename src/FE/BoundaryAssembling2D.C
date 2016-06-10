@@ -567,6 +567,117 @@ void  Assemble_RHS_v_n_u_n(double *rhs,
 }
 
 */
+//__________________________________________________________________
+//v_n_u_n
+//__________________________________________________________________
 
+void BoundaryAssembling2D::BoundaryAssemble_on_Matrix_u_n_v_n(TMatrix2D **MatrixA11,
+                                                              TMatrix2D **MatrixA12,
+                                                              TMatrix2D **MatrixA21,
+                                                              TMatrix2D **MatrixA22,
+                                                              const TFESpace2D *U_Space,
+                                                              int boundary_component_id,
+                                                              double mult
+                                                              )
+{
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    TCollection *coll= U_Space->GetCollection();
+    coll->get_edge_list_on_component(boundary_component_id,boundaryEdgeList);
+    
+    
+    BoundaryAssemble_on_Matrix_u_n_v_n(MatrixA11,
+                                       MatrixA12,
+                                       MatrixA21,
+                                       MatrixA22,
+                                       U_Space,
+                                       boundaryEdgeList,
+                                       mult);
+}
+
+void BoundaryAssembling2D::BoundaryAssemble_on_Matrix_u_n_v_n(TMatrix2D **MatrixA11,
+                                                              TMatrix2D **MatrixA12,
+                                                              TMatrix2D **MatrixA21,
+                                                              TMatrix2D **MatrixA22,
+                                                              const TFESpace2D *U_Space,
+                                                              std::vector<TBoundEdge*> &boundaryEdgeList,
+                                                              double mult)
+{   int *BeginIndex = U_Space->GetBeginIndex();
+    int *GlobalNumbers = U_Space->GetGlobalNumbers();
+    int ActiveBound = U_Space->GetActiveBound();
+    
+    for(int m=0;m< boundaryEdgeList.size(); m++)
+    {
+        TBoundEdge *boundedge = boundaryEdgeList[m];
+        TBaseCell *cell = boundedge->GetNeighbour(0);
+        // get basis dimension and FE space data of cell i
+        FE2D FEId = U_Space->GetFE2D(0,cell );
+        
+        int BaseVectDim = 1; // we assume only scalar FE
+        // ---------------------------------------------------------------
+        int joint_id = boundedge->get_index_in_neighbour(cell);
+        
+        // get a quadrature formula good enough for the velocity FE space
+        int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
+        this->LineQuadFormula =  TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
+        std::vector<double> quadWeights,quadPoints;
+        get_quadrature_formula_data(fe_degree,quadPoints,quadWeights);
+        
+        //TFEDatabase2D::GetBaseFunct2DFromFE2D(FEId)->MakeRefElementData(this->LineQuadFormula);
+        
+        // compute values of all basis functions at all quadrature points
+        std::vector< std::vector<double> > uorig,uxorig,uyorig;
+        get_original_values(FEId, joint_id, cell, quadPoints,BaseVectDim, uorig,uxorig,uyorig);
+        
+        double x0, x1, y0, y1;
+        boundedge->get_vertices(x0,  y0, x1, y1);
+        // compute length of the edge
+        double joint_length = boundedge->get_length();
+        // normal vector to this boundary (normalized)
+        double nx,ny;
+        boundedge->get_normal(nx, ny);
+        
+        // -------------------------------------------
+        // quadrature
+        for(unsigned int k=0;k<quadPoints.size();k++)
+        {
+            
+            //double uorig[N_BaseFunct], uxorig[N_BaseFunct];
+            //double uyorig[N_BaseFunct];
+            //get_original_values(FEId, joint_id, cell, quadPoints[k],BaseVectDim, uorig,uxorig,uyorig);
+            // ----------------------------
+            
+            ///@attention in 1D the reference joint is [-1,1] => length = 2
+            double reference_joint_length = 2;
+            double x = x0+(quadPoints[k]+1.)/2.*(x1-x0);
+            double y = y0+(quadPoints[k]+1.)/2.*(y1-y0);
+            
+            // mapping from local(cell) DOF to global DOF
+            int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
+            
+            for(unsigned int l=0;l< uorig[k].size();l++)
+            {
+                int global_dof_from_local = DOF[l];
+                
+                // if the DOF is Dirichlet, continue
+                if(global_dof_from_local >= ActiveBound)
+                    continue;
+                
+                // updating Matrix: int_gamma u \cdot n v \cdot n
+                double vtest = uorig[k][l]; // value of test function (vtest = vx = vy)
+                double u = uorig[k][l]; // value of test function (u = ux = uy)
+                
+                double value11 = mult*quadWeights[k]*(vtest*nx)*(u*nx)*(joint_length/reference_joint_length);
+                MatrixA11[k][l] += value11;			//->add(global_dof_from_local ,AnsatzDOF,value);
+                double value12 = mult*quadWeights[k]*(vtest*nx)*(u*ny)*(joint_length/reference_joint_length);
+                MatrixA12[k][l] += value12; 			//->add(global_dof_from_local ,AnsatzDOF,value);
+                double value21 = mult*quadWeights[k]*(vtest*ny)*(u*nx)*(joint_length/reference_joint_length);
+                MatrixA21[k][l] += value21; 			//->add(global_dof_from_local ,AnsatzDOF,value);
+                double value22 = mult*quadWeights[k]*(vtest*ny)*(u*ny)*(joint_length/reference_joint_length);
+                MatrixA22[k][l] += value22; 			//->add(global_dof_from_local ,AnsatzDOF,value);
+                
+            } //for(l=0;l<N_BaseFunct;l++)
+        }
+    } // endif
+}
 
 
