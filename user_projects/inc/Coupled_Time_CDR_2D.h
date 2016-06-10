@@ -64,21 +64,23 @@ class Coupled_Time_CDR_2D {
     /**
      * Solve the system. Contains a loop in which the coupled part is assembled,
      * put to the right hand side and the resulting equations is solved.
+     * The coupled part may depend on further FE functions (given in further_functions),
+     * and the velocity field (which is not used currently).
      */
-    void couple_and_solve();
+    void couple_and_solve(
+        const TFEVectFunct2D* velocity_field,
+        std::vector<const TFEFunction2D*> further_functions = {});
 
     /**
      * Assembling functions for the case of coupling with a velocity field
-     * (and a population balance equation).
+     * (and other functions, e.g. a particle size distribution from a PBE).
      */
     void assemble_initial_time(const TFEVectFunct2D* velocity_field,
-                               const TFEVectFunct2D* population_balance = nullptr);
+                               std::vector<const TFEFunction2D*> further_functions = {});
 
-    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field,
-                                 const TFEVectFunct2D* population_balance = nullptr);
-
-    void couple_and_solve(const TFEVectFunct2D* velocity_field,
-                          const TFEVectFunct2D* population_balance = nullptr);
+    /// We assume that the "uncoupled" (CD) parts do only depend on the velocity
+    /// field, but neither on each other nor on other FE functions .
+    void assemble_uncoupled_part(const TFEVectFunct2D* velocity_field);
 
     /**
      * Produce some output.
@@ -113,14 +115,18 @@ class Coupled_Time_CDR_2D {
     /*! @brief The reaction parts which belong to the equation and involve the coupling.*/
     std::vector<std::shared_ptr<ReactionCoupling>> coupledParts_;
 
-    /** A database object holding parameters for controlling the object. */
-    ParameterDatabase db_;
-
     /*! @brief The used example. */
     Example_TimeCoupledCDR2D example_;
 
+    /** A database object holding parameters for controlling the object. */
+    ParameterDatabase db_;
+
     /// Decide whether stopping criterion is hit and solve loop can be broken.
-    bool break_iteration(size_t step);
+    /// If so, also gives some nice print out.
+    /// @param[in] step The current iteration number in the solving loop
+    /// @param[out] residuals The current vector of residuals per single equation.
+    /// @return Whether to break the solve loop as one of the breaking criteria is hit.
+    bool break_iteration(size_t step, std::vector<double> residuals);
 
 };
 
