@@ -11,6 +11,9 @@
 
 
 /** @brief an abstract base class to describe iterative methods for solving
+ * 
+ * many of its derived classes are implemented similar to templates from
+ * http://www.netlib.org/templates/cpptemplates.tgz.
  */
 template <class LinearOperator, class Vector>
 class IterativeMethod
@@ -63,8 +66,10 @@ class IterativeMethod
     /** @brief the residual before the iterative method starts */
     double initial_residual;
     
-    // a small helper function to reduce code duplication and to assure the same
-    // stopping criterion for all iterative methods
+    /** @brief a small helper function to reduce code duplication and to assure 
+     * the same stopping criterion for all iterative methods.
+     * \todo include time measurements here for nicer output
+     */
     bool converged(double current_residual, unsigned int current_iterate)
     {
       bool residual_small_enough = current_residual < this->residual_tolerance;
@@ -80,23 +85,29 @@ class IterativeMethod
         converged = true;
       
       // output
-      Output::print<4>(this->get_name(), " iteration ", current_iterate, 
-                       "    residual: ", current_residual,
-                       "    rate: ", current_residual/this->old_residual, 
-                       "    rate from beginning: ", 
-                       current_residual/this->initial_residual, "  ");
-      this->old_residual = current_residual;
+      using namespace Output;
+      if(current_iterate > 0)
+        print<4>(this->get_name(), " iteration ", current_iterate, 
+                 "    residual: ", std::setprecision(12), current_residual,
+                 "    rate: ", current_residual/this->old_residual, 
+                 "    rate from beginning: ", 
+                 current_residual/this->initial_residual);
+      else
+        print<4>(this->get_name(), " iteration ", current_iterate, 
+                 "    residual: ", std::setprecision(12), current_residual);
+      
       if(stagnation)
-        Output::warn("IterativeMethod", "residual increased: ", 
-                     this->old_residual, " -> ", current_residual);
+        warn("IterativeMethod", "residual increased: ", std::setprecision(12),
+             this->old_residual, " -> ", current_residual);
       if(converged)
-        Output::print<2>(this->get_name(), " iterations: ",  current_iterate,
-                         "  residual: ", current_residual,
-                         "  reduction: ", 
-                         current_residual/this->initial_residual,
-                         "  average reduction per step ", 
-                         std::pow(current_residual/this->initial_residual, 
-                                  1./current_iterate));
+        print<2>(this->get_name(), " iterations: ",  current_iterate,
+                 "  residual: ", std::setprecision(12), current_residual,
+                 "  reduction: ", current_residual/this->initial_residual,
+                 "  average reduction per step ", 
+                 std::pow(current_residual/this->initial_residual, 
+                          1./current_iterate));
+      
+      this->old_residual = current_residual;
       return converged;
     }
     
