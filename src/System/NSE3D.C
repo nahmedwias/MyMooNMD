@@ -186,85 +186,75 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   
   bool usingMultigrid = solver.is_using_multigrid();
-  if(!usingMultigrid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+  // create finite element space and function, a matrix, rhs, and solution
+  #ifdef _MPI
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                        maxSubDomainPerDof);
+  #else
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+  #endif
+  
+  if(usingMultigrid)
   {
-    TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
-        
     #ifdef _MPI
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                          maxSubDomainPerDof);
-    #else
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-    #endif
-
-  }
-  else // multigrid
-  {
-#ifdef _MPI
     ErrThrow("There is no multigrid for NSE3D in MPI yet!");
-#endif
-
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-
-    // Construct systems per grid and store them, finest level first
-    std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = database_mg["multigrid_n_levels"];
-
-    std::string mgtype_str = database_mg["multigrid_type"];
-    MultigridType mgtype = string_to_multigrid_type(mgtype_str);
-
-    int finest = 0;
-    int coarsest = 0;
-    if(mgtype == MultigridType::STANDARD)
+    #endif
+    // Construct multigrid object
+    mg_ = std::make_shared<Multigrid>(param_db);
+    bool mdml = mg_->is_using_mdml();
+    if(mdml)
     {
-      finest = domain.get_ref_level();
-      coarsest = finest - n_levels + 1;
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
+    }
+    
+    // number of multigrid levels
+    size_t n_multigrid_levels = mg_->get_n_levels();
+    // index of finest grid
+    int finest = domain.get_ref_level(); // -> there are finest+1 grids
+    // index of the coarsest grid used in this multigrid environment
+    int coarsest = finest - n_multigrid_levels + 1;
+    if(mdml)
+    {
+      coarsest++;
     }
     else
-    if(mgtype == MultigridType::MDML)
     {
-      finest = domain.get_ref_level();
-      coarsest = finest - n_levels + 2;
-      //do the finest algebraic grid in advance
-      TCollection *coll = domain.GetCollection(It_EQ, finest, -4711);
-#ifdef _MPI
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                            maxSubDomainPerDof);
-#else
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-      matrices.push_front(&systems_.back().matrix_);
-      // set velo/pressure orders to lowest order nonconforming
-      velocity_pressure_orders = {-1, 0};
+      // only for mdml there is another matrix on the finest grid, otherwise
+      // the next system to be created is on the next coarser grid
+      finest--;
     }
-    if(coarsest < 0)
-      ErrThrow("More multigrid levels (",n_levels,") than possible due to "
-          "refinement and multigrid type requested.");
-
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    if(coarsest < 0 )
+    {
+      ErrThrow("the domain has not been refined often enough to do multigrid "
+               "on ", n_multigrid_levels, " levels. There are only ",
+               domain.get_ref_level() + 1, " grid levels.");
+    }
+    
+     // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems_.back().matrix_);
+    // initialize the systems on the coarser grids (smaller spaces)
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-#ifdef _MPI
-      // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+      #ifndef _MPI
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
+      #else
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type,
                             maxSubDomainPerDof);
-#else
-      // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-      //prepare input argument for multigrid object
+      #endif
+      // prepare input argument for multigrid object
       matrices.push_front(&systems_.back().matrix_);
     }
-
-    // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(database_mg, matrices, mgtype);
+    // initialize the multigrid object with all the matrices on all levels
+    mg_->initialize(matrices);
   }
-
   output_problem_size_info();
-
 }
 
 void NSE3D::check_parameters()

@@ -125,34 +125,59 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   }
 
   bool usingMultigrid = this->solver.is_using_multigrid();
-  if(!usingMultigrid)
-  {
-    TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
-    // create finite element space and function, a matrix, rhs, and solution
-    systems.emplace_back(e, *coll, velocity_pressure_orders, type);
+  TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
+  // create finite element space and function, a matrix, rhs, and solution
+  systems.emplace_back(example, *coll, velocity_pressure_orders, type);
 
-  }
-  else // multigrid
+  if(usingMultigrid)
   {
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-
-    // Construct systems per grid and store them, finest level first
-    std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = database_mg["multigrid_n_levels"];
-    int finest = domain.get_ref_level();
-    int coarsest = finest - n_levels + 1;
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    // Construct multigrid object
+    mg_ = std::make_shared<Multigrid>(param_db);
+    bool mdml = mg_->is_using_mdml();
+    if(mdml)
     {
-      TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
-      systems.emplace_back(example, *coll, velocity_pressure_orders,
-                            type);
-      //prepare input argument for multigrid object
-      matrices.push_front(&systems.back().matrix);
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
     }
 
-    // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+    // number of multigrid levels
+    size_t n_multigrid_levels = mg_->get_n_levels();
+    // index of finest grid
+    int finest = domain.get_ref_level(); // -> there are finest+1 grids
+    // index of the coarsest grid used in this multigrid environment
+    int coarsest = finest - n_multigrid_levels + 1;
+    if(mdml)
+    {
+      coarsest++;
+    }
+    else
+    {
+      // only for mdml there is another matrix on the finest grid, otherwise
+      // the next system to be created is on the next coarser grid
+      finest--;
+    }
+    if(coarsest < 0 )
+    {
+      ErrThrow("the domain has not been refined often enough to do multigrid "
+               "on ", n_multigrid_levels, " levels. There are only ",
+               domain.get_ref_level() + 1, " grid levels.");
+    }
+    
+    // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems.back().matrix);
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
+      systems.emplace_back(example, *coll, velocity_pressure_orders, type);
+      // prepare input argument for multigrid object
+      matrices.push_front(&systems.back().matrix);
+    }
+    // initialize the multigrid object with all the matrices on all levels
+    mg_->initialize(matrices);
   }
   
   outputWriter.add_fe_vector_function(&this->get_velocity());
@@ -168,8 +193,8 @@ NSE2D::~NSE2D()
 }
 
 /** ************************************************************************ */
-void NSE2D::get_velocity_pressure_orders(std::pair <int,int> 
-                 &velocity_pressure_orders)
+void NSE2D::get_velocity_pressure_orders(
+  std::pair<int,int>& velocity_pressure_orders)
 {
   int velocity_order = velocity_pressure_orders.first;
   int pressure_order = velocity_pressure_orders.second;
@@ -421,8 +446,13 @@ void NSE2D::assemble()
                boundary_conditions, non_const_bound_values.data(), la);
 
     // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(this->db["problem_type"].is(3)))
+    bool mdml = mg_ && mg_->is_using_mdml();
+    bool on_finest_grid = &systems.front() == &s;
+    bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+                         || (mdml && !on_finest_grid))
+                        && !is_stokes;
+    if(do_upwinding)
     {
       switch(TDatabase::ParamDB->NSTYPE)
       {
@@ -488,7 +518,6 @@ void NSE2D::assemble_nonlinear_term()
     const TFESpace2D * v_space = &s.velocity_space;
 
     //the variables we will have to fill for the call to Assemble2D
-
     size_t n_fe_spaces = 1;
     const TFESpace2D* fe_spaces[1]{v_space};
 
@@ -549,21 +578,37 @@ void NSE2D::assemble_nonlinear_term()
         ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
             "I don't know how to pass its blocks to Assemble2D.");
     }
+    
+    // do upwinding TODO remove dependency of global values
+    bool mdml = mg_ && mg_->is_using_mdml();
+    bool on_finest_grid = &systems.front() == &s;
+    bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
+                         || (mdml && !on_finest_grid))
+                        && !is_stokes;
 
     // assemble the nonlinear part of NSE
-    for(size_t i =0; i < n_sq_mat; ++i)
-    {//reset the matrices, linear part is assembled anew
-      sq_mat[i]->reset();
-    }
-    //do the actual assembling
-    Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
-               n_rhs, rhs, fe_rhs, boundary_conditions,
-               non_const_bound_values.data(), la_nonlinear);
-
-    // do upwinding TODO remove dependency of global values
-    if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-        && !(this->db["problem_type"].is(3)))
+    if(!do_upwinding)
     {
+      for(size_t i =0; i < n_sq_mat; ++i)
+      {
+        //reset the matrices, linear part is assembled anew
+        sq_mat[i]->reset();
+      }
+      //do the actual assembling
+      Assemble2D(n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
+                 n_rhs, rhs, fe_rhs, boundary_conditions,
+                 non_const_bound_values.data(), la_nonlinear);
+    }
+    else
+    {
+      // in case of upwinding we only assemble the linear terms. The nonlinear
+      // term is not assembled but replaced by a call to the upwind method.
+      // Note that we assemble the same terms over and over again here. Not 
+      // nice, but otherwise we would have to store the linear parts in a 
+      // separate BlockFEMatrix.
+      this->get_matrix().reset();
+      this->assemble();
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:

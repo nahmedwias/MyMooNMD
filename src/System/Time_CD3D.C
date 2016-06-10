@@ -136,7 +136,8 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
       systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
       matrices.push_front(&systems_.back().stiffMatrix_);
     }
-    multigrid_=std::make_shared<Multigrid>(database_mg, matrices);
+    multigrid_ = std::make_shared<Multigrid>(database_mg);
+    multigrid_->initialize(matrices);
   }// multigrid case
 }
 
