@@ -93,12 +93,6 @@ int main(int argc, char* argv[])
   Example_NSE2D example_flow(flow_database["example"]);
   NSE2D flow_object(domain, flow_database, example_flow);
 
-  //set global parameters which are to be used for Time_CD2D construction here...
-  TDatabase::ParamDB->ANSATZ_ORDER = 1;
-
-  Example_TimeCoupledCDR2D example_conc(conc_database["example"]);
-  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
-
   // PART 3: PRECOMPUTE STATIONARY FLOW FIELD //////////////////////////////////
   Output::info("PROGRAM PART", "Precomputing velocity.");
   flow_object.assemble();
@@ -120,6 +114,13 @@ int main(int argc, char* argv[])
 
 
   // PART 4: SOLVING THE CDRE IN A TIME LOOP //////////////////////////////////
+
+  //set global parameters which are to be used for Time_CD2D construction here...
+  TDatabase::ParamDB->ANSATZ_ORDER = 1;
+
+  Example_TimeCoupledCDR2D example_conc(conc_database["example"]);
+  Coupled_Time_CDR_2D conc_object(domain, conc_database, example_conc);
+
   Output::info("PROGRAM PART", "Solving the coupled system.");
 
   //get the velocity field of the precomputed velo object

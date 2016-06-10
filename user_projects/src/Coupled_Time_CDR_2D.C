@@ -94,7 +94,9 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part()
   }
 }
 
-void Coupled_Time_CDR_2D::couple_and_solve()
+void Coupled_Time_CDR_2D::couple_and_solve(
+    const TFEVectFunct2D* velocity_field,
+    std::vector<const TFEFunction2D*> further_functions)
 {
   // Put up an array of pointers to the solutions of previous iteration
   TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
@@ -106,6 +108,8 @@ void Coupled_Time_CDR_2D::couple_and_solve()
     originalRightHandSides.push_back(vector);
   }
 
+  // A vector keeping track of the residuals before solving
+  std::vector<double> resids( nEquations_ , 10e10 );
 
   for (size_t step = 0 ; true ; ++step){
 
@@ -118,32 +122,30 @@ void Coupled_Time_CDR_2D::couple_and_solve()
     for (size_t equation = 0; equation<nEquations_;++equation){
 
       // assemble the coupling term
-      coupledParts_[equation]->assembleLinearDecoupled(previousSolutions);
+      coupledParts_[equation]
+                    ->assembleLinearDecoupled(previousSolutions, further_functions);
 
       // add coupled rhs to rhs of the uncoupled equation
       cdProblems_[equation]->get_rhs().add_scaled(coupledParts_[equation]->getRightHandSide(),1);
 
+      // before solving, fetch the residual
+      resids[equation] = cdProblems_[equation]->get_discrete_residual();
       // solve equation with the new right hand side
       cdProblems_[equation]->solve();
 
-    }//end loop over equations
-
-    // Check whether any stopping criterion is matched. FIXME This is at the wrong place - iteration is Gauss--Seidel style!
-    bool break_it = break_iteration(step);
-
-    // Set back to uncoupled rhs.
-    for (size_t equation = 0; equation<nEquations_;++equation){
+      // Set back to uncoupled rhs.
       cdProblems_[equation]->get_rhs().copy(originalRightHandSides.at(equation).get_entries());
     }
 
-    //If break, then break
-    if (break_it)
+    if(break_iteration(step, resids))
       break;
 
   }//endwhile bzw. endfor
 
+
   //descale the stiffness matrices of the problems, which also updates old_Au
-  for (auto cd : cdProblems_){
+  for (auto cd : cdProblems_)
+  {
     double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     double theta_1 = TDatabase::TimeDB->THETA1;
     cd->descale_stiffness(tau, theta_1);
@@ -154,7 +156,7 @@ void Coupled_Time_CDR_2D::couple_and_solve()
 
 void Coupled_Time_CDR_2D::assemble_initial_time(
     const TFEVectFunct2D* velocity_field,
-    const TFEVectFunct2D* population_balance)
+    std::vector<const TFEFunction2D*> further_functions)
 {
   for (auto tcd : cdProblems_)
   {
@@ -165,24 +167,13 @@ void Coupled_Time_CDR_2D::assemble_initial_time(
 }
 
 void Coupled_Time_CDR_2D::assemble_uncoupled_part(
-    const TFEVectFunct2D* velocity_field,
-    const TFEVectFunct2D* population_balance)
+    const TFEVectFunct2D* velocity_field
+    )
 {
   for (auto tcd : cdProblems_)
   {
-    //TODO
-    Output::warn("assemble_uncoupled_part", "Still disregarding population_balance input.");
     tcd->assemble(velocity_field);
   }
-}
-
-void Coupled_Time_CDR_2D::couple_and_solve(
-    const TFEVectFunct2D* velocity_field,
-    const TFEVectFunct2D* population_balance)
-{
-  //TODO
-  Output::warn("couple_and_solve", "Passing call to couple_and_solve().");
-  couple_and_solve();
 }
 
 void Coupled_Time_CDR_2D::output(){
@@ -192,18 +183,23 @@ void Coupled_Time_CDR_2D::output(){
   }
 }
 
-bool Coupled_Time_CDR_2D::break_iteration(size_t step)
+/**
+ * Es ist mir noch nicht klar, ob die Ermittlung des Residuals in Ordnung ist.
+ * Bis jetzt wird in einer Gauss-Seidel-artigen Schleife geloest. Das Residuum
+ * einer jeden gekoppelten Gleichung einzeln wird vor dem Loesen bestimmt, wobei
+ * also die bis dahin bekannten anderen Loesungen eingehen. Ob die einzelnen
+ * Residuen (d.h. ihr Maximum) klein genug sind, um die Loesungsschleife zu brechen,
+ * wird am Ende einer vollen Loesungsschleife bestimmt. In die dort
+ * beruecksichtigten Residuen gehen also nie die AKTUELLSTEN Loesungen ein -
+ * nicht ueber die Kopplung in die rechte Seite, nicht wird die aktuelle Loesung
+ * benutzt. Staendig zu updaten waere aber wahrscheinlich zu teuer.
+ *
+ */
+bool Coupled_Time_CDR_2D::break_iteration(size_t step, std::vector<double> residuals)
 {
   size_t max_it = db_["tcdre_system_solve_maxit"];
   double epsilon = db_["tcdre_system_solve_epsilon"];
-
-
-  // Calculate residuals.
-  std::vector<double> residuals(this->nEquations_, 0.0);
-  for(size_t p = 0 ; p < nEquations_; ++p)
-  {
-    residuals[p] = cdProblems_[p]->get_discrete_residual();
-  }
+  //find maximum residual of a single equation
   double max_res = *std::max_element(residuals.begin(), residuals.end());
 
   // Check whether target epsilon is hit.
