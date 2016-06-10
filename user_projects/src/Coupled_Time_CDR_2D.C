@@ -96,7 +96,7 @@ void Coupled_Time_CDR_2D::assemble_uncoupled_part()
 
 void Coupled_Time_CDR_2D::couple_and_solve(
     const TFEVectFunct2D* velocity_field,
-    std::vector<const TFEFunction2D*> further_functions)
+    std::vector<TFEFunction2D*> further_functions)
 {
   // Put up an array of pointers to the solutions of previous iteration
   TFEFunction2D** previousSolutions = new TFEFunction2D*[nEquations_];
