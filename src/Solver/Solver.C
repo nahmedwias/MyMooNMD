@@ -325,9 +325,7 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
 
 
     // iterative solver
-    auto n_it_residual = this->iterative_method->iterate(matrix, rhs, solution);
-    Output::print<2>(this->iterative_method->get_name(), " iterations: ",
-                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
+    this->iterative_method->iterate(matrix, rhs, solution);
 }
 
 /* ************************************************************************** */
