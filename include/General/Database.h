@@ -841,6 +841,10 @@ struct TParaDB
   // factor for boundary integrals
   std::vector<double> neumann_boundary_value;
     
+    int n_unvn_boundary;
+    std::vector<int> unvn_boundary_id;
+    std::vector<double> unvn_boundary_value;
+  //======================================================================
     
   #ifdef _MPI
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/

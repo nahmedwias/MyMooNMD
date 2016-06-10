@@ -281,8 +281,10 @@ void Brinkman2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
       Output::print("assemble");
-
       
+      
+// weakly imposing boundary conditions
+// --------------------------------------------------------------
       for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
       {
           BoundaryAssembling2D bi;
@@ -292,6 +294,24 @@ void Brinkman2D::assemble()
                                            TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
                                            -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
       }
+      
+      for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+      {
+          BoundaryAssembling2D bi;
+          bi.BoundaryAssemble_on_Matrix_u_n_v_n(sq_matrices[0],
+                                                sq_matrices[1],
+                                                sq_matrices[2],
+                                                sq_matrices[3],
+                                                v_space,
+                                                TDatabase::ParamDB->unvn_boundary_id[k],// boundary component
+                                                -TDatabase::ParamDB->unvn_boundary_value[k]
+                                                );
+          
+      }
+      
+    
+      
+     
     
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
