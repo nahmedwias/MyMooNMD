@@ -277,10 +277,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
   }
   else
   {
-    auto n_it_residual = this->iterative_method->iterate(
-      *this->linear_operator, rhs, solution);
-    Output::print<2>(this->iterative_method->get_name(), " iterations: ", 
-                     n_it_residual.first, "\tresidual: ", n_it_residual.second);
+    this->iterative_method->iterate(*this->linear_operator, rhs, solution);
   }
   //compute the residual by hand again.
   //V r(rhs);
