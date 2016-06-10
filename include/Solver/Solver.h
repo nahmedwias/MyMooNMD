@@ -2,11 +2,14 @@
 #define __SOLVER_H__
 
 #include <ParameterDatabase.h>
-#include <DirectSolver.h>
-#include <IterativeMethod.h>
-#include <Preconditioner.h>
+#include <BlockFEMatrix.h>
+#include <BlockVector.h>
 #include <memory>
 
+// forward declarations
+template <class LinearOperator, class Vector> class IterativeMethod;
+class DirectSolver;
+template <class Vector> class Preconditioner;
 class Multigrid;
 
 /** @brief Solve a linear system
@@ -19,6 +22,9 @@ class Multigrid;
  * 
  * Currently this class is instantiated for `<BlockMatrix, BlockVector>` and
  * `<BlockFEMatrix, BlockVector>`.
+ * 
+ * @todo make members direct_solver, iterative_method and preconditioner a 
+ * unique_ptr.
  */
 template <class LinearOperator = BlockFEMatrix, class Vector = BlockVector>
 class Solver
@@ -102,7 +108,7 @@ class Solver
     const LinearOperator* linear_operator;
     
     /// @brief this object is only created if needed.
-    std::unique_ptr<DirectSolver> direct_solver;
+    std::shared_ptr<DirectSolver> direct_solver;
     /// @brief this object is only created if needed.
     std::shared_ptr<IterativeMethod<LinearOperator, Vector>> iterative_method;
     /// @brief this object is only created if needed.
