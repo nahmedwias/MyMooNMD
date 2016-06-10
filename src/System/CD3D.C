@@ -152,7 +152,8 @@ ParameterDatabase get_default_CD3D_parameters()
         }
 
         // Construct multigrid object
-        mg_ = std::make_shared<Multigrid>(database_mg, matrices);
+        mg_ = std::make_shared<Multigrid>(database_mg);
+        mg_->initialize(matrices);
       }
       else
       { //THIS IS OLD MULTIGRID

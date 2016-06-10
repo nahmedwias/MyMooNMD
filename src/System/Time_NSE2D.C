@@ -122,9 +122,6 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   {
     ParameterDatabase database_mg = Multigrid::default_multigrid_database();
     database_mg.merge(param_db, false);
-
-  outputWriter.add_fe_vector_function(&this->get_velocity());
-  outputWriter.add_fe_function(&this->get_pressure());
   
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
@@ -140,10 +137,14 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
       matrices.push_front(&systems.back().matrix);
     }
     // Construct the multigrid object
-    multigrid=std::make_shared<Multigrid>(database_mg, matrices);
+    multigrid = std::make_shared<Multigrid>(database_mg);
+    multigrid->initialize(matrices);
   }
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
+  
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();

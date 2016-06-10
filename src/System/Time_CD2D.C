@@ -146,7 +146,8 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
       systems.front().fe_function.Interpolate(example.get_initial_cond(0));
       matrices.push_front(&systems.back().stiff_matrix);
     }
-    multigrid=std::make_shared<Multigrid>(database_mg, matrices);    
+    multigrid = std::make_shared<Multigrid>(database_mg);
+    multigrid->initialize(matrices);
   }
 }
 

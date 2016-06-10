@@ -95,7 +95,8 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   
   // Construct multigrid object
-  mg = std::make_shared<Multigrid>(database_mg, matrices);
+  mg = std::make_shared<Multigrid>(database_mg);
+  mg->initialize(matrices);
 }
 
 /** ************************************************************************ */
