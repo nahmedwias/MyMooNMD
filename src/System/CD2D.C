@@ -74,8 +74,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 
   
   // done with the constructor in case we're not using multigrid
-  if(this->solver.get_db()["solver_type"].is("direct") || 
-     !this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(!this->solver.is_using_multigrid())
     return;
   // else multigrid
   
@@ -194,8 +193,7 @@ void CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(this->solver.get_db()["solver_type"].is("direct") || 
-     !this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(!this->solver.is_using_multigrid())
   {
     this->solver.solve(s.matrix, s.rhs, s.solution);
   }

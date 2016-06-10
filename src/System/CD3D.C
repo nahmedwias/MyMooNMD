@@ -97,9 +97,7 @@ ParameterDatabase get_default_CD3D_parameters()
     this->checkParameters();
     // The construction of the members differ, depending on whether
     // a multigrid solver will be used or not.
-    bool usingMultigrid = 
-        this->solver.get_db()["solver_type"].is("iterative")
-        && this->solver.get_db()["preconditioner"].is("multigrid");
+    bool usingMultigrid = this->solver.is_using_multigrid();
 
     if (!usingMultigrid)
     {
@@ -253,9 +251,7 @@ void CD3D::solve()
     SystemPerGrid& s = this->systems_.front();
 
     //determine whether we make use of multigrid
-    bool using_multigrid =
-        this->solver.get_db()["solver_type"].is("iterative")
-        && this->solver.get_db()["preconditioner"].is("multigrid");
+    bool using_multigrid = this->solver.is_using_multigrid();
 
     if(!using_multigrid)
     {//no multigrid
