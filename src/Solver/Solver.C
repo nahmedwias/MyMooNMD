@@ -1,4 +1,5 @@
 #include <Solver.h>
+#include <IterativeMethod.h>
 #include <Iteration_bicgstab.h>
 #include <Iteration_cg.h>
 #include <Iteration_cgs.h>
@@ -7,7 +8,9 @@
 #include <Iteration_multigrid.h>
 #include <Iteration_richardson.h>
 #include <Iteration_sor.h>
+#include <Preconditioner.h>
 #include <Saddle_point_preconditioner.h>
+#include <DirectSolver.h>
 
 template <class L, class V>
 ParameterDatabase Solver<L, V>::default_solver_database()
@@ -341,7 +344,8 @@ const ParameterDatabase& Solver<LinearOperator, Vector>::get_db()
 template <class L, class V>
 bool Solver<L, V>::is_using_multigrid()
 {
-    return db["solver_type"].is("iterative") && db["preconditioner"].is("multigrid");
+  return db["solver_type"].is("iterative") 
+      && db["preconditioner"].is("multigrid");
 }
 /* ************************************************************************** */
 
