@@ -104,9 +104,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class NSE2D.");
   }
-  bool usingMultigrid =
-       this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = this->solver.is_using_multigrid();
   
   if(!usingMultigrid)
   {
@@ -657,8 +655,7 @@ void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
   
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(this->solver.is_using_multigrid())
   {
     solver.solve(s.matrix, s.rhs, s.solution, multigrid);
     ErrThrow("multigrid solver is not tested yet")

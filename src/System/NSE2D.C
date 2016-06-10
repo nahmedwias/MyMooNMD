@@ -124,9 +124,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
                " That NSE Block Matrix Type is unknown to class NSE2D.");
   }
 
-  bool usingMultigrid =
-       this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = this->solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
@@ -689,8 +687,7 @@ void NSE2D::solve()
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution);
   
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(this->solver.is_using_multigrid())
   {
     solver.solve(s.matrix, s.rhs, s.solution, mg_);
   }

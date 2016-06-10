@@ -85,8 +85,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   this->db.merge(param_db,false); // update this database with given values
   this->checkParameters();
   
-  bool usingMultigrid = this->solver.get_db()["solver_type"].is("iterative")
-                        && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = this->solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     // check at least if the collections list contains exactly one collection
@@ -296,9 +295,7 @@ void Time_CD3D::solve()
 {
   SystemPerGrid& s=this->systems_.front();
   //determine whether we make use of multigrid
-  bool using_multigrid = 
-       this->solver.get_db()["solver_type"].is("iterative") 
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool using_multigrid = this->solver.is_using_multigrid();
   
   if(!using_multigrid)
   {

@@ -103,8 +103,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   // this is the L^inf(L^2(Omega)) error, initialize with some large number
   errors[4] = 1.e10; 
   
-  bool usingMultigrid = this->solver.get_db()["solver_type"].is("iterative")
-                        && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = this->solver.is_using_multigrid();
   if(!usingMultigrid)
   {
     // create the collection of cells from the domain (finest grid)
@@ -361,9 +360,7 @@ void Time_CD2D::solve()
   double t = GetTime();
   System_per_grid& s = this->systems.front();
   
-  bool using_multigrid = 
-             this->solver.get_db()["solver_type"].is("iterative") 
-             && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool using_multigrid = this->solver.is_using_multigrid();
   if(!using_multigrid)
   {
     if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
