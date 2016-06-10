@@ -182,12 +182,12 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
   
   double resid = norm(r); // compute initial residual
   double beta = resid; // initialize beta as initial residual
-  if(this->converged(resid, resid, 0))
+  // safe initial residual, used to check stopping criteria later
+  this->initial_residual = resid;
+  if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);
   }
-  // safe initial residual, used to check stopping criteria later
-  double resid0 = resid;
   
   Vector *v = new Vector[this->restart+1];
   
@@ -231,8 +231,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<4>("left gmres iteration ", j, " ", resid);
-      if(this->converged(resid, resid0, j))
+      if(this->converged(resid, j))
       {
         Update(solution, i, H, s, v);
         delete [] v;
@@ -250,7 +249,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
     {
       Output::print("restart residual changed ", beta, "  ", resid);
     }
-    if(this->converged(resid, resid0, j))
+    if(this->converged(resid, j))
     {
       delete [] v;
       return std::pair<unsigned int, double>(j, resid);
@@ -284,12 +283,12 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
   
   double resid = norm(r); // compute initial residual
   double beta = norm(r); // initialize beta as initial residual
-  if(this->converged(resid, resid, 0))
+  // safe initial residual, used to check stopping criteria later
+  this->initial_residual = resid;
+  if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);
   }
-  // safe initial residual, used to check stopping criteria later
-  double resid0 = resid;
   
   Vector *v = new Vector[this->restart+1];
   
@@ -335,8 +334,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<4>("right gmres iteration ", j, " ", resid);
-      if(this->converged(resid, resid0, j)) 
+      if(this->converged(resid, j)) 
       {
         w = 0.0; // reuse w for update of solution
         Update(w, i, H, s, v);
@@ -360,7 +358,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
     {
       Output::print<1>("restart residual changed ", beta, "  ", resid);
     }
-    if(this->converged(resid, resid0, j)) 
+    if(this->converged(resid, j)) 
     {
       delete [] v;
       return std::pair<unsigned int, double>(j, resid);
@@ -392,12 +390,12 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
   
   double resid = norm(r); // compute initial residual
   double beta = resid; // initialize beta as initial residual
-  if(this->converged(resid, resid, 0))
+  // safe initial residual, used to check stopping criteria later
+  this->initial_residual = resid;
+  if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);
   }
-  // safe initial residual, used to check stopping criteria later
-  double resid0 = resid;
   
   Vector *v = new Vector[this->restart+1];
   //array to store the outputs of the preconditioning processes
@@ -455,8 +453,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
       ApplyPlaneRotation(s[i], s[i+1], cs[i], sn[i]);
       
       resid = std::abs(s[i+1]);
-      Output::print<4>("flexible gmres iteration ", j, " ", resid);
-      if(this->converged(resid, resid0, j))
+      if(this->converged(resid, j))
       {
         //use r as auxiliary here
         r = 0.0; //set entries to zero
@@ -484,7 +481,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     {
       Output::print<1>("restart residual changed ", beta, "  ", resid);
     }
-    if(this->converged(resid, resid0, j))
+    if(this->converged(resid, j))
     {
       delete [] v;
       delete [] z;
