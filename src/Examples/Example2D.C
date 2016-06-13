@@ -13,3 +13,7 @@ Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
    problem_coefficients(coeffs)
 { 
 }
+
+CoeffFct2D* Example2D::get_coeffs() const {
+  return problem_coefficients;
+}
