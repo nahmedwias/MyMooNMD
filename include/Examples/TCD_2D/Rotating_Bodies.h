@@ -30,10 +30,9 @@ void ExampleFile()
 {
   Output::print("Example: Rotating_Bodies.h");
 
-  // TODO This global variable is a total mess - rework!
-  TDatabase::ParamDB->RE_NR = 1e20;
-  Output::print("TDatabase::ParamDB->RE_NR was set to 1e20 for"
-      " rotating bodies example.");
+  Output::print(""
+      "This is a reminder: TDatabase::ParamDB->RE_NR has no effect on "
+      "rotating bodies example. Instead diffusion is hardcoded to 1e-20.");
 }
 
 /** The exact solution */
@@ -112,17 +111,15 @@ void BilinearCoeffs(int n_points, double *X, double *Y,
 double **parameters, double **coeffs)
 {
 
-  double eps = 1.0/TDatabase::ParamDB->RE_NR;
+  double eps = 1e-20;
 
   int i;
-  double *coeff;                                  // *param;
+  double *coeff;
   double x, y;
-  // double t = TDatabase::TimeDB->CURRENTTIME;
 
   for(i=0;i<n_points;i++)
   {
     coeff = coeffs[i];
-    // param = parameters[i];
 
     x = X[i];
     y = Y[i];

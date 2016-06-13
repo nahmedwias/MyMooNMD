@@ -33,7 +33,7 @@ class Example_NonStationary2D : public Example2D
     
     /** @brief function representing the initial data
      */
-    std::vector<DoubleFunct2D*> initialCOndtion;
+    std::vector<DoubleFunct2D*> initialCondition;
   public:
     
     //Declaration of special member functions - rule of zero
@@ -71,7 +71,7 @@ class Example_NonStationary2D : public Example2D
     bool coefficients_depend_on_time();
     
     DoubleFunct2D* get_initial_cond(unsigned int i)const
-    { return initialCOndtion.at(i); }  
+    { return initialCondition.at(i); }
 };
 
 #endif
