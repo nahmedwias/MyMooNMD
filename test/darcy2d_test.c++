@@ -179,7 +179,6 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
                 0.0038190922876324, 0.81680935765046 }};
     check_darcy2d(domain, db, 1002, errors);
   }
-  return;
   
   // this is really slow!
   if(db["solver_type"].is("direct"))
