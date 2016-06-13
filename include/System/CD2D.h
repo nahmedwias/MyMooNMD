@@ -104,6 +104,23 @@ class CD2D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
     
+    /** @brief store the errors to access them from outside this class
+     * 
+     * This array is filled during a call to CD2D::output if the parameter
+     * "output_compute_errors" is set to true. The exact solution is taken from
+     * CD2D::example. If that example does not provide an exact solution,
+     * typically it is set to be zero, so that this array contains the norms of
+     * the solution instead of the error.
+     * 
+     * The errors are stored in the following order: 
+     * 
+     *  - L2 error
+     *  - H1-semi
+     *  - SD error (streamline diffusion, useful for SDFEM)
+     *  - L_inf error
+     */
+    std::array<double, 4> errors;
+    
     /** @brief set parameters in database
      * 
      * This functions checks if the parameters in the database are meaningful 
@@ -176,6 +193,21 @@ class CD2D
      * @param i suffix for vtk output file name, -1 means no suffix
      */
     void output(int i = -1);
+    
+    /// @name return computed errors
+    ///
+    /// You have to call CD2D::output for any of these to return a meaningful 
+    /// value.
+    //@{
+    /// @brief return the computed L2 error.
+    double get_L2_error() const;
+    /// @brief return the computed H1-semi.
+    double get_H1_semi_error() const;
+    /// @brief return the streamline diffusion (SD) error.
+    double get_SD_error() const;
+    /// @brief return the maximum error over all quadrature points in all cells.
+    double get_L_inf_error() const;
+    //@}
     
     // getters and setters
     const BlockFEMatrix & get_matrix() const
