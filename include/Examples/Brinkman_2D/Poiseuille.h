@@ -100,19 +100,21 @@ void LinCoeffs(int n_points, double *x, double *y,
   static double eps = 1./TDatabase::ParamDB->RE_NR;
   int i;
   double *coeff;
-
-  for(i=0;i<n_points;i++)
-  {
-    coeff = coeffs[i];
-
-    coeff[0] = eps;                             //WAS IST DAS?
-    //coeff[1] = 1 + 8*eps + 4*y*(1-y);
-    coeff[1] = 0;//1 + 8*eps + 4*y[i]*(1-y[i]);     // f1 (lhs of Brinkman problem for u1)
-    coeff[2] = 0;                               // f2 (lhs of Brinkman problem for u2)
-    coeff[3] = 0;                               // g (divergence term=u1_x+u2_y)
-
-  }
-
+    
+    for(i=0;i<n_points;i++)
+    {
+        coeff = coeffs[i];
+        
+        coeff[0] = eps;                             //WAS IST DAS?
+        //coeff[1] = 1 + 8*eps + 4*y*(1-y);
+        coeff[1] = 0;//1 + 8*eps + 4*y[i]*(1-y[i]);     // f1 (lhs of Brinkman problem for u1)
+        coeff[2] = 0;                               // f2 (lhs of Brinkman problem for u2)
+        coeff[3] = 0;                               // g (divergence term=u1_x+u2_y)
+        coeff[4]=TDatabase::ParamDB->VISCOSITY;
+        coeff[5]=TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+        coeff[6]=TDatabase::ParamDB->PERMEABILITY;
+    }
+    
 }
 
 

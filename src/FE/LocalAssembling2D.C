@@ -93,6 +93,9 @@ std::string LocalAssembling2D_type_to_string(LocalAssembling2D_type type)
     case Brinkman2D_Galerkin1:
           return std::string("Brinkman2D_Galerkin1");
           
+      case Brinkman2D_Galerkin1b:
+          return std::string("Brinkman2D_Galerkin1b");
+          
     case Brinkman2D_Galerkin1Stab:
           return std::string("Brinkman2D_Galerkin1Stab");
      
@@ -276,6 +279,23 @@ switch(type)
         // Brinkman2D: problems and Brinkman problem
 
     case LocalAssembling2D_type::Brinkman2D_Galerkin1:
+        //Matrix Type 14
+        this->N_Terms = 4;
+        this->Derivatives = { D10, D01, D00, D00 };
+        this->Needs2ndDerivatives = new bool[2];
+        this->Needs2ndDerivatives[0] = false;
+        this->Needs2ndDerivatives[1] = false;
+        this->FESpaceNumber = { 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+        this->N_Matrices = 9;
+        this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0};
+        this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1};
+        this->N_Rhs = 3;
+        this->RhsSpace = { 0, 0, 1 };
+        this->AssembleParam = BrinkmanType1Galerkin;
+        this->Manipulate = NULL;
+        break;
+        
+    case LocalAssembling2D_type::Brinkman2D_Galerkin1b:
         //Matrix Type 14
         this->N_Terms = 4;
         this->Derivatives = { D10, D01, D00, D00 };

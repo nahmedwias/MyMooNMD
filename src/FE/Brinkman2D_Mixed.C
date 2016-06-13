@@ -5,6 +5,9 @@
 //
 // -nu \Delta (u1,u2) + \nabla p + K (u1,u2) = (f1,f2)
 // \nabla \dcot (u1,u2) = g
+//resp.
+// -nu_eff \Delta (u1,u2) + \nabla p + nu/K (u1,u2) = (f1,f2)
+// \nabla \dcot (u1,u2) = g
 // ======================================================================
 //#include <Convolution.h>
 #include <Database.h>
@@ -25,10 +28,8 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
                      double **OrigValues, int *N_BaseFuncts,
                      double ***LocMatrices, double **LocRhs)
 {
-   
     double ansatz00, ansatz10, ansatz01;    // ansatz functions
     double test00, test10, test01;          // test functions
-
 
     double ** MatrixA11 = LocMatrices[0];
     //double ** MatrixA12 = LocMatrices[1];
@@ -58,13 +59,14 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     double c0 = coeff[0];                   // nu bzw eps (viscosity)
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double K = coeff[4];                          // viscosity/permeability
-
+    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    double nu = coeff[4];                   //viscosity
+    double nu_eff = coeff[5];               // effective viscosity
+    double K = coeff[6];                    // permeability
     
     double val;
     for(int i=0;i<N_U;i++)
     {
-        
         test10 = Orig0[i];
         test01 = Orig1[i];
         test00 = Orig2[i];
@@ -74,10 +76,9 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
         
         for(int j=0;j<N_U;j++)
         {
-
-            ansatz10 = Orig0[j];
-            ansatz01 = Orig1[j];
-            ansatz00 = Orig2[j];
+            double ansatz10 = Orig0[j]; // ansatz functions
+            double ansatz01 = Orig1[j];
+            double ansatz00 = Orig2[j];
             
             val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
             val += K*(ansatz00*test00);                       // K*(u * v)
@@ -86,7 +87,6 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
             val  = c0*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
             val += K*(ansatz00*test00);                       // K*(u * v)
             MatrixA22[i][j] += Mult * val;
-            
          }                            // endfor j
         
         for(int j=0;j<N_P;j++)
@@ -103,7 +103,6 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
     
     for(int i=0;i<N_P;i++)
     {
-        
         test00 = Orig3[i];
         
         for(int j=0;j<N_U;j++)
@@ -119,12 +118,110 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
         }                            // endfor j
         
   //for MatrixC: loop over U_P here
-    
     }                                // endfor i
-
-
 }
 
+// ======================================================================
+// -nu_eff \Delta (u1,u2) + \nabla p + nu/K (u1,u2) = (f1,f2)
+// \nabla \dcot (u1,u2) = g
+// ======================================================================
+void BrinkmanType1bGalerkin(double Mult, double *coeff,
+                           double *param, double hK,
+                           double **OrigValues, int *N_BaseFuncts,
+                           double ***LocMatrices, double **LocRhs)
+{
+    double ansatz00, ansatz10, ansatz01;    // ansatz functions
+    double test00, test10, test01;          // test functions
+    
+    double ** MatrixA11 = LocMatrices[0];
+    //double ** MatrixA12 = LocMatrices[1];
+    //double ** MatrixA21 = LocMatrices[2];
+    double ** MatrixA22 = LocMatrices[3];
+    //double ** MatrixC = LocMatrices[4];
+    double ** MatrixB1 = LocMatrices[5];
+    double ** MatrixB2 = LocMatrices[6];
+    double ** MatrixB1T = LocMatrices[7];
+    double ** MatrixB2T = LocMatrices[8];
+    
+    double * Rhs_u1 = LocRhs[0];            // f_u1
+    double * Rhs_u2 = LocRhs[1];            // f_u2
+    // double * Rhs_p = LocRhs[2];          // g_q
+    
+    int N_U = N_BaseFuncts[0];              // number of basis functions for the velocity space
+    int N_P = N_BaseFuncts[1];              // number of basis functions for the pressure space
+    
+    // values of fe functions at quadrature points: Origvalues = f(uk,vk) (Gauß-quadrature: \int f(u,v) = sum wk * f(uk,vk) at Gauß points)
+    // Mult is the quadrature weight (wk)
+    double *Orig0 = OrigValues[0];          // u_x
+    double *Orig1 = OrigValues[1];          // u_y
+    double *Orig2 = OrigValues[2];          // u
+    double *Orig3 = OrigValues[3];          // p
+    
+    // values defined in the example
+    double c0 = coeff[0];                   // nu bzw eps (viscosity)
+    double c1 = coeff[1];                   // f1
+    double c2 = coeff[2];                   // f2
+    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    double nu = coeff[4];                   // viscosity
+    double nu_eff = coeff[5];               // effective viscosity
+    double K = coeff[6];                    // permeability
+    
+    double val;
+    for(int i=0;i<N_U;i++)
+    {
+        test10 = Orig0[i];
+        test01 = Orig1[i];
+        test00 = Orig2[i];
+        
+        Rhs_u1[i] += Mult*test00*c1;
+        Rhs_u2[i] += Mult*test00*c2;
+        
+        for(int j=0;j<N_U;j++)
+        {
+            double ansatz10 = Orig0[j]; // ansatz functions
+            double ansatz01 = Orig1[j];
+            double ansatz00 = Orig2[j];
+            
+            val  = nu_eff*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
+            val += nu/K *(ansatz00*test00);                       // K*(u * v)
+            MatrixA11[i][j] += Mult * val;
+            
+            val  = nu_eff*(test10*ansatz10+test01*ansatz01);      // nu*(v_x*u_x + v_y*u_y)
+            val += nu/K*(ansatz00*test00);                       // K*(u * v)
+            MatrixA22[i][j] += Mult * val;
+        }                            // endfor j
+        
+        for(int j=0;j<N_P;j++)
+        {
+            ansatz00 = Orig3[j];
+            
+            val = -Mult*ansatz00*test10;                      // -Mult* p*v_x
+            MatrixB1T[i][j] += val;
+            
+            val = -Mult*ansatz00*test01;                      // -Mult*p*v_y
+            MatrixB2T[i][j] += val;
+        }
+    }                              // endfor i
+    
+    for(int i=0;i<N_P;i++)
+    {
+        test00 = Orig3[i];
+        
+        for(int j=0;j<N_U;j++)
+        {
+            ansatz10 = Orig0[j];
+            ansatz01 = Orig1[j];
+            
+            val = Mult*test00*ansatz10;                       // Mult*q*u_x
+            MatrixB1[i][j] += val;
+            
+            val = Mult*test00*ansatz01;                       // Mult*q*u_y
+            MatrixB2[i][j] += val;
+        }                            // endfor j
+        
+        //for MatrixC: loop over U_P here
+    }                                // endfor i
+}
 
 
 // ======================================================================
@@ -135,59 +232,50 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
-    double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
-    double **MatrixB1, **MatrixB2;
-    double **MatrixB1T, **MatrixB2T;
-    double *Rhs1, *Rhs2, val;
-    double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
-    double *MatrixRow1, *MatrixRow2;
-    double ansatz00, ansatz10, ansatz01;
-    double test00, test10, test01;
-    double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5;
-    int i,j,N_U, N_P;
-    double c0, c1, c2;
-    
-    MatrixA11 = LocMatrices[0];
-    MatrixA12 = LocMatrices[1];
-    MatrixA21 = LocMatrices[2];
-    MatrixA22 = LocMatrices[3];
+    double **MatrixA11 = LocMatrices[0];
+    double **MatrixA12 = LocMatrices[1];
+    double **MatrixA21 = LocMatrices[2];
+    double **MatrixA22 = LocMatrices[3];
     ////int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
     //double ** MatrixC = LocMatrices[4];
     int offset = 1;
-    MatrixB1 = LocMatrices[4+offset];
-    MatrixB2 = LocMatrices[5+offset];
-    MatrixB1T = LocMatrices[6+offset];
-    MatrixB2T = LocMatrices[7+offset];
+    double **MatrixB1 = LocMatrices[4+offset];
+    double **MatrixB2 = LocMatrices[5+offset];
+    double **MatrixB1T = LocMatrices[6+offset];
+    double **MatrixB2T = LocMatrices[7+offset];
     
-    Rhs1 = LocRhs[0];                       // f1
-    Rhs2 = LocRhs[1];                       // f2
-    // double * Rhs_p = LocRhs[2];          // g_q
+    double *Rhs1 = LocRhs[0];                       // f1
+    double *Rhs2 = LocRhs[1];                       // f2
+    // double *Rhs_p = LocRhs[2];                   // g_q
     
-    N_U = N_BaseFuncts[0];
-    N_P = N_BaseFuncts[1];
+    int N_U = N_BaseFuncts[0];
+    int N_P = N_BaseFuncts[1];
     
-    Orig0 = OrigValues[0];         // u_x
-    Orig1 = OrigValues[1];         // u_y
-    Orig2 = OrigValues[2];         // u
-    Orig3 = OrigValues[3];         // p
-    Orig4 = OrigValues[4];         // p_x   MUSS NOCH DEFINIERT WERDEN !!!...eventuell
-    Orig5 = OrigValues[5];         // p_y   MUSS NOCH DEFINIERT WERDEN!!!...eventuell
+    double *Orig0 = OrigValues[0];         // u_x
+    double *Orig1 = OrigValues[1];         // u_y
+    double *Orig2 = OrigValues[2];         // u
+    double *Orig3 = OrigValues[3];         // p
+    double *Orig4 = OrigValues[4];         // p_x   MUSS NOCH DEFINIERT WERDEN !!!...eventuell
+    double *Orig5 = OrigValues[5];         // p_y   MUSS NOCH DEFINIERT WERDEN!!!...eventuell
     
-    c0 = coeff[0];                 // nu
-    c1 = coeff[1];                 // f1
-    c2 = coeff[2];                 // f2
-    double K = coeff[4];                          // viscosity/permeability
+    double c0 = coeff[0];                   // nu
+    double c1 = coeff[1];                   // f1
+    double c2 = coeff[2];                   // f2
+    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    double nu = coeff[4];                   // viscosity
+    double nu_eff = coeff[5];               // effective viscosity
+    double K = coeff[6];                    // permeability
     
+    double val;
+    double ansatz00, ansatz10, ansatz01;
+    double test00, test10, test01;
     
-    for(i=0;i<N_U;i++)
+    for(int i=0;i<N_U;i++)
     {
-        //cout << 'Halloooo';
-        //throw('ajh');
-        
-        Matrix11Row = MatrixA11[i];
-        Matrix12Row = MatrixA12[i];
-        Matrix21Row = MatrixA21[i];
-        Matrix22Row = MatrixA22[i];
+        double *Matrix11Row = MatrixA11[i];
+        // double *Matrix12Row = MatrixA12[i];
+        // double *Matrix21Row = MatrixA21[i];
+        double *Matrix22Row = MatrixA22[i];
         
         test10 = Orig0[i];
         test01 = Orig1[i];
@@ -196,7 +284,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
         Rhs1[i] += Mult*test00*c1;
         Rhs2[i] += Mult*test00*c2;
         
-        for(j=0;j<N_U;j++)
+        for(int j=0;j<N_U;j++)
         {
             ansatz10 = Orig0[j];
             ansatz01 = Orig1[j];
@@ -215,17 +303,15 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
             val  = c0*(test10*ansatz10+test01*ansatz01);
             val += K *(ansatz00*test00);
             Matrix22Row[j] += Mult * val;
-            
-        }                            // endfor j
+        }
         
-        MatrixRow1 = MatrixB1T[i];
-        MatrixRow2 = MatrixB2T[i];
+        double *MatrixRow1 = MatrixB1T[i];
+        double *MatrixRow2 = MatrixB2T[i];
         
-        for(j=0;j<N_P;j++)
+        for(int j=0;j<N_P;j++)
         {
             ansatz10 = Orig4[j];
             ansatz01 = Orig5[j];
-            
             
             val = Mult*ansatz10*test00;        // p_x*v
             MatrixRow1[j] += val;
@@ -233,17 +319,17 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
             val = Mult*ansatz01*test00;        // p_y*v
             MatrixRow2[j] += val;
         }
-    }                              // endfor i
+    }
     
-    for(i=0;i<N_P;i++)
+    for(int i=0;i<N_P;i++)
     {
-        MatrixRow1 = MatrixB1[i];
-        MatrixRow2 = MatrixB2[i];
+        double *MatrixRow1 = MatrixB1[i];
+        double *MatrixRow2 = MatrixB2[i];
         
         test10 = Orig4[i];
         test01 = Orig5[i];
         
-        for(j=0;j<N_U;j++)
+        for(int j=0;j<N_U;j++)
         {
             ansatz00 = Orig2[j];
             
@@ -252,10 +338,8 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
             
             val = -Mult*ansatz00*test01;
             MatrixRow2[j] += val;
-        }                            // endfor j
-        
-     }                              // endfor i
-
+        }
+     }
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -307,19 +391,19 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
     double c0 = coeff[0];                   // nu
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];
-    double K = coeff[4];                          // viscosity/permeability
+    double c3 = coeff[3];                   // f3 (the rhs of incompressibility constraint)
+    double nu = coeff[4];                   //viscosity
+    double nu_eff = coeff[5];               // effective viscosity
+    double K = coeff[6];                    // permeability
     double alpha = 0.4;//1.;
     double PSPGStab = alpha*(hK*hK)/(c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
     
     double val;
     for(int i=0;i<N_U;i++)
     {
-        
         test10 = Orig0[i];
         test01 = Orig1[i];
         test00 = Orig2[i];
-        
         
         Rhs_u1[i] += Mult*test00*c1;
         Rhs_u2[i] += Mult*test00*c2;
@@ -328,12 +412,9 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
         
         for(int j=0;j<N_U;j++)
         {
-            
             ansatz10 = Orig0[j];
             ansatz01 = Orig1[j];
             ansatz00 = Orig2[j];
-            
-
             
             val  = c0*(test10*ansatz10+test01*ansatz01);        // nu*(v_x*u_x + v_y*u_x)
             val += K*(ansatz00*test00);                         // K*(u * v)
@@ -350,18 +431,13 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
             val += K*(ansatz00*test00);                         // K*(u * v)
             val += PSPGStab*(ansatz00*test00);                  // stabilization
             MatrixA22[i][j] += Mult * val;
-            
         }                            // endfor j
-        
-        
         
         for(int j=0;j<N_P;j++)
         {
             ansatz00 = Orig3[j];
             ansatz10 = Orig4[j];
             ansatz01 = Orig5[j];
-            
-       
             
             val = -ansatz00*test10;                             // -Mult* p*v_x
             val-= PSPGStab*(ansatz00*test10);                   // stabilization
@@ -378,7 +454,6 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
     
     for(int i=0;i<N_P;i++)
     {
-        
         test00 = Orig3[i];
         test10 = Orig4[i];
         test01 = Orig5[i];
@@ -386,7 +461,6 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
         Rhs_p[i] += Mult*PSPGStab*test10*c1;                    // stabilization
         Rhs_p[i] += Mult*PSPGStab*test01*c2;                    // stabilization
 
-        
         for(int j=0;j<N_U;j++)
         {
             ansatz00 = Orig2[j];
@@ -409,21 +483,17 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
                 ansatz00 = Orig3[j];
                 ansatz10 = Orig4[j];
                 ansatz01 = Orig5[j];
-
                 
                 val = PSPGStab*(ansatz10*test10);               // stabilization
                 MatrixC[i][j] += Mult * val;
-                
 
                 val= PSPGStab *(ansatz01*test01);               // stabilization
                 MatrixC[i][j] += Mult * val;
-    
-    
             }
-
-
     }
 }
+
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -438,10 +508,8 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
                                double **OrigValues, int *N_BaseFuncts,
                                double ***LocMatrices, double **LocRhs)
 {
-    
     double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;    // ansatz functions
     double test00, test10, test01, test20, test02;              // test functions
-    
     
     double ** MatrixA11 = LocMatrices[0];
     double ** MatrixA12 = LocMatrices[1];                       // stabilization P2/P2
@@ -471,28 +539,25 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
     double *Orig6 = OrigValues[6];          // u_xx
     double *Orig7 = OrigValues[7];          // u_yy
     
-    
     // values defined in the example
     double c0 = coeff[0];                           // nu resp. eps(:=1/Re) ; Re can be set in brinkman2d.dat
     double c1 = coeff[1];                           // f1
     double c2 = coeff[2];                           // f2
     double c3 = coeff[3];                           // f3 (the rhs of incompressibility constraint)
-    double K = coeff[4];                          // viscosity/permeability
+    double nu = coeff[4];
+    double nu_eff = coeff[5];
+    double K = coeff[6];                          // viscosity/permeability
     double alpha = 0.01;                            // PSPG Stabilization Parameter
     double PSPGStab = -alpha*(hK*hK)/(c0*c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK)
     
     double val;
     for(int i=0;i<N_U;i++)
     {
-        //cout << 'Halloooo';
-        //throw('ajh');
-        
         test10 = Orig0[i];
         test01 = Orig1[i];
         test00 = Orig2[i];
         test20 = Orig6[i];
         test02 = Orig7[i];
-        
         
         Rhs_u1[i] += Mult*test00*c1;
         Rhs_u2[i] += Mult*test00*c2;
@@ -503,20 +568,17 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
         
         for(int j=0;j<N_U;j++)
         {
-            
             ansatz10 = Orig0[j];
             ansatz01 = Orig1[j];
             ansatz00 = Orig2[j];
             ansatz20 = Orig6[j];
             ansatz02 = Orig7[j];
             
-            
             val  = c0*(test10*ansatz10+test01*ansatz01);                            // nu*(v_x*u_x + v_y*u_x)
             val += K*(ansatz00*test00);                                             // K*(u * v)
             val += PSPGStab * (ansatz00*test00);                                    // stabilization P1/P1
             val += PSPGStab * c0 * c0 * ((ansatz20+ansatz02)*(test20+test02));      // stabilization P2/P2
             MatrixA11[i][j] += Mult * val;
-            
             
             // val  = 0;
             // Matrix12Row[j] += Mult * val;
@@ -540,15 +602,12 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
             
         }                            // endfor j
         
-        
-        
         for(int j=0;j<N_P;j++)
         {
             ansatz00 = Orig3[j];
             ansatz10 = Orig4[j];
             ansatz01 = Orig5[j];
-            
-            
+        
             val = -ansatz00*test10;                                                 // -Mult* p*v_x
             val+= PSPGStab*(ansatz10*test00);                                       // stabilization P1/P1
             val+= -PSPGStab * c0 * (test20+test02) * ansatz10;                      // stabilization P2/P2
@@ -561,10 +620,8 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
         }
     }                              // endfor i
     
-    
     for(int i=0;i<N_P;i++)
     {
-        
         test00 = Orig3[i];
         test10 = Orig4[i];
         test01 = Orig5[i];
@@ -573,7 +630,6 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
         
         Rhs_p[i] += Mult*PSPGStab*test10*c1;                                        // stabilization P1/P1
         Rhs_p[i] += Mult*PSPGStab*test01*c2;                                        // stabilization P1/P1
-        
         
         for(int j=0;j<N_U;j++)
         {
@@ -603,18 +659,12 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
             ansatz10 = Orig4[j];
             ansatz01 = Orig5[j];
             
-            
             val = PSPGStab*(ansatz10*test10);                                       // stabilization P1/P1
             MatrixC[i][j] += Mult * val;
             
-            
             val= PSPGStab *(ansatz01*test01);                                       // stabilization P1/P1
             MatrixC[i][j] += Mult * val;
-            
-            
         }
-        
-        
     }
 }
 

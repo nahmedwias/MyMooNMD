@@ -316,8 +316,10 @@ struct TParaDB
   //======================================================================
   /** PARAMETERS FOR Brinkman PROBLEMS                  */
   //======================================================================
-  int BrinkmanTYPE;
-
+    int BrinkmanTYPE;
+    double VISCOSITY;
+    double EFFECTIVE_VISCOSITY;
+    double PERMEABILITY;
     
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
@@ -325,7 +327,7 @@ struct TParaDB
   int DARCYTYPE; 
   double SIGMA_PERM;
   //======================================================================
-  
+    
   double FR_NR;
   double WB_NR;
   double PR_NR;
@@ -834,16 +836,28 @@ struct TParaDB
   //======================================================================
   /** parameters for weakly imposing boundary/interface conditions */
   //======================================================================
-  // number of boundary components with neumann conditions
-  int n_neumann_boundary;
-  // ID's of boundary components with neumann conditions
-  std::vector<int> neumann_boundary_id;
-  // factor for boundary integrals
-  std::vector<double> neumann_boundary_value;
+    // number of boundary components with neumann conditions
+    int n_neumann_boundary;
+    // ID's of boundary components with neumann conditions
+    std::vector<int> neumann_boundary_id;
+    // factor for boundary integrals
+    std::vector<double> neumann_boundary_value;
+    
+    int n_g_v_boundary;
+    std::vector<int> g_v_boundary_id;
+    std::vector<double> g_v_boundary_value;
     
     int n_unvn_boundary;
     std::vector<int> unvn_boundary_id;
     std::vector<double> unvn_boundary_value;
+    
+    int n_graduvn_boundary;
+    std::vector<int> graduvn_boundary_id;
+    std::vector<double> graduvn_boundary_value;
+    
+    int n_u_v_boundary;
+    std::vector<int> u_v_boundary_id;
+    std::vector<double> u_v_boundary_value;
   //======================================================================
     
   #ifdef _MPI

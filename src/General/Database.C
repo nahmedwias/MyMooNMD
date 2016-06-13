@@ -400,9 +400,14 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SHISHKIN_MESH = 0;
   ParamDB->SHISHKIN_DIAM = 1.0;
   ParamDB->NSTYPE = 1;
-ParamDB->BrinkmanTYPE = 1;
+  ParamDB->BrinkmanTYPE = 1;
   ParamDB->DARCYTYPE = 1;
+    
   ParamDB->SIGMA_PERM = 1;
+  ParamDB->VISCOSITY = 1;
+  ParamDB->EFFECTIVE_VISCOSITY = 1;
+  ParamDB->PERMEABILITY = 1;
+    
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
   ParamDB->VMM_COARSE_LEVEL = 4711;
@@ -663,9 +668,21 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->neumann_boundary_id.clear();
   ParamDB->neumann_boundary_value.clear();
     
+  ParamDB-> n_g_v_boundary = 0.;
+  ParamDB-> g_v_boundary_id.clear();
+  ParamDB->g_v_boundary_value.clear();
+    
   ParamDB-> n_unvn_boundary = 0.;
   ParamDB-> unvn_boundary_id.clear();
   ParamDB->unvn_boundary_value.clear();
+    
+  ParamDB-> n_graduvn_boundary = 0.;
+  ParamDB-> graduvn_boundary_id.clear();
+  ParamDB->graduvn_boundary_value.clear();
+    
+  ParamDB-> n_u_v_boundary = 0.;
+  ParamDB-> u_v_boundary_id.clear();
+  ParamDB->u_v_boundary_value.clear();
     
   
   // THESE ARE THE DEFAULTS, DO NOT CHANGE 

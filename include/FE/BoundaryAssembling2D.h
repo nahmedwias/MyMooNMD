@@ -34,6 +34,19 @@ public:
 		   double mult
 		   );
     
+    void rhs_g_v(double **rhs,
+                   const TFESpace2D *U_Space,
+                   TFEFunction2D *pFunct,
+                   int compBC,
+                   double mult
+                   ) ;
+    void rhs_g_v(double **rhs,
+                   const TFESpace2D *U_Space,
+                   TFEFunction2D *given_boundary_data,
+                   std::vector<TBoundEdge*> &edge,
+                   double mult
+                   );
+    
     void matrix_v_n_v_n(BlockFEMatrix &M,
 			const TFESpace2D *U_Space,
 			int boundary_component_id,
@@ -45,6 +58,29 @@ public:
 			std::vector<TBoundEdge*> &edge,
 			double mult);
     
+    void matrix_gradv_v_n(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          int boundary_component_id,
+                          double mult
+                          );
+    
+    void matrix_gradv_v_n(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          std::vector<TBoundEdge*> &edge,
+                          double mult);
+    
+    void matrix_u_v(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          int boundary_component_id,
+                          double mult
+                          );
+    
+    void matrix_u_v(BlockFEMatrix &M,
+                          const TFESpace2D *U_Space,
+                          std::vector<TBoundEdge*> &edge,
+                          double mult);
+    
+    //todo for symmetry (nitsche): ((u-g)n,q) and -((u-g),dnvn)
 
     
 protected:
