@@ -287,6 +287,26 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SIGMA_PERM;
       N_Param++;  
     }
+      
+//      if (!strcmp(line, "VISCOSITY:"))
+//      {
+//          dat >> TDatabase::ParamDB->VISCOSITY;
+//          N_Param++;
+//      }
+//      
+//      if (!strcmp(line, "EFFECTIVE_VISCOSITY:"))
+//      {
+//          dat >> TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+//          N_Param++;
+//      }
+//      
+//      if (!strcmp(line, "PERMEABILITY:"))
+//      {
+//          dat >> TDatabase::ParamDB->PERMEABILITY;
+//          N_Param++;
+//      }
+      
+      
     if (!strcmp(line, "USE_ISOPARAMETRIC:"))
     {
       dat >> TDatabase::ParamDB->USE_ISOPARAMETRIC;
@@ -3235,6 +3255,88 @@ int TDomain::ReadParam(char *ParamFile)
               dat >> TDatabase::ParamDB->unvn_boundary_value[ib];
           }
       }
+      
+      if (!strcmp(line, "n_gradvn_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_unvn_boundary;
+          N_Param++;
+          TDatabase::ParamDB->graduvn_boundary_id.resize(TDatabase::ParamDB->n_graduvn_boundary);
+          TDatabase::ParamDB->graduvn_boundary_value.resize(TDatabase::ParamDB->n_graduvn_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->graduvn_boundary_id.begin(),
+                    TDatabase::ParamDB->graduvn_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->graduvn_boundary_value.begin(),
+                    TDatabase::ParamDB->graduvn_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "graduvn_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_graduvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->graduvn_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "graduvn_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_graduvn_boundary; ib++) {
+              dat >> TDatabase::ParamDB->graduvn_boundary_value[ib];
+          }
+      }
+      
+      
+      if (!strcmp(line, "n_u_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_u_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->u_v_boundary_id.resize(TDatabase::ParamDB->n_u_v_boundary);
+          TDatabase::ParamDB->u_v_boundary_value.resize(TDatabase::ParamDB->n_u_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->u_v_boundary_id.begin(),
+                    TDatabase::ParamDB->u_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->u_v_boundary_value.begin(),
+                    TDatabase::ParamDB->u_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "u_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "u_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_u_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->u_v_boundary_value[ib];
+          }
+      }
+
+      
+      if (!strcmp(line, "n_g_v_boundary:"))
+      {
+          dat >> TDatabase::ParamDB-> n_g_v_boundary;
+          N_Param++;
+          TDatabase::ParamDB->g_v_boundary_id.resize(TDatabase::ParamDB->n_g_v_boundary);
+          TDatabase::ParamDB->g_v_boundary_value.resize(TDatabase::ParamDB->n_g_v_boundary);
+          //parameters for weakly imposing boundary/interface conditions
+          std::fill(TDatabase::ParamDB->g_v_boundary_id.begin(),
+                    TDatabase::ParamDB->g_v_boundary_id.end(), -1);
+          
+          std::fill(TDatabase::ParamDB->g_v_boundary_value.begin(),
+                    TDatabase::ParamDB->g_v_boundary_value.end(), 0.);
+      }
+      
+      if (!strcmp(line, "g_v_boundary_id:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_id[ib];
+          }
+      }
+      
+      if (!strcmp(line, "g_v_boundary_value:")) {
+          for (int ib=0; ib< TDatabase::ParamDB->n_g_v_boundary; ib++) {
+              dat >> TDatabase::ParamDB->g_v_boundary_value[ib];
+          }
+      }
+      
+      
       // ----------------------------------------------------------------
       
       
