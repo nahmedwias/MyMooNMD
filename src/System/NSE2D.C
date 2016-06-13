@@ -765,13 +765,19 @@ void NSE2D::output(int i)
     u2->PrintMinMax();
     s.p.PrintMinMax();
   }
+
+  outputWriter.add_fe_function(&s.p);
+  outputWriter.add_fe_vector_function(&s.u);
+  outputWriter.write();
   
+  /*
   // write solution to a vtk file
   if(db["output_write_vtk"])
   {
     outputWriter.write(i);
   }
-  
+  */
+    
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.

@@ -34,6 +34,8 @@
 #include <utility>
 #include <array>
 
+#include <PostProcessing2D.h>
+
 class Brinkman2D
 {
   enum class Matrix{Type14, Type1, Type2 , Type3, Type4};

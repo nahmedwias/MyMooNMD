@@ -874,9 +874,9 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "often simply set to zero and computing errors then means computing "
 	         "norms, e.g. the L^2-norm of the solution.",
 			 {true,false});
-
+	  ///@todo change this to output_directory
 	  db.add("output_vtk_directory", std::string("."),
-	         "This directory is where the VTK output is written. This "
+	         "This directory is where the output is written. This "
 	         "directory will be created, if it does not exist already. Files in "
 	         "this directory will be overwritten without any warning.");
 

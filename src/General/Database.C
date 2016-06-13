@@ -656,6 +656,17 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->CC_DEPENDENCY=AMG_UNSYM;
   ParamDB->CC_RESCALE=1.8;
   ParamDB->CC_VERBOSE=1;
+
+    
+  /** parameters for weakly imposing boundary/interface conditions */
+  ParamDB->n_neumann_boundary = 0.;
+  ParamDB->neumann_boundary_id.clear();
+  ParamDB->neumann_boundary_value.clear();
+    
+  ParamDB-> n_unvn_boundary = 0.;
+  ParamDB-> unvn_boundary_id.clear();
+  ParamDB->unvn_boundary_value.clear();
+    
   
   // THESE ARE THE DEFAULTS, DO NOT CHANGE 
   // solver context 
@@ -1086,7 +1097,8 @@ ParamDB->BrinkmanTYPE = 1;
   ParamDB->DEPENDENT_BASIS = 0;
   ParamDB->DEPENDENT_BASIS_Q1 = 0;
   ParamDB->DEPENDENT_BASIS_Q2 = 0;
-  
+ 
+    
   #ifdef _MPI
   ParamDB->Comm = MPI_COMM_WORLD;    
   #endif
@@ -1157,7 +1169,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SHISHKIN_MESH: ", ParamDB->SHISHKIN_MESH);
   printToFile("SHISHKIN_DIAM: ", ParamDB->SHISHKIN_DIAM);
   printToFile("NSTYPE: ", ParamDB->NSTYPE);
-printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
+  printToFile("BrinkmanTYPE: ", ParamDB->BrinkmanTYPE);
   printToFile("DARCYTYPE: ", ParamDB->DARCYTYPE);
   printToFile("SIGMA_PERM: ", ParamDB->SIGMA_PERM);
   printToFile("LAPLACETYPE: ", ParamDB->LAPLACETYPE);
@@ -1633,12 +1645,16 @@ void TDatabase::WriteTimeDB()
 
   printToFile("RB_TYPE: ", TimeDB->RB_TYPE);
   printToFile("RB_TYPE2: ", TimeDB->RB_TYPE2);
-
+    
   printToFile("EXTRAPOLATE_VELOCITY: ", TimeDB->EXTRAPOLATE_VELOCITY);
   printToFile("EXTRAPOLATE_PRESSURE: ", TimeDB->EXTRAPOLATE_PRESSURE);
   printToFile("EXTRAPOLATE_STEPS: ", TimeDB->EXTRAPOLATE_STEPS);
   printToFile("EXTRAPOLATE_WEIGHT: ", TimeDB->EXTRAPOLATE_WEIGHT);
-} 
+    
+//  printToFile(" n_neumann_boundary: ",ParamDB->n_neumann_boundary );
+//  printToFile(" neumann_boundary_id: ", ParamDB->neumann_boundary_id);
+//  printToFile("neumann_boundary_value: ", ParamDB->neumann_boundary_value);
+}
 
 void TDatabase::CheckParameterConsistencyNSE()
 {

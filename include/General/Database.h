@@ -63,7 +63,7 @@ struct TParaDB
   //======================================================================
   int PRECOND_LS;
   int SOLVER_TYPE;
-   int WRITE_GRAPE;
+  int WRITE_GRAPE;
   int WRITE_GNU;
   int WRITE_GMV;
   int WRITE_AMIRA;
@@ -829,8 +829,23 @@ struct TParaDB
   
   int DEPENDENT_BASIS;
   int DEPENDENT_BASIS_Q1;
-  int DEPENDENT_BASIS_Q2;  
-  
+  int DEPENDENT_BASIS_Q2;
+    
+  //======================================================================
+  /** parameters for weakly imposing boundary/interface conditions */
+  //======================================================================
+  // number of boundary components with neumann conditions
+  int n_neumann_boundary;
+  // ID's of boundary components with neumann conditions
+  std::vector<int> neumann_boundary_id;
+  // factor for boundary integrals
+  std::vector<double> neumann_boundary_value;
+    
+    int n_unvn_boundary;
+    std::vector<int> unvn_boundary_id;
+    std::vector<double> unvn_boundary_value;
+  //======================================================================
+    
   #ifdef _MPI
   /** MPI_Comm for which the computation is started (should not be changed during coomputation)*/
   MPI_Comm Comm;
