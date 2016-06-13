@@ -83,13 +83,6 @@ class Darcy2D
     /** @brief Definition of the used example */
     const Example_Darcy2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     * 
-     * @note multigrid for Darcy type problems is not yet implemented
-     */
-    std::shared_ptr<TMultiGrid2D> multigrid;
-    
     /** @brief a local parameter database which constrols this class
      * 
      * The database given to the constructor will be merged into this one. Only 
