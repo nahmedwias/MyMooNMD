@@ -51,7 +51,7 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            const Example_CD2D& example, int reference_id)
  : systems(), example(example), db(get_default_CD2D_parameters()),
-   outputWriter(param_db), solver(param_db)
+   outputWriter(param_db), solver(param_db), errors()
 {
   this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();
@@ -214,19 +214,27 @@ void CD2D::output(int i)
   // in such a case here only integrals of the solution are computed.
   if(this->db["output_compute_errors"])
   {
-    double errors[5];
+    // this should be a little longer than this->errors, because of a bug in
+    // FEFunction::GetErrors. Otherwise we could use this->errors directly.
+    // Note that we can not write 
+    // 'constexpr size_t n_errors = errors.max_size();'. The reason is that the
+    // method 'max_size' is not marked const in c++11, but it is in c++14. We
+    // should switch to that.
+    std::array<double, 5> errors;
     TAuxParam2D aux;
     MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
-                          &space, errors);
+                          &space, errors.data());
     
     Output::print<1>("L2     : ", errors[0]);
     Output::print<1>("H1-semi: ", errors[1]);
     Output::print<1>("SD     : ", errors[2]);
     Output::print<1>("L_inf  : ", errors[3]);
+    // copy local variable to member variable
+    std::copy(errors.begin(), errors.end()-1, this->errors.begin());
   } 
 }
 
@@ -273,3 +281,28 @@ void CD2D::do_algebraic_flux_correction()
     }
   }
 }
+
+/** ************************************************************************ */
+double CD2D::get_L2_error() const
+{
+  return this->errors[0];
+}
+
+/** ************************************************************************ */
+double CD2D::get_H1_semi_error() const
+{
+  return this->errors[1];
+}
+
+/** ************************************************************************ */
+double CD2D::get_SD_error() const
+{
+  return this->errors[2];
+}
+
+/** ************************************************************************ */
+double CD2D::get_L_inf_error() const
+{
+  return this->errors[3];
+}
+
