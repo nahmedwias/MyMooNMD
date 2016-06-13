@@ -354,7 +354,7 @@ class TMatrix
     /// @param[in,out] x solution (this is updated)
     /// @param[in] omega relaxation parameter
     /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
-    void sor_sweep(const double* b, double* x, double omega, size_t flag);
+    void sor_sweep(const double* b, double* x, double omega, size_t flag) const;
     
     /** @brief adding a scaled matrix to this matrix
      * 

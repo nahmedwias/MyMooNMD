@@ -21,7 +21,10 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
    rhs_(*matrix,true), solution_(*matrix, false),
    smoother_(nullptr)
 {
-  Output::info("MultigridLevel", "Constructed a MultigridLevel object.");
+  Output::info("MultigridLevel", "Constructed a MultigridLevel object. matrix "
+               "dimensions: (", matrix->get_n_total_rows(), ",",
+               matrix->get_n_total_columns(), "), n_cells ",
+               matrix->get_ansatz_space(0,0).GetCollection()->GetN_Cells());
 
   //Determine which smoother to use and construct the object.
   switch(sm)

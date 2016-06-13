@@ -95,10 +95,6 @@ class NSE2D
     /** @brief Definition of the used example */
     const Example_NSE2D example;
     
-    /// An object of the new multigrid class. This will entirely replace the old
-    /// multigrid_ object in time.
-    std::shared_ptr<Multigrid> mg_;
-
     /** @brief a local parameter database which constrols this class
      * 
      * The database given to the constructor will be merged into this one. Only 

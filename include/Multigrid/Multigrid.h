@@ -23,6 +23,7 @@
 #ifndef INCLUDE_MULTIGRID_MULTIGRID_H_
 #define INCLUDE_MULTIGRID_MULTIGRID_H_
 
+#include <ParameterDatabase.h>
 #include <CycleControl.h>
 #include <MultigridLevel.h>
 
@@ -31,7 +32,6 @@
 
 //Forward declarations.
 class BlockVector;
-class ParameterDatabase;
 
 enum class MultigridType{ STANDARD , MDML };
 MultigridType string_to_multigrid_type(std::string code);
@@ -40,31 +40,43 @@ class Multigrid
 {
   public:
 
-    /**
-     * Set up a multigrid object. Note that there is ABSOLUTELY NO CHECKS
-     * performed whether the matrices found a reasonable Multigrid hierarchie.
-     * The crucial point are the restriction and prolongation methods -
-     * everything else will work for any set of Rubbish matrices.
+    /** @brief construct a multigrid object.
+     * 
+     * To really use it, you have to call initialize as well.
+     */
+    Multigrid(const ParameterDatabase& db);
+
+    /** @brief Actual set up a multigrid object. 
      *
-     * @param db A database object containing control parameters.
+     * Note that there is ABSOLUTELY NO CHECKS performed whether the matrices 
+     * found a reasonable Multigrid hierarchie. The crucial point are the 
+     * restriction and prolongation methods - everything else will work 
+     * for any set of Rubbish matrices.
+     *
      * @param matrices A vector of the matrices per level, ordered from coarsest
      * (0) to finest level.
-     * @param type The type of the multigrid approach used - standard or mdml.
      */
-    Multigrid(const ParameterDatabase& db,
-              std::list<BlockFEMatrix*> matrices,
-              MultigridType type = MultigridType::STANDARD);
+    void initialize(std::list<BlockFEMatrix*> matrices);
 
-    /// @brief Apply one complete multigrid cycle. Which kind of cycle that is
-    /// is determined at the time of construction via a parameter. So far V,W
-    /// and F cycle are implemented.
+    /// @brief Apply one complete multigrid cycle. 
+    /// @details Which kind of cycle that is is determined at the time of 
+    /// construction via a parameter database. So far V,W and F cycle are 
+    /// implemented.
     void cycle();
 
-    /// Get the solution on the finest grid. Call this after a cycle is complete
-    /// to get the result.
+    /// @brief Get the solution on the finest grid.
+    /// @details Call this after a cycle is complete to get the result.
     const BlockVector& get_finest_sol();
 
+    /// @brief get the type of this multigrid object
     MultigridType get_type() const { return type_; }
+    
+    /// @brief find out it mdml is used, otherwise standard multigrid is used
+    bool is_using_mdml() const { return type_ == MultigridType::MDML; }
+
+    /// @brief return the number of multigrid levels.
+    /// @details In case of mdml this is one more than there are grids involved.
+    size_t get_n_levels() const { return db["multigrid_n_levels"]; };
 
     /// Set the right hand side on the finest grid. It must of course fit the
     /// matrix stored on the finest grid.
@@ -91,6 +103,9 @@ class Multigrid
 
   private:
 
+    /// @brief Parameter database to store all parameters related to multigrid
+    ParameterDatabase db;
+    
     /// A list of the participating levels, ordered from coarsest (0)
     /// to finest level.
     std::vector<MultigridLevel> levels_;

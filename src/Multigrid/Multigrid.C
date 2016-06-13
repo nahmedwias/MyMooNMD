@@ -49,13 +49,45 @@ MultigridType string_to_multigrid_type(std::string code)
   }
 }
 
-
-Multigrid::Multigrid(const ParameterDatabase& db,
-                     std::list<BlockFEMatrix*> matrices,
-                     MultigridType type)
-: type_(type)
+Multigrid::Multigrid(const ParameterDatabase& param_db)
+: db(default_multigrid_database()), damp_factors_(), 
+  type_(MultigridType::STANDARD)
 {
-  //Create the levels and collect them in a list
+  this->db.merge(param_db, false);
+  this->type_ = string_to_multigrid_type(db["multigrid_type"]);
+  
+  size_t n_levels = this->get_n_levels();
+  if(n_levels <= 1)
+    ErrThrow("for multigrid you need at least two multigrid levels, not ",
+             n_levels);
+
+  damp_factors_.resize(n_levels, db["multigrid_correction_damp_factor"]);
+  
+  // Set up the cycle control.
+  std::string cycle_str = db["multigrid_cycle_type"];
+  control_ = CycleControl(cycle_str, n_levels);
+
+  n_pre_smooths_ = db["multigrid_n_pre_smooth"];
+
+  coarse_n_maxit = db["multigrid_coarse_max_n_iterations"];
+
+  coarse_epsilon = db["multigrid_coarse_residual"];
+
+  n_post_smooths_ = db["multigrid_n_post_smooth"];
+
+}
+
+void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
+{
+  // Create the levels and collect them in a list
+  if(matrices.size() != this->get_n_levels())
+  {
+    Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
+                    "was set to ", this->get_n_levels(), ", but there are ",
+                    matrices.size(), " matrices given. I will assume ", 
+                    matrices.size(), " multigrid levels from now on.");
+    this->db["multigrid_n_levels"] = matrices.size();
+  }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
   {
@@ -71,28 +103,8 @@ Multigrid::Multigrid(const ParameterDatabase& db,
 
     levels_.push_back(MultigridLevel(mat, sm, level_db));
   }
-
-  // Store the between-level damping parameters.
-  size_t n_levels = levels_.size();
-  Output::print(n_levels);
-
-
-  for(size_t i = 0; i < n_levels ;++i)
-    damp_factors_.push_back(db["multigrid_correction_damp_factor"]);
-
-  // Set up the cycle control.
-  std::string cycle_str = db["multigrid_cycle_type"];
-  control_ = CycleControl(cycle_str, n_levels);
-
-  n_pre_smooths_ = db["multigrid_n_pre_smooth"];
-
-  coarse_n_maxit = db["multigrid_coarse_max_n_iterations"];
-
-  coarse_epsilon = db["multigrid_coarse_residual"];
-
-  n_post_smooths_ = db["multigrid_n_post_smooth"];
-
 }
+
 
 void Multigrid::set_finest_sol(const BlockVector& bv)
 {
