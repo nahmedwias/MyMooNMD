@@ -211,7 +211,6 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
 template <class L, class V>
 void Solver<L, V>::update_matrix(const L& matrix)
 {
-  this->linear_operator = &matrix;
   if(db["solver_type"].is("direct")) // direct solver
   {
     DirectSolver::DirectSolverTypes t;
@@ -227,25 +226,17 @@ void Solver<L, V>::update_matrix(const L& matrix)
   else
   {
     // iterative solver
-    std::string ist = db["iterative_solver_type"];
-    std::string prec_name = db["preconditioner"];
-    size_t max_it = db["max_n_iterations"];
-    size_t min_it = db["min_n_iterations"];
-    double tol = db["residual_tolerance"];
-    double reduc = db["residual_reduction"];
-    size_t restart = db["gmres_restart"]; // only for gmres
-    double damping = db["damping_factor"];
-    
-    // find out if a preconditioner object already exists and if it is of type 
-    // Saddle_point_preconditioner
-    bool is_saddle_point_preconditioner = this->preconditioner 
-      && (prec_name == "least_squares_commutator" 
-          || prec_name == "least_squares_commutator_boundary"
-          || prec_name == "semi_implicit_method_for_pressure_linked_equations");
-    
-    if(!is_saddle_point_preconditioner)
+    bool create_new = this->linear_operator == nullptr;
+    if(create_new)
     {
-      // create a new preconditioner
+      std::string ist = db["iterative_solver_type"];
+      std::string prec_name = db["preconditioner"];
+      size_t max_it = db["max_n_iterations"];
+      size_t min_it = db["min_n_iterations"];
+      double tol = db["residual_tolerance"];
+      double reduc = db["residual_reduction"];
+      size_t restart = db["gmres_restart"]; // only for gmres
+      double damping = db["damping_factor"];
       if(this->is_using_multigrid())
       {
         this->preconditioner = std::make_shared<Iteration_multigrid<L, V>>(
@@ -257,20 +248,21 @@ void Solver<L, V>::update_matrix(const L& matrix)
         this->preconditioner = get_preconditioner<L, V>(prec_name, matrix, 
                                                         this->db);
       }
+      this->iterative_method = get_iterative_method<L, V>(ist, this->db, 
+                                                          matrix, 
+                                                          this->preconditioner);
+      this->iterative_method->set_stopping_parameters(max_it, min_it, tol, 
+                                                      reduc, 2., damping, 
+                                                      restart);
     }
     else
     {
-      // only update the matrix
-      Saddle_point_preconditioner* spp = 
-        dynamic_cast<Saddle_point_preconditioner*>(this->preconditioner.get());
-      if(spp != nullptr)
-        spp->update(matrix);
+      this->preconditioner->update();
+      this->iterative_method->update(matrix);
     }
-    this->iterative_method = get_iterative_method<L, V>(ist, this->db, matrix, 
-                                                        this->preconditioner);
-    this->iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc, 
-                                                    2., damping, restart);
   }
+  // set the linear operator (needed for iterative solvers)
+  this->linear_operator = &matrix;
 }
 
 /* ************************************************************************** */

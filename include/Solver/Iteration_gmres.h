@@ -2,6 +2,7 @@
 #define __ITERATION_GMRES__
 
 #include <IterativeMethod.h>
+#include <vector>
 
 // not nice: pollute global namespace
 enum class gmres_type {left, right, flexible};
@@ -25,6 +26,15 @@ class Iteration_gmres : public IterativeMethod<LinearOperator, Vector>
   protected:
     
     gmres_type type;
+    
+    // temporaries, stored only to avoid reallocation:
+    // these have size restart+1
+    std::vector<double> s;
+    std::vector<double> cs;
+    std::vector<double> sn;
+    std::vector<Vector> v;
+    // only for flexible gmres
+    std::vector<Vector> z;
     
     std::pair<unsigned int, double> left_gmres(const LinearOperator & A, 
                                                const Vector & rhs,

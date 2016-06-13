@@ -133,6 +133,19 @@ class IterativeMethod
     virtual std::pair<unsigned int, double> iterate(const LinearOperator & A,
                                                     const Vector & rhs,
                                                     Vector & solution) = 0;
+    
+    /** @brief update this iterative method 
+     * 
+     * This sometimes saves computation time, and/or reduces reallocation. In 
+     * general creating a new IterativeMethod should work as well. Some
+     * iterative methods do not need this, so there is a default implementation 
+     * here.
+     */
+    virtual void update(const LinearOperator& A)
+    {
+      old_residual = std::numeric_limits<double>::max();
+      initial_residual = 0.;
+    };
 
     /** return absolute tolerance for stopping */
     double get_residual_tolerance() const

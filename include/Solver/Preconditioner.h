@@ -22,6 +22,15 @@ class Preconditioner
      */
     void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r) const
     { apply(z, r); }
+    
+    /** @brief update this preconditioner
+     * 
+     * This sometimes saves computation time, and/or reduces reallocation. In 
+     * general creating a new Preconditioner should work as well. Some
+     * preconditioners do not need this, so there is a default implementation 
+     * here.
+     */
+    virtual void update() {};
 };
 
 template <class Vector>
