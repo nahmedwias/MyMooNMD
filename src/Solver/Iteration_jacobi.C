@@ -85,6 +85,20 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
 /* ************************************************************************** */
 // L - LinearOperator, V - Vector
 template <class L, class V>
+void Iteration_jacobi<L, V>::update(const L& A)
+{
+  if(&this->linear_operator != &A)
+    ErrThrow("You are trying to update a Iteration_jacobi object with a matrix "
+             "which is not the one you constructed it with. Please create a "
+             "new Iteration_jacobi object");
+  // update the diagonal entries
+  extract_diagonal_entries(this->diagonal_entries, A);
+  this->IterativeMethod<L, V>::update(A);
+}
+
+/* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
 void Iteration_jacobi<L, V>::apply(const V & z, V & r) const
 {
   // as if no preconditioner is used (this initialized r, in case it has not 

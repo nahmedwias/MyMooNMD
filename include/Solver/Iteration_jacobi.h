@@ -22,6 +22,10 @@ class Iteration_jacobi : public IterativeMethod<LinearOperator, Vector>,
                                             const Vector & rhs,
                                             Vector & solution);
     
+    /** @brief update after the matrix has changed */
+    void update(const LinearOperator& A);
+    void update(){ this->update(this->linear_operator); };
+    
     const LinearOperator& get_operator() const;
 
   protected:

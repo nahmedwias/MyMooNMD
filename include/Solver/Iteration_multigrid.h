@@ -43,6 +43,12 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
     std::pair<unsigned int, double> iterate(const LinearOperator & A,
                                             const Vector & rhs,
                                             Vector & solution) override;
+    
+    void update(const LinearOperator A)
+    { mg_->update(); };
+    void update()
+    { mg_->update(); };
+    
     /** destructor */
     virtual ~Iteration_multigrid() = default;
 

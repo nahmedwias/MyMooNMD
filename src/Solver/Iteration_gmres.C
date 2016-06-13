@@ -7,7 +7,8 @@
 template <class LinearOperator, class Vector>
 Iteration_gmres<LinearOperator, Vector>::Iteration_gmres(
   std::shared_ptr<Preconditioner<Vector>> prec, gmres_type t)
- : IterativeMethod<LinearOperator, Vector>(prec, "gmres"), type(t)
+ : IterativeMethod<LinearOperator, Vector>(prec, "gmres"), type(t), s(), cs(), 
+   sn(), v(), z()
 {
   if(!prec)
   {
@@ -80,8 +81,8 @@ class TriangularMatrix
       // the first two rows have `size` many columns
       entries[0] = std::vector<double>(size, 0.);
       entries[1] = std::vector<double>(size, 0.);
-      // the following rows have one column less the their previous row, the last
-      // row has two entries
+      // the following rows have one column less the their previous row, the
+      // last row has two entries
       for(unsigned int row = 2; row < size; ++row)
       {
         size_t n = size-row+1; // number of entries in this row
@@ -141,7 +142,7 @@ void ApplyPlaneRotation(double &dx, double &dy, const double &cs,
 }
 template <class Matrix, class Vector>
 void Update(Vector &x, const int k, const Matrix &h, std::vector<double> y,
-            Vector v[])
+            std::vector<Vector>& v)
 {
   // Backsolve:  
   for (int i = k; i >= 0; i--) 
@@ -165,9 +166,9 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
                                                     const Vector & rhs,
                                                     Vector & solution)
 {
-  std::vector<double> s(this->restart+1);
-  std::vector<double> cs(this->restart+1);
-  std::vector<double> sn(this->restart+1);
+  this->s.resize(this->restart+1);
+  this->cs.resize(this->restart+1);
+  this->sn.resize(this->restart+1);
   Vector w;
   
   TriangularMatrix H(this->restart+1);
@@ -187,7 +188,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
     return std::pair<unsigned int, double>(0, resid);
   }
   
-  Vector *v = new Vector[this->restart+1];
+  this->v.resize(this->restart+1);
   
   unsigned int j = 1; // iteration index
   while (j <= this->max_n_iterations) 
@@ -232,7 +233,6 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
       if(this->converged(resid, j))
       {
         Update(solution, i, H, s, v);
-        delete [] v;
         return std::pair<unsigned int, double>(j, resid);
       }
     }
@@ -249,13 +249,11 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
     }
     if(this->converged(resid, j))
     {
-      delete [] v;
       return std::pair<unsigned int, double>(j, resid);
     }
     // else restart
   }
   
-  delete [] v;
   // did not converge
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
 }
@@ -267,9 +265,9 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
                                                      const Vector & rhs,
                                                      Vector & solution)
 {
-  std::vector<double> s(this->restart+1);
-  std::vector<double> cs(this->restart+1);
-  std::vector<double> sn(this->restart+1);
+  this->s.resize(this->restart+1);
+  this->cs.resize(this->restart+1);
+  this->sn.resize(this->restart+1);
   Vector w(rhs);
   
   TriangularMatrix H(this->restart+1);
@@ -288,7 +286,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
     return std::pair<unsigned int, double>(0, resid);
   }
   
-  Vector *v = new Vector[this->restart+1];
+  this->v.resize(this->restart+1);
   
   unsigned int j = 1; // iteration index
   while (j <= this->max_n_iterations) 
@@ -339,7 +337,6 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
         this->prec->apply(w, r); // r = M.solve(w);
         solution += r;
         
-        delete [] v;
         return std::pair<unsigned int, double>(j, resid);
       }
     }
@@ -358,14 +355,12 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
     }
     if(this->converged(resid, j)) 
     {
-      delete [] v;
       return std::pair<unsigned int, double>(j, resid);
     }
     // else restart
   }
   
   // not converged
-  delete [] v;
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
 }
 
@@ -376,9 +371,9 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
                                                         const Vector & rhs,
                                                         Vector & solution)
 {
-  std::vector<double> s(this->restart+1);
-  std::vector<double> cs(this->restart+1);
-  std::vector<double> sn(this->restart+1);
+  this->s.resize(this->restart+1);
+  this->cs.resize(this->restart+1);
+  this->sn.resize(this->restart+1);
   
   TriangularMatrix H(this->restart+1);
   
@@ -395,9 +390,9 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     return std::pair<unsigned int, double>(0, resid);
   }
   
-  Vector *v = new Vector[this->restart+1];
+  this->v.resize(this->restart+1);
   //array to store the outputs of the preconditioning processes
-  Vector *z = new Vector[this->restart+1];
+  this->z.resize(this->restart+1);
   
   unsigned int j = 1;
   while (j <= this->max_n_iterations)
@@ -453,8 +448,6 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
         Update(r, i, H, s, z); // solve the least squares problem by backsolve
         solution += r; //and update the solution
         
-        delete [] v;
-        delete [] z;
         return std::pair<unsigned int, double>(j, resid);
       }
     }
@@ -476,16 +469,12 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
     }
     if(this->converged(resid, j))
     {
-      delete [] v;
-      delete [] z;
       return std::pair<unsigned int, double>(j, resid);
     }
     // else restart
   }
   
   // not converged
-  delete [] v;
-  delete [] z;
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
 }
 
