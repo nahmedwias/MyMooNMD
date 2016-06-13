@@ -142,12 +142,12 @@ void VankaSmootherNew::smooth(const BlockVector& rhs, BlockVector& solution )
       size_t c_loc = 0;// start with the 0th local column - exploit that
                        // the global KCol Array and the dof_map array are sorted
 
-      for( int i = begin_r_glo ; i < end_r_glo ; ++i )
+      for( int j = begin_r_glo ; j < end_r_glo ; ++j )
       {
-        double entry = matrix_global_->GetEntries()[i];
+        double entry = matrix_global_->GetEntries()[j];
         if(entry != 0) //don't copy zeroes.
         {
-          int c_glo = matrix_global_->GetKCol()[i];
+          int c_glo = matrix_global_->GetKCol()[j];
           //find out what the local column is
           while(dof_map.at(c_loc) < c_glo)
           {

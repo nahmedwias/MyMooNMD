@@ -169,7 +169,7 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
    symbolic(nullptr), numeric(nullptr), pt(), maxfct(10), mnum(1), 
    mtype(11), perm(0), nrhs(1), iparm(), msglvl(0)
 {
-  Output::print<3>("constructing a DirectSolver object");
+  Output::print<5>("constructing a DirectSolver object");
   if(!matrix->is_square())
   {
     ErrThrow("unable to factorize a non-square matrix ", matrix->GetN_Rows(),
@@ -244,7 +244,7 @@ DirectSolver::DirectSolver(DirectSolver&& other)
 {
   other.symbolic = nullptr;
   other.numeric = nullptr;
-  Output::print<4>("DirectSolver::DirectSolver(DirectSolver&&)");
+  Output::print<5>("DirectSolver::DirectSolver(DirectSolver&&)");
 }
 
 /** ************************************************************************ */
@@ -258,7 +258,7 @@ class DirectSolver& DirectSolver::operator=(DirectSolver&& other)
   this->rows = std::move(other.rows);
   other.symbolic = nullptr;
   other.numeric = nullptr;
-  Output::print<4>("DirectSolver::operator=(DirectSolver&&)");
+  Output::print<5>("DirectSolver::operator=(DirectSolver&&)");
   return *this;
 }
 
@@ -302,7 +302,7 @@ DirectSolver::~DirectSolver()
                static_cast<typename 
                  std::underlying_type<DirectSolverTypes>::type> (type));
   }
-  Output::print<3>("destructed a DirectSolver object");
+  Output::print<5>("destructed a DirectSolver object");
 }
 
 /** ************************************************************************ */
@@ -410,7 +410,7 @@ void DirectSolver::numeric_factorize()
 /** ************************************************************************ */
 void DirectSolver::solve(const double* rhs, double* solution)
 {
-  Output::print<3>("solving using a direct solver");
+  Output::print<5>("solving using a direct solver");
   switch(type)
   {
     case DirectSolverTypes::umfpack:

@@ -49,12 +49,12 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
     normb = 1;
   // check for convergence
   double resid = norm(r) / normb;
-  if(this->converged(resid, resid, 0)) 
+  // safe initial residual, used to check stopping criteria later
+  this->initial_residual = resid;
+  if(this->converged(resid, 0)) 
   {
     return std::pair<unsigned int, double>(0, resid);
   }
-  // safe initial residual, used to check stopping criteria later
-  double resid0 = resid;
   
   for(unsigned int i = 1; i <= this->max_n_iterations; ++i) 
   {
@@ -63,7 +63,7 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
       r[j] *= this->damping / this->diagonal_entries[j];
     // now: r = w D^{-1}(rhs - A*solution)
     r += solution;
-    // now: r = D^{-1}(rhs - A*solution) + solution
+    // now: r = w D^{-1}(rhs - A*solution) + solution
     std::swap(solution, r); // solution is now the new solution
     
     // compute residual
@@ -72,8 +72,7 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
     
     // check for convergence
     resid = norm(r) / normb;
-    Output::print<4>("jacobi iteration ", i, " ", resid);
-    if(this->converged(resid, resid0, i))
+    if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);
     }

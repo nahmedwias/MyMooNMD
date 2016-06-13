@@ -134,11 +134,6 @@ class Time_CD3D
     /** @brief Definition of the used example */
     const Example_TimeCD3D example_;
     
-    /** a multigrid object from new multigrid class;
-     * it stays nullptr if not used
-     */
-    std::shared_ptr<Multigrid>  multigrid_;
-            
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only
@@ -208,7 +203,7 @@ class Time_CD3D
      */
 #ifdef _MPI
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_CD3D& _example, int maxSubDomainPerDof);
+	      const Example_TimeCD3D& _example, int maxSubDomainPerDof);
 #else
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
 	      const Example_TimeCD3D& _example);

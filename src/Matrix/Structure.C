@@ -5043,10 +5043,10 @@ bool TStructure::is_fortran_shifted() const
 
 void TStructure::info() const
 {
-  Output::print<2>("Information on the stored matrix structure");
-  Output::print<2>("Number of rows: ", nRows);
-  Output::print<2>("Number of columns: ", nColumns);
-  Output::print<2>("Number of matrix entries: ", nEntries);
+  Output::print<3>("Information on the stored matrix structure");
+  Output::print<3>("Number of rows: ", nRows);
+  Output::print<3>("Number of columns: ", nColumns);
+  Output::print<3>("Number of matrix entries: ", nEntries);
 }
 
 void TStructure::draw(std::string filename) const

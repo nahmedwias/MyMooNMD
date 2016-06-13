@@ -155,9 +155,8 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
              , int maxSubDomainPerDof
 #endif
 ) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
-    solver(param_db), mg_(nullptr),
-    defect_(), old_residuals_(),
-    initial_residual_(1e10), errors_()
+    solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
+    errors_()
 {
   this->db.merge(param_db, false);
   std::pair <int,int> 
@@ -186,85 +185,75 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   
   bool usingMultigrid = solver.is_using_multigrid();
-  if(!usingMultigrid)
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
+  // create finite element space and function, a matrix, rhs, and solution
+  #ifdef _MPI
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+                        maxSubDomainPerDof);
+  #else
+  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
+  #endif
+  
+  if(usingMultigrid)
   {
-    TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
-        
     #ifdef _MPI
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                          maxSubDomainPerDof);
-    #else
-    // create finite element space and function, a matrix, rhs, and solution
-    systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-    #endif
-
-  }
-  else // multigrid
-  {
-#ifdef _MPI
     ErrThrow("There is no multigrid for NSE3D in MPI yet!");
-#endif
-
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-
-    // Construct systems per grid and store them, finest level first
-    std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = database_mg["multigrid_n_levels"];
-
-    std::string mgtype_str = database_mg["multigrid_type"];
-    MultigridType mgtype = string_to_multigrid_type(mgtype_str);
-
-    int finest = 0;
-    int coarsest = 0;
-    if(mgtype == MultigridType::STANDARD)
+    #endif
+    // Construct multigrid object
+    auto mg = this->solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
+    if(mdml)
     {
-      finest = domain.get_ref_level();
-      coarsest = finest - n_levels + 1;
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
+    }
+    
+    // number of multigrid levels
+    size_t n_multigrid_levels = mg->get_n_levels();
+    // index of finest grid
+    int finest = domain.get_ref_level(); // -> there are finest+1 grids
+    // index of the coarsest grid used in this multigrid environment
+    int coarsest = finest - n_multigrid_levels + 1;
+    if(mdml)
+    {
+      coarsest++;
     }
     else
-    if(mgtype == MultigridType::MDML)
     {
-      finest = domain.get_ref_level();
-      coarsest = finest - n_levels + 2;
-      //do the finest algebraic grid in advance
-      TCollection *coll = domain.GetCollection(It_EQ, finest, -4711);
-#ifdef _MPI
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                            maxSubDomainPerDof);
-#else
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-      matrices.push_front(&systems_.back().matrix_);
-      // set velo/pressure orders to lowest order nonconforming
-      velocity_pressure_orders = {-1, 0};
+      // only for mdml there is another matrix on the finest grid, otherwise
+      // the next system to be created is on the next coarser grid
+      finest--;
     }
-    if(coarsest < 0)
-      ErrThrow("More multigrid levels (",n_levels,") than possible due to "
-          "refinement and multigrid type requested.");
-
-    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    if(coarsest < 0 )
+    {
+      ErrThrow("the domain has not been refined often enough to do multigrid "
+               "on ", n_multigrid_levels, " levels. There are only ",
+               domain.get_ref_level() + 1, " grid levels.");
+    }
+    
+     // Construct systems per grid and store them, finest level first
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems_.back().matrix_);
+    // initialize the systems on the coarser grids (smaller spaces)
+    for(int grid_no = finest; grid_no >= coarsest; --grid_no)
     {
       TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
-#ifdef _MPI
-      // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
+      #ifndef _MPI
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
+      #else
+      systems_.emplace_back(example, *coll, velocity_pressure_orders, type,
                             maxSubDomainPerDof);
-#else
-      // create finite element space and function, a matrix, rhs, and solution
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
-      //prepare input argument for multigrid object
+      #endif
+      // prepare input argument for multigrid object
       matrices.push_front(&systems_.back().matrix_);
     }
-
-    // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(database_mg, matrices, mgtype);
+    // initialize the multigrid object with all the matrices on all levels
+    mg->initialize(matrices);
   }
-
   output_problem_size_info();
-
 }
 
 void NSE3D::check_parameters()
@@ -627,8 +616,8 @@ void NSE3D::assemble_non_linear_term()
     bool finest_grid = (&s == &systems_.at(0));
 
     bool upwinding = false;
-    if(mg_)
-      upwinding = mg_->get_type() == MultigridType::MDML && !finest_grid;
+    if(this->solver.is_using_multigrid())
+      upwinding = this->solver.get_multigrid()->is_using_mdml() && !finest_grid;
 
     if(!upwinding)
     {
@@ -787,40 +776,33 @@ void NSE3D::solve()
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution_);
   
-  //determine whether we make use of multigrid
-  bool using_multigrid = solver.is_using_multigrid();
-  if(!using_multigrid)
-  {//no multigrid
-    if(this->solver.get_db()["solver_type"].is("direct"))
-    {
+  // solving:
 #ifndef _MPI
-      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+  this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
-      if(damping != 1.0)
-        Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
-      //two vectors of communicators (const for init, non-const for solving)
-      std::vector<const TParFECommunicator3D*> par_comms_init =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-      std::vector<TParFECommunicator3D*> par_comms_solv =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+  if(this->solver.get_db()["solver_type"].is("direct"))
+  {
+    if(damping != 1.0)
+      Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
+    //two vectors of communicators (const for init, non-const for solving)
+    std::vector<const TParFECommunicator3D*> par_comms_init =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
+       &s.parCommPressure_};
+    std::vector<TParFECommunicator3D*> par_comms_solv =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
+       &s.parCommPressure_};
 
-      //set up a MUMPS wrapper
-      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    //set up a MUMPS wrapper
+    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
 
-      //kick off the solving process
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#endif
-
-    }
-    else
-      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+    //kick off the solving process
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
   }
   else
-  {//multigrid preconditioned iterative solver
-    solver.solve(s.matrix_, s.rhs_, s.solution_, mg_);
-  }
-
+    this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
+#endif
+  
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
    s.p_.project_into_L20();

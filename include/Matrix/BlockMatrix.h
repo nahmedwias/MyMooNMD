@@ -175,6 +175,16 @@ class BlockMatrix
     virtual void apply_scaled_add(const BlockVector & x, BlockVector & y,
                           double a = 1.0) const;
 
+    /// @brief perform one successive overrelaxation (sor) sweep.
+    /// The flag can be either 0(forward sweep), 1(backward sweep), or 
+    /// 2(forward followed by backward sweep). 
+    /// @param[in] b right hand side
+    /// @param[in,out] x solution (this is updated)
+    /// @param[in] omega relaxation parameter
+    /// @param[in] flag either 0 (forward), 1(backward), or 2(both)
+    void sor_sweep(const BlockVector& b, BlockVector& x, double omega,
+                   size_t flag) const;
+    
     /**
      * @brief checks whether the coloring is correct - use in tests only
      *
@@ -401,7 +411,9 @@ class BlockMatrix
 
     /// @brief Default destructor. Tidies up nice and clean.
     virtual ~BlockMatrix() = default;
-
+    
+    /// @brief Set all submatrices to zero
+    void reset();
 
   protected:
 
@@ -787,12 +799,6 @@ class BlockMatrix
     // not yet adapted members of BlockMatrix - serves as a TODO list
 
   public:
-
-    /** @brief Set all submatrices to zero
-     *
-     * Possibly existing special matrices are not changed.
-     */
-    void reset();
 
     /**
      * @brief adding a scaled matrix to this matrix

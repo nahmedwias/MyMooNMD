@@ -39,12 +39,12 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
     normb = 1;
   
   double resid = norm(r) / normb;
-  if(this->converged(resid, resid, 0)) 
+  // safe initial residual, used to check stopping criteria later
+  this->initial_residual = resid;
+  if(this->converged(resid, 0)) 
   {
     return std::pair<unsigned int, double>(0, resid);
   }
-  // safe initial residual, used to check stopping criteria later
-  double resid0 = resid;
   
   for (unsigned int i = 1; i <= this->max_n_iterations; i++)
   {
@@ -92,8 +92,7 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
     rho_2 = rho_1;
     
     resid = norm(r) / normb;
-    Output::print<4>("cgs iteration ", i, " ", resid);
-    if(this->converged(resid, resid0, i))
+    if(this->converged(resid, i))
     {
       return std::pair<unsigned int, double>(i, resid);
     }

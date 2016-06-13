@@ -84,9 +84,6 @@ class CD2D
     /** @brief Definition of the used example */
     const Example_CD2D example;
     
-    ///Multigrid object, set to shared nullptr if it is not needed.
-    std::shared_ptr<Multigrid> mg;
-    
     /** @brief a local parameter database which constrols this class
      * 
      * The database given to the constructor will be merged into this one. Only 

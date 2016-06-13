@@ -6,6 +6,7 @@
  */
 
 #include <BlockMatrix.h>
+#include <BlockVector.h>
 
 #include <vector>
 #include <tuple>
@@ -146,7 +147,7 @@ int main(int argc, char* argv[])
     Output::print("\n\nstarting to test the BlockMatrix constructor taking ",
                   "existing blocks\n");
     /**
-     * A = [ 0.5, 0,    0, 0  ; B = [ 4, 0, 0, 1; C = [ 7, 0, 8;
+     * A = [ 1,   0,    0, 0  ; B = [ 4, 0, 0, 1; C = [ 7, 0, 8;
      *       0,   0.75, 0, 0  ;       0, 0, 5, 0;       9,10, 0;
      *       0,   0,    1, 0  ;       0, 6, 0, 1 ]      0,11,12;
      *       0,   0,    0, 1.5 ]                        13,0,14 ]
@@ -165,7 +166,10 @@ int main(int argc, char* argv[])
     RowA[0] = 0; RowA[1] = 1; RowA[2] = 2; RowA[3] = 3; RowA[4] = 4;
     std::shared_ptr<TStructure> structureA(new TStructure(4, 4, ColA, RowA));
     std::shared_ptr<TMatrix> matA = std::make_shared<TMatrix>(structureA);
-    matA->GetEntries()[0] = 1.; // set just one entry for testing later
+    matA->GetEntries()[0] = 10.; // set just one entry for testing later
+    matA->GetEntries()[1] = 75;
+    matA->GetEntries()[2] = 100;
+    matA->GetEntries()[3] = 150;
     
     //Matrix B
     int * RowB = new int[4];
@@ -174,6 +178,11 @@ int main(int argc, char* argv[])
     ColB[0] = 0; ColB[1] = 3; ColB[2] = 2; ColB[3] = 1; ColB[4] = 3;
     std::shared_ptr<TStructure> structureB(new TStructure(3, 4, 5, ColB, RowB));
     std::shared_ptr<TMatrix> matB = std::make_shared<TMatrix>(structureB);
+    matB->GetEntries()[0] = 4;
+    matB->GetEntries()[1] = 1;
+    matB->GetEntries()[2] = 5;
+    matB->GetEntries()[3] = 6;
+    matB->GetEntries()[4] = 1;
     
     //Matrix C
     int * RowC = new int[5];
@@ -183,6 +192,14 @@ int main(int argc, char* argv[])
     ColC[6] = 0; ColC[7] = 2;
     std::shared_ptr<TStructure> structureC(new TStructure(4, 3, 8, ColC, RowC));
     std::shared_ptr<TMatrix> matC = std::make_shared<TMatrix>(structureC);
+    matC->GetEntries()[0] = 7;
+    matC->GetEntries()[1] = 8;
+    matC->GetEntries()[2] = 9;
+    matC->GetEntries()[3] = 10;
+    matC->GetEntries()[4] = 11;
+    matC->GetEntries()[5] = 12;
+    matC->GetEntries()[6] = 13;
+    matC->GetEntries()[7] = 14;
     
     std::shared_ptr<TMatrix> matCT(matC->GetTransposed());
 
@@ -193,6 +210,11 @@ int main(int argc, char* argv[])
     ColD[0] = 0; ColD[1] = 1; ColD[2] = 2; ColD[3] = 1; ColD[4] = 2;
     std::shared_ptr<TStructure> structureD(new TStructure(3, 3, 5, ColD, RowD));
     std::shared_ptr<TMatrix> matD = std::make_shared<TMatrix>(structureD);
+    matD->GetEntries()[0] = 50.;
+    matD->GetEntries()[1] = 10.;
+    matD->GetEntries()[2] = 0.1;
+    matD->GetEntries()[3] = 0.1;
+    matD->GetEntries()[4] = 15.;
     
     // create a BlockMatrix
     std::vector<std::shared_ptr<TMatrix>> blocks = {matA, matC, matB, matD};
@@ -206,10 +228,10 @@ int main(int argc, char* argv[])
     if(bm.get_n_total_entries() != 22)
       ErrThrow("total number of entries in BlockMatrix is incorrect");
     // check an entry in the sparsity pattern
-    if(bm.get(0, 0) != 1.) // we set this one entry to test here
+    if(bm.get(0, 0) != 10.)
       ErrThrow("wrong entry at position (0,0) ", bm.get(0, 0));
     // check an entry which is not in the sparsity pattern
-    if(bm.get(4, 1) != 0.)//other entries are not set, so they are zero(default)
+    if(bm.get(4, 1) != 0.)
       ErrThrow("wrong entry at position (0,0) ", bm.get(0, 0));
     // check if exceptions are thrown when accessing a value which is too large
     try
@@ -282,6 +304,29 @@ int main(int argc, char* argv[])
 
     }
 
+    {
+      // test BlockMatrix::sor_sweep
+      BlockVector rhs(bm, true);
+      rhs[0] = 1.0;
+      BlockVector sol(bm, false);
+      BlockVector exact_sol(bm, false);
+      exact_sol[0] = 0.1063356097695721;
+      exact_sol[1] = 0.001025959742357445;
+      exact_sol[2] = 5.817149251470894e-05;
+      exact_sol[3] = 0.0007817668937139531;
+      exact_sol[4] = -0.008522484119439989;
+      exact_sol[5] = -2.446236018275369e-05;
+      exact_sol[6] = -0.0004623386074561225;
+      bm.get_combined_matrix()->PrintFull();
+      for(size_t i = 0; i < 20; ++i)
+      {
+        bm.sor_sweep(rhs, sol, 1.1, 2);
+        BlockVector diff(sol);
+        diff.add_scaled(exact_sol, -1.);
+        Output::print("norm ", i, ": ", diff.norm());
+      }
+    }
+    
     delete[] RowA;
     delete[] ColA;
     delete[] RowB;

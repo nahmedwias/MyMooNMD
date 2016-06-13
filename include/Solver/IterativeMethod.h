@@ -5,9 +5,15 @@
 #include <memory> // std::shared_ptr
 #include <string>
 #include <Preconditioner.h>
+#include <limits>
+#include <cmath>
+#include <MooNMD_Io.h>
 
 
 /** @brief an abstract base class to describe iterative methods for solving
+ * 
+ * many of its derived classes are implemented similar to templates from
+ * http://www.netlib.org/templates/cpptemplates.tgz.
  */
 template <class LinearOperator, class Vector>
 class IterativeMethod
@@ -54,18 +60,55 @@ class IterativeMethod
     /** @brief damping factor (typically between 0 and 1) */
     double damping;
     
-    // a small helper function to reduce code duplication and to assure the same
-    // stopping criterion for all iterative methods
-    bool converged(double current_residual, double initial_residual,
-                   unsigned int current_iterate)
+    /** @brief the residual from the previous step */
+    double old_residual;
+    
+    /** @brief the residual before the iterative method starts */
+    double initial_residual;
+    
+    /** @brief a small helper function to reduce code duplication and to assure 
+     * the same stopping criterion for all iterative methods.
+     * \todo include time measurements here for nicer output
+     */
+    bool converged(double current_residual, unsigned int current_iterate)
     {
       bool residual_small_enough = current_residual < this->residual_tolerance;
       bool sufficient_reduction = 
-        current_residual < this->residual_reduction * initial_residual;
+        current_residual < this->residual_reduction * this->initial_residual;
       bool enough_iterations = 
         current_iterate > this->min_n_iterations || this->min_n_iterations == 0;
-      return (residual_small_enough || sufficient_reduction)
-              && enough_iterations;
+      bool stagnation = (current_residual > this->old_residual);
+      bool converged = (residual_small_enough || sufficient_reduction 
+                        || stagnation) && enough_iterations;
+      // reached maximum number of iterations
+      if(current_iterate == this->max_n_iterations)
+        converged = true;
+      
+      // output
+      using namespace Output;
+      if(current_iterate > 0)
+        print<4>(this->get_name(), " iteration ", current_iterate, 
+                 "    residual: ", std::setprecision(12), current_residual,
+                 "    rate: ", current_residual/this->old_residual, 
+                 "    rate from beginning: ", 
+                 current_residual/this->initial_residual);
+      else
+        print<4>(this->get_name(), " iteration ", current_iterate, 
+                 "    residual: ", std::setprecision(12), current_residual);
+      
+      if(stagnation)
+        warn("IterativeMethod", "residual increased: ", std::setprecision(12),
+             this->old_residual, " -> ", current_residual);
+      if(converged)
+        print<2>(this->get_name(), " iterations: ",  current_iterate,
+                 "  residual: ", std::setprecision(12), current_residual,
+                 "  reduction: ", current_residual/this->initial_residual,
+                 "  average reduction per step ", 
+                 std::pow(current_residual/this->initial_residual, 
+                          1./current_iterate));
+      
+      this->old_residual = current_residual;
+      return converged;
     }
     
   public:
@@ -74,7 +117,9 @@ class IterativeMethod
                     std::string name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
         residual_reduction(0.), divergence_factor(1.5), max_n_iterations(100),
-        min_n_iterations(0), restart(10)
+        min_n_iterations(0), restart(10), damping(1.0), 
+        old_residual(std::numeric_limits<double>::max()),
+        initial_residual(0.)
     {
     }
     

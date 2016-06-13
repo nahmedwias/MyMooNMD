@@ -82,8 +82,8 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        const Example_TimeNSE2D& ex, int reference_id)
  : db(get_default_TNSE2D_parameters()), outputWriter(param_db), systems(),
-   example(ex), multigrid(), solver(param_db), defect(), oldResidual(0), initial_residual(1e10),
-   errors(10,0.), oldtau(0.0)
+   example(ex), solver(param_db), defect(), oldResidual(0), 
+   initial_residual(1e10), errors(10,0.), oldtau(0.0)
 {
   db.merge(param_db);
   this->set_parameters();
@@ -104,9 +104,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
       ErrThrow("TDatabase::ParamDB->NSTYPE = ", TDatabase::ParamDB->NSTYPE ,
                " That NSE Block Matrix Type is unknown to class NSE2D.");
   }
-  bool usingMultigrid =
-       this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid");
+  bool usingMultigrid = this->solver.is_using_multigrid();
   
   if(!usingMultigrid)
   {
@@ -122,15 +120,11 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   else
   {
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-
-  outputWriter.add_fe_vector_function(&this->get_velocity());
-  outputWriter.add_fe_function(&this->get_pressure());
-  
+    auto multigrid = this->solver.get_multigrid();
+    
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
-    size_t n_levels = database_mg["multigrid_n_levels"];
+    size_t n_levels = multigrid->get_n_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest - n_levels + 1;
     for (int grid_no = finest; grid_no >= coarsest; --grid_no)
@@ -141,11 +135,13 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
       //prepare input argument for multigrid object
       matrices.push_front(&systems.back().matrix);
     }
-    // Construct the multigrid object
-    multigrid=std::make_shared<Multigrid>(database_mg, matrices);
+    multigrid->initialize(matrices);
   }
   // the defect has the same structure as the rhs (and as the solution)
   this->defect.copy_structure(this->systems.front().rhs);
+  
+  outputWriter.add_fe_vector_function(&this->get_velocity());
+  outputWriter.add_fe_function(&this->get_pressure());
   
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
@@ -657,16 +653,11 @@ void Time_NSE2D::solve()
 {
   System_per_grid& s = this->systems.front();
   
-  if(this->solver.get_db()["solver_type"].is("iterative")
-    && this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(this->solver.is_using_multigrid())
   {
-    solver.solve(s.matrix, s.rhs, s.solution, multigrid);
     ErrThrow("multigrid solver is not tested yet")
   }
-  else
-  {
-    solver.solve(s.matrix,s.rhs, s.solution);
-  }
+  solver.solve(s.matrix,s.rhs, s.solution);
   
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11 and A22 matrices are 

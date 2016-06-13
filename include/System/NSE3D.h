@@ -163,9 +163,6 @@ class NSE3D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
 
-    /// An object of the new multigrid class. Stays nullptr if not needed.
-    std::shared_ptr<Multigrid> mg_;
-
     //! @brief An array to store the current defect.
     BlockVector defect_;
     
