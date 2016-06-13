@@ -79,7 +79,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
 			      , int maxSubDomainPerDof
 #endif
 	   )
-: systems_(), example_(param_db["example"]), multigrid_(nullptr), db(get_default_TCD3D_parameters()),
+: systems_(), example_(param_db["example"]), db(get_default_TCD3D_parameters()),
   solver(param_db), errors_(5,0.0)
 {
   this->db.merge(param_db,false); // update this database with given values
@@ -115,10 +115,8 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   }
   else
   {
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db, false);
-    
-    size_t nMgLevels = database_mg["multigrid_n_levels"];
+    auto multigrid = this->solver.get_multigrid();
+    size_t nMgLevels = multigrid->get_n_levels();
     if(collections.size() != nMgLevels)
     {
       ErrThrow("Multigrid: expected ", nMgLevels, " collections ", 
@@ -136,8 +134,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
       systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
       matrices.push_front(&systems_.back().stiffMatrix_);
     }
-    multigrid_ = std::make_shared<Multigrid>(database_mg);
-    multigrid_->initialize(matrices);
+    multigrid->initialize(matrices);
   }// multigrid case
 }
 
@@ -295,44 +292,23 @@ void Time_CD3D::assemble()
 void Time_CD3D::solve()
 {
   SystemPerGrid& s=this->systems_.front();
-  //determine whether we make use of multigrid
-  bool using_multigrid = this->solver.is_using_multigrid();
-  
-  if(!using_multigrid)
+  #ifndef _MPI
+  this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential 
+  #endif
+  #ifdef _MPI // parallel
+  if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
   {
-    if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
-    {
-#ifndef _MPI
-      this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential 
-      return;
-#endif
-#ifdef _MPI // parallel
-      // TParFECommunicator3D* parComm = &s.parComm_;
-      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
-
-      MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#endif
-    }
-    
-    if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
-    {
-#ifdef _MPI // parallel
-      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
-
-      MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#else      
-      this->solver.solve(s.stiffMatrix_, s.rhs_, s.solution_); // sequential
-#endif
-    }
+    this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
   }
-  else // multigrid solver
+  if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
-    this->solver.solve(s.stiffMatrix_, s.rhs_, s.solution_, multigrid_);
+    std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
+    std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
+
+    MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
   }
+  #endif
 }
 
 //==============================================================================

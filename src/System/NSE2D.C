@@ -132,7 +132,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
   if(usingMultigrid)
   {
     // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(param_db);
+    auto mg_ = this->solver.get_multigrid();
     bool mdml = mg_->is_using_mdml();
     if(mdml)
     {
@@ -446,7 +446,8 @@ void NSE2D::assemble()
                boundary_conditions, non_const_bound_values.data(), la);
 
     // do upwinding TODO remove dependency of global values
-    bool mdml = mg_ && mg_->is_using_mdml();
+    bool mdml = this->solver.is_using_multigrid() 
+                && this->solver.get_multigrid()->is_using_mdml();
     bool on_finest_grid = &systems.front() == &s;
     bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
     bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
@@ -580,7 +581,8 @@ void NSE2D::assemble_nonlinear_term()
     }
     
     // do upwinding TODO remove dependency of global values
-    bool mdml = mg_ && mg_->is_using_mdml();
+    bool mdml = this->solver.is_using_multigrid() 
+                && this->solver.get_multigrid()->is_using_mdml();
     bool on_finest_grid = &systems.front() == &s;
     bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
     bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
@@ -732,14 +734,8 @@ void NSE2D::solve()
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution);
   
-  if(this->solver.is_using_multigrid())
-  {
-    solver.solve(s.matrix, s.rhs, s.solution, mg_);
-  }
-  else
-  {
-    solver.solve(s.matrix,s.rhs, s.solution);
-  }
+  solver.solve(s.matrix,s.rhs, s.solution);
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
   

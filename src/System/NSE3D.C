@@ -155,9 +155,8 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
              , int maxSubDomainPerDof
 #endif
 ) : systems_(), example_(example), db(get_default_NSE3D_parameters()),
-    solver(param_db), mg_(nullptr),
-    defect_(), old_residuals_(),
-    initial_residual_(1e10), errors_()
+    solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
+    errors_()
 {
   this->db.merge(param_db, false);
   std::pair <int,int> 
@@ -201,8 +200,8 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     ErrThrow("There is no multigrid for NSE3D in MPI yet!");
     #endif
     // Construct multigrid object
-    mg_ = std::make_shared<Multigrid>(param_db);
-    bool mdml = mg_->is_using_mdml();
+    auto mg = this->solver.get_multigrid();
+    bool mdml = mg->is_using_mdml();
     if(mdml)
     {
       // change the discretization on the coarse grids to lowest order 
@@ -212,7 +211,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     }
     
     // number of multigrid levels
-    size_t n_multigrid_levels = mg_->get_n_levels();
+    size_t n_multigrid_levels = mg->get_n_levels();
     // index of finest grid
     int finest = domain.get_ref_level(); // -> there are finest+1 grids
     // index of the coarsest grid used in this multigrid environment
@@ -252,7 +251,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
       matrices.push_front(&systems_.back().matrix_);
     }
     // initialize the multigrid object with all the matrices on all levels
-    mg_->initialize(matrices);
+    mg->initialize(matrices);
   }
   output_problem_size_info();
 }
@@ -617,8 +616,8 @@ void NSE3D::assemble_non_linear_term()
     bool finest_grid = (&s == &systems_.at(0));
 
     bool upwinding = false;
-    if(mg_)
-      upwinding = mg_->get_type() == MultigridType::MDML && !finest_grid;
+    if(this->solver.is_using_multigrid())
+      upwinding = this->solver.get_multigrid()->is_using_mdml() && !finest_grid;
 
     if(!upwinding)
     {
@@ -777,40 +776,33 @@ void NSE3D::solve()
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution_);
   
-  //determine whether we make use of multigrid
-  bool using_multigrid = solver.is_using_multigrid();
-  if(!using_multigrid)
-  {//no multigrid
-    if(this->solver.get_db()["solver_type"].is("direct"))
-    {
+  // solving:
 #ifndef _MPI
-      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+  this->solver.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
 #ifdef _MPI
-      if(damping != 1.0)
-        Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
-      //two vectors of communicators (const for init, non-const for solving)
-      std::vector<const TParFECommunicator3D*> par_comms_init =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-      std::vector<TParFECommunicator3D*> par_comms_solv =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+  if(this->solver.get_db()["solver_type"].is("direct"))
+  {
+    if(damping != 1.0)
+      Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
+    //two vectors of communicators (const for init, non-const for solving)
+    std::vector<const TParFECommunicator3D*> par_comms_init =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
+       &s.parCommPressure_};
+    std::vector<TParFECommunicator3D*> par_comms_solv =
+      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
+       &s.parCommPressure_};
 
-      //set up a MUMPS wrapper
-      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    //set up a MUMPS wrapper
+    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
 
-      //kick off the solving process
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#endif
-
-    }
-    else
-      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+    //kick off the solving process
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
   }
   else
-  {//multigrid preconditioned iterative solver
-    solver.solve(s.matrix_, s.rhs_, s.solution_, mg_);
-  }
-
+    this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential
+#endif
+  
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
    s.p_.project_into_L20();

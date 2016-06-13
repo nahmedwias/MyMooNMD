@@ -90,8 +90,8 @@ ParameterDatabase get_default_CD3D_parameters()
              ,int maxSubDomainPerDof
 #endif
   )
-  : systems_(), example_(example), multigrid_(nullptr),
-    db(get_default_CD3D_parameters()), solver(param_db), errors_()
+  : systems_(), example_(example), db(get_default_CD3D_parameters()),
+    solver(param_db), errors_()
   {
     this->db.merge(param_db, false); // update this database with given values
     this->checkParameters();
@@ -135,9 +135,7 @@ ParameterDatabase get_default_CD3D_parameters()
         if(!param_db["multigrid_n_levels"].is(n_levels))
            ErrThrow("Number of collection does not equal number of multigrid levels!");
 
-        ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-        database_mg.merge(param_db, false);
-
+        auto mg = this->solver.get_multigrid();
         // Construct systems per grid and store them, finest level first
         std::list<BlockFEMatrix*> matrices;
         for (auto coll : collections)
@@ -150,10 +148,7 @@ ParameterDatabase get_default_CD3D_parameters()
           //prepare input argument for multigrid object
           matrices.push_front(&systems_.back().matrix_);
         }
-
-        // Construct multigrid object
-        mg_ = std::make_shared<Multigrid>(database_mg);
-        mg_->initialize(matrices);
+        mg->initialize(matrices);
       }
       else
       { //THIS IS OLD MULTIGRID
@@ -250,38 +245,25 @@ void CD3D::solve()
   if(use_new_solver_debug)
   {
     SystemPerGrid& s = this->systems_.front();
+    #ifndef _MPI
+    this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+    #endif
+    #ifdef _MPI
+    if(this->solver.get_db()["solver_type"].is("direct"))
+    {
+      //two vectors of communicators (const for init, non-const for solving)
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
 
-    //determine whether we make use of multigrid
-    bool using_multigrid = this->solver.is_using_multigrid();
+      //set up a MUMPS wrapper
+      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
 
-    if(!using_multigrid)
-    {//no multigrid
-      if(this->solver.get_db()["solver_type"].is("direct"))
-      {
-#ifndef _MPI
-        this->solver.solve(s.matrix_, s.rhs_, s.solution_);
-#endif
-#ifdef _MPI
-        //two vectors of communicators (const for init, non-const for solving)
-        std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-        std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
-
-        //set up a MUMPS wrapper
-        MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
-
-        //kick off the solving process
-        mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#endif
-
-      }
-      else
-        this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+      //kick off the solving process
+      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
     }
     else
-    {//multigrid preconditioned iterative solver is used
-      // All matrices which mg_'s levels point to must be ready!
-      solver.solve(s.matrix_, s.rhs_, s.solution_, mg_);
-    }
+      this->solver.solve(s.matrix_, s.rhs_, s.solution_);
+    #endif
   }
   else
   {
