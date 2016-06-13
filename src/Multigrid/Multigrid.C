@@ -79,7 +79,15 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 
 void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
 {
-  //Create the levels and collect them in a list
+  // Create the levels and collect them in a list
+  if(matrices.size() != this->get_n_levels())
+  {
+    Output::warn<2>("Multigrid::initialize", "the number of multigrid levels "
+                    "was set to ", this->get_n_levels(), ", but there are ",
+                    matrices.size(), " matrices given. I will assume ", 
+                    matrices.size(), " multigrid levels from now on.");
+    this->db["multigrid_n_levels"] = matrices.size();
+  }
   auto coarsest = matrices.front();
   for(auto mat : matrices)
   {
