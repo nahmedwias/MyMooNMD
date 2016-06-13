@@ -18,6 +18,7 @@
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
 #include <array>
+#include <BoundEdge.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -1055,6 +1056,32 @@ int TCollection::writeMesh(const char *meshFileName)
   return 0;
   
 }
+
+void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &edges)
+{
+  edges.clear();
+  for(int i=0;i<this->N_Cells; i++)
+    {
+      TBaseCell *cell = this->Cells[i];
+      for(int j=0;  j < cell->GetN_Joints(); j++)
+        {
+	  TJoint *joint= cell->GetJoint(j);
+	  if (joint->GetType()==BoundaryEdge)
+            {
+	      TBoundEdge *boundedge = (TBoundEdge *)joint;
+	      TBoundComp *BoundComp = boundedge->GetBoundComp();
+	      if (BoundComp->GetID() == id)
+                {
+		  ///@todo set the boundedge properties in the function MakeGrid
+		  boundedge->SetNeighbour(cell);
+		  boundedge->set_index_in_neighbour(cell,j);
+		  edges.push_back(boundedge);                 
+                }
+            }
+        }
+    }
+}
+
 #ifdef _MPI
 int TCollection::find_process_of_point(double x, double y, double z) const
 {
@@ -1097,4 +1124,7 @@ int TCollection::find_process_of_point(double x, double y, double z) const
 
 
 }
+
+
+
 #endif
