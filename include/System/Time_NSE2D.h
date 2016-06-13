@@ -101,11 +101,6 @@ class Time_NSE2D
     /** @brief Definition of the used example */
     Example_TimeNSE2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<Multigrid> multigrid;
-    
     /** @brief a solver object which will solve the linear system
      * 
      * Storing it means that for a direct solver we also store the factorization

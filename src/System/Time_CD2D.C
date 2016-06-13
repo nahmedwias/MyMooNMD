@@ -95,7 +95,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		const Example_TimeCD2D& ex, int reference_id)
- : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex), multigrid(nullptr),
+ : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
    errors(5, 0.0), timeDependentOutput(param_db)
 {
   db.merge(param_db);
@@ -130,10 +130,11 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   }
   else
   {
-    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-    database_mg.merge(param_db,false);
+    auto multigrid = this->solver.get_multigrid();
+    if(multigrid->is_using_mdml())
+      ErrThrow("mdml for TCD2D not yet implemented");
     
-    size_t nMGLevel = database_mg["multigrid_n_levels"];
+    size_t nMGLevel = multigrid->get_n_levels();
     int finest = domain.get_ref_level();
     int coarsest = finest-nMGLevel+1;
     
@@ -146,7 +147,6 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
       systems.front().fe_function.Interpolate(example.get_initial_cond(0));
       matrices.push_front(&systems.back().stiff_matrix);
     }
-    multigrid = std::make_shared<Multigrid>(database_mg);
     multigrid->initialize(matrices);
   }
 }
@@ -361,29 +361,13 @@ void Time_CD2D::solve()
   double t = GetTime();
   System_per_grid& s = this->systems.front();
   
-  bool using_multigrid = this->solver.is_using_multigrid();
-  if(!using_multigrid)
-  {
-    if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
-    {
-      this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
-      return;
-    }
-    if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
-    {
-      this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
-    }
-  }
-  else
-  {
-    this->solver.solve(s.stiff_matrix, s.rhs, s.solution, multigrid);
-  }
+  this->solver.solve(s.stiff_matrix, s.rhs, s.solution);
+  
   t = GetTime() - t;
   Output::print<1>("time for solving: ",  t);
   Output::print<2>("solution ", sqrt(Ddot(s.solution.length(),
                                           s.solution.get_entries(),
                                           s.solution.get_entries())) );
-
 }
 
 /**************************************************************************** */

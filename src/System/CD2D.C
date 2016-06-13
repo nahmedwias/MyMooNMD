@@ -50,8 +50,8 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
            const Example_CD2D& example, int reference_id)
- : systems(), example(example), mg(nullptr),
-   db(get_default_CD2D_parameters()), outputWriter(param_db), solver(param_db)
+ : systems(), example(example), db(get_default_CD2D_parameters()),
+   outputWriter(param_db), solver(param_db)
 {
   this->db.merge(param_db, false); // update this database with given values
   this->set_parameters();
@@ -78,12 +78,13 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     return;
   // else multigrid
   
-  ParameterDatabase database_mg = Multigrid::default_multigrid_database();
-  database_mg.merge(param_db, false);
+  auto mg = this->solver.get_multigrid();
+  if(mg->is_using_mdml())
+    ErrThrow("mdml for CD2D not yet implemented");
   
   // Construct systems per grid and store them, finest level first
   std::list<BlockFEMatrix*> matrices;
-  size_t n_levels = database_mg["multigrid_n_levels"];
+  size_t n_levels = mg->get_n_levels();
   int finest = domain.get_ref_level();
   int coarsest = finest - n_levels + 1;
   for (int grid_no = finest; grid_no >= coarsest; --grid_no)
@@ -93,9 +94,6 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
     //prepare input argument for multigrid object
     matrices.push_front(&systems.back().matrix);
   }
-  
-  // Construct multigrid object
-  mg = std::make_shared<Multigrid>(database_mg);
   mg->initialize(matrices);
 }
 
@@ -194,14 +192,7 @@ void CD2D::solve()
 {
   double t = GetTime();
   System_per_grid& s = this->systems.front();
-  if(!this->solver.is_using_multigrid())
-  {
-    this->solver.solve(s.matrix, s.rhs, s.solution);
-  }
-  else
-  {//multigrid preconditioned iterative solver is used
-    solver.solve(s.matrix, s.rhs, s.solution, mg);
-  }
+  this->solver.solve(s.matrix, s.rhs, s.solution);
   
   t = GetTime() - t;
   Output::print<2>(" solving of a CD2D problem done in ", t, " seconds");

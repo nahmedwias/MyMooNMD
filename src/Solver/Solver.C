@@ -199,9 +199,11 @@ std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
 template <class L, class V>
 Solver<L, V>::Solver(const ParameterDatabase& param_db)
  : db(default_solver_database()), linear_operator(nullptr), direct_solver(), 
-   iterative_method(), preconditioner()
+   iterative_method(), preconditioner(), multigrid(nullptr)
 {
   this->db.merge(param_db, false);
+  if(this->is_using_multigrid())
+    multigrid = std::make_shared<Multigrid>(param_db);
 }
 
 /* ************************************************************************** */
@@ -244,8 +246,17 @@ void Solver<L, V>::update_matrix(const L& matrix)
     if(!is_saddle_point_preconditioner)
     {
       // create a new preconditioner
-      this->preconditioner = get_preconditioner<L, V>(prec_name, matrix, 
-                                                      this->db);
+      if(this->is_using_multigrid())
+      {
+        this->preconditioner = std::make_shared<Iteration_multigrid<L, V>>(
+          this->multigrid);
+        this->multigrid->update();
+      }
+      else
+      {
+        this->preconditioner = get_preconditioner<L, V>(prec_name, matrix, 
+                                                        this->db);
+      }
     }
     else
     {
@@ -294,54 +305,41 @@ void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution)
   this->solve(rhs, solution);
 }
 
-/*TODO this implementation is partly copy-and-paste from update_matrix,
- * partly from another solve...bad! */
-template <class L, class V>
-void Solver<L, V>::solve(const L& matrix, const V& rhs, V& solution,
-                         std::shared_ptr<Multigrid> mg)
-{
-    if(db["solver_type"].is("direct"))
-    {
-      ErrThrow("Solver::solve with multigrid object called for Direct Solver!")
-    }
-
-    preconditioner = std::make_shared<Iteration_multigrid<L, V>>(mg);
-    mg->update();
-
-    // iterative solver
-    std::string ist = db["iterative_solver_type"];
-    std::string prec_name = db["preconditioner"];
-    size_t max_it = db["max_n_iterations"];
-    size_t min_it = db["min_n_iterations"];
-    double tol = db["residual_tolerance"];
-    double reduc = db["residual_reduction"];
-    size_t restart = db["gmres_restart"]; // only for gmres
-    double damping = db["damping_factor"];
-
-    iterative_method = get_iterative_method<L, V>(ist, this->db, matrix,
-                                                  this->preconditioner);
-    iterative_method->set_stopping_parameters(max_it, min_it, tol, reduc,
-                                                    2., damping, restart);
-
-
-    // iterative solver
-    this->iterative_method->iterate(matrix, rhs, solution);
-}
-
 /* ************************************************************************** */
 template <class LinearOperator, class Vector>
-const ParameterDatabase& Solver<LinearOperator, Vector>::get_db()
+const ParameterDatabase& Solver<LinearOperator, Vector>::get_db() const
 {
   return this->db;
 }
 /* ************************************************************************** */
 
 template <class L, class V>
-bool Solver<L, V>::is_using_multigrid()
+bool Solver<L, V>::is_using_multigrid() const
 {
   return db["solver_type"].is("iterative") 
       && db["preconditioner"].is("multigrid");
 }
+
+/* ************************************************************************** */
+template <class L, class V>
+std::shared_ptr<Multigrid> Solver<L, V>::get_multigrid()
+{
+  if(this->is_using_multigrid())
+    return this->multigrid;
+  ErrThrow("unable to return a multigrid object, because this solver object is "
+           "not set to use multigrid");
+}
+
+/* ************************************************************************** */
+template <class L, class V>
+std::shared_ptr<const Multigrid> Solver<L, V>::get_multigrid() const
+{
+  if(this->is_using_multigrid())
+    return this->multigrid;
+  ErrThrow("unable to return a multigrid object, because this solver object is "
+           "not set to use multigrid");
+}
+
 /* ************************************************************************** */
 
 // explicit instantiations

@@ -134,11 +134,6 @@ class Time_CD3D
     /** @brief Definition of the used example */
     const Example_TimeCD3D example_;
     
-    /** a multigrid object from new multigrid class;
-     * it stays nullptr if not used
-     */
-    std::shared_ptr<Multigrid>  multigrid_;
-            
     /** @brief a local parameter database which controls this class
      *
      * The database given to the constructor will be merged into this one. Only

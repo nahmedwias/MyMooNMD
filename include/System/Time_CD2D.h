@@ -126,11 +126,6 @@ class Time_CD2D
     /** @brief Definition of the used example */
     const Example_TimeCD2D example;
     
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<Multigrid> multigrid;
-    
     /** @brief set parameters in database
      * 
      * This functions checks if the parameters in the database are meaningful 

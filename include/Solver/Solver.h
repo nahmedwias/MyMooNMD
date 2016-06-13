@@ -50,6 +50,11 @@ class Solver
     /// direct solver is used at all. A Saddle_point_preconditioner on the other
     /// hand only needs to be created once, and then update is enough. This 
     /// method does this.
+    ///
+    /// In case of a multigrid preconditioner, the multigrid object is updated 
+    /// within this method - all its levels and their smoothers get updated.
+    /// This behaviour is based on the assumption, that at the time this method 
+    /// is called all matrices on all levels have been reassembled.
     void update_matrix(const LinearOperator& matrix);
     
     /// @brief solve after calling `Solver::update_matrix`
@@ -69,27 +74,19 @@ class Solver
     void solve(const LinearOperator& matrix, const Vector& rhs,
                Vector& solution);
     
-    ///
-    /// When solving iteratively with a multigrid preconditioner, the following
-    /// method must be called - passing a complete multigrid object to the
-    /// solver, which will be used to set up the preconditioner.
-    ///
-    /// The multigrid object is updated within the method - all its levels
-    /// and their smoothers get actualized. This behaviour is based on the
-    /// assumption, that at the time this method is called
-    /// all matrices on all levels have been reassembled.
-    void solve(const LinearOperator& matrix, const Vector& rhs,
-               Vector& solution, std::shared_ptr<Multigrid> mg);
-
     /// @brief return a constant reference to the local ParameterDatabase
     ///
     /// Note that you can not change the behavior of this class after 
     /// construction. This method only lets you inspect the solver parameters
-    const ParameterDatabase& get_db();
+    const ParameterDatabase& get_db() const;
     
-    /// Return true if multigrid is expected as preconditioner.
-    bool is_using_multigrid();
-
+    /// @brief Return true if multigrid is expected as preconditioner.
+    bool is_using_multigrid() const;
+    
+    /// @brief return the multigrid object, throws if not using multigrid
+    std::shared_ptr<const Multigrid> get_multigrid() const;
+    /// @brief return the multigrid object, throws if not using multigrid
+    std::shared_ptr<Multigrid> get_multigrid();
 
     /// @brief return a default solver parameter database
     ///
@@ -113,6 +110,8 @@ class Solver
     std::shared_ptr<IterativeMethod<LinearOperator, Vector>> iterative_method;
     /// @brief this object is only created if needed.
     std::shared_ptr<Preconditioner<Vector>> preconditioner;
+    /// @brief this object is only created if needed.
+    std::shared_ptr<Multigrid> multigrid;
 };
 
 #endif // __SOLVER_H__
