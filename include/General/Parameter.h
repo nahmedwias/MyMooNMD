@@ -266,9 +266,9 @@ class Parameter
     /// Even if the range is an interval, here all numbers are listed
     std::set<size_t> unsigned_range;
     /// @brief the range is the interval [unsigned_min, unsigned_max]
-    int unsigned_min;
+    size_t unsigned_min;
     /// @brief the range is the interval [unsigned_min, unsigned_max]
-    int unsigned_max;
+    size_t unsigned_max;
     /// @brief the range is the interval [min, max]
     double double_min;
     /// @brief the range is the interval [min, max]
