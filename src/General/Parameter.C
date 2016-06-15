@@ -224,6 +224,12 @@ void Parameter::impose(const Parameter& p)
         this->double_max = (double) p.int_max;
         this->double_value = (double) p.int_value;
       }
+      else if(p.int_range.size() == 1) // single element range
+      {
+        this->double_min = (double) p.int_value;
+        this->double_max = (double) p.int_value;
+        this->double_value = (double) p.int_value;
+      }
       else
         ErrThrow("cannot impose an integer parameter to a double parameter "
                  "because the int_range is not an interval. Parameter name: ",
@@ -237,6 +243,12 @@ void Parameter::impose(const Parameter& p)
         // this is double and p is a size_t parameter with an inteval range
         this->double_min = (double) p.unsigned_min;
         this->double_max = (double) p.unsigned_max;
+        this->double_value = (double) p.unsigned_value;
+      }
+      else if(p.unsigned_range.size() == 1) // single element range
+      {
+        this->double_min = (double) p.unsigned_value;
+        this->double_max = (double) p.unsigned_value;
         this->double_value = (double) p.unsigned_value;
       }
       else
@@ -373,11 +385,14 @@ bool Parameter::get<bool>() const
 template<>
 int Parameter::get<int>() const
 {
-  if(!check_type<int>(this->type))
+  if(!check_type<int>(this->type) && !check_type<size_t>(this->type))
     ErrThrow("Parameter ", this->name, " has the wrong type: ",
              type_as_string(this->type), " != int");
   access_count++;
-  return this->int_value;
+  if(check_type<int>(this->type))
+    return this->int_value;
+  else //if(check_type<size_t>(this->type))
+    return this->unsigned_value;
 }
 template<>
 size_t Parameter::get<size_t>() const
