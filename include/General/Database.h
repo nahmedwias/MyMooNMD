@@ -649,39 +649,6 @@ struct TParaDB
   int PB_TIME_DISC;
 
   //======================================================================
-  /** parameters for Stokes--Darcy (StoDa) coupling */
-  //======================================================================
-  int StoDa_interfaceType; //Beavers-Joseph-Saffman or u.t=0
-  double StoDa_alpha; // from Beavers-Joseph-Saffman condition on interface
-  int StoDa_problemType; // Neumann--Neumann, Robin--Robin, ...
-  int StoDa_updatingStrategy; // update of the etas
-  double StoDa_theta_f; //damping in Stokes (flow) part
-  double StoDa_theta_p; //damping in Darcy (porous) part
-  double StoDa_gamma_f; // parameter for Robin condition on interface
-  double StoDa_gamma_p; // parameter for Robin condition on interface
-  double StoDa_weakGamma; // parameter for enforcing weak boundary conditions
-  double StoDa_solutionStrategy; // iterative (0), one big matrix (2), both (1)
-  int StoDa_algorithm; // Gauss--Seidel, Jacobi, ...
-  int StoDa_StokesFirst; // for Gauss--Seidel type method.
-  int StoDa_nIterations; // maximum number of iterations
-  // convergence criteria: 
-  // interface error e = ( ||uS.n-uD.n||^2_L2  +  ||nTn+pD||^2_L2 )^{1/2}
-  double StoDa_relDiff_interfaceError; // (e_k - e_{k+1})/e_k < this number
-  // E_k^2 = ( a1 * (||uS_{h,k}-uS_{h,k+1})/uS_{h,k} )^2
-  //        +( a2 * (||pS_{h,k}-pS_{h,k+1})/pS_{h,k} )^2
-  //        +( a3 * (||pD_{h,k}-pD_{h,k+1})/pD_{h,k} )^2
-  // a1,a2,a3 are the following
-  double StoDa_relDiff_factor1;
-  double StoDa_relDiff_factor2;
-  double StoDa_relDiff_factor3;
-  double StoDa_relDiff_solution; // E_k < this number
-  double StoDa_bigResidual; // residual of big System < this number
-  int StoDa_periodicBoundary; // true if there is a periodic boundary
-  // a prescribed pressure drop at the periodic boundary (to have a flow at all)
-  double StoDa_periodicBoundaryPressureDrop; 
-  
-
-  //======================================================================
   /** internal parameters
   cannot be set in the readin file
   are used as global variables */
