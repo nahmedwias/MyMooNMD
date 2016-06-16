@@ -31,6 +31,7 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   // x^{k+1} = w D^{-1}(b - Rx^k) + (1-w)x^k
   // D is the diagonal, R is A-D, w is the damping parameter
   // Since we can only multiply with all of A, we do the following:

@@ -23,6 +23,7 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   double alpha, beta, rho_1, rho_2;
   Vector p, phat(rhs), q, u, uhat(rhs);
   Vector qhat(rhs), vhat(rhs); // this does a copy. We don't need the entries.

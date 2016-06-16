@@ -20,6 +20,7 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_sor<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   // (D + wL) x^{k+1} = w b - (wU + (w-1)D)x^k
   // D is the diagonal, L is the lower triangular part of A, U is the upper 
   // triangular part of A, w is the relaxation parameter

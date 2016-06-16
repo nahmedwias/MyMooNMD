@@ -23,8 +23,9 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   double rho_1, rho_2 = 1., alpha = 1., beta, omega = 1.;
-  Vector p, phat, s, shat;
+  Vector p, phat(rhs), s, shat(rhs);
   Vector t(rhs), v(rhs); // this does a copy. We don't need the entries though.
   
   //Vector r = rhs - A * solution;
