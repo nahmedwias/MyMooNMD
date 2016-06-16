@@ -100,7 +100,9 @@ class Parameter
 
     /// @brief take the value and range from a given other parameter
     ///
-    /// The other parameter `p` must have the same name and type. The 
+    /// The other parameter `p` must have the same name. It should also have the
+    /// same type, but a few exceptions are possible, for example p can be a
+    /// size_t parameter while this is an int or double parameter. The 
     /// descriptions are concatenated (unless equal), the range is merged with 
     /// that of `p`. We think of this as if a new Parameter is defined, 
     /// therefore both change_count and access_count are reset to 0.
