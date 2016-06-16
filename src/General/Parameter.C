@@ -154,6 +154,19 @@ Parameter::Parameter(const Parameter& p)
 
 
 /* ************************************************************************** */
+// change min and max to include range
+template<typename T1, typename T2>
+void adjust_range(T1& min, T1& max, const std::set<T2>& range)
+{
+  constexpr bool T1_ok = std::is_integral<T1>::value 
+                         || std::is_floating_point<T1>::value;
+  static_assert(T1_ok && std::is_integral<T2>::value,
+                "adjust_range in Parameter.C is only valid for integers");
+  auto mm = std::minmax_element(range.begin(), range.end());
+  min = std::min(min, (T1)*mm.first);
+  max = std::max(max, (T1)*mm.second);
+}
+
 void Parameter::impose(const Parameter& p)
 {
   if(this->name != p.get_name())
@@ -179,17 +192,20 @@ void Parameter::impose(const Parameter& p)
   // is either empty or equal.
   
   // handle the range (it will be at least as large as that of p)
-  this->not_bool_value_allowed |= p.not_bool_value_allowed; // logical or
-  this->int_range.insert(p.int_range.begin(), p.int_range.end());
-  this->int_min = std::min(this->int_min, p.int_min);
-  this->int_max = std::max(this->int_max, p.int_max);
-  this->unsigned_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
-  this->unsigned_min = std::min(this->unsigned_min, p.unsigned_min);
-  this->unsigned_max = std::max(this->unsigned_max, p.unsigned_max);
-  this->double_min = std::min(this->double_min, p.double_min);
-  this->double_max = std::max(this->double_max, p.double_max);
-  this->string_range.insert(p.string_range.begin(), p.string_range.end());
-  
+  if(this->type == p.get_type())
+  {
+    this->not_bool_value_allowed |= p.not_bool_value_allowed; // logical or
+    this->int_range.insert(p.int_range.begin(), p.int_range.end());
+    this->int_min = std::min(this->int_min, p.int_min);
+    this->int_max = std::max(this->int_max, p.int_max);
+    this->unsigned_range.insert(p.unsigned_range.begin(), 
+                                p.unsigned_range.end());
+    this->unsigned_min = std::min(this->unsigned_min, p.unsigned_min);
+    this->unsigned_max = std::max(this->unsigned_max, p.unsigned_max);
+    this->double_min = std::min(this->double_min, p.double_min);
+    this->double_max = std::max(this->double_max, p.double_max);
+    this->string_range.insert(p.string_range.begin(), p.string_range.end());
+  }
   // handle the value
   // the value is included in the range, because it was included in the range of
   // p and this->range is a superset of p.range. So no additional check needed 
@@ -211,8 +227,8 @@ void Parameter::impose(const Parameter& p)
       // `this` is of type int, just set int_value and int_range correctly
       this->int_value = (size_t)p;
       this->int_range.insert(p.unsigned_range.begin(), p.unsigned_range.end());
-      this->int_min = p.unsigned_min;
-      this->int_max = p.unsigned_max;
+      this->int_min = std::min(this->int_min, (int)p.unsigned_min);
+      this->int_max = std::max(this->int_max, (int)p.unsigned_max);
     }
     else if(check_type<double>(this->type) && p_is_int)
     {
@@ -220,8 +236,14 @@ void Parameter::impose(const Parameter& p)
       if(p.range_is_an_interval)
       {
         // this is double and p is an integer parameter with an inteval range
-        this->double_min = (double) p.int_min;
-        this->double_max = (double) p.int_max;
+        this->double_min = std::min(this->double_min, (double) p.int_min);
+        this->double_max = std::max(this->double_max, (double) p.int_max);
+        this->double_value = (double) p.int_value;
+      }
+      else if(p.int_range.size() == 1) // single element range
+      {
+        this->double_min = std::min(this->double_min, (double) p.int_value);
+        this->double_max = std::max(this->double_max, (double) p.int_value);
         this->double_value = (double) p.int_value;
       }
       else if(p.int_range.size() == 1) // single element range
@@ -241,8 +263,14 @@ void Parameter::impose(const Parameter& p)
       if(p.range_is_an_interval)
       {
         // this is double and p is a size_t parameter with an inteval range
-        this->double_min = (double) p.unsigned_min;
-        this->double_max = (double) p.unsigned_max;
+        this->double_min = std::min(this->double_min, (double) p.unsigned_min);
+        this->double_max = std::max(this->double_max, (double) p.unsigned_max);
+        this->double_value = (double) p.unsigned_value;
+      }
+      else if(p.unsigned_range.size() == 1) // single element range
+      {
+        this->double_min = std::min(this->double_min, (double)p.unsigned_value);
+        this->double_max = std::max(this->double_max, (double)p.unsigned_value);
         this->double_value = (double) p.unsigned_value;
       }
       else if(p.unsigned_range.size() == 1) // single element range
@@ -261,6 +289,79 @@ void Parameter::impose(const Parameter& p)
       ErrThrow("cannot impose another parameter to this one (", this->name,
                ") because it has a different type: ", 
                type_as_string(this->type), " ", type_as_string(p.get_type()));
+    }
+  }
+  if(this->range_is_an_interval != p.range_is_an_interval)
+  {
+    if(this->type == p.get_type())
+    {
+      // type is either int or size_t
+      // we will use an interval as a range!
+      if(this->range_is_an_interval)
+      {
+        // in case of int parameter
+        adjust_range<int, int>(this->int_min, this->int_max, p.int_range);
+        // in case of size_t parameter
+        adjust_range<size_t, size_t>(this->unsigned_min, this->unsigned_max, 
+                                     p.unsigned_range);
+      }
+      else
+      {
+        // in case of int parameter
+        this->int_min = p.int_min;
+        this->int_max = p.int_max;
+        adjust_range<int, int>(this->int_min, this->int_max, this->int_range);
+        // in case of size_t parameter
+        this->unsigned_min = p.unsigned_min;
+        this->unsigned_max = p.unsigned_max;
+        adjust_range<size_t, size_t>(this->unsigned_min, this->unsigned_max, 
+                                     this->unsigned_range);
+        this->range_is_an_interval = true;
+      }
+    }
+    else
+    {
+      // different types and different types of ranges
+      if(check_type<int>(this->type) && check_type<size_t>(p.get_type()))
+      {
+        // this is int and p is size_t,
+        // we will use an interval as a range!
+        if(this->range_is_an_interval)
+        {
+          auto mmi = std::minmax_element(p.unsigned_range.begin(), 
+                                         p.unsigned_range.end());
+          this->int_min = std::min(this->int_min, (int)*mmi.first);
+          this->int_max = std::max(this->int_max, (int)*mmi.second);
+          // in case of size_t parameter
+        }
+        else
+        {
+          // in case of int parameter
+          auto mmi = std::minmax_element(this->int_range.begin(), 
+                                         this->int_range.end());
+          this->int_min = std::min((int)p.unsigned_min, *mmi.first);
+          this->int_max = std::max((int)p.unsigned_min, *mmi.second);
+          this->range_is_an_interval = true;
+        }
+      }
+      else if(check_type<double>(this->type))
+      {
+        if(check_type<int>(p.get_type()))
+          // p has non interval range and is of type int
+          adjust_range<double, int>(this->double_min, this->double_max,
+                                    p.int_range);
+        else if(check_type<size_t>(p.get_type()))
+          // p has non interval range and is of type size_t
+          adjust_range<double, size_t>(this->double_min, this->double_max,
+                                       p.unsigned_range);
+      }
+      else
+      {
+        this->info();
+        p.info();
+        ErrThrow("unable to impose one Parameter to another where one has an "
+                 "interval range and the other does not. ", this->name);
+      }
     }
   }
 }
