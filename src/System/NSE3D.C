@@ -568,6 +568,19 @@ void NSE3D::assemble_non_linear_term()
       GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
     }
   }
+  
+  bool mdml =  this->solver.is_using_multigrid() 
+            && this->solver.get_multigrid()->is_using_mdml();
+  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  if(mdml && !is_stokes)
+  {
+    // in case of upwinding we only assemble the linear terms. The nonlinear
+    // term is not assembled but replaced by a call to the upwind method.
+    // Note that we assemble the same terms over and over again here. Not 
+    // nice, but otherwise we would have to store the linear parts in a 
+    // separate BlockFEMatrix.
+    this->assemble_linear_terms();
+  }
 
   for(auto &s : this->systems_)
   {
@@ -594,11 +607,6 @@ void NSE3D::assemble_non_linear_term()
         break;
     }// endswitch nstype
 
-    for(auto mat : sqMatrices)
-    {
-      mat->reset();
-    }
-
     // boundary conditions and boundary values
     BoundCondFunct3D * boundCondition[1]={
       spaces[0]->getBoundCondition() };
@@ -614,31 +622,30 @@ void NSE3D::assemble_non_linear_term()
 
     //decide wether to assemble by upwinding or not
     bool finest_grid = (&s == &systems_.at(0));
-
-    bool upwinding = false;
-    if(this->solver.is_using_multigrid())
-      upwinding = this->solver.get_multigrid()->is_using_mdml() && !finest_grid;
-
+    bool upwinding = mdml && !finest_grid && !is_stokes;
+    
     if(!upwinding)
     {
-    // local assembling object    
-    const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
-                         feFunction.data(), example_.get_coeffs());
-    
-    // assemble now the matrices and right hand side 
-    Assemble3D(nFESpace, spaces, 
-               nSqMatrices, sqMatrices.data(),
-               nReMatrices, reMatrices.data(), 
-               nRhs, rhsArray.data(), rhsSpaces,
-               boundCondition, boundValues.data(), la);
+      for(auto mat : sqMatrices)
+      {
+        mat->reset();
+      }
+      // local assembling object    
+      const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
+                                 feFunction.data(), example_.get_coeffs());
+      
+      // assemble now the matrices and right hand side 
+      Assemble3D(nFESpace, spaces, nSqMatrices, sqMatrices.data(),
+                 nReMatrices, reMatrices.data(), nRhs, rhsArray.data(), 
+                 rhsSpaces, boundCondition, boundValues.data(), la);
     }
     else
     {
       double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
       for(auto mat : sqMatrices)
       {
-        UpwindForNavierStokes3D(
-        mat, feFunction[0],feFunction[1],feFunction[2], one_over_nu);
+        UpwindForNavierStokes3D(mat, feFunction[0], feFunction[1],
+                                feFunction[2], one_over_nu);
       }
     }
 
