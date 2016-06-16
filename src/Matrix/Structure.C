@@ -4631,7 +4631,7 @@ void TStructure::Sort()
 void TStructure::reset_n_entries()
 {
   //throw if number of rows changed
-  if (this->rows.size() - 1 != this->nRows)
+  if ((int)this->rows.size() - 1 != this->nRows)
     ErrThrow("TStructure: nRows != rows.size() - 1 ",nRows, " != ", rows.size() + 1);
 
   //throw if there are hanging entries

@@ -23,7 +23,7 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-  double rho_1, rho_2, alpha, beta, omega;
+  double rho_1, rho_2 = 1., alpha = 1., beta, omega = 1.;
   Vector p, phat, s, shat;
   Vector t(rhs), v(rhs); // this does a copy. We don't need the entries though.
   
