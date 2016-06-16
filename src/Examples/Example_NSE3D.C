@@ -127,6 +127,8 @@ Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
 
       /* coefficients */
       problem_coefficients = cos_sin_simple::LinCoeffs;
+      
+      nu = cos_sin_simple::get_nu();
 
       cos_sin_simple::ExampleFile();
       break;
