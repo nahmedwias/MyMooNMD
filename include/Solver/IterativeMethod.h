@@ -7,8 +7,8 @@
 #include <Preconditioner.h>
 #include <limits>
 #include <cmath>
+#include <chrono>
 #include <MooNMD_Io.h>
-
 
 /** @brief an abstract base class to describe iterative methods for solving
  * 
@@ -66,6 +66,11 @@ class IterativeMethod
     /** @brief the residual before the iterative method starts */
     double initial_residual;
     
+    /** @brief save the starting time for output later 
+     * @todo this is file for sequential code, how about openmp and mpi?
+     */
+    std::chrono::high_resolution_clock::time_point start_time;
+    
     /** @brief a small helper function to reduce code duplication and to assure 
      * the same stopping criterion for all iterative methods.
      * \todo include time measurements here for nicer output
@@ -100,12 +105,20 @@ class IterativeMethod
         warn("IterativeMethod", "residual increased: ", std::setprecision(12),
              this->old_residual, " -> ", current_residual);
       if(converged)
-        print<2>(this->get_name(), " iterations: ",  current_iterate,
-                 "  residual: ", std::setprecision(12), current_residual,
-                 "  reduction: ", current_residual/this->initial_residual,
-                 "  average reduction per step ", 
-                 std::pow(current_residual/this->initial_residual, 
-                          1./current_iterate));
+      {
+        using namespace std;
+        auto t = chrono::duration<double>(chrono::high_resolution_clock::now()
+                                          - this->start_time);
+        print<2>(this->get_name(), " iterations: ", setw(5), current_iterate,
+                 "  res: ", left, setprecision(10), setw(15), current_residual,
+                 "  red: ", setw(15), current_residual/this->initial_residual,
+                 "  red/step: ", setw(15), 
+                 pow(current_residual/this->initial_residual, 
+                     1./current_iterate),
+                 "  t[s]: ", setprecision(6), setw(8), t.count(), 
+                 "  t[s]/step: ", setw(8), t.count()/current_iterate
+                );
+      }
       
       this->old_residual = current_residual;
       return converged;

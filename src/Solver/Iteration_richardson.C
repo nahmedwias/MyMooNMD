@@ -23,7 +23,7 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-
+  this->start_time = std::chrono::high_resolution_clock::now();
   Vector z(A, false);
   
   double normb = norm(rhs);

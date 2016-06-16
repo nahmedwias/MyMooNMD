@@ -166,6 +166,7 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
                                                     const Vector & rhs,
                                                     Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
@@ -265,6 +266,7 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
                                                      const Vector & rhs,
                                                      Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
@@ -371,6 +373,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
                                                         const Vector & rhs,
                                                         Vector & solution)
 {
+  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
