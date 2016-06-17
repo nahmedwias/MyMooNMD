@@ -890,3 +890,27 @@ ParameterDatabase ParameterDatabase::default_output_database()
 
 	  return db;
 }
+
+ParameterDatabase ParameterDatabase::default_tetgen_database()
+{
+  ParameterDatabase db("default ParMooN mesh generation using TetGen "
+                        "parameters database");
+  
+  db.add("tetgen_quality", 1.0, " This value is the shape constrained--"
+         "quality mesh generation", 0.0, 2.0);
+  
+  db.add("tetgen_steiner", (size_t) 0,
+         "this parameter 'preserve the mesh on the exterior boundary' ", 
+	 (size_t) 0, (size_t) 1);
+
+  db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
+          "of the tetrahedron", 0.0, 2.0);
+  
+  db.add("tetgen_merge_colplaner", (size_t) 0, 
+         "This parameter is for the coplanar facets to be merge "
+	 "or very close vertices", (size_t) 0, (size_t) 1);
+  
+  db.add("tetgen_quite", (size_t) 1, 
+         "Quiet: No terminal output except errors ", 
+	 (size_t) 0, (size_t) 1);
+}
