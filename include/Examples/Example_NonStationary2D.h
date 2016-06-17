@@ -65,10 +65,10 @@ class Example_NonStationary2D : public Example2D
     
     
     // getters
-    //TODO
-    bool rhs_depends_on_time();
+    //
+    bool get_rhs_depends_on_time(){return timeDependentRhs;};
     
-    bool coefficients_depend_on_time();
+    bool get_coefficients_depend_on_time(){return timeDependentCoeffs;};
     
     DoubleFunct2D* get_initial_cond(unsigned int i)const
     { return initialCOndtion.at(i); }  
