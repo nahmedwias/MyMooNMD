@@ -3,13 +3,12 @@
 #include <Assemble3D.h>
 #include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <ItMethod.h>
-#include <MultiGridIte.h>
 #include <FixedPointIte.h>
 #include <FgmresIte.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
+#include <Multigrid.h>
 
 #include <sys/stat.h>
 
@@ -114,25 +113,12 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
    solver_(param_db), mg_(nullptr),
    defect_(), old_residual_(), initial_residual_(1e10), errors_(), oldtau_()
 {
- // TODO Implement the method "set_parameters" or "Check_parameters". Check
- // if it has to be called here or in the main program (see difference between
- // TNSE2D and NSE3D.
-//  this->set_parameters();
   db_.merge(param_db, false);
+  this->check_parameters();
   std::pair <int,int>
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
-
-  // Set the velocity and pressure spaces.
-  // This function returns a pair which consists of
-  // velocity and pressure order. It takes the input read in
-  // ParamDB and return a couple of VALID space orders.
-  // TODO In this method there is an important thing to check about
-  // pressure space.
-  // NOTE: this method has the same purpose as set_parameters or check_parameters
-  // In the future, these 3 different functions should be merged in one
-  // check function. This will be the case with the implementation of
-  // the new database.
+  // get the velocity and pressure orders
   this->get_velocity_pressure_orders(velocity_pressure_orders);
 
 
@@ -149,102 +135,110 @@ Time_NSE3D::Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
 
-  bool usingMultigrid = solver_.is_using_multigrid();
-  if(!usingMultigrid)
-  {
   // create the collection of cells from the domain (finest grid)
-  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);
-
-  #ifdef _MPI
+  TCollection *coll = domain.GetCollection(It_Finest, 0, -4711);    
+#ifdef _MPI
   // create finite element space and function, a matrix, rhs, and solution
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                      maxSubDomainPerDof);
-
-  // initialize the defect of the system. It has the same structure as
-  // the rhs (and as the solution)
-  this->defect_.copy_structure(this->systems_.front().rhs_);
-
-  // print out some information about number of DoFs and mesh size
-  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
-  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
-  double h_min, h_max;
-  coll->GetHminHmax(&h_min, &h_max);
-
-  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
-  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
-  Output::print("dof Velocity: ", setw(10), 3* n_u);
-  Output::print("dof Pressure: ", setw(10), n_p   );
-  Output::print("dof all     : ", setw(10), n_dof );
-  Output::print("active dof  : ", setw(10), 3*nActive);
-
-  // Initial velocity = interpolation of initial conditions
-  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-
-  u1->Interpolate(example_.get_initial_cond(0));
-  u2->Interpolate(example_.get_initial_cond(1));
-  u3->Interpolate(example_.get_initial_cond(2));
-
-  #else
+                        maxSubDomainPerDof);    
+#else
   // create finite element space and function, a matrix, rhs and solution
   // all this by calling constructor of System_Per_Grid
   this->systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-
+#endif
+  // Initial velocity = interpolation of initial conditions
+  this->interpolate();
+  
+  bool usingMultigrid = solver_.is_using_multigrid();
+  if(usingMultigrid)
+  {
+#ifdef _MPI
+    ErrThrow("No multigrid for MPI is implemented yet: " );
+#endif
+    ParameterDatabase database_mg = Multigrid::default_multigrid_database();
+    database_mg.merge(param_db, false);
+    // construct multigrid object
+    auto mg_ = this->solver_.get_multigrid();
+    bool mdml = mg_->is_using_mdml();
+    
+    if(mdml)
+    {
+      // change the discretization on the coarse grids to lowest order 
+      // non-conforming(-1). The pressure space is chosen automatically(-4711).
+      velocity_pressure_orders = {-1, -4711};
+      this->get_velocity_pressure_orders(velocity_pressure_orders);
+    }
+    // number of multigrid levels
+    size_t n_multigrid_levels = mg_->get_n_levels();
+    // index of the finest grid 
+    int finest = domain.get_ref_level();
+    int coarsest = finest - n_multigrid_levels + 1;
+    if(mdml)
+    {
+      coarsest++;
+    }
+    else
+    {
+      // only for mdml there is another matrix on the finest grid, otherwise
+      // the next system to be created is on the next coarser grid
+      finest--;
+    }
+    
+    if(coarsest < 0 )
+    {
+      ErrThrow("the domain has not been refined often enough to do multigrid "
+               "on ", n_multigrid_levels, " levels. There are only ",
+               domain.get_ref_level() + 1, " grid levels.");
+    }
+    // Construct systems per grid and store them, finest level first    
+    std::list<BlockFEMatrix*> matrices;
+    // matrix on finest grid is already constructed
+    matrices.push_back(&systems_.back().matrix_);
+    // initialize the systems on the coarser grids
+    for (int grid_no = finest; grid_no >= coarsest; --grid_no)
+    {
+      TCollection *coll = domain.GetCollection(It_EQ, grid_no, -4711);
+#ifdef _MPI
+#else
+      this->systems_.emplace_back(example_, *coll, velocity_pressure_orders,
+                            type);
+#endif
+      //prepare input argument for multigrid object
+      matrices.push_front(&this->systems_.back().matrix_);
+      // interpolate the initial condition to get initial velocity
+      this->interpolate();
+    }
+    // initialize the multigrid object on all levels
+    mg_->initialize(matrices);
+  }
+  this->output_problem_size_info();
   // initialize the defect of the system. It has the same structure as
   // the rhs (and as the solution)
-  this->defect_.copy_structure(this->systems_.front().rhs_);
-
-  // print out some information about number of DoFs and mesh size
-  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
-  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
-  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
-  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
-  double h_min, h_max;
-  coll->GetHminHmax(&h_min, &h_max);
-
-  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
-  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
-  Output::print("dof Velocity: ", setw(10), 3* n_u);
-  Output::print("dof Pressure: ", setw(10), n_p   );
-  Output::print("dof all     : ", setw(10), n_dof );
-  Output::print("active dof  : ", setw(10), 3*nActive);
-
-  // Initial velocity = interpolation of initial conditions
-  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
-  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
-  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
-  u1->Interpolate(example_.get_initial_cond(0));
-  u2->Interpolate(example_.get_initial_cond(1));
-  u3->Interpolate(example_.get_initial_cond(2));
-
-#endif
-  }
-  else
-  {
-    ErrThrow("No multigrid yet. When implementing, stick e.g. to NSE3D.");
-  }
+  this->defect_.copy_structure(this->systems_.front().rhs_);    
 }
 
 ///**************************************************************************** */
-//void Time_NSE3D::set_parameters()
-//{
-//  if(TDatabase::ParamDB->EXAMPLE < 101)
-//  {
-//    ErrMsg("Example " << TDatabase::ParamDB->EXAMPLE
-//    <<" is not supported for time dependent problem");
-//    exit(1);
-//  }
-//
-//  if(TDatabase::TimeDB->TIME_DISC == 0)
-//  {
-//    ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC
-//          << " does not supported");
-//    throw("TIME_DISC: 0 is not supported");
-//  }
-//}
+void Time_NSE3D::interpolate()
+{
+  TFEFunction3D *u1 = this->systems_.front().u_.GetComponent(0);
+  TFEFunction3D *u2 = this->systems_.front().u_.GetComponent(1);
+  TFEFunction3D *u3 = this->systems_.front().u_.GetComponent(2);
+  
+  u1->Interpolate(example_.get_initial_cond(0));
+  u2->Interpolate(example_.get_initial_cond(1));
+  u3->Interpolate(example_.get_initial_cond(2));
+}
+
+///**************************************************************************** */
+void Time_NSE3D::check_parameters()
+{
+ if(TDatabase::TimeDB->TIME_DISC == 0)
+ {
+   ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC
+         << " does not supported");
+   throw("TIME_DISC: 0 is not supported");
+ }
+}
 
 /**************************************************************************** */
 void Time_NSE3D::get_velocity_pressure_orders(std::pair< int, int > &velocity_pressure_orders)
@@ -972,38 +966,27 @@ void Time_NSE3D::compute_residuals()
 void Time_NSE3D::solve()
 {
   System_per_grid& s = systems_.front();
-
-  bool using_multigrid = solver_.is_using_multigrid();
-
-  if(!using_multigrid)
-  { // no multigrid
-    if(solver_.get_db()["solver_type"].is("direct"))
-    {
+  
 #ifndef _MPI
-      solver_.solve(s.matrix_, s.rhs_, s.solution_);
+  solver_.solve(s.matrix_, s.rhs_, s.solution_);
 #endif
+  
 #ifdef _MPI
-      //two vectors of communicators (const for init, non-const for solving)
-      std::vector<const TParFECommunicator3D*> par_comms_init =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-      std::vector<TParFECommunicator3D*> par_comms_solv =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
-
-      //set up a MUMPS wrapper
-      MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
-
-      //kick off the solving process
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
-#endif
-    }
-    else
-      solver_.solve(s.matrix_, s.rhs_, s.solution_);
-  }
-  else  // multigrid preconditioned iterative solver
+  if(solver_.get_db()["solver_type"].is("direct"))
   {
-    ErrThrow("No multigrid yet"); //TODO
+    //two vectors of communicators (const for init, non-const for solving)
+    std::vector<const TParFECommunicator3D*> par_comms_init =
+    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+    std::vector<TParFECommunicator3D*> par_comms_solv =
+    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+    
+    //set up a MUMPS wrapper
+    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    
+    //kick off the solving process
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
   }
-
+#endif
   // Important: We have to descale the matrices, since they are scaled
   // before the solving process. Only A11, A22 and A33 matrices are
   // reset and assembled again but the non-diagonal blocks are scaled, so
@@ -1044,9 +1027,9 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-	bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
-	if(no_output)
-		return;
+    bool no_output = !db_["output_write_vtk"] && !db_["output_compute_errors"];
+    if(no_output)
+      return;
 
   System_per_grid& s = this->systems_.front();
   TFEFunction3D* u1 = s.u_.GetComponent(0);
@@ -1072,7 +1055,7 @@ void Time_NSE3D::output(int m, int &image)
 #ifdef _MPI
       char SubID[] = "";
       if(my_rank == 0)
-    	  mkdir(db_["output_vtk_directory"], 0777);
+	mkdir(db_["output_vtk_directory"], 0777);
       std::string dir = db_["output_vtk_directory"];
       std::string base = db_["output_basename"];
       output.Write_ParVTK(MPI_COMM_WORLD, image, SubID, dir, base);
@@ -1110,7 +1093,7 @@ void Time_NSE3D::output(int m, int &image)
     const TFESpace3D *v_space = &this->get_velocity_space();
     const TFESpace3D *p_space = &this->get_pressure_space();
 
-//    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 
     // Errors in velocity components and pressure
     u1 ->GetErrors(example_.get_exact(0), 4, allderiv, 2, L2H1Errors, nullptr,
@@ -1153,32 +1136,37 @@ void Time_NSE3D::output(int m, int &image)
     int my_rank = 0;
 #endif
 
-    errors_[0] = err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] +
-                 err_u3[0]*err_u3[0];  // (L2-norm)^2 for u
-    errors_[1] = err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] +
-                 err_u3[1]*err_u3[1];  // (H1-semi)^2 for u
-    errors_[2] = err_p[0]*err_p[0];  // (L2-norm)^2 for p
-    errors_[3] = err_p[1]*err_p[1];  // (H1-norm)^2 for p
+    errors_.at(0) = err_u1[0]*err_u1[0] + err_u2[0]*err_u2[0] +
+                    err_u3[0]*err_u3[0];  // (L2-norm)^2 for u
+    errors_.at(1) = err_u1[1]*err_u1[1] + err_u2[1]*err_u2[1] +
+                    err_u3[1]*err_u3[1];  // (H1-semi)^2 for u
+    errors_.at(2) = err_p[0]*err_p[0];  // (L2-norm)^2 for p
+    errors_.at(3) = err_p[1]*err_p[1];  // (H1-norm)^2 for p
 
-    // TODO : CORRECT THE TIME-CORRECTED NORMS L2 AND H1 AND DISPLAY THEM
-//    errors_[4] += (locerr[0]*locerr[0]+locerr[2]*locerr[2]
-//                  + this->errors[0])*tau*0.5;
-//    errors_[5] += (locerr[1]*locerr[1]+locerr[3]*locerr[3]
-//                  + this->errors[1])*tau*0.5;
-//    errors[6] += (locerr[0]*locerr[0] + this->errors[2])*tau*0.5;
-//    errors[7] += (locerr[1]*locerr[1] + this->errors[3])*tau*0.5;
-
+    errors_.at(4) += (errors_[0] + this->errors_.at(5))*tau*0.5; //l2(0,t,l2)(u)
+    errors_.at(5) = errors_.at(0);
+    errors_.at(6) += (errors_.at(1) + errors_.at(7))*tau*0.5; // l2(0,t,h1)(u)
+    errors_.at(7) = errors_.at(1);
+    
+    errors_.at(8) += (errors_.at(2)+errors_.at(9))*tau*0.5; //l2(0,t,l2) (p)
+    errors_.at(9) = errors_.at(2);
+    errors_.at(10) += (errors_.at(3) + errors_.at(11))*tau*0.5;//l2(0,t,h1)(p)
+    errors_.at(11) = errors_.at(3);
+    
     // print errors
     if (my_rank == 0 )
     {
-      Output::print<1>("L2(u)      : ", setprecision(10), sqrt(this->errors_[0]));
-      Output::print<1>("H1-semi(u) : ", setprecision(10), sqrt(this->errors_[1]));
-//    Output::print<1>("L2(0,t,L2(u)) : ", sqrt(this->errors[4]));
-//    Output::print<1>("L2(0,t,H1-semi(u)) : ", sqrt(this->errors[5]));
-      Output::print<1>("L2(p)      : ", setprecision(10), sqrt(this->errors_[2]));
-      Output::print<1>("H1-semi(p)): ", setprecision(10), sqrt(this->errors_[3]));
-//    Output::print<1>("L2(0,t,L2(p)) : ", sqrt(errors[6]) );
-//    Output::print<1>("L2(0,t,H1-semi(p)) : ", sqrt(errors[7]) );
+      Output::print<1>("L2(u)         : ", setprecision(10), sqrt(errors_.at(0)));
+      Output::print<1>("H1-semi(u)    : ", setprecision(10), sqrt(errors_.at(1)));
+      
+      Output::print<1>("L2(0,t,L2(u)) : ", setprecision(10), sqrt(errors_.at(4)));
+      Output::print<1>("L2(0,t,H1-semi(u)) : ", 
+                       setprecision(10), sqrt(errors_.at(6)));
+      Output::print<1>("L2(p)      : ", setprecision(10), sqrt(errors_.at(2)));
+      Output::print<1>("H1-semi(p)): ", setprecision(10), sqrt(errors_.at(3)));
+      
+      Output::print<1>("L2(0,t,L2(p)) : ", setprecision(10), sqrt(errors_.at(8)) );
+      Output::print<1>("L2(0,t,H1-semi(p)) : ", setprecision(10), sqrt(errors_.at(10)) );
     }
   }
    delete u1;
@@ -1186,7 +1174,7 @@ void Time_NSE3D::output(int m, int &image)
    delete u3;
 
    // do post-processing step depending on what the example implements, if needed
-//   example_.do_post_processing(*this);
+   example_.do_post_processing(*this);
 
 }
 
@@ -1227,3 +1215,21 @@ std::array< double, int(6) > Time_NSE3D::get_errors() const
 }
 
 /**************************************************************************** */
+void Time_NSE3D::output_problem_size_info() const
+{
+  // print out some information about number of DoFs and mesh size
+  int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
+  int n_p = this->get_pressure_space().GetN_DegreesOfFreedom();
+  int n_dof = 3 * n_u + n_p; // total number of degrees of freedom
+  int nActive = this->get_velocity_space().GetN_ActiveDegrees();
+  double h_min, h_max;
+  TCollection * coll = this->get_velocity_space().GetCollection();
+  coll->GetHminHmax(&h_min, &h_max);
+
+  Output::print("N_Cells     : ", setw(10), coll->GetN_Cells());
+  Output::print("h (min,max) : ", setw(10), h_min ," ", setw(12), h_max);
+  Output::print("dof Velocity: ", setw(10), 3* n_u);
+  Output::print("dof Pressure: ", setw(10), n_p   );
+  Output::print("dof all     : ", setw(10), n_dof );
+  Output::print("active dof  : ", setw(10), 3*nActive);
+}

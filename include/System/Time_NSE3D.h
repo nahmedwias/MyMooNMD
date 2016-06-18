@@ -11,6 +11,7 @@
  * @author     Najib Alia
  * @date       2016/04/16
  * @history    2016/04/16
+ * @history    2016/06/16 (multigrid enabled)
  *
  ******************************************************************************/
 
@@ -188,7 +189,7 @@ class Time_NSE3D
      * and the pressure (errors.at(2) is L2 and errors.at(3) is H1-semi).
      * From 5 to 8, errors corrected with time tau*0.5
      */
-    std::array<double, int(8)> errors_;
+    std::array<double, int(12)> errors_;
 
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
@@ -209,6 +210,9 @@ class Time_NSE3D
      */
     void get_velocity_pressure_orders(std::pair <int,int>
                    &velocity_pressure_orders);
+    
+    /// write some information (number of cells, dofs, ...) 
+    void output_problem_size_info() const;
  public:
 
 //    /** @brief constructor
@@ -243,25 +247,15 @@ class Time_NSE3D
 #endif
     
 // ======================================================================
-     /**
-//     * TODO Implement this method. What's the difference with "set_parameters()"
-//     * in TNSE2D class?
-//     * @brief Check whether the program will be working with the
-//     * current input parameters.
-//     *
-//     * ParMooN is work in progress, and so is this class. This method
-//     * checks the parameters stored in the database and stops execution
-//     * of the program, if some of these do not match.
-//     * The method is a little makeshift and the cases caught here are various,
-//     * but basically it is intended to stop execution of cases with
-//     * parameter combinations which are not implemented for NSE3D or
-//     * are currently known to be problematic.
-//     *
-//     * This is not yet a guarantee for a functioning program, but is
-//     * intended to be, someday. Eventually this method and the like
-//     * will be moved to TDatabase.
-//     */
-//    static void check_parameters();
+    ///This function interpolates the initial solution.
+    void interpolate();
+    /** @brief check parameters in database
+    *
+    * This functions checks if the parameters in the database are meaningful.
+    * If some parameters are set to unsupported values, an error occurs and
+    * throws an exception.
+    */
+    void check_parameters();
 
    /** @brief Assemble all the matrices and rhs before the time iterations
     *
