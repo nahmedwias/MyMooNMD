@@ -209,7 +209,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["multigrid_coarse_residual"] = 1.0e-1;
     db["multigrid_coarse_max_n_iterations"] = 5;
     db["multigrid_vanka_damp_factor"]=0.7;
-
   }
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
@@ -273,13 +272,13 @@ void set_errors(int example, int velocity_order, int nstype,
   // Errors[1] are in the second time step (t=0.1)
   // Errors[2] are in the last time step (t=1)
 
-  if (example == 101) // Errors for the example Linear_space_time.h
+  if (example == 0) // Errors for the example Linear_space_time.h
   {
     errors[0] = {{0.0, 0.0, 2.886751346, 10}};
     errors[1] = {{0.0, 0.0, 2.886751346, 10}};
     errors[2] = {{0.0, 0.0, 2.886751346, 10}};
   }
-  else if (example == 102) // Example AnsatzLinConst
+  else if (example == 1) // Example AnsatzLinConst
   {
     errors[0] = {{0.0, 0.0, 0.0, 0.0}};
     errors[1] = {{0.0, 0.0, 0.0, 0.0}};
@@ -353,7 +352,7 @@ int main(int argc, char* argv[])
 
     //=============================================================================
     // EXAMPLE ... (101 to 106)
-    size_t exmpl = 1; int laplacetype = 0; int nonlineartype = 0;
+    size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
     int timediscretizationtype = 2;
@@ -630,7 +629,7 @@ int main(int argc, char* argv[])
 
     //=============================================================================
     // EXAMPLE ... (101 to 106)
-    size_t exmpl = 1; int laplacetype = 0; int nonlineartype = 0;
+    size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
     int timediscretizationtype = 2;
