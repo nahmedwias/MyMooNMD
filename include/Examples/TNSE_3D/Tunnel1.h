@@ -152,6 +152,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   
   int bbox6=boundBox(x,y,z,xmin6,xmax6,ymin6,ymax6,zmin6,zmax6);
   int bdcomp6=boundcomp(x,y,z,nx6,ny6,nz6,px6,py6,pz6);
+  
   if( ( bbox2 && bdcomp2) || (bbox4 && bdcomp4) ||
       ( bbox5 && bdcomp5) || (bbox6 && bdcomp6) )
   { 
@@ -207,6 +208,7 @@ void U1BoundValue(double x, double y, double z, double &value)
   int bbox3=boundBox(x,y,z,xmin3,xmax3,ymin3,ymax3,zmin3,zmax3);
   int bdcomp3=boundcomp(x,y,z,nx3,ny3,nz3,px3,py3,pz3);
   
+  // TODO: ask Abid about the inflow b.c
   if( bbox3 && bdcomp3)
   {
     value = 1; // what is the inflow here ??? 
@@ -230,6 +232,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
+  // TODO: what will be the reynold's number
   const double eps = 1/TDatabase::ParamDB->RE_NR;
   for(int i = 0; i < n_points; i++)
   {
