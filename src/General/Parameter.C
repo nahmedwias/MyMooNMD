@@ -163,8 +163,8 @@ void adjust_range(T1& min, T1& max, const std::set<T2>& range)
   static_assert(T1_ok && std::is_integral<T2>::value,
                 "adjust_range in Parameter.C is only valid for integers");
   auto mm = std::minmax_element(range.begin(), range.end());
-  min = std::min(min, (T1)*mm.first);
-  max = std::max(max, (T1)*mm.second);
+  min = std::min(min, static_cast<T1>(*mm.first));
+  max = std::max(max, static_cast<T1>(*mm.second));
 }
 
 void Parameter::impose(const Parameter& p)
