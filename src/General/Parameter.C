@@ -67,75 +67,39 @@ std::string type_as_string(const Parameter::types t)
 }
 
 /* ************************************************************************** */
-void Parameter::set_defaults(std::string key, std::string description)
-{
-  this->bool_value = true;
-  this->int_value = 0;
-  this->unsigned_value = 0;
-  this->double_value = 0.0;
-  this->string_value = "";
-  this->access_count = 0;
-  this->change_count = 0;
-  this->name = check_name(key);
-  this->description = description;
-  this->range_is_an_interval = false;
-  this->not_bool_value_allowed = true;
-  this->int_range = std::set<int>();
-  this->int_min = 0;
-  this->int_max = 0;
-  this->unsigned_range = std::set<size_t>();
-  this->unsigned_min = 0;
-  this->unsigned_max = 0;
-  this->double_min = 0.0;
-  this->double_max = 0.0;
-  this->string_range = std::set<std::string>();
-}
-
-/* ************************************************************************** */
 Parameter::Parameter(std::string key, bool new_value, std::string description)
- : type(Parameter::types::_bool)
+ : type(Parameter::types::_bool), bool_value(new_value), name(key),
+   description(description), not_bool_value_allowed(true)
 {
-  this->set_defaults(key, description);
-  this->bool_value = new_value;
-  this->not_bool_value_allowed = true; // allow both 'true' and 'false'
+  // allow both 'true' and 'false'
 }
 
 //template <typename T>
 Parameter::Parameter(std::string key, int new_value, std::string description)
- : type(Parameter::types::_int)
+ : type(Parameter::types::_int), int_value(new_value), name(key),
+   description(description), range_is_an_interval(false), int_range({new_value})
 {
-  this->set_defaults(key, description);
-  this->int_value = new_value;
-  this->range_is_an_interval = false;
-  this->int_range = {new_value};
 }
 
 Parameter::Parameter(std::string key, size_t new_value, std::string description)
- : type(Parameter::types::_size_t)
+ : type(Parameter::types::_size_t), unsigned_value(new_value), name(key),
+   description(description), range_is_an_interval(false),
+   unsigned_range({new_value})
 {
-  this->set_defaults(key, description);
-  this->unsigned_value = new_value;
-  this->range_is_an_interval = false;
-  this->unsigned_range = {new_value};
 }
 
 Parameter::Parameter(std::string key, double new_value, std::string description)
- : type(Parameter::types::_double)
+ : type(Parameter::types::_double), double_value(new_value), name(key),
+   description(description), range_is_an_interval(true), double_min(new_value),
+   double_max(new_value)
 {
-  this->set_defaults(key, description);
-  this->double_value = new_value;
-  this->range_is_an_interval = true;
-  this->double_min = new_value;
-  this->double_max = new_value;
 }
 
 Parameter::Parameter(std::string key, std::string new_value, 
                      std::string description)
- : type(Parameter::types::_string)
+ : type(Parameter::types::_string), string_value(new_value), name(key),
+   description(description), string_range({new_value})
 {
-  this->set_defaults(key, description);
-  this->string_value = new_value;
-  this->string_range = {new_value};
 }
 
 Parameter::Parameter(const Parameter& p)
