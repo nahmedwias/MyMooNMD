@@ -895,22 +895,27 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
 {
   ParameterDatabase db("default ParMooN mesh generation using TetGen "
                         "parameters database");
-  
-  db.add("tetgen_quality", 1.0, " This value is the shape constrained--"
-         "quality mesh generation", 0.0, 2.0);
+  db.add("mesh_tetgen_file", std::string("Wuerfel"),
+         "This files describes the computational mesh. Typically this files"
+         " has the extension 'smesh', 'node' or 'poly'. "
+         " currently only the smesh files are supported");
+  // maximum can be infnity
+  db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
+         1.0, 1000.);
   
   db.add("tetgen_steiner", (size_t) 0,
          "this parameter 'preserve the mesh on the exterior boundary' ", 
-	 (size_t) 0, (size_t) 1);
-
+         (size_t) 0, (size_t) 1);
+  
+  // maximum can be anything depending on geometry
   db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
-          "of the tetrahedron", 0.0, 2.0);
+          "that depends on the geometry", 0.0, 1000.);
   
   db.add("tetgen_merge_colplaner", (size_t) 0, 
          "This parameter is for the coplanar facets to be merge "
-	 "or very close vertices", (size_t) 0, (size_t) 1);
+         "or very close vertices", (size_t) 0, (size_t) 1);
   
-  db.add("tetgen_quite", (size_t) 1, 
-         "Quiet: No terminal output except errors ", 
-	 (size_t) 0, (size_t) 1);
+  db.add("tetgen_quite", (size_t) 1, "Quiet: No terminal output except errors ", 
+         (size_t) 0, (size_t) 1);
+  return db;
 }
