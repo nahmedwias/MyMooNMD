@@ -274,9 +274,9 @@ void set_errors(int example, int velocity_order, int nstype,
 
   if (example == 0) // Errors for the example Linear_space_time.h
   {
-    errors[0] = {{0.0, 0.0, 2.886751346, 10}};
-    errors[1] = {{0.0, 0.0, 2.886751346, 10}};
-    errors[2] = {{0.0, 0.0, 2.886751346, 10}};
+    errors[0] = {{0.0, 0.0, 0, 0}};
+    errors[1] = {{0.0, 0.0, 0, 0}};
+    errors[2] = {{0.0, 0.0, 0, 0}};
   }
   else if (example == 1) // Example AnsatzLinConst
   {
@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (101 to 106)
+    // EXAMPLE ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
@@ -628,7 +628,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (101 to 106)
+    // EXAMPLE ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
