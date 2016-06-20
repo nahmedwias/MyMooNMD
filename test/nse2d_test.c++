@@ -26,14 +26,10 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
 #include <Example_NSE2D.h>
-
-#include <MainUtilities.h> //for error measuring
+#include <Multigrid.h>
+#include <Chrono.h>
+#include <algorithm>
 
 void compare(const NSE2D& nse2d, std::array<double, int(4)> errors)
 {
@@ -91,6 +87,7 @@ void check(TDomain &domain, ParameterDatabase db,
 {
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(Multigrid::default_multigrid_database());
   db["problem_type"] = 5;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
@@ -106,14 +103,47 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
+  Chrono time_measureing;
   compute(domain, db, errors);
+  time_measureing.print_time("nse2d direct solver,                    velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
   
   // we have to reset the space codes because they are changed in nse2d
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
   db["solver_type"] = "iterative";
+  time_measureing.reset();
   compute(domain, db, errors);
+  time_measureing.print_time("nse2d fgmres(lsc preconditioner),       velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
+  
+  // we have to reset the space codes because they are changed in nse2d
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  
+  // we do multigrid tests only for lower order elements, because the higher 
+  // ones take way too long.
+  /// @todo Multigrid, NSE2D, higher order spaces: Is this a programming error 
+  /// which needs to be fixed? If not should we use mdml as default?
+  auto multigrid_velo_orders = {2, 12, 22}; // allowed for multigrid
+  if(std::none_of(multigrid_velo_orders.begin(), multigrid_velo_orders.end(),
+                 [velocity_order](int v){return v == velocity_order; }))
+    return;
+  
+  db["preconditioner"] = "multigrid";
+  db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
+  db["multigrid_smoother"] = "nodal_vanka";
+  db["multigrid_smoother_coarse"] = "direct_solve";
+  db["multigrid_n_pre_smooth"] = 2;
+  db["multigrid_n_post_smooth"] = 2;
+  time_measureing.reset();
+  compute(domain, db, errors);
+  time_measureing.print_time("nse2d fgmres(multigrid preconditioner), velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
 }
 
 void check_one_element(TDomain& domain, ParameterDatabase db,
@@ -154,8 +184,7 @@ int main(int argc, char* argv[])
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    db.add("multigrid_n_levels", (size_t) 1,"");
-
+    
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
@@ -250,8 +279,7 @@ int main(int argc, char* argv[])
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    db.add("multigrid_n_levels", (size_t) 1,"");
-
+    
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
