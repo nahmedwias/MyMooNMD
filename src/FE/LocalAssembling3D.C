@@ -207,7 +207,17 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
     case LocalAssembling3D_type::TNSE3D_LinGAL:
     case LocalAssembling3D_type::TNSE3D_NLGAL:
     case LocalAssembling3D_type::TNSE3D_Rhs:
-      this->set_parameters_for_tnse(type);
+      switch(TDatabase::ParamDB->DISCTYPE)
+      {
+        case GALERKIN:
+          this->set_parameters_for_tnse(type);
+          break;
+        case SMAGORINSKY:
+          this->set_parameters_for_tnse_smagorinsky(type);
+          break;
+        default:
+          ErrThrow("DISCTYPE", TDatabase::ParamDB->DISCTYPE , "is not supported yet!!");  
+      }
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling3D_type case.");
@@ -1236,3 +1246,118 @@ void LocalAssembling3D::set_parameters_for_tnse(LocalAssembling3D_type la_type)
   }
 }
 //========================================================================
+void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type)
+{
+  //NOTE: change according to the discretization schemes used
+  // changing needed for turbulent models and for the newton method
+  this->N_Parameters = 3;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { TimeNSParamsVelo_GradVelo3D };
+  this->N_FEValues = 12;
+  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 };
+  // u1old, u2old, u3old, all derivatives of u1, u2, u3
+  this->FEValue_MultiIndex = { D000, D000, D000, 
+                               D100, D100, D100,
+                               D010, D010, D010,
+                               D001, D001, D001 };
+  this->BeginParameter = { 0 };
+  
+
+  switch(type)
+  {
+    case LocalAssembling3D_type::TNSE3D_LinGAL:
+      // case 0: fixed point, case 1: newton iteration
+      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      {
+        // fixed point 
+        case 0:
+          switch(TDatabase::ParamDB->NSTYPE)
+          {
+            case 1:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 5;
+              this->RowSpace    = { 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
+              this->AssembleParam=TimeNSType1Smagorinsky3D;
+              this->Manipulate = NULL;              
+              break;
+            case 2:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 8;
+              this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
+
+              this->AssembleParam=TimeNSType2Smagorinsky3D;
+              this->Manipulate = NULL;
+              break;
+            case 3:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 13;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 0 };
+
+              this->Manipulate = NULL;
+              if(TDatabase::ParamDB->LAPLACETYPE==0)
+                this->AssembleParam=TimeNSType3Smagorinsky3D;
+              else 
+                this->AssembleParam=TimeNSType3SmagorinskyDD3D;
+              break;
+            case 4:
+              this->N_Terms = 5;
+              this->Derivatives = {D100, D010, D001, D000, D000};
+              this->Needs2ndDerivatives = new bool[2];
+              this->Needs2ndDerivatives[0] = false;
+              this->Needs2ndDerivatives[1] = false;
+              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+              this->N_Matrices = 16;
+              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
+              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
+              this->N_Rhs = 4;
+              this->RhsSpace = { 0, 0, 0, 1};
+
+              this->Manipulate = NULL;
+              if(TDatabase::ParamDB->LAPLACETYPE==0)
+                this->AssembleParam=TimeNSType4Smagorinsky3D;
+              else 
+                this->AssembleParam=TimeNSType4SmagorinskyDD3D;
+              break;
+          }
+          break;
+          // newton iteration 
+        case 1:
+          switch(TDatabase::ParamDB->NSTYPE)
+          {
+            case 1:
+            case 2:
+              ErrThrow("Newton iteration is only supported for NSTYE 3, and 4");
+              break;
+            case 3:
+              break;
+            case 4:
+              break;
+          }
+          break;
+      }
+  }
+}
