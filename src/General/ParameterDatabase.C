@@ -895,8 +895,12 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
 {
   ParameterDatabase db("default ParMooN mesh generation using TetGen "
                         "parameters database");
+  db.add("mesh_tetgen_file", std::string("Wuerfel"),
+         "This files describes the computational mesh. Typically this files"
+         " has the extension 'smesh', 'node' or 'poly'. "
+         " currently only the smesh files are supported");
   
-  db.add("tetgen_quality", 1.0, " This value is the shape constrained--"
+  db.add("tetgen_quality", 2.0, " This value is the shape constrained--"
          "quality mesh generation", 0.0, 2.0);
   
   db.add("tetgen_steiner", (size_t) 0,
@@ -913,4 +917,5 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
   db.add("tetgen_quite", (size_t) 1, 
          "Quiet: No terminal output except errors ", 
 	 (size_t) 0, (size_t) 1);
+  return db;
 }
