@@ -310,25 +310,25 @@ ParameterDatabase Multigrid::default_multigrid_database()
   db.add<size_t>("multigrid_n_levels", 2,
          "Determine how many levels the multigrid cycle consists of.", 0, 5);
 
-  db.add("multigrid_type", std::string("standard"),
+  db.add("multigrid_type", "standard",
          "The type of multigrid algorithm to apply. Besides "
          "the standard approach a 'multiple discretization multilevel'"
          " approach is available (for those systems where it is "
          "already implemented). See e.g. John et al. 2002. ",
          {"standard", "mdml"});
 
-  db.add("multigrid_cycle_type", std::string("V"),
+  db.add("multigrid_cycle_type", "V",
          "The recursion type how to traverse the multigrid levels. "
          "So far the three standard cycle V, W and F are implemented."
          , {"V", "W", "F"});
 
-  db.add("multigrid_smoother", std::string("nodal_vanka"),
+  db.add("multigrid_smoother", "nodal_vanka",
          "The smoother to use on all but the coarsest level. You should take "
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
          {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
 
-  db.add("multigrid_smoother_coarse", std::string("direct_solve"),
+  db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
