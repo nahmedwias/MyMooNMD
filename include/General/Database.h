@@ -68,7 +68,6 @@ struct TParaDB
   int COMPUTE_VORTICITY_DIVERGENCE;
   
   int timeprofiling;  //(time profiling)
-  
 
   //======================================================================
   /** parameters for setting finite element spaces                      */
@@ -80,7 +79,6 @@ struct TParaDB
   int PRESSURE_SPACE;
   int PRESSURE_SEPARATION;
 
-  int EXAMPLE; // used (and explained) in derived classes of Example2D
   //======================================================================
   /** parameters for grid generation                                    */
   //======================================================================
