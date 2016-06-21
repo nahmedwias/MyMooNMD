@@ -232,6 +232,20 @@ void Time_NSE3D::interpolate()
 ///**************************************************************************** */
 void Time_NSE3D::check_parameters()
 {
+ if(!db_["problem_type"].is(6))
+ {
+   if (db_["problem_type"].is(0))
+   {
+     db_["problem_type"] = 6;
+   }
+   else
+   {
+     Output::warn<2>("The parameter problem_type doesn't correspond to Time_NSE."
+         "It is now reset to the correct value for Time_NSE (=6).");
+     db_["problem_type"] = 6;
+   }
+ }
+
  if(TDatabase::TimeDB->TIME_DISC == 0)
  {
    ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC

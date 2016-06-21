@@ -108,7 +108,6 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
   Example_NSE3D example_obj(example);
 
   //Perform usual checks on the parameter consistency
-  NSE3D::check_parameters(); //makeshift check
   TDatabase::CheckParameterConsistencyNSE(); //old check
 
   // Construct the nse3d problem object.

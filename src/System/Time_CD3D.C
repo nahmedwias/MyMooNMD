@@ -163,12 +163,21 @@ void Time_CD3D::SystemPerGrid::update_old_Au()
 //==============================================================================
 void Time_CD3D::checkParameters()
 {
-  if(!this->db["problem_type"].is(1))
+  //set problem_type to Time_CD if not yet set
+  if(!db["problem_type"].is(2))
   {
-    this->db["problem_type"] = 1;// set correct problem type
-    Output::print("The parameter parameter_type is set to 1 for (convection-diffusion-reaction"
-                  "for this class Time_CD3D");
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 2;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to Time_CD."
+          "It is now reset to the correct value for Time_CD (=2).");
+      db["problem_type"] = 2;
+    }
   }
+
   // an error when using ansatz order 0
   if(TDatabase::ParamDB->ANSATZ_ORDER == 0)
   {

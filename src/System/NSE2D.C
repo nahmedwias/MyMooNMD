@@ -101,6 +101,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       initial_residual(1e10), errors()
 {
   this->db.merge(param_db, false);
+  this->set_parameters();
   
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -279,6 +280,13 @@ void NSE2D::get_velocity_pressure_orders(
 
 void NSE2D::set_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
+
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
     //Assemble2DSlipBC does not work, and is not implemented yet

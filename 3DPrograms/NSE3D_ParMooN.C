@@ -11,6 +11,7 @@
 #include <NSE3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
+#include <Output3D.h>
 
 #include <sys/stat.h>
 
@@ -71,12 +72,11 @@ int main(int argc, char* argv[])
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
   // Initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -125,7 +125,6 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
 
 #endif
-
 
   //print information on the mesh partition on the finest grid
   domain.print_info("NSE3D domain");
