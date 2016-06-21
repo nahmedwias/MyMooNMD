@@ -7,6 +7,7 @@
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <DenseMatrix.h>
 #include <DirectSolver.h>
 #include <MooNMD_Io.h>
 #include <VankaSmootherNew.h>
@@ -100,15 +101,7 @@ void VankaSmootherNew::smooth(const BlockVector& rhs, BlockVector& solution )
     std::vector<double> rhs_local(size_local, 0.0);
     std::vector<double> solution_local(size_local, 0.0);
 
-    //These vectors will form the local matrix.
-    std::vector<int> rowptr_local;
-    std::vector<int> kcol_local;
-    std::vector<double> entries_local;
-
-    //reserve space for local matrices
-    rowptr_local.reserve(size_local + 1);
-    kcol_local.reserve(size_local*size_local); //this is too much space! local matrix will be sparse, too
-    entries_local.reserve(size_local*size_local);
+    DenseMatrix matrix_local(size_local,size_local);
 
     /* ******** Fill dof map. *********** */
     for(size_t k = 0; k < size_local; ++k)
@@ -130,7 +123,6 @@ void VankaSmootherNew::smooth(const BlockVector& rhs, BlockVector& solution )
     }
 
     /* ******** Set up local matrix *********** */
-    rowptr_local.push_back(0);
     for(size_t dof_loc = 0; dof_loc < size_local; ++dof_loc) //loop over all local rows
     {
       size_t dof_glo = dof_map.at(dof_loc); //the corresponding global dof
@@ -159,24 +151,13 @@ void VankaSmootherNew::smooth(const BlockVector& rhs, BlockVector& solution )
             break; //break loop, we're behind the end!
           if(dof_map.at(c_loc) == c_glo) //the dof c_glo is of interest for the local system
           {
-            kcol_local.push_back(c_loc);
-            entries_local.push_back(entry);
-            //count up the number of entries in the row
-            ++n_entries_in_row_local;
+            matrix_local.setEntry(dof_loc, c_loc, entry);
           }
           //else just go on
         }
       }
-      rowptr_local.push_back(rowptr_local.back() + n_entries_in_row_local);
 
     }
-    std::shared_ptr<TStructure> structure_local
-    = std::make_shared<TStructure>(size_local, entries_local.size(),
-                                   &kcol_local.at(0), &rowptr_local.at(0));
-    std::shared_ptr<TMatrix> matrix_local
-    = std::make_shared<TMatrix>(structure_local);
-    matrix_local->setEntries(entries_local);
-
 
     /* ******** Set up local right hand side. *********** */
     /* (Local right hand side is global defect in local rows) */
@@ -198,9 +179,11 @@ void VankaSmootherNew::smooth(const BlockVector& rhs, BlockVector& solution )
       rhs_local.at(dof_loc) = temp;
     }
 
-    /* ******** Solve the local system with UMFPACK. *********** */
-    DirectSolver ds(matrix_local, DirectSolver::DirectSolverTypes::umfpack);
-    ds.solve(&rhs_local.at(0), &solution_local.at(0));
+    /* ******** Solve the local system with LAPACK. *********** */
+    //copy rhs_local into solution_local
+    solution_local = rhs_local;
+    matrix_local.decomposeLU();
+    matrix_local.solve(&solution_local.at(0));
 
     /* ******** Add damped local solution to global solution. *********** */
     for(size_t dof_loc = 0; dof_loc < size_local; ++dof_loc) //loop over all local rows
