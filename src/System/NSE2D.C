@@ -23,7 +23,7 @@ ParameterDatabase get_default_NSE2D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {

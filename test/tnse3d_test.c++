@@ -312,7 +312,6 @@ int main(int argc, char* argv[])
   db["nonlinloop_slowfactor"]=1.;
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6; // flow problem type
-  TDatabase::ParamDB->PROBLEM_TYPE = 6; // to be on the safe side...
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output

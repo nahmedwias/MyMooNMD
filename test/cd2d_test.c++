@@ -278,8 +278,6 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    // Set Database values (this is what is usually done by the input-file)
-    TDatabase::ParamDB->PROBLEM_TYPE = 1; //CDR Problem
 
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation

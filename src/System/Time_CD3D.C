@@ -166,7 +166,7 @@ void Time_CD3D::checkParameters()
   if(!this->db["problem_type"].is(1))
   {
     this->db["problem_type"] = 1;// set correct problem type
-    Output::print("PROBLEM_TYPE set to 1 for (convection-diffusion-reaction" 
+    Output::print("The parameter parameter_type is set to 1 for (convection-diffusion-reaction"
                   "for this class Time_CD3D");
   }
   // an error when using ansatz order 0
