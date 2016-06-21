@@ -228,7 +228,7 @@ class NSE3D
      * intended to be, someday. Eventually this method and the like
      * will be moved to TDatabase.
      */
-    static void check_parameters();
+    void check_parameters();
 
     /**
      * Assemble those parts which do not contain nonlinearities

@@ -45,9 +45,6 @@ int main(int argc, char* argv[])
   //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   
-  //// possibly change parameters in the database, if they are not meaningful now
-  ////Database.CheckParameterConsistencyNSE();
-    
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
     
