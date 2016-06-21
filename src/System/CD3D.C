@@ -489,7 +489,7 @@ void CD3D::checkParameters()
   if (!this->db["problem_type"].is(1))
   {
     this->db["problem_type"] = 1; //set correct problem type
-    Output::print("PROBLEM_TYPE set to 1 (convection-diffusion-reaction), "
+    Output::print("The parameter problem_type is set to 1 (convection-diffusion-reaction), "
                   "for this is class CD3D.");
   }
 

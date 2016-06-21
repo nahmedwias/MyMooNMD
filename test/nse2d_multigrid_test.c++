@@ -62,7 +62,6 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -137,7 +136,7 @@ int main(int argc, char* argv[])
      {
        ErrThrow("Residual at iteration ", k, " is not correct");
      }
-      if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
+      if(db["problem_type"].is(3))
         break;
       
       nse2d.assemble_nonlinear_term();
@@ -210,7 +209,6 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -276,7 +274,7 @@ int main(int argc, char* argv[])
         nse2d.getResiduals());
       nse2d.solve();
       
-      if(TDatabase::ParamDB->PROBLEM_TYPE == 3)
+      if(db["problem_type"].is(3))
         break;
       // checking the first nonlinear iteration
       if( (k==2) && ( (nse2d.getImpulsResidual() - 0.1984203854 >1e-6)        
