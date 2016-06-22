@@ -1000,7 +1000,7 @@ int RotateGrid(const char *name, TCollection *coll, double swap_rotation, double
 double *uoldx, double *uoldy, double *uold1, double *uold2,
 TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
 {
-  int i, j, k, N_Cells, N_V, swapped=0, count;
+  int j, k, N_Cells, N_V, swapped=0, count;
   int *GlobalNumbers_velo, *BeginIndex_velo, *DOF, index, N_U;
   double x, y, phi, r, phi_plus, t0, t1;
   double val[1], *sol;
@@ -1092,7 +1092,7 @@ TFEFunction2D *u1, TFEFunction2D *u2, double *tangential_values_ssl)
   // test for swapping
   if ((int)(angle/swap_rotation) < (int) ((angle+phi_plus)/swap_rotation))
   {
-    OutPut("swapping edges at step " << i << " time " << TDatabase::TimeDB->CURRENTTIME
+    OutPut("swapping edges at time " << TDatabase::TimeDB->CURRENTTIME
       << " " << (int)(angle/swap_rotation)
       << " " << (int) ((angle+phi_plus)/swap_rotation) << endl);
     // save the solution on the old mesh in the nodal values of the P2_bubble
@@ -1439,6 +1439,7 @@ double *values)
       }
     }
   }                                               // end j
+  return 0;
 }
 
 

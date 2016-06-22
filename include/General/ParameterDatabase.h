@@ -30,7 +30,7 @@ class ParameterDatabase
     /// @brief construct an empty parameter database with a given name
     ParameterDatabase(std::string name);
     
-    /// @brief construct a database filled with parameters of generaly interest
+    /// @brief construct a database filled with parameters of general interest
     ///
     /// These parameters include "outfile", "boundary_file", "geo_file", 
     /// "problem_type", "base_name", ...
@@ -55,6 +55,10 @@ class ParameterDatabase
     /// construct a database filled with parameters for 
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();
+
+    /// @brief construct a database filled with parameters for the example class
+    // e.g. Reynolds_number, and other variables which can be changed from .dat
+    static ParameterDatabase default_example_database();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;

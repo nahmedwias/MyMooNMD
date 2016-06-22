@@ -2936,7 +2936,7 @@ void TFEFunction2D::computeNodeValues(std::vector<double>& solutionAtNode) const
     } // for j
   }  // for(i=0;i<nelements;i++) {
   
-  for(unsigned int i=0;i<nPoints;i++) {
+  for(int i=0;i<nPoints;i++) {
     if(WArray[i]!=0.) {
       solutionAtNode[i] /= WArray[i];
     }

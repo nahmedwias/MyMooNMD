@@ -185,8 +185,8 @@ Brinkman2D::~Brinkman2D()
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
                  &velocity_pressure_orders)
 {
-  int velocity_order = velocity_pressure_orders.first;
-  int pressure_order = velocity_pressure_orders.second;
+//  int velocity_order = velocity_pressure_orders.first;
+//  int pressure_order = velocity_pressure_orders.second;
    Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
@@ -598,7 +598,7 @@ void Brinkman2D :: mg_solver()
   TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
   TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
   TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
-  TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
+//  TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
 
   switch(TDatabase::ParamDB->BrinkmanTYPE)
   {
