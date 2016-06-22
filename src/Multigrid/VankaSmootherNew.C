@@ -356,5 +356,15 @@ void VankaSmootherNew::set_up_velocity_batches(const TMatrix& pressureVelocityMa
   }
 }
 
+
+VankaSmootherNew::~VankaSmootherNew()
+{
+  //Delete all local systems.
+  for(auto sys : local_systems_)
+  {
+    delete sys; sys = nullptr;
+  }
+}
+
 #undef TFESpaceXD
 
