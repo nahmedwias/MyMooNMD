@@ -57,7 +57,7 @@ void twisted_pipe_flow::ExampleFile(bool time_dependent)
 
   using namespace FluidProperties;
 
-  if( TIME_DEPENDENT )
+  if(! TIME_DEPENDENT )
   {
     vol_flux = 0.72;
   }
