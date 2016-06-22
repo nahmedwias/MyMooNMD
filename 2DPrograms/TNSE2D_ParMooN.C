@@ -1,13 +1,6 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
-
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>

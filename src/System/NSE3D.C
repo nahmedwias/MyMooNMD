@@ -710,13 +710,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    if(my_rank==0)
-    {
-      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
-                       " RES : ", normOfResidual, " Reduction : ",
-                       normOfResidual/initial_residual_);
-    }
-
     return true;
   }
   else
