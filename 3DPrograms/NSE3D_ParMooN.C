@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   domain.print_info("NSE3D domain");
 
   // Choose and construct example.
-  Example_NSE3D example(parmoon_db["example"]);
+  Example_NSE3D example(parmoon_db["example"],parmoon_db);
 
   // Construct an object of the NSE3D-problem type.
 #ifdef _MPI

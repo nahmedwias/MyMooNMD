@@ -85,7 +85,8 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
              int reference_id)
- : NSE2D(domain, param_db, Example_NSE2D(param_db["example"]), reference_id)
+ : NSE2D(domain, param_db, Example_NSE2D(param_db["example"],param_db),
+         reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.

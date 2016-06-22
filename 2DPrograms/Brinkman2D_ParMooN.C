@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
     
-  Example_Brinkman2D example(parmoon_db["example"]);
+  Example_Brinkman2D example(parmoon_db["example"],parmoon_db);
     
   //=========================================================================
   // create an object of the Brinkman class

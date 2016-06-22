@@ -33,8 +33,10 @@ namespace tunnel_tdp1
 #include "TNSE_3D/Tunnel1.h"
 }
 //=========================================================
-Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
+Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
+                                     const ParameterDatabase& user_input_parameter_db)
 {
+  this->example_database.merge(user_input_parameter_db,false);
   switch(example_code)
   {
     case 0:
@@ -262,7 +264,7 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code)
       break;
     }
     default:
-      ErrThrow("Unknown Example_TimeNSE3D example!");  
+      ErrThrow("Unknown Example_TimeNSE3D example!");
   }
 }
 

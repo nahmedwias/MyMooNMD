@@ -23,7 +23,6 @@ double timeC = 0;
 
 int main(int argc, char *argv[])
 {
-  double start_time = GetTime();
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -146,7 +145,7 @@ int main(int argc, char *argv[])
   domain.print_info("TCD3D domain");
 
   // Choose example according to the value of
-  Example_TimeCD3D example(parmoon_db["example"]);  
+  Example_TimeCD3D example(parmoon_db["example"],parmoon_db);
   
   // create an object of the class Time_CD3D
 #ifdef _MPI

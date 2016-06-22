@@ -24,7 +24,7 @@ ParameterDatabase get_default_Example3D_parameters()
   return db;
 }
 
-Example3D::Example3D() 
+Example3D::Example3D()
  : example_database(get_default_Example3D_parameters()), exact_solution(),
    boundary_conditions(), boundary_data(), problem_coefficients(NULL)
 {

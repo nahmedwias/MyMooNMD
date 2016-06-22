@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
   #endif
 
-  Example_CD3D example(db["example"]);
+  Example_CD3D example(db["example"],db);
 
 
   // extract the finest level collection from the domain
@@ -329,7 +329,7 @@ int main(int argc, char* argv[])
   }
 
   // Choose example.
-  Example_CD3D example(db["example"]);
+  Example_CD3D example(db["example"],db);
 
   // Construct the cd3d problem object.
 #ifdef _MPI
