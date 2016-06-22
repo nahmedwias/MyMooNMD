@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
   domain.print_info("cd3d domain");
 
   // Choose and construct example.
-  Example_CD3D example(parmoon_db["example"]);
+  Example_CD3D example(parmoon_db["example"],parmoon_db);
 
   // Construct the cd3d problem object.
 #ifdef _MPI

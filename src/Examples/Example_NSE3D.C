@@ -50,8 +50,11 @@ namespace test_u_3_p_2 //-4
 
 //========================================
 
-Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
+Example_NSE3D::Example_NSE3D(int example_code,
+                             const ParameterDatabase& user_input_parameter_db) : Example3D()
 {
+  this->example_database.merge(user_input_parameter_db,false);
+
   //Set kinematic viscosity to zero, example switch is responsible for returning
   // and resetting it.
   nu = -1;

@@ -107,7 +107,7 @@ void check(ParameterDatabase& db, int ansatz_order,
   }
 
   // Choose and construct example.
-  Example_CD3D example_obj(db["example"]);
+  Example_CD3D example_obj(db["example"],db);
 
   // Construct the cd3d problem object.
 #ifdef _MPI

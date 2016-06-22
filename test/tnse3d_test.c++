@@ -101,7 +101,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   SetTimeDiscParameters(0);
 
   // Construct example object
-  Example_TimeNSE3D example(db["example"]);
+  Example_TimeNSE3D example(db["example"],db);
   // Construct Time_NSE3D object
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);

@@ -17,8 +17,10 @@ namespace concentration
 #include "TCD_3D/concentrationOfSpecies_3d.h"
 }
 
-Example_TimeCD3D::Example_TimeCD3D(int example_code)
+Example_TimeCD3D::Example_TimeCD3D(int example_code,
+                                   const ParameterDatabase& user_input_parameter_db)
 {
+  this->example_database.merge(user_input_parameter_db,false);
   switch(example_code)
   {
     case -2:

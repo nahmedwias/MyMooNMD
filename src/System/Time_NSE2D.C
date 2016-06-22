@@ -73,7 +73,9 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        int reference_id)
-  : Time_NSE2D(domain, param_db, Example_TimeNSE2D(param_db["example"]), reference_id)
+  : Time_NSE2D(domain, param_db,
+               Example_TimeNSE2D(param_db["example"],param_db),
+               reference_id)
 {
   
 }

@@ -111,7 +111,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   }
   
   // example object
-  Example_TimeCD3D example_obj(db["example"]);
+  Example_TimeCD3D example_obj(db["example"],db);
 #ifdef _MPI
   Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
 #else

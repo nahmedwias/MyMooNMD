@@ -29,7 +29,9 @@ class Example_NSE3D : public Example3D
      * This intializes a (Navier-)Stokes example in 3D. It is chosen according
      * to example_code.
      */
-    Example_NSE3D(int example_code);
+    Example_NSE3D(int example_code,
+                  const ParameterDatabase& user_input_parameter_db);
+
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
