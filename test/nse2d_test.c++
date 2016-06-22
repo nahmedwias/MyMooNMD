@@ -130,9 +130,9 @@ void check(TDomain &domain, ParameterDatabase db,
   //choose smoother on fine grid according to element
   std::vector<int> disc_p = {12,13,14,15,22,23,24};
   if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
-    db["multigrid_smoother"] = "cell_vanka";
+    db["multigrid_smoother"] = "cell_vanka_store";
   else
-    db["multigrid_smoother"] = "batch_vanka";
+    db["multigrid_smoother"] = "batch_vanka_store";
 
   db["multigrid_type"] = "standard";
   db["multigrid_smoother_coarse"] = "direct_solve";

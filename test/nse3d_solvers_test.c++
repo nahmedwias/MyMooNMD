@@ -165,8 +165,8 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "batch_vanka";
-    db["multigrid_smoother_coarse"] = "nodal_vanka";
+    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother_coarse"] = "nodal_vanka_store";
     db["multigrid_correction_damp_factor"] = 1.0;
     db["multigrid_n_pre_smooth"] = 1;
     db["multigrid_n_post_smooth"] = 1;
