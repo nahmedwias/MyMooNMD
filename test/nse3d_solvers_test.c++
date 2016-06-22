@@ -22,15 +22,14 @@
  *
  * So far the test is adapted to:
  *  - testing the umfpack solver when compiled SEQUENTIAL
+ *  - testing lsc preconditioned fgmres SEQUENTIAL
+ *  - testing multigrid preconditioned fgmres SEQUENTIAL
  *  - testing the mumps solver when compiled MPI
  *
  * The MPI Mumps test contains one example for the three combinations
  * 1 - 2 (hexa), 2 - 12 (hexa), 4 - 2 (hexa) of nstype and velocity space.
  * The tests for 3rd order elements cannot be run, because these elements are
  * not fitted for mpi yet.
- *
- * @todo TODO Enable this test for: pardiso,
- * fgmres with multigrid, fgmres with lsc preconditioner
  *
  * @author Clemens Bartsch (heavily inspired by Najib's NSE2D Test program)
  *
@@ -166,14 +165,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "nodal_vanka";
+    db["multigrid_smoother"] = "batch_vanka";
     db["multigrid_smoother_coarse"] = "nodal_vanka";
-    db["multigrid_correction_damp_factor"] = 0.8;
-    db["multigrid_n_pre_smooth"] = 2;
-    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_correction_damp_factor"] = 1.0;
+    db["multigrid_n_pre_smooth"] = 1;
+    db["multigrid_n_post_smooth"] = 1;
     db["multigrid_coarse_residual"] = 1.0e-1;
     db["multigrid_coarse_max_n_iterations"] = 5;
-    db["multigrid_vanka_damp_factor"]=0.7;
+    db["multigrid_vanka_damp_factor"]=1.0;
 
   }
 #ifndef _MPI
@@ -215,7 +214,7 @@ double get_tolerance(std::string solver_name)
   if(solver_name.compare("lsc") == 0)
     return 1e-9;
   if(solver_name.compare("multigrid") == 0)
-    return 1e-9;
+    return 1e-8;
 #else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
