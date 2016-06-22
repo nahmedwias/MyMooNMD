@@ -42,7 +42,7 @@ protected:
   
   /** @brief function representing the initial data
    */
-  std::vector<DoubleFunct3D*> initialCondtion;
+  std::vector<DoubleFunct3D*> initialCondition;
   
 public:
   //Declaration of special member functions - rule of zero
@@ -77,7 +77,7 @@ public:
   bool coefficients_depend_on_time();
   
   DoubleFunct3D* get_initial_cond(unsigned int i)const
-    { return initialCondtion.at(i); }  
+    { return initialCondition.at(i); }
 };
 
 #endif // _Example_NonStationary3D_

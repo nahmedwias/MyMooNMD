@@ -88,8 +88,6 @@ struct TParaDB
   int VELOCITY_SPACE;
   int PRESSURE_SPACE;
   int PRESSURE_SEPARATION;
-
-  int EXAMPLE; // used (and explained) in derived classes of Example2D
   //======================================================================
   /** parameters for grid generation                                    */
   //======================================================================

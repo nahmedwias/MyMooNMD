@@ -4,7 +4,7 @@ Example_NonStationary3D::Example_NonStationary3D()
  : Example3D()
  , timeDependentRhs()
  , timeDependentCoeffs()
- , initialCondtion()
+ , initialCondition()
 {
 
 }
@@ -18,7 +18,7 @@ Example_NonStationary3D::Example_NonStationary3D(std::vector <DoubleFunct3D*> ex
 : Example3D(exact, bc, bd, coeffs)
   , timeDependentRhs(timedependentrhs)
   , timeDependentCoeffs(timedependentcoeffs)
-  , initialCondtion(init_cond)
+  , initialCondition(init_cond)
 {
 
 }

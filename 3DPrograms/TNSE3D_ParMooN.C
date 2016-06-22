@@ -16,6 +16,9 @@
 
 #include <TimeDiscRout.h>
 
+//project specific
+#include <CoiledPipe.h>
+
 using namespace std;
 
 #ifdef _MPI
@@ -78,19 +81,53 @@ int main(int argc, char* argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
 
   if(my_rank==0) //Only one process should do that.
-    {
+  {
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
-    }
+  }
 
   // Do a makeshift parameter check and the old parameter check of the Database.
   // TODO Adapt the check_parameters() method to the class TNSE3D
   // NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
 
+  // project specific: prepare the coiled geometry
+  size_t n_twists                 = parmoon_db["twisted_pipe_n_twists"];
+  size_t n_segments_per_twist     = parmoon_db["twisted_pipe_n_segments_per_twist"];
+  double l_inflow                 = parmoon_db["twisted_pipe_l_inflow"];
+  size_t n_segments_inflow        = parmoon_db["twisted_pipe_n_segments_inflow"];
+  double l_outflow                = parmoon_db["twisted_pipe_l_outflow"];
+  size_t n_segments_outflow       = parmoon_db["twisted_pipe_n_segments_outflow"];
+  double tube_radius              = parmoon_db["twisted_pipe_tube_radius"];
+  double twist_radius             = parmoon_db["twisted_pipe_twist_radius"];
+  double space_between_twists     = parmoon_db["twisted_pipe_space_between_twists"];
+
+  CoiledPipe::set_up_geoconsts(
+      n_twists,
+      n_segments_per_twist,
+      l_inflow,
+      n_segments_inflow,
+      l_outflow,
+      n_segments_outflow,
+      tube_radius,
+      twist_radius,
+      space_between_twists
+  );
+  double drift_x = 0;
+  double drift_y = 0;
+  double drift_z =CoiledPipe::GeoConsts::l_tube;
+
+  // Choose and construct example - in this project, this has to be done before
+  // initiing the Domain, as the example itself influences the geometry by setting
+  // a global parameter (which is awful).
+  // AWFUL WORKAROUND: we use this global parameter to signal to the
+  // twisted pipe example that it is time dependent:
+  Example_TimeNSE3D example(parmoon_db["example"]);
+
   // Read in geometry and initialize the mesh.
-//  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"],
+              drift_x, drift_y, drift_z,
+              CoiledPipe::GeoConsts::segment_marks);
 
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -100,10 +137,10 @@ int main(int argc, char* argv[])
   }
 
   // Write grid into a postscript file (before partitioning)
-//  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-//  {
-//    domain.PS("Domain.ps", It_Finest, 0);
-//  }
+  //  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
+  //  {
+  //    domain.PS("Domain.ps", It_Finest, 0);
+  //  }
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -141,17 +178,14 @@ int main(int argc, char* argv[])
 
   // calculate largest possible number of processes which share one dof
   int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+#endif //_MPI
 
-#endif
 
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
 
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
-
-  // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db["example"]);
 
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
@@ -188,13 +222,13 @@ int main(int argc, char* argv[])
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-//      if( step == 1 && my_rank==0) // a few output, not very necessary
-//      {
-//        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
-//        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
-//        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
-//        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
-//      }
+      //      if( step == 1 && my_rank==0) // a few output, not very necessary
+      //      {
+      //        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
+      //        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
+      //        Output::print<1>("Theta3: ", TDatabase::TimeDB->THETA3);
+      //        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
+      //      }
       // tau may change depending on the time discretization (adaptive time)
       double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
       TDatabase::TimeDB->CURRENTTIME += tau;
@@ -231,7 +265,7 @@ int main(int argc, char* argv[])
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
           Output::print<1>("Residuals :", tnse3d.get_residuals());
         }
-//        break;
+        //        break;
         tnse3d.solve();
 
         tnse3d.assemble_nonlinear_term();

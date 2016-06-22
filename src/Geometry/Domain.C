@@ -992,7 +992,12 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 
 
 #else // 3D
-void TDomain::Init(const char *PRM, const char *GEO)
+void TDomain::Init(
+    const char *PRM, const char *GEO,
+    //from here it's params with default values, relevant only for sandwich geo
+    double drift_x, double drift_y, double drift_z,
+    std::vector<double> segment_marks
+)
 {
   int IsSandwich = 0;
 
@@ -1058,7 +1063,20 @@ void TDomain::Init(const char *PRM, const char *GEO)
       ErrThrow("cannot open GEO file");
     }
     // then read in sandwich geo.
-    ReadSandwichGeo(bdryStream);
+    if(drift_x || drift_y || drift_z)
+    {//any drift parameter is given non-zero
+      ReadSandwichGeo(bdryStream, drift_x, drift_y, drift_z, segment_marks);
+    }
+    else
+    {
+      double DriftX = TDatabase::ParamDB->DRIFT_X;
+      double DriftY = TDatabase::ParamDB->DRIFT_Y;
+      double DriftZ = TDatabase::ParamDB->DRIFT_Z;
+      ReadSandwichGeo(bdryStream, DriftX, DriftY, DriftZ, segment_marks);
+    }
+
+
+
   }
 }
 #endif // __2D__
@@ -3513,7 +3531,6 @@ int TDomain::GenerateEdgeInfo()
 
   return 0;
 }
-
 
 #endif
 

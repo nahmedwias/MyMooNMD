@@ -29,7 +29,7 @@ Example_TimeCD3D::Example_TimeCD3D(int example_code)
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       ExampleFile();
     }
       break;
@@ -40,7 +40,7 @@ Example_TimeCD3D::Example_TimeCD3D(int example_code)
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       ExampleFile();
     }
       break;
@@ -50,7 +50,7 @@ Example_TimeCD3D::Example_TimeCD3D(int example_code)
       boundary_conditions.push_back(BoundCondition);
       boundary_data.push_back(BoundValue);
       problem_coefficients = BilinearCoeffs;
-      initialCondtion.push_back(InitialCondition);
+      initialCondition.push_back(InitialCondition);
       ExampleFile();
       break;
     default:
