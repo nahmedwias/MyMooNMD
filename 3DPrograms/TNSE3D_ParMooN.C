@@ -111,11 +111,9 @@ int main(int argc, char* argv[])
   
   output.WriteVtk(parmoon_db["output_basename"]);
 
-  // Write grid into a postscript file (before partitioning)
-//  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-//  {
-//    domain.PS("Domain.ps", It_Finest, 0);
-//  }
+  // write grid into an Postscript file (before partitioning)
+  if(parmoon_db["output_write_ps"] && my_rank==0)
+    domain.PS("Domain.ps", It_Finest, 0);
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
