@@ -10,6 +10,7 @@
 #define __GRIDCELL__
 
 #include <BaseCell.h>
+#include <vector>
 
 /**  @brief represent geometric information of the cell */
 class TGridCell : public TBaseCell
@@ -21,7 +22,7 @@ class TGridCell : public TBaseCell
     TBaseCell *Parent;
 
     /**  @brief field of all vertices */
-    TVertex  **Vertices;
+    std::vector<TVertex*> Vertices;
 
     /**  @brief grid level on with this cell was generated */
     int RefLevel;
@@ -41,7 +42,7 @@ class TGridCell : public TBaseCell
     virtual const TVertex *GetVertex(int Vert_i) const;
     /**  @brief return field of pointers to all vertices */
     TVertex **GetVertices()
-    { return Vertices; }
+    { return &Vertices[0]; }
 
     /**  @brief return number of children */
     virtual int GetN_Children();
@@ -115,19 +116,19 @@ class TGridCell : public TBaseCell
 
     /**  @brief get diameter of a cell */
     virtual double GetDiameter()
-    { return RefDesc->GetShapeDesc()->GetDiameter(Vertices); }
+    { return RefDesc->GetShapeDesc()->GetDiameter(&Vertices[0]); }
 
     /**  @brief get shortest edge of a cell */
     virtual double GetShortestEdge()
-    { return RefDesc->GetShapeDesc()->GetShortestEdge(Vertices); }
+    { return RefDesc->GetShapeDesc()->GetShortestEdge(&Vertices[0]); }
 
     /**  @brief return the length of the cell defined with the reference map */
     virtual double GetLengthWithReferenceMap()
-    { return RefDesc->GetShapeDesc()->GetLengthWithReferenceMap(Vertices); }
+    { return RefDesc->GetShapeDesc()->GetLengthWithReferenceMap(&Vertices[0]); }
 
      /**  @brief get measure of a cell */
     virtual double GetMeasure()
-    { return RefDesc->GetShapeDesc()->GetMeasure(Vertices); }
+    { return RefDesc->GetShapeDesc()->GetMeasure(&Vertices[0]); }
 
     /**  @brief get geometry level */
     virtual int GetGeoLevel();

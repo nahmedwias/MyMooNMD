@@ -1664,7 +1664,7 @@ void TDatabase::CheckParameterConsistencyNSE()
   {
       //ParamDB->NSTYPE = 2;
       //Output::info("NSE Parameter Consistency","NSTYPE changed from 1 to 2 because of SDFEM discretization ");
-	  if(my_rank==0)
+    if(my_rank==0)
         Output::info("NSE Parameter Consistency","NSTYPE 1: only reduced SDFEM, only for 2D, fixed point, not skew !!!");
   }
 
