@@ -13,6 +13,9 @@
 
 enum class VankaType {NODAL, CELL, BATCH};
 
+//forward declaration
+class DenseMatrix;
+
 /**
  * A class for Vanka smoother as used in the multgrid method. Currently the
  * implementation and nomenclature are adapted to (Navier--)Stokes saddle
@@ -24,8 +27,13 @@ class VankaSmootherNew : public Smoother
     /** Default constructor.
      * @param type The Vanka type to use. Currently nodal, cell and batch
      * Vanke are available.
+     * @param damp_factor The damping factor to use when updating the solution
+     * of the global system by the solution of the local system.
+     * @param store Whether to store the local systems or not. This can considerably
+     * speed up the computation (especially if the grid level is traversed very
+     * often) but is very memory intensive. You should use it for test cases only.
      */
-    VankaSmootherNew(VankaType type, double damp_factor);
+    VankaSmootherNew(VankaType type, double damp_factor,  bool store = false);
 
     /// Perform one step of Vanka smoothing (solve all local systems).
     void smooth(const BlockVector& rhs, BlockVector& solution ) override;
@@ -72,6 +80,10 @@ class VankaSmootherNew : public Smoother
 
     /// The collection of velocity dofs for the local systems.
     std::vector<DofBatch> velo_dofs_local_;
+
+    //Store the matrices which were assembled in order to reuse their LU factorization.
+    std::vector<DenseMatrix*> local_systems_;
+    bool store_systems_;
 
 // TODO Change these to weak pointers as soon as FESpaces are stored in a
 // shared_ptr fashion.
