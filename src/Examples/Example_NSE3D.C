@@ -336,6 +336,9 @@ Example_NSE3D::Example_NSE3D(int example_code) : Example3D()
         ExampleFile();
         break;
       }
+      default:
+        ErrThrow("Unknown Example code in Example_NSE3D. Exiting!");
+
   }
 }
 

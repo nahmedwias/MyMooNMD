@@ -120,8 +120,6 @@ int main(int argc, char* argv[])
   // Choose and construct example - in this project, this has to be done before
   // initiing the Domain, as the example itself influences the geometry by setting
   // a global parameter (which is awful).
-  // AWFUL WORKAROUND: we use this global parameter to signal to the
-  // twisted pipe example that it is time dependent:
   Example_TimeNSE3D example(parmoon_db["example"]);
 
   // Read in geometry and initialize the mesh.
