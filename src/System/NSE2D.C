@@ -660,9 +660,6 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     if(slow_conv)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual);
     return true;
   }
   else
