@@ -343,12 +343,12 @@ ParameterDatabase Multigrid::default_multigrid_database()
   db.add<size_t>("multigrid_n_pre_smooth", 1,
                  "The number of smoothing steps to apply per level before "
                  "going down to the next coarsest level.",
-                 1, 10);
+                 0, 10);
 
   db.add<size_t>("multigrid_n_post_smooth", 1,
                  "The number of smoothing steps to apply per level after "
                  "coming up from the next coarsest level.",
-                 1, 10);
+                 0, 10);
 
   db.add("multigrid_coarse_residual", 1.0e-1,
          "The target residual on the coarsest grid. When this residual is "

@@ -124,21 +124,22 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
-  // we do multigrid tests only for lower order elements, because the higher 
-  // ones take way too long.
-  /// @todo Multigrid, NSE2D, higher order spaces: Is this a programming error 
-  /// which needs to be fixed? If not should we use mdml as default?
-  auto multigrid_velo_orders = {2, 12, 22}; // allowed for multigrid
-  if(std::none_of(multigrid_velo_orders.begin(), multigrid_velo_orders.end(),
-                 [velocity_order](int v){return v == velocity_order; }))
-    return;
-  
+
   db["preconditioner"] = "multigrid";
   db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
-  db["multigrid_smoother"] = "nodal_vanka";
+  //choose smoother on fine grid according to element
+  std::vector<int> disc_p = {12,13,14,15,22,23,24};
+  if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
+    db["multigrid_smoother"] = "cell_vanka";
+  else
+    db["multigrid_smoother"] = "batch_vanka";
+
+  db["multigrid_type"] = "standard";
   db["multigrid_smoother_coarse"] = "direct_solve";
-  db["multigrid_n_pre_smooth"] = 2;
-  db["multigrid_n_post_smooth"] = 2;
+  db["multigrid_n_pre_smooth"] = 0;
+  db["multigrid_n_post_smooth"] = 1;
+  db["multigrid_correction_damp_factor"] = 1.0;
+  db["multigrid_vanka_damp_factor"] = 1.0;
   time_measureing.reset();
   compute(domain, db, errors);
   time_measureing.print_time("nse2d fgmres(multigrid preconditioner), velocity "
