@@ -60,7 +60,7 @@ class VankaSmootherNew : public Smoother
     //! Move assignment operator.
     VankaSmootherNew& operator=( VankaSmootherNew&& );
 
-    ~VankaSmootherNew() = default;
+    ~VankaSmootherNew();
 
   private:
     /// The type of Vanka smoother (nodal, cell, batch)

@@ -514,6 +514,11 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
   }// endfor auto grid
 
   //copy non-actives from rhs to solution on finest grid
@@ -648,6 +653,10 @@ void NSE3D::assemble_non_linear_term()
                                 feFunction[2], one_over_nu);
       }
     }
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
 
     //TODO: Copying non-actives??
 
