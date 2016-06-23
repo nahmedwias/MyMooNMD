@@ -819,13 +819,15 @@ ParameterDatabase ParameterDatabase::default_time_database()
          "time adaptivity, it only corresponds to the initial value.",
          0., 0.5);
   
-  db.add("time_discretization", (size_t)1,
+  db.add("time_discretization", (size_t)2,
          "This is the time discretization scheme. The following values are "
          "implemented :"
          "0 -> Forward Euler, "
          "1 -> Backward Euler, "
          "2 -> Crank-Nicholson, "
-         "3 -> Fractional step.", (size_t)0 , (size_t)4 );
+         "3 -> Fractional step."
+         "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)",
+         (size_t)0 , (size_t)4 );
   
   return db;
 }

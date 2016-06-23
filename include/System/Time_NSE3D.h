@@ -194,7 +194,12 @@ class Time_NSE3D
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
 
+    /** @brief solution vector from previous time step (on finest mesh)*/
     BlockVector old_solution_;
+
+    /** @brief an older solution vector, eg from time step-2 (on finest mesh)
+     * Is used for IMEX-Scheme. */
+    BlockVector old_solution2_;
 
     /** old time step length used to scale the pressure blocks*/
     double oldtau_;

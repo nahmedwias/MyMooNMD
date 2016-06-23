@@ -30,6 +30,10 @@ ParameterDatabase get_default_TNSE3D_parameters()
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
 
+  // a default time database
+  ParameterDatabase time_db = ParameterDatabase::default_time_database();
+  db.merge(time_db,true);
+
   return db;
 }
 
@@ -232,6 +236,7 @@ void Time_NSE3D::interpolate()
 ///**************************************************************************** */
 void Time_NSE3D::check_parameters()
 {
+ // Check problem_type
  if(!db_["problem_type"].is(6))
  {
    if (db_["problem_type"].is(0))
@@ -244,6 +249,13 @@ void Time_NSE3D::check_parameters()
          "It is now reset to the correct value for Time_NSE (=6).");
      db_["problem_type"] = 6;
    }
+ }
+
+ // Tell the user he is using IMEX
+ if(db_["time_discretization"].is(4))
+ {
+   Output::info<1>("check_parameters",
+                   "The IMEX scheme has been chosen as a time discretization scheme!\n");
  }
 
  if(TDatabase::TimeDB->TIME_DISC == 0)
@@ -1010,6 +1022,8 @@ void Time_NSE3D::solve()
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        s.p_.project_into_L20();
 
+  // save the vectors from previous step...and the one before (for IMEX-scheme)
+  this->old_solution2_ = this->old_solution_;
   this->old_solution_ = s.solution_;
 }
 
