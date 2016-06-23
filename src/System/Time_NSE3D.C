@@ -885,11 +885,15 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   if(iteration_counter == 0)
     initial_residual_ = normOfResidual;
 
-  // Parameters for stopping criteria (desired precision epsilon, max number
-  // of iteration, convergence rate)
+  /** Parameters for stopping criteria (desired precision epsilon, max number
+   *  of iteration, convergence rate, IMEX_scheme : if IMEX is used, we only
+   *  need to solve the nonlinear iterations for the first time step in order
+   *  to obtain both initial solution and the one after. Then, the extrapolated
+   *  scheme is solved just once, as a linear system. ) */
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
+  bool IMEX_scheme  = (db_["time_discretization"].is(4))*(this->current_step_>=2);
   bool slow_conv    = false;
 
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
@@ -906,7 +910,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Stopping criteria
   if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
-        || (slow_conv) )
+        || (slow_conv) || (IMEX_scheme) )
    {
     if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);

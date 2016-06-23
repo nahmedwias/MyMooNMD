@@ -176,7 +176,8 @@ int main(int argc, char* argv[])
   tnse3d.assemble_initial_time();
 
   double end_time = TDatabase::TimeDB->ENDTIME;
-  int step = 0;
+  tnse3d.current_step_ = 0;
+
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
@@ -191,14 +192,14 @@ int main(int argc, char* argv[])
   {
     Chrono chrono_timeit;
 
-    step++;
-    // Output::print("memory before ":, GetMemory());
+    tnse3d.current_step_++;
+
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-//      if( step == 1 && my_rank==0) // a few output, not very necessary
+//      if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
 //      {
 //        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
 //        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -253,7 +254,7 @@ int main(int argc, char* argv[])
 
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
-      tnse3d.output(step,image);
+      tnse3d.output(tnse3d.current_step_,image);
 
     } // end of subtime loop
   } // end of time loop
