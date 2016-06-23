@@ -104,11 +104,11 @@ void twisted_pipe_flow::ExactU1(double x, double y,  double z, double *values)
       if( TIME_DEPENDENT )
       {
         double t = TDatabase::TimeDB->CURRENTTIME;
-        if(t < 1.0) //within first second of the simulated time
+        if(t < 0.1) //within first tenth of a second of the simulated time
         {//multiply inflow with t ("anstroemen")
-          u_1   *=t;
-          u_1_y *=t;
-          u_1_z *=t;
+          u_1   *=10*t;
+          u_1_y *=10*t;
+          u_1_z *=10*t;
         }
       }
 
