@@ -893,7 +893,9 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
-  bool IMEX_scheme  = (db_["time_discretization"].is(4))*(this->current_step_>=2);
+  bool IMEX_scheme  = (db_["time_discretization"].is(4))*
+                      (this->current_step_>=2)*
+                      (iteration_counter>0);
   bool slow_conv    = false;
 
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
