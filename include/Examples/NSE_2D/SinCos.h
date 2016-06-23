@@ -183,7 +183,7 @@ void LinCoeffs(int n_points, double *X, double *Y,
     coeffs[i][1] = -nu*val1[3] + val3[1]; // f1
     coeffs[i][2] = -nu*val2[3] + val3[2]; // f2
     
-    if(TDatabase::ParamDB->PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
+    if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5) // Navier-Stokes (3 means Stokes)
     {
       coeffs[i][1] += val1[0]*val1[1] + val2[0]*val1[2]; // f1
       coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2

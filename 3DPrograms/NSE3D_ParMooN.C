@@ -70,8 +70,7 @@ int main(int argc, char* argv[])
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
@@ -125,7 +124,6 @@ int main(int argc, char* argv[])
 
 #endif
 
-
   //print information on the mesh partition on the finest grid
   domain.print_info("NSE3D domain");
 
@@ -155,7 +153,8 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
-    Output::print(); // new line for a new nonlinear iteration
+    if(rank == 0)
+      Output::print(); // new line for a new nonlinear iteration
     // solve the system
     nse3d.solve();
 

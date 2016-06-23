@@ -107,7 +107,6 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
   Example_NSE3D example_obj(example);
 
   //Perform usual checks on the parameter consistency
-  NSE3D::check_parameters(); //makeshift check
   TDatabase::CheckParameterConsistencyNSE(); //old check
 
   // Construct the nse3d problem object.
@@ -253,7 +252,6 @@ int main(int argc, char* argv[])
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
-  TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
   TDatabase::ParamDB->DRIFT_Z = 1;
 

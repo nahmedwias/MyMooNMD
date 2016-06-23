@@ -280,7 +280,7 @@ void Brinkman2D::assemble()
       
     // do upwinding TODO remove dependency of global values
     if((TDatabase::ParamDB->DISCTYPE == UPWIND)
-       && !(TDatabase::ParamDB->PROBLEM_TYPE == 3))
+       && !(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3))
     {
       switch(TDatabase::ParamDB->BrinkmanTYPE)
       {
