@@ -69,6 +69,8 @@ class IterativeMethod
      */
     bool converged(double current_residual, unsigned int current_iterate)
     {
+      if(current_iterate == 0)
+        this->loop_info.restart(this->name, current_residual);
       bool residual_small_enough = current_residual < this->residual_tolerance;
       bool sufficient_reduction = 
         current_residual < this->residual_reduction 
@@ -88,7 +90,7 @@ class IterativeMethod
         Output::warn("IterativeMethod", "residual increased: ", 
                      std::setprecision(12), 
                      this->loop_info.get_previous_residual(), " -> ",
-                     current_residual);
+                     current_residual, ", at iteration ", current_iterate);
       if(converged)
         this->loop_info.finish(current_iterate, current_residual);
       else

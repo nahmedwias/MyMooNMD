@@ -52,8 +52,8 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
   }
   else
   {
-    this->initial_residual = current_residual;
-    this->initial_time.reset(); // should we do this here or rather not?
+    // should we reset the initial_time here or rather not?
+    this->restart(this->name, current_residual);
   }
   old_residual = current_residual;
   old_time.reset();
