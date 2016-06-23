@@ -193,8 +193,8 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -289,8 +289,8 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     // parameters used for this test
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;

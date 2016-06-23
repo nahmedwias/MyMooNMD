@@ -36,10 +36,7 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1], parmoon_db);
   
-  //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(!parmoon_db["problem_type"].is(3) && !parmoon_db["problem_type"].is(5))
-    parmoon_db["problem_type"] = 5;
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   

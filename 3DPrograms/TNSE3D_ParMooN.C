@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
   TDomain domain(argv[1],parmoon_db);
 
   //open OUTFILE, this is where all output is written to (additionally to console)
-  if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 6;
+  if(parmoon_db["problem_type"].is(0))
+    parmoon_db["problem_type"] = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   //open OUTFILE, this is where all output is written to (addionally to console)
