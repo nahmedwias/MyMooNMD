@@ -650,35 +650,9 @@ void Time_NSE3D::assemble_rhs()
              nRhs, rhsArray.data(), rhsSpaces,
              boundary_conditions, boundary_values.data(), localAssembling);
 
-  // copy the non active to the solution vector
-  // since the rhs vector will be passed to the solver
-  // and is modified with matrix vector multiplication
-  // which also uses the non-actives
-  s.solution_.copy_nonactive(s.rhs_);
-
-  /** After copy_nonactive, the solution vectors needs to be Comm-updated
-     * in MPI-case in order to be consistently saved. It is necessary that
-     * the vector is consistently saved because it is the only way to
-     * ensure that its multiplication with an inconsistently saved matrix
-     * (multiplication which appears in the defect and rhs computations)
-     * give the correct results.
-     * When we call copy_nonactive in MPI-case, we have to remember the following:
-     * it can happen that some slave ACTTIVE DoFs are placed in the block of
-     * NON-ACTIVE DoFs (because they are at the interface between processors).
-     * Doing copy_nonactive changes then the value of these DOFs,although they are
-     * actually active.
-     * That's why we have to update the values so that the vector becomes consistent again.
-     */
-  #ifdef _MPI
-    double *u1 = this->systems_.front().solution_.block(0);
-    double *u2 = this->systems_.front().solution_.block(1);
-    double *u3 = this->systems_.front().solution_.block(2);
-    double *p  = this->systems_.front().solution_.block(3);
-    this->systems_.front().parCommVelocity_.CommUpdate(u1);
-    this->systems_.front().parCommVelocity_.CommUpdate(u2);
-    this->systems_.front().parCommVelocity_.CommUpdate(u3);
-    this->systems_.front().parCommPressure_.CommUpdate(p);
-  #endif
+  /* just a temporary vector to store the nonActive of rhs */
+  BlockVector temporary = s.rhs_;
+  temporary.copy_nonactive(s.rhs_);
 
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)
@@ -697,11 +671,11 @@ void Time_NSE3D::assemble_rhs()
   }
 
   // FIXME Find other solution than this submatrix method.
-  // M u^{k-1}
-  s.massMatrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, 1.0);
-  // -tau*theta2 * A u^{k-1}
+  // M u^{k-1} NOTE : here s.solution_ is exactly u^{k-1}
+  s.massMatrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, 1.0);
+  // -tau*theta2 * A u^{k-1} NOTE : here, s.solution_ is u^{k-1}
   double factor = -tau*theta2;
-  s.matrix_.apply_scaled_submatrix(old_solution_, s.rhs_, 3, 3, factor);
+  s.matrix_.apply_scaled_submatrix(s.solution_, s.rhs_, 3, 3, factor);
 
   // scale the BT blocks with time step length
   for(System_per_grid& s : this->systems_)
@@ -731,8 +705,36 @@ void Time_NSE3D::assemble_rhs()
   }
 
   this->oldtau_ = tau;
-  // copy non active from solution into rhs vector
-  s.rhs_.copy_nonactive(s.solution_);
+
+  // retrieve the non active from "temporary" into rhs vector
+  s.rhs_.copy_nonactive(temporary);
+
+  // copy the non active to the solution vector
+  s.solution_.copy_nonactive(s.rhs_);
+
+  /** After copy_nonactive, the solution vectors needs to be Comm-updated
+     * in MPI-case in order to be consistently saved. It is necessary that
+     * the vector is consistently saved because it is the only way to
+     * ensure that its multiplication with an inconsistently saved matrix
+     * (multiplication which appears in the defect and rhs computations)
+     * give the correct results.
+     * When we call copy_nonactive in MPI-case, we have to remember the following:
+     * it can happen that some slave ACTTIVE DoFs are placed in the block of
+     * NON-ACTIVE DoFs (because they are at the interface between processors).
+     * Doing copy_nonactive changes then the value of these DOFs,although they are
+     * actually active.
+     * That's why we have to update the values so that the vector becomes consistent again.
+     */
+  #ifdef _MPI
+    double *u1 = this->systems_.front().solution_.block(0);
+    double *u2 = this->systems_.front().solution_.block(1);
+    double *u3 = this->systems_.front().solution_.block(2);
+    double *p  = this->systems_.front().solution_.block(3);
+    this->systems_.front().parCommVelocity_.CommUpdate(u1);
+    this->systems_.front().parCommVelocity_.CommUpdate(u2);
+    this->systems_.front().parCommVelocity_.CommUpdate(u3);
+    this->systems_.front().parCommPressure_.CommUpdate(p);
+  #endif
 
   // Reset old_residual_ for this time step iteration
   // otherwise, ones compares with the old_residual_ from
@@ -1028,9 +1030,6 @@ void Time_NSE3D::solve()
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        s.p_.project_into_L20();
 
-  // save the vectors from previous step...and the one before (for IMEX-scheme)
-  this->old_solution2_ = this->old_solution_;
-  this->old_solution_ = s.solution_;
 }
 
 /**************************************************************************** */
