@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
   //======================================================================
   for(unsigned int k=1;; k++)
   {
-    if(rank == 0)
+    if(my_rank == 0)
       Output::print(); // new line for a new nonlinear iteration
     // solve the system
     nse3d.solve();
