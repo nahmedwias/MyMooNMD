@@ -201,7 +201,7 @@ class Time_NSE3D
      * Is used for IMEX-Scheme. */
     BlockVector old_solution2_;
 
-    /** old time step length used to scale the pressure blocks*/
+    /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
 
     /** @brief set the velocity and pressure orders
@@ -216,21 +216,10 @@ class Time_NSE3D
     void get_velocity_pressure_orders(std::pair <int,int>
                    &velocity_pressure_orders);
     
-    /// write some information (number of cells, dofs, ...) 
+    /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
- public:
 
-//    /** @brief constructor
-//    * This constructor calls the other constructor creating an Example_NSE3D
-//    * object. It is commented because not used currently.
-//    * If you need it, outcomment it and add it in the src file.
-//    */
-//#ifdef _MPI
-//    Time_NSE3D(const TDomain& domain, int reference_id = -4711,
-//               int maxSubDomainPerDof);
-//#else
-//    Time_NSE3D(const TDomain& domain, int reference_id = -4711);
-//#endif
+ public:
 
     /** @brief Standard constructor of an NSE3D problem.
      *
@@ -252,8 +241,18 @@ class Time_NSE3D
 #endif
     
 // ======================================================================
-    ///This function interpolates the initial solution.
+    /** @brief This returns the number of the current time step.
+     * This counter is set at 0 before the time loop and is incremented at each
+     * time step (but not at each sub-step) in the main program.
+     * It can be useful to give info to the members of the class. It is for example
+     * used in IMEX scheme to detect when we passed 2 time steps, so that we
+     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
+    int current_step_;
+
+// ======================================================================
+    /** @brief This function interpolates the initial solution. */
     void interpolate();
+
     /** @brief check parameters in database
     *
     * This functions checks if the parameters in the database are meaningful.
@@ -262,7 +261,7 @@ class Time_NSE3D
     */
     void check_parameters();
 
-   /** @brief Assemble all the matrices and rhs before the time iterations
+    /** @brief Assemble all the matrices and rhs before the time iterations
     *
     * This includes the assembling of the Stiffness matrix, the Mass matrix,
     * the additional matrix K in case of SUPG stabilization, and rhs.
@@ -271,7 +270,7 @@ class Time_NSE3D
     */
     void assemble_initial_time();
 
-  /** @brief Assemble the rhs only
+    /** @brief Assemble the rhs only
     * 1. Assembling the right hand side only
     * 2. Scaling of the B-Blocks due to time stepping
     * This function will prepare the right hand side during the time
@@ -317,8 +316,7 @@ class Time_NSE3D
      */
     bool stop_it(unsigned int iteration_counter);
 
-    /**
-     * @brief Compute the defect Ax-b, and the residuals and store it all.
+    /** @brief Compute the defect Ax-b, and the residuals and store it all.
      * This method is also the one displaying the residuals.
      * Updates defect and old_residuals.
      * A is the current matrix, x is the current solution and b is the
@@ -327,7 +325,8 @@ class Time_NSE3D
      */
     void compute_residuals();
 
-    /** ! Measure errors and draw a nice VTK picture, if requested to do so.
+    /** @brief Measure errors and draw a nice VTK picture,
+     * if requested to do so.
      */
     void output(int m, int &image);
 
@@ -372,7 +371,6 @@ class Time_NSE3D
     const ParameterDatabase & get_db() const
     { return db_; }
 
-//   const Example_TimeNSE3D  & get_example()  const
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impulse residual (updated in compute_residuals)
@@ -382,9 +380,8 @@ class Time_NSE3D
     /// @brief get the current residual (updated in compute_residuals)
     double get_full_residual() const;
 
-  /** @brief return the computed errors (computed in output())
-   */
-  std::array<double, int(6)> get_errors() const;
+    /** @brief return the computed errors (computed in output()) */
+    std::array<double, int(6)> get_errors() const;
 };
 
 
