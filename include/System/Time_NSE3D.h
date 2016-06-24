@@ -197,9 +197,9 @@ class Time_NSE3D
     /** @brief solution vector from previous time step (on finest mesh)*/
     BlockVector old_solution_;
 
-    /** @brief an older solution vector, eg from time step-2 (on finest mesh)
-     * Is used for IMEX-Scheme. */
-    BlockVector old_solution2_;
+    /** @brief constructs a solution vector extrapolated from previous steps
+     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+    BlockVector extrapolated_solution_;
 
     /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
@@ -329,6 +329,10 @@ class Time_NSE3D
      * if requested to do so.
      */
     void output(int m, int &image);
+
+    /** @brief Construct the extrapolated solution.
+     * At the moment, only IMEX is implemented. */
+    void construct_extrapolated_solution();
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
