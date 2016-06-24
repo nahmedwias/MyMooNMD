@@ -597,6 +597,13 @@ void Time_NSE3D::assemble_initial_time()
 /**************************************************************************** */
 void Time_NSE3D::assemble_rhs()
 {
+  System_per_grid& s = this->systems_.front();
+
+  /* At each time iteration, the old_solution is stored once
+   * before solving. It is done here, because assemble_rhs
+   * is called once in each time step. */
+  this->old_solution_ = s.solution_;
+
   // TODO Should it be timesteplength or currenttimesteplength
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 //  const double theta1 = TDatabase::TimeDB->THETA1;
@@ -605,7 +612,6 @@ void Time_NSE3D::assemble_rhs()
   const double theta4 = TDatabase::TimeDB->THETA4;
 
   // reset the right hand side of the grid of interest (finest)
-  System_per_grid& s = this->systems_.front();
   s.rhs_.reset();
 
   // some definitions necessary for assembling
@@ -650,9 +656,11 @@ void Time_NSE3D::assemble_rhs()
              nRhs, rhsArray.data(), rhsSpaces,
              boundary_conditions, boundary_values.data(), localAssembling);
 
-  /* just a temporary vector to store the nonActive of rhs */
+  /* just a temporary vector which is going to be used at the end to
+   * retrieve the nonActive of rhs_. If we dont do it, the nonActive of rhs
+   * will be changed during the following matrix.vector operations and we'll
+   * loose the values of the Dirichlet nodes. */
   BlockVector temporary = s.rhs_;
-  temporary.copy_nonactive(s.rhs_);
 
   // now it is this->systems[i].rhs = f^k
   // scale by time step length and theta4 (only active dofs)
@@ -736,12 +744,12 @@ void Time_NSE3D::assemble_rhs()
     this->systems_.front().parCommPressure_.CommUpdate(p);
   #endif
 
-  // Reset old_residual_ for this time step iteration
-  // otherwise, ones compares with the old_residual_ from
-  // the previous time iteration, which is not correct.
+  /* Reset old_residual_ for this time step iteration
+  * otherwise, ones compares with the old_residual_ from
+  * the previous time iteration, which is not correct. */
   this->old_residual_ = FixedSizeQueue<10,Residuals>();
 
-  Output::print<5>("assembled the system right hand side ");
+  Output::info<5>("Assemble_rhs()", "End of the assembling of right hand side.");
 }
 
 /**************************************************************************** */
@@ -806,6 +814,22 @@ void Time_NSE3D::assemble_nonlinear_term()
         s.u_.GetComponent(1),
         s.u_.GetComponent(2)};
 
+    if (db_["time_discretization"].is(4))
+    {
+      BlockVector IMEX_velocity = this->old_solution_;
+      IMEX_velocity.scale(-1.);
+      // IMEX_velocity = 2*u(n) - u(n-1)
+      IMEX_velocity.add_scaled(s.solution_,2.);
+
+      TFEVectFunct3D temporary(&s.velocitySpace_, (char*)"", (char*)"", IMEX_velocity.block(0),
+        IMEX_velocity.length(0), 3);
+
+      TFEFunction3D *fe_functions[3] =
+        { temporary.GetComponent(0),
+          temporary.GetComponent(1),
+          temporary.GetComponent(2)};
+    }
+
     // assemble nonlinear matrices
     LocalAssembling3D
         localAssembling(LocalAssembling3D_type::TNSE3D_NLGAL,
@@ -818,7 +842,7 @@ void Time_NSE3D::assemble_nonlinear_term()
                boundary_conditions, boundary_values.data(), localAssembling);
   }
 
-  Output::print<5>("Assembled the nonlinear matrix only ");
+  Output::info<5>("Assemble non linear terms", "End of the assembling of the nonlinear matrix.");
 }
 
 /**************************************************************************** */
