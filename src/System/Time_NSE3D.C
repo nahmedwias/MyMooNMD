@@ -606,11 +606,6 @@ void Time_NSE3D::assemble_rhs()
 {
   System_per_grid& s = this->systems_.front();
 
-  /* At each time iteration, the old_solution is stored once
-   * before solving. It is done here, because assemble_rhs
-   * is called once in each time step. */
-  this->old_solution_ = s.solution_;
-
   // TODO Should it be timesteplength or currenttimesteplength
   double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
 //  const double theta1 = TDatabase::TimeDB->THETA1;
@@ -816,26 +811,41 @@ void Time_NSE3D::assemble_nonlinear_term()
     boundary_values[1] = this->example_.get_bd(1);
     boundary_values[2] = this->example_.get_bd(2);
 
-    TFEFunction3D *fe_functions[3] =
-      { s.u_.GetComponent(0),
-        s.u_.GetComponent(1),
-        s.u_.GetComponent(2)};
+    TFEFunction3D *fe_functions[3] = {nullptr, nullptr,nullptr};
 
-//    if (db_["time_discretization"].is(4))
-//    {
-//      BlockVector IMEX_velocity = this->old_solution_;
-//      IMEX_velocity.scale(-1.);
-//      // IMEX_velocity = 2*u(n) - u(n-1)
-//      IMEX_velocity.add_scaled(s.solution_,2.);
-//
-//      TFEVectFunct3D temporary(&s.velocitySpace_, (char*)"", (char*)"", IMEX_velocity.block(0),
-//        IMEX_velocity.length(0), 3);
-//
-//      TFEFunction3D *fe_functions[3] =
-//        { temporary.GetComponent(0),
-//          temporary.GetComponent(1),
-//          temporary.GetComponent(2)};
-//    }
+    // General case, no IMEX-scheme (=4), business as usual
+    if(!db_["time_discretization"].is(4))
+    {
+      fe_functions[0] = s.u_.GetComponent(0);
+      fe_functions[1] = s.u_.GetComponent(1);
+      fe_functions[2] = s.u_.GetComponent(2);
+    }
+    else if(db_["time_discretization"].is(4))
+    {
+
+      if (this->current_step_<=3) // for the first step, no IMEX
+      {
+        fe_functions[0] = s.u_.GetComponent(0);
+        fe_functions[1] = s.u_.GetComponent(1);
+        fe_functions[2] = s.u_.GetComponent(2);
+      }
+      else
+      {
+      // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
+      // Note : in this function, the non active Dofs are taken care of.
+      // Namely, extrapolated_solution takes the nonActive of the current Rhs.
+      this->construct_extrapolated_solution();
+      TFEVectFunct3D extrapolated_velocity_vector(&this->systems_.front().velocitySpace_,
+                                                  (char*)"", (char*)"",
+                                                  extrapolated_solution_.block(0),
+                                                  extrapolated_solution_.length(0), 3);
+
+      // Construct now the corresponding fe_functions for local assembling
+      fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
+      fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
+      fe_functions[2] = extrapolated_velocity_vector.GetComponent(2);
+      }
+    }
 
     // assemble nonlinear matrices
     LocalAssembling3D
@@ -877,8 +887,8 @@ void Time_NSE3D::assemble_system()
                                  {false, false, false});
   }
 
-  Output::print<5>("Assembled the system matrix which will be passed to the ",
-                   "solver");
+  Output::info<5>("Assemble System", "Assembled the system matrix which"
+      " will be passed to the solver");
 }
 
 /**************************************************************************** */
@@ -890,6 +900,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 #else
   int my_rank = 0;
 #endif
+
   // compute, update and display defect and residuals
   compute_residuals();
 
@@ -915,8 +926,14 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 //  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
 //  }
 
+  /* Some parameters have to be set up at the first nonlinear iteration */
   if(iteration_counter == 0)
+  {
     initial_residual_ = normOfResidual;
+
+    // saves the solution from previous time step with nonActive of current step
+    this->old_solution_ = this->systems_.front().solution_;
+  }
 
   /** Parameters for stopping criteria (desired precision epsilon, max number
    *  of iteration, convergence rate, IMEX_scheme : if IMEX is used, we only
@@ -927,7 +944,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
   bool IMEX_scheme  = (db_["time_discretization"].is(4))*
-                      (this->current_step_>=2)*
+                      (this->current_step_>=3)*
                       (iteration_counter>0);
   bool slow_conv    = false;
 
