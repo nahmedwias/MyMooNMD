@@ -254,8 +254,15 @@ void Time_NSE3D::check_parameters()
  // Tell the user he is using IMEX
  if(db_["time_discretization"].is(4))
  {
-   Output::info<1>("check_parameters",
-                   "The IMEX scheme has been chosen as a time discretization scheme!\n");
+   if(solver_.is_using_multigrid())
+   {
+     ErrThrow("Multigrid with IMEX-scheme is not implemented yet");
+   }
+   else
+   {
+     Output::info<1>("check_parameters",
+                     "The IMEX scheme has been chosen as a time discretization scheme!\n");
+   }
  }
 
  if(TDatabase::TimeDB->TIME_DISC == 0)
@@ -814,21 +821,21 @@ void Time_NSE3D::assemble_nonlinear_term()
         s.u_.GetComponent(1),
         s.u_.GetComponent(2)};
 
-    if (db_["time_discretization"].is(4))
-    {
-      BlockVector IMEX_velocity = this->old_solution_;
-      IMEX_velocity.scale(-1.);
-      // IMEX_velocity = 2*u(n) - u(n-1)
-      IMEX_velocity.add_scaled(s.solution_,2.);
-
-      TFEVectFunct3D temporary(&s.velocitySpace_, (char*)"", (char*)"", IMEX_velocity.block(0),
-        IMEX_velocity.length(0), 3);
-
-      TFEFunction3D *fe_functions[3] =
-        { temporary.GetComponent(0),
-          temporary.GetComponent(1),
-          temporary.GetComponent(2)};
-    }
+//    if (db_["time_discretization"].is(4))
+//    {
+//      BlockVector IMEX_velocity = this->old_solution_;
+//      IMEX_velocity.scale(-1.);
+//      // IMEX_velocity = 2*u(n) - u(n-1)
+//      IMEX_velocity.add_scaled(s.solution_,2.);
+//
+//      TFEVectFunct3D temporary(&s.velocitySpace_, (char*)"", (char*)"", IMEX_velocity.block(0),
+//        IMEX_velocity.length(0), 3);
+//
+//      TFEFunction3D *fe_functions[3] =
+//        { temporary.GetComponent(0),
+//          temporary.GetComponent(1),
+//          temporary.GetComponent(2)};
+//    }
 
     // assemble nonlinear matrices
     LocalAssembling3D
@@ -1290,3 +1297,16 @@ void Time_NSE3D::output_problem_size_info() const
   Output::print("dof all     : ", setw(10), n_dof );
   Output::print("active dof  : ", setw(10), 3*nActive);
 }
+
+/**************************************************************************** */
+void Time_NSE3D::construct_extrapolated_solution()
+{
+  this->extrapolated_solution_.reset();
+  this->extrapolated_solution_ = this->old_solution_;
+  this->extrapolated_solution_.scale(-1.);
+  this->extrapolated_solution_.add_scaled(this->systems_.front().solution_,2.);
+  this->extrapolated_solution_.copy_nonactive(this->systems_.front().rhs_);
+  // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
+}
+
+
