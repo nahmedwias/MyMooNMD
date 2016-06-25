@@ -107,9 +107,10 @@ int main(int argc, char* argv[])
   }
   
   TCollection* coll = domain.GetCollection(It_Finest,0);
+  // coll->info();
   TOutput3D output(0,0,0,0,std::addressof(domain),coll);
   
-  output.WriteVtk(parmoon_db["output_basename"]);
+  output.WriteVtk("parmoon.vtk");
 
   // Write grid into a postscript file (before partitioning)
 //  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
@@ -182,6 +183,8 @@ int main(int argc, char* argv[])
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
+  
+  tnse3d.output(step,image);
 
   chrono_parts.print_time(std::string("setting up spaces, matrices and initial assembling"));
   chrono_parts.reset();
