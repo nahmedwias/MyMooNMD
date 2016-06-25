@@ -52,7 +52,8 @@ class CD2D
       TFEFunction2D fe_function;
       
       /** @brief constructor */
-      System_per_grid( const Example_CD2D& example, TCollection& coll );
+      System_per_grid( const Example_CD2D& example, TCollection& coll, 
+                       int ansatz_order );
 
       // Special member functions. Disable copy/move, set destructor to default.
       // Will be changed only when the underlying

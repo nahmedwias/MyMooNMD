@@ -140,7 +140,7 @@
 // 
 // void MovingTimeNSParamsVelo3D(double *in, double *out)
 // {
-//   if ( TDatabase::ParamDB->PROBLEM_TYPE == 3 )
+//   if ( TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3 )
 //   {
 //     out[0] = 0;
 //     out[1] = 0;
@@ -162,7 +162,7 @@
 //   
 // //   cout << phase << endl;
 //   
-//   if ( TDatabase::ParamDB->PROBLEM_TYPE == 3 )
+//   if ( TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3 )
 //   {
 //     out[0] = 0;
 //     out[1] = 0;

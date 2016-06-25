@@ -43,7 +43,7 @@ ParameterDatabase get_default_NSE3D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -159,6 +159,8 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     errors_()
 {
   this->db.merge(param_db, false);
+  this->check_parameters();
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -258,6 +260,12 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 void NSE3D::check_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
 
   // Some implementation/testing constraints on the used discretization.
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
@@ -343,7 +351,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      pressure_order = pressure_order*1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -514,6 +522,11 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
   }// endfor auto grid
 
   //copy non-actives from rhs to solution on finest grid
@@ -649,6 +662,10 @@ void NSE3D::assemble_non_linear_term()
       }
     }
 
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
     //TODO: Copying non-actives??
 
   }// endfor auto grid
@@ -701,13 +718,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    if(my_rank==0)
-    {
-      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
-                       " RES : ", normOfResidual, " Reduction : ",
-                       normOfResidual/initial_residual_);
-    }
-
     return true;
   }
   else

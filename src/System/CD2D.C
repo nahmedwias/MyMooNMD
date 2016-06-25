@@ -6,6 +6,7 @@
 #include <PostProcessing2D.h>
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
+#include <Upwind.h>
 #include <LocalProjection.h>
 
 ParameterDatabase get_default_CD2D_parameters()
@@ -24,9 +25,9 @@ ParameterDatabase get_default_CD2D_parameters()
 }
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
-                                       TCollection& coll)
+                                       TCollection& coll, int ansatz_order)
 : fe_space(&coll, (char*)"space", (char*)"cd2d fe_space", example.get_bc(0),
-           TDatabase::ParamDB->ANSATZ_ORDER, nullptr),
+           ansatz_order, nullptr),
            // TODO CB: Building the matrix here and rebuilding later is due to the
            // highly non-functional class TFEVectFunction2D (and TFEFunction2D,
            // which do neither provide default constructors nor working copy assignments.)
@@ -58,7 +59,8 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   // create the collection of cells from the domain (finest grid)
   TCollection *coll = domain.GetCollection(It_Finest, 0, reference_id);
   // create finite element space and function, a matrix, rhs, and solution
-  this->systems.emplace_back(this->example, *coll);
+  int ansatz_order = TDatabase::ParamDB->ANSATZ_ORDER;
+  this->systems.emplace_back(this->example, *coll, ansatz_order);
 
   outputWriter.add_fe_function(&this->get_function());
   
@@ -79,18 +81,63 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   // else multigrid
   
   auto mg = this->solver.get_multigrid();
-  if(mg->is_using_mdml())
-    ErrThrow("mdml for CD2D not yet implemented");
+  bool mdml = mg->is_using_mdml();
+  if(mdml)
+  {
+    // change the discretization to lowest order
+    /// @todo for mdml: is P1/Q1 the correct space on the other grids? Maybe 
+    /// what we really need is say Q3/P3, Q2/P2, Q1/P1 on the finest grid and 
+    /// Q1/P1 on all coarser grids.
+    if(ansatz_order == -1 || ansatz_order == 1)
+    {
+      // - using non conforming P1 already, it makes no sense to use another 
+      //   discretization on the finest grid. 
+      // - using conforming P1, we don't do another multigrid level with non 
+      //   conforming P1 elements on the finest grid, because this space is 
+      //   typically larger that conforming P1.
+      // Either way we just do regular multigrid
+      mdml = false;
+    }
+    else
+      ansatz_order = -1;
+  }
+  if(mdml)
+    /// @todo mdml for CD2D: We need a special assembling function which 
+    /// does not assemble the convection term. Instead one then calls an upwind 
+    /// method.
+    ErrThrow("mdml is currently not working.");
+  
+  // number of multigrid levels
+  size_t n_levels = mg->get_n_levels();
+  // index of finest grid
+  int finest = domain.get_ref_level(); // -> there are finest+1 grids
+  // index of the coarsest grid used in this multigrid environment
+  int coarsest = finest - n_levels + 1;
+  if(mdml)
+  {
+    coarsest++;
+  }
+  else
+  {
+    // only for mdml there is another matrix on the finest grid, otherwise
+    // the next system to be created is on the next coarser grid
+    finest--;
+  }
+  if(coarsest < 0 )
+  {
+    ErrThrow("the domain has not been refined often enough to do multigrid "
+             "on ", n_levels, " levels. There are only ",
+             domain.get_ref_level() + 1, " grid levels.");
+  }
   
   // Construct systems per grid and store them, finest level first
   std::list<BlockFEMatrix*> matrices;
-  size_t n_levels = mg->get_n_levels();
-  int finest = domain.get_ref_level();
-  int coarsest = finest - n_levels + 1;
+  // matrix on finest grid is already constructed
+  matrices.push_back(&systems.back().matrix);
   for (int grid_no = finest; grid_no >= coarsest; --grid_no)
   {
     TCollection *coll = domain.GetCollection(It_EQ, grid_no, reference_id);
-    systems.emplace_back(example, *coll);
+    systems.emplace_back(example, *coll, ansatz_order);
     //prepare input argument for multigrid object
     matrices.push_front(&systems.back().matrix);
   }
@@ -108,6 +155,20 @@ CD2D::~CD2D()
 /** ************************************************************************ */
 void CD2D::set_parameters()
 {
+  //set problem_type to CD if not yet set
+  if(!db["problem_type"].is(1))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 1;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to CD."
+          "It is now reset to the correct value for CD (=1).");
+      db["problem_type"] = 1;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION == 1)
   {//some kind of afc enabled
@@ -133,6 +194,10 @@ void CD2D::set_parameters()
 void CD2D::assemble()
 {
   LocalAssembling2D_type t = LocalAssembling2D_type::ConvDiff;
+  bool mdml = this->solver.is_using_multigrid()
+             && this->solver.get_multigrid()->is_using_mdml();
+  // in case of mdml, we need to change the local assembling, (not yet 
+  // implemented)
 
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : this->systems)
@@ -172,6 +237,13 @@ void CD2D::assemble()
         {
           ErrThrow("LP_FULL_GRADIENT needs to be one to use LOCAL_PROJECTION");
         }
+      }
+      
+      bool finest_grid = &systems.front() == &s;
+      if(mdml && !finest_grid)
+      {
+        UpwindForConvDiff(la.GetCoeffFct(), matrix, rhs_entries, fe_space, 
+                          nullptr, nullptr, false);
       }
 
       // copy Dirichlet values from rhs to solution vector (this is not really

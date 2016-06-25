@@ -30,15 +30,6 @@ class TDatabase;
 struct TParaDB
 {
   int VERSION;
-  // indicate what kind of problem is solved (T means time dependent)
-  //  0: not set
-  //  1: CD
-  //  2: TCD
-  //  3: Stokes
-  //  4: TStokes
-  //  5: NSE
-  //  6: TNSE
-  int PROBLEM_TYPE;
 
   //======================================================================
   /** parameters data output and input files                            */

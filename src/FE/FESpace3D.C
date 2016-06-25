@@ -2087,6 +2087,8 @@ TFESpace3D::~TFESpace3D()
 
   if(ElementForShape)
     delete[] ElementForShape;
+
+  delete[] HangingNodeArray;
 }
 
 /** return position of all dofs */

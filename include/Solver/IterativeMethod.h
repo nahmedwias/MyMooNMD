@@ -8,6 +8,7 @@
 #include <limits>
 #include <cmath>
 #include <chrono>
+#include <LoopInfo.h>
 #include <MooNMD_Io.h>
 
 /** @brief an abstract base class to describe iterative methods for solving
@@ -60,29 +61,24 @@ class IterativeMethod
     /** @brief damping factor (typically between 0 and 1) */
     double damping;
     
-    /** @brief the residual from the previous step */
-    double old_residual;
-    
-    /** @brief the residual before the iterative method starts */
-    double initial_residual;
-    
-    /** @brief save the starting time for output later 
-     * @todo this is file for sequential code, how about openmp and mpi?
-     */
-    std::chrono::high_resolution_clock::time_point start_time;
+    /** @brief for nicer output during the iteration */
+    LoopInfo loop_info;
     
     /** @brief a small helper function to reduce code duplication and to assure 
      * the same stopping criterion for all iterative methods.
-     * \todo include time measurements here for nicer output
      */
     bool converged(double current_residual, unsigned int current_iterate)
     {
+      if(current_iterate == 0)
+        this->loop_info.restart(this->name, current_residual);
       bool residual_small_enough = current_residual < this->residual_tolerance;
       bool sufficient_reduction = 
-        current_residual < this->residual_reduction * this->initial_residual;
+        current_residual < this->residual_reduction 
+                         * this->loop_info.get_initial_residual();
       bool enough_iterations = 
         current_iterate > this->min_n_iterations || this->min_n_iterations == 0;
-      bool stagnation = (current_residual > this->old_residual);
+      bool stagnation = 
+        (current_residual > this->loop_info.get_previous_residual());
       bool converged = (residual_small_enough || sufficient_reduction 
                         || stagnation) && enough_iterations;
       // reached maximum number of iterations
@@ -90,37 +86,16 @@ class IterativeMethod
         converged = true;
       
       // output
-      using namespace Output;
-      if(current_iterate > 0)
-        print<4>(this->get_name(), " iteration ", current_iterate, 
-                 "    residual: ", std::setprecision(12), current_residual,
-                 "    rate: ", current_residual/this->old_residual, 
-                 "    rate from beginning: ", 
-                 current_residual/this->initial_residual);
-      else
-        print<4>(this->get_name(), " iteration ", current_iterate, 
-                 "    residual: ", std::setprecision(12), current_residual);
-      
       if(stagnation)
-        warn("IterativeMethod", "residual increased: ", std::setprecision(12),
-             this->old_residual, " -> ", current_residual);
+        Output::warn("IterativeMethod", "residual increased: ", 
+                     std::setprecision(12), 
+                     this->loop_info.get_previous_residual(), " -> ",
+                     current_residual, ", at iteration ", current_iterate);
       if(converged)
-      {
-        using namespace std;
-        auto t = chrono::duration<double>(chrono::high_resolution_clock::now()
-                                          - this->start_time);
-        print<2>(this->get_name(), " iterations: ", setw(5), current_iterate,
-                 "  res: ", left, setprecision(10), setw(15), current_residual,
-                 "  red: ", setw(15), current_residual/this->initial_residual,
-                 "  red/step: ", setw(15), 
-                 pow(current_residual/this->initial_residual, 
-                     1./current_iterate),
-                 "  t[s]: ", setprecision(6), setw(8), t.count(), 
-                 "  t[s]/step: ", setw(8), t.count()/current_iterate
-                );
-      }
+        this->loop_info.finish(current_iterate, current_residual);
+      else
+        this->loop_info.print(current_iterate, current_residual);
       
-      this->old_residual = current_residual;
       return converged;
     }
     
@@ -130,9 +105,7 @@ class IterativeMethod
                     std::string name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
         residual_reduction(0.), divergence_factor(1.5), max_n_iterations(100),
-        min_n_iterations(0), restart(10), damping(1.0), 
-        old_residual(std::numeric_limits<double>::max()),
-        initial_residual(0.)
+        min_n_iterations(0), restart(10), damping(1.0), loop_info(name)
     {
     }
     
@@ -156,8 +129,7 @@ class IterativeMethod
      */
     virtual void update(const LinearOperator& A)
     {
-      old_residual = std::numeric_limits<double>::max();
-      initial_residual = 0.;
+      this->loop_info.restart(this->name, 0.0);
     };
 
     /** return absolute tolerance for stopping */

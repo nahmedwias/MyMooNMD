@@ -68,11 +68,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->VERSION;
       N_Param++;
     }
-    if (!strcmp(line, "PROBLEM_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->PROBLEM_TYPE;
-      N_Param++;
-    }
 
     if (!strcmp(line, "MAPFILE:"))
     {

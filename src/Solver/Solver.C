@@ -18,16 +18,16 @@ ParameterDatabase Solver<L, V>::default_solver_database()
   Output::print<3>("creating a default solver parameter database");
   ParameterDatabase db("default solver database");
   
-  db.add("solver_type", std::string("direct"),
+  db.add("solver_type", "direct",
          "Determine which kind of solver should be used. This can be an "
          "iterative or a direct solver", {"direct", "iterative"});
   
-  db.add("direct_solver_type", std::string("umfpack"),
+  db.add("direct_solver_type", "umfpack",
          "Determine which type of direct solver should be used. All of them "
          "are implemented in external libraries. ",
          {"umfpack", "pardiso", "mumps"});
   
-  db.add("iterative_solver_type", std::string("fgmres"),
+  db.add("iterative_solver_type", "fgmres",
          "Determine which type of iterative solver should be used.",
          {"jacobi", "sor", "ssor", "richardson", "cg", "cgs", "bi_cgstab", 
           "left_gmres", "right_gmres", "fgmres"});
@@ -62,7 +62,7 @@ ParameterDatabase Solver<L, V>::default_solver_database()
                  "consumption, smaller numbers typically mean more "
                  "iterations.", 1, 1e3);
   
-  db.add("preconditioner", std::string("no_preconditioner"),
+  db.add("preconditioner", "no_preconditioner",
          "Determine the used preconditioner. Note that some of these are "
          "specific for some problem types.",
          {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 

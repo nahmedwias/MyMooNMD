@@ -1,13 +1,6 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
-
 #include <Example_TimeNSE2D.h>
 #include <Time_NSE2D.h>
 #include <TimeDiscRout.h>
@@ -30,9 +23,6 @@ int main(int argc, char* argv[])
   // ======================================================================
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   TDomain Domain(argv[1], parmoon_db);
-  
-  if(TDatabase::ParamDB->PROBLEM_TYPE == 0)
-    TDatabase::ParamDB->PROBLEM_TYPE = 6;
 
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
