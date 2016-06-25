@@ -10,22 +10,21 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <LinAlg.h>
 #include <NSE2D.h>
-#include <Output2D.h>
-#include <MainUtilities.h>
-#include <LocalAssembling2D.h>
 #include <Example_NSE2D.h>
+#include <Chrono.h>
+#include <LoopInfo.h>
+#include <ParameterDatabase.h>
 
-#include <MooNMD_Io.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 // =======================================================================
 // main program
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  // start a stopwatch which measures time spent in program parts
+  Chrono chrono_parts;
+  
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
@@ -37,10 +36,7 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(argv[1], parmoon_db);
   
-  //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
-  if(!parmoon_db["problem_type"].is(3) && !parmoon_db["problem_type"].is(5))
-    parmoon_db["problem_type"] = 5;
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   
@@ -72,13 +68,20 @@ int main(int argc, char* argv[])
   
   ns.stopIt(0);
   
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold = 1; // full verbosity
+  loop_info.print(0, ns.getFullResidual());
+  
+  chrono_parts.print_time("setting up spaces, matrices, linear assemble");
+  chrono_parts.reset();
+  
   //======================================================================
   // nonlinear loop
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print<1>("nonlinear iteration step ", setw(3), k-1, "\t", 
-                     ns.getResiduals());
+    Output::print(); // new line for a new nonlinear iteration
     ns.solve();
     
     //no nonlinear iteration for Stokes problem
@@ -88,8 +91,15 @@ int main(int argc, char* argv[])
     ns.assemble_nonlinear_term();
     
     if(ns.stopIt(k))
+    {
+      loop_info.finish(k, ns.getFullResidual());
       break;
+    }
+    else
+      loop_info.print(k, ns.getFullResidual());
   } // end for k
+  
+  chrono_parts.print_time("solving procedure");
   
   ns.output();
   

@@ -219,18 +219,18 @@ class Parameter
     /// Which one is used depends on Parameter::type. The others are simply 
     /// not used.
     //@{
-    bool bool_value;
-    int int_value;
-    size_t unsigned_value;
-    double double_value;
-    std::string string_value;
+    bool bool_value = true;
+    int int_value = 0;
+    size_t unsigned_value = 0;
+    double double_value = 0.0;
+    std::string string_value = "";
     //@}
     
     /// @brief Access count
-    mutable std::size_t access_count;
+    mutable std::size_t access_count = 0;
 
     /// @brief Change count
-    std::size_t change_count;
+    std::size_t change_count = 0;
 
     /// @brief Parameter key
     std::string name;
@@ -244,7 +244,7 @@ class Parameter
     /// unused. For 'double' it is always true. For 'int' and 'size_t' it may
     /// or may not be set. If set, the respective std::set (int_range or 
     /// unsigned_range) is unused and instead the respective min/max are used.
-    bool range_is_an_interval;
+    bool range_is_an_interval = false;
     
     /// @name describing the range (valid values) of this parameter
     /// @brief Parameter range describing all valid parameter values
@@ -254,36 +254,30 @@ class Parameter
     /// used.
     //@{
     /// @brief if false, the range is {bool_value}, otherwise it is {true,false}
-    bool not_bool_value_allowed;
+    bool not_bool_value_allowed = true;
     /// @brief set of all possible integers for this parameter
     ///
     /// Even if the range is an interval, here all numbers are listed
-    std::set<int> int_range;
+    std::set<int> int_range = std::set<int>();
     /// @brief the range is the interval [int_min, int_max]
-    int int_min;
+    int int_min = 0;
     /// @brief the range is the interval [int_min, int_max]
-    int int_max;
+    int int_max = 0;
     /// @brief set of all possible `size_t`s for this parameter
     ///
     /// Even if the range is an interval, here all numbers are listed
-    std::set<size_t> unsigned_range;
+    std::set<size_t> unsigned_range = std::set<size_t>();
     /// @brief the range is the interval [unsigned_min, unsigned_max]
-    size_t unsigned_min;
+    size_t unsigned_min = 0;
     /// @brief the range is the interval [unsigned_min, unsigned_max]
-    size_t unsigned_max;
+    size_t unsigned_max = 0;
     /// @brief the range is the interval [min, max]
-    double double_min;
+    double double_min = 0.0;
     /// @brief the range is the interval [min, max]
-    double double_max;
+    double double_max = 0.0;
     /// @brief set of all possible strings for this parameter
-    std::set<std::string> string_range;
+    std::set<std::string> string_range = std::set<std::string>();
     //@}
-    
-    /// @brief set all members (except type) to some default values
-    /// 
-    /// This is called from the other constructors and produces less code. That
-    /// is basically the reason for this constructor.
-    void set_defaults(std::string name, std::string description);
 };
 
 #endif // __PARAMETER__

@@ -191,9 +191,9 @@ void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver,
                     const BlockVector& rhs, BlockVector& sol)
 {
   unsigned int verbosity = Output::getVerbosity();
-  Output::setVerbosity(1);
+  Output::suppressAll();
   velocity_solver->solve(rhs, sol);
-  Output::setVerbosity(verbosity);
+  Output::setVerbosity(verbosity); // reset verbosity for further output
 }
 
 /* ************************************************************************** */
