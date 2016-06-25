@@ -11,6 +11,8 @@
 #include <Time_NSE3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
+#include <TetGenMeshLoader.h>
+#include <Output3D.h>
 
 #include <sys/stat.h>
 
@@ -38,6 +40,7 @@ int main(int argc, char* argv[])
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
@@ -89,15 +92,24 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-//  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+  //  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
+  // domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
+  TTetGenMeshLoader tetgen(parmoon_db["mesh_tetgen_file"], parmoon_db);
+  tetgen.Generate(domain);
+  
+  
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
   {
     domain.RegRefineAll();
   }
+  
+  TCollection* coll = domain.GetCollection(It_Finest,0);
+  TOutput3D output(0,0,0,0,std::addressof(domain),coll);
+  
+  output.WriteVtk(parmoon_db["output_basename"]);
 
   // Write grid into a postscript file (before partitioning)
 //  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)

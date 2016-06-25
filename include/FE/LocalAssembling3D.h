@@ -143,9 +143,16 @@ class LocalAssembling3D
      */
     void set_parameters_for_nse(LocalAssembling3D_type type);
     
-    /** @brief 
+    /** Depending on the NSTYPE and SC_NONLIN_ITE_TYPE_SADDLE all parameters are 
+     * set within this function. 
+     * 
+     * For different discretization schemes: we tried to use different functions
+     * in order to keep the function definition smaller.
      */
+    /// standard case
     void set_parameters_for_tnse(LocalAssembling3D_type type);
+    /// SMAGORINSKY model
+    void set_parameters_for_tnse_smagorinsky(LocalAssembling3D_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.
