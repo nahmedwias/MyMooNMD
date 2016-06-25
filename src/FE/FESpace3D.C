@@ -2360,3 +2360,45 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
   } // endfor i
 } // end GetDOFPosition
 
+bool TFESpace3D::CheckMesh() const
+{
+  int N_DOF, *DOF=NULL, found;
+  TBaseCell *Cell;
+  FE3D feid;
+  TFE3D *fe=NULL;
+
+  for (int i=0;i<N_Cells;++i)
+  {
+    Cell = Collection->GetCell(i);
+
+    DOF = GlobalNumbers + BeginIndex[i];
+
+    feid = GetFE3D(i, Cell);
+    fe   = TFEDatabase3D::GetFE3D(feid);
+    N_DOF = fe->GetN_DOF();
+
+    found = 0;
+    for (int j=0;j<N_DOF;++j)
+    {
+      if ( DOF[j] < ActiveBound )
+      {
+        found = 1;
+        break;
+      }
+    }
+
+    if ( found == 0 )
+    {
+      Output::print("index: " , i, 
+                    "\n", Cell->GetVertex(0),
+                    "\n", Cell->GetVertex(1),
+                    "\n", Cell->GetVertex(2),
+                    "\n", Cell->GetVertex(3));
+      // Collection->info();      
+      return false;
+    }
+  }
+
+  return true;
+} 
+

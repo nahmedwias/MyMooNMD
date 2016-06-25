@@ -14,6 +14,92 @@
 // ======================================================================
 // compute turbulent viscosity for LES 
 // ======================================================================
+double frobeniusNormTensor(double *u, double *gradu)
+{
+  int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
+  double a11, a12, a13,a22, a23, a33;
+  double frobenius_norm_tensor;
+  
+  if(viscosityType==0)
+  { 
+    // no turbulent viscosity
+    return (0);
+  }
+  
+  // compute square of the Frobenius norm of the tensor using 
+  // deformation tensor
+  switch(viscosityType)
+  {
+    case 0: // 0.5*(grad(u) + grad(u)^T)
+      a11 = gradu[0]+gradu[0];
+      a12 = gradu[1]+gradu[3];
+      a13 = gradu[2]+gradu[6];
+      a22 = gradu[4]+gradu[4];
+      a23 = gradu[5]+gradu[7];
+      a33 = gradu[8]+gradu[8];
+      
+      frobenius_norm_tensor = 2*(a12*a12 + a13*a13 + a23*a23);
+      frobenius_norm_tensor += a11*a11 + a22*a22 + a33*a33;
+      frobenius_norm_tensor /= 4;
+      break;
+    case 1: // grad u form
+      frobenius_norm_tensor 
+         = gradu[0]*gradu[0] + gradu[1]*gradu[1] +
+           gradu[2]*gradu[2] + gradu[3]*gradu[3] + 
+           gradu[4]*gradu[4] + gradu[5]*gradu[5] + 
+           gradu[6]*gradu[6] + gradu[7]*gradu[7] +
+           gradu[8]*gradu[8];
+      break;
+    default:
+      ErrThrow("viscosity Type is ", viscosityType, " is not implemented so far");
+  }
+  return frobenius_norm_tensor;
+}
+
+double turbulentViscosity3D(double hK, double *u, double *gradu)
+{
+  /// compute Characteristic Filter Width
+  double filter_constant = TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;
+  double filter_power = TDatabase::ParamDB->FILTER_WIDTH_POWER;
+  double viscosity_constant = TDatabase::ParamDB->TURBULENT_VISCOSITY_CONSTANT;
+  
+  double delta;
+
+  if (filter_power==1)
+    delta = filter_constant * hK;
+  else
+    delta = filter_constant*pow(hK,filter_power);
+  
+  int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
+  double viscosity;
+  
+  double viscosity_power = TDatabase::ParamDB->TURBULENT_VISCOSITY_POWER;
+  double viscosity_sigma = TDatabase::ParamDB->TURBULENT_VISCOSITY_SIGMA;
+  // compute the frobenius norm tensor
+  double frobenius_norm_tensor=frobeniusNormTensor(u, gradu);
+  switch(viscosityType)
+  {
+    case 0:
+      viscosity = viscosity_constant * delta * delta * sqrt(frobenius_norm_tensor);
+      break;
+    case 1:      
+      viscosity = viscosity_constant * delta * delta * 
+                      pow(frobenius_norm_tensor, viscosity_power/2.0);
+      break;
+    case 2: // Layton SIAM J. Sci. Comput. 1996 
+            // nu = nu_0 |ln(h)|^(-2/3*(p-1)) h^sigma \|\nabla u\|^(p-2)
+      viscosity = viscosity_constant * pow(delta,viscosity_sigma) * 
+                 pow(frobenius_norm_tensor,(viscosity_power-2)/2.0)
+                 /pow(fabs(log(delta)),2*(viscosity_power-1)/3);
+      break;
+    default:
+      ErrThrow("Viscosity type: ", viscosityType, " is not implemented so far ", 
+                "implement them from TurbulentViscosity3D() .." );
+  }
+ //TODO: Implement and test all the models tested in the MooNMD (TurbulentViscosity3D)
+ // and remove the function itself
+  return (viscosity);
+}
 double TurbulentViscosity3D(double delta, double* gradU, double* u, 
 			    double* uConv, double* x, double* y, double* z, double proj_space)
 {
@@ -879,7 +965,7 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j, N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, mu, delta;
+  double u1, u2, u3, mu;
 
   MatrixA = LocMatrices[0];
   MatrixM = LocMatrices[1];
@@ -909,9 +995,10 @@ void TimeNSType1Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
 
   for(i=0;i<N_U;i++)
   {
@@ -1349,7 +1436,7 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j, N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, mu, delta;
+  double u1, u2, u3, mu;
 
   MatrixA = LocMatrices[0];
   MatrixM = LocMatrices[1];
@@ -1382,9 +1469,10 @@ void TimeNSType2Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
 
   for(i=0;i<N_U;i++)
   {
@@ -2162,28 +2250,26 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixM11Row;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j,N_U, N_P;
-  double c0, c1, c2, c3, mu, delta;
+  double c0, c1, c2, c3, mu;
   double u1, u2, u3;
 
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[4];
   MatrixA33 = LocMatrices[8];
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
+  MatrixM = LocMatrices[9];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2208,18 +2294,19 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
 
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    MatrixM11Row  = MatrixM[i];
+    // MatrixM22Row  = MatrixM22[i];
+    // MatrixM33Row  = MatrixM33[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -2247,8 +2334,8 @@ void TimeNSType3Smagorinsky3D(double Mult, double *coeff,
 
       val = Mult*(ansatz000*test000);
       MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      // MatrixM22Row[j] += val;
+      // MatrixM33Row[j] += val;
     } // endfor j
   } // endfor i
 
@@ -2289,20 +2376,20 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixMRow;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, mu, viscosity, delta;
+  double u1, u2, u3, mu, viscosity;
 
   MatrixA11 = LocMatrices[0];
   MatrixA12 = LocMatrices[1];
@@ -2313,12 +2400,10 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
   MatrixA31 = LocMatrices[6];
   MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
+  MatrixM = LocMatrices[9];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -2342,9 +2427,10 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -2359,9 +2445,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
     Matrix31Row = MatrixA31[i];
     Matrix32Row = MatrixA32[i];
     Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    MatrixMRow  = MatrixM[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -2413,9 +2497,7 @@ void TimeNSType3SmagorinskyDD3D(double Mult, double *coeff,
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
-      MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      MatrixMRow[j] += val;
     } // endfor j
   } // endfor i
 
@@ -3402,32 +3484,30 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
                 double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T, **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix22Row, *Matrix33Row;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixMRow;
   double ansatz100, ansatz010, ansatz001, ansatz000;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j,N_U, N_P;
   double c0, c1, c2, c3;
-  double u1, u2, u3, mu, delta;
+  double u1, u2, u3, mu;
 
   MatrixA11 = LocMatrices[0];
   MatrixA22 = LocMatrices[4];
   MatrixA33 = LocMatrices[8];
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
-  MatrixB1T  = LocMatrices[15];
-  MatrixB2T  = LocMatrices[16];
-  MatrixB3T  = LocMatrices[17];
+  MatrixM = LocMatrices[9];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T  = LocMatrices[13];
+  MatrixB2T  = LocMatrices[14];
+  MatrixB3T  = LocMatrices[15];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -3451,18 +3531,17 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
-
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
+  
   for(i=0;i<N_U;i++)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
     Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    MatrixMRow  = MatrixM[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -3488,9 +3567,7 @@ void TimeNSType4Smagorinsky3D(double Mult, double *coeff,
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
-      MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      MatrixMRow[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];
@@ -3546,20 +3623,20 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
   double **MatrixA33;
-  double **MatrixM11, **MatrixM22, **MatrixM33;
+  double **MatrixM;
   double **MatrixB1, **MatrixB2,  **MatrixB3;
   double **MatrixB1T, **MatrixB2T,  **MatrixB3T;
   double *Rhs1, *Rhs2, *Rhs3, val;
   double *Matrix11Row, *Matrix12Row, *Matrix13Row, *Matrix21Row;
   double *Matrix22Row, *Matrix23Row, *Matrix31Row, *Matrix32Row;
   double *Matrix33Row;
-  double *MatrixM11Row, *MatrixM22Row, *MatrixM33Row;
+  double *MatrixMRow;
   double *MatrixRow1, *MatrixRow2, *MatrixRow3;
   double ansatz000, ansatz100, ansatz010, ansatz001;
   double test000, test100, test010, test001;
   double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
   int i,j,N_U, N_P;
-  double c0, c1, c2, c3, delta;
+  double c0, c1, c2, c3;
   double u1, u2, u3, mu, viscosity;
 
   MatrixA11 = LocMatrices[0];
@@ -3571,15 +3648,13 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
   MatrixA31 = LocMatrices[6];
   MatrixA32 = LocMatrices[7];
   MatrixA33 = LocMatrices[8];
-  MatrixM11 = LocMatrices[9];
-  MatrixM22 = LocMatrices[10];
-  MatrixM33 = LocMatrices[11];
-  MatrixB1  = LocMatrices[12];
-  MatrixB2  = LocMatrices[13];
-  MatrixB3  = LocMatrices[14];
-  MatrixB1T = LocMatrices[15];
-  MatrixB2T = LocMatrices[16];
-  MatrixB3T = LocMatrices[17];
+  MatrixM = LocMatrices[9];
+  MatrixB1  = LocMatrices[10];
+  MatrixB2  = LocMatrices[11];
+  MatrixB3  = LocMatrices[12];
+  MatrixB1T = LocMatrices[13];
+  MatrixB2T = LocMatrices[14];
+  MatrixB3T = LocMatrices[15];
 
   Rhs1 = LocRhs[0];
   Rhs2 = LocRhs[1];
@@ -3603,9 +3678,10 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
   u2 = param[1]; // u2old
   u3 = param[2]; // u3old
 
-  delta =  CharacteristicFilterWidth(hK);
-  mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
-                           -4711);
+  // double delta =  CharacteristicFilterWidth(hK);
+  // mu = TurbulentViscosity3D(delta,&param[3],&param[0],&param[0],&param[12],&param[13],&param[14],
+  //                         -4711);
+  mu = turbulentViscosity3D(hK, &param[0], &param[3]);
   mu = mu/2.0;
   viscosity = c0+mu;
 
@@ -3620,9 +3696,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
     Matrix31Row = MatrixA31[i];
     Matrix32Row = MatrixA32[i];
     Matrix33Row = MatrixA33[i];
-    MatrixM11Row  = MatrixM11[i];
-    MatrixM22Row  = MatrixM22[i];
-    MatrixM33Row  = MatrixM33[i];
+    MatrixMRow  = MatrixM[i];
 
     test100 = Orig0[i];
     test010 = Orig1[i];
@@ -3674,9 +3748,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
       Matrix33Row[j] += Mult * val;
 
       val = Mult*(ansatz000*test000);
-      MatrixM11Row[j] += val;
-      MatrixM22Row[j] += val;
-      MatrixM33Row[j] += val;
+      MatrixMRow[j] += val;
     } // endfor j
 
     MatrixRow1 = MatrixB1T[i];
