@@ -119,6 +119,10 @@ class TFESpace3D : public TFESpace
     /** return position of all dofs */
     void GetDOFPosition(double *x, double *y, double *z) const;
 
+    /**
+     * velocity space, if there is a element that only has dirichlet dof's??
+     */
+    bool CheckMesh() const;
 
 };
 
