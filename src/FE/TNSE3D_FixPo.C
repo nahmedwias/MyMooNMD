@@ -51,7 +51,7 @@ double frobeniusNormTensor(double *u, double *gradu)
            gradu[8]*gradu[8];
       break;
     default:
-      ErrThrow("viscosity Type is ", viscosityType, " is not implemented so far");
+      ErrThrow("Turbulent viscosity tnsor: ", viscosityTensor, " is not implemented so far");
   }
   return frobenius_norm_tensor;
 }
