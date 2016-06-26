@@ -16,11 +16,11 @@
 // ======================================================================
 double frobeniusNormTensor(double *u, double *gradu)
 {
-  int viscosityType = TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE;
+  int viscosityTensor = TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
   double a11, a12, a13,a22, a23, a33;
   double frobenius_norm_tensor;
   
-  if(viscosityType==0)
+  if(viscosityTensor==0)
   { 
     // no turbulent viscosity
     return (0);
@@ -28,7 +28,7 @@ double frobeniusNormTensor(double *u, double *gradu)
   
   // compute square of the Frobenius norm of the tensor using 
   // deformation tensor
-  switch(viscosityType)
+  switch(viscosityTensor)
   {
     case 0: // 0.5*(grad(u) + grad(u)^T)
       a11 = gradu[0]+gradu[0];
