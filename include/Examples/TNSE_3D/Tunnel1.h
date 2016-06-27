@@ -220,7 +220,7 @@ void U1BoundValue(double x, double y, double z, double &value)
   zmax3= 5.583052254; zmin3= -5.576516723999999;
   
 
- int bbox3   =boundBox (x,y,z,xmin3,xmax3,ymin3,ymax3,zmin3,zmax3);
+// int bbox3   =boundBox (x,y,z,xmin3,xmax3,ymin3,ymax3,zmin3,zmax3);
  //int bdcomp3=boundcomp(x,y,z,nx3,ny3,nz3,px3,py3,pz3);
   
   //NOTE: we do not have the right values to identify the plane

@@ -1450,5 +1450,7 @@ void LocalAssembling3D::set_parameters_for_tnse_smagorinsky(LocalAssembling3D_ty
                    " not supported.");
       }
      break;
+        default:
+          ErrThrow("Unknown LocalAssembling3D_type");
   }
 }

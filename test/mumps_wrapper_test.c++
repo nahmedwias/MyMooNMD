@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     //now create BlockVectors to try the solver with
     BlockVector rhs(nsemat ,true);
     BlockVector sol(nsemat, false);
-    for(int i =0; i<rhs.length(); ++i)
+    for(unsigned int i =0; i<rhs.length(); ++i)
     {//fill rhs with ones
       rhs.at(i) = 1;
     }
