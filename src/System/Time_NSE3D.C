@@ -813,24 +813,19 @@ void Time_NSE3D::assemble_nonlinear_term()
 
     TFEFunction3D *fe_functions[3] = {nullptr, nullptr,nullptr};
 
-    // General case, no IMEX-scheme (=4), business as usual
-    if(!db_["time_discretization"].is(4))
+    // The assembly with the extrapolated velocity of IMEX_scheme begins
+    // at step 3
+    bool imex_scheme = (db_["time_discretization"].is(4)*(this->current_step_>=3));
+
+    // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
+    if(!imex_scheme)
     {
       fe_functions[0] = s.u_.GetComponent(0);
       fe_functions[1] = s.u_.GetComponent(1);
       fe_functions[2] = s.u_.GetComponent(2);
     }
-    else if(db_["time_discretization"].is(4))
+    else
     {
-
-      if (this->current_step_<=3) // for the first step, no IMEX
-      {
-        fe_functions[0] = s.u_.GetComponent(0);
-        fe_functions[1] = s.u_.GetComponent(1);
-        fe_functions[2] = s.u_.GetComponent(2);
-      }
-      else
-      {
       // construct the extrapolated solution 2*u(t-1)-u(t-2) in case of IMEX-scheme
       // Note : in this function, the non active Dofs are taken care of.
       // Namely, extrapolated_solution takes the nonActive of the current Rhs.
@@ -844,7 +839,7 @@ void Time_NSE3D::assemble_nonlinear_term()
       fe_functions[0] = extrapolated_velocity_vector.GetComponent(0);
       fe_functions[1] = extrapolated_velocity_vector.GetComponent(1);
       fe_functions[2] = extrapolated_velocity_vector.GetComponent(2);
-      }
+
     }
 
     // assemble nonlinear matrices
@@ -1077,7 +1072,6 @@ void Time_NSE3D::solve()
 
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
        s.p_.project_into_L20();
-
 }
 
 /**************************************************************************** */
