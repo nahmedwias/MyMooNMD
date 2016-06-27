@@ -351,6 +351,25 @@ class Time_NSE3D
 
     //// getters
 
+    // copy from NSE3D
+    const TFEVectFunct3D& get_velocity() const
+    { return this->systems_.front().u_; }
+
+    // copy from NSE3D
+    TFEVectFunct3D& get_velocity()
+    { return this->systems_.front().u_; }
+
+    // copy from NSE3D
+    TFEFunction3D *get_velocity_component(int i);
+
+    // copy from NSE3D
+    const TFEFunction3D& get_pressure() const
+    { return this->systems_.front().p_; }
+
+    // copy from NSE3D
+    TFEFunction3D& get_pressure()
+    { return this->systems_.front().p_; }
+
     /// Get the velocity space.
     const TFESpace3D     & get_velocity_space() const
     { return this->systems_.front().velocitySpace_; }

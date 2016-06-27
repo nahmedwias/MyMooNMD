@@ -2,3 +2,6 @@
 documentation/html/
 # files created by KDevelop 
 \.kdev4$
+\.cproject
+\.project
+\.settings/

@@ -16,11 +16,17 @@
 #ifndef COILED_PIPE_H_
 #define COILED_PIPE_H_
 
+#include <cmath>
+#include <iostream>
 #include <cstddef>
+#include <memory>
 #include <vector>
+#include <FEVectFunct3D.h>
+#include <Domain.h>
 
 //forwared declaration
 class TCollection;
+class TDomain;
 
 namespace CoiledPipe
 {
@@ -109,6 +115,118 @@ void compute_position_in_coiled_pipe(
  * it takes care of the coiling of the pipe.
  */
 void coil_pipe_helically(TCollection *coll);
+
+/**
+ * Collect all cells which are cut by the plane into a std::vector of pointers.
+ *
+ * There is no check applied, whether the plane parameters are reasonable.
+ *
+ * @param coll the collection which has the considered cells
+ * @param posPlane position vector of the plane
+ * @param normalPlane normal vector of the plane
+ * @return vector of pointers to the cells which are cut
+ */
+std::vector<TBaseCell*> getCellsAtPlane(const TCollection* coll,
+								 	 	const TVertex* posPlane,
+										const TVertex* normalPlane);
+
+/**
+ * This struct is only used here, to hold
+ * the geometrical information of a TVertex
+ * and a pointer to an associated TBaseCell.
+ */
+struct VertexValues{
+  /// unique index
+  int index;
+
+  /// straight coordinates
+  double origX, origY, origZ;
+
+  /// coiled coordinates
+  double coiledX, coiledY, coiledZ;
+
+  /// pointer to one associated cell
+  TBaseCell* myCell = nullptr;
+
+  /// default constructor
+  VertexValues() = default;
+
+  /**
+   * Constructor to initialize the vertex with
+   * an index and the straight coordinates.
+   *
+   * The coiled coordinates will be computed and set.
+   *
+   * @param index
+   * @param x
+   * @param y
+   * @param z
+   */
+  VertexValues(int index, double x, double y, double z):
+	  index(index), origX(x), origY(y), origZ(z),
+	  coiledX(0.), coiledY(0.), coiledZ(0.)
+  {}
+
+  /// default destructor
+  ~VertexValues() = default;
+
+  /**
+   * Get the straight coordinates all at once.
+   *
+   * @param[out] x straight x coordinate
+   * @param[out] y straight y coordinate
+   * @param[out] z straight z coordinate
+   */
+  void GetCoords( double &x, double &y, double &z ) const
+  {
+	x = origX;
+	y = origY;
+	z = origZ;
+  }
+
+  /**
+   * Get the coiled coordinates all at once.
+   *
+   * @param[out] x coiled x coordinate
+   * @param[out] y coiled y coordinate
+   * @param[out] z coiled z coordinate
+   */
+  void GetCoiledCoords( double &x_coiled, double &y_coiled, double &z_coiled) const
+  {
+	x_coiled = coiledX;
+	y_coiled = coiledY;
+	z_coiled = coiledZ;
+  }
+
+};
+
+/**
+ * Checks whether a give vertex is contained by one of the given cells.
+ *
+ * This sets the VertexValues::myCell attribute to the pointer of the first found cell.
+ *
+ * @param[in] cells vector of pointers to cells
+ * @param[in,out] vertex single vertex to check against the cells
+ */
+void matchVertexToCells(const std::vector<TBaseCell*> &cells, VertexValues &vertex);
+
+/**
+ * Write the velocity of the input cells to a file.
+ *
+ * If the file specified by filename is already taken, the data will be appended.
+ * Otherwise the file will be created.
+ *
+ * @param cellIndices[in] vector of cells
+ * @param list[in,out] a list of vertices
+ * @param u[in] FE function of the velocity
+ * @param p[in] FE function of the pressure
+ * @param filename[in] name of the output file
+ */
+void writeVelocityOfCells(const std::vector<TBaseCell*> &cells,
+						  std::vector<CoiledPipe::VertexValues> &list,
+						  const TFEVectFunct3D &u,
+						  TFEFunction3D &p,
+						  const std::string &filename);
 
 }
 

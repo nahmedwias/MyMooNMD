@@ -185,6 +185,82 @@ int main(int argc, char* argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
+  size_t planeSegment = parmoon_db["twisted_pipe_planeSegment"];
+
+  // variable zPlane
+  double zPlane = 0.;
+
+  if (planeSegment < n_segments_inflow)
+  {//inflow part
+	  zPlane = (double) planeSegment / n_segments_inflow * l_inflow;
+  }
+  else if (planeSegment < n_segments_inflow + n_twists * n_segments_per_twist )
+  {//twisted part
+	  size_t i_twist = planeSegment - n_segments_inflow;
+	  zPlane = l_inflow + (double) i_twist / (n_twists * n_segments_per_twist)
+			   * (drift_z - l_inflow - l_outflow);
+  }
+  else
+  {//outflow part
+	  size_t i_out = planeSegment - n_segments_inflow - n_twists * n_segments_per_twist;
+	  zPlane = l_inflow + (drift_z - l_inflow - l_outflow)
+			  + (double) i_out / n_segments_outflow * l_outflow;
+  }
+
+  // plane with position vector and normal vector
+  TVertex*  posPlane = new TVertex(0. , 0., zPlane);
+  TVertex* normPlane = new TVertex(0., 0., 1.);
+
+  // copy the straight pipe collection
+  TCollection* straightColl = domain.GetCollection(It_Finest, 0);
+  std::vector<TBaseCell*> cells = CoiledPipe::getCellsAtPlane(straightColl, posPlane, normPlane);
+
+  // discretization of the plane
+  // it will be a square of height = width = tube_radius
+  int discN = 100;
+  double h = 2*tube_radius/(discN-1);
+
+  std::vector<CoiledPipe::VertexValues> vertexList;
+
+  // some points in the plane
+  for (int i = 0; i < discN; ++i)
+  {
+	double xCoord = -tube_radius + i*h;
+
+	for (int j = 0; j < discN; ++j)
+	{
+	  double yCoord = -tube_radius + j*h;
+
+	  // if the point is in the tube
+	  if ( xCoord*xCoord + yCoord*yCoord < tube_radius*tube_radius)
+	  {
+		// already swapped x and z, because else the coiling of these
+		// vertices is going wrong
+	    CoiledPipe::VertexValues p(j+i*discN, xCoord,
+	    						   yCoord, zPlane);
+#ifdef _MPI
+	    double x, y, z;
+
+	    p.GetCoords(x, y, z);
+
+	    for (TBaseCell* cell : cells)
+	    {
+	    	if ( cell->PointInCell(x, y, z) )
+	    	{
+#endif
+	    		p.origZ = p.origX;
+	    		p.origX = zPlane - CoiledPipe::GeoConsts::l_inflow;
+
+	    		vertexList.push_back(p);
+#ifdef _MPI
+	    		break;
+	    	} // end if
+	    }// end for cells
+#endif
+	  }
+	}
+  }
+
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, parmoon_db, example, maxSubDomainPerDof);
@@ -276,6 +352,23 @@ int main(int argc, char* argv[])
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
       tnse3d.output(step,image);
+
+      if (cells.empty())
+      {
+     	Output::print<2>("No cells found at zPlane = ", zPlane);
+      }
+      else
+      {
+        Output::print<2>(cells.size(), " cells found");
+
+        std::string filename = std::string("testVelocity")
+        	  	  	  	  	 + std::string(".txt");
+
+        CoiledPipe::writeVelocityOfCells(cells, vertexList,
+     	  	 	 	 	 	 	 	     tnse3d.get_velocity(),
+  									     tnse3d.get_pressure(),
+  									     filename);
+      }
 
     } // end of subtime loop
   } // end of time loop

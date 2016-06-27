@@ -165,9 +165,11 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     errors_()
 {
   this->db.merge(param_db, false);
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
+
   // set the velocity and pressure spaces
   // this function returns a pair which consists of 
   // velocity and pressure order
@@ -198,6 +200,7 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     {
       // ...lie down the cell collection by swapping its vertices x and z coords
       CoiledPipe::swap_x_and_z_coordinates(coll);
+
       // ...and coil up the pipe by replacing the vertices' coords
       CoiledPipe::coil_pipe_helically(coll);
     }

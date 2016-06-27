@@ -297,6 +297,18 @@ class TBaseCell
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y) = 0;
 
+    /**
+     * @brief return whether this cells gets cut by a plane
+     * defined by p and n, where p is the position vector and n the normal vector
+     *
+     * @param p position vector of the plane
+     * @param n normal vector of the plane
+     * @return whether plane cuts this cell
+     *
+     * @author Felix Anker
+     */
+    virtual bool PlaneCutsCell(const TVertex* p, const TVertex* n) const = 0;
+
 #ifdef __3D__
     virtual bool PointInCell(double X, double Y, double Z) = 0;
 

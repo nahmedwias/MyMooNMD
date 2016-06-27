@@ -277,4 +277,287 @@ void coil_pipe_helically(TCollection *coll)
   }
 }
 
+std::vector<TBaseCell*> getCellsAtPlane(const TCollection* coll,
+									    const TVertex* posPlane,
+									    const TVertex* normalPlane)
+{
+  // get all pointers of cells that lay in the specified plane
+  std::vector<TBaseCell*> cells;
+
+  int N_Cells = coll->GetN_Cells();
+
+  // iterate over cells in mesh
+  for(int i = 0 ; i < N_Cells; ++i)
+  {
+	  TBaseCell* cell = coll->GetCell(i);
+
+#ifdef _MPI
+	  // ignore halo cells to avoid double entries
+	  if (cell->IsHaloCell())
+	  {
+		  continue;
+	  }
+#endif
+
+	  // are you at the plane?
+	  if ( cell->PlaneCutsCell(posPlane, normalPlane) )
+	  {
+		  // copy the pointer to the cell into the vector
+		  cells.push_back(cell);
+	  }
+  }
+
+  return cells;
+}
+
+void matchVertexToCells(const std::vector<TBaseCell*> &cells,
+						VertexValues &vertex)
+{
+  // get the straight coordinates
+  double x, y, z;
+  vertex.GetCoords(x, y, z);
+
+  // get the coiled coordinates
+  double x_coiled, y_coiled, z_coiled;
+  compute_position_in_coiled_pipe(x, y, z, x_coiled, y_coiled, z_coiled);
+
+  // set the coiled coordinates for this vertex
+  vertex.coiledX = x_coiled;
+  vertex.coiledY = y_coiled;
+  vertex.coiledZ = z_coiled;
+
+  // iterate over all given cells
+  for (TBaseCell* coiledCell : cells)
+  {
+	// if the vertex is in this cell
+    if ( coiledCell->PointInCell(x_coiled, y_coiled, z_coiled) )
+    {
+      // associate the found cell with this vertex
+      vertex.myCell = coiledCell;
+
+      // one cell is enough in continuous spaces
+      break;
+    } // end if
+  }// end for cells
+
+  // if we still have no cell found our vertex is not in the mesh
+  // which should not happen
+  if (vertex.myCell == nullptr)
+  {
+    ErrThrow(vertex.index, " ", x, " ", y, " ", z,
+    		 " ", x_coiled, " ", y_coiled, " ", z_coiled,
+    		 " No cell contains this vertex.");
+  }
+}
+
+void writeVelocityOfCells(const std::vector<TBaseCell*> &cells,
+						  std::vector<CoiledPipe::VertexValues> &list,
+						  const TFEVectFunct3D &u,
+						  TFEFunction3D &p,
+						  const std::string &filename)
+{
+
+#ifdef _MPI
+  int my_rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  TCollection* coiledColl = u.GetFESpace3D()->GetCollection();
+  TFEFunction3D* u0 = u.GetComponent(0);
+  TFEFunction3D* u1 = u.GetComponent(1);
+  TFEFunction3D* u2 = u.GetComponent(2);
+
+  // x, y, z
+  // x_coiled, y_coiled, z_coiled
+  // ux, uy, uz
+  // p = 10 values
+  int numDatum = 10;
+
+  int* allListSizes = new int[size];
+  int* allDataSizes = new int[size];
+
+  int myListSize = list.size();
+
+  int myDataSize = myListSize*numDatum;
+
+  // send the size of each list
+  MPI_Gather(&myListSize, 1, MPI_INT,
+		     allListSizes, 1, MPI_INT,
+			 0, MPI_COMM_WORLD);
+
+  int sumListSizes = 0;
+
+  if (my_rank == 0)
+  {
+	  for (int i = 0; i < size; ++i)
+	  {
+		  allDataSizes[i] = allListSizes[i] * numDatum;
+		  sumListSizes += allListSizes[i];
+	  }
+  }
+
+  // send buffer of each process
+  std::vector<double> myData(myDataSize);
+
+  // recieve buffer of rank = 0
+  std::vector<double> allData;
+
+  if (my_rank == 0)
+  {
+	allData.resize(sumListSizes * numDatum, -4711);
+  }
+
+  double velocity[3] = {0., 0., 0.};
+  double pressure = 0.;
+
+  double x = 0., y = 0., z = 0.;
+
+  // iterate over vertices in list
+  for (unsigned j = 0; j < list.size(); j++)
+  {
+	  VertexValues* vertex = &(list[j]);
+
+	  // if the vertex was already found in one of the cells
+	  // ignore other cells which might contain this vertex too
+	  if (vertex->myCell == nullptr)
+	  {
+		matchVertexToCells(cells, *vertex);
+	  }
+
+	  vertex->GetCoords(x, y, z);
+
+	  TBaseCell* coiledCell = vertex->myCell;
+	  int ci = coiledColl->GetIndex(coiledCell);
+
+	  double x_coiled, y_coiled, z_coiled;
+	  vertex->GetCoiledCoords(x_coiled, y_coiled, z_coiled);
+
+	  // get velocity
+	  u0->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity);
+	  u1->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity+1);
+	  u2->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity+2);
+
+	  p.FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, &pressure);
+
+	  myData.at(j*numDatum    ) = x;
+	  myData.at(j*numDatum + 1) = y;
+	  myData.at(j*numDatum + 2) = z;
+	  myData.at(j*numDatum + 3) = x_coiled;
+	  myData.at(j*numDatum + 4) = y_coiled;
+	  myData.at(j*numDatum + 5) = z_coiled;
+	  myData.at(j*numDatum + 6) = velocity[0];
+	  myData.at(j*numDatum + 7) = velocity[1];
+	  myData.at(j*numDatum + 8) = velocity[2];
+	  myData.at(j*numDatum + 9) = pressure;
+  }
+
+  int* displacements = new int[size];
+
+  displacements[0] = 0;
+
+  for (int i = 1; i < size; ++i)
+  {
+	  displacements[i] = displacements[i-1] + allDataSizes[i-1];
+  }
+
+
+  MPI_Gatherv( &(myData[0]), myDataSize, MPI_DOUBLE,
+		       &(allData[0]), allDataSizes, displacements, MPI_DOUBLE,
+			   0, MPI_COMM_WORLD);
+
+  delete[] allListSizes;
+  delete[] allDataSizes;
+  delete[] displacements;
+
+  if(my_rank == 0)
+  {
+	  std::ofstream outfile;
+
+	  outfile.open(filename.c_str(), std::ios::app);
+
+	  outfile << "# Time step:" << TDatabase::TimeDB->CURRENTTIME << "\n";
+
+	  for (int i = 0; i < sumListSizes; ++i)
+	  {
+		  outfile << TDatabase::TimeDB->CURRENTTIME << "\t";
+
+		  for (int datum = 0; datum < numDatum; ++datum)
+		  {
+			  outfile << allData[i*numDatum + datum] << "\t";
+		  }
+
+		  outfile << "\n";
+	  }
+
+	  outfile << "\n\n";
+  }
+
+  delete u0;
+  delete u1;
+  delete u2;
+
+#else
+  std::ofstream outfile;
+  outfile.open(filename.c_str(), std::ios::app);
+
+  double velocity[3] = {0., 0., 0.};
+  double pressure = 0.;
+
+  double x = 0., y = 0., z = 0.;
+
+  TCollection* coiledColl = u.GetFESpace3D()->GetCollection();
+  TFEFunction3D* u0 = u.GetComponent(0);
+  TFEFunction3D* u1 = u.GetComponent(1);
+  TFEFunction3D* u2 = u.GetComponent(2);
+
+  // iterate over vertices in list
+  for (unsigned j = 0; j < list.size(); j++)
+  {
+    VertexValues* vertex = &(list[j]);
+
+	// if the vertex was already found in one of the cells
+	// ignore other cells which might contain this vertex too
+	if (vertex->myCell == nullptr)
+	{
+	  matchVertexToCells(cells, *vertex);
+	}
+
+	vertex->GetCoords(x, y, z);
+
+	TBaseCell* coiledCell = vertex->myCell;
+	int ci = coiledColl->GetIndex(coiledCell);
+
+	double x_coiled, y_coiled, z_coiled;
+
+	vertex->GetCoiledCoords(x_coiled, y_coiled, z_coiled);
+
+	// get velocity
+	u0->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity);
+	u1->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity+1);
+	u2->FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, velocity+2);
+
+	p.FindValueLocal(coiledCell, ci, x_coiled, y_coiled, z_coiled, &pressure);
+
+	outfile << TDatabase::TimeDB->CURRENTTIME << "\t"
+		    << x << "\t"
+		    << y << "\t"
+		    << z << "\t"
+		    << x_coiled << "\t"
+		    << y_coiled << "\t"
+		    << z_coiled << "\t"
+		    << velocity[0] << "\t"
+		    << velocity[1] << "\t"
+		    << velocity[2] << "\t"
+		    << pressure << "\n";
+  } // end for list
+
+  outfile << "\n\n";
+
+  delete u0;
+  delete u1;
+  delete u2;
+
+#endif
+}
+
 }
