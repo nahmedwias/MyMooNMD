@@ -92,11 +92,10 @@ int main(int argc, char* argv[])
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
-  //  domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE);
-  // domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
+   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
 
-  TTetGenMeshLoader tetgen(parmoon_db["mesh_tetgen_file"], parmoon_db);
-  tetgen.Generate(domain);
+//  TTetGenMeshLoader tetgen(parmoon_db["mesh_tetgen_file"], parmoon_db);
+//  tetgen.Generate(domain);
   
   
   // Do initial domain refinement
