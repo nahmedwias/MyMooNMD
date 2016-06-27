@@ -1010,6 +1010,127 @@ int TGridCell::LineMidT(int J_i, int SJ_j, double &T_0, double &T_1)
 }
 #endif
 
+/**
+ * The main idea is to check, whether all points of the
+ * cell lay on the same side of the plane spanned by p and n.
+ * If this is the case, then the plane does not cut the cell.
+ *
+ */
+bool TGridCell::PlaneCutsCell(const TVertex* p, const TVertex* n) const
+{
+  bool cuts = false;
+
+  // current cell vertex coordinates
+  double xVert = 0., yVert = 0.;
+#ifdef __3D__
+  double zVert = 0.;
+#endif
+
+  // get coordinates of the position vector
+  double xPos = 0., yPos = 0.;
+#ifdef __3D__
+  double zPos = 0.;
+#endif
+
+  p->GetCoords(xPos, yPos
+#ifdef __3D__
+		     , zPos
+#endif
+			   );
+
+  // get coordinates of the normal vector
+  double xNormal = 0., yNormal = 0.;
+#ifdef __3D__
+  double zNormal = 0.;
+#endif
+
+  n->GetCoords(xNormal, yNormal
+#ifdef __3D__
+		     , zNormal
+#endif
+			   );
+
+  int sign = 0;
+
+  // treat the first vertex separately to initialize
+  // the sign value
+  TVertex* vert = Vertices[0];
+
+  vert->GetCoords(xVert, yVert
+#ifdef __3D__
+		        , zVert
+#endif
+			     );
+
+  // dot product
+  double dp = (xVert - xPos) * xNormal
+		    + (yVert - yPos) * yNormal
+#ifdef __3D__
+		    + (zVert - zPos) * zNormal
+#endif
+		    ;
+
+  // unlikely
+  if (dp == 0.)
+  {
+	  cuts = true;
+  }
+  // "above" plane
+  else if (dp > 0)
+  {
+	  sign = 1;
+  }
+  // dp < 0, "below" plane
+  else
+  {
+	  sign = -1;
+  }
+
+  // iterate over every but the first vertex of the cell
+  // as long as we didn't find the cut
+  for(unsigned i = 1; i < Vertices.size() && !cuts; ++i)
+  {
+	vert = Vertices[i];
+
+	vert->GetCoords(xVert, yVert
+#ifdef __3D__
+				  , zVert
+#endif
+					);
+
+	/*
+	 * Calculate whether this vertex is
+	 * "above" (> 0) or "below" (< 0) the plane
+	 * using the standard dot product.
+	 *
+	 * If the dot product is zero, then the vertex is in the plane
+	 * and this will return true.
+	 */
+
+	// dot product
+	double dp = (xVert - xPos) * xNormal
+			  + (yVert - yPos) * yNormal
+#ifdef __3D__
+			  + (zVert - zPos) * zNormal
+#endif
+			  ;
+
+	// unlikely
+	bool inPlane = (dp == 0.);
+
+	// other side of the plane
+	bool otherSide = (dp > 0 && sign == -1) || (dp < 0 && sign == 1);
+
+	if (inPlane || otherSide)
+	{
+		cuts = true;
+	}
+
+  } // end for
+
+  return cuts;
+}
+
 bool TGridCell::PointInCell(double X, double Y)
 {
   int i, j, N_ = RefDesc->GetN_OrigEdges();

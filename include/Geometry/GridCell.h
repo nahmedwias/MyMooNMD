@@ -114,6 +114,20 @@ class TGridCell : public TBaseCell
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y);
 
+    /**
+     * @brief return whether this cells gets cut by a plane
+     * defined by x and n, where x is the position vector and n the normal vector
+     *
+     * If one or more vertices of the cell lay in the plane, true is returned.
+     *
+     * @param x position vector of the plane
+     * @param n normal vector of the plane
+     * @return whether plane cuts this cell
+     *
+     * @author Felix Anker
+     */
+    virtual bool PlaneCutsCell(const TVertex* p, const TVertex* n) const override;
+
     /**  @brief get diameter of a cell */
     virtual double GetDiameter()
     { return RefDesc->GetShapeDesc()->GetDiameter(&Vertices[0]); }
