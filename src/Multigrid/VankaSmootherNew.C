@@ -48,6 +48,11 @@ void VankaSmootherNew::update(const BlockFEMatrix& matrix)
   }
   //Find out if spaces changed, and if so: reassort dof batches
   //pressure (when pressure space has changed)
+  // @todo TODO the following two "if" dont check correctly if the spaces changed
+  // in comparison to the previous one. This needs to be corrected to make a safer
+  // comparison. For the moment, I dont comment them out, because then the tests are
+  // much longer, especially in tnse3d case: reassort when needed (with "if") ~ 20s,
+  // reassort systematically (without "if") ~ 315s !!!
   if(last_space != pressure_space_)
   {
     //TODO Check that cell vanka and continuous space are not used together!
