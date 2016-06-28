@@ -14,12 +14,7 @@
  *    - the Brush interface module for stochastic calculation of the particles
  *
  * Tasks:
- *  - write example file for Eder example
- *  - enable flow and psd to get into the coupling module
  *  - interface Brush
- *
- * Questions:
- *  - which part of the program will take care of particle growth??
  *
  * @author Clemens Bartsch
  * @date April 22, 2016
