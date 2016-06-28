@@ -80,7 +80,7 @@ double couplingTerm_T( const double* const params ) //must contain all that is n
   double T = params[0];
   double c = params[1];
   double F = params[2]; //parameter functions takes care of that
-  F = 1e4;//FIXME Take value from param, instead!
+  F = 1e5;//FIXME Take value from param, instead!
 
   double constant = Physics::delta_h_cryst / (Physics::rho_E * Physics::C_E);
 
@@ -92,7 +92,7 @@ double couplingTerm_C_ASA( const double* const params ) //must contain all that 
   double T = params[0];
   double c = params[1];
   double F = params[2]; //parameter functions takes care of that
-  F = 1e4;//FIXME Take value from param, instead!
+  F = 1e5;//FIXME Take value from param, instead!
 
   double constant = 1 / Physics::M_ASA;
 
