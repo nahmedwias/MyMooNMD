@@ -367,6 +367,20 @@ class Time_NSE3D
     const TFESpace3D     & get_pressure_space() const
     { return this->systems_.front().pressureSpace_; }
 
+    const TFEVectFunct3D& get_velocity() const
+    { return this->systems_.front().u_; }
+
+    TFEVectFunct3D& get_velocity()
+    { return this->systems_.front().u_; }
+
+    TFEFunction3D *get_velocity_component(int i);
+
+    const TFEFunction3D& get_pressure() const
+    { return this->systems_.front().p_; }
+
+    TFEFunction3D& get_pressure()
+    { return this->systems_.front().p_; }
+
     /// Get number of degrees of freedom.
     const int get_size() const
     { return this->systems_.front().solution_.length(); }

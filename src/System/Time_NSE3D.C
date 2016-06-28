@@ -1320,4 +1320,16 @@ void Time_NSE3D::construct_extrapolated_solution()
   // Now extrapolated_solution_ = 2*u(t-1)-u(t-2), only on the finest mesh
 }
 
+/**************************************************************************** */
+TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
+{
+  if(i==0)
+    return this->systems_.front().u_.GetComponent(0);
+  else if(i==1)
+    return this->systems_.front().u_.GetComponent(1);
+  else  if(i==2)
+    return this->systems_.front().u_.GetComponent(2);
+  else
+    throw std::runtime_error("There are only three velocity components!");
+}
 
