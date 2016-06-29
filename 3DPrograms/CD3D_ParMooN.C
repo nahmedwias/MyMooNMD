@@ -73,9 +73,6 @@ int main(int argc, char* argv[])
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
-  // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning
   int n_ref_total = domain.get_n_initial_refinement_steps();

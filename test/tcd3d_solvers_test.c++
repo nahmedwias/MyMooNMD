@@ -61,9 +61,9 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   TDomain domain(db);
   
   // set the time discretization 
+  domain.Init(db["boundary_file"], db["geo_file"]);
   SetTimeDiscParameters(0);
   
-  domain.Init(db["boundary_file"], db["geo_file"]);
   
   int n_ref_total = domain.get_n_initial_refinement_steps();
   size_t mg_levels = db["multigrid_n_levels"];
@@ -235,7 +235,9 @@ int main(int argc, char* argv[])
   // db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
   // db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   // db.add("preconditioner", std::string("multigrid"), "",{"jacobi", "multigrid"});
-  db["boundary_file"] = "Default_UnitCube";
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // db["output_write_vtk"] = false;
 
   TDatabase::ParamDB->DRIFT_Z = 1;

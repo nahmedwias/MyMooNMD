@@ -36,8 +36,12 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
 #ifdef __3D__
-  db["boundary_file"] =std::string("Default_UnitCube");
-  db["geo_file"] = std::string("Default_UnitCube_Tetra");
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
+#else
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
 #endif
 
   db.add("refinement_n_initial_steps", (size_t) 1, "");
