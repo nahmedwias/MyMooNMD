@@ -39,6 +39,10 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
                                      const ParameterDatabase& user_input_parameter_db)
 {
   this->example_database.merge(user_input_parameter_db,false);
+
+  // Calculate nu with reynolds_number stored in database (input from user)
+  this->nu = get_nu();
+
   switch(example_code)
   {
     case 0:
@@ -69,6 +73,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU1 );
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
+
+      /** some variables to change values in the example */
+      lin_space_time::DIMENSIONLESS_VISCOSITY = this->nu;
 
       ExampleFile();
       break;
@@ -102,6 +109,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
 
+      /** some variables to change values in the example */
+      AnsatzLinConst::DIMENSIONLESS_VISCOSITY = this->nu;
+
       ExampleFile();
       break;
     }
@@ -133,6 +143,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU1 );
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
+
+      /** some variables to change values in the example */
+      Bsp0::DIMENSIONLESS_VISCOSITY = this->nu;
 
       ExampleFile();
       break;
@@ -166,6 +179,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
 
+      /** some variables to change values in the example */
+      Bsp1::DIMENSIONLESS_VISCOSITY = this->nu;
+
       ExampleFile();
       break;
     }    
@@ -198,6 +214,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
 
+      /** some variables to change values in the example */
+      Bsp2::DIMENSIONLESS_VISCOSITY = this->nu;
+
       ExampleFile();
       break;
     }
@@ -229,6 +248,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU1 );
       initialCondtion.push_back( InitialU2 );
       initialCondtion.push_back( InitialU3 );
+
+      /** some variables to change values in the example */
+      Bsp3::DIMENSIONLESS_VISCOSITY = this->nu;
 
       ExampleFile();
       break;
@@ -265,7 +287,9 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       /**post processing - drag and lift calculation and output */
       post_processing_stat = compute_drag_lift_pdiff;
 
-      nu = flow_around_cylinder_instationary::get_nu();
+      /** some variables to change values in the example */
+      flow_around_cylinder_instationary::DIMENSIONLESS_VISCOSITY = this->nu;
+
       ExampleFile();
       break;
     }
@@ -293,9 +317,8 @@ void Example_TimeNSE3D::do_post_processing(Time_NSE3D& tnse3d) const
 
 double Example_TimeNSE3D::get_nu() const
 {
-  if(nu==-1)
-    ErrThrow("Kinematic viscosity is not set in this example!");
-  
-  return nu;
+  double reynolds = this->example_database["reynolds_number"];
+  reynolds = 1/reynolds;
+  return reynolds;
 }
 

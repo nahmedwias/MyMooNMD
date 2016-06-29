@@ -136,7 +136,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
 
-  double eps = KINEMATIC_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
+  double eps = get_nu();//KINEMATIC_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
 
   for(int i=0;i<n_points;i++)
   {
