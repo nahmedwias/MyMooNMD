@@ -58,6 +58,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
   //Set kinematic viscosity to zero, example switch is responsible for returning
   // and resetting it.
   nu = -1;
+  cout << example_database["reynolds_number"] << endl;
 
   switch( example_code )
   {
