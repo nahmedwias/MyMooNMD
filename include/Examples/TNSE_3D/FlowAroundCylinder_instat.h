@@ -395,8 +395,8 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cl = recvbuf[1];
 #endif
 
-  cd *= -500/0.41;
-  cl *= -500/0.41;
+  cd *= -20/0.41;
+  cl *= -20/0.41;
 
   delete[] aux;
   delete[] v;
