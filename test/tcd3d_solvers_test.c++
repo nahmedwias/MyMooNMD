@@ -61,7 +61,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   TDomain domain(db);
   
   // set the time discretization 
-  domain.Init(db["boundary_file"], db["geo_file"]);
   SetTimeDiscParameters(0);
   
   

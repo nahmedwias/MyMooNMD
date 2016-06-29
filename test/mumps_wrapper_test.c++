@@ -53,13 +53,16 @@ int main(int argc, char* argv[])
 
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
 
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // default construct a domain object
   TDomain domain(db);
 
 
   // the domain is initialised with default description and default
   // initial mesh
-  domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Hexa");
+  //domain.Init((char*)"Default_UnitCube", (char*)"Default_UnitCube_Hexa");
 
   // refine grid just once
   domain.RegRefineAll();
