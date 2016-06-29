@@ -131,13 +131,11 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
   }
 }
 
-
+//TODO This domain constructor, which is also responsible for read-in of the
+// old database, is to be reomved soon.
 TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
-    db(get_default_domain_parameters())
+    TDomain(param_db)
 {
-  RefLevel = 0;
-  
-  db.merge(param_db, false);
 
   // This will be removed as soon as we got entirely rid of the
   // global database.
