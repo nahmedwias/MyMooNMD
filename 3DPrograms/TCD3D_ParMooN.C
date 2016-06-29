@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
   
   if(my_rank==0)
     Database.WriteParamDB(argv[1]);
-  // reading mesh
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
   
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning

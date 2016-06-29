@@ -131,13 +131,12 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
        
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< 5; ++i)
     domain.RegRefineAll();
     TDatabase::ParamDB->SOLVER_TYPE=2;
@@ -161,12 +160,12 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
+    
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // some parameters
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+    
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
     

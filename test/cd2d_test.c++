@@ -79,9 +79,6 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
 
   // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
@@ -149,9 +146,6 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
 
   // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
@@ -221,12 +215,18 @@ int main(int argc, char* argv[])
   db["residual_tolerance"] = 1.0e-13;
   
   db["output_compute_errors"] = true;
+  
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+  
   Chrono time; // measure the time spent for each solver
   
   Output::print("\n\n ----------- direct solver -----------\n");
   time.reset();
   db["solver_type"] = "direct";
+  db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   time.print_time("all tests, direct solver");
   
@@ -238,7 +238,9 @@ int main(int argc, char* argv[])
   db["iterative_solver_type"] = "fgmres";
   db["max_n_iterations"] = 1000;
   db["preconditioner"] = "ssor";
+  db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   time.print_time("all tests, fgmres solver and ssor preconditioner");
   
@@ -255,7 +257,9 @@ int main(int argc, char* argv[])
   db["multigrid_correction_damp_factor"] = 1.0;
   db["multigrid_n_pre_smooth"] = 2;
   db["multigrid_n_post_smooth"] = 2;
+  db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   time.print_time("all tests, fgmres solver and multigrid preconditioner");
   
@@ -276,8 +280,9 @@ int main(int argc, char* argv[])
     db.add("multigrid_n_levels", (size_t) 0, "");
 
     // default construct a domain object
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
-
 
     TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
     TDatabase::ParamDB->DISCTYPE = 1; //Galerkin Desicreitzation
@@ -289,12 +294,8 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
     TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
     
-    // the domain is initialised with default description and default
-    // initial mesh
-	  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
-
     // refine grid up to the coarsest level
-	  size_t n_ref = domain.get_n_initial_refinement_steps();
+    size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
     {
       domain.RegRefineAll();

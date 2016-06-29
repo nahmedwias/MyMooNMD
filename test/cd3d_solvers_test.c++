@@ -55,9 +55,6 @@ void check(ParameterDatabase& db, int ansatz_order,
   // fresh domain object
   TDomain domain(db);
 
-  domain.Init(db["boundary_file"], db["geo_file"]);
-
-
   // split the number of refinement steps - some have to be done before,
   // some after the domain partitioning
   int n_ref_total = domain.get_n_initial_refinement_steps();
@@ -235,9 +232,11 @@ int main(int argc, char* argv[])
   db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   db.add("preconditioner", std::string("multigrid"), "",
          {"jacobi", "multigrid"});
-  db["boundary_file"] = "Default_UnitCube";
-
-
+  
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+	 {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
+  
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
 

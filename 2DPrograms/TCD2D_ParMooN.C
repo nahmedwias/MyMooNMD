@@ -48,12 +48,6 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   
-  
-  /* include the mesh from a meshgenerator, for a standard mesh use the build-in function */
-  // standard mesh  
-  //Domain.Init(TDatabase::ParamDB->BNDFILE, TDatabase::ParamDB->GEOFILE); // call mesh generator
-  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
   for(int i=0; i<n_ref; i++){

@@ -281,8 +281,10 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
+    db.add("boundary_file", "Default_UnitCube", "");
+    db.add("geo_file", "Default_UnitCube_Hexa", "", 
+	   {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDomain domain_hex(db);
-    domain_hex.Init("Default_UnitCube", "Default_UnitCube_Hexa");
 
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
@@ -349,8 +351,8 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
+    db["geo_file"]= "Default_UnitCube_Tetra";
     TDomain domain_tet(db);
-    domain_tet.Init("Default_UnitCube", "Default_UnitCube_Tetra");
     for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();

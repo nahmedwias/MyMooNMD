@@ -73,6 +73,27 @@ ParameterDatabase get_default_domain_parameters()
          "which may be applied to this domain."
          "THIS IS UNUSED AT THE MOMENT!",
          (size_t) 0, size_t (10));
+  
+   db.add("boundary_file", "Default_UnitSquare",
+        "This is a file describing the boundary of the computational domain. "
+        "You probably want to adjust this to be the path to some file which "
+        "typically has the extension 'PRM'. See the documentation for GEO and "
+        "PRM files.",
+        {"Default_UnitSquare", "Default_UnitCube"}
+       );
+   
+   db.add("geo_file", "Default_UnitSquare",
+        "This files describes the computational mesh. You probably want to "
+        "adjust this to be the path to some file which typically has the "
+        "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
+        "files.",
+        {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
+         "Default_UnitCube_Tetra","Default_UnitSquare"});
+   
+   db.add("mesh_tetgen_file", std::string("Wuerfel"),
+         "This files describes the computational mesh. Typically this files"
+         " has the extension 'smesh', 'node' or 'poly'. "
+         " currently only the smesh files are supported");
 
   return db;
 }
@@ -84,6 +105,30 @@ TDomain::TDomain(const ParameterDatabase& param_db) :
 {
   RefLevel = 0;
   db.merge(param_db, false);
+  
+  std::string geoname = db["geo_file"];
+  std::string boundname = db["boundary_file"];
+  std::string smesh = db["mesh_tetgen_file"];
+  
+  if( (geoname.substr(geoname.find_last_of(".") + 1) == "GEO" ) 
+      && (boundname.substr(boundname.find_last_of(".") + 1) == "PRM" ) 
+    )
+  {
+    this->Init(boundname.c_str(), geoname.c_str());
+  }
+#ifdef __3D__
+  else if(smesh.substr(smesh.find_last_of(".")+1) == "smesh")
+  {
+    // intialize mesh using tetegen mesh loader
+    TTetGenMeshLoader tetgen(smesh, db);
+    tetgen.Generate(*this);
+  }
+#endif
+  else 
+  {
+    // default cases for the tests
+    this->Init(boundname.c_str(), geoname.c_str());
+  }
 }
 
 
