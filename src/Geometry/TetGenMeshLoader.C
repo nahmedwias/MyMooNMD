@@ -13,7 +13,11 @@
 ParameterDatabase get_default_param_database()
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.set_name("db mesh generator");
+  // merge default database of TetGen
+  db.merge(ParameterDatabase::default_tetgen_database(), true);
+  
+  db.set_name("TetGen mesh loader default database ");
+  
   return db;
 }
 
