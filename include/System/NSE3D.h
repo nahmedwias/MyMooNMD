@@ -38,11 +38,6 @@
 #include <utility>
 #include <array>
 
-#ifdef _MPI
-#include <ParFEMapper3D.h>
-#include <ParFECommunicator3D.h>
-#endif
-
 class NSE3D
 {
 
@@ -96,25 +91,6 @@ class NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
-
-#ifdef _MPI
-      /** @brief A parallel FE mapper storing parallel information
-       * for the velocity degrees of freedom.*/
-      TParFEMapper3D parMapperVelocity_;
-
-      /** @brief A parallel FE mapper storing parallel information
-       * for the pressure degrees of freedom.*/
-      TParFEMapper3D parMapperPressure_;
-
-      /** @brief A parallel FE communicator taking care for the MPI
-       * communication between the velocity dofs on this grid. */
-      TParFECommunicator3D parCommVelocity_;
-
-      /** @brief A parallel FE communicator taking care for the MPI
-       * communication between the pressure dofs on this grid. */
-      TParFECommunicator3D parCommPressure_;
-#endif
-
 
       // System_per_grid is not supposed to be copied or moved
       // until underlying classes realize the rule of zero.

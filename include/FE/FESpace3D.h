@@ -155,6 +155,15 @@ class TFESpace3D : public TFESpace
 
     const TParFECommunicator3D& get_communicator() const
     { return *comm_; }
+
+    TParFECommunicator3D& get_communicator()
+    { return *comm_; }
+
+    const TParFEMapper3D& get_mapper() const
+    { return *mapper_; }
+
+    TParFEMapper3D& get_mapper()
+    { return *mapper_; }
 #endif
 
 };

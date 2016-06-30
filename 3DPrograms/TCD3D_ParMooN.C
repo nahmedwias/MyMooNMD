@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
   domain.GenerateEdgeInfo();
 
   // calculate largest possible number of processes which share one dof
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
+  int maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
   
 #endif
   

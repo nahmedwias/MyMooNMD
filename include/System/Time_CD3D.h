@@ -23,12 +23,6 @@
 #include <vector>
 #include <deque>
 
-#ifdef _MPI
-#include "mpi.h"
-#include <ParFEMapper3D.h>
-#include <ParFECommunicator3D.h>
-#endif
-
 class LocalAssembling3D; //forward declaration
 
 class Time_CD3D
@@ -56,17 +50,7 @@ class Time_CD3D
       BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction3D feFunction_;
-#ifdef _MPI
-      /** @brief A parallel FE mapper storing parallel information for 
-       *the one matrix of this grid.
-       */
-      TParFEMapper3D parMapper_;
-      
-      /** @brief A parallel FE communicator taking care for the 
-       * MPI communication on this grid. 
-       */
-      TParFECommunicator3D parComm_;
-#endif 
+
       /** @brief constructor in mpi case
        * @param[in] example The current example.
        * @param[in] coll The collection of mesh cells of this grid.

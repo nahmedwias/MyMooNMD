@@ -22,6 +22,9 @@
 
 #ifdef _MPI
 #include <MumpsWrapper.h>
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
 #endif
 
   bool use_new_solver_debug = true;
@@ -50,9 +53,7 @@ ParameterDatabase get_default_CD3D_parameters()
      rhs_(matrix_, true), // suitable right hand side vector filled with zeroes
      solution_(matrix_, false), // suitable solution vector filled with zeroes
      feFunction_(&feSpace_, (char*)"c", (char*)"c", solution_.get_entries(),
-                 solution_.length()),
-     parMapper_(), // will be reset shortly
-     parComm_() // will be reset shortly
+                 solution_.length())
 
   {
     //inform the fe space about the maximum number of subdomains per dof
@@ -61,11 +62,6 @@ ParameterDatabase get_default_CD3D_parameters()
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
 
-    // Must be reset here, because feSpace needs special treatment
-    // This includes copy assignment - all because there is no good
-    // way to communicate Maximum number of subdomains per dof to FESpace...
-    parMapper_ = TParFEMapper3D(1, &feSpace_);
-    parComm_ = TParFECommunicator3D(&parMapper_);
   }
 #else
   /* ************************************************************************ */
@@ -201,7 +197,7 @@ ParameterDatabase get_default_CD3D_parameters()
               (
                   level, block, system->rhs_.get_entries(),
                   system->solution_.get_entries(),
-                  &system->parComm_, &system->parMapper_,
+                  &system->feSpace_.get_communicator(), &system->feSpace_.get_mapper(),
                   nAuxArrays, NULL
               );
 #else
@@ -252,8 +248,8 @@ void CD3D::solve()
     if(this->solver.get_db()["solver_type"].is("direct"))
     {
       //two vectors of communicators (const for init, non-const for solving)
-      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&s.feSpace_.get_communicator()};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&s.feSpace_.get_communicator()};
 
       //set up a MUMPS wrapper
       MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
@@ -286,7 +282,7 @@ void CD3D::solve()
     double* solutionEntries = syst.solution_.get_entries();
     double* rhsEntries =syst.rhs_.get_entries();
 #ifdef _MPI
-    TParFECommunicator3D* parComm = &syst.parComm_;
+    TParFECommunicator3D* parComm = &syst.feSpace_.get_communicator();
 #endif
 
 
@@ -374,8 +370,8 @@ void CD3D::solve()
       this->solver.solve(syst.rhs_, syst.solution_);
       return;
 #elif _MPI
-      std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.parComm_};
-      std::vector<TParFECommunicator3D*> par_comms_solv = {&syst.parComm_};
+      std::vector<const TParFECommunicator3D*> par_comms_init = {&syst.feSpace_.get_communicator()};
+      std::vector<TParFECommunicator3D*> par_comms_solv = {&syst.feSpace_.get_communicator()};
 
       MumpsWrapper mumps_wrapper(syst.matrix_, par_comms_init);
       mumps_wrapper.solve(syst.rhs_, syst.solution_, par_comms_solv);
