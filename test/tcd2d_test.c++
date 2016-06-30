@@ -122,9 +122,9 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["example"] = 0;
+    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;
@@ -152,9 +152,9 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_output_database());
     db["example"] = 0;
+    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;

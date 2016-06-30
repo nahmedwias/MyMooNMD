@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["example"] = 3;
-
-    TDatabase::ParamDB->RE_NR = 1e-20;
+    db.add("reynolds_number",1e-20,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
