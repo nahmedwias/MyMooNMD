@@ -2028,5 +2028,5 @@ TParaDB::~TParaDB()
   delete [] FS_OUTNAME;
   delete [] MATLAB_MATRIX;
   delete [] PODFILE;
-  Output::print<2>("deleted parameter database");
+  Output::print<4>("deleted parameter database");
 }

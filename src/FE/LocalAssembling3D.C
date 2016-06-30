@@ -83,7 +83,7 @@ LocalAssembling3D::LocalAssembling3D(LocalAssembling3D_type type,
    FEFunctions3D(fefunctions3d)
 {
 
-  Output::print<3>("Constructor of LocalAssembling3D: using type ", name);
+  Output::print<5>("Constructor of LocalAssembling3D: using type ", name);
   
   // the values below only matter if you need an existing finite element
   // function during your assembly. Change them in such a case
@@ -345,7 +345,7 @@ LocalAssembling3D::LocalAssembling3D(
 
   name = std::string("CUSTOMIZED");
   //Inform the world of what's going on.
-  Output::print<3>("Constructor of LocalAssembling3D: using type ", name);
+  Output::print<5>("Constructor of LocalAssembling3D: using type ", name);
 
   //Dynamically allocate space for auxiliary arrays
   AllOrigValues = new double** [N_Terms];

@@ -22,7 +22,7 @@ BlockFEMatrix::BlockFEMatrix(
     ansatz_spaces_columnwise_(spaces),
     pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
-  Output::print<3>("BlockFEMatrix constructor");
+  Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
   for(auto sp : spaces)

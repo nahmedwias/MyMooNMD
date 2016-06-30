@@ -3,6 +3,10 @@
 #include <limits>
 #include <cmath>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 LoopInfo::LoopInfo(std::string name)
  : name(name), initial_residual(std::numeric_limits<double>::max()),
    old_residual(std::numeric_limits<double>::max()), initial_time(), old_time()
@@ -27,6 +31,13 @@ void LoopInfo::restart(std::string name, double initial_residual)
 
 void LoopInfo::print(unsigned int loop_index, double current_residual)
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  my_rank = 0;
+#endif
+
   using namespace std;
   std::stringstream s;
   
@@ -58,13 +69,20 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
   old_residual = current_residual;
   old_time.reset();
   // print only if verbosity is high enough.
-  if(this->verbosity_threshold <= Output::getVerbosity())
+  if(this->verbosity_threshold <= Output::getVerbosity() && my_rank == 0)
     Output::print<1>(s.str());
 }
 
 
 void LoopInfo::finish(unsigned int loop_index, double current_residual)
 {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  my_rank = 0;
+#endif
+
   using namespace std;
   std::stringstream s;
   
@@ -82,7 +100,8 @@ void LoopInfo::finish(unsigned int loop_index, double current_residual)
       << "  t[s]/step: " << setprecision(4) << setw(9)
       << this->initial_time.elapsed_time()/loop_index;
   }
-  Output::print<1>(s.str());
+  if(my_rank == 0)
+    Output::print<1>(s.str());
 }
 
 double LoopInfo::get_initial_residual() const
