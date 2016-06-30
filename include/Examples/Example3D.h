@@ -79,6 +79,8 @@ class Example3D
     //! Default destructor.
     ~Example3D() = default;
 
+    // Initialize example database, called with the constructor
+    ParameterDatabase default_example_database();
 
     // Getter functions
 

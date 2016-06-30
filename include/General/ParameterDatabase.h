@@ -56,10 +56,6 @@ class ParameterDatabase
     /// mesh generation using TetGen
     static ParameterDatabase default_tetgen_database();
 
-    /// @brief construct a database filled with parameters for the example class
-    // e.g. Reynolds_number, and other variables which can be changed from .dat
-    static ParameterDatabase default_example_database();
-
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
     
