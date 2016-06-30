@@ -35,7 +35,7 @@ void LoopInfo::print(unsigned int loop_index, double current_residual)
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #else
-  my_rank = 0;
+  int my_rank = 0;
 #endif
 
   using namespace std;
@@ -80,7 +80,7 @@ void LoopInfo::finish(unsigned int loop_index, double current_residual)
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #else
-  my_rank = 0;
+  int my_rank = 0;
 #endif
 
   using namespace std;
