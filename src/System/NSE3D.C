@@ -26,6 +26,12 @@
 
 #include <sys/stat.h>
 
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 ParameterDatabase get_default_NSE3D_parameters()
 {
   Output::print<3>("creating a default NSE3D parameter database");
@@ -76,14 +82,6 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
      p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
         solution_.length(3))
 
-#ifdef _MPI
-     //default construct parallel infrastructure, will be reset in the body
-     , parMapperVelocity_(),
-     parMapperPressure_(),
-     parCommVelocity_(),
-     parCommPressure_()
-#endif
-
 {
   switch(TDatabase::ParamDB->NSTYPE)
   {
@@ -106,21 +104,13 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
 #ifdef _MPI
+
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
   pressureSpace_.initialize_parallel(maxSubDomainPerDof);
 
-  //Must be reset here, because feSpace needs special treatment
-  // This includes copy assignment - all because there is no good
-  // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
-  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
-
-  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
-  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
-
   //print some information
-  parCommVelocity_.print_info();
-  parCommPressure_.print_info();
+  velocitySpace_.get_communicator().print_info();
+  pressureSpace_.get_communicator().print_info();
 
 #endif
 }
@@ -545,10 +535,10 @@ void NSE3D::assemble_linear_terms()
   double *u2 = this->systems_.front().solution_.block(1);
   double *u3 = this->systems_.front().solution_.block(2);
   double *p  = this->systems_.front().solution_.block(3);
-  this->systems_.front().parCommVelocity_.CommUpdate(u1);
-  this->systems_.front().parCommVelocity_.CommUpdate(u2);
-  this->systems_.front().parCommVelocity_.CommUpdate(u3);
-  this->systems_.front().parCommPressure_.CommUpdate(p);
+  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u1);
+  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u2);
+  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u3);
+  this->systems_.front().pressureSpace_.get_communicator().CommUpdate(p);
 #endif
 }
 
@@ -749,7 +739,7 @@ void NSE3D::compute_residuals()
   //Eliminate all non-master rows in defect_m!
   for(int ui = 0; ui < 3; ++ui)
   {//velocity rows
-    const int* masters = s.parMapperVelocity_.GetMaster();
+    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<n_u_dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -759,7 +749,7 @@ void NSE3D::compute_residuals()
     }
   }
   {//pressure row
-    const int* masters = s.parMapperPressure_.GetMaster();
+    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<n_p_dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -804,11 +794,15 @@ void NSE3D::solve()
       Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
     //two vectors of communicators (const for init, non-const for solving)
     std::vector<const TParFECommunicator3D*> par_comms_init =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
-       &s.parCommPressure_};
+    {&s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.pressureSpace_.get_communicator()};
     std::vector<TParFECommunicator3D*> par_comms_solv =
-      {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, 
-       &s.parCommPressure_};
+    {&s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.pressureSpace_.get_communicator()};
 
     //set up a MUMPS wrapper
     MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);

@@ -15,6 +15,13 @@
 
 #include <cstring>
 #include <sys/stat.h>
+
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 //==============================================================================
 ParameterDatabase get_default_TCD3D_parameters()
 {
@@ -41,18 +48,14 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
   rhs_(stiffMatrix_, true), // rhs hand side vector (filled with zeros)
   solution_(stiffMatrix_, false), // solution vector (filled with zeros)
   old_Au(this->stiffMatrix_, true),
-  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),solution_.length()),
-  parMapper_(),
-  parComm_()
+  feFunction_(&feSpace_, (char*)"u", (char*)"u", solution_.get_entries(),solution_.length())
 {
   //inform the fe space about the maximum number of subdomains per dof
   feSpace_.initialize_parallel(maxSubDomainPerDof);
   
   stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);
   massMatrix_ = BlockFEMatrix::CD3D(feSpace_);
-  
-  parMapper_ = TParFEMapper3D(1, &feSpace_);
-  parComm_ = TParFECommunicator3D(&parMapper_);
+
 }
 #else /* ***********************************************************************/
 Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll)
@@ -311,8 +314,8 @@ void Time_CD3D::solve()
   }
   if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
-    std::vector<const TParFECommunicator3D*> par_comms_init = {&s.parComm_};
-    std::vector<TParFECommunicator3D*> par_comms_solv = {&s.parComm_};
+    std::vector<const TParFECommunicator3D*> par_comms_init = {&s.feSpace_.get_communicator()};
+    std::vector<TParFECommunicator3D*> par_comms_solv = {&s.feSpace_.get_communicator()};
 
     MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
     mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);

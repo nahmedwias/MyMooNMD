@@ -12,6 +12,12 @@
 
 #include <sys/stat.h>
 
+#ifdef _MPI
+#include "mpi.h"
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 /* *************************************************************************** */
   //TODO  So far of this object only the nonlin it stuff is used - switch entirely!
 ParameterDatabase get_default_TNSE3D_parameters()
@@ -53,13 +59,6 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
      solution_.length(0), 3),
    p_(&pressureSpace_, (char*)"p", (char*)"p", solution_.block(3),
      solution_.length(3))
-#ifdef _MPI
-     //default construct parallel infrastructure, will be reset in the body
-     , parMapperVelocity_(),
-     parMapperPressure_(),
-     parCommVelocity_(),
-     parCommPressure_()
-#endif
 {
   // Mass Matrix
   // Output::increaseVerbosity(5);
@@ -89,16 +88,9 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
 #ifdef _MPI
   velocitySpace_.initialize_parallel(maxSubDomainPerDof);
   pressureSpace_.initialize_parallel(maxSubDomainPerDof);
-
-  //Must be reset here, because feSpace needs special treatment
-  // This includes copy assignment - all because there is no good
-  // way to communicate Maximum number of subdomains per dof to FESpace...
-  parMapperVelocity_ = TParFEMapper3D(1, &velocitySpace_);
-  parMapperPressure_ = TParFEMapper3D(1, &pressureSpace_);
-
-  parCommVelocity_ = TParFECommunicator3D(&parMapperVelocity_);
-  parCommPressure_ = TParFECommunicator3D(&parMapperPressure_);
-
+  //print some information on the parallel infrastructure
+  velocitySpace_.get_communicator().print_info();
+  pressureSpace_.get_communicator().print_info();
 #endif
 }
 
@@ -571,10 +563,10 @@ void Time_NSE3D::assemble_initial_time()
     double *u2  = this->systems_.front().solution_.block(1);
     double *u3  = this->systems_.front().solution_.block(2);
     double *p   = this->systems_.front().solution_.block(3);
-    this->systems_.front().parCommVelocity_.CommUpdate(u1);
-    this->systems_.front().parCommVelocity_.CommUpdate(u2);
-    this->systems_.front().parCommVelocity_.CommUpdate(u3);
-    this->systems_.front().parCommPressure_.CommUpdate(p);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u1);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u2);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u3);
+    this->systems_.front().pressureSpace_.get_communicator().CommUpdate(p);
   #endif
 
   // copy the last right hand side and solution vectors to the old ones
@@ -662,10 +654,10 @@ void Time_NSE3D::assemble_rhs()
     double *u2 = this->systems_.front().solution_.block(1);
     double *u3 = this->systems_.front().solution_.block(2);
     double *p  = this->systems_.front().solution_.block(3);
-    this->systems_.front().parCommVelocity_.CommUpdate(u1);
-    this->systems_.front().parCommVelocity_.CommUpdate(u2);
-    this->systems_.front().parCommVelocity_.CommUpdate(u3);
-    this->systems_.front().parCommPressure_.CommUpdate(p);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u1);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u2);
+    this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u3);
+    this->systems_.front().pressureSpace_.get_communicator().CommUpdate(p);
   #endif
 
   // now it is this->systems[i].rhs = f^k
@@ -939,7 +931,7 @@ void Time_NSE3D::compute_residuals()
   //Eliminate all non-master rows in defect_m!
   for(int ui = 0; ui < 3; ++ui)
   {//velocity rows
-    const int* masters = s.parMapperVelocity_.GetMaster();
+    const int* masters = s.velocitySpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<number_u_Dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -949,7 +941,7 @@ void Time_NSE3D::compute_residuals()
     }
   }
   {//pressure row
-    const int* masters = s.parMapperPressure_.GetMaster();
+    const int* masters = s.pressureSpace_.get_communicator().GetMaster();
     for(size_t i = 0; i<number_p_Dof; ++i)
     {
       if (masters[i]!=my_rank)
@@ -990,9 +982,19 @@ void Time_NSE3D::solve()
   {
     //two vectors of communicators (const for init, non-const for solving)
     std::vector<const TParFECommunicator3D*> par_comms_init =
-    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+    {
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.pressureSpace_.get_communicator()
+    };
     std::vector<TParFECommunicator3D*> par_comms_solv =
-    {&s.parCommVelocity_, &s.parCommVelocity_, &s.parCommVelocity_, &s.parCommPressure_};
+    {
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.velocitySpace_.get_communicator(),
+     &s.pressureSpace_.get_communicator()
+    };
     
     //set up a MUMPS wrapper
     MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
