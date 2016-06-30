@@ -10,16 +10,15 @@
  * @date 2016/04/04
  */
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   OutPut("Example: test_u_2_p_1.");
   // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE=1;
-}
-
-double get_nu()
-{
-  return 1;
 }
 
 // exact solution
@@ -88,7 +87,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = get_nu();
+  const double eps = DIMENSIONLESS_VISCOSITY;
   std::vector<double> u1(5,0.0);
   std::vector<double> u2(5,0.0);
   std::vector<double> u3(5,0.0);
