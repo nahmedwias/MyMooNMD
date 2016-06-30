@@ -135,10 +135,9 @@ int main(int argc, char* argv[])
     db.add("refinement_n_initial_steps", (size_t) 1,"");
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
-    
+    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     

@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->RE_NR=1;
+    db.add("reynolds_number",1,"");
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     // parameters used for this test
-    TDatabase::ParamDB->RE_NR=1;
+    db.add("reynolds_number",1,"");
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
