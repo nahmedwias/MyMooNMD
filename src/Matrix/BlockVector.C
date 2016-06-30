@@ -299,7 +299,7 @@ double BlockVector::norm_global(std::vector<const TParFECommunicator3D*> comms) 
   double sum_local = 0;
   for(size_t b =0; b < n_blocks(); ++b)
   {
-    TParFECommunicator3D* comm = comms[b]; //for convenicance
+    const TParFECommunicator3D* comm = comms[b]; //for convenience
     const int* masters = comm->GetMaster();
 
     size_t offset = this->offset(b);
