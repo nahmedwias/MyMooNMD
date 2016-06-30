@@ -46,7 +46,7 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
   parComm_()
 {
   //inform the fe space about the maximum number of subdomains per dof
-  feSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+  feSpace_.initialize_parallel(maxSubDomainPerDof);
   
   stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);
   massMatrix_ = BlockFEMatrix::CD3D(feSpace_);

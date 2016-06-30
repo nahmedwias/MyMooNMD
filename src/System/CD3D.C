@@ -24,7 +24,7 @@
 #include <MumpsWrapper.h>
 #endif
 
-  bool use_new_solver_debug = false;
+  bool use_new_solver_debug = true;
 
 ParameterDatabase get_default_CD3D_parameters()
 {
@@ -56,7 +56,7 @@ ParameterDatabase get_default_CD3D_parameters()
 
   {
     //inform the fe space about the maximum number of subdomains per dof
-    feSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+    feSpace_.initialize_parallel(maxSubDomainPerDof);
 
     // reset the matrix with named constructor
     matrix_ = BlockFEMatrix::CD3D(feSpace_);
@@ -506,18 +506,6 @@ void CD3D::checkParameters()
     throw std::runtime_error("Ansatz order 0 is no use in convection diffusion "
         "reaction problems! (Vanishing convection and diffusion term).");
   }
-
-  // the only solving strategy implemented is iterative
-#ifdef _MPI
-  // among the iterative solvers only 11 (fixed point iteration/
-  // Richardson) is working
-  if(this->solver.get_db()["solver_type"].is("iterative") 
-      && TDatabase::ParamDB->SC_SOLVER_SCALAR != 11)
-  {
-      ErrThrow("Only SC_SOLVER_SCALAR: 11 (fixed point iteration) is implemented so far.")
-  }
-#endif // mpi
-
 }
 
 void CD3D::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)

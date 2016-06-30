@@ -87,8 +87,8 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
       ErrThrow("NSTYPE: ", TDatabase::ParamDB->NSTYPE, " is not known");
   }
 #ifdef _MPI
-  velocitySpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
-  pressureSpace_.SetMaxSubDomainPerDof(maxSubDomainPerDof);
+  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
+  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
 
   //Must be reset here, because feSpace needs special treatment
   // This includes copy assignment - all because there is no good

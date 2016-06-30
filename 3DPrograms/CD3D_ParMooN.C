@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
 
   // split the number of refinement steps - some have to be done before,
-  // some after the domain partitioning
+  // some after the domain partitioning TODO This is awful - if no multigrid solver is used!
   int n_ref_total = domain.get_n_initial_refinement_steps();
   size_t n_ref_after = parmoon_db["multigrid_n_levels"];
   if(n_ref_after != 0)
