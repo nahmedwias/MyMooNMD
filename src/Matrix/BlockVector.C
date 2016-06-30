@@ -13,14 +13,14 @@
 /** ************************************************************************ */
 BlockVector::BlockVector() : entries(), lengths(), actives()
 {
-  Output::print<3>("Constructor of BlockVector with no arguments");
+  Output::print<5>("Constructor of BlockVector with no arguments");
 }
 
 /** ************************************************************************ */
 BlockVector::BlockVector(unsigned int length)
  : entries(length, 0.0), lengths(1, length), actives(1, length)
 {
-  Output::print<3>("Constructor of BlockVector with length ", length);
+  Output::print<5>("Constructor of BlockVector with length ", length);
 }
 
 /** ************************************************************************ */
@@ -33,7 +33,7 @@ BlockVector::BlockVector(int length)
 
 BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
-  Output::print<3>("Constructor of BlockVector using a BlockMatrix");
+  Output::print<5>("Constructor of BlockVector using a BlockMatrix");
   // the total length of this vector
   size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
   // number of blocks in this BlockVector
@@ -59,8 +59,8 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool result)
    // all entries are active
     actives[b] = lengths[b];
   }
-  Output::print<3>("(end) Constructor of BlockVector using a BlockMatrix");
-  Output::print<3>("entries: ", this->entries.size(), " ",this->length());
+  Output::print<5>("(end) Constructor of BlockVector using a BlockMatrix");
+  Output::print<5>("entries: ", this->entries.size(), " ",this->length());
 }
 
 BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
