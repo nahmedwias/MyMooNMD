@@ -115,12 +115,6 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_hdiv parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(hdiv ParMooN_test_hdiv)
   list(APPEND parmoon_tests ParMooN_test_hdiv)
-    
-  #cd3d test sequential
-  add_executable(ParMooN_test_cd3d_seq cd3d_test.c++)
-  target_link_libraries(ParMooN_test_cd3d_seq parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(cd3d_seq ParMooN_test_cd3d_seq)
-  list(APPEND parmoon_tests ParMooN_test_cd3d_seq)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_seq)
@@ -209,12 +203,6 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   ###################################################
   ####### Tests for parallel type: MPI #######
   ###################################################
-  
-  # cd3d test mpi (run with 4 processes)
-  add_executable(ParMooN_test_cd3d_mpi cd3d_test.c++)
-  target_link_libraries(ParMooN_test_cd3d_mpi parmoon_3d_MPI ${_EXTERN_LIBRARIES})
-  add_test(NAME cd3d_mpi COMMAND mpirun -n 4 ParMooN_test_cd3d_mpi )
-  list(APPEND parmoon_tests ParMooN_test_cd3d_mpi)
   
   # 1st mumps solver test mpi (run with 2 processes)
   add_executable(ParMooN_test_mumps_1_mpi mumps_test_1.c++)
