@@ -1043,6 +1043,22 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
 
 /* ************************************************************************* */
 
+#ifdef _MPI
+/// Return a list of the FE communicators belonging to the FESpaces of
+/// the rows/columns.
+std::vector<const TParFECommunicator3D*> BlockFEMatrix::get_communicators() const
+{
+  std::vector<const TParFECommunicator3D*> comms;
+  for(auto sp : test_spaces_rowwise_ )
+  {
+    comms.push_back(&sp->get_communicator());
+  }
+  return comms;
+}
+#endif
+
+/* ************************************************************************* */
+
 BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) const
 {
   //check input

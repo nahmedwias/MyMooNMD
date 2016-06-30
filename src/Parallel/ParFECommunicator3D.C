@@ -94,7 +94,7 @@ void TParFECommunicator3D::print_info() const
   }
 }
 
-void TParFECommunicator3D::CommUpdateMS(double *sol)
+void TParFECommunicator3D::CommUpdateMS(double *sol) const
 {
   if(!Mapper)
   {
@@ -131,7 +131,7 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateH1(double *sol)
+void TParFECommunicator3D::CommUpdateH1(double *sol) const
 {
   if(!Mapper)
   {
@@ -171,7 +171,7 @@ void TParFECommunicator3D::CommUpdateH1(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateH2(double *sol)
+void TParFECommunicator3D::CommUpdateH2(double *sol) const
 {
   if(!Mapper)
   {
@@ -208,7 +208,7 @@ void TParFECommunicator3D::CommUpdateH2(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdate_M_H1(double *sol)
+void TParFECommunicator3D::CommUpdate_M_H1(double *sol) const
 {
   if(!Mapper)
   {
@@ -223,7 +223,7 @@ void TParFECommunicator3D::CommUpdate_M_H1(double *sol)
   
 }
 
-void TParFECommunicator3D::CommUpdate(double *sol)
+void TParFECommunicator3D::CommUpdate(double *sol) const
 {
   
   if(!Mapper)

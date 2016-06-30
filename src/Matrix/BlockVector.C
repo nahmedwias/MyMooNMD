@@ -319,7 +319,7 @@ double BlockVector::norm_global(std::vector<const TParFECommunicator3D*> comms) 
   double recvbf[1];
   MPI_Allreduce(sendbf,recvbf,1,MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
 
-  double norm = sqrt(recvbf[1]); //square root of the global sum
+  double norm = sqrt(recvbf[0]); //square root of the global sum
   return norm;
 
 }
