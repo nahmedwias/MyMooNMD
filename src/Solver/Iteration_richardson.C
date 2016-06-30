@@ -52,7 +52,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   //MPI: solution in consistency level 2 for computation of global norm
   for (size_t bl = 0; bl < comms.size() ;++bl)
   {
-    comms[bl]->CommUpdate_M_H1(solution.block(bl));
+    comms[bl]->consistency_update(solution.block(bl), 2);
   }
 #endif
 
@@ -85,7 +85,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
     //MPI: solution in consistency level 2 for computation of global norm
     for (size_t bl = 0; bl < comms.size() ;++bl)
     {
-      comms[bl]->CommUpdate_M_H1(solution.block(bl));
+      comms[bl]->consistency_update(solution.block(bl), 2);
     }
 #endif
     A.apply_scaled_add(solution, r, -1.0);

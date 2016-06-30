@@ -94,6 +94,28 @@ void TParFECommunicator3D::print_info() const
   }
 }
 
+void TParFECommunicator3D::consistency_update(double* vector, size_t level) const
+{
+   switch (level)
+   {
+     case 1:
+       CommUpdateMS(vector); //restore level 1 consistency by updating all interface slaves
+       break;
+     case 2:
+       CommUpdateMS(vector); //restore level 2 consistency by updating
+       CommUpdateH1(vector); // all interface slaves and Halo1 dofs
+       break;
+     case 3:
+       CommUpdateMS(vector); // restore level 2 consistency by updating
+       CommUpdateH1(vector); // all interface slaves, Halo1 and Halo2 dofs
+       CommUpdateH2(vector);
+       break;
+     default:
+       ErrThrow("Unknown consistency level ", level, ". Choose between 1, 2 "
+           "and 3 (full consistency).")
+   }
+}
+
 void TParFECommunicator3D::CommUpdateMS(double *sol) const
 {
   if(!Mapper)

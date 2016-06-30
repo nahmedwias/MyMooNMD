@@ -62,38 +62,50 @@ class TParFECommunicator3D
     int *Master;
     
   public:
-    // TODO When the buffers would be put mutable, most of theses public methods
-    // could be const!
-
     //TODO Comment the usage of this!
     TParFECommunicator3D(TParFEMapper3D *mapper);
     
-    //TODO Comment the usage of this!
+    /// Default constructor. Creates an almost empty object, which should not be used.
     TParFECommunicator3D();
     
-	/// Gather information about this communicator in root and print it
-	/// to console and output file.
+    /// Gather information about this communicator in root and print it
+    /// to console and output file.
     void print_info() const;
 
-    //TODO Comment the usage of this!
+    /**
+     * Restores the required level of consistency of a vector.
+     * For the notion of consistency levels refer to our ParMooN paper:
+     * TODO cite the ParMooN paper correctly...
+     *
+     * Not that this method is not range checked - you must make sure that
+     * "vector" whcih is supposed to be updated is as long as N_Dof.
+     *
+     * TODO This method is intended to be the sole interface of the Communicator -
+     * all CommmUpdate... -methods should become private in time.
+     */
+    void consistency_update(double* vector, size_t level) const;
+
+
+
+    //TODO comment and put private
     void CommUpdateMS(double *sol) const;
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdateH1(double *sol) const;
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdateH2(double *sol) const;
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdate_M_H1(double *sol) const;
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdate(double *sol) const;
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdateReduce(double *rhs);
     
-    //TODO Comment the usage of this!
+    //TODO comment and put private
     void CommUpdate(double *sol, double *rhs);
 
     //TODO Comment the usage of this!
