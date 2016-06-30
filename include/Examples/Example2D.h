@@ -82,6 +82,8 @@ class Example2D
     //! Default destructor.
     ~Example2D() = default;
 
+    // Initialize example database, called with the constructor
+    ParameterDatabase default_example_database();
 
     // Getter functions
 
