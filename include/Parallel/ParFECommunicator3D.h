@@ -76,19 +76,19 @@ class TParFECommunicator3D
     void print_info() const;
 
     //TODO Comment the usage of this!
-    void CommUpdateMS(double *sol);
+    void CommUpdateMS(double *sol) const;
     
     //TODO Comment the usage of this!
-    void CommUpdateH1(double *sol);
+    void CommUpdateH1(double *sol) const;
     
     //TODO Comment the usage of this!
-    void CommUpdateH2(double *sol);
+    void CommUpdateH2(double *sol) const;
     
     //TODO Comment the usage of this!
-    void CommUpdate_M_H1(double *sol);
+    void CommUpdate_M_H1(double *sol) const;
     
     //TODO Comment the usage of this!
-    void CommUpdate(double *sol);
+    void CommUpdate(double *sol) const;
     
     //TODO Comment the usage of this!
     void CommUpdateReduce(double *rhs);

@@ -4,6 +4,11 @@
 #include <Iteration_jacobi.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#include <mpi.h>
+#endif
+
 // L - LinearOperator, V - Vector
 template <class L, class V>
 Iteration_richardson<L, V>::Iteration_richardson(
@@ -23,16 +28,44 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
+
+  //MPI: rhs and solution in consistency level 0 for computation of global norm
+
   Vector z(A, false);
   
+#ifdef _MPI
+  int size, my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  std::vector<const TParFECommunicator3D*> comms = A.get_communicators();
+#endif
+
+#ifndef _MPI
   double normb = norm(rhs);
+#elif _MPI
+  double normb = rhs.norm_global(comms);
+#endif
   if (normb == 0.0)
     normb = 1;
   
+#ifdef _MPI
+  //MPI: solution in consistency level 2 for computation of global norm
+  for (size_t bl = 0; bl < comms.size() ;++bl)
+  {
+    comms[bl]->CommUpdate_M_H1(solution.block(bl));
+  }
+#endif
+
   //Vector r = rhs - A*solution;
   Vector r(rhs); // copy values
   A.apply_scaled_add(solution, r, -1.0);
+
+  //MPI: Now r in consistency level 0
+#ifndef _MPI
   double resid = norm(r) / normb;
+#elif _MPI
+  double resid = r.norm_global(comms) / normb;
+#endif
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
   {
@@ -48,9 +81,20 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
     
     //r = b - A * x;
     r = rhs;
+#ifdef _MPI
+    //MPI: solution in consistency level 2 for computation of global norm
+    for (size_t bl = 0; bl < comms.size() ;++bl)
+    {
+      comms[bl]->CommUpdate_M_H1(solution.block(bl));
+    }
+#endif
     A.apply_scaled_add(solution, r, -1.0);
-    
+
+#ifndef _MPI
     resid = norm(r) / normb;
+#elif _MPI
+    resid = r.norm_global(comms) / normb;
+#endif
     Output::print<4>("richardson iteration ", i, " ", resid);
     if(this->converged(resid, i))
     {
@@ -64,4 +108,8 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 /* ************************************************************************** */
 // explicit instantiations
 template class Iteration_richardson<BlockFEMatrix, BlockVector>;
+// In MPI case we are so dependent on the connection of Matrix and FESpace, that
+// it does not make sense to instantiate the function for BlockMatrix.
+#ifndef _MPI
 template class Iteration_richardson<BlockMatrix,   BlockVector>;
+#endif
