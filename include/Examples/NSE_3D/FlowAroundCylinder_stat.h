@@ -13,18 +13,16 @@
 
 #include <array>
 
-double KINEMATIC_VISCOSITY = 1e-3;
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+double VARIABLE_PARAMETER1;
 
 //side effect: sets the global parameter
 void ExampleFile()
 {
   OutPut("Example: FlowAroundCylinder_stat.h" << endl);
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
-}
-
-double get_nu()
-{
-  return KINEMATIC_VISCOSITY;
 }
 
 // ========================================================================
@@ -136,7 +134,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
 
-  double eps = get_nu();//KINEMATIC_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
+  double eps = DIMENSIONLESS_VISCOSITY;
+  // the kinematic viscosity (1e-3 in the paper cited above)
 
   for(int i=0;i<n_points;i++)
   {
@@ -189,7 +188,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   MultiIndex3D NeededDerivatives[4] = { D000, D100, D010, D001 };
   TFEFunction3D *vfct;
   double *v;
-  double nu = KINEMATIC_VISCOSITY;
+  double nu = DIMENSIONLESS_VISCOSITY;
   double *Der, *aux;
   TJoint *joint;
   TBoundFace *boundface;
@@ -393,8 +392,10 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cl = recvbuf[1];
 #endif
 
-  cd *= -500/0.41;
-  cl *= -500/0.41;
+  double test_coefficient = VARIABLE_PARAMETER1;
+
+  cd *= -test_coefficient/0.41;
+  cl *= -test_coefficient/0.41;
 
   delete[] aux;
   delete[] v;

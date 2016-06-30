@@ -6,6 +6,10 @@
  * try running it on any other domain - just to make you aware of that fact.
  */
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   Output::print<1>("Example: DrivenCavity3D.h");
@@ -89,7 +93,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *x, double *y, double *z,
                double **parameters, double **coeffs)
 {
-  static double eps = 1/TDatabase::ParamDB->RE_NR;
+  static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
   double *coeff;
 

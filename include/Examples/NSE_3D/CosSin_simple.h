@@ -7,7 +7,9 @@
 
  */
 
-constexpr double KINEMATIC_VISCOSITY = 1;
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
 
 void ExampleFile()
 {
@@ -15,11 +17,6 @@ void ExampleFile()
 
   // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
-}
-
-double get_nu()
-{
-  return KINEMATIC_VISCOSITY;
 }
 
 // exact solution
@@ -85,7 +82,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = KINEMATIC_VISCOSITY;
+  const double eps = DIMENSIONLESS_VISCOSITY;
   double u1[5], u2[5], u3[5], p[5];
   for(int i=0;i<n_points;i++)
   {

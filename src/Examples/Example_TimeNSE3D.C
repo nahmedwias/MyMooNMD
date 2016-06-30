@@ -317,8 +317,8 @@ void Example_TimeNSE3D::do_post_processing(Time_NSE3D& tnse3d) const
 
 double Example_TimeNSE3D::get_nu() const
 {
-  double reynolds = this->example_database["reynolds_number"];
-  reynolds = 1/reynolds;
-  return reynolds;
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
 }
 
