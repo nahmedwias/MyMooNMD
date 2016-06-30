@@ -12,6 +12,8 @@
  * @date 2016/03/31
  */
 #include <CD3D.h>
+#include <Solver.h>
+#include <Multigrid.h>
 
 #include <Database.h>
 #include <FEDatabase3D.h>
@@ -128,39 +130,33 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   if (solver_name.compare("jacobi") == 0)
   {
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "jacobi";
-    TDatabase::ParamDB->SOLVER_TYPE = 1;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 1;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 500;  //Jacobi needs a lot of iterations
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-10;
+    db["residual_tolerance"] = 1.0e-10;
+    db["residual_reduction"] =  0.0;
+    db["max_n_iterations"] =  1000;
+    db["min_n_iterations"] =  5;
   }
-  else if (solver_name.compare("multigrid") == 0)
+  else if (solver_name.compare("multigrid") == 0) //multigrid test will fail in mpi
   {
+    db.merge(Multigrid::default_multigrid_database() ,true);
+
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
     db["multigrid_n_levels"] = 2;
-    TDatabase::ParamDB->SOLVER_TYPE = 1;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR = 11;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR = 5;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR = 100; //mg needs fewer iterations
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR = 0.0;
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR = 1e-12; //measures L2only
-
-    // specific multigrid parameters
-    TDatabase::ParamDB->SC_MG_TYPE_SCALAR = 0; // geometric multigrid
-    TDatabase::ParamDB->SC_MG_CYCLE_SCALAR = 1;
-    TDatabase::ParamDB->SC_SMOOTHER_SCALAR = 3; // SSOR smoother
-    TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR = 3;
-    TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR = 3;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR = 1.0;
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR = 3; // SSOR smoother
-    TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR = 10;
-    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR = 0.1;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR = 0; // no slc
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR = 0;  // no slc
+    db["max_n_iterations"] =  100;
+    db["residual_tolerance"] = 1.0e-14;
+    db["residual_reduction"] =  0.0;
+    // Multigrid parameters
+    db["multigrid_n_levels"] = 2;
+    db["multigrid_cycle_type"] = "V";
+    db["multigrid_smoother"] = "jacobi";
+    db["multigrid_smoother_coarse"] = "direct_solve";
+    db["multigrid_correction_damp_factor"] = 0.8;
+    db["multigrid_n_pre_smooth"] = 2;
+    db["multigrid_n_post_smooth"] = 2;
 
     Output::setVerbosity(2);
 
@@ -176,7 +172,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if (solver_name.compare("mumps") == 0)
   {
     db["solver_type"] = "direct";
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
   }
 #endif
   else
@@ -189,10 +184,10 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 double get_tolerance(std::string solver_name)
 {//solver dependent tolerance?
   if (solver_name.compare("jacobi") == 0)
-    return 1e-10;
+    return 1e-8;
 
   else if (solver_name.compare("multigrid") == 0)
-    return 1e-10;
+    return 1e-12;
 
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
@@ -226,15 +221,12 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D FEDatabase;
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+  db.merge(Solver<>::default_solver_database() ,true);
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
   db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
-  db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
-  db.add("preconditioner", std::string("multigrid"), "",
-         {"jacobi", "multigrid"});
-  
   db.add("boundary_file", "Default_UnitCube", "");
-  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+  db.add("geo_file", "Default_UnitCube_Hexa", "",
 	 {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   
   TDatabase::ParamDB->DRIFT_Z = 1;

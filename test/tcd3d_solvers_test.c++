@@ -150,8 +150,12 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   if(solver_name.compare("jacobi")==0)
   {
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "jacobi";
-    db["residual_tolerance"] = 1e-13;
+    db["residual_tolerance"] = 1.0e-13;
+    db["residual_reduction"] =  0.0;
+    db["max_n_iterations"] =  1000;
+    db["min_n_iterations"] =  5;
     // Output::setVerbosity(2);
   }
   else if(solver_name.compare("multigrid") ==0)

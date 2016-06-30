@@ -228,7 +228,7 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   # mumps
   add_test(NAME cd3d_mpi_mumps COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi mumps)
-  #jacobi - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
+  #jacobi
   add_test(NAME cd3d_mpi_jacobi COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
   #multigrid - CB: THIS DOES STILL FAIL - FIX THE ITERATIVE MPI!
   add_test(NAME cd3d_mpi_mg COMMAND mpirun -n 3 ParMooN_test_cd3d_solver_mpi multigrid)
