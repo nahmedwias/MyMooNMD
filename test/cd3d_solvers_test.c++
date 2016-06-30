@@ -260,8 +260,6 @@ int main(int argc, char* argv[])
   db["example"] = -3; // Example -3: quadratic solution, order 2 elements
   check(db, 2, errors, tol);
 
-  if (std::string(argv[1]).compare("jacobi") != 0)//Jacobi simply fails on this grid (mpi and sequential).
-  {
     if(my_rank==0)
       Output::print<1>("Tetrahedra grid.");
     db["geo_file"] = "Default_UnitCube_Tetra";
@@ -274,7 +272,7 @@ int main(int argc, char* argv[])
     
     db["example"] = -3; // Example -3: quadratic solution, order 2 elements
     check(db, 2, errors, tol);
-  }
+
 #ifdef _MPI
   MPI_Finalize();
 #endif

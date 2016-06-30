@@ -271,8 +271,6 @@ int main(int argc, char* argv[])
   db["example"] = -1; // Example -4: quadratic space time
   check(db, 2, 2, errors, tol); // time discretization is also included in the function
   
-  if (std::string(argv[1]).compare("jacobi") != 0)//Jacobi simply fails on this grid (mpi and sequential).
-  {
     if(my_rank==0)
       Output::print<1>("Tetrahedra grid.");
     db["geo_file"] = "Default_UnitCube_Tetra";
@@ -282,7 +280,6 @@ int main(int argc, char* argv[])
     
     db["example"] = -1; // Example -4: quadratic space time
     check(db, 2, 2, errors, tol); // time discretization is also included in the function
-  }
 #ifdef _MPI
   MPI_Finalize();
 #endif
