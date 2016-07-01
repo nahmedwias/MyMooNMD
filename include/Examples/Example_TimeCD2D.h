@@ -23,6 +23,10 @@
 #define _Example_TimeCD2D_
 
 #include <Example_NonStationary2D.h>
+#include <functional>
+
+class Time_CD2D; //forward declaration
+
 
 class Example_TimeCD2D : public Example_NonStationary2D
 {
@@ -49,6 +53,13 @@ public:
   {
 
   };
+
+  /// Apply the function stored as post processing routine.
+  void do_post_processing(Time_CD2D& tcd2d) const;
+
+  /// Return kinematic viscosity, if set.
+  double get_nu() const;
+
   //Declaration of special member functions - rule of zero
   //! Default copy constructor. Performs deep copy.
   Example_TimeCD2D(const Example_TimeCD2D&) = default;
@@ -64,5 +75,17 @@ public:
   
   //! Default destructor.
   ~Example_TimeCD2D() = default;  
+
+  private:
+  /// Function doing the post processing for a stationary example.
+  /// TODO put Time_CD2D argument const as soon as FEFunctions can be copied properly!
+  std::function<void(Time_CD2D &)> post_processing_stat;
+  /// TODO Function doing the post processing for a time dependent example.
+
+  // Diffusion coefficient = kinematic viscosity. Should replace
+  // former global parameter 1/RE_NR.
+  double nu;
+
+
 };
 #endif

@@ -148,4 +148,26 @@ Example_Brinkman2D::Example_Brinkman2D(int example_code,
   }
 }
 
-      
+void Example_Brinkman2D::do_post_processing(Brinkman2D& brinkman2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(brinkman2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_Brinkman2D","No post processing done for the current example.");
+  }
+}
+
+double Example_Brinkman2D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}

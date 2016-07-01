@@ -52,7 +52,7 @@ public:
   /// Return kinematic viscosity, if set.
   double get_nu() const;
 
-private:
+  private:
   /// Function doing the post processing for a stationary example.
   /// TODO put Time_NSE2D argument const as soon as FEFunctions can be copied properly!
   std::function<void(Time_NSE2D &)> post_processing_stat;
