@@ -18,7 +18,9 @@
 #define __EXAMPLE_NSE2D__
 
 #include<Example2D.h>
+#include <functional>
 
+class NSE2D; //forward declaration
 
 class Example_NSE2D : public Example2D
 {
@@ -40,6 +42,12 @@ class Example_NSE2D : public Example2D
                   std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
       : Example2D(exact, bc, bd, coeffs) {};
   
+    /// Apply the function stored as post processing routine.
+    void do_post_processing(NSE2D& nse2d) const;
+
+    /// Return kinematic viscosity, if set.
+    double get_nu() const;
+
     //Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
@@ -56,6 +64,16 @@ class Example_NSE2D : public Example2D
 
     //! Default destructor.
     ~Example_NSE2D() = default;
+
+  private:
+  /// Function doing the post processing for a stationary example.
+  /// TODO put NSE2D argument const as soon as FEFunctions can be copied properly!
+  std::function<void(NSE2D &)> post_processing_stat;
+  /// TODO Function doing the post processing for a time dependent example.
+
+  // Diffusion coefficient = kinematic viscosity. Should replace
+  // former global parameter 1/RE_NR.
+  double nu;
 };
 
 
