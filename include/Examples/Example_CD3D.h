@@ -19,7 +19,9 @@
 #define __EXAMPLE_CD3D__
 
 #include<Example3D.h>
+#include <functional> // std::function
 
+class CD3D; //forward declaration
 
 class Example_CD3D : public Example3D 
 {
@@ -41,6 +43,11 @@ class Example_CD3D : public Example3D
                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D *coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
 
+    /// Apply the function stored as post processing routine.
+    void do_post_processing(CD3D& cd3d) const;
+
+    /// Return kinematic viscosity, if set.
+    double get_nu() const;
 
     //Declaration of special member functions - rule of zero
 
@@ -58,6 +65,16 @@ class Example_CD3D : public Example3D
 
     //! Default destructor.
     ~Example_CD3D() = default;
+
+  private:
+    /// Function doing the post processing for a stationary example.
+    /// TODO put CD3D argument const as soon as FEFunctions can be copied properly!
+    std::function<void(CD3D &)> post_processing_stat;
+    /// TODO Function doing the post processing for a time dependent example.
+
+    // Diffusion coefficient = kinematic viscosity. Should replace
+    // former global parameter 1/RE_NR.
+    double nu;
 };
 
 

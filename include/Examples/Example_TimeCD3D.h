@@ -23,6 +23,9 @@
 #define _Example_TimeCD3D_
 
 #include <Example_NonStationary3D.h>
+#include <functional>  // std::function
+
+class Time_CD3D; // forward declaration
 
 class Example_TimeCD3D : public Example_NonStationary3D
 {
@@ -48,6 +51,12 @@ public:
   : Example_NonStationary3D(exact, bc, bd, coeffs,  timedependentrhs, 
                           timedependentcoeffs, init_cond) {};
   
+  /// Apply the function stored as post processing routine.
+  void do_post_processing(Time_CD3D& tcd3d) const;
+
+  /// Return kinematic viscosity, if set.
+  double get_nu() const;
+
   //Declaration of special member functions - rule of zero
   //! Default copy constructor. Performs deep copy.
   Example_TimeCD3D(const Example_TimeCD3D&) = default;
@@ -63,5 +72,16 @@ public:
   
   //! Default destructor.
   ~Example_TimeCD3D() = default;  
+
+private:
+  /// Function doing the post processing for a stationary example.
+  /// TODO put TCD3D argument const as soon as FEFunctions can be copied properly!
+  std::function<void(Time_CD3D &)> post_processing_stat;
+  /// TODO Function doing the post processing for a time dependent example.
+
+  // Diffusion coefficient = kinematic viscosity. Should replace
+  // former global parameter 1/RE_NR.
+  double nu;
+
 };
 #endif // _Example_TimeCD3D_

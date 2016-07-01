@@ -73,3 +73,27 @@ Example_TimeNSE2D::Example_TimeNSE2D(int example_code,
       ErrThrow("Unknown Time dependent Example_TimeNSE2D example!");
   }
 }
+
+void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(tnse2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_TimeNSE2D","No post processing done for the current example.");
+  }
+}
+
+double Example_TimeNSE2D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}
