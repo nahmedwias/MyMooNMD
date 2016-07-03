@@ -55,9 +55,6 @@ Example_NSE3D::Example_NSE3D(int example_code,
 {
   this->example_database.merge(user_input_parameter_db,false);
 
-  // Calculate nu with reynolds_number stored in database (input from user)
-  this->nu = get_nu();
-
   switch( example_code )
   {
     case 0:
@@ -84,7 +81,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = ansatz_lin_const::LinCoeffs;
 
       /** some variables to change values in the example */
-      ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->nu;
+      ansatz_lin_const::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ansatz_lin_const::ExampleFile();
       break;
@@ -113,7 +110,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = ansatz_quad_lin::LinCoeffs;
 
       /** some variables to change values in the example */
-      ansatz_quad_lin::DIMENSIONLESS_VISCOSITY = this->nu;
+      ansatz_quad_lin::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ansatz_quad_lin::ExampleFile();
       break;
@@ -142,7 +139,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = cos_sin_simple::LinCoeffs;
       
       /** some variables to change values in the example */
-      cos_sin_simple::DIMENSIONLESS_VISCOSITY = this->nu;
+      cos_sin_simple::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       cos_sin_simple::ExampleFile();
       break;
@@ -171,7 +168,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = driven_cavity3d::LinCoeffs;
       
       /** some variables to change values in the example */
-      driven_cavity3d::DIMENSIONLESS_VISCOSITY = this->nu;
+      driven_cavity3d::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       driven_cavity3d::ExampleFile();
       break;
@@ -204,7 +201,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       post_processing_stat = compute_drag_lift_pdiff;
 
       /** some variables to change values in the example */
-      flow_around_cylinder_stat::DIMENSIONLESS_VISCOSITY = this->nu;
+      flow_around_cylinder_stat::DIMENSIONLESS_VISCOSITY = this->get_nu();
       // this is just an example to illustrate how a value given by
       // the user in the input file can be used in the example
       this->example_database["variable_parameter1"] = 500;
@@ -238,7 +235,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = LinCoeffs;
 
       /** some variables to change values in the example */
-      test_u_0_p_0::DIMENSIONLESS_VISCOSITY = this->nu;
+      test_u_0_p_0::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;
@@ -268,7 +265,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = LinCoeffs;
 
       /** some variables to change values in the example */
-      test_u_1_p_0::DIMENSIONLESS_VISCOSITY = this->nu;
+      test_u_1_p_0::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;
@@ -298,7 +295,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = LinCoeffs;
 
       /** some variables to change values in the example */
-      test_u_2_p_1::DIMENSIONLESS_VISCOSITY = this->nu;
+      test_u_2_p_1::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;
@@ -328,7 +325,7 @@ Example_NSE3D::Example_NSE3D(int example_code,
       problem_coefficients = LinCoeffs;
 
       /** some variables to change values in the example */
-      test_u_3_p_2::DIMENSIONLESS_VISCOSITY = this->nu;
+      test_u_3_p_2::DIMENSIONLESS_VISCOSITY = this->get_nu();
 
       ExampleFile();
       break;

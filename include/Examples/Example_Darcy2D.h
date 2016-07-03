@@ -73,9 +73,6 @@ class Example_Darcy2D : public Example2D
     std::function<void(Darcy2D &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 
-    // Diffusion coefficient = kinematic viscosity. Should replace
-    // former global parameter 1/RE_NR.
-    double nu;
 };
 
 
