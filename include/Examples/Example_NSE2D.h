@@ -70,10 +70,6 @@ class Example_NSE2D : public Example2D
   /// TODO put NSE2D argument const as soon as FEFunctions can be copied properly!
   std::function<void(NSE2D &)> post_processing_stat;
   /// TODO Function doing the post processing for a time dependent example.
-
-  // Diffusion coefficient = kinematic viscosity. Should replace
-  // former global parameter 1/RE_NR.
-  double nu;
 };
 
 

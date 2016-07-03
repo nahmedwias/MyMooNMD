@@ -77,8 +77,5 @@ private:
   std::function<void(Time_NSE3D &)> post_processing_stat;
   /// TODO @ULRICH Function doing the post processing for a time dependent example.
   
-  // Diffusion coefficient = dimensionless viscosity = 1/Reynolds
-  // Should replace former global parameter 1/RE_NR.
-  double nu;
 };
 #endif // _EXAMPLE_TimeNSE3D_

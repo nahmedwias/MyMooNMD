@@ -70,10 +70,6 @@ class Example_Brinkman2D : public Example2D
     /// TODO put Brinkman2D argument const as soon as FEFunctions can be copied properly!
     std::function<void(Brinkman2D &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
-
-    // Diffusion coefficient = kinematic viscosity. Should replace
-    // former global parameter 1/RE_NR.
-    double nu;
 };
 
 

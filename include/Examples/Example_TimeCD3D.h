@@ -78,10 +78,5 @@ private:
   /// TODO put TCD3D argument const as soon as FEFunctions can be copied properly!
   std::function<void(Time_CD3D &)> post_processing_stat;
   /// TODO Function doing the post processing for a time dependent example.
-
-  // Diffusion coefficient = kinematic viscosity. Should replace
-  // former global parameter 1/RE_NR.
-  double nu;
-
 };
 #endif // _Example_TimeCD3D_
