@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
     parmoon_db["problem_type"] = 6;
   Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
-  //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (additionally to console)
   if(my_rank==0)
   {
     Output::set_outfile(parmoon_db["outfile"]);
@@ -86,9 +86,7 @@ int main(int argc, char* argv[])
     Database.WriteTimeDB();
     }
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  // TODO Adapt the check_parameters() method to the class TNSE3D
-  // NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
   
   // Do initial domain refinement
