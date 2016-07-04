@@ -237,7 +237,6 @@ int main(int argc, char* argv[])
          {"jacobi", "multigrid"});
   db["boundary_file"] = "Default_UnitCube";
 
-  TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
 
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented

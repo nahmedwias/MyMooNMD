@@ -40,7 +40,6 @@ std::pair<unsigned int, double> Iteration_cgs<L, Vector>::iterate(
   
   double resid = norm(r) / normb;
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0)) 
   {
     return std::pair<unsigned int, double>(0, resid);

@@ -39,11 +39,11 @@ void Chrono::print_time(const std::string& program_part)
 void Chrono::print_time_seq(const std::string& program_part) const
 {
   //rusage time
-  double time_rusage = get_rusage_time() - start_time_rusage;
+  double time_rusage = this->elapsed_time();
   Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (sequential rusage time)");
 
   //wall clock time
-  double time_wall = get_wall_time() - start_time_wall;
+  double time_wall = this->elapsed_wall_time();
   Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (sequential wall time)");
 }
 #ifdef _MPI
@@ -54,12 +54,12 @@ void Chrono::print_time_mpi(const std::string& program_part) const
   MPI_Comm_rank(comm, &my_rank);
 
   //rusage time in root
-  double time_rusage = get_rusage_time() - start_time_rusage;
+  double time_rusage = this->elapsed_time();
   if(my_rank==0)
     Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (mpi root rusage time)");
 
   //wall clock time in root
-  double time_wall = get_wall_time() - start_time_wall;
+  double time_wall = this->elapsed_wall_time();
   if(my_rank==0)
     Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (mpi root wall time)");
 
@@ -82,15 +82,25 @@ void Chrono::print_time_mpi(const std::string& program_part) const
 void Chrono::print_time_omp(const std::string& program_part) const
 {
   //rusage time
-  double time_rusage = get_rusage_time() - start_time_rusage;
+  double time_rusage = this->elapsed_time();
   Output::print("--- TIME: time for ", program_part,": ", time_rusage, " s (openmp rusage time)");
 
   //wall clock time
-  double time_wall = get_wall_time() - start_time_wall;
+  double time_wall = this->elapsed_wall_time();
   Output::print("--- TIME: time for ", program_part,": ", time_wall, " s (openmp wall time)");
 }
 #endif
 
+double Chrono::elapsed_time() const
+{
+  return Chrono::get_rusage_time() - start_time_rusage;
+}
+
+
+double Chrono::elapsed_wall_time() const
+{
+  return Chrono::get_wall_time() - start_time_wall;
+}
 
 double Chrono::get_rusage_time()
 {
@@ -128,19 +138,10 @@ double Chrono::get_wall_time()
 void Chrono::reset()
 {
   //rusage time (system + cpu)
-  struct rusage usage;
-  if(getrusage(RUSAGE_SELF, &usage) == -1)
-    ErrThrow("Error in getrusage!");
-  //add up system and user time since program start and set them as start_time_rusage
-  double tv_sec = usage.ru_stime.tv_sec + usage.ru_utime.tv_sec;
-  double tv_usec = (usage.ru_stime.tv_usec + usage.ru_utime.tv_usec)/(double)1000000;
-  start_time_rusage = tv_sec + tv_usec;
+  start_time_rusage = Chrono::get_rusage_time();
 
   //wall time
-  struct timeval wall_time;
-  if (gettimeofday(&wall_time,NULL))
-    ErrThrow("Error in gettimeofday!");
-  start_time_wall = wall_time.tv_sec + wall_time.tv_usec/(double)1000000;
+  start_time_wall = Chrono::get_wall_time();
 #ifdef _OMP
   start_time_wall = omp_get_wtime();
 #endif

@@ -43,12 +43,22 @@ class Chrono
     void reset();
 
     /**
-     * Print out the measured times. The output as well as the means of time
-     * measuring depend on the parallel type.
+     * @brief Print out the measured times. 
+     * 
+     * The output as well as the means of time measuring depend on the parallel
+     * type.
      *
      * @param program_part will be put into the output string
      */
     void print_time(const std::string& program_part);
+    void print_time(const char* program_part)
+    { print_time(std::string(program_part)); }
+    
+    /// @brief return the time (using rusage) elapsed since last reset or 
+    /// construction
+    double elapsed_time() const;
+    /// @brief return the wall time elapsed since last reset or construction
+    double elapsed_wall_time() const;
 
   private:
     //// The starting time for time measurement with means of rusage

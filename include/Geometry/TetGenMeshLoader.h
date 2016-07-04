@@ -5,20 +5,24 @@
 // Purpose:     creates domain with tetgen from a .smesh file
 //
 // Author:      Andreas Hahn 26.04.2010
-//
-// History:
+//              Naveed Ahmed, 10.06.2016  
+// History: 
 //
 // =======================================================================
-
-#ifndef __TETGENMESHLOADER__
-#define __TETGENMESHLOADER__
-
+#ifndef _TTetGenMeshLoader
+#define _TTetGenMeshLoader
+/// using 1.4 version of the TetGen
 #define __TETGEN_14X__ 
 
 #include <tetgen.h>
 
 #include <Constants.h>
 #include <MooNMD_Io.h>
+#include <ParameterDatabase.h>
+
+#include <iostream>
+#include <memory>
+#include <vector>
 
 class TBoundPart;
 class TBoundComp3D;
@@ -29,124 +33,101 @@ class TDomain;
 
 class TTetGenMeshLoader
 {
-  protected:
-    /** Filename of .smesh file without postfix **/
-    char *mFileName;
-    
-    /** filename of .bound file with postfix **/
-    char *mBoundFile;
-    
-    /** list of all boundary components **/
-    TBoundComp3D **mAllBoundComps;
-    
-    /** list of all vertices **/
-    TVertex **mAllVertices;
-    
-    /** list of all joints **/
-    TJoint **mAllJoints;
-    
-    /** */
-    int **mTrifaceHash;
-    
-    /** tetgen io objects **/
-    tetgenio mTetIn;
-    tetgenio mTetOut;
-#ifdef __TETGEN_14X__
-    tetgenbehavior mTetBeh;
-    tetgenio mTetAddIn;
-#endif
-    
-    /** options */
-    bool plc;
-    bool reconstruct;
-    bool insertpoints;
-    
-  protected:
-    int ReadBoundFile(int N_BoundComps);
-    int ReadBoundComp(std::ifstream *in, int &CurrBoundComp, int &Range);
-    int ReadBoundType(std::ifstream *in, char *buff);
-    int ReadBoundParams(std::ifstream *in, char *type, int CurrBoundComp, int Range);
-    int ReadBoundParamsCylinder(std::ifstream *in, double &radius,
-				double &px, double &py, double &pz,
-				double &ax, double &ay, double &az,
-				double &nx, double &ny, double &nz);
-    int ReadBoundParamsSphere(std::ifstream *in, double &radius, 
-			      double &mx, double &my, double &mz);
-				
-    int ExtractValue(const char *buff, int increment, double &val);
-    int ExtractVector(const char *buff, int increment,
-		      double &val1, double &val2, double &val3);
-		      
-    int SetBdPlaneParams(int N_BoundComps);
-    
-    void Normalize3D(double *vec);
-    void Cross3D(double *vec1, double *vec2, double *res);
-    
-    int AllocVertices(double &StartX, double &StartY, double &StartZ,
-		      double &BoundX, double &BoundY, double &BoundZ);
-    int AllocRootCells(TBaseCell **&CellTree, int &N_RootCells);
-    int AllocJoints(TBaseCell **CellTree);
-    int DistributeJoints(TBaseCell **CellTree);
-    
-    int  FindTriface(int a, int b, int c);
-    void HashTrifaces();
-    int  CreateAdjacency();
-    
-    void MakeOptionString(std::string &opts);
-    
-    void MakeBoundaryLayer_smesh();
-    void MakeBoundaryLayer_msh();
-    void FindBoundaryPoints_msh(int *pointlist, double *normallist);
-    
-    int Load_msh(const char *filename);    
-    
-    /** build boundary from .smesh file **/
-    int BuildBoundary  (TBoundPart **&BdParts, int &N_BoundParts,
-		        int &N_BoundComps, int *&StartBdCompID, int *&Interfaces);
-		      
-    /** build boundary from trifaces */
-    int BuildBoundary2 (TBoundPart **&BdParts, int &N_BoundParts,
-		        int &N_BoundComps, int *&StartBdCompID, int *&Interfaces);
-		  
-    /** triangulation with tegen **/
-    int Tetgen();
-    
-    /** build rootcells */
-    int BuildMooNMDMesh(TBaseCell **&CellTree, int &N_RootCells,
-			double &StartX, double &StartY, double &StartZ,
-			double &BoundX, double &BoundY, double &BoundZ);
+protected:
+  /// Name of the mesh file  
+  std::string meshFileName;
   
-  public:
-    typedef struct
-    {
-      TBoundPart **BdParts;
-      int N_BoundParts;
-      int N_BoundComps;
-      int *StartBdCompID;
-      int *Interfaces;
-      TBaseCell **CellTree;
-      int N_RootCells;
-      double StartX;
-      double StartY;
-      double StartZ;
-      double BoundX;
-      double BoundY;
-      double BoundZ;
-    } TDummyDomain;
-			
-  public:
-    // CTOR
-//     TTetGenMeshLoader() : mFileName(0), mAllBoundComps(0), mBoundFile(0),
-// 			  mAllVertices(0), mAllJoints(0) {};
-    TTetGenMeshLoader();
-    TTetGenMeshLoader(const char *FileName);
-    
-    // DTOR
-    ~TTetGenMeshLoader();
-    
-    /** generate mesh */
-    int Generate(TDomain *Domain);
-    int Generate(int N_Points, double *Points, int N_Facets, int *Facets,
-		 int N_Regions, double *Regions, TDummyDomain *Domain);
-};
+  /// list of all boundary components
+  std::vector<TBoundComp3D*> meshBoundComps;
+  
+  /// list of all vertices
+  std::vector<TVertex*> meshVertices;
+  
+  /// list of all joints
+  std::vector<TJoint*> meshJoints;
+  
+  /// counts how often face with 
+  /// same hash occurs 
+  std::vector<int*> meshTrifaceHash;
+  
+  /// ParMooN Parameter database
+  ParameterDatabase db;
+  
+  ///three different options can be used    
+  bool plc; // piecewise linear complex
+  bool reconstruct;
+  bool insertpoints;
+  
+  /// TetGen in and out objects
+  tetgenio meshTetGenIn;
+  tetgenio meshTetGenOut;
+#ifdef __TETGEN_14X__
+    tetgenio meshTetAddIn;
 #endif
+
+public:  
+  /** 
+   * This constructor will only merge the current database 
+   * with the ParMooN database.
+   * 
+   * @param filename copies the file name to meshFileName
+   * @param parmoon_db merged with the default database
+   */
+  TTetGenMeshLoader(std::string filename, ParameterDatabase& parmoon_db);
+  
+  /// default Destructor 
+  ~TTetGenMeshLoader()=default;
+  
+  /**
+   * read mesh file in tetgen format and Generate 
+   * the ParMooN mesh.
+   * 
+   * This function will read the mesh file ".smesh, or .." 
+   * and modiefy the domain to ressemble the mesh, 
+   * the boundary, and build the mesh which will be 
+   * used within ParMooN.
+   * 
+   * @param[out] domain domain object where the mesh is loaded
+   */
+    void Generate(TDomain& domain);
+  
+protected:
+  /// create mesh with options
+  void Tetgen();
+  
+  /// build the boundary
+  void buildBoundary(TBoundPart**& BdParts, int& N_BoundParts, 
+            int& N_BoundComps, int*& StartBdCompID, int*& Interfaces);
+
+  /// this creates the "meshTrifaceHash"
+  void hashTriFaces();
+
+  /** 
+   * create adjacent tetrahedra to the faces of trifacelist
+   * 
+   * @return number of number of boudary components "N_BoundComp" 
+   */
+  int CreateAdjacency();
+
+  ///find the face of triangle
+  int findTriFace(int a, int b, int c);
+
+  ///this function build the mesh which 
+  void buildParMooNMDMesh(TBaseCell**& CellTree, int& N_RootCells,
+                           double& StartX, double& StartY, double& StartZ, 
+                           double& BoundX, double& BoundY, double& BoundZ);
+  
+  /// set vertices and bounds 
+  void setVertices(double &StartX, double &StartY, double &StartZ,
+                    double &BoundX, double &BoundY, double &BoundZ);
+  
+  /// allocate roor cells
+  void allocRootCells(TBaseCell**& CellTree, int& N_RootCells);
+ 
+  /// set the joints, boundary face params and map type
+  void distributeJoints(TBaseCell **CellTree);  
+};
+
+#endif // _TTetGenMeshLoader
+
+//===================================================================================================#include <TetGenMeshLoader_Test.h>

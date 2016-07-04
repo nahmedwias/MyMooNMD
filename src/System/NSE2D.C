@@ -23,7 +23,7 @@ ParameterDatabase get_default_NSE2D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -101,6 +101,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       initial_residual(1e10), errors()
 {
   this->db.merge(param_db, false);
+  this->set_parameters();
   
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -279,6 +280,13 @@ void NSE2D::get_velocity_pressure_orders(
 
 void NSE2D::set_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
+
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
     //Assemble2DSlipBC does not work, and is not implemented yet
@@ -292,6 +300,7 @@ void NSE2D::assemble()
   for(System_per_grid& s : this->systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
+    s.matrix.reset(); // reset matrix (needed for mdml where this is called)
 
     const TFESpace2D * v_space = &s.velocity_space;
     const TFESpace2D * p_space = &s.pressure_space;
@@ -445,38 +454,6 @@ void NSE2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
 
-    // do upwinding TODO remove dependency of global values
-    bool mdml = this->solver.is_using_multigrid() 
-                && this->solver.get_multigrid()->is_using_mdml();
-    bool on_finest_grid = &systems.front() == &s;
-    bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
-    bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
-                         || (mdml && !on_finest_grid))
-                        && !is_stokes;
-    if(do_upwinding)
-    {
-      switch(TDatabase::ParamDB->NSTYPE)
-      {
-        case 1:
-        case 2:
-          // do upwinding with one matrix
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          Output::print<3>("UPWINDING DONE : level ");
-          break;
-        case 3:
-        case 4:
-        case 14:
-          // do upwinding with two matrices
-          Output::print<3>("UPWINDING DONE : level ");
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[0],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          UpwindForNavierStokes(la.GetCoeffFct(), sq_matrices[3],
-                                la.get_fe_function(0), la.get_fe_function(1));
-          break;
-      } // endswitch
-    } // endif
-
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
 
@@ -511,6 +488,20 @@ void NSE2D::assemble_nonlinear_term()
       }
       GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
     }
+  }
+  
+  bool mdml =  this->solver.is_using_multigrid() 
+            && this->solver.get_multigrid()->is_using_mdml();
+  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  
+  if(mdml && !is_stokes)
+  {
+    // in case of upwinding we only assemble the linear terms. The nonlinear
+    // term is not assembled but replaced by a call to the upwind method.
+    // Note that we assemble the same terms over and over again here. Not 
+    // nice, but otherwise we would have to store the linear parts in a 
+    // separate BlockFEMatrix.
+    this->assemble();
   }
 
   for(System_per_grid& s : this->systems)
@@ -581,10 +572,7 @@ void NSE2D::assemble_nonlinear_term()
     }
     
     // do upwinding TODO remove dependency of global values
-    bool mdml = this->solver.is_using_multigrid() 
-                && this->solver.get_multigrid()->is_using_mdml();
     bool on_finest_grid = &systems.front() == &s;
-    bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
     bool do_upwinding = (TDatabase::ParamDB->DISCTYPE == UPWIND 
                          || (mdml && !on_finest_grid))
                         && !is_stokes;
@@ -604,13 +592,6 @@ void NSE2D::assemble_nonlinear_term()
     }
     else
     {
-      // in case of upwinding we only assemble the linear terms. The nonlinear
-      // term is not assembled but replaced by a call to the upwind method.
-      // Note that we assemble the same terms over and over again here. Not 
-      // nice, but otherwise we would have to store the linear parts in a 
-      // separate BlockFEMatrix.
-      this->get_matrix().reset();
-      this->assemble();
       switch(TDatabase::ParamDB->NSTYPE)
       {
         case 1:
@@ -687,9 +668,6 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     if(slow_conv)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual);
     return true;
   }
   else

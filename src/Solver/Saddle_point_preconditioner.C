@@ -28,8 +28,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   Output::print<3>("constructing a Saddle_point_preconditioner");
   if(lsc_strategy > 0)
   {
-    Output::print("WARNING: solving systems within LSC using some iterative "
-                  "routine requires a flexible solver.");
+    Output::warn<2>("Saddle_point_preconditioner"," solving systems within LSC "
+                    "using some iterative routine requires a flexible solver.");
   }
   bool pressure_correction_in_matrix = this->M->pressure_correction_enabled();
   this->M->disable_pressure_correction();
@@ -64,9 +64,12 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     {
       vs_db["solver_type"] = "iterative";
       vs_db["iterative_solver_type"] = "fgmres";
+      //vs_db["preconditioner"] = "no_preconditioner";
       vs_db["preconditioner"] = "jacobi";
+      //vs_db["preconditioner"] = "ssor";
+      vs_db["sor_omega"] = 1.5;
       vs_db["max_n_iterations"] = 100;
-      vs_db["residual_tolerance"] = 1.0e-15; // hardly ever reached
+      vs_db["residual_tolerance"] = 1.0e-12; // hardly ever reached
       vs_db["residual_reduction"] = 0.01;    // the actual stopping criterion
       vs_db["gmres_restart"] = 10;
       vs_db["damping_factor"] = 1.0; // no damping
@@ -129,11 +132,8 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 }
 
 /* ************************************************************************** */
-void Saddle_point_preconditioner::update(const BlockFEMatrix & m)
+void Saddle_point_preconditioner::update()
 {
-  if(this->M != &m)
-    ErrThrow("cannot update Saddle_point_preconditioner with different matrix");
-  
   // we assume the velocity block has changed but not the other blocks!
   // number of block columns and rows
   unsigned int n_rows = this->M->get_n_cell_rows();
@@ -187,22 +187,13 @@ void Saddle_point_preconditioner::update(const BlockFEMatrix & m)
 }
 
 /* ************************************************************************** */
-void Saddle_point_preconditioner::update(const BlockMatrix& m)
-{
-  ErrThrow("Updating a Saddle_point_preconditioner with a BlockMatrix is not "
-           "possible, you need a BlockFEMatrix.");
-  // otherwise the get_combined_matrix methods are possibly not giving the 
-  // correct behavior.
-}
-
-/* ************************************************************************** */
 void solve_velocity(std::shared_ptr<Solver<BlockFEMatrix>> velocity_solver, 
                     const BlockVector& rhs, BlockVector& sol)
 {
   unsigned int verbosity = Output::getVerbosity();
-  Output::setVerbosity(1);
+  Output::suppressAll();
   velocity_solver->solve(rhs, sol);
-  Output::setVerbosity(verbosity);
+  Output::setVerbosity(verbosity); // reset verbosity for further output
 }
 
 /* ************************************************************************** */

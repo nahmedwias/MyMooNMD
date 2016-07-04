@@ -23,7 +23,6 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-
   Vector z(A, false);
   
   double normb = norm(rhs);
@@ -35,7 +34,6 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   A.apply_scaled_add(solution, r, -1.0);
   double resid = norm(r) / normb;
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);

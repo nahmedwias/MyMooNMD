@@ -16,7 +16,7 @@ class Iteration_cg : public IterativeMethod<LinearOperator, Vector>
     /** iterate routine */
     std::pair<unsigned int, double> iterate(const LinearOperator & A, 
                                             const Vector & rhs,
-                                            Vector & solution);
+                                            Vector & solution) override final;
 };
 
 #endif // __ITERATION_CG__

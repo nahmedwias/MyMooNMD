@@ -13,6 +13,10 @@ void ExampleFile()
   Output::print<1>("Example: SinCos1.h");
   TDatabase::ParamDB->INTERNAL_STEADY_STATE_MATRICES_OR_RHS = 0;
 }
+
+constexpr bool rhs_depends_on_time = true;
+constexpr bool coefficients_depend_on_time = false;
+
 // exact solution
 void Exact(double x, double y, double *values)
 {

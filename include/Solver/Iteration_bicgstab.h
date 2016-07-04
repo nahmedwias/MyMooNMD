@@ -16,7 +16,7 @@ class Iteration_bicgstab : public IterativeMethod<LinearOperator, Vector>
     /** iterate routine */
     std::pair<unsigned int, double> iterate(const LinearOperator & A, 
                                             const Vector & rhs,
-                                            Vector & solution);
+                                            Vector & solution) override final;
 };
 
 #endif // __ITERATION_BICG__
