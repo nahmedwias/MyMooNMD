@@ -11,7 +11,7 @@
 #include <MooNMD_Io.h>
 #include <MultigridLevel.h>
 #include <ParameterDatabase.h>
-#include <VankaSmootherNew.h>
+#include <VankaSmoother.h>
 
 #ifdef _MPI
 #include <ParFECommunicator3D.h>
@@ -48,38 +48,38 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
     case SmootherCode::NODAL_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::NODAL, damp);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::NODAL, damp);
       break;
     }
     case SmootherCode::CELL_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::CELL, damp);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::CELL, damp);
       break;
     }
     case SmootherCode::BATCH_VANKA:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::BATCH, damp);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::BATCH, damp);
       break;
     }
     //Vanka smoothers with storage of local systems
     case SmootherCode::NODAL_VANKA_STORE:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::NODAL, damp, true);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::NODAL, damp, true);
       break;
     }
     case SmootherCode::CELL_VANKA_STORE:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::CELL, damp, true);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::CELL, damp, true);
       break;
     }
     case SmootherCode::BATCH_VANKA_STORE:
     {
       double damp = db["multigrid_vanka_damp_factor"];
-      smoother_ = std::make_shared<VankaSmootherNew>(VankaType::BATCH, damp, true);
+      smoother_ = std::make_shared<VankaSmoother>(VankaType::BATCH, damp, true);
       break;
     }
     default:
