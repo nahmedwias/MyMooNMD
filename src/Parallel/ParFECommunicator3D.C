@@ -294,7 +294,7 @@ void TParFECommunicator3D::CommUpdate(double *sol) const
 
 }
 
-void TParFECommunicator3D::CommUpdateReduce(double *rhs)
+void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
   if(!Mapper)
   {

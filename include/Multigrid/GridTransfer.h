@@ -31,6 +31,10 @@ namespace GridTransfer
 /**
  * Prolongate a function from finer to coarser level.
  *
+ * In MPI case you must make sure that the input CoarseFunction enters in level
+ * 3 consistency. Due to its const-ness the update cannot be performed within
+ * this function.
+ *
  * @note No checks whether the spaces actually form the correct hierarchy are
  * performed - we rely on "garbage in, garbage out" here.
  */
@@ -44,6 +48,10 @@ void Prolongate(
  * maps into dual space. Used for restricting the defect from fine grid to
  * coarse grid (where it will form the right hand side).
  * For an in-depth explanation see lecture notes of Volker John.
+ *
+ * In MPI case you must make sure that the input FineFunction enters in level
+ * 3 consistency. Due to its const-ness the update cannot be performed within
+ * this function.
  *
  * @note No checks whether the spaces actually form the correct hierarchy are
  * performed - we rely on "garbage in, garbage out" here.

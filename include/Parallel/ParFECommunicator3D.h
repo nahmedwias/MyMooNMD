@@ -107,7 +107,7 @@ class TParFECommunicator3D
     // Mastern auf und stellt mit diesen addierten Werten Level-1-Konsistenz her.
     // Dies scheint nach Multigrid-Gridtransfers noetig zu sein ( zumindest wird
     // die Methode dort aufgerufen).
-    void CommUpdateReduce(double *rhs);
+    void CommUpdateReduce(double *rhs) const;
 
     //TODO Comment the usage of this!
     const int *GetMaster() const

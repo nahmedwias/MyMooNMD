@@ -314,11 +314,10 @@ void Time_CD3D::solve()
   }
   if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
-    std::vector<const TParFECommunicator3D*> par_comms_init = {&s.feSpace_.get_communicator()};
-    std::vector<TParFECommunicator3D*> par_comms_solv = {&s.feSpace_.get_communicator()};
+    std::vector<const TParFECommunicator3D*> par_comms = {&s.feSpace_.get_communicator()};
 
-    MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms_init);
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+    MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms);
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms);
   }
   #endif
 }
