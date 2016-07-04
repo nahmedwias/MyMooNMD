@@ -17,7 +17,6 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_TimeCD2D.h>
-#include <MultiGrid2D.h>
 #include <Multigrid.h>
 #include <Domain.h>
 #include <PostProcessing2D.h>

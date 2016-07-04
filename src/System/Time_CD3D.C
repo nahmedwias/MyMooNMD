@@ -2,12 +2,7 @@
 #include <Database.h>
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
-#include <ItMethod.h>
-#include <JacobiIte.h>
 #include <LinAlg.h>
-#include <MultiGridScaIte.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <Multigrid.h>
 #include <Output3D.h>
 

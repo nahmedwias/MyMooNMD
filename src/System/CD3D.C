@@ -8,12 +8,8 @@
 #include <Assemble3D.h>
 //#include <PostProcessing3D.h>
 
-#include <FixedPointIte.h>
-#include <JacobiIte.h>
-#include <MultiGridScaIte.h>
 #include <DirectSolver.h>
 
-#include <MultiGrid3D.h>
 #include <MainUtilities.h> // L2H1Errors
 
 #include <Multigrid.h>

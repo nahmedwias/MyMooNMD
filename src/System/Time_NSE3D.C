@@ -3,8 +3,6 @@
 #include <Assemble3D.h>
 #include <LocalAssembling3D.h>
 #include <LinAlg.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <Output3D.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
