@@ -103,10 +103,11 @@ class TParFECommunicator3D
     void CommUpdate(double *sol) const;
     
     //TODO comment and put private
+    // Verdacht: die Methode addiert die Werte von Interface-Slaves und Interface-
+    // Mastern auf und stellt mit diesen addierten Werten Level-1-Konsistenz her.
+    // Dies scheint nach Multigrid-Gridtransfers noetig zu sein ( zumindest wird
+    // die Methode dort aufgerufen).
     void CommUpdateReduce(double *rhs);
-    
-    //TODO comment and put private
-    void CommUpdate(double *sol, double *rhs);
 
     //TODO Comment the usage of this!
     const int *GetMaster() const

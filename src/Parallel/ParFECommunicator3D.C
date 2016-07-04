@@ -388,15 +388,6 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   timeC+=(t2-t1);
 }
 
-
-
-void TParFECommunicator3D::CommUpdate(double *sol, double *rhs)
-{
-  printf("GMRES not yet verified. Check if rhs update is reqd????\n");
-  MPI_Finalize();
-  exit(0);
-}
-
 #endif
 
 
