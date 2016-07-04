@@ -522,10 +522,10 @@ void NSE3D::assemble_linear_terms()
   double *u2 = this->systems_.front().solution_.block(1);
   double *u3 = this->systems_.front().solution_.block(2);
   double *p  = this->systems_.front().solution_.block(3);
-  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u1);
-  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u2);
-  this->systems_.front().velocitySpace_.get_communicator().CommUpdate(u3);
-  this->systems_.front().pressureSpace_.get_communicator().CommUpdate(p);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u1, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u2, 3);
+  this->systems_.front().velocitySpace_.get_communicator().consistency_update(u3, 3);
+  this->systems_.front().pressureSpace_.get_communicator().consistency_update(p, 3);
 #endif
 }
 
