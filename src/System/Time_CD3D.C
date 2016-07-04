@@ -303,23 +303,22 @@ void Time_CD3D::assemble()
 //==============================================================================
 void Time_CD3D::solve()
 {
-  SystemPerGrid& s=this->systems_.front();
-  #ifndef _MPI
-  this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential 
-  #endif
-  #ifdef _MPI // parallel
-  if(this->solver.get_db()["solver_type"].is("iterative")) // iterative solver 
+  SystemPerGrid& s = systems_.front();
+#ifndef _MPI
+  solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential
+#else // parallel
+  if(solver.get_db()["solver_type"].is("iterative")) // iterative solver
   {
-    this->solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
+    solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
   }
-  if(this->solver.get_db()["solver_type"].is("direct")) // direct solvers
+  else if(solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
     std::vector<const TParFECommunicator3D*> par_comms = {&s.feSpace_.get_communicator()};
 
     MumpsWrapper mumps_wrapper(s.stiffMatrix_, par_comms);
     mumps_wrapper.solve(s.rhs_, s.solution_, par_comms);
   }
-  #endif
+#endif
 }
 
 //==============================================================================
