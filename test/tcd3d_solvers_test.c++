@@ -160,17 +160,24 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   }
   else if(solver_name.compare("multigrid") ==0)
   {
+
+    db.merge(Multigrid::default_multigrid_database() ,true);
+
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
     db["multigrid_n_levels"] = 2;
-    db["multigrid_cycle_type"] = "V";
+    db["max_n_iterations"] =  100;
+    db["residual_tolerance"] = 1.0e-15;
+    db["residual_reduction"] =  0.0;
+    // Multigrid parameters
+    db["multigrid_cycle_type"] = "W";
     db["multigrid_smoother"] = "jacobi";
-    db["residual_tolerance"] = 1e-13;
-    db["multigrid_coarse_max_n_iterations"] = 5;
-    db["damping_factor"] = 0.7;
-    db["damping_factor_finest_grid"] = 0.7;
-    
+    db["multigrid_smoother_coarse"] = "direct_solve";
+    db["multigrid_correction_damp_factor"] = 0.8;
+    db["multigrid_n_pre_smooth"] = 3;
+    db["multigrid_n_post_smooth"] = 3;
 
     Output::setVerbosity(2);
   }

@@ -137,7 +137,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["max_n_iterations"] =  1000;
     db["min_n_iterations"] =  5;
   }
-  else if (solver_name.compare("multigrid") == 0) //multigrid test will fail in mpi
+  else if (solver_name.compare("multigrid") == 0)
   {
     db.merge(Multigrid::default_multigrid_database() ,true);
 
@@ -147,16 +147,15 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     db["refinement_n_initial_steps"] = 2;
     db["multigrid_n_levels"] = 2;
     db["max_n_iterations"] =  100;
-    db["residual_tolerance"] = 1.0e-14;
+    db["residual_tolerance"] = 1.0e-15;
     db["residual_reduction"] =  0.0;
     // Multigrid parameters
-    db["multigrid_n_levels"] = 2;
-    db["multigrid_cycle_type"] = "V";
+    db["multigrid_cycle_type"] = "W";
     db["multigrid_smoother"] = "jacobi";
     db["multigrid_smoother_coarse"] = "direct_solve";
     db["multigrid_correction_damp_factor"] = 0.8;
-    db["multigrid_n_pre_smooth"] = 2;
-    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_n_pre_smooth"] = 3;
+    db["multigrid_n_post_smooth"] = 3;
 
     Output::setVerbosity(2);
 
@@ -223,8 +222,8 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database() ,true);
   db["problem_type"] = 1;
-  db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
-  db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
+  db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 3);
+  db.add("multigrid_n_levels", (size_t) 0, "",(size_t) 0, (size_t) 3);
   db.add("boundary_file", "Default_UnitCube", "");
   db.add("geo_file", "Default_UnitCube_Hexa", "",
 	 {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
