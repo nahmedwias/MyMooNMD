@@ -51,6 +51,10 @@ class ParameterDatabase
     /// TODO The more of these default databases I add here, the more I am convinced:
     /// they are a symptom for classes which we ought to have but don't.
     static ParameterDatabase default_output_database();
+    
+    /// construct a database filled with parameters for 
+    /// mesh generation using TetGen
+    static ParameterDatabase default_tetgen_database();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;

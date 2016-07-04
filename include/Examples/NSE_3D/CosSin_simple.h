@@ -7,12 +7,19 @@
 
  */
 
+constexpr double KINEMATIC_VISCOSITY = 1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Simple example with sin and cos solution and p=0");
 
   // \TODO check if the expected geometry is used
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 1;
+}
+
+double get_nu()
+{
+  return KINEMATIC_VISCOSITY;
 }
 
 // exact solution
@@ -78,7 +85,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = 1;
+  const double eps = KINEMATIC_VISCOSITY;
   double u1[5], u2[5], u3[5], p[5];
   for(int i=0;i<n_points;i++)
   {
@@ -120,7 +127,7 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
 // // former values of boundary condition
 //void U1BoundValue(double x, double y, double z, double &value)
 //{
-//  const double eps = 1./TDatabase::ParamDB->RE_NR;
+//  const double eps = KINEMATIC_VISCOSITY;
 //  double tol = 1e-10;
 //  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
 //       || (fabs(1-z) < tol))
@@ -142,7 +149,7 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
 //}
 //void U2BoundValue(double x, double y, double z, double &value)
 //{
-//  const double eps = 1./TDatabase::ParamDB->RE_NR;
+//  const double eps = KINEMATIC_VISCOSITY;
 //  double tol = 1e-10;
 //  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
 //       || (fabs(1-z) < tol))
@@ -164,7 +171,7 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
 //}
 //void U3BoundValue(double x, double y, double z, double &value)
 //{
-//  const double eps = 1./TDatabase::ParamDB->RE_NR;
+//  const double eps = KINEMATIC_VISCOSITY;
 //  double tol = 1e-10;
 //  if((fabs(1+x) < tol) || (fabs(1+y) < tol) || (fabs(1+z) < tol)
 //       || (fabs(1-z) < tol))

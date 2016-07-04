@@ -348,8 +348,8 @@ void MumpsWrapper::set_mumps_parameters()
   id_.ICNTL(2) = 6;   // no warnings output
   id_.ICNTL(3) = 6;   // no global info output
   id_.ICNTL(4) = 1;    // verbosity level
-
-  id_.ICNTL(14) = 20;   //estimated working space increase (%)
+  // NOTE: Clemens suggestion for this parameter to be 75 original was 20
+  id_.ICNTL(14) = 75;   //estimated working space increase (%)
 
   //the following block is for choice of ordering tools in analysis phase
   // FIXME parellel ordering with parmetis is segfaulting!

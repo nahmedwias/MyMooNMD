@@ -1,6 +1,39 @@
 #include <ParameterDatabase.h>
 #include <MooNMD_Io.h>
 
+bool test_for_parameter_class()
+{
+  Parameter p("parameter", 1, "dummy description");
+  Parameter q("unsigned_parameter", (size_t)1, "dummy description");
+  try
+  {
+    p.impose(q);
+    Output::print("I was able to impose one parameter to another one, even "
+                  "though their names are different");
+    return false;
+  }
+  catch(...) { }
+  
+  Parameter p2("parameter", 2, "some description");
+  p.set_range(-2, 4);
+  p2.set_range<int>({-2, 2, 5});
+  // impose a parameter with the same type but different type of range
+  p2.impose(p);
+  p2.info();
+  
+  Parameter p3("parameter", (size_t)6, "some description");
+  // impose a parameter with a different type
+  p.impose(p3);
+  p.info();
+  
+  Parameter p4("parameter", 2.0, "double parameter description");
+  p4.impose(p3);
+  p4.info();
+  p4.impose(p);
+  p4.info();
+  return true;
+}
+
 int main(int argc, char* argv[])
 {
   Output::print("starting parameter test");
@@ -56,6 +89,9 @@ int main(int argc, char* argv[])
   
   ParameterDatabase timedb = ParameterDatabase::default_time_database();
 
+  if(!test_for_parameter_class())
+    return 1;
+  
   Output::print("successful test");
   return 0;
 }

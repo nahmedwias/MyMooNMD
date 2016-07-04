@@ -59,9 +59,8 @@ Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
 /** ************************************************************************ */
 Darcy2D::Darcy2D(const TDomain& domain, const ParameterDatabase& param_db,
                  const Example_Darcy2D ex, int reference_id)
- : systems(), example(ex), multigrid(nullptr), 
-   db(get_default_Darcy2D_parameters()), outputWriter(param_db),
-   solver(param_db), errors()
+ : systems(), example(ex), db(get_default_Darcy2D_parameters()),
+   outputWriter(param_db), solver(param_db), errors()
 {
   // get the parameters to control the behavior of this class
   this->db.merge(param_db, false);
@@ -134,8 +133,7 @@ void Darcy2D::set_parameters()
         break;
     }
   }
-  if(this->solver.get_db()["solver_type"].is("iterative") && 
-     this->solver.get_db()["preconditioner"].is("multigrid"))
+  if(this->solver.is_using_multigrid())
   {
     ErrThrow("multigrid not yet implemented for Darcy2D");
   }

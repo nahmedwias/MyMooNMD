@@ -37,12 +37,18 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
      * @param[in, out] r Solution vector of the equation. Will be used as
      * start solution on input.
      */
-    void apply(const Vector & z, Vector & r) const override;
+    void apply(const Vector & z, Vector & r) const override final;
 
     /** iterate routine */
     std::pair<unsigned int, double> iterate(const LinearOperator & A,
                                             const Vector & rhs,
-                                            Vector & solution) override;
+                                            Vector & solution) override final;
+    
+    void update(const LinearOperator& A) override final
+    { mg_->update(); };
+    void update() override final
+    { mg_->update(); };
+    
     /** destructor */
     virtual ~Iteration_multigrid() = default;
 
