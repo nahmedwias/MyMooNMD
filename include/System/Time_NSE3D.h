@@ -309,6 +309,9 @@ class Time_NSE3D
      * At the moment, only IMEX is implemented. */
     void construct_extrapolated_solution();
 
+    /** */
+    bool imex_scheme(unsigned int iteration_counter);
+
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
     // This problem class will be used to request the whole process of

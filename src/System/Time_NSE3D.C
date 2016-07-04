@@ -829,10 +829,10 @@ void Time_NSE3D::assemble_nonlinear_term()
 
     // The assembly with the extrapolated velocity of IMEX_scheme begins
     // at step 3
-    bool imex_scheme = (db_["time_discretization"].is(4)*(this->current_step_>=3));
+    bool is_imex = this->imex_scheme(1);
 
     // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
-    if(!imex_scheme)
+    if(!is_imex)
     {
       fe_functions[0] = s.u_.GetComponent(0);
       fe_functions[1] = s.u_.GetComponent(1);
@@ -920,7 +920,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 //  const double normOfMassResidual    = this->get_mass_residual();
 //  const double oldNormOfResidual     = this->old_residual_[1].fullR;
   // hold the residual from up to 10 iterations ago
-  const double veryOldNormOfResidual     = this->old_residual_.front().fullResidual;
+  const double veryOldNormOfResidual  = this->old_residual_.front().fullResidual;
 
 //  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
 //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
@@ -952,9 +952,6 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
   double conv_speed = db_["nonlinloop_slowfactor"];
-  bool IMEX_scheme  = (db_["time_discretization"].is(4))*
-                      (this->current_step_>=3)*
-                      (iteration_counter>0);
   bool slow_conv    = false;
 
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
@@ -971,7 +968,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Stopping criteria
   if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
-        || (slow_conv) || (IMEX_scheme) )
+        || (slow_conv) )
    {
     if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);
@@ -984,7 +981,8 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
-    this->descale_matrices();
+    if (!this->imex_scheme(iteration_counter)) //because solve() already descaled
+      this->descale_matrices();
     return true;
    }
    else
@@ -1338,5 +1336,23 @@ TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
     return this->systems_.front().u_.GetComponent(2);
   else
     throw std::runtime_error("There are only three velocity components!");
+}
+
+/**************************************************************************** */
+bool Time_NSE3D::imex_scheme(unsigned int iteration_counter)
+{
+  //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
+  bool interruption_condition  = (db_["time_discretization"].is(4))*
+                      (this->current_step_>=3)*
+                      (iteration_counter>0);
+
+  // change maximum number of nonlin_iterations to 1 in IMEX case
+  if (interruption_condition)
+  {
+    db_["nonlinloop_maxit"] = 1;
+    Output::info<1>("interrupt_nonlin_loop",
+                    "Only one non-linear iteration is done, for the IMEX scheme was chosen.\n");
+  }
+  return interruption_condition;
 }
 
