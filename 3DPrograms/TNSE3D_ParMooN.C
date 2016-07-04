@@ -214,26 +214,24 @@ int main(int argc, char* argv[])
 
       for(unsigned int k=0; ; k++)
       {
-        // checking residuals
-        if(tnse3d.stop_it(k))
-        {
-          if (my_rank==0)
-          {
-            Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-            Output::print<1>("Residuals :", tnse3d.get_residuals());
-          }
-          break;
-        }
+        tnse3d.compute_residuals();
 
-        Chrono chrono_nonlinit;
-
-        if (my_rank==0)
+        if (my_rank==0) // some outputs
         {
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
           Output::print<1>("Residuals :", tnse3d.get_residuals());
         }
-//        break;
+
+        // checking residuals and stop conditions
+        if(tnse3d.stop_it(k))
+          break;
+
+        Chrono chrono_nonlinit;
+
         tnse3d.solve();
+
+        if(tnse3d.imex_scheme(k))
+          continue;
 
         tnse3d.assemble_nonlinear_term();
 
