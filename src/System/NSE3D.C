@@ -3,20 +3,7 @@
 #include <LocalAssembling3D.h>
 #include <Assemble3D.h>
 #include <MainUtilities.h>
-
-#include <NSE_MGLevel.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
 #include <LinAlg.h>
-
-#include <ItMethod.h>
-#include <FgmresIte.h>
-#include <FixedPointIte.h>
-#include <MultiGridIte.h>
-
 #include <DirectSolver.h>
 #include <Output3D.h>
 

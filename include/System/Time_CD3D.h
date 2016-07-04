@@ -17,7 +17,6 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Example_TimeCD3D.h>
-#include <MultiGrid3D.h>
 #include <Solver.h>
 
 #include <vector>

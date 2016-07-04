@@ -146,27 +146,6 @@ int main(int argc, char* argv[])
   for(auto f : function_fine)
     Output::print(f);
 
-  //CB DEBUG - Old defect restriction
-  double aux[1000];
-
-  std::fill(function_coarse.begin(), function_coarse.end(), 0.0);
-  std::fill(function_fine.begin(), function_fine.end(), 2.0);
-
-  DefectRestriction(
-      &space_coarse, &space_fine,
-      &function_coarse.at(0), &function_fine.at(0),
-      aux);
-
-  Output::print("Coarse function");
-  for(auto c : function_coarse)
-    Output::print(c);
-
-  Output::print("Fine function");
-  for(auto f : function_fine)
-    Output::print(f);
-
-  //END DEBUG
-
   Output::print("Test program finished.");
 }
 

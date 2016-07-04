@@ -26,8 +26,6 @@
 #include <FESpace3D.h>
 #include <Example_TimeNSE3D.h>
 
-#include <NSE_MultiGrid.h>
-
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
