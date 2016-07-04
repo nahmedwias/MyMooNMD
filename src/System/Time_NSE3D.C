@@ -980,15 +980,8 @@ void Time_NSE3D::solve()
 #ifdef _MPI
   if(solver_.get_db()["solver_type"].is("direct"))
   {
-    //two vectors of communicators (const for init, non-const for solving)
-    std::vector<const TParFECommunicator3D*> par_comms_init =
-    {
-     &s.velocitySpace_.get_communicator(),
-     &s.velocitySpace_.get_communicator(),
-     &s.velocitySpace_.get_communicator(),
-     &s.pressureSpace_.get_communicator()
-    };
-    std::vector<TParFECommunicator3D*> par_comms_solv =
+    //vector of communicators
+    std::vector<const TParFECommunicator3D*> par_comms =
     {
      &s.velocitySpace_.get_communicator(),
      &s.velocitySpace_.get_communicator(),
@@ -997,10 +990,10 @@ void Time_NSE3D::solve()
     };
     
     //set up a MUMPS wrapper
-    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    MumpsWrapper mumps_wrapper(s.matrix_, par_comms);
     
     //kick off the solving process
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms);
   }
 #endif
   // Important: We have to descale the matrices, since they are scaled

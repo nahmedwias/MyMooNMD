@@ -68,7 +68,7 @@ MumpsWrapper::MumpsWrapper(
 
 void MumpsWrapper::solve(
     const BlockVector& rhs, BlockVector& solution,
-    std::vector<TParFECommunicator3D*> comms)
+    std::vector<const TParFECommunicator3D*> comms)
 {
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -258,7 +258,7 @@ MumpsWrapper::~MumpsWrapper()
 // Private functions.
 void MumpsWrapper::check_input_solve(
     const BlockVector& rhs, const BlockVector& solution,
-    const std::vector<TParFECommunicator3D*>& comms,
+    std::vector<const TParFECommunicator3D*> comms,
     int& n_masters_local_comms, int& n_dofs_global_comms)
 {
   int mpi_rank, mpi_size;

@@ -12,10 +12,12 @@
  * If you want to hard-code changes to some parameters, the method
  * "set_mumps_parameters" is the place to go to.
  *
- * TODO 1) Play with sets of parameters.
- * TODO 2) Make some reuse of a factorization possible.
- * TODO 3) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
+ * TODO 1) Make some reuse of a factorization possible.
+ * TODO 2) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
  *         to make the class at least movable (although not copyable yet.)
+ *
+ * TODO Remove the comms from the interface - it is known to the FESpaces now
+ * and can be accessed via the BlockFEMatrix now.
  *
  * @note Replaces the older classes ParDirectSolver and MumpsSolver.
  *
@@ -70,7 +72,7 @@ class MumpsWrapper
      * given to the constructor, but this is not checked explicitly.
      */
     void solve(const BlockVector& rhs, BlockVector& solution,
-              std::vector<TParFECommunicator3D*> comms);
+              std::vector<const TParFECommunicator3D*> comms);
 
     /**
      * Write the locally stored matrix to a file in MatrixMarket
@@ -114,7 +116,7 @@ class MumpsWrapper
      * @param[out] n_dofs_global_comms The overall, global number of dofs.
      */
     void check_input_solve(const BlockVector& rhs, const BlockVector& solution,
-                           const std::vector<TParFECommunicator3D*>& comms,
+                           std::vector<const TParFECommunicator3D*> comms,
                            int& n_masters_local_comms,
                            int& n_dofs_global_comms);
 

@@ -792,23 +792,18 @@ void NSE3D::solve()
   {
     if(damping != 1.0)
       Output::warn("NSE3D::solve", "damping in an MPI context is not tested");
-    //two vectors of communicators (const for init, non-const for solving)
-    std::vector<const TParFECommunicator3D*> par_comms_init =
-    {&s.velocitySpace_.get_communicator(),
-     &s.velocitySpace_.get_communicator(),
-     &s.velocitySpace_.get_communicator(),
-     &s.pressureSpace_.get_communicator()};
-    std::vector<TParFECommunicator3D*> par_comms_solv =
+    //vector of communicators
+    std::vector<const TParFECommunicator3D*> par_comms =
     {&s.velocitySpace_.get_communicator(),
      &s.velocitySpace_.get_communicator(),
      &s.velocitySpace_.get_communicator(),
      &s.pressureSpace_.get_communicator()};
 
     //set up a MUMPS wrapper
-    MumpsWrapper mumps_wrapper(s.matrix_, par_comms_init);
+    MumpsWrapper mumps_wrapper(s.matrix_, par_comms);
 
     //kick off the solving process
-    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms_solv);
+    mumps_wrapper.solve(s.rhs_, s.solution_, par_comms);
   }
   else
     this->solver.solve(s.matrix_, s.rhs_, s.solution_); // same as sequential

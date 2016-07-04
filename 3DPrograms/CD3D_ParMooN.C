@@ -26,6 +26,7 @@ double timeC = 0;
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  {
 #ifdef _MPI
   //Construct and initialise the default MPI communicator.
   MPI_Init(&argc, &argv);
@@ -179,9 +180,11 @@ int main(int argc, char* argv[])
   //=========================================================================
 
   if(my_rank==0)
-    Output::print("<<<<< ParMooN Finished: NSE3D Main Program >>>>>");
+    Output::print("<<<<< ParMooN Finished: CD3D Main Program >>>>>");
 
   Output::close_file();
+
+}
 
 #ifdef _MPI
   MPI_Finalize();
