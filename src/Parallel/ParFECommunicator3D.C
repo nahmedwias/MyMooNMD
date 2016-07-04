@@ -230,69 +230,6 @@ void TParFECommunicator3D::CommUpdateH2(double *sol) const
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdate_M_H1(double *sol) const
-{
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  
-  CommUpdateMS(sol);
-  CommUpdateH1(sol);
-  
-}
-
-void TParFECommunicator3D::CommUpdate(double *sol) const
-{
-  
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  int i,j,k;
-  double t1,t2;
-  
-  if(TDatabase::ParamDB->MapperType != 2)
-  {
-    CommUpdateMS(sol);
-    CommUpdateH1(sol);
-    CommUpdateH2(sol);
-  }
-  else
-  {
-    t1=MPI_Wtime();
-    
-    for(i=0;i<N_SendDof;i++)
-    {
-      for(j=0;j<N_Dim;j++)
-      {
-	k = i*N_Dim + j;
-	Send_Info[k]=sol[DofSend[i]+j*N_Dof];
-      }
-    }
-
-    MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
-  
-    for(i=0;i<N_Slave;i++)  
-    {
-      for(j=0;j<N_Dim;j++)
-      {
-        k = i*N_Dim + j;
-        sol[DofRecv[i]+j*N_Dof] = Recv_Info[k];
-      }
-    }
-    
-    t2=MPI_Wtime(); 
-    timeC+=(t2-t1);
-  } 
-
-}
 
 void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
