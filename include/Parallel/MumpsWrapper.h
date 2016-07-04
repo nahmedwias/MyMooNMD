@@ -16,11 +16,6 @@
  * TODO 2) Maybe store just a raw pointer to the DMUMPS_STRUC_C object,
  *         to make the class at least movable (although not copyable yet.)
  *
- * TODO Remove the comms from the interface - it is known to the FESpaces now
- * and can be accessed via the BlockFEMatrix now.
- *
- * @note Replaces the older classes ParDirectSolver and MumpsSolver.
- *
  * @date 2016/03/14
  * @author Clemens Bartsch
  */
@@ -46,17 +41,10 @@ class MumpsWrapper
 {
   public:
     /**
-     * Set up a Mumps wrapper for a certain BlockFEMatrix and suitable
-     * ParFECommunicators. The communicators have to belong to the
-     * testspaces of the matrix and must be in the same order.
-     * Also their dimension variable "N_Dim" must equal 1.
-     *
+     * Set up a Mumps wrapper for a certain BlockFEMatrix.
      * @param[in] bmatrix The matrix to wrap a mumps solver around.
-     * @param[in] comms The FE communicators for the testspaces. Must be of dimension 1.
      */
-    MumpsWrapper(
-        const BlockFEMatrix& bmatrix,
-        std::vector<const TParFECommunicator3D*> comms);
+    MumpsWrapper( const BlockFEMatrix& bmatrix );
 
     /**
      * Solve an equation system for the wrapped up matrix with the mumps solver.
@@ -67,12 +55,8 @@ class MumpsWrapper
      * @param[out] solution The solution - local to each proccess.
      * Must fit in dimension to the stored matrix and the given communicators,
      * obviously.
-     * @param[in] comms The communicators with which to interpret
-     * the blocks of the BlockVectors - these should be the same as have been
-     * given to the constructor, but this is not checked explicitly.
      */
-    void solve(const BlockVector& rhs, BlockVector& solution,
-              std::vector<const TParFECommunicator3D*> comms);
+    void solve(const BlockVector& rhs, BlockVector& solution);
 
     /**
      * Write the locally stored matrix to a file in MatrixMarket
@@ -110,13 +94,11 @@ class MumpsWrapper
      *
      * @param[in] rhs The right hand side vector.
      * @param[in] solution The solution vector.
-     * @param[in comms The communicators for the FE spaces.
      * @param[out] n_masters_local_comms The local number of masters, counted
      * across all blocks of the input vectors.
      * @param[out] n_dofs_global_comms The overall, global number of dofs.
      */
     void check_input_solve(const BlockVector& rhs, const BlockVector& solution,
-                           std::vector<const TParFECommunicator3D*> comms,
                            int& n_masters_local_comms,
                            int& n_dofs_global_comms);
 
@@ -144,18 +126,9 @@ class MumpsWrapper
      * BlockFEMatrix to the coordinate format which mumps requires.
      * On each process only those dofs which it is master of will be regarded.
      *
-     * Performs no input checks, the constructor who calls it does that.
-     *
      * @param bmatrix The BlockFEMatrix which is to transform.
-     * @param comms An array containing the ParFECommunicators which belong
-     * to the fespaces of the matrix' block rows (in the same order).
-     * So far they all must have dimension 1, this method cannot yet deal
-     * with using the same communicator for more than one block row.
-
      */
-    void store_in_distributed_coordinate_form(
-        const BlockFEMatrix& bmatrix,
-        std::vector<const TParFECommunicator3D*> comms);
+    void store_in_distributed_coordinate_form(const BlockFEMatrix& bmatrix);
 
     /**
      * This method is need for enclosed flows. Determines which row is the
@@ -224,6 +197,7 @@ class MumpsWrapper
         std::vector<double> a_loc;
     } matrix_;
 
+    std::vector< const TParFECommunicator3D* > comms_;
 
 };
 

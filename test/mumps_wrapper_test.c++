@@ -136,10 +136,7 @@ int main(int argc, char* argv[])
 
   {//start new scope, so that Mumps solver is destructed before MPI_FINALIZE
     //set up a mumps wrapper for the block matrix
-    MumpsWrapper wrap(bfem, {&comm_1, &comm_2});
-
-    //this should fail! - catch
-    //MumpsWrapper wrap_fail(bfem, {&comm_2, &comm_1});
+    MumpsWrapper wrap(bfem);
 
     // //write matrices to file
     //wrap.write_matrix_distributed(std::string("1d"));
@@ -165,7 +162,7 @@ int main(int argc, char* argv[])
     }
     nsemat.get_combined_matrix()->write((std::string("2s") +
         std::to_string(mpiRank)).c_str());
-    MumpsWrapper wrap(nsemat, {&comm_1, &comm_1, &comm_2});
+    MumpsWrapper wrap(nsemat);
     wrap.write_matrix_distributed(std::string("2d"));
 
     // Here I used MATLAB to read in the matrices - those gained by get_combined_matrix
@@ -183,7 +180,7 @@ int main(int argc, char* argv[])
     {//fill rhs with ones
       rhs.at(i) = 1;
     }
-    wrap.solve(rhs, sol, {&comm_1, &comm_1, &comm_2});
+    wrap.solve(rhs, sol );
 
     //hard-coded test, I don't know anything better at the moment...
     Output::print(sol.norm());

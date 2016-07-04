@@ -170,14 +170,10 @@ void CD3D::solve()
     #ifdef _MPI
     if(this->solver.get_db()["solver_type"].is("direct"))
     {
-      //vector of communicators
-      std::vector<const TParFECommunicator3D*> par_comms = {&s.feSpace_.get_communicator()};
-
       //set up a MUMPS wrapper
-      MumpsWrapper mumps_wrapper(s.matrix_, par_comms);
-
+      MumpsWrapper mumps_wrapper(s.matrix_);
       //kick off the solving process
-      mumps_wrapper.solve(s.rhs_, s.solution_, par_comms);
+      mumps_wrapper.solve(s.rhs_, s.solution_);
     }
     else
       this->solver.solve(s.matrix_, s.rhs_, s.solution_);
