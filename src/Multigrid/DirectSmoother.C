@@ -25,7 +25,7 @@ DirectSmoother::DirectSmoother()
 void DirectSmoother::smooth(const BlockVector& rhs, BlockVector& solution)
 {
 #ifdef _MPI
-  solver_->solve(rhs,solution, comms_);
+  solver_->solve(rhs,solution);
 #else
   solver_->solve(rhs, solution);
 #endif
@@ -34,8 +34,7 @@ void DirectSmoother::smooth(const BlockVector& rhs, BlockVector& solution)
 void DirectSmoother::update(const BlockFEMatrix& matrix)
 {
 #ifdef _MPI
-  solver_.reset(new MumpsWrapper(matrix, matrix.get_communicators()));
-  comms_ = matrix.get_communicators();
+  solver_.reset(new MumpsWrapper(matrix));
 #else
   DirectSolver::DirectSolverTypes type = DirectSolver::DirectSolverTypes::umfpack;
   solver_.reset(new DirectSolver(matrix, type));

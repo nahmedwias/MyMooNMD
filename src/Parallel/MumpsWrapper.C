@@ -23,32 +23,10 @@
 #define ICNTL(I) icntl[(I)-1]
 #define INFOG(I) infog[(I)-1]
 
-MumpsWrapper::MumpsWrapper(
-    const BlockFEMatrix& bmatrix,
-    std::vector<const TParFECommunicator3D*> comms)
+MumpsWrapper::MumpsWrapper(const BlockFEMatrix& bmatrix)
 {
-  //input checks
-  if (comms.size() != bmatrix.get_n_cell_rows())
-  {
-    throw std::runtime_error("Number of given communicators does not match"
-        " block order.");
-  }
-  size_t n_comms = comms.size();
-
-  for(size_t index = 0 ; index<n_comms; ++index) //check if fespaces match
-  {
-    //compare adresses of the FESpaces
-    if(comms.at(index)->get_fe_space() != &bmatrix.get_row_space(index))
-      throw std::runtime_error("Adresses of spaces do not match.");
-  }
-  for(size_t index = 0; index<n_comms; ++index)
-  // check if all communicators have dimension 1 - this is a restriction which
-  // must be removed later!
-  {
-    if(comms.at(index)->get_n_dim() != 1 )
-      throw std::runtime_error("MumpsWrapper can only be used with "
-          "ParFeCommunicators of dimension 1");
-  }
+  //copy the BlockFEMatrices communicators and store them
+  comms_ = bmatrix.get_communicators();
 
   // initialize the mumps entity
   // set those "hard" parameters which must be set before initializing
@@ -62,13 +40,11 @@ MumpsWrapper::MumpsWrapper(
   set_mumps_parameters();
 
   // transform and store the matrix distributed in coordinate format
-  store_in_distributed_coordinate_form(bmatrix, comms);
+  store_in_distributed_coordinate_form(bmatrix);
 
 }
 
-void MumpsWrapper::solve(
-    const BlockVector& rhs, BlockVector& solution,
-    std::vector<const TParFECommunicator3D*> comms)
+void MumpsWrapper::solve(const BlockVector& rhs, BlockVector& solution)
 {
   int mpi_rank, mpi_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -80,8 +56,7 @@ void MumpsWrapper::solve(
   //0) do input check and gather two important numbers
   int n_masters_local_comms;
   int n_dofs_global_comms;
-  check_input_solve(rhs, solution, comms,
-                    n_masters_local_comms, n_dofs_global_comms);
+  check_input_solve(rhs, solution, n_masters_local_comms, n_dofs_global_comms);
 
   //1) set up the global right hand side in root
   std::vector<double> master_values;
@@ -100,11 +75,11 @@ void MumpsWrapper::solve(
   size_t loc_dof_shift = 0;
   size_t glob_dof_shift = 0;
 
-  for(size_t index = 0; index < comms.size() ;++index) //loop over blocks
+  for(size_t index = 0; index < comms_.size() ;++index) //loop over blocks
   {
     //fill the local right hand side with master dof rows only
-    const int* masters = comms.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!
-    size_t n_loc_dofs_block = comms.at(index)->GetNDof();
+    const int* masters = comms_.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!
+    size_t n_loc_dofs_block = comms_.at(index)->GetNDof();
     for(size_t i = 0; i< n_loc_dofs_block; ++i)
     {//push rhs values for master dofs on this rank and block to master_values
       if(masters[i] == mpi_rank)
@@ -114,7 +89,7 @@ void MumpsWrapper::solve(
     }
 
     //...and gather these local right hand sides globally
-    int n_loc_masters_block = comms.at(index)->GetN_Master();
+    int n_loc_masters_block = comms_.at(index)->GetN_Master();
     double* global_rhs_dummy = nullptr;
     if(i_am_root)
     {
@@ -169,10 +144,10 @@ void MumpsWrapper::solve(
   loc_master_shift = 0;
   glob_dof_shift = 0;
 
-  for(size_t index = 0; index < comms.size(); ++index) //loop over blocks
+  for(size_t index = 0; index < comms_.size(); ++index) //loop over blocks
   {
     //receive all master values from root and store in master_values
-    int n_loc_masters_block = comms.at(index)->GetN_Master();
+    int n_loc_masters_block = comms_.at(index)->GetN_Master();
     int n_glob_dofs_block;
     MPI_Allreduce(&n_loc_masters_block,&n_glob_dofs_block,
                   1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
@@ -201,8 +176,8 @@ void MumpsWrapper::solve(
     }
 
     //write master values into local solution vector
-    const int* masters = comms.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!
-    int n_local_dofs_block = comms.at(index)->GetNDof();
+    const int* masters = comms_.at(index)->GetMaster(); //TODO this should be a vector (in ParFECommunicator)!
+    int n_local_dofs_block = comms_.at(index)->GetNDof();
     int i_master = 0;
     for(int i_dof = 0; i_dof< n_local_dofs_block; ++i_dof)
     {//write solution values for master dofs on this rank into solution vector
@@ -215,10 +190,10 @@ void MumpsWrapper::solve(
     }
 
     // Update all non-master values in solution vector. Big fire!
-    comms.at(index)->CommUpdate(&solution.at(loc_dof_shift));
+    comms_.at(index)->consistency_update(&solution.at(loc_dof_shift),3);
 
     // count up the block shifts
-    int n_loc_dofs_block = comms.at(index)->GetNDof();
+    int n_loc_dofs_block = comms_.at(index)->GetNDof();
     loc_dof_shift += n_loc_dofs_block;
     loc_master_shift += n_loc_masters_block;
     glob_dof_shift += n_glob_dofs_block;
@@ -258,7 +233,6 @@ MumpsWrapper::~MumpsWrapper()
 // Private functions.
 void MumpsWrapper::check_input_solve(
     const BlockVector& rhs, const BlockVector& solution,
-    std::vector<const TParFECommunicator3D*> comms,
     int& n_masters_local_comms, int& n_dofs_global_comms)
 {
   int mpi_rank, mpi_size;
@@ -268,13 +242,13 @@ void MumpsWrapper::check_input_solve(
   //0) input checks
    n_masters_local_comms = 0;
    n_dofs_global_comms = 0;
-   for (size_t i =0; i < comms.size(); ++i)
+   for (size_t i =0; i < comms_.size(); ++i)
    {
-     if(comms.at(i)->get_n_dim() != 1 )
+     if(comms_.at(i)->get_n_dim() != 1 )
        throw std::runtime_error("MumpsWrapper can only be used with "
            "ParFECommunicators of dimension 1");
 
-     size_t local_n_dofs = comms.at(i)->GetNDof();
+     size_t local_n_dofs = comms_.at(i)->GetNDof();
      size_t block_length_rhs = rhs.length(i);
      size_t block_length_sol = solution.length(i);
 
@@ -289,7 +263,7 @@ void MumpsWrapper::check_input_solve(
            "of local dofs in given communicator.");
      }
      // add up all masters
-     n_masters_local_comms += comms.at(i)->GetN_Master();
+     n_masters_local_comms += comms_.at(i)->GetN_Master();
    }
    MPI_Allreduce(&n_masters_local_comms, &n_dofs_global_comms,
                  1, MPI_INT,MPI_SUM, MPI_COMM_WORLD);
@@ -364,8 +338,7 @@ void MumpsWrapper::set_mumps_parameters()
 }
 
 void MumpsWrapper::store_in_distributed_coordinate_form(
-    const BlockFEMatrix& bmatrix,
-    std::vector<const TParFECommunicator3D*> comms
+    const BlockFEMatrix& bmatrix
 )
 {
   // no input checks - assume that this method is only called from
@@ -379,7 +352,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   size_t n_dofs_global = 0; //sum over all local masters is number of global dofs
   {
     size_t n_masters_local = 0;
-    for(auto comm : comms)
+    for(auto comm : comms_)
     {
       n_masters_local += comm->GetN_Master();
     }
@@ -389,13 +362,13 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
 
   // 0.1)
   //determine an array which holds index-shifts
-  size_t nComms = comms.size();
+  size_t nComms = comms_.size();
   std::vector<size_t> shifts(nComms,0);
   //for each space, find out how many dofs there are in total
   //(over all processors) - adding up those will give the shift
   for(size_t index =0; index< nComms - 1;++index)
   {
-    int n_masters_local = comms.at(index)->GetN_Master();
+    int n_masters_local = comms_.at(index)->GetN_Master();
     //sum up all nLocalMasters over all processes and store
     MPI_Allreduce(&n_masters_local, &shifts.at(index + 1),
                   1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -408,8 +381,8 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   std::vector<std::vector<int>> dof_masters(nComms);
   for (size_t index = 0; index<nComms; ++index)
   {
-    const int* master_array = comms.at(index)->GetMaster();
-    size_t master_array_length = comms.at(index)->GetNDof();
+    const int* master_array = comms_.at(index)->GetMaster();
+    size_t master_array_length = comms_.at(index)->GetNDof();
     dof_masters.at(index).resize(master_array_length);
     std::copy(master_array,
               master_array + master_array_length, //pointer arithmetic!
@@ -421,8 +394,8 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   std::vector<std::vector<int>> local2globals(nComms);
   for (size_t index = 0; index<nComms; ++index)
   {
-    const int* l2g = comms.at(index)->Get_Local2Global();
-    size_t array_length = comms.at(index)->GetNDof();
+    const int* l2g = comms_.at(index)->Get_Local2Global();
+    size_t array_length = comms_.at(index)->GetNDof();
     local2globals.at(index).resize(array_length);
     std::copy(l2g,
               l2g + array_length, //pointer arithmetic!
@@ -550,7 +523,7 @@ void MumpsWrapper::store_in_distributed_coordinate_form(
   // an internal pressure row correction is necessary
   if (TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
   {
-    pressure_row_correction(comms);
+    pressure_row_correction(comms_);
   }
 }
 
