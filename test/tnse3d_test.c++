@@ -130,6 +130,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
     tnse3d.assemble_system();
     for(unsigned int k=0; ; k++)
     {
+      tnse3d.compute_residuals();
       // checking residuals
       if(tnse3d.stop_it(k))
         break;
