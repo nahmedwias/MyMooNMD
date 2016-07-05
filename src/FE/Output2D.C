@@ -2151,7 +2151,7 @@ int TOutput2D::WriteGNU_iso(const char *name, int scalar)
   dat << "#" << setw(11) << "x" << setw(12) << "y" << setw(12) <<
     "stream" << endl;
 
-  nextx = ++nextx % 4;
+  nextx = (nextx + 1) % 4;
   nexty = -1;
   do
   {

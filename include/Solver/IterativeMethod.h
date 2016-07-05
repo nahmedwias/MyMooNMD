@@ -11,6 +11,10 @@
 #include <LoopInfo.h>
 #include <MooNMD_Io.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 /** @brief an abstract base class to describe iterative methods for solving
  * 
  * many of its derived classes are implemented similar to templates from
@@ -69,6 +73,13 @@ class IterativeMethod
      */
     bool converged(double current_residual, unsigned int current_iterate)
     {
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+  int my_rank = 0;
+#endif
+
       if(current_iterate == 0)
         this->loop_info.restart(this->name, current_residual);
       bool residual_small_enough = current_residual < this->residual_tolerance;
@@ -87,10 +98,13 @@ class IterativeMethod
       
       // output
       if(stagnation)
+      {
+        if(my_rank == 0)
         Output::warn("IterativeMethod", "residual increased: ", 
                      std::setprecision(12), 
                      this->loop_info.get_previous_residual(), " -> ",
                      current_residual, ", at iteration ", current_iterate);
+      }
       if(converged)
         this->loop_info.finish(current_iterate, current_residual);
       else

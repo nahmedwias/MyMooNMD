@@ -31,8 +31,11 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
-Example_CD2D::Example_CD2D(int example_code) : Example2D()
+Example_CD2D::Example_CD2D(int example_code,
+                           const ParameterDatabase& user_input_parameter_db) : Example2D()
 {
+  this->example_database.merge(user_input_parameter_db,false);
+
   switch( example_code)
   {
     case 0:

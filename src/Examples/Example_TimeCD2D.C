@@ -27,8 +27,10 @@ namespace rotating_bodies_1
 #include "TCD_2D/Rotating_Bodies.h"
 }
 
-Example_TimeCD2D::Example_TimeCD2D(int example_code)
+Example_TimeCD2D::Example_TimeCD2D(int example_code,
+                                   const ParameterDatabase& user_input_parameter_db)
 {
+  this->example_database.merge(user_input_parameter_db,false);
   switch(example_code)
   {
     case -1:

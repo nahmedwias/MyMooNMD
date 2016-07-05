@@ -30,8 +30,11 @@ namespace test_p2
 
 //=========================================================================
 
-Example_CD3D::Example_CD3D(int example_code) : Example3D()
+Example_CD3D::Example_CD3D(int example_code,
+                           const ParameterDatabase& user_input_parameter_db) : Example3D()
 {
+  this->example_database.merge(user_input_parameter_db,false);
+
   switch( example_code )
   {
     //steady-state problems

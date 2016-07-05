@@ -1,5 +1,5 @@
 /**
- * @file VankaSmootherNew.h
+ * @file VankaSmoother.h
  *
  * @date 2016/05/16
  * @author Clemens Bartsch
@@ -21,7 +21,7 @@ class DenseMatrix;
  * implementation and nomenclature are adapted to (Navier--)Stokes saddle
  * point problems - but extending it should be relatively simple.
  */
-class VankaSmootherNew : public Smoother
+class VankaSmoother : public Smoother
 {
   public:
     /** Default constructor.
@@ -33,7 +33,7 @@ class VankaSmootherNew : public Smoother
      * speed up the computation (especially if the grid level is traversed very
      * often) but is very memory intensive. You should use it for test cases only.
      */
-    VankaSmootherNew(VankaType type, double damp_factor,  bool store = false);
+    VankaSmoother(VankaType type, double damp_factor,  bool store = false);
 
     /// Perform one step of Vanka smoothing (solve all local systems).
     void smooth(const BlockVector& rhs, BlockVector& solution ) override;
@@ -46,21 +46,21 @@ class VankaSmootherNew : public Smoother
      * is not yet clear whether to shallow or deep copy here.
      * ************* */
     //! Default constructor.
-    VankaSmootherNew() = delete;
+    VankaSmoother() = delete;
 
     //! Copy constructor.
-    VankaSmootherNew( const VankaSmootherNew& );
+    VankaSmoother( const VankaSmoother& );
 
     //! Move constructor.
-    VankaSmootherNew( VankaSmootherNew&& );
+    VankaSmoother( VankaSmoother&& );
 
     //! Copy assignment operator.
-    VankaSmootherNew& operator=( const VankaSmootherNew& );
+    VankaSmoother& operator=( const VankaSmoother& );
 
     //! Move assignment operator.
-    VankaSmootherNew& operator=( VankaSmootherNew&& );
+    VankaSmoother& operator=( VankaSmoother&& );
 
-    ~VankaSmootherNew();
+    ~VankaSmoother();
 
   private:
     /// The type of Vanka smoother (nodal, cell, batch)

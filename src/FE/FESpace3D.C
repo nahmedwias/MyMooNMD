@@ -35,6 +35,11 @@
 
 #include <Edge.h>
 
+#ifdef _MPI
+#include <ParFEMapper3D.h>
+#include <ParFECommunicator3D.h>
+#endif
+
 /** Constructor */
 TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
      TFESpace(coll, name, description)
@@ -44,6 +49,11 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description) :
   UsedElements = NULL;
   AllElements = NULL;
   ElementForShape = NULL;
+
+# ifdef _MPI
+ MaxSubDomainPerDof = -1;
+# endif
+
 }
 
 // =====================================================================
@@ -217,7 +227,6 @@ TFESpace3D::TFESpace3D(TCollection *coll, char *name, char *description,
 
   // construct space
   ConstructSpace(BoundaryCondition);
-
 }
 
 /** constructor for building a space with the given elements */
@@ -2401,4 +2410,15 @@ bool TFESpace3D::CheckMesh() const
 
   return true;
 } 
+
+#ifdef _MPI
+void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
+{
+  MaxSubDomainPerDof = maxSubDomainPerDof;
+
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+}
+#endif
 

@@ -37,10 +37,6 @@ int TFESpace::InitData(TCollection *coll, char *name, char *description)
   N_Dirichlet=0;
   DGSpace = 0; // use 'void SetAsDGSpace()' to change this
 
- # ifdef _MPI
-  MaxSubDomainPerDof = -1;
-  // cout << "number of cells: " << N_Cells << endl;
- # endif
   return 0;
 }
 
