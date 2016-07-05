@@ -911,7 +911,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 #endif
 
   // compute, update and display defect and residuals
-  compute_residuals();
+//  compute_residuals();
 
   // stores current norm of the residual. They are normed per default in
   // the class Residuals
