@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_NSE2D example(parmoon_db["example"]);
+  Example_NSE2D example(parmoon_db["example"],parmoon_db);
   
   // create an object of the Navier-Stokes class
   NSE2D ns(domain, parmoon_db, example);

@@ -78,6 +78,7 @@ class TShapeDesc
 
   public:
     // Constructor
+    virtual ~TShapeDesc(){};
 
     // Methods
     /** return the number of vertices */

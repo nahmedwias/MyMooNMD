@@ -88,27 +88,6 @@ class TFEFunction2D
                   ErrorMethod2D * const ErrorMeth, 
                   double * const errors) const;
     
-    void GetErrorsAdapt(DoubleFunct2D *Exact, int N_Derivatives,
-		   MultiIndex2D *NeededDerivatives,
-		   int N_Errors, ErrorMethod2D *ErrorMeth, 
-		   CoeffFct2D *Coeff, TAuxParam2D *Aux,
-		   int n_fespaces, const TFESpace2D **fespaces,
-		   double *errors);
-    
-    void GetErrorsOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
-		   MultiIndex2D *NeededDerivatives,
-		   int N_Errors, ErrorMethod2D *ErrorMeth, 
-		   CoeffFct2D *Coeff, TAuxParam2D *Aux,
-		   int n_fespaces, const TFESpace2D **fespaces,
-		   int& kink, double upper, double lower, double *errors);
-    
-    void GetErrorsAdaptOPTPDE(DoubleFunct2D *Exact, int N_Derivatives,
-			MultiIndex2D *NeededDerivatives,
-			int N_Errors, ErrorMethod2D *ErrorMeth, 
-			CoeffFct2D *Coeff, TAuxParam2D *Aux,
-			int n_fespaces, const TFESpace2D **fespaces,
-			double radius, double upper, double lower,double *errors);
-
     /** determine the value of function and its first derivatives at
         the given point */
     void FindGradient(double x, double y, double *values) const;

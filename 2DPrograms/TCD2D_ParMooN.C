@@ -50,14 +50,14 @@ int main(int argc, char* argv[])
   
   // refine grid up to the coarsest level
   size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(int i=0; i<n_ref; i++){
+  for(unsigned int i=0; i<n_ref; i++){
     Domain.RegRefineAll();  
   }
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_TimeCD2D example( parmoon_db["example"] );
+  Example_TimeCD2D example( parmoon_db["example"],parmoon_db );
   Time_CD2D tcd(Domain, parmoon_db, example);
   // ======================================================================
   // assemble matrices and right hand side at start time  

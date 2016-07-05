@@ -101,7 +101,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   SetTimeDiscParameters(0);
 
   // Construct example object
-  Example_TimeNSE3D example(db["example"]);
+  Example_TimeNSE3D example(db["example"],db);
   // Construct Time_NSE3D object
 #ifdef _MPI
   Time_NSE3D tnse3d(domain, db, example, maxSubDomainPerDof);
@@ -350,7 +350,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (0 to 5)
+    // examples ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================
@@ -626,7 +626,7 @@ int main(int argc, char* argv[])
 #endif
 
     //=============================================================================
-    // EXAMPLE ... (0 to 5)
+    // examples ... (0 to 5)
     size_t exmpl = 0; int laplacetype = 0; int nonlineartype = 0;
     //=============================================================================
     // CRANK-NICHOLSON TIME STEPPING SCHEME========================================

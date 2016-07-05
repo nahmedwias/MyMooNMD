@@ -1,7 +1,5 @@
 #include <Time_CD2D.h>
 #include <Database.h>
-#include <MultiGrid2D.h>
-#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>
@@ -87,7 +85,8 @@ TSquareMatrix2D* Time_CD2D::System_per_grid::get_stiff_matrix_pointer()
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 		int reference_id)
- : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db["example"]), reference_id)
+ : Time_CD2D(domain, param_db, Example_TimeCD2D(param_db["example"],param_db),
+             reference_id)
 {
   
 }

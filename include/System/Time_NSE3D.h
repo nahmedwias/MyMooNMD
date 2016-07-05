@@ -26,8 +26,6 @@
 #include <FESpace3D.h>
 #include <Example_TimeNSE3D.h>
 
-#include <NSE_MultiGrid.h>
-
 #include <ParameterDatabase.h>
 #include <Solver.h>
 
@@ -38,11 +36,6 @@
 #include <list>
 #include <utility>
 #include <array>
-
-#ifdef _MPI
-#include <ParFEMapper3D.h>
-#include <ParFECommunicator3D.h>
-#endif
 
 class Time_NSE3D
 {
@@ -87,24 +80,6 @@ class Time_NSE3D
       TFEVectFunct3D u_;
       /** @brief Finite Element function for pressure */
       TFEFunction3D p_;
-
-#ifdef _MPI
-      /** @brief A parallel FE mapper storing parallel information
-       * for the velocity degrees of freedom.*/
-      TParFEMapper3D parMapperVelocity_;
-
-      /** @brief A parallel FE mapper storing parallel information
-       * for the pressure degrees of freedom.*/
-      TParFEMapper3D parMapperPressure_;
-
-      /** @brief A parallel FE communicator taking care for the MPI
-       * communication between the velocity dofs on this grid. */
-      TParFECommunicator3D parCommVelocity_;
-
-      /** @brief A parallel FE communicator taking care for the MPI
-       * communication between the pressure dofs on this grid. */
-      TParFECommunicator3D parCommPressure_;
-#endif
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -194,9 +169,14 @@ class Time_NSE3D
     /** @brief right hand side vector from previous time step (on finest mesh)*/
     BlockVector old_rhs_;
 
+    /** @brief solution vector from previous time step (on finest mesh)*/
     BlockVector old_solution_;
 
-    /** old time step length used to scale the pressure blocks*/
+    /** @brief constructs a solution vector extrapolated from previous steps
+     * Currently, it is used for IMEX-Scheme: 2u(t-1)-u(t-2). */
+    BlockVector extrapolated_solution_;
+
+    /** @brief old time step length used to scale the pressure blocks */
     double oldtau_;
 
     /** @brief set the velocity and pressure orders
@@ -211,21 +191,10 @@ class Time_NSE3D
     void get_velocity_pressure_orders(std::pair <int,int>
                    &velocity_pressure_orders);
     
-    /// write some information (number of cells, dofs, ...) 
+    /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
- public:
 
-//    /** @brief constructor
-//    * This constructor calls the other constructor creating an Example_NSE3D
-//    * object. It is commented because not used currently.
-//    * If you need it, outcomment it and add it in the src file.
-//    */
-//#ifdef _MPI
-//    Time_NSE3D(const TDomain& domain, int reference_id = -4711,
-//               int maxSubDomainPerDof);
-//#else
-//    Time_NSE3D(const TDomain& domain, int reference_id = -4711);
-//#endif
+ public:
 
     /** @brief Standard constructor of an NSE3D problem.
      *
@@ -247,8 +216,18 @@ class Time_NSE3D
 #endif
     
 // ======================================================================
-    ///This function interpolates the initial solution.
+    /** @brief This returns the number of the current time step.
+     * This counter is set at 0 before the time loop and is incremented at each
+     * time step (but not at each sub-step) in the main program.
+     * It can be useful to give info to the members of the class. It is for example
+     * used in IMEX scheme to detect when we passed 2 time steps, so that we
+     * are guaranteed to have saved both old_solution_ and old_solution2_ correctly.    */
+    int current_step_;
+
+// ======================================================================
+    /** @brief This function interpolates the initial solution. */
     void interpolate();
+
     /** @brief check parameters in database
     *
     * This functions checks if the parameters in the database are meaningful.
@@ -257,7 +236,7 @@ class Time_NSE3D
     */
     void check_parameters();
 
-   /** @brief Assemble all the matrices and rhs before the time iterations
+    /** @brief Assemble all the matrices and rhs before the time iterations
     *
     * This includes the assembling of the Stiffness matrix, the Mass matrix,
     * the additional matrix K in case of SUPG stabilization, and rhs.
@@ -266,7 +245,7 @@ class Time_NSE3D
     */
     void assemble_initial_time();
 
-  /** @brief Assemble the rhs only
+    /** @brief Assemble the rhs only
     * 1. Assembling the right hand side only
     * 2. Scaling of the B-Blocks due to time stepping
     * This function will prepare the right hand side during the time
@@ -312,8 +291,7 @@ class Time_NSE3D
      */
     bool stop_it(unsigned int iteration_counter);
 
-    /**
-     * @brief Compute the defect Ax-b, and the residuals and store it all.
+    /** @brief Compute the defect Ax-b, and the residuals and store it all.
      * This method is also the one displaying the residuals.
      * Updates defect and old_residuals.
      * A is the current matrix, x is the current solution and b is the
@@ -322,9 +300,14 @@ class Time_NSE3D
      */
     void compute_residuals();
 
-    /** ! Measure errors and draw a nice VTK picture, if requested to do so.
+    /** @brief Measure errors and draw a nice VTK picture,
+     * if requested to do so.
      */
     void output(int m, int &image);
+
+    /** @brief Construct the extrapolated solution.
+     * At the moment, only IMEX is implemented. */
+    void construct_extrapolated_solution();
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
@@ -359,6 +342,20 @@ class Time_NSE3D
     const TFESpace3D     & get_pressure_space() const
     { return this->systems_.front().pressureSpace_; }
 
+    const TFEVectFunct3D& get_velocity() const
+    { return this->systems_.front().u_; }
+
+    TFEVectFunct3D& get_velocity()
+    { return this->systems_.front().u_; }
+
+    TFEFunction3D *get_velocity_component(int i);
+
+    const TFEFunction3D& get_pressure() const
+    { return this->systems_.front().p_; }
+
+    TFEFunction3D& get_pressure()
+    { return this->systems_.front().p_; }
+
     /// Get number of degrees of freedom.
     const int get_size() const
     { return this->systems_.front().solution_.length(); }
@@ -367,7 +364,6 @@ class Time_NSE3D
     const ParameterDatabase & get_db() const
     { return db_; }
 
-//   const Example_TimeNSE3D  & get_example()  const
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impulse residual (updated in compute_residuals)
@@ -377,9 +373,8 @@ class Time_NSE3D
     /// @brief get the current residual (updated in compute_residuals)
     double get_full_residual() const;
 
-  /** @brief return the computed errors (computed in output())
-   */
-  std::array<double, int(6)> get_errors() const;
+    /** @brief return the computed errors (computed in output()) */
+    std::array<double, int(6)> get_errors() const;
 };
 
 

@@ -22,7 +22,7 @@ BlockFEMatrix::BlockFEMatrix(
     ansatz_spaces_columnwise_(spaces),
     pressure_correction(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE != 0)
 {
-  Output::print<3>("BlockFEMatrix constructor");
+  Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
   // as the only kind of non-active dofs this class can handle is Dirichlet dofs
   for(auto sp : spaces)
@@ -1040,6 +1040,22 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
   return sub_cmat;
 
 }
+
+/* ************************************************************************* */
+
+#ifdef _MPI
+/// Return a list of the FE communicators belonging to the FESpaces of
+/// the rows/columns.
+std::vector<const TParFECommunicator3D*> BlockFEMatrix::get_communicators() const
+{
+  std::vector<const TParFECommunicator3D*> comms;
+  for(auto sp : test_spaces_rowwise_ )
+  {
+    comms.push_back(&sp->get_communicator());
+  }
+  return comms;
+}
+#endif
 
 /* ************************************************************************* */
 

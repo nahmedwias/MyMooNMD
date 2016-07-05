@@ -1085,7 +1085,7 @@ void PostProcessing2D::writeCaseVars(int iter)
     for(int ifig=1;ifig<=nParts;ifig++)
     {
       n = 0;
-      for(int k=0;k<Coll->NodesReferences.size();k++)
+      for(unsigned int k=0;k<Coll->NodesReferences.size();k++)
       {
         double x,y,z;
         x = uP1vect[0][k];

@@ -103,11 +103,9 @@ int main(int argc, char* argv[])
   
   output.WriteVtk(parmoon_db["output_basename"]);
 
-  // Write grid into a postscript file (before partitioning)
-//  if(TDatabase::ParamDB->WRITE_PS && my_rank == 0)
-//  {
-//    domain.PS("Domain.ps", It_Finest, 0);
-//  }
+  // write grid into an Postscript file (before partitioning)
+  if(parmoon_db["output_write_ps"] && my_rank==0)
+    domain.PS("Domain.ps", It_Finest, 0);
 
 #ifdef _MPI
   // Partition the by now finest grid using Metis and distribute among processes.
@@ -155,7 +153,7 @@ int main(int argc, char* argv[])
   SetTimeDiscParameters(0);
 
   // Choose and construct example.
-  Example_TimeNSE3D example(parmoon_db["example"]);
+  Example_TimeNSE3D example(parmoon_db["example"],parmoon_db);
 
   // Construct an object of the Time_NSE3D-problem type.
 #ifdef _MPI
@@ -170,7 +168,8 @@ int main(int argc, char* argv[])
   tnse3d.assemble_initial_time();
 
   double end_time = TDatabase::TimeDB->ENDTIME;
-  int step = 0;
+  tnse3d.current_step_ = 0;
+
   int n_substeps = GetN_SubSteps();
 
   int image = 0;
@@ -185,14 +184,14 @@ int main(int argc, char* argv[])
   {
     Chrono chrono_timeit;
 
-    step++;
-    // Output::print("memory before ":, GetMemory());
+    tnse3d.current_step_++;
+
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-//      if( step == 1 && my_rank==0) // a few output, not very necessary
+//      if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
 //      {
 //        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
 //        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -247,7 +246,7 @@ int main(int argc, char* argv[])
 
       chrono_timeit.print_time(std::string("solving the time iteration ") + std::to_string(tau));
 
-      tnse3d.output(step,image);
+      tnse3d.output(tnse3d.current_step_,image);
 
     } // end of subtime loop
   } // end of time loop

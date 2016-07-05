@@ -24,7 +24,7 @@
 class BlockMatrix;
 class BlockFEMatrix;
 class BlockVector;
-class VankaSmootherNew;
+class VankaSmoother;
 constexpr size_t pardiso_options_array_length = 64;
 
 class DirectSolver

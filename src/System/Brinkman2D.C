@@ -2,9 +2,6 @@
 #include <MainUtilities.h> // GetVelocityAndPressureSpace
 #include <Database.h>
 #include <LinAlg.h> // DDot
-#include <MultiGridIte.h>
-#include <FixedPointIte.h>
-#include <FgmresIte.h>
 #include <DirectSolver.h>
 #include <Upwind.h>
 
@@ -78,7 +75,8 @@ Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
 /** ************************************************************************ */
 Brinkman2D::Brinkman2D(const TDomain& domain, const ParameterDatabase& param_db,
                        int reference_id)
- : Brinkman2D(domain, param_db, Example_Brinkman2D(param_db["example"]), reference_id)
+ : Brinkman2D(domain, param_db, Example_Brinkman2D(param_db["example"],param_db),
+              reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -92,7 +90,7 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
                        const Example_Brinkman2D & e,
              unsigned int reference_id)
     : db(get_default_Brinkman2D_parameters()), outputWriter(param_db),
-      systems(), example(e), multigrid(), defect(), oldResiduals(),
+      systems(), example(e), solver(param_db), defect(), oldResiduals(),
       initial_residual(1e10), errors()
 {
   db.merge(param_db,false);
@@ -141,37 +139,6 @@ Brinkman2D::Brinkman2D(const TDomain & domain, const ParameterDatabase& param_db
     return;
   // else multigrid
 
-
-    
-  // create spaces, functions, matrices on coarser levels
-  double *param = new double[2];
-  param[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  param[1] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-  this->multigrid.reset(new TNSE_MultiGrid(1, 2, param));
-  // number of refinement levels for the multigrid
-
-// //TODO Commented out, requires switching to Solver object.
-//  int LEVELS = TDatabase::ParamDB->LEVELS;
-//  if(LEVELS > domain.get_ref_level() + 1)
-//    LEVELS = domain.get_ref_level() + 1;
-//
-//  // the matrix and rhs side on the finest grid are already constructed
-//  // now construct all matrices, rhs, and solutions on coarser grids
-//  for(int i = LEVELS - 2; i >= 0; i--)
-//  {
-//    unsigned int grid = i + domain.get_ref_level() + 1 - LEVELS;
-//    TCollection *coll = domain.GetCollection(It_EQ, grid, reference_id);
-//    this->systems.emplace_back(example, *coll, velocity_pressure_orders, Brinkman2D::Matrix::Type14);
-//  }
-
-  
-  // create multigrid-level-objects, must be coarsest first
-  unsigned int i = 0;
-  for(auto it = this->systems.rbegin(); it != this->systems.rend(); ++it)
-  {
-    this->multigrid->AddLevel(this->mg_levels(i, *it));
-    i++;
-  }
 }
 
 /** ************************************************************************ */
@@ -185,8 +152,8 @@ Brinkman2D::~Brinkman2D()
 void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
                  &velocity_pressure_orders)
 {
-  int velocity_order = velocity_pressure_orders.first;
-  int pressure_order = velocity_pressure_orders.second;
+//  int velocity_order = velocity_pressure_orders.first;
+//  int pressure_order = velocity_pressure_orders.second;
    Output::print("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
 }
@@ -395,25 +362,18 @@ void Brinkman2D::computeNormsOfResiduals()
 /** ************************************************************************ */
 void Brinkman2D::solve()
 {
-  System_per_grid& s = this->systems.front();
-  if((TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE !=5)
-    || (TDatabase::ParamDB->SOLVER_TYPE != 1))
-  {
-    if(TDatabase::ParamDB->SOLVER_TYPE != 2)
-      ErrThrow("only the direct solver is supported currently");
-    
-    /// @todo consider storing an object of DirectSolver in this class
-    DirectSolver direct_solver(s.matrix, 
-                               DirectSolver::DirectSolverTypes::umfpack);
-    direct_solver.solve(s.rhs, s.solution);
-  }
-  else
-  { // multigrid preconditioned iterative solver
-    mg_solver();
-  }
+  System_per_grid& s = systems.front();
+  double damping = db["nonlinloop_damping_factor"];
+  // store previous solution for damping, it is a pointer so that we can avoid
+  // the copy in case of no damping
+  std::shared_ptr<BlockVector> old_solution(nullptr);
+  if(damping != 1.0)
+    old_solution = std::make_shared<BlockVector>(s.solution);
+
+  solver.solve(s.matrix,s.rhs, s.solution);
+
   if(TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE)
     s.p.project_into_L20();
-
 
 }
 
@@ -484,219 +444,6 @@ void Brinkman2D::output(int i)
 std::array< double, int(6) > Brinkman2D::get_errors()
 {
   return errors;
-}
-
-/** ************************************************************************ */
-TNSE_MGLevel* Brinkman2D::mg_levels(int i, System_per_grid& s)
-{
-  TNSE_MGLevel *mg_l = nullptr;
-  int n_aux;
-  double alpha[2];
-
-  int v_space_code = TDatabase::ParamDB->VELOCITY_SPACE;
-  int p_space_code = TDatabase::ParamDB->PRESSURE_SPACE;  
-  
-  if ((TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE)
-        || (TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE))
-     n_aux=4;
-  else
-     n_aux=2;
-  
-  if (i==0)
-  {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  else
-  {
-    alpha[0] = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE;
-    alpha[1] = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE;
-  }
-  
-  //get all blocks for the solver - here blocks may appear more than once
-  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-  // entire multigrid apparatus expects non-const TMatrix pointers
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-
-  TSquareMatrix2D* A11 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-  TSquareMatrix2D* A12 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-  TMatrix2D* B1T =        reinterpret_cast<TMatrix2D*>( blocks.at(2).get());
-  TSquareMatrix2D* A21 =  reinterpret_cast<TSquareMatrix2D*>( blocks.at(3).get());
-  TSquareMatrix2D* A22 =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-  TMatrix2D* B2T =        reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-  TMatrix2D* B1 =         reinterpret_cast<TMatrix2D*>(blocks.at(6).get());
-  TMatrix2D* B2 =         reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-  TSquareMatrix2D* C = (TSquareMatrix2D*) blocks.at(8).get();
-
-  std::shared_ptr<TStructure> structure = B1T->GetStructure().GetTransposed();
-  switch(TDatabase::ParamDB->BrinkmanTYPE)
-  {
-    case 1:
-      mg_l = new TNSE_MGLevel1(i, A11, B1, B2, structure.get(),
-                               s.rhs.get_entries(), s.solution.get_entries(),
-                               n_aux, alpha, v_space_code, p_space_code,
-                               nullptr, nullptr);
-      break;    
-    case 2:
-      mg_l = new TNSE_MGLevel2(i, A11, B1, B2, B1T, B2T,
-                               s.rhs.get_entries(), 
-                               s.solution.get_entries(), 
-                               n_aux, alpha, v_space_code, p_space_code, 
-                               nullptr, nullptr);
-      break;      
-    case 3:
-      mg_l = new TNSE_MGLevel3(i, A11, A12, A21, A22, B1, B2, structure.get(),
-                               s.rhs.get_entries(), s.solution.get_entries(),
-                               n_aux, alpha, v_space_code, p_space_code,
-                               nullptr, nullptr);
-      break;      
-    case 4:
-       mg_l = new TNSE_MGLevel4(i, A11, A12, A21, A22, B1, B2, B1T, B2T,
-                                s.rhs.get_entries(), 
-                                s.solution.get_entries(), 
-                                n_aux, alpha, v_space_code, p_space_code, 
-                                nullptr, nullptr);
-       break;
-    case 14:
-       mg_l = new TNSE_MGLevel14(i, A11, A12, A21, A22, C, B1, B2, B1T, B2T,
-                                s.rhs.get_entries(), 
-                                s.solution.get_entries(), 
-                                n_aux, alpha, v_space_code, p_space_code, 
-                                nullptr, nullptr);
-    break;
-  }
-  return mg_l;
-}
-
-
-/** ************************************************************************ */
-void Brinkman2D :: mg_solver()
-{
-  System_per_grid& s = this->systems.front();
-  double *itmethod_rhs, *itmethod_sol;
-  TItMethod *itmethod, *prec;
-  int zero_start;  
-  TSquareMatrix2D *sqMat[5];
-  TSquareMatrix **sqmatrices = (TSquareMatrix **)sqMat;
-  TMatrix2D *recMat[4];
-  TMatrix **matrices = (TMatrix **)recMat;
-  MatVecProc *MatVect;
-  DefectProc *Defect;
-
-  int n_dof = this->get_size();
-  
-  //get all blocks for the solver - here blocks may appear more than once
-  // we must make use of non-const get_blocks_TERRIBLY_UNSAFE, because the
-  // entire multigrid apparatus expects non-const TMatrix pointers
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_TERRIBLY_UNSAFE();
-
-  TSquareMatrix2D* A11 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-  TSquareMatrix2D* A12 = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-  TMatrix2D* B1T =  reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-  TSquareMatrix2D* A21 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(3).get());
-  TSquareMatrix2D* A22 = reinterpret_cast< TSquareMatrix2D*>(blocks.at(4).get());
-  TMatrix2D* B2T = reinterpret_cast< TMatrix2D*>(blocks.at(5).get());
-  TMatrix2D* B1 = reinterpret_cast< TMatrix2D*>(blocks.at(6).get());
-  TMatrix2D* B2 = reinterpret_cast< TMatrix2D*>(blocks.at(7).get());
-  TSquareMatrix2D* C = reinterpret_cast< TSquareMatrix2D*>(blocks.at(8).get());
-
-  switch(TDatabase::ParamDB->BrinkmanTYPE)
-  {
-    case 1:
-          sqMat[0] = A11;
-          sqMat[1] = A12;
-          sqMat[2] = A21;
-          sqMat[3] = A22;
-          recMat[0] = B1;
-          recMat[1] = B2;
-          recMat[2] = B1T;
-          recMat[3] = B2T;
-          
-          MatVect = MatVect_NSE4;
-          Defect = Defect_NSE4;
-          break;
-    case 2:
-          sqMat[0] = A11;
-          sqMat[1] = A12;
-          sqMat[2] = A21;
-          sqMat[3] = A22;
-          recMat[0] = B1;
-          recMat[1] = B2;
-          recMat[2] = B1T;
-          recMat[3] = B2T;
-          
-          MatVect = MatVect_NSE4;
-          Defect = Defect_NSE4;
-          break;
-  }
-
-
-  if(TDatabase::ParamDB->SOLVER_TYPE ==1)
-  {
-    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-    {
-      case 11:
-        zero_start = 1;
-        break; 
-      case 16:
-        zero_start = 0;
-        break;
-    }
-    switch(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE)
-    {
-      case 5:
-        prec = new TMultiGridIte(MatVect, Defect, nullptr, 0, n_dof, 
-                                 this->multigrid.get(), zero_start);
-        break;
-      default:
-        ErrThrow("Unknown preconditioner !!!");
-    }
-    
-    if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-    {
-      itmethod_sol = new double[n_dof];
-      itmethod_rhs = new double[n_dof];
-      
-      memcpy(itmethod_sol, s.solution.get_entries(), n_dof*SizeOfDouble);
-      memcpy(itmethod_rhs, s.rhs.get_entries(), n_dof*SizeOfDouble);
-    }
-    else
-    {
-      itmethod_sol = s.solution.get_entries();
-      itmethod_rhs = s.rhs.get_entries();
-    }
-
-    switch(TDatabase::ParamDB->SC_SOLVER_SADDLE)
-    {
-      case 11:
-        itmethod = new TFixedPointIte(MatVect, Defect, prec, 0, n_dof, 0);
-        break;
-      case 16:
-        itmethod = new TFgmresIte(MatVect, Defect, prec, 0, n_dof, 0);
-        break;
-      default:
-        ErrThrow("Unknown preconditioner !!!");
-    }
-  }
-    
-  switch(TDatabase::ParamDB->SOLVER_TYPE)
-  {
-    case 1:
-      itmethod->Iterate(sqmatrices,matrices,itmethod_sol,itmethod_rhs);
-      break;
-    case 2:
-      break;
-  }
-  
-  if(TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE == 5)
-  {
-    memcpy(s.solution.get_entries(), itmethod_sol, n_dof*SizeOfDouble);
-    memcpy(s.rhs.get_entries(), itmethod_rhs, n_dof*SizeOfDouble);
-    
-    delete itmethod; delete prec;
-    delete [] itmethod_rhs;
-    delete [] itmethod_sol;
-  }
 }
 
 /** ************************************************************************ */

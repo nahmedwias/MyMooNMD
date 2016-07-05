@@ -29,7 +29,8 @@ class Example_CD3D : public Example3D
      * This intializes a convection-diffusion example in 3D.
      * It is chosen according to the given example_code.
      */
-    Example_CD3D(int example_code);
+    Example_CD3D(int example_code,
+                 const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 

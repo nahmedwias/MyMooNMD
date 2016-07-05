@@ -104,7 +104,7 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-  Example_NSE3D example_obj(example);
+  Example_NSE3D example_obj(example,db);
 
   //Perform usual checks on the parameter consistency
   TDatabase::CheckParameterConsistencyNSE(); //old check
