@@ -49,9 +49,6 @@ int main(int argc, char* argv[])
     Output::print(" Test: ");
     Output::print("   * read .PRM and .GEO file and write the corresponding .mesh");
 
-    // initialize domain
-    domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
     // write .mesh file
     TCollection *coll = domain.GetCollection(It_Finest, 0);
     coll->writeMesh(parmoon_db["mesh_file"]);

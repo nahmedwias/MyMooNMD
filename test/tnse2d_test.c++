@@ -133,6 +133,9 @@ int main(int argc, char* argv[])
     db["output_compute_errors"] = true;
 
     db.add("refinement_n_initial_steps", (size_t) 1,"");
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->RE_NR = 1;
@@ -146,9 +149,6 @@ int main(int argc, char* argv[])
     //  declaration of databases
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i< n_ref; ++i)

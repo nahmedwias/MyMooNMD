@@ -309,6 +309,9 @@ int main(int argc, char* argv[])
   db.merge(ParameterDatabase::default_nonlinit_database());
   db["problem_type"].set<size_t>(6);
   db["nonlinloop_slowfactor"]=1.;
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa","Default_UnitCube_Tetra"});
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 6; // flow problem type
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -326,8 +329,6 @@ int main(int argc, char* argv[])
   {
     // Construct domain and refine (default = once)
     TDomain domain_hex(db);
-    domain_hex.Init("Default_UnitCube",
-                    "Default_UnitCube_Hexa");
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
     {
@@ -602,9 +603,8 @@ int main(int argc, char* argv[])
   //=======================================================================
   {
     // Construct domain and refine (default = once)
+    db["geo_file"]="Default_UnitCube_Tetra";
     TDomain domain_tet(db);
-    domain_tet.Init("Default_UnitCube",
-                    "Default_UnitCube_Tetra");
     size_t n_ref = domain_tet.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
     {

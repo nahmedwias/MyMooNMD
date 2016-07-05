@@ -73,9 +73,6 @@ int main(int argc, char* argv[])
   // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
-  // Read in geometry and initialize the mesh.
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
   // Initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)

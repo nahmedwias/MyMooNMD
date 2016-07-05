@@ -547,7 +547,7 @@ void TMultiGrid3D::Cycle(int i, double &res)
 
          // restrict defect
 //     exit(0);
-#ifdef _MPI  
+#ifdef _MPI
         ParComm->CommUpdate(CurrentDefect);
   
 	memcpy(CurrentLevel->GetTemp_arr(),CurrentDefect,CurrentLevel->GetN_DOF());

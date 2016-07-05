@@ -26,6 +26,8 @@
 #include <FESpace3D.h>
 #include <Structure.h>
 
+class FESpace3D;
+
 class TParFEMapper3D
 {
   protected:

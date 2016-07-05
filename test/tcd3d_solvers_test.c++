@@ -63,7 +63,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   // set the time discretization 
   SetTimeDiscParameters(0);
   
-  domain.Init(db["boundary_file"], db["geo_file"]);
   
   int n_ref_total = domain.get_n_initial_refinement_steps();
   size_t mg_levels = db["multigrid_n_levels"];
@@ -151,23 +150,34 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   if(solver_name.compare("jacobi")==0)
   {
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "jacobi";
-    db["residual_tolerance"] = 1e-13;
+    db["residual_tolerance"] = 1.0e-13;
+    db["residual_reduction"] =  0.0;
+    db["max_n_iterations"] =  1000;
+    db["min_n_iterations"] =  5;
     // Output::setVerbosity(2);
   }
   else if(solver_name.compare("multigrid") ==0)
   {
+
+    db.merge(Multigrid::default_multigrid_database() ,true);
+
     db["solver_type"] = "iterative";
+    db["iterative_solver_type"] = "richardson";
     db["preconditioner"] = "multigrid";
     db["refinement_n_initial_steps"] = 2;
     db["multigrid_n_levels"] = 2;
-    db["multigrid_cycle_type"] = "V";
+    db["max_n_iterations"] =  100;
+    db["residual_tolerance"] = 1.0e-15;
+    db["residual_reduction"] =  0.0;
+    // Multigrid parameters
+    db["multigrid_cycle_type"] = "W";
     db["multigrid_smoother"] = "jacobi";
-    db["residual_tolerance"] = 1e-13;
-    db["multigrid_coarse_max_n_iterations"] = 5;
-    db["damping_factor"] = 0.7;
-    db["damping_factor_finest_grid"] = 0.7;
-    
+    db["multigrid_smoother_coarse"] = "direct_solve";
+    db["multigrid_correction_damp_factor"] = 0.8;
+    db["multigrid_n_pre_smooth"] = 3;
+    db["multigrid_n_post_smooth"] = 3;
 
     Output::setVerbosity(2);
   }
@@ -235,7 +245,9 @@ int main(int argc, char* argv[])
   // db.add("n_multigrid_levels", (size_t) 0, "",(size_t) 0, (size_t) 2);
   // db.add("solver_type", std::string("direct"), "", {"direct", "iterative"});
   // db.add("preconditioner", std::string("multigrid"), "",{"jacobi", "multigrid"});
-  db["boundary_file"] = "Default_UnitCube";
+  db.add("boundary_file", "Default_UnitCube", "");
+  db.add("geo_file", "Default_UnitCube_Hexa", "", 
+         {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
   // db["output_write_vtk"] = false;
 
   TDatabase::ParamDB->DRIFT_Z = 1;
@@ -266,8 +278,6 @@ int main(int argc, char* argv[])
   db["example"] = -1; // Example -4: quadratic space time
   check(db, 2, 2, errors, tol); // time discretization is also included in the function
   
-  if (std::string(argv[1]).compare("jacobi") != 0)//Jacobi simply fails on this grid (mpi and sequential).
-  {
     if(my_rank==0)
       Output::print<1>("Tetrahedra grid.");
     db["geo_file"] = "Default_UnitCube_Tetra";
@@ -277,7 +287,6 @@ int main(int argc, char* argv[])
     
     db["example"] = -1; // Example -4: quadratic space time
     check(db, 2, 2, errors, tol); // time discretization is also included in the function
-  }
 #ifdef _MPI
   MPI_Finalize();
 #endif

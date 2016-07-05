@@ -52,7 +52,14 @@ class DirectSmoother : public Smoother
     ~DirectSmoother() = default;
 
   private:
+#ifdef _MPI
+    std::shared_ptr<MumpsWrapper> solver_;
+    //This has to be stored due to a deprecated feature of the MUMPS Wrapper,
+    // which requires the comms to be passed to every solve.
+    std::vector<const TParFECommunicator3D*> comms_;
+#else
     std::shared_ptr<DirectSolver> solver_;
+#endif
 
 };
 

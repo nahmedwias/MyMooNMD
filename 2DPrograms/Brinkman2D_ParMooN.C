@@ -47,10 +47,6 @@ int main(int argc, char* argv[])
   
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
-    
-  /* include the mesh from a mesh generator, for a standard mesh use the
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]); // call mesh generator
   
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();

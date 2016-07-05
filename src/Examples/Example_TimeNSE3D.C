@@ -28,10 +28,7 @@ namespace Bsp3
 {
   #include "TNSE_3D/Bsp3.h"   // 5
 }
-namespace tunnel_tdp1
-{
-#include "TNSE_3D/Tunnel1.h"  // 6
-}
+
 namespace flow_around_cylinder_instationary
 {
 #include "TNSE_3D/FlowAroundCylinder_instat.h"   // 7
@@ -48,30 +45,30 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
     {
       using namespace lin_space_time;
       /** exact_solution */
-      exact_solution.push_back( lin_space_time::ExactU1 );
-      exact_solution.push_back( lin_space_time::ExactU2 );
-      exact_solution.push_back( lin_space_time::ExactU3 );
-      exact_solution.push_back( lin_space_time::ExactP );
+      exact_solution.push_back( ExactU1 );
+      exact_solution.push_back( ExactU2 );
+      exact_solution.push_back( ExactU3 );
+      exact_solution.push_back( ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( lin_space_time::BoundCondition );
-      boundary_conditions.push_back( lin_space_time::BoundCondition );
-      boundary_conditions.push_back( lin_space_time::BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( lin_space_time::U1BoundValue );
-      boundary_data.push_back( lin_space_time::U2BoundValue );
-      boundary_data.push_back( lin_space_time::U3BoundValue );
+      boundary_data.push_back( U1BoundValue );
+      boundary_data.push_back( U2BoundValue );
+      boundary_data.push_back( U3BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = lin_space_time::LinCoeffs;
+      problem_coefficients = LinCoeffs;
 
       /** initial conditions */
-      initialCondtion.push_back( lin_space_time::InitialU1 );
-      initialCondtion.push_back( lin_space_time::InitialU2 );
-      initialCondtion.push_back( lin_space_time::InitialU3 );
+      initialCondtion.push_back( InitialU1 );
+      initialCondtion.push_back( InitialU2 );
+      initialCondtion.push_back( InitialU3 );
 
       ExampleFile();
       break;
@@ -207,38 +204,6 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
     case 5:
     {
       using namespace Bsp3;
-      /** exact_solution */
-      exact_solution.push_back( ExactU1 );
-      exact_solution.push_back( ExactU2 );
-      exact_solution.push_back( ExactU3 );
-      exact_solution.push_back( ExactP );
-
-      /** boundary condition */
-      boundary_conditions.push_back( BoundCondition );
-      boundary_conditions.push_back( BoundCondition );
-      boundary_conditions.push_back( BoundCondition );
-      boundary_conditions.push_back( BoundConditionNoBoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( U1BoundValue );
-      boundary_data.push_back( U2BoundValue );
-      boundary_data.push_back( U3BoundValue );
-      boundary_data.push_back( BoundaryValueHomogenous );
-
-      /** coefficients */
-      problem_coefficients = LinCoeffs;
-
-      /** initial conditions */
-      initialCondtion.push_back( InitialU1 );
-      initialCondtion.push_back( InitialU2 );
-      initialCondtion.push_back( InitialU3 );
-
-      ExampleFile();
-      break;
-    }
-    case 6:
-    {
-      using namespace tunnel_tdp1;
       /** exact_solution */
       exact_solution.push_back( ExactU1 );
       exact_solution.push_back( ExactU2 );

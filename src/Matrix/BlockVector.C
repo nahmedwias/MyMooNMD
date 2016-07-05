@@ -5,17 +5,22 @@
 #include <Constants.h>
 #include <LinAlg.h>
 
+#ifdef _MPI
+#include <ParFECommunicator3D.h>
+#include <mpi.h>
+#endif
+
 /** ************************************************************************ */
 BlockVector::BlockVector() : entries(), lengths(), actives()
 {
-  Output::print<3>("Constructor of BlockVector with no arguments");
+  Output::print<5>("Constructor of BlockVector with no arguments");
 }
 
 /** ************************************************************************ */
 BlockVector::BlockVector(unsigned int length)
  : entries(length, 0.0), lengths(1, length), actives(1, length)
 {
-  Output::print<3>("Constructor of BlockVector with length ", length);
+  Output::print<5>("Constructor of BlockVector with length ", length);
 }
 
 /** ************************************************************************ */
@@ -28,7 +33,7 @@ BlockVector::BlockVector(int length)
 
 BlockVector::BlockVector(const BlockMatrix& mat, bool result)
 {
-  Output::print<3>("Constructor of BlockVector using a BlockMatrix");
+  Output::print<5>("Constructor of BlockVector using a BlockMatrix");
   // the total length of this vector
   size_t total_length = result ? mat.get_n_total_rows() : mat.get_n_total_columns();
   // number of blocks in this BlockVector
@@ -54,8 +59,8 @@ BlockVector::BlockVector(const BlockMatrix& mat, bool result)
    // all entries are active
     actives[b] = lengths[b];
   }
-  Output::print<3>("(end) Constructor of BlockVector using a BlockMatrix");
-  Output::print<3>("entries: ", this->entries.size(), " ",this->length());
+  Output::print<5>("(end) Constructor of BlockVector using a BlockMatrix");
+  Output::print<5>("entries: ", this->entries.size(), " ",this->length());
 }
 
 BlockVector::BlockVector(const BlockFEMatrix& mat, bool result)
@@ -264,6 +269,62 @@ double BlockVector::norm() const
 {
   return Dnorm(this->length(), this->get_entries());
 }
+
+/** ************************************************************************ */
+#ifdef _MPI
+double BlockVector::norm_global(std::vector<const TParFECommunicator3D*> comms) const
+{
+  // This MPI method makes only use of values of master dofs, therefore
+  // "this" does not have to be updated, consistency level 0 is enough.
+
+  /// First check if vector and communicators fit
+  if(comms.size() != n_blocks())
+  {
+    ErrThrow("Number of blocks does not equal number of communicators.",
+             n_blocks(), " ",comms.size() );
+  }
+  for(size_t i =0; i < n_blocks(); ++i)
+  {
+    if(comms[i]->GetNDof() != (int) length(i))
+    {
+      ErrThrow("Length of Block ", i, " and comms", i, " do not match. ",
+               comms[i]->GetNDof(), " ", length(i));
+    }
+  }
+
+  int my_rank, size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+  double sum_local = 0;
+  for(size_t b =0; b < n_blocks(); ++b)
+  {
+    const TParFECommunicator3D* comm = comms[b]; //for convenience
+    const int* masters = comm->GetMaster();
+
+    size_t offset = this->offset(b);
+
+    for(size_t i = 0; i< length(b); ++i )
+    {
+      if(masters[i] == my_rank)
+      {
+        double val = entries[offset + i];
+        sum_local += val * val;
+      }
+    }
+  }
+
+  // Now add up all local sums via MPI_Allreduce.
+  double sendbf[1] = {sum_local};
+  double recvbf[1];
+  MPI_Allreduce(sendbf,recvbf,1,MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
+
+  double norm = sqrt(recvbf[0]); //square root of the global sum
+  return norm;
+
+}
+#endif
+/** ************************************************************************ */
 
 /** ************************************************************************ */
 void BlockVector::print(const std::string name, const int iB) const
