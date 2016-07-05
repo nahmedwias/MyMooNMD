@@ -24,6 +24,10 @@ class BlockFEMatrix;
 #include <vector>
 #include <string>
 
+#ifdef _MPI
+class TParFECommunicator3D;
+#endif
+
 class BlockVector
 {
   protected:
@@ -209,6 +213,13 @@ class BlockVector
      */
     double norm() const;
     
+
+#ifdef _MPI
+    /// Compute global norm of a vector distributed among the processes. All
+    /// processes will return the same results.
+    double norm_global(std::vector<const TParFECommunicator3D*> comms) const;
+#endif
+
     /**
      * @brief Print subvector iB to console in Matlab format
      *

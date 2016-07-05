@@ -190,6 +190,9 @@ int main(int argc, char* argv[])
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
 
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "TwoTriangles", "", {"UnitSquare", "TwoTriangles"});
+    
     // default construct a domain object
     TDomain domain(db);
 
@@ -202,9 +205,6 @@ int main(int argc, char* argv[])
     
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)
@@ -286,6 +286,8 @@ int main(int argc, char* argv[])
     db["nonlinloop_slowfactor"] = 1.;
 
     // default construct a domain object
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
 
     // parameters used for this test
@@ -298,9 +300,6 @@ int main(int argc, char* argv[])
     // possibly parameters in the database
     Database.CheckParameterConsistencyNSE();
 
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     // refine grid
     size_t n_ref = domain.get_n_initial_refinement_steps();
     for(unsigned int i=0; i < n_ref; i++)

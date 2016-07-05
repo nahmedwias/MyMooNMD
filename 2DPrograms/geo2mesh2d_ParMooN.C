@@ -37,10 +37,6 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   
-
-  // initialize domain
-  domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
   // write .mesh file
   TCollection *coll = domain.GetCollection(It_Finest, 0);
   coll->writeMesh(parmoon_db["mesh_file"]);

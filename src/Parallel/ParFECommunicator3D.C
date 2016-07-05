@@ -94,7 +94,29 @@ void TParFECommunicator3D::print_info() const
   }
 }
 
-void TParFECommunicator3D::CommUpdateMS(double *sol)
+void TParFECommunicator3D::consistency_update(double* vector, size_t level) const
+{
+   switch (level)
+   {
+     case 1:
+       CommUpdateMS(vector); //restore level 1 consistency by updating all interface slaves
+       break;
+     case 2:
+       CommUpdateMS(vector); //restore level 2 consistency by updating
+       CommUpdateH1(vector); // all interface slaves and Halo1 dofs
+       break;
+     case 3:
+       CommUpdateMS(vector); // restore level 2 consistency by updating
+       CommUpdateH1(vector); // all interface slaves, Halo1 and Halo2 dofs
+       CommUpdateH2(vector);
+       break;
+     default:
+       ErrThrow("Unknown consistency level ", level, ". Choose between 1, 2 "
+           "and 3 (full consistency).")
+   }
+}
+
+void TParFECommunicator3D::CommUpdateMS(double *sol) const
 {
   if(!Mapper)
   {
@@ -131,7 +153,7 @@ void TParFECommunicator3D::CommUpdateMS(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateH1(double *sol)
+void TParFECommunicator3D::CommUpdateH1(double *sol) const
 {
   if(!Mapper)
   {
@@ -171,7 +193,7 @@ void TParFECommunicator3D::CommUpdateH1(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdateH2(double *sol)
+void TParFECommunicator3D::CommUpdateH2(double *sol) const
 {
   if(!Mapper)
   {
@@ -208,71 +230,8 @@ void TParFECommunicator3D::CommUpdateH2(double *sol)
   timeC+=(t2-t1);
 }
 
-void TParFECommunicator3D::CommUpdate_M_H1(double *sol)
-{
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  
-  CommUpdateMS(sol);
-  CommUpdateH1(sol);
-  
-}
 
-void TParFECommunicator3D::CommUpdate(double *sol)
-{
-  
-  if(!Mapper)
-  {
-    printf("Set The Mapper for Communicator routines\n");
-    MPI_Finalize();
-    exit(0);
-  }
-  
-  int i,j,k;
-  double t1,t2;
-  
-  if(TDatabase::ParamDB->MapperType != 2)
-  {
-    CommUpdateMS(sol);
-    CommUpdateH1(sol);
-    CommUpdateH2(sol);
-  }
-  else
-  {
-    t1=MPI_Wtime();
-    
-    for(i=0;i<N_SendDof;i++)
-    {
-      for(j=0;j<N_Dim;j++)
-      {
-	k = i*N_Dim + j;
-	Send_Info[k]=sol[DofSend[i]+j*N_Dof];
-      }
-    }
-
-    MPI_Alltoallv(Send_Info,N_DofSend,sdispl,MPI_DOUBLE,Recv_Info,N_DofRecv,rdispl,MPI_DOUBLE,Comm);
-  
-    for(i=0;i<N_Slave;i++)  
-    {
-      for(j=0;j<N_Dim;j++)
-      {
-        k = i*N_Dim + j;
-        sol[DofRecv[i]+j*N_Dof] = Recv_Info[k];
-      }
-    }
-    
-    t2=MPI_Wtime(); 
-    timeC+=(t2-t1);
-  } 
-
-}
-
-void TParFECommunicator3D::CommUpdateReduce(double *rhs)
+void TParFECommunicator3D::CommUpdateReduce(double *rhs) const
 {
   if(!Mapper)
   {
@@ -364,15 +323,6 @@ void TParFECommunicator3D::CommUpdateReduce(double *rhs)
   
   t2=MPI_Wtime(); 
   timeC+=(t2-t1);
-}
-
-
-
-void TParFECommunicator3D::CommUpdate(double *sol, double *rhs)
-{
-  printf("GMRES not yet verified. Check if rhs update is reqd????\n");
-  MPI_Finalize();
-  exit(0);
 }
 
 #endif

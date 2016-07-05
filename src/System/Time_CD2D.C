@@ -1,7 +1,5 @@
 #include <Time_CD2D.h>
 #include <Database.h>
-#include <MultiGrid2D.h>
-#include <OldSolver.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
 #include <AlgebraicFluxCorrection.h>

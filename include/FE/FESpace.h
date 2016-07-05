@@ -98,11 +98,6 @@ class TFESpace
     /** 0 space for Galerkin disc, 1 - space for DG disc */
     int DGSpace;
 
-#ifdef  _MPI
-     /** Maximum number of subdomains associated with any dof */
-    int MaxSubDomainPerDof;
-#endif
-
   private:
     /** copying given parameters into inner storage places */
     int InitData(TCollection *coll, char *name, char *description);
@@ -206,15 +201,6 @@ class TFESpace
     int IsDGSpace() const
     { return DGSpace; }
 
-#ifdef  _MPI
-    /** return  MaxSubDomainPerDof */
-    void SetMaxSubDomainPerDof(int maxSubDomainPerDof)
-    { MaxSubDomainPerDof = maxSubDomainPerDof; }
-
-    /** return  MaxSubDomainPerDof */
-    int GetMaxSubDomainPerDof()
-    { return MaxSubDomainPerDof; }
-#endif
 
 };
 

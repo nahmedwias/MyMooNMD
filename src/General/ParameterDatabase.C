@@ -751,22 +751,6 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "to. In general ParMooN produces text output on the console as well "
          "as in this file. For this to properly work, you should call "
          "`Output::set_outfile(db[\"outfile\"]);` in your main program.");
-  
-  db.add("boundary_file", "Default_UnitSquare",
-         "This is a file describing the boundary of the computational domain. "
-         "You probably want to adjust this to be the path to some file which "
-         "typically has the extension 'PRM'. See the documentation for GEO and "
-         "PRM files.",
-         {"Default_UnitSquare", "Default_UnitCube"}
-        );
-  
-   db.add("geo_file", "UnitSquare",
-         "This files describes the computational mesh. You probably want to "
-         "adjust this to be the path to some file which typically has the "
-         "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
-         "files.",
-         {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
-          "Default_UnitCube_Tetra"});
 
   db.add("mesh_file", "__nofile__",
          "This files describes the computational mesh in .mesh format. "
@@ -910,10 +894,7 @@ ParameterDatabase ParameterDatabase::default_tetgen_database()
 {
   ParameterDatabase db("default ParMooN mesh generation using TetGen "
                         "parameters database");
-  db.add("mesh_tetgen_file", std::string("Wuerfel"),
-         "This files describes the computational mesh. Typically this files"
-         " has the extension 'smesh', 'node' or 'poly'. "
-         " currently only the smesh files are supported");
+
   // maximum can be infnity
   db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
          1.0, 1000.);

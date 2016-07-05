@@ -90,13 +90,6 @@ int main(int argc, char* argv[])
   // TODO Adapt the check_parameters() method to the class TNSE3D
   // NSE3D::check_parameters();
   Database.CheckParameterConsistencyNSE();
-
-  // Read in geometry and initialize the mesh.
-   domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]);
-
-//  TTetGenMeshLoader tetgen(parmoon_db["mesh_tetgen_file"], parmoon_db);
-//  tetgen.Generate(domain);
-  
   
   // Do initial domain refinement
   size_t n_ref = domain.get_n_initial_refinement_steps();
