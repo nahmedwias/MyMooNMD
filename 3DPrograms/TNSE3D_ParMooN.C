@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
 
         tnse3d.solve();
 
-        if(tnse3d.imex_scheme(k))
+        if(tnse3d.imex_scheme(1))
           continue;
 
         tnse3d.assemble_nonlinear_term();
