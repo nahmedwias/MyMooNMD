@@ -31,7 +31,7 @@ namespace Bsp3
 
 namespace flow_around_cylinder_instationary
 {
-#include "TNSE_3D/FlowAroundCylinder_instat.h"   // 7
+#include "TNSE_3D/FlowAroundCylinder_instat.h"   // 6
 }
 
 //=========================================================
@@ -252,7 +252,7 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       ExampleFile();
       break;
     }
-    case 7:
+    case 6:
     {
       using namespace flow_around_cylinder_instationary;
       /** exact_solution */
@@ -282,7 +282,7 @@ Example_TimeNSE3D::Example_TimeNSE3D(int example_code,
       initialCondtion.push_back( InitialU3 );
 
       /**post processing - drag and lift calculation and output */
-      post_processing_stat = compute_drag_lift_pdiff;
+      post_processing_stat = flow_around_cylinder_instationary::compute_drag_lift_pdiff;
 
       /** some variables to change values in the example */
       flow_around_cylinder_instationary::DIMENSIONLESS_VISCOSITY = this->get_nu();
