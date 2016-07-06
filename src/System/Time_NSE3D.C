@@ -805,7 +805,7 @@ void Time_NSE3D::assemble_nonlinear_term()
 
     // The assembly with the extrapolated velocity of IMEX_scheme begins
     // at step 3
-    bool is_imex = this->imex_scheme(1);
+    bool is_imex = this->imex_scheme(0);
 
     // General case, no IMEX-scheme (=4) or IMEX but first steps => business as usual
     if(!is_imex)
@@ -957,7 +957,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
     }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
-    if (this->imex_scheme(iteration_counter) && iteration_counter>0)
+    if (this->imex_scheme(0) && iteration_counter>0)
       return true; // in these conditions, the matrix are already descaled
     else
     {
@@ -1319,7 +1319,7 @@ TFEFunction3D* Time_NSE3D::get_velocity_component(int i)
 }
 
 /**************************************************************************** */
-bool Time_NSE3D::imex_scheme(unsigned int iteration_counter)
+bool Time_NSE3D::imex_scheme(bool print_info)
 {
   //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
   bool interruption_condition  = (db_["time_discretization"].is(4))*
@@ -1329,8 +1329,10 @@ bool Time_NSE3D::imex_scheme(unsigned int iteration_counter)
   if (interruption_condition)
   {
     db_["nonlinloop_maxit"] = 1;
-    Output::info<1>("interrupt_nonlin_loop",
-                    "Only one non-linear iteration is done, for the IMEX scheme was chosen.\n");
+    if(print_info) // condition is here just to print it once
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                    "The parameter 'nonlinloop_maxit' was changed to 1."
+                    " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
   }
   return interruption_condition;
 }

@@ -310,7 +310,7 @@ class Time_NSE3D
     void construct_extrapolated_solution();
 
     /** */
-    bool imex_scheme(unsigned int iteration_counter);
+    bool imex_scheme(bool print_info);
 
 /* ******************************************************************************/
     // Declaration of special member functions - delete all but destructor.
