@@ -887,29 +887,29 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 #endif
 
   // compute, update and display defect and residuals
-//  compute_residuals();
+  //  compute_residuals();
 
   // stores current norm of the residual. They are normed per default in
   // the class Residuals
   const double normOfResidual        = this->get_full_residual();
-//  const double normOfImpulseResidual = this->get_impulse_residual();
-//  const double normOfMassResidual    = this->get_mass_residual();
-//  const double oldNormOfResidual     = this->old_residual_[1].fullR;
+  //  const double normOfImpulseResidual = this->get_impulse_residual();
+  //  const double normOfMassResidual    = this->get_mass_residual();
+  //  const double oldNormOfResidual     = this->old_residual_[1].fullR;
   // hold the residual from up to 10 iterations ago
   const double veryOldNormOfResidual  = this->old_residual_.front().fullResidual;
 
-//  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
-//  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
-//  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
-//  Output::print("residual        :  " , setw(3), normOfResidual);
+  //  Output::print("nonlinear step  :  " , setw(3), iteration_counter);
+  //  Output::print("impulse_residual:  " , setw(3), normOfImpulseResidual);
+  //  Output::print("mass_residual   :  " , setw(3), normOfMassResidual);
+  //  Output::print("residual        :  " , setw(3), normOfResidual);
 
   // this is the convergence ratio between actual step and last step
   // TODO : correct oldNormOfResidual to be the residual of last step
   // and print it out
-//  if ( iteration_counter > 0 )
-//  {
-//  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
-//  }
+  //  if ( iteration_counter > 0 )
+  //  {
+  //  Output::print("convergence rate:  " , setw(3), normOfResidual/oldNormOfResidual);
+  //  }
 
   /* Some parameters have to be set up at the first nonlinear iteration */
   if(iteration_counter == 0)
@@ -944,24 +944,28 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
 
   // Stopping criteria
   if ( (normOfResidual <= epsilon) || (iteration_counter == max_It)
-        || (slow_conv) )
-   {
+      || (slow_conv) )
+  {
     if(slow_conv && my_rank==0)
       Output::print<1>(" SLOW !!! ", normOfResidual/veryOldNormOfResidual);
 
     if(my_rank==0)
     {
-    Output::print("Last nonlinear iteration : ", setw(3), iteration_counter,
-                  "\t\t", "Residual: ", normOfResidual,
-                  "\t\t", "Reduction: ", normOfResidual/initial_residual_);
+      Output::print("Last nonlinear iteration : ", setw(3), iteration_counter,
+                    "\t\t", "Residual: ", normOfResidual,
+                    "\t\t", "Reduction: ", normOfResidual/initial_residual_);
     }
     // descale the matrices, since only the diagonal A block will
     // be reassembled in the next time step
-    if (!this->imex_scheme(iteration_counter)) //because solve() already descaled
+    if (this->imex_scheme(iteration_counter) && iteration_counter>0)
+      return true; // in these conditions, the matrix are already descaled
+    else
+    {
       this->descale_matrices();
-    return true;
-   }
-   else
+      return true;
+    }
+  }
+  else
     return false;
 }
 
@@ -1319,8 +1323,7 @@ bool Time_NSE3D::imex_scheme(unsigned int iteration_counter)
 {
   //IMEX-scheme needs to get out of the iteration directly after the 1st solve()
   bool interruption_condition  = (db_["time_discretization"].is(4))*
-                      (this->current_step_>=3)*
-                      (iteration_counter>0);
+                      (this->current_step_>=3);
 
   // change maximum number of nonlin_iterations to 1 in IMEX case
   if (interruption_condition)
