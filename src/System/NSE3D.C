@@ -43,7 +43,7 @@ ParameterDatabase get_default_NSE3D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -159,6 +159,8 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
     errors_()
 {
   this->db.merge(param_db, false);
+  this->check_parameters();
+
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -258,6 +260,12 @@ NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
 
 void NSE3D::check_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
 
   // Some implementation/testing constraints on the used discretization.
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE != 0)
@@ -343,7 +351,7 @@ void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressur
       break;
     // continuous pressure spaces
     case 1: case 2: case 3: case 4: case 5:
-      pressure_order = 1;
+      pressure_order = pressure_order*1;
       break;
     // discontinuous spaces
     case -11: case -12: case -13: case -14:
@@ -514,6 +522,11 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
+
   }// endfor auto grid
 
   //copy non-actives from rhs to solution on finest grid
@@ -568,6 +581,19 @@ void NSE3D::assemble_non_linear_term()
       GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
     }
   }
+  
+  bool mdml =  this->solver.is_using_multigrid() 
+            && this->solver.get_multigrid()->is_using_mdml();
+  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  if(mdml && !is_stokes)
+  {
+    // in case of upwinding we only assemble the linear terms. The nonlinear
+    // term is not assembled but replaced by a call to the upwind method.
+    // Note that we assemble the same terms over and over again here. Not 
+    // nice, but otherwise we would have to store the linear parts in a 
+    // separate BlockFEMatrix.
+    this->assemble_linear_terms();
+  }
 
   for(auto &s : this->systems_)
   {
@@ -594,11 +620,6 @@ void NSE3D::assemble_non_linear_term()
         break;
     }// endswitch nstype
 
-    for(auto mat : sqMatrices)
-    {
-      mat->reset();
-    }
-
     // boundary conditions and boundary values
     BoundCondFunct3D * boundCondition[1]={
       spaces[0]->getBoundCondition() };
@@ -614,33 +635,36 @@ void NSE3D::assemble_non_linear_term()
 
     //decide wether to assemble by upwinding or not
     bool finest_grid = (&s == &systems_.at(0));
-
-    bool upwinding = false;
-    if(this->solver.is_using_multigrid())
-      upwinding = this->solver.get_multigrid()->is_using_mdml() && !finest_grid;
-
+    bool upwinding = mdml && !finest_grid && !is_stokes;
+    
     if(!upwinding)
     {
-    // local assembling object    
-    const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
-                         feFunction.data(), example_.get_coeffs());
-    
-    // assemble now the matrices and right hand side 
-    Assemble3D(nFESpace, spaces, 
-               nSqMatrices, sqMatrices.data(),
-               nReMatrices, reMatrices.data(), 
-               nRhs, rhsArray.data(), rhsSpaces,
-               boundCondition, boundValues.data(), la);
+      for(auto mat : sqMatrices)
+      {
+        mat->reset();
+      }
+      // local assembling object    
+      const LocalAssembling3D la(LocalAssembling3D_type::NSE3D_NonLinear, 
+                                 feFunction.data(), example_.get_coeffs());
+      
+      // assemble now the matrices and right hand side 
+      Assemble3D(nFESpace, spaces, nSqMatrices, sqMatrices.data(),
+                 nReMatrices, reMatrices.data(), nRhs, rhsArray.data(), 
+                 rhsSpaces, boundCondition, boundValues.data(), la);
     }
     else
     {
       double one_over_nu = 1/example_.get_nu(); //the inverse of the example's diffusion coefficient
       for(auto mat : sqMatrices)
       {
-        UpwindForNavierStokes3D(
-        mat, feFunction[0],feFunction[1],feFunction[2], one_over_nu);
+        UpwindForNavierStokes3D(mat, feFunction[0], feFunction[1],
+                                feFunction[2], one_over_nu);
       }
     }
+
+    //delete the temorary feFunctions gained by GetComponent
+    for(int i = 0; i<3; ++i)
+      delete feFunction[i];
 
     //TODO: Copying non-actives??
 
@@ -694,13 +718,6 @@ bool NSE3D::stop_it(unsigned int iteration_counter)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
 
     // stop iteration
-    if(my_rank==0)
-    {
-      Output::print<1>("\nNonlinear Iterations: ", setw(4), iteration_counter, setprecision(8),
-                       " RES : ", normOfResidual, " Reduction : ",
-                       normOfResidual/initial_residual_);
-    }
-
     return true;
   }
   else

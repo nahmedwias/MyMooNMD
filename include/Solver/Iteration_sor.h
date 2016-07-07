@@ -21,7 +21,7 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     Iteration_sor(const LinearOperator & mat, int flag = 0, double omega = 1.0);
     
     /// @brief apply this object as a preconditioner
-    void apply(const Vector & z, Vector & r) const override;
+    void apply(const Vector & z, Vector & r) const override final;
     
     /** @brief destructor */
     virtual ~Iteration_sor() = default;
@@ -29,7 +29,7 @@ class Iteration_sor : public IterativeMethod<LinearOperator, Vector>,
     /** @brief iterate routine, called if this is used as a solver */
     std::pair<unsigned int, double> iterate(const LinearOperator & A, 
                                             const Vector & rhs,
-                                            Vector & solution);
+                                            Vector & solution) override final;
     
     /// @brief return the used linear operator
     const LinearOperator& get_operator() const;

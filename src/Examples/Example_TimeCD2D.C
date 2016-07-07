@@ -4,6 +4,10 @@
 
 #include<string>
 
+namespace linear_space_time
+{
+#include "TCD_2D/linear_space_time.h"
+}
 namespace exp_sin_cos
 {
 #include "TCD_2D/exp.h"
@@ -27,6 +31,27 @@ Example_TimeCD2D::Example_TimeCD2D(int example_code)
 {
   switch(example_code)
   {
+    case -1:
+    {
+      /**Exact solution"**/
+      exact_solution.push_back(linear_space_time::Exact);
+      /** boundary condition */
+      boundary_conditions.push_back( linear_space_time::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( linear_space_time::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = linear_space_time::BilinearCoeffs;
+      
+      /** Initial condition*/
+     initialCOndtion.push_back(linear_space_time::InitialCondition);
+     linear_space_time::ExampleFile();
+
+     this->timeDependentRhs = linear_space_time::rhs_depends_on_time;
+     this->timeDependentCoeffs=linear_space_time::coefficients_depend_on_time;
+    }
+    break;
     case 0:
       /**Exact solution"**/
       exact_solution.push_back(exp_sin_cos::Exact);
@@ -42,6 +67,9 @@ Example_TimeCD2D::Example_TimeCD2D(int example_code)
       /** Initial condition*/
      initialCOndtion.push_back(exp_sin_cos::InitialCondition);
      exp_sin_cos::ExampleFile();
+     
+     this->timeDependentRhs = exp_sin_cos::rhs_depends_on_time;
+     this->timeDependentCoeffs=exp_sin_cos::coefficients_depend_on_time;
      break;
     case 1:
       /**Exact solution"**/
@@ -58,6 +86,9 @@ Example_TimeCD2D::Example_TimeCD2D(int example_code)
       /** Initial condition*/
       initialCOndtion.push_back(sin_sin_sin::InitialCondition);
       sin_sin_sin::ExampleFile();
+      
+      this->timeDependentRhs = sin_sin_sin::rhs_depends_on_time;
+     this->timeDependentCoeffs=sin_sin_sin::coefficients_depend_on_time;
       break;
     case 2:
       /**Exact solution"**/

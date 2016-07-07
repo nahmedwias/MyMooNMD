@@ -82,8 +82,6 @@ int main(int argc, char* argv[])
   // Construct domain.
   TDomain domain(db);
 
-  TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
-
   TDatabase::ParamDB->DRIFT_Z = 1;
   TDatabase::ParamDB->ANSATZ_ORDER=2; // ANSATZ_ORDER 1 is not working yet
   TDatabase::ParamDB->DISCTYPE = 1; //Galerkin discretization, nothing else implemented
@@ -247,8 +245,6 @@ int main(int argc, char* argv[])
     
     // Construct domain.
     TDomain domain(db);
-
-    TDatabase::ParamDB->PROBLEM_TYPE = 1; // CDR problem type
 
     TDatabase::ParamDB->DRIFT_Z = 1;
     TDatabase::ParamDB->ANSATZ_ORDER = 2;

@@ -72,6 +72,11 @@ template void ParameterDatabase::add(std::string n, int v,       std::string d);
 template void ParameterDatabase::add(std::string n, size_t v,    std::string d);
 template void ParameterDatabase::add(std::string n, double v,    std::string d);
 template void ParameterDatabase::add(std::string n,std::string v,std::string d);
+template<> void ParameterDatabase::add(std::string n,const char* v,
+                                       std::string d)
+{
+  this->add(n, std::string(v), d);
+}
 
 /* ************************************************************************** */
 template <typename T>
@@ -106,6 +111,14 @@ template void ParameterDatabase::add(std::string n, size_t v,    std::string d,
                                      std::set<size_t> range);
 template void ParameterDatabase::add(std::string n,std::string v,std::string d,
                                      std::set<std::string> range);
+template<> void ParameterDatabase::add(std::string n,const char* v,
+                                       std::string d, 
+                                       std::set<const char*> range)
+{
+  std::set<std::string> range_of_strings;
+  for(const auto& r : range) range_of_strings.insert(std::string(r));
+  this->add(n, std::string(v), d, range_of_strings);
+}
 
 /* ************************************************************************** */
 void ParameterDatabase::add(Parameter&& p)
@@ -734,13 +747,13 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   // add parameters which are needed by all ParMooN programs and don't belong
   // anywhere else.
   
-  db.add("outfile", std::string("default_parmoon_outfile.out"),
+  db.add("outfile", "default_parmoon_outfile.out",
          "This is the file where all output of ParMooN is (usually) written "
          "to. In general ParMooN produces text output on the console as well "
          "as in this file. For this to properly work, you should call "
          "`Output::set_outfile(db[\"outfile\"]);` in your main program.");
   
-  db.add("boundary_file", std::string("Default_UnitSquare"),
+  db.add("boundary_file", "Default_UnitSquare",
          "This is a file describing the boundary of the computational domain. "
          "You probably want to adjust this to be the path to some file which "
          "typically has the extension 'PRM'. See the documentation for GEO and "
@@ -748,7 +761,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          {"Default_UnitSquare", "Default_UnitCube"}
         );
   
-   db.add("geo_file", std::string("UnitSquare"),
+   db.add("geo_file", "UnitSquare",
          "This files describes the computational mesh. You probably want to "
          "adjust this to be the path to some file which typically has the "
          "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
@@ -756,7 +769,7 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
           "Default_UnitCube_Tetra"});
 
-  db.add("mesh_file", std::string("__nofile__"),
+  db.add("mesh_file", "__nofile__",
          "This files describes the computational mesh in .mesh format. "
          "Set this to the path of your desired mesh file.");
 
@@ -876,12 +889,12 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	         "norms, e.g. the L^2-norm of the solution.",
 			 {true,false});
 	  ///@todo change this to output_directory
-	  db.add("output_vtk_directory", std::string("."),
+	  db.add("output_vtk_directory", ".",
 	         "This directory is where the output is written. This "
 	         "directory will be created, if it does not exist already. Files in "
 	         "this directory will be overwritten without any warning.");
 
-	  db.add("output_basename", std::string("parmoon"),
+	  db.add("output_basename", "parmoon",
 	         "This string is prepended to most files written by ParMooN. "
 	         "This includes also vtk- and case-files");
 
@@ -890,4 +903,33 @@ ParameterDatabase ParameterDatabase::default_output_database()
 		 "before writing the results ");
 
 	  return db;
+}
+
+ParameterDatabase ParameterDatabase::default_tetgen_database()
+{
+  ParameterDatabase db("default ParMooN mesh generation using TetGen "
+                        "parameters database");
+  db.add("mesh_tetgen_file", std::string("Wuerfel"),
+         "This files describes the computational mesh. Typically this files"
+         " has the extension 'smesh', 'node' or 'poly'. "
+         " currently only the smesh files are supported");
+  // maximum can be infnity
+  db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
+         1.0, 1000.);
+  
+  db.add("tetgen_steiner", (size_t) 0,
+         "this parameter 'preserve the mesh on the exterior boundary' ", 
+         (size_t) 0, (size_t) 1);
+  
+  // maximum can be anything depending on geometry
+  db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
+          "that depends on the geometry", 0.0, 1000.);
+  
+  db.add("tetgen_merge_colplaner", (size_t) 0, 
+         "This parameter is for the coplanar facets to be merge "
+         "or very close vertices", (size_t) 0, (size_t) 1);
+  
+  db.add("tetgen_quite", (size_t) 1, "Quiet: No terminal output except errors ", 
+         (size_t) 0, (size_t) 1);
+  return db;
 }

@@ -42,8 +42,6 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
   TDomain Domain(argv[1], parmoon_db);
   
-  if(parmoon_db["problem_type"].is(0))
-    parmoon_db["problem_type"] = 2;
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
 

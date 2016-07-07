@@ -55,7 +55,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(matrix ParMooN_test_matrix)
   list(APPEND parmoon_tests ParMooN_test_matrix)
-  
+   
   #block matrix test
   add_executable(ParMooN_test_block_matrix block_matrix_test.c++)
   target_link_libraries(ParMooN_test_block_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -67,7 +67,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_block_fe_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(block_fe_matrix ParMooN_test_block_fe_matrix)
   list(APPEND parmoon_tests ParMooN_test_block_fe_matrix)
- 
+  
+  #dense matrix test
+  add_executable(ParMooN_test_dense_matrix dense_matrix_test.c++)
+  target_link_libraries(ParMooN_test_dense_matrix parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(dense_matrix ParMooN_test_dense_matrix)
+  list(APPEND parmoon_tests ParMooN_test_dense_matrix)
+  
   #cd2d test
   add_executable(ParMooN_test_cd2d cd2d_test.c++)
   target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -97,13 +103,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
-  
-  #nse2d multigrid test
-  add_executable(ParMooN_test_nse2d_mg nse2d_multigrid_test.c++)
-  target_link_libraries(ParMooN_test_nse2d_mg parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(nse2d_mg ParMooN_test_nse2d_mg)
-  list(APPEND parmoon_tests ParMooN_test_nse2d_mg)
-  
+   
   #tnse2d test (direct solver)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
   target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
@@ -174,6 +174,10 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
   add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d_seq umfpack)
+  #multigrid
+  add_test(NAME tnse3d_seq_multigrid COMMAND ParMooN_test_tnse3d_seq multigrid)
+  #lsc 
+  add_test(NAME tnse3d_seq_lsc COMMAND ParMooN_test_tnse3d_seq lsc)
   
   #multigrid tests
   set(_EXEC_NAME ParMooN_test_multigrid_2d)
@@ -185,7 +189,8 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   #test 1
   add_test(NAME multigrid_2d COMMAND ParMooN_test_multigrid_2d)
   add_test(NAME multigrid_3d COMMAND ParMooN_test_multigrid_3d)
-	
+
+  
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
   #####################################################

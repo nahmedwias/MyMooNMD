@@ -321,11 +321,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 }                                                 // end of UpwindForNavierStokes
 
 
-void UpwindForConvDiff(CoeffFct2D *Coeff,
-TSquareMatrix2D *sqmatrix, double *RHS,
-TFESpace2D *fespace, TDiscreteForm2D *DiscreteForm,
-TFEFunction2D *u1, TFEFunction2D *u2,
-int ConvIsVelo)
+void UpwindForConvDiff(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix, 
+                       double *RHS, const TFESpace2D *fespace, 
+                       const TFEFunction2D *u1, const TFEFunction2D *u2, 
+                       bool ConvIsVelo)
 {
   double RE;
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
@@ -416,7 +415,7 @@ int ConvIsVelo)
           // compute convection in center of edge of dual
           // boundary
           if (!ConvIsVelo)
-            DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+            Coeff(1, &x, &y, &param, &coeff);
           else
           {
             u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -485,7 +484,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+2)%3])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 // the underlying pde
                 else
                 {
@@ -509,7 +508,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+1)%3])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -534,7 +533,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -582,7 +581,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+3)%4])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -604,7 +603,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[(m+1)%4])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -627,7 +626,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);
@@ -650,7 +649,7 @@ int ConvIsVelo)
                 y= (ycoords[m]+ycoords[n])*0.25+sy*0.5;
                 if (!ConvIsVelo)
                   // get parameter function of the underlying pde
-                  DiscreteForm->GetCoeffFct()(1, &x, &y, &param, &coeff);
+                  Coeff(1, &x, &y, &param, &coeff);
                 else
                 {
                   u1->FindGradientLocal(cell,i,x,y,&coeff[1]);

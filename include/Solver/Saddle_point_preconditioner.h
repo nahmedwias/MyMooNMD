@@ -44,14 +44,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * for LSC and for SIMPLE. In particular is saves the costly computation of 
      * B*B^T.
      */
-    void update(const BlockFEMatrix & m);
-    
-    /** @brief don't use this method. It is here only for compatability 
-     * in the Solver class.
-     * 
-     * @warning Do not use this method. You need a BlockFEMatrix instead.
-     */
-    void update(const BlockMatrix & m);
+    void update();
     
     /** @brief applying the preconditioner */
     void apply(const BlockVector &z, BlockVector &r) const;

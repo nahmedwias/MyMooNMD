@@ -50,7 +50,6 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
   // check for convergence
   double resid = norm(r) / normb;
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0)) 
   {
     return std::pair<unsigned int, double>(0, resid);
@@ -80,6 +79,20 @@ std::pair<unsigned int, double> Iteration_jacobi<L, Vector>::iterate(
   
   // did not converge
   return std::pair<unsigned int, double>(this->max_n_iterations, resid);
+}
+
+/* ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Iteration_jacobi<L, V>::update(const L& A)
+{
+  if(&this->linear_operator != &A)
+    ErrThrow("You are trying to update a Iteration_jacobi object with a matrix "
+             "which is not the one you constructed it with. Please create a "
+             "new Iteration_jacobi object");
+  // update the diagonal entries
+  extract_diagonal_entries(this->diagonal_entries, A);
+  this->IterativeMethod<L, V>::update(A);
 }
 
 /* ************************************************************************** */

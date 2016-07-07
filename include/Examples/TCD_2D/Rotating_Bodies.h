@@ -36,6 +36,8 @@ void ExampleFile()
       " rotating bodies example.");
 }
 
+constexpr bool rhs_depends_on_time = false;
+constexpr bool coefficients_depend_on_time = false;
 /** The exact solution */
 void Exact(double x, double y, double *values)
 {
