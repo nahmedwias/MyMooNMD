@@ -58,13 +58,13 @@ public:
 			std::vector<TBoundEdge*> &edge,
 			double mult);
     
-    void matrix_gradv_v_n(BlockFEMatrix &M,
+    void matrix_gradv_n_v(BlockFEMatrix &M,
                           const TFESpace2D *U_Space,
                           int boundary_component_id,
                           double mult
                           );
     
-    void matrix_gradv_v_n(BlockFEMatrix &M,
+    void matrix_gradv_n_v(BlockFEMatrix &M,
                           const TFESpace2D *U_Space,
                           std::vector<TBoundEdge*> &edge,
                           double mult);
@@ -79,6 +79,20 @@ public:
                           const TFESpace2D *U_Space,
                           std::vector<TBoundEdge*> &edge,
                           double mult);
+    
+    
+    void matrix_p_v_n(BlockFEMatrix &M,
+                    const TFESpace2D *U_Space,
+                    const TFESpace2D *P_Space,
+                    int boundary_component_id,
+                    double mult
+                    );
+    
+    void matrix_p_v_n(BlockFEMatrix &M,
+                    const TFESpace2D *U_Space,
+                    const TFESpace2D *P_Space,
+                    std::vector<TBoundEdge*> &edge,
+                    double mult);
     
     //todo for symmetry (nitsche): ((u-g)n,q) and -((u-g),dnvn)
 

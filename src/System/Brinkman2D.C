@@ -271,16 +271,12 @@ void Brinkman2D::assemble()
         RHSs[2] = s.rhs.block(2); // NSE type 14 includes pressure rhs
         fesprhs[2]  = p_space;
         N_Rhs = 3;
-
-      
-	Output::print("assemble");
  
       
     // call the assemble method with the information that has been patched together
     Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
-      Output::print("assemble");
       
       
 // weakly imposing boundary conditions
@@ -294,6 +290,16 @@ void Brinkman2D::assemble()
 		       TDatabase::ParamDB->neumann_boundary_id[k],// boundary component
 		       -TDatabase::ParamDB->neumann_boundary_value[k]); // mult
       }
+      
+      for (int k=0;k<TDatabase::ParamDB->n_g_v_boundary;k++)
+      {
+          bi.rhs_g_v(RHSs,
+                       v_space,
+                       NULL, // g = 1
+                       TDatabase::ParamDB->g_v_boundary_id[k],// boundary component
+                       -TDatabase::ParamDB->g_v_boundary_value[k]); // mult
+      }
+
 
        // test (in the true case, this function should be assembled on "DIRICHLET" boundaries
 	  ////bi.matrix_v_n_v_n(s.matrix,v_space,1,1.);
@@ -306,12 +312,12 @@ void Brinkman2D::assemble()
                             TDatabase::ParamDB->unvn_boundary_value[k]); // mult
       }
       
-      for (int k=0;k<TDatabase::ParamDB->n_graduvn_boundary;k++)
+      for (int k=0;k<TDatabase::ParamDB->n_gradunv_boundary;k++)
       {
-          bi.matrix_gradv_v_n(s.matrix,
-                            v_space,
-                            TDatabase::ParamDB->graduvn_boundary_id[k],// boundary component
-                            TDatabase::ParamDB->graduvn_boundary_value[k]); // mult
+          bi.matrix_gradv_n_v(s.matrix,
+                              v_space,
+                              TDatabase::ParamDB->gradunv_boundary_id[k],// boundary component
+                              TDatabase::ParamDB->gradunv_boundary_value[k]); // mult
       }
      
       for (int k=0;k<TDatabase::ParamDB->n_u_v_boundary;k++)
@@ -322,10 +328,17 @@ void Brinkman2D::assemble()
                               TDatabase::ParamDB->u_v_boundary_value[k]); // mult
       }
       
+      for (int k=0;k<TDatabase::ParamDB->n_p_v_n_boundary;k++)
+
+      {
+          bi.matrix_p_v_n(s.matrix,
+                        v_space,
+                        p_space,
+                        TDatabase::ParamDB->p_v_n_boundary_id[k],// boundary component
+                        TDatabase::ParamDB->p_v_n_boundary_value[k]); // mult
+      }
       
-    
       
-     
     
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
@@ -336,11 +349,8 @@ void Brinkman2D::assemble()
     //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
-      
-
   }
 }
-
 
 
 /** ************************************************************************ */

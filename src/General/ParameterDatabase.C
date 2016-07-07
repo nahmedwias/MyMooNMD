@@ -115,6 +115,7 @@ void ParameterDatabase::add(Parameter&& p)
     this->parameters.emplace_back(std::move(p));
   else
     ErrThrow("parameter with this name already exists");
+   
     // what happens to p now?
 }
 
