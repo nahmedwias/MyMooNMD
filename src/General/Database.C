@@ -336,8 +336,6 @@ void TDatabase::SetDefaultParameters()
   strcpy(tmp,"MooN_MD_default_outfile");
   ParamDB->OUTFILE=tmp;
   
-  ParamDB->PROBLEM_TYPE = 0;
-  
   ParamDB->timeprofiling = 0; //time profiling
   ParamDB->MapperType = 1;
   ParamDB->DSType = 1;		//Parallel Direct Solver Type
@@ -981,31 +979,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SSMUM_INTERPOLATION = 0;
 
 
-  //======================================================================
-  /** parameters for Stokes--Darcy (StoDa) coupling */
-  //======================================================================
-  ParamDB->StoDa_interfaceType = 0; //Beavers-Joseph-Saffman or u.t=0
-  ParamDB->StoDa_alpha = 1; // from Beavers-Joseph-Saffman condition on interface
-  ParamDB->StoDa_problemType = 1;// Neumann--Neumann, Robin--Robin, ...
-  ParamDB->StoDa_updatingStrategy = 0; // update of the etas
-  ParamDB->StoDa_theta_f = 1; //damping in Stokes (flow) part
-  ParamDB->StoDa_theta_p = 1; //damping in Darcy (porous) part
-  ParamDB->StoDa_gamma_f = 1; // parameter for Robin condition on interface
-  ParamDB->StoDa_gamma_p = 1; // parameter for Robin condition on interface
-  ParamDB->StoDa_weakGamma = 1; // parameter for enforcing weak boundary conditions
-  ParamDB->StoDa_solutionStrategy = 1; // only iterative (0) or iterative and one big matrix (1)
-  ParamDB->StoDa_algorithm = 1; // Gauss--Seidel, Jacobi, ...
-  ParamDB->StoDa_StokesFirst = 0; // for Gauss--Seidel type method.
-  ParamDB->StoDa_nIterations = 100; // maximum number of iterations
-  ParamDB->StoDa_relDiff_interfaceError = 1e-10; // (e_k - e_{k+1})/e_k < this number
-  ParamDB->StoDa_relDiff_factor1 = 1; // factor of StokesU in computing E_k
-  ParamDB->StoDa_relDiff_factor2 = 1; // factor of StokesP in computing E_k
-  ParamDB->StoDa_relDiff_factor3 = 1; // factor of DarcyP  in computing E_k
-  ParamDB->StoDa_relDiff_solution = 1e-10; // E_k < this number
-  ParamDB->StoDa_bigResidual = 1e-10; // residual of big System < this number
-  ParamDB->StoDa_periodicBoundary = 0; // true if there is a periodic boundary
-  ParamDB->StoDa_periodicBoundaryPressureDrop = 1.0; // pressure drop at periodic boundary
-  
   /** general parameters for population balances */
   ParamDB->PB_DISC_TYPE = 3;
   ParamDB->PB_TIME_DISC = 100;
@@ -1143,7 +1116,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("VERSION: ", ParamDB->VERSION);
   printToFile("MAPFILE: ", ParamDB->MAPFILE);
   printToFile("OUTFILE: ", ParamDB->OUTFILE);
-  printToFile("PROBLEM_TYPE: ", ParamDB->PROBLEM_TYPE);
   printToFile("profiling: ", ParamDB->timeprofiling);
   printToFile("MapperType: ", ParamDB->MapperType);
   printToFile("DSType: ", ParamDB->DSType);
@@ -1569,30 +1541,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   
   printToFile("INPUT_QUAD_RULE: ", ParamDB->INPUT_QUAD_RULE);
   
-  /** Parameters for Stokes--Darcy */
-  printToFile("StoDa_interfaceType: ", ParamDB->StoDa_interfaceType);
-  printToFile("StoDa_alpha: ", ParamDB->StoDa_alpha);
-  printToFile("StoDa_problemType: ", ParamDB->StoDa_problemType);
-  printToFile("StoDa_updatingStrategy: ", ParamDB->StoDa_updatingStrategy);
-  printToFile("StoDa_theta_f: ", ParamDB->StoDa_theta_f);
-  printToFile("StoDa_theta_p: ", ParamDB->StoDa_theta_p);
-  printToFile("StoDa_gamma_f: ", ParamDB->StoDa_gamma_f);
-  printToFile("StoDa_gamma_p: ", ParamDB->StoDa_gamma_p);
-  printToFile("StoDa_weakGamma: ", ParamDB->StoDa_weakGamma);
-  printToFile("StoDa_solutionStrategy: ", ParamDB->StoDa_solutionStrategy);
-  printToFile("StoDa_StokesFirst: ", ParamDB->StoDa_StokesFirst);
-  printToFile("StoDa_algorithm: ", ParamDB->StoDa_algorithm);
-  printToFile("StoDa_relDiff_interfaceError: ", ParamDB->StoDa_relDiff_interfaceError);
-  printToFile("StoDa_relDiff_factor1: ", ParamDB->StoDa_relDiff_factor1);
-  printToFile("StoDa_relDiff_factor2: ", ParamDB->StoDa_relDiff_factor2);
-  printToFile("StoDa_relDiff_factor3: ", ParamDB->StoDa_relDiff_factor3);
-  printToFile("StoDa_relDiff_solution: ", ParamDB->StoDa_relDiff_solution);
-  printToFile("StoDa_bigResidual: ", ParamDB->StoDa_bigResidual);
-  printToFile("StoDa_periodicBoundary: ", ParamDB->StoDa_periodicBoundary);
-  printToFile("StoDa_periodicBoundaryPressureDrop: ", ParamDB->StoDa_periodicBoundaryPressureDrop);
-  printToFile("StoDa_nIterations: ", ParamDB->StoDa_nIterations);
-
- 
   printToFile("HEAT_TANGENTIAL_STRESS_FACTOR: ", ParamDB->HEAT_TANGENTIAL_STRESS_FACTOR);
   printToFile("HEAT_SOLID_SURFACE_FACTOR: ", ParamDB->HEAT_SOLID_SURFACE_FACTOR);
   printToFile("EQ_CONTACT_ANGLE: ", ParamDB->EQ_CONTACT_ANGLE);

@@ -24,6 +24,12 @@ SmootherCode string_to_smoother_code(std::string code)
     return SmootherCode::CELL_VANKA;
   else if(code == std::string("batch_vanka"))
     return SmootherCode::BATCH_VANKA;
+  else if(code == std::string("nodal_vanka_store"))
+    return SmootherCode::NODAL_VANKA_STORE;
+  else if(code == std::string("cell_vanka_store"))
+    return SmootherCode::CELL_VANKA_STORE;
+  else if(code == std::string("batch_vanka_store"))
+    return SmootherCode::BATCH_VANKA_STORE;
   else
   {
     Output::warn("SmootherCode", "The string ", code,
@@ -310,29 +316,31 @@ ParameterDatabase Multigrid::default_multigrid_database()
   db.add<size_t>("multigrid_n_levels", 2,
          "Determine how many levels the multigrid cycle consists of.", 0, 5);
 
-  db.add("multigrid_type", std::string("standard"),
+  db.add("multigrid_type", "standard",
          "The type of multigrid algorithm to apply. Besides "
          "the standard approach a 'multiple discretization multilevel'"
          " approach is available (for those systems where it is "
          "already implemented). See e.g. John et al. 2002. ",
          {"standard", "mdml"});
 
-  db.add("multigrid_cycle_type", std::string("V"),
+  db.add("multigrid_cycle_type", "V",
          "The recursion type how to traverse the multigrid levels. "
          "So far the three standard cycle V, W and F are implemented."
          , {"V", "W", "F"});
 
-  db.add("multigrid_smoother", std::string("nodal_vanka"),
+  db.add("multigrid_smoother", "nodal_vanka",
          "The smoother to use on all but the coarsest level. You should take "
          "care, that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
+         {"jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
-  db.add("multigrid_smoother_coarse", std::string("direct_solve"),
+  db.add("multigrid_smoother_coarse", "direct_solve",
          "The smoother to use on the coarsest level. You should take care, "
          "that the smoother you chose fits your problem type, e.g. Vanka "
          "smoothers are best fitted for saddle point problems.",
-         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka", "no_smoother"});
+         {"direct_solve", "jacobi", "nodal_vanka", "cell_vanka", "batch_vanka",
+          "nodal_vanka_store", "cell_vanka_store", "batch_vanka_store", "no_smoother"});
 
   db.add("multigrid_correction_damp_factor", 1.0,
          "The damping factor which is used when applying the coarse grid "
@@ -343,12 +351,12 @@ ParameterDatabase Multigrid::default_multigrid_database()
   db.add<size_t>("multigrid_n_pre_smooth", 1,
                  "The number of smoothing steps to apply per level before "
                  "going down to the next coarsest level.",
-                 1, 10);
+                 0, 10);
 
   db.add<size_t>("multigrid_n_post_smooth", 1,
                  "The number of smoothing steps to apply per level after "
                  "coming up from the next coarsest level.",
-                 1, 10);
+                 0, 10);
 
   db.add("multigrid_coarse_residual", 1.0e-1,
          "The target residual on the coarsest grid. When this residual is "

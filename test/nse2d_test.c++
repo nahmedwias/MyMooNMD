@@ -26,14 +26,10 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <NSE2D.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <LocalAssembling2D.h>
 #include <Example_NSE2D.h>
-
-#include <MainUtilities.h> //for error measuring
+#include <Multigrid.h>
+#include <Chrono.h>
+#include <algorithm>
 
 void compare(const NSE2D& nse2d, std::array<double, int(4)> errors)
 {
@@ -91,6 +87,7 @@ void check(TDomain &domain, ParameterDatabase db,
 {
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(Multigrid::default_multigrid_database());
   db["problem_type"] = 5;
   db["solver_type"] = "direct";
   db["iterative_solver_type"] = "fgmres";
@@ -106,14 +103,48 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
   TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
   
+  Chrono time_measureing;
   compute(domain, db, errors);
+  time_measureing.print_time("nse2d direct solver,                    velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
   
   // we have to reset the space codes because they are changed in nse2d
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   
   db["solver_type"] = "iterative";
+  time_measureing.reset();
   compute(domain, db, errors);
+  time_measureing.print_time("nse2d fgmres(lsc preconditioner),       velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
+  
+  // we have to reset the space codes because they are changed in nse2d
+  TDatabase::ParamDB->PRESSURE_SPACE = -4711;
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  
+
+  db["preconditioner"] = "multigrid";
+  db["multigrid_n_levels"] = db["refinement_n_initial_steps"].get<size_t>();
+  //choose smoother on fine grid according to element
+  std::vector<int> disc_p = {12,13,14,15,22,23,24};
+  if(std::find(disc_p.begin(), disc_p.end(), velocity_order) != disc_p.end())
+    db["multigrid_smoother"] = "cell_vanka_store";
+  else
+    db["multigrid_smoother"] = "batch_vanka_store";
+
+  db["multigrid_type"] = "standard";
+  db["multigrid_smoother_coarse"] = "direct_solve";
+  db["multigrid_n_pre_smooth"] = 0;
+  db["multigrid_n_post_smooth"] = 1;
+  db["multigrid_correction_damp_factor"] = 1.0;
+  db["multigrid_vanka_damp_factor"] = 1.0;
+  time_measureing.reset();
+  compute(domain, db, errors);
+  time_measureing.print_time("nse2d fgmres(multigrid preconditioner), velocity "
+                             + std::to_string(velocity_order) + ", nstype "
+                             + std::to_string(nstype));
 }
 
 void check_one_element(TDomain& domain, ParameterDatabase db,
@@ -154,8 +185,7 @@ int main(int argc, char* argv[])
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    db.add("multigrid_n_levels", (size_t) 1,"");
-
+    
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
@@ -163,8 +193,8 @@ int main(int argc, char* argv[])
     // default construct a domain object
     TDomain domain(db);
 
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
@@ -250,8 +280,7 @@ int main(int argc, char* argv[])
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    db.add("multigrid_n_levels", (size_t) 1,"");
-
+    
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
@@ -260,8 +289,8 @@ int main(int argc, char* argv[])
     TDomain domain(db);
 
     // parameters used for this test
-    TDatabase::ParamDB->PROBLEM_TYPE = 5; //NSE Problem
     TDatabase::ParamDB->RE_NR=1;
+    TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->SOLVER_TYPE = 2;
     TDatabase::ParamDB->LAPLACETYPE = 0;

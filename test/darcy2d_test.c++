@@ -179,7 +179,6 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
                 0.0038190922876324, 0.81680935765046 }};
     check_darcy2d(domain, db, 1002, errors);
   }
-  return;
   
   // this is really slow!
   if(db["solver_type"].is("direct"))
@@ -221,8 +220,6 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->PROBLEM_TYPE = 0; // problem type is not needed
   // velocity space code for Raviart-Thomas (RT) and 
   // Brezzi-Douglas-Marini(BDM) elements:
   // 1000    RT_0

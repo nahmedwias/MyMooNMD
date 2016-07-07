@@ -486,11 +486,18 @@ void CD3D::output(int i)
 void CD3D::checkParameters()
 {
   //check if the correct problem type is set, change eventually
-  if (!this->db["problem_type"].is(1))
+  if(!db["problem_type"].is(1))
   {
-    this->db["problem_type"] = 1; //set correct problem type
-    Output::print("PROBLEM_TYPE set to 1 (convection-diffusion-reaction), "
-                  "for this is class CD3D.");
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 1;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to CD."
+          "It is now reset to the correct value for CD (=1).");
+      db["problem_type"] = 1;
+    }
   }
 
   //an error when using ansatz order 0

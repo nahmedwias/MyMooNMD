@@ -23,8 +23,8 @@ template <class L, class Vector>
 std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
   const L & A, const Vector & rhs, Vector & solution)
 {
-  double rho_1, rho_2, alpha, beta, omega;
-  Vector p, phat, s, shat;
+  double rho_1, rho_2 = 1., alpha = 1., beta, omega = 1.;
+  Vector p, phat(rhs), s, shat(rhs);
   Vector t(rhs), v(rhs); // this does a copy. We don't need the entries though.
   
   //Vector r = rhs - A * solution;
@@ -38,7 +38,6 @@ std::pair<unsigned int, double> Iteration_bicgstab<L, Vector>::iterate(
     normb = 1;
   double resid = norm(r) / normb;
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);

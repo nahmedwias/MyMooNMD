@@ -11,8 +11,7 @@
 #include <NSE3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
-
-#include <sys/stat.h>
+#include <LoopInfo.h>
 
 #ifdef _MPI
 // we need this here because for some reason (??) these are declared extern in
@@ -71,8 +70,7 @@ int main(int argc, char* argv[])
   if(my_rank==0) //Only one process should do that.
     Database.WriteParamDB(argv[0]);
 
-  // Do a makeshift parameter check and the old parameter check of the Database.
-  NSE3D::check_parameters();
+  // Do the old parameter check of the Database.
   Database.CheckParameterConsistencyNSE();
 
   // Read in geometry and initialize the mesh.
@@ -126,7 +124,6 @@ int main(int argc, char* argv[])
 
 #endif
 
-
   //print information on the mesh partition on the finest grid
   domain.print_info("NSE3D domain");
 
@@ -144,20 +141,20 @@ int main(int argc, char* argv[])
   nse3d.assemble_linear_terms();
   nse3d.stop_it(0);  // check initial residuals
 
+  LoopInfo loop_info("nonlinear");
+  loop_info.print_time_every_step = true;
+  loop_info.verbosity_threshold = 1; // full verbosity
+  if(my_rank==0)
+    loop_info.print(0, nse3d.get_full_residual());
+  
   chrono_parts.print_time(std::string("setting up spaces, matrices, linear assemble"));
   chrono_parts.reset();
 
   //======================================================================
   for(unsigned int k=1;; k++)
   {
-    Chrono chrono_nonlinit;
-
-    if(my_rank==0)
-    {
-     Output::info("NONLINEAR ITERATION ", setw(3), k-1);
-     Output::dash(" residuals ",nse3d.get_residuals());
-    }
-
+    if(my_rank == 0)
+      Output::print(); // new line for a new nonlinear iteration
     // solve the system
     nse3d.solve();
 
@@ -167,13 +164,15 @@ int main(int argc, char* argv[])
     
     nse3d.assemble_non_linear_term();
 
-    chrono_nonlinit.print_time(std::string("nonlinear iteration ") + std::to_string(k-1));
-
     // checking residuals
     if(nse3d.stop_it(k))
+    {
+      loop_info.finish(k, nse3d.get_full_residual());
       break;
-
-  }
+    }
+    else
+      loop_info.print(k, nse3d.get_full_residual());
+  } // end for k
 
   chrono_parts.print_time(std::string("solving procedure "));
 

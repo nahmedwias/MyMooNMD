@@ -162,6 +162,20 @@ void Time_CD2D::set_parameters()
     throw("TIME_DISC: 0 is not supported. Chose 1 (backward Euler) or 2 (Crank-Nicolson).");
   }
 
+  //set problem_type to Time_CD if not yet set
+  if(!db["problem_type"].is(2))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 2;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to Time_CD."
+          "It is now reset to the correct value for Time_CD (=2).");
+      db["problem_type"] = 2;
+    }
+  }
   //////////////// Algebraic flux correction ////////////
   if(TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION != 0)
   {//some kind of afc enabled

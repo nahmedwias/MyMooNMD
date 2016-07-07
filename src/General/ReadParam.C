@@ -68,11 +68,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->VERSION;
       N_Param++;
     }
-    if (!strcmp(line, "PROBLEM_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->PROBLEM_TYPE;
-      N_Param++;
-    }
 
     if (!strcmp(line, "MAPFILE:"))
     {
@@ -2819,115 +2814,6 @@ int TDomain::ReadParam(char *ParamFile)
     if (!strcmp(line, "INPUT_QUAD_RULE:"))
     {
       dat >> TDatabase::ParamDB->INPUT_QUAD_RULE;
-      N_Param++;
-    }
-    
-    //======================================================================
-    /** parameters for Stokes--Darcy (StoDa) coupling */
-    //======================================================================
-    if (!strcmp(line, "StoDa_interfaceType:"))
-    { //Beavers-Joseph-Saffman or u.t=0
-      dat >> TDatabase::ParamDB->StoDa_interfaceType;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_alpha:"))
-    { // from Beavers-Joseph-Saffman condition on interface
-      dat >> TDatabase::ParamDB->StoDa_alpha;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_problemType:"))
-    { // Neumann--Neumann, Robin--Robin, ...
-      dat >> TDatabase::ParamDB->StoDa_problemType;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_updatingStrategy:"))
-    { // update of the etas
-      dat >> TDatabase::ParamDB->StoDa_updatingStrategy;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_theta_f:"))
-    { //damping in Stokes (flow) part
-      dat >> TDatabase::ParamDB->StoDa_theta_f;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_theta_p:"))
-    { //damping in Darcy (porous) part
-      dat >> TDatabase::ParamDB->StoDa_theta_p;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_gamma_f:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_gamma_f;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_gamma_p:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_gamma_p;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_weakGamma:"))
-    { // parameter for Robin condition on interface
-      dat >> TDatabase::ParamDB->StoDa_weakGamma;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_solutionStrategy:"))
-    { // only iterative (0) or iterative and one big matrix (1)
-      dat >> TDatabase::ParamDB->StoDa_solutionStrategy;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_algorithm:"))
-    { // Gauss--Seidel, Jacobi, ...
-      dat >> TDatabase::ParamDB->StoDa_algorithm;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_StokesFirst:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_StokesFirst;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_nIterations:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_nIterations;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_interfaceError:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_interfaceError;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor1:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor1;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor2:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor2;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_factor3:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_factor3;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_relDiff_solution:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_relDiff_solution;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_bigResidual:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_bigResidual;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_periodicBoundary:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_periodicBoundary;
-      N_Param++;
-    }
-    if (!strcmp(line, "StoDa_periodicBoundaryPressureDrop:"))
-    { // for Gauss--Seidel type method.
-      dat >> TDatabase::ParamDB->StoDa_periodicBoundaryPressureDrop;
       N_Param++;
     }
 

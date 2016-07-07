@@ -15,11 +15,10 @@
 void UpwindForNavierStokes(CoeffFct2D *Coeff, TSquareMatrix2D *sqmatrix, 
 			   TFEFunction2D *u1, TFEFunction2D *u2);
 
-void UpwindForConvDiff(CoeffFct2D *Coeff, 
-		       TSquareMatrix2D *sqmatrix, double *RHS,
-                       TFESpace2D *fespace, TDiscreteForm2D *DiscreteForm,
-		       TFEFunction2D *u1, TFEFunction2D *u2,
-		       int ConvIsVelo);
+void UpwindForConvDiff(CoeffFct2D* Coeff, TSquareMatrix2D* sqmatrix, 
+                       double* RHS, const TFESpace2D* fespace,
+                       const TFEFunction2D* u1, const TFEFunction2D* u2,
+                       bool ConvIsVelo );
 
 /******************************************************************************/
 //
