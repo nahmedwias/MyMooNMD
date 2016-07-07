@@ -140,7 +140,7 @@ TDomain::TDomain(char *ParamFile, const ParameterDatabase& param_db) :
 {
   RefLevel = 0;
   
-  db.merge(param_db, false);
+  db.merge(param_db, true);
 
   // This will be removed as soon as we got entirely rid of the
   // global database.
