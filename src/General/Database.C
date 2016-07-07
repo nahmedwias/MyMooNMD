@@ -675,14 +675,18 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> n_unvn_boundary = 0.;
   ParamDB-> unvn_boundary_id.clear();
   ParamDB->unvn_boundary_value.clear();
-    
-  ParamDB-> n_graduvn_boundary = 0.;
-  ParamDB-> graduvn_boundary_id.clear();
-  ParamDB->graduvn_boundary_value.clear();
+
+  ParamDB-> n_gradunv_boundary = 0.;
+  ParamDB-> gradunv_boundary_id.clear();
+  ParamDB->gradunv_boundary_value.clear();
     
   ParamDB-> n_u_v_boundary = 0.;
   ParamDB-> u_v_boundary_id.clear();
   ParamDB->u_v_boundary_value.clear();
+    
+  ParamDB-> n_p_v_n_boundary = 0.;
+  ParamDB-> p_v_n_boundary_id.clear();
+  ParamDB-> p_v_n_boundary_value.clear();
     
   
   // THESE ARE THE DEFAULTS, DO NOT CHANGE 

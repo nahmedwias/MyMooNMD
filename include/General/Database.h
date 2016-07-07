@@ -855,9 +855,17 @@ struct TParaDB
     std::vector<int> graduvn_boundary_id;
     std::vector<double> graduvn_boundary_value;
     
+    int n_gradunv_boundary;
+    std::vector<int> gradunv_boundary_id;
+    std::vector<double> gradunv_boundary_value;
+    
     int n_u_v_boundary;
     std::vector<int> u_v_boundary_id;
     std::vector<double> u_v_boundary_value;
+    
+    int n_p_v_n_boundary;
+    std::vector<int> p_v_n_boundary_id;
+    std::vector<double> p_v_n_boundary_value;
   //======================================================================
     
   #ifdef _MPI
