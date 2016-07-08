@@ -213,7 +213,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 #ifndef _MPI
   else if(solver_name.compare("umfpack") == 0)
   {
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "umfpack";
     db["nonlinloop_epsilon"] = 1e-10;
@@ -228,7 +227,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
 #else
   else if (solver_name.compare("mumps") == 0)
   {
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     db["solver_type"] = "direct";
     db["direct_solver_type"] = "mumps";
     db["nonlinloop_epsilon"] = 1e-15;

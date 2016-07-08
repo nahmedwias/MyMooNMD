@@ -139,7 +139,6 @@ int main(int argc, char* argv[])
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;

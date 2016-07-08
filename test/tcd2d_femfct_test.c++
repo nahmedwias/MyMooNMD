@@ -130,8 +130,6 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->ALGEBRAIC_FLUX_CORRECTION = 2;
     TDatabase::ParamDB->FEM_FCT_PRELIMITING = 0;
 
-    TDatabase::ParamDB->SOLVER_TYPE=2;
-
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;

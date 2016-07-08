@@ -807,13 +807,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->PRECOND_LS;
       N_Param++;
     }
-
-    if (!strcmp(line, "SOLVER_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SOLVER_TYPE;
-      N_Param++;
-    }
-
     if (!strcmp(line, "WRITE_GRAPE:"))
     {
       dat >> TDatabase::ParamDB->WRITE_GRAPE;
@@ -1128,20 +1121,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_SYSTEM_TYPE;
       N_Param++;
     }
-    if (!strcmp(line, "SC_SOLVER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      TDatabase::ParamDB->SC_SOLVER_SADDLE =
-        TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRECONDITIONER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE =
-         TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      N_Param++;
-    }
     if (!strcmp(line, "SC_AMG_PREC_IT:"))
     {
       dat >> TDatabase::ParamDB->SC_AMG_PREC_IT;
@@ -1318,64 +1297,6 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-
-    // *********** PARAMETERS FOR SCALAR SOLVER ***********
-
-    if (!strcmp(line, "SC_SOLVER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SOLVER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRECONDITIONER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      N_Param++;
-      if (!flag[6])
-         TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-    }
-    if (!strcmp(line, "SC_LIN_RED_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      N_Param++;
-      if (!flag[4])
-         TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-      if (!flag[5])
-         TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-    }
-
-    if (!strcmp(line, "SC_LIN_RED_FACTOR_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR_SOLD;
-      N_Param++;
-      flag[4] = 1;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR_SOLD;
-      N_Param++;
-      flag[5] = 1;
-    }
-    if (!strcmp(line, "SC_LIN_MAXIT_SCALAR_SOLD:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR_SOLD;
-      flag[6] = 1;
-    }
-    if (!strcmp(line, "SC_FLEXIBLE_KRYLOV_SPACE_SOLVER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FLEXIBLE_KRYLOV_SPACE_SOLVER;
-      N_Param++;
-    }
-
     if (!strcmp(line, "CIP_TYPE:"))
     {
       dat >> TDatabase::ParamDB->CIP_TYPE;
@@ -1536,103 +1457,11 @@ int TDomain::ReadParam(char *ParamFile)
       N_Param++;
     }
 
-    
-
-    if (!strcmp(line, "SC_MG_TYPE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MG_CYCLE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRE_SMOOTH_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_POST_SMOOTH_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      flag[0] =1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR;
-      flag[0] =2;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_SMOOTHER_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_MAXIT_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_RED_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      flag[1]=1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSEST_LEVEL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_FIRST_SOLUTION_LEVEL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      N_Param++;
-    }
-
     if (!strcmp(line, "OMPNUMTHREADS:"))
     {
       dat >> TDatabase::ParamDB->OMPNUMTHREADS;
       N_Param++;
     } 
-
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_FINE_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_ALL_SCALAR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      N_Param++;
-    }
 
     // *********** PARAMETERS FOR SADDLE POINT SOLVER ***********
 
@@ -1766,145 +1595,6 @@ int TDomain::ReadParam(char *ParamFile)
       dat >> TDatabase::ParamDB->SC_DOWNWIND_TYPE;
       N_Param++;
     }
-    // *********** PARAMETERS FOR BOTH SOLVERS SOLVER ***********
-
-    if (!strcmp(line, "SC_LIN_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_LIN_MAXIT_SADDLE
-        = TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_LIN_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_LIN_RED_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-     if (!strcmp(line, "SC_LIN_RES_NORM_MIN:"))
-    {
-      dat >> TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SADDLE 
-        = TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "SC_MG_TYPE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      TDatabase::ParamDB->SC_MG_TYPE_SADDLE 
-        = TDatabase::ParamDB->SC_MG_TYPE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_MG_CYCLE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      TDatabase::ParamDB->SC_MG_CYCLE_SADDLE
-        =  TDatabase::ParamDB->SC_MG_CYCLE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTHER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTHER_SADDLE
-        =  TDatabase::ParamDB->SC_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_PRE_SMOOTH:"))
-    {
-      dat >> TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      TDatabase::ParamDB->SC_PRE_SMOOTH_SADDLE
-        =  TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_POST_SMOOTH:"))
-    {
-      dat >> TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      TDatabase::ParamDB->SC_POST_SMOOTH_SADDLE
-        = TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SADDLE =
-        TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_SMOOTH_DAMP_FACTOR_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE
-        = TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR;
-      flag[0] = flag[2] = 1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_SMOOTHER:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_MAXIT:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_MAXIT_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_MAXIT_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSE_RED_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SADDLE
-        = TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
-      flag[1]= flag[3] = 1;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_GMG_DAMP_FACTOR_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SADDLE
-        =  TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_COARSEST_LEVEL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      TDatabase::ParamDB->SC_COARSEST_LEVEL_SADDLE =
-        TDatabase::ParamDB->SC_COARSEST_LEVEL_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_FIRST_SOLUTION_LEVEL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SADDLE
-        = TDatabase::ParamDB->SC_FIRST_SOLUTION_LEVEL_SCALAR;
-      N_Param++;
-    } 
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_FINE:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SADDLE
-        = TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR;
-      N_Param++;
-    }
-    if (!strcmp(line, "SC_STEP_LENGTH_CONTROL_ALL:"))
-    {
-      dat >> TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SADDLE
-        = TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR;
-      N_Param++;
-    }
-
 
     // read in parameter for time discretization
     if (!strcmp(line, "STEPLENGTH:"))
@@ -3090,16 +2780,6 @@ int TDomain::ReadParam(char *ParamFile)
     dat.getline (line, 199);
   }
 
-  if (!flag[0])
-  {
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SCALAR =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-    TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_COARSE_SCALAR =
-      TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_SCALAR;
-  }
-  if (!flag[1])
-    TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_FINE_SCALAR =
-      TDatabase::ParamDB->SC_GMG_DAMP_FACTOR_SCALAR;
   if (flag[2]!=1)
   {
     TDatabase::ParamDB->SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE =

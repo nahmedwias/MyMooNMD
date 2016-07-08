@@ -223,8 +223,6 @@ void SetParametersCD(int &nonlinear_method)
   }
   if (TDatabase::ParamDB->DISCTYPE==LOCAL_PROJECTION_2_LEVEL)
   {
-    TDatabase::ParamDB->SOLVER_TYPE = 2;
-    OutPut("LOCAL_PROJECTION_2_LEVEL only with direct solver !!!" << endl);
     nonlinear_method = 1;
     TDatabase::ParamDB->SOLD_PARAMETER_TYPE = 0;
   }

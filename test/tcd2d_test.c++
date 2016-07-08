@@ -139,10 +139,8 @@ int main(int argc, char* argv[])
        
     for(int i=0; i< 5; ++i)
     domain.RegRefineAll();
-    TDatabase::ParamDB->SOLVER_TYPE=2;
     
     Time_CD2D tcd(domain, db);
-    // direct SOLVER_TYPE = 2
     time_integration(2,tcd);
   }
   
@@ -168,22 +166,7 @@ int main(int argc, char* argv[])
     
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
-    
-    TDatabase::ParamDB->SOLVER_TYPE=1;
-    TDatabase::ParamDB->SC_PRECONDITIONER_SCALAR= 5;
-    TDatabase::ParamDB->SC_SOLVER_SCALAR= 16;
-    TDatabase::ParamDB->SC_SMOOTHER_SCALAR= 3;
-    TDatabase::ParamDB->SC_MG_CYCLE_SCALAR   = 1;
-    TDatabase::ParamDB->SC_PRE_SMOOTH_SCALAR = 2;
-    TDatabase::ParamDB->SC_POST_SMOOTH_SCALAR= 2;
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SCALAR= 17;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_FINE_SCALAR= 0;
-    TDatabase::ParamDB->SC_STEP_LENGTH_CONTROL_ALL_SCALAR= 0;
-    TDatabase::ParamDB->SC_LIN_MAXIT_SCALAR= 10000;   
-    TDatabase::ParamDB->SC_LIN_RES_NORM_MIN_SCALAR= 1e-12  ;
-    TDatabase::ParamDB->SC_LIN_RED_FACTOR_SCALAR= 0;
     TDatabase::ParamDB->SC_GMRES_RESTART= 20;
-    TDatabase::ParamDB->SC_COARSE_RED_FACTOR_SCALAR=0.1;
     
     Time_CD2D tcd(domain, db);
     time_integration(2,tcd);
