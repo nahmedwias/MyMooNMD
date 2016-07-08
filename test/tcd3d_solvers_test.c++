@@ -191,6 +191,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   else if(solver_name.compare("mumps") == 0)
   {
     db["solver_type"] = "direct";
+  }
 #endif
   else
   {
