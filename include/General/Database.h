@@ -374,89 +374,9 @@ struct TParaDB
   // ******** parameters for saddle point system *********//
   //======================================================================
   // parameter for nonlinear iteration
+  //TODO Move that parameter to the local "nonlinear" Database!
   int    SC_NONLIN_ITE_TYPE_SADDLE;
-
-  // parameters for linear iteration
-  int    SC_SOLVER_SADDLE;
-  int    SC_PRECONDITIONER_SADDLE;
-  int    SC_LIN_MAXIT_SADDLE;
-  double SC_LIN_RED_FACTOR_SADDLE;
-  double SC_LIN_RES_NORM_MIN_SADDLE;
-
-  // parameters which are used in multigrid for saddle point problems
-  int    SC_MG_TYPE_SADDLE;
-  int    SC_MG_CYCLE_SADDLE;
-  int    SC_SMOOTHER_SADDLE;
-  int    SC_PRE_SMOOTH_SADDLE;
-  int    SC_POST_SMOOTH_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_FINE_SADDLE;
-  double SC_SMOOTH_DAMP_FACTOR_COARSE_SADDLE;
-  int    SC_COARSE_SMOOTHER_SADDLE;
-  int    SC_COARSE_MAXIT_SADDLE;
-  double SC_COARSE_RED_FACTOR_SADDLE;
-  double SC_GMG_DAMP_FACTOR_SADDLE;
-  double SC_GMG_DAMP_FACTOR_FINE_SADDLE;
-
-  int    SC_FIRST_SOLUTION_LEVEL_SADDLE;
-  int    SC_COARSEST_LEVEL_SADDLE;
-
-  int    SC_STEP_LENGTH_CONTROL_FINE_SADDLE;
-  int    SC_STEP_LENGTH_CONTROL_ALL_SADDLE;
-  int    SC_LARGEST_DIRECT_SOLVE;
-  int    SC_DOWNWIND_TYPE;
   
-  //======================================================================
-  /** AMG solver parameters */
-  //======================================================================
-
-  // coarsen context
-  double CC_ALPHA;
-  double CC_BETA;
-  int    CC_MINCLUSTER;
-  int    CC_MAXCLUSTER;
-  int    CC_MAXDISTANCE;
-  int    CC_MAXCONNECTIVITY;
-  int    CC_DEPTHTARGET;
-  int    CC_COARSENTARGET;
-  double CC_COARSENRATE;
-  int    CC_MAJOR;
-  int    CC_DEPENDENCY;
-  double CC_RESCALE;
-  int    CC_VERBOSE;
-
-  // solver context
-  int    SC_SYSTEM_TYPE;
-  int    SC_AMG_PREC_IT;
-  double SC_AMG_PREC_RED_FACTOR;
-  int    SC_EX_MAXIT;
-  int    SC_GMRES_RESTART;
-  int    SC_LCD_START_VECTOR;
-  double SC_ILU_BETA;
-  double SC_SOR_OMEGA;
-  double SC_SMOOTHER_RED_FACTOR;
-  double SC_OMEGA_COARSE_0;
-  double SC_OMEGA_P_0;
-  double SC_ILUT_TOL;
-  int    SC_ILUT_ABSOLUTE_FILLIN;
-  double SC_ILUT_RELATIVE_FILLIN;
-  int    SC_ILUT_SORT;
-  int    SC_SCHUR_INV_OF_A;
-  int    SC_SCHUR_INV_OF_A_MAXIT;
-  double SC_SCHUR_ITERATION_DAMP;
-  int    SC_SCHUR_ITERATION_MAXIT;
-  int    SC_SCHUR_STEP_LENGTH_CONTROL;
-  int    SC_MIXED_BCGS_CGS_SWITCH_TOL;
-  double SC_DIV_FACTOR;
-  int    SC_SMOOTHING_STEPS;
-  int    SC_N1_PARAM;
-  int    SC_N2_PARAM;
-  int    SC_MINIT;
-  double SC_VAS_LAZ_DELTA;
-  int    SC_ROW_EQUILIBRATION;
-
-  int    SC_BRAESS_SARAZIN_MATRIX;
-  double SC_BRAESS_SARAZIN_ALPHA;
 
   double CHAR_L0;
   double D_VISCOSITY;
