@@ -166,7 +166,6 @@ int main(int argc, char* argv[])
     
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
-    TDatabase::ParamDB->SC_GMRES_RESTART= 20;
     
     Time_CD2D tcd(domain, db);
     time_integration(2,tcd);

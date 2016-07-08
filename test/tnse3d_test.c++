@@ -187,8 +187,6 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
   {
     db["preconditioner"] = "least_squares_commutator";
     db["nonlinloop_epsilon"] = 1e-12;
-    // just to not distract 'NSE3D::check_parameters'
-    TDatabase::ParamDB->SC_PRECONDITIONER_SADDLE = 20;
   }
   else if (solver_name.compare("multigrid") == 0)
   {

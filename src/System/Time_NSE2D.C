@@ -611,7 +611,7 @@ bool Time_NSE2D::stopIte(unsigned int it_counter)
   System_per_grid& s = this->systems.front();
   unsigned int nuDof = s.solution.length(0);
   unsigned int npDof = s.solution.length(2);
-  unsigned int sc_minit = TDatabase::ParamDB->SC_MINIT;
+  unsigned int sc_minit = db["nonlinloop_minit"];
   
   this->defect = s.rhs; 
   s.matrix.apply_scaled_add(s.solution, defect,-1.);

@@ -825,6 +825,10 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
          "The maximum number of iterations to perform in a non-linear loop.",
          (size_t) 0, size_t (1000));
 
+  db.add("nonlinloop_minit", (size_t) 1,
+         "The minimum number of iterations to perform in a non-linear loop.",
+         (size_t) 0, size_t (1000));
+
   // TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SADDLE, TDatabase::ParamDB->SC_NONLIN_RES_NORM_MIN_SCALAR,
   db.add("nonlinloop_epsilon", 1e-10,
          "At which absolute residual to break the nonlinear loop.",
