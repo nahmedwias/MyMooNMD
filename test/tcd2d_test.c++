@@ -122,22 +122,21 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["example"] = 0;
+    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
        
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< 5; ++i)
     domain.RegRefineAll();
     TDatabase::ParamDB->SOLVER_TYPE=2;
@@ -153,20 +152,20 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(ParameterDatabase::default_output_database());
     db["example"] = 0;
+    db.add("reynolds_number",1,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
-    TDatabase::ParamDB->RE_NR = 1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
     TDatabase::TimeDB->STARTTIME=0;
     TDatabase::TimeDB->ENDTIME=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
+    
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // some parameters
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+    
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
     

@@ -17,6 +17,9 @@
 #define _Example_TimeNSE2D_
 
 #include <Example_NonStationary2D.h>
+#include <functional>
+
+class Time_NSE2D; //forward declaration
 
 class Example_TimeNSE2D : public Example_NonStationary2D
 {
@@ -25,7 +28,8 @@ public:
    * This intializes a Time dependent (Navier-)Stokes example in 2D. 
    * It is chosen according to example_code.
    */
-  Example_TimeNSE2D(int example_code);
+  Example_TimeNSE2D(int example_code,
+                    const ParameterDatabase& user_input_parameter_db);
   /** @brief initialize your own example
    * 
    * Create an example with all vectors already defined.
@@ -41,5 +45,18 @@ public:
   {
 
   };
+
+  /// Apply the function stored as post processing routine.
+  void do_post_processing(Time_NSE2D& tnse2d) const;
+
+  /// Return kinematic viscosity, if set.
+  double get_nu() const;
+
+  private:
+  /// Function doing the post processing for a stationary example.
+  /// TODO put Time_NSE2D argument const as soon as FEFunctions can be copied properly!
+  std::function<void(Time_NSE2D &)> post_processing_stat;
+  /// TODO Function doing the post processing for a time dependent example.
+
 };
 #endif // _Example_TimeNSE2D_

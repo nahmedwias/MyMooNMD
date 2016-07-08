@@ -28,8 +28,11 @@ namespace flow_around_cylinder
 }
 //=========================================
 
-Example_NSE2D::Example_NSE2D(int example_code) : Example2D()
+Example_NSE2D::Example_NSE2D(int example_code,
+                             const ParameterDatabase& user_input_parameter_db) : Example2D()
 {
+  this->example_database.merge(user_input_parameter_db,false);
+
   switch( example_code )
   {
     case 0:
@@ -121,4 +124,27 @@ Example_NSE2D::Example_NSE2D(int example_code) : Example2D()
   }
 }
 
-      
+void Example_NSE2D::do_post_processing(NSE2D& nse2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(nse2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_NSE2D","No post processing done for the current example.");
+  }
+}
+
+double Example_NSE2D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}
+

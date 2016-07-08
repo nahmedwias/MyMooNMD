@@ -86,9 +86,7 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
+  
 
   // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
@@ -148,10 +146,7 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init((char*)"Default_UnitSquare", (char*)"TwoTriangles");
-
+  
   // refine grid up to the coarsest level
   for(unsigned int i = 0; i < nRefinements; i++)
   {
@@ -220,8 +215,6 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   
-  // Set Database values (this is what is usually done by the input-file)
-  TDatabase::ParamDB->PROBLEM_TYPE = 0; // problem type is not needed
   // velocity space code for Raviart-Thomas (RT) and 
   // Brezzi-Douglas-Marini(BDM) elements:
   // 1000    RT_0
@@ -254,7 +247,12 @@ int main(int argc, char* argv[])
   
   Output::print("\n\n ----------- direct solver -----------\n");
   db["solver_type"] = "direct";
+ 
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+  
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   
   
@@ -264,13 +262,17 @@ int main(int argc, char* argv[])
   Output::print("\n\n --------- fgmres+lsc solver ---------\n");
   db["preconditioner"] = "least_squares_commutator";
   
+  db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   
   Output::print("\n\n -------- fgmres+simple solver -------\n");
   db["preconditioner"] = "semi_implicit_method_for_pressure_linked_equations";
   
+  db["geo_file"] = "UnitSquare";
   tests_on_quads(nRefinements, db);
+  db["geo_file"] = "TwoTriangles";
   tests_on_triangles(nRefinements, db);
   
   return 0;

@@ -266,15 +266,24 @@ class NSE2D
     { return this->systems.front().solution.length(); }
     const Example_NSE2D & get_example() const
     { return example; }
-    /// @brief get the current residuals  (updated in NSE2D::normOfResidual)
+    /// @brief get the current residuals 
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     const Residuals& getResiduals() const;
-    /// @brief get the current impuls residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current impuls residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getImpulsResidual() const;
-    /// @brief get the current mass residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current mass residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getMassResidual() const;
-    /// @brief get the current residual (updated in NSE2D::normOfResidual)
+    /// @brief get the current residual
+    /// @details updated in NSE2D::computeNormsOfResiduals which in turn is 
+    /// called from NSE2D::stopIt
     double getFullResidual() const;
     /// @brief return the computed errors
+    /// @details updated in NSE2D::stopIt
     std::array<double, int(4)> get_errors() const;
 };
 

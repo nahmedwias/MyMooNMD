@@ -23,7 +23,7 @@ ParameterDatabase get_default_NSE2D_parameters()
   db.merge(out_db, true);
 
   //stokes case - reduce no nonlin its TODO remove global database dependency
-  if (TDatabase::ParamDB->PROBLEM_TYPE == 3)
+  if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 3)
   {
      if (TDatabase::ParamDB->PRESSURE_SEPARATION==1)
      {
@@ -85,7 +85,8 @@ NSE2D::System_per_grid::System_per_grid (const Example_NSE2D& example,
 /** ************************************************************************ */
 NSE2D::NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
              int reference_id)
- : NSE2D(domain, param_db, Example_NSE2D(param_db["example"]), reference_id)
+ : NSE2D(domain, param_db, Example_NSE2D(param_db["example"],param_db),
+         reference_id)
 {
   // note that the way we construct the example above will produce a memory 
   // leak, but that class is small.
@@ -101,6 +102,7 @@ NSE2D::NSE2D(const TDomain & domain, const ParameterDatabase& param_db,
       initial_residual(1e10), errors()
 {
   this->db.merge(param_db, false);
+  this->set_parameters();
   
   std::pair <int,int> 
       velocity_pressure_orders(TDatabase::ParamDB->VELOCITY_SPACE, 
@@ -279,6 +281,13 @@ void NSE2D::get_velocity_pressure_orders(
 
 void NSE2D::set_parameters()
 {
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  {
+    Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
+        "nor to Stokes. It is now reset to the default value for NSE (=5).");
+    db["problem_type"] = 5;
+  }
+
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
   {
     //Assemble2DSlipBC does not work, and is not implemented yet
@@ -660,9 +669,6 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     if(slow_conv)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
-    Output::print<1>(" ITE : ", setw(4), iteration_counter, setprecision(8),
-                     " RES : ", normOfResidual, " Reduction : ",
-                     normOfResidual/initial_residual);
     return true;
   }
   else

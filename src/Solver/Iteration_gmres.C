@@ -4,32 +4,35 @@
 #include <cmath> // std::abs
 #include <MooNMD_Io.h>
 
+std::string type_name(gmres_type t)
+{
+  switch(t)
+  {
+    case gmres_type::left:
+      return "left gmres";
+      break;
+    case gmres_type::right:
+      return "right gmres";
+      break;
+    case gmres_type::flexible:
+      return "flexible gmres";
+      break;
+    default:
+      ErrThrow("unknown gmres type ");
+      break;
+  }
+}
+
 template <class LinearOperator, class Vector>
 Iteration_gmres<LinearOperator, Vector>::Iteration_gmres(
   std::shared_ptr<Preconditioner<Vector>> prec, gmres_type t)
- : IterativeMethod<LinearOperator, Vector>(prec, "gmres"), type(t), s(), cs(), 
-   sn(), v(), z()
+ : IterativeMethod<LinearOperator, Vector>(prec, type_name(t)), type(t), s(),
+   cs(), sn(), v(), z()
 {
   if(!prec)
   {
     ErrThrow("No preconditioner specified. Choose NoPreconditioner<Vector> if "
              "you don't need one");
-  }
-  // change name according to the type and check if type is known
-  switch(this->type)
-  {
-    case gmres_type::left:
-      this->name = "left gmres";
-      break;
-    case gmres_type::right:
-      this->name = "right gmres";
-      break;
-    case gmres_type::flexible:
-      this->name = "flexible gmres";
-      break;
-    default:
-      ErrThrow("unknown gmres type ");
-      break;
   }
 }
 
@@ -166,7 +169,6 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
                                                     const Vector & rhs,
                                                     Vector & solution)
 {
-  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
@@ -183,7 +185,6 @@ Iteration_gmres<LinearOperator, Vector>::left_gmres(const LinearOperator & A,
   double resid = norm(r); // compute initial residual
   double beta = resid; // initialize beta as initial residual
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);
@@ -266,7 +267,6 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
                                                      const Vector & rhs,
                                                      Vector & solution)
 {
-  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
@@ -282,7 +282,6 @@ Iteration_gmres<LinearOperator, Vector>::right_gmres(const LinearOperator & A,
   double resid = norm(r); // compute initial residual
   double beta = norm(r); // initialize beta as initial residual
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);
@@ -373,7 +372,6 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
                                                         const Vector & rhs,
                                                         Vector & solution)
 {
-  this->start_time = std::chrono::high_resolution_clock::now();
   this->s.resize(this->restart+1);
   this->cs.resize(this->restart+1);
   this->sn.resize(this->restart+1);
@@ -387,7 +385,6 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
   double resid = norm(r); // compute initial residual
   double beta = resid; // initialize beta as initial residual
   // safe initial residual, used to check stopping criteria later
-  this->initial_residual = resid;
   if(this->converged(resid, 0))
   {
     return std::pair<unsigned int, double>(0, resid);

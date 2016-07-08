@@ -16,12 +16,11 @@
 // This is also called nu, or eps, it is equal
 // to 1/Reynolds_number and is dimensionless
 double DIMENSIONLESS_VISCOSITY;
-double VARIABLE_PARAMETER1;
 
 //side effect: sets the global parameter
 void ExampleFile()
 {
-  OutPut("Example: FlowAroundCylinder_stat.h" << endl);
+  OutPut("Example: FlowAroundCylinder_instat.h" << endl);
   TDatabase::ParamDB->INTERNAL_PROJECT_PRESSURE = 0;
 }
 
@@ -101,12 +100,14 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 // value of boundary condition
 void U1BoundValue(double x, double y, double z, double &value)
 {
+  double t=TDatabase::TimeDB->CURRENTTIME;
+
   //if( (fabs(x)<1e-6) || (fabs(x-2.5)<1e-6) )
   if((fabs(x)<1e-10)) //inflow boundary
   {
     double H = 0.41; //height of the cylinder in m
-    double U = 0.45; //peak inflow velocity
-    value = 16*U*y*z*(H-y)*(H-z) / pow(H,4);
+    double U = 2.25; //peak inflow velocity
+    value = 16*U*sin(Pi*t/8)*y*z*(H-y)*(H-z) / pow(H,4);
   }
   else
   {
@@ -134,8 +135,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
 
-  double eps = DIMENSIONLESS_VISCOSITY;
-  // the kinematic viscosity (1e-3 in the paper cited above)
+  double eps = DIMENSIONLESS_VISCOSITY; // the kinematic viscosity (1e-3 in the paper cited above)
 
   for(int i=0;i<n_points;i++)
   {
@@ -392,10 +392,8 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   cl = recvbuf[1];
 #endif
 
-  double test_coefficient = VARIABLE_PARAMETER1;
-
-  cd *= -test_coefficient/0.41;
-  cl *= -test_coefficient/0.41;
+  cd *= -20/0.41;
+  cl *= -20/0.41;
 
   delete[] aux;
   delete[] v;
@@ -462,7 +460,7 @@ double get_p_diff(const std::array<double,3>& point_A,
 }
 
 // this is the actual interface
-void compute_drag_lift_pdiff(NSE3D& nse3d)
+void compute_drag_lift_pdiff(Time_NSE3D& tnse3d)
 {
 #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -474,8 +472,8 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   //compute drag and lift and print them
   double drag, lift;
 
-  const TFEVectFunct3D& u(nse3d.get_velocity());
-  TFEFunction3D& p(nse3d.get_pressure()); //I want this const!!!
+  const TFEVectFunct3D& u(tnse3d.get_velocity());
+  TFEFunction3D& p(tnse3d.get_pressure()); //I want this const!!!
 
   TFEFunction3D* u1 = u.GetComponent(0);
   TFEFunction3D* u2 = u.GetComponent(1);

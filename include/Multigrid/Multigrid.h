@@ -11,7 +11,7 @@
  * Here are the (bigger) tasks and functionalities to regain. Most of the work
  * necessary will not amass in this class but elsewhere.
  *
- * @todo TODO Reenable step length control (work in VankaSmootherNew).
+ * @todo TODO Reenable step length control (work in VankaSmoother).
  * @todo TODO Reenable MDML (work in system classes )
  * @todo TODO Parallelize (work here and in different smoothers)
  *

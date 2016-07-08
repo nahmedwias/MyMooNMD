@@ -17,20 +17,14 @@
 
 #include <FEVectFunct2D.h>
 #include <Example_Brinkman2D.h>
-#include <MultiGrid2D.h>
 #include <MainUtilities.h> // FixedSizeQueue
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
+#include <Solver.h>
 
 #include <ParameterDatabase.h>
 #include <PostProcessing2D.h>
-#include <NSE_MultiGrid.h>
-#include <NSE_MGLevel1.h>
-#include <NSE_MGLevel2.h>
-#include <NSE_MGLevel3.h>
-#include <NSE_MGLevel4.h>
-#include <NSE_MGLevel14.h>
 #include <utility>
 #include <array>
 
@@ -100,6 +94,13 @@ class Brinkman2D
      */
     ParameterDatabase db;
     
+    /** @brief a solver object which will solve the linear system
+     *
+     * Storing it means that for a direct solver we also store the factorization
+     * which is usually not necessary.
+     */
+    Solver<BlockFEMatrix, BlockVector> solver;
+
     /** @brief class for output handling (vtk and case files) */
     PostProcessing2D outputWriter;
 
@@ -112,11 +113,6 @@ class Brinkman2D
     
     /** @brief Definition of the used example */
     const Example_Brinkman2D example;
-    
-    /** @brief a multigrid object which is set to nullptr in case it is not 
-     *         needed
-     */
-    std::shared_ptr<TNSE_MultiGrid> multigrid;
     
     /** @brief an array to store defect, so that we don't have to reallocate
      *         so often
@@ -260,16 +256,7 @@ class Brinkman2D
      * @param i suffix for output file name, -1 means no suffix
      */
     void output(int i = -1);
-    
-    /**
-   * @brief initialize multigrid levels for different NSTYPE's
-   */
-    TNSE_MGLevel* mg_levels(int i, System_per_grid& s);
-    /**
-   * @brief multigrid solver
-   */
-    void mg_solver();
-    
+
     // getters and setters
 //    const BlockMatrixNSE2D & get_matrix() const TODO
 //    { return this->systems.front().matrix; }

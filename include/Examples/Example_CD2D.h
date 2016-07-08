@@ -32,7 +32,9 @@
 #define __EXAMPLE_CD2D__
 
 #include<Example2D.h>
+#include <functional>
 
+class CD2D; //forward declaration
 
 class Example_CD2D : public Example2D 
 {
@@ -42,7 +44,8 @@ class Example_CD2D : public Example2D
      * This intializes a convection-diffusion example in 2D. It is chosen 
      * according to example_code.
      */
-    Example_CD2D(int example_code);
+    Example_CD2D(int example_code,
+                 const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 
@@ -52,6 +55,12 @@ class Example_CD2D : public Example2D
                   std::vector <BoundCondFunct2D*> bc,
                   std::vector <BoundValueFunct2D*> bd, CoeffFct2D *coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
+
+    /// Apply the function stored as post processing routine.
+    void do_post_processing(CD2D& cd2d) const;
+
+    /// Return kinematic viscosity, if set.
+    double get_nu() const;
 
     //Declaration of special member functions - rule of zero
 
@@ -69,6 +78,13 @@ class Example_CD2D : public Example2D
 
     //! Default destructor.
     ~Example_CD2D() = default;
+
+  private:
+    /// Function doing the post processing for a stationary example.
+    /// TODO put CD2D argument const as soon as FEFunctions can be copied properly!
+    std::function<void(CD2D &)> post_processing_stat;
+    /// TODO Function doing the post processing for a time dependent example.
+
 };
 
 

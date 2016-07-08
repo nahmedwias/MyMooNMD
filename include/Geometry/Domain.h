@@ -136,7 +136,9 @@ class TDomain
      *
      * TODO This is messy in will be tidied up in the near future.
      */
-    TDomain(char *ParamFile, const ParameterDatabase& param_db);
+    TDomain(char *ParamFile, const ParameterDatabase& param_db,
+            double drift_x = 0, double drift_y = 0, double drift_z = 0,
+            std::vector<double> segment_marks = {});
     
     /** @brief destructor */
     ~TDomain();

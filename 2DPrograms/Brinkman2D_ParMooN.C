@@ -42,22 +42,11 @@ int main(int argc, char* argv[])
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain Domain(argv[1], parmoon_db);
   
- //// //set PROBLEM_TYPE to NSE if not yet set (3 means Stokes, 5 Naver-Stokes)
- //// if(TDatabase::ParamDB->PROBLEM_TYPE!=3 && TDatabase::ParamDB->PROBLEM_TYPE!=5)
- ////   TDatabase::ParamDB->PROBLEM_TYPE = 5;
-  
-    //open OUTFILE, this is where all output is written to (addionally to console)
+  //open OUTFILE, this is where all output is written to (addionally to console)
   Output::set_outfile(parmoon_db["outfile"]);
   
-  //// possibly change parameters in the database, if they are not meaningful now
-  ////Database.CheckParameterConsistencyNSE();
-    
   // write all Parameters to the OUTFILE (not to console) for later reference
   Database.WriteParamDB(argv[0]);
-    
-  /* include the mesh from a mesh generator, for a standard mesh use the
-   * build-in function. The GEOFILE describes the boundary of the domain. */
-  Domain.Init(parmoon_db["boundary_file"], parmoon_db["geo_file"]); // call mesh generator
   
   // refine grid
   size_t n_ref =  Domain.get_n_initial_refinement_steps();
@@ -68,7 +57,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
     
-  Example_Brinkman2D example(parmoon_db["example"]);
+  Example_Brinkman2D example(parmoon_db["example"],parmoon_db);
     
   //=========================================================================
   // create an object of the Brinkman class

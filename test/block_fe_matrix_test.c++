@@ -39,14 +39,12 @@ int main(int argc, char* argv[])
   db.add("multigrid_n_levels", (size_t) 0, "");
 
   // default construct a domain object
+  db.add("boundary_file", "Default_UnitSquare", "");
+  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
   TDomain domain(db);
 
   Output::setVerbosity(1);
 
-  // the domain is initialised with default description and default
-  // initial mesh
-  domain.Init("Default_UnitSquare", "UnitSquare");
-  
   // refine grid up to the coarsest level
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(unsigned int i=0; i < n_ref; i++)

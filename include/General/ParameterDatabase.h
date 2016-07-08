@@ -30,7 +30,7 @@ class ParameterDatabase
     /// @brief construct an empty parameter database with a given name
     ParameterDatabase(std::string name);
     
-    /// @brief construct a database filled with parameters of generaly interest
+    /// @brief construct a database filled with parameters of general interest
     ///
     /// These parameters include "outfile", "boundary_file", "geo_file", 
     /// "problem_type", "base_name", ...

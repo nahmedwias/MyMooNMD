@@ -73,7 +73,9 @@ Time_NSE2D::System_per_grid::System_per_grid(const Example_TimeNSE2D& example,
 /**************************************************************************** */
 Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
                        int reference_id)
-  : Time_NSE2D(domain, param_db, Example_TimeNSE2D(param_db["example"]), reference_id)
+  : Time_NSE2D(domain, param_db,
+               Example_TimeNSE2D(param_db["example"],param_db),
+               reference_id)
 {
   
 }
@@ -150,7 +152,19 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain, const ParameterDatabase& param_db,
 /**************************************************************************** */
 void Time_NSE2D::set_parameters()
 {
-
+  if(!db["problem_type"].is(6))
+  {
+    if (db["problem_type"].is(0))
+    {
+      db["problem_type"] = 6;
+    }
+    else
+    {
+      Output::warn<2>("The parameter problem_type doesn't correspond to Time_NSE."
+          "It is now reset to the correct value for Time_NSE (=6).");
+      db["problem_type"] = 6;
+    }
+  }
   if(TDatabase::TimeDB->TIME_DISC == 0)
   {
     ErrMsg("TIME_DISC: " << TDatabase::TimeDB->TIME_DISC 

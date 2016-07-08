@@ -84,7 +84,7 @@ void Boundary::initFromFile(std::string PRM)
   getline(ifile,theline,'\n'); // PARAMETERS
   Output::print(theline);
   for (int i=0; i<nBoundaryParts; i++) {
-    for (int k=0; k<parts[i].size(); k++) {
+    for (unsigned int k=0; k<parts[i].size(); k++) {
       for (unsigned int p=0; p<parts[i][k].parameters.size()/2; p++) {
 
       ifile >> parts[i][k].parameters[2*p];

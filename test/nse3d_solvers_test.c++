@@ -22,15 +22,14 @@
  *
  * So far the test is adapted to:
  *  - testing the umfpack solver when compiled SEQUENTIAL
+ *  - testing lsc preconditioned fgmres SEQUENTIAL
+ *  - testing multigrid preconditioned fgmres SEQUENTIAL
  *  - testing the mumps solver when compiled MPI
  *
  * The MPI Mumps test contains one example for the three combinations
  * 1 - 2 (hexa), 2 - 12 (hexa), 4 - 2 (hexa) of nstype and velocity space.
  * The tests for 3rd order elements cannot be run, because these elements are
  * not fitted for mpi yet.
- *
- * @todo TODO Enable this test for: pardiso,
- * fgmres with multigrid, fgmres with lsc preconditioner
  *
  * @author Clemens Bartsch (heavily inspired by Najib's NSE2D Test program)
  *
@@ -105,10 +104,9 @@ void check(ParameterDatabase& db, int example, const TDomain& domain,
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-  Example_NSE3D example_obj(example);
+  Example_NSE3D example_obj(example,db);
 
   //Perform usual checks on the parameter consistency
-  NSE3D::check_parameters(); //makeshift check
   TDatabase::CheckParameterConsistencyNSE(); //old check
 
   // Construct the nse3d problem object.
@@ -166,14 +164,14 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // New multigrid parameters
     db["multigrid_n_levels"] = 2;
     db["multigrid_cycle_type"] = "V";
-    db["multigrid_smoother"] = "nodal_vanka";
-    db["multigrid_smoother_coarse"] = "nodal_vanka";
-    db["multigrid_correction_damp_factor"] = 0.8;
-    db["multigrid_n_pre_smooth"] = 2;
-    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_smoother"] = "batch_vanka_store";
+    db["multigrid_smoother_coarse"] = "nodal_vanka_store";
+    db["multigrid_correction_damp_factor"] = 1.0;
+    db["multigrid_n_pre_smooth"] = 1;
+    db["multigrid_n_post_smooth"] = 1;
     db["multigrid_coarse_residual"] = 1.0e-1;
     db["multigrid_coarse_max_n_iterations"] = 5;
-    db["multigrid_vanka_damp_factor"]=0.7;
+    db["multigrid_vanka_damp_factor"]=1.0;
 
   }
 #ifndef _MPI
@@ -215,7 +213,7 @@ double get_tolerance(std::string solver_name)
   if(solver_name.compare("lsc") == 0)
     return 1e-9;
   if(solver_name.compare("multigrid") == 0)
-    return 1e-9;
+    return 1e-8;
 #else
   if(solver_name.compare("mumps") == 0)
     return 1e-9 ;
@@ -254,7 +252,6 @@ int main(int argc, char* argv[])
   db.add("refinement_n_initial_steps", (size_t) 1,"", (size_t) 0, (size_t) 2);
 
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
-  TDatabase::ParamDB->PROBLEM_TYPE = 5; // to be on the safe side...
 
   TDatabase::ParamDB->DRIFT_Z = 1;
 
@@ -284,8 +281,10 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
+    db.add("boundary_file", "Default_UnitCube", "");
+    db.add("geo_file", "Default_UnitCube_Hexa", "", 
+	   {"Default_UnitCube_Hexa", "Default_UnitCube_Tetra"});
     TDomain domain_hex(db);
-    domain_hex.Init("Default_UnitCube", "Default_UnitCube_Hexa");
 
     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
     for(size_t i=0; i< n_ref ; i++)
@@ -352,8 +351,8 @@ int main(int argc, char* argv[])
   //===========================================================
   {
     //do the domain thingy
+    db["geo_file"]= "Default_UnitCube_Tetra";
     TDomain domain_tet(db);
-    domain_tet.Init("Default_UnitCube", "Default_UnitCube_Tetra");
     for(size_t i=0; i< domain_tet.get_n_initial_refinement_steps(); i++)
     {
       domain_tet.RegRefineAll();

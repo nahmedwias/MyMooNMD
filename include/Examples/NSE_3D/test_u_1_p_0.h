@@ -10,15 +10,14 @@
  * @date 2016/03/11 Import to ParMooN.
  */
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   OutPut("Example: test_u_1_p_0. Linear velocity solution u=(x,-y,0), "
    "constant zero pressure solution p=0. \n");
-}
-
-double get_nu()
-{
-  return 1;
 }
 
 // exact solution
@@ -88,7 +87,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double * X, double * Y, double * Z,
                double **parameters, double **coeffs)
 {
-  const double eps = get_nu();
+  const double eps = DIMENSIONLESS_VISCOSITY;
   std::vector<double> u1(5,0.0);
   std::vector<double> u2(5,0.0);
   std::vector<double> u3(5,0.0);

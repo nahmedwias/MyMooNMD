@@ -123,8 +123,7 @@ int main(int argc, char* argv[])
     TFEDatabase2D FEDatabase;
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db["example"] = 3;
-
-    TDatabase::ParamDB->RE_NR = 1e-20;
+    db.add("reynolds_number",1e-20,"");
 
     TDatabase::ParamDB->DISCTYPE=1;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
@@ -137,12 +136,11 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->ENDTIME=0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
     TDomain domain(db);
     SetTimeDiscParameters(0);
     // some parameters
-    // the domain is initialised with default description and default
-    // initial mesh
-    domain.Init((char*)"Default_UnitSquare", (char*)"UnitSquare");
     for(int i=0; i< 5; ++i)
       domain.RegRefineAll();
 

@@ -135,21 +135,21 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
-    double **MatrixA11, **MatrixA12, **MatrixA21, **MatrixA22;
+    double **MatrixA11, **MatrixA22; // **MatrixA21, **MatrixA12;
     double **MatrixB1, **MatrixB2;
     double **MatrixB1T, **MatrixB2T;
     double *Rhs1, *Rhs2, val;
-    double *Matrix11Row, *Matrix12Row, *Matrix21Row, *Matrix22Row;
+    double *Matrix11Row, *Matrix22Row; // *Matrix21Row, *Matrix12Row;
     double *MatrixRow1, *MatrixRow2;
     double ansatz00, ansatz10, ansatz01;
     double test00, test10, test01;
-    double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4, *Orig5;
+    double *Orig0, *Orig1, *Orig2, *Orig4, *Orig5; // *Orig3;
     int i,j,N_U, N_P;
     double c0, c1, c2;
     
     MatrixA11 = LocMatrices[0];
-    MatrixA12 = LocMatrices[1];
-    MatrixA21 = LocMatrices[2];
+//    MatrixA12 = LocMatrices[1];
+//    MatrixA21 = LocMatrices[2];
     MatrixA22 = LocMatrices[3];
     ////int offset = TDatabase::ParamDB->NSTYPE == 14 ? 1 : 0;
     //double ** MatrixC = LocMatrices[4];
@@ -169,7 +169,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
     Orig0 = OrigValues[0];         // u_x
     Orig1 = OrigValues[1];         // u_y
     Orig2 = OrigValues[2];         // u
-    Orig3 = OrigValues[3];         // p
+//    Orig3 = OrigValues[3];         // p
     Orig4 = OrigValues[4];         // p_x   MUSS NOCH DEFINIERT WERDEN !!!...eventuell
     Orig5 = OrigValues[5];         // p_y   MUSS NOCH DEFINIERT WERDEN!!!...eventuell
     
@@ -185,8 +185,8 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
         //throw('ajh');
         
         Matrix11Row = MatrixA11[i];
-        Matrix12Row = MatrixA12[i];
-        Matrix21Row = MatrixA21[i];
+//        Matrix12Row = MatrixA12[i];
+//        Matrix21Row = MatrixA21[i];
         Matrix22Row = MatrixA22[i];
         
         test10 = Orig0[i];
@@ -307,7 +307,7 @@ void BrinkmanType1GalerkinStab(double Mult, double *coeff,
     double c0 = coeff[0];                   // nu
     double c1 = coeff[1];                   // f1
     double c2 = coeff[2];                   // f2
-    double c3 = coeff[3];
+//    double c3 = coeff[3];
     double K = 1.;
     double alpha = 0.4;//1.;
     double PSPGStab = alpha*(hK*hK)/(c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK) ///warum negativ, wenn positiv geht es schief-NOCHMAL TESTEN
@@ -476,7 +476,7 @@ void BrinkmanType1GalerkinStab2(double Mult, double *coeff,
     double c0 = coeff[0];                           // nu resp. eps(:=1/Re) ; Re can be set in brinkman2d.dat
     double c1 = coeff[1];                           // f1
     double c2 = coeff[2];                           // f2
-    double c3 = coeff[3];                           // f3 (the rhs of incompressibility constraint)
+//    double c3 = coeff[3];                           // f3 (the rhs of incompressibility constraint)
     double K = 1.;                                  // Permeability
     double alpha = 0.01;                            // PSPG Stabilization Parameter
     double PSPGStab = -alpha*(hK*hK)/(c0*c0+hK*hK); //stabilization = (hK*hK)/(c0*c0+hK*hK)

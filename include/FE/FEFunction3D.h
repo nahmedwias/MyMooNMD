@@ -86,23 +86,6 @@ class TFEFunction3D
     void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
                                           ErrorMethod3D * const ErrMeth,
                                           double * const errors);
-    
-    void GetErrorsAdapt(DoubleFunct3D *Exact, int N_Derivatives,
-			MultiIndex3D *NeededDerivatives,
-			int N_Errors, ErrorMethod3D *ErrorMeth, 
-			CoeffFct3D *Coeff, 
-			TAuxParam3D *Aux,
-			int n_fespaces, const TFESpace3D **fespaces,
-			double *errors);
-    
-    /** calculate errors to given function taylored to OPTPDE */
-    void GetErrorsOPTPDE(DoubleFunct3D *Exact, int N_Derivatives,
-		   MultiIndex3D *NeededDerivatives,
-		   int N_Errors, ErrorMethod3D *ErrorMeth, 
-		   CoeffFct3D *Coeff, TAuxParam3D *Aux,
-		   int n_fespaces, const TFESpace3D **fespaces,
-		   double radius, double upper, double lower, double *errors);
-    
 
     /** calculate errors to given function */
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,

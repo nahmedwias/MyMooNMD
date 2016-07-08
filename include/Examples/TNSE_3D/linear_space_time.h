@@ -3,6 +3,10 @@
 // u(x,y,z) = (t*y,2*t*x,0)
 // p(x,y,z) = 0
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 void ExampleFile()
 {
   Output::print<1>("Example: linear_space_time.h");
@@ -109,7 +113,7 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *X, double *Y, double *Z,
                double **parameters, double **coeffs)
 {
-  const double nu = 1/TDatabase::ParamDB->RE_NR;
+  const double nu = DIMENSIONLESS_VISCOSITY;
   double t = TDatabase::TimeDB->CURRENTTIME;
   double x, y;
   if(TDatabase::ParamDB->FLOW_PROBLEM_TYPE == STOKES)

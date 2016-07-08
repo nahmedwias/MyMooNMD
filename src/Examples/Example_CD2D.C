@@ -31,8 +31,11 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
-Example_CD2D::Example_CD2D(int example_code) : Example2D()
+Example_CD2D::Example_CD2D(int example_code,
+                           const ParameterDatabase& user_input_parameter_db) : Example2D()
 {
+  this->example_database.merge(user_input_parameter_db,false);
+
   switch( example_code)
   {
     case 0:
@@ -103,4 +106,28 @@ Example_CD2D::Example_CD2D(int example_code) : Example2D()
   }
 }
 
-      
+
+void Example_CD2D::do_post_processing(CD2D& cd2d) const
+{
+  if(post_processing_stat)
+  {
+    post_processing_stat(cd2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_CD2D","No post processing done for the current example.");
+  }
+}
+
+double Example_CD2D::get_nu() const
+{
+  double inverse_reynolds = this->example_database["reynolds_number"];
+  inverse_reynolds = 1/inverse_reynolds;
+  return inverse_reynolds;
+}
+

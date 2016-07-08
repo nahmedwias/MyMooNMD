@@ -549,11 +549,10 @@ int TCollection::createElementLists()
     }
   }
 
-  
-  int nInterfaceFaces = 0;
   int nBoundaryFaces = 0;
 
 #ifdef __2D__
+  int nInterfaceFaces = 0;
   for(int i=0;i<N_Cells;i++){
     for (int j=0; j<Cells[i]->GetN_Edges(); j++) {
       
@@ -618,14 +617,14 @@ int TCollection::createElementLists()
     BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
   }
 
-  int ibd = 0;
   for(int i=0;i<N_Cells;i++){
     
     if (dim==2) {
       
 #ifdef __2D__
-      int nJoints = Cells[i]->GetN_Edges();
-      for (int j=0;j<nJoints;j++) {
+  int ibd = 0;
+  int nJoints = Cells[i]->GetN_Edges();
+  for (int j=0;j<nJoints;j++) {
 	bool foundVertex1= false;
 	bool foundVertex2 = false;
 	TJoint *joint = Cells[i]->GetJoint(j);
